@@ -20,13 +20,10 @@ module Solargraph
           tries += 1
           spot = e.diagnostic.location.begin_pos
           if spot == tmp.length
-            STDERR.puts "********* END OF FILE"
             tmp = tmp[0..-2] + '#'
           else
-            STDERR.puts "********* SOMEWHERE IN THERE"
             tmp = tmp[0..spot] + '#' + tmp[spot+2..-1].to_s
           end
-          STDERR.puts "Retrying"
           retry
         end
         raise e
@@ -104,15 +101,12 @@ module Solargraph
       elsif word.start_with?(':') and !word.start_with?('::')
         # TODO it's a symbol
       elsif word.include?('::')
-        STDERR.puts "Included a word with ::"
         parts = word.split('::', -1)
         ns = parts[0..-2].join('::')
         if parts.last.include?('.')
           ns = parts[0..-2].join('::') + '::' + parts.last[0..parts.last.index('.')-1]
-          STDERR.puts "Looking for methods in #{ns}"
           return @api_map.get_methods(ns)
         else
-          STDERR.puts "Looking for namespaces"
           return @api_map.namespaces_in(ns)
         end
       elsif word.include?('.')

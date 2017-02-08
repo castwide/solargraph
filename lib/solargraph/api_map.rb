@@ -114,22 +114,27 @@ module Solargraph
     def inner_namespaces_in name, root, skip
       result = []
       fqns = find_fully_qualified_namespace(name, root)
+      STDERR.puts "#{name}, #{root} goes to #{fqns}"
+      STDERR.puts "WTF? skipping #{fqns}" if skip.include?(fqns)
       unless fqns.nil? or skip.include?(fqns)
         skip.push(fqns)
-        cursor = @namespace_tree[fqns]
-        #unless name.nil?
-        #  parts = name.split('::')
-        #  parts.each { |p|
-        #    cursor = cursor[p]
-        #  }
-        #end
+        cursor = @namespace_tree
+        parts = fqns.split('::')
+        STDERR.puts "Gonna use #{parts.length} parts"
+        parts.each { |p|
+          STDERR.puts "For #{p} doin shit"
+          cursor = cursor[p]
+        }
+        STDERR.puts "Cursor: #{cursor}"
         unless cursor.nil?
           result += cursor.keys
-          skip += cursor.keys
-          nodes = get_namespace_nodes(name)
+          #skip += cursor.keys
+          nodes = get_namespace_nodes(fqns)
           nodes.each { |n|
             get_includes_from(n).each { |i|
-              result += inner_namespaces_in(unpack_name(i.children[2]), fqns, skip)
+              n = unpack_name(i.children[2])
+              STDERR.puts "Looking in #{n}"
+              result += inner_namespaces_in(n, fqns, skip)
             }
           }
         end
@@ -139,7 +144,7 @@ module Solargraph
     
     def find_fully_qualified_namespace name, root = ''
       if name == ''
-        return @node if root == ''
+        return '' if root == ''
         return @namespace_map[root].nil? ? nil : root
       elsif root == ''
         return @namespace_map[name].nil? ? nil : name
@@ -147,10 +152,13 @@ module Solargraph
         roots = root.split('::')
         while roots.length > 0
           fqns = roots.join('::') + '::' + name
+          STDERR.puts "Checking #{fqns}"
           return fqns unless @namespace_map[fqns].nil?
           roots.pop
         end
+        return name unless @namespace_map[fqns].nil?
       end
+      STDERR.puts "Nothing found for #{name}, #{root}"
       nil
     end
 
