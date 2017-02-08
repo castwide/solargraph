@@ -7,8 +7,8 @@ module Solargraph
     
     include NodeMethods
     
-    def initialize code
-      @api_map = ApiMap.current
+    def initialize code, api_map: ApiMap.current
+      @api_map = api_map.dup
       @code = code
       tries = 0
       tmp = "#{code}\nX".gsub(/[\.@]([\s])/, "#$1")
@@ -74,7 +74,7 @@ module Solargraph
     def word_at index
       word = ''
       cursor = index - 1
-      while cursor > 0
+      while cursor > -1
         char = @code[cursor, 1]
         #puts "***#{char}"
         break if char.nil? or char == ''
@@ -104,11 +104,15 @@ module Solargraph
       elsif word.start_with?(':') and !word.start_with?('::')
         # TODO it's a symbol
       elsif word.include?('::')
+        STDERR.puts "Included a word with ::"
         parts = word.split('::', -1)
         ns = parts[0..-2].join('::')
         if parts.last.include?('.')
+          ns = parts[0..-2].join('::') + '::' + parts.last[0..parts.last.index('.')-1]
+          STDERR.puts "Looking for methods in #{ns}"
           return @api_map.get_methods(ns)
         else
+          STDERR.puts "Looking for namespaces"
           return @api_map.namespaces_in(ns)
         end
       elsif word.include?('.')
@@ -129,8 +133,6 @@ module Solargraph
           return result
         end
       else
-        # Just get the constants
-        puts "Just getting constants"
         return @api_map.namespaces_in(namespace_at(index)) + get_local_variables_and_methods_at(index) + Solargraph::ApiMap::KEYWORDS
       end
     end

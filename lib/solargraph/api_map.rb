@@ -12,6 +12,9 @@ module Solargraph
       'then', 'true', 'undef', 'unless', 'until', 'when', 'while', 'yield'
     ]
     
+    MAPPABLE_METHODS = [
+      :include, :require, :attr_reader, :attr_writer, :attr_accessor
+    ]
     include NodeMethods
     
     attr_reader :node
@@ -24,7 +27,13 @@ module Solargraph
       @pending_requires = []
       @merged_requires = []
     end
-    
+
+    def dup
+      other = ApiMap.new
+      other.merge @node
+      other
+    end
+
     def merge node
       return if node.nil?
       mapified = mapify(node)
@@ -57,7 +66,7 @@ module Solargraph
           c = File.read("#{p}/#{name}.rb")
           n = Parser::CurrentRuby.parse(c)
           quick_merge n
-          break
+          return
         end
       }
       f = "#{Solargraph::STUB_PATH}/ruby/#{RUBY_VERSION}/stdlib/#{name}.rb"
@@ -65,7 +74,19 @@ module Solargraph
         c = File.read(f)
         n = Parser::CurrentRuby.parse(c)
         quick_merge n
+        return
       end
+      spec = Gem::Specification.find_by_name(name.split('/')[0])
+      gem_root = spec.gem_dir
+      gem_lib = gem_root + "/lib"
+      f = "#{gem_lib}/#{name}.rb"
+      if File.exist?(f)
+        c = File.read(f)
+        n = Parser::CurrentRuby.parse(c)
+        quick_merge n
+        return
+      end
+      puts "Required lib not found: #{name}"
     end
     
     def quick_merge node
@@ -92,29 +113,50 @@ module Solargraph
     
     def inner_namespaces_in name, root, skip
       result = []
-      unless skip.include?(name)
-        skip.push(name)
-        cursor = @namespace_tree
-        unless name.nil?
-          parts = name.split('::')
-          parts.each { |p|
-            cursor = cursor[p]
+      fqns = find_fully_qualified_namespace(name, root)
+      unless fqns.nil? or skip.include?(fqns)
+        skip.push(fqns)
+        cursor = @namespace_tree[fqns]
+        #unless name.nil?
+        #  parts = name.split('::')
+        #  parts.each { |p|
+        #    cursor = cursor[p]
+        #  }
+        #end
+        unless cursor.nil?
+          result += cursor.keys
+          skip += cursor.keys
+          nodes = get_namespace_nodes(name)
+          nodes.each { |n|
+            get_includes_from(n).each { |i|
+              result += inner_namespaces_in(unpack_name(i.children[2]), fqns, skip)
+            }
           }
         end
-        result += cursor.keys
-        skip += cursor.keys
-        nodes = get_namespace_nodes(name)
-        nodes.each { |n|
-          get_includes_from(n).each { |i|
-            result += inner_namespaces_in(unpack_name(i.children[2]), '', skip)
-          }
-        }
       end
       result    
     end
     
-    def get_namespace_nodes(name, root = '')
-      name == '' ? [@node] : (@namespace_map[name] || [])
+    def find_fully_qualified_namespace name, root = ''
+      if name == ''
+        return @node if root == ''
+        return @namespace_map[root].nil? ? nil : root
+      elsif root == ''
+        return @namespace_map[name].nil? ? nil : name
+      else
+        roots = root.split('::')
+        while roots.length > 0
+          fqns = roots.join('::') + '::' + name
+          return fqns unless @namespace_map[fqns].nil?
+          roots.pop
+        end
+      end
+      nil
+    end
+
+    def get_namespace_nodes(fqns)
+      return [@node] if fqns == ''
+      @namespace_map[fqns] || []
     end
     
     def get_instance_variables(namespace, scope = :instance)
@@ -157,7 +199,8 @@ module Solargraph
       meths = []
       return meths if skip.include?(namespace)
       skip.push namespace
-      nodes = get_namespace_nodes(namespace, root)
+      fqns = find_fully_qualified_namespace(namespace, root)
+      nodes = get_namespace_nodes(fqns)
       unless nodes.nil?
         nodes.each { |n|
           if n.type == :class and !n.children[1].nil?
@@ -181,21 +224,42 @@ module Solargraph
     end
     
     def get_instance_methods(namespace, root = '', skip = [])
+      fqns = find_fully_qualified_namespace(namespace, root)
       meths = []
-      return meths if skip.include?(namespace)
-      skip.push namespace
-      nodes = get_namespace_nodes(namespace, root)
+      if fqns.nil?
+        STDERR.puts "Failed to find fully qualified namespace for '#{namespace}' from '#{root}'"
+        return meths
+      end
+      return meths if skip.include?(fqns)
+      skip.push fqns
+      nodes = get_namespace_nodes(fqns)
+      STDERR.puts "Namespace nodes found: #{nodes.length}"
       nodes.each { |n|
         if n.type == :class and !n.children[1].nil?
           s = unpack_name(n.children[1])
-          meths += get_instance_methods(s, root, skip)
+          meths += get_instance_methods(s, namespace, skip)
         end
         n.children.each { |c|
           if c.kind_of?(AST::Node) and c.type == :def
             meths.push c.children[0] if c.children[0].to_s[0].match(/[a-z]/i)
+          elsif c.kind_of?(AST::Node) and c.type == :send and c.children[1] == :attr_reader
+            c.children[2..-1].each { |x|
+              meths.push x.children[0] if x.type == :sym
+            }
+          elsif c.kind_of?(AST::Node) and c.type == :send and c.children[1] == :attr_writer
+            c.children[2..-1].each { |x|
+              meths.push "#{x.children[0]}=" if x.type == :sym
+            }
+          elsif c.kind_of?(AST::Node) and c.type == :send and c.children[1] == :attr_accessor
+            meths.concat c.children[2..-1]
+            c.children[2..-1].each { |x|
+              meths.push x.children[0] if x.type == :sym
+              meths.push "#{x.children[0]}=" if x.type == :sym
+            }
           elsif c.kind_of?(AST::Node) and c.type == :send and c.children[1] == :include
             i = unpack_name(c.children[2])
-            meths += get_instance_methods(i, root, skip) unless i == 'Kernel'
+            STDERR.puts "Gonna try to get methods from included module #{i}"
+            meths += get_instance_methods(i, fqns, skip) unless i == 'Kernel'
           end
         }
       }
@@ -207,7 +271,12 @@ module Solargraph
       #map = ApiMap.new
       #map.merge(Parser::CurrentRuby.parse(File.read("#{Solargraph::STUB_PATH}/ruby/#{RUBY_VERSION}/core.rb")))
       #map
-      Marshal.load(File.read("#{Solargraph::STUB_PATH}/ruby/#{RUBY_VERSION}/core.ser"))
+      #Marshal.load(File.read("#{Solargraph::STUB_PATH}/ruby/#{RUBY_VERSION}/core.ser"))
+      if @current.nil?
+        @current = ApiMap.new
+        @current.merge(Parser::CurrentRuby.parse(File.read("#{Solargraph::STUB_PATH}/ruby/2.3.0/core.rb")))
+      end
+      @current
     end
     
     def get_descendants node, *types
@@ -281,9 +350,7 @@ module Solargraph
       # TODO Add node.type :casgn (constant assignment)
       if node.kind_of?(AST::Node) and (node.type == :class or node.type == :module or node.type == :def or node.type == :defs or node.type == :ivasgn or node.type == :gvasgn)
         true
-      elsif node.kind_of?(AST::Node) and node.type == :send and node.children[0] == nil and node.children[1] == :include
-        true
-      elsif node.kind_of?(AST::Node) and node.type == :send and node.children[0] == nil and node.children[1] == :require
+      elsif node.kind_of?(AST::Node) and node.type == :send and node.children[0] == nil and MAPPABLE_METHODS.include?(node.children[1])
         true
       else
         false
@@ -334,6 +401,8 @@ module Solargraph
       elsif node.type == :send and node.children[1] == :require
         @pending_requires.push(node.children[2].children[0])
         children += node.children[0, 3]
+      elsif node.type == :send #and node.children[1] == :require
+        children += node.children
       end
       AST::Node.new(type, children)
     end
