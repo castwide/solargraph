@@ -1,0 +1,69 @@
+module Syslog
+include Syslog::Constants
+include Syslog::Macros
+include Syslog::Level
+include Syslog::Facility
+include Syslog::Option
+def reopen(*args);end
+def open!(*args);end
+def opened?();end
+def ident();end
+def options();end
+def facility();end
+def log(*args);end
+def close();end
+def mask();end
+def mask=(arg0);end
+def instance();end
+def emerg(*args);end
+def alert(*args);end
+def crit(*args);end
+def err(*args);end
+def warning(*args);end
+def notice(*args);end
+def info(*args);end
+def debug(*args);end
+def LOG_MASK(arg0);end
+def LOG_UPTO(arg0);end
+def self.reopen(*args);end
+def self.open!(*args);end
+def self.opened?();end
+def self.ident();end
+def self.options();end
+def self.facility();end
+def self.log(*args);end
+def self.close();end
+def self.mask();end
+def self.mask=(arg0);end
+def self.instance();end
+def self.emerg(*args);end
+def self.alert(*args);end
+def self.crit(*args);end
+def self.err(*args);end
+def self.warning(*args);end
+def self.notice(*args);end
+def self.info(*args);end
+def self.debug(*args);end
+end
+module Syslog::Constants
+include Syslog::Macros
+include Syslog::Level
+include Syslog::Facility
+include Syslog::Option
+def included(arg0);end
+def LOG_MASK(arg0);end
+def LOG_UPTO(arg0);end
+def self.included(arg0);end
+end
+module Syslog::Option
+end
+module Syslog::Facility
+end
+module Syslog::Level
+end
+module Syslog::Macros
+def included(arg0);end
+def self.included(arg0);end
+def LOG_MASK(arg0);end
+def LOG_UPTO(arg0);end
+end

@@ -1,0 +1,53 @@
+class Set < Object
+include Enumerable
+include Kernel
+def self.[](*args);end
+def self.[](*args);end
+def size();end
+def length();end
+def empty?();end
+def clear();end
+def replace(enum);end
+def to_a();end
+def flatten();end
+def flatten!();end
+def member?(o);end
+def superset?(set);end
+def proper_superset?(set);end
+def subset?(set);end
+def proper_subset?(set);end
+def each(&block);end
+def add(o);end
+def <<(o);end
+def add?(o);end
+def delete(o);end
+def delete?(o);end
+def delete_if();end
+def keep_if();end
+def collect!();end
+def map!();end
+def reject!(&block);end
+def select!(&block);end
+def merge(enum);end
+def subtract(enum);end
+def |(enum);end
+def +(enum);end
+def union(enum);end
+def -(enum);end
+def difference(enum);end
+def &(enum);end
+def intersection(enum);end
+def ^(enum);end
+def classify();end
+def divide(&func);end
+def pretty_print(pp);end
+def pretty_print_cycle(pp);end
+end
+class SortedSet < Set
+include Enumerable
+include Kernel
+def self.[](*args);end
+def self.setup();end
+def self.[](*args);end
+def self.setup();end
+end
