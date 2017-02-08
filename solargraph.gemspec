@@ -9,7 +9,7 @@ Gem::Specification.new do |s|
   s.description = "IDE tools for code analysis and autocompletion"
   s.authors     = ["Fred Snyder"]
   s.email       = 'admin@castwide.com'
-  s.files       = Dir['lib']
+  s.files       = Dir['lib'] + Dir['stubs']
   s.homepage    = 'http://castwide.com'
   s.license     = 'MIT'
   s.executables   = ['solargraph-ruby']
