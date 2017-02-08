@@ -235,8 +235,28 @@ module Solargraph
       fqns = find_fully_qualified_namespace(namespace, root)
       meths = []
       if fqns.nil?
-        STDERR.puts "Failed to find fully qualified namespace for '#{namespace}' from '#{root}'"
-        return meths
+        root_node = find_fully_qualified_namespace(root)
+        if root_node.nil?
+          STDERR.puts "Failed to find fully qualified namespace for '#{namespace}' from '#{root}'"
+          return meths
+        else
+          get_namespace_nodes(root_node).each { |rn|
+            get_includes_from(rn).each { |i|
+              STDERR.puts "#{i.class} #{i}"
+              inc = unpack_name(i.children[2])
+              STDERR.puts "I could try from #{inc}"
+              other = find_fully_qualified_namespace(inc, root)
+              unless other.nil?
+                fqns = find_fully_qualified_namespace(namespace, other)
+                return get_instance_methods(fqns, '', skip) unless fqns.nil?
+              end
+            }
+          }
+          if fqns.nil?
+            STDERR.puts "Failed to find fully qualified namespace for '#{namespace}' from '#{root}'"
+            return meths
+          end
+        end
       end
       return meths if skip.include?(fqns)
       skip.push fqns
