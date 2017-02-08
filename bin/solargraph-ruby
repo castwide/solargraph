@@ -1,0 +1,6 @@
+#!/usr/bin/env ruby
+
+$LOAD_PATH.unshift '/home/fred/solargraph-ruby/lib'
+require 'solargraph'
+
+Solargraph::Shell.start(ARGV)
