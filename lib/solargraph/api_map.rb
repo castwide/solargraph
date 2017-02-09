@@ -197,6 +197,34 @@ module Solargraph
       }
       arr
     end
+
+    def infer_instance_variable(var, namespace, scope = :instance)
+      vn = nil
+      if namespace_exists?(namespace)
+        get_namespace_nodes(namespace).each { |node|
+          vn = find_instance_variable_assignment(var, node, scope)
+          break unless vn.nil?
+        }
+      end
+      infer(vn.children[1]) unless vn.nil?
+    end
+
+    def find_instance_variable_assignment(var, node, scope)
+      node.children.each { |c|
+        if c.kind_of?(AST::Node)
+          is_inst = !find_parent(c, :def).nil?
+          if c.type == :ivasgn and ( (scope == :instance and is_inst) or (scope != :instance and !is_inst) )
+            if c.children[0].to_s == var
+              return c
+            end
+          else
+            inner = find_instance_variable_assignment(var, c, scope)
+            return inner unless inner.nil?
+          end
+        end
+      }
+      nil
+    end
     
     def get_global_variables
       # TODO I bet these aren't getting mapped at all. Damn.
@@ -352,7 +380,7 @@ module Solargraph
     
     def mappable?(node)
       # TODO Add node.type :casgn (constant assignment)
-      if node.kind_of?(AST::Node) and (node.type == :class or node.type == :module or node.type == :def or node.type == :defs or node.type == :ivasgn or node.type == :gvasgn)
+      if node.kind_of?(AST::Node) and (node.type == :class or node.type == :module or node.type == :def or node.type == :defs or node.type == :ivasgn or node.type == :gvasgn or node.type == :or_asgn)
         true
       elsif node.kind_of?(AST::Node) and node.type == :send and node.children[0] == nil and MAPPABLE_METHODS.include?(node.children[1])
         true
@@ -397,8 +425,9 @@ module Solargraph
         children += node.children[0, 1]
         children += get_mappable_nodes(node.children[1..-1])
       elsif node.type == :ivasgn or node.type == :gvasgn
-        children += node.children[0, 1]
-        children += get_mappable_nodes(node.children[1..-1])
+        #children += node.children[0, 1]
+        #children += get_mappable_nodes(node.children[1..-1])
+        children += node.children
       elsif node.type == :send and node.children[1] == :include
         children += node.children[0,3]
         #children += get_mappable_nodes(node.children[3..-1])
@@ -407,6 +436,10 @@ module Solargraph
         children += node.children[0, 3]
       elsif node.type == :send #and node.children[1] == :require
         children += node.children
+      elsif node.type == :or_asgn
+        # TODO: The api_map should ignore local variables.
+        type = node.children[0].type
+        children.push node.children[0].children[0], node.children[1]
       end
       AST::Node.new(type, children)
     end

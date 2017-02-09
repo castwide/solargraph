@@ -3,6 +3,7 @@ module Solargraph
     def unpack_name(node)
       pack_name(node).join("::")
     end
+    
     def pack_name(node)
       parts = []
       node.children.each { |n|
@@ -17,6 +18,25 @@ module Solargraph
         end
       }
       parts
+    end
+
+    def infer node
+      if node.type == :str
+        return 'String'
+      elsif node.type == :array
+        return 'Array'
+      elsif node.type == :hash
+        return 'Hash'
+      elsif node.type == :send
+        if node.children[0].nil?
+          # TODO Another local variable or method or something? sheesh
+        else
+          ns = unpack_name(node.children[0])
+          if node.children[1] == :new
+            return ns
+          end
+        end
+      end
     end
   end
 end

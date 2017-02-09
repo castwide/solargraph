@@ -29,9 +29,11 @@ module Solargraph
         raise e
       end
     end
+
     def merge node
       api_map.merge node
     end
+
     def tree_at(index)
       arr = []
       if index >= @node.loc.expression.begin_pos and index < @node.loc.expression.end_pos
@@ -39,13 +41,16 @@ module Solargraph
       end
       arr
     end
+
     def node_at(index)
       tree_at(index).first
     end
+
     def string_at?(index)
       n = node_at(index)
       n.kind_of?(AST::Node) and n.type == :str
     end
+
     def parent_node_from(index, *types)
       arr = tree_at(index)
       arr.each { |a|
@@ -55,6 +60,7 @@ module Solargraph
       }
       @node
     end
+
     def namespace_at(index)
       tree = tree_at(index)
       return nil if tree.length == 0
@@ -68,6 +74,7 @@ module Solargraph
       }
       parts.join("::")
     end
+
     def word_at index
       word = ''
       cursor = index - 1
@@ -81,18 +88,25 @@ module Solargraph
       end
       word
     end
+
     def get_instance_variables_at(index)
       node = parent_node_from(index, :def, :defs, :class, :module)
       ns = namespace_at(index) || ''
       @api_map.get_instance_variables(ns, (node.type == :def ? :instance : :class))
     end
+
     def suggest_at index
       return [] if string_at?(index)
       word = word_at(index)
       if word.start_with?('@')
         if word.include?('.')
-          # TODO Handle this dammit
-          return []
+          result = []
+          # TODO: Temporarily assuming one period
+          var = word[0..word.index('.')-1]
+          ns = namespace_at(index)
+          obj = @api_map.infer_instance_variable(var, ns)
+          result = @api_map.get_instance_methods(obj) unless obj.nil?
+          return result
         else
           return get_instance_variables_at(index)
         end
@@ -192,23 +206,5 @@ module Solargraph
       nil
     end
     
-    def infer node
-      if node.type == :str
-        return 'String'
-      elsif node.type == :array
-        return 'Array'
-      elsif node.type == :hash
-        return 'Hash'
-      elsif node.type == :send
-        if node.children[0].nil?
-          # TODO Another local variable or method or something? sheesh
-        else
-          ns = unpack_name(node.children[0])
-          if node.children[1] == :new
-            return ns
-          end
-        end
-      end
-    end
   end
 end
