@@ -87,7 +87,7 @@ module Solargraph
         quick_merge n
         return
       end
-      puts "Required lib not found: #{name}"
+      STDERR.puts "Required lib not found: #{name}"
     end
     
     def quick_merge node
@@ -278,13 +278,13 @@ module Solargraph
             }
           elsif c.kind_of?(AST::Node) and c.type == :send and c.children[1] == :attr_writer
             c.children[2..-1].each { |x|
-              meths.push "#{x.children[0]}=" if x.type == :sym
+              meths.push "#{x.children[0]}=".to_sym if x.type == :sym
             }
           elsif c.kind_of?(AST::Node) and c.type == :send and c.children[1] == :attr_accessor
-            meths.concat c.children[2..-1]
+            #meths.concat c.children[2..-1]
             c.children[2..-1].each { |x|
               meths.push x.children[0] if x.type == :sym
-              meths.push "#{x.children[0]}=" if x.type == :sym
+              meths.push "#{x.children[0]}=".to_sym if x.type == :sym
             }
           #elsif c.kind_of?(AST::Node) and c.type == :send and c.children[1] == :include
           #  i = unpack_name(c.children[2])

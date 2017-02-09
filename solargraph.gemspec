@@ -13,7 +13,11 @@ Gem::Specification.new do |s|
   s.homepage    = 'http://castwide.com'
   s.license     = 'MIT'
   s.executables   = ['solargraph-ruby']
+
   s.required_ruby_version = '>= 1.9.3'
   s.add_runtime_dependency 'parser'
   s.add_runtime_dependency 'thor', '~> 0.19', '>= 0.19.4'
+
+  s.add_development_dependency 'rspec', '~> 3.5', '>= 3.5.0'
+  s.add_development_dependency 'codeclimate-test-reporter', '~> 1.0', '>= 1.0.0'
 end
