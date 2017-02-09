@@ -106,37 +106,6 @@ module Solargraph
       !find_fully_qualified_namespace(name, root).nil?
     end
     
-    # Get all namespaces that are direct descendants of the specified namespace.
-    #
-    # @return [Array<String>]
-    #def namespaces_in name, root = ''
-    #  inner_namespaces_in name, root, []
-    #end
-    
-    #def inner_namespaces_in name, root, skip
-    #  result = []
-    #  fqns = find_fully_qualified_namespace(name, root)
-    #  unless fqns.nil? or skip.include?(fqns)
-    #    skip.push(fqns)
-    #    cursor = @namespace_tree
-    #    parts = fqns.split('::')
-    #    parts.each { |p|
-    #      cursor = cursor[p]
-    #    }
-    #    unless cursor.nil?
-    #      result += cursor.keys
-    #      #skip += cursor.keys
-    #      nodes = get_namespace_nodes(fqns)
-    #      nodes.each { |n|
-    #        get_include_strings_from(n).each { |i|
-    #          result += inner_namespaces_in(i, fqns, skip)
-    #        }
-    #      }
-    #    end
-    #  end
-    #  result    
-    #end
-
     def namespaces_in name, root = '', skip = []
       result = []
       fqns = find_fully_qualified_namespace(name, root)
@@ -262,7 +231,6 @@ module Solargraph
     end
     
     def get_instance_methods(namespace, root = '', skip = [])
-      STDERR.puts "Trying to get inst meth from #{namespace}, #{root}"
       fqns = find_fully_qualified_namespace(namespace, root)
       meths = []
       return meths if skip.include?(fqns)
@@ -295,7 +263,6 @@ module Solargraph
           #  meths += get_instance_methods(i, fqns, skip) unless i == 'Kernel'
           end
           get_include_strings_from(n).each { |i|
-            STDERR.puts "Using include #{i}"
             meths += get_instance_methods(i, fqns, skip) unless i == 'Kernel'
           }
         }
