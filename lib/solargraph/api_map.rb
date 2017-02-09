@@ -101,64 +101,95 @@ module Solargraph
     end
     
     def namespace_exists? name, root = ''
-      @namespace_map.keys.include?(name)
+      #@namespace_map.keys.include?(name)
+      !find_fully_qualified_namespace(name, root).nil?
     end
     
     # Get all namespaces that are direct descendants of the specified namespace.
     #
     # @return [Array<String>]
-    def namespaces_in name, root = ''
-      inner_namespaces_in name, root, []
-    end
+    #def namespaces_in name, root = ''
+    #  inner_namespaces_in name, root, []
+    #end
     
-    def inner_namespaces_in name, root, skip
+    #def inner_namespaces_in name, root, skip
+    #  result = []
+    #  fqns = find_fully_qualified_namespace(name, root)
+    #  unless fqns.nil? or skip.include?(fqns)
+    #    skip.push(fqns)
+    #    cursor = @namespace_tree
+    #    parts = fqns.split('::')
+    #    parts.each { |p|
+    #      cursor = cursor[p]
+    #    }
+    #    unless cursor.nil?
+    #      result += cursor.keys
+    #      #skip += cursor.keys
+    #      nodes = get_namespace_nodes(fqns)
+    #      nodes.each { |n|
+    #        get_include_strings_from(n).each { |i|
+    #          result += inner_namespaces_in(i, fqns, skip)
+    #        }
+    #      }
+    #    end
+    #  end
+    #  result    
+    #end
+
+    def namespaces_in name, root = '', skip = []
       result = []
       fqns = find_fully_qualified_namespace(name, root)
-      STDERR.puts "#{name}, #{root} goes to #{fqns}"
-      STDERR.puts "WTF? skipping #{fqns}" if skip.include?(fqns)
-      unless fqns.nil? or skip.include?(fqns)
-        skip.push(fqns)
+      if fqns.nil?
+        return result
+      else
+        return result if skip.include?(fqns)
+        skip.push fqns
         cursor = @namespace_tree
         parts = fqns.split('::')
-        STDERR.puts "Gonna use #{parts.length} parts"
         parts.each { |p|
-          STDERR.puts "For #{p} doin shit"
           cursor = cursor[p]
         }
-        STDERR.puts "Cursor: #{cursor}"
         unless cursor.nil?
           result += cursor.keys
           #skip += cursor.keys
           nodes = get_namespace_nodes(fqns)
           nodes.each { |n|
-            get_includes_from(n).each { |i|
-              n = unpack_name(i.children[2])
-              STDERR.puts "Looking in #{n}"
-              result += inner_namespaces_in(n, fqns, skip)
+            get_include_strings_from(n).each { |i|
+              result += namespaces_in(i, fqns, skip)
             }
           }
         end
+        result
       end
-      result    
     end
     
-    def find_fully_qualified_namespace name, root = ''
+    def find_fully_qualified_namespace name, root = '', skip = []
+      return nil if skip.include?(root)
+      skip.push root
       if name == ''
         return '' if root == ''
-        return @namespace_map[root].nil? ? nil : root
+        #return @namespace_map[root].nil? ? nil : root
+        return find_fully_qualified_namespace(root, '', skip)
       elsif root == ''
-        return @namespace_map[name].nil? ? nil : name
+        return name unless @namespace_map[name].nil?
+        get_include_strings_from(@node).each { |i|
+          reroot = "#{root == '' ? '' : root + '::'}#{i}"
+          recname = find_fully_qualified_namespace name, reroot, skip
+          return recname unless recname.nil?
+        }
       else
         roots = root.split('::')
         while roots.length > 0
           fqns = roots.join('::') + '::' + name
-          STDERR.puts "Checking #{fqns}"
           return fqns unless @namespace_map[fqns].nil?
           roots.pop
         end
         return name unless @namespace_map[fqns].nil?
+        get_include_strings_from(@node).each { |i|
+          recname = find_fully_qualified_namespace name, i, skip
+          return recname unless recname.nil?
+        }
       end
-      STDERR.puts "Nothing found for #{name}, #{root}"
       nil
     end
 
@@ -208,25 +239,24 @@ module Solargraph
       return meths if skip.include?(namespace)
       skip.push namespace
       fqns = find_fully_qualified_namespace(namespace, root)
+      return meths if fqns.nil?
       nodes = get_namespace_nodes(fqns)
-      unless nodes.nil?
-        nodes.each { |n|
-          if n.type == :class and !n.children[1].nil?
-            s = unpack_name(n.children[1])
-            meths += get_methods(s, root, skip)
+      nodes.each { |n|
+        if n.type == :class and !n.children[1].nil?
+          s = unpack_name(n.children[1])
+          meths += get_methods(s, root, skip)
+        end
+        n.children.each { |c|
+          if c.kind_of?(AST::Node) and c.type == :defs
+            meths.push c.children[1] if c.children[1].to_s[0].match(/[a-z]/i)
+          elsif c.kind_of?(AST::Node) and c.type == :send and c.children[1] == :include
+            # TODO This might not be right. Should we be getting singleton methods
+            # from an include, or only from an extend?
+            i = unpack_name(c.children[2])
+            meths += get_methods(i, root, skip) unless i == 'Kernel'
           end
-          n.children.each { |c|
-            if c.kind_of?(AST::Node) and c.type == :defs
-              meths.push c.children[1] if c.children[1].to_s[0].match(/[a-z]/i)
-            elsif c.kind_of?(AST::Node) and c.type == :send and c.children[1] == :include
-              # TODO This might not be right. Should we be getting singleton methods
-              # from an include, or only from an extend?
-              i = unpack_name(c.children[2])
-              meths += get_methods(i, root, skip) unless i == 'Kernel'
-            end
-          }
         }
-      end
+      }
       meths += get_methods('BasicObject', root, skip) if !nodes.nil? and nodes[0].kind_of?(AST::Node) and nodes[0].type == :class
       meths.uniq
     end
@@ -234,34 +264,9 @@ module Solargraph
     def get_instance_methods(namespace, root = '', skip = [])
       fqns = find_fully_qualified_namespace(namespace, root)
       meths = []
-      if fqns.nil?
-        root_node = find_fully_qualified_namespace(root)
-        if root_node.nil?
-          STDERR.puts "Failed to find fully qualified namespace for '#{namespace}' from '#{root}'"
-          return meths
-        else
-          get_namespace_nodes(root_node).each { |rn|
-            get_includes_from(rn).each { |i|
-              STDERR.puts "#{i.class} #{i}"
-              inc = unpack_name(i.children[2])
-              STDERR.puts "I could try from #{inc}"
-              other = find_fully_qualified_namespace(inc, root)
-              unless other.nil?
-                fqns = find_fully_qualified_namespace(namespace, other)
-                return get_instance_methods(fqns, '', skip) unless fqns.nil?
-              end
-            }
-          }
-          if fqns.nil?
-            STDERR.puts "Failed to find fully qualified namespace for '#{namespace}' from '#{root}'"
-            return meths
-          end
-        end
-      end
       return meths if skip.include?(fqns)
       skip.push fqns
       nodes = get_namespace_nodes(fqns)
-      STDERR.puts "Namespace nodes found: #{nodes.length}"
       nodes.each { |n|
         if n.type == :class and !n.children[1].nil?
           s = unpack_name(n.children[1])
@@ -286,7 +291,6 @@ module Solargraph
             }
           elsif c.kind_of?(AST::Node) and c.type == :send and c.children[1] == :include
             i = unpack_name(c.children[2])
-            STDERR.puts "Gonna try to get methods from included module #{i}"
             meths += get_instance_methods(i, fqns, skip) unless i == 'Kernel'
           end
         }
@@ -318,12 +322,12 @@ module Solargraph
       arr
     end
     
-    def get_includes_from node
+    def get_include_strings_from node
       arr = []
       node.children.each { |n|
         if n.kind_of?(AST::Node)
-          arr.push n if (n.type == :send and n.children[1] == :include)
-          arr += get_includes_from(n) if n.type != :class and n.type != :module
+          arr.push unpack_name(n.children[2]) if (n.type == :send and n.children[1] == :include)
+          arr += get_include_strings_from(n) if n.type != :class and n.type != :module
         end
       }
       arr
