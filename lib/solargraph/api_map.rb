@@ -38,7 +38,8 @@ module Solargraph
       return if node.nil?
       mapified = mapify(node)
       mapified.children.each { |c|
-        @node = inner_merge c, @node
+        #@node = inner_merge c, @node
+        @node = @node.append c
       }
       run_requires
       process_maps
@@ -168,7 +169,6 @@ module Solargraph
       skip.push root
       if name == ''
         return '' if root == ''
-        #return @namespace_map[root].nil? ? nil : root
         return find_fully_qualified_namespace(root, '', skip)
       elsif root == ''
         return name unless @namespace_map[name].nil?
@@ -184,7 +184,7 @@ module Solargraph
           return fqns unless @namespace_map[fqns].nil?
           roots.pop
         end
-        return name unless @namespace_map[fqns].nil?
+        return name unless @namespace_map[name].nil?
         get_include_strings_from(@node).each { |i|
           recname = find_fully_qualified_namespace name, i, skip
           return recname unless recname.nil?
@@ -262,6 +262,7 @@ module Solargraph
     end
     
     def get_instance_methods(namespace, root = '', skip = [])
+      STDERR.puts "Trying to get inst meth from #{namespace}, #{root}"
       fqns = find_fully_qualified_namespace(namespace, root)
       meths = []
       return meths if skip.include?(fqns)
@@ -289,10 +290,14 @@ module Solargraph
               meths.push x.children[0] if x.type == :sym
               meths.push "#{x.children[0]}=" if x.type == :sym
             }
-          elsif c.kind_of?(AST::Node) and c.type == :send and c.children[1] == :include
-            i = unpack_name(c.children[2])
-            meths += get_instance_methods(i, fqns, skip) unless i == 'Kernel'
+          #elsif c.kind_of?(AST::Node) and c.type == :send and c.children[1] == :include
+          #  i = unpack_name(c.children[2])
+          #  meths += get_instance_methods(i, fqns, skip) unless i == 'Kernel'
           end
+          get_include_strings_from(n).each { |i|
+            STDERR.puts "Using include #{i}"
+            meths += get_instance_methods(i, fqns, skip) unless i == 'Kernel'
+          }
         }
       }
       meths += get_instance_methods('BasicObject', root, skip) if nodes.length > 0 and nodes[0].type == :class
@@ -339,17 +344,17 @@ module Solargraph
       return dst unless src.kind_of?(AST::Node)
       result = dst
       if mappable?(src)
-        match = find_match(src, dst.children)
-        if match.nil?
+        #match = find_match(src, dst.children)
+        #if match.nil?
           # Append to result
-          result = result.append(src)
-        else
-          merged = match
-          src.children.each { |c|
-            merged = inner_merge(c, merged)
-          }
-          result = result.updated(nil, result.children - [match] + [merged])
-        end
+          result.append(src)
+        #else
+        #  merged = match
+        #  src.children.each { |c|
+        #    merged = inner_merge(c, merged)
+        #  }
+        #  result = result.updated(nil, result.children - [match] + [merged])
+        #end
       else
         src.children.each { |c|
           result = inner_merge c, result
@@ -358,16 +363,16 @@ module Solargraph
       result
     end
     
-    def find_match src, nodes
-      nodes.each { |n|
-        # For most nodes, we can assume a match if they have equivalent first
-        # children. That's enough to identify distinct class, modules, and
-        # methods. If the node is a :send or a variable assignment, we assume
-        # it's unique.
-        return n if n.kind_of?(AST::Node) and n.children[0] == src.children[0] and n.type != :send and n.type != :ivasgn and n.type != :gvasgn
-      }
-      nil
-    end
+    #def find_match src, nodes
+    #  nodes.each { |n|
+    #    # For most nodes, we can assume a match if they have equivalent first
+    #    # children. That's enough to identify distinct class, modules, and
+    #    # methods. If the node is a :send or a variable assignment, we assume
+    #    # it's unique.
+    #    return n if n.kind_of?(AST::Node) and n.children[0] == src.children[0] and n.type != :send and n.type != :ivasgn and n.type != :gvasgn
+    #  }
+    #  nil
+    #end
     
     def mapify node
       root = node
