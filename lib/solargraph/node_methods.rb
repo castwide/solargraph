@@ -36,6 +36,8 @@ module Solargraph
             return ns
           end
         end
+      elsif node.type == :cbase or node.type == :const
+        unpack_name node
       end
     end
   end
