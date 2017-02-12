@@ -47,9 +47,9 @@ module Solargraph
     
     def self.get_keywords
       result = []
-      KEYWORDS.each { |k|
-        result.push CodeData.new(k)
-      }
+      #KEYWORDS.each { |k|
+      #  result.push CodeData.new(k, kind: CodeData::KEYWORD, detail: 'Keyword')
+      #}
       result
     end
 
@@ -210,7 +210,7 @@ module Solargraph
         if c.kind_of?(AST::Node)
           is_inst = !find_parent(c, :def).nil?
           if c.type == :ivasgn and ( (scope == :instance and is_inst) or (scope != :instance and !is_inst) )
-            arr.push CodeData.new(c.children[0])
+            arr.push CodeData.new(c.children[0], kind: CodeData::VARIABLE)
           end
           arr += inner_get_instance_variables(c, scope)
         end
@@ -265,7 +265,7 @@ module Solargraph
         end
         n.children.each { |c|
           if c.kind_of?(AST::Node) and c.type == :defs
-            meths.push CodeData.new(c.children[1]) if c.children[1].to_s[0].match(/[a-z]/i)
+            meths.push CodeData.new(c.children[1], kind: CodeData::METHOD) if c.children[1].to_s[0].match(/[a-z_]/i) and c.children[1] != :def
           elsif c.kind_of?(AST::Node) and c.type == :send and c.children[1] == :include
             # TODO This might not be right. Should we be getting singleton methods
             # from an include, or only from an extend?
@@ -298,20 +298,20 @@ module Solargraph
           # assuming public only
           elsif current_scope == :public
             if c.kind_of?(AST::Node) and c.type == :def
-              meths.push CodeData.new(c.children[0]) if c.children[0].to_s[0].match(/[a-z]/i)
+              meths.push CodeData.new(c.children[0], kind: CodeData::METHOD) if c.children[0].to_s[0].match(/[a-z]/i)
             elsif c.kind_of?(AST::Node) and c.type == :send and c.children[1] == :attr_reader
               c.children[2..-1].each { |x|
-                meths.push CodeData.new(x.children[0]) if x.type == :sym
+                meths.push CodeData.new(x.children[0], kind: CodeData::METHOD) if x.type == :sym
               }
             elsif c.kind_of?(AST::Node) and c.type == :send and c.children[1] == :attr_writer
               c.children[2..-1].each { |x|
-                meths.push CodeData.new("#{x.children[0]}=") if x.type == :sym
+                meths.push CodeData.new("#{x.children[0]}=", kind: CodeData::METHOD) if x.type == :sym
               }
             elsif c.kind_of?(AST::Node) and c.type == :send and c.children[1] == :attr_accessor
               #meths.concat c.children[2..-1]
               c.children[2..-1].each { |x|
-                meths.push CodeData.new(x.children[0]) if x.type == :sym
-                meths.push CodeData.new("#{x.children[0]}=") if x.type == :sym
+                meths.push CodeData.new(x.children[0], kind: CodeData::METHOD) if x.type == :sym
+                meths.push CodeData.new("#{x.children[0]}=", kind: CodeData::METHOD) if x.type == :sym
               }
             end
           end
@@ -458,15 +458,11 @@ module Solargraph
         #children += get_mappable_nodes(node.children[3..-1])
       elsif node.type == :send and node.children[1] == :require
         @pending_requires.push(node.children[2].children[0])
-        STDERR.puts "Require #{@pending_requires.last}"
         children += node.children[0, 3]
-        STDERR.puts node.children[0, 3]
       elsif node.type == :send and node.children[1] == :autoload
         @pending_requires.push(node.children[3].children[0])
-        STDERR.puts "Autoload #{@pending_requires.last}"
         type = :require
         children += node.children[1, 3]
-        STDERR.puts node.children[1, 3]
       elsif node.type == :send #and node.children[1] == :require
         children += node.children
       elsif node.type == :or_asgn

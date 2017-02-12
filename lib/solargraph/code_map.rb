@@ -11,7 +11,8 @@ module Solargraph
       @api_map = api_map.dup
       @code = code
       tries = 0
-      tmp = "#{code}\nX".gsub(/[\.@]([\s])/, "#$1")
+      # Hide incomplete code to avoid syntax errors
+      tmp = "#{code}\nX".gsub(/[\.@]([\s])/, "#$1").gsub(/([\A\s]?)def([\s]*?[\n\Z])/, "{$1}#ef{$2}")
       begin
         @node = Parser::CurrentRuby.parse(tmp)
         @api_map.merge(@node)
@@ -143,25 +144,27 @@ module Solargraph
           return result
         end
       else
-        return get_snippets_at(index) + @api_map.namespaces_in(namespace_at(index)) + get_local_variables_and_methods_at(index) #+ ApiMap.get_keywords
+        return get_snippets_at(index) + @api_map.namespaces_in(namespace_at(index)) + get_local_variables_and_methods_at(index) + ApiMap.get_keywords
       end
     end
     
     def get_snippets_at(index)
       result = []
       SNIPPETS.each_pair { |name, detail|
+        STDERR.puts "Checking #{detail['prefix']}"
         matched = false
         prefix = detail['prefix']
         while prefix.length > 0
-          STDERR.puts "Checking #{prefix}"
-          if @code[0..index][-(prefix.length)] == prefix
+          STDERR.puts "Comparing #{prefix} to #{@code[index-prefix.length, prefix.length]}"
+          if @code[index-prefix.length, prefix.length] == prefix
             matched = true
             break
           end
           prefix = prefix[0..-2]
         end
         if matched
-          result.push CodeData.new(detail['prefix'], kind: CodeData::SNIPPET, detail: name, insert: detail['body'])
+          STDERR.puts "Matched #{detail['prefix']}"
+          result.push CodeData.new(detail['prefix'], kind: CodeData::SNIPPET, detail: name, insert: detail['body'].join("\r\n"))
         end
       }
       result
