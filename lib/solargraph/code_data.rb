@@ -1,3 +1,5 @@
+require 'json'
+
 module Solargraph
 
   class CodeData
@@ -21,13 +23,13 @@ module Solargraph
       label
     end
 
-    def to_json
+    def to_json args={}
       {
         label: @label,
         kind: @kind,
         insert: @insert,
         detail: @detail,
-      }.to_json
+      }.to_json(args)
     end
   end
 

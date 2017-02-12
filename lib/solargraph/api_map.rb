@@ -45,7 +45,7 @@ module Solargraph
       process_maps
     end
     
-    def get_keywords
+    def self.get_keywords
       result = []
       KEYWORDS.each { |k|
         result.push CodeData.new(k)

@@ -20,12 +20,14 @@ module Solargraph
           tries += 1
           spot = e.diagnostic.location.begin_pos
           if spot == tmp.length
+            puts e.message
             tmp = tmp[0..-2] + '#'
           else
             tmp = tmp[0..spot] + '#' + tmp[spot+2..-1].to_s
           end
           retry
         end
+        STDERR.puts tmp
         raise e
       end
     end
@@ -141,7 +143,7 @@ module Solargraph
           return result
         end
       else
-        return get_snippets_at(index) + @api_map.namespaces_in(namespace_at(index)) + get_local_variables_and_methods_at(index) + Solargraph::ApiMap.get_keywords
+        return get_snippets_at(index) + @api_map.namespaces_in(namespace_at(index)) + get_local_variables_and_methods_at(index) #+ ApiMap.get_keywords
       end
     end
     
@@ -152,14 +154,14 @@ module Solargraph
         prefix = detail['prefix']
         while prefix.length > 0
           STDERR.puts "Checking #{prefix}"
-          if @code[0..index][-(prefix.length)]
+          if @code[0..index][-(prefix.length)] == prefix
             matched = true
             break
           end
           prefix = prefix[0..-2]
         end
         if matched
-          result.push CodeData.new(detail['prefix'], kind: CodeData::SNIPPET, detail: name, insert: prefix['body'])
+          result.push CodeData.new(detail['prefix'], kind: CodeData::SNIPPET, detail: name, insert: detail['body'])
         end
       }
       result
