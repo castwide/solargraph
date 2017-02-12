@@ -159,7 +159,7 @@ module Solargraph
           prefix = prefix[0..-2]
         end
         if matched
-          result.push CodeData.new(detail['prefix'], kind: CodeData::SNIPPET, detail: name, snippet: prefix['body'])
+          result.push CodeData.new(detail['prefix'], kind: CodeData::SNIPPET, detail: name, insert: prefix['body'])
         end
       }
       result
