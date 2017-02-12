@@ -37,85 +37,85 @@ describe Solargraph::ApiMap do
 
   it "finds instance methods" do
     methods = @api_map.get_instance_methods("Class1")
-    expect(methods).to include(:bar)
-    expect(methods).not_to include(:baz)
+    expect(methods.map(&:to_s)).to include('bar')
+    expect(methods.map(&:to_s)).not_to include('baz')
   end
 
   it "finds included instance methods" do
     methods = @api_map.get_instance_methods("Class1")
-    expect(methods).to include(:module1_method)
+    expect(methods.map(&:to_s)).to include('module1_method')
   end
 
   it "finds superclass instance methods" do
     methods = @api_map.get_instance_methods("Class2")
-    expect(methods).to include(:bar)
-    expect(methods).to include(:module1_method)
+    expect(methods.map(&:to_s)).to include('bar')
+    expect(methods.map(&:to_s)).to include('module1_method')
   end
 
   it "finds singleton methods" do
     methods = @api_map.get_methods("Class1")
-    expect(methods).to include(:baz)
-    expect(methods).not_to include(:bar)
+    expect(methods.map(&:to_s)).to include('baz')
+    expect(methods.map(&:to_s)).not_to include('bar')
   end
 
   it "finds instance variables" do
     vars = @api_map.get_instance_variables("Class1")
-    expect(vars).to include(:@bar)
-    expect(vars).not_to include(:@baz)
+    expect(vars.map(&:to_s)).to include('@bar')
+    expect(vars.map(&:to_s)).not_to include('@baz')
   end
 
   it "finds instance variables inside blocks" do
     vars = @api_map.get_instance_variables("Class1")
-    expect(vars).to include(:@bing)
+    expect(vars.map(&:to_s)).to include('@bing')
   end
 
   it "finds class instance variables" do
     vars = @api_map.get_instance_variables("Class1", scope: :class)
-    expect(vars).to include(:@baz)
-    expect(vars).not_to include(:@bar)
+    expect(vars.map(&:to_s)).to include('@baz')
+    expect(vars.map(&:to_s)).not_to include('@bar')
   end
 
   it "finds attr_read methods" do
     methods = @api_map.get_instance_methods("Class1")
-    expect(methods).to include(:read_foo)
-    expect(methods).not_to include(:read_foo=)
+    expect(methods.map(&:to_s)).to include('read_foo')
+    expect(methods.map(&:to_s)).not_to include('read_foo=')
   end
 
   it "finds attr_write methods" do
     methods = @api_map.get_instance_methods("Class1")
-    expect(methods).to include(:write_foo=)
-    expect(methods).not_to include(:write_foo)
+    expect(methods.map(&:to_s)).to include('write_foo=')
+    expect(methods.map(&:to_s)).not_to include('write_foo')
   end
 
   it "finds attr_accessor methods" do
     methods = @api_map.get_instance_methods("Class1")
-    expect(methods).to include(:access_foo)
-    expect(methods).to include(:access_foo=)
+    expect(methods.map(&:to_s)).to include('access_foo')
+    expect(methods.map(&:to_s)).to include('access_foo=')
   end
 
   it "finds root namespaces" do
     namespaces = @api_map.namespaces_in('')
-    expect(namespaces).to include("Class1")
+    expect(namespaces.map(&:to_s)).to include("Class1")
   end
 
   it "finds included namespaces" do
     namespaces = @api_map.namespaces_in('Class1')
-    expect(namespaces).to include('Module1Class')
+    expect(namespaces.map(&:to_s)).to include('Module1Class')
   end
 
   it "finds namespaces within namespaces" do
     namespaces = @api_map.namespaces_in('Module1')
-    expect(namespaces).to include('Module1Class')
+    expect(namespaces.map(&:to_s)).to include('Module1Class')
   end
 
   it "excludes namespaces outside of scope" do
     namespaces = @api_map.namespaces_in('')
-    expect(namespaces).not_to include('Module1Class')
+    expect(namespaces.map(&:to_s)).not_to include('Module1Class')
   end
 
   it "finds instance variables in scoped classes" do
     methods = @api_map.get_instance_methods('Module1Class', 'Module1')
-    expect(methods).to include(:module1class_method)
+    expect(methods.map(&:to_s)).to include('module1class_method')
   end
 
   it "finds namespaces beneath the current scope" do

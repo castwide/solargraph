@@ -141,10 +141,30 @@ module Solargraph
           return result
         end
       else
-        return @api_map.namespaces_in(namespace_at(index)) + get_local_variables_and_methods_at(index) + Solargraph::ApiMap::KEYWORDS
+        return get_snippets_at(index) + @api_map.namespaces_in(namespace_at(index)) + get_local_variables_and_methods_at(index) + Solargraph::ApiMap.get_keywords
       end
     end
     
+    def get_snippets_at(index)
+      result = []
+      SNIPPETS.each_pair { |name, detail|
+        matched = false
+        prefix = detail['prefix']
+        while prefix.length > 0
+          STDERR.puts "Checking #{prefix}"
+          if @code[0..index][-(prefix.length)]
+            matched = true
+            break
+          end
+          prefix = prefix[0..-2]
+        end
+        if matched
+          result.push CodeData.new(detail['prefix'], kind: CodeData::SNIPPET, detail: name, snippet: prefix['body'])
+        end
+      }
+      result
+    end
+
     def get_local_variables_and_methods_at(index)
       result = []
       local = parent_node_from(index, :class, :module, :def, :defs) || @node
@@ -167,7 +187,7 @@ module Solargraph
       node.children.each { |c|
         if c.kind_of?(AST::Node)
           if c.type == :lvasgn
-            arr.push c.children[0]
+            arr.push CodeData.new(c.children[0], kind: CodeData::VARIABLE)
           else
             arr += get_local_variables_from(c)
           end

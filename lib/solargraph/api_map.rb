@@ -13,7 +13,7 @@ module Solargraph
     ]
     
     MAPPABLE_METHODS = [
-      :include, :require, :attr_reader, :attr_writer, :attr_accessor
+      :include, :require, :autoload, :attr_reader, :attr_writer, :attr_accessor, :private, :public, :protected
     ]
     include NodeMethods
     
@@ -45,6 +45,14 @@ module Solargraph
       process_maps
     end
     
+    def get_keywords
+      result = []
+      KEYWORDS.each { |k|
+        result.push CodeData.new(k)
+      }
+      result
+    end
+
     def process_maps
       @parent_stack = {}
       @namespace_map = {}
@@ -77,26 +85,36 @@ module Solargraph
         quick_merge n
         return
       end
-      spec = Gem::Specification.find_by_name(name.split('/')[0])
-      gem_root = spec.gem_dir
-      gem_lib = gem_root + "/lib"
-      f = "#{gem_lib}/#{name}.rb"
-      if File.exist?(f)
-        c = File.read(f)
-        n = Parser::CurrentRuby.parse(c)
-        quick_merge n
-        return
+      begin
+        spec = Gem::Specification.find_by_name(name.split('/')[0])
+        gem_root = spec.gem_dir
+        gem_lib = gem_root + "/lib"
+        f = "#{gem_lib}/#{name}.rb"
+        if File.exist?(f)
+          c = File.read(f)
+          n = Parser::CurrentRuby.parse(c)
+          quick_merge n
+          return
+        end
+      rescue Gem::MissingSpecError => e
+        # TODO: Just ignore for now?
       end
       STDERR.puts "Required lib not found: #{name}"
     end
     
     def quick_merge node
-        m = mapify(node)
-        m.children.each { |c|
-          @node = inner_merge c, @node
-        }    
+      #m = mapify(node)
+      #m.children.each { |c|
+      #  @node = inner_merge c, @node
+      #}    
+      return if node.nil?
+      mapified = mapify(node)
+      mapified.children.each { |c|
+        #@node = inner_merge c, @node
+        @node = @node.append c
+      }
     end
-    
+
     def namespaces
       @namespace_map.keys
     end
@@ -120,7 +138,9 @@ module Solargraph
           cursor = cursor[p]
         }
         unless cursor.nil?
-          result += cursor.keys
+          cursor.keys.each { |k|
+            result.push CodeData.new(k)
+          }
           #skip += cursor.keys
           nodes = get_namespace_nodes(fqns)
           nodes.each { |n|
@@ -190,7 +210,7 @@ module Solargraph
         if c.kind_of?(AST::Node)
           is_inst = !find_parent(c, :def).nil?
           if c.type == :ivasgn and ( (scope == :instance and is_inst) or (scope != :instance and !is_inst) )
-            arr.push c.children[0]
+            arr.push CodeData.new(c.children[0])
           end
           arr += inner_get_instance_variables(c, scope)
         end
@@ -245,7 +265,7 @@ module Solargraph
         end
         n.children.each { |c|
           if c.kind_of?(AST::Node) and c.type == :defs
-            meths.push c.children[1] if c.children[1].to_s[0].match(/[a-z]/i)
+            meths.push CodeData.new(c.children[1]) if c.children[1].to_s[0].match(/[a-z]/i)
           elsif c.kind_of?(AST::Node) and c.type == :send and c.children[1] == :include
             # TODO This might not be right. Should we be getting singleton methods
             # from an include, or only from an extend?
@@ -269,26 +289,31 @@ module Solargraph
           s = unpack_name(n.children[1])
           meths += get_instance_methods(s, namespace, skip)
         end
+        current_scope = :public
         n.children.each { |c|
-          if c.kind_of?(AST::Node) and c.type == :def
-            meths.push c.children[0] if c.children[0].to_s[0].match(/[a-z]/i)
-          elsif c.kind_of?(AST::Node) and c.type == :send and c.children[1] == :attr_reader
-            c.children[2..-1].each { |x|
-              meths.push x.children[0] if x.type == :sym
-            }
-          elsif c.kind_of?(AST::Node) and c.type == :send and c.children[1] == :attr_writer
-            c.children[2..-1].each { |x|
-              meths.push "#{x.children[0]}=".to_sym if x.type == :sym
-            }
-          elsif c.kind_of?(AST::Node) and c.type == :send and c.children[1] == :attr_accessor
-            #meths.concat c.children[2..-1]
-            c.children[2..-1].each { |x|
-              meths.push x.children[0] if x.type == :sym
-              meths.push "#{x.children[0]}=".to_sym if x.type == :sym
-            }
-          #elsif c.kind_of?(AST::Node) and c.type == :send and c.children[1] == :include
-          #  i = unpack_name(c.children[2])
-          #  meths += get_instance_methods(i, fqns, skip) unless i == 'Kernel'
+          if c.kind_of?(AST::Node) and c.type == :send and [:public, :protected, :private].include?(c.children[1])
+            current_scope = c.children[1]
+          # TODO: Determine the current scope so we can decide whether to
+          # exclude protected or private methods. Right now we're just
+          # assuming public only
+          elsif current_scope == :public
+            if c.kind_of?(AST::Node) and c.type == :def
+              meths.push CodeData.new(c.children[0]) if c.children[0].to_s[0].match(/[a-z]/i)
+            elsif c.kind_of?(AST::Node) and c.type == :send and c.children[1] == :attr_reader
+              c.children[2..-1].each { |x|
+                meths.push CodeData.new(x.children[0]) if x.type == :sym
+              }
+            elsif c.kind_of?(AST::Node) and c.type == :send and c.children[1] == :attr_writer
+              c.children[2..-1].each { |x|
+                meths.push CodeData.new("#{x.children[0]}=") if x.type == :sym
+              }
+            elsif c.kind_of?(AST::Node) and c.type == :send and c.children[1] == :attr_accessor
+              #meths.concat c.children[2..-1]
+              c.children[2..-1].each { |x|
+                meths.push CodeData.new(x.children[0]) if x.type == :sym
+                meths.push CodeData.new("#{x.children[0]}=") if x.type == :sym
+              }
+            end
           end
           get_include_strings_from(n).each { |i|
             meths += get_instance_methods(i, fqns, skip) unless i == 'Kernel'
@@ -433,7 +458,15 @@ module Solargraph
         #children += get_mappable_nodes(node.children[3..-1])
       elsif node.type == :send and node.children[1] == :require
         @pending_requires.push(node.children[2].children[0])
+        STDERR.puts "Require #{@pending_requires.last}"
         children += node.children[0, 3]
+        STDERR.puts node.children[0, 3]
+      elsif node.type == :send and node.children[1] == :autoload
+        @pending_requires.push(node.children[3].children[0])
+        STDERR.puts "Autoload #{@pending_requires.last}"
+        type = :require
+        children += node.children[1, 3]
+        STDERR.puts node.children[1, 3]
       elsif node.type == :send #and node.children[1] == :require
         children += node.children
       elsif node.type == :or_asgn

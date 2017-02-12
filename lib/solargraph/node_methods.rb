@@ -27,6 +27,10 @@ module Solargraph
         return 'Array'
       elsif node.type == :hash
         return 'Hash'
+      elsif node.type == :int
+        return 'Integer'
+      elsif node.type == :float
+        return 'Float'
       elsif node.type == :send
         if node.children[0].nil?
           # TODO Another local variable or method or something? sheesh
