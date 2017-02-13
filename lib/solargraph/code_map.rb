@@ -116,7 +116,8 @@ module Solargraph
       elsif word.start_with?('$')
         return @api_map.get_global_variables
       elsif word.start_with?(':') and !word.start_with?('::')
-        # TODO it's a symbol
+        # TODO: it's a symbol
+        return []
       elsif word.include?('::')
         parts = word.split('::', -1)
         ns = parts[0..-2].join('::')
@@ -124,11 +125,11 @@ module Solargraph
           ns = parts[0..-2].join('::') + '::' + parts.last[0..parts.last.index('.')-1]
           return @api_map.get_methods(ns)
         else
-          return @api_map.namespaces_in(ns, qualify: true)
+          return @api_map.namespaces_in(ns)
         end
       elsif word.include?('.')
-        # TODO it's a method call!
-        # TODO For now we're assuming only one period. That's obviously a bad assumption.
+        # It's a method call
+        # TODO: For now we're assuming only one period. That's obviously a bad assumption.
         base = word[0..word.index('.')-1]
         if @api_map.namespace_exists?(base)
           return @api_map.get_methods(base)

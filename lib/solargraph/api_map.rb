@@ -124,7 +124,7 @@ module Solargraph
       !find_fully_qualified_namespace(name, root).nil?
     end
     
-    def namespaces_in name, root = '', skip = [], qualify: false
+    def namespaces_in name, root = '', skip = []
       result = []
       fqns = find_fully_qualified_namespace(name, root)
       if fqns.nil?
@@ -139,9 +139,8 @@ module Solargraph
         }
         unless cursor.nil?
           cursor.keys.each { |k|
-            result.push CodeData.new(qualify ? "#{name}::#{k}" : k)
+            result.push CodeData.new(k, kind: CodeData::CLASS)
           }
-          #skip += cursor.keys
           nodes = get_namespace_nodes(fqns)
           nodes.each { |n|
             get_include_strings_from(n).each { |i|
