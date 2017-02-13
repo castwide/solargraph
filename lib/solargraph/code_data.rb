@@ -3,10 +3,10 @@ require 'json'
 module Solargraph
 
   class CodeData
-    CLASS = 'Class',
-    KEYWORD = 'Keyword',
-    MODULE = 'Module',
-    METHOD = 'Method',
+    CLASS = 'Class'
+    KEYWORD = 'Keyword'
+    MODULE = 'Module'
+    METHOD = 'Method'
     VARIABLE = 'Variable'
     SNIPPET = 'Snippet'
 
