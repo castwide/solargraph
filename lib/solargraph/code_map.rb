@@ -124,7 +124,7 @@ module Solargraph
           ns = parts[0..-2].join('::') + '::' + parts.last[0..parts.last.index('.')-1]
           return @api_map.get_methods(ns)
         else
-          return @api_map.namespaces_in(ns)
+          return @api_map.namespaces_in(ns, qualify: true)
         end
       elsif word.include?('.')
         # TODO it's a method call!
