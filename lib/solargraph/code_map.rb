@@ -144,7 +144,16 @@ module Solargraph
           return result
         end
       else
-        return get_snippets_at(index) + @api_map.namespaces_in(namespace_at(index)) + get_local_variables_and_methods_at(index) + ApiMap.get_keywords
+        result = []
+        current_namespace = namespace_at(index)
+        parts = current_namespace.split('::')
+        result += get_snippets_at(index) + get_local_variables_and_methods_at(index) #+ ApiMap.get_keywords
+        while parts.length > 0
+          ns = parts.join('::')
+          result += @api_map.namespaces_in(ns)
+          parts.pop
+        end
+        result += @api_map.namespaces_in('')
       end
     end
     
