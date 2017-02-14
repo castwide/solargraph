@@ -45,11 +45,13 @@ module Solargraph
       process_maps
     end
     
-    def self.get_keywords
+    def self.get_keywords without_snippets: false
       result = []
-      #KEYWORDS.each { |k|
-      #  result.push CodeData.new(k, kind: CodeData::KEYWORD, detail: 'Keyword')
-      #}
+      keywords = KEYWORDS
+      keywords -= Snippets.keywords if without_snippets
+      keywords.each { |k|
+        result.push CodeData.new(k, kind: CodeData::KEYWORD, detail: 'Keyword')
+      }
       result
     end
 

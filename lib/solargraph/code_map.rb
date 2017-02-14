@@ -78,6 +78,20 @@ module Solargraph
       parts.join("::")
     end
 
+    def phrase_at index
+      word = ''
+      cursor = index - 1
+      while cursor > -1
+        char = @code[cursor, 1]
+        #puts "***#{char}"
+        break if char.nil? or char == ''
+        break unless char.match(/[\s;=\(\)\[\]\{\}]/).nil?
+        word = char + word
+        cursor -= 1
+      end
+      word
+    end
+
     def word_at index
       word = ''
       cursor = index - 1
@@ -85,11 +99,11 @@ module Solargraph
         char = @code[cursor, 1]
         #puts "***#{char}"
         break if char.nil? or char == ''
-        break unless char.match(/[\s;=]/).nil?
+        break unless char.match(/[a-z0-9_]/i)
         word = char + word
         cursor -= 1
       end
-      word
+      word      
     end
 
     def get_instance_variables_at(index)
@@ -98,57 +112,55 @@ module Solargraph
       @api_map.get_instance_variables(ns, (node.type == :def ? :instance : :class))
     end
 
-    def suggest_at index
+    def suggest_at index, filtered: true, with_snippets: false
       return [] if string_at?(index)
-      word = word_at(index)
-      if word.start_with?('@')
-        if word.include?('.')
+      result = []
+      phrase = phrase_at(index)
+      if phrase.start_with?('@')
+        if phrase.include?('.')
           result = []
           # TODO: Temporarily assuming one period
-          var = word[0..word.index('.')-1]
+          var = phrase[0..phrase.index('.')-1]
           ns = namespace_at(index)
           obj = @api_map.infer_instance_variable(var, ns)
           result = @api_map.get_instance_methods(obj) unless obj.nil?
-          return result
         else
-          return get_instance_variables_at(index)
+          result = get_instance_variables_at(index)
         end
-      elsif word.start_with?('$')
-        return @api_map.get_global_variables
-      elsif word.start_with?(':') and !word.start_with?('::')
-        # TODO: it's a symbol
+      elsif phrase.start_with?('$')
+        result += @api_map.get_global_variables
+      elsif phrase.start_with?(':') and !phrase.start_with?('::')
+        # TODO: It's a symbol. Nothing to do for now.
         return []
-      elsif word.include?('::')
-        parts = word.split('::', -1)
+      elsif phrase.include?('::')
+        parts = phrase.split('::', -1)
         ns = parts[0..-2].join('::')
         if parts.last.include?('.')
           ns = parts[0..-2].join('::') + '::' + parts.last[0..parts.last.index('.')-1]
-          return @api_map.get_methods(ns)
+          result = @api_map.get_methods(ns)
         else
-          return @api_map.namespaces_in(ns)
+          result = @api_map.namespaces_in(ns)
         end
-      elsif word.include?('.')
+      elsif phrase.include?('.')
         # It's a method call
         # TODO: For now we're assuming only one period. That's obviously a bad assumption.
-        base = word[0..word.index('.')-1]
+        base = phrase[0..phrase.index('.')-1]
         if @api_map.namespace_exists?(base)
-          return @api_map.get_methods(base)
+          result = @api_map.get_methods(base)
         else
-          # TODO This won't be easy, will it? Shit.
-          result = []
           scope = parent_node_from(index, :class, :module, :def, :defs) || @node
           var = find_local_variable_node(base, scope)
           unless var.nil?
             obj = infer(var.children[1])
             result = @api_map.get_instance_methods(obj) unless obj.nil?
           end
-          return result
+          #result = reduce(results, word_at(index)) unless unfiltered
         end
       else
-        result = []
         current_namespace = namespace_at(index)
         parts = current_namespace.split('::')
-        result += get_snippets_at(index) + get_local_variables_and_methods_at(index) #+ ApiMap.get_keywords
+        result += get_snippets_at(index) if with_snippets
+        result += get_local_variables_and_methods_at(index) + ApiMap.get_keywords(without_snippets: with_snippets)
         while parts.length > 0
           ns = parts.join('::')
           result += @api_map.namespaces_in(ns)
@@ -156,11 +168,21 @@ module Solargraph
         end
         result += @api_map.namespaces_in('')
       end
+      result = butt(result, word_at(index)) if filtered
+      STDERR.puts "#{result.length} results?"
+      result
     end
     
+    def butt(suggestions, word)
+      STDERR.puts "Reducing with #{word}"
+      suggestions.reject { |s|
+        !s.label.start_with?(word)
+      }
+    end
+
     def get_snippets_at(index)
       result = []
-      SNIPPETS.each_pair { |name, detail|
+      Snippets.definitions.each_pair { |name, detail|
         STDERR.puts "Checking #{detail['prefix']}"
         matched = false
         prefix = detail['prefix']
@@ -174,7 +196,7 @@ module Solargraph
         end
         if matched
           STDERR.puts "Matched #{detail['prefix']}"
-          result.push CodeData.new(detail['prefix'], kind: CodeData::SNIPPET, detail: name, insert: detail['body'].join("\r\n"))
+          result.push CodeData.new(detail['prefix'], kind: CodeData::KEYWORD, detail: name, insert: detail['body'].join("\r\n"))
         end
       }
       result
