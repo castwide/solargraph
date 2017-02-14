@@ -12,7 +12,7 @@ module Solargraph
       @code = code
       tries = 0
       # Hide incomplete code to avoid syntax errors
-      tmp = "#{code}\nX".gsub(/[\.@]([\s])/, "#$1").gsub(/([\A\s]?)def([\s]*?[\n\Z])/, "{$1}#ef{$2}")
+      tmp = "#{code}\nX".gsub(/[\.@]([\s])/, '#\1').gsub(/([\A\s]?)def([\s]*?[\n\Z])/, '\1#ef\2')
       begin
         @node = Parser::CurrentRuby.parse(tmp)
         @api_map.merge(@node)
@@ -145,8 +145,9 @@ module Solargraph
         # It's a method call
         # TODO: For now we're assuming only one period. That's obviously a bad assumption.
         base = phrase[0..phrase.index('.')-1]
-        if @api_map.namespace_exists?(base)
-          result = @api_map.get_methods(base)
+        ns_here = namespace_at(index)
+        if @api_map.namespace_exists?(base, ns_here)
+          result = @api_map.get_methods(base, ns_here)
         else
           scope = parent_node_from(index, :class, :module, :def, :defs) || @node
           var = find_local_variable_node(base, scope)
@@ -168,6 +169,7 @@ module Solargraph
         end
         result += @api_map.namespaces_in('')
       end
+      STDERR.puts "Starting with #{result.length} results"
       result = butt(result, word_at(index)) if filtered
       STDERR.puts "#{result.length} results?"
       result
@@ -183,11 +185,9 @@ module Solargraph
     def get_snippets_at(index)
       result = []
       Snippets.definitions.each_pair { |name, detail|
-        STDERR.puts "Checking #{detail['prefix']}"
         matched = false
         prefix = detail['prefix']
         while prefix.length > 0
-          STDERR.puts "Comparing #{prefix} to #{@code[index-prefix.length, prefix.length]}"
           if @code[index-prefix.length, prefix.length] == prefix
             matched = true
             break
@@ -195,7 +195,6 @@ module Solargraph
           prefix = prefix[0..-2]
         end
         if matched
-          STDERR.puts "Matched #{detail['prefix']}"
           result.push CodeData.new(detail['prefix'], kind: CodeData::KEYWORD, detail: name, insert: detail['body'].join("\r\n"))
         end
       }
