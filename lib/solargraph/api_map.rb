@@ -38,7 +38,6 @@ module Solargraph
       return if node.nil?
       mapified = mapify(node)
       mapified.children.each { |c|
-        #@node = inner_merge c, @node
         @node = @node.append c
       }
       run_requires
@@ -105,14 +104,9 @@ module Solargraph
     end
     
     def quick_merge node
-      #m = mapify(node)
-      #m.children.each { |c|
-      #  @node = inner_merge c, @node
-      #}    
       return if node.nil?
       mapified = mapify(node)
       mapified.children.each { |c|
-        #@node = inner_merge c, @node
         @node = @node.append c
       }
     end
@@ -122,7 +116,6 @@ module Solargraph
     end
     
     def namespace_exists? name, root = ''
-      #@namespace_map.keys.include?(name)
       !find_fully_qualified_namespace(name, root).nil?
     end
     
@@ -360,40 +353,6 @@ module Solargraph
     end
     
     private
-    
-    def inner_merge src, dst
-      return dst unless src.kind_of?(AST::Node)
-      result = dst
-      if mappable?(src)
-        #match = find_match(src, dst.children)
-        #if match.nil?
-          # Append to result
-          result.append(src)
-        #else
-        #  merged = match
-        #  src.children.each { |c|
-        #    merged = inner_merge(c, merged)
-        #  }
-        #  result = result.updated(nil, result.children - [match] + [merged])
-        #end
-      else
-        src.children.each { |c|
-          result = inner_merge c, result
-        }
-      end
-      result
-    end
-    
-    #def find_match src, nodes
-    #  nodes.each { |n|
-    #    # For most nodes, we can assume a match if they have equivalent first
-    #    # children. That's enough to identify distinct class, modules, and
-    #    # methods. If the node is a :send or a variable assignment, we assume
-    #    # it's unique.
-    #    return n if n.kind_of?(AST::Node) and n.children[0] == src.children[0] and n.type != :send and n.type != :ivasgn and n.type != :gvasgn
-    #  }
-    #  nil
-    #end
     
     def mapify node
       root = node
