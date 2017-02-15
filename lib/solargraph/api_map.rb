@@ -330,17 +330,6 @@ module Solargraph
       @current
     end
     
-    def get_descendants node, *types
-      arr = []
-      node.children.each { |n|
-        if n.kind_of?(AST::Node)
-          arr.push n if types.include?(n.type)
-          arr += get_descendants(n, *types)
-        end
-      }
-      arr
-    end
-    
     def get_include_strings_from node
       arr = []
       node.children.each { |n|
