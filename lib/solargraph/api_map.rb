@@ -257,7 +257,6 @@ module Solargraph
       return meths if skip.include?(namespace)
       skip.push namespace
       fqns = find_fully_qualified_namespace(namespace, root)
-      STDERR.puts "FQNS: #{fqns}"
       return meths if fqns.nil?
       nodes = get_namespace_nodes(fqns)
       nodes.each { |n|

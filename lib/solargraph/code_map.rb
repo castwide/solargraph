@@ -28,7 +28,6 @@ module Solargraph
           end
           retry
         end
-        STDERR.puts tmp
         raise e
       end
     end
