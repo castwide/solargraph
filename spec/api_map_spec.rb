@@ -130,4 +130,9 @@ describe Solargraph::ApiMap do
     expect(@api_map.namespace_exists?('Module1Class::Module1Class2', 'Module1')).to be true
     expect(@api_map.namespace_exists?('Module1Class::Module1Class2', 'Class1')).to be false
   end
+
+  it "infers instance variable classes" do
+    cls = @api_map.infer_instance_variable('@bar', 'Class1')
+    expect(cls).to eq('String')
+  end
 end
