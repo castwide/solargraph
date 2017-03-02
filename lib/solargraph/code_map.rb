@@ -7,15 +7,16 @@ module Solargraph
     
     include NodeMethods
     
-    def initialize code, api_map: ApiMap.new, with_required: true
+    def initialize code, api_map: ApiMap.new, require_nodes: {}, workspace: nil
       @api_map = api_map.dup
+      @api_map.workspace = workspace
       @code = code
       tries = 0
       # Hide incomplete code to avoid syntax errors
       tmp = "#{code}\nX".gsub(/[\.@]([\s])/, '#\1').gsub(/([\A\s]?)def([\s]*?[\n\Z])/, '\1#ef\2')
       begin
         @node = Parser::CurrentRuby.parse(tmp)
-        @api_map.merge(@node, with_required: with_required)
+        @api_map.merge(@node)
       rescue Parser::SyntaxError => e
         if tries < 10
           tries += 1

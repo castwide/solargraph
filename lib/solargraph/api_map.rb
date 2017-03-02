@@ -19,15 +19,15 @@ module Solargraph
     include NodeMethods
     
     attr_reader :node
-    
-    def initialize workspace: nil
+    attr_accessor :workspace
+
+    def initialize
       @node = AST::Node.new(:begin, [])
       @parent_stack = {}
       @namespace_map = {}
       @namespace_tree = {}
       @pending_requires = []
       @merged_requires = []
-      @workspace = workspace
     end
 
     def dup
@@ -39,13 +39,13 @@ module Solargraph
     def clear
     end
 
-    def merge node, with_required: true
+    def merge node, require_nodes = {}
       return if node.nil?
       mapified = mapify(node)
       mapified.children.each { |c|
         @node = @node.append c
       }
-      run_requires if with_required
+      run_requires require_nodes
       process_maps
     end
     
@@ -67,59 +67,61 @@ module Solargraph
       map_namespaces @node
     end
     
-    def run_requires
+    def run_requires require_nodes
       while r = @pending_requires.shift
-        parse_require r
+        parse_require r, require_nodes
       end
     end
 
     def resolve_require path
       file = nil
-      if @workspace.nil?
+      #if @workspace.nil?
+      unless workspace.nil?
+        if File.file?("#{workspace}/lib/#{path}.rb")
+          file = "#{workspace}/lib/#{path}.rb"
+        end
+      end
+      if file.nil?
         $LOAD_PATH.each { |p|
           if File.exist?("#{p}/#{path}.rb")
             file = "#{p}/#{path}.rb"
             break
           end
         }
-        if file.nil?
-          begin
-            spec = Gem::Specification.find_by_name(path.to_s.split('/')[0])
-            gem_root = spec.gem_dir
-            gem_lib = gem_root + "/lib"
-            f = "#{gem_lib}/#{path}.rb"
-            if File.exist?(f)
-              file = f
-            end
-          rescue Gem::LoadError => e
-            # TODO: Just ignore for now?
+      end
+      if file.nil?
+        begin
+          spec = Gem::Specification.find_by_name(path.to_s.split('/')[0])
+          gem_root = spec.gem_dir
+          gem_lib = gem_root + "/lib"
+          f = "#{gem_lib}/#{path}.rb"
+          if File.exist?(f)
+            file = f
           end
-        end
-      else
-        Dir.chdir @workspace do
-          result = `bundle exec solargraph resolve-require #{path}`
-          file = result unless result.to_s.strip == ''
+        rescue Gem::LoadError => e
+          # TODO: Just ignore for now?
         end
       end
       STDERR.puts "Required lib not found: #{path}" if file.nil?
       file
     end
 
-    def parse_require path
+    def parse_require path, require_nodes
       return if @merged_requires.include?(path)
       @merged_requires.push path
-      file = resolve_require(path)
-      unless file.nil?
-        code = File.read(file)
-        node = Parser::CurrentRuby.parse(code)
-        quick_merge node
+      if require_nodes[path].nil?
+        file = resolve_require(path)
+        unless file.nil?
+          code = File.read(file)
+          node = Parser::CurrentRuby.parse(code)
+          quick_merge node
+          require_nodes[path] = node
+        end
+      else
+        quick_merge require_nodes[path]
       end
     end
     
-    def required
-      @merged_requires
-    end
-
     def quick_merge node
       return if node.nil?
       mapified = mapify(node)
