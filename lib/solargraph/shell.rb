@@ -11,6 +11,25 @@ module Solargraph
       puts a.stub
     end
     
+    desc 'stub-env', 'Generate a stub of the current environment.'
+    option :require, type: :array, aliases: :r, desc: 'Paths to require', default: []
+    def stub_env
+      options[:require].each { |path|
+        require path
+      }
+      puts Solargraph::LiveParser.parse(nil)
+    end
+
+    desc 'serve', 'Start a Solargraph server'
+    def serve
+      Solargraph::Server.run!
+    end
+
+    desc 'resolve-require PATH', 'Get the filename that matches the require path.'
+    def resolve_require path
+      puts ApiMap.new.resolve_require(path)
+    end
+
     desc 'methods NAMESPACE', 'Get a list of methods.'
     option :stub, type: :string, aliases: :s, desc: 'A stub to load'
     option :access, type: :string, aliases: :a, enum: ['public', 'protected', 'private'], default: 'public', desc: 'The lowest accessibility to include'
@@ -86,7 +105,7 @@ module Solargraph
         end
       else
         # Just get the constants
-        a.get_constants(a.namespace_at(options[:index]))).to_json
+        a.get_constants(a.namespace_at(options[:index])).to_json
       end
       exit
       i = a.get_info_at(options[:index])

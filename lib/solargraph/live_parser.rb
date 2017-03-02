@@ -97,8 +97,11 @@ module Solargraph
           else
             #code += subparse(obj)
           end
-        rescue NameError => e
-          #puts "NOPE! NOT #{c}"
+        #rescue NameError => e
+        #  #puts "NOPE! NOT #{c}"
+        #end
+        rescue Exception => e
+          # TODO: Ignoring all exceptions for now
         end
       }
       code
@@ -205,6 +208,7 @@ module Solargraph
           code += "def self.#{m}#{args};end\n"
         end
       }
+      #obj.public_instance_methods(false).each { |m|
       obj.public_instance_methods(false).each { |m|
         #if !can_ignore?(obj, m)
           args = build_args obj.public_instance_method(m)

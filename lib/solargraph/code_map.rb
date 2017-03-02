@@ -7,7 +7,7 @@ module Solargraph
     
     include NodeMethods
     
-    def initialize code, api_map: ApiMap.current
+    def initialize code, api_map: ApiMap.new, with_required: true
       @api_map = api_map.dup
       @code = code
       tries = 0
@@ -15,7 +15,7 @@ module Solargraph
       tmp = "#{code}\nX".gsub(/[\.@]([\s])/, '#\1').gsub(/([\A\s]?)def([\s]*?[\n\Z])/, '\1#ef\2')
       begin
         @node = Parser::CurrentRuby.parse(tmp)
-        @api_map.merge(@node)
+        @api_map.merge(@node, with_required: with_required)
       rescue Parser::SyntaxError => e
         if tries < 10
           tries += 1
@@ -138,6 +138,7 @@ module Solargraph
           ns = parts[0..-2].join('::') + '::' + parts.last[0..parts.last.index('.')-1]
           result = @api_map.get_methods(ns)
         else
+          STDERR.puts "Looking in #{ns}"
           result = @api_map.namespaces_in(ns)
         end
       elsif phrase.include?('.')
@@ -158,7 +159,7 @@ module Solargraph
         end
       else
         current_namespace = namespace_at(index)
-        parts = current_namespace.split('::')
+        parts = current_namespace.to_s.split('::')
         result += get_snippets_at(index) if with_snippets
         result += get_local_variables_and_methods_at(index) + ApiMap.get_keywords(without_snippets: with_snippets)
         while parts.length > 0
@@ -169,18 +170,11 @@ module Solargraph
         result += @api_map.namespaces_in('')
       end
       STDERR.puts "Starting with #{result.length} results"
-      result = butt(result, word_at(index)) if filtered
+      result = reduce_starting_with(result, word_at(index)) if filtered
       STDERR.puts "#{result.length} results?"
       result
     end
     
-    def butt(suggestions, word)
-      STDERR.puts "Reducing with #{word}"
-      suggestions.reject { |s|
-        !s.label.start_with?(word)
-      }
-    end
-
     def get_snippets_at(index)
       result = []
       Snippets.definitions.each_pair { |name, detail|
@@ -215,6 +209,12 @@ module Solargraph
     end
     
     private
+
+    def reduce_starting_with(suggestions, word)
+      suggestions.reject { |s|
+        !s.label.start_with?(word)
+      }
+    end
 
     def get_local_variables_from(node)
       node ||= @node

@@ -9,6 +9,8 @@ module Solargraph
   autoload :NodeMethods, 'solargraph/node_methods'
   autoload :CodeData, 'solargraph/code_data'
   autoload :Snippets, 'solargraph/snippets'
+  autoload :Mapper, 'solargraph/mapper'
+  autoload :Server, 'solargraph/server'
 
   STUB_PATH = File.realpath(File.dirname(__FILE__) + "/../stubs")
 end
