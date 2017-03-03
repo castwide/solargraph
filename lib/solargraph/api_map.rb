@@ -28,6 +28,7 @@ module Solargraph
       @namespace_tree = {}
       @pending_requires = []
       @merged_requires = []
+      @comments = {}
     end
 
     def dup
@@ -39,13 +40,14 @@ module Solargraph
     def clear
     end
 
-    def merge node, require_nodes = {}
+    def merge node, comments = []
       return if node.nil?
+      @comments.merge! Parser::Source::Comment.associate(node, comments)
       mapified = mapify(node)
       mapified.children.each { |c|
         @node = @node.append c
       }
-      run_requires require_nodes
+      run_requires
       process_maps
     end
     
@@ -67,9 +69,9 @@ module Solargraph
       map_namespaces @node
     end
     
-    def run_requires require_nodes
+    def run_requires
       while r = @pending_requires.shift
-        parse_require r, require_nodes
+        parse_require r
       end
     end
 
@@ -106,19 +108,15 @@ module Solargraph
       file
     end
 
-    def parse_require path, require_nodes
+    def parse_require path
       return if @merged_requires.include?(path)
       @merged_requires.push path
-      if require_nodes[path].nil?
-        file = resolve_require(path)
-        unless file.nil?
-          code = File.read(file)
-          node = Parser::CurrentRuby.parse(code)
-          quick_merge node
-          require_nodes[path] = node
-        end
-      else
-        quick_merge require_nodes[path]
+      file = resolve_require(path)
+      unless file.nil?
+        code = File.read(file)
+        node = Parser::CurrentRuby.parse(code)
+        quick_merge node
+        require_nodes[path] = node
       end
     end
     
@@ -312,6 +310,9 @@ module Solargraph
           # assuming public only
           elsif current_scope == :public
             if c.kind_of?(AST::Node) and c.type == :def
+              unless @comments[c].nil?
+                STDERR.puts "Found a comment! #{@comments[c].text}"
+              end
               meths.push Suggestion.new(c.children[0], kind: Suggestion::METHOD) if c.children[0].to_s[0].match(/[a-z]/i)
             elsif c.kind_of?(AST::Node) and c.type == :send and c.children[1] == :attr_reader
               c.children[2..-1].each { |x|

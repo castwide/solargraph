@@ -16,8 +16,8 @@ module Solargraph
       tmp = "#{code}\nX".gsub(/[\.@]([\s])/, '#\1').gsub(/([\A\s]?)def([\s]*?[\n\Z])/, '\1#ef\2')
       #tmp = code.gsub(/[\.@]([\s])/, '#\1').gsub(/([\A\s]?)def([\s]*?[\n\Z])/, '\1#ef\2')
       begin
-        @node = Parser::CurrentRuby.parse(tmp)
-        @api_map.merge(@node)
+        @node, comments = Parser::CurrentRuby.parse_with_comments(tmp)
+        @api_map.merge(@node, comments)
       rescue Parser::SyntaxError => e
         if tries < 10
           tries += 1

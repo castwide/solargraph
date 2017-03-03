@@ -10,7 +10,6 @@ module Solargraph
 
     def get filename, text
       workspace = find_workspace(filename)
-      STDERR.puts "Building with #{text}"
       CodeMap.new(text, api_map: @default_api_map, workspace: workspace, require_nodes: @require_nodes)
     end
 
