@@ -54,7 +54,6 @@ module Solargraph
       }
       run_requires
       process_maps
-      STDERR.puts "Comment hash: #{@comments}"
     end
     
     def self.get_keywords without_snippets: false
@@ -316,6 +315,7 @@ module Solargraph
           # assuming public only
           elsif current_scope == :public
             if c.kind_of?(AST::Node) and c.type == :def
+              STDERR.puts "Node map: #{c.loc}"
               unless @comments[c].nil?
                 @comments[c].each { |x|
                   STDERR.puts "Found a comment! #{x.text}"
@@ -458,7 +458,8 @@ module Solargraph
         type = node.children[0].type
         children.push node.children[0].children[0], node.children[1]
       end
-      result = AST::Node.new(type, children)
+      #result = AST::Node.new(type, children)
+      result = node.updated(type, children)
       if @comments.has_key? node
         @comments[result] = @comments[node]
         @comments.delete node
