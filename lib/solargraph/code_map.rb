@@ -14,6 +14,7 @@ module Solargraph
       tries = 0
       # Hide incomplete code to avoid syntax errors
       tmp = "#{code}\nX".gsub(/[\.@]([\s])/, '#\1').gsub(/([\A\s]?)def([\s]*?[\n\Z])/, '\1#ef\2')
+      #tmp = code.gsub(/[\.@]([\s])/, '#\1').gsub(/([\A\s]?)def([\s]*?[\n\Z])/, '\1#ef\2')
       begin
         @node = Parser::CurrentRuby.parse(tmp)
         @api_map.merge(@node)
@@ -39,9 +40,14 @@ module Solargraph
 
     def tree_at(index)
       arr = []
-      if index >= @node.loc.expression.begin_pos and index < @node.loc.expression.end_pos
+      #if index >= @node.loc.expression.begin_pos and index < @node.loc.expression.end_pos
+        arr.push @node
+        #if match = code[1..-1].match(/^[\s]*end/)
+        #  index -= 1
+        #end
         inner_node_at(index, @node, arr)
-      end
+      #end
+      puts "TREE: #{arr.join("\n---\n")}"
       arr
     end
 
@@ -139,7 +145,6 @@ module Solargraph
           ns = parts[0..-2].join('::') + '::' + parts.last[0..parts.last.index('.')-1]
           result = @api_map.get_methods(ns)
         else
-          STDERR.puts "Looking in #{ns}"
           result = @api_map.namespaces_in(ns)
         end
       elsif phrase.include?('.')
@@ -170,9 +175,7 @@ module Solargraph
         end
         result += @api_map.namespaces_in('')
       end
-      STDERR.puts "Starting with #{result.length} results"
       result = reduce_starting_with(result, word_at(index)) if filtered
-      STDERR.puts "#{result.length} results?"
       result
     end
     
@@ -233,17 +236,16 @@ module Solargraph
     end
     
     def inner_node_at(index, node, arr)
-      arr.unshift node
-      node.children.each { |c|
+      node.children.reverse.each { |c|
         if c.kind_of?(AST::Node)
           next if c.loc.expression.nil?
-          if index >= c.loc.expression.begin_pos and index < c.loc.expression.end_pos
-            f = inner_node_at(index, c, arr)
-            return f || c
+          if index >= c.loc.expression.begin_pos
+            arr.unshift c
+            inner_node_at(index, c, arr) #if index < c.loc.expression.end_pos
+            break
           end
         end
       }
-      return node
     end
     
     def find_local_variable_node name, scope

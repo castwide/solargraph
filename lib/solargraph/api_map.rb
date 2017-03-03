@@ -201,7 +201,9 @@ module Solargraph
     end
     
     def get_instance_variables(namespace, scope = :instance)
+      STDERR.puts "Namespace for vars: #{namespace}"
       nodes = get_namespace_nodes(namespace) || [@node]
+      STDERR.puts "Found #{nodes.length} nodes"
       arr = []
       nodes.each { |n|
         arr += inner_get_instance_variables(n, scope)
