@@ -7,7 +7,7 @@ module Solargraph
   autoload :ApiMap, 'solargraph/api_map'
   autoload :CodeMap, 'solargraph/code_map'
   autoload :NodeMethods, 'solargraph/node_methods'
-  autoload :CodeData, 'solargraph/code_data'
+  autoload :Suggestion, 'solargraph/suggestion'
   autoload :Snippets, 'solargraph/snippets'
   autoload :Mapper, 'solargraph/mapper'
   autoload :Server, 'solargraph/server'

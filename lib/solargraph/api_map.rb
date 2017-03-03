@@ -54,7 +54,7 @@ module Solargraph
       keywords = KEYWORDS
       keywords -= Snippets.keywords if without_snippets
       keywords.each { |k|
-        result.push CodeData.new(k, kind: CodeData::KEYWORD, detail: 'Keyword')
+        result.push Suggestion.new(k, kind: Suggestion::KEYWORD, detail: 'Keyword')
       }
       result
     end
@@ -153,7 +153,7 @@ module Solargraph
         }
         unless cursor.nil?
           cursor.keys.each { |k|
-            result.push CodeData.new(k, kind: CodeData::CLASS)
+            result.push Suggestion.new(k, kind: Suggestion::CLASS)
           }
           nodes = get_namespace_nodes(fqns)
           nodes.each { |n|
@@ -224,7 +224,7 @@ module Solargraph
           #next if [:class, :module].include?(c.type)
           is_inst = !find_parent(c, :def).nil?
           if c.type == :ivasgn and ( (scope == :instance and is_inst) or (scope != :instance and !is_inst) )
-            arr.push CodeData.new(c.children[0], kind: CodeData::VARIABLE)
+            arr.push Suggestion.new(c.children[0], kind: Suggestion::VARIABLE)
           end
           arr += inner_get_instance_variables(c, scope) unless [:class, :module].include?(c.type)
         end
@@ -279,7 +279,7 @@ module Solargraph
         end
         n.children.each { |c|
           if c.kind_of?(AST::Node) and c.type == :defs
-            meths.push CodeData.new(c.children[1], kind: CodeData::METHOD) if c.children[1].to_s[0].match(/[a-z_]/i) and c.children[1] != :def
+            meths.push Suggestion.new(c.children[1], kind: Suggestion::METHOD) if c.children[1].to_s[0].match(/[a-z_]/i) and c.children[1] != :def
           elsif c.kind_of?(AST::Node) and c.type == :send and c.children[1] == :include
             # TODO This might not be right. Should we be getting singleton methods
             # from an include, or only from an extend?
@@ -312,20 +312,20 @@ module Solargraph
           # assuming public only
           elsif current_scope == :public
             if c.kind_of?(AST::Node) and c.type == :def
-              meths.push CodeData.new(c.children[0], kind: CodeData::METHOD) if c.children[0].to_s[0].match(/[a-z]/i)
+              meths.push Suggestion.new(c.children[0], kind: Suggestion::METHOD) if c.children[0].to_s[0].match(/[a-z]/i)
             elsif c.kind_of?(AST::Node) and c.type == :send and c.children[1] == :attr_reader
               c.children[2..-1].each { |x|
-                meths.push CodeData.new(x.children[0], kind: CodeData::METHOD) if x.type == :sym
+                meths.push Suggestion.new(x.children[0], kind: Suggestion::METHOD) if x.type == :sym
               }
             elsif c.kind_of?(AST::Node) and c.type == :send and c.children[1] == :attr_writer
               c.children[2..-1].each { |x|
-                meths.push CodeData.new("#{x.children[0]}=", kind: CodeData::METHOD) if x.type == :sym
+                meths.push Suggestion.new("#{x.children[0]}=", kind: Suggestion::METHOD) if x.type == :sym
               }
             elsif c.kind_of?(AST::Node) and c.type == :send and c.children[1] == :attr_accessor
               #meths.concat c.children[2..-1]
               c.children[2..-1].each { |x|
-                meths.push CodeData.new(x.children[0], kind: CodeData::METHOD) if x.type == :sym
-                meths.push CodeData.new("#{x.children[0]}=", kind: CodeData::METHOD) if x.type == :sym
+                meths.push Suggestion.new(x.children[0], kind: Suggestion::METHOD) if x.type == :sym
+                meths.push Suggestion.new("#{x.children[0]}=", kind: Suggestion::METHOD) if x.type == :sym
               }
             end
           end

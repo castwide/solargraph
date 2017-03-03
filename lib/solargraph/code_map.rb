@@ -191,7 +191,7 @@ module Solargraph
           prefix = prefix[0..-2]
         end
         if matched
-          result.push CodeData.new(detail['prefix'], kind: CodeData::KEYWORD, detail: name, insert: detail['body'].join("\r\n"))
+          result.push Suggestion.new(detail['prefix'], kind: Suggestion::KEYWORD, detail: name, insert: detail['body'].join("\r\n"))
         end
       }
       result
@@ -225,7 +225,7 @@ module Solargraph
       node.children.each { |c|
         if c.kind_of?(AST::Node)
           if c.type == :lvasgn
-            arr.push CodeData.new(c.children[0], kind: CodeData::VARIABLE)
+            arr.push Suggestion.new(c.children[0], kind: Suggestion::VARIABLE)
           else
             arr += get_local_variables_from(c)
           end

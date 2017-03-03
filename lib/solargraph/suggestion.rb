@@ -2,7 +2,7 @@ require 'json'
 
 module Solargraph
 
-  class CodeData
+  class Suggestion
     CLASS = 'Class'
     KEYWORD = 'Keyword'
     MODULE = 'Module'
