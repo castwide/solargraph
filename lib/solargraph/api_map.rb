@@ -201,9 +201,7 @@ module Solargraph
     end
     
     def get_instance_variables(namespace, scope = :instance)
-      STDERR.puts "Namespace for vars: #{namespace}"
       nodes = get_namespace_nodes(namespace) || [@node]
-      STDERR.puts "Found #{nodes.length} nodes"
       arr = []
       nodes.each { |n|
         arr += inner_get_instance_variables(n, scope)
@@ -223,11 +221,12 @@ module Solargraph
       arr = []
       node.children.each { |c|
         if c.kind_of?(AST::Node)
+          #next if [:class, :module].include?(c.type)
           is_inst = !find_parent(c, :def).nil?
           if c.type == :ivasgn and ( (scope == :instance and is_inst) or (scope != :instance and !is_inst) )
             arr.push CodeData.new(c.children[0], kind: CodeData::VARIABLE)
           end
-          arr += inner_get_instance_variables(c, scope)
+          arr += inner_get_instance_variables(c, scope) unless [:class, :module].include?(c.type)
         end
       }
       arr

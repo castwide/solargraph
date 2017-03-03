@@ -47,7 +47,6 @@ module Solargraph
         #end
         inner_node_at(index, @node, arr)
       #end
-      puts "TREE: #{arr.join("\n---\n")}"
       arr
     end
 
@@ -236,14 +235,24 @@ module Solargraph
     end
     
     def inner_node_at(index, node, arr)
-      node.children.reverse.each { |c|
+      node.children.each { |c|
         if c.kind_of?(AST::Node)
-          next if c.loc.expression.nil?
-          if index >= c.loc.expression.begin_pos
-            arr.unshift c
-            inner_node_at(index, c, arr) #if index < c.loc.expression.end_pos
-            break
+          unless c.loc.expression.nil?
+            if index >= c.loc.expression.begin_pos #+ @code[index..-1].match(/^[\s]*?/).to_s.length
+              if index < c.loc.expression.end_pos
+                # HACK: If this is a scoped node, make sure the index isn't in preceding whitespace
+                unless [:module, :class, :def].include?(c.type) and @code[index..-1].match(/^[\s]*?#{c.type}/)
+                  arr.unshift c
+                end
+              else
+                match = @code[index..-1].match(/^[\s]*?end/)
+                if match and index < c.loc.expression.end_pos + match.to_s.length
+                  arr.unshift c
+                end
+              end
+            end
           end
+          inner_node_at(index, c, arr)
         end
       }
     end
