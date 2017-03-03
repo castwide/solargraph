@@ -45,10 +45,16 @@ module Solargraph
       @comments.merge! Parser::Source::Comment.associate(node, comments)
       mapified = mapify(node)
       mapified.children.each { |c|
-        @node = @node.append c
+        result = @node.append c
+        if @comments.has_key?(c)
+          @comments[result] = @comments[c]
+          @comments.delete c
+        end
+        @node = result
       }
       run_requires
       process_maps
+      STDERR.puts "Comment hash: #{@comments}"
     end
     
     def self.get_keywords without_snippets: false
@@ -311,7 +317,9 @@ module Solargraph
           elsif current_scope == :public
             if c.kind_of?(AST::Node) and c.type == :def
               unless @comments[c].nil?
-                STDERR.puts "Found a comment! #{@comments[c].text}"
+                @comments[c].each { |x|
+                  STDERR.puts "Found a comment! #{x.text}"
+                }
               end
               meths.push Suggestion.new(c.children[0], kind: Suggestion::METHOD) if c.children[0].to_s[0].match(/[a-z]/i)
             elsif c.kind_of?(AST::Node) and c.type == :send and c.children[1] == :attr_reader
@@ -369,6 +377,10 @@ module Solargraph
       root = node
       if root.type != :begin
         root = AST::Node.new(:begin, [node], {})
+        if @comments.has_key? node
+          @comments[root] = @comments[node]
+          @comments.delete node
+        end
       end
       root = reduce root
       root
@@ -387,7 +399,12 @@ module Solargraph
     
     def reduce node
       mappable = get_mappable_nodes(node.children)
-      node.updated nil, mappable
+      result = node.updated nil, mappable
+      if @comments.has_key? node
+        @comments[result] = @comments[node]
+        @comments.delete[node]
+      end
+      result
     end
     
     def get_mappable_nodes arr
@@ -441,7 +458,12 @@ module Solargraph
         type = node.children[0].type
         children.push node.children[0].children[0], node.children[1]
       end
-      AST::Node.new(type, children)
+      result = AST::Node.new(type, children)
+      if @comments.has_key? node
+        @comments[result] = @comments[node]
+        @comments.delete node
+      end
+      result
     end
     
     def map_parents node, tree = []
