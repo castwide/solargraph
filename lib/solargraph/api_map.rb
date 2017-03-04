@@ -121,7 +121,6 @@ module Solargraph
         code = File.read(file)
         node = Parser::CurrentRuby.parse(code)
         quick_merge node
-        require_nodes[path] = node
       end
     end
     
@@ -129,7 +128,12 @@ module Solargraph
       return if node.nil?
       mapified = mapify(node)
       mapified.children.each { |c|
-        @node = @node.append c
+        result = @node.append c
+        if @comments.has_key?(c) and c != result
+          @comments[result] = @comments[c]
+          @comments.delete c
+        end
+        @node = result
       }
     end
 
@@ -315,7 +319,7 @@ module Solargraph
           # assuming public only
           elsif current_scope == :public
             if c.kind_of?(AST::Node) and c.type == :def
-              STDERR.puts "Node map: #{c.loc}"
+              #STDERR.puts "Node map: #{c.loc}"
               unless @comments[c].nil?
                 @comments[c].each { |x|
                   STDERR.puts "Found a comment! #{x.text}"
@@ -460,10 +464,10 @@ module Solargraph
       end
       #result = AST::Node.new(type, children)
       result = node.updated(type, children)
-      if @comments.has_key? node
-        @comments[result] = @comments[node]
-        @comments.delete node
-      end
+      #if @comments.has_key? node
+      #  @comments[result] = @comments[node]
+      #  @comments.delete node
+      #end
       result
     end
     
