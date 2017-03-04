@@ -177,27 +177,32 @@ module Solargraph
       return nil if skip.include?(root)
       skip.push root
       if name == ''
-        return '' if root == ''
-        return find_fully_qualified_namespace(root, '', skip)
-      elsif root == ''
-        return name unless @namespace_map[name].nil?
-        get_include_strings_from(@node).each { |i|
-          reroot = "#{root == '' ? '' : root + '::'}#{i}"
-          recname = find_fully_qualified_namespace name, reroot, skip
-          return recname unless recname.nil?
-        }
-      else
-        roots = root.to_s.split('::')
-        while roots.length > 0
-          fqns = roots.join('::') + '::' + name
-          return fqns unless @namespace_map[fqns].nil?
-          roots.pop
+        if root == ''
+          return ''
+        else
+          return find_fully_qualified_namespace(root, '', skip)
         end
-        return name unless @namespace_map[name].nil?
-        get_include_strings_from(@node).each { |i|
-          recname = find_fully_qualified_namespace name, i, skip
-          return recname unless recname.nil?
-        }
+      else
+        if (root == '')
+          return name unless @namespace_map[name].nil?
+          get_include_strings_from(@node).each { |i|
+            reroot = "#{root == '' ? '' : root + '::'}#{i}"
+            recname = find_fully_qualified_namespace name, reroot, skip
+            return recname unless recname.nil?
+          }
+        else
+          roots = root.to_s.split('::')
+          while roots.length > 0
+            fqns = roots.join('::') + '::' + name
+            return fqns unless @namespace_map[fqns].nil?
+            roots.pop
+          end
+          return name unless @namespace_map[name].nil?
+          get_include_strings_from(@node).each { |i|
+            recname = find_fully_qualified_namespace name, i, skip
+            return recname unless recname.nil?
+          }
+        end
       end
       nil
     end
