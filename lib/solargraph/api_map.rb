@@ -103,8 +103,8 @@ module Solargraph
       @namespace_map = {}
       @namespace_tree = {}
       @file_nodes.values.each { |f|
-        map_parents f
-        map_namespaces f
+        map_parents f #AST::Node.new(:tmp, @file_nodes.values)
+        map_namespaces f #AST::Node.new(:tmp, @file_nodes.values)
       }
     end
     
@@ -354,7 +354,6 @@ module Solargraph
           # assuming public only
           elsif current_scope == :public
             if c.kind_of?(AST::Node) and c.type == :def
-              current_scope = c.children[1]
               cmnt = get_comment_for(c)
               #if cmnt.nil?
               #  puts "No docstring for #{c.children[0]}"
