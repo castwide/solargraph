@@ -32,7 +32,7 @@ describe Solargraph::ApiMap do
       end
     )
     @api_map = Solargraph::ApiMap.new
-    @api_map.merge(Parser::CurrentRuby.parse(code))
+    @api_map.append_source(code)
   end
 
   it "finds instance methods" do

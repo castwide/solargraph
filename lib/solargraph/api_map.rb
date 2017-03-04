@@ -1,7 +1,8 @@
 $LOAD_PATH.unshift '/home/fred/gamefic/lib'
 
-require 'parser/current'
 require 'rubygems'
+require 'parser/current'
+require 'yard'
 
 module Solargraph
   class ApiMap
@@ -18,44 +19,75 @@ module Solargraph
     ]
     include NodeMethods
     
-    attr_reader :node
-    attr_accessor :workspace
+    attr_reader :workspace
 
-    def initialize
-      @node = AST::Node.new(:begin, [])
+    def initialize workspace = nil
+      #@node = AST::Node.new(:begin, [])
+      @workspace = workspace
+      process
+    end
+
+    def clear
+      @file_nodes = {}
+      @file_comments = {}
       @parent_stack = {}
       @namespace_map = {}
       @namespace_tree = {}
       @pending_requires = []
-      @merged_requires = []
-      @comments = {}
+      @yard_requires = []
     end
 
-    def dup
-      other = ApiMap.new
-      other.merge @node
-      other
-    end
-
-    def clear
-    end
-
-    def merge node, comments = []
-      return if node.nil?
-      @comments.merge! Parser::Source::Comment.associate(node, comments)
-      mapified = mapify(node)
-      mapified.children.each { |c|
-        result = @node.append c
-        if @comments.has_key?(c)
-          @comments[result] = @comments[c]
-          @comments.delete c
-        end
-        @node = result
-      }
-      run_requires
+    def process
+      clear
+      return if workspace.nil?
+      process_files
+      process_requires
       process_maps
     end
-    
+
+    def append_file filename
+      append_source File.read(filename), filename
+    end
+
+    def append_source text, filename = nil
+      node, comments = Parser::CurrentRuby.parse_with_comments(text)
+      yard_hash = associate_comments(node, comments)
+      mapified = mapify(node)
+      root = AST::Node.new(:begin, [filename])
+      mapified.children.each { |c|
+        root = root.append c
+      }
+      @file_nodes[filename] = root
+      @file_comments[filename] = associate_comments(node, comments)
+      process_requires
+      process_maps
+    end
+
+    def process_files
+      Dir.chdir workspace do
+        YARD::Parser::SourceParser::DEFAULT_PATH_GLOB.each { |d|
+          Dir[d].each { |f|
+            append_file f
+          }
+        }
+      end
+    end
+
+    def associate_comments node, comments
+      comment_hash = Parser::Source::Comment.associate(node, comments)
+      yard_hash = {}
+      comment_hash.each_pair { |k, v|
+        ctxt = v.map(&:text).join("\n")
+        yard_hash[k] = YARD::DocstringParser.new.parse(ctxt).to_docstring
+      }
+      yard_hash
+    end
+
+    def get_comment_for node
+      filename = get_filename_for(node)
+      @file_comments[filename][node] unless @file_comments[filename].nil?
+    end
+
     def self.get_keywords without_snippets: false
       result = []
       keywords = KEYWORDS
@@ -70,13 +102,16 @@ module Solargraph
       @parent_stack = {}
       @namespace_map = {}
       @namespace_tree = {}
-      map_parents @node
-      map_namespaces @node
+      @file_nodes.values.each { |f|
+        map_parents f
+        map_namespaces f
+      }
     end
     
-    def run_requires
+    def process_requires
       while r = @pending_requires.shift
-        parse_require r
+        # TODO: Figure this out
+        #parse_require r
       end
     end
 
@@ -113,30 +148,17 @@ module Solargraph
       file
     end
 
-    def parse_require path
-      return if @merged_requires.include?(path)
-      @merged_requires.push path
-      file = resolve_require(path)
-      unless file.nil?
-        code = File.read(file)
-        node = Parser::CurrentRuby.parse(code)
-        quick_merge node
-      end
-    end
+    #def parse_require path
+    #  return if @merged_requires.include?(path)
+    #  @merged_requires.push path
+    #  file = resolve_require(path)
+    #  unless file.nil?
+    #    code = File.read(file)
+    #    node = Parser::CurrentRuby.parse(code)
+    #    quick_merge node
+    #  end
+    #end
     
-    def quick_merge node
-      return if node.nil?
-      mapified = mapify(node)
-      mapified.children.each { |c|
-        result = @node.append c
-        if @comments.has_key?(c) and c != result
-          @comments[result] = @comments[c]
-          @comments.delete c
-        end
-        @node = result
-      }
-    end
-
     def namespaces
       @namespace_map.keys
     end
@@ -185,7 +207,7 @@ module Solargraph
       else
         if (root == '')
           return name unless @namespace_map[name].nil?
-          get_include_strings_from(@node).each { |i|
+          get_include_strings_from(*@file_nodes.values).each { |i|
             reroot = "#{root == '' ? '' : root + '::'}#{i}"
             recname = find_fully_qualified_namespace name, reroot, skip
             return recname unless recname.nil?
@@ -198,7 +220,7 @@ module Solargraph
             roots.pop
           end
           return name unless @namespace_map[name].nil?
-          get_include_strings_from(@node).each { |i|
+          get_include_strings_from(*@file_nodes.values).each { |i|
             recname = find_fully_qualified_namespace name, i, skip
             return recname unless recname.nil?
           }
@@ -208,12 +230,12 @@ module Solargraph
     end
 
     def get_namespace_nodes(fqns)
-      return [@node] if fqns == ''
+      return [@file_nodes.values] if fqns == ''
       @namespace_map[fqns] || []
     end
     
     def get_instance_variables(namespace, scope = :instance)
-      nodes = get_namespace_nodes(namespace) || [@node]
+      nodes = get_namespace_nodes(namespace) || @file_nodes.values
       arr = []
       nodes.each { |n|
         arr += inner_get_instance_variables(n, scope)
@@ -229,6 +251,15 @@ module Solargraph
       nil
     end
     
+    def get_root_for(node)
+      @parent_stack[node].last unless @parent_stack[node].nil?
+    end
+
+    def get_filename_for(node)
+      root = get_root_for(node)
+      root.children[0]
+    end
+
     def inner_get_instance_variables(node, scope)
       arr = []
       node.children.each { |c|
@@ -318,18 +349,18 @@ module Solargraph
         current_scope = :public
         n.children.each { |c|
           if c.kind_of?(AST::Node) and c.type == :send and [:public, :protected, :private].include?(c.children[1])
-            current_scope = c.children[1]
           # TODO: Determine the current scope so we can decide whether to
           # exclude protected or private methods. Right now we're just
           # assuming public only
           elsif current_scope == :public
             if c.kind_of?(AST::Node) and c.type == :def
-              #STDERR.puts "Node map: #{c.loc}"
-              unless @comments[c].nil?
-                @comments[c].each { |x|
-                  STDERR.puts "Found a comment! #{x.text}"
-                }
-              end
+              current_scope = c.children[1]
+              cmnt = get_comment_for(c)
+              #if cmnt.nil?
+              #  puts "No docstring for #{c.children[0]}"
+              #else
+              #  puts "Docstring: #{cmnt}"
+              #end
               meths.push Suggestion.new(c.children[0], kind: Suggestion::METHOD) if c.children[0].to_s[0].match(/[a-z]/i)
             elsif c.kind_of?(AST::Node) and c.type == :send and c.children[1] == :attr_reader
               c.children[2..-1].each { |x|
@@ -340,7 +371,6 @@ module Solargraph
                 meths.push Suggestion.new("#{x.children[0]}=", kind: Suggestion::METHOD) if x.type == :sym
               }
             elsif c.kind_of?(AST::Node) and c.type == :send and c.children[1] == :attr_accessor
-              #meths.concat c.children[2..-1]
               c.children[2..-1].each { |x|
                 meths.push Suggestion.new(x.children[0], kind: Suggestion::METHOD) if x.type == :sym
                 meths.push Suggestion.new("#{x.children[0]}=", kind: Suggestion::METHOD) if x.type == :sym
@@ -358,10 +388,6 @@ module Solargraph
     end
     
     def self.current
-      #map = ApiMap.new
-      #map.merge(Parser::CurrentRuby.parse(File.read("#{Solargraph::STUB_PATH}/ruby/#{RUBY_VERSION}/core.rb")))
-      #map
-      #Marshal.load(File.read("#{Solargraph::STUB_PATH}/ruby/#{RUBY_VERSION}/core.ser"))
       if @current.nil?
         @current = ApiMap.new
         @current.merge(Parser::CurrentRuby.parse(File.read("#{Solargraph::STUB_PATH}/ruby/2.3.0/core.rb")))
@@ -369,12 +395,16 @@ module Solargraph
       @current
     end
     
-    def get_include_strings_from node
+    def get_include_strings_from *nodes
       arr = []
-      node.children.each { |n|
-        if n.kind_of?(AST::Node)
-          arr.push unpack_name(n.children[2]) if (n.type == :send and n.children[1] == :include)
-          arr += get_include_strings_from(n) if n.type != :class and n.type != :module
+      nodes.each { |node|
+        if node.kind_of?(AST::Node)
+          node.children.each { |n|
+            if n.kind_of?(AST::Node)
+              arr.push unpack_name(n.children[2]) if (n.type == :send and n.children[1] == :include)
+              arr += get_include_strings_from(n) if n.type != :class and n.type != :module
+            end
+          }
         end
       }
       arr
@@ -386,10 +416,6 @@ module Solargraph
       root = node
       if root.type != :begin
         root = AST::Node.new(:begin, [node], {})
-        if @comments.has_key? node
-          @comments[root] = @comments[node]
-          @comments.delete node
-        end
       end
       root = reduce root
       root
@@ -409,10 +435,6 @@ module Solargraph
     def reduce node
       mappable = get_mappable_nodes(node.children)
       result = node.updated nil, mappable
-      if @comments.has_key? node
-        @comments[result] = @comments[node]
-        @comments.delete[node]
-      end
       result
     end
     
@@ -447,12 +469,9 @@ module Solargraph
         children += node.children[0, 1]
         children += get_mappable_nodes(node.children[1..-1])
       elsif node.type == :ivasgn or node.type == :gvasgn
-        #children += node.children[0, 1]
-        #children += get_mappable_nodes(node.children[1..-1])
         children += node.children
       elsif node.type == :send and node.children[1] == :include
         children += node.children[0,3]
-        #children += get_mappable_nodes(node.children[3..-1])
       elsif node.type == :send and node.children[1] == :require
         @pending_requires.push(node.children[2].children[0])
         children += node.children[0, 3]
@@ -460,19 +479,14 @@ module Solargraph
         @pending_requires.push(node.children[3].children[0])
         type = :require
         children += node.children[1, 3]
-      elsif node.type == :send #and node.children[1] == :require
+      elsif node.type == :send
         children += node.children
       elsif node.type == :or_asgn
         # TODO: The api_map should ignore local variables.
         type = node.children[0].type
         children.push node.children[0].children[0], node.children[1]
       end
-      #result = AST::Node.new(type, children)
       result = node.updated(type, children)
-      #if @comments.has_key? node
-      #  @comments[result] = @comments[node]
-      #  @comments.delete node
-      #end
       result
     end
     
