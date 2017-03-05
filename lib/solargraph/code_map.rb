@@ -166,9 +166,9 @@ module Solargraph
         # TODO: For now we're assuming only one period. That's obviously a bad assumption.
         base = phrase[0..phrase.index('.')-1]
         ns_here = namespace_at(index)
-        if @api_map.namespace_exists?(base, ns_here)
+        #if @api_map.namespace_exists?(base, ns_here)
           result = @api_map.get_methods(base, ns_here)
-        else
+        #else
           scope = parent_node_from(index, :class, :module, :def, :defs) || @node
           var = find_local_variable_node(base, scope)
           unless var.nil?
@@ -176,7 +176,7 @@ module Solargraph
             result = @api_map.get_instance_methods(obj) unless obj.nil?
           end
           #result = reduce(results, word_at(index)) unless unfiltered
-        end
+        #end
       else
         current_namespace = namespace_at(index)
         parts = current_namespace.to_s.split('::')

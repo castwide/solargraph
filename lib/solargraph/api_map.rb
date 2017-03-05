@@ -39,7 +39,7 @@ module Solargraph
 
     def process_workspace
       clear
-      return if workspace.nil?
+      return if @workspace.nil?
       process_files
       process_requires
       process_maps
@@ -68,7 +68,7 @@ module Solargraph
     end
 
     def process_files
-      Dir.chdir workspace do
+      Dir.chdir @workspace do
         YARD::Parser::SourceParser::DEFAULT_PATH_GLOB.each { |d|
           Dir[d].each { |f|
             append_file f
@@ -314,21 +314,32 @@ module Solargraph
     
     def get_methods(namespace, root = '')
       meths = inner_get_methods(namespace, root, [])
-      YARD::Registry.load(File.join(Dir.home, '.solargraph', 'cache', '2.0.0', 'yardoc'))
       if root == ''
-        ns = YARD::Registry.at(namespace)
+        ns = yard.at(namespace)
       else
-        ns = YARD::Registry.resolve(P(namespace), root)
+        ns = yard.resolve(P(namespace), root)
       end
       unless ns.nil?
-        ns.meths(scope: :class).each { |m|
-          n = m.to_s.split('#').last
+        # TODO: Handle private and protected scopes
+        ns.meths(scope: :class, visibility: [:public]).each { |m|
+          n = m.to_s.split('.').last
           meths.push Suggestion.new("#{n}", kind: Suggestion::METHOD) if n.to_s.match(/^[a-z]/i)
         }
+        if ns.kind_of?(YARD::CodeObjects::ClassObject)
+          ns = yard.at('Class')
+          ns.meths(scope: :instance, visibility: [:public]).each { |m|
+            n = m.to_s.split('#').last
+            meths.push Suggestion.new("#{n}", kind: Suggestion::METHOD) if n.to_s.match(/^[a-z]/i) and !m.to_s.start_with?('Kernel#')
+          }
+        end
       end
       meths.uniq
     end
     
+    def yard
+      YARD::Registry.load(File.join(Dir.home, '.solargraph', 'cache', '2.0.0', 'yardoc'))
+    end
+
     def inner_get_methods(namespace, root = '', skip = [])
       meths = []
       return meths if skip.include?(namespace)
@@ -360,12 +371,11 @@ module Solargraph
     
     def get_instance_methods(namespace, root = '')
       meths = inner_get_instance_methods(namespace, root, [])
-      YARD::Registry.load(File.join(Dir.home, '.solargraph', 'cache', '2.0.0', 'yardoc'))
       ns = nil
       if root == ''
-        ns = YARD::Registry.at(namespace)
+        ns = yard.at(namespace)
       else
-        ns = YARD::Registry.resolve(P(namespace), root)
+        ns = yard.resolve(P(namespace), root)
       end
       unless ns.nil?
         ns.meths(scope: :instance).each { |m|
