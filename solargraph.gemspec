@@ -1,5 +1,6 @@
 $LOAD_PATH.unshift File.dirname(__FILE__) + '/lib'
 require 'solargraph/version'
+require 'date'
 
 Gem::Specification.new do |s|
   s.name        = 'solargraph'
@@ -18,7 +19,8 @@ Gem::Specification.new do |s|
   s.add_runtime_dependency 'parser'
   s.add_runtime_dependency 'thor', '~> 0.19', '>= 0.19.4'
   s.add_runtime_dependency 'sinatra'
-  
+  s.add_runtime_dependency 'yard'
+
   s.add_development_dependency 'rspec', '~> 3.5', '>= 3.5.0'
   s.add_development_dependency 'codeclimate-test-reporter', '~> 1.0', '>= 1.0.0'
 end

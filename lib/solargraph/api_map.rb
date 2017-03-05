@@ -22,9 +22,9 @@ module Solargraph
     attr_reader :workspace
 
     def initialize workspace = nil
-      #@node = AST::Node.new(:begin, [])
       @workspace = workspace
-      process
+      #process_workspace
+      clear
     end
 
     def clear
@@ -34,10 +34,10 @@ module Solargraph
       @namespace_map = {}
       @namespace_tree = {}
       @pending_requires = []
-      @yard_requires = []
+      @requires = []
     end
 
-    def process
+    def process_workspace
       clear
       return if workspace.nil?
       process_files
@@ -51,7 +51,11 @@ module Solargraph
 
     def append_source text, filename = nil
       node, comments = Parser::CurrentRuby.parse_with_comments(text)
-      yard_hash = associate_comments(node, comments)
+      append_node(node, comments, filename)
+    end
+
+    def append_node node, comments, filename = nil
+      #yard_hash = associate_comments(node, comments)
       mapified = mapify(node)
       root = AST::Node.new(:begin, [filename])
       mapified.children.each { |c|
@@ -308,7 +312,24 @@ module Solargraph
       []
     end
     
-    def get_methods(namespace, root = '', skip = [])
+    def get_methods(namespace, root = '')
+      meths = inner_get_methods(namespace, root, [])
+      YARD::Registry.load(File.join(Dir.home, '.solargraph', 'cache', '2.0.0', 'yardoc'))
+      if root == ''
+        ns = YARD::Registry.at(namespace)
+      else
+        ns = YARD::Registry.resolve(P(namespace), root)
+      end
+      unless ns.nil?
+        ns.meths(scope: :class).each { |m|
+          n = m.to_s.split('#').last
+          meths.push Suggestion.new("#{n}", kind: Suggestion::METHOD) if n.to_s.match(/^[a-z]/i)
+        }
+      end
+      meths.uniq
+    end
+    
+    def inner_get_methods(namespace, root = '', skip = [])
       meths = []
       return meths if skip.include?(namespace)
       skip.push namespace
@@ -316,26 +337,46 @@ module Solargraph
       return meths if fqns.nil?
       nodes = get_namespace_nodes(fqns)
       nodes.each { |n|
-        if n.type == :class and !n.children[1].nil?
-          s = unpack_name(n.children[1])
-          meths += get_methods(s, root, skip)
-        end
-        n.children.each { |c|
-          if c.kind_of?(AST::Node) and c.type == :defs
-            meths.push Suggestion.new(c.children[1], kind: Suggestion::METHOD) if c.children[1].to_s[0].match(/[a-z_]/i) and c.children[1] != :def
-          elsif c.kind_of?(AST::Node) and c.type == :send and c.children[1] == :include
-            # TODO This might not be right. Should we be getting singleton methods
-            # from an include, or only from an extend?
-            i = unpack_name(c.children[2])
-            meths += get_methods(i, root, skip) unless i == 'Kernel'
+        if n.kind_of?(AST::Node)
+          if n.type == :class and !n.children[1].nil?
+            s = unpack_name(n.children[1])
+            meths += inner_get_methods(s, root, skip)
           end
-        }
+          n.children.each { |c|
+            if c.kind_of?(AST::Node) and c.type == :defs
+              meths.push Suggestion.new(c.children[1], kind: Suggestion::METHOD) if c.children[1].to_s[0].match(/[a-z_]/i) and c.children[1] != :def
+            elsif c.kind_of?(AST::Node) and c.type == :send and c.children[1] == :include
+              # TODO This might not be right. Should we be getting singleton methods
+              # from an include, or only from an extend?
+              i = unpack_name(c.children[2])
+              meths += inner_get_methods(i, root, skip) unless i == 'Kernel'
+            end
+          }
+        end
       }
-      meths += get_methods('BasicObject', root, skip) if !nodes.nil? and nodes[0].kind_of?(AST::Node) and nodes[0].type == :class
+      #meths += get_methods('BasicObject', root, skip) if !nodes.nil? and nodes[0].kind_of?(AST::Node) and nodes[0].type == :class
       meths.uniq
     end
     
-    def get_instance_methods(namespace, root = '', skip = [])
+    def get_instance_methods(namespace, root = '')
+      meths = inner_get_instance_methods(namespace, root, [])
+      YARD::Registry.load(File.join(Dir.home, '.solargraph', 'cache', '2.0.0', 'yardoc'))
+      ns = nil
+      if root == ''
+        ns = YARD::Registry.at(namespace)
+      else
+        ns = YARD::Registry.resolve(P(namespace), root)
+      end
+      unless ns.nil?
+        ns.meths(scope: :instance).each { |m|
+          n = m.to_s.split('#').last
+          meths.push Suggestion.new("#{n}", kind: Suggestion::METHOD) if n.to_s.match(/^[a-z]/i)
+        }
+      end
+      meths
+    end
+
+    def inner_get_instance_methods(namespace, root, skip)
       fqns = find_fully_qualified_namespace(namespace, root)
       meths = []
       return meths if skip.include?(fqns)
@@ -344,7 +385,7 @@ module Solargraph
       nodes.each { |n|
         if n.type == :class and !n.children[1].nil?
           s = unpack_name(n.children[1])
-          meths += get_instance_methods(s, namespace, skip)
+          meths += inner_get_instance_methods(s, namespace, skip)
         end
         current_scope = :public
         n.children.each { |c|
@@ -377,12 +418,12 @@ module Solargraph
             end
           end
           get_include_strings_from(n).each { |i|
-            meths += get_instance_methods(i, fqns, skip) unless i == 'Kernel'
+            meths += inner_get_instance_methods(i, fqns, skip)
           }
         }
       }
-      meths += get_instance_methods('BasicObject', root, skip) if nodes.length > 0 and nodes[0].type == :class
-      meths += get_instance_methods('Module', root, skip) if nodes.length > 0 and nodes[0].type == :class
+      #meths += get_instance_methods('BasicObject', root, skip) if nodes.length > 0 and nodes[0].type == :class
+      #meths += get_instance_methods('Module', root, skip) if nodes.length > 0 and nodes[0].type == :class
       meths.uniq
     end
     

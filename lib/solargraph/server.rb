@@ -5,7 +5,7 @@ module Solargraph
     set :port, 56527
     #set :port, 0
     #set :bind, '0.0.0.0'
-    set :mapper, Mapper.new
+    #set :mapper, Mapper.new
 
     #post '/initialize' do
     #  content_type :json
@@ -18,9 +18,11 @@ module Solargraph
       begin
         #settings.mapper.set params['filename'], params['code']
         #api_map = settings.mapper.get(params['filename'])
-        code_map = settings.mapper.get(params['filename'], params['text'])
+        #code_map = settings.mapper.get(params['filename'], params['text'])
         #raise 'No API map' if api_map.nil?
         #map = Solargraph::CodeMap.new(params['script'], api_map: api_map, with_required: false)
+        #api_map = ApiMap.new
+        code_map = CodeMap.new(code: params['text'], filename: params['filename'])
         sugg = code_map.suggest_at(params['index'].to_i, with_snippets: true, filtered: true)
         { "status" => "ok", "suggestions" => sugg }.to_json
       rescue Exception => e

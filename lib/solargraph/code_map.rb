@@ -7,17 +7,16 @@ module Solargraph
     
     include NodeMethods
     
-    def initialize code, api_map: ApiMap.new, require_nodes: {}, workspace: nil
-      @api_map = api_map.dup
-      @api_map.workspace = workspace
+    def initialize code: '', filename: nil
+      workspace = CodeMap.find_workspace(filename)
+      @api_map = ApiMap.new(workspace)
       @code = code
       tries = 0
       # Hide incomplete code to avoid syntax errors
       tmp = "#{code}\nX".gsub(/[\.@]([\s])/, '#\1').gsub(/([\A\s]?)def([\s]*?[\n\Z])/, '\1#ef\2')
-      #tmp = code.gsub(/[\.@]([\s])/, '#\1').gsub(/([\A\s]?)def([\s]*?[\n\Z])/, '\1#ef\2')
       begin
         @node, comments = Parser::CurrentRuby.parse_with_comments(tmp)
-        @api_map.merge(@node, comments)
+        @api_map.append_node(@node, comments, filename)
       rescue Parser::SyntaxError => e
         if tries < 10
           tries += 1
@@ -32,6 +31,22 @@ module Solargraph
         end
         raise e
       end
+    end
+
+    def self.find_workspace filename
+      return nil if filename.nil?
+      dirname = filename
+      lastname = nil
+      result = nil
+      until dirname == lastname
+        if File.file?("#{dirname}/Gemfile")
+          result = dirname
+          break
+        end
+        lastname = dirname
+        dirname = File.dirname(dirname)
+      end
+      result || File.dirname(filename)
     end
 
     def merge node
