@@ -195,8 +195,19 @@ module Solargraph
             }
           }
         end
-        result
+        consts = nil
+        if name == ''
+          consts = yard.root.children
+        else
+          consts = yard.at(name).children unless yard.at(name).nil?
+        end
+        unless consts.nil?
+          consts.each { |c|
+            result.push Suggestion.new(c.to_s, kind: Suggestion::CLASS)
+          }
+        end
       end
+      result
     end
     
     def find_fully_qualified_namespace name, root = '', skip = []
