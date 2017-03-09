@@ -34,6 +34,10 @@ module Solargraph
     LONGDESC
     def suggest
       # TODO: Wait for input and return suggestions
+      input = STDIN.gets
+      data = JSON.parse(input)
+      #STDOUT.puts data
+      STDOUT.puts "Hell yeah! #{input}"
     end
   end
 end
