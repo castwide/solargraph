@@ -1,5 +1,8 @@
 require 'thor'
 require 'json'
+require 'fileutils'
+require 'rubygems/package'
+require 'zlib'
 
 module Solargraph
   class Shell < Thor
@@ -8,6 +11,28 @@ module Solargraph
     def prepare
       # TODO: Download core and stdlib files from yardoc.solargraph.org
       # Maybe also generate yardoc files for bundled gems
+      cache_dir = File.join(Dir.home, '.solargraph', 'cache')
+      FileUtils.mkdir_p cache_dir
+      require 'net/http'
+      Net::HTTP.start("solargraph.org") do |http|
+          resp = http.get("/2.0.0.tar.gz")
+          open(File.join(cache_dir, '2.0.0.tar.gz'), "wb") do |file|
+              file.write(resp.body)
+          end
+          tar_extract = Gem::Package::TarReader.new(Zlib::GzipReader.open(File.join(cache_dir, '2.0.0.tar.gz')))
+          tar_extract.rewind
+          tar_extract.each do |entry|
+            if entry.directory?
+              FileUtils.mkdir_p File.join(cache_dir, entry.full_name)
+            else
+              FileUtils.mkdir_p File.join(cache_dir, File.dirname(entry.full_name))
+              File.open(File.join(cache_dir, entry.full_name), 'wb') do |f|
+                f << entry.read
+              end
+            end
+          end
+          tar_extract.close
+      end
     end
     
     desc 'serve', 'Start a Solargraph server'
