@@ -8,6 +8,8 @@ module Solargraph
   class Shell < Thor
     desc 'prepare', 'Cache YARD files for the current environment'
     option :host, type: :string, aliases: :h, desc: 'The host that provides YARDOC files for download', default: 'yardoc.solargraph.org'
+    # TODO: Prepare gems.
+    #option :gems, type: :boolean, aliases: :g, desc: 'Generate YARDOC files for bundled gems', default: false
     def prepare
       # TODO: Download core and stdlib files from yardoc.solargraph.org
       # Maybe also generate yardoc files for bundled gems
@@ -33,6 +35,13 @@ module Solargraph
           end
           tar_extract.close
       end
+    end
+    
+    desc 'bundled', 'Get a list of bundled gems'
+    def bundled
+      Bundler.load.specs.each { |s|
+        puts s.name
+      }
     end
     
     desc 'serve', 'Start a Solargraph server'
