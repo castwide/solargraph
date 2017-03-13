@@ -330,7 +330,17 @@ module Solargraph
       else
         ns = yard.resolve(P(namespace), root)
       end
-      unless ns.nil?
+      if ns.nil?
+        fqns = find_fully_qualified_namespace(namespace, root)
+        nodes = get_namespace_nodes(fqns)
+        if !nodes.nil? and nodes[0].kind_of?(AST::Node) and nodes[0].type == :class
+          ns = yard.at('Class')
+          ns.meths(scope: :instance, visibility: [:public]).each { |m|
+            n = m.to_s.split('#').last
+            meths.push Suggestion.new("#{n}", kind: Suggestion::METHOD) if n.to_s.match(/^[a-z]/i) and !m.to_s.start_with?('Kernel#')
+          }
+        end
+      else
         # TODO: Handle private and protected scopes
         ns.meths(scope: :class, visibility: [:public]).each { |m|
           n = m.to_s.split('.').last
