@@ -70,8 +70,17 @@ module Solargraph
       # TODO: Wait for input and return suggestions
       input = STDIN.gets
       data = JSON.parse(input)
-      #STDOUT.puts data
-      STDOUT.puts "Hell yeah! #{input}"
+      begin
+        code_map = CodeMap.new(code: data['text'], filename: data['filename'])
+        sugg = code_map.suggest_at(data['position'].to_i, with_snippets: true, filtered: true)
+        result = { "status" => "ok", "suggestions" => sugg }.to_json
+        STDOUT.puts result
+      rescue Exception => e
+        STDERR.puts e
+        STDERR.puts e.backtrace.join("\n")
+        result = { "status" => "err", "message" => e.message }.to_json
+        STDOUT.puts result
+      end
     end
   end
 end
