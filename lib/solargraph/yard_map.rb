@@ -83,7 +83,6 @@ module Solargraph
           end
           unless ns.nil?
             ns.meths(scope: :instance, visibility: [:public]).each { |m|
-              STDERR.puts "#{m}!!!!!"
               n = m.to_s.split('#').last
               meths.push Suggestion.new("#{n}", kind: Suggestion::METHOD) if n.to_s.match(/^[a-z]/i) and !m.to_s.start_with?('Kernel#')
             }
