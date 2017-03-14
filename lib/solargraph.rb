@@ -11,6 +11,7 @@ module Solargraph
   autoload :Snippets,    'solargraph/snippets'
   autoload :Mapper,      'solargraph/mapper'
   autoload :Server,      'solargraph/server'
+  autoload :YardMap,     'solargraph/yard_map'
 
   STUB_PATH = File.realpath(File.dirname(__FILE__) + "/../stubs")
 end

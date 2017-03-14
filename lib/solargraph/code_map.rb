@@ -77,7 +77,7 @@ module Solargraph
     def parent_node_from(index, *types)
       arr = tree_at(index)
       arr.each { |a|
-        if a.kind_of?(AST::Node) and types.include?(a.type)
+        if a.kind_of?(AST::Node) and (types.empty? or types.include?(a.type))
           return a
         end
       }
@@ -179,15 +179,25 @@ module Solargraph
         #end
       else
         current_namespace = namespace_at(index)
+        STDERR.puts "Namespace: #{current_namespace}"
         parts = current_namespace.to_s.split('::')
         result += get_snippets_at(index) if with_snippets
-        result += get_local_variables_and_methods_at(index) + ApiMap.get_keywords(without_snippets: with_snippets)
+        result += get_local_variables_and_methods_at(index)
+        result += ApiMap.get_keywords(without_snippets: with_snippets)
         while parts.length > 0
           ns = parts.join('::')
           result += @api_map.namespaces_in(ns)
           parts.pop
         end
         result += @api_map.namespaces_in('')
+        #scope = parent_node_from(index, :class, :module, :def, :defs) || @node
+        #STDERR.puts scope
+        #if scope.type == :def
+        #  STDERR.puts "Yer in a def!"
+        #  result += @api_map.get_instance_methods(current_namespace)
+        #else
+        #  result += @api_map.get_methods(current_namespace)
+        #end
       end
       result = reduce_starting_with(result, word_at(index)) if filtered
       result
@@ -242,7 +252,7 @@ module Solargraph
           if c.type == :lvasgn
             arr.push Suggestion.new(c.children[0], kind: Suggestion::VARIABLE)
           else
-            arr += get_local_variables_from(c)
+            arr += get_local_variables_from(c) unless [:class, :module, :def, :defs].include?(c.type)
           end
         end
       }
@@ -261,7 +271,7 @@ module Solargraph
                 end
               else
                 match = @code[index..-1].match(/^[\s]*?end/)
-                if match and index < c.loc.expression.end_pos + match.to_s.length
+                if match and index <= c.loc.expression.end_pos + match.to_s.length + 1
                   arr.unshift c
                 end
               end

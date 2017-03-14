@@ -1,5 +1,3 @@
-$LOAD_PATH.unshift '/home/fred/gamefic/lib'
-
 require 'rubygems'
 require 'parser/current'
 require 'yard'
@@ -195,18 +193,20 @@ module Solargraph
             }
           }
         end
-        consts = nil
-        if name == ''
-          consts = yard.root.children
-        else
-          consts = yard.at(name).children unless yard.at(name).nil?
-        end
-        unless consts.nil?
-          consts.each { |c|
-            result.push Suggestion.new(c.to_s, kind: Suggestion::CLASS)
-          }
-        end
+        #consts = nil
+        #if name == ''
+        #  consts = yard.root.children
+        #else
+        #  consts = yard.at(name).children unless yard.at(name).nil?
+        #end
+        #unless consts.nil?
+        #  consts.each { |c|
+        #    result.push Suggestion.new(c.to_s, kind: Suggestion::CLASS)
+        #  }
+        #end
       end
+      yard = YardMap.new
+      result += yard.get_constants name, root
       result
     end
     
@@ -323,43 +323,61 @@ module Solargraph
       []
     end
     
+    def get_namespace_type namespace, root = ''
+      type = nil
+      fqns = find_fully_qualified_namespace(namespace, root)
+      nodes = get_namespace_nodes(fqns)
+      unless nodes.nil? or nodes.empty? or !nodes[0].kind_of?(AST::Node)
+        type = nodes[0].type if [:class, :module].include?(nodes[0].type)
+      end
+      type
+    end
+
     def get_methods(namespace, root = '')
       meths = inner_get_methods(namespace, root, [])
-      if root == ''
-        ns = yard.at(namespace)
-      else
-        ns = yard.resolve(P(namespace), root)
-      end
-      if ns.nil?
-        fqns = find_fully_qualified_namespace(namespace, root)
-        nodes = get_namespace_nodes(fqns)
-        if !nodes.nil? and nodes[0].kind_of?(AST::Node) and nodes[0].type == :class
-          ns = yard.at('Class')
-          ns.meths(scope: :instance, visibility: [:public]).each { |m|
-            n = m.to_s.split('#').last
-            meths.push Suggestion.new("#{n}", kind: Suggestion::METHOD) if n.to_s.match(/^[a-z]/i) and !m.to_s.start_with?('Kernel#')
-          }
-        end
-      else
-        # TODO: Handle private and protected scopes
-        ns.meths(scope: :class, visibility: [:public]).each { |m|
-          n = m.to_s.split('.').last
-          meths.push Suggestion.new("#{n}", kind: Suggestion::METHOD) if n.to_s.match(/^[a-z]/i)
-        }
-        if ns.kind_of?(YARD::CodeObjects::ClassObject)
-          ns = yard.at('Class')
-          ns.meths(scope: :instance, visibility: [:public]).each { |m|
-            n = m.to_s.split('#').last
-            meths.push Suggestion.new("#{n}", kind: Suggestion::METHOD) if n.to_s.match(/^[a-z]/i) and !m.to_s.start_with?('Kernel#')
-          }
-        end
+      #if root == ''
+      #  ns = yard.at(namespace)
+      #else
+      #  ns = yard.resolve(P(namespace), root)
+      #end
+      #if ns.nil?
+      #  fqns = find_fully_qualified_namespace(namespace, root)
+      #  nodes = get_namespace_nodes(fqns)
+      #  if !nodes.nil? and nodes[0].kind_of?(AST::Node) and nodes[0].type == :class
+      #    ns = yard.at('Class')
+      #    ns.meths(scope: :instance, visibility: [:public]).each { |m|
+      #      n = m.to_s.split('#').last
+      #      meths.push Suggestion.new("#{n}", kind: Suggestion::METHOD) if n.to_s.match(/^[a-z]/i) and !m.to_s.start_with?('Kernel#')
+      #    }
+      #  end
+      #else
+      #  # TODO: Handle private and protected scopes
+      #  ns.meths(scope: :class, visibility: [:public]).each { |m|
+      #    n = m.to_s.split('.').last
+      #    meths.push Suggestion.new("#{n}", kind: Suggestion::METHOD) if n.to_s.match(/^[a-z]/i)
+      #  }
+      #  if ns.kind_of?(YARD::CodeObjects::ClassObject)
+      #    ns = yard.at('Class')
+      #    ns.meths(scope: :instance, visibility: [:public]).each { |m|
+      #      n = m.to_s.split('#').last
+      #      meths.push Suggestion.new("#{n}", kind: Suggestion::METHOD) if n.to_s.match(/^[a-z]/i) and !m.to_s.start_with?('Kernel#')
+      #    }
+      #  end
+      #end
+      yard = YardMap.new
+      meths += yard.get_methods(namespace, root)
+      type = get_namespace_type(namespace, root)
+      if type == :class
+        meths += yard.get_instance_methods('Class')
+      elsif type == :module
+        meths += yard.get_methods('Module')
       end
       meths.uniq
     end
     
-    def yard
-      YARD::Registry.load(File.join(Dir.home, '.solargraph', 'cache', '2.0.0', 'yardoc'))
-    end
+    #def yard
+    #  YARD::Registry.load(File.join(Dir.home, '.solargraph', 'cache', '2.0.0', 'yardoc'))
+    #end
 
     def inner_get_methods(namespace, root = '', skip = [])
       meths = []
@@ -392,18 +410,30 @@ module Solargraph
     
     def get_instance_methods(namespace, root = '')
       meths = inner_get_instance_methods(namespace, root, [])
-      ns = nil
-      if root == ''
-        ns = yard.at(namespace)
-      else
-        ns = yard.resolve(P(namespace), root)
-      end
-      unless ns.nil?
-        ns.meths(scope: :instance).each { |m|
-          n = m.to_s.split('#').last
-          meths.push Suggestion.new("#{n}", kind: Suggestion::METHOD) if n.to_s.match(/^[a-z]/i)
-        }
-      end
+      #ns = nil
+      #if root == ''
+      #  ns = yard.at(namespace)
+      #else
+      #  ns = yard.resolve(P(namespace), root)
+      #end
+      #if ns.nil?
+      #  fqns = find_fully_qualified_namespace(namespace, root)
+      #  nodes = get_namespace_nodes(fqns)
+      #  if !nodes.nil? and nodes[0].kind_of?(AST::Node) and nodes[0].type == :class
+      #    ns = yard.at('Object')
+      #    ns.meths(scope: :instance, visibility: [:public]).each { |m|
+      #      n = m.to_s.split('#').last
+      #      meths.push Suggestion.new("#{n}", kind: Suggestion::METHOD) if n.to_s.match(/^[a-z]/i) and !m.to_s.start_with?('Kernel#')
+      #    }
+      #  end
+      #else
+      #  ns.meths(scope: :instance).each { |m|
+      #    n = m.to_s.split('#').last
+      #    meths.push Suggestion.new("#{n}", kind: Suggestion::METHOD) if n.to_s.match(/^[a-z]/i)
+      #  }
+      #end
+      yard = YardMap.new
+      meths += yard.get_instance_methods(namespace, root)
       meths
     end
 
