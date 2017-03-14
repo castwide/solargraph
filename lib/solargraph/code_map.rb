@@ -177,7 +177,6 @@ module Solargraph
         end
       else
         current_namespace = namespace_at(index)
-        STDERR.puts "Namespace: #{current_namespace}"
         parts = current_namespace.to_s.split('::')
         result += get_snippets_at(index) if with_snippets
         result += get_local_variables_and_methods_at(index)
@@ -215,7 +214,6 @@ module Solargraph
     def get_local_variables_and_methods_at(index)
       result = []
       local = parent_node_from(index, :class, :module, :def, :defs) || @node
-      STDERR.puts local
       result += get_local_variables_from(local)
       scope = namespace_at(index) || @node
       if local.type == :def
@@ -262,7 +260,6 @@ module Solargraph
                 end
               else
                 match = @code[index..-1].match(/^[\s]*?end/)
-                STDERR.puts "#{c.type}, #{index}, #{c.loc.expression.end_pos}, #{match.to_s.length}"
                 if match and index <= c.loc.expression.end_pos + match.to_s.length + 1
                   arr.unshift c
                 end

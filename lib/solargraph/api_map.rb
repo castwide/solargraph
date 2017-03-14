@@ -435,8 +435,32 @@ module Solargraph
       #  }
       #end
       yard = YardMap.new
+      type = get_namespace_type(namespace, root)
+      if type == :class
+        meths += yard.get_instance_methods('Object')
+      elsif type == :module
+        meths += yard.get_instance_methods('Module')
+      end
       meths += yard.get_instance_methods(namespace, root)
+      sc = get_superclass(namespace, root)
+      until sc.nil?
+        meths += yard.get_instance_methods(sc, root)
+        sc = get_superclass(sc)
+      end
       meths
+    end
+
+    def get_superclass(namespace, root = '')
+      fqns = find_fully_qualified_namespace(namespace, root)
+      nodes = get_namespace_nodes(fqns)
+      nodes.each { |n|
+        if n.kind_of?(AST::Node)
+          if n.type == :class and !n.children[1].nil?
+            return unpack_name(n.children[1])
+          end
+        end
+      }
+      return nil
     end
 
     def inner_get_instance_methods(namespace, root, skip)
