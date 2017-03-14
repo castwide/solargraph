@@ -277,16 +277,18 @@ module Solargraph
 
     def inner_get_instance_variables(node, scope)
       arr = []
-      node.children.each { |c|
-        if c.kind_of?(AST::Node)
-          #next if [:class, :module].include?(c.type)
-          is_inst = !find_parent(c, :def).nil?
-          if c.type == :ivasgn and ( (scope == :instance and is_inst) or (scope != :instance and !is_inst) )
-            arr.push Suggestion.new(c.children[0], kind: Suggestion::VARIABLE)
+      if node.kind_of?(AST::Node)
+        node.children.each { |c|
+          if c.kind_of?(AST::Node)
+            #next if [:class, :module].include?(c.type)
+            is_inst = !find_parent(c, :def).nil?
+            if c.type == :ivasgn and ( (scope == :instance and is_inst) or (scope != :instance and !is_inst) )
+              arr.push Suggestion.new(c.children[0], kind: Suggestion::VARIABLE)
+            end
+            arr += inner_get_instance_variables(c, scope) unless [:class, :module].include?(c.type)
           end
-          arr += inner_get_instance_variables(c, scope) unless [:class, :module].include?(c.type)
-        end
-      }
+        }
+      end
       arr
     end
 
@@ -444,44 +446,46 @@ module Solargraph
       skip.push fqns
       nodes = get_namespace_nodes(fqns)
       nodes.each { |n|
-        if n.type == :class and !n.children[1].nil?
-          s = unpack_name(n.children[1])
-          meths += inner_get_instance_methods(s, namespace, skip)
-        end
-        current_scope = :public
-        n.children.each { |c|
-          if c.kind_of?(AST::Node) and c.type == :send and [:public, :protected, :private].include?(c.children[1])
-          # TODO: Determine the current scope so we can decide whether to
-          # exclude protected or private methods. Right now we're just
-          # assuming public only
-          elsif current_scope == :public
-            if c.kind_of?(AST::Node) and c.type == :def
-              cmnt = get_comment_for(c)
-              #if cmnt.nil?
-              #  puts "No docstring for #{c.children[0]}"
-              #else
-              #  puts "Docstring: #{cmnt}"
-              #end
-              meths.push Suggestion.new(c.children[0], kind: Suggestion::METHOD) if c.children[0].to_s[0].match(/[a-z]/i)
-            elsif c.kind_of?(AST::Node) and c.type == :send and c.children[1] == :attr_reader
-              c.children[2..-1].each { |x|
-                meths.push Suggestion.new(x.children[0], kind: Suggestion::METHOD) if x.type == :sym
-              }
-            elsif c.kind_of?(AST::Node) and c.type == :send and c.children[1] == :attr_writer
-              c.children[2..-1].each { |x|
-                meths.push Suggestion.new("#{x.children[0]}=", kind: Suggestion::METHOD) if x.type == :sym
-              }
-            elsif c.kind_of?(AST::Node) and c.type == :send and c.children[1] == :attr_accessor
-              c.children[2..-1].each { |x|
-                meths.push Suggestion.new(x.children[0], kind: Suggestion::METHOD) if x.type == :sym
-                meths.push Suggestion.new("#{x.children[0]}=", kind: Suggestion::METHOD) if x.type == :sym
-              }
-            end
+        if n.kind_of?(AST::Node)
+          if n.type == :class and !n.children[1].nil?
+            s = unpack_name(n.children[1])
+            meths += inner_get_instance_methods(s, namespace, skip)
           end
-          get_include_strings_from(n).each { |i|
-            meths += inner_get_instance_methods(i, fqns, skip)
+          current_scope = :public
+          n.children.each { |c|
+            if c.kind_of?(AST::Node) and c.type == :send and [:public, :protected, :private].include?(c.children[1])
+            # TODO: Determine the current scope so we can decide whether to
+            # exclude protected or private methods. Right now we're just
+            # assuming public only
+            elsif current_scope == :public
+              if c.kind_of?(AST::Node) and c.type == :def
+                cmnt = get_comment_for(c)
+                #if cmnt.nil?
+                #  puts "No docstring for #{c.children[0]}"
+                #else
+                #  puts "Docstring: #{cmnt}"
+                #end
+                meths.push Suggestion.new(c.children[0], kind: Suggestion::METHOD) if c.children[0].to_s[0].match(/[a-z]/i)
+              elsif c.kind_of?(AST::Node) and c.type == :send and c.children[1] == :attr_reader
+                c.children[2..-1].each { |x|
+                  meths.push Suggestion.new(x.children[0], kind: Suggestion::METHOD) if x.type == :sym
+                }
+              elsif c.kind_of?(AST::Node) and c.type == :send and c.children[1] == :attr_writer
+                c.children[2..-1].each { |x|
+                  meths.push Suggestion.new("#{x.children[0]}=", kind: Suggestion::METHOD) if x.type == :sym
+                }
+              elsif c.kind_of?(AST::Node) and c.type == :send and c.children[1] == :attr_accessor
+                c.children[2..-1].each { |x|
+                  meths.push Suggestion.new(x.children[0], kind: Suggestion::METHOD) if x.type == :sym
+                  meths.push Suggestion.new("#{x.children[0]}=", kind: Suggestion::METHOD) if x.type == :sym
+                }
+              end
+            end
+            get_include_strings_from(n).each { |i|
+              meths += inner_get_instance_methods(i, fqns, skip)
+            }
           }
-        }
+        end
       }
       #meths += get_instance_methods('BasicObject', root, skip) if nodes.length > 0 and nodes[0].type == :class
       #meths += get_instance_methods('Module', root, skip) if nodes.length > 0 and nodes[0].type == :class
@@ -515,7 +519,7 @@ module Solargraph
     
     def mapify node
       root = node
-      if root.type != :begin
+      if !root.kind_of?(AST::Node) or root.type != :begin
         root = AST::Node.new(:begin, [node], {})
       end
       root = reduce root

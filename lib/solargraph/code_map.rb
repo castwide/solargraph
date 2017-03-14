@@ -8,8 +8,15 @@ module Solargraph
     include NodeMethods
     
     def initialize code: '', filename: nil
+      filename.gsub!(File::ALT_SEPARATOR, File::SEPARATOR) unless File::ALT_SEPARATOR.nil?
       workspace = CodeMap.find_workspace(filename)
       @api_map = ApiMap.new(workspace)
+      files = Dir[File.join workspace, '**', '*.rb']
+      files.each { |f|
+        unless filename == f
+          @api_map.append_file f
+        end
+      }
       @code = code
       tries = 0
       # Hide incomplete code to avoid syntax errors
@@ -46,7 +53,9 @@ module Solargraph
         lastname = dirname
         dirname = File.dirname(dirname)
       end
-      result || File.dirname(filename)
+      result ||= File.dirname(filename)
+      result.gsub!(File::ALT_SEPARATOR, File::SEPARATOR) unless File::ALT_SEPARATOR.nil?
+      result
     end
 
     def merge node
@@ -206,6 +215,7 @@ module Solargraph
     def get_local_variables_and_methods_at(index)
       result = []
       local = parent_node_from(index, :class, :module, :def, :defs) || @node
+      STDERR.puts local
       result += get_local_variables_from(local)
       scope = namespace_at(index) || @node
       if local.type == :def
@@ -252,6 +262,7 @@ module Solargraph
                 end
               else
                 match = @code[index..-1].match(/^[\s]*?end/)
+                STDERR.puts "#{c.type}, #{index}, #{c.loc.expression.end_pos}, #{match.to_s.length}"
                 if match and index <= c.loc.expression.end_pos + match.to_s.length + 1
                   arr.unshift c
                 end
