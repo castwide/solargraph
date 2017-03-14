@@ -4,7 +4,7 @@ IDE tools for the Ruby language.
 
 _This library is still in early development._
 
-Solargraph is a set of tools to integrate Ruby code completion and inline documentation into IDEs. The first supported IDE is Visual Studio code.
+Solargraph is a set of tools to integrate Ruby code completion and inline documentation into IDEs. The first supported IDE is Visual Studio Code.
 
 ## Installation
 
