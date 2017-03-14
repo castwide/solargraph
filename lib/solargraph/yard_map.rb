@@ -11,7 +11,7 @@ module Solargraph
         yardocs.push gy unless gy.nil?
       }
       yardocs.push File.join(Dir.home, '.solargraph', 'cache', '2.0.0', 'yardoc')
-      #yardocs.push File.join(Dir.home, '.solargraph', 'cache', '2.0.0', 'yardoc-stdlib')
+      yardocs.push File.join(Dir.home, '.solargraph', 'cache', '2.0.0', 'yardoc-stdlib')
     end
 
     def yardocs
@@ -80,6 +80,9 @@ module Solargraph
               n = m.to_s.split('#').last
               meths.push Suggestion.new("#{n}", kind: Suggestion::METHOD) if n.to_s.match(/^[a-z]/i) and !m.to_s.start_with?('Kernel#')
             }
+            if ns.kind_of?(YARD::CodeObjects::ClassObject) and namespace != 'Object'
+              meths += get_instance_methods('Object')
+            end
           end
         end
       }
