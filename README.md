@@ -14,6 +14,10 @@ Solargraph is available as a Ruby gem:
 
 To use it with Visual Studio Code, go to the extensions, search for Solargraph, and click Install. (The gem needs to be installed for the extension to work.)
 
+## How It Works
+
+Solargraph uses parser for code analysis and YARD for API documentation.
+
 ## Using the Solargraph Executable
 
 The gem includes an executable that provides access to the library's features. For code completion, IDEs will typically integrate using solargraph serve or solargraph suggest.
