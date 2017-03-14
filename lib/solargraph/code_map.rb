@@ -55,13 +55,8 @@ module Solargraph
 
     def tree_at(index)
       arr = []
-      #if index >= @node.loc.expression.begin_pos and index < @node.loc.expression.end_pos
-        arr.push @node
-        #if match = code[1..-1].match(/^[\s]*end/)
-        #  index -= 1
-        #end
-        inner_node_at(index, @node, arr)
-      #end
+      arr.push @node
+      inner_node_at(index, @node, arr)
       arr
     end
 
@@ -103,7 +98,6 @@ module Solargraph
       cursor = index - 1
       while cursor > -1
         char = @code[cursor, 1]
-        #puts "***#{char}"
         break if char.nil? or char == ''
         break unless char.match(/[\s;=\(\)\[\]\{\}]/).nil?
         word = char + word
@@ -117,7 +111,6 @@ module Solargraph
       cursor = index - 1
       while cursor > -1
         char = @code[cursor, 1]
-        #puts "***#{char}"
         break if char.nil? or char == ''
         break unless char.match(/[a-z0-9_]/i)
         word = char + word
@@ -166,17 +159,13 @@ module Solargraph
         # TODO: For now we're assuming only one period. That's obviously a bad assumption.
         base = phrase[0..phrase.index('.')-1]
         ns_here = namespace_at(index)
-        #if @api_map.namespace_exists?(base, ns_here)
-          result = @api_map.get_methods(base, ns_here)
-        #else
-          scope = parent_node_from(index, :class, :module, :def, :defs) || @node
-          var = find_local_variable_node(base, scope)
-          unless var.nil?
-            obj = infer(var.children[1])
-            result = @api_map.get_instance_methods(obj) unless obj.nil?
-          end
-          #result = reduce(results, word_at(index)) unless unfiltered
-        #end
+        result = @api_map.get_methods(base, ns_here)
+        scope = parent_node_from(index, :class, :module, :def, :defs) || @node
+        var = find_local_variable_node(base, scope)
+        unless var.nil?
+          obj = infer(var.children[1])
+          result = @api_map.get_instance_methods(obj) unless obj.nil?
+        end
       else
         current_namespace = namespace_at(index)
         STDERR.puts "Namespace: #{current_namespace}"
@@ -190,14 +179,6 @@ module Solargraph
           parts.pop
         end
         result += @api_map.namespaces_in('')
-        #scope = parent_node_from(index, :class, :module, :def, :defs) || @node
-        #STDERR.puts scope
-        #if scope.type == :def
-        #  STDERR.puts "Yer in a def!"
-        #  result += @api_map.get_instance_methods(current_namespace)
-        #else
-        #  result += @api_map.get_methods(current_namespace)
-        #end
       end
       result = reduce_starting_with(result, word_at(index)) if filtered
       result
@@ -263,7 +244,7 @@ module Solargraph
       node.children.each { |c|
         if c.kind_of?(AST::Node)
           unless c.loc.expression.nil?
-            if index >= c.loc.expression.begin_pos #+ @code[index..-1].match(/^[\s]*?/).to_s.length
+            if index >= c.loc.expression.begin_pos
               if index < c.loc.expression.end_pos
                 # HACK: If this is a scoped node, make sure the index isn't in preceding whitespace
                 unless [:module, :class, :def].include?(c.type) and @code[index..-1].match(/^[\s]*?#{c.type}/)
