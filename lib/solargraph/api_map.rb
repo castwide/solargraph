@@ -174,6 +174,15 @@ module Solargraph
       result += inner_namespaces_in(name, root, [])
       yard = YardMap.new
       result += yard.get_constants name, root
+      fqns = find_fully_qualified_namespace(name, root)
+      unless fqns.nil?
+        nodes = get_namespace_nodes(fqns)
+        #nodes.each { |n|
+          get_include_strings_from(*nodes).each { |i|
+            result += yard.get_constants(i, root)
+          }
+        #}
+      end
       result
     end
     
@@ -240,7 +249,7 @@ module Solargraph
     end
 
     def get_namespace_nodes(fqns)
-      return [@file_nodes.values] if fqns == ''
+      return @file_nodes.values if fqns == ''
       @namespace_map[fqns] || []
     end
     
@@ -522,14 +531,16 @@ module Solargraph
     def get_include_strings_from *nodes
       arr = []
       nodes.each { |node|
-        if node.kind_of?(AST::Node)
+        next unless node.kind_of?(AST::Node)
+        #if node.kind_of?(AST::Node)
+          arr.push unpack_name(node.children[2]) if (node.type == :send and node.children[1] == :include)
           node.children.each { |n|
-            if n.kind_of?(AST::Node)
-              arr.push unpack_name(n.children[2]) if (n.type == :send and n.children[1] == :include)
-              arr += get_include_strings_from(n) if n.type != :class and n.type != :module
-            end
+            #if n.kind_of?(AST::Node)
+            #  arr.push unpack_name(n.children[2]) if (n.type == :send and n.children[1] == :include)
+              arr += get_include_strings_from(n) if n.kind_of?(AST::Node) and n.type != :class and n.type != :module
+            #end
           }
-        end
+        #end
       }
       arr
     end
