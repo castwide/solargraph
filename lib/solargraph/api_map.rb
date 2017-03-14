@@ -169,7 +169,15 @@ module Solargraph
       !find_fully_qualified_namespace(name, root).nil?
     end
     
-    def namespaces_in name, root = '', skip = []
+    def namespaces_in name, root = '' #, skip = []
+      result = []
+      result += inner_namespaces_in(name, root, [])
+      yard = YardMap.new
+      result += yard.get_constants name, root
+      result
+    end
+    
+    def inner_namespaces_in name, root, skip
       result = []
       fqns = find_fully_qualified_namespace(name, root)
       if fqns.nil?
@@ -189,27 +197,14 @@ module Solargraph
           nodes = get_namespace_nodes(fqns)
           nodes.each { |n|
             get_include_strings_from(n).each { |i|
-              result += namespaces_in(i, fqns, skip)
+              result += inner_namespaces_in(i, fqns, skip)
             }
           }
         end
-        #consts = nil
-        #if name == ''
-        #  consts = yard.root.children
-        #else
-        #  consts = yard.at(name).children unless yard.at(name).nil?
-        #end
-        #unless consts.nil?
-        #  consts.each { |c|
-        #    result.push Suggestion.new(c.to_s, kind: Suggestion::CLASS)
-        #  }
-        #end
       end
-      yard = YardMap.new
-      result += yard.get_constants name, root
       result
     end
-    
+
     def find_fully_qualified_namespace name, root = '', skip = []
       return nil if skip.include?(root)
       skip.push root
