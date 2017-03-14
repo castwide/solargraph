@@ -55,6 +55,15 @@ module Solargraph
               n = m.to_s.split('.').last
               meths.push Suggestion.new("#{n}", kind: Suggestion::METHOD) if n.to_s.match(/^[a-z]/i)
             }
+            if ns.kind_of?(YARD::CodeObjects::ClassObject)
+              ns = yard.at('Class')
+              unless ns.nil?
+                ns.meths(scope: :instance, visibility: [:public]).each { |m|
+                  n = m.to_s.split('#').last
+                  meths.push Suggestion.new("#{n}", kind: Suggestion::METHOD) if n.to_s.match(/^[a-z]/i)
+                }
+              end
+            end
           end
         end
       }
@@ -74,6 +83,7 @@ module Solargraph
           end
           unless ns.nil?
             ns.meths(scope: :instance, visibility: [:public]).each { |m|
+              STDERR.puts "#{m}!!!!!"
               n = m.to_s.split('#').last
               meths.push Suggestion.new("#{n}", kind: Suggestion::METHOD) if n.to_s.match(/^[a-z]/i) and !m.to_s.start_with?('Kernel#')
             }
