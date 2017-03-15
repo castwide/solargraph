@@ -10,14 +10,14 @@ module Solargraph
     VARIABLE = 'Variable'
     SNIPPET = 'Snippet'
 
-    attr_reader :label, :kind, :insert, :detail, :description
+    attr_reader :label, :kind, :insert, :detail, :documentation
 
-    def initialize label, kind: KEYWORD, insert: nil, detail: nil, description: nil
+    def initialize label, kind: KEYWORD, insert: nil, detail: nil, documentation: nil
       @label = label.to_s
       @kind = kind
       @insert = insert || @label
       @detail = detail
-      @description = description
+      @documentation = documentation
     end
     
     def to_s
@@ -30,7 +30,7 @@ module Solargraph
         kind: @kind,
         insert: @insert,
         detail: @detail,
-        description: @description
+        documentation: @documentation
       }.to_json(args)
     end
   end
