@@ -53,7 +53,6 @@ module Solargraph
     end
 
     def append_node node, comments, filename = nil
-      #yard_hash = associate_comments(node, comments)
       mapified = mapify(node)
       root = AST::Node.new(:begin, [filename])
       mapified.children.each { |c|
@@ -61,19 +60,9 @@ module Solargraph
       }
       @file_nodes[filename] = root
       @file_comments[filename] = associate_comments(mapified, comments)
-      #process_requires
+      @required.uniq!
       process_maps
     end
-
-    #def process_files
-    #  Dir.chdir @workspace do
-    #    YARD::Parser::SourceParser::DEFAULT_PATH_GLOB.each { |d|
-    #      Dir[d].each { |f|
-    #        append_file f
-    #      }
-    #    }
-    #  end
-    #end
 
     def associate_comments node, comments
       comment_hash = Parser::Source::Comment.associate(node, comments)
@@ -113,60 +102,6 @@ module Solargraph
         map_namespaces f #AST::Node.new(:tmp, @file_nodes.values)
       }
     end
-    
-    # TODO: Deprecate
-    def xxx_process_requires
-      while r = @pending_requires.shift
-        # TODO: Figure this out
-        #parse_require r
-      end
-    end
-
-    # TODO: Deprecate
-    def xxx_resolve_require path
-      file = nil
-      #if @workspace.nil?
-      unless workspace.nil?
-        if File.file?("#{workspace}/lib/#{path}.rb")
-          file = "#{workspace}/lib/#{path}.rb"
-        end
-      end
-      if file.nil?
-        $LOAD_PATH.each { |p|
-          if File.exist?("#{p}/#{path}.rb")
-            file = "#{p}/#{path}.rb"
-            break
-          end
-        }
-      end
-      if file.nil?
-        begin
-          spec = Gem::Specification.find_by_name(path.to_s.split('/')[0])
-          gem_root = spec.gem_dir
-          gem_lib = gem_root + "/lib"
-          f = "#{gem_lib}/#{path}.rb"
-          if File.exist?(f)
-            file = f
-          end
-        rescue Gem::LoadError => e
-          # TODO: Just ignore for now?
-        end
-      end
-      STDERR.puts "Required lib not found: #{path}" if file.nil?
-      file
-    end
-
-    # TODO: Deprecate
-    #def parse_require path
-    #  return if @merged_requires.include?(path)
-    #  @merged_requires.push path
-    #  file = resolve_require(path)
-    #  unless file.nil?
-    #    code = File.read(file)
-    #    node = Parser::CurrentRuby.parse(code)
-    #    quick_merge node
-    #  end
-    #end
     
     def namespaces
       @namespace_map.keys
