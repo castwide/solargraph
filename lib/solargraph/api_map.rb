@@ -31,8 +31,8 @@ module Solargraph
       @parent_stack = {}
       @namespace_map = {}
       @namespace_tree = {}
-      @pending_requires = []
-      @requires = []
+      #@pending_requires = []
+      @required = []
     end
 
     #def process_workspace
@@ -61,7 +61,7 @@ module Solargraph
       }
       @file_nodes[filename] = root
       @file_comments[filename] = associate_comments(mapified, comments)
-      process_requires
+      #process_requires
       process_maps
     end
 
@@ -79,7 +79,11 @@ module Solargraph
       comment_hash = Parser::Source::Comment.associate(node, comments)
       yard_hash = {}
       comment_hash.each_pair { |k, v|
-        ctxt = v.map(&:text).join("\n")
+        #ctxt = v.map(&:text).join("\r\n")
+        ctxt = ''
+        v.each { |l|
+          ctxt += l.text.gsub(/^#/, '') + "\n"
+        }
         yard_hash[k] = YARD::DocstringParser.new.parse(ctxt).to_docstring
       }
       yard_hash
@@ -110,14 +114,16 @@ module Solargraph
       }
     end
     
-    def process_requires
+    # TODO: Deprecate
+    def xxx_process_requires
       while r = @pending_requires.shift
         # TODO: Figure this out
         #parse_require r
       end
     end
 
-    def resolve_require path
+    # TODO: Deprecate
+    def xxx_resolve_require path
       file = nil
       #if @workspace.nil?
       unless workspace.nil?
@@ -150,6 +156,7 @@ module Solargraph
       file
     end
 
+    # TODO: Deprecate
     #def parse_require path
     #  return if @merged_requires.include?(path)
     #  @merged_requires.push path
@@ -172,7 +179,7 @@ module Solargraph
     def namespaces_in name, root = '' #, skip = []
       result = []
       result += inner_namespaces_in(name, root, [])
-      yard = YardMap.new
+      yard = YardMap.new(required: @required)
       result += yard.get_constants name, root
       fqns = find_fully_qualified_namespace(name, root)
       unless fqns.nil?
@@ -370,7 +377,7 @@ module Solargraph
       #    }
       #  end
       #end
-      yard = YardMap.new
+      yard = YardMap.new(required: @required)
       meths += yard.get_methods(namespace, root)
       type = get_namespace_type(namespace, root)
       if type == :class
@@ -421,29 +428,7 @@ module Solargraph
     
     def get_instance_methods(namespace, root = '')
       meths = inner_get_instance_methods(namespace, root, [])
-      #ns = nil
-      #if root == ''
-      #  ns = yard.at(namespace)
-      #else
-      #  ns = yard.resolve(P(namespace), root)
-      #end
-      #if ns.nil?
-      #  fqns = find_fully_qualified_namespace(namespace, root)
-      #  nodes = get_namespace_nodes(fqns)
-      #  if !nodes.nil? and nodes[0].kind_of?(AST::Node) and nodes[0].type == :class
-      #    ns = yard.at('Object')
-      #    ns.meths(scope: :instance, visibility: [:public]).each { |m|
-      #      n = m.to_s.split('#').last
-      #      meths.push Suggestion.new("#{n}", kind: Suggestion::METHOD) if n.to_s.match(/^[a-z]/i) and !m.to_s.start_with?('Kernel#')
-      #    }
-      #  end
-      #else
-      #  ns.meths(scope: :instance).each { |m|
-      #    n = m.to_s.split('#').last
-      #    meths.push Suggestion.new("#{n}", kind: Suggestion::METHOD) if n.to_s.match(/^[a-z]/i)
-      #  }
-      #end
-      yard = YardMap.new
+      yard = YardMap.new(required: @required)
       type = get_namespace_type(namespace, root)
       if type == :class
         meths += yard.get_instance_methods('Object')
@@ -610,10 +595,10 @@ module Solargraph
       elsif node.type == :send and node.children[1] == :include
         children += node.children[0,3]
       elsif node.type == :send and node.children[1] == :require
-        @pending_requires.push(node.children[2].children[0])
+        @required.push(node.children[2].children[0])
         children += node.children[0, 3]
       elsif node.type == :send and node.children[1] == :autoload
-        @pending_requires.push(node.children[3].children[0])
+        @required.push(node.children[3].children[0])
         type = :require
         children += node.children[1, 3]
       elsif node.type == :send

@@ -5,9 +5,13 @@ require 'yard'
 module Solargraph
 
   class YardMap
-    def initialize
-      Bundler.load.specs.each { |s|
-        gy = YARD::Registry.yardoc_file_for_gem(s.name)
+    def initialize required: []
+      #Bundler.load.specs.each { |s|
+      #  gy = YARD::Registry.yardoc_file_for_gem(s.name)
+      #  yardocs.push gy unless gy.nil?
+      #}
+      required.each { |r|
+        gy = YARD::Registry.yardoc_file_for_gem(r)
         yardocs.push gy unless gy.nil?
       }
       yardocs.push File.join(Dir.home, '.solargraph', 'cache', '2.0.0', 'yardoc')
@@ -78,7 +82,9 @@ module Solargraph
           unless ns.nil?
             ns.meths(scope: :instance, visibility: [:public]).each { |m|
               n = m.to_s.split('#').last
-              meths.push Suggestion.new("#{n}", kind: Suggestion::METHOD) if n.to_s.match(/^[a-z]/i) and !m.to_s.start_with?('Kernel#') and !m.docstring.to_s.include?(':nodoc:')
+              doc = nil
+              doc = m.docstring.all unless m.docstring.nil?
+              meths.push Suggestion.new("#{n}", kind: Suggestion::METHOD, documentation: doc) if n.to_s.match(/^[a-z]/i) and !m.to_s.start_with?('Kernel#') and !m.docstring.to_s.include?(':nodoc:')
             }
             if ns.kind_of?(YARD::CodeObjects::ClassObject) and namespace != 'Object'
               meths += get_instance_methods('Object')
