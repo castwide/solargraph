@@ -8,15 +8,20 @@ module Solargraph
     include NodeMethods
     
     def initialize code: '', filename: nil
-      filename.gsub!(File::ALT_SEPARATOR, File::SEPARATOR) unless File::ALT_SEPARATOR.nil?
-      workspace = CodeMap.find_workspace(filename)
+      workspace = nil
+      unless filename.nil?
+        filename.gsub!(File::ALT_SEPARATOR, File::SEPARATOR) unless File::ALT_SEPARATOR.nil?
+        workspace = CodeMap.find_workspace(filename)
+      end
       @api_map = ApiMap.new(workspace)
-      files = Dir[File.join workspace, '**', '*.rb']
-      files.each { |f|
-        unless filename == f
-          @api_map.append_file f
-        end
-      }
+      unless workspace.nil?
+        files = Dir[File.join workspace, '**', '*.rb']
+        files.each { |f|
+          unless filename == f
+            @api_map.append_file f
+          end
+        }
+      end
       @code = code
       tries = 0
       # Hide incomplete code to avoid syntax errors
@@ -125,7 +130,7 @@ module Solargraph
         word = char + word
         cursor -= 1
       end
-      word      
+      word
     end
 
     def get_instance_variables_at(index)
@@ -253,16 +258,12 @@ module Solargraph
         if c.kind_of?(AST::Node)
           unless c.loc.expression.nil?
             if index >= c.loc.expression.begin_pos
-              if index < c.loc.expression.end_pos
-                # HACK: If this is a scoped node, make sure the index isn't in preceding whitespace
-                unless [:module, :class, :def].include?(c.type) and @code[index..-1].match(/^[\s]*?#{c.type}/)
+              if c.respond_to?(:end)
+                if index < c.end.end_pos
                   arr.unshift c
                 end
-              else
-                match = @code[index..-1].match(/^[\s]*?end/)
-                if match and index <= c.loc.expression.end_pos + match.to_s.length + 1
-                  arr.unshift c
-                end
+              elsif index < c.loc.expression.end_pos
+                arr.unshift c
               end
             end
           end
