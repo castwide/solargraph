@@ -15,7 +15,7 @@ module Solargraph
         yardocs.push gy unless gy.nil?
       }
       yardocs.push File.join(Dir.home, '.solargraph', 'cache', '2.0.0', 'yardoc')
-      yardocs.push File.join(Dir.home, '.solargraph', 'cache', '2.0.0', 'yardoc-stdlib')
+      #yardocs.push File.join(Dir.home, '.solargraph', 'cache', '2.0.0', 'yardoc-stdlib')
     end
 
     def yardocs
@@ -41,6 +41,28 @@ module Solargraph
         result.push Suggestion.new(c.to_s.split('::').last, kind: Suggestion::CLASS)
       }
       result
+    end
+
+    def at signature
+      yardocs.each { |y|
+        yard = YARD::Registry.load! y
+        unless yard.nil?
+          obj = yard.at(signature)
+          return obj unless obj.nil?
+        end
+      }
+      nil
+    end
+
+    def resolve signature, scope
+      yardocs.each { |y|
+        yard = YARD::Registry.load! y
+        unless yard.nil?
+          obj = yard.resolve(P(scope), signature)
+          return obj unless obj.nil?
+        end
+      }
+      nil
     end
 
     def get_methods namespace, scope = ''
@@ -84,7 +106,7 @@ module Solargraph
               n = m.to_s.split('#').last
               doc = nil
               doc = m.docstring.all unless m.docstring.nil?
-              meths.push Suggestion.new("#{n}", kind: Suggestion::METHOD, documentation: doc) if n.to_s.match(/^[a-z]/i) and !m.to_s.start_with?('Kernel#') and !m.docstring.to_s.include?(':nodoc:')
+              meths.push Suggestion.new("#{n}", kind: Suggestion::METHOD, documentation: m.docstring) if n.to_s.match(/^[a-z]/i) and !m.to_s.start_with?('Kernel#') and !m.docstring.to_s.include?(':nodoc:')
             }
             if ns.kind_of?(YARD::CodeObjects::ClassObject) and namespace != 'Object'
               meths += get_instance_methods('Object')

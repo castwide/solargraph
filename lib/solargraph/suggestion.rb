@@ -30,7 +30,7 @@ module Solargraph
         kind: @kind,
         insert: @insert,
         detail: @detail,
-        documentation: @documentation
+        documentation: (@documentation.nil? ? nil : @documentation.all)
       }.to_json(args)
     end
   end

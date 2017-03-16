@@ -22,10 +22,12 @@ module Solargraph
           end
         }
       end
+
       @code = code.gsub(/\r/, '')
       tries = 0
       # Hide incomplete code to avoid syntax errors
       tmp = "#{code}\nX".gsub(/[\.@]([\s])/, '#\1').gsub(/([\A\s]?)def([\s]*?[\n\Z])/, '\1#ef\2')
+      #tmp = code
       begin
         @node, comments = Parser::CurrentRuby.parse_with_comments(tmp)
         @api_map.append_node(@node, comments, filename)
@@ -181,15 +183,18 @@ module Solargraph
       elsif phrase.include?('.')
         # It's a method call
         # TODO: For now we're assuming only one period. That's obviously a bad assumption.
-        base = phrase[0..phrase.index('.')-1]
-        ns_here = namespace_at(index)
-        result = @api_map.get_methods(base, ns_here)
-        scope = parent_node_from(index, :class, :module, :def, :defs) || @node
-        var = find_local_variable_node(base, scope)
-        unless var.nil?
-          obj = infer(var.children[1])
-          result = @api_map.get_instance_methods(obj) unless obj.nil?
-        end
+        #base = phrase[0..phrase.index('.')-1]
+        #ns_here = namespace_at(index)
+        #result = @api_map.get_methods(base, ns_here)
+        #scope = parent_node_from(index, :class, :module, :def, :defs) || @node
+        #var = find_local_variable_node(base, scope)
+        #unless var.nil?
+        #  obj = infer(var.children[1])
+        #  result = @api_map.get_instance_methods(obj) unless obj.nil?
+        #end
+        
+        # TODO: Alternate version that resolves signature
+        result = resolve_signature_at index
       else
         current_namespace = namespace_at(index)
         parts = current_namespace.to_s.split('::')
@@ -207,6 +212,100 @@ module Solargraph
       result
     end
     
+    def resolve_signature_at index
+      signature = get_signature_at(index)
+      ns_here = namespace_at(index)
+      parts = signature.split('.')
+      first = parts.shift
+      scope = parent_node_from(index, :class, :module, :def, :defs) || @node
+      var = find_local_variable_node(first, scope)
+      if var.nil?
+        if parts.length == 0
+          return @api_map.get_methods(first, ns_here)
+        end
+        obj = get_method_return_value first, ns_here, parts.shift
+        while parts.length > 1
+          obj = get_instance_method_return_value obj, ns_here, parts.shift
+        end
+        return @api_map.get_instance_methods(obj) unless obj.nil?
+      else
+        # TODO: It's a variable!
+      end
+    end
+
+    def get_method_return_value namespace, root, method
+      meths = @api_map.get_methods(namespace, root).delete_if{ |m| m.label != method }
+      meths.each { |m|
+        unless m.documentation.nil?
+          match = m.documentation.all.match(/@return \[([a-z0-9:_]*)/i)
+          klass = match[1]
+          return klass unless klass.nil?
+        end
+      }
+      'Object'
+    end
+
+    def get_instance_method_return_value namespace, root, method
+      meths = @api_map.get_methods(namespace, root).delete_if{ |m| m.label != method }
+      meths.each { |m|
+        unless m.documentation.nil?
+          match = m.documentation.all.match(/@return \[([a-z0-9:_]*)/i)
+          klass = match[1]
+          return klass unless klass.nil?
+        end
+      }
+      'Object'
+    end
+
+    def get_signature_at index
+      #node = node_at(index - 1)
+      #return '' unless node.type == :send
+      #parts = []
+      #build_signature(node, parts)
+      #return parts.join('.')
+
+      # TODO: Alternate rough version
+      brackets = 0
+      squares = 0
+      parens = 0
+      signature = ''
+      index -=1
+      while index > 0
+        break if brackets > 0 or parens > 0 or squares > 0
+        char = @code[index, 1]
+        if char == ')'
+          parens -=1
+        elsif char == ']'
+          squares -=1
+        elsif char == '}'
+          brackets -= 1
+        elsif char == '('
+          parens += 1
+        elsif char == '{'
+          brackets += 1
+        elsif char == '['
+          squares += 1
+        end
+        if brackets == 0 and parens == 0 and squares == 0
+          break if ['"', "'", ',', ' ', "\t", "\n"].include?(char)
+          signature = char + signature if char.match(/[a-z0-9:\.]/i)
+        end
+        index -= 1
+      end
+      signature
+    end
+
+    def build_signature(node, parts)
+      if node.kind_of?(AST::Node)
+        if node.type == :send
+          parts.unshift node.children[1].to_s
+        elsif node.type == :const
+          parts.unshift unpack_name(node)
+        end
+        build_signature(node.children[0], parts)
+      end
+    end
+
     def get_snippets_at(index)
       result = []
       Snippets.definitions.each_pair { |name, detail|
