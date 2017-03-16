@@ -5,11 +5,11 @@ require 'yard'
 module Solargraph
 
   class YardMap
-    def initialize required: []
-      #Bundler.load.specs.each { |s|
-      #  gy = YARD::Registry.yardoc_file_for_gem(s.name)
-      #  yardocs.push gy unless gy.nil?
-      #}
+    def initialize required: [], workspace: nil
+      unless workspace.nil?
+        wsy = File.join(workspace, '.yardoc')
+        yardocs.push wsy if File.exist?(wsy)
+      end
       required.each { |r|
         gy = YARD::Registry.yardoc_file_for_gem(r)
         yardocs.push gy unless gy.nil?

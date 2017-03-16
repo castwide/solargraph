@@ -115,7 +115,7 @@ module Solargraph
     def namespaces_in name, root = '' #, skip = []
       result = []
       result += inner_namespaces_in(name, root, [])
-      yard = YardMap.new(required: @required)
+      yard = YardMap.new(required: @required, workspace: @workspace)
       result += yard.get_constants name, root
       fqns = find_fully_qualified_namespace(name, root)
       unless fqns.nil?
@@ -313,7 +313,7 @@ module Solargraph
       #    }
       #  end
       #end
-      yard = YardMap.new(required: @required)
+      yard = YardMap.new(required: @required, workspace: @workspace)
       meths += yard.get_methods(namespace, root)
       type = get_namespace_type(namespace, root)
       if type == :class
@@ -360,7 +360,7 @@ module Solargraph
     
     def get_instance_methods(namespace, root = '')
       meths = inner_get_instance_methods(namespace, root, [])
-      yard = YardMap.new(required: @required)
+      yard = YardMap.new(required: @required, workspace: @workspace)
       type = get_namespace_type(namespace, root)
       if type == :class
         meths += yard.get_instance_methods('Object')

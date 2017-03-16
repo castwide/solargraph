@@ -230,11 +230,8 @@ module Solargraph
         return @api_map.get_instance_methods(obj) unless obj.nil?
       else
         obj = infer(var.children[1])
-        STDERR.puts "First: #{obj}"
         while parts.length > 0
-          STDERR.puts "Checking #{parts.first}"
           obj = get_instance_method_return_value obj, ns_here, parts.shift
-          STDERR.puts "Resolved: #{obj}"
         end
         return @api_map.get_instance_methods(obj) unless obj.nil?
       end
@@ -243,9 +240,7 @@ module Solargraph
     def get_method_return_value namespace, root, method
       meths = @api_map.get_methods(namespace, root).delete_if{ |m| m.label != method }
       meths.each { |m|
-        STDERR.puts "Method: #{m.label}"
         unless m.documentation.nil?
-          STDERR.puts "HAS DOC: #{m.documentation.all}"
           match = m.documentation.all.match(/@return \[([a-z0-9:_]*)/i)
           klass = match[1]
           return klass unless klass.nil?
@@ -259,8 +254,7 @@ module Solargraph
       meths.each { |m|
         unless m.documentation.nil?
           match = m.documentation.all.match(/@return \[([a-z0-9:_]*)/i)
-          klass = match[1]
-          return klass unless klass.nil?
+          return match[1] unless match.nil?
         end
       }
       'Object'
