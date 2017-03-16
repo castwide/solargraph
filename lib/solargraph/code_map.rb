@@ -22,7 +22,7 @@ module Solargraph
           end
         }
       end
-      @code = code
+      @code = code.gsub(/\r/, '')
       tries = 0
       # Hide incomplete code to avoid syntax errors
       tmp = "#{code}\nX".gsub(/[\.@]([\s])/, '#\1').gsub(/([\A\s]?)def([\s]*?[\n\Z])/, '\1#ef\2')
@@ -61,6 +61,16 @@ module Solargraph
       result ||= File.dirname(filename)
       result.gsub!(File::ALT_SEPARATOR, File::SEPARATOR) unless File::ALT_SEPARATOR.nil?
       result
+    end
+
+    def get_offset line, col
+      offset = 0
+      if line > 0
+        @code.lines[0..line - 1].each { |l|
+          offset += l.length
+        }
+      end
+      offset + col
     end
 
     def merge node
