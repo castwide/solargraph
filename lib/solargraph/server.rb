@@ -2,7 +2,7 @@ require 'sinatra/base'
 
 module Solargraph
   class Server < Sinatra::Base
-    set :port, 56527
+    set :port, 0
 
     post '/suggest' do
       content_type :json

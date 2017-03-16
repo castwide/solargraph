@@ -44,8 +44,8 @@ module Solargraph
       }
     end
     
-    desc 'serve', 'Start a Solargraph server'
-    def serve
+    desc 'server', 'Start a Solargraph server'
+    def server
       Solargraph::Server.run!
     end
     
