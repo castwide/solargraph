@@ -224,19 +224,28 @@ module Solargraph
           return @api_map.get_methods(first, ns_here)
         end
         obj = get_method_return_value first, ns_here, parts.shift
-        while parts.length > 1
+        while parts.length > 0
           obj = get_instance_method_return_value obj, ns_here, parts.shift
         end
         return @api_map.get_instance_methods(obj) unless obj.nil?
       else
-        # TODO: It's a variable!
+        obj = infer(var.children[1])
+        STDERR.puts "First: #{obj}"
+        while parts.length > 0
+          STDERR.puts "Checking #{parts.first}"
+          obj = get_instance_method_return_value obj, ns_here, parts.shift
+          STDERR.puts "Resolved: #{obj}"
+        end
+        return @api_map.get_instance_methods(obj) unless obj.nil?
       end
     end
 
     def get_method_return_value namespace, root, method
       meths = @api_map.get_methods(namespace, root).delete_if{ |m| m.label != method }
       meths.each { |m|
+        STDERR.puts "Method: #{m.label}"
         unless m.documentation.nil?
+          STDERR.puts "HAS DOC: #{m.documentation.all}"
           match = m.documentation.all.match(/@return \[([a-z0-9:_]*)/i)
           klass = match[1]
           return klass unless klass.nil?
@@ -246,7 +255,7 @@ module Solargraph
     end
 
     def get_instance_method_return_value namespace, root, method
-      meths = @api_map.get_methods(namespace, root).delete_if{ |m| m.label != method }
+      meths = @api_map.get_instance_methods(namespace, root).delete_if{ |m| m.label != method }
       meths.each { |m|
         unless m.documentation.nil?
           match = m.documentation.all.match(/@return \[([a-z0-9:_]*)/i)
@@ -288,7 +297,7 @@ module Solargraph
         end
         if brackets == 0 and parens == 0 and squares == 0
           break if ['"', "'", ',', ' ', "\t", "\n"].include?(char)
-          signature = char + signature if char.match(/[a-z0-9:\.]/i)
+          signature = char + signature if char.match(/[a-z0-9:\._]/i)
         end
         index -= 1
       end
