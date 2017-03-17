@@ -120,11 +120,9 @@ module Solargraph
       fqns = find_fully_qualified_namespace(name, root)
       unless fqns.nil?
         nodes = get_namespace_nodes(fqns)
-        #nodes.each { |n|
-          get_include_strings_from(*nodes).each { |i|
-            result += yard.get_constants(i, root)
-          }
-        #}
+        get_include_strings_from(*nodes).each { |i|
+          result += yard.get_constants(i, root)
+        }
       end
       result
     end
@@ -284,35 +282,6 @@ module Solargraph
 
     def get_methods(namespace, root = '')
       meths = inner_get_methods(namespace, root, [])
-      #if root == ''
-      #  ns = yard.at(namespace)
-      #else
-      #  ns = yard.resolve(P(namespace), root)
-      #end
-      #if ns.nil?
-      #  fqns = find_fully_qualified_namespace(namespace, root)
-      #  nodes = get_namespace_nodes(fqns)
-      #  if !nodes.nil? and nodes[0].kind_of?(AST::Node) and nodes[0].type == :class
-      #    ns = yard.at('Class')
-      #    ns.meths(scope: :instance, visibility: [:public]).each { |m|
-      #      n = m.to_s.split('#').last
-      #      meths.push Suggestion.new("#{n}", kind: Suggestion::METHOD) if n.to_s.match(/^[a-z]/i) and !m.to_s.start_with?('Kernel#')
-      #    }
-      #  end
-      #else
-      #  # TODO: Handle private and protected scopes
-      #  ns.meths(scope: :class, visibility: [:public]).each { |m|
-      #    n = m.to_s.split('.').last
-      #    meths.push Suggestion.new("#{n}", kind: Suggestion::METHOD) if n.to_s.match(/^[a-z]/i)
-      #  }
-      #  if ns.kind_of?(YARD::CodeObjects::ClassObject)
-      #    ns = yard.at('Class')
-      #    ns.meths(scope: :instance, visibility: [:public]).each { |m|
-      #      n = m.to_s.split('#').last
-      #      meths.push Suggestion.new("#{n}", kind: Suggestion::METHOD) if n.to_s.match(/^[a-z]/i) and !m.to_s.start_with?('Kernel#')
-      #    }
-      #  end
-      #end
       yard = YardMap.new(required: @required, workspace: @workspace)
       meths += yard.get_methods(namespace, root)
       type = get_namespace_type(namespace, root)
@@ -323,10 +292,6 @@ module Solargraph
       end
       meths
     end
-    
-    #def yard
-    #  YARD::Registry.load(File.join(Dir.home, '.solargraph', 'cache', '2.0.0', 'yardoc'))
-    #end
 
     def inner_get_methods(namespace, root = '', skip = [])
       meths = []
@@ -354,7 +319,6 @@ module Solargraph
           }
         end
       }
-      #meths += get_methods('BasicObject', root, skip) if !nodes.nil? and nodes[0].kind_of?(AST::Node) and nodes[0].type == :class
       meths.uniq
     end
     
@@ -434,8 +398,6 @@ module Solargraph
           }
         end
       }
-      #meths += get_instance_methods('BasicObject', root, skip) if nodes.length > 0 and nodes[0].type == :class
-      #meths += get_instance_methods('Module', root, skip) if nodes.length > 0 and nodes[0].type == :class
       meths.uniq
     end
     
@@ -451,15 +413,10 @@ module Solargraph
       arr = []
       nodes.each { |node|
         next unless node.kind_of?(AST::Node)
-        #if node.kind_of?(AST::Node)
-          arr.push unpack_name(node.children[2]) if (node.type == :send and node.children[1] == :include)
-          node.children.each { |n|
-            #if n.kind_of?(AST::Node)
-            #  arr.push unpack_name(n.children[2]) if (n.type == :send and n.children[1] == :include)
-              arr += get_include_strings_from(n) if n.kind_of?(AST::Node) and n.type != :class and n.type != :module
-            #end
-          }
-        #end
+        arr.push unpack_name(node.children[2]) if (node.type == :send and node.children[1] == :include)
+        node.children.each { |n|
+          arr += get_include_strings_from(n) if n.kind_of?(AST::Node) and n.type != :class and n.type != :module
+        }
       }
       arr
     end
