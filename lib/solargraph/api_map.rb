@@ -321,7 +321,7 @@ module Solargraph
       yard = YardMap.new(required: @required, workspace: @workspace)
       yard_meths = yard.get_instance_methods(namespace, root)
       if yard_meths.any?
-        yard.concat yard_meths
+        meths.concat yard_meths
       else
         type = get_namespace_type(namespace, root)
         if type == :class
