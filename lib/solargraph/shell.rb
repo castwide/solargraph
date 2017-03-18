@@ -7,33 +7,38 @@ require 'zlib'
 module Solargraph
   class Shell < Thor
     desc 'prepare', 'Cache YARD files for the current environment'
+    option :force, type: :boolean, aliases: :f, desc: 'Force download of YARDOC files if they already exist'
     option :host, type: :string, aliases: :h, desc: 'The host that provides YARDOC files for download', default: 'yardoc.solargraph.org'
-    # TODO: Prepare gems.
-    #option :gems, type: :boolean, aliases: :g, desc: 'Generate YARDOC files for bundled gems', default: false
     def prepare
-      # TODO: Download core and stdlib files from yardoc.solargraph.org
-      # Maybe also generate yardoc files for bundled gems
       cache_dir = File.join(Dir.home, '.solargraph', 'cache')
-      FileUtils.mkdir_p cache_dir
-      require 'net/http'
-      Net::HTTP.start("solargraph.org") do |http|
-          resp = http.get("/2.0.0.tar.gz")
-          open(File.join(cache_dir, '2.0.0.tar.gz'), "wb") do |file|
-              file.write(resp.body)
-          end
-          tar_extract = Gem::Package::TarReader.new(Zlib::GzipReader.open(File.join(cache_dir, '2.0.0.tar.gz')))
-          tar_extract.rewind
-          tar_extract.each do |entry|
-            if entry.directory?
-              FileUtils.mkdir_p File.join(cache_dir, entry.full_name)
-            else
-              FileUtils.mkdir_p File.join(cache_dir, File.dirname(entry.full_name))
-              File.open(File.join(cache_dir, entry.full_name), 'wb') do |f|
-                f << entry.read
+      version_dir = File.join(cache_dir, '2.0.0')
+      unless File.exist?(version_dir) or options[:force]
+        FileUtils.mkdir_p cache_dir
+        require 'net/http'
+        puts 'Downloading 2.0.0...'
+        Net::HTTP.start(options[:host]) do |http|
+            resp = http.get("/2.0.0.tar.gz")
+            open(File.join(cache_dir, '2.0.0.tar.gz'), "wb") do |file|
+                file.write(resp.body)
+            end
+            puts 'Uncompressing archives...'
+            FileUtils.rm_rf version_dir if File.exist?(version_dir)
+            tar_extract = Gem::Package::TarReader.new(Zlib::GzipReader.open(File.join(cache_dir, '2.0.0.tar.gz')))
+            tar_extract.rewind
+            tar_extract.each do |entry|
+              if entry.directory?
+                FileUtils.mkdir_p File.join(cache_dir, entry.full_name)
+              else
+                FileUtils.mkdir_p File.join(cache_dir, File.dirname(entry.full_name))
+                File.open(File.join(cache_dir, entry.full_name), 'wb') do |f|
+                  f << entry.read
+                end
               end
             end
-          end
-          tar_extract.close
+            tar_extract.close
+            FileUtils.rm File.join(cache_dir, '2.0.0.tar.gz')
+            puts 'Done.'
+        end
       end
     end
     
@@ -51,28 +56,21 @@ module Solargraph
     
     desc 'suggest', 'Get code suggestions for the provided input'
     long_desc <<-LONGDESC
-      This command will wait for information sent in JSON format over
-      STDIN and output a list of code suggestions in JSON format.
-
-      The input should be a JSON string with the the following properties:
-
-        filename: The name of the file. Optional but recommended.
-
-        text: The source code to be analyzed.
-
-        position: The numeric location of the cursor, i.e., the location in the text where the suggestion will be inserted.
-
-      Example of input: {"filename": "my_code.rb", "text": "class MyCode\n  inc\nEnd", "position": 18}
-
-      The above example will return suggestions to complete a code phrase that starts with "inc".
+      Analyze a Ruby file and output a list of code suggestions in JSON format.
     LONGDESC
-    def suggest
-      # TODO: Wait for input and return suggestions
-      input = STDIN.gets
-      data = JSON.parse(input)
+    option :line, type: :numeric, aliases: :l, desc: 'Zero-based line number', required: true
+    option :column, type: :numeric, aliases: [:c, :col], desc: 'Zero-based column number', required: true
+    option :filename, type: :string, aliases: :f, desc: 'File name', required: false
+    def suggest(*filenames)
+      # HACK: The ARGV array needs to be manipulated for ARGF.read to work
+      ARGV.clear
+      ARGV.concat filenames
+      text = ARGF.read
+      filename = options[:filename] || filenames[0]
       begin
-        code_map = CodeMap.new(code: data['text'], filename: data['filename'])
-        sugg = code_map.suggest_at(data['position'].to_i, with_snippets: true, filtered: true)
+        code_map = CodeMap.new(code: text, filename: filename)
+        offset = code_map.get_offset(options[:line], options[:column])
+        sugg = code_map.suggest_at(offset, with_snippets: true, filtered: true)
         result = { "status" => "ok", "suggestions" => sugg }.to_json
         STDOUT.puts result
       rescue Exception => e

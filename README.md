@@ -12,7 +12,7 @@ Solargraph is available as a Ruby gem:
 
     gem install solargraph
 
-To use it with Visual Studio Code, go to the extensions, search for Solargraph, and click Install. (The gem needs to be installed for the extension to work.)
+To use it with Visual Studio Code, see the solargraph-vscode project (forthcoming).
 
 ## How It Works
 
@@ -32,4 +32,4 @@ The suggest subcommand provides an interface to request suggestions without the 
 
 ## Integrating Solargraph into Other IDEs
 
-Documentation for Solargraph integration is forthcoming. In the meantime, refer to the VS Code extension source for an example.
+Documentation for Solargraph integration is forthcoming. In the meantime, refer to the VS Code extension source for an example (forthcoming).

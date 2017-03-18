@@ -104,9 +104,7 @@ module Solargraph
           unless ns.nil?
             ns.meths(scope: :instance, visibility: [:public]).each { |m|
               n = m.to_s.split('#').last
-              doc = nil
-              doc = m.docstring.all unless m.docstring.nil?
-              meths.push Suggestion.new("#{n}", kind: Suggestion::METHOD, documentation: m.docstring) if n.to_s.match(/^[a-z]/i) and !m.to_s.start_with?('Kernel#') and !m.docstring.to_s.include?(':nodoc:')
+              meths.push Suggestion.new("#{n}", kind: Suggestion::METHOD, documentation: m.docstring, code_object: m) if n.to_s.match(/^[a-z]/i) and !m.to_s.start_with?('Kernel#') and !m.docstring.to_s.include?(':nodoc:')
             }
             if ns.kind_of?(YARD::CodeObjects::ClassObject) and namespace != 'Object'
               meths += get_instance_methods('Object')

@@ -74,7 +74,7 @@ module Solargraph
           ctxt += l.text.gsub(/^#/, '') + "\n"
         }
         parser = YARD::DocstringParser.new
-        yard_hash[k] = parser.parse(ctxt + "\ndef butts;end").to_docstring
+        yard_hash[k] = parser.parse(ctxt).to_docstring
       }
       yard_hash
     end
@@ -373,9 +373,7 @@ module Solargraph
             # assuming public only
             elsif current_scope == :public
               if c.kind_of?(AST::Node) and c.type == :def
-                doc = nil
                 cmnt = get_comment_for(c)
-                doc = cmnt.all unless cmnt.nil?
                 meths.push Suggestion.new(c.children[0], kind: Suggestion::METHOD, documentation: cmnt) if c.children[0].to_s[0].match(/[a-z]/i)
               elsif c.kind_of?(AST::Node) and c.type == :send and c.children[1] == :attr_reader
                 c.children[2..-1].each { |x|
