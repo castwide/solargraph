@@ -54,6 +54,18 @@ module Solargraph
       Solargraph::Server.run!
     end
     
+    desc 'serialize DIRECTORY', 'Cache an API map of DIRECTORY'
+    def serialize directory
+      api_map = ApiMap.new directory
+      files = Dir[File.join directory, 'lib', '**', '*.rb'] + Dir[File.join directory, 'app', '**', '*.rb']
+      files.each { |f|
+        api_map.append_file f
+      }
+      File.open(File.join(directory, '.solargraph.ser'), 'wb') { |file|
+        file << Marshal.dump(api_map)
+      }
+    end
+
     desc 'suggest', 'Get code suggestions for the provided input'
     long_desc <<-LONGDESC
       Analyze a Ruby file and output a list of code suggestions in JSON format.
@@ -76,7 +88,8 @@ module Solargraph
       rescue Exception => e
         STDERR.puts e
         STDERR.puts e.backtrace.join("\n")
-        result = { "status" => "err", "message" => e.message }.to_json
+        #result = { "status" => "err", "message" => e.message }.to_json
+        result = { "status" => "err", "message" => e.message + "\n" + e.backtrace.join("\n") }.to_json
         STDOUT.puts result
       end
     end

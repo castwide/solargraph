@@ -10,15 +10,16 @@ module Solargraph
     VARIABLE = 'Variable'
     SNIPPET = 'Snippet'
 
-    attr_reader :label, :kind, :insert, :detail, :documentation
+    attr_reader :label, :kind, :insert, :detail, :documentation, :code_object, :location
 
-    def initialize label, kind: KEYWORD, insert: nil, detail: nil, documentation: nil, code_object: nil
+    def initialize label, kind: KEYWORD, insert: nil, detail: nil, documentation: nil, code_object: nil, location: nil
       @label = label.to_s
       @kind = kind
       @insert = insert || @label
       @detail = detail
       @code_object = code_object
       @documentation = documentation
+      @location = location
     end
     
     def to_s
@@ -26,14 +27,20 @@ module Solargraph
     end
 
     def to_json args={}
-      {
+      STDERR.puts "Documentation: #{@documentation.class} #{@documentation.to_s}"
+      obj = {
         label: @label,
         kind: @kind,
         insert: @insert,
         detail: @detail,
-        #documentation: (@documentation.nil? ? nil : @documentation.all)
-        documentation: (@code_object.nil? ? nil : YARD::Templates::Engine.render(format: :text, object: @code_object))
-      }.to_json(args)
+        location: (@location.nil? ? nil : @location.to_s)
+      }
+      if @code_object.nil?
+        obj[:documentation] = @documentation.all unless @documentation.nil?
+      else
+        obj[:documentation] = @code_object.docstring.all unless @code_object.docstring.nil?
+      end
+      obj.to_json(args)
     end
   end
 

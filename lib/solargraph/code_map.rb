@@ -7,26 +7,26 @@ module Solargraph
     
     include NodeMethods
     
-    def initialize code: '', filename: nil
+    def initialize code: '', filename: nil, workspace: nil
       workspace = nil
       unless filename.nil?
-        filename.gsub!(File::ALT_SEPARATOR, File::SEPARATOR) unless File::ALT_SEPARATOR.nil?
+        filename = filename.gsub(File::ALT_SEPARATOR, File::SEPARATOR) unless File::ALT_SEPARATOR.nil?
         workspace = CodeMap.find_workspace(filename)
       end
       @api_map = ApiMap.new(workspace)
-      unless workspace.nil?
-        files = Dir[File.join workspace, '**', '*.rb']
-        files.each { |f|
-          unless filename == f
-            @api_map.append_file f
-          end
-        }
-      end
+      #unless workspace.nil?
+      #  files = Dir[File.join workspace, 'lib', '**', '*.rb'] + Dir[File.join workspace, 'app', '**', '*.rb']
+      #  files.each { |f|
+      #    unless filename == f
+      #      @api_map.append_file f
+      #    end
+      #  }
+      #end
 
       @code = code.gsub(/\r/, '')
       tries = 0
       # Hide incomplete code to avoid syntax errors
-      tmp = "#{code}\nX".gsub(/[\.@]([\s])/, '#\1').gsub(/([\A\s]?)def([\s]*?[\n\Z])/, '\1#ef\2')
+      tmp = "#{@code}\nX".gsub(/[\.@]([\s])/, '#\1').gsub(/([\A\s]?)def([\s]*?[\n\Z])/, '\1#ef\2')
       #tmp = code
       begin
         @node, comments = Parser::CurrentRuby.parse_with_comments(tmp)
@@ -36,7 +36,6 @@ module Solargraph
           tries += 1
           spot = e.diagnostic.location.begin_pos
           if spot == tmp.length
-            puts e.message
             tmp = tmp[0..-2] + '#'
           else
             tmp = tmp[0..spot] + '#' + tmp[spot+2..-1].to_s

@@ -10,12 +10,20 @@ module Solargraph
         wsy = File.join(workspace, '.yardoc')
         yardocs.push wsy if File.exist?(wsy)
       end
+      used = []
       required.each { |r|
-        gy = YARD::Registry.yardoc_file_for_gem(r)
-        yardocs.push gy unless gy.nil?
+        if workspace.nil? or !File.exist?(File.join workspace, 'lib', "#{r}.rb")
+          g = r.split('/').first
+          unless used.include?(g)
+            used.push g
+            gy = YARD::Registry.yardoc_file_for_gem(g)
+            yardocs.push gy unless gy.nil?
+          end
+        end
       }
       yardocs.push File.join(Dir.home, '.solargraph', 'cache', '2.0.0', 'yardoc')
       #yardocs.push File.join(Dir.home, '.solargraph', 'cache', '2.0.0', 'yardoc-stdlib')
+      yardocs.uniq!
     end
 
     def yardocs
@@ -104,7 +112,9 @@ module Solargraph
           unless ns.nil?
             ns.meths(scope: :instance, visibility: [:public]).each { |m|
               n = m.to_s.split('#').last
-              meths.push Suggestion.new("#{n}", kind: Suggestion::METHOD, documentation: m.docstring, code_object: m) if n.to_s.match(/^[a-z]/i) and !m.to_s.start_with?('Kernel#') and !m.docstring.to_s.include?(':nodoc:')
+              if n.to_s.match(/^[a-z]/i) and !m.to_s.start_with?('Kernel#') and !m.docstring.to_s.include?(':nodoc:')
+                meths.push Suggestion.new("#{n}", kind: Suggestion::METHOD, documentation: m.docstring, code_object: m, location: "#{m.file}:#{m.line}")
+              end
             }
             if ns.kind_of?(YARD::CodeObjects::ClassObject) and namespace != 'Object'
               meths += get_instance_methods('Object')

@@ -14,7 +14,7 @@ module Solargraph
       rescue Exception => e
         STDERR.puts e
         STDERR.puts e.backtrace.join("\n")
-        { "status" => "err", "message" => e.message }.to_json
+        { "status" => "err", "message" => e.message + "\n" + e.backtrace.join("\n") }.to_json
       end
     end
   end

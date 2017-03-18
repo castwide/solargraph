@@ -21,7 +21,6 @@ module Solargraph
 
     def initialize workspace = nil
       @workspace = workspace
-      #process_workspace
       clear
     end
 
@@ -31,17 +30,12 @@ module Solargraph
       @parent_stack = {}
       @namespace_map = {}
       @namespace_tree = {}
-      #@pending_requires = []
       @required = []
     end
 
-    #def process_workspace
-    #  clear
-    #  return if @workspace.nil?
-    #  process_files
-    #  process_requires
-    #  process_maps
-    #end
+    def has_yardoc?
+      workspace and File.exist?(File.join(workspace, '.yardoc'))
+    end
 
     def append_file filename
       append_source File.read(filename), filename
@@ -53,13 +47,13 @@ module Solargraph
     end
 
     def append_node node, comments, filename = nil
-      mapified = mapify(node)
+      @file_comments[filename] = associate_comments(node, comments)
+      mapified = mapify(node, @file_comments[filename])
       root = AST::Node.new(:begin, [filename])
       mapified.children.each { |c|
         root = root.append c
       }
       @file_nodes[filename] = root
-      @file_comments[filename] = associate_comments(mapified, comments)
       @required.uniq!
       process_maps
     end
@@ -81,7 +75,8 @@ module Solargraph
 
     def get_comment_for node
       filename = get_filename_for(node)
-      @file_comments[filename][node] unless @file_comments[filename].nil?
+      return nil if @file_comments[filename].nil?
+      @file_comments[filename][node]
     end
 
     def self.get_keywords without_snippets: false
@@ -266,7 +261,7 @@ module Solargraph
     end
     
     def get_global_variables
-      # TODO I bet these aren't getting mapped at all. Damn.
+      # TODO: Get them
       []
     end
     
@@ -323,19 +318,26 @@ module Solargraph
     end
     
     def get_instance_methods(namespace, root = '')
-      meths = inner_get_instance_methods(namespace, root, [])
+      meths = []
+      meths += inner_get_instance_methods(namespace, root, []) unless has_yardoc?
+      return meths # TODO: Stop this
       yard = YardMap.new(required: @required, workspace: @workspace)
-      type = get_namespace_type(namespace, root)
-      if type == :class
-        meths += yard.get_instance_methods('Object')
-      elsif type == :module
-        meths += yard.get_instance_methods('Module')
-      end
-      meths += yard.get_instance_methods(namespace, root)
-      sc = get_superclass(namespace, root)
-      until sc.nil?
-        meths += yard.get_instance_methods(sc, root)
-        sc = get_superclass(sc)
+      yard_meths = yard.get_instance_methods(namespace, root)
+      if yard_meths.any?
+        yard.concat yard_meths
+      else
+        type = get_namespace_type(namespace, root)
+        if type == :class
+          meths += yard.get_instance_methods('Object')
+        elsif type == :module
+          meths += yard.get_instance_methods('Module')
+        end
+        # TODO: Look out for repeats. Consider not doing this at all.
+        sc = get_superclass(namespace, root)
+        until sc.nil?
+          meths += yard.get_instance_methods(sc, root)
+          sc = get_superclass(sc)
+        end
       end
       meths
     end
@@ -374,6 +376,7 @@ module Solargraph
             elsif current_scope == :public
               if c.kind_of?(AST::Node) and c.type == :def
                 cmnt = get_comment_for(c)
+                STDERR.puts "Found a comment: #{cmnt.class} #{cmnt}" if cmnt
                 meths.push Suggestion.new(c.children[0], kind: Suggestion::METHOD, documentation: cmnt) if c.children[0].to_s[0].match(/[a-z]/i)
               elsif c.kind_of?(AST::Node) and c.type == :send and c.children[1] == :attr_reader
                 c.children[2..-1].each { |x|
@@ -421,13 +424,18 @@ module Solargraph
     
     private
     
-    def mapify node
-      root = node
-      if !root.kind_of?(AST::Node) or root.type != :begin
-        root = AST::Node.new(:begin, [node], {})
-      end
-      root = reduce root
-      root
+    def mapify node, comment_hash
+      #root = node
+      #if !root.kind_of?(AST::Node) or root.type != :begin
+      #  root = AST::Node.new(:begin, [node], {})
+      #end
+      #root = reduce(node, comment_hash)
+      #if comment_hash.has_key?(node)
+      #  comment_hash[root] = comment_hash[node]
+      #  comment_hash.delete node
+      #end
+      #root
+      reduce node, comment_hash
     end
     
     def mappable?(node)
@@ -441,42 +449,42 @@ module Solargraph
       end
     end
     
-    def reduce node
-      mappable = get_mappable_nodes(node.children)
+    def reduce node, comment_hash
+      mappable = get_mappable_nodes(node.children, comment_hash)
       result = node.updated nil, mappable
       result
     end
     
-    def get_mappable_nodes arr
+    def get_mappable_nodes arr, comment_hash
       result = []
       arr.each { |n|
         if mappable?(n)
-          min = minify(n)
+          min = minify(n, comment_hash)
           result.push min
         else
           next unless n.kind_of?(AST::Node)
-          result += get_mappable_nodes(n.children)
+          result += get_mappable_nodes(n.children, comment_hash)
         end
       }
       result
     end
     
-    def minify node
+    def minify node, comment_hash
       return node if node.type == :args
       type = node.type
       children = []
       if node.type == :class
         children += node.children[0, 2]
-        children += get_mappable_nodes(node.children[2..-1])
+        children += get_mappable_nodes(node.children[2..-1], comment_hash)
       elsif node.type == :def
         children += node.children[0, 2]
-        children += get_mappable_nodes(node.children[2..-1])
+        children += get_mappable_nodes(node.children[2..-1], comment_hash)
       elsif node.type == :defs
         children += node.children[0, 3]
-        children += get_mappable_nodes(node.children[3..-1])
+        children += get_mappable_nodes(node.children[3..-1], comment_hash)
       elsif node.type == :module
         children += node.children[0, 1]
-        children += get_mappable_nodes(node.children[1..-1])
+        children += get_mappable_nodes(node.children[1..-1], comment_hash)
       elsif node.type == :ivasgn or node.type == :gvasgn
         children += node.children
       elsif node.type == :send and node.children[1] == :include
@@ -496,6 +504,10 @@ module Solargraph
         children.push node.children[0].children[0], node.children[1]
       end
       result = node.updated(type, children)
+      if result != node and comment_hash.has_key?(node)
+        comment_hash[result] = comment_hash[node]
+        comment_hash.delete node
+      end
       result
     end
     
