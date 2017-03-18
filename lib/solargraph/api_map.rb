@@ -48,7 +48,7 @@ module Solargraph
 
     def append_node node, comments, filename = nil
       @file_comments[filename] = associate_comments(node, comments)
-      mapified = mapify(node, @file_comments[filename])
+      mapified = reduce(node, @file_comments[filename])
       root = AST::Node.new(:begin, [filename])
       mapified.children.each { |c|
         root = root.append c
@@ -219,7 +219,6 @@ module Solargraph
       if node.kind_of?(AST::Node)
         node.children.each { |c|
           if c.kind_of?(AST::Node)
-            #next if [:class, :module].include?(c.type)
             is_inst = !find_parent(c, :def).nil?
             if c.type == :ivasgn and ( (scope == :instance and is_inst) or (scope != :instance and !is_inst) )
               arr.push Suggestion.new(c.children[0], kind: Suggestion::VARIABLE)
@@ -319,7 +318,6 @@ module Solargraph
     def get_instance_methods(namespace, root = '')
       meths = []
       meths += inner_get_instance_methods(namespace, root, []) unless has_yardoc?
-      return meths # TODO: Stop this
       yard = YardMap.new(required: @required, workspace: @workspace)
       yard_meths = yard.get_instance_methods(namespace, root)
       if yard_meths.any?
@@ -375,7 +373,7 @@ module Solargraph
             elsif current_scope == :public
               if c.kind_of?(AST::Node) and c.type == :def
                 cmnt = get_comment_for(c)
-                meths.push Suggestion.new(c.children[0], kind: Suggestion::METHOD, documentation: cmnt) if c.children[0].to_s[0].match(/[a-z]/i)
+                meths.push Suggestion.new(c.children[0], kind: Suggestion::METHOD, documentation: cmnt, detail: fqns) if c.children[0].to_s[0].match(/[a-z]/i)
               elsif c.kind_of?(AST::Node) and c.type == :send and c.children[1] == :attr_reader
                 c.children[2..-1].each { |x|
                   meths.push Suggestion.new(x.children[0], kind: Suggestion::METHOD) if x.type == :sym
@@ -421,20 +419,6 @@ module Solargraph
     end
     
     private
-    
-    def mapify node, comment_hash
-      #root = node
-      #if !root.kind_of?(AST::Node) or root.type != :begin
-      #  root = AST::Node.new(:begin, [node], {})
-      #end
-      #root = reduce(node, comment_hash)
-      #if comment_hash.has_key?(node)
-      #  comment_hash[root] = comment_hash[node]
-      #  comment_hash.delete node
-      #end
-      #root
-      reduce node, comment_hash
-    end
     
     def mappable?(node)
       # TODO Add node.type :casgn (constant assignment)
@@ -502,15 +486,11 @@ module Solargraph
         children.push node.children[0].children[0], node.children[1]
       end
       result = node.updated(type, children)
-      if result != node and comment_hash.has_key?(node)
-        comment_hash[result] = comment_hash[node]
-        comment_hash.delete node
-      end
       result
     end
     
     def map_parents node, tree = []
-      if node.kind_of?(AST::Node) #and (node.type == :class or node.type == :module)
+      if node.kind_of?(AST::Node)
         @parent_stack[node] = tree
         node.children.each { |c|
           map_parents c, [node] + tree
