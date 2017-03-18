@@ -59,10 +59,9 @@ module Solargraph
     end
 
     def associate_comments node, comments
-      comment_hash = Parser::Source::Comment.associate(node, comments)
+      comment_hash = Parser::Source::Comment.associate_locations(node, comments)
       yard_hash = {}
       comment_hash.each_pair { |k, v|
-        #ctxt = v.map(&:text).join("\r\n")
         ctxt = ''
         v.each { |l|
           ctxt += l.text.gsub(/^#/, '') + "\n"
@@ -76,7 +75,7 @@ module Solargraph
     def get_comment_for node
       filename = get_filename_for(node)
       return nil if @file_comments[filename].nil?
-      @file_comments[filename][node]
+      @file_comments[filename][node.loc]
     end
 
     def self.get_keywords without_snippets: false
@@ -376,7 +375,6 @@ module Solargraph
             elsif current_scope == :public
               if c.kind_of?(AST::Node) and c.type == :def
                 cmnt = get_comment_for(c)
-                STDERR.puts "Found a comment: #{cmnt.class} #{cmnt}" if cmnt
                 meths.push Suggestion.new(c.children[0], kind: Suggestion::METHOD, documentation: cmnt) if c.children[0].to_s[0].match(/[a-z]/i)
               elsif c.kind_of?(AST::Node) and c.type == :send and c.children[1] == :attr_reader
                 c.children[2..-1].each { |x|
