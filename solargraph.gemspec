@@ -15,11 +15,11 @@ Gem::Specification.new do |s|
   s.license     = 'MIT'
   s.executables   = ['solargraph']
 
-  s.required_ruby_version = '>= 1.9.3'
-  s.add_runtime_dependency 'parser'
+  s.required_ruby_version = '>= 2.1'
+  s.add_runtime_dependency 'parser', '~> 2.4'
   s.add_runtime_dependency 'thor', '~> 0.19', '>= 0.19.4'
-  s.add_runtime_dependency 'sinatra'
-  s.add_runtime_dependency 'yard'
+  s.add_runtime_dependency 'sinatra', '~> 1.4'
+  s.add_runtime_dependency 'yard', '~> 0.9'
 
   s.add_development_dependency 'rspec', '~> 3.5', '>= 3.5.0'
   s.add_development_dependency 'codeclimate-test-reporter', '~> 1.0', '>= 1.0.0'
