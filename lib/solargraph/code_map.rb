@@ -193,7 +193,7 @@ module Solargraph
         #end
         
         # TODO: Alternate version that resolves signature
-        result = resolve_signature_at index
+        result = resolve_signature_at @code[0, index].rindex('.')
       else
         current_namespace = namespace_at(index)
         parts = current_namespace.to_s.split('::')
@@ -213,6 +213,7 @@ module Solargraph
     
     def resolve_signature_at index
       signature = get_signature_at(index)
+      STDERR.puts "Signature is #{signature}"
       ns_here = namespace_at(index)
       parts = signature.split('.')
       first = parts.shift
