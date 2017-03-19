@@ -46,7 +46,16 @@ module Solargraph
         end
       }
       consts.each { |c|
-        result.push Suggestion.new(c.to_s.split('::').last, kind: Suggestion::CLASS)
+        detail = nil
+        kind = nil
+        if c.kind_of?(YARD::CodeObjects::ClassObject)
+          detail = 'Class'
+          kind = Suggestion::CLASS
+        elsif c.kind_of?(YARD::CodeObjects::ModuleObject)
+          detail = 'Module'
+          kind = Suggestion::MODULE
+        end
+        result.push Suggestion.new(c.to_s.split('::').last, detail: detail, kind: kind)
       }
       result
     end

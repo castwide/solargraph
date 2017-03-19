@@ -136,7 +136,17 @@ module Solargraph
         }
         unless cursor.nil?
           cursor.keys.each { |k|
-            result.push Suggestion.new(k, kind: Suggestion::CLASS)
+            type = get_namespace_type(k, fqns)
+            kind = nil
+            detail = nil
+            if type == :class
+              kind = Suggestion::CLASS
+              detail = 'Class'
+            elsif type == :module
+              kind = Suggestion::MODULE
+              detail = 'Module'
+            end
+            result.push Suggestion.new(k, kind: kind, detail: detail)
           }
           nodes = get_namespace_nodes(fqns)
           nodes.each { |n|
