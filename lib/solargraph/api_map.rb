@@ -15,6 +15,7 @@ module Solargraph
     MAPPABLE_METHODS = [
       :include, :require, :autoload, :attr_reader, :attr_writer, :attr_accessor, :private, :public, :protected
     ]
+
     include NodeMethods
     
     attr_reader :workspace
@@ -22,6 +23,12 @@ module Solargraph
     def initialize workspace = nil
       @workspace = workspace
       clear
+      unless @workspace.nil? #or has_yardoc?
+        files = Dir[File.join workspace, 'lib', '**', '*.rb'] + Dir[File.join workspace, 'app', '**', '*.rb']
+        files.each { |f|
+          append_file f
+        }
+      end
     end
 
     def clear

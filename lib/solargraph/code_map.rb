@@ -8,20 +8,26 @@ module Solargraph
     include NodeMethods
     
     def initialize code: '', filename: nil, workspace: nil
-      workspace = nil
-      unless filename.nil?
+      if workspace.nil? and !filename.nil?
         filename = filename.gsub(File::ALT_SEPARATOR, File::SEPARATOR) unless File::ALT_SEPARATOR.nil?
         workspace = CodeMap.find_workspace(filename)
       end
-      @api_map = ApiMap.new(workspace)
-      #unless workspace.nil?
-      #  files = Dir[File.join workspace, 'lib', '**', '*.rb'] + Dir[File.join workspace, 'app', '**', '*.rb']
-      #  files.each { |f|
-      #    unless filename == f
-      #      @api_map.append_file f
-      #    end
-      #  }
-      #end
+      if workspace.nil?
+        @api_map = ApiMap.new(workspace)
+      else
+        ser_file = File.join(workspace, '.solargraph.ser')
+        if File.exist?(ser_file)
+          begin
+            STDERR.puts "Loading serialized api map"
+            @api_map = Marshal.load(File.read(ser_file))
+          rescue Exception => e
+            STDERR.puts "Serialized map failed"
+            @api_map = ApiMap.new(workspace)
+          end
+        else
+          @api_map = ApiMap.new(workspace)
+        end
+      end
 
       @code = code.gsub(/\r/, '')
       tries = 0
@@ -180,19 +186,6 @@ module Solargraph
           result = @api_map.namespaces_in(ns)
         end
       elsif phrase.include?('.')
-        # It's a method call
-        # TODO: For now we're assuming only one period. That's obviously a bad assumption.
-        #base = phrase[0..phrase.index('.')-1]
-        #ns_here = namespace_at(index)
-        #result = @api_map.get_methods(base, ns_here)
-        #scope = parent_node_from(index, :class, :module, :def, :defs) || @node
-        #var = find_local_variable_node(base, scope)
-        #unless var.nil?
-        #  obj = infer(var.children[1])
-        #  result = @api_map.get_instance_methods(obj) unless obj.nil?
-        #end
-        
-        # TODO: Alternate version that resolves signature
         result = resolve_signature_at @code[0, index].rindex('.')
       else
         current_namespace = namespace_at(index)
