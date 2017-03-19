@@ -27,7 +27,6 @@ module Solargraph
     end
 
     def to_json args={}
-      STDERR.puts "Documentation: #{@documentation.class} #{@documentation.to_s}"
       obj = {
         label: @label,
         kind: @kind,
