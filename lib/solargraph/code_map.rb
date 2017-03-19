@@ -18,10 +18,8 @@ module Solargraph
         ser_file = File.join(workspace, '.solargraph.ser')
         if File.exist?(ser_file)
           begin
-            STDERR.puts "Loading serialized api map"
             @api_map = Marshal.load(File.read(ser_file))
           rescue Exception => e
-            STDERR.puts "Serialized map failed"
             @api_map = ApiMap.new(workspace)
           end
         else
@@ -206,7 +204,6 @@ module Solargraph
     
     def resolve_signature_at index
       signature = get_signature_at(index)
-      STDERR.puts "Signature is #{signature}"
       ns_here = namespace_at(index)
       parts = signature.split('.')
       first = parts.shift
