@@ -18,9 +18,9 @@ To use it with Visual Studio Code, install the [Solargraph extension](https://ma
 
 Solargraph uses [parser](https://github.com/whitequark/parser) for code analysis and [YARD](https://github.com/lsegal/yard) for API documentation.
 
-## Using the Solargraph Executable
+## Using the `solargraph` Executable
 
-The gem includes an executable that provides access to the library's features. For code completion, IDEs will typically integrate using solargraph serve or solargraph suggest.
+The gem includes an executable that provides access to the library's features. For code completion, IDEs will typically integrate using `solargraph server` or `solargraph suggest`.
 
 ### The Server
 
