@@ -32,7 +32,7 @@ describe Solargraph::ApiMap do
       end
     )
     @api_map = Solargraph::ApiMap.new
-    @api_map.append_source(code)
+    @api_map.append_source(code, 'file.rb')
   end
 
   it "finds instance methods" do
@@ -134,5 +134,9 @@ describe Solargraph::ApiMap do
   it "infers instance variable classes" do
     cls = @api_map.infer_instance_variable('@bar', 'Class1')
     expect(cls).to eq('String')
+  end
+
+  it "finds filenames for nodes" do
+    
   end
 end

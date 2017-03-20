@@ -8,6 +8,9 @@ module Solargraph
     include NodeMethods
     
     def initialize code: '', filename: nil, workspace: nil
+      unless workspace.nil?
+        workspace = workspace.gsub(File::ALT_SEPARATOR, File::SEPARATOR) unless File::ALT_SEPARATOR.nil?
+      end
       if workspace.nil? and !filename.nil?
         filename = filename.gsub(File::ALT_SEPARATOR, File::SEPARATOR) unless File::ALT_SEPARATOR.nil?
         workspace = CodeMap.find_workspace(filename)

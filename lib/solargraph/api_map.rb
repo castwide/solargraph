@@ -24,7 +24,7 @@ module Solargraph
       @workspace = workspace
       clear
       unless @workspace.nil?
-        files = Dir[File.join workspace, 'lib', '**', '*.rb'] + Dir[File.join workspace, 'app', '**', '*.rb']
+        files = Dir[File.join @workspace, 'lib', '**', '*.rb'] + Dir[File.join @workspace, 'app', '**', '*.rb']
         files.each { |f|
           append_file f
         }
@@ -42,6 +42,15 @@ module Solargraph
 
     def has_yardoc?
       workspace and File.exist?(File.join(workspace, '.yardoc'))
+    end
+
+    def yardoc_has_file?(filename)
+      return false unless has_yardoc?
+      return false if filename.nil?
+      if filename.start_with?(File.join(workspace, 'lib'), File.join(workspace, 'app'))
+        return true
+      end
+      false
     end
 
     def append_file filename
@@ -136,6 +145,9 @@ module Solargraph
       else
         return result if skip.include?(fqns)
         skip.push fqns
+        nodes = get_namespace_nodes(fqns)
+        nodes.delete_if { |n| yardoc_has_file?(get_filename_for(n))}
+        return result if nodes.empty?
         cursor = @namespace_tree
         parts = fqns.split('::')
         parts.each { |p|
@@ -223,12 +235,15 @@ module Solargraph
     end
     
     def get_root_for(node)
-      @parent_stack[node].last unless @parent_stack[node].nil?
+      s = @parent_stack[node]
+      return nil if s.nil?
+      return node if s.empty?
+      s.last
     end
 
     def get_filename_for(node)
       root = get_root_for(node)
-      root.children[0]
+      root.nil? ? nil : root.children[0]
     end
 
     def inner_get_instance_variables(node, scope)
@@ -294,14 +309,18 @@ module Solargraph
       meths = []
       meths += inner_get_methods(namespace, root, []) #unless has_yardoc?
       yard = YardMap.new(required: @required, workspace: @workspace)
-      meths += yard.get_methods(namespace, root)
-      type = get_namespace_type(namespace, root)
-      if type == :class
-        meths += yard.get_instance_methods('Class')
-      elsif type == :module
-        meths += yard.get_methods('Module')
+      yard_meths = yard.get_methods(namespace, root)
+      if yard_meths.any?
+        meths.concat yard_meths
+      else
+        type = get_namespace_type(namespace, root)
+        if type == :class
+          meths += yard.get_instance_methods('Class')
+        elsif type == :module
+          meths += yard.get_methods('Module')
+        end
+        meths
       end
-      meths
     end
     
     def get_method_args node
@@ -389,25 +408,27 @@ module Solargraph
       return meths if fqns.nil?
       nodes = get_namespace_nodes(fqns)
       nodes.each { |n|
-        if n.kind_of?(AST::Node)
-          if n.type == :class and !n.children[1].nil?
-            s = unpack_name(n.children[1])
-            meths += inner_get_methods(s, root, skip)
-          end
-          n.children.each { |c|
-            if c.kind_of?(AST::Node) and c.type == :defs
-              docstring = get_comment_for(c)
-              label = "#{c.children[1]}"
-              args = get_method_args(c)
-              label += " #{args.join(', ')}" unless args.empty?
-              meths.push Suggestion.new(label, insert: c.children[1].to_s, kind: Suggestion::METHOD, detail: 'Method', documentation: docstring) if c.children[1].to_s[0].match(/[a-z_]/i) and c.children[1] != :def
-            elsif c.kind_of?(AST::Node) and c.type == :send and c.children[1] == :include
-              # TODO: This might not be right. Should we be getting singleton methods
-              # from an include, or only from an extend?
-              i = unpack_name(c.children[2])
-              meths += inner_get_methods(i, root, skip) unless i == 'Kernel'
+        unless yardoc_has_file?(get_filename_for(n))
+          if n.kind_of?(AST::Node)
+            if n.type == :class and !n.children[1].nil?
+              s = unpack_name(n.children[1])
+              meths += inner_get_methods(s, root, skip)
             end
-          }
+            n.children.each { |c|
+              if c.kind_of?(AST::Node) and c.type == :defs
+                docstring = get_comment_for(c)
+                label = "#{c.children[1]}"
+                args = get_method_args(c)
+                label += " #{args.join(', ')}" unless args.empty?
+                meths.push Suggestion.new(label, insert: c.children[1].to_s, kind: Suggestion::METHOD, detail: 'Method', documentation: docstring) if c.children[1].to_s[0].match(/[a-z_]/i) and c.children[1] != :def
+              elsif c.kind_of?(AST::Node) and c.type == :send and c.children[1] == :include
+                # TODO: This might not be right. Should we be getting singleton methods
+                # from an include, or only from an extend?
+                i = unpack_name(c.children[2])
+                meths += inner_get_methods(i, root, skip) unless i == 'Kernel'
+              end
+            }
+          end
         end
       }
       meths.uniq
@@ -420,43 +441,45 @@ module Solargraph
       skip.push fqns
       nodes = get_namespace_nodes(fqns)
       nodes.each { |n|
-        if n.kind_of?(AST::Node)
-          if n.type == :class and !n.children[1].nil?
-            s = unpack_name(n.children[1])
-            meths += inner_get_instance_methods(s, namespace, skip)
-          end
-          current_scope = :public
-          n.children.each { |c|
-            if c.kind_of?(AST::Node) and c.type == :send and [:public, :protected, :private].include?(c.children[1])
-            # TODO: Determine the current scope so we can decide whether to
-            # exclude protected or private methods. Right now we're just
-            # assuming public only
-            elsif current_scope == :public
-              if c.kind_of?(AST::Node) and c.type == :def
-                cmnt = get_comment_for(c)
-                label = "#{c.children[0]}"
-                args = get_method_args(c)
-                label += " #{args.join(', ')}" unless args.empty?
-                meths.push Suggestion.new(label, insert: c.children[0].to_s, kind: Suggestion::METHOD, documentation: cmnt, detail: fqns) if c.children[0].to_s[0].match(/[a-z]/i)
-              elsif c.kind_of?(AST::Node) and c.type == :send and c.children[1] == :attr_reader
-                c.children[2..-1].each { |x|
-                  meths.push Suggestion.new(x.children[0], kind: Suggestion::METHOD) if x.type == :sym
-                }
-              elsif c.kind_of?(AST::Node) and c.type == :send and c.children[1] == :attr_writer
-                c.children[2..-1].each { |x|
-                  meths.push Suggestion.new("#{x.children[0]}=", kind: Suggestion::METHOD) if x.type == :sym
-                }
-              elsif c.kind_of?(AST::Node) and c.type == :send and c.children[1] == :attr_accessor
-                c.children[2..-1].each { |x|
-                  meths.push Suggestion.new(x.children[0], kind: Suggestion::METHOD) if x.type == :sym
-                  meths.push Suggestion.new("#{x.children[0]}=", kind: Suggestion::METHOD) if x.type == :sym
-                }
-              end
+        unless yardoc_has_file?(get_filename_for(n))
+          if n.kind_of?(AST::Node)
+            if n.type == :class and !n.children[1].nil?
+              s = unpack_name(n.children[1])
+              meths += inner_get_instance_methods(s, namespace, skip)
             end
-            get_include_strings_from(n).each { |i|
-              meths += inner_get_instance_methods(i, fqns, skip)
+            current_scope = :public
+            n.children.each { |c|
+              if c.kind_of?(AST::Node) and c.type == :send and [:public, :protected, :private].include?(c.children[1])
+              # TODO: Determine the current scope so we can decide whether to
+              # exclude protected or private methods. Right now we're just
+              # assuming public only
+              elsif current_scope == :public
+                if c.kind_of?(AST::Node) and c.type == :def
+                  cmnt = get_comment_for(c)
+                  label = "#{c.children[0]}"
+                  args = get_method_args(c)
+                  label += " #{args.join(', ')}" unless args.empty?
+                  meths.push Suggestion.new(label, insert: c.children[0].to_s, kind: Suggestion::METHOD, documentation: cmnt, detail: fqns) if c.children[0].to_s[0].match(/[a-z]/i)
+                elsif c.kind_of?(AST::Node) and c.type == :send and c.children[1] == :attr_reader
+                  c.children[2..-1].each { |x|
+                    meths.push Suggestion.new(x.children[0], kind: Suggestion::METHOD) if x.type == :sym
+                  }
+                elsif c.kind_of?(AST::Node) and c.type == :send and c.children[1] == :attr_writer
+                  c.children[2..-1].each { |x|
+                    meths.push Suggestion.new("#{x.children[0]}=", kind: Suggestion::METHOD) if x.type == :sym
+                  }
+                elsif c.kind_of?(AST::Node) and c.type == :send and c.children[1] == :attr_accessor
+                  c.children[2..-1].each { |x|
+                    meths.push Suggestion.new(x.children[0], kind: Suggestion::METHOD) if x.type == :sym
+                    meths.push Suggestion.new("#{x.children[0]}=", kind: Suggestion::METHOD) if x.type == :sym
+                  }
+                end
+              end
+              get_include_strings_from(n).each { |i|
+                meths += inner_get_instance_methods(i, fqns, skip)
+              }
             }
-          }
+          end
         end
       }
       meths.uniq
