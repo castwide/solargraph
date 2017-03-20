@@ -96,7 +96,10 @@ module Solargraph
           unless ns.nil?
             ns.meths(scope: :class, visibility: [:public]).each { |m|
               n = m.to_s.split('.').last
-              meths.push Suggestion.new("#{n}", kind: Suggestion::METHOD, detail: "#{ns}") if n.to_s.match(/^[a-z]/i)
+              label = "#{n}"
+              args = get_method_args(m)
+              label += " #{args.join(', ')}" unless args.empty?
+              meths.push Suggestion.new(label, insert: "#{n}", kind: Suggestion::METHOD, detail: "#{ns}") if n.to_s.match(/^[a-z]/i)
             }
             if ns.kind_of?(YARD::CodeObjects::ClassObject) and namespace != 'Class'
               meths += get_instance_methods('Class')
@@ -122,7 +125,10 @@ module Solargraph
             ns.meths(scope: :instance, visibility: [:public]).each { |m|
               n = m.to_s.split('#').last
               if n.to_s.match(/^[a-z]/i) and !m.to_s.start_with?('Kernel#') and !m.docstring.to_s.include?(':nodoc:')
-                meths.push Suggestion.new("#{n}", kind: Suggestion::METHOD, documentation: m.docstring, code_object: m, detail: "#{ns}", location: "#{m.file}:#{m.line}")
+                label = "#{n}"
+                args = get_method_args(m)
+                label += " #{args.join(', ')}" unless args.empty?
+                meths.push Suggestion.new(label, insert: "#{n}", kind: Suggestion::METHOD, documentation: m.docstring, code_object: m, detail: "#{ns}", location: "#{m.file}:#{m.line}")
               end
             }
             if ns.kind_of?(YARD::CodeObjects::ClassObject) and namespace != 'Object'
@@ -132,6 +138,16 @@ module Solargraph
         end
       }
       meths
+    end
+
+    private
+
+    def get_method_args meth
+      args = []
+      meth.parameters.each { |a|
+        args.push a[0]
+      }
+      args
     end
   end
 
