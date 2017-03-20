@@ -291,7 +291,8 @@ module Solargraph
     end
 
     def get_methods(namespace, root = '')
-      meths = inner_get_methods(namespace, root, [])
+      meths = []
+      meths += inner_get_methods(namespace, root, []) #unless has_yardoc?
       yard = YardMap.new(required: @required, workspace: @workspace)
       meths += yard.get_methods(namespace, root)
       type = get_namespace_type(namespace, root)
@@ -302,39 +303,28 @@ module Solargraph
       end
       meths
     end
-
-    def inner_get_methods(namespace, root = '', skip = [])
-      meths = []
-      return meths if skip.include?(namespace)
-      skip.push namespace
-      fqns = find_fully_qualified_namespace(namespace, root)
-      return meths if fqns.nil?
-      nodes = get_namespace_nodes(fqns)
-      nodes.each { |n|
-        if n.kind_of?(AST::Node)
-          if n.type == :class and !n.children[1].nil?
-            s = unpack_name(n.children[1])
-            meths += inner_get_methods(s, root, skip)
-          end
-          n.children.each { |c|
-            if c.kind_of?(AST::Node) and c.type == :defs
-              docstring = get_comment_for(c)
-              meths.push Suggestion.new(c.children[1], kind: Suggestion::METHOD, documentation: docstring) if c.children[1].to_s[0].match(/[a-z_]/i) and c.children[1] != :def
-            elsif c.kind_of?(AST::Node) and c.type == :send and c.children[1] == :include
-              # TODO This might not be right. Should we be getting singleton methods
-              # from an include, or only from an extend?
-              i = unpack_name(c.children[2])
-              meths += inner_get_methods(i, root, skip) unless i == 'Kernel'
-            end
-          }
+    
+    def get_method_args node
+      list = nil
+      args = []
+      node.children.each { |c|
+        if c.kind_of?(AST::Node) and c.type == :args
+          list = c
+          break
         end
       }
-      meths.uniq
+      return args if list.nil?
+      list.children.each { |c|
+        if c.type == :arg
+          args.push c.children[0]
+        end
+      }
+      args
     end
-    
+
     def get_instance_methods(namespace, root = '')
       meths = []
-      meths += inner_get_instance_methods(namespace, root, []) unless has_yardoc?
+      meths += inner_get_instance_methods(namespace, root, []) #unless has_yardoc?
       yard = YardMap.new(required: @required, workspace: @workspace)
       yard_meths = yard.get_instance_methods(namespace, root)
       if yard_meths.any?
@@ -368,6 +358,60 @@ module Solargraph
       }
       return nil
     end
+    
+    def self.current
+      if @current.nil?
+        @current = ApiMap.new
+        @current.merge(Parser::CurrentRuby.parse(File.read("#{Solargraph::STUB_PATH}/ruby/2.3.0/core.rb")))
+      end
+      @current
+    end
+    
+    def get_include_strings_from *nodes
+      arr = []
+      nodes.each { |node|
+        next unless node.kind_of?(AST::Node)
+        arr.push unpack_name(node.children[2]) if (node.type == :send and node.children[1] == :include)
+        node.children.each { |n|
+          arr += get_include_strings_from(n) if n.kind_of?(AST::Node) and n.type != :class and n.type != :module
+        }
+      }
+      arr
+    end
+    
+    private
+
+    def inner_get_methods(namespace, root = '', skip = [])
+      meths = []
+      return meths if skip.include?(namespace)
+      skip.push namespace
+      fqns = find_fully_qualified_namespace(namespace, root)
+      return meths if fqns.nil?
+      nodes = get_namespace_nodes(fqns)
+      nodes.each { |n|
+        if n.kind_of?(AST::Node)
+          if n.type == :class and !n.children[1].nil?
+            s = unpack_name(n.children[1])
+            meths += inner_get_methods(s, root, skip)
+          end
+          n.children.each { |c|
+            if c.kind_of?(AST::Node) and c.type == :defs
+              docstring = get_comment_for(c)
+              label = "#{c.children[1]}"
+              args = get_method_args(c)
+              label += "(#{args.join(', ')})" unless args.empty?
+              meths.push Suggestion.new(label, insert: c.children[1].to_s, kind: Suggestion::METHOD, detail: 'Method', documentation: docstring) if c.children[1].to_s[0].match(/[a-z_]/i) and c.children[1] != :def
+            elsif c.kind_of?(AST::Node) and c.type == :send and c.children[1] == :include
+              # TODO: This might not be right. Should we be getting singleton methods
+              # from an include, or only from an extend?
+              i = unpack_name(c.children[2])
+              meths += inner_get_methods(i, root, skip) unless i == 'Kernel'
+            end
+          }
+        end
+      }
+      meths.uniq
+    end
 
     def inner_get_instance_methods(namespace, root, skip)
       fqns = find_fully_qualified_namespace(namespace, root)
@@ -390,7 +434,10 @@ module Solargraph
             elsif current_scope == :public
               if c.kind_of?(AST::Node) and c.type == :def
                 cmnt = get_comment_for(c)
-                meths.push Suggestion.new(c.children[0], kind: Suggestion::METHOD, documentation: cmnt, detail: fqns) if c.children[0].to_s[0].match(/[a-z]/i)
+                label = "#{c.children[0]}"
+                args = get_method_args(c)
+                label += "(#{args.join(', ')})" unless args.empty?
+                meths.push Suggestion.new(label, insert: c.children[0].to_s, kind: Suggestion::METHOD, documentation: cmnt, detail: fqns) if c.children[0].to_s[0].match(/[a-z]/i)
               elsif c.kind_of?(AST::Node) and c.type == :send and c.children[1] == :attr_reader
                 c.children[2..-1].each { |x|
                   meths.push Suggestion.new(x.children[0], kind: Suggestion::METHOD) if x.type == :sym
@@ -414,29 +461,7 @@ module Solargraph
       }
       meths.uniq
     end
-    
-    def self.current
-      if @current.nil?
-        @current = ApiMap.new
-        @current.merge(Parser::CurrentRuby.parse(File.read("#{Solargraph::STUB_PATH}/ruby/2.3.0/core.rb")))
-      end
-      @current
-    end
-    
-    def get_include_strings_from *nodes
-      arr = []
-      nodes.each { |node|
-        next unless node.kind_of?(AST::Node)
-        arr.push unpack_name(node.children[2]) if (node.type == :send and node.children[1] == :include)
-        node.children.each { |n|
-          arr += get_include_strings_from(n) if n.kind_of?(AST::Node) and n.type != :class and n.type != :module
-        }
-      }
-      arr
-    end
-    
-    private
-    
+
     def mappable?(node)
       # TODO Add node.type :casgn (constant assignment)
       if node.kind_of?(AST::Node) and (node.type == :class or node.type == :module or node.type == :def or node.type == :defs or node.type == :ivasgn or node.type == :gvasgn or node.type == :or_asgn)
