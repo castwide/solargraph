@@ -213,7 +213,12 @@ module Solargraph
         if parts.length == 0
           return @api_map.get_methods(first, ns_here)
         end
-        obj = get_method_return_value first, ns_here, parts.shift
+        meth = parts.shift
+        if meth == 'new'
+          obj = first
+        else
+          obj = get_method_return_value first, ns_here, meth
+        end
         while parts.length > 0
           obj = get_instance_method_return_value obj, ns_here, parts.shift
         end
@@ -263,7 +268,7 @@ module Solargraph
       parens = 0
       signature = ''
       index -=1
-      while index > 0
+      while index >= 0
         break if brackets > 0 or parens > 0 or squares > 0
         char = @code[index, 1]
         if char == ')'
