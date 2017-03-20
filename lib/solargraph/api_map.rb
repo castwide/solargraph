@@ -23,7 +23,7 @@ module Solargraph
     def initialize workspace = nil
       @workspace = workspace
       clear
-      unless @workspace.nil? #or has_yardoc?
+      unless @workspace.nil?
         files = Dir[File.join workspace, 'lib', '**', '*.rb'] + Dir[File.join workspace, 'app', '**', '*.rb']
         files.each { |f|
           append_file f

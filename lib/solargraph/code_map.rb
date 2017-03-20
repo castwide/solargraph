@@ -31,7 +31,6 @@ module Solargraph
       tries = 0
       # Hide incomplete code to avoid syntax errors
       tmp = "#{@code}\nX".gsub(/[\.@]([\s])/, '#\1').gsub(/([\A\s]?)def([\s]*?[\n\Z])/, '\1#ef\2')
-      #tmp = code
       begin
         @node, comments = Parser::CurrentRuby.parse_with_comments(tmp)
         @api_map.append_node(@node, comments, filename)
