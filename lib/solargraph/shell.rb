@@ -3,6 +3,7 @@ require 'json'
 require 'fileutils'
 require 'rubygems/package'
 require 'zlib'
+require 'net/http'
 
 module Solargraph
   class Shell < Thor
@@ -14,7 +15,6 @@ module Solargraph
       version_dir = File.join(cache_dir, '2.0.0')
       unless File.exist?(version_dir) or options[:force]
         FileUtils.mkdir_p cache_dir
-        require 'net/http'
         puts 'Downloading 2.0.0...'
         Net::HTTP.start(options[:host]) do |http|
             resp = http.get("/2.0.0.tar.gz")
