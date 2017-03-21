@@ -42,15 +42,10 @@ module Solargraph
       end
     end
     
-    desc 'bundled', 'Get a list of bundled gems'
-    def bundled
-      Bundler.load.specs.each { |s|
-        puts s.name
-      }
-    end
-    
     desc 'server', 'Start a Solargraph server'
+    option :port, type: :numeric, aliases: :p, desc: 'The server port', default: 7657
     def server
+      Solargraph::Server.set :port, options[:port]
       Solargraph::Server.run!
     end
     
