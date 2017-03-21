@@ -20,16 +20,7 @@ module Solargraph
         if workspace.nil?
           @api_map = ApiMap.new(workspace)
         else
-          #ser_file = File.join(workspace, '.solargraph.ser')
-          #if File.exist?(ser_file)
-          #  begin
-          #    @api_map = Marshal.load(File.read(ser_file))
-          #  rescue Exception => e
-          #    @api_map = ApiMap.new(workspace)
-          #  end
-          #else
-            @api_map = ApiMap.new(workspace)
-          #end
+          @api_map = ApiMap.new(workspace)
         end
       end
 
