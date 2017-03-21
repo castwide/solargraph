@@ -26,7 +26,7 @@ module Solargraph
       unless @workspace.nil?
         files = Dir[File.join @workspace, 'lib', '**', '*.rb'] + Dir[File.join @workspace, 'app', '**', '*.rb']
         files.each { |f|
-          append_file f
+          append_file f unless yardoc_has_file?(f)
         }
       end
     end
