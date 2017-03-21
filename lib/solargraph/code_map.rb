@@ -7,7 +7,7 @@ module Solargraph
     
     include NodeMethods
     
-    def initialize code: '', filename: nil, workspace: nil
+    def initialize code: '', filename: nil, workspace: nil, api_map: nil
       unless workspace.nil?
         workspace = workspace.gsub(File::ALT_SEPARATOR, File::SEPARATOR) unless File::ALT_SEPARATOR.nil?
       end
@@ -15,18 +15,21 @@ module Solargraph
         filename = filename.gsub(File::ALT_SEPARATOR, File::SEPARATOR) unless File::ALT_SEPARATOR.nil?
         workspace = CodeMap.find_workspace(filename)
       end
-      if workspace.nil?
-        @api_map = ApiMap.new(workspace)
-      else
-        ser_file = File.join(workspace, '.solargraph.ser')
-        if File.exist?(ser_file)
-          begin
-            @api_map = Marshal.load(File.read(ser_file))
-          rescue Exception => e
-            @api_map = ApiMap.new(workspace)
-          end
-        else
+      @api_map = api_map
+      if @api_map.nil?
+        if workspace.nil?
           @api_map = ApiMap.new(workspace)
+        else
+          #ser_file = File.join(workspace, '.solargraph.ser')
+          #if File.exist?(ser_file)
+          #  begin
+          #    @api_map = Marshal.load(File.read(ser_file))
+          #  rescue Exception => e
+          #    @api_map = ApiMap.new(workspace)
+          #  end
+          #else
+            @api_map = ApiMap.new(workspace)
+          #end
         end
       end
 
@@ -228,14 +231,15 @@ module Solargraph
       else
         obj = infer(var.children[1])
         while parts.length > 0
-          obj = get_instance_method_return_value obj, ns_here, parts.shift
+          meth = parts.shift
+          obj = get_instance_method_return_value obj, ns_here, meth
         end
         return @api_map.get_instance_methods(obj) unless obj.nil?
       end
     end
 
     def get_method_return_value namespace, root, method
-      meths = @api_map.get_methods(namespace, root).delete_if{ |m| m.label != method }
+      meths = @api_map.get_methods(namespace, root).delete_if{ |m| m.insert != method }
       meths.each { |m|
         unless m.documentation.nil?
           match = m.documentation.all.match(/@return \[([a-z0-9:_]*)/i)
@@ -247,7 +251,7 @@ module Solargraph
     end
 
     def get_instance_method_return_value namespace, root, method
-      meths = @api_map.get_instance_methods(namespace, root).delete_if{ |m| m.label != method }
+      meths = @api_map.get_instance_methods(namespace, root).delete_if{ |m| m.insert != method }
       meths.each { |m|
         unless m.documentation.nil?
           match = m.documentation.all.match(/@return \[([a-z0-9:_]*)/i)
