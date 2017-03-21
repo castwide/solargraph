@@ -47,7 +47,7 @@ module Solargraph
     def yardoc_has_file?(filename)
       return false unless has_yardoc?
       return false if filename.nil?
-      if filename.start_with?(File.join(workspace, 'lib'), File.join(workspace, 'app'))
+      if filename.start_with?(File.join(workspace, 'lib/'), File.join(workspace, 'app/'))
         return true
       end
       false
