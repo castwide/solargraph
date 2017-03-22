@@ -101,7 +101,7 @@ module Solargraph
           else
             ns = yard.resolve(P(scope), namespace)
           end
-          unless ns.nil?
+          unless ns.nil? or !ns.kind_of?(YARD::CodeObjects::NamespaceObject)
             ns.meths(scope: :class, visibility: [:public]).each { |m|
               n = m.to_s.split(/[\.#]/).last
               label = "#{n}"
