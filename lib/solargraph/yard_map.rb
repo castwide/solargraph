@@ -132,7 +132,7 @@ module Solargraph
           unless ns.nil?
             ns.meths(scope: :instance, visibility: [:public]).each { |m|
               n = m.to_s.split(/[\.#]/).last
-              if n.to_s.match(/^[a-z]/i) and !m.to_s.start_with?('Kernel#') and !m.docstring.to_s.include?(':nodoc:')
+              if n.to_s.match(/^[a-z]/i) and (namespace == 'Kernel' or !m.to_s.start_with?('Kernel#')) and !m.docstring.to_s.include?(':nodoc:')
                 label = "#{n}"
                 args = get_method_args(m)
                 label += " #{args.join(', ')}" unless args.empty?
