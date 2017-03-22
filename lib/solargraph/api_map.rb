@@ -537,10 +537,10 @@ module Solargraph
       elsif node.type == :send and node.children[1] == :include
         children += node.children[0,3]
       elsif node.type == :send and node.children[1] == :require
-        @required.push(node.children[2].children[0])
+        @required.push(node.children[2].children[0]) if node.children[2].children[0].kind_of?(String)
         children += node.children[0, 3]
       elsif node.type == :send and node.children[1] == :autoload
-        @required.push(node.children[3].children[0])
+        @required.push(node.children[3].children[0]) if node.children[3].children[0].kind_of?(String)
         type = :require
         children += node.children[1, 3]
       elsif node.type == :send
