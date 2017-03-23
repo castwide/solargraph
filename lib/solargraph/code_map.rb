@@ -207,14 +207,21 @@ module Solargraph
       scope = parent_node_from(index, :class, :module, :def, :defs) || @node
       var = find_local_variable_node(first, scope)
       if var.nil?
-        if parts.length == 0
-          return @api_map.get_methods(first, ns_here)
-        end
-        meth = parts.shift
-        if meth == 'new'
-          obj = first
+        if ['STDERR','STDOUT','STDIN'].include?(first)
+          obj = 'IO'
+          if parts.length == 0
+            return @api_map.get_instance_methods('IO')
+          end
         else
-          obj = get_method_return_value first, ns_here, meth
+          if parts.length == 0
+            return @api_map.get_methods(first, ns_here)
+          end
+          meth = parts.shift
+          if meth == 'new'
+            obj = first
+          else
+            obj = get_method_return_value first, ns_here, meth
+          end
         end
         while parts.length > 0
           obj = get_instance_method_return_value obj, ns_here, parts.shift
