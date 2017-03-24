@@ -31,6 +31,18 @@ module Solargraph
       end
     end
 
+    get '/search' do
+      workspace = params['workspace']
+      api_map = @@api_hash[workspace]
+      required = []
+      unless api_map.nil?
+        required.concat api_map.required
+      end
+      yard = YardMap.new(required: required, workspace: workspace)
+      yard.search params['query']
+      ''
+    end
+
     class << self
       def run!
         constant_updates
@@ -53,7 +65,7 @@ module Solargraph
                 @@api_hash[k] = update
               }
             }
-            sleep 2
+            sleep 10
           end
         }
       end

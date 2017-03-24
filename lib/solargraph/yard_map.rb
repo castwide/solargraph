@@ -38,6 +38,20 @@ module Solargraph
       @yardocs ||= []
     end
 
+    def search query
+      found = []
+      yardocs.each { |y|
+        yard = YARD::Registry.load! y
+        unless yard.nil?
+          yard.paths.each { |p|
+            found.push p if p.downcase.include?(query.downcase)
+          }
+        end
+      }
+      STDERR.puts found
+      found
+    end
+
     def get_constants namespace, scope = ''
       consts = []
       result = []

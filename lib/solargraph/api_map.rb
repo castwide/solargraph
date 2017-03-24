@@ -19,7 +19,8 @@ module Solargraph
     include NodeMethods
     
     attr_reader :workspace
-
+    attr_reader :required
+    
     def initialize workspace = nil
       @workspace = workspace
       clear
