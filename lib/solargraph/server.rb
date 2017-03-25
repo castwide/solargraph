@@ -98,6 +98,7 @@ module Solargraph
       def options
         @options ||= YARD::Templates::TemplateOptions.new
       end
+      # HACK: The linkify method just returns the arguments as plain text
       def linkify *args
         args.join(', ')
       end
