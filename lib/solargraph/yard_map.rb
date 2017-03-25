@@ -48,7 +48,7 @@ module Solargraph
           }
         end
       }
-      found
+      found.sort
     end
 
     def document query
