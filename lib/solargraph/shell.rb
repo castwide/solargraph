@@ -44,8 +44,12 @@ module Solargraph
     
     desc 'server', 'Start a Solargraph server'
     option :port, type: :numeric, aliases: :p, desc: 'The server port', default: 7657
+    option :views, type: :string, aliases: :v, desc: 'The view template directory', default: nil
+    option :files, type: :string, aliases: :f, desc: 'The public files directory', default: nil
     def server
       Solargraph::Server.set :port, options[:port]
+      Solargraph::Server.set :views, options[:views] unless options[:views].nil?
+      Solargraph::Server.set :public_folder, options[:files] unless options[:files].nil?
       Solargraph::Server.run!
     end
     

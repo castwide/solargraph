@@ -1,8 +1,10 @@
 require 'sinatra/base'
 require 'thread'
+require 'yard'
 
 module Solargraph
   class Server < Sinatra::Base
+
     set :port, 7657
 
     @@api_hash = {}
@@ -31,6 +33,36 @@ module Solargraph
       end
     end
 
+    get '/search' do
+      workspace = params['workspace']
+      api_map = @@api_hash[workspace]
+      required = []
+      unless api_map.nil?
+        required.concat api_map.required
+      end
+      yard = YardMap.new(required: required, workspace: workspace)
+      @results = yard.search(params['query'])
+      erb :search
+    end
+
+    get '/document' do
+      workspace = params['workspace']
+      api_map = @@api_hash[workspace]
+      required = []
+      unless api_map.nil?
+        required.concat api_map.required
+      end
+      yard = YardMap.new(required: required, workspace: workspace)
+      @objects = yard.document(params['query'])
+      erb :document
+    end
+
+    def htmlify object
+      h = Helpers.new
+      h.object = object
+      h.htmlify object.docstring.all, :rdoc
+    end
+
     class << self
       def run!
         constant_updates
@@ -53,9 +85,22 @@ module Solargraph
                 @@api_hash[k] = update
               }
             }
-            sleep 2
+            sleep 10
           end
         }
+      end
+    end
+
+    class Helpers
+      attr_accessor :object
+      attr_accessor :serializer
+      include YARD::Templates::Helpers::HtmlHelper
+      def options
+        @options ||= YARD::Templates::TemplateOptions.new
+      end
+      # HACK: The linkify method just returns the arguments as plain text
+      def linkify *args
+        args.join(', ')
       end
     end
   end

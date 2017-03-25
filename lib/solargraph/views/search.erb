@@ -1,0 +1,11 @@
+<h1>Search Results for <kbd><%= params['query'] %></kbd></h1>
+
+<% unless @results.empty? %>
+    <ul>
+    <% @results.each do |result| %>
+        <li>
+            <a href="#"><%= result %></a>
+        </li>
+    <% end %>
+    </ul>
+<% end %>
