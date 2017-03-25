@@ -48,7 +48,19 @@ module Solargraph
           }
         end
       }
-      STDERR.puts found
+      found
+    end
+
+    def document query
+      found = []
+      yardocs.each { |y|
+        yard = YARD::Registry.load! y
+        unless yard.nil?
+          obj = yard.at query
+          #found.push YARD::Templates::Engine.render(format: :html, object: obj) unless obj.nil?
+          found.push obj unless obj.nil?
+        end
+      }
       found
     end
 
