@@ -336,7 +336,7 @@ module Solargraph
       if local.type == :def
         result += @api_map.get_instance_methods(scope, visibility: [:public, :private, :protected])
       else
-        result += @api_map.get_methods(scope)
+        result += @api_map.get_methods(scope, visibility: [:public, :private, :protected])
       end
       result += @api_map.get_methods('Kernel')
       result    

@@ -306,11 +306,11 @@ module Solargraph
       type
     end
 
-    def get_methods(namespace, root = '')
+    def get_methods(namespace, root = '', visibility: [:public])
       meths = []
       meths += inner_get_methods(namespace, root, []) #unless has_yardoc?
       yard = YardMap.new(required: @required, workspace: @workspace)
-      yard_meths = yard.get_methods(namespace, root)
+      yard_meths = yard.get_methods(namespace, root, visibility: visibility)
       if yard_meths.any?
         meths.concat yard_meths
       else

@@ -116,7 +116,7 @@ module Solargraph
       nil
     end
 
-    def get_methods namespace, scope = ''
+    def get_methods namespace, scope = '', visibility: [:public]
       meths = []
       yardocs.each { |y|
         yard = YARD::Registry.load! y
@@ -128,7 +128,7 @@ module Solargraph
             ns = yard.resolve(P(scope), namespace)
           end
           unless ns.nil? or !ns.kind_of?(YARD::CodeObjects::NamespaceObject)
-            ns.meths(scope: :class, visibility: [:public]).each { |m|
+            ns.meths(scope: :class, visibility: visibility).each { |m|
               n = m.to_s.split(/[\.#]/).last
               label = "#{n}"
               args = get_method_args(m)
