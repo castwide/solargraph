@@ -334,7 +334,7 @@ module Solargraph
       result += get_local_variables_from(local)
       scope = namespace_at(index) || @node
       if local.type == :def
-        result += @api_map.get_instance_methods(scope)
+        result += @api_map.get_instance_methods(scope, visibility: [:public, :private, :protected])
       else
         result += @api_map.get_methods(scope)
       end

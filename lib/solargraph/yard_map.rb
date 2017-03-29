@@ -144,7 +144,7 @@ module Solargraph
       meths
     end
 
-    def get_instance_methods namespace, scope = ''
+    def get_instance_methods namespace, scope = '', visibility: [:public]
       meths = []
       yardocs.each { |y|
         yard = YARD::Registry.load! y
@@ -156,7 +156,7 @@ module Solargraph
             ns = yard.resolve(P(scope), namespace)
           end
           unless ns.nil?
-            ns.meths(scope: :instance, visibility: [:public]).each { |m|
+            ns.meths(scope: :instance, visibility: visibility).each { |m|
               n = m.to_s.split(/[\.#]/).last
               if n.to_s.match(/^[a-z]/i) and (namespace == 'Kernel' or !m.to_s.start_with?('Kernel#')) and !m.docstring.to_s.include?(':nodoc:')
                 label = "#{n}"
