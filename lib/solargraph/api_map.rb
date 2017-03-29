@@ -26,9 +26,6 @@ module Solargraph
       @workspace = workspace
       clear
       unless @workspace.nil?
-        #files = Dir[File.join @workspace, 'lib', '**', '*.rb'] + Dir[File.join @workspace, 'app', '**', '*.rb']
-        #files = Dir[File.join @workspace, '**', '*.rb']
-        #files = Dir[File.join @workspace, 'lib', '**', '*.rb'] + Dir[File.join @workspace, 'app', '**', '*.rb'] + Dir[File.join @workspace, 'scripts', '**', '*.rb']
         files = []
         opts = options
         (opts[:include] - opts[:exclude]).each { |glob|
@@ -92,9 +89,6 @@ module Solargraph
       @file_comments[filename] = associate_comments(node, comments)
       mapified = reduce(node, @file_comments[filename])
       root = AST::Node.new(:begin, [filename])
-      #mapified.children.each { |c|
-      #  root = root.append c
-      #}
       root = root.append mapified
       @file_nodes[filename] = root
       @required.uniq!
@@ -136,20 +130,20 @@ module Solargraph
       @namespace_map = {}
       @namespace_tree = {}
       @file_nodes.values.each { |f|
-        map_parents f #AST::Node.new(:tmp, @file_nodes.values)
-        map_namespaces f #AST::Node.new(:tmp, @file_nodes.values)
+        map_parents f
+        map_namespaces f
       }
     end
-    
+
     def namespaces
       @namespace_map.keys
     end
-    
+
     def namespace_exists? name, root = ''
       !find_fully_qualified_namespace(name, root).nil?
     end
-    
-    def namespaces_in name, root = '' #, skip = []
+
+    def namespaces_in name, root = ''
       result = []
       result += inner_namespaces_in(name, root, [])
       yard = YardMap.new(required: @required, workspace: @workspace)
@@ -163,7 +157,7 @@ module Solargraph
       end
       result
     end
-    
+
     def inner_namespaces_in name, root, skip
       result = []
       fqns = find_fully_qualified_namespace(name, root)
@@ -243,7 +237,7 @@ module Solargraph
       return @file_nodes.values if fqns == ''
       @namespace_map[fqns] || []
     end
-    
+
     def get_instance_variables(namespace, scope = :instance)
       nodes = get_namespace_nodes(namespace) || @file_nodes.values
       arr = []
@@ -252,7 +246,7 @@ module Solargraph
       }
       arr
     end
-    
+
     def find_parent(node, *types)
       parents = @parent_stack[node]
       parents.each { |p|
@@ -260,7 +254,7 @@ module Solargraph
       }
       nil
     end
-    
+
     def get_root_for(node)
       s = @parent_stack[node]
       return nil if s.nil?
