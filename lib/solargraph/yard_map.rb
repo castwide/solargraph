@@ -174,6 +174,10 @@ module Solargraph
       meths
     end
 
+    def gem_names
+      Gem::Specification.map{ |s| s.name }.uniq
+    end
+
     private
 
     def get_method_args meth

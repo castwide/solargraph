@@ -1,6 +1,7 @@
 require 'rubygems'
 require 'parser/current'
 require 'yard'
+require 'yaml'
 
 module Solargraph
   class ApiMap
@@ -25,9 +26,19 @@ module Solargraph
       @workspace = workspace
       clear
       unless @workspace.nil?
-        files = Dir[File.join @workspace, 'lib', '**', '*.rb'] + Dir[File.join @workspace, 'app', '**', '*.rb']
+        #files = Dir[File.join @workspace, 'lib', '**', '*.rb'] + Dir[File.join @workspace, 'app', '**', '*.rb']
+        #files = Dir[File.join @workspace, '**', '*.rb']
+        #files = Dir[File.join @workspace, 'lib', '**', '*.rb'] + Dir[File.join @workspace, 'app', '**', '*.rb'] + Dir[File.join @workspace, 'scripts', '**', '*.rb']
+        files = []
+        opts = options
+        (opts[:include] - opts[:exclude]).each { |glob|
+          files += Dir[File.join @workspace, glob]
+        }
+        opts[:exclude].each { |glob|
+          files -= Dir[File.join @workspace, glob]
+        }
         files.each { |f|
-          append_file f unless yardoc_has_file?(f)
+          append_file f #unless yardoc_has_file?(f)
         }
       end
     end
@@ -39,6 +50,20 @@ module Solargraph
       @namespace_map = {}
       @namespace_tree = {}
       @required = []
+    end
+
+    def options
+      o = {
+        include: ['app/**/*.rb', 'lib/**/*.rb'],
+        exclude: []
+      }
+      yaml = File.join(workspace, '.solargraph.yml')
+      if workspace && File.exist?(yaml)
+        l = YAML.load_file(yaml)
+        o[:include].concat l['include'] unless l['include'].nil?
+        o[:exclude].concat l[:exclude] unless l['exclude'].nil?
+      end
+      o
     end
 
     def has_yardoc?
@@ -67,9 +92,10 @@ module Solargraph
       @file_comments[filename] = associate_comments(node, comments)
       mapified = reduce(node, @file_comments[filename])
       root = AST::Node.new(:begin, [filename])
-      mapified.children.each { |c|
-        root = root.append c
-      }
+      #mapified.children.each { |c|
+      #  root = root.append c
+      #}
+      root = root.append mapified
       @file_nodes[filename] = root
       @required.uniq!
       process_maps
@@ -253,7 +279,7 @@ module Solargraph
         node.children.each { |c|
           if c.kind_of?(AST::Node)
             is_inst = !find_parent(c, :def).nil?
-            if c.type == :ivasgn and ( (scope == :instance and is_inst) or (scope != :instance and !is_inst) )
+            if c.type == :ivasgn and c.children[0] and ( (scope == :instance and is_inst) or (scope != :instance and !is_inst) )
               arr.push Suggestion.new(c.children[0], kind: Suggestion::VARIABLE)
             end
             arr += inner_get_instance_variables(c, scope) unless [:class, :module].include?(c.type)
@@ -498,6 +524,7 @@ module Solargraph
     end
     
     def reduce node, comment_hash
+      return node unless node.kind_of?(AST::Node)
       mappable = get_mappable_nodes(node.children, comment_hash)
       result = node.updated nil, mappable
       result
@@ -575,7 +602,7 @@ module Solargraph
     def map_namespaces node, tree = []
       if node.kind_of?(AST::Node)
         if node.type == :class or node.type == :module
-          if node.children[0].children[0].kind_of?(AST::Node) and node.children[0].children[0].type == :cbase
+          if node.children[0].kind_of?(AST::Node) and node.children[0].children[0].kind_of?(AST::Node) and node.children[0].children[0].type == :cbase
             tree = pack_name(node.children[0])
           else
             tree = tree + pack_name(node.children[0])

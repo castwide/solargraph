@@ -6,17 +6,19 @@ module Solargraph
     
     def pack_name(node)
       parts = []
-      node.children.each { |n|
-        if n.kind_of?(AST::Node)
-          if n.type == :cbase
-            parts = pack_name(n)
+      if node.kind_of?(AST::Node)
+        node.children.each { |n|
+          if n.kind_of?(AST::Node)
+            if n.type == :cbase
+              parts = pack_name(n)
+            else
+              parts += pack_name(n)
+            end
           else
-            parts += pack_name(n)
+            parts.push n unless n.nil?
           end
-        else
-          parts.push n unless n.nil?
-        end
-      }
+        }
+      end
       parts
     end
 
