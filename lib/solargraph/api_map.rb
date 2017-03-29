@@ -34,7 +34,7 @@ module Solargraph
         opts[:exclude].each { |glob|
           files -= Dir[File.join @workspace, glob]
         }
-        files.each { |f|
+        files.uniq.each { |f|
           append_file f #unless yardoc_has_file?(f)
         }
       end
