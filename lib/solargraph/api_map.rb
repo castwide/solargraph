@@ -63,6 +63,26 @@ module Solargraph
       o
     end
 
+    def yardoc_files
+      return @yardoc_files unless @yardoc_files.nil?
+      @yardoc_files = []
+      return @yardoc_files if workspace.nil?
+      globs = YARD::Parser::SourceParser::DEFAULT_PATH_GLOB
+      if !workspace.nil? and File.exist?(File.join workspace, '.yardopts')
+        ext = []
+        opts = File.read(File.join workspace, '.yardopts')
+        opts.lines.each { |line|
+          ext.push line.strip unless line.strip.start_with?('-')
+        }
+        globs = ext unless ext.empty?
+      end
+      globs.each { |glob|
+        @yardoc_files.concat Dir["#{workspace}/#{glob}"]
+      }
+      @yardoc_files.uniq!
+      @yardoc_files
+    end
+
     def has_yardoc?
       workspace and File.exist?(File.join(workspace, '.yardoc'))
     end
@@ -70,7 +90,7 @@ module Solargraph
     def yardoc_has_file?(filename)
       return false unless has_yardoc?
       return false if filename.nil?
-      if filename.start_with?(File.join(workspace, 'lib/'), File.join(workspace, 'app/'))
+      if yardoc_files.include?(filename)
         return true
       end
       false
