@@ -182,39 +182,37 @@ module Solargraph
     def inner_namespaces_in name, root, skip
       result = []
       fqns = find_fully_qualified_namespace(name, root)
-      if fqns.nil?
-        return result
-      else
-        return result if skip.include?(fqns)
+      unless fqns.nil? or skip.include?(fqns)
         skip.push fqns
         nodes = get_namespace_nodes(fqns)
         nodes.delete_if { |n| yardoc_has_file?(get_filename_for(n))}
-        return result if nodes.empty?
-        cursor = @namespace_tree
-        parts = fqns.split('::')
-        parts.each { |p|
-          cursor = cursor[p]
-        }
-        unless cursor.nil?
-          cursor.keys.each { |k|
-            type = get_namespace_type(k, fqns)
-            kind = nil
-            detail = nil
-            if type == :class
-              kind = Suggestion::CLASS
-              detail = 'Class'
-            elsif type == :module
-              kind = Suggestion::MODULE
-              detail = 'Module'
-            end
-            result.push Suggestion.new(k, kind: kind, detail: detail)
+        unless nodes.empty?
+          cursor = @namespace_tree
+          parts = fqns.split('::')
+          parts.each { |p|
+            cursor = cursor[p]
           }
-          nodes = get_namespace_nodes(fqns)
-          nodes.each { |n|
-            get_include_strings_from(n).each { |i|
-              result += inner_namespaces_in(i, fqns, skip)
+          unless cursor.nil?
+            cursor.keys.each { |k|
+              type = get_namespace_type(k, fqns)
+              kind = nil
+              detail = nil
+              if type == :class
+                kind = Suggestion::CLASS
+                detail = 'Class'
+              elsif type == :module
+                kind = Suggestion::MODULE
+                detail = 'Module'
+              end
+              result.push Suggestion.new(k, kind: kind, detail: detail)
             }
-          }
+            nodes = get_namespace_nodes(fqns)
+            nodes.each { |n|
+              get_include_strings_from(n).each { |i|
+                result += inner_namespaces_in(i, fqns, skip)
+              }
+            }
+          end
         end
       end
       result
