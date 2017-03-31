@@ -207,6 +207,7 @@ module Solargraph
       scope = parent_node_from(index, :class, :module, :def, :defs) || @node
       var = find_local_variable_node(first, scope)
       if var.nil?
+        # It's not a locally assigned variable.
         if ['STDERR','STDOUT','STDIN'].include?(first)
           obj = 'IO'
           if parts.length == 0
@@ -214,21 +215,25 @@ module Solargraph
           end
         else
           if parts.length == 0
-            #return @api_map.get_methods(first, ns_here)
-            if scope.type == :def
-              meths = @api_map.get_instance_methods(ns_here).delete_if{|m| m.insert != first}
-              return nil if meths.empty?
-              return nil if meths[0].documentation.nil?
-              match = meths[0].documentation.all.match(/@return \[([a-z0-9:_]*)/i)
-              if match[1].nil?
-                return []
-              else
-                return @api_map.get_instance_methods(match[1])
-              end
+            # HACK: Assume that it's a constant (class or module) if it starts with an uppercase letter
+            if first[0] == first[0].upcase
+              return @api_map.get_methods(first, ns_here)
             else
-              meths = @api_map.get_methods(ns_here).delete_if{|m| m.insert != first}
-              return nil if meths.empty?
-              obj = get_method_return_value(ns_here, '', meths[0])
+              if scope.type == :def
+                meths = @api_map.get_instance_methods(ns_here).delete_if{|m| m.insert != first}
+                return [] if meths.empty?
+                return [] if meths[0].documentation.nil?
+                match = meths[0].documentation.all.match(/@return \[([a-z0-9:_]*)/i)
+                return [] if match[1].nil?
+                return @api_map.get_instance_methods(match[1], ns_here)
+              else
+                meths = @api_map.get_methods(ns_here).delete_if{|m| m.insert != first}
+                return [] if meths.empty?
+                return [] if meths[0].documentation.nil?
+                match = meths[0].documentation.all.match(/@return \[([a-z0-9:_]*)/i)
+                return [] if match[1].nil?
+                return @api_map.get_instance_methods(match[1], ns_here)
+              end
             end
           end
           meth = parts.shift

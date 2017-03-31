@@ -129,7 +129,7 @@ module Solargraph
           if scope == ''
             ns = yard.at(namespace)
           else
-            ns = yard.resolve(P(scope), namespace)
+            ns = find_first_resolved_namespace(yard, namespace, scope)
           end
           unless ns.nil? or !ns.kind_of?(YARD::CodeObjects::NamespaceObject)
             ns.meths(scope: :class, visibility: visibility).each { |m|
@@ -139,7 +139,7 @@ module Solargraph
               label = "#{n}"
               args = get_method_args(m)
               label += " #{args.join(', ')}" unless args.empty?
-              meths.push Suggestion.new(label, insert: "#{n}", kind: Suggestion::METHOD, detail: "#{ns}") if n.to_s.match(/^[a-z]/i)
+              meths.push Suggestion.new(label, insert: "#{n}", kind: Suggestion::METHOD, documentation: m.docstring, code_object: m, detail: "#{ns}", location: "#{m.file}:#{m.line}")
             }
             if ns.kind_of?(YARD::CodeObjects::ClassObject) and namespace != 'Class'
               meths += get_instance_methods('Class')
@@ -159,7 +159,7 @@ module Solargraph
           if scope == ''
             ns = yard.at(namespace)
           else
-            ns = yard.resolve(P(scope), namespace)
+            ns = find_first_resolved_namespace(yard, namespace, scope)
           end
           unless ns.nil?
             ns.meths(scope: :instance, visibility: visibility).each { |m|
@@ -210,6 +210,16 @@ module Solargraph
       }
       doc = YARD::Docstring.new(text, meth)
       meth.docstring = doc
+    end
+
+    def find_first_resolved_namespace yard, namespace, scope
+      parts = scope.split('::')
+      while parts.length > 0
+        ns = yard.resolve(P(scope), namespace)
+        return ns unless ns.nil?
+        parts.pop
+      end
+      yard.at(namespace)
     end
   end
 
