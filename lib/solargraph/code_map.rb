@@ -214,7 +214,22 @@ module Solargraph
           end
         else
           if parts.length == 0
-            return @api_map.get_methods(first, ns_here)
+            #return @api_map.get_methods(first, ns_here)
+            if scope.type == :def
+              meths = @api_map.get_instance_methods(ns_here).delete_if{|m| m.insert != first}
+              return nil if meths.empty?
+              return nil if meths[0].documentation.nil?
+              match = meths[0].documentation.all.match(/@return \[([a-z0-9:_]*)/i)
+              if match[1].nil?
+                return []
+              else
+                return @api_map.get_instance_methods(match[1])
+              end
+            else
+              meths = @api_map.get_methods(ns_here).delete_if{|m| m.insert != first}
+              return nil if meths.empty?
+              obj = get_method_return_value(ns_here, '', meths[0])
+            end
           end
           meth = parts.shift
           if meth == 'new'
@@ -238,7 +253,7 @@ module Solargraph
     end
 
     def get_method_return_value namespace, root, method
-      meths = @api_map.get_methods(namespace, root).delete_if{ |m| m.insert != method }
+      meths = @api_map.get_instance_methods(namespace, root).delete_if{ |m| m.insert != method }
       meths.each { |m|
         unless m.documentation.nil?
           match = m.documentation.all.match(/@return \[([a-z0-9:_]*)/i)
@@ -339,7 +354,7 @@ module Solargraph
         result += @api_map.get_methods(scope, visibility: [:public, :private, :protected])
       end
       result += @api_map.get_methods('Kernel')
-      result    
+      result
     end
     
     private
