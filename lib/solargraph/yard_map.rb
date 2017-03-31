@@ -11,14 +11,12 @@ module Solargraph
         yardocs.push wsy if File.exist?(wsy)
       end
       used = []
-      STDERR.puts "Required: #{required}"
       required.each { |r|
         if workspace.nil? or !File.exist?(File.join workspace, 'lib', "#{r}.rb")
           g = r.split('/').first
           unless used.include?(g)
             used.push g
             gy = YARD::Registry.yardoc_file_for_gem(g)
-            STDERR.puts "#{g}: #{gy}"
             yardocs.push gy unless gy.nil?
           end
         end
@@ -61,7 +59,6 @@ module Solargraph
           obj = yard.at query
           #found.push YARD::Templates::Engine.render(format: :html, object: obj) unless obj.nil?
           unless obj.nil?
-            STDERR.puts "Got an object!"
             # HACK: Fix return tags in core documentation
             fix_return! obj if obj.kind_of?(YARD::CodeObjects::MethodObject) and y.include?('.solargraph')
             found.push obj
@@ -200,10 +197,8 @@ module Solargraph
     end
 
     def fix_return! meth
-      STDERR.puts "Fixing return for a meth"
       return unless meth.tag(:return).nil?
       return unless meth.docstring.all.include?('@return')
-      STDERR.puts "Yeop"
       text = ''
       meth.docstring.all.lines.each { |line|
         if line.strip.start_with?('@return')
