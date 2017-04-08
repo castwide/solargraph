@@ -258,7 +258,7 @@ module Solargraph
     end
 
     def get_method_return_value namespace, root, method, scope = :instance
-      meths = @api_map.get_instance_methods(namespace, root).delete_if{ |m| m.insert != method }
+      meths = @api_map.get_methods(namespace, root).delete_if{ |m| m.insert != method }
       meths.each { |m|
         puts "Meth doc: #{m.documentation.class}"
         unless m.documentation.nil?
