@@ -240,7 +240,7 @@ module Solargraph
           if meth == 'new'
             obj = first
           else
-            obj = get_method_return_value first, ns_here, meth
+            obj = get_method_return_value first, ns_here, meth, :class
           end
         end
         while parts.length > 0
@@ -257,9 +257,10 @@ module Solargraph
       end
     end
 
-    def get_method_return_value namespace, root, method
+    def get_method_return_value namespace, root, method, scope = :instance
       meths = @api_map.get_instance_methods(namespace, root).delete_if{ |m| m.insert != method }
       meths.each { |m|
+        puts "Meth doc: #{m.documentation.class}"
         unless m.documentation.nil?
           match = m.documentation.all.match(/@return \[([a-z0-9:_]*)/i)
           klass = match[1]

@@ -88,6 +88,9 @@ module Solargraph
       workspace and File.exist?(File.join(workspace, '.yardoc'))
     end
 
+    # TODO: Candidate for deprecation. If ApiMap always parses the workspace,
+    # this differentiation isn't necessary.
+    #
     def yardoc_has_file?(filename)
       return false unless has_yardoc?
       return false if filename.nil?
@@ -185,7 +188,7 @@ module Solargraph
       unless fqns.nil? or skip.include?(fqns)
         skip.push fqns
         nodes = get_namespace_nodes(fqns)
-        nodes.delete_if { |n| yardoc_has_file?(get_filename_for(n))}
+        #nodes.delete_if { |n| yardoc_has_file?(get_filename_for(n))}
         unless nodes.empty?
           cursor = @namespace_tree
           parts = fqns.split('::')
@@ -448,7 +451,7 @@ module Solargraph
       return meths if fqns.nil?
       nodes = get_namespace_nodes(fqns)
       nodes.each { |n|
-        unless yardoc_has_file?(get_filename_for(n))
+        #unless yardoc_has_file?(get_filename_for(n))
           if n.kind_of?(AST::Node)
             if n.type == :class and !n.children[1].nil?
               s = unpack_name(n.children[1])
@@ -469,7 +472,7 @@ module Solargraph
               end
             }
           end
-        end
+        #end
       }
       meths.uniq
     end
@@ -481,7 +484,7 @@ module Solargraph
       skip.push fqns
       nodes = get_namespace_nodes(fqns)
       nodes.each { |n|
-        unless yardoc_has_file?(get_filename_for(n))
+        #unless yardoc_has_file?(get_filename_for(n))
           if n.kind_of?(AST::Node)
             if n.type == :class and !n.children[1].nil?
               s = unpack_name(n.children[1])
@@ -520,7 +523,7 @@ module Solargraph
               }
             }
           end
-        end
+        #end
       }
       meths.uniq
     end
