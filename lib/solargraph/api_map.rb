@@ -261,7 +261,7 @@ module Solargraph
           if c.kind_of?(AST::Node)
             is_inst = !find_parent(c, :def).nil?
             if c.type == :ivasgn and c.children[0] and ( (scope == :instance and is_inst) or (scope != :instance and !is_inst) )
-              arr.push Suggestion.new(c.children[0], kind: Suggestion::VARIABLE)
+              arr.push Suggestion.new(c.children[0], kind: Suggestion::VARIABLE, documentation: get_comment_for(c))
             end
             arr += inner_get_instance_variables(c, scope) unless [:class, :module].include?(c.type)
           end
