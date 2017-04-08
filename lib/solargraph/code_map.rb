@@ -160,7 +160,10 @@ module Solargraph
           # TODO: Temporarily assuming one period
           var = phrase[0..phrase.index('.')-1]
           ns = namespace_at(index)
-          obj = @api_map.infer_instance_variable(var, ns)
+          scope = :class
+          node = parent_node_from(index, :def, :defs, :class, :module)
+          scope = :instance if !node.nil? and node.type == :def
+          obj = @api_map.infer_instance_variable(var, ns, scope)
           result = @api_map.get_instance_methods(obj) unless obj.nil?
         else
           result = get_instance_variables_at(index)
@@ -248,6 +251,11 @@ module Solargraph
         end
         return @api_map.get_instance_methods(obj) unless obj.nil?
       else
+        obj = nil
+        cmnt = @api_map.get_comment_for(var)
+        unless cmnt.nil?
+          STDERR.puts cmnt.inspect
+        end
         obj = infer(var.children[1])
         while parts.length > 0
           meth = parts.shift
