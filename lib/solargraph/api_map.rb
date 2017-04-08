@@ -3,6 +3,8 @@ require 'parser/current'
 require 'yard'
 require 'yaml'
 
+YARD::Tags::Library.define_tag("Type", :type, :with_types_and_name)
+
 module Solargraph
   class ApiMap
     KEYWORDS = [
@@ -88,7 +90,7 @@ module Solargraph
       comment_hash.each_pair { |k, v|
         ctxt = ''
         v.each { |l|
-          ctxt += l.text.gsub(/^#/, '') + "\n"
+          ctxt += l.text.gsub(/^# /, '') + "\n"
         }
         parser = YARD::DocstringParser.new
         yard_hash[k] = parser.parse(ctxt).to_docstring
@@ -269,6 +271,7 @@ module Solargraph
     end
 
     def infer_instance_variable(var, namespace, scope = :instance)
+      result = nil
       vn = nil
       if namespace_exists?(namespace)
         get_namespace_nodes(namespace).each { |node|
@@ -276,7 +279,15 @@ module Solargraph
           break unless vn.nil?
         }
       end
-      infer(vn.children[1]) unless vn.nil?
+      unless vn.nil?
+        cmnt = get_comment_for(vn)
+        unless cmnt.nil?
+          tag = cmnt.tag(:type)
+          result = tag.types[0] unless tag.nil? or tag.types.empty?
+        end
+        result = infer(vn.children[1]) if result.nil?
+      end
+      result
     end
 
     def find_instance_variable_assignment(var, node, scope)
