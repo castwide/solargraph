@@ -260,25 +260,27 @@ module Solargraph
     def get_method_return_value namespace, root, method, scope = :instance
       meths = @api_map.get_methods(namespace, root).delete_if{ |m| m.insert != method }
       meths.each { |m|
-        puts "Meth doc: #{m.documentation.class}"
-        unless m.documentation.nil?
-          match = m.documentation.all.match(/@return \[([a-z0-9:_]*)/i)
-          klass = match[1]
-          return klass unless klass.nil?
-        end
+        r = get_return_tag(m)
+        return r unless r.nil?
       }
-      'Object'
+      nil
     end
 
     def get_instance_method_return_value namespace, root, method
       meths = @api_map.get_instance_methods(namespace, root).delete_if{ |m| m.insert != method }
       meths.each { |m|
-        unless m.documentation.nil?
-          match = m.documentation.all.match(/@return \[([a-z0-9:_]*)/i)
-          return match[1] unless match.nil?
-        end
+        r = get_return_tag(m)
+        return r unless r.nil?
       }
-      'Object'
+      nil
+    end
+
+    def get_return_tag suggestion
+        unless suggestion.documentation.nil?
+          match = suggestion.documentation.all.match(/@return \[([a-z0-9:_]*)/i)
+          return match[1]
+        end
+        nil
     end
 
     def get_signature_at index
