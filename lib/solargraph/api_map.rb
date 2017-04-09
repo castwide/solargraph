@@ -354,9 +354,10 @@ module Solargraph
           end
           meths.delete_if{ |m| m.insert != p }
           return nil if meths.empty?
+          type = nil
           unless meths[0].documentation.nil?
             match = meths[0].documentation.all.match(/@return \[([a-z0-9:_]*)/i)
-            type = find_fully_qualified_namespace(match[1])
+            type = find_fully_qualified_namespace(match[1]) unless match.nil?
           end
         end
         scope = :instance
