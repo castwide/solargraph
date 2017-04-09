@@ -4,9 +4,9 @@ module Solargraph
   class CodeMap
     attr_accessor :node
     attr_accessor :api_map
-    
+
     include NodeMethods
-    
+
     def initialize code: '', filename: nil, workspace: nil, api_map: nil
       unless workspace.nil?
         workspace = workspace.gsub(File::ALT_SEPARATOR, File::SEPARATOR) unless File::ALT_SEPARATOR.nil?
@@ -212,114 +212,41 @@ module Solargraph
       STDERR.puts "Will try to resolve #{signature}"
       ns_here = namespace_at(index)
       scope = parent_node_from(index, :class, :module, :def, :defs) || @node
-      #if (signature.include?('.'))
-        # TODO: Dammit, it's a long one"
-      #else
-        parts = signature.split('.')
-        STDERR.puts "Trying to infer #{parts[0]}"
-        var = find_local_variable_node(parts[0], scope)
-        if var.nil?
-          # It's not a local variable
-          fqns = @api_map.find_fully_qualified_namespace(signature, ns_here)
-          if fqns.nil?
-            # It's a method call
-            type = @api_map.infer_signature_type(signature, ns_here, scope: :class)
-            result.concat @api_map.get_instance_methods(type) unless type.nil?
-          else
-            result.concat @api_map.get_methods(fqns)
-          end
+      parts = signature.split('.')
+      STDERR.puts "Trying to infer #{parts[0]}"
+      var = find_local_variable_node(parts[0], scope)
+      if var.nil?
+        # It's not a local variable
+        fqns = @api_map.find_fully_qualified_namespace(signature, ns_here)
+        if fqns.nil?
+          # It's a method call
+          type = @api_map.infer_signature_type(signature, ns_here, scope: :class)
+          result.concat @api_map.get_instance_methods(type) unless type.nil?
         else
-          # It's a local variable
-          # Get the type from the node, dummy
-          vtype = resolve_node_signature(var.children[1])
-          STDERR.puts "Lookin at #{vtype} (#{parts.join(';')})"
-          #wtype = vtype + (parts.length == 1 ? '' : '.' + parts[1..-1].join('.'))
-          #STDERR.puts "Bangin out #{wtype}"
-          #type = @api_map.infer_signature_type(wtype, ns_here, scope)
-          if parts.length == 1
-            type = vtype
-          else
-            type = @api_map.infer_signature_type(parts[1..-1].join('.'), vtype, scope: :instance)
-          end
-          STDERR.puts "Resolved: #{type}"
-          if type.nil?
-            STDERR.puts "Could not resolve type for #{var}"
-          else
-            result.concat @api_map.get_instance_methods(type)
-          end
+          result.concat @api_map.get_methods(fqns)
         end
-        # TODO: Where do these go?
-        #fqns = @api_map.find_fully_qualified_namespace(signature, ns_here)
-        #result.concat @api_map.get_methods(fqns) unless fqns.nil?
-      #end
+      else
+        # It's a local variable
+        # Get the type from the node, dummy
+        STDERR.puts "Dammit, #{var}"
+        type = get_type_comment(var)
+        if type.nil?
+          sig = resolve_node_signature(var.children[1])
+          type = @api_map.infer_signature_type(sig, ns_here, scope: (scope == :def ? :instance : :class))
+        end
+        result.concat @api_map.get_instance_methods(type) unless type.nil?
+      end
       result
     end
 
-    # @todo This should return the signature type, not the type methods.
-    def xxx_infer_signature_type signature, ns_here, scope
-      parts = signature.split('.')
-      first = parts.shift
-      var = find_local_variable_node(first, scope)
-      if var.nil?
-        # It's not a locally assigned variable.
-        if ['STDERR','STDOUT','STDIN'].include?(first)
-          obj = 'IO'
-          if parts.length == 0
-            return @api_map.get_instance_methods('IO')
-          end
-        else
-          if parts.length == 0
-            # HACK: Assume that it's a constant (class or module) if it starts with an uppercase letter
-            if first[0] == first[0].upcase
-              return @api_map.get_methods(first, ns_here)
-            else
-              if scope.type == :def
-                meths = @api_map.get_instance_methods(ns_here).delete_if{|m| m.insert != first}
-                return [] if meths.empty?
-                return [] if meths[0].documentation.nil?
-                match = meths[0].documentation.all.match(/@return \[([a-z0-9:_]*)/i)
-                return [] if match[1].nil?
-                return @api_map.get_instance_methods(match[1], ns_here)
-              else
-                meths = @api_map.get_methods(ns_here).delete_if{|m| m.insert != first}
-                return [] if meths.empty?
-                return [] if meths[0].documentation.nil?
-                match = meths[0].documentation.all.match(/@return \[([a-z0-9:_]*)/i)
-                return [] if match[1].nil?
-                return @api_map.get_instance_methods(match[1], ns_here)
-              end
-            end
-          end
-          meth = parts.shift
-          if meth == 'new'
-            obj = first
-          else
-            obj = get_method_return_value first, ns_here, meth, :class
-          end
-        end
-        while parts.length > 0
-          obj = get_instance_method_return_value obj, ns_here, parts.shift
-        end
-        return @api_map.get_instance_methods(obj) unless obj.nil?
-      else
-        obj = nil
-        cmnt = @api_map.get_comment_for(var)
-        unless cmnt.nil?
-          tag = cmnt.tag(:type)
-          obj = tag.types[0] unless tag.nil? or tag.types.empty?
-        end
-        obj = infer(var.children[1]) if obj.nil?
-        if obj.nil?
-          sig = resolve_node_signature(var.children[1])
-          return infer_signature_type(sig, ns_here, scope)
-        end
-        while parts.length > 0
-          meth = parts.shift
-          obj = get_instance_method_return_value obj, ns_here, meth
-        end
-        return @api_map.get_instance_methods(obj) unless obj.nil?
+    def get_type_comment node
+      obj = nil
+      cmnt = @api_map.get_comment_for(node)
+      unless cmnt.nil?
+        tag = cmnt.tag(:type)
+        obj = tag.types[0] unless tag.nil? or tag.types.empty?
       end
-      return []
+      obj
     end
 
     # Get a call signature from a node.
@@ -334,10 +261,12 @@ module Solargraph
     def stack_node_signature node
       parts = []
       if node.kind_of?(AST::Node)
-        if node.children[0].type == :send
-          parts = stack_node_signature(node.children[0]) + parts
+        if node.type == :send
+          parts = stack_node_signature(node.children[1]) + parts
           parts.push node.children[1].to_s
+          STDERR.puts "Stack became #{parts.join(';')}"
         else
+          STDERR.puts "Fucked on #{node}"
           parts = [unpack_name(node.children[0])] + stack_node_signature(node.children[1]) + parts
         end
       end
@@ -372,13 +301,6 @@ module Solargraph
     end
 
     def get_signature_at index
-      #node = node_at(index - 1)
-      #return '' unless node.type == :send
-      #parts = []
-      #build_signature(node, parts)
-      #return parts.join('.')
-
-      # TODO: Alternate rough version
       brackets = 0
       squares = 0
       parens = 0
@@ -452,7 +374,7 @@ module Solargraph
       result += @api_map.get_methods('Kernel')
       result
     end
-    
+
     private
 
     def reduce_starting_with(suggestions, word)
@@ -475,7 +397,7 @@ module Solargraph
       }
       arr
     end
-    
+
     def inner_node_at(index, node, arr)
       node.children.each { |c|
         if c.kind_of?(AST::Node)
@@ -494,7 +416,7 @@ module Solargraph
         end
       }
     end
-    
+
     def find_local_variable_node name, scope
       scope.children.each { |c|
         if c.kind_of?(AST::Node)
@@ -510,6 +432,6 @@ module Solargraph
       }
       nil
     end
-    
+
   end
 end

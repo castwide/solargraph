@@ -12,17 +12,17 @@ module Solargraph
       'nil', 'not', 'or', 'redo', 'rescue', 'retry', 'return', 'self', 'super',
       'then', 'true', 'undef', 'unless', 'until', 'when', 'while', 'yield'
     ]
-    
+
     MAPPABLE_METHODS = [
       :include, :extend, :require, :autoload, :attr_reader, :attr_writer, :attr_accessor, :private, :public, :protected,
       :solargraph_include_public_methods
     ]
 
     include NodeMethods
-    
+
     attr_reader :workspace
     attr_reader :required
-    
+
     def initialize workspace = nil
       @workspace = workspace
       clear
@@ -68,7 +68,7 @@ module Solargraph
     def yard_map
       @yard_map ||= YardMap.new(required: required, workspace: workspace)
     end
-    
+
     def append_file filename
       append_source File.read(filename), filename
     end
@@ -334,11 +334,11 @@ module Solargraph
           meths = get_methods(namespace)
         end
         meths.delete_if{ |m| m.insert != p }
-        STDERR.puts "#{meths.to_json}"
         return nil if meths.empty?
         match = meths[0].documentation.all.match(/@return \[([a-z0-9:_]*)/i)
         STDERR.puts "Go #{match[1]} in #{namespace} or #{type}"
         type = find_fully_qualified_namespace(match[1])
+        STDERR.puts "Got #{type}"
         scope = :instance
       end
       type
