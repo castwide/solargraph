@@ -29,27 +29,29 @@ describe Solargraph::NodeMethods do
     expect(tester.infer(ast.children[1])).to eq 'Array'
   end
 
-  it "infers class instantiation" do
-    ast = Parser::CurrentRuby.parse("x = Object.new")
-    tester = test_class.new
-    expect(tester.infer(ast.children[1])).to eq 'Object'
-  end
+  # @todo The following type inferences are the reponsibility of the ApiMap.
+  
+  #it "infers class instantiation" do
+  #  ast = Parser::CurrentRuby.parse("x = Object.new")
+  #  tester = test_class.new
+  #  expect(tester.infer(ast.children[1])).to eq 'Object'
+  #end
 
-  it "infers constants" do
-    ast = Parser::CurrentRuby.parse("x = Class")
-    tester = test_class.new
-    expect(tester.infer(ast.children[1])).to eq 'Class'
-  end
+  #it "infers constants" do
+  #  ast = Parser::CurrentRuby.parse("x = Class")
+  #  tester = test_class.new
+  #  expect(tester.infer(ast.children[1])).to eq 'Class'
+  #end
 
-  it "infers constants with root" do
-    ast = Parser::CurrentRuby.parse("x = ::String")
-    tester = test_class.new
-    expect(tester.infer(ast.children[1])).to eq 'String'
-  end
+  #it "infers constants with root" do
+  #  ast = Parser::CurrentRuby.parse("x = ::String")
+  #  tester = test_class.new
+  #  expect(tester.infer(ast.children[1])).to eq 'String'
+  #end
 
-  it "infers namespaced constants" do
-    ast = Parser::CurrentRuby.parse("x = Foo::Bar")
-    tester = test_class.new
-    expect(tester.infer(ast.children[1])).to eq 'Foo::Bar'
-  end
+  #it "infers namespaced constants" do
+  #  ast = Parser::CurrentRuby.parse("x = Foo::Bar")
+  #  tester = test_class.new
+  #  expect(tester.infer(ast.children[1])).to eq 'Foo::Bar'
+  #end
 end
