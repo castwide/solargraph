@@ -150,17 +150,18 @@ module Solargraph
       return [] if string_at?(index)
       result = []
       phrase = phrase_at(index)
-      if phrase.start_with?('@')
-        if phrase.include?('.')
+      signature = get_signature_at(index)
+      if signature.start_with?('@')
+        parts = signature.split('.')
+        var = parts.shift
+        if parts.length > 0 or signature.end_with?('.')
           result = []
-          var = phrase[0..phrase.index('.')-1]
           ns = namespace_at(index)
           scope = :class
           node = parent_node_from(index, :def, :defs, :class, :module)
           scope = :instance if !node.nil? and node.type == :def
           obj = @api_map.infer_instance_variable(var, ns, scope)
-          sig = get_signature_at(index).split('.')[1..-1].join('.')
-          type = @api_map.infer_signature_type(sig, obj, scope: :instance)
+          type = @api_map.infer_signature_type(parts.join('.'), obj, scope: :instance)
           result = @api_map.get_instance_methods(type) unless type.nil?
         else
           result = get_instance_variables_at(index)
@@ -179,7 +180,7 @@ module Solargraph
         else
           result = @api_map.namespaces_in(ns)
         end
-      elsif phrase.include?('.')
+      elsif signature.include?('.')
         result = resolve_signature_at @code[0, index].rindex('.')
       else
         current_namespace = namespace_at(index)
@@ -237,7 +238,11 @@ module Solargraph
           signature = parts[1..-1].join('.')
           type = @api_map.infer_signature_type(signature, fqns, scope: :instance)
         end
-        result.concat @api_map.get_instance_methods(type) unless type.nil?
+        unless type.nil?
+          lsig = signature.split('.')[1..-1].join('.')
+          ltype = @api_map.infer_signature_type(lsig, type, scope: :instance)
+          result.concat @api_map.get_instance_methods(ltype) unless ltype.nil?
+        end
       end
       result
     end
@@ -294,7 +299,8 @@ module Solargraph
         end
         if brackets == 0 and parens == 0 and squares == 0
           break if ['"', "'", ',', ' ', "\t", "\n"].include?(char)
-          signature = char + signature if char.match(/[a-z0-9:\._]/i)
+          signature = char + signature if char.match(/[a-z0-9:\._@]/i)
+          break if char == '@'
         end
         index -= 1
       end
