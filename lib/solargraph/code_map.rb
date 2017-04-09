@@ -239,9 +239,14 @@ module Solargraph
           type = @api_map.infer_signature_type(signature, fqns, scope: :instance)
         end
         unless type.nil?
-          lsig = signature.split('.')[1..-1].join('.')
-          ltype = @api_map.infer_signature_type(lsig, type, scope: :instance)
-          result.concat @api_map.get_instance_methods(ltype) unless ltype.nil?
+          lparts = signature.split('.')
+          if lparts.length > 1
+            lsig = lparts[1..-1].join('.')
+            ltype = @api_map.infer_signature_type(lsig, type, scope: :instance)
+            result.concat @api_map.get_instance_methods(ltype) unless ltype.nil?
+          else
+            result.concat @api_map.get_instance_methods(type)
+          end
         end
       end
       result
