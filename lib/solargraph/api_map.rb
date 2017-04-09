@@ -3,6 +3,7 @@ require 'parser/current'
 require 'yard'
 require 'yaml'
 
+# Define a @type tag to be used for documenting variables
 YARD::Tags::Library.define_tag("Type", :type, :with_types_and_name)
 
 module Solargraph
@@ -82,6 +83,7 @@ module Solargraph
       @file_nodes[filename] = root
       @required.uniq!
       process_maps
+      root
     end
 
     def associate_comments node, comments
@@ -504,7 +506,7 @@ module Solargraph
 
     def mappable?(node)
       # TODO Add node.type :casgn (constant assignment)
-      if node.kind_of?(AST::Node) and (node.type == :class or node.type == :module or node.type == :def or node.type == :defs or node.type == :ivasgn or node.type == :gvasgn or node.type == :or_asgn)
+      if node.kind_of?(AST::Node) and (node.type == :class or node.type == :module or node.type == :def or node.type == :defs or node.type == :ivasgn or node.type == :gvasgn or node.type == :lvasgn or node.type == :or_asgn)
         true
       elsif node.kind_of?(AST::Node) and node.type == :send and node.children[0] == nil and MAPPABLE_METHODS.include?(node.children[1])
         true
@@ -550,7 +552,7 @@ module Solargraph
       elsif node.type == :module
         children += node.children[0, 1]
         children += get_mappable_nodes(node.children[1..-1], comment_hash)
-      elsif node.type == :ivasgn or node.type == :gvasgn
+      elsif node.type == :ivasgn or node.type == :gvasgn or node.type == :lvasgn
         children += node.children
       elsif node.type == :send and node.children[1] == :include
         children += node.children[0,3]

@@ -29,8 +29,9 @@ module Solargraph
       # Hide incomplete code to avoid syntax errors
       tmp = "#{@code}\nX".gsub(/[\.@]([\s])/, '#\1').gsub(/([\A\s]?)def([\s]*?[\n\Z])/, '\1#ef\2')
       begin
-        @node, comments = Parser::CurrentRuby.parse_with_comments(tmp)
-        @api_map.append_node(@node, comments, filename)
+        node, comments = Parser::CurrentRuby.parse_with_comments(tmp)
+        @node = @api_map.append_node(node, comments, filename)
+        #@yard_hash = associate_comments @node, comments
       rescue Parser::SyntaxError => e
         if tries < 10
           tries += 1
@@ -44,6 +45,22 @@ module Solargraph
         end
         raise e
       end
+    end
+
+    def associate_comments node, comments
+      comment_hash = Parser::Source::Comment.associate_locations(node, comments)
+      yard_hash = {}
+      comment_hash.each_pair { |k, v|
+        ctxt = ''
+        v.each { |l|
+          ctxt += l.text.gsub(/^# /, '') + "\n"
+        }
+        STDERR.puts "Thing: #{k}"
+        STDERR.puts "Parsed comment: #{ctxt}"
+        parser = YARD::DocstringParser.new
+        yard_hash[k] = parser.parse(ctxt).to_docstring
+      }
+      yard_hash
     end
 
     def self.find_workspace filename
@@ -251,18 +268,23 @@ module Solargraph
         end
         return @api_map.get_instance_methods(obj) unless obj.nil?
       else
+        STDERR.puts "Workin with a variable #{var}"
         obj = nil
         cmnt = @api_map.get_comment_for(var)
+        #cmnt = @yard_hash[var]
+        STDERR.puts "Comment: #{cmnt}"
         unless cmnt.nil?
-          STDERR.puts cmnt.inspect
+          tag = cmnt.tag(:type)
+          obj = tag.types[0] unless tag.nil? or tag.types.empty?
         end
-        obj = infer(var.children[1])
+        obj = infer(var.children[1]) if obj.nil?
         while parts.length > 0
           meth = parts.shift
           obj = get_instance_method_return_value obj, ns_here, meth
         end
         return @api_map.get_instance_methods(obj) unless obj.nil?
       end
+      return []
     end
 
     def get_method_return_value namespace, root, method, scope = :instance
@@ -387,7 +409,7 @@ module Solargraph
       node.children.each { |c|
         if c.kind_of?(AST::Node)
           if c.type == :lvasgn
-            arr.push Suggestion.new(c.children[0], kind: Suggestion::VARIABLE)
+            arr.push Suggestion.new(c.children[0], kind: Suggestion::VARIABLE, documentation: @api_map.get_comment_for(c))
           else
             arr += get_local_variables_from(c) unless [:class, :module, :def, :defs].include?(c.type)
           end
