@@ -224,12 +224,20 @@ module Solargraph
           result.concat @api_map.get_methods(fqns)
         end
       else
-        # It's a local variable
-        # Get the type from the node, dummy
+        # It's a local variable. Get the type from the node
         type = get_type_comment(var)
         if type.nil?
-          sig = resolve_node_signature(var.children[1])
-          type = @api_map.infer_signature_type(sig, ns_here, scope: (scope == :def ? :instance : :class))
+          vsig = resolve_node_signature(var.children[1])
+          vparts = vsig.split('.')
+          fqns = @api_map.find_fully_qualified_namespace(vparts[0], ns_here)
+          if fqns.nil?
+            vtype = @api_map.infer_signature_type(vsig, ns_here, scope: :instance)
+          else
+            vtype = @api_map.infer_signature_type(vparts[1..-1].join('.'), fqns, scope: :class)
+          end
+          fqns = @api_map.find_fully_qualified_namespace(vtype, ns_here)
+          signature = parts[1..-1].join('.')
+          type = @api_map.infer_signature_type(signature, fqns, scope: :instance)
         end
         result.concat @api_map.get_instance_methods(type) unless type.nil?
       end
@@ -252,18 +260,24 @@ module Solargraph
     #
     # @return [String]
     def resolve_node_signature node
-      stack_node_signature(node).join('.')
+      x = stack_node_signature(node).join('.')
+      STDERR.puts "Fuck you #{node} to #{x}"
+      x
     end
 
     def stack_node_signature node
       parts = []
       if node.kind_of?(AST::Node)
         if node.type == :send
-          parts = stack_node_signature(node.children[1]) + parts
-          parts.push node.children[1].to_s
+          unless node.children[0].nil?
+            parts = [unpack_name(node.children[0])] + parts
+          end
+          parts += stack_node_signature(node.children[1])
         else
-          parts = [unpack_name(node.children[0])] + stack_node_signature(node.children[1]) + parts
+          parts = [unpack_name(node)] + stack_node_signature(node.children[1])
         end
+      else
+        parts.push node.to_s
       end
       parts
     end

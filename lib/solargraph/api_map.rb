@@ -325,13 +325,17 @@ module Solargraph
     def infer_signature_type signature, namespace, scope: :instance
       parts = signature.split('.')
       type = find_fully_qualified_namespace(namespace)
+      type ||= ''
+      top = true
       while parts.length > 0 and !type.nil?
         p = parts.shift
-        if p == 'new' and scope != :instance
+        unless p == 'new' and scope != :instance
           if scope == :instance
-            meths = get_instance_methods(namespace)
+            meths = get_instance_methods(type)
+            meths += get_methods('') if top
           else
-            meths = get_methods(namespace)
+            meths = get_methods(type)
+            #meths += get_methods('') if top
           end
           meths.delete_if{ |m| m.insert != p }
           return nil if meths.empty?
@@ -339,6 +343,7 @@ module Solargraph
           type = find_fully_qualified_namespace(match[1])
         end
         scope = :instance
+        top = false
       end
       type
     end
