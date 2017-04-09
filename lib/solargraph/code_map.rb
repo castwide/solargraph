@@ -157,7 +157,6 @@ module Solargraph
       if phrase.start_with?('@')
         if phrase.include?('.')
           result = []
-          # TODO: Temporarily assuming one period
           var = phrase[0..phrase.index('.')-1]
           ns = namespace_at(index)
           scope = :class
@@ -282,16 +281,7 @@ module Solargraph
       parts
     end
 
-    # @todo This probably belongs in ApiMap.
-    def get_method_return_value namespace, root, method, scope = :instance
-      meths = @api_map.get_methods(namespace, root).delete_if{ |m| m.insert != method }
-      meths.each { |m|
-        r = get_return_tag(m)
-        return r unless r.nil?
-      }
-      nil
-    end
-
+    # @todo Candidate for deprecation
     def get_instance_method_return_value namespace, root, method
       meths = @api_map.get_instance_methods(namespace, root).delete_if{ |m| m.insert != method }
       meths.each { |m|
