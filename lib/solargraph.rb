@@ -1,5 +1,6 @@
 require 'solargraph/version'
 require 'rubygems/package'
+require 'yard'
 
 module Solargraph
   autoload :Analyzer,    'solargraph/analyzer'
@@ -38,3 +39,6 @@ unless File.exist?(version_dir)
   tar_extract.close
   #FileUtils.rm File.join(cache_dir, '2.0.0.tar.gz')
 end
+
+# Define a @type tag to be used for documenting variables
+YARD::Tags::Library.define_tag("Type", :type, :with_types_and_name)

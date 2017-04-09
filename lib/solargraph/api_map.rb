@@ -3,9 +3,6 @@ require 'parser/current'
 require 'yard'
 require 'yaml'
 
-# Define a @type tag to be used for documenting variables
-YARD::Tags::Library.define_tag("Type", :type, :with_types_and_name)
-
 module Solargraph
   class ApiMap
     KEYWORDS = [
