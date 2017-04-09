@@ -310,92 +310,38 @@ module Solargraph
       }
       nil
     end
-    
+
     def get_global_variables
       # TODO: Get them
       []
     end
-    
+
     # Get a fully qualified namespace for the given signature.
-    # The signature should be in the form of a call, e.g.,
-    # variable.method or Class.method.
+    # The signature should be in the form of a method chain, e.g.,
+    # method1.method2
     #
     # @return [String] The fully qualified namespace for the signature's type
     #   or nil if a type could not be determined
-    def infer_signature_type signature, ns_here, scope
+    def infer_signature_type signature, namespace, scope: :instance
       parts = signature.split('.')
-      first = parts.shift
-      # @todo Where should this happen?
-      #var = find_local_variable_node(first, scope)
-      var = nil
-      if var.nil?
-        # It's not a locally assigned variable.
-        if ['STDERR','STDOUT','STDIN'].include?(first)
-          obj = 'IO'
-          if parts.length == 0
-            #return @api_map.get_instance_methods('IO')
-            return 'IO'
-          end
+      type = find_fully_qualified_namespace(namespace)
+      while parts.length > 0 and !type.nil?
+        p = parts.shift
+        if scope == :instance
+          STDERR.puts "Looking for #{p} in #{namespace}"
+          meths = get_instance_methods(namespace)
         else
-          if parts.length == 0
-            # HACK: Assume that it's a constant (class or module) if it starts with an uppercase letter
-            if first[0] == first[0].upcase
-              #return @api_map.get_methods(first, ns_here)
-              STDERR.puts "Welp, the type is #{find_fully_qualified_namespace(first, ns_here)}"
-              return find_fully_qualified_namespace(first, ns_here)
-            else
-              if scope.type == :def
-                meths = get_instance_methods(ns_here).delete_if{|m| m.insert != first}
-                return [] if meths.empty?
-                return [] if meths[0].documentation.nil?
-                match = meths[0].documentation.all.match(/@return \[([a-z0-9:_]*)/i)
-                return [] if match[1].nil?
-                #return @api_map.get_instance_methods(match[1], ns_here)
-                return find_fully_qualified_namespace(match[1], ns_here)
-              else
-                meths = get_methods(ns_here).delete_if{|m| m.insert != first}
-                return nil if meths.empty?
-                return nil if meths[0].documentation.nil?
-                match = meths[0].documentation.all.match(/@return \[([a-z0-9:_]*)/i)
-                return nil if match[1].nil?
-                #return @api_map.get_instance_methods(match[1], ns_here)
-                return find_fully_qualified_namespace(match[1], ns_here)
-              end
-            end
-          end
-          meth = parts.shift
-          if meth == 'new'
-            obj = find_fully_qualified_namespace(first, ns_here)
-          else
-            obj = get_method_return_value first, ns_here, meth, :class
-          end
+          meths = get_methods(namespace)
         end
-        while parts.length > 0
-          obj = get_instance_method_return_value obj, ns_here, parts.shift
-          break if obj.nil?
-        end
-        #return @api_map.get_instance_methods(obj) unless obj.nil?
-        return obj unless obj.nil?
-      else
-        obj = nil
-        cmnt = @api_map.get_comment_for(var)
-        unless cmnt.nil?
-          tag = cmnt.tag(:type)
-          obj = tag.types[0] unless tag.nil? or tag.types.empty?
-        end
-        obj = infer(var.children[1]) if obj.nil?
-        if obj.nil?
-          sig = resolve_node_signature(var.children[1])
-          return infer_signature_type(sig, ns_here, scope)
-        end
-        while parts.length > 0
-          meth = parts.shift
-          obj = get_instance_method_return_value obj, ns_here, meth
-        end
-        #return @api_map.get_instance_methods(obj) unless obj.nil?
-        return find_fully_qualified_namespace(obj, ns_here) unless obj.nil?
+        meths.delete_if{ |m| m.insert != p }
+        STDERR.puts "#{meths.to_json}"
+        return nil if meths.empty?
+        match = meths[0].documentation.all.match(/@return \[([a-z0-9:_]*)/i)
+        STDERR.puts "Go #{match[1]} in #{namespace} or #{type}"
+        type = find_fully_qualified_namespace(match[1])
+        scope = :instance
       end
-      nil
+      type
     end
 
     def get_method_return_value namespace, root, method, scope = :instance
