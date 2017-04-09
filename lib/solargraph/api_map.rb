@@ -27,6 +27,10 @@ module Solargraph
       @workspace = workspace
       clear
       unless @workspace.nil?
+        extra = File.join(workspace, '.solargraph')
+        if File.exist?(extra)
+          append_file(extra)
+        end
         files = []
         opts = options
         (opts[:include] - opts[:exclude]).each { |glob|
@@ -52,16 +56,22 @@ module Solargraph
 
     def options
       o = {
-        include: ['app/**/*.rb', 'lib/**/*.rb'],
+        include: [],
         exclude: []
       }
-      yaml = File.join(workspace, '.solargraph.yml')
-      if workspace && File.exist?(yaml)
-        l = YAML.load_file(yaml)
-        o[:include].concat l['include'] unless l['include'].nil?
-        o[:exclude].concat l['exclude'] unless l['exclude'].nil?
-        append_source(l['parse'].join("\n"), yaml) unless l['parse'].nil?
+      unless workspace.nil?
+        yardopts_file = File.join(workspace, '.yardopts')
+        if File.exist?(yardopts_file)
+          yardopts = File.read(yardopts_file)
+          yardopts.lines.each { |line|
+            arg = line.strip
+            if !arg.start_with?('-')
+              o[:include].push arg
+            end
+          }
+        end
       end
+      o[:include].concat ['app/**/*.rb', 'lib/**/*.rb'] if o[:include].empty?
       o
     end
 
