@@ -287,8 +287,9 @@ module Solargraph
     def infer_instance_variable(var, namespace, scope = :instance)
       result = nil
       vn = nil
-      if namespace_exists?(namespace)
-        get_namespace_nodes(namespace).each { |node|
+      fqns = find_fully_qualified_namespace(namespace)
+      unless fqns.nil?
+        get_namespace_nodes(fqns).each { |node|
           vn = find_instance_variable_assignment(var, node, scope)
           break unless vn.nil?
         }
@@ -302,7 +303,7 @@ module Solargraph
         result = infer(vn.children[1]) if result.nil?
         if result.nil?
           signature = resolve_node_signature(vn.children[1])
-          result = infer_signature_type(signature, namespace, scope: scope)
+          result = infer_signature_type(signature, namespace || '', scope: scope)
         end
       end
       result

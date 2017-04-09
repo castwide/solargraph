@@ -159,7 +159,9 @@ module Solargraph
           node = parent_node_from(index, :def, :defs, :class, :module)
           scope = :instance if !node.nil? and node.type == :def
           obj = @api_map.infer_instance_variable(var, ns, scope)
-          result = @api_map.get_instance_methods(obj) unless obj.nil?
+          sig = get_signature_at(index).split('.')[1..-1].join('.')
+          type = @api_map.infer_signature_type(sig, obj, scope: :instance)
+          result = @api_map.get_instance_methods(type) unless type.nil?
         else
           result = get_instance_variables_at(index)
         end
