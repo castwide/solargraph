@@ -209,11 +209,9 @@ module Solargraph
     def resolve_signature_at index
       result = []
       signature = get_signature_at(index)
-      STDERR.puts "Will try to resolve #{signature}"
       ns_here = namespace_at(index)
       scope = parent_node_from(index, :class, :module, :def, :defs) || @node
       parts = signature.split('.')
-      STDERR.puts "Trying to infer #{parts[0]}"
       var = find_local_variable_node(parts[0], scope)
       if var.nil?
         # It's not a local variable
@@ -228,7 +226,6 @@ module Solargraph
       else
         # It's a local variable
         # Get the type from the node, dummy
-        STDERR.puts "Dammit, #{var}"
         type = get_type_comment(var)
         if type.nil?
           sig = resolve_node_signature(var.children[1])
@@ -264,9 +261,7 @@ module Solargraph
         if node.type == :send
           parts = stack_node_signature(node.children[1]) + parts
           parts.push node.children[1].to_s
-          STDERR.puts "Stack became #{parts.join(';')}"
         else
-          STDERR.puts "Fucked on #{node}"
           parts = [unpack_name(node.children[0])] + stack_node_signature(node.children[1]) + parts
         end
       end

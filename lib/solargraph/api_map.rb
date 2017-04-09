@@ -327,18 +327,17 @@ module Solargraph
       type = find_fully_qualified_namespace(namespace)
       while parts.length > 0 and !type.nil?
         p = parts.shift
-        if scope == :instance
-          STDERR.puts "Looking for #{p} in #{namespace}"
-          meths = get_instance_methods(namespace)
-        else
-          meths = get_methods(namespace)
+        if p == 'new' and scope != :instance
+          if scope == :instance
+            meths = get_instance_methods(namespace)
+          else
+            meths = get_methods(namespace)
+          end
+          meths.delete_if{ |m| m.insert != p }
+          return nil if meths.empty?
+          match = meths[0].documentation.all.match(/@return \[([a-z0-9:_]*)/i)
+          type = find_fully_qualified_namespace(match[1])
         end
-        meths.delete_if{ |m| m.insert != p }
-        return nil if meths.empty?
-        match = meths[0].documentation.all.match(/@return \[([a-z0-9:_]*)/i)
-        STDERR.puts "Go #{match[1]} in #{namespace} or #{type}"
-        type = find_fully_qualified_namespace(match[1])
-        STDERR.puts "Got #{type}"
         scope = :instance
       end
       type
