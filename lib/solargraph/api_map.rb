@@ -14,7 +14,8 @@ module Solargraph
     ]
     
     MAPPABLE_METHODS = [
-      :include, :require, :autoload, :attr_reader, :attr_writer, :attr_accessor, :private, :public, :protected
+      :include, :extend, :require, :autoload, :attr_reader, :attr_writer, :attr_accessor, :private, :public, :protected,
+      :solargraph_include_public_methods
     ]
 
     include NodeMethods
@@ -58,7 +59,8 @@ module Solargraph
       if workspace && File.exist?(yaml)
         l = YAML.load_file(yaml)
         o[:include].concat l['include'] unless l['include'].nil?
-        o[:exclude].concat l[:exclude] unless l['exclude'].nil?
+        o[:exclude].concat l['exclude'] unless l['exclude'].nil?
+        append_source(l['parse'].join("\n"), yaml) unless l['parse'].nil?
       end
       o
     end
@@ -216,11 +218,12 @@ module Solargraph
           }
         end
       end
-      nil
+      yard_map = Solargraph::YardMap.new(required: @required, workspace: workspace)
+      yard_map.find_fully_qualified_namespace(name, root)
     end
 
     def get_namespace_nodes(fqns)
-      return @file_nodes.values if fqns == ''
+      return @file_nodes.values if fqns == '' or fqns.nil?
       @namespace_map[fqns] || []
     end
 
@@ -360,8 +363,10 @@ module Solargraph
     def get_instance_methods(namespace, root = '', visibility: [:public])
       meths = []
       meths += inner_get_instance_methods(namespace, root, []) #unless has_yardoc?
+      fqns = find_fully_qualified_namespace(namespace, root)
       yard = YardMap.new(required: @required, workspace: @workspace)
-      yard_meths = yard.get_instance_methods(namespace, root, visibility: visibility)
+      #yard_meths = yard.get_instance_methods(namespace, root, visibility: visibility)
+      yard_meths = yard.get_instance_methods(fqns, '', visibility: visibility)
       if yard_meths.any?
         meths.concat yard_meths
       else
@@ -430,24 +435,37 @@ module Solargraph
               s = unpack_name(n.children[1])
               meths += inner_get_methods(s, root, skip)
             end
-            n.children.each { |c|
-              if c.kind_of?(AST::Node) and c.type == :defs
-                docstring = get_comment_for(c)
-                label = "#{c.children[1]}"
-                args = get_method_args(c)
-                label += " #{args.join(', ')}" unless args.empty?
-                meths.push Suggestion.new(label, insert: c.children[1].to_s, kind: Suggestion::METHOD, detail: 'Method', documentation: docstring) if c.children[1].to_s[0].match(/[a-z_]/i) and c.children[1] != :def
-              elsif c.kind_of?(AST::Node) and c.type == :send and c.children[1] == :include
-                # TODO: This might not be right. Should we be getting singleton methods
-                # from an include, or only from an extend?
-                i = unpack_name(c.children[2])
-                meths += inner_get_methods(i, root, skip) unless i == 'Kernel'
-              end
-            }
+            meths += inner_get_methods_from_node(n, root, skip)
           end
         #end
       }
       meths.uniq
+    end
+
+    def inner_get_methods_from_node node, root, skip
+      meths = []
+      node.children.each { |c|
+        if c.kind_of?(AST::Node)
+          if c.type == :defs
+            docstring = get_comment_for(c)
+            label = "#{c.children[1]}"
+            args = get_method_args(c)
+            label += " #{args.join(', ')}" unless args.empty?
+            meths.push Suggestion.new(label, insert: c.children[1].to_s, kind: Suggestion::METHOD, detail: 'Method', documentation: docstring) if c.children[1].to_s[0].match(/[a-z_]/i) and c.children[1] != :def
+          elsif c.type == :send and c.children[1] == :include
+            # TODO: This might not be right. Should we be getting singleton methods
+            # from an include, or only from an extend?
+            i = unpack_name(c.children[2])
+            meths += inner_get_methods(i, root, skip) unless i == 'Kernel'
+          elsif c.type == :send and c.children[1] == :solargraph_include_public_methods
+            i = unpack_name(c.children[2])
+            meths += get_instance_methods(i, root, visibility: [:public])
+          else
+            meths += inner_get_methods_from_node(c, root, skip)
+          end
+        end
+      }
+      meths
     end
 
     def inner_get_instance_methods(namespace, root, skip)
@@ -491,12 +509,13 @@ module Solargraph
                   }
                 end
               end
-              get_include_strings_from(n).each { |i|
-                meths += inner_get_instance_methods(i, fqns, skip)
-              }
             }
           end
         #end
+        # This is necessary to get included modules from workspace definitions
+        get_include_strings_from(n).each { |i|
+          meths += inner_get_instance_methods(i, fqns, skip)
+        }
       }
       meths.uniq
     end

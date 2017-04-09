@@ -126,11 +126,11 @@ module Solargraph
         yard = YARD::Registry.load! y
         unless yard.nil?
           ns = nil
-          if scope == ''
-            ns = yard.at(namespace)
-          else
+          #if scope == ''
+          #  ns = yard.at(namespace)
+          #else
             ns = find_first_resolved_namespace(yard, namespace, scope)
-          end
+          #end
           unless ns.nil? or !ns.kind_of?(YARD::CodeObjects::NamespaceObject)
             ns.meths(scope: :class, visibility: visibility).each { |m|
               # HACK: Fix return tags in core documentation
@@ -156,11 +156,11 @@ module Solargraph
         yard = YARD::Registry.load! y
         unless yard.nil?
           ns = nil
-          if scope == ''
-            ns = yard.at(namespace)
-          else
+          #if scope == ''
+          #  ns = yard.at(namespace)
+          #else
             ns = find_first_resolved_namespace(yard, namespace, scope)
-          end
+          #end
           unless ns.nil?
             ns.meths(scope: :instance, visibility: visibility).each { |m|
               # HACK: Fix return tags in core documentation
@@ -184,6 +184,11 @@ module Solargraph
 
     def gem_names
       Gem::Specification.map{ |s| s.name }.uniq
+    end
+
+    def find_fully_qualified_namespace namespace, scope
+      obj = resolve(namespace, scope)
+      return obj.path unless obj.nil?
     end
 
     private
@@ -215,7 +220,8 @@ module Solargraph
     def find_first_resolved_namespace yard, namespace, scope
       parts = scope.split('::')
       while parts.length > 0
-        ns = yard.resolve(P(scope), namespace)
+        puts "Looking for #{namespace} in #{parts.join('::')}"
+        ns = yard.resolve(P(parts.join('::')), namespace, true)
         return ns unless ns.nil?
         parts.pop
       end
