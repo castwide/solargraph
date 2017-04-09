@@ -33,18 +33,8 @@ module Solargraph
         return 'Integer'
       elsif node.type == :float
         return 'Float'
-      elsif node.type == :send
-        if node.children[0].nil?
-          # TODO Another local variable or method or something? sheesh
-        else
-          ns = unpack_name(node.children[0])
-          if node.children[1] == :new
-            return ns
-          end
-        end
-      elsif node.type == :cbase or node.type == :const
-        unpack_name node
       end
+      nil
     end
 
     # Get a call signature from a node.
