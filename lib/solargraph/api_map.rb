@@ -65,6 +65,10 @@ module Solargraph
       o
     end
 
+    def yard_map
+      @yard_map ||= YardMap.new(required: required, workspace: workspace)
+    end
+    
     def append_file filename
       append_source File.read(filename), filename
     end
@@ -136,13 +140,12 @@ module Solargraph
     def namespaces_in name, root = ''
       result = []
       result += inner_namespaces_in(name, root, [])
-      yard = YardMap.new(required: @required, workspace: @workspace)
-      result += yard.get_constants name, root
+      result += yard_map.get_constants name, root
       fqns = find_fully_qualified_namespace(name, root)
       unless fqns.nil?
         nodes = get_namespace_nodes(fqns)
         get_include_strings_from(*nodes).each { |i|
-          result += yard.get_constants(i, root)
+          result += yard_map.get_constants(i, root)
         }
       end
       result
@@ -218,7 +221,6 @@ module Solargraph
           }
         end
       end
-      yard_map = Solargraph::YardMap.new(required: @required, workspace: workspace)
       yard_map.find_fully_qualified_namespace(name, root)
     end
 
@@ -314,6 +316,97 @@ module Solargraph
       []
     end
     
+    # Get a fully qualified namespace for the given signature.
+    # The signature should be in the form of a call, e.g.,
+    # variable.method or Class.method.
+    #
+    # @return [String] The fully qualified namespace for the signature's type
+    #   or nil if a type could not be determined
+    def infer_signature_type signature, ns_here, scope
+      parts = signature.split('.')
+      first = parts.shift
+      # @todo Where should this happen?
+      #var = find_local_variable_node(first, scope)
+      var = nil
+      if var.nil?
+        # It's not a locally assigned variable.
+        if ['STDERR','STDOUT','STDIN'].include?(first)
+          obj = 'IO'
+          if parts.length == 0
+            #return @api_map.get_instance_methods('IO')
+            return 'IO'
+          end
+        else
+          if parts.length == 0
+            # HACK: Assume that it's a constant (class or module) if it starts with an uppercase letter
+            if first[0] == first[0].upcase
+              #return @api_map.get_methods(first, ns_here)
+              STDERR.puts "Welp, the type is #{find_fully_qualified_namespace(first, ns_here)}"
+              return find_fully_qualified_namespace(first, ns_here)
+            else
+              if scope.type == :def
+                meths = get_instance_methods(ns_here).delete_if{|m| m.insert != first}
+                return [] if meths.empty?
+                return [] if meths[0].documentation.nil?
+                match = meths[0].documentation.all.match(/@return \[([a-z0-9:_]*)/i)
+                return [] if match[1].nil?
+                #return @api_map.get_instance_methods(match[1], ns_here)
+                return find_fully_qualified_namespace(match[1], ns_here)
+              else
+                meths = get_methods(ns_here).delete_if{|m| m.insert != first}
+                return nil if meths.empty?
+                return nil if meths[0].documentation.nil?
+                match = meths[0].documentation.all.match(/@return \[([a-z0-9:_]*)/i)
+                return nil if match[1].nil?
+                #return @api_map.get_instance_methods(match[1], ns_here)
+                return find_fully_qualified_namespace(match[1], ns_here)
+              end
+            end
+          end
+          meth = parts.shift
+          if meth == 'new'
+            obj = find_fully_qualified_namespace(first, ns_here)
+          else
+            obj = get_method_return_value first, ns_here, meth, :class
+          end
+        end
+        while parts.length > 0
+          obj = get_instance_method_return_value obj, ns_here, parts.shift
+          break if obj.nil?
+        end
+        #return @api_map.get_instance_methods(obj) unless obj.nil?
+        return obj unless obj.nil?
+      else
+        obj = nil
+        cmnt = @api_map.get_comment_for(var)
+        unless cmnt.nil?
+          tag = cmnt.tag(:type)
+          obj = tag.types[0] unless tag.nil? or tag.types.empty?
+        end
+        obj = infer(var.children[1]) if obj.nil?
+        if obj.nil?
+          sig = resolve_node_signature(var.children[1])
+          return infer_signature_type(sig, ns_here, scope)
+        end
+        while parts.length > 0
+          meth = parts.shift
+          obj = get_instance_method_return_value obj, ns_here, meth
+        end
+        #return @api_map.get_instance_methods(obj) unless obj.nil?
+        return find_fully_qualified_namespace(obj, ns_here) unless obj.nil?
+      end
+      nil
+    end
+
+    def get_method_return_value namespace, root, method, scope = :instance
+      meths = get_methods(namespace, root).delete_if{ |m| m.insert != method }
+      meths.each { |m|
+        r = get_return_tag(m)
+        return r unless r.nil?
+      }
+      nil
+    end
+
     def get_namespace_type namespace, root = ''
       type = nil
       fqns = find_fully_qualified_namespace(namespace, root)
@@ -327,16 +420,15 @@ module Solargraph
     def get_methods(namespace, root = '', visibility: [:public])
       meths = []
       meths += inner_get_methods(namespace, root, []) #unless has_yardoc?
-      yard = YardMap.new(required: @required, workspace: @workspace)
-      yard_meths = yard.get_methods(namespace, root, visibility: visibility)
+      yard_meths = yard_map.get_methods(namespace, root, visibility: visibility)
       if yard_meths.any?
         meths.concat yard_meths
       else
         type = get_namespace_type(namespace, root)
         if type == :class
-          meths += yard.get_instance_methods('Class')
+          meths += yard_map.get_instance_methods('Class')
         elsif type == :module
-          meths += yard.get_methods('Module')
+          meths += yard_map.get_methods('Module')
         end
         meths
       end
@@ -364,24 +456,22 @@ module Solargraph
       meths = []
       meths += inner_get_instance_methods(namespace, root, []) #unless has_yardoc?
       fqns = find_fully_qualified_namespace(namespace, root)
-      yard = YardMap.new(required: @required, workspace: @workspace)
-      #yard_meths = yard.get_instance_methods(namespace, root, visibility: visibility)
-      yard_meths = yard.get_instance_methods(fqns, '', visibility: visibility)
+      yard_meths = yard_map.get_instance_methods(fqns, '', visibility: visibility)
       if yard_meths.any?
         meths.concat yard_meths
       else
         type = get_namespace_type(namespace, root)
         if type == :class
-          meths += yard.get_instance_methods('Object')
+          meths += yard_map.get_instance_methods('Object')
         elsif type == :module
-          meths += yard.get_instance_methods('Module')
+          meths += yard_map.get_instance_methods('Module')
         end
         # TODO: Look out for repeats. Consider not doing this at all.
-        sc = get_superclass(namespace, root)
-        until sc.nil?
-          meths += yard.get_instance_methods(sc, root)
-          sc = get_superclass(sc)
-        end
+        #sc = get_superclass(namespace, root)
+        #until sc.nil?
+        #  meths += yard.get_instance_methods(sc, root)
+        #  sc = get_superclass(sc)
+        #end
       end
       meths
     end

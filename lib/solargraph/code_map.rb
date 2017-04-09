@@ -201,15 +201,62 @@ module Solargraph
       result = reduce_starting_with(result, word_at(index)) if filtered
       result
     end
-    
+
+    # Find the signature at the specified index and get suggestions based
+    # on its inferred type.
+    #
+    # @return [Array<Solargraph::Suggestion>]
     def resolve_signature_at index
+      result = []
       signature = get_signature_at(index)
+      STDERR.puts "Will try to resolve #{signature}"
       ns_here = namespace_at(index)
       scope = parent_node_from(index, :class, :module, :def, :defs) || @node
-      infer_signature_type(signature, ns_here, scope)
+      #if (signature.include?('.'))
+        # TODO: Dammit, it's a long one"
+      #else
+        parts = signature.split('.')
+        STDERR.puts "Trying to infer #{parts[0]}"
+        var = find_local_variable_node(parts[0], scope)
+        if var.nil?
+          # It's not a local variable
+          fqns = find_fully_qualified_namespace(signature, ns_here)
+          if fqns.nil?
+            # It's a method call
+            type = @api_map.infer_signature_type(signature, ns_here, scope)          
+            result.concat @api_map.get_instance_methods(type) unless type.nil?
+          else
+            result.concat @api_map.get_methods(fqns)
+          end
+        else
+          # It's a local variable
+          # Get the type from the node, dummy
+          vtype = resolve_node_signature(var.children[1])
+          STDERR.puts "Lookin at #{vtype} (#{parts.join(';')})"
+          #wtype = vtype + (parts.length == 1 ? '' : '.' + parts[1..-1].join('.'))
+          #STDERR.puts "Bangin out #{wtype}"
+          #type = @api_map.infer_signature_type(wtype, ns_here, scope)
+          if parts.length == 1
+            type = vtype
+          else
+            type = @api_map.infer_signature_type(parts[1..-1].join('.'), vtype, scope)
+          end
+          STDERR.puts "Resolved: #{type}"
+          if type.nil?
+            STDERR.puts "Could not resolve type for #{var}"
+          else
+            result.concat @api_map.get_instance_methods(type)
+          end
+        end
+        # TODO: Where do these go?
+        #fqns = @api_map.find_fully_qualified_namespace(signature, ns_here)
+        #result.concat @api_map.get_methods(fqns) unless fqns.nil?
+      #end
+      result
     end
 
-    def infer_signature_type signature, ns_here, scope
+    # @todo This should return the signature type, not the type methods.
+    def xxx_infer_signature_type signature, ns_here, scope
       parts = signature.split('.')
       first = parts.shift
       var = find_local_variable_node(first, scope)
@@ -275,19 +322,29 @@ module Solargraph
       return []
     end
 
+    # Get a call signature from a node.
+    # The result should be a string in the form of a method path, e.g.,
+    # String.new or variable.method.
+    #
+    # @return [String]
     def resolve_node_signature node
       stack_node_signature(node).join('.')
     end
 
     def stack_node_signature node
       parts = []
-      if node.children[0].kind_of?(AST::Node) and node.children[0].type == :send
-        parts = stack_node_signature(node.children[0]) + parts
+      if node.kind_of?(AST::Node)
+        if node.children[0].type == :send
+          parts = stack_node_signature(node.children[0]) + parts
+          parts.push node.children[1].to_s
+        else
+          parts = [unpack_name(node.children[0])] + stack_node_signature(node.children[1]) + parts
+        end
       end
-      parts.push node.children[1].to_s
       parts
     end
 
+    # @todo This probably belongs in ApiMap.
     def get_method_return_value namespace, root, method, scope = :instance
       meths = @api_map.get_methods(namespace, root).delete_if{ |m| m.insert != method }
       meths.each { |m|
