@@ -17,11 +17,7 @@ module Solargraph
       end
       @api_map = api_map
       if @api_map.nil?
-        if workspace.nil?
-          @api_map = ApiMap.new(workspace)
-        else
-          @api_map = ApiMap.new(workspace)
-        end
+        @api_map = ApiMap.new(workspace)
       end
 
       @code = code.gsub(/\r/, '')
