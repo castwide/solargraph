@@ -221,6 +221,7 @@ module Solargraph
       else
         # It's a local variable. Get the type from the node
         type = get_type_comment(var)
+        type = infer(var.children[1]) if type.nil?
         if type.nil?
           vsig = resolve_node_signature(var.children[1])
           vparts = vsig.split('.')

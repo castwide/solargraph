@@ -214,7 +214,7 @@ module Solargraph
           return name unless @namespace_map[name].nil?
           get_include_strings_from(*@file_nodes.values).each { |i|
             reroot = "#{root == '' ? '' : root + '::'}#{i}"
-            recname = find_fully_qualified_namespace name, reroot, skip
+            recname = find_fully_qualified_namespace name.to_s, reroot, skip
             return recname unless recname.nil?
           }
         else
