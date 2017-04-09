@@ -290,6 +290,10 @@ module Solargraph
           result = tag.types[0] unless tag.nil? or tag.types.empty?
         end
         result = infer(vn.children[1]) if result.nil?
+        if result.nil?
+          signature = resolve_node_signature(vn.children[1])
+          result = infer_signature_type(signature, namespace, scope: scope)
+        end
       end
       result
     end
@@ -339,8 +343,10 @@ module Solargraph
           end
           meths.delete_if{ |m| m.insert != p }
           return nil if meths.empty?
-          match = meths[0].documentation.all.match(/@return \[([a-z0-9:_]*)/i)
-          type = find_fully_qualified_namespace(match[1])
+          unless meths[0].documentation.nil?
+            match = meths[0].documentation.all.match(/@return \[([a-z0-9:_]*)/i)
+            type = find_fully_qualified_namespace(match[1])
+          end
         end
         scope = :instance
         top = false
