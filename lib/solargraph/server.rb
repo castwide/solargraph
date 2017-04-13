@@ -11,7 +11,8 @@ module Solargraph
     @@semaphore = Mutex.new
 
     post '/prepare' do
-      prepare_workspace params['directory']
+      STDERR.puts "Preparing #{params['workspace']}"
+      Server.prepare_workspace params['workspace']
     end
 
     post '/suggest' do
@@ -65,7 +66,7 @@ module Solargraph
 
     class << self
       def run!
-        constant_updates
+        #constant_updates
         super
       end
 

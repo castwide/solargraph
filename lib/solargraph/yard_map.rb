@@ -6,10 +6,10 @@ module Solargraph
 
   class YardMap
     def initialize required: [], workspace: nil
-      #unless workspace.nil?
-      #  wsy = File.join(workspace, '.yardoc')
-      #  yardocs.push wsy if File.exist?(wsy)
-      #end
+      unless workspace.nil?
+        wsy = File.join(workspace, '.yardoc')
+        yardocs.push wsy if File.exist?(wsy)
+      end
       used = []
       required.each { |r|
         if workspace.nil? or !File.exist?(File.join workspace, 'lib', "#{r}.rb")

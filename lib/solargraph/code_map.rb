@@ -197,7 +197,7 @@ module Solargraph
         result += @api_map.get_instance_methods('Kernel')
       end
       result = reduce_starting_with(result, word_at(index)) if filtered
-      result
+      result.uniq{|s| s.path}
     end
 
     # Find the signature at the specified index and get suggestions based

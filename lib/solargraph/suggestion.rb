@@ -22,6 +22,10 @@ module Solargraph
       @location = location
     end
     
+    def path
+      code_object.nil? ? label : code_object.path
+    end
+
     def to_s
       label
     end
@@ -32,6 +36,7 @@ module Solargraph
         kind: @kind,
         insert: @insert,
         detail: @detail,
+        path: path,
         location: (@location.nil? ? nil : @location.to_s)
       }
       if @code_object.nil?

@@ -32,7 +32,7 @@ module Solargraph
           append_file(extra)
         end
         files = []
-        opts = options
+        opts = yard_options
         (opts[:include] - opts[:exclude]).each { |glob|
           files += Dir[File.join @workspace, glob]
         }
@@ -52,27 +52,6 @@ module Solargraph
       @namespace_map = {}
       @namespace_tree = {}
       @required = []
-    end
-
-    def options
-      o = {
-        include: [],
-        exclude: []
-      }
-      unless workspace.nil?
-        yardopts_file = File.join(workspace, '.yardopts')
-        if File.exist?(yardopts_file)
-          yardopts = File.read(yardopts_file)
-          yardopts.lines.each { |line|
-            arg = line.strip
-            if !arg.start_with?('-')
-              o[:include].push arg
-            end
-          }
-        end
-      end
-      o[:include].concat ['app/**/*.rb', 'lib/**/*.rb'] if o[:include].empty?
-      o
     end
 
     def yard_map
@@ -167,7 +146,7 @@ module Solargraph
       unless fqns.nil? or skip.include?(fqns)
         skip.push fqns
         nodes = get_namespace_nodes(fqns)
-        #nodes.delete_if { |n| yardoc_has_file?(get_filename_for(n))}
+        nodes.delete_if { |n| yardoc_has_file?(get_filename_for(n))}
         unless nodes.empty?
           cursor = @namespace_tree
           parts = fqns.split('::')
@@ -266,6 +245,17 @@ module Solargraph
     def get_filename_for(node)
       root = get_root_for(node)
       root.nil? ? nil : root.children[0]
+    end
+
+    def yardoc_has_file?(file)
+      return false if workspace.nil?
+      if @yardoc_files.nil?
+        @yardoc_files = []
+        yard_options[:include].each { |glob|
+          @yardoc_files.concat Dir[File.join workspace, glob]
+        }
+      end
+      @yardoc_files.include?(file)
     end
 
     def inner_get_instance_variables(node, scope)
@@ -487,7 +477,7 @@ module Solargraph
       return meths if fqns.nil?
       nodes = get_namespace_nodes(fqns)
       nodes.each { |n|
-        #unless yardoc_has_file?(get_filename_for(n))
+        unless yardoc_has_file?(get_filename_for(n))
           if n.kind_of?(AST::Node)
             if n.type == :class and !n.children[1].nil?
               s = unpack_name(n.children[1])
@@ -495,7 +485,7 @@ module Solargraph
             end
             meths += inner_get_methods_from_node(n, root, skip)
           end
-        #end
+        end
       }
       meths.uniq
     end
@@ -533,7 +523,7 @@ module Solargraph
       skip.push fqns
       nodes = get_namespace_nodes(fqns)
       nodes.each { |n|
-        #unless yardoc_has_file?(get_filename_for(n))
+        unless yardoc_has_file?(get_filename_for(n))
           if n.kind_of?(AST::Node)
             if n.type == :class and !n.children[1].nil?
               s = unpack_name(n.children[1])
@@ -569,7 +559,7 @@ module Solargraph
               end
             }
           end
-        #end
+        end
         # This is necessary to get included modules from workspace definitions
         get_include_strings_from(n).each { |i|
           meths += inner_get_instance_methods(i, fqns, skip)
