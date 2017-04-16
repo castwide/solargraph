@@ -187,8 +187,13 @@ module Solargraph
     end
 
     def find_fully_qualified_namespace namespace, scope
-      obj = resolve(namespace, scope)
-      return obj.path unless obj.nil?
+      yardocs.each { |y|
+        yard = YARD::Registry.load! y
+        unless yard.nil?
+          obj = find_first_resolved_namespace(yard, namespace, scope)
+          return obj.path unless obj.nil?
+        end
+      }
     end
 
     private
@@ -220,7 +225,6 @@ module Solargraph
     def find_first_resolved_namespace yard, namespace, scope
       parts = scope.split('::')
       while parts.length > 0
-        puts "Looking for #{namespace} in #{parts.join('::')}"
         ns = yard.resolve(P(parts.join('::')), namespace, true)
         return ns unless ns.nil?
         parts.pop
