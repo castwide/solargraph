@@ -194,6 +194,7 @@ module Solargraph
           return obj.path unless obj.nil?
         end
       }
+      nil
     end
 
     private
