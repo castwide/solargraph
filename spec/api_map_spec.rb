@@ -139,4 +139,14 @@ describe Solargraph::ApiMap do
   it "finds filenames for nodes" do
     
   end
+
+  it "infers local class from [Class].new method" do
+    cls = @api_map.infer_signature_type('Class1.new', '', scope: :class)
+    expect(cls).to eq('Class1')
+  end
+
+  it "infers core class from [Class].new method" do
+    cls = @api_map.infer_signature_type('String.new', '', scope: :class)
+    expect(cls).to eq('String')
+  end
 end

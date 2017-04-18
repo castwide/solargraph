@@ -71,10 +71,4 @@ describe Solargraph::CodeMap do
     expect(result.map(&:to_s)).to include('baz')
     expect(result.map(&:to_s)).to include('boo')
   end
-
-  it "infers class from new method" do
-    code_map = Solargraph::CodeMap.new(code: @string_code)
-    result = code_map.suggest_at(11)
-    expect(result.map(&:to_s)).to include('upcase')
-  end
 end
