@@ -219,7 +219,11 @@ module Solargraph
           type = @api_map.infer_signature_type(signature, ns_here, scope: :class)
           result.concat @api_map.get_instance_methods(type) unless type.nil?
         else
-          result.concat @api_map.get_methods(fqns)
+          if fqns == ns_here
+            result.concat @api_map.get_methods(fqns, '', visibility: [:private, :protected, :public])
+          else
+            result.concat @api_map.get_methods(fqns)
+          end
         end
       else
         # It's a local variable. Get the type from the node

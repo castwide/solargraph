@@ -141,6 +141,10 @@ module Solargraph
               label += " #{args.join(', ')}" unless args.empty?
               meths.push Suggestion.new(label, insert: "#{n}", kind: Suggestion::METHOD, documentation: m.docstring, code_object: m, detail: "#{ns}", location: "#{m.file}:#{m.line}")
             }
+            # Collect superclass methods
+            if ns.kind_of?(YARD::CodeObjects::ClassObject) and !ns.superclass.nil?
+              meths += get_methods ns.superclass.to_s, '', visibility: [:public, :protected] unless ['Object', 'BasicObject', ''].include?(ns.superclass.to_s)
+            end
             if ns.kind_of?(YARD::CodeObjects::ClassObject) and namespace != 'Class'
               meths += get_instance_methods('Class')
             end
