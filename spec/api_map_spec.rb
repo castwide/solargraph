@@ -137,7 +137,8 @@ describe Solargraph::ApiMap do
   end
 
   it "finds filenames for nodes" do
-    
+    nodes = @api_map.get_namespace_nodes('Class1')
+    expect(@api_map.get_filename_for(nodes.first)).to eq('file.rb')
   end
 
   it "infers local class from [Class].new method" do
