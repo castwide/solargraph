@@ -334,6 +334,12 @@ module Solargraph
       top = true
       while parts.length > 0 and !type.nil?
         p = parts.shift
+        if top and scope == :class
+          first_class = find_fully_qualified_namespace(p, namespace)
+          sub = nil
+          sub = infer_signature_type(parts.join('.'), first_class, scope: :class) unless first_class.nil?
+          return sub unless sub.to_s == ''
+        end
         unless p == 'new' and scope != :instance
           if scope == :instance
             meths = get_instance_methods(type)
