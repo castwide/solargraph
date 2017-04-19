@@ -144,6 +144,10 @@ describe Solargraph::ApiMap do
   it "infers local class from [Class].new method" do
     cls = @api_map.infer_signature_type('Class1.new', '', scope: :class)
     expect(cls).to eq('Class1')
+    cls = @api_map.infer_signature_type('Module1::Module1Class.new', '', scope: :class)
+    expect(cls).to eq('Module1::Module1Class')
+    cls = @api_map.infer_signature_type('Module1Class.new', 'Module1', scope: :class)
+    expect(cls).to eq('Module1::Module1Class')
   end
 
   it "infers core class from [Class].new method" do
