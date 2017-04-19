@@ -35,8 +35,6 @@ describe Solargraph::CodeMap do
         end
       end
     )
-
-    @string_code = 'String.new.'
   end
 
   it "identifies position in def node" do
