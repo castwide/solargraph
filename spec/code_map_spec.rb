@@ -69,4 +69,10 @@ describe Solargraph::CodeMap do
     expect(result.map(&:to_s)).to include('baz')
     expect(result.map(&:to_s)).to include('boo')
   end
+
+  it "gets instance methods for literals" do
+    code_map = Solargraph::CodeMap.new(code: "'string'.")
+    result = code_map.suggest_at(9)
+    expect(result.map(&:to_s)).to include('upcase')
+  end
 end
