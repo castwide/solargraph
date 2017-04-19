@@ -147,10 +147,15 @@ module Solargraph
     end
 
     def suggest_at index, filtered: true, with_snippets: false
+      node = node_at(index - 2)
       return [] if string_at?(index)
       result = []
       phrase = phrase_at(index)
       signature = get_signature_at(index)
+      if (@code[index - 1] == '.')
+        type = infer(node_at(index - 2))
+        return @api_map.get_instance_methods(type) unless type.nil?
+      end
       if signature.start_with?('@')
         parts = signature.split('.')
         var = parts.shift

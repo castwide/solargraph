@@ -575,6 +575,7 @@ module Solargraph
     end
 
     def mappable?(node)
+      return true if node.kind_of?(AST::Node) and [:array, :hash, :str, :int, :float].include?(node.type)
       # TODO Add node.type :casgn (constant assignment)
       if node.kind_of?(AST::Node) and (node.type == :class or node.type == :module or node.type == :def or node.type == :defs or node.type == :ivasgn or node.type == :gvasgn or node.type == :lvasgn or node.type == :or_asgn)
         true
@@ -639,6 +640,8 @@ module Solargraph
         # TODO: The api_map should ignore local variables.
         type = node.children[0].type
         children.push node.children[0].children[0], node.children[1]
+      elsif [:array, :hash, :str, :int, :float].include?(node.type)
+        # @todo Do we really care about the details?
       end
       result = node.updated(type, children)
       result
