@@ -351,24 +351,13 @@ module Solargraph
           meths.delete_if{ |m| m.insert != p }
           return nil if meths.empty?
           type = nil
-          unless meths[0].documentation.nil?
-            match = meths[0].documentation.all.match(/@return \[([a-z0-9:_]*)/i)
-            type = find_fully_qualified_namespace(match[1]) unless match.nil?
-          end
+          match = meths[0].return_type
+          type = find_fully_qualified_namespace(match) unless match.nil?
         end
         scope = :instance
         top = false
       end
       type
-    end
-
-    def get_method_return_value namespace, root, method, scope = :instance
-      meths = get_methods(namespace, root).delete_if{ |m| m.insert != method }
-      meths.each { |m|
-        r = get_return_tag(m)
-        return r unless r.nil?
-      }
-      nil
     end
 
     def get_namespace_type namespace, root = ''
@@ -430,12 +419,6 @@ module Solargraph
         elsif type == :module
           meths += yard_map.get_instance_methods('Module')
         end
-        # TODO: Look out for repeats. Consider not doing this at all.
-        #sc = get_superclass(namespace, root)
-        #until sc.nil?
-        #  meths += yard.get_instance_methods(sc, root)
-        #  sc = get_superclass(sc)
-        #end
       end
       meths
     end

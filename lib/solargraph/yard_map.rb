@@ -57,12 +57,7 @@ module Solargraph
         yard = YARD::Registry.load! y
         unless yard.nil?
           obj = yard.at query
-          #found.push YARD::Templates::Engine.render(format: :html, object: obj) unless obj.nil?
-          unless obj.nil?
-            # HACK: Fix return tags in core documentation
-            #fix_return! obj if obj.kind_of?(YARD::CodeObjects::MethodObject) and y.include?('.solargraph')
-            found.push obj
-          end
+          found.push obj unless obj.nil?
         end
       }
       found
@@ -126,15 +121,9 @@ module Solargraph
         yard = YARD::Registry.load! y
         unless yard.nil?
           ns = nil
-          #if scope == ''
-          #  ns = yard.at(namespace)
-          #else
-            ns = find_first_resolved_namespace(yard, namespace, scope)
-          #end
+          ns = find_first_resolved_namespace(yard, namespace, scope)
           unless ns.nil? or !ns.kind_of?(YARD::CodeObjects::NamespaceObject)
             ns.meths(scope: :class, visibility: visibility).each { |m|
-              # HACK: Fix return tags in core documentation
-              #fix_return! m if y.include?('.solargraph')
               n = m.to_s.split(/[\.#]/).last
               label = "#{n}"
               args = get_method_args(m)
@@ -160,15 +149,9 @@ module Solargraph
         yard = YARD::Registry.load! y
         unless yard.nil?
           ns = nil
-          #if scope == ''
-          #  ns = yard.at(namespace)
-          #else
-            ns = find_first_resolved_namespace(yard, namespace, scope)
-          #end
+          ns = find_first_resolved_namespace(yard, namespace, scope)
           unless ns.nil?
             ns.meths(scope: :instance, visibility: visibility).each { |m|
-              # HACK: Fix return tags in core documentation
-              #fix_return! m if y.include?('.solargraph')
               n = m.to_s.split(/[\.#]/).last
               if n.to_s.match(/^[a-z]/i) and (namespace == 'Kernel' or !m.to_s.start_with?('Kernel#')) and !m.docstring.to_s.include?(':nodoc:')
                 label = "#{n}"
@@ -209,23 +192,6 @@ module Solargraph
         args.push a[0]
       }
       args
-    end
-
-    def fix_return! meth
-      STDERR.puts "WARNING: fix_return! is deprecated"
-      return unless meth.tag(:return).nil?
-      return unless meth.docstring.all.include?('@return')
-      text = ''
-      meth.docstring.all.lines.each { |line|
-        if line.strip.start_with?('@return')
-          text += line.strip
-        else
-          text += line
-        end
-        text += "\n"
-      }
-      doc = YARD::Docstring.new(text, meth)
-      meth.docstring = doc
     end
 
     def find_first_resolved_namespace yard, namespace, scope

@@ -271,24 +271,6 @@ module Solargraph
       obj
     end
 
-    # @todo Candidate for deprecation
-    def get_instance_method_return_value namespace, root, method
-      meths = @api_map.get_instance_methods(namespace, root).delete_if{ |m| m.insert != method }
-      meths.each { |m|
-        r = get_return_tag(m)
-        return r unless r.nil?
-      }
-      nil
-    end
-
-    def get_return_tag suggestion
-        unless suggestion.documentation.nil?
-          match = suggestion.documentation.all.match(/@return \[([a-z0-9:_]*)/i)
-          return match[1]
-        end
-        nil
-    end
-
     def get_signature_at index
       brackets = 0
       squares = 0

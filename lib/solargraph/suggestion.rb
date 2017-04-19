@@ -30,6 +30,22 @@ module Solargraph
       label
     end
 
+    def return_type
+      if code_object.nil?
+        unless documentation.nil?
+          match = documentation.all.match(/@return \[([a-z0-9:_]*)/i)
+          return match[1]
+        end
+      else
+        o = code_object.tag(:overload)
+        unless o.nil?
+          r = o.tag(:return)
+          return r.types[0] unless r.nil?
+        end
+      end
+      nil
+    end
+
     def to_json args={}
       obj = {
         label: @label,
