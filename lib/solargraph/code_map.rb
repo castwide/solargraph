@@ -221,7 +221,8 @@ module Solargraph
         fqns = @api_map.find_fully_qualified_namespace(signature, ns_here)
         if fqns.nil?
           # It's a method call
-          type = @api_map.infer_signature_type(signature, ns_here, scope: :class)
+          sig_scope = (scope.type == :def ? :instance : :class)
+          type = @api_map.infer_signature_type(signature, ns_here, scope: sig_scope)
           result.concat @api_map.get_instance_methods(type) unless type.nil?
         else
           if fqns == ns_here
