@@ -24,7 +24,7 @@ module Solargraph
     attr_reader :required
 
     def initialize workspace = nil
-      @workspace = workspace.gsub(/\\/, '/')
+      @workspace = workspace.gsub(/\\/, '/') unless workspace.nil?
       clear
       unless @workspace.nil?
         extra = File.join(@workspace, '.solargraph')
