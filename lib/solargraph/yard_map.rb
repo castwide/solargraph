@@ -189,7 +189,12 @@ module Solargraph
     def get_method_args meth
       args = []
       meth.parameters.each { |a|
-        args.push a[0]
+        p = a[0]
+        unless a[1].nil?
+          p += ' =' unless p.end_with?(':')
+          p += " #{a[1]}"
+        end
+        args.push p
       }
       args
     end
