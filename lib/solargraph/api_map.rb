@@ -24,10 +24,10 @@ module Solargraph
     attr_reader :required
 
     def initialize workspace = nil
-      @workspace = workspace
+      @workspace = workspace.gsub(/\\/, '/')
       clear
       unless @workspace.nil?
-        extra = File.join(workspace, '.solargraph')
+        extra = File.join(@workspace, '.solargraph')
         if File.exist?(extra)
           append_file(extra)
         end
@@ -252,7 +252,10 @@ module Solargraph
       if @yardoc_files.nil?
         @yardoc_files = []
         yard_options[:include].each { |glob|
-          @yardoc_files.concat Dir[File.join workspace, glob]
+          #@yardoc_files.concat Dir[File.join workspace, glob]
+          Dir[File.join workspace, glob].each { |f|
+            @yardoc_files.push File.absolute_path(f)
+          }
         }
       end
       @yardoc_files.include?(file)
@@ -400,6 +403,8 @@ module Solargraph
       list.children.each { |c|
         if c.type == :arg
           args.push c.children[0]
+        elsif c.type == :kwoptarg
+          args.push "#{c.children[0]}:"
         end
       }
       args
@@ -512,6 +517,7 @@ module Solargraph
       skip.push fqns
       nodes = get_namespace_nodes(fqns)
       nodes.each { |n|
+        f = get_filename_for(n)
         unless yardoc_has_file?(get_filename_for(n))
           if n.kind_of?(AST::Node)
             if n.type == :class and !n.children[1].nil?
