@@ -38,10 +38,12 @@ module Solargraph
         end
       else
         o = code_object.tag(:overload)
-        unless o.nil?
+        if o.nil?
+          r = code_object.tag(:return)
+        else
           r = o.tag(:return)
-          return r.types[0] unless r.nil?
         end
+        return r.types[0] unless r.nil?
       end
       nil
     end
