@@ -5,6 +5,8 @@ require 'yard'
 module Solargraph
 
   class YardMap
+    autoload :Cache, 'solargraph/yard_map/cache'
+
     def initialize required: [], workspace: nil
       unless workspace.nil?
         wsy = File.join(workspace, '.yardoc')
@@ -32,6 +34,7 @@ module Solargraph
       yardocs.push File.join(Dir.home, '.solargraph', 'cache', '2.0.0', 'yardoc')
       #yardocs.push File.join(Dir.home, '.solargraph', 'cache', '2.0.0', 'yardoc-stdlib')
       yardocs.uniq!
+      cache_core
     end
 
     def yardocs
@@ -63,7 +66,10 @@ module Solargraph
       found
     end
 
+    # @return [Array<Suggestion>]
     def get_constants namespace, scope = ''
+      cached = cache.get_constants(namespace, scope)
+      return cached unless cached.nil?
       consts = []
       result = []
       yardocs.each { |y|
@@ -90,6 +96,7 @@ module Solargraph
         end
         result.push Suggestion.new(c.to_s.split('::').last, detail: detail, kind: kind)
       }
+      cache.set_constants(namespace, scope, result)
       result
     end
 
@@ -115,20 +122,23 @@ module Solargraph
       nil
     end
 
+    # @return [Array<Suggestion>]
     def get_methods namespace, scope = '', visibility: [:public]
+      cached = cache.get_methods(namespace, scope, visibility)
+      return cached unless cached.nil?
       meths = []
       yardocs.each { |y|
         yard = YARD::Registry.load! y
         unless yard.nil?
           ns = nil
           ns = find_first_resolved_namespace(yard, namespace, scope)
-          unless ns.nil? or !ns.kind_of?(YARD::CodeObjects::NamespaceObject)
+          unless ns.nil?
             ns.meths(scope: :class, visibility: visibility).each { |m|
-              n = m.to_s.split(/[\.#]/).last
+              n = m.to_s.split(/[\.#]/).last.gsub(/=/, ' = ')
               label = "#{n}"
               args = get_method_args(m)
               label += " #{args.join(', ')}" unless args.empty?
-              meths.push Suggestion.new(label, insert: "#{n}", kind: Suggestion::METHOD, documentation: m.docstring, code_object: m, detail: "#{ns}", location: "#{m.file}:#{m.line}")
+              meths.push Suggestion.new(label, insert: "#{n.gsub(/=/, ' = ')}", kind: Suggestion::METHOD, documentation: m.docstring, code_object: m, detail: "#{ns}", location: "#{m.file}:#{m.line}")
             }
             # Collect superclass methods
             if ns.kind_of?(YARD::CodeObjects::ClassObject) and !ns.superclass.nil?
@@ -140,10 +150,14 @@ module Solargraph
           end
         end
       }
+      cache.set_methods(namespace, scope, visibility, meths)
       meths
     end
 
+    # @return [Array<Suggestion>]
     def get_instance_methods namespace, scope = '', visibility: [:public]
+      cached = cache.get_instance_methods(namespace, scope, visibility)
+      return cached unless cached.nil?
       meths = []
       yardocs.each { |y|
         yard = YARD::Registry.load! y
@@ -157,7 +171,7 @@ module Solargraph
                 label = "#{n}"
                 args = get_method_args(m)
                 label += " #{args.join(', ')}" unless args.empty?
-                meths.push Suggestion.new(label, insert: "#{n}", kind: Suggestion::METHOD, documentation: m.docstring, code_object: m, detail: "#{ns}", location: "#{m.file}:#{m.line}")
+                meths.push Suggestion.new(label, insert: "#{n.gsub(/=/, ' = ')}", kind: Suggestion::METHOD, documentation: m.docstring, code_object: m, detail: "#{ns}", location: "#{m.file}:#{m.line}")
               end
             }
             if ns.kind_of?(YARD::CodeObjects::ClassObject) and namespace != 'Object'
@@ -166,6 +180,7 @@ module Solargraph
           end
         end
       }
+      cache.set_instance_methods(namespace, scope, visibility, meths)
       meths
     end
 
@@ -178,13 +193,17 @@ module Solargraph
         yard = YARD::Registry.load! y
         unless yard.nil?
           obj = find_first_resolved_namespace(yard, namespace, scope)
-          return obj.path unless obj.nil?
+          return obj.path unless obj.nil? or !obj.kind_of?(YARD::CodeObjects::NamespaceObject)
         end
       }
       nil
     end
 
     private
+
+    def cache
+      @cache ||= Cache.new
+    end
 
     def get_method_args meth
       args = []
@@ -207,6 +226,14 @@ module Solargraph
         parts.pop
       end
       yard.at(namespace)
+    end
+
+    def cache_core
+      c = get_constants '', ''
+      c.each { |n|
+        get_methods 'n', visibility: :public
+        get_instance_methods 'n', visibility: :public
+      }
     end
   end
 
