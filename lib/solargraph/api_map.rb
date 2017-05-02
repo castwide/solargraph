@@ -298,7 +298,7 @@ module Solargraph
           signature = resolve_node_signature(vn.children[1])
           sig_ns = find_fully_qualified_namespace(signature.split('.').first, fqns)
           sig_scope = (sig_ns.nil? ? :instance : :class)
-          result = infer_signature_type(sig_ns, '', scope: sig_scope)
+          result = infer_signature_type(signature, namespace, scope: sig_scope)
         end
       end
       result
