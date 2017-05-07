@@ -469,10 +469,14 @@ module Solargraph
         Dir.chdir(workspace) do
           #YARD::Registry.load(yard_options[:include] - yard_options[:exclude], true)
           #YARD::Registry.save
-          `yardoc -e #{Solargraph::YARD_EXTENSION_FILE} #{yard_options[:all]}`
-          unless $?.success?
-            STDERR.puts "There was an error processing the workspace yardoc."
-          end
+          Thread.new {
+            STDERR.puts "Updating the yardoc..."
+            globs = yard_options[:include] - yard_options[:exclude]
+            STDERR.puts `yardoc -e #{Solargraph::YARD_EXTENSION_FILE} #{yard_options[:flags].join(' ')} #{globs.join(' ')}`
+            unless $?.success?
+              STDERR.puts "There was an error processing the workspace yardoc."
+            end
+          }
         end
       end
     end
