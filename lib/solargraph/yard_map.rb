@@ -81,6 +81,7 @@ module Solargraph
       cached = cache.get_constants(namespace, scope)
       return cached unless cached.nil?
       consts = []
+      binds = []
       result = []
       yardocs.each { |y|
         yard = load_yardoc(y)
@@ -91,9 +92,7 @@ module Solargraph
             # specified namespaces.
             b = yard.root.tag(:bind)
             unless b.nil?
-              b.types.each { |t|
-                consts += get_instance_methods(t, '', visibility: :public)
-              }
+              binds.concat b.types
             end
           end
           ns = nil
@@ -116,6 +115,9 @@ module Solargraph
           kind = Suggestion::MODULE
         end
         result.push Suggestion.new(c.to_s.split('::').last, detail: detail, kind: kind)
+      }
+      binds.each { |type|
+        result.concat get_instance_methods(type, '', visibility: [:public])
       }
       cache.set_constants(namespace, scope, result)
       result
@@ -192,6 +194,7 @@ module Solargraph
                 label = "#{n}"
                 args = get_method_args(m)
                 label += " #{args.join(', ')}" unless args.empty?
+                STDERR.puts "Adding #{label} from yard"
                 meths.push Suggestion.new(label, insert: "#{n.gsub(/=/, ' = ')}", kind: Suggestion::METHOD, documentation: m.docstring, code_object: m, detail: "#{ns}", location: "#{m.file}:#{m.line}")
               end
             }

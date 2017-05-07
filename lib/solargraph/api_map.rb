@@ -472,7 +472,10 @@ module Solargraph
           Thread.new {
             STDERR.puts "Updating the yardoc..."
             globs = yard_options[:include] - yard_options[:exclude]
-            STDERR.puts `yardoc -e #{Solargraph::YARD_EXTENSION_FILE} #{yard_options[:flags].join(' ')} #{globs.join(' ')}`
+            #cmd = "yardoc #{globs.join(' ')} -e #{Solargraph::YARD_EXTENSION_FILE} #{yard_options[:flags].join(' ')}"
+            cmd = "yardoc -e #{Solargraph::YARD_EXTENSION_FILE}"
+            STDERR.puts "Update yardoc with #{cmd}"
+            STDERR.puts `#{cmd}`
             unless $?.success?
               STDERR.puts "There was an error processing the workspace yardoc."
             end
