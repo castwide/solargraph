@@ -97,10 +97,9 @@ module Solargraph
       @file_comments[filename][node.loc]
     end
 
-    def self.get_keywords without_snippets: false
+    def self.get_keywords
       result = []
       keywords = KEYWORDS
-      keywords -= Snippets.keywords if without_snippets
       keywords.each { |k|
         result.push Suggestion.new(k, kind: Suggestion::KEYWORD, detail: 'Keyword')
       }

@@ -193,7 +193,7 @@ module Solargraph
         parts = current_namespace.to_s.split('::')
         result += get_snippets_at(index) if with_snippets
         result += get_local_variables_and_methods_at(index)
-        result += ApiMap.get_keywords(without_snippets: with_snippets)
+        result += ApiMap.get_keywords
         while parts.length > 0
           ns = parts.join('::')
           result += @api_map.namespaces_in(ns)
@@ -335,7 +335,7 @@ module Solargraph
           prefix = prefix[0..-2]
         end
         if matched
-          result.push Suggestion.new(detail['prefix'], kind: Suggestion::KEYWORD, detail: name, insert: detail['body'].join("\r\n"))
+          result.push Suggestion.new(detail['prefix'], kind: Suggestion::SNIPPET, detail: name, insert: detail['body'].join("\r\n"))
         end
       }
       result
