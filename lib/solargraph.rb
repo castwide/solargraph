@@ -1,6 +1,6 @@
 require 'solargraph/version'
 require 'rubygems/package'
-require 'yard'
+require 'yard-solargraph'
 
 module Solargraph
   autoload :Analyzer,    'solargraph/analyzer'
@@ -15,7 +15,8 @@ module Solargraph
   autoload :Server,      'solargraph/server'
   autoload :YardMap,     'solargraph/yard_map'
 
-  YARDOC_PATH = File.realpath(File.dirname(__FILE__) + "/../yardoc")
+  YARDOC_PATH = File.join(File.realpath(File.dirname(__FILE__)), '..', 'yardoc')
+  YARD_EXTENSION_FILE = File.join(File.realpath(File.dirname(__FILE__)), 'yard-solargraph.rb')
 end
 
 # Make sure the core and stdlib documentation is available
@@ -39,6 +40,3 @@ unless File.exist?(version_dir)
   tar_extract.close
   #FileUtils.rm File.join(cache_dir, '2.0.0.tar.gz')
 end
-
-# Define a @type tag to be used for documenting variables
-YARD::Tags::Library.define_tag("Type", :type, :with_types_and_name)

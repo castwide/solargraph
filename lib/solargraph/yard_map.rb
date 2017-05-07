@@ -11,6 +11,8 @@ module Solargraph
       unless workspace.nil?
         wsy = File.join(workspace, '.yardoc')
         yardocs.push wsy if File.exist?(wsy)
+        #wsy = Dir[File.join workspace, '**/*.rb']
+        #yardocs.push(wsy)
       end
       used = []
       required.each { |r|
@@ -41,10 +43,18 @@ module Solargraph
       @yardocs ||= []
     end
 
+    def load_yardoc y
+      if y.kind_of?(Array)
+        YARD::Registry.load y, true
+      else
+        YARD::Registry.load! y
+      end
+    end
+
     def search query
       found = []
       yardocs.each { |y|
-        yard = YARD::Registry.load! y
+        yard = load_yardoc(y)
         unless yard.nil?
           yard.paths.each { |p|
             found.push p if p.downcase.include?(query.downcase)
@@ -57,7 +67,7 @@ module Solargraph
     def document query
       found = []
       yardocs.each { |y|
-        yard = YARD::Registry.load! y
+        yard = load_yardoc(y)
         unless yard.nil?
           obj = yard.at query
           found.push obj unless obj.nil?
@@ -73,8 +83,19 @@ module Solargraph
       consts = []
       result = []
       yardocs.each { |y|
-        yard = YARD::Registry.load! y
+        yard = load_yardoc(y)
         unless yard.nil?
+          if namespace == '' and scope == ''
+            # Check for a bind tag in the yardoc root. If it exists, treat
+            # workspace code as a DSL that uses public instance methods in the
+            # specified namespaces.
+            b = yard.root.tag(:bind)
+            unless b.nil?
+              b.types.each { |t|
+                consts += get_instance_methods(t, '', visibility: :public)
+              }
+            end
+          end
           ns = nil
           if scope == ''
             ns = yard.at(namespace)
@@ -102,7 +123,7 @@ module Solargraph
 
     def at signature
       yardocs.each { |y|
-        yard = YARD::Registry.load! y
+        yard = load_yardoc(y)
         unless yard.nil?
           obj = yard.at(signature)
           return obj unless obj.nil?
@@ -113,7 +134,7 @@ module Solargraph
 
     def resolve signature, scope
       yardocs.each { |y|
-        yard = YARD::Registry.load! y
+        yard = load_yardoc(y)
         unless yard.nil?
           obj = yard.resolve(P(scope), signature)
           return obj unless obj.nil?
@@ -128,7 +149,7 @@ module Solargraph
       return cached unless cached.nil?
       meths = []
       yardocs.each { |y|
-        yard = YARD::Registry.load! y
+        yard = load_yardoc(y)
         unless yard.nil?
           ns = nil
           ns = find_first_resolved_namespace(yard, namespace, scope)
@@ -160,7 +181,7 @@ module Solargraph
       return cached unless cached.nil?
       meths = []
       yardocs.each { |y|
-        yard = YARD::Registry.load! y
+        yard = load_yardoc(y)
         unless yard.nil?
           ns = nil
           ns = find_first_resolved_namespace(yard, namespace, scope)
@@ -190,7 +211,7 @@ module Solargraph
 
     def find_fully_qualified_namespace namespace, scope
       yardocs.each { |y|
-        yard = YARD::Registry.load! y
+        yard = load_yardoc(y)
         unless yard.nil?
           obj = find_first_resolved_namespace(yard, namespace, scope)
           return obj.path unless obj.nil? or !obj.kind_of?(YARD::CodeObjects::NamespaceObject)

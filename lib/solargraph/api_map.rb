@@ -14,9 +14,8 @@ module Solargraph
     ]
 
     MAPPABLE_METHODS = [
-      :include, :extend, :require, :autoload, :attr_reader, :attr_writer, :attr_accessor, :private, :public, :protected,
-      :solargraph_include_public_methods
-    ]
+      :include, :extend, :require, :autoload, :attr_reader, :attr_writer, :attr_accessor, :private, :public, :protected
+    ] # @todo Not including solargraph_include_public_methods (an experimental thing)
 
     include NodeMethods
 
@@ -463,6 +462,21 @@ module Solargraph
       arr
     end
     
+    def update_yardoc
+      if workspace.nil?
+        STDERR.puts "No workspace specified for yardoc update."
+      else
+        Dir.chdir(workspace) do
+          #YARD::Registry.load(yard_options[:include] - yard_options[:exclude], true)
+          #YARD::Registry.save
+          `yardoc -e #{Solargraph::YARD_EXTENSION_FILE} #{yard_options[:all]}`
+          unless $?.success?
+            STDERR.puts "There was an error processing the workspace yardoc."
+          end
+        end
+      end
+    end
+
     private
 
     def inner_get_methods(namespace, root = '', skip = [])
@@ -501,9 +515,9 @@ module Solargraph
             # from an include, or only from an extend?
             i = unpack_name(c.children[2])
             meths += inner_get_methods(i, root, skip) unless i == 'Kernel'
-          elsif c.type == :send and c.children[1] == :solargraph_include_public_methods
-            i = unpack_name(c.children[2])
-            meths += get_instance_methods(i, root, visibility: [:public])
+          #elsif c.type == :send and c.children[1] == :solargraph_include_public_methods
+          #  i = unpack_name(c.children[2])
+          #  meths += get_instance_methods(i, root, visibility: [:public])
           else
             meths += inner_get_methods_from_node(c, root, skip)
           end

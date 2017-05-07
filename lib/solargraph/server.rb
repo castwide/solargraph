@@ -75,6 +75,9 @@ module Solargraph
         @@semaphore.synchronize {
           @@api_hash[directory] = api_map
         }
+        #Thread.new {
+          api_map.update_yardoc
+        #}
       end
 
       def constant_updates

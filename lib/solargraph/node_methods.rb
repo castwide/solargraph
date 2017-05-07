@@ -67,7 +67,9 @@ module Solargraph
       if @yard_options.nil?
         @yard_options = {
           include: [],
-          exclude: []
+          exclude: [],
+          flags: [],
+          all: []
         }
         unless workspace.nil?
           yardopts_file = File.join(workspace, '.yardopts')
@@ -75,7 +77,10 @@ module Solargraph
             yardopts = File.read(yardopts_file)
             yardopts.lines.each { |line|
               arg = line.strip
-              if !arg.start_with?('-')
+              @yard_options[:all].push arg
+              if arg.start_with?('-')
+                @yard_options[:flags].push arg
+              else
                 @yard_options[:include].push arg
               end
             }
