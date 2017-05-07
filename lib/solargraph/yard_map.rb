@@ -194,7 +194,6 @@ module Solargraph
                 label = "#{n}"
                 args = get_method_args(m)
                 label += " #{args.join(', ')}" unless args.empty?
-                STDERR.puts "Adding #{label} from yard"
                 meths.push Suggestion.new(label, insert: "#{n.gsub(/=/, ' = ')}", kind: Suggestion::METHOD, documentation: m.docstring, code_object: m, detail: "#{ns}", location: "#{m.file}:#{m.line}")
               end
             }
