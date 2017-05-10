@@ -23,7 +23,7 @@ module Solargraph
       @code = code.gsub(/\r/, '')
       tries = 0
       # Hide incomplete code to avoid syntax errors
-      # @todo This might noe be necessary given the corrected character
+      # @todo This might not be necessary given the corrected character
       #   replacement in retries.
       #tmp = "#{@code}\nX".gsub(/[\.@]([\s])/, '#\1').gsub(/([\A\s]?)def([\s]*?[\n\Z])/, '\1#ef\2')
       tmp = @code
