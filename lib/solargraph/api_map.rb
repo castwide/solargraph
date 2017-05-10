@@ -10,7 +10,7 @@ module Solargraph
       'begin', 'break', 'case', 'class', 'def', 'defined?', 'do', 'else',
       'elsif', 'end', 'ensure', 'false', 'for', 'if', 'in', 'module', 'next',
       'nil', 'not', 'or', 'redo', 'rescue', 'retry', 'return', 'self', 'super',
-      'then', 'true', 'undef', 'unless', 'until', 'when', 'while', 'yield'
+      'then', 'true', 'undef', 'unless', 'until', 'when', 'while', 'yield',
     ]
 
     MAPPABLE_METHODS = [
@@ -99,7 +99,7 @@ module Solargraph
 
     def self.get_keywords
       result = []
-      keywords = KEYWORDS
+      keywords = KEYWORDS + MAPPABLE_METHODS
       keywords.each { |k|
         result.push Suggestion.new(k, kind: Suggestion::KEYWORD, detail: 'Keyword')
       }
