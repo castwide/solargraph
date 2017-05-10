@@ -20,22 +20,26 @@ module Solargraph
       if @api_map.nil?
         @api_map = ApiMap.new(workspace)
       end
-
       @code = code.gsub(/\r/, '')
       tries = 0
       # Hide incomplete code to avoid syntax errors
-      tmp = "#{@code}\nX".gsub(/[\.@]([\s])/, '#\1').gsub(/([\A\s]?)def([\s]*?[\n\Z])/, '\1#ef\2')
+      # @todo This might noe be necessary given the corrected character
+      #   replacement in retries.
+      #tmp = "#{@code}\nX".gsub(/[\.@]([\s])/, '#\1').gsub(/([\A\s]?)def([\s]*?[\n\Z])/, '\1#ef\2')
+      tmp = @code
       begin
         node, comments = Parser::CurrentRuby.parse_with_comments(tmp)
         @node = @api_map.append_node(node, comments, filename)
       rescue Parser::SyntaxError => e
         if tries < 10
+          STDERR.puts "Error parsing #{filename}: #{e.message}"
+          STDERR.puts "Retrying..."
           tries += 1
           spot = e.diagnostic.location.begin_pos
           if spot == tmp.length
             tmp = tmp[0..-2] + '#'
           else
-            tmp = tmp[0..spot] + '#' + tmp[spot+2..-1].to_s
+            tmp = tmp[0..spot - 1] + '#' + tmp[spot+1..-1].to_s
           end
           retry
         end
