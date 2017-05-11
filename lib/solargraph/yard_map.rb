@@ -85,20 +85,10 @@ module Solargraph
       cached = cache.get_constants(namespace, scope)
       return cached unless cached.nil?
       consts = []
-      binds = []
       result = []
       yardocs.each { |y|
         yard = load_yardoc(y)
         unless yard.nil?
-          if namespace == '' and scope == ''
-            # Check for a bind tag in the yardoc root. If it exists, treat
-            # workspace code as a DSL that uses public instance methods in the
-            # specified namespaces.
-            b = yard.root.tag(:bind)
-            unless b.nil?
-              binds.concat b.types
-            end
-          end
           ns = nil
           if scope == ''
             ns = yard.at(namespace)
@@ -119,9 +109,6 @@ module Solargraph
           kind = Suggestion::MODULE
         end
         result.push Suggestion.new(c.to_s.split('::').last, detail: detail, kind: kind)
-      }
-      binds.each { |type|
-        result.concat get_instance_methods(type, '', visibility: [:public])
       }
       cache.set_constants(namespace, scope, result)
       result
@@ -160,8 +147,13 @@ module Solargraph
         unless yard.nil?
           ns = nil
           ns = find_first_resolved_namespace(yard, namespace, scope)
-          b = yard.root.tag(:bind)
-          binds.concat b.types unless b.nil?
+          if namespace == '' and scope == ''
+            # Check for a bind tag in the yardoc root. If it exists, treat
+            # workspace code as a DSL that uses public instance methods in the
+            # specified namespaces.
+            b = yard.root.tag(:bind)
+            binds.concat b.types unless b.nil?
+          end
           unless ns.nil?
             ns.meths(scope: :class, visibility: visibility).each { |m|
               n = m.to_s.split(/[\.#]/).last.gsub(/=/, ' = ')
