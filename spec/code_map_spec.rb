@@ -91,6 +91,13 @@ describe Solargraph::CodeMap do
     expect(code_map.parsed).to eq("if true\nString.\nend;end")
   end
 
+  it "stubs extra end keyword" do
+    code_map = Solargraph::CodeMap.new(code: "if true\nend\nend")
+    # @hack CodeMap tries to add an end on the first pass. Thus, the result
+    # of the parse has "#nd;end" instead of "#nd"
+    expect(code_map.parsed).to eq("if true\nend\n#nd;end")
+  end
+
   #it "stubs unfinished method calls nested in code" do
   #  code_map = Solargraph::CodeMap.new(code: "if true\nString.\nend")
   #  expect(code_map.parsed).to eq("if true\nString_\nend")
