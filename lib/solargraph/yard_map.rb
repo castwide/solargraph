@@ -202,7 +202,9 @@ module Solargraph
               end
             }
             if ns.kind_of?(YARD::CodeObjects::ClassObject) and namespace != 'Object'
-              meths += get_instance_methods('Object')
+              if ns.superclass.kind_of?(YARD::CodeObjects::Proxy)
+                meths += get_instance_methods(ns.superclass.to_s)
+              end
             end
           end
         end
