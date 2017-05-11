@@ -41,21 +41,34 @@ module Solargraph
           STDERR.puts "Retrying..."
           tries += 1
           spot = e.diagnostic.location.begin_pos
+          STDERR.puts "CODE>>>>"
+          STDERR.puts tmp
+          STDERR.puts "<<<<CODE"
+          STDERR.puts "Spot #{spot}: #{tmp[spot]}"
+          repl = '_'
           if tmp[spot] == '@' or tmp[spot] == ':'
             # Stub unfinished instance variables and symbols
             spot -= 1
           elsif tmp[spot - 1] == '.'
             # Stub unfinished method calls
+            repl = '#' if spot == tmp.length or tmp[spot] == '\n'
             spot -= 2
           else
             # Stub the whole line
-            spot = beginning_of_line_from(spot)
+            spot = beginning_of_line_from(tmp, spot)
+            repl = '#'
+            if tmp[spot+1..-1].rstrip == 'end'
+              repl= 'end;end'
+            end
           end
-          if spot == 0
-            tmp = '#' + tmp[1..-1]
-          else
-            tmp = tmp[0..spot] + '#' + tmp[spot+2..-1].to_s
-          end
+          #if spot == 0
+          #  tmp = '#' + tmp[1..-1]
+          #else
+            tmp = tmp[0..spot] + repl + tmp[spot+repl.length+1..-1].to_s
+          #end
+          STDERR.puts "CHNG>>>>"
+          STDERR.puts tmp
+          STDERR.puts "<<<<CHNG"
           retry
         end
         raise e
@@ -432,9 +445,12 @@ module Solargraph
       nil
     end
 
-    def beginning_of_line_from i
-      while i > 0 and @code[i] != "\n"
+    def beginning_of_line_from str, i
+      while i > 0 and str[i] != "\n"
         i -= 1
+      end
+      if i > 0 and str[i..-1].strip == ''
+        i = beginning_of_line_from str, i -1
       end
       i
     end
