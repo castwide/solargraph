@@ -75,4 +75,19 @@ describe Solargraph::CodeMap do
     result = code_map.suggest_at(9)
     expect(result.map(&:to_s)).to include('upcase')
   end
+
+  it "stubs unfinished instance variables" do
+    code_map = Solargraph::CodeMap.new(code: "puts @")
+    expect(code_map.parsed).to eq("puts #")
+  end
+
+  it "stubs unfinished symbols" do
+    code_map = Solargraph::CodeMap.new(code: "symbol :")
+    expect(code_map.parsed).to eq("symbol #")
+  end
+
+  it "stubs unfinished method calls" do
+    code_map = Solargraph::CodeMap.new(code: "String.")
+    expect(code_map.parsed).to eq("String#")
+  end
 end

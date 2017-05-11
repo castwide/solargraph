@@ -4,6 +4,8 @@ module Solargraph
   class CodeMap
     attr_accessor :node
     attr_accessor :api_map
+    attr_reader :code
+    attr_reader :parsed
 
     include NodeMethods
 
@@ -30,16 +32,29 @@ module Solargraph
       begin
         node, comments = Parser::CurrentRuby.parse_with_comments(tmp)
         @node = @api_map.append_node(node, comments, filename)
+        @parsed = tmp
+        @code.freeze
+        @parsed.freeze
       rescue Parser::SyntaxError => e
         if tries < 10
           STDERR.puts "Error parsing #{filename}: #{e.message}"
           STDERR.puts "Retrying..."
           tries += 1
           spot = e.diagnostic.location.begin_pos
-          if spot == tmp.length
-            tmp = tmp[0..-2] + '#'
+          if tmp[spot] == '@' or tmp[spot] == ':'
+            # Stub unfinished instance variables and symbols
+            spot -= 1
+          elsif tmp[spot - 1] == '.'
+            # Stub unfinished method calls
+            spot -= 2
           else
-            tmp = tmp[0..spot - 1] + '#' + tmp[spot+1..-1].to_s
+            # Stub the whole line
+            spot = beginning_of_line_from(spot)
+          end
+          if spot == 0
+            tmp = '#' + tmp[1..-1]
+          else
+            tmp = tmp[0..spot] + '#' + tmp[spot+2..-1].to_s
           end
           retry
         end
@@ -417,5 +432,11 @@ module Solargraph
       nil
     end
 
+    def beginning_of_line_from i
+      while i > 0 and @code[i] != "\n"
+        i -= 1
+      end
+      i
+    end
   end
 end
