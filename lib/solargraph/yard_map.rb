@@ -21,7 +21,11 @@ module Solargraph
           unless used.include?(g)
             used.push g
             gy = YARD::Registry.yardoc_file_for_gem(g)
-            yardocs.push gy unless gy.nil?
+            if gy.nil?
+              STDERR.puts "Required path not found: #{r}"
+            else
+              yardocs.push gy
+            end
           end
         end
       }

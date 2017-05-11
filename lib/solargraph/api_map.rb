@@ -544,7 +544,9 @@ module Solargraph
           if n.kind_of?(AST::Node)
             if n.type == :class and !n.children[1].nil?
               s = unpack_name(n.children[1])
-              meths += inner_get_instance_methods(s, namespace, skip)
+              # @todo This skip might not work properly. We might need to get a
+              #   fully qualified namespace from it first
+              meths += get_instance_methods(s, namespace) unless skip.include?(s)
             end
             current_scope = :public
             n.children.each { |c|

@@ -41,10 +41,10 @@ module Solargraph
           STDERR.puts "Retrying..."
           tries += 1
           spot = e.diagnostic.location.begin_pos
-          STDERR.puts "CODE>>>>"
-          STDERR.puts tmp
-          STDERR.puts "<<<<CODE"
-          STDERR.puts "Spot #{spot}: #{tmp[spot]}"
+          #STDERR.puts "CODE>>>>"
+          #STDERR.puts tmp
+          #STDERR.puts "<<<<CODE"
+          #STDERR.puts "Spot #{spot}: #{tmp[spot]}"
           repl = '_'
           if tmp[spot] == '@' or tmp[spot] == ':'
             # Stub unfinished instance variables and symbols
@@ -66,9 +66,9 @@ module Solargraph
           #else
             tmp = tmp[0..spot] + repl + tmp[spot+repl.length+1..-1].to_s
           #end
-          STDERR.puts "CHNG>>>>"
-          STDERR.puts tmp
-          STDERR.puts "<<<<CHNG"
+          #STDERR.puts "CHNG>>>>"
+          #STDERR.puts tmp
+          #STDERR.puts "<<<<CHNG"
           retry
         end
         raise e
