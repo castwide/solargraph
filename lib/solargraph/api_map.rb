@@ -346,7 +346,7 @@ module Solargraph
         unless p == 'new' and scope != :instance
           if scope == :instance
             meths = get_instance_methods(type)
-            meths += get_methods('') if top
+            meths += get_methods('') if top or type.to_s == ''
           else
             meths = get_methods(type)
             #meths += get_methods('') if top
