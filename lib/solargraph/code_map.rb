@@ -189,9 +189,7 @@ module Solargraph
         type = infer(node_at(index - 2))
         return @api_map.get_instance_methods(type) unless type.nil?
       end
-      STDERR.puts "Getting suggestions for #{signature}"
       if signature.start_with?('@')
-        STDERR.puts "Okay, it's an instance variable"
         parts = signature.split('.')
         var = parts.shift
         if parts.length > 0 or signature.end_with?('.')
