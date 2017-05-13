@@ -258,8 +258,8 @@ module Solargraph
     def cache_core
       c = get_constants '', ''
       c.each { |n|
-        get_methods 'n', visibility: :public
-        get_instance_methods 'n', visibility: :public
+        get_methods n, visibility: :public
+        get_instance_methods n, visibility: :public
       }
     end
   end
