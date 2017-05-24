@@ -514,8 +514,8 @@ module Solargraph
             docstring = get_comment_for(c)
             label = "#{c.children[1]}"
             args = get_method_args(c)
-            label += " #{args.join(', ')}" unless args.empty?
-            meths.push Suggestion.new(label, insert: c.children[1].to_s.gsub(/=/, ' = '), kind: Suggestion::METHOD, detail: 'Method', documentation: docstring) if c.children[1].to_s[0].match(/[a-z_]/i) and c.children[1] != :def
+            #label += " #{args.join(', ')}" unless args.empty?
+            meths.push Suggestion.new(label, insert: c.children[1].to_s.gsub(/=/, ' = '), kind: Suggestion::METHOD, detail: 'Method', documentation: docstring, arguments: args) if c.children[1].to_s[0].match(/[a-z_]/i) and c.children[1] != :def
           elsif c.type == :send and c.children[1] == :include
             # TODO: This might not be right. Should we be getting singleton methods
             # from an include, or only from an extend?
@@ -559,8 +559,8 @@ module Solargraph
                   cmnt = get_comment_for(c)
                   label = "#{c.children[0]}"
                   args = get_method_args(c)
-                  label += " #{args.join(', ')}" unless args.empty?
-                  meths.push Suggestion.new(label, insert: c.children[0].to_s.gsub(/=/, ' = '), kind: Suggestion::METHOD, documentation: cmnt, detail: fqns) if c.children[0].to_s[0].match(/[a-z]/i)
+                  #label += " #{args.join(', ')}" unless args.empty?
+                  meths.push Suggestion.new(label, insert: c.children[0].to_s.gsub(/=/, ' = '), kind: Suggestion::METHOD, documentation: cmnt, detail: fqns, arguments: args) if c.children[0].to_s[0].match(/[a-z]/i)
                 elsif c.kind_of?(AST::Node) and c.type == :send and c.children[1] == :attr_reader
                   c.children[2..-1].each { |x|
                     meths.push Suggestion.new(x.children[0], kind: Suggestion::METHOD) if x.type == :sym

@@ -179,7 +179,7 @@ module Solargraph
       @api_map.get_instance_variables(ns, (node.type == :def ? :instance : :class))
     end
 
-    def suggest_at index, filtered: true, with_snippets: false
+    def suggest_at index, filtered: false, with_snippets: false
       node = node_at(index - 2)
       return [] if string_at?(index)
       result = []
@@ -240,8 +240,15 @@ module Solargraph
           end
         end
       end
-      #result = reduce_starting_with(result, word_at(index)) if filtered
+      result = reduce_starting_with(result, word_at(index)) if filtered
       result.uniq{|s| s.path}
+    end
+
+    def signatures_at index
+      sig = signature_index_before(index)
+      return [] if sig.nil?
+      word = word_at(sig)
+      suggest_at(sig).reject{|s| s.label != word}
     end
 
     # Find the signature at the specified index and get suggestions based
@@ -453,6 +460,23 @@ module Solargraph
         i = beginning_of_line_from str, i -1
       end
       i
+    end
+
+    def signature_index_before index
+      open_parens = 0
+      cursor = index - 1
+      while cursor >= 0
+        break if cursor < 0
+        if @code[cursor] == ')'
+          open_parens -= 1
+        elsif @code[cursor] == '('
+          open_parens += 1
+        end
+        break if open_parens == 1
+        cursor -= 1
+      end
+      cursor = nil if cursor < 0
+      cursor
     end
   end
 end

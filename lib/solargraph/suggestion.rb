@@ -10,9 +10,9 @@ module Solargraph
     VARIABLE = 'Variable'
     SNIPPET = 'Snippet'
 
-    attr_reader :label, :kind, :insert, :detail, :documentation, :code_object, :location
+    attr_reader :label, :kind, :insert, :detail, :documentation, :code_object, :location, :arguments
 
-    def initialize label, kind: KEYWORD, insert: nil, detail: nil, documentation: nil, code_object: nil, location: nil
+    def initialize label, kind: KEYWORD, insert: nil, detail: nil, documentation: nil, code_object: nil, location: nil, arguments: []
       @label = label.to_s
       @kind = kind
       @insert = insert || @label
@@ -20,6 +20,7 @@ module Solargraph
       @code_object = code_object
       @documentation = documentation
       @location = location
+      @arguments = arguments
     end
     
     def path
@@ -55,7 +56,8 @@ module Solargraph
         insert: @insert,
         detail: @detail,
         path: path,
-        location: (@location.nil? ? nil : @location.to_s)
+        location: (@location.nil? ? nil : @location.to_s),
+        arguments: @arguments
       }
       if @code_object.nil?
         obj[:documentation] = @documentation.all unless @documentation.nil?
