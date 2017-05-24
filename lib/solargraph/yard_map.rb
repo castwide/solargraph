@@ -232,9 +232,20 @@ module Solargraph
       yardocs.each { |y|
         yard = load_yardoc(y)
         unless yard.nil?
-          obj = find_first_resolved_namespace(yard, path, '')
-          STDERR.puts "Object: #{obj.class}"
-          result.push Solargraph::Suggestion.new(obj.path, detail: obj.path, code_object: obj) unless obj.nil?
+          #obj = find_first_resolved_namespace(yard, path, '')
+          obj = yard.at(path)
+          if obj.nil? and path.include?('#')
+            parts = path.split('#')
+            obj = yard.at(parts[0])
+            unless obj.nil?
+              meths = obj.meths(scope: [:instance]).keep_if{|m| m.name.to_s == parts[1]}
+              meths.each { |m|
+                result.push Solargraph::Suggestion.new(m.path, detail: m.path, code_object: m)
+              }
+            end
+          else
+            result.push Solargraph::Suggestion.new(obj.path, detail: obj.path, code_object: obj) unless obj.nil?
+          end
         end
       }
       result

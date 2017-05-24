@@ -301,8 +301,13 @@ module Solargraph
           else
             vtype = @api_map.infer_signature_type(vparts[1..-1].join('.'), fqns, scope: :class)
           end
+          return [] if vtype.nil?
           fqns = @api_map.find_fully_qualified_namespace(vtype, ns_here)
-          signature = parts[1..-1].join('.')
+          if ender.nil?
+            signature = parts[1..-1].join('.')
+          else
+            signature = parts[1..-2].join('.')
+          end
           type = @api_map.infer_signature_type(signature, fqns, scope: :instance)
         end
         unless type.nil?
