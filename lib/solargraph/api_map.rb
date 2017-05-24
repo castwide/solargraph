@@ -389,7 +389,7 @@ module Solargraph
         meths
       end
     end
-    
+
     def get_method_args node
       list = nil
       args = []

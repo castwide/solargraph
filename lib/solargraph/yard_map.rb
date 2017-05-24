@@ -226,6 +226,20 @@ module Solargraph
       nil
     end
 
+    def objects path
+      STDERR.puts "Looking for objects for #{path} #{path.class}"
+      result = []
+      yardocs.each { |y|
+        yard = load_yardoc(y)
+        unless yard.nil?
+          obj = find_first_resolved_namespace(yard, path, '')
+          STDERR.puts "Object: #{obj.class}"
+          result.push Solargraph::Suggestion.new(obj.path, detail: obj.path, code_object: obj) unless obj.nil?
+        end
+      }
+      result
+    end
+
     private
 
     def cache

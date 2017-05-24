@@ -251,6 +251,69 @@ module Solargraph
       suggest_at(sig).reject{|s| s.label != word}
     end
 
+    def resolve_object_at index
+      signature = get_signature_at(index)
+      cursor = index
+      while @code[cursor].match(/[a-z0-9_]/)
+        signature += @code[cursor]
+        cursor += 1
+        break if cursor >= @code.length
+      end
+      return [] if signature.to_s == ''
+      ns_here = namespace_at(index)
+      scope = parent_node_from(index, :class, :module, :def, :defs) || @node
+      parts = signature.split('.')
+      if parts.length > 1
+        beginner = parts[0..-2].join('.')
+        ender = parts.last
+      else
+        beginner = signature
+        ender = nil
+      end
+      var = find_local_variable_node(parts[0], scope)
+      if var.nil?
+        # It's not a local variable
+        fqns = @api_map.find_fully_qualified_namespace(beginner, ns_here)
+        if fqns.nil?
+          # It's a method call
+          sig_scope = (scope.type == :def ? :instance : :class)
+          type = @api_map.infer_signature_type(beginner, ns_here, scope: sig_scope)
+          return [] if type.nil?
+          path = type
+          path += "##{ender}" unless ender.nil?
+          STDERR.puts "Path: #{path}"
+          return @api_map.yard_map.objects(path)
+        else
+          path = beginner
+          path += "##{ender}" unless ender.nil?
+          return @api_map.yard_map.objects(path)
+        end
+      else
+        # It's a local variable. Get the type from the node
+        type = get_type_comment(var)
+        type = infer(var.children[1]) if type.nil?
+        if type.nil?
+          vsig = resolve_node_signature(var.children[1])
+          vparts = vsig.split('.')
+          fqns = @api_map.find_fully_qualified_namespace(vparts[0], ns_here)
+          if fqns.nil?
+            vtype = @api_map.infer_signature_type(vsig, ns_here, scope: :instance)
+          else
+            vtype = @api_map.infer_signature_type(vparts[1..-1].join('.'), fqns, scope: :class)
+          end
+          fqns = @api_map.find_fully_qualified_namespace(vtype, ns_here)
+          signature = parts[1..-1].join('.')
+          type = @api_map.infer_signature_type(signature, fqns, scope: :instance)
+        end
+        unless type.nil?
+          path = type
+          path += "##{ender}" unless ender.nil?
+          return @api_map.yard_map.objects(path)
+        end
+      end
+      return []
+    end
+
     # Find the signature at the specified index and get suggestions based
     # on its inferred type.
     #
