@@ -99,7 +99,7 @@ module Solargraph
 
     def self.get_keywords
       result = []
-      keywords = KEYWORDS + MAPPABLE_METHODS
+      keywords = KEYWORDS + ['attr_reader', 'attr_writer', 'attr_accessor', 'private', 'public', 'protected']
       keywords.each { |k|
         result.push Suggestion.new(k, kind: Suggestion::KEYWORD, detail: 'Keyword')
       }
