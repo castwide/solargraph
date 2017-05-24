@@ -24,7 +24,26 @@ module Solargraph
         @@semaphore.synchronize {
           code_map = CodeMap.new(code: params['text'], filename: params['filename'], api_map: @@api_hash[workspace])
           offset = code_map.get_offset(params['line'].to_i, params['column'].to_i)
-          sugg = code_map.suggest_at(offset, with_snippets: params['with_snippets'] == '1' ? true : false, filtered: true)
+          sugg = code_map.suggest_at(offset, with_snippets: params['with_snippets'] == '1' ? true : false)
+        }
+        { "status" => "ok", "suggestions" => sugg }.to_json
+      rescue Exception => e
+        STDERR.puts e
+        STDERR.puts e.backtrace.join("\n")
+        { "status" => "err", "message" => e.message + "\n" + e.backtrace.join("\n") }.to_json
+      end
+    end
+
+    post '/signify' do
+      content_type :json
+      begin
+        sugg = []
+        workspace = params['workspace'] || CodeMap.find_workspace(params['filename'])
+        Server.prepare_workspace workspace unless @@api_hash.has_key?(workspace)
+        @@semaphore.synchronize {
+          code_map = CodeMap.new(code: params['text'], filename: params['filename'], api_map: @@api_hash[workspace])
+          offset = code_map.get_offset(params['line'].to_i, params['column'].to_i)
+          sugg = code_map.signatures_at(offset)
         }
         { "status" => "ok", "suggestions" => sugg }.to_json
       rescue Exception => e
