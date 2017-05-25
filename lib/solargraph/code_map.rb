@@ -254,7 +254,7 @@ module Solargraph
     def resolve_object_at index
       signature = get_signature_at(index)
       cursor = index
-      while @code[cursor].match(/[a-z0-9_]/)
+      while @code[cursor] =~ /[a-z0-9_\?]/i
         signature += @code[cursor]
         cursor += 1
         break if cursor >= @code.length
