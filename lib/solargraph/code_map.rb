@@ -280,6 +280,7 @@ module Solargraph
         if fqns.nil?
           # It's a method call
           if ender.nil?
+            STDERR.puts "Okay, here we are"
             return @api_map.yard_map.objects(beginner, ns_here)
           else
             sig_scope = (scope.type == :def ? :instance : :class)
