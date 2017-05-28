@@ -24,7 +24,16 @@ module Solargraph
 
     def const_from node
       if node.kind_of?(AST::Node) and node.type == :const
-        node.children[1].to_s
+        result = ''
+        unless node.children[0].nil?
+          result = const_from(node.children[0])
+        end
+        if result == ''
+          result = node.children[1].to_s
+        else
+          result = result + '::' + node.children[1].to_s
+        end
+        result
       else
         nil
       end
