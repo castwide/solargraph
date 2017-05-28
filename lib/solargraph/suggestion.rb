@@ -60,9 +60,9 @@ module Solargraph
         arguments: @arguments
       }
       if @code_object.nil?
-        obj[:documentation] = @documentation.all unless @documentation.nil?
+        obj[:documentation] = @documentation.to_s unless @documentation.nil?
       else
-        obj[:documentation] = @code_object.docstring.all unless @code_object.docstring.nil?
+        obj[:documentation] = @code_object.docstring.to_s unless @code_object.docstring.nil?
       end
       obj.to_json(args)
     end
