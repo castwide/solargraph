@@ -590,7 +590,7 @@ module Solargraph
     def mappable?(node)
       return true if node.kind_of?(AST::Node) and [:array, :hash, :str, :int, :float].include?(node.type)
       # TODO Add node.type :casgn (constant assignment)
-      if node.kind_of?(AST::Node) and (node.type == :class or node.type == :module or node.type == :def or node.type == :defs or node.type == :ivasgn or node.type == :gvasgn or node.type == :lvasgn or node.type == :or_asgn)
+      if node.kind_of?(AST::Node) and (node.type == :class or node.type == :module or node.type == :def or node.type == :defs or node.type == :ivasgn or node.type == :gvasgn or node.type == :lvasgn or node.type == :or_asgn or node.type == :const)
         true
       elsif node.kind_of?(AST::Node) and node.type == :send and node.children[0] == nil and MAPPABLE_METHODS.include?(node.children[1])
         true
@@ -627,6 +627,9 @@ module Solargraph
       if node.type == :class
         children += node.children[0, 2]
         children += get_mappable_nodes(node.children[2..-1], comment_hash)
+        #children += get_mappable_nodes(node.children, comment_hash)
+      elsif node.type == :const
+        children += node.children
       elsif node.type == :def
         children += node.children[0, 2]
         children += get_mappable_nodes(node.children[2..-1], comment_hash)

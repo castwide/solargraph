@@ -226,14 +226,13 @@ module Solargraph
       nil
     end
 
-    def objects path
-      STDERR.puts "Looking for objects for #{path} #{path.class}"
+    def objects path, space = ''
       result = []
       yardocs.each { |y|
         yard = load_yardoc(y)
         unless yard.nil?
-          #obj = find_first_resolved_namespace(yard, path, '')
-          obj = yard.at(path)
+          obj = find_first_resolved_namespace(yard, path, space)
+          #obj = yard.at(path)
           if obj.nil? and path.include?('#')
             parts = path.split('#')
             obj = yard.at(parts[0])

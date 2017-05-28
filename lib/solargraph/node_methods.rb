@@ -22,6 +22,14 @@ module Solargraph
       parts
     end
 
+    def const_from node
+      if node.kind_of?(AST::Node) and node.type == :const
+        node.children[1].to_s
+      else
+        nil
+      end
+    end
+
     def infer node
       if node.type == :str
         return 'String'

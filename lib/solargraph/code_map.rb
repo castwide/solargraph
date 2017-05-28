@@ -136,12 +136,15 @@ module Solargraph
     def namespace_at(index)
       tree = tree_at(index)
       return nil if tree.length == 0
-      node = parent_node_from(index, :module, :class)
-      slice = tree[(tree.index(node) || 0)..-1]
+      #node = parent_node_from(index, :module, :class)
+      #slice = tree[(tree.index(node) || 0)..-1]
+      slice = tree
       parts = []
       slice.reverse.each { |n|
         if n.type == :class or n.type == :module
-          parts.push unpack_name(n.children[0])
+          #parts.push unpack_name(n.children[0])
+          c = const_from(n.children[0])
+          parts.push c
         end
       }
       parts.join("::")
@@ -276,17 +279,20 @@ module Solargraph
         fqns = @api_map.find_fully_qualified_namespace(beginner, ns_here)
         if fqns.nil?
           # It's a method call
-          sig_scope = (scope.type == :def ? :instance : :class)
-          type = @api_map.infer_signature_type(beginner, ns_here, scope: sig_scope)
-          return [] if type.nil?
-          path = type
-          path += "##{ender}" unless ender.nil?
-          STDERR.puts "Path: #{path}"
-          return @api_map.yard_map.objects(path)
+          if ender.nil?
+            return @api_map.yard_map.objects(beginner, ns_here)
+          else
+            sig_scope = (scope.type == :def ? :instance : :class)
+            type = @api_map.infer_signature_type(beginner, ns_here, scope: sig_scope)
+            return [] if type.nil?
+            path = type
+            path += "##{ender}" unless ender.nil?
+            return @api_map.yard_map.objects(path, ns_here)
+          end
         else
           path = beginner
           path += "##{ender}" unless ender.nil?
-          return @api_map.yard_map.objects(path)
+          return @api_map.yard_map.objects(path, ns_here)
         end
       else
         # It's a local variable. Get the type from the node
@@ -313,7 +319,7 @@ module Solargraph
         unless type.nil?
           path = type
           path += "##{ender}" unless ender.nil?
-          return @api_map.yard_map.objects(path)
+          return @api_map.yard_map.objects(path, ns_here)
         end
       end
       return []
