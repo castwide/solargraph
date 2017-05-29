@@ -337,18 +337,32 @@ module Solargraph
         # It's a local variable. Get the type from the node
         type = get_type_comment(var)
         type = infer(var.children[1]) if type.nil?
+        skipdat = false
         if type.nil?
           vsig = resolve_node_signature(var.children[1])
           vparts = vsig.split('.')
           fqns = @api_map.find_fully_qualified_namespace(vparts[0], ns_here)
           if fqns.nil?
-            vtype = @api_map.infer_signature_type(vsig, ns_here, scope: :instance)
+            lvar = find_local_variable_node(vparts[0], scope)
+            if lvar.nil?
+              vtype = @api_map.infer_signature_type(vsig, ns_here, scope: :instance)
+            else
+              type = get_type_comment(lvar)
+              type = infer(lvar.children[1]) if type.nil?
+              unless type.nil?
+                #signature = "#{type}.#{vparts[1..-1].join}"
+                signature = "#{type}.#{vparts[1..-1].join('.')}"
+              end
+              skipdat = true
+            end
           else
             vtype = @api_map.infer_signature_type(vparts[1..-1].join('.'), fqns, scope: :class)
           end
-          fqns = @api_map.find_fully_qualified_namespace(vtype, ns_here)
-          signature = parts[1..-1].join('.')
-          type = @api_map.infer_signature_type(signature, fqns, scope: :instance)
+          unless skipdat
+            fqns = @api_map.find_fully_qualified_namespace(vtype, ns_here)
+            signature = parts[1..-1].join('.')
+            type = @api_map.infer_signature_type(signature, fqns, scope: :instance)
+          end
         end
         unless type.nil?
           lparts = signature.split('.')
