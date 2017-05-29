@@ -11,8 +11,6 @@ module Solargraph
       unless workspace.nil?
         wsy = File.join(workspace, '.yardoc')
         yardocs.push wsy if File.exist?(wsy)
-        #wsy = Dir[File.join workspace, '**/*.rb']
-        #yardocs.push(wsy)
       end
       used = []
       required.each { |r|
@@ -29,16 +27,7 @@ module Solargraph
           end
         end
       }
-      # TODO: Experimental loading of all gems
-      #Bundler.load.specs.each { |s|
-      #  unless used.include?(s.name)
-      #    used.push s.name
-      #    gy = YARD::Registry.yardoc_file_for_gem(s.name)
-      #    yardocs.push gy unless gy.nil?
-      #  end
-      #}
       yardocs.push File.join(Dir.home, '.solargraph', 'cache', '2.0.0', 'yardoc')
-      #yardocs.push File.join(Dir.home, '.solargraph', 'cache', '2.0.0', 'yardoc-stdlib')
       yardocs.uniq!
       cache_core
     end
@@ -202,7 +191,6 @@ module Solargraph
               if n.to_s.match(/^[a-z]/i) and (namespace == 'Kernel' or !m.to_s.start_with?('Kernel#')) and !m.docstring.to_s.include?(':nodoc:')
                 label = "#{n}"
                 args = get_method_args(m)
-                #label += " #{args.join(', ')}" unless args.empty?
                 meths.push Suggestion.new(label, insert: "#{n.gsub(/=/, ' = ')}", kind: Suggestion::METHOD, documentation: m.docstring, code_object: m, detail: "#{ns}", location: "#{m.file}:#{m.line}", arguments: args)
               end
             }
@@ -239,7 +227,6 @@ module Solargraph
         yard = load_yardoc(y)
         unless yard.nil?
           obj = find_first_resolved_namespace(yard, path, space)
-          #obj = yard.at(path)
           if obj.nil? and path.include?('#')
             parts = path.split('#')
             obj = yard.at(parts[0])
@@ -294,10 +281,6 @@ module Solargraph
 
     def cache_core
       c = get_constants '', ''
-      c.each { |n|
-        #get_methods n.label, visibility: :public
-        #get_instance_methods n.label, visibility: :public
-      }
     end
 
     def kind_of_object obj

@@ -24,10 +24,6 @@ module Solargraph
       end
       @code = code.gsub(/\r/, '')
       tries = 0
-      # Hide incomplete code to avoid syntax errors
-      # @todo This might not be necessary given the corrected character
-      #   replacement in retries.
-      #tmp = "#{@code}\nX".gsub(/[\.@]([\s])/, '#\1').gsub(/([\A\s]?)def([\s]*?[\n\Z])/, '\1#ef\2')
       tmp = @code
       begin
         node, comments = Parser::CurrentRuby.parse_with_comments(tmp)
@@ -41,10 +37,6 @@ module Solargraph
           STDERR.puts "Retrying..."
           tries += 1
           spot = e.diagnostic.location.begin_pos
-          #STDERR.puts "CODE>>>>"
-          #STDERR.puts tmp
-          #STDERR.puts "<<<<CODE"
-          #STDERR.puts "Spot #{spot}: #{tmp[spot]}"
           repl = '_'
           if tmp[spot] == '@' or tmp[spot] == ':'
             # Stub unfinished instance variables and symbols
@@ -61,14 +53,7 @@ module Solargraph
               repl= 'end;end'
             end
           end
-          #if spot == 0
-          #  tmp = '#' + tmp[1..-1]
-          #else
-            tmp = tmp[0..spot] + repl + tmp[spot+repl.length+1..-1].to_s
-          #end
-          #STDERR.puts "CHNG>>>>"
-          #STDERR.puts tmp
-          #STDERR.puts "<<<<CHNG"
+          tmp = tmp[0..spot] + repl + tmp[spot+repl.length+1..-1].to_s
           retry
         end
         raise e
@@ -136,13 +121,10 @@ module Solargraph
     def namespace_at(index)
       tree = tree_at(index)
       return nil if tree.length == 0
-      #node = parent_node_from(index, :module, :class)
-      #slice = tree[(tree.index(node) || 0)..-1]
       slice = tree
       parts = []
       slice.reverse.each { |n|
         if n.type == :class or n.type == :module
-          #parts.push unpack_name(n.children[0])
           c = const_from(n.children[0])
           parts.push c
         end

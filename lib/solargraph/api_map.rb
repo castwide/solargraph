@@ -15,7 +15,7 @@ module Solargraph
 
     MAPPABLE_METHODS = [
       :include, :extend, :require, :autoload, :attr_reader, :attr_writer, :attr_accessor, :private, :public, :protected
-    ] # @todo Not including solargraph_include_public_methods (an experimental thing)
+    ]
 
     include NodeMethods
 
@@ -250,7 +250,6 @@ module Solargraph
       if @yardoc_files.nil?
         @yardoc_files = []
         yard_options[:include].each { |glob|
-          #@yardoc_files.concat Dir[File.join workspace, glob]
           Dir[File.join workspace, glob].each { |f|
             @yardoc_files.push File.absolute_path(f)
           }
@@ -349,7 +348,6 @@ module Solargraph
             meths += get_methods('') if top or type.to_s == ''
           else
             meths = get_methods(type)
-            #meths += get_methods('') if top
           end
           meths.delete_if{ |m| m.insert != p }
           return nil if meths.empty?
@@ -466,12 +464,9 @@ module Solargraph
         STDERR.puts "No workspace specified for yardoc update."
       else
         Dir.chdir(workspace) do
-          #YARD::Registry.load(yard_options[:include] - yard_options[:exclude], true)
-          #YARD::Registry.save
           Thread.new {
             STDERR.puts "Updating the yardoc..."
             globs = yard_options[:include] - yard_options[:exclude]
-            #cmd = "yardoc #{globs.join(' ')} -e #{Solargraph::YARD_EXTENSION_FILE} #{yard_options[:flags].join(' ')}"
             cmd = "yardoc -e #{Solargraph::YARD_EXTENSION_FILE}"
             STDERR.puts "Update yardoc with #{cmd}"
             STDERR.puts `#{cmd}`
@@ -514,16 +509,12 @@ module Solargraph
             docstring = get_comment_for(c)
             label = "#{c.children[1]}"
             args = get_method_args(c)
-            #label += " #{args.join(', ')}" unless args.empty?
             meths.push Suggestion.new(label, insert: c.children[1].to_s.gsub(/=/, ' = '), kind: Suggestion::METHOD, detail: 'Method', documentation: docstring, arguments: args) if c.children[1].to_s[0].match(/[a-z_]/i) and c.children[1] != :def
           elsif c.type == :send and c.children[1] == :include
             # TODO: This might not be right. Should we be getting singleton methods
             # from an include, or only from an extend?
             i = unpack_name(c.children[2])
             meths += inner_get_methods(i, root, skip) unless i == 'Kernel'
-          #elsif c.type == :send and c.children[1] == :solargraph_include_public_methods
-          #  i = unpack_name(c.children[2])
-          #  meths += get_instance_methods(i, root, visibility: [:public])
           else
             meths += inner_get_methods_from_node(c, root, skip)
           end
@@ -559,7 +550,6 @@ module Solargraph
                   cmnt = get_comment_for(c)
                   label = "#{c.children[0]}"
                   args = get_method_args(c)
-                  #label += " #{args.join(', ')}" unless args.empty?
                   meths.push Suggestion.new(label, insert: c.children[0].to_s.gsub(/=/, ' = '), kind: Suggestion::METHOD, documentation: cmnt, detail: fqns, arguments: args) if c.children[0].to_s[0].match(/[a-z]/i)
                 elsif c.kind_of?(AST::Node) and c.type == :send and c.children[1] == :attr_reader
                   c.children[2..-1].each { |x|

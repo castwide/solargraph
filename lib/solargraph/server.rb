@@ -104,7 +104,6 @@ module Solargraph
 
     class << self
       def run!
-        #constant_updates
         super
       end
 
@@ -112,24 +111,9 @@ module Solargraph
         api_map = Solargraph::ApiMap.new(directory)
         @@semaphore.synchronize {
           @@api_hash[directory] = api_map
-          #api_map.update_yardoc
         }
         Thread.new {
           api_map.update_yardoc
-        }
-      end
-
-      def constant_updates
-        Thread.new {
-          loop do
-            @@api_hash.keys.each { |k|
-              update = Solargraph::ApiMap.new(k)
-              @@semaphore.synchronize {
-                @@api_hash[k] = update
-              }
-            }
-            sleep 10
-          end
         }
       end
     end
