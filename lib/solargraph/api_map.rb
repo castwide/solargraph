@@ -580,7 +580,7 @@ module Solargraph
     def mappable?(node)
       return true if node.kind_of?(AST::Node) and [:array, :hash, :str, :int, :float].include?(node.type)
       # TODO Add node.type :casgn (constant assignment)
-      if node.kind_of?(AST::Node) and (node.type == :class or node.type == :module or node.type == :def or node.type == :defs or node.type == :ivasgn or node.type == :gvasgn or node.type == :lvasgn or node.type == :or_asgn or node.type == :const)
+      if node.kind_of?(AST::Node) and (node.type == :class or node.type == :module or node.type == :def or node.type == :defs or node.type == :ivasgn or node.type == :gvasgn or node.type == :lvasgn or node.type == :or_asgn or node.type == :const or node.type == :lvar)
         true
       elsif node.kind_of?(AST::Node) and node.type == :send and node.children[0] == nil and MAPPABLE_METHODS.include?(node.children[1])
         true
@@ -640,7 +640,7 @@ module Solargraph
         @required.push(node.children[3].children[0]) if node.children[3].children[0].kind_of?(String)
         type = :require
         children += node.children[1, 3]
-      elsif node.type == :send
+      elsif node.type == :send or node.type == :lvar
         children += node.children
       elsif node.type == :or_asgn
         # TODO: The api_map should ignore local variables.

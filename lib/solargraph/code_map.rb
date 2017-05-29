@@ -349,14 +349,19 @@ module Solargraph
             else
               type = get_type_comment(lvar)
               type = infer(lvar.children[1]) if type.nil?
-              unless type.nil?
-                #signature = "#{type}.#{vparts[1..-1].join}"
-                signature = "#{type}.#{vparts[1..-1].join('.')}"
+              if type.nil?
+                type = @api_map.infer_signature_type(resolve_node_signature(lvar.children[1]), ns_here, scope: :class)
               end
-              skipdat = true
+              unless type.nil?
+                signature = "#{vparts[1..-1].join('.')}"
+                skipdat = true
+              end
             end
           else
             vtype = @api_map.infer_signature_type(vparts[1..-1].join('.'), fqns, scope: :class)
+            type = fqns
+            signature = parts[1..-1].join('.')
+            skipdat = true
           end
           unless skipdat
             fqns = @api_map.find_fully_qualified_namespace(vtype, ns_here)
@@ -366,8 +371,8 @@ module Solargraph
         end
         unless type.nil?
           lparts = signature.split('.')
-          if lparts.length > 1
-            lsig = lparts[1..-1].join('.')
+          if lparts.length >= 1
+            lsig = signature
             ltype = @api_map.infer_signature_type(lsig, type, scope: :instance)
             result.concat @api_map.get_instance_methods(ltype) unless ltype.nil?
           else
