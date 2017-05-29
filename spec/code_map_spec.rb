@@ -98,6 +98,13 @@ describe Solargraph::CodeMap do
     expect(code_map.parsed).to eq("if true\nend\n#nd;end")
   end
 
+  it "resolves signatures to documentation" do
+    code_map = Solargraph::CodeMap.new(code: "x = [];x.join")
+    suggestions = code_map.resolve_object_at(12)
+    expect(suggestions.length).to eq(1)
+    expect(suggestions[0].path).to eq('Array#join')
+  end
+
   #it "stubs unfinished method calls nested in code" do
   #  code_map = Solargraph::CodeMap.new(code: "if true\nString.\nend")
   #  expect(code_map.parsed).to eq("if true\nString_\nend")
