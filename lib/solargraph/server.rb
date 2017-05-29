@@ -96,10 +96,18 @@ module Solargraph
       erb :document
     end
 
-    def htmlify object
+    def htmlify text
+      rdoc_to_html text
+    end
+
+    def rdoc_to_html text
       h = Helpers.new
-      h.object = object
-      h.htmlify object.docstring.all, :rdoc
+      h.html_markup_rdoc(text)
+    end
+
+    def ruby_to_html code
+      h = Helpers.new
+      h.html_markup_ruby(code)
     end
 
     class << self
