@@ -368,6 +368,8 @@ module Solargraph
             signature = parts[1..-1].join('.')
             type = @api_map.infer_signature_type(signature, fqns, scope: :instance)
           end
+        else
+          signature = signature.split('.')[1..-1].join('.')
         end
         unless type.nil?
           lparts = signature.split('.')
