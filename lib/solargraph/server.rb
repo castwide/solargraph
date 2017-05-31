@@ -6,6 +6,7 @@ module Solargraph
   class Server < Sinatra::Base
 
     set :port, 7657
+    set :server, :webrick
 
     @@api_hash = {}
     @@semaphore = Mutex.new
