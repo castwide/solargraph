@@ -27,7 +27,7 @@ module Solargraph
       tries = 0
       tmp = @code
       begin
-        node, comments = Parser::CurrentRuby.parse_with_comments(tmp + "\n_")
+        node, comments = Parser::CurrentRuby.parse_with_comments(tmp)
         @node = @api_map.append_node(node, comments, filename)
         @parsed = tmp
         @code.freeze
@@ -35,24 +35,28 @@ module Solargraph
       rescue Parser::SyntaxError => e
         if tries < 10
           tries += 1
-          spot = e.diagnostic.location.begin_pos
-          repl = '_'
-          if tmp[spot] == '@' or tmp[spot] == ':'
-            # Stub unfinished instance variables and symbols
-            spot -= 1
-          elsif tmp[spot - 1] == '.'
-            # Stub unfinished method calls
-            repl = '#' if spot == tmp.length or tmp[spot] == '\n'
-            spot -= 2
+          if tries == 10 and e.message.include?('token $end')
+            tmp += "\nend"
           else
-            # Stub the whole line
-            spot = beginning_of_line_from(tmp, spot)
-            repl = '#'
-            if tmp[spot+1..-1].rstrip == 'end'
-              repl= 'end;end'
+            spot = e.diagnostic.location.begin_pos
+            repl = '_'
+            if tmp[spot] == '@' or tmp[spot] == ':'
+              # Stub unfinished instance variables and symbols
+              spot -= 1
+            elsif tmp[spot - 1] == '.'
+              # Stub unfinished method calls
+              repl = '#' if spot == tmp.length or tmp[spot] == '\n'
+              spot -= 2
+            else
+              # Stub the whole line
+              spot = beginning_of_line_from(tmp, spot)
+              repl = '#'
+              if tmp[spot+1..-1].rstrip == 'end'
+                repl= 'end;end'
+              end
             end
+            tmp = tmp[0..spot] + repl + tmp[spot+repl.length+1..-1].to_s
           end
-          tmp = tmp[0..spot] + repl + tmp[spot+repl.length+1..-1].to_s
           retry
         end
         raise e
