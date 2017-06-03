@@ -247,6 +247,7 @@ module Solargraph
     def resolve_object_at index
       signature = get_signature_at(index)
       return [] if signature.to_s == ''
+      path = nil
       ns_here = namespace_at(index)
       scope = parent_node_from(index, :class, :module, :def, :defs) || @node
       cursor = index
@@ -257,111 +258,50 @@ module Solargraph
       end
       STDERR.puts "Trying to resolve object for #{signature}"
       node = parent_node_from(index, :class, :module, :def, :defs) || @node
-      type = infer_signature_from_node(signature, node)
-      STDERR.puts "I would do #{type}"
-      if type.nil?
-        parts = signature.split('.')
-        if parts.length > 1
-          beginner = parts[0..-2].join('.')
-          ender = parts.last
-        else
-          beginner = signature
-          ender = nil
-        end
-        fqns = @api_map.find_fully_qualified_namespace(beginner, ns_here)
-        if fqns.nil?
-          # It's a method call
-          if ender.nil?
-            return @api_map.yard_map.objects(beginner, ns_here)
-          else
-            sig_scope = (scope.type == :def ? :instance : :class)
-            type = @api_map.infer_signature_type(beginner, ns_here, scope: sig_scope)
-            return [] if type.nil?
-            path = type
-            path += "##{ender}" unless ender.nil?
-            return @api_map.yard_map.objects(path, ns_here)
-          end
-        else
-          path = beginner
-          path += "##{ender}" unless ender.nil?
-          return @api_map.yard_map.objects(path, ns_here)
-        end
-      else
-        return @api_map.yard_map.objects(type, ns_here)
-      end
-      return []
-      #
-      #
-      #
-      #
-      #
-      return [] if signature.to_s == ''
-      ns_here = namespace_at(index)
-      scope = parent_node_from(index, :class, :module, :def, :defs) || @node
+      #type = infer_signature_from_node(signature, node)
+      #STDERR.puts "I would do #{type}"
+      #return []
+
       parts = signature.split('.')
       if parts.length > 1
         beginner = parts[0..-2].join('.')
+        type = infer_signature_from_node(beginner, node)
+        STDERR.puts "Workin with #{type}"
         ender = parts.last
+        path = "#{type}##{ender}"
       else
-        beginner = signature
-        ender = nil
-      end
-      var = find_local_variable_node(parts[0], scope)
-      if var.nil?
-        # It's not a local variable
-        fqns = @api_map.find_fully_qualified_namespace(beginner, ns_here)
-        if fqns.nil?
-          # It's a method call
-          if ender.nil?
-            return @api_map.yard_map.objects(beginner, ns_here)
-          else
-            sig_scope = (scope.type == :def ? :instance : :class)
-            type = @api_map.infer_signature_type(beginner, ns_here, scope: sig_scope)
-            return [] if type.nil?
-            path = type
-            path += "##{ender}" unless ender.nil?
-            return @api_map.yard_map.objects(path, ns_here)
-          end
+        #beginner = nil
+        #ender = signature
+        if local_variable_in_node?(signature, node)
+          path = infer_signature_from_node(signature, node)
         else
-          path = beginner
-          path += "##{ender}" unless ender.nil?
-          return @api_map.yard_map.objects(path, ns_here)
+          path = signature
         end
-      else
-        # It's a local variable. Get the type from the node
-        type = get_type_comment(var)
-        type = infer(var.children[1]) if type.nil?
-        if type.nil?
-          vsig = resolve_node_signature(var.children[1])
-          vparts = vsig.split('.')
-          fqns = @api_map.find_fully_qualified_namespace(vparts[0], ns_here)
-          if fqns.nil?
-            vtype = @api_map.infer_signature_type(vsig, ns_here, scope: :instance)
-          else
-            vtype = @api_map.infer_signature_type(vparts[1..-1].join('.'), fqns, scope: :class)
-          end
-          return [] if vtype.nil?
-          fqns = @api_map.find_fully_qualified_namespace(vtype, ns_here)
-          if ender.nil?
-            signature = parts[1..-1].join('.')
-          else
-            signature = parts[1..-2].join('.')
-          end
-          type = @api_map.infer_signature_type(signature, fqns, scope: :instance)
-        end
-        unless type.nil?
-          path = type
-          path += "##{ender}" unless ender.nil?
-          return @api_map.yard_map.objects(path, ns_here)
+        if path.nil?
+          path = api_map.find_fully_qualified_namespace(signature, ns_here)
         end
       end
-      return []
+      #type = nil
+      #type = infer_signature_from_node(beginner, node)
+      STDERR.puts "Gonna go with #{path}"
+
+      return [] if path.nil?
+      return api_map.yard_map.objects(path, ns_here)
     end
 
     def infer_signature_at index
       signature = get_signature_at(index)
       node = parent_node_from(index, :class, :module, :def, :defs) || @node
       infer_signature_from_node signature, node
+    end
+
+    def local_variable_in_node?(name, node)
+      return true unless find_local_variable_node(name, node).nil?
+      if node.type == :def or node.type == :defs
+        args = get_method_arguments_from(node).keep_if{|a| a.label == name}
+        return true unless args.empty?
+      end
+      false
     end
 
     def infer_signature_from_node signature, node
