@@ -245,17 +245,17 @@ module Solargraph
     end
 
     def resolve_object_at index
+      return [] if string_at?(index)
       signature = get_signature_at(index)
-      return [] if signature.to_s == ''
-      path = nil
-      ns_here = namespace_at(index)
-      scope = parent_node_from(index, :class, :module, :def, :defs) || @node
       cursor = index
       while @code[cursor] =~ /[a-z0-9_\?]/i
         signature += @code[cursor]
         cursor += 1
         break if cursor >= @code.length
       end
+      return [] if signature.to_s == ''
+      path = nil
+      ns_here = namespace_at(index)
       node = parent_node_from(index, :class, :module, :def, :defs) || @node
       parts = signature.split('.')
       if parts.length > 1
@@ -267,7 +267,7 @@ module Solargraph
         if local_variable_in_node?(signature, node)
           path = infer_signature_from_node(signature, node)
         elsif signature.start_with?('@')
-          path = api_map.infer_instance_variable(signature, ns_here, (scope.type == :def ? :instance : :class))
+          path = api_map.infer_instance_variable(signature, ns_here, (node.type == :def ? :instance : :class))
         else
           path = signature
         end
