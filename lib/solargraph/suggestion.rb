@@ -35,7 +35,7 @@ module Solargraph
       if code_object.nil?
         unless documentation.nil?
           match = documentation.all.match(/@return \[([a-z0-9:_]*)/i)
-          return match[1]
+          return match[1] unless match.nil?
         end
       else
         o = code_object.tag(:overload)

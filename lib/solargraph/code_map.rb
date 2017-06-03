@@ -3,6 +3,7 @@ require 'parser/current'
 module Solargraph
   class CodeMap
     attr_accessor :node
+    # @return [Solargraph::ApiMap]
     attr_accessor :api_map
     attr_reader :code
     attr_reader :parsed
@@ -33,8 +34,6 @@ module Solargraph
         @parsed.freeze
       rescue Parser::SyntaxError => e
         if tries < 10
-          STDERR.puts "Error parsing #{filename}: #{e.message}"
-          STDERR.puts "Retrying..."
           tries += 1
           spot = e.diagnostic.location.begin_pos
           repl = '_'
@@ -132,6 +131,14 @@ module Solargraph
       parts.join("::")
     end
 
+    def namespace_from(node)
+      if node.respond_to?(:loc)
+        namespace_at(node.loc.expression.begin_pos)
+      else
+        namespace_at(0)
+      end
+    end
+
     def phrase_at index
       word = ''
       cursor = index - 1
@@ -204,7 +211,8 @@ module Solargraph
           result = @api_map.namespaces_in(ns)
         end
       elsif signature.include?('.')
-        result = resolve_signature_at @code[0, index].rindex('.')
+        #result = resolve_signature_at @code[0, index].rindex('.')
+        result = suggest_for_signature_at @code[0, index].rindex('.')
       else
         current_namespace = namespace_at(index)
         parts = current_namespace.to_s.split('::')
@@ -307,81 +315,59 @@ module Solargraph
       return []
     end
 
-    # Find the signature at the specified index and get suggestions based
-    # on its inferred type.
-    #
-    # @return [Array<Solargraph::Suggestion>]
-    def resolve_signature_at index
-      result = []
+    def infer_signature_at index
       signature = get_signature_at(index)
-      ns_here = namespace_at(index)
-      scope = parent_node_from(index, :class, :module, :def, :defs) || @node
+      node = parent_node_from(index, :class, :module, :def, :defs) || @node
+      infer_signature_from_node signature, node
+    end
+
+    def infer_signature_from_node signature, node
+      inferred = nil
       parts = signature.split('.')
-      var = find_local_variable_node(parts[0], scope)
+      ns_here = namespace_from(node)
+      start = parts[0]
+      remainder = parts[1..-1]
+      scope = :instance
+      var = find_local_variable_node(start, node)
       if var.nil?
-        # It's not a local variable
-        fqns = @api_map.find_fully_qualified_namespace(signature, ns_here)
-        if fqns.nil?
-          # It's a method call
-          sig_scope = (scope.type == :def ? :instance : :class)
-          type = @api_map.infer_signature_type(signature, ns_here, scope: sig_scope)
-          result.concat @api_map.get_instance_methods(type) unless type.nil?
-        else
-          if fqns == ns_here
-            result.concat @api_map.get_methods(fqns, '', visibility: [:private, :protected, :public])
+        if node.type == :def or node.type == :defs
+          args = get_method_arguments_from(node).keep_if{|a| a.label == start}
+          if args.empty?
+            scope = :class
+            type = api_map.find_fully_qualified_namespace(start, ns_here)
           else
-            result.concat @api_map.get_methods(fqns)
-          end
-        end
-      else
-        # It's a local variable. Get the type from the node
-        type = get_type_comment(var)
-        type = infer(var.children[1]) if type.nil?
-        skipdat = false
-        if type.nil?
-          vsig = resolve_node_signature(var.children[1])
-          vparts = vsig.split('.')
-          fqns = @api_map.find_fully_qualified_namespace(vparts[0], ns_here)
-          if fqns.nil?
-            lvar = find_local_variable_node(vparts[0], scope)
-            if lvar.nil?
-              vtype = @api_map.infer_signature_type(vsig, ns_here, scope: :instance)
-            else
-              type = get_type_comment(lvar)
-              type = infer(lvar.children[1]) if type.nil?
-              if type.nil?
-                type = @api_map.infer_signature_type(resolve_node_signature(lvar.children[1]), ns_here, scope: :class)
-              end
-              unless type.nil?
-                signature = "#{vparts[1..-1].join('.')}"
-                skipdat = true
+            cmnt = api_map.get_comment_for(node)
+            params = cmnt.tags(:param)
+            params.each do |p|
+              if p.name == args[0].label
+                type = p.types[0]
+                break
               end
             end
-          else
-            vtype = @api_map.infer_signature_type(vparts[1..-1].join('.'), fqns, scope: :class)
-            type = fqns
-            signature = parts[1..-1].join('.')
-            skipdat = true
-          end
-          unless skipdat
-            fqns = @api_map.find_fully_qualified_namespace(vtype, ns_here)
-            signature = parts[1..-1].join('.')
-            type = @api_map.infer_signature_type(signature, fqns, scope: :instance)
           end
         else
-          signature = signature.split('.')[1..-1].join('.')
+          scope = :class
+          type = @api_map.find_fully_qualified_namespace(start, ns_here)
         end
-        unless type.nil?
-          lparts = signature.split('.')
-          if lparts.length >= 1
-            lsig = signature
-            ltype = @api_map.infer_signature_type(lsig, type, scope: :instance)
-            result.concat @api_map.get_instance_methods(ltype) unless ltype.nil?
-          else
-            result.concat @api_map.get_instance_methods(type)
-          end
+      else
+        # Signature starts with a local variable
+        type = get_type_comment(var)
+        type = infer(var.children[1]) if type.nil?
+        if type.nil?
+          vsig = resolve_node_signature(var.children[1])
+          type = infer_signature_from_node vsig, node
         end
       end
+      unless type.nil?
+        inferred = api_map.infer_signature_type(remainder.join('.'), type, scope: scope)
+      end
+      inferred
+    end
+
+    def suggest_for_signature_at index
+      result = []
+      type = infer_signature_at(index)
+      result.concat @api_map.get_instance_methods(type) unless type.nil?
       result
     end
 

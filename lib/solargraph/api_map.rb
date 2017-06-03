@@ -337,6 +337,7 @@ module Solargraph
       while parts.length > 0 and !type.nil?
         p = parts.shift
         if top and scope == :class
+          next if p == 'new'
           first_class = find_fully_qualified_namespace(p, namespace)
           sub = nil
           sub = infer_signature_type(parts.join('.'), first_class, scope: :class) unless first_class.nil?
