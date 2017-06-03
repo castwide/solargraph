@@ -4,7 +4,7 @@ module Solargraph
   class CodeMap
     attr_accessor :node
     # @return [Solargraph::ApiMap]
-    attr_accessor :api_map
+    attr_reader :api_map
     attr_reader :code
     attr_reader :parsed
 
@@ -27,7 +27,7 @@ module Solargraph
       tries = 0
       tmp = @code
       begin
-        node, comments = Parser::CurrentRuby.parse_with_comments(tmp)
+        node, comments = Parser::CurrentRuby.parse_with_comments(tmp + "\n_")
         @node = @api_map.append_node(node, comments, filename)
         @parsed = tmp
         @code.freeze
@@ -102,6 +102,9 @@ module Solargraph
       tree_at(index).first
     end
 
+    # Determine if the specified index is inside a string.
+    #
+    # @return [Boolean]
     def string_at?(index)
       n = node_at(index)
       n.kind_of?(AST::Node) and n.type == :str
@@ -172,35 +175,31 @@ module Solargraph
     end
 
     def suggest_at index, filtered: false, with_snippets: false
-      node = node_at(index - 2)
       return [] if string_at?(index)
       result = []
       phrase = phrase_at(index)
       signature = get_signature_at(index)
-      if (@code[index - 1] == '.')
+      namespace = namespace_at(index)
+      if signature.include?('.')
+        # Check for literals first
         type = infer(node_at(index - 2))
-        return @api_map.get_instance_methods(type) unless type.nil?
-      end
-      if signature.start_with?('@')
-        parts = signature.split('.')
-        var = parts.shift
-        if parts.length > 0 or signature.end_with?('.')
-          result = []
-          ns = namespace_at(index)
-          scope = :class
-          node = parent_node_from(index, :def, :defs, :class, :module)
-          scope = :instance if !node.nil? and node.type == :def
-          obj = @api_map.infer_instance_variable(var, ns, scope)
-          type = @api_map.infer_signature_type(parts.join('.'), obj, scope: :instance)
-          result = @api_map.get_instance_methods(type) unless type.nil?
+        if type.nil?
+          nearest = @code[0, index].rindex('.')
+          revised = signature[0..nearest-index-1]
+          type = infer_signature_at(nearest) unless revised.empty?
+          if !type.nil?
+            result.concat api_map.get_instance_methods(type) unless type.nil?
+          elsif !revised.include?('.')
+            fqns = api_map.find_fully_qualified_namespace(revised, namespace)
+            result.concat api_map.get_methods(fqns) unless fqns.nil?
+          end
         else
-          result = get_instance_variables_at(index)
+          result.concat @api_map.get_instance_methods(type)
         end
+      elsif signature.start_with?('@')
+        result.concat get_instance_variables_at(index)
       elsif phrase.start_with?('$')
-        result += @api_map.get_global_variables
-      elsif phrase.start_with?(':') and !phrase.start_with?('::')
-        # TODO: It's a symbol. Nothing to do for now.
-        return []
+        result.concat @api_map.get_global_variables
       elsif phrase.include?('::')
         parts = phrase.split('::', -1)
         ns = parts[0..-2].join('::')
@@ -210,9 +209,6 @@ module Solargraph
         else
           result = @api_map.namespaces_in(ns)
         end
-      elsif signature.include?('.')
-        #result = resolve_signature_at @code[0, index].rindex('.')
-        result = suggest_for_signature_at @code[0, index].rindex('.')
       else
         current_namespace = namespace_at(index)
         parts = current_namespace.to_s.split('::')
@@ -226,12 +222,12 @@ module Solargraph
         end
         result += @api_map.namespaces_in('')
         result += @api_map.get_instance_methods('Kernel')
-        unless @filename.nil? or @api_map.yardoc_has_file?(@filename)
-          m = @code.match(/# +@bind \[([a-z0-9_:]*)/i)
-          unless m.nil?
-            @api_map.get_instance_methods(m[1])
-          end
-        end
+        #unless @filename.nil? or @api_map.yardoc_has_file?(@filename)
+        #  m = @code.match(/# +@bind \[([a-z0-9_:]*)/i)
+        #  unless m.nil?
+        #    @api_map.get_instance_methods(m[1])
+        #  end
+        #end
       end
       result = reduce_starting_with(result, word_at(index)) if filtered
       result.uniq{|s| s.path}
@@ -256,24 +252,18 @@ module Solargraph
         cursor += 1
         break if cursor >= @code.length
       end
-      STDERR.puts "Trying to resolve object for #{signature}"
       node = parent_node_from(index, :class, :module, :def, :defs) || @node
-      #type = infer_signature_from_node(signature, node)
-      #STDERR.puts "I would do #{type}"
-      #return []
-
       parts = signature.split('.')
       if parts.length > 1
         beginner = parts[0..-2].join('.')
         type = infer_signature_from_node(beginner, node)
-        STDERR.puts "Workin with #{type}"
         ender = parts.last
         path = "#{type}##{ender}"
       else
-        #beginner = nil
-        #ender = signature
         if local_variable_in_node?(signature, node)
           path = infer_signature_from_node(signature, node)
+        elsif signature.start_with?('@')
+          path = api_map.infer_instance_variable(signature, ns_here, (scope == :def ? :instance : :class))
         else
           path = signature
         end
@@ -281,10 +271,6 @@ module Solargraph
           path = api_map.find_fully_qualified_namespace(signature, ns_here)
         end
       end
-      #type = nil
-      #type = infer_signature_from_node(beginner, node)
-      STDERR.puts "Gonna go with #{path}"
-
       return [] if path.nil?
       return api_map.yard_map.objects(path, ns_here)
     end
@@ -313,35 +299,41 @@ module Solargraph
       scope = :instance
       var = find_local_variable_node(start, node)
       if var.nil?
-        if node.type == :def or node.type == :defs
-          args = get_method_arguments_from(node).keep_if{|a| a.label == start}
-          if args.empty?
+        if start.start_with?('@')
+          type = api_map.infer_instance_variable(start, ns_here, (scope == :def ? :instance : :class))
+        else
+          if node.type == :def or node.type == :defs
+            args = get_method_arguments_from(node).keep_if{|a| a.label == start}
+            if args.empty?
+              scope = :class
+              type = api_map.find_fully_qualified_namespace(start, ns_here)
+              if type.nil?
+                # It's a method call
+                sig_scope = (node.type == :def ? :instance : :class)
+                type = @api_map.infer_signature_type(start, ns_here, scope: sig_scope)
+              else
+                return nil if remainder.empty?
+              end
+            else
+              cmnt = api_map.get_comment_for(node)
+              params = cmnt.tags(:param)
+              params.each do |p|
+                if p.name == args[0].label
+                  type = p.types[0]
+                  break
+                end
+              end
+            end
+          else
             scope = :class
-            type = api_map.find_fully_qualified_namespace(start, ns_here)
+            type = @api_map.find_fully_qualified_namespace(start, ns_here)
             if type.nil?
               # It's a method call
               sig_scope = (node.type == :def ? :instance : :class)
               type = @api_map.infer_signature_type(start, ns_here, scope: sig_scope)
-              #result.concat @api_map.get_instance_methods(type) unless type.nil?
+            else
+              return nil if remainder.empty?
             end
-          else
-            cmnt = api_map.get_comment_for(node)
-            params = cmnt.tags(:param)
-            params.each do |p|
-              if p.name == args[0].label
-                type = p.types[0]
-                break
-              end
-            end
-          end
-        else
-          scope = :class
-          type = @api_map.find_fully_qualified_namespace(start, ns_here)
-          if type.nil?
-            # It's a method call
-            sig_scope = (node.type == :def ? :instance : :class)
-            type = @api_map.infer_signature_type(start, ns_here, scope: sig_scope)
-            #result.concat @api_map.get_instance_methods(type) unless type.nil?
           end
         end
       else
