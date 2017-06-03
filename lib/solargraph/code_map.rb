@@ -378,6 +378,12 @@ module Solargraph
           if args.empty?
             scope = :class
             type = api_map.find_fully_qualified_namespace(start, ns_here)
+            if type.nil?
+              # It's a method call
+              sig_scope = (node.type == :def ? :instance : :class)
+              type = @api_map.infer_signature_type(start, ns_here, scope: sig_scope)
+              #result.concat @api_map.get_instance_methods(type) unless type.nil?
+            end
           else
             cmnt = api_map.get_comment_for(node)
             params = cmnt.tags(:param)
@@ -391,6 +397,12 @@ module Solargraph
         else
           scope = :class
           type = @api_map.find_fully_qualified_namespace(start, ns_here)
+          if type.nil?
+            # It's a method call
+            sig_scope = (node.type == :def ? :instance : :class)
+            type = @api_map.infer_signature_type(start, ns_here, scope: sig_scope)
+            #result.concat @api_map.get_instance_methods(type) unless type.nil?
+          end
         end
       else
         # Signature starts with a local variable
