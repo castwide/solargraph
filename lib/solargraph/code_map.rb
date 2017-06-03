@@ -267,7 +267,7 @@ module Solargraph
         if local_variable_in_node?(signature, node)
           path = infer_signature_from_node(signature, node)
         elsif signature.start_with?('@')
-          path = api_map.infer_instance_variable(signature, ns_here, (scope == :def ? :instance : :class))
+          path = api_map.infer_instance_variable(signature, ns_here, (scope.type == :def ? :instance : :class))
         else
           path = signature
         end
