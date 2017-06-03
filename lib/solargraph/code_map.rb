@@ -304,7 +304,7 @@ module Solargraph
       var = find_local_variable_node(start, node)
       if var.nil?
         if start.start_with?('@')
-          type = api_map.infer_instance_variable(start, ns_here, (scope == :def ? :instance : :class))
+          type = api_map.infer_instance_variable(start, ns_here, (node.type == :def ? :instance : :class))
         else
           if node.type == :def or node.type == :defs
             args = get_method_arguments_from(node).keep_if{|a| a.label == start}
