@@ -246,12 +246,55 @@ module Solargraph
 
     def resolve_object_at index
       signature = get_signature_at(index)
+      return [] if signature.to_s == ''
+      ns_here = namespace_at(index)
+      scope = parent_node_from(index, :class, :module, :def, :defs) || @node
       cursor = index
       while @code[cursor] =~ /[a-z0-9_\?]/i
         signature += @code[cursor]
         cursor += 1
         break if cursor >= @code.length
       end
+      STDERR.puts "Trying to resolve object for #{signature}"
+      node = parent_node_from(index, :class, :module, :def, :defs) || @node
+      type = infer_signature_from_node(signature, node)
+      STDERR.puts "I would do #{type}"
+      if type.nil?
+        parts = signature.split('.')
+        if parts.length > 1
+          beginner = parts[0..-2].join('.')
+          ender = parts.last
+        else
+          beginner = signature
+          ender = nil
+        end
+        fqns = @api_map.find_fully_qualified_namespace(beginner, ns_here)
+        if fqns.nil?
+          # It's a method call
+          if ender.nil?
+            return @api_map.yard_map.objects(beginner, ns_here)
+          else
+            sig_scope = (scope.type == :def ? :instance : :class)
+            type = @api_map.infer_signature_type(beginner, ns_here, scope: sig_scope)
+            return [] if type.nil?
+            path = type
+            path += "##{ender}" unless ender.nil?
+            return @api_map.yard_map.objects(path, ns_here)
+          end
+        else
+          path = beginner
+          path += "##{ender}" unless ender.nil?
+          return @api_map.yard_map.objects(path, ns_here)
+        end
+      else
+        return @api_map.yard_map.objects(type, ns_here)
+      end
+      return []
+      #
+      #
+      #
+      #
+      #
       return [] if signature.to_s == ''
       ns_here = namespace_at(index)
       scope = parent_node_from(index, :class, :module, :def, :defs) || @node
