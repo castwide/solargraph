@@ -3,10 +3,9 @@ require 'parser/current'
 module Solargraph
   class CodeMap
     attr_accessor :node
-    # @return [Solargraph::ApiMap]
-    attr_reader :api_map
     attr_reader :code
     attr_reader :parsed
+    attr_reader :workspace
 
     include NodeMethods
 
@@ -18,17 +17,15 @@ module Solargraph
         filename = filename.gsub(File::ALT_SEPARATOR, File::SEPARATOR) unless File::ALT_SEPARATOR.nil?
         workspace = CodeMap.find_workspace(filename)
       end
+      @workspace = workspace
       @filename = filename
       @api_map = api_map
-      if @api_map.nil?
-        @api_map = ApiMap.new(workspace)
-      end
       @code = code.gsub(/\r/, '')
       tries = 0
       tmp = @code
       begin
         node, comments = Parser::CurrentRuby.parse_with_comments(tmp)
-        @node = @api_map.append_node(node, comments, filename)
+        @node = self.api_map.append_node(node, comments, filename)
         @parsed = tmp
         @code.freeze
         @parsed.freeze
@@ -61,6 +58,11 @@ module Solargraph
         end
         raise e
       end
+    end
+
+    # @return [Solargraph::ApiMap]
+    def api_map
+      @api_map ||= ApiMap.new(workspace)
     end
 
     def self.find_workspace filename
@@ -175,7 +177,7 @@ module Solargraph
     def get_instance_variables_at(index)
       node = parent_node_from(index, :def, :defs, :class, :module)
       ns = namespace_at(index) || ''
-      @api_map.get_instance_variables(ns, (node.type == :def ? :instance : :class))
+      api_map.get_instance_variables(ns, (node.type == :def ? :instance : :class))
     end
 
     def suggest_at index, filtered: false, with_snippets: false
@@ -198,20 +200,20 @@ module Solargraph
             result.concat api_map.get_methods(fqns) unless fqns.nil?
           end
         else
-          result.concat @api_map.get_instance_methods(type)
+          result.concat api_map.get_instance_methods(type)
         end
       elsif signature.start_with?('@')
         result.concat get_instance_variables_at(index)
       elsif phrase.start_with?('$')
-        result.concat @api_map.get_global_variables
+        result.concat api_map.get_global_variables
       elsif phrase.include?('::')
         parts = phrase.split('::', -1)
         ns = parts[0..-2].join('::')
         if parts.last.include?('.')
           ns = parts[0..-2].join('::') + '::' + parts.last[0..parts.last.index('.')-1]
-          result = @api_map.get_methods(ns)
+          result = api_map.get_methods(ns)
         else
-          result = @api_map.namespaces_in(ns)
+          result = api_map.namespaces_in(ns)
         end
       else
         current_namespace = namespace_at(index)
@@ -221,11 +223,11 @@ module Solargraph
         result += ApiMap.get_keywords
         while parts.length > 0
           ns = parts.join('::')
-          result += @api_map.namespaces_in(ns)
+          result += api_map.namespaces_in(ns)
           parts.pop
         end
-        result += @api_map.namespaces_in('')
-        result += @api_map.get_instance_methods('Kernel')
+        result += api_map.namespaces_in('')
+        result += api_map.get_instance_methods('Kernel')
         #unless @filename.nil? or @api_map.yardoc_has_file?(@filename)
         #  m = @code.match(/# +@bind \[([a-z0-9_:]*)/i)
         #  unless m.nil?
@@ -314,7 +316,7 @@ module Solargraph
               if type.nil?
                 # It's a method call
                 sig_scope = (node.type == :def ? :instance : :class)
-                type = @api_map.infer_signature_type(start, ns_here, scope: sig_scope)
+                type = api_map.infer_signature_type(start, ns_here, scope: sig_scope)
               else
                 return nil if remainder.empty?
               end
@@ -330,11 +332,11 @@ module Solargraph
             end
           else
             scope = :class
-            type = @api_map.find_fully_qualified_namespace(start, ns_here)
+            type = api_map.find_fully_qualified_namespace(start, ns_here)
             if type.nil?
               # It's a method call
               sig_scope = (node.type == :def ? :instance : :class)
-              type = @api_map.infer_signature_type(start, ns_here, scope: sig_scope)
+              type = api_map.infer_signature_type(start, ns_here, scope: sig_scope)
             else
               return nil if remainder.empty?
             end
@@ -358,13 +360,13 @@ module Solargraph
     def suggest_for_signature_at index
       result = []
       type = infer_signature_at(index)
-      result.concat @api_map.get_instance_methods(type) unless type.nil?
+      result.concat api_map.get_instance_methods(type) unless type.nil?
       result
     end
 
     def get_type_comment node
       obj = nil
-      cmnt = @api_map.get_comment_for(node)
+      cmnt = api_map.get_comment_for(node)
       unless cmnt.nil?
         tag = cmnt.tag(:type)
         obj = tag.types[0] unless tag.nil? or tag.types.empty?
@@ -440,14 +442,14 @@ module Solargraph
       result += get_local_variables_from(local)
       scope = namespace_at(index) || @node
       if local.type == :def
-        result += @api_map.get_instance_methods(scope, visibility: [:public, :private, :protected])
+        result += api_map.get_instance_methods(scope, visibility: [:public, :private, :protected])
       else
-        result += @api_map.get_methods(scope, visibility: [:public, :private, :protected])
+        result += api_map.get_methods(scope, visibility: [:public, :private, :protected])
       end
       if local.type == :def or local.type == :defs
         result += get_method_arguments_from local
       end
-      result += @api_map.get_methods('Kernel')
+      result += api_map.get_methods('Kernel')
       result
     end
 
@@ -475,7 +477,7 @@ module Solargraph
       node.children.each { |c|
         if c.kind_of?(AST::Node)
           if c.type == :lvasgn
-            arr.push Suggestion.new(c.children[0], kind: Suggestion::VARIABLE, documentation: @api_map.get_comment_for(c))
+            arr.push Suggestion.new(c.children[0], kind: Suggestion::VARIABLE, documentation: api_map.get_comment_for(c))
           else
             arr += get_local_variables_from(c) unless [:class, :module, :def, :defs].include?(c.type)
           end
