@@ -580,7 +580,7 @@ module Solargraph
     def mappable?(node)
       return true if node.kind_of?(AST::Node) and [:array, :hash, :str, :int, :float].include?(node.type)
       # TODO Add node.type :casgn (constant assignment)
-      if node.kind_of?(AST::Node) and (node.type == :class or node.type == :module or node.type == :def or node.type == :defs or node.type == :ivasgn or node.type == :gvasgn or node.type == :lvasgn or node.type == :or_asgn or node.type == :const or node.type == :lvar)
+      if node.kind_of?(AST::Node) and (node.type == :class or node.type == :module or node.type == :def or node.type == :defs or node.type == :ivasgn or node.type == :gvasgn or node.type == :lvasgn or node.type == :or_asgn or node.type == :const or node.type == :lvar or node.type == :args or node.type == :kwargs)
         true
       elsif node.kind_of?(AST::Node) and node.type == :send and node.children[0] == nil and MAPPABLE_METHODS.include?(node.children[1])
         true
@@ -618,7 +618,7 @@ module Solargraph
         children += node.children[0, 2]
         children += get_mappable_nodes(node.children[2..-1], comment_hash)
         #children += get_mappable_nodes(node.children, comment_hash)
-      elsif node.type == :const
+      elsif node.type == :const or node.type == :args or node.type == :kwargs
         children += node.children
       elsif node.type == :def
         children += node.children[0, 2]
@@ -634,7 +634,10 @@ module Solargraph
       elsif node.type == :send and node.children[1] == :include
         children += node.children[0,3]
       elsif node.type == :send and node.children[1] == :require
-        @required.push(node.children[2].children[0]) if node.children[2].children[0].kind_of?(String)
+        if node.children[2].children[0].kind_of?(String)
+          path = node.children[2].children[0].to_s
+          @required.push(path) unless local_path?(path)
+        end
         children += node.children[0, 3]
       elsif node.type == :send and node.children[1] == :autoload
         @required.push(node.children[3].children[0]) if node.children[3].children[0].kind_of?(String)
@@ -653,6 +656,13 @@ module Solargraph
       result
     end
     
+    def local_path? path
+      return false if workspace.nil?
+      return true if File.exist?(File.join workspace, 'lib', path)
+      return true if File.exist?(File.join workspace, 'lib', "#{path}.rb")
+      false
+    end
+
     def map_parents node, tree = []
       if node.kind_of?(AST::Node)
         @parent_stack[node] = tree

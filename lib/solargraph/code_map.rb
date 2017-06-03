@@ -467,11 +467,24 @@ module Solargraph
       else
         result += @api_map.get_methods(scope, visibility: [:public, :private, :protected])
       end
+      if local.type == :def or local.type == :defs
+        result += get_method_arguments_from local
+      end
       result += @api_map.get_methods('Kernel')
       result
     end
 
     private
+
+    def get_method_arguments_from node
+      result = []
+      args = node.children[1]
+      args.children.each do |arg|
+        name = arg.children[0].to_s
+        result.push Suggestion.new(name, kind: Suggestion::VARIABLE, insert: name)
+      end
+      result
+    end
 
     def reduce_starting_with(suggestions, word)
       suggestions.reject { |s|
