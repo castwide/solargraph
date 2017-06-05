@@ -8,6 +8,8 @@ module Solargraph
     MODULE = 'Module'
     METHOD = 'Method'
     VARIABLE = 'Variable'
+    PROPERTY = 'Property'
+    FIELD = 'Field'
     SNIPPET = 'Snippet'
 
     attr_reader :label, :kind, :insert, :detail, :documentation, :code_object, :location, :arguments
