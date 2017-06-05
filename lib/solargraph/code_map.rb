@@ -181,7 +181,7 @@ module Solargraph
     end
 
     def suggest_at index, filtered: false, with_snippets: false
-      return [] if string_at?(index)
+      return [] if string_at?(index) or string_at?(index - 1)
       result = []
       phrase = phrase_at(index)
       signature = get_signature_at(index)
@@ -301,6 +301,7 @@ module Solargraph
       parts = signature.split('.')
       ns_here = namespace_from(node)
       start = parts[0]
+      return nil if start.nil?
       remainder = parts[1..-1]
       scope = :instance
       var = find_local_variable_node(start, node)
