@@ -148,7 +148,8 @@ module Solargraph
               n = m.to_s.split(/[\.#]/).last.gsub(/=/, ' = ')
               label = "#{n}"
               args = get_method_args(m)
-              meths.push Suggestion.new(label, insert: "#{n.gsub(/=/, ' = ')}", kind: Suggestion::METHOD, documentation: m.docstring, code_object: m, detail: "#{ns}", location: "#{m.file}:#{m.line}", arguments: args)
+              kind = (m.is_attribute? ? Suggestion::FIELD : Suggestion::METHOD)
+              meths.push Suggestion.new(label, insert: "#{n.gsub(/=/, ' = ')}", kind: kind, documentation: m.docstring, code_object: m, detail: "#{ns}", location: "#{m.file}:#{m.line}", arguments: args)
             }
             # Collect superclass methods
             if ns.kind_of?(YARD::CodeObjects::ClassObject) and !ns.superclass.nil?
@@ -191,7 +192,8 @@ module Solargraph
               if n.to_s.match(/^[a-z]/i) and (namespace == 'Kernel' or !m.to_s.start_with?('Kernel#')) and !m.docstring.to_s.include?(':nodoc:')
                 label = "#{n}"
                 args = get_method_args(m)
-                meths.push Suggestion.new(label, insert: "#{n.gsub(/=/, ' = ')}", kind: Suggestion::METHOD, documentation: m.docstring, code_object: m, detail: m.namespace, location: "#{m.file}:#{m.line}", arguments: args)
+                kind = (m.is_attribute? ? Suggestion::FIELD : Suggestion::METHOD)
+                meths.push Suggestion.new(label, insert: "#{n.gsub(/=/, ' = ')}", kind: kind, documentation: m.docstring, code_object: m, detail: m.namespace, location: "#{m.file}:#{m.line}", arguments: args)
               end
             }
             if ns.kind_of?(YARD::CodeObjects::ClassObject) and namespace != 'Object'
