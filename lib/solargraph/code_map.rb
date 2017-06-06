@@ -213,7 +213,7 @@ module Solargraph
           ns = parts[0..-2].join('::') + '::' + parts.last[0..parts.last.index('.')-1]
           result = api_map.get_methods(ns)
         else
-          result = api_map.namespaces_in(ns)
+          result = api_map.namespaces_in(ns, namespace)
         end
       else
         current_namespace = namespace_at(index)
@@ -223,7 +223,7 @@ module Solargraph
         result += ApiMap.get_keywords
         while parts.length > 0
           ns = parts.join('::')
-          result += api_map.namespaces_in(ns)
+          result += api_map.namespaces_in(ns, namespace)
           parts.pop
         end
         result += api_map.namespaces_in('')

@@ -10,7 +10,7 @@ module Solargraph
       'begin', 'break', 'case', 'class', 'def', 'defined?', 'do', 'else',
       'elsif', 'end', 'ensure', 'false', 'for', 'if', 'in', 'module', 'next',
       'nil', 'not', 'or', 'redo', 'rescue', 'retry', 'return', 'self', 'super',
-      'then', 'true', 'undef', 'unless', 'until', 'when', 'while', 'yield',
+      'then', 'true', 'undef', 'unless', 'until', 'when', 'while', 'yield'
     ]
 
     MAPPABLE_METHODS = [
@@ -96,6 +96,7 @@ module Solargraph
       return nil if @file_comments[filename].nil?
       @file_comments[filename][node.loc]
     end
+
 
     def self.get_keywords
       result = []
@@ -510,14 +511,16 @@ module Solargraph
             docstring = get_comment_for(c)
             label = "#{c.children[1]}"
             args = get_method_args(c)
-            meths.push Suggestion.new(label, insert: c.children[1].to_s.gsub(/=/, ' = '), kind: Suggestion::METHOD, detail: 'Method', documentation: docstring, arguments: args) if c.children[1].to_s[0].match(/[a-z_]/i) and c.children[1] != :def
+            if (c.children[1].to_s[0].match(/[a-z_]/i) and c.children[1] != :def)
+              meths.push Suggestion.new(label, insert: c.children[1].to_s.gsub(/=/, ' = '), kind: Suggestion::METHOD, detail: 'Method', documentation: docstring, arguments: args)
+            end
           elsif c.type == :send and c.children[1] == :include
             # TODO: This might not be right. Should we be getting singleton methods
             # from an include, or only from an extend?
             i = unpack_name(c.children[2])
-            meths += inner_get_methods(i, root, skip) unless i == 'Kernel'
+            meths.concat inner_get_methods(i, root, skip) unless i == 'Kernel'
           else
-            meths += inner_get_methods_from_node(c, root, skip)
+            meths.concat inner_get_methods_from_node(c, root, skip)
           end
         end
       }
@@ -589,7 +592,7 @@ module Solargraph
         false
       end
     end
-    
+
     def reduce node, comment_hash
       return node unless node.kind_of?(AST::Node)
       mappable = get_mappable_nodes(node.children, comment_hash)
@@ -680,7 +683,7 @@ module Solargraph
         cursor = cursor[t.to_s]
       }
     end
-    
+
     def map_namespaces node, tree = []
       if node.kind_of?(AST::Node)
         if node.type == :class or node.type == :module
@@ -698,6 +701,6 @@ module Solargraph
           map_namespaces c, tree
         }
       end
-    end    
+    end
   end
 end
