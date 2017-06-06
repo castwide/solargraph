@@ -460,7 +460,7 @@ module Solargraph
       args = node.children[1]
       args.children.each do |arg|
         name = arg.children[0].to_s
-        result.push Suggestion.new(name, kind: Suggestion::VARIABLE, insert: name)
+        result.push Suggestion.new(name, kind: Suggestion::PROPERTY, insert: name)
       end
       result
     end
