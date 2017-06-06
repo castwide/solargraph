@@ -554,16 +554,16 @@ module Solargraph
                   meths.push Suggestion.new(label, insert: c.children[0].to_s.gsub(/=/, ' = '), kind: Suggestion::METHOD, documentation: cmnt, detail: fqns, arguments: args) if c.children[0].to_s[0].match(/[a-z]/i)
                 elsif c.kind_of?(AST::Node) and c.type == :send and c.children[1] == :attr_reader
                   c.children[2..-1].each { |x|
-                    meths.push Suggestion.new(x.children[0], kind: Suggestion::METHOD) if x.type == :sym
+                    meths.push Suggestion.new(x.children[0], kind: Suggestion::FIELD) if x.type == :sym
                   }
                 elsif c.kind_of?(AST::Node) and c.type == :send and c.children[1] == :attr_writer
                   c.children[2..-1].each { |x|
-                    meths.push Suggestion.new("#{x.children[0]}=", kind: Suggestion::METHOD) if x.type == :sym
+                    meths.push Suggestion.new("#{x.children[0]}=", kind: Suggestion::FIELD) if x.type == :sym
                   }
                 elsif c.kind_of?(AST::Node) and c.type == :send and c.children[1] == :attr_accessor
                   c.children[2..-1].each { |x|
-                    meths.push Suggestion.new(x.children[0], kind: Suggestion::METHOD) if x.type == :sym
-                    meths.push Suggestion.new("#{x.children[0]}=", kind: Suggestion::METHOD) if x.type == :sym
+                    meths.push Suggestion.new(x.children[0], kind: Suggestion::FIELD) if x.type == :sym
+                    meths.push Suggestion.new("#{x.children[0]}=", kind: Suggestion::FIELD) if x.type == :sym
                   }
                 end
               end
