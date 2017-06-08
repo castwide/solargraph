@@ -35,6 +35,13 @@ describe Solargraph::CodeMap do
         end
       end
     )
+
+    # Type tag
+    @type_tag = %(
+# @type [String]
+my_var = some_method_call
+my_var.
+    )
   end
 
   it "identifies position in def node" do
@@ -105,13 +112,9 @@ describe Solargraph::CodeMap do
     expect(suggestions[0].path).to eq('Array#join')
   end
 
-  #it "stubs unfinished method calls nested in code" do
-  #  code_map = Solargraph::CodeMap.new(code: "if true\nString.\nend")
-  #  expect(code_map.parsed).to eq("if true\nString_\nend")
-  #end
-
-  #it "stubs unfinished method calls at end of code" do
-  #  code_map = Solargraph::CodeMap.new(code: "String.")
-  #  expect(code_map.parsed).to eq("String#")
-  #end
+  it "detects variable types from @type tags" do
+    code_map = Solargraph::CodeMap.new(code: @type_tag)
+    sugg = code_map.suggest_at(51)
+    expect(sugg.map{ |s| s.label }).to include('upcase')
+  end
 end

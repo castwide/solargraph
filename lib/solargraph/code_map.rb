@@ -24,7 +24,10 @@ module Solargraph
       tries = 0
       tmp = @code
       begin
-        node, comments = Parser::CurrentRuby.parse_with_comments(tmp)
+        # HACK: The current file is parsed with a trailing underscore to fix
+        # incomplete trees resulting from short scripts (e.g., a lone variable
+        # assignment).
+        node, comments = Parser::CurrentRuby.parse_with_comments(tmp + "\n_")
         @node = self.api_map.append_node(node, comments, filename)
         @parsed = tmp
         @code.freeze
