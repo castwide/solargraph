@@ -25,7 +25,7 @@ module Solargraph
         @@semaphore.synchronize {
           code_map = CodeMap.new(code: params['text'], filename: params['filename'], api_map: @@api_hash[workspace])
           offset = code_map.get_offset(params['line'].to_i, params['column'].to_i)
-          sugg = code_map.suggest_at(offset, with_snippets: params['with_snippets'] == '1' ? true : false)
+          sugg = code_map.suggest_at(offset, with_snippets: params['with_snippets'] == '1' ? true : false, filtered: (params['filtered'] || false))
         }
         { "status" => "ok", "suggestions" => sugg }.to_json
       rescue Exception => e

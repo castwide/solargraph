@@ -239,7 +239,7 @@ module Solargraph
         #end
       end
       result = reduce_starting_with(result, word_at(index)) if filtered
-      result.uniq{|s| s.path}
+      result.uniq{|s| s.path}.sort{|a,b| a.label <=> b.label}
     end
 
     def signatures_at index
