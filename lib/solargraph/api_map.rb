@@ -373,6 +373,10 @@ module Solargraph
       type
     end
 
+    # Get an array of singleton methods that are available in the specified
+    # namespace.
+    #
+    # @return [Array<Solargraph::Suggestion>]
     def get_methods(namespace, root = '', visibility: [:public])
       meths = []
       meths += inner_get_methods(namespace, root, []) #unless has_yardoc?
@@ -410,6 +414,10 @@ module Solargraph
       args
     end
 
+    # Get an array of instance methods that are available in the specified
+    # namespace.
+    #
+    # @return [Array<Solargraph::Suggestion>]
     def get_instance_methods(namespace, root = '', visibility: [:public])
       meths = []
       meths += inner_get_instance_methods(namespace, root, []) #unless has_yardoc?
@@ -461,6 +469,8 @@ module Solargraph
       arr
     end
     
+    # Update the YARD documentation for the current workspace.
+    #
     def update_yardoc
       if workspace.nil?
         STDERR.puts "No workspace specified for yardoc update."

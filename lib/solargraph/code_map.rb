@@ -86,6 +86,12 @@ module Solargraph
       result
     end
 
+    # Get the offset of the specified line and column.
+    # The offset (also called the "index") is typically used to identify the
+    # cursor's location in the code when generating suggestions.
+    # The line and column numbers should start at zero.
+    #
+    # @return [Integer]
     def get_offset line, col
       offset = 0
       if line > 0
@@ -465,6 +471,10 @@ module Solargraph
       result
     end
 
+    # Get an array of local variables and methods that can be accessed from
+    # the specified location in the code.
+    #
+    # @return [Array<Solargraph::Suggestion>]
     def get_local_variables_and_methods_at(index)
       result = []
       local = parent_node_from(index, :class, :module, :def, :defs) || @node
