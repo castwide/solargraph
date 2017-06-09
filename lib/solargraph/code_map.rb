@@ -96,10 +96,6 @@ module Solargraph
       offset + col
     end
 
-    def merge node
-      api_map.merge node
-    end
-
     def tree_at(index)
       arr = []
       arr.push @node
@@ -129,6 +125,11 @@ module Solargraph
       @node
     end
 
+    # Get the namespace at the specified location. For example, given the code
+    # `class Foo; def bar; end; end`, index 14 (the center) is in the
+    # "Foo" namespace.
+    #
+    # @return [String]
     def namespace_at(index)
       tree = tree_at(index)
       return nil if tree.length == 0
@@ -143,6 +144,11 @@ module Solargraph
       parts.join("::")
     end
 
+    # Get the namespace for the specified node. For example, given the code
+    # `class Foo; def bar; end; end`, the node for `def bar` is in the "Foo"
+    # namespace.
+    #
+    # @return [String]
     def namespace_from(node)
       if node.respond_to?(:loc)
         namespace_at(node.loc.expression.begin_pos)
@@ -183,6 +189,10 @@ module Solargraph
       api_map.get_instance_variables(ns, (node.type == :def ? :instance : :class))
     end
 
+    # Get suggestions for code completion at the specified location in the
+    # source.
+    #
+    # @return [Array<Suggestions>] The completion suggestions
     def suggest_at index, filtered: false, with_snippets: false
       return [] if string_at?(index) or string_at?(index - 1)
       result = []
@@ -378,6 +388,17 @@ module Solargraph
       obj
     end
 
+    # Get the signature at the specified index.
+    # A signature is a method call that can start with a constant, method, or
+    # variable and does not include any method arguments. Examples:
+    #
+    # Code                  Signature
+    # -----------------------------------------
+    # String.new            String.new
+    # @x.bar                @x.bar
+    # y.split(', ').length  y.split.length
+    #
+    # @return [String]
     def get_signature_at index
       brackets = 0
       squares = 0
@@ -410,6 +431,10 @@ module Solargraph
       signature
     end
 
+    # Build a signature from the specified node. This method returns the node
+    # as an array of strings.
+    #
+    # @return [Array<String>]
     def build_signature(node, parts)
       if node.kind_of?(AST::Node)
         if node.type == :send
