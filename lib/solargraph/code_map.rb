@@ -343,11 +343,15 @@ module Solargraph
               end
             else
               cmnt = api_map.get_comment_for(node)
-              params = cmnt.tags(:param)
-              params.each do |p|
-                if p.name == args[0].label
-                  type = p.types[0]
-                  break
+              unless cmnt.nil?
+                params = cmnt.tags(:param)
+                unless params.nil?
+                  params.each do |p|
+                    if p.name == args[0].label
+                      type = p.types[0]
+                      break
+                    end
+                  end
                 end
               end
             end

@@ -39,7 +39,7 @@ module Solargraph
           files -= Dir[File.join @workspace, glob]
         }
         files.uniq.each { |f|
-          append_file f #unless yardoc_has_file?(f)
+          append_file f if File.file?(f)
         }
       end
     end

@@ -59,7 +59,8 @@ module Solargraph
         detail: @detail,
         path: path,
         location: (@location.nil? ? nil : @location.to_s),
-        arguments: @arguments
+        arguments: @arguments,
+        return_type: return_type
       }
       if @code_object.nil?
         obj[:documentation] = @documentation.to_s unless @documentation.nil?
