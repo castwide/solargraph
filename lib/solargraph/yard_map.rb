@@ -202,6 +202,9 @@ module Solargraph
                 meths += get_instance_methods(ns.superclass.to_s)
               end
             end
+            ns.instance_mixins.each do |m|
+              meths += get_instance_methods(m.to_s)
+            end
           end
         end
       }
