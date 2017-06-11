@@ -39,27 +39,6 @@ module Solargraph
       end
     end
 
-    def drill_signature node, signature
-      return signature unless node.kind_of?(AST::Node)
-      if node.type == :const or node.type == :cbase
-        unless node.children[0].nil?
-          signature += drill_signature(node.children[0], signature)
-        end
-        signature += '::' unless signature.empty?
-        signature += node.children[1].to_s
-      elsif node.type == :lvar
-        signature += '.' unless signature.empty?
-        signature += node.children[0].to_s
-      elsif node.type == :send
-        unless node.children[0].nil?
-          signature += drill_signature(node.children[0], signature)
-        end
-        signature += '.' unless signature.empty?
-        signature += node.children[1].to_s
-      end
-      signature
-    end
-
     def infer node
       if node.type == :str
         return 'String'
@@ -126,6 +105,29 @@ module Solargraph
         @yard_options[:include].concat ['app/**/*.rb', 'lib/**/*.rb'] if @yard_options[:include].empty?
       end
       @yard_options
+    end
+
+    private
+
+    def drill_signature node, signature
+      return signature unless node.kind_of?(AST::Node)
+      if node.type == :const or node.type == :cbase
+        unless node.children[0].nil?
+          signature += drill_signature(node.children[0], signature)
+        end
+        signature += '::' unless signature.empty?
+        signature += node.children[1].to_s
+      elsif node.type == :lvar
+        signature += '.' unless signature.empty?
+        signature += node.children[0].to_s
+      elsif node.type == :send
+        unless node.children[0].nil?
+          signature += drill_signature(node.children[0], signature)
+        end
+        signature += '.' unless signature.empty?
+        signature += node.children[1].to_s
+      end
+      signature
     end
   end
 end

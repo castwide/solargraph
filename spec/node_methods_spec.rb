@@ -1,3 +1,5 @@
+require 'parser/current'
+
 describe Solargraph::NodeMethods do
   let(:test_class) {
     Class.new do
@@ -27,6 +29,31 @@ describe Solargraph::NodeMethods do
     ast = Parser::CurrentRuby.parse("x = []")
     tester = test_class.new
     expect(tester.infer(ast.children[1])).to eq 'Array'
+  end
+
+  it "unpacks a multi-part constant" do
+    ast = Parser::CurrentRuby.parse("class Foo::Bar;end")
+    tester = test_class.new
+    expect(tester.const_from(ast.children[0])).to eq 'Foo::Bar'
+  end
+
+  it "resolves a constant signature from a node" do
+    ast = Parser::CurrentRuby.parse('String.new(foo)')
+    tester = test_class.new
+    expect(tester.resolve_node_signature(ast)).to eq('String.new')
+  end
+
+  it "resolves a method signature from a node" do
+    ast = Parser::CurrentRuby.parse('foo(1).bar.bong(2)')
+    tester = test_class.new
+    expect(tester.resolve_node_signature(ast)).to eq('foo.bar.bong')
+  end
+
+  it "resolves a local variable signature from a node" do
+    ast = Parser::CurrentRuby.parse('foo = bar; foo.bar(1).baz(2)')
+    tester = test_class.new
+    expect(tester.resolve_node_signature(ast.children[1])).to eq('foo.bar.baz')
+    STDERR.puts ast
   end
 
   # @todo The following type inferences are the reponsibility of the ApiMap.
