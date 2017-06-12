@@ -203,7 +203,7 @@ module Solargraph
               end
             end
             ns.instance_mixins.each do |m|
-              meths += get_instance_methods(m.to_s)
+              meths += get_instance_methods(m.to_s) unless m.to_s == 'Kernel'
             end
           end
         end
