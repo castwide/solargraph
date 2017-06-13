@@ -53,7 +53,6 @@ describe Solargraph::NodeMethods do
     ast = Parser::CurrentRuby.parse('foo = bar; foo.bar(1).baz(2)')
     tester = test_class.new
     expect(tester.resolve_node_signature(ast.children[1])).to eq('foo.bar.baz')
-    STDERR.puts ast
   end
 
   # @todo The following type inferences are the reponsibility of the ApiMap.

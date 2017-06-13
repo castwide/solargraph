@@ -18,6 +18,7 @@ describe Solargraph::CodeMap do
     )
 
     # Unfinished class variable at 93
+    # Instance variable assignment at 63
     @cvar_code = %(
       class Foo
         @cvar = ''
@@ -126,6 +127,13 @@ my_var.
     sugg = code_map.suggest_at(51)
     expect(sugg.map{ |s| s.label }).to include('upcase')
     sugg = code_map.resolve_object_at(49)
+    expect(sugg[0].path).to eq('String')
+  end
+
+  it "infers the type of an instance variable" do
+    code_map = Solargraph::CodeMap.new(code: @cvar_code)
+    sugg = code_map.resolve_object_at(63)
+    expect(sugg.length).to eq(1)
     expect(sugg[0].path).to eq('String')
   end
 
