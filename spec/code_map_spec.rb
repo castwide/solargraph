@@ -49,6 +49,10 @@ my_var.
     )
   end
 
+  after :all do
+    FileUtils.remove_entry @workspace
+  end
+
   it "identifies position in def node" do
     code_map = Solargraph::CodeMap.new(code: @ivar_code)
     node = code_map.node_at(92)

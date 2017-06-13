@@ -21,7 +21,7 @@ module Solargraph
       @insert = insert || @label
       @detail = detail
       @code_object = code_object
-      @documentation = @helper.html_markup_rdoc(documentation.to_s) unless documentation.nil?
+      @documentation = documentation
       @location = location
       @arguments = arguments
     end
@@ -37,8 +37,14 @@ module Solargraph
     def return_type
       if code_object.nil?
         unless documentation.nil?
-          match = documentation.match(/@return \[([a-z0-9:_]*)/i)
-          return match[1] unless match.nil?
+          if documentation.kind_of?(YARD::Docstring)
+            t = documentation.tag(:return)
+            return nil if t.nil?
+            return t.types[0]
+          else
+            match = documentation.match(/@return \[([a-z0-9:_]*)/i)
+            return match[1] unless match.nil?
+          end
         end
       else
         o = code_object.tag(:overload)
@@ -55,10 +61,10 @@ module Solargraph
     def documentation
       if @documentation.nil?
         unless @code_object.nil?
-          @documentation = @helper.html_markup_rdoc(@code_object.docstring.to_s) unless @code_object.docstring.nil?
+          @documentation = @code_object.docstring unless @code_object.docstring.nil?
         end
       end
-      @documentation.to_s
+      @documentation
     end
 
     def to_json args={}
@@ -71,7 +77,7 @@ module Solargraph
         location: (@location.nil? ? nil : @location.to_s),
         arguments: @arguments,
         return_type: return_type,
-        documentation: documentation
+        documentation: @helper.html_markup_rdoc(documentation.to_s)
       }
       obj.to_json(args)
     end
