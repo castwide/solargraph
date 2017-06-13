@@ -1,5 +1,10 @@
+require 'tmpdir'
+
 describe Solargraph::CodeMap do
   before :all do
+    @workspace = Dir.mktmpdir
+    @filename = "#{@workspace}/test.rb"
+
     # Unfinished instance variable at 92
     @ivar_code = %(
       class Foo
@@ -118,5 +123,23 @@ my_var.
     expect(sugg.map{ |s| s.label }).to include('upcase')
     sugg = code_map.resolve_object_at(49)
     expect(sugg[0].path).to eq('String')
+  end
+
+  it "accepts a filename without a workspace" do
+    code_map = Solargraph::CodeMap.new(code: @ivar_code, filename: @filename)
+    expect(code_map.filename).to eq(@filename)
+    expect(code_map.workspace).to be(nil)
+  end
+
+  it "accepts a workspace without a filename" do
+    code_map = Solargraph::CodeMap.new(code: @ivar_code, workspace: @workspace)
+    expect(code_map.filename).to be(nil)
+    expect(code_map.workspace).to eq(@workspace)
+  end
+
+  it "accepts a workspace and a filename" do
+    code_map = Solargraph::CodeMap.new(code: @ivar_code, workspace: @workspace, filename: @filename)
+    expect(code_map.filename).to eq(@filename)
+    expect(code_map.workspace).to eq(@workspace)
   end
 end

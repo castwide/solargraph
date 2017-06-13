@@ -477,7 +477,7 @@ module Solargraph
       else
         Dir.chdir(workspace) do
           Thread.new {
-            STDERR.puts "Updating the yardoc..."
+            STDERR.puts "Updating the yardoc for #{workspace}..."
             globs = yard_options[:include] - yard_options[:exclude]
             cmd = "yardoc -e #{Solargraph::YARD_EXTENSION_FILE}"
             STDERR.puts "Update yardoc with #{cmd}"

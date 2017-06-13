@@ -5,18 +5,12 @@ module Solargraph
     attr_accessor :node
     attr_reader :code
     attr_reader :parsed
+    attr_reader :filename
     attr_reader :workspace
 
     include NodeMethods
 
     def initialize code: '', filename: nil, workspace: nil, api_map: nil
-      unless workspace.nil?
-        workspace = workspace.gsub(File::ALT_SEPARATOR, File::SEPARATOR) unless File::ALT_SEPARATOR.nil?
-      end
-      if workspace.nil? and !filename.nil?
-        filename = filename.gsub(File::ALT_SEPARATOR, File::SEPARATOR) unless File::ALT_SEPARATOR.nil?
-        workspace = CodeMap.find_workspace(filename)
-      end
       @workspace = workspace
       @filename = filename
       @api_map = api_map
@@ -66,24 +60,6 @@ module Solargraph
     # @return [Solargraph::ApiMap]
     def api_map
       @api_map ||= ApiMap.new(workspace)
-    end
-
-    def self.find_workspace filename
-      return nil if filename.nil?
-      dirname = filename
-      lastname = nil
-      result = nil
-      until dirname == lastname
-        if File.file?("#{dirname}/Gemfile")
-          result = dirname
-          break
-        end
-        lastname = dirname
-        dirname = File.dirname(dirname)
-      end
-      result ||= File.dirname(filename)
-      result.gsub!(File::ALT_SEPARATOR, File::SEPARATOR) unless File::ALT_SEPARATOR.nil?
-      result
     end
 
     # Get the offset of the specified line and column.
