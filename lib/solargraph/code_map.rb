@@ -12,6 +12,8 @@ module Solargraph
 
     def initialize code: '', filename: nil, workspace: nil, api_map: nil
       @workspace = workspace
+      # HACK: Adjust incoming filename's path separator for yardoc file comparisons
+      filename = filename.gsub(File::ALT_SEPARATOR, File::SEPARATOR) unless File::ALT_SEPARATOR.nil?
       @filename = filename
       @api_map = api_map
       @code = code.gsub(/\r/, '')
