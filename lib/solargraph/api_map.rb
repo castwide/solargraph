@@ -405,10 +405,15 @@ module Solargraph
       }
       return args if list.nil?
       list.children.each { |c|
+        STDERR.puts "Args child is #{c.type}"
         if c.type == :arg
           args.push c.children[0]
-        elsif c.type == :kwoptarg
+        elsif c.type == :optarg
+          args.push "#{c.children[0]} = _"
+        elsif c.type == :kwarg
           args.push "#{c.children[0]}:"
+        elsif c.type == :kwoptarg
+          args.push "#{c.children[0]}: _"
         end
       }
       args
