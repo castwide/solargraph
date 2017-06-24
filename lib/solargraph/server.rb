@@ -11,6 +11,10 @@ module Solargraph
     @@api_hash = {}
     @@semaphore = Mutex.new
 
+    after do
+      GC.start
+    end
+
     post '/prepare' do
       STDERR.puts "Preparing #{params['workspace']}"
       Server.prepare_workspace params['workspace']
