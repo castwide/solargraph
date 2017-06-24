@@ -1,1 +1,7 @@
 Gemfile.lock
+
+.idea
+.vscode
+.yardoc
+doc
+coverage
