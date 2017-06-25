@@ -410,7 +410,6 @@ module Solargraph
       }
       return args if list.nil?
       list.children.each { |c|
-        STDERR.puts "Args child is #{c.type}"
         if c.type == :arg
           args.push c.children[0]
         elsif c.type == :optarg
@@ -568,12 +567,14 @@ module Solargraph
               # TODO: Determine the current scope so we can decide whether to
               # exclude protected or private methods. Right now we're just
               # assuming public only
+              elsif c.kind_of?(AST::Node) and c.type == :send and c.children[1] == :include
+                fqmod = find_fully_qualified_namespace(const_from(c.children[2]), root)
+                meths += get_instance_methods(fqmod) unless fqmod.nil? or skip.include?(fqmod)
               elsif current_scope == :public
                 if c.kind_of?(AST::Node) and c.type == :def
                   cmnt = get_comment_for(c)
                   label = "#{c.children[0]}"
                   args = get_method_args(c)
-                  STDERR.puts "Comment for #{label}: #{cmnt.class} #{cmnt}"
                   meths.push Suggestion.new(label, insert: c.children[0].to_s.gsub(/=/, ' = '), kind: Suggestion::METHOD, documentation: cmnt, detail: fqns, arguments: args) if c.children[0].to_s[0].match(/[a-z]/i)
                 elsif c.kind_of?(AST::Node) and c.type == :send and c.children[1] == :attr_reader
                   c.children[2..-1].each { |x|
