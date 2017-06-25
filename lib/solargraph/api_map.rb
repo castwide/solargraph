@@ -30,16 +30,9 @@ module Solargraph
         if File.exist?(extra)
           append_file(extra)
         end
-        files = []
-        opts = yard_options
-        (opts[:include] - opts[:exclude]).each { |glob|
-          files += Dir[File.join @workspace, glob]
-        }
-        opts[:exclude].each { |glob|
-          files -= Dir[File.join @workspace, glob]
-        }
+        files = Dir[File.join @workspace, '**', '*.rb']
         files.uniq.each { |f|
-          append_file f if File.file?(f)
+          append_file f
         }
       end
     end
