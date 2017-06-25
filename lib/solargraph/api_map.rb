@@ -75,11 +75,23 @@ module Solargraph
       yard_hash = {}
       comment_hash.each_pair { |k, v|
         ctxt = ''
+        num = nil
+        started = false
         v.each { |l|
-          ctxt += l.text.gsub(/^# /, '') + "\n"
+          # Trim the comment and minimum leading whitespace
+          p = l.text.gsub(/^#/, '')
+          if num.nil? and !p.strip.empty?
+            num = p.index(/[^ ]/)
+            started = true
+          elsif started and !p.strip.empty?
+            cur = p.index(/[^ ]/)
+            num = cur if cur < num
+          end
+          if started
+            ctxt += "#{p[num..-1]}\n"
+          end
         }
-        parser = YARD::DocstringParser.new
-        yard_hash[k] = parser.parse(ctxt).to_docstring
+        yard_hash[k] = YARD::Docstring.parser.parse(ctxt).to_docstring
       }
       yard_hash
     end
@@ -561,6 +573,7 @@ module Solargraph
                   cmnt = get_comment_for(c)
                   label = "#{c.children[0]}"
                   args = get_method_args(c)
+                  STDERR.puts "Comment for #{label}: #{cmnt.class} #{cmnt}"
                   meths.push Suggestion.new(label, insert: c.children[0].to_s.gsub(/=/, ' = '), kind: Suggestion::METHOD, documentation: cmnt, detail: fqns, arguments: args) if c.children[0].to_s[0].match(/[a-z]/i)
                 elsif c.kind_of?(AST::Node) and c.type == :send and c.children[1] == :attr_reader
                   c.children[2..-1].each { |x|
