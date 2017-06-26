@@ -5,6 +5,8 @@ require 'yaml'
 
 module Solargraph
   class ApiMap
+    autoload :Config, 'solargraph/api_map/config'
+
     KEYWORDS = [
       '__ENCODING__', '__LINE__', '__FILE__', 'BEGIN', 'END', 'alias', 'and',
       'begin', 'break', 'case', 'class', 'def', 'defined?', 'do', 'else',
@@ -26,13 +28,11 @@ module Solargraph
       @workspace = workspace.gsub(/\\/, '/') unless workspace.nil?
       clear
       unless @workspace.nil?
-        extra = File.join(@workspace, '.solargraph')
-        if File.exist?(extra)
-          append_file(extra)
-        end
-        files = Dir[File.join @workspace, '**', '*.rb']
-        files.uniq.each { |f|
-          append_file f
+        config = ApiMap::Config.new(@workspace)
+        config.included.each { |f|
+          unless config.excluded.include?(f)
+            append_file f
+          end
         }
       end
     end
@@ -55,8 +55,13 @@ module Solargraph
     end
 
     def append_source text, filename = nil
-      node, comments = Parser::CurrentRuby.parse_with_comments(text)
-      append_node(node, comments, filename)
+      begin
+        node, comments = Parser::CurrentRuby.parse_with_comments(text)
+        append_node(node, comments, filename)
+      rescue Parser::SyntaxError => e
+        STDERR.puts "Error parsing '#{filename}': #{e.message}"
+        nil
+      end
     end
 
     def append_node node, comments, filename = nil

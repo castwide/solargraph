@@ -79,5 +79,16 @@ module Solargraph
         STDOUT.puts result
       end
     end
+
+    desc 'config [DIRECTORY]', 'Create or overwrite a default configuration file'
+    def config(directory = '.')
+      File.open(File.join(directory, '.solargraph'), 'w') do |file|
+        file.puts "include:",
+          "  - ./**/*.rb",
+          "exclude:",
+          "  - spec/**/*"
+      end
+      STDOUT.puts "Configuration file initialized."
+    end
   end
 end
