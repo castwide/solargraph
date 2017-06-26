@@ -45,6 +45,7 @@ module Solargraph
         end
       rescue Exception => e
         STDERR.puts "Error loading yardoc '#{y}' #{e.class} #{e.message}"
+        yardocs.delete y
         nil
       end
     end
