@@ -489,7 +489,7 @@ module Solargraph
       if workspace.nil?
         STDERR.puts "No workspace specified for yardoc update."
       else
-        Thread.new {
+        Thread.new do
           Dir.chdir(workspace) do
             STDERR.puts "Updating the yardoc for #{workspace}..."
             cmd = "yardoc -e #{Solargraph::YARD_EXTENSION_FILE}"
@@ -499,7 +499,7 @@ module Solargraph
               STDERR.puts "There was an error processing the workspace yardoc."
             end
           end
-        }
+        end
       end
     end
 
