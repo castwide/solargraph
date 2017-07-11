@@ -53,7 +53,7 @@ module Solargraph
         else
           r = o.tag(:return)
         end
-        return r.types[0] unless r.nil?
+        return r.types[0] unless r.nil? or r.types.nil?
       end
       nil
     end
