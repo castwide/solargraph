@@ -67,6 +67,23 @@ module Solargraph
       @documentation
     end
 
+    def params
+      if @params.nil?
+        @params = []
+        return @params if documentation.nil?
+        param_tags = documentation.tags(:param)
+        unless param_tags.empty?
+          param_tags.each do |t|
+            txt = t.name
+            txt += " [#{t.types.join(',')}]" unless t.types.empty?
+            txt += " #{t.text}" unless t.text.empty?
+            @params.push txt
+          end
+        end
+      end
+      @params
+    end
+
     def to_json args={}
       obj = {
         label: @label,
@@ -76,6 +93,7 @@ module Solargraph
         path: path,
         location: (@location.nil? ? nil : @location.to_s),
         arguments: @arguments,
+        params: params,
         return_type: return_type,
         documentation: @helper.html_markup_rdoc(documentation.to_s)
       }
