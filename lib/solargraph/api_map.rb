@@ -38,6 +38,7 @@ module Solargraph
     end
 
     def clear
+      @file_source = {}
       @file_nodes = {}
       @file_comments = {}
       @parent_stack = {}
@@ -55,6 +56,7 @@ module Solargraph
     end
 
     def append_source text, filename = nil
+      @file_source[filename] = text
       begin
         node, comments = Parser::CurrentRuby.parse_with_comments(text)
         append_node(node, comments, filename)
@@ -418,11 +420,11 @@ module Solargraph
         if c.type == :arg
           args.push c.children[0]
         elsif c.type == :optarg
-          args.push "#{c.children[0]} = _"
+          args.push "#{c.children[0]} = #{code_for(c.children[1])}"
         elsif c.type == :kwarg
           args.push "#{c.children[0]}:"
         elsif c.type == :kwoptarg
-          args.push "#{c.children[0]}: _"
+          args.push "#{c.children[0]}: #{code_for(c.children[1])}"
         end
       }
       args
@@ -727,6 +729,14 @@ module Solargraph
           map_namespaces c, tree
         }
       end
+    end
+
+    def code_for node
+      src = @file_source[get_filename_for(node)]
+      return nil if src.nil?
+      b = node.location.expression.begin.begin_pos
+      e = node.location.expression.end.end_pos
+      src[b..e].strip.gsub(/,$/, '')
     end
   end
 end
