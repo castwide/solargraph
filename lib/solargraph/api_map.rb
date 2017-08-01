@@ -24,6 +24,7 @@ module Solargraph
     attr_reader :workspace
     attr_reader :required
 
+    # @param workspace [String]
     def initialize workspace = nil
       @workspace = workspace.gsub(/\\/, '/') unless workspace.nil?
       clear
@@ -47,14 +48,18 @@ module Solargraph
       @required = []
     end
 
+    # @return [Solargraph::YardMap]
     def yard_map
       @yard_map ||= YardMap.new(required: required, workspace: workspace)
     end
 
+    # @param filename [String]
     def append_file filename
       append_source File.read(filename), filename
     end
 
+    # @param text [String]
+    # @param filename [String]
     def append_source text, filename = nil
       @file_source[filename] = text
       begin
@@ -150,45 +155,6 @@ module Solargraph
       result
     end
 
-    def inner_namespaces_in name, root, skip
-      result = []
-      fqns = find_fully_qualified_namespace(name, root)
-      unless fqns.nil? or skip.include?(fqns)
-        skip.push fqns
-        nodes = get_namespace_nodes(fqns)
-        nodes.delete_if { |n| yardoc_has_file?(get_filename_for(n))}
-        unless nodes.empty?
-          cursor = @namespace_tree
-          parts = fqns.split('::')
-          parts.each { |p|
-            cursor = cursor[p]
-          }
-          unless cursor.nil?
-            cursor.keys.each { |k|
-              type = get_namespace_type(k, fqns)
-              kind = nil
-              detail = nil
-              if type == :class
-                kind = Suggestion::CLASS
-                detail = 'Class'
-              elsif type == :module
-                kind = Suggestion::MODULE
-                detail = 'Module'
-              end
-              result.push Suggestion.new(k, kind: kind, detail: detail)
-            }
-            nodes = get_namespace_nodes(fqns)
-            nodes.each { |n|
-              get_include_strings_from(n).each { |i|
-                result += inner_namespaces_in(i, fqns, skip)
-              }
-            }
-          end
-        end
-      end
-      result
-    end
-
     def find_fully_qualified_namespace name, root = '', skip = []
       return nil if skip.include?(root)
       skip.push root
@@ -268,22 +234,6 @@ module Solargraph
         }
       end
       @yardoc_files.include?(file)
-    end
-
-    def inner_get_instance_variables(node, scope)
-      arr = []
-      if node.kind_of?(AST::Node)
-        node.children.each { |c|
-          if c.kind_of?(AST::Node)
-            is_inst = !find_parent(c, :def).nil?
-            if c.type == :ivasgn and c.children[0] and ( (scope == :instance and is_inst) or (scope != :instance and !is_inst) )
-              arr.push Suggestion.new(c.children[0], kind: Suggestion::VARIABLE, documentation: get_comment_for(c))
-            end
-            arr += inner_get_instance_variables(c, scope) unless [:class, :module].include?(c.type)
-          end
-        }
-      end
-      arr
     end
 
     def infer_instance_variable(var, namespace, scope = :instance)
@@ -606,6 +556,61 @@ module Solargraph
         }
       }
       meths.uniq
+    end
+
+    def inner_namespaces_in name, root, skip
+      result = []
+      fqns = find_fully_qualified_namespace(name, root)
+      unless fqns.nil? or skip.include?(fqns)
+        skip.push fqns
+        nodes = get_namespace_nodes(fqns)
+        nodes.delete_if { |n| yardoc_has_file?(get_filename_for(n))}
+        unless nodes.empty?
+          cursor = @namespace_tree
+          parts = fqns.split('::')
+          parts.each { |p|
+            cursor = cursor[p]
+          }
+          unless cursor.nil?
+            cursor.keys.each { |k|
+              type = get_namespace_type(k, fqns)
+              kind = nil
+              detail = nil
+              if type == :class
+                kind = Suggestion::CLASS
+                detail = 'Class'
+              elsif type == :module
+                kind = Suggestion::MODULE
+                detail = 'Module'
+              end
+              result.push Suggestion.new(k, kind: kind, detail: detail)
+            }
+            nodes = get_namespace_nodes(fqns)
+            nodes.each { |n|
+              get_include_strings_from(n).each { |i|
+                result += inner_namespaces_in(i, fqns, skip)
+              }
+            }
+          end
+        end
+      end
+      result
+    end
+
+    def inner_get_instance_variables(node, scope)
+      arr = []
+      if node.kind_of?(AST::Node)
+        node.children.each { |c|
+          if c.kind_of?(AST::Node)
+            is_inst = !find_parent(c, :def).nil?
+            if c.type == :ivasgn and c.children[0] and ( (scope == :instance and is_inst) or (scope != :instance and !is_inst) )
+              arr.push Suggestion.new(c.children[0], kind: Suggestion::VARIABLE, documentation: get_comment_for(c))
+            end
+            arr += inner_get_instance_variables(c, scope) unless [:class, :module].include?(c.type)
+          end
+        }
+      end
+      arr
     end
 
     def mappable?(node)
