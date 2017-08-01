@@ -132,12 +132,19 @@ module Solargraph
     end
 
     class Helpers
+      include YARD::Templates::Helpers::HtmlHelper
+
       attr_accessor :object
       attr_accessor :serializer
-      include YARD::Templates::Helpers::HtmlHelper
+
+      def url_for(object)
+        '.'
+      end
+
       def options
         @options ||= YARD::Templates::TemplateOptions.new
       end
+
       # HACK: The linkify method just returns the arguments as plain text
       def linkify *args
         args.join(', ')
