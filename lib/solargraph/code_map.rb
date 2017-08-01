@@ -387,6 +387,7 @@ module Solargraph
     # @x.bar                @x.bar
     # y.split(', ').length  y.split.length
     #
+    # @param index [Integer]
     # @return [String]
     def get_signature_at index
       brackets = 0
@@ -487,6 +488,8 @@ module Solargraph
       result
     end
 
+    # @param suggestions [Array<Solargraph::Suggestion>]
+    # @param word [String]
     def reduce_starting_with(suggestions, word)
       suggestions.reject { |s|
         !s.label.start_with?(word)

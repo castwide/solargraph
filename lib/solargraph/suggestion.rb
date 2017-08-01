@@ -75,7 +75,7 @@ module Solargraph
         unless param_tags.empty?
           param_tags.each do |t|
             txt = t.name
-            txt += " [#{t.types.join(',')}]" unless t.types.empty?
+            txt += " [#{t.types.join(',')}]" unless t.types.nil? or t.types.empty?
             txt += " #{t.text}" unless t.text.empty?
             @params.push txt
           end
@@ -97,6 +97,11 @@ module Solargraph
         return_type: return_type,
         documentation: @helper.html_markup_rdoc(documentation.to_s)
       }
+      #begin
+      #  obj[:documentation] = @helper.html_markup_rdoc(documentation.to_s)
+      #rescue Exception => e
+      #  obj[:documentation] = @helper.html_markup_pre(documentation.to_s)
+      #end
       obj.to_json(args)
     end
   end
