@@ -104,7 +104,7 @@ module Solargraph
     # @return [Boolean]
     def comment_at?(index)
       @comments.each do |c|
-        return true if index >= c.location.expression.begin_pos and index <= c.location.expression.end_pos
+        return true if index > c.location.expression.begin_pos and index <= c.location.expression.end_pos
       end
       false
     end
