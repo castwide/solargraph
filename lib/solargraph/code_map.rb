@@ -23,8 +23,8 @@ module Solargraph
         # HACK: The current file is parsed with a trailing underscore to fix
         # incomplete trees resulting from short scripts (e.g., a lone variable
         # assignment).
-        node, comments = Parser::CurrentRuby.parse_with_comments(tmp + "\n_")
-        @node = self.api_map.append_node(node, comments, filename)
+        node, @comments = Parser::CurrentRuby.parse_with_comments(tmp + "\n_")
+        @node = self.api_map.append_node(node, @comments, filename)
         @parsed = tmp
         @code.freeze
         @parsed.freeze
@@ -97,6 +97,16 @@ module Solargraph
     def string_at?(index)
       n = node_at(index)
       n.kind_of?(AST::Node) and n.type == :str
+    end
+
+    # Determine if the specified index is inside a comment.
+    #
+    # @return [Boolean]
+    def comment_at?(index)
+      @comments.each do |c|
+        return true if index >= c.location.expression.begin_pos and index <= c.location.expression.end_pos
+      end
+      false
     end
 
     def parent_node_from(index, *types)
@@ -178,7 +188,7 @@ module Solargraph
     #
     # @return [Array<Suggestions>] The completion suggestions
     def suggest_at index, filtered: false, with_snippets: false
-      return [] if string_at?(index) or string_at?(index - 1)
+      return [] if string_at?(index) or string_at?(index - 1) or comment_at?(index)
       result = []
       phrase = phrase_at(index)
       signature = get_signature_at(index)

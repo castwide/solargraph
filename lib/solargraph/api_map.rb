@@ -109,7 +109,6 @@ module Solargraph
       @file_comments[filename][node.loc]
     end
 
-
     def self.get_keywords
       result = []
       keywords = KEYWORDS + ['attr_reader', 'attr_writer', 'attr_accessor', 'private', 'public', 'protected']
