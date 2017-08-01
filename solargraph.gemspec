@@ -23,5 +23,5 @@ Gem::Specification.new do |s|
 
   s.add_development_dependency 'rspec', '~> 3.5', '>= 3.5.0'
   s.add_development_dependency 'rack-test', '~> 0'
-  s.add_development_dependency 'codeclimate-test-reporter', '~> 1.0', '>= 1.0.0'
+  s.add_development_dependency 'simplecov', '~> 0.14'
 end
