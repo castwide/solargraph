@@ -97,11 +97,6 @@ module Solargraph
         return_type: return_type,
         documentation: @helper.html_markup_rdoc(documentation.to_s)
       }
-      #begin
-      #  obj[:documentation] = @helper.html_markup_rdoc(documentation.to_s)
-      #rescue Exception => e
-      #  obj[:documentation] = @helper.html_markup_pre(documentation.to_s)
-      #end
       obj.to_json(args)
     end
   end
