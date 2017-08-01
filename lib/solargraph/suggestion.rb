@@ -14,7 +14,7 @@ module Solargraph
 
     attr_reader :label, :kind, :insert, :detail, :documentation, :code_object, :location, :arguments
 
-    def initialize label, kind: KEYWORD, insert: nil, detail: nil, documentation: nil, code_object: nil, location: nil, arguments: []
+    def initialize label, kind: KEYWORD, insert: nil, detail: nil, documentation: nil, code_object: nil, location: nil, arguments: [], return_type: nil
       @helper = Server::Helpers.new
       @label = label.to_s
       @kind = kind
@@ -24,6 +24,7 @@ module Solargraph
       @documentation = documentation
       @location = location
       @arguments = arguments
+      @return_type = return_type
     end
     
     def path
@@ -35,27 +36,28 @@ module Solargraph
     end
 
     def return_type
-      if code_object.nil?
-        unless documentation.nil?
-          if documentation.kind_of?(YARD::Docstring)
-            t = documentation.tag(:return)
-            return nil if t.nil?
-            return t.types[0]
-          else
-            match = documentation.match(/@return \[([a-z0-9:_]*)/i)
-            return match[1] unless match.nil?
+      if @return_type.nil?
+        if code_object.nil?
+          unless documentation.nil?
+            if documentation.kind_of?(YARD::Docstring)
+              t = documentation.tag(:return)
+              @return_type = t.types[0] unless t.nil? or t.types.nil?
+            else
+              match = documentation.match(/@return \[([a-z0-9:_]*)/i)
+              @return_type = match[1] unless match.nil?
+            end
           end
-        end
-      else
-        o = code_object.tag(:overload)
-        if o.nil?
-          r = code_object.tag(:return)
         else
-          r = o.tag(:return)
+          o = code_object.tag(:overload)
+          if o.nil?
+            r = code_object.tag(:return)
+          else
+            r = o.tag(:return)
+          end
+          @return_type = r.types[0] unless r.nil? or r.types.nil?
         end
-        return r.types[0] unless r.nil? or r.types.nil?
       end
-      nil
+      @return_type
     end
 
     def documentation
@@ -76,7 +78,7 @@ module Solargraph
           param_tags.each do |t|
             txt = t.name
             txt += " [#{t.types.join(',')}]" unless t.types.nil? or t.types.empty?
-            txt += " #{t.text}" unless t.text.empty?
+            txt += " #{t.text}" unless t.text.nil? or t.text.empty?
             @params.push txt
           end
         end

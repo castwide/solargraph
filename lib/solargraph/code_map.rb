@@ -479,11 +479,19 @@ module Solargraph
     private
 
     def get_method_arguments_from node
+      param_hash = {}
+      cmnt = api_map.get_comment_for(node)
+      unless cmnt.nil?
+        tags = cmnt.tags(:param)
+        tags.each do |tag|
+          param_hash[tag.name] = tag.types[0]
+        end
+      end
       result = []
       args = node.children[1]
       args.children.each do |arg|
         name = arg.children[0].to_s
-        result.push Suggestion.new(name, kind: Suggestion::PROPERTY, insert: name)
+        result.push Suggestion.new(name, kind: Suggestion::PROPERTY, insert: name, return_type: param_hash[name])
       end
       result
     end
