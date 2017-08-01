@@ -82,7 +82,7 @@ module Solargraph
 
     desc 'config [DIRECTORY]', 'Create or overwrite a default configuration file'
     def config(directory = '.')
-      File.open(File.join(directory, '.solargraph'), 'w') do |file|
+      File.open(File.join(directory, '.solargraph.yml'), 'w') do |file|
         file.puts "include:",
           "  - ./**/*.rb",
           "exclude:",
