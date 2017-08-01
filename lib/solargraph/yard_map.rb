@@ -1,13 +1,17 @@
 require 'rubygems'
 require 'parser/current'
 require 'yard'
+require 'bundler'
 
 module Solargraph
 
   class YardMap
     autoload :Cache, 'solargraph/yard_map/cache'
 
-    def initialize required: [], workspace: nil
+    attr_reader :workspace
+
+    def initialize required: [], workspace: nil, with_bundled: false
+      @workspace = workspace
       unless workspace.nil?
         wsy = File.join(workspace, '.yardoc')
         yardocs.push wsy if File.exist?(wsy)
@@ -22,16 +26,35 @@ module Solargraph
             if gy.nil?
               STDERR.puts "Required path not found: #{r}"
             else
-              yardocs.push gy
+              STDERR.puts "Adding #{gy}"
+              yardocs.unshift gy
             end
           end
         end
       }
       yardocs.push File.join(Dir.home, '.solargraph', 'cache', '2.0.0', 'yardoc')
       yardocs.uniq!
+      include_bundled_gems if with_bundled
       cache_core
     end
 
+    def include_bundled_gems
+      return if workspace.nil?
+      lockfile = File.join(workspace, 'Gemfile.lock')
+      return unless File.file?(lockfile)
+      parser = Bundler::LockfileParser.new(Bundler.read_file(lockfile))
+      parser.specs.each do |s|
+        STDERR.puts "Specs include #{s.name}"
+        gy = YARD::Registry.yardoc_file_for_gem(s.name)
+        if gy.nil?
+          STDERR.puts "Bundled gem not found: #{s.name}"
+        else
+          yardocs.unshift gy unless yardocs.include?(gy)
+        end
+      end
+    end
+
+    # @return [Array<String>]
     def yardocs
       @yardocs ||= []
     end
@@ -50,6 +73,7 @@ module Solargraph
       end
     end
 
+    # @param query [String]
     def search query
       found = []
       yardocs.each { |y|
@@ -63,6 +87,7 @@ module Solargraph
       found.sort
     end
 
+    # @param query [String]
     def document query
       found = []
       yardocs.each { |y|
@@ -109,6 +134,7 @@ module Solargraph
       result
     end
 
+    # @param signature [String]
     def at signature
       yardocs.each { |y|
         yard = load_yardoc(y)
@@ -120,6 +146,8 @@ module Solargraph
       nil
     end
 
+    # @param signature [String]
+    # @param scope [String]
     def resolve signature, scope
       yardocs.each { |y|
         yard = load_yardoc(y)
