@@ -48,6 +48,15 @@ describe Solargraph::CodeMap do
 my_var = some_method_call
 my_var.
     )
+
+    # Nested class
+    @nested = %(
+      class Foo
+        class Bar
+        end
+      end
+      Foo::Bar.
+    )
   end
 
   after :all do
@@ -135,6 +144,18 @@ my_var.
     sugg = code_map.resolve_object_at(63)
     expect(sugg.length).to eq(1)
     expect(sugg[0].path).to eq('String')
+  end
+
+  it "detects a nested class name" do
+    code_map = Solargraph::CodeMap.new(code: @nested)
+    sugg = code_map.suggest_at(69)
+    expect(sugg.map(&:to_s)).to include('Bar')
+  end
+
+  it "detects a nested class method" do
+    code_map = Solargraph::CodeMap.new(code: @nested)
+    sugg = code_map.suggest_at(72)
+    expect(sugg.map(&:to_s)).to include('new')
   end
 
   it "accepts a filename without a workspace" do
