@@ -43,7 +43,7 @@ module Solargraph
       content_type :json
       begin
         sugg = []
-        workspace = params['workspace'] || CodeMap.find_workspace(params['filename'])
+        workspace = params['workspace'] || nil
         Server.prepare_workspace workspace unless @@api_hash.has_key?(workspace)
         @@semaphore.synchronize {
           code_map = CodeMap.new(code: params['text'], filename: params['filename'], api_map: @@api_hash[workspace])
@@ -62,7 +62,7 @@ module Solargraph
       content_type :json
       begin
         sugg = []
-        workspace = params['workspace'] || CodeMap.find_workspace(params['filename'])
+        workspace = params['workspace'] || nil
         Server.prepare_workspace workspace unless @@api_hash.has_key?(workspace)
         @@semaphore.synchronize {
           code_map = CodeMap.new(code: params['text'], filename: params['filename'], api_map: @@api_hash[workspace])

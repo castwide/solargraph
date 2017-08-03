@@ -1,0 +1,26 @@
+<h2>
+    Overview:
+</h2>
+<%= htmlify object.docstring %>
+<h2>
+    Class Methods
+</h2>
+<ul class="doc-list">
+    <% object.meths(scope: :class).sort{|a, b| a.name <=> b.name}.each do |meth| %>
+        <li>
+            <% esc = URI.escape("\"solargraph:/document?#{meth.path}\"").gsub('%23', URI.escape('%23')) %>
+            <a href="command:solargraph._openDocument?<%= esc %>"><%= meth.name %></a>
+        </li>
+    <% end %>
+</ul>
+<h2>
+    Instance Methods
+</h2>
+<ul class="doc-list">
+    <% object.meths(scope: :instance).sort{|a, b| a.name <=> b.name}.each do |meth| %>
+        <li>
+            <% esc = URI.escape("\"solargraph:/document?#{meth.path}\"").gsub('%23', URI.escape('%23')) %>
+            <a href="command:solargraph._openDocument?<%= esc %>"><%= meth.name %></a>
+        </li>
+    <% end %>
+</ul>

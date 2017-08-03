@@ -1,0 +1,16 @@
+<% @objects.reverse.each do |object| %>
+    <h1>
+        <%= object.name %>
+    </h1>
+    <h2>
+        Defined in:
+    </h2>
+    <p>
+        <%= object.files.join(', ') %>
+    </p>
+    <% if object.kind_of?(YARD::CodeObjects::NamespaceObject) %>
+        <%= erb :_namespace, layout: false, locals: {object: object} %>
+    <% elsif object.kind_of?(YARD::CodeObjects::MethodObject) %>
+        <%= erb :_method, layout: false, locals: {object: object} %>
+    <% end %>
+<% end %>

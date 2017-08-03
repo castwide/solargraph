@@ -1,0 +1,60 @@
+<h2>
+    Namespace:
+</h2>
+<p>
+    <a href="command:solargraph._openDocument?<%= URI.escape "\"solargraph:/document?#{object.namespace}\"" %>"><%= object.namespace %></a>
+</p>
+<h2>
+    Overview:
+</h2>
+<%= htmlify object.docstring %>
+<h2>
+    Parameters:
+</h2>
+<% if object.parameters.empty? %>
+    <p>
+        None
+    </p>
+<% else %>
+    <ul>
+    <% object.parameters.each do |p| %>
+        <li>
+            <%= p[0] %>
+            <%= " = #{p[1]}" unless p[1].nil? %>
+        </li>
+    <% end %>
+    </ul>
+<% end %>
+<h2>
+    Returns:
+</h2>
+<% if object.tag(:return).nil? %>
+    <p>
+        Undefined/unknown
+    </p>
+<% else %>
+    <% tag = object.tag(:return) %>
+    <% unless tag.types.nil? or tag.types.empty? %>
+    <ul>
+        <% tag.types.each do |r| %>
+            <li>
+                <a href="command:solargraph._openDocument?<%= URI.escape "\"solargraph:/document?#{r}\"" %>"><%= r %></a>
+            </li>
+        <% end %>
+    </ul>
+    <% end %>
+    <% unless tag.text.empty? %>
+        <p>
+            <%= tag.text %>
+        </p>
+    <% end %>
+<% end %>
+<% examples = object.tags(:example) %>
+<% unless examples.nil? %>
+    <% examples.each do |example| %>
+        <h2>
+            Example: <%= example.name %>
+        </h2>
+        <%= ruby_to_html example.text.strip %>
+    <% end %>
+<% end %>
