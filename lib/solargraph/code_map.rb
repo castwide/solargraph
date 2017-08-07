@@ -482,6 +482,13 @@ module Solargraph
       if local.type == :def or local.type == :defs
         result += get_method_arguments_from local
       end
+      # Get block parameter variables
+      block_node = parent_node_from(index, :block)
+      unless block_node.nil? or block_node.children[1].nil?
+        block_node.children[1].children.each do |a|
+          result.push Suggestion.new(a.children[0], kind: Suggestion::PROPERTY)
+        end
+      end
       result += api_map.get_methods('Kernel')
       result
     end
