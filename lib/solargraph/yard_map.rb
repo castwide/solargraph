@@ -129,7 +129,7 @@ module Solargraph
           kind = Suggestion::MODULE
         elsif c.kind_of?(YARD::CodeObjects::ConstantObject)
           detail = 'Constant'
-          kind = Suggestion::VARIABLE
+          kind = Suggestion::CONSTANT
         else
           next
         end

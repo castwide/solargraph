@@ -4,6 +4,7 @@ module Solargraph
 
   class Suggestion
     CLASS = 'Class'
+    CONSTANT = 'Constant'
     KEYWORD = 'Keyword'
     MODULE = 'Module'
     METHOD = 'Method'
