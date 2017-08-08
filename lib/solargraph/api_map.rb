@@ -13,11 +13,16 @@ module Solargraph
       'elsif', 'end', 'ensure', 'false', 'for', 'if', 'in', 'module', 'next',
       'nil', 'not', 'or', 'redo', 'rescue', 'retry', 'return', 'self', 'super',
       'then', 'true', 'undef', 'unless', 'until', 'when', 'while', 'yield'
-    ]
+    ].freeze
+
+    MAPPABLE_NODES = [
+      # @todo Add node.type :casgn (constant assignment)
+      :array, :hash, :str, :int, :float, :block, :class, :module, :def, :defs, :ivasgn, :gvasgn, :lvasgn, :or_asgn, :const, :lvar, :args, :kwargs
+    ].freeze
 
     MAPPABLE_METHODS = [
       :include, :extend, :require, :autoload, :attr_reader, :attr_writer, :attr_accessor, :private, :public, :protected
-    ]
+    ].freeze
 
     include NodeMethods
 
@@ -614,9 +619,7 @@ module Solargraph
     end
 
     def mappable?(node)
-      return true if node.kind_of?(AST::Node) and [:array, :hash, :str, :int, :float, :block].include?(node.type)
-      # TODO Add node.type :casgn (constant assignment)
-      if node.kind_of?(AST::Node) and (node.type == :class or node.type == :module or node.type == :def or node.type == :defs or node.type == :ivasgn or node.type == :gvasgn or node.type == :lvasgn or node.type == :or_asgn or node.type == :const or node.type == :lvar or node.type == :args or node.type == :kwargs)
+      if node.kind_of?(AST::Node) and MAPPABLE_NODES.include?(node.type)
         true
       elsif node.kind_of?(AST::Node) and node.type == :send and node.children[0] == nil and MAPPABLE_METHODS.include?(node.children[1])
         true
