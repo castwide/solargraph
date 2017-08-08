@@ -127,6 +127,11 @@ module Solargraph
         elsif c.kind_of?(YARD::CodeObjects::ModuleObject)
           detail = 'Module'
           kind = Suggestion::MODULE
+        elsif c.kind_of?(YARD::CodeObjects::ConstantObject)
+          detail = 'Constant'
+          kind = Suggestion::VARIABLE
+        else
+          next
         end
         result.push Suggestion.new(c.to_s.split('::').last, detail: detail, kind: kind)
       }
