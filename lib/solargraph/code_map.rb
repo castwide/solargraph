@@ -235,12 +235,6 @@ module Solargraph
         end
         result += api_map.namespaces_in('')
         result += api_map.get_instance_methods('Kernel')
-        #unless @filename.nil? or @api_map.yardoc_has_file?(@filename)
-        #  m = @code.match(/# +@bind \[([a-z0-9_:]*)/i)
-        #  unless m.nil?
-        #    @api_map.get_instance_methods(m[1])
-        #  end
-        #end
       end
       result = reduce_starting_with(result, word_at(index)) if filtered
       result.uniq{|s| s.path}.sort{|a,b| a.label <=> b.label}

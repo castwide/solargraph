@@ -236,7 +236,6 @@ module Solargraph
               end
             }
             if ns.kind_of?(YARD::CodeObjects::ClassObject) and namespace != 'Object'
-              #if ns.superclass.kind_of?(YARD::CodeObjects::Proxy)
               unless ns.nil?
                 meths += get_instance_methods(ns.superclass.to_s)
               end
