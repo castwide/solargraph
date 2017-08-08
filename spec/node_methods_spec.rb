@@ -31,6 +31,18 @@ describe Solargraph::NodeMethods do
     expect(tester.infer(ast.children[1])).to eq 'Array'
   end
 
+  it "infers literal integers" do
+    ast = Parser::CurrentRuby.parse("x = 100")
+    tester = test_class.new
+    expect(tester.infer(ast.children[1])).to eq 'Integer'
+  end
+
+  it "infers literal floats" do
+    ast = Parser::CurrentRuby.parse("x = 10.1")
+    tester = test_class.new
+    expect(tester.infer(ast.children[1])).to eq 'Float'
+  end
+
   it "unpacks a multi-part constant" do
     ast = Parser::CurrentRuby.parse("class Foo::Bar;end")
     tester = test_class.new
