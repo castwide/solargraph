@@ -177,6 +177,11 @@ module Solargraph
       word
     end
 
+    def get_class_variables_at(index)
+      ns = namespace_at(index) || ''
+      api_map.get_class_variables(ns)
+    end
+
     def get_instance_variables_at(index)
       node = parent_node_from(index, :def, :defs, :class, :module)
       ns = namespace_at(index) || ''
@@ -193,6 +198,7 @@ module Solargraph
       phrase = phrase_at(index)
       signature = get_signature_at(index)
       namespace = namespace_at(index)
+      STDERR.puts "Signature: #{signature}"
       if signature.include?('.')
         # Check for literals first
         type = infer(node_at(index - 2))
@@ -209,6 +215,9 @@ module Solargraph
         else
           result.concat api_map.get_instance_methods(type)
         end
+      elsif signature.start_with?('@@')
+        STDERR.puts "Getting class variables"
+        result.concat get_class_variables_at(index)
       elsif signature.start_with?('@')
         result.concat get_instance_variables_at(index)
       elsif phrase.start_with?('$')
@@ -307,7 +316,9 @@ module Solargraph
       scope = :instance
       var = find_local_variable_node(start, node)
       if var.nil?
-        if start.start_with?('@')
+        if start.start_with?('@@')
+          type = api_map.infer_class_variable(start, ns_here)
+        elsif start.start_with?('@')
           scope2 = (node.type == :def ? :instance : :class)
           type = api_map.infer_instance_variable(start, ns_here, scope2)
         else
@@ -418,7 +429,10 @@ module Solargraph
         if brackets == 0 and parens == 0 and squares == 0
           break if ['"', "'", ',', ' ', "\t", "\n"].include?(char)
           signature = char + signature if char.match(/[a-z0-9:\._@]/i)
-          break if char == '@'
+          if char == '@'
+            signature = "@#{signature}" if @code[index-1, 1] == '@'
+            break
+          end
         end
         index -= 1
       end

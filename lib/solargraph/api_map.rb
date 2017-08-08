@@ -17,11 +17,13 @@ module Solargraph
 
     MAPPABLE_NODES = [
       # @todo Add node.type :casgn (constant assignment)
-      :array, :hash, :str, :int, :float, :block, :class, :module, :def, :defs, :ivasgn, :gvasgn, :lvasgn, :or_asgn, :const, :lvar, :args, :kwargs
+      :array, :hash, :str, :int, :float, :block, :class, :module, :def, :defs,
+      :ivasgn, :gvasgn, :lvasgn, :cvasgn, :or_asgn, :const, :lvar, :args, :kwargs
     ].freeze
 
     MAPPABLE_METHODS = [
-      :include, :extend, :require, :autoload, :attr_reader, :attr_writer, :attr_accessor, :private, :public, :protected
+      :include, :extend, :require, :autoload, :attr_reader, :attr_writer,
+      :attr_accessor, :private, :public, :protected
     ].freeze
 
     include NodeMethods
@@ -208,6 +210,15 @@ module Solargraph
       arr
     end
 
+    def get_class_variables(namespace)
+      nodes = get_namespace_nodes(namespace) || @file_nodes.values
+      arr = []
+      nodes.each { |n|
+        arr += inner_get_class_variables(n)
+      }
+      arr
+    end
+
     def find_parent(node, *types)
       parents = @parent_stack[node]
       parents.each { |p|
@@ -268,6 +279,33 @@ module Solargraph
       result
     end
 
+    def infer_class_variable(var, namespace)
+      result = nil
+      vn = nil
+      fqns = find_fully_qualified_namespace(namespace)
+      unless fqns.nil?
+        get_namespace_nodes(fqns).each { |node|
+          vn = find_class_variable_assignment(var, node)
+          break unless vn.nil?
+        }
+      end
+      unless vn.nil?
+        cmnt = get_comment_for(vn)
+        unless cmnt.nil?
+          tag = cmnt.tag(:type)
+          result = tag.types[0] unless tag.nil? or tag.types.empty?
+        end
+        result = infer(vn.children[1]) if result.nil?
+        if result.nil?
+          signature = resolve_node_signature(vn.children[1])
+          sig_ns = find_fully_qualified_namespace(signature.split('.').first, fqns)
+          sig_scope = (sig_ns.nil? ? :instance : :class)
+          result = infer_signature_type(signature, namespace, scope: sig_scope)
+        end
+      end
+      result
+    end
+
     def find_instance_variable_assignment(var, node, scope)
       node.children.each { |c|
         if c.kind_of?(AST::Node)
@@ -280,6 +318,21 @@ module Solargraph
             inner = find_instance_variable_assignment(var, c, scope)
             return inner unless inner.nil?
           end
+        end
+      }
+      nil
+    end
+
+    def find_class_variable_assignment(var, node)
+      node.children.each { |c|
+        next unless c.kind_of?(AST::Node)
+        if c.type == :cvasgn
+          if c.children[0].to_s == var
+            return c
+          end
+        else
+          inner = find_class_variable_assignment(var, c)
+          return inner unless inner.nil?
         end
       }
       nil
@@ -618,6 +671,20 @@ module Solargraph
       arr
     end
 
+    def inner_get_class_variables(node)
+      arr = []
+      if node.kind_of?(AST::Node)
+        node.children.each { |c|
+          next unless c.kind_of?(AST::Node)
+          if c.type == :cvasgn
+            arr.push Suggestion.new(c.children[0], kind: Suggestion::VARIABLE, documentation: get_comment_for(c))              
+          end
+          arr += inner_get_class_variables(c) unless [:class, :module].include?(c.type)
+        }
+      end
+      arr
+    end
+
     def mappable?(node)
       if node.kind_of?(AST::Node) and MAPPABLE_NODES.include?(node.type)
         true
@@ -668,7 +735,7 @@ module Solargraph
       elsif node.type == :module
         children += node.children[0, 1]
         children += get_mappable_nodes(node.children[1..-1], comment_hash)
-      elsif node.type == :ivasgn or node.type == :gvasgn or node.type == :lvasgn
+      elsif node.type == :ivasgn or node.type == :gvasgn or node.type == :lvasgn or node.type == :cvasgn
         children += node.children
       elsif node.type == :send and node.children[1] == :include
         children += node.children[0,3]

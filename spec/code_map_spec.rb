@@ -57,6 +57,14 @@ my_var.
       end
       Foo::Bar.
     )
+
+    # Class variable 48/50
+    @classvar = %(
+      class Foo
+        @@var = ''
+        @@var.a
+      end
+    )
   end
 
   after :all do
@@ -86,6 +94,12 @@ my_var.
     result = code_map.suggest_at(93)
     expect(result.map(&:to_s)).to include('@cvar')
     expect(result.map(&:to_s)).not_to include('@bar')
+  end
+
+  it "detects class variables" do
+    code_map = Solargraph::CodeMap.new(code: @classvar)
+    result = code_map.suggest_at(48)
+    expect(result.map(&:to_s)).to include('@@var')
   end
 
   it "detects local variables and instance methods" do
