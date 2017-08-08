@@ -133,7 +133,7 @@ module Solargraph
         else
           next
         end
-        result.push Suggestion.new(c.to_s.split('::').last, detail: detail, kind: kind)
+        result.push Suggestion.new(c.to_s.split('::').last, detail: detail, kind: kind, documentation: c.docstring)
       }
       cache.set_constants(namespace, scope, result)
       result
