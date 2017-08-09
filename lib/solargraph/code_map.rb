@@ -200,7 +200,7 @@ module Solargraph
       namespace = namespace_at(index)
       if signature.include?('.')
         # Check for literals first
-        type = infer(node_at(index - 2))
+        type = infer_literal_node_type(node_at(index - 2))
         if type.nil?
           nearest = @code[0, index].rindex('.')
           revised = signature[0..nearest-index-1]
@@ -314,61 +314,22 @@ module Solargraph
       scope = :instance
       var = find_local_variable_node(start, node)
       if var.nil?
-        if start.start_with?('@@')
-          type = api_map.infer_class_variable(start, ns_here)
-        elsif start.start_with?('@')
-          scope2 = (node.type == :def ? :instance : :class)
-          type = api_map.infer_instance_variable(start, ns_here, scope2)
-        else
-          if node.type == :def or node.type == :defs
-            args = get_method_arguments_from(node).keep_if{|a| a.label == start}
-            if args.empty?
-              scope = :class
-              type = api_map.find_fully_qualified_namespace(start, ns_here)
-              if type.nil?
-                # It's a method call
-                sig_scope = (node.type == :def ? :instance : :class)
-                type = api_map.infer_signature_type(start, ns_here, scope: sig_scope)
-              else
-                return nil if remainder.empty?
-              end
-            else
-              cmnt = api_map.get_comment_for(node)
-              unless cmnt.nil?
-                params = cmnt.tags(:param)
-                unless params.nil?
-                  params.each do |p|
-                    if p.name == args[0].label
-                      type = p.types[0]
-                      break
-                    end
-                  end
-                end
-              end
-            end
-          else
-            scope = :class
-            type = api_map.find_fully_qualified_namespace(start, ns_here)
-            if type.nil?
-              # It's a method call
-              sig_scope = (node.type == :def ? :instance : :class)
-              type = api_map.infer_signature_type(start, ns_here, scope: sig_scope)
-            else
-              return nil if remainder.empty?
-            end
-          end
-        end
+        return api_map.infer_signature_type(signature, ns_here)
       else
         # Signature starts with a local variable
         type = get_type_comment(var)
-        type = infer(var.children[1]) if type.nil?
+        type = infer_literal_node_type(var.children[1]) if type.nil?
         if type.nil?
           vsig = resolve_node_signature(var.children[1])
           type = infer_signature_from_node vsig, node
         end
       end
       unless type.nil?
-        inferred = api_map.infer_signature_type(remainder.join('.'), type, scope: scope)
+        if remainder.empty?
+          inferred = type
+        else
+          inferred = api_map.infer_signature_type(remainder.join('.'), type, scope: scope)
+        end
       end
       inferred
     end

@@ -39,7 +39,7 @@ module Solargraph
       end
     end
 
-    def infer node
+    def infer_literal_node_type node
       if node.type == :str
         return 'String'
       elsif node.type == :array

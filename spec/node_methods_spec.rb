@@ -16,31 +16,31 @@ describe Solargraph::NodeMethods do
   it "infers literal strings" do
     ast = Parser::CurrentRuby.parse("x = 'string'")
     tester = test_class.new
-    expect(tester.infer(ast.children[1])).to eq 'String'
+    expect(tester.infer_literal_node_type(ast.children[1])).to eq 'String'
   end
 
   it "infers literal hashes" do
     ast = Parser::CurrentRuby.parse("x = {}")
     tester = test_class.new
-    expect(tester.infer(ast.children[1])).to eq 'Hash'
+    expect(tester.infer_literal_node_type(ast.children[1])).to eq 'Hash'
   end
 
   it "infers literal arrays" do
     ast = Parser::CurrentRuby.parse("x = []")
     tester = test_class.new
-    expect(tester.infer(ast.children[1])).to eq 'Array'
+    expect(tester.infer_literal_node_type(ast.children[1])).to eq 'Array'
   end
 
   it "infers literal integers" do
     ast = Parser::CurrentRuby.parse("x = 100")
     tester = test_class.new
-    expect(tester.infer(ast.children[1])).to eq 'Integer'
+    expect(tester.infer_literal_node_type(ast.children[1])).to eq 'Integer'
   end
 
   it "infers literal floats" do
     ast = Parser::CurrentRuby.parse("x = 10.1")
     tester = test_class.new
-    expect(tester.infer(ast.children[1])).to eq 'Float'
+    expect(tester.infer_literal_node_type(ast.children[1])).to eq 'Float'
   end
 
   it "unpacks a multi-part constant" do
@@ -72,24 +72,24 @@ describe Solargraph::NodeMethods do
   #it "infers class instantiation" do
   #  ast = Parser::CurrentRuby.parse("x = Object.new")
   #  tester = test_class.new
-  #  expect(tester.infer(ast.children[1])).to eq 'Object'
+  #  expect(tester.infer_literal_node_type(ast.children[1])).to eq 'Object'
   #end
 
   #it "infers constants" do
   #  ast = Parser::CurrentRuby.parse("x = Class")
   #  tester = test_class.new
-  #  expect(tester.infer(ast.children[1])).to eq 'Class'
+  #  expect(tester.infer_literal_node_type(ast.children[1])).to eq 'Class'
   #end
 
   #it "infers constants with root" do
   #  ast = Parser::CurrentRuby.parse("x = ::String")
   #  tester = test_class.new
-  #  expect(tester.infer(ast.children[1])).to eq 'String'
+  #  expect(tester.infer_literal_node_type(ast.children[1])).to eq 'String'
   #end
 
   #it "infers namespaced constants" do
   #  ast = Parser::CurrentRuby.parse("x = Foo::Bar")
   #  tester = test_class.new
-  #  expect(tester.infer(ast.children[1])).to eq 'Foo::Bar'
+  #  expect(tester.infer_literal_node_type(ast.children[1])).to eq 'Foo::Bar'
   #end
 end

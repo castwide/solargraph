@@ -132,7 +132,7 @@ describe Solargraph::ApiMap do
   end
 
   it "infers instance variable classes" do
-    cls = @api_map.infer_instance_variable('@bar', 'Class1')
+    cls = @api_map.infer_instance_variable('@bar', 'Class1', :instance)
     expect(cls).to eq('String')
   end
 
@@ -142,11 +142,11 @@ describe Solargraph::ApiMap do
   end
 
   it "infers local class from [Class].new method" do
-    cls = @api_map.infer_signature_type('Class1.new', '', scope: :class)
+    cls = @api_map.infer_signature_type('Class1.new', '')
     expect(cls).to eq('Class1')
-    cls = @api_map.infer_signature_type('Module1::Module1Class.new', '', scope: :class)
+    cls = @api_map.infer_signature_type('Module1::Module1Class.new', '')
     expect(cls).to eq('Module1::Module1Class')
-    cls = @api_map.infer_signature_type('Module1Class.new', 'Module1', scope: :class)
+    cls = @api_map.infer_signature_type('Module1Class.new', 'Module1')
     expect(cls).to eq('Module1::Module1Class')
   end
 

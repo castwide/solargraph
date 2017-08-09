@@ -172,6 +172,12 @@ my_var.
     expect(sugg.map(&:to_s)).to include('new')
   end
 
+  it "detects a class instance from a new method" do
+    code_map = Solargraph::CodeMap.new(code: 'String.new.')
+    sugg = code_map.suggest_at(11)
+    expect(sugg.map(&:to_s)).to include('upcase')
+  end
+
   it "accepts a filename without a workspace" do
     code_map = Solargraph::CodeMap.new(code: @ivar_code, filename: @filename)
     expect(code_map.filename).to eq(@filename)
