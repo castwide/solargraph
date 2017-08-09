@@ -27,6 +27,7 @@ module Solargraph
     ].freeze
 
     include NodeMethods
+    include YardMethods
 
     attr_reader :workspace
     attr_reader :required
