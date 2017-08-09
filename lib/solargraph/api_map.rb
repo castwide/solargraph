@@ -1,6 +1,5 @@
 require 'rubygems'
 require 'parser/current'
-require 'yard'
 require 'yaml'
 
 module Solargraph
@@ -342,21 +341,16 @@ module Solargraph
 
     def infer_signature_type signature, namespace, scope: :class
       return nil if signature.nil? or signature.empty?
+      if namespace.end_with?('#class')
+        return infer_signature_type signature, namespace[0..-7], scope: (scope == :class ? :instance : :class)
+      end
       parts = signature.split('.', 2)
       if parts[0].start_with?('@@')
         type = infer_class_variable(parts[0], namespace)
-        if type.end_with?('#class')
-          inner_infer_signature_type parts[1], type.split('#').first, scope: :class
-        else
-          inner_infer_signature_type parts[1], type, scope: :instance
-        end
+        inner_infer_signature_type parts[1], type, scope: :instance
       elsif parts[0].start_with?('@')
         type = infer_instance_variable(parts[0], namespace, scope)
-        if type.end_with?('#class')
-          inner_infer_signature_type parts[1], type.split('#').first, scope: :class
-        else
-          inner_infer_signature_type parts[1], type, scope: :instance
-        end
+        inner_infer_signature_type parts[1], type, scope: :instance
       else
         type = find_fully_qualified_namespace(parts[0], namespace)
         if type.nil?
@@ -364,7 +358,6 @@ module Solargraph
           type = inner_infer_signature_type(parts[0], namespace, scope: scope)
           inner_infer_signature_type(parts[1], type, scope: :instance)
         else
-          # @todo Should probably return signature#class or something
           inner_infer_signature_type(parts[1], type, scope: :class)
         end
       end
@@ -683,14 +676,15 @@ module Solargraph
     # @return [String] The fully qualified namespace for the signature's type
     #   or nil if a type could not be determined
     def inner_infer_signature_type signature, namespace, scope: :instance
-      #return nil if (signature.nil? or signature.empty?) and scope == :class
-      #return namespace if (signature.nil? or signature.empty?) and scope == :instance
       if signature.nil? or signature.empty?
         if scope == :class
           return "#{namespace}#class"
         else
           return "#{namespace}"
         end
+      end
+      if namespace.end_with?('#class')
+        return inner_infer_signature_type signature, namespace[0..-7], scope: (scope == :class ? :instance : :class)
       end
       parts = signature.split('.')
       type = find_fully_qualified_namespace(namespace)
@@ -768,7 +762,6 @@ module Solargraph
       if node.type == :class or node.type == :block
         children += node.children[0, 2]
         children += get_mappable_nodes(node.children[2..-1], comment_hash)
-        #children += get_mappable_nodes(node.children, comment_hash)
       elsif node.type == :const or node.type == :args or node.type == :kwargs
         children += node.children
       elsif node.type == :def

@@ -327,12 +327,7 @@ module Solargraph
         if remainder.empty?
           inferred = type
         else
-          if type.end_with?('#class')
-            inferred = api_map.infer_signature_type(remainder.join('.'), type.split('#').first, scope: :class)
-          else
-            inferred = api_map.infer_signature_type(remainder.join('.'), type, scope: :instance)
-          end
-          
+          inferred = api_map.infer_signature_type(remainder.join('.'), type, scope: :instance)
         end
       end
       inferred
