@@ -289,19 +289,45 @@ module Solargraph
       return api_map.yard_map.objects(path, ns_here)
     end
 
+    # Infer the type of the signature located at the specified index.
+    #
+    # @example
+    #   # Given the following code:
+    #   nums = [1, 2, 3]
+    #   nums.join
+    #   # ...and given an index that points at the end of "nums.join",
+    #   # infer_signature_at will identify nums as an Array and the return
+    #   # type of Array#join as a String, so the signature's type will be
+    #   # String.
+    #
+    # @return [String]
     def infer_signature_at index
       signature = get_signature_at(index)
       node = parent_node_from(index, :class, :module, :def, :defs) || @node
       result = infer_signature_from_node signature, node
       if result.nil? or result.empty?
-        # Check for yieldparams
-        parts = signature.split('.', 2)
-        yp = get_yieldparams_at(index).keep_if{|s| s.to_s == parts[0]}.first
-        unless yp.nil?
-          if parts[1].nil? or parts[1].empty?
-            result = yp.return_type
+        if node.type == :def or node.type == :defs
+          # Check for method arguments
+          parts = signature.split('.', 2)
+          # @type [Solargraph::Suggestion]
+          arg = get_method_arguments_from(node).keep_if{|s| s.to_s == parts[0] }.first
+          if arg.nil?
+            # Check for yieldparams
+            parts = signature.split('.', 2)
+            yp = get_yieldparams_at(index).keep_if{|s| s.to_s == parts[0]}.first
+            unless yp.nil?
+              if parts[1].nil? or parts[1].empty?
+                result = yp.return_type
+              else
+                result = api_map.infer_signature_type(parts[1], yp.return_type, scope: :instance)
+              end
+            end
           else
-            result = api_map.infer_signature_type(parts[1], yp.return_type, scope: :instance)
+            if parts[1].nil?
+              result = arg.return_type
+            else
+              result = api_map.infer_signature_type(parts[1], parts[0], :instance)
+            end
           end
         end
       end
@@ -468,7 +494,13 @@ module Solargraph
 
     private
 
+    # Get a node's arguments as an array of suggestions. The node's type must
+    # be a method (:def or :defs).
+    #
+    # @param node [AST::Node]
+    # @return [Array<Suggestion>]
     def get_method_arguments_from node
+      return [] unless node.type == :def or node.type == :defs
       param_hash = {}
       cmnt = api_map.get_comment_for(node)
       unless cmnt.nil?
