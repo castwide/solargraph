@@ -292,7 +292,20 @@ module Solargraph
     def infer_signature_at index
       signature = get_signature_at(index)
       node = parent_node_from(index, :class, :module, :def, :defs) || @node
-      infer_signature_from_node signature, node
+      result = infer_signature_from_node signature, node
+      if result.nil? or result.empty?
+        # Check for yieldparams
+        parts = signature.split('.', 2)
+        yp = get_yieldparams_at(index).keep_if{|s| s.to_s == parts[0]}.first
+        unless yp.nil?
+          if parts[1].nil? or parts[1].empty?
+            result = yp.return_type
+          else
+            result = api_map.infer_signature_type(parts[1], yp.return_type, scope: :instance)
+          end
+        end
+      end
+      result
     end
 
     def local_variable_in_node?(name, node)
@@ -489,7 +502,7 @@ module Solargraph
         sig = api_map.infer_signature_type(recv, fqns)
         meth = api_map.get_instance_methods(sig, fqns).keep_if{ |s| s.to_s == block_node.children[0].children[1].to_s }.first
         unless meth.nil? or meth.documentation.nil?
-          yps = meth.documentation.tags(:yieldparam)
+          yps = meth.documentation.tags(:yieldparam) || []
         end
         i = 0
         block_node.children[1].children.each do |a|

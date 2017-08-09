@@ -683,7 +683,7 @@ module Solargraph
           return "#{namespace}"
         end
       end
-      if namespace.end_with?('#class')
+      if !namespace.nil? and namespace.end_with?('#class')
         return inner_infer_signature_type signature, namespace[0..-7], scope: (scope == :class ? :instance : :class)
       end
       parts = signature.split('.')
