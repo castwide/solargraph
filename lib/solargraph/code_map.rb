@@ -489,18 +489,26 @@ module Solargraph
 
     def get_yieldparams_at index
       block_node = parent_node_from(index, :block)
+      scope_node = parent_node_from(index, :class, :module, :def, :defs) || @node
       return [] if block_node.nil?
-      get_yieldparams_from block_node
+      get_yieldparams_from block_node, scope_node
     end
 
-    def get_yieldparams_from block_node
+    def get_yieldparams_from block_node, scope_node
       return [] unless block_node.kind_of?(AST::Node) and block_node.type == :block
       result = []
       unless block_node.nil? or block_node.children[1].nil?
         recv = resolve_node_signature(block_node.children[0].children[0])
         fqns = namespace_from(block_node)
-        sig = api_map.infer_signature_type(recv, fqns)
+        lvarnode = find_local_variable_node(recv, scope_node)
+        if lvarnode.nil?
+          sig = api_map.infer_signature_type(recv, fqns)
+        else
+          tmp = resolve_node_signature(lvarnode.children[1])
+          sig = infer_signature_from_node tmp, scope_node
+        end
         meth = api_map.get_instance_methods(sig, fqns).keep_if{ |s| s.to_s == block_node.children[0].children[1].to_s }.first
+        yps = []
         unless meth.nil? or meth.documentation.nil?
           yps = meth.documentation.tags(:yieldparam) || []
         end
