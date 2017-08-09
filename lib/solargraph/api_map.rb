@@ -345,10 +345,18 @@ module Solargraph
       parts = signature.split('.', 2)
       if parts[0].start_with?('@@')
         type = infer_class_variable(parts[0], namespace)
-        inner_infer_signature_type parts[1], type, scope: :instance
+        if type.end_with?('#class')
+          inner_infer_signature_type parts[1], type.split('#').first, scope: :class
+        else
+          inner_infer_signature_type parts[1], type, scope: :instance
+        end
       elsif parts[0].start_with?('@')
         type = infer_instance_variable(parts[0], namespace, scope)
-        inner_infer_signature_type parts[1], type, scope: :instance
+        if type.end_with?('#class')
+          inner_infer_signature_type parts[1], type.split('#').first, scope: :class
+        else
+          inner_infer_signature_type parts[1], type, scope: :instance
+        end
       else
         type = find_fully_qualified_namespace(parts[0], namespace)
         if type.nil?
@@ -422,6 +430,9 @@ module Solargraph
     #
     # @return [Array<Solargraph::Suggestion>]
     def get_instance_methods(namespace, root = '', visibility: [:public])
+      if namespace.end_with?('#class')
+        return get_methods(namespace.split('#').first, root, visibility: visibility)
+      end
       meths = []
       meths += inner_get_instance_methods(namespace, root, []) #unless has_yardoc?
       fqns = find_fully_qualified_namespace(namespace, root)
@@ -672,8 +683,15 @@ module Solargraph
     # @return [String] The fully qualified namespace for the signature's type
     #   or nil if a type could not be determined
     def inner_infer_signature_type signature, namespace, scope: :instance
-      return nil if (signature.nil? or signature.empty?) and scope == :class
-      return namespace if (signature.nil? or signature.empty?) and scope == :instance
+      #return nil if (signature.nil? or signature.empty?) and scope == :class
+      #return namespace if (signature.nil? or signature.empty?) and scope == :instance
+      if signature.nil? or signature.empty?
+        if scope == :class
+          return "#{namespace}#class"
+        else
+          return "#{namespace}"
+        end
+      end
       parts = signature.split('.')
       type = find_fully_qualified_namespace(namespace)
       type ||= ''
