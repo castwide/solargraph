@@ -60,25 +60,7 @@ module Solargraph
     #
     # @return [String]
     def resolve_node_signature node
-      #stack_node_signature(node).join('.')
       drill_signature node, ''
-    end
-
-    def stack_node_signature node
-      parts = []
-      if node.kind_of?(AST::Node)
-        if node.type == :send
-          unless node.children[0].nil?
-            parts = [unpack_name(node.children[0])] + parts
-          end
-          parts += stack_node_signature(node.children[1])
-        else
-          parts = [unpack_name(node)] + stack_node_signature(node.children[1])
-        end
-      else
-        parts.push node.to_s
-      end
-      parts
     end
 
     def yard_options
