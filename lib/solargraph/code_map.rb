@@ -448,13 +448,7 @@ module Solargraph
       if local.type == :def or local.type == :defs
         result += get_method_arguments_from local
       end
-      # Get block parameter variables
-      block_node = parent_node_from(index, :block)
-      unless block_node.nil? or block_node.children[1].nil?
-        block_node.children[1].children.each do |a|
-          result.push Suggestion.new(a.children[0], kind: Suggestion::PROPERTY)
-        end
-      end
+      result += get_yieldparams_at(index)
       result += api_map.get_methods('Kernel')
       result
     end
@@ -476,6 +470,33 @@ module Solargraph
       args.children.each do |arg|
         name = arg.children[0].to_s
         result.push Suggestion.new(name, kind: Suggestion::PROPERTY, insert: name, return_type: param_hash[name])
+      end
+      result
+    end
+
+    def get_yieldparams_at index
+      block_node = parent_node_from(index, :block)
+      return [] if block_node.nil?
+      get_yieldparams_from block_node
+    end
+
+    def get_yieldparams_from block_node
+      return [] unless block_node.kind_of?(AST::Node) and block_node.type == :block
+      result = []
+      unless block_node.nil? or block_node.children[1].nil?
+        recv = resolve_node_signature(block_node.children[0].children[0])
+        fqns = namespace_from(block_node)
+        sig = api_map.infer_signature_type(recv, fqns)
+        meth = api_map.get_instance_methods(sig, fqns).keep_if{ |s| s.to_s == block_node.children[0].children[1].to_s }.first
+        unless meth.nil? or meth.documentation.nil?
+          yps = meth.documentation.tags(:yieldparam)
+        end
+        i = 0
+        block_node.children[1].children.each do |a|
+          rt = (yps[i].nil? ? nil : yps[i].types[0])
+          result.push Suggestion.new(a.children[0], kind: Suggestion::PROPERTY, return_type: rt)
+          i += 1
+        end
       end
       result
     end

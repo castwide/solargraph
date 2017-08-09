@@ -73,7 +73,7 @@ module Solargraph
         end
         signature += '::' unless signature.empty?
         signature += node.children[1].to_s
-      elsif node.type == :lvar
+      elsif node.type == :lvar or node.type == :ivar or node.type == :cvar
         signature += '.' unless signature.empty?
         signature += node.children[0].to_s
       elsif node.type == :send
