@@ -198,7 +198,6 @@ module Solargraph
       phrase = phrase_at(index)
       signature = get_signature_at(index)
       namespace = namespace_at(index)
-      STDERR.puts "Signature: #{signature}"
       if signature.include?('.')
         # Check for literals first
         type = infer(node_at(index - 2))
@@ -216,7 +215,6 @@ module Solargraph
           result.concat api_map.get_instance_methods(type)
         end
       elsif signature.start_with?('@@')
-        STDERR.puts "Getting class variables"
         result.concat get_class_variables_at(index)
       elsif signature.start_with?('@')
         result.concat get_instance_variables_at(index)
@@ -514,6 +512,7 @@ module Solargraph
       end
       result = []
       args = node.children[1]
+      return result unless args.kind_of?(AST::Node) and args.type == :args
       args.children.each do |arg|
         name = arg.children[0].to_s
         result.push Suggestion.new(name, kind: Suggestion::PROPERTY, insert: name, return_type: param_hash[name])

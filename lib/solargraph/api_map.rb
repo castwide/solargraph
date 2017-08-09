@@ -271,9 +271,11 @@ module Solargraph
         result = infer(vn.children[1]) if result.nil?
         if result.nil?
           signature = resolve_node_signature(vn.children[1])
-          sig_ns = find_fully_qualified_namespace(signature.split('.').first, fqns)
-          sig_scope = (sig_ns.nil? ? :instance : :class)
-          result = infer_signature_type(signature, namespace, scope: sig_scope)
+          #sig_ns = find_fully_qualified_namespace(signature.split('.').first, fqns)
+          #sig_scope = (sig_ns.nil? ? :instance : :class)
+          #result = infer_signature_type(signature, namespace, scope: sig_scope)
+          #result = infer_signature_type(signature, namespace, scope: :class)
+          result = infer_pure_signature_from_namespace(signature, namespace)
         end
       end
       result
@@ -298,9 +300,10 @@ module Solargraph
         result = infer(vn.children[1]) if result.nil?
         if result.nil?
           signature = resolve_node_signature(vn.children[1])
-          sig_ns = find_fully_qualified_namespace(signature.split('.').first, fqns)
-          sig_scope = (sig_ns.nil? ? :instance : :class)
-          result = infer_signature_type(signature, namespace, scope: sig_scope)
+          #sig_ns = find_fully_qualified_namespace(signature.split('.').first, fqns)
+          #sig_scope = (sig_ns.nil? ? :instance : :class)
+          #result = infer_signature_type(signature, namespace, scope: sig_scope)
+          result = infer_pure_signature_from_namespace(signature, namespace)
         end
       end
       result
@@ -380,6 +383,37 @@ module Solargraph
         top = false
       end
       type
+    end
+
+    def infer_pure_signature_from_namespace signature, ns_here
+      inferred = nil
+      parts = signature.split('.')
+      start = parts[0]
+      return nil if start.nil?
+      remainder = parts[1..-1]
+      scope = :instance
+      if start.start_with?('@@')
+        raise 'no'
+        type = api_map.infer_class_variable(start, ns_here)
+      elsif start.start_with?('@')
+        raise 'no'
+        scope2 = (node.type == :def ? :instance : :class)
+        type = infer_instance_variable(start, ns_here, scope2)
+      else
+        scope = :class
+        type = find_fully_qualified_namespace(start, ns_here)
+        if type.nil?
+          # It's a method call
+          sig_scope = (node.type == :def ? :instance : :class)
+          type = infer_signature_type(start, ns_here, scope: sig_scope)
+        else
+          return nil if remainder.empty?
+        end
+      end
+      unless type.nil?
+        inferred = infer_signature_type(remainder.join('.'), type, scope: scope)
+      end
+      inferred
     end
 
     def get_namespace_type namespace, root = ''
