@@ -423,6 +423,7 @@ module Solargraph
     #
     # @return [Array<Solargraph::Suggestion>]
     def get_instance_methods(namespace, root = '', visibility: [:public])
+      namespace ||= ''
       if namespace.end_with?('#class')
         return get_methods(namespace.split('#').first, root, visibility: visibility)
       end

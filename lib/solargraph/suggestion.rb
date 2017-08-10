@@ -77,7 +77,7 @@ module Solargraph
         param_tags = documentation.tags(:param)
         unless param_tags.empty?
           param_tags.each do |t|
-            txt = t.name
+            txt = t.name.to_s
             txt += " [#{t.types.join(',')}]" unless t.types.nil? or t.types.empty?
             txt += " #{t.text}" unless t.text.nil? or t.text.empty?
             @params.push txt
