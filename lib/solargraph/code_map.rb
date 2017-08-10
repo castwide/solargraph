@@ -59,6 +59,8 @@ module Solargraph
       end
     end
 
+    # Get the ApiMap that was generated for this CodeMap.
+    #
     # @return [Solargraph::ApiMap]
     def api_map
       @api_map ||= ApiMap.new(workspace)
@@ -69,6 +71,8 @@ module Solargraph
     # cursor's location in the code when generating suggestions.
     # The line and column numbers should start at zero.
     #
+    # @param line [Integer]
+    # @param col [Integer]
     # @return [Integer]
     def get_offset line, col
       offset = 0
@@ -80,6 +84,11 @@ module Solargraph
       offset + col
     end
 
+    # Get an array of nodes containing the specified index, starting with the
+    # topmost node and ending with the nearest.
+    #
+    # @param index [Integer]
+    # @return [Array<AST::Node>]
     def tree_at(index)
       arr = []
       arr.push @node
@@ -87,6 +96,10 @@ module Solargraph
       arr
     end
 
+    # Get the nearest node that contains the specified index.
+    #
+    # @param index [Integer]
+    # @return [AST::Node]
     def node_at(index)
       tree_at(index).first
     end
@@ -109,6 +122,12 @@ module Solargraph
       false
     end
 
+    # Find the nearest parent node from the specified index. If one or more
+    # types are provided, find the nearest node whose type is in the list.
+    #
+    # @param index [Integer]
+    # @param types [Array<Symbol>]
+    # @return [AST::Node]
     def parent_node_from(index, *types)
       arr = tree_at(index)
       arr.each { |a|
@@ -151,6 +170,12 @@ module Solargraph
       end
     end
 
+    # Select the phrase that directly precedes the specified index.
+    # A phrase can consist of most types of characters other than whitespace,
+    # semi-colons, equal signs, parentheses, or brackets.
+    #
+    # @param index [Integer]
+    # @return [String]
     def phrase_at index
       word = ''
       cursor = index - 1
@@ -164,6 +189,11 @@ module Solargraph
       word
     end
 
+    # Select the word that directly precedes the specified index.
+    # A word can only consist of letters, numbers, and underscores.
+    #
+    # @param index [Integer]
+    # @return [String]
     def word_at index
       word = ''
       cursor = index - 1
@@ -393,11 +423,11 @@ module Solargraph
     # A signature is a method call that can start with a constant, method, or
     # variable and does not include any method arguments. Examples:
     #
-    # Code                  Signature
-    # -----------------------------------------
-    # String.new            String.new
-    # @x.bar                @x.bar
-    # y.split(', ').length  y.split.length
+    #   Code                  Signature
+    #   -----------------------------------------
+    #   String.new            String.new
+    #   @x.bar                @x.bar
+    #   y.split(', ').length  y.split.length
     #
     # @param index [Integer]
     # @return [String]
@@ -473,6 +503,7 @@ module Solargraph
     # Get an array of local variables and methods that can be accessed from
     # the specified location in the code.
     #
+    # @param index [Integer]
     # @return [Array<Solargraph::Suggestion>]
     def get_local_variables_and_methods_at(index)
       result = []
