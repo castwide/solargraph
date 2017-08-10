@@ -77,6 +77,18 @@ my_var.
     expect(node.type).to eq(:def)
   end
 
+  it "converts lines and columns to offsets" do
+    code_map = Solargraph::CodeMap.new(code: "class Foo\n  def foo;end\nend")
+    offset = code_map.get_offset(1, 9)
+    expect(offset).to eq(19)
+  end
+
+  it "converts lines and columns to offsets with carriage returns" do
+    code_map = Solargraph::CodeMap.new(code: "class Foo\r\n  def foo;end\r\nend")
+    offset = code_map.get_offset(1, 9)
+    expect(offset).to eq(19)
+  end
+
   it "detects instance variables" do
     code_map = Solargraph::CodeMap.new(code: @ivar_code)
     result = code_map.suggest_at(92)
