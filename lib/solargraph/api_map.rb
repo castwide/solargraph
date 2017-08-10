@@ -89,32 +89,6 @@ module Solargraph
       root
     end
 
-    def associate_comments node, comments
-      comment_hash = Parser::Source::Comment.associate_locations(node, comments)
-      yard_hash = {}
-      comment_hash.each_pair { |k, v|
-        ctxt = ''
-        num = nil
-        started = false
-        v.each { |l|
-          # Trim the comment and minimum leading whitespace
-          p = l.text.gsub(/^#/, '')
-          if num.nil? and !p.strip.empty?
-            num = p.index(/[^ ]/)
-            started = true
-          elsif started and !p.strip.empty?
-            cur = p.index(/[^ ]/)
-            num = cur if cur < num
-          end
-          if started
-            ctxt += "#{p[num..-1]}\n"
-          end
-        }
-        yard_hash[k] = YARD::Docstring.parser.parse(ctxt).to_docstring
-      }
-      yard_hash
-    end
-
     def get_comment_for node
       filename = get_filename_for(node)
       return nil if @file_comments[filename].nil?
@@ -498,6 +472,32 @@ module Solargraph
     end
 
     private
+
+    def associate_comments node, comments
+      comment_hash = Parser::Source::Comment.associate_locations(node, comments)
+      yard_hash = {}
+      comment_hash.each_pair { |k, v|
+        ctxt = ''
+        num = nil
+        started = false
+        v.each { |l|
+          # Trim the comment and minimum leading whitespace
+          p = l.text.gsub(/^#/, '')
+          if num.nil? and !p.strip.empty?
+            num = p.index(/[^ ]/)
+            started = true
+          elsif started and !p.strip.empty?
+            cur = p.index(/[^ ]/)
+            num = cur if cur < num
+          end
+          if started
+            ctxt += "#{p[num..-1]}\n"
+          end
+        }
+        yard_hash[k] = YARD::Docstring.parser.parse(ctxt).to_docstring
+      }
+      yard_hash
+    end
 
     def inner_get_methods(namespace, root = '', skip = [])
       meths = []
