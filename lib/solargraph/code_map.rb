@@ -336,27 +336,29 @@ module Solargraph
       node = parent_node_from(index, :class, :module, :def, :defs) || @node
       result = infer_signature_from_node signature, node
       if result.nil? or result.empty?
-        if node.type == :def or node.type == :defs
+        arg = nil
+        if node.type == :def or node.type == :defs or node.type == :block
           # Check for method arguments
           parts = signature.split('.', 2)
           # @type [Solargraph::Suggestion]
           arg = get_method_arguments_from(node).keep_if{|s| s.to_s == parts[0] }.first
-          if arg.nil?
-            # Check for yieldparams
-            parts = signature.split('.', 2)
-            yp = get_yieldparams_at(index).keep_if{|s| s.to_s == parts[0]}.first
-            unless yp.nil?
-              if parts[1].nil? or parts[1].empty?
-                result = yp.return_type
-              else
-                result = api_map.infer_signature_type(parts[1], yp.return_type, scope: :instance)
-              end
-            end
-          else
+          unless arg.nil?
             if parts[1].nil?
               result = arg.return_type
             else
               result = api_map.infer_signature_type(parts[1], parts[0], :instance)
+            end
+          end
+        end
+        if arg.nil?
+          # Check for yieldparams
+          parts = signature.split('.', 2)
+          yp = get_yieldparams_at(index).keep_if{|s| s.to_s == parts[0]}.first
+          unless yp.nil?
+            if parts[1].nil? or parts[1].empty?
+              result = yp.return_type
+            else
+              result = api_map.infer_signature_type(parts[1], yp.return_type, scope: :instance)
             end
           end
         end

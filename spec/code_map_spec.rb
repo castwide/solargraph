@@ -221,8 +221,6 @@ my_var.
     expect(sig).to eq('String')
   end
 
-=begin
-  # @todo Fix this
   it "infers signatures from yield params" do
     code_map = Solargraph::CodeMap.new(code: %(
       class Foo
@@ -236,7 +234,6 @@ my_var.
     ))
     offset = code_map.get_offset(7, 11)
     sig = code_map.infer_signature_at(offset)
-    expect(sig).to eq('String')    
+    expect(sig).to eq('Array')
   end
-=end
 end
