@@ -207,4 +207,36 @@ my_var.
     expect(code_map.filename).to eq(@filename)
     expect(code_map.workspace).to eq(@workspace)
   end
+
+  it "infers signatures from method arguments" do
+    code_map = Solargraph::CodeMap.new(code: %(
+      class Foo
+        # @param baz [String]
+        def bar baz
+          baz
+        end
+      end
+    ))
+    sig = code_map.infer_signature_at(80)
+    expect(sig).to eq('String')
+  end
+
+=begin
+  # @todo Fix this
+  it "infers signatures from yield params" do
+    code_map = Solargraph::CodeMap.new(code: %(
+      class Foo
+        # @yieldparam baz [Array]
+        def bar;end
+      end
+      foo = Foo.new
+      foo.bar do |par|
+        par
+      end
+    ))
+    offset = code_map.get_offset(7, 11)
+    sig = code_map.infer_signature_at(offset)
+    expect(sig).to eq('String')    
+  end
+=end
 end
