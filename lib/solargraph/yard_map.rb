@@ -314,11 +314,13 @@ module Solargraph
     end
 
     def find_first_resolved_namespace yard, namespace, scope
-      parts = scope.split('::')
-      while parts.length > 0
-        ns = yard.resolve(P(parts.join('::')), namespace, true)
-        return ns unless ns.nil?
-        parts.pop
+      unless scope.nil?
+        parts = scope.split('::')
+        while parts.length > 0
+          ns = yard.resolve(P(parts.join('::')), namespace, true)
+          return ns unless ns.nil?
+          parts.pop
+        end
       end
       yard.at(namespace)
     end
