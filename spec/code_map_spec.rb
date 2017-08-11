@@ -273,4 +273,26 @@ my_var.
     sig = code_map.infer_signature_at(offset)
     expect(sig).to eq('Array')
   end
+
+  it "detects signature types for instance variables" do
+    code_map = Solargraph::CodeMap.new(code: %(
+      class Foo;end
+      @foo = Foo.new
+      @foo.
+    ))
+    offset = code_map.get_offset(3, 11)
+    sig = code_map.infer_signature_at(offset)
+    expect(sig).to eq('Foo')
+  end
+
+  it "detects signature types for class variables" do
+    code_map = Solargraph::CodeMap.new(code: %(
+      class Foo;end
+      @@foo = Foo.new
+      @@foo.
+    ))
+    offset = code_map.get_offset(3, 12)
+    sig = code_map.infer_signature_at(offset)
+    expect(sig).to eq('Foo')
+  end
 end

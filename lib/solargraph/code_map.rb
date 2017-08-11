@@ -394,6 +394,18 @@ module Solargraph
       start = parts[0]
       return nil if start.nil?
       remainder = parts[1..-1]
+      if start.start_with?('@@')
+        type = api_map.infer_class_variable(start, ns_here)
+        return nil if type.nil?
+        return type if remainder.empty?
+        return api_map.infer_signature_type(remainder.join('.'), type, scope: :instance)
+      elsif start.start_with?('@')
+        scope = (node.type == :def ? :instance : :scope)
+        type = api_map.infer_instance_variable(start, ns_here, scope: :instance)
+        return nil if type.nil?
+        return type if remainder.empty?
+        return api_map.infer_signature_type(remainder.join('.'), type, scope: :instance)
+      end
       var = find_local_variable_node(start, node)
       if var.nil?
         scope = (node.type == :def ? :instance : :class)
