@@ -332,6 +332,7 @@ module Solargraph
         if type.nil?
           # It's a method call
           type = inner_infer_signature_type(parts[0], namespace, scope: scope)
+          return type if parts[1].nil?
           inner_infer_signature_type(parts[1], type, scope: :instance)
         else
           inner_infer_signature_type(parts[1], type, scope: :class)

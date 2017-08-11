@@ -370,7 +370,8 @@ module Solargraph
             if parts[1].nil? or parts[1].empty?
               result = yp.return_type
             else
-              result = api_map.infer_signature_type(parts[1], yp.return_type, scope: :instance)
+              newsig = parts[1..-1].join('.')
+              result = api_map.infer_signature_type(newsig, yp.return_type, scope: :instance)
             end
           end
         end
