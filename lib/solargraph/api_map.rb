@@ -321,9 +321,11 @@ module Solargraph
       parts = signature.split('.', 2)
       if parts[0].start_with?('@@')
         type = infer_class_variable(parts[0], namespace)
+        return type unless type.nil? or parts.empty?
         inner_infer_signature_type parts[1], type, scope: :instance
       elsif parts[0].start_with?('@')
         type = infer_instance_variable(parts[0], namespace, scope)
+        return type unless type.nil? or parts.empty?
         inner_infer_signature_type parts[1], type, scope: :instance
       else
         type = find_fully_qualified_namespace(parts[0], namespace)
