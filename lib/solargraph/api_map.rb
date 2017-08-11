@@ -352,6 +352,7 @@ module Solargraph
     #
     # @return [Array<Solargraph::Suggestion>]
     def get_methods(namespace, root = '', visibility: [:public])
+      namespace = clean_namespace_string(namespace)
       meths = []
       meths += inner_get_methods(namespace, root, []) #unless has_yardoc?
       yard_meths = yard_map.get_methods(namespace, root, visibility: visibility)
@@ -397,7 +398,7 @@ module Solargraph
     #
     # @return [Array<Solargraph::Suggestion>]
     def get_instance_methods(namespace, root = '', visibility: [:public])
-      namespace ||= ''
+      namespace = clean_namespace_string(namespace)
       if namespace.end_with?('#class')
         return get_methods(namespace.split('#').first, root, visibility: visibility)
       end
@@ -850,6 +851,10 @@ module Solargraph
       b = node.location.expression.begin.begin_pos
       e = node.location.expression.end.end_pos
       src[b..e].strip.gsub(/,$/, '')
+    end
+
+    def clean_namespace_string namespace
+      namespace.to_s.gsub(/<.*$/, '')
     end
   end
 end
