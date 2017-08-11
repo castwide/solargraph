@@ -398,7 +398,7 @@ module Solargraph
       if var.nil?
         scope = (node.type == :def ? :instance : :class)
         type = api_map.infer_signature_type(signature, ns_here, scope: scope)
-        #return api_map.infer_signature_type(signature, ns_here, scope: scope)
+        return type unless type.nil?
       else
         # Signature starts with a local variable
         type = get_type_comment(var)

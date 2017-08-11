@@ -237,7 +237,7 @@ my_var.
     expect(sig).to eq('Array')
   end
 
-  it "infers local method call type from return param" do
+  it "infers local method call types from return tags" do
     code_map = Solargraph::CodeMap.new(code: %(
       class Foo
         # @return [Array]
@@ -249,6 +249,27 @@ my_var.
       end
     ), cursor: [6, 14])
     offset = code_map.get_offset(6, 14)
+    sig = code_map.infer_signature_at(offset)
+    expect(sig).to eq('Array')
+  end
+
+  it "infers chained method call types" do
+    code_map = Solargraph::CodeMap.new(code: %(
+      class Thing1
+        # @return [Array]
+        def foo bar, baz
+        end
+      end
+      class Thing2
+        # @return [Thing1]
+        def get_thing1
+        end
+        def baz
+          get_thing1.foo(number, 'string').
+        end
+      end
+    ), cursor: [11, 43])
+    offset = code_map.get_offset(11, 43)
     sig = code_map.infer_signature_at(offset)
     expect(sig).to eq('Array')
   end
