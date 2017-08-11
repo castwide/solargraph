@@ -384,7 +384,9 @@ module Solargraph
       remainder = parts[1..-1]
       var = find_local_variable_node(start, node)
       if var.nil?
-        return api_map.infer_signature_type(signature, ns_here)
+        scope = (node.type == :def ? :instance : :class)
+        type = api_map.infer_signature_type(signature, ns_here, scope: scope)
+        #return api_map.infer_signature_type(signature, ns_here, scope: scope)
       else
         # Signature starts with a local variable
         type = get_type_comment(var)
@@ -395,7 +397,14 @@ module Solargraph
         end
       end
       unless type.nil?
-        if remainder.empty?
+        if remainder[0] == 'new'
+          remainder.shift
+          if remainder.empty?
+            inferred = type
+          else
+            inferred = api_map.infer_signature_type(remainder.join('.'), type, scope: :instance)
+          end
+        elsif remainder.empty?
           inferred = type
         else
           inferred = api_map.infer_signature_type(remainder.join('.'), type, scope: :instance)
