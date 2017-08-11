@@ -236,4 +236,20 @@ my_var.
     sig = code_map.infer_signature_at(offset)
     expect(sig).to eq('Array')
   end
+
+  it "infers local method call type from return param" do
+    code_map = Solargraph::CodeMap.new(code: %(
+      class Foo
+        # @return [Array]
+        def bar
+        end
+        def baz
+          bar.
+        end
+      end
+    ), cursor: [6, 14])
+    offset = code_map.get_offset(6, 14)
+    sig = code_map.infer_signature_at(offset)
+    expect(sig).to eq('Array')
+  end
 end

@@ -10,7 +10,7 @@ module Solargraph
 
     include NodeMethods
 
-    def initialize code: '', filename: nil, workspace: nil, api_map: nil
+    def initialize code: '', filename: nil, workspace: nil, api_map: nil, cursor: nil
       @workspace = workspace
       # HACK: Adjust incoming filename's path separator for yardoc file comparisons
       filename = filename.gsub(File::ALT_SEPARATOR, File::SEPARATOR) unless filename.nil? or File::ALT_SEPARATOR.nil?
@@ -19,6 +19,8 @@ module Solargraph
       @code = code.gsub(/\r/, '')
       tries = 0
       tmp = @code
+      cursor = CodeMap.get_offset(@code, cursor[0], cursor[1]) if cursor.kind_of?(Array)
+      fixed_cursor = false
       begin
         # HACK: The current file is parsed with a trailing underscore to fix
         # incomplete trees resulting from short scripts (e.g., a lone variable
@@ -34,21 +36,27 @@ module Solargraph
           if tries == 10 and e.message.include?('token $end')
             tmp += "\nend"
           else
-            spot = e.diagnostic.location.begin_pos
-            repl = '_'
-            if tmp[spot] == '@' or tmp[spot] == ':'
-              # Stub unfinished instance variables and symbols
-              spot -= 1
-            elsif tmp[spot - 1] == '.'
-              # Stub unfinished method calls
-              repl = '#' if spot == tmp.length or tmp[spot] == '\n'
-              spot -= 2
+            if !fixed_cursor and !cursor.nil? and e.message.include?('token $end') and cursor >= 2
+              fixed_cursor = true
+              spot = cursor - 2
+              repl = '_'
             else
-              # Stub the whole line
-              spot = beginning_of_line_from(tmp, spot)
-              repl = '#'
-              if tmp[spot+1..-1].rstrip == 'end'
-                repl= 'end;end'
+              spot = e.diagnostic.location.begin_pos
+              repl = '_'
+              if tmp[spot] == '@' or tmp[spot] == ':'
+                # Stub unfinished instance variables and symbols
+                spot -= 1
+              elsif tmp[spot - 1] == '.'
+                # Stub unfinished method calls
+                repl = '#' if spot == tmp.length or tmp[spot] == '\n'
+                spot -= 2
+              else
+                # Stub the whole line
+                spot = beginning_of_line_from(tmp, spot)
+                repl = '#'
+                if tmp[spot+1..-1].rstrip == 'end'
+                  repl= 'end;end'
+                end
               end
             end
             tmp = tmp[0..spot] + repl + tmp[spot+repl.length+1..-1].to_s
@@ -75,13 +83,17 @@ module Solargraph
     # @param col [Integer]
     # @return [Integer]
     def get_offset line, col
+      CodeMap.get_offset @code, line, col
+    end
+
+    def self.get_offset text, line, col
       offset = 0
       if line > 0
-        @code.lines[0..line - 1].each { |l|
+        text.lines[0..line - 1].each { |l|
           offset += l.length
         }
       end
-      offset + col
+      offset + col      
     end
 
     # Get an array of nodes containing the specified index, starting with the
