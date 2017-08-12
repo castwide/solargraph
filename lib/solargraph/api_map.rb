@@ -179,7 +179,7 @@ module Solargraph
       nodes = get_namespace_nodes(namespace) || @file_nodes.values
       arr = []
       nodes.each { |n|
-        arr += inner_get_instance_variables(n, scope)
+        arr += inner_get_instance_variables(n, namespace, scope)
       }
       arr
     end
@@ -188,7 +188,7 @@ module Solargraph
       nodes = get_namespace_nodes(namespace) || @file_nodes.values
       arr = []
       nodes.each { |n|
-        arr += inner_get_class_variables(n)
+        arr += inner_get_class_variables(n, namespace)
       }
       arr
     end
@@ -644,31 +644,59 @@ module Solargraph
       result
     end
 
-    def inner_get_instance_variables(node, scope)
+    def inner_get_instance_variables(node, namespace, scope)
       arr = []
       if node.kind_of?(AST::Node)
         node.children.each { |c|
           if c.kind_of?(AST::Node)
             is_inst = !find_parent(c, :def).nil?
             if c.type == :ivasgn and c.children[0] and ( (scope == :instance and is_inst) or (scope != :instance and !is_inst) )
-              arr.push Suggestion.new(c.children[0], kind: Suggestion::VARIABLE, documentation: get_comment_for(c))
+              type = nil
+              cmnt = get_comment_for(c)
+              if cmnt.nil?
+                sig = resolve_node_signature(c.children[1])
+                type = infer_signature_type(sig, namespace)
+              else
+                t = cmnt.tag(:type)
+                if t.nil?
+                  sig = resolve_node_signature(c.children[1])
+                  type = infer_signature_type(sig, namespace)
+                else
+                  type = t.types[0]
+                end
+              end
+              arr.push Suggestion.new(c.children[0], kind: Suggestion::VARIABLE, documentation: cmnt, return_type: type)
             end
-            arr += inner_get_instance_variables(c, scope) unless [:class, :module].include?(c.type)
+            arr += inner_get_instance_variables(c, namespace, scope) unless [:class, :module].include?(c.type)
           end
         }
       end
       arr
     end
 
-    def inner_get_class_variables(node)
+    def inner_get_class_variables(node, namespace)
       arr = []
       if node.kind_of?(AST::Node)
         node.children.each { |c|
           next unless c.kind_of?(AST::Node)
           if c.type == :cvasgn
-            arr.push Suggestion.new(c.children[0], kind: Suggestion::VARIABLE, documentation: get_comment_for(c))              
+            type = nil
+            cmnt = get_comment_for(c)
+            if cmnt.nil?
+              sig = resolve_node_signature(c.children[1])
+              type = infer_signature_type(sig, namespace)
+            else
+              t = cmnt.tag(:type)
+              if t.nil?
+                sig = resolve_node_signature(c.children[1])
+                type = infer_signature_type(sig, namespace)
+              else
+                type = t.types[0]
+              end
+            end
+          arr.push Suggestion.new(c.children[0], kind: Suggestion::VARIABLE, documentation: cmnt, return_type: type)
           end
-          arr += inner_get_class_variables(c) unless [:class, :module].include?(c.type)
+          arr += inner_get_class_variables(c, namespace) unless [:class, :module].include?(c.type)
         }
       end
       arr
