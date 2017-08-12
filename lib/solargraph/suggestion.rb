@@ -87,8 +87,8 @@ module Solargraph
       @params
     end
 
-    def to_json args={}
-      obj = {
+    def as_json args={}
+      {
         label: @label,
         kind: @kind,
         insert: @insert,
@@ -100,7 +100,10 @@ module Solargraph
         return_type: return_type,
         documentation: @helper.html_markup_rdoc(documentation.to_s)
       }
-      obj.to_json(args)
+    end
+
+    def to_json args={}
+      as_json.to_json
     end
   end
 
