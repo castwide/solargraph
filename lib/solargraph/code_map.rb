@@ -606,7 +606,9 @@ module Solargraph
           tmp = resolve_node_signature(lvarnode.children[1])
           sig = infer_signature_from_node tmp, scope_node
         end
-        meth = api_map.get_instance_methods(sig, fqns).keep_if{ |s| s.to_s == block_node.children[0].children[1].to_s }.first
+        meths = api_map.get_instance_methods(sig, fqns)
+        meths += api_map.get_methods('')
+        meth = meths.keep_if{ |s| s.to_s == block_node.children[0].children[1].to_s }.first
         yps = []
         unless meth.nil? or meth.documentation.nil?
           yps = meth.documentation.tags(:yieldparam) || []
