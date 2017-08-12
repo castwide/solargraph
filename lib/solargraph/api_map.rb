@@ -5,6 +5,7 @@ require 'yaml'
 module Solargraph
   class ApiMap
     autoload :Config, 'solargraph/api_map/config'
+    autoload :Cache,  'solargraph/api_map/cache'
 
     KEYWORDS = [
       '__ENCODING__', '__LINE__', '__FILE__', 'BEGIN', 'END', 'alias', 'and',
@@ -314,30 +315,45 @@ module Solargraph
     end
 
     def infer_signature_type signature, namespace, scope: :class
+      cached = cache.get_signature_type(signature, namespace, scope)
+      return cached unless cached.nil?
       return nil if signature.nil? or signature.empty?
+      result = nil
       if namespace.end_with?('#class')
-        return infer_signature_type signature, namespace[0..-7], scope: (scope == :class ? :instance : :class)
-      end
-      parts = signature.split('.', 2)
-      if parts[0].start_with?('@@')
-        type = infer_class_variable(parts[0], namespace)
-        return type unless type.nil? or parts.empty?
-        inner_infer_signature_type parts[1], type, scope: :instance
-      elsif parts[0].start_with?('@')
-        type = infer_instance_variable(parts[0], namespace, scope)
-        return type unless type.nil? or parts.empty?
-        inner_infer_signature_type parts[1], type, scope: :instance
+        result = infer_signature_type signature, namespace[0..-7], scope: (scope == :class ? :instance : :class)
       else
-        type = find_fully_qualified_namespace(parts[0], namespace)
-        if type.nil?
-          # It's a method call
-          type = inner_infer_signature_type(parts[0], namespace, scope: scope)
-          return type if parts[1].nil?
-          inner_infer_signature_type(parts[1], type, scope: :instance)
+        parts = signature.split('.', 2)
+        if parts[0].start_with?('@@')
+          type = infer_class_variable(parts[0], namespace)
+          if type.nil? or parts.empty?
+            result = inner_infer_signature_type(parts[1], type, scope: :instance)
+          else
+            result = type
+          end
+        elsif parts[0].start_with?('@')
+          type = infer_instance_variable(parts[0], namespace, scope)
+          if type.nil? or parts.empty?
+            result = inner_infer_signature_type(parts[1], type, scope: :instance)
+          else
+            result = type
+          end
         else
-          inner_infer_signature_type(parts[1], type, scope: :class)
+          type = find_fully_qualified_namespace(parts[0], namespace)
+          if type.nil?
+            # It's a method call
+            type = inner_infer_signature_type(parts[0], namespace, scope: scope)
+            if parts[1].nil?
+              result = type
+            else
+              result = inner_infer_signature_type(parts[1], type, scope: :instance)
+            end
+          else
+            result = inner_infer_signature_type(parts[1], type, scope: :class)
+          end
         end
       end
+      cache.set_signature_type signature, namespace, scope, result
+      result
     end
 
     def get_namespace_type namespace, root = ''
@@ -476,6 +492,10 @@ module Solargraph
     end
 
     private
+
+    def cache
+      @cache ||= Cache.new
+    end
 
     def associate_comments node, comments
       comment_hash = Parser::Source::Comment.associate_locations(node, comments)
