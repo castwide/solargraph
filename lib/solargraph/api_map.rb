@@ -18,13 +18,18 @@ module Solargraph
     MAPPABLE_NODES = [
       # @todo Add node.type :casgn (constant assignment)
       :array, :hash, :str, :int, :float, :block, :class, :module, :def, :defs,
-      :ivasgn, :gvasgn, :lvasgn, :cvasgn, :or_asgn, :const, :lvar, :args, :kwargs
+      :ivasgn, :gvasgn, :lvasgn, :cvasgn, :casgn, :or_asgn, :const, :lvar,
+      :args, :kwargs
     ].freeze
 
     MAPPABLE_METHODS = [
       :include, :extend, :require, :autoload, :attr_reader, :attr_writer,
       :attr_accessor, :private, :public, :protected
     ].freeze
+
+    METHODS_RETURNING_SELF = [
+      'freeze'
+    ]
 
     include NodeMethods
     include YardMethods
@@ -748,6 +753,7 @@ module Solargraph
       while parts.length > 0 and !type.nil?
         p = parts.shift
         next if p.empty?
+        next if !type.nil? and !type.empty? and METHODS_RETURNING_SELF.include?(p)
         if top and scope == :class
           #next if p == 'new'
           if p == 'new'
@@ -829,7 +835,7 @@ module Solargraph
       elsif node.type == :module
         children += node.children[0, 1]
         children += get_mappable_nodes(node.children[1..-1], comment_hash)
-      elsif node.type == :ivasgn or node.type == :gvasgn or node.type == :lvasgn or node.type == :cvasgn
+      elsif node.type == :ivasgn or node.type == :gvasgn or node.type == :lvasgn or node.type == :cvasgn or node.type == :casgn
         children += node.children
       elsif node.type == :send and node.children[1] == :include
         children += node.children[0,3]
