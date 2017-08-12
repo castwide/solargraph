@@ -28,7 +28,7 @@ module Solargraph
     ].freeze
 
     METHODS_RETURNING_SELF = [
-      'freeze'
+      'clone', 'dup', 'freeze', 'taint', 'untaint'
     ]
 
     include NodeMethods
