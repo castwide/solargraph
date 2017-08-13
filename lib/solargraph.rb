@@ -11,7 +11,6 @@ module Solargraph
   autoload :NodeMethods, 'solargraph/node_methods'
   autoload :Suggestion,  'solargraph/suggestion'
   autoload :Snippets,    'solargraph/snippets'
-  autoload :Mapper,      'solargraph/mapper'
   autoload :Server,      'solargraph/server'
   autoload :YardMap,     'solargraph/yard_map'
   autoload :YardMethods, 'solargraph/yard_methods'
