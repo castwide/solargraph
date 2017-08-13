@@ -610,7 +610,7 @@ module Solargraph
                 elsif c.kind_of?(AST::Node) and c.type == :send and c.children[1] == :attr_accessor
                   c.children[2..-1].each { |x|
                     meths.push Suggestion.new(x.children[0], kind: Suggestion::FIELD) if x.type == :sym
-                    meths.push Suggestion.new("#{x.children[0]}=", kind: Suggestion::FIELD) if x.type == :sym
+                    meths.push Suggestion.new("#{x.children[0]}=", insert: "#{x.children[0]} = ", kind: Suggestion::FIELD) if x.type == :sym
                   }
                 end
               end
