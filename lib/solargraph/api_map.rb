@@ -608,7 +608,7 @@ module Solargraph
               s = unpack_name(n.children[1])
               # @todo This skip might not work properly. We might need to get a
               #   fully qualified namespace from it first
-              meths += get_instance_methods(s, namespace) unless skip.include?(s)
+              meths += get_instance_methods(s, namespace, visibility: visibility - [:private]) unless skip.include?(s)
             end
             n.children.each { |c|
               if c.kind_of?(AST::Node) and c.type == :send and [:public, :protected, :private].include?(c.children[1])
@@ -644,7 +644,7 @@ module Solargraph
         end
         # This is necessary to get included modules from workspace definitions
         get_include_strings_from(n).each { |i|
-          meths += inner_get_instance_methods(i, fqns, skip)
+          meths += inner_get_instance_methods(i, fqns, skip, visbility: visibility - [:private])
         }
       }
       meths.uniq
