@@ -154,4 +154,22 @@ describe Solargraph::ApiMap do
     cls = @api_map.infer_signature_type('String.new', '', scope: :class)
     expect(cls).to eq('String')
   end
+
+  it "checks visibility of instance methods" do
+    code = %(
+      class Foo
+        def bar;end
+        private
+        def baz;end
+      end
+    )
+    api_map = Solargraph::ApiMap.new
+    api_map.append_source(code, 'file.rb')
+    suggestions = api_map.get_instance_methods('Foo', '', visibility: [:public])
+    expect(suggestions.map(&:to_s)).to include('bar')
+    expect(suggestions.map(&:to_s)).not_to include('baz')
+    suggestions = api_map.get_instance_methods('Foo', '', visibility: [:private])
+    expect(suggestions.map(&:to_s)).not_to include('bar')
+    expect(suggestions.map(&:to_s)).to include('baz')
+  end
 end
