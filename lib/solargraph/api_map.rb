@@ -446,7 +446,7 @@ module Solargraph
         return get_methods(namespace.split('#').first, root, visibility: visibility)
       end
       meths = []
-      meths += inner_get_instance_methods(namespace, root, []) #unless has_yardoc?
+      meths += inner_get_instance_methods(namespace, root, [], visibility) #unless has_yardoc?
       fqns = find_fully_qualified_namespace(namespace, root)
       yard_meths = yard_map.get_instance_methods(fqns, '', visibility: visibility)
       if yard_meths.any?
@@ -593,12 +593,13 @@ module Solargraph
       meths
     end
 
-    def inner_get_instance_methods(namespace, root, skip)
+    def inner_get_instance_methods(namespace, root, skip, visibility = [:public])
       fqns = find_fully_qualified_namespace(namespace, root)
       meths = []
       return meths if skip.include?(fqns)
       skip.push fqns
       nodes = get_namespace_nodes(fqns)
+      current_scope = :public
       nodes.each { |n|
         f = get_filename_for(n)
         unless yardoc_has_file?(get_filename_for(n))
@@ -609,21 +610,20 @@ module Solargraph
               #   fully qualified namespace from it first
               meths += get_instance_methods(s, namespace) unless skip.include?(s)
             end
-            current_scope = :public
             n.children.each { |c|
               if c.kind_of?(AST::Node) and c.type == :send and [:public, :protected, :private].include?(c.children[1])
-              # TODO: Determine the current scope so we can decide whether to
-              # exclude protected or private methods. Right now we're just
-              # assuming public only
+                current_scope = c.children[1]
               elsif c.kind_of?(AST::Node) and c.type == :send and c.children[1] == :include
                 fqmod = find_fully_qualified_namespace(const_from(c.children[2]), root)
                 meths += get_instance_methods(fqmod) unless fqmod.nil? or skip.include?(fqmod)
-              elsif current_scope == :public
+              else
                 if c.kind_of?(AST::Node) and c.type == :def
-                  cmnt = get_comment_for(c)
-                  label = "#{c.children[0]}"
-                  args = get_method_args(c)
-                  meths.push Suggestion.new(label, insert: c.children[0].to_s.gsub(/=/, ' = '), kind: Suggestion::METHOD, documentation: cmnt, detail: fqns, arguments: args) if c.children[0].to_s[0].match(/[a-z]/i)
+                  if visibility.include?(current_scope)
+                    cmnt = get_comment_for(c)
+                    label = "#{c.children[0]}"
+                    args = get_method_args(c)
+                    meths.push Suggestion.new(label, insert: c.children[0].to_s.gsub(/=/, ' = '), kind: Suggestion::METHOD, documentation: cmnt, detail: fqns, arguments: args) if c.children[0].to_s[0].match(/[a-z]/i)
+                  end
                 elsif c.kind_of?(AST::Node) and c.type == :send and c.children[1] == :attr_reader
                   c.children[2..-1].each { |x|
                     meths.push Suggestion.new(x.children[0], kind: Suggestion::FIELD) if x.type == :sym
