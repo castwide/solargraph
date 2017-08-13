@@ -318,8 +318,11 @@ module Solargraph
       type = nil
       cmnt = get_comment_for(node)
       if cmnt.nil?
-        sig = resolve_node_signature(node.children[1])
-        type = infer_signature_type(sig, namespace)
+        type = infer_literal_node_type(node.children[1])
+        if type.nil?
+          sig = resolve_node_signature(node.children[1])
+          type = infer_signature_type(sig, namespace)
+        end
       else
         t = cmnt.tag(:type)
         if t.nil?
