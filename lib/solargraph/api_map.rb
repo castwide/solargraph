@@ -315,22 +315,25 @@ module Solargraph
     end
 
     def infer_assignment_node_type node, namespace
-      type = nil
-      cmnt = get_comment_for(node)
-      if cmnt.nil?
-        type = infer_literal_node_type(node.children[1])
-        if type.nil?
-          sig = resolve_node_signature(node.children[1])
-          type = infer_signature_type(sig, namespace)
-        end
-      else
-        t = cmnt.tag(:type)
-        if t.nil?
-          sig = resolve_node_signature(node.children[1])
-          type = infer_signature_type(sig, namespace)
+      type = cache.get_assignment_node_type(node, namespace)
+      if type.nil?
+        cmnt = get_comment_for(node)
+        if cmnt.nil?
+          type = infer_literal_node_type(node.children[1])
+          if type.nil?
+            sig = resolve_node_signature(node.children[1])
+            type = infer_signature_type(sig, namespace)
+          end
         else
-          type = t.types[0]
+          t = cmnt.tag(:type)
+          if t.nil?
+            sig = resolve_node_signature(node.children[1])
+            type = infer_signature_type(sig, namespace)
+          else
+            type = t.types[0]
+          end
         end
+        cache.set_assignment_node_type(node, namespace, type)
       end
       type
     end
@@ -514,6 +517,7 @@ module Solargraph
 
     private
 
+    # @return [Solargraph::ApiMap::Cache]
     def cache
       @cache ||= Cache.new
     end
@@ -744,7 +748,6 @@ module Solargraph
         p = parts.shift
         next if p.empty?
         if top and scope == :class
-          #next if p == 'new'
           if p == 'new'
             scope = :instance
             type = namespace
@@ -758,7 +761,9 @@ module Solargraph
         end
         unless p == 'new' and scope != :instance
           if scope == :instance
-            meths = get_instance_methods(type)
+            visibility = [:public]
+            visibility.push :private, :protected if top
+            meths = get_instance_methods(type, visibility: visibility)
             meths += get_methods('') if top or type.to_s == ''
           else
             meths = get_methods(type)
