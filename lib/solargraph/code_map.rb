@@ -637,7 +637,8 @@ module Solargraph
       node.children.each { |c|
         if c.kind_of?(AST::Node)
           if c.type == :lvasgn
-            arr.push Suggestion.new(c.children[0], kind: Suggestion::VARIABLE, documentation: api_map.get_comment_for(c))
+            type = api_map.infer_assignment_node_type(c, namespace_from(c))
+            arr.push Suggestion.new(c.children[0], kind: Suggestion::VARIABLE, documentation: api_map.get_comment_for(c), return_type: type)
           else
             arr += get_local_variables_from(c) unless [:class, :module, :def, :defs].include?(c.type)
           end

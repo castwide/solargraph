@@ -314,6 +314,24 @@ module Solargraph
       []
     end
 
+    def infer_assignment_node_type node, namespace
+      type = nil
+      cmnt = get_comment_for(node)
+      if cmnt.nil?
+        sig = resolve_node_signature(node.children[1])
+        type = infer_signature_type(sig, namespace)
+      else
+        t = cmnt.tag(:type)
+        if t.nil?
+          sig = resolve_node_signature(node.children[1])
+          type = infer_signature_type(sig, namespace)
+        else
+          type = t.types[0]
+        end
+      end
+      type
+    end
+
     def infer_signature_type signature, namespace, scope: :class
       cached = cache.get_signature_type(signature, namespace, scope)
       return cached unless cached.nil?
@@ -671,21 +689,8 @@ module Solargraph
           if c.kind_of?(AST::Node)
             is_inst = !find_parent(c, :def).nil?
             if c.type == :ivasgn and c.children[0] and ( (scope == :instance and is_inst) or (scope != :instance and !is_inst) )
-              type = nil
-              cmnt = get_comment_for(c)
-              if cmnt.nil?
-                sig = resolve_node_signature(c.children[1])
-                type = infer_signature_type(sig, namespace)
-              else
-                t = cmnt.tag(:type)
-                if t.nil?
-                  sig = resolve_node_signature(c.children[1])
-                  type = infer_signature_type(sig, namespace)
-                else
-                  type = t.types[0]
-                end
-              end
-              arr.push Suggestion.new(c.children[0], kind: Suggestion::VARIABLE, documentation: cmnt, return_type: type)
+              type = infer_assignment_node_type(c, namespace)
+              arr.push Suggestion.new(c.children[0], kind: Suggestion::VARIABLE, documentation: get_comment_for(c), return_type: type)
             end
             arr += inner_get_instance_variables(c, namespace, scope) unless [:class, :module].include?(c.type)
           end
@@ -700,21 +705,8 @@ module Solargraph
         node.children.each { |c|
           next unless c.kind_of?(AST::Node)
           if c.type == :cvasgn
-            type = nil
-            cmnt = get_comment_for(c)
-            if cmnt.nil?
-              sig = resolve_node_signature(c.children[1])
-              type = infer_signature_type(sig, namespace)
-            else
-              t = cmnt.tag(:type)
-              if t.nil?
-                sig = resolve_node_signature(c.children[1])
-                type = infer_signature_type(sig, namespace)
-              else
-                type = t.types[0]
-              end
-            end
-          arr.push Suggestion.new(c.children[0], kind: Suggestion::VARIABLE, documentation: cmnt, return_type: type)
+            type = infer_assignment_node_type(c, namespace)
+            arr.push Suggestion.new(c.children[0], kind: Suggestion::VARIABLE, documentation: get_comment_for(c), return_type: type)
           end
           arr += inner_get_class_variables(c, namespace) unless [:class, :module].include?(c.type)
         }
