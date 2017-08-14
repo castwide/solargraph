@@ -644,7 +644,7 @@ module Solargraph
         end
         # This is necessary to get included modules from workspace definitions
         get_include_strings_from(n).each { |i|
-          meths += inner_get_instance_methods(i, fqns, skip, visibility - [:private])
+          meths += inner_get_instance_methods(i, fqns, skip, visibility)
         }
       }
       meths.uniq
