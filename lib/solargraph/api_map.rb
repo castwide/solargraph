@@ -62,12 +62,14 @@ module Solargraph
     end
 
     # @param filename [String]
+    # @return [AST::Node]
     def append_file filename
       append_source File.read(filename), filename
     end
 
     # @param text [String]
     # @param filename [String]
+    # @return [AST::Node]
     def append_source text, filename = nil
       @file_source[filename] = text
       begin
@@ -79,6 +81,7 @@ module Solargraph
       end
     end
 
+    # @return [AST::Node]
     def append_node node, comments, filename = nil
       @file_comments[filename] = associate_comments(node, comments)
       mapified = reduce(node, @file_comments[filename])
@@ -90,6 +93,10 @@ module Solargraph
       root
     end
 
+    # Get the docstring associated with a node.
+    #
+    # @param node [AST::Node]
+    # @return [YARD::Docstring]
     def get_comment_for node
       filename = get_filename_for(node)
       return nil if @file_comments[filename].nil?
@@ -412,6 +419,7 @@ module Solargraph
       end
     end
 
+    # @return [Array<String>]
     def get_method_args node
       list = nil
       args = []
