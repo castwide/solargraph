@@ -40,6 +40,7 @@ module Solargraph
     end
 
     def infer_literal_node_type node
+      return nil unless node.kind_of?(AST::Node)
       if node.type == :str
         return 'String'
       elsif node.type == :array
