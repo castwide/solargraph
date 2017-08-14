@@ -1,6 +1,5 @@
 require 'rubygems'
 require 'parser/current'
-require 'yaml'
 
 module Solargraph
   class ApiMap
@@ -29,7 +28,13 @@ module Solargraph
     include NodeMethods
     include YardMethods
 
+    # The root directory of the project. The ApiMap will search here for
+    # additional files to parse and analyze.
+    #
+    # @return [String]
     attr_reader :workspace
+
+    # @return [Array<String>]
     attr_reader :required
 
     # @param workspace [String]
@@ -46,27 +51,21 @@ module Solargraph
       end
     end
 
-    def clear
-      @file_source = {}
-      @file_nodes = {}
-      @file_comments = {}
-      @parent_stack = {}
-      @namespace_map = {}
-      @namespace_tree = {}
-      @required = []
-    end
-
     # @return [Solargraph::YardMap]
     def yard_map
       @yard_map ||= YardMap.new(required: required, workspace: workspace)
     end
 
+    # Add a file to the map.
+    #
     # @param filename [String]
     # @return [AST::Node]
     def append_file filename
       append_source File.read(filename), filename
     end
 
+    # Add a string of source code to the map.
+    #
     # @param text [String]
     # @param filename [String]
     # @return [AST::Node]
@@ -81,6 +80,8 @@ module Solargraph
       end
     end
 
+    # Add an AST node to the map.
+    #
     # @return [AST::Node]
     def append_node node, comments, filename = nil
       @file_comments[filename] = associate_comments(node, comments)
@@ -103,23 +104,11 @@ module Solargraph
       @file_comments[filename][node.loc]
     end
 
+    # @return [Array<Solargraph::Suggestion>]
     def self.get_keywords
-      result = []
-      keywords = KEYWORDS + ['attr_reader', 'attr_writer', 'attr_accessor', 'private', 'public', 'protected']
-      keywords.each { |k|
-        result.push Suggestion.new(k, kind: Suggestion::KEYWORD, detail: 'Keyword')
-      }
-      result
-    end
-
-    def process_maps
-      @parent_stack = {}
-      @namespace_map = {}
-      @namespace_tree = {}
-      @file_nodes.values.each { |f|
-        map_parents f
-        map_namespaces f
-      }
+      @keyword_suggestions ||= (KEYWORDS + MAPPABLE_METHODS).map{ |s|
+        Suggestion.new(s.to_s, kind: Suggestion::KEYWORD, detail: 'Keyword')
+      }.freeze
     end
 
     def namespaces
@@ -244,18 +233,7 @@ module Solargraph
           break unless vn.nil?
         }
       end
-      unless vn.nil?
-        cmnt = get_comment_for(vn)
-        unless cmnt.nil?
-          tag = cmnt.tag(:type)
-          result = tag.types[0] unless tag.nil? or tag.types.empty?
-        end
-        result = infer_literal_node_type(vn.children[1]) if result.nil?
-        if result.nil?
-          signature = resolve_node_signature(vn.children[1])
-          result = infer_signature_type(signature, namespace)
-        end
-      end
+      result = infer_assignment_node_type(vn, namespace) unless vn.nil?
       result
     end
 
@@ -524,6 +502,26 @@ module Solargraph
     end
 
     private
+
+    def clear
+      @file_source = {}
+      @file_nodes = {}
+      @file_comments = {}
+      @parent_stack = {}
+      @namespace_map = {}
+      @namespace_tree = {}
+      @required = []
+    end
+
+    def process_maps
+      @parent_stack = {}
+      @namespace_map = {}
+      @namespace_tree = {}
+      @file_nodes.values.each { |f|
+        map_parents f
+        map_namespaces f
+      }
+    end
 
     # @return [Solargraph::ApiMap::Cache]
     def cache
@@ -870,7 +868,7 @@ module Solargraph
       result = node.updated(type, children)
       result
     end
-    
+
     def local_path? path
       return false if workspace.nil?
       return true if File.exist?(File.join workspace, 'lib', path)

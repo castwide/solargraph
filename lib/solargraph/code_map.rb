@@ -2,10 +2,32 @@ require 'parser/current'
 
 module Solargraph
   class CodeMap
+
+    # The root node of the parsed code.
+    #
+    # @return [AST::Node]
     attr_accessor :node
+
+    # The source code being analyzed.
+    #
+    # @return [String]
     attr_reader :code
+
+    # The source code after modification to fix syntax errors during parsing.
+    # This string will match #code if no modifications were made.
+    #
+    # @return [String]
     attr_reader :parsed
+
+    # The filename for the source code.
+    #
+    # @return [String]
     attr_reader :filename
+
+    # The root directory of the project. The ApiMap will search here for
+    # additional files to parse and analyze.
+    #
+    # @return [String]
     attr_reader :workspace
 
     include NodeMethods
@@ -39,7 +61,11 @@ module Solargraph
             if !fixed_cursor and !cursor.nil? and e.message.include?('token $end') and cursor >= 2
               fixed_cursor = true
               spot = cursor - 2
-              repl = '_'
+              if tmp[cursor - 1] == '.'
+                repl = ';'
+              else
+                repl = '#'
+              end
             else
               spot = e.diagnostic.location.begin_pos
               repl = '_'
@@ -402,7 +428,7 @@ module Solargraph
         return api_map.infer_signature_type(remainder.join('.'), type, scope: :instance)
       elsif start.start_with?('@')
         scope = (node.type == :def ? :instance : :scope)
-        type = api_map.infer_instance_variable(start, ns_here, scope: :instance)
+        type = api_map.infer_instance_variable(start, ns_here, scope)
         return nil if type.nil?
         return type if remainder.empty?
         return api_map.infer_signature_type(remainder.join('.'), type, scope: :instance)
@@ -436,13 +462,6 @@ module Solargraph
         end
       end
       inferred
-    end
-
-    def suggest_for_signature_at index
-      result = []
-      type = infer_signature_at(index)
-      result.concat api_map.get_instance_methods(type) unless type.nil?
-      result
     end
 
     def get_type_comment node
@@ -500,21 +519,6 @@ module Solargraph
         index -= 1
       end
       signature
-    end
-
-    # Build a signature from the specified node. This method returns the node
-    # as an array of strings.
-    #
-    # @return [Array<String>]
-    def build_signature(node, parts)
-      if node.kind_of?(AST::Node)
-        if node.type == :send
-          parts.unshift node.children[1].to_s
-        elsif node.type == :const
-          parts.unshift unpack_name(node)
-        end
-        build_signature(node.children[0], parts)
-      end
     end
 
     def get_snippets_at(index)
