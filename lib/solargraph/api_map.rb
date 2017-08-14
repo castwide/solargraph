@@ -644,7 +644,7 @@ module Solargraph
         end
         # This is necessary to get included modules from workspace definitions
         get_include_strings_from(n).each { |i|
-          meths += inner_get_instance_methods(i, fqns, skip, visbility: visibility - [:private])
+          meths += inner_get_instance_methods(i, fqns, skip, visibility - [:private])
         }
       }
       meths.uniq
@@ -772,7 +772,14 @@ module Solargraph
           return nil if meths.empty?
           type = nil
           match = meths[0].return_type
-          type = find_fully_qualified_namespace(match) unless match.nil?
+          unless match.nil?
+            cleaned = clean_namespace_string(match)
+            if cleaned.end_with?('#class')
+              return inner_infer_signature_type(parts.join('.'), cleaned.split('#').first, scope: :class)
+            else
+              type = find_fully_qualified_namespace(cleaned)
+            end
+          end
         end
         scope = :instance
         top = false
@@ -908,7 +915,12 @@ module Solargraph
     end
 
     def clean_namespace_string namespace
-      namespace.to_s.gsub(/<.*$/, '')
+      result = namespace.to_s.gsub(/<.*$/, '')
+      if result == 'Class' and namespace.include?('<')
+        subtype = namespace.match(/<([a-z0-9:_]*)/i)[1]
+        result = "#{subtype}#class"
+      end
+      result
     end
   end
 end
