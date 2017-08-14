@@ -140,18 +140,6 @@ module Solargraph
     end
 
     # @param signature [String]
-    def at signature
-      yardocs.each { |y|
-        yard = load_yardoc(y)
-        unless yard.nil?
-          obj = yard.at(signature)
-          return obj unless obj.nil?
-        end
-      }
-      nil
-    end
-
-    # @param signature [String]
     # @param scope [String]
     def resolve signature, scope
       yardocs.each { |y|
