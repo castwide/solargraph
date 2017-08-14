@@ -139,19 +139,6 @@ module Solargraph
       result
     end
 
-    # @param signature [String]
-    # @param scope [String]
-    def resolve signature, scope
-      yardocs.each { |y|
-        yard = load_yardoc(y)
-        unless yard.nil?
-          obj = yard.resolve(P(scope), signature)
-          return obj unless obj.nil?
-        end
-      }
-      nil
-    end
-
     # @return [Array<Suggestion>]
     def get_methods namespace, scope = '', visibility: [:public]
       cached = cache.get_methods(namespace, scope, visibility)
