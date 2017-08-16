@@ -182,4 +182,30 @@ describe Solargraph::ApiMap do
     type = api_map.infer_instance_variable('@foo', '', :class)
     expect(type).to be(nil)
   end
+
+  it "recognizes self in instance scope" do
+    code = %(
+      class Foo
+        def bar
+        end
+      end
+    )
+    api_map = Solargraph::ApiMap.new
+    api_map.append_source(code, 'file.rb')
+    type = api_map.infer_signature_type('self', 'Foo', scope: :instance)
+    expect(type).to eq('Foo')
+  end
+
+  it "recognizes self in class scope" do
+    code = %(
+      class Foo
+        def bar
+        end
+      end
+    )
+    api_map = Solargraph::ApiMap.new
+    api_map.append_source(code, 'file.rb')
+    type = api_map.infer_signature_type('self', 'Foo', scope: :class)
+    expect(type).to eq('Foo')
+  end
 end

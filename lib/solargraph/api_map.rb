@@ -756,6 +756,7 @@ module Solargraph
         p = parts.shift
         next if p.empty?
         if top and scope == :class
+          next if p == 'self'
           if p == 'new'
             scope = :instance
             type = namespace
@@ -765,6 +766,11 @@ module Solargraph
           first_class = find_fully_qualified_namespace(p, namespace)
           sub = nil
           sub = infer_signature_type(parts.join('.'), first_class, scope: :class) unless first_class.nil?
+          return sub unless sub.to_s == ''
+        end
+        if top and scope == :instance and p == 'self'
+          return type if parts.empty?
+          sub = infer_signature_type(parts.join('.'), type, scope: :instance)
           return sub unless sub.to_s == ''
         end
         unless p == 'new' and scope != :instance
