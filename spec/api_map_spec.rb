@@ -172,4 +172,14 @@ describe Solargraph::ApiMap do
     expect(suggestions.map(&:to_s)).not_to include('bar')
     expect(suggestions.map(&:to_s)).to include('baz')
   end
+
+  it "avoids infinite loops from variable assignments that reference themselves" do
+    code = %(
+      @foo = @foo
+    )
+    api_map = Solargraph::ApiMap.new
+    api_map.append_source(code, 'file.rb')
+    type = api_map.infer_instance_variable('@foo', '', :class)
+    expect(type).to be(nil)
+  end
 end

@@ -307,6 +307,8 @@ module Solargraph
           type = infer_literal_node_type(node.children[1])
           if type.nil?
             sig = resolve_node_signature(node.children[1])
+            # Avoid infinite loops from variable assignments that reference themselves
+            return nil if node.children[0].to_s == sig.split('.').first
             type = infer_signature_type(sig, namespace)
           end
         else
