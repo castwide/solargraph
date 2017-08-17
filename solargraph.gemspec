@@ -18,10 +18,10 @@ Gem::Specification.new do |s|
   s.required_ruby_version = '>= 2.1'
   s.add_runtime_dependency 'parser', '~> 2.4'
   s.add_runtime_dependency 'thor', '~> 0.19', '>= 0.19.4'
-  s.add_runtime_dependency 'sinatra', '~> 1.4'
+  s.add_runtime_dependency 'sinatra', '~> 2'
   s.add_runtime_dependency 'yard', '~> 0.9'
 
   s.add_development_dependency 'rspec', '~> 3.5', '>= 3.5.0'
-  s.add_development_dependency 'rack-test', '~> 0'
+  s.add_development_dependency 'rack-test', '~> 0.7'
   s.add_development_dependency 'simplecov', '~> 0.14'
 end
