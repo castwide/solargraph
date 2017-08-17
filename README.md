@@ -4,6 +4,10 @@ IDE tools for the Ruby language.
 
 Solargraph is a set of tools to integrate Ruby code completion and inline documentation into IDEs. The first supported IDE is Visual Studio Code.
 
+## Online Demo
+
+A web-based demonstration of Solargraph is available at http://solargraph.org/demo.
+
 ## Installation
 
 Solargraph is available as a Ruby gem:
