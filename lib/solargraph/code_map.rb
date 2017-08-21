@@ -553,7 +553,7 @@ module Solargraph
       if local.type == :def
         result += api_map.get_instance_methods(scope, visibility: [:public, :private, :protected])
       else
-        result += api_map.get_methods(scope, visibility: [:public, :private, :protected])
+        result += api_map.get_methods(scope, scope, visibility: [:public, :private, :protected])
       end
       if local.type == :def or local.type == :defs
         result += get_method_arguments_from local

@@ -570,18 +570,23 @@ module Solargraph
               s = unpack_name(n.children[1])
               meths += inner_get_methods(s, root, skip)
             end
-            meths += inner_get_methods_from_node(n, root, :class, skip)
+            vis = [:public]
+            vis.push :private, :protected if namespace == root
+            meths += inner_get_methods_from_node(n, root, :class, skip, vis)
           end
         end
       }
       meths.uniq
     end
 
-    def inner_get_methods_from_node node, root, scope, skip
+    def inner_get_methods_from_node node, root, scope, skip, visibility, current_visibility = :public
       meths = []
       node.children.each { |c|
         if c.kind_of?(AST::Node)
-          if (c.type == :defs and scope == :class) or (c.type == :def and scope == :instance)
+          if c.kind_of?(AST::Node) and c.type == :send and [:public, :protected, :private].include?(c.children[1])
+            current_visibility = c.children[1]
+          elsif (c.type == :defs and scope == :class) or (c.type == :def and scope == :instance)
+            next unless visibility.include?(current_visibility)
             docstring = get_comment_for(c)
             child_index = (scope == :class ? 1 : 0)
             label = "#{c.children[child_index]}"
@@ -590,14 +595,14 @@ module Solargraph
               meths.push Suggestion.new(label, insert: c.children[child_index].to_s.gsub(/=/, ' = '), kind: Suggestion::METHOD, detail: 'Method', documentation: docstring, arguments: args)
             end
           elsif c.type == :sclass and scope == :class and c.children[0].type == :self
-            meths.concat inner_get_methods_from_node c, root, :instance, skip
+            meths.concat inner_get_methods_from_node c, root, :instance, skip, visibility
           elsif c.type == :send and c.children[1] == :include
             # TODO: This might not be right. Should we be getting singleton methods
             # from an include, or only from an extend?
             i = unpack_name(c.children[2])
             meths.concat inner_get_methods(i, root, skip) unless i == 'Kernel'
           else
-            meths.concat inner_get_methods_from_node(c, root, scope, skip)
+            meths.concat inner_get_methods_from_node(c, root, scope, skip, visibility, current_visibility)
           end
         end
       }
