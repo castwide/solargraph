@@ -16,7 +16,7 @@ module Solargraph
 
     MAPPABLE_NODES = [
       # @todo Add node.type :casgn (constant assignment)
-      :array, :hash, :str, :int, :float, :block, :class, :module, :def, :defs,
+      :array, :hash, :str, :int, :float, :block, :class, :sclass, :module, :def, :defs,
       :ivasgn, :gvasgn, :lvasgn, :cvasgn, :or_asgn, :const, :lvar, :args, :kwargs
     ].freeze
 
@@ -570,31 +570,34 @@ module Solargraph
               s = unpack_name(n.children[1])
               meths += inner_get_methods(s, root, skip)
             end
-            meths += inner_get_methods_from_node(n, root, skip)
+            meths += inner_get_methods_from_node(n, root, :class, skip)
           end
         end
       }
       meths.uniq
     end
 
-    def inner_get_methods_from_node node, root, skip
+    def inner_get_methods_from_node node, root, scope, skip
       meths = []
       node.children.each { |c|
         if c.kind_of?(AST::Node)
-          if c.type == :defs
+          if (c.type == :defs and scope == :class) or (c.type == :def and scope == :instance)
             docstring = get_comment_for(c)
-            label = "#{c.children[1]}"
+            child_index = (scope == :class ? 1 : 0)
+            label = "#{c.children[child_index]}"
             args = get_method_args(c)
-            if (c.children[1].to_s[0].match(/[a-z_]/i) and c.children[1] != :def)
-              meths.push Suggestion.new(label, insert: c.children[1].to_s.gsub(/=/, ' = '), kind: Suggestion::METHOD, detail: 'Method', documentation: docstring, arguments: args)
+            if (c.children[child_index].to_s[0].match(/[a-z_]/i) and c.children[child_index] != :def)
+              meths.push Suggestion.new(label, insert: c.children[child_index].to_s.gsub(/=/, ' = '), kind: Suggestion::METHOD, detail: 'Method', documentation: docstring, arguments: args)
             end
+          elsif c.type == :sclass and scope == :class and c.children[0].type == :self
+            meths.concat inner_get_methods_from_node c, root, :instance, skip
           elsif c.type == :send and c.children[1] == :include
             # TODO: This might not be right. Should we be getting singleton methods
             # from an include, or only from an extend?
             i = unpack_name(c.children[2])
             meths.concat inner_get_methods(i, root, skip) unless i == 'Kernel'
           else
-            meths.concat inner_get_methods_from_node(c, root, skip)
+            meths.concat inner_get_methods_from_node(c, root, scope, skip)
           end
         end
       }
@@ -843,7 +846,7 @@ module Solargraph
       return node if node.type == :args
       type = node.type
       children = []
-      if node.type == :class or node.type == :block
+      if node.type == :class or node.type == :block or node.type == :sclass
         children += node.children[0, 2]
         children += get_mappable_nodes(node.children[2..-1], comment_hash)
       elsif node.type == :const or node.type == :args or node.type == :kwargs
