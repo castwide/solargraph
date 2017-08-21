@@ -581,7 +581,7 @@ module Solargraph
         end
       end
       result = []
-      args = node.children[1]
+      args = node.children[(node.type == :def ? 1 : 2)]
       return result unless args.kind_of?(AST::Node) and args.type == :args
       args.children.each do |arg|
         name = arg.children[0].to_s
