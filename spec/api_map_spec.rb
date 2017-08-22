@@ -251,6 +251,51 @@ describe Solargraph::ApiMap do
     expect(type).to eq('String')
   end
 
+  it "does not infer an instance variable type in the class scope" do
+    code = %(
+      class Foo
+        def bar
+          # @type [String]
+          @bar = unknown_method
+        end
+      end
+    )
+    api_map = Solargraph::ApiMap.new
+    api_map.append_source(code, 'file.rb')
+    type = api_map.infer_signature_type('@bar', 'Foo', scope: :class)
+    expect(type).to eq(nil)
+  end
+
+  it "infers a class instance variable type from a tag" do
+    code = %(
+      class Foo
+        # @type [String]
+        @bar = unknown_method
+        def bar
+        end
+      end
+    )
+    api_map = Solargraph::ApiMap.new
+    api_map.append_source(code, 'file.rb')
+    type = api_map.infer_signature_type('@bar', 'Foo', scope: :class)
+    expect(type).to eq('String')
+  end
+
+  it "does not infer a class instance variable type in the instance scope" do
+    code = %(
+      class Foo
+        # @type [String]
+        @bar = unknown_method
+        def bar
+        end
+      end
+    )
+    api_map = Solargraph::ApiMap.new
+    api_map.append_source(code, 'file.rb')
+    type = api_map.infer_signature_type('@bar', 'Foo', scope: :instance)
+    expect(type).to eq(nil)
+  end
+
   it "infers a class variable type from a tag" do
     code = %(
       class Foo
