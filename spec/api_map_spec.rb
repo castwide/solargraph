@@ -209,7 +209,7 @@ describe Solargraph::ApiMap do
     type = api_map.infer_signature_type('self.bar', 'Foo', scope: :instance)
     expect(type).to eq('String')
   end
-  
+
   it "recognizes self in class scope" do
     code = %(
       class Foo
@@ -234,5 +234,47 @@ describe Solargraph::ApiMap do
     api_map.append_source(code, 'file.rb')
     type = api_map.infer_signature_type('self.new', 'Foo', scope: :class)
     expect(type).to eq('Foo')
+  end
+
+  it "infers an instance variable type from a tag" do
+    code = %(
+      class Foo
+        def bar
+          # @type [String]
+          @bar = unknown_method
+        end
+      end
+    )
+    api_map = Solargraph::ApiMap.new
+    api_map.append_source(code, 'file.rb')
+    type = api_map.infer_signature_type('@bar', 'Foo', scope: :instance)
+    expect(type).to eq('String')
+  end
+
+  it "infers a class variable type from a tag" do
+    code = %(
+      class Foo
+        # @type [String]
+        @@bar = unknown_method
+      end
+    )
+    api_map = Solargraph::ApiMap.new
+    api_map.append_source(code, 'file.rb')
+    type = api_map.infer_signature_type('@@bar', 'Foo')
+    expect(type).to eq('String')
+  end
+
+  it "infers a class method return type from a tag" do
+    code = %(
+      class Foo
+        # @return [String]
+        def self.bar
+        end
+      end
+    )
+    api_map = Solargraph::ApiMap.new
+    api_map.append_source(code, 'file.rb')
+    type = api_map.infer_signature_type('Foo.bar', '')
+    expect(type).to eq('String')
   end
 end
