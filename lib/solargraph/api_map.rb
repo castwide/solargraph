@@ -15,9 +15,9 @@ module Solargraph
     ].freeze
 
     MAPPABLE_NODES = [
-      # @todo Add node.type :casgn (constant assignment)
-      :array, :hash, :str, :int, :float, :block, :class, :sclass, :module, :def, :defs,
-      :ivasgn, :gvasgn, :lvasgn, :cvasgn, :or_asgn, :const, :lvar, :args, :kwargs
+      :array, :hash, :str, :int, :float, :block, :class, :sclass, :module,
+      :def, :defs, :ivasgn, :gvasgn, :lvasgn, :cvasgn, :casgn, :or_asgn,
+      :const, :lvar, :args, :kwargs
     ].freeze
 
     MAPPABLE_METHODS = [
@@ -304,11 +304,13 @@ module Solargraph
       if type.nil?
         cmnt = get_comment_for(node)
         if cmnt.nil?
-          type = infer_literal_node_type(node.children[1])
+          name_i = (node.type == :casgn ? 1 : 0) 
+          sig_i = (node.type == :casgn ? 2 : 1)
+          type = infer_literal_node_type(node.children[sig_i])
           if type.nil?
-            sig = resolve_node_signature(node.children[1])
+            sig = resolve_node_signature(node.children[sig_i])
             # Avoid infinite loops from variable assignments that reference themselves
-            return nil if node.children[0].to_s == sig.split('.').first
+            return nil if node.children[name_i].to_s == sig.split('.').first
             type = infer_signature_type(sig, namespace)
           end
         else
@@ -694,12 +696,25 @@ module Solargraph
               result.push Suggestion.new(k, kind: kind, detail: detail)
             }
             nodes = get_namespace_nodes(fqns)
-            nodes.each { |n|
+            nodes.each do |n|
+              result.concat get_constant_nodes(n, fqns)
               get_include_strings_from(n).each { |i|
                 result += inner_namespaces_in(i, fqns, skip)
               }
-            }
+            end
           end
+        end
+      end
+      result
+    end
+
+    def get_constant_nodes(node, fqns)
+      result = []
+      node.children.each do |n|
+        if n.kind_of?(AST::Node) and n.type == :casgn
+          cmnt = get_comment_for(n)
+          type = infer_assignment_node_type(n, fqns)
+          result.push Suggestion.new(n.children[1].to_s, kind: Suggestion::CONSTANT, documentation: cmnt, return_type: type)
         end
       end
       result
@@ -865,7 +880,7 @@ module Solargraph
       elsif node.type == :module
         children += node.children[0, 1]
         children += get_mappable_nodes(node.children[1..-1], comment_hash)
-      elsif node.type == :ivasgn or node.type == :gvasgn or node.type == :lvasgn or node.type == :cvasgn
+      elsif node.type == :ivasgn or node.type == :gvasgn or node.type == :lvasgn or node.type == :cvasgn or node.type == :casgn
         children += node.children
       elsif node.type == :send and node.children[1] == :include
         children += node.children[0,3]
