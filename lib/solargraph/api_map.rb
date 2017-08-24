@@ -25,6 +25,10 @@ module Solargraph
       :attr_accessor, :private, :public, :protected
     ].freeze
 
+    METHODS_RETURNING_SELF = [
+      'clone', 'dup', 'freeze', 'taint', 'untaint'
+    ]
+
     include NodeMethods
     include YardMethods
 
@@ -779,6 +783,7 @@ module Solargraph
       while parts.length > 0 and !type.nil?
         p = parts.shift
         next if p.empty?
+        next if !type.nil? and !type.empty? and METHODS_RETURNING_SELF.include?(p)
         if top and scope == :class
           if p == 'self'
             top = false
