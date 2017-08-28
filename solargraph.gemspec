@@ -11,7 +11,7 @@ Gem::Specification.new do |s|
   s.authors     = ["Fred Snyder"]
   s.email       = 'admin@castwide.com'
   s.files       = Dir['lib/**/*'] + Dir['yardoc/**/*']
-  s.homepage    = 'http://castwide.com'
+  s.homepage    = 'http://solargraph.org'
   s.license     = 'MIT'
   s.executables   = ['solargraph']
 
