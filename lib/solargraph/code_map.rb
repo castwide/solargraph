@@ -507,6 +507,7 @@ module Solargraph
           brackets += 1
         elsif char == '['
           squares += 1
+          signature = ".[]#{signature}" if squares == 0
         end
         if brackets == 0 and parens == 0 and squares == 0
           break if ['"', "'", ',', ' ', "\t", "\n"].include?(char)

@@ -763,6 +763,7 @@ module Solargraph
     # @return [String] The fully qualified namespace for the signature's type
     #   or nil if a type could not be determined
     def inner_infer_signature_type signature, namespace, scope: :instance
+      orig = namespace
       namespace = clean_namespace_string(namespace)
       return nil if signature.nil?
       signature.gsub!(/\.$/, '')
@@ -807,6 +808,13 @@ module Solargraph
           return type if parts.empty?
           sub = infer_signature_type(parts.join('.'), type, scope: :instance)
           return sub unless sub.to_s == ''
+        end
+        if top and scope == :instance and p == '[]' and !orig.nil?
+          if orig.start_with?('Array<')
+            match = orig.match(/Array<([a-z0-9:_]*)/i)[1]
+            type = match
+            next
+          end
         end
         unless p == 'new' and scope != :instance
           if scope == :instance
