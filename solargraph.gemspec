@@ -7,7 +7,7 @@ Gem::Specification.new do |s|
   s.version     = Solargraph::VERSION
   s.date        = Date.today.strftime("%Y-%m-%d")
   s.summary     = "Solargraph for Ruby"
-  s.description = "IDE tools for code analysis and autocompletion"
+  s.description = "IDE tools for code completion and inline documentation"
   s.authors     = ["Fred Snyder"]
   s.email       = 'admin@castwide.com'
   s.files       = Dir['lib/**/*'] + Dir['yardoc/**/*']
