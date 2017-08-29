@@ -510,7 +510,7 @@ module Solargraph
           signature = ".[]#{signature}" if squares == 0
         end
         if brackets == 0 and parens == 0 and squares == 0
-          break if ['"', "'", ',', ' ', "\t", "\n"].include?(char)
+          break if ['"', "'", ',', ' ', "\t", "\n", ';'].include?(char)
           signature = char + signature if char.match(/[a-z0-9:\._@]/i)
           if char == '@'
             signature = "@#{signature}" if @code[index-1, 1] == '@'
