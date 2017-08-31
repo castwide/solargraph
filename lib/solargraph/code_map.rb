@@ -268,10 +268,10 @@ module Solargraph
       namespace = namespace_at(index)
       if signature.include?('.')
         # Check for literals first
-        type = infer_literal_node_type(node_at(index - 2))
+        nearest = @code[0, index].rindex('.')
+        revised = signature[0..nearest-index-1]
+        type = infer_literal_node_type(node_at(nearest - 1))
         if type.nil?
-          nearest = @code[0, index].rindex('.')
-          revised = signature[0..nearest-index-1]
           type = infer_signature_at(nearest) unless revised.empty?
           if !type.nil?
             result.concat api_map.get_instance_methods(type) unless type.nil?
