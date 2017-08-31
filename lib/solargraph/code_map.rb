@@ -270,7 +270,16 @@ module Solargraph
         # Check for literals first
         nearest = @code[0, index].rindex('.')
         revised = signature[0..nearest-index-1]
-        type = infer_literal_node_type(node_at(nearest - 1))
+        revised = revised[2..-1] if revised.start_with?('[]')
+        cursed = get_signature_index_at(index)
+        frag = @code[cursed..index]
+        literal = nil
+        if frag.start_with?('.')
+          literal = node_at(cursed - 1)
+        else
+          literal = node_at(cursed + 1)
+        end
+        type = infer_literal_node_type(literal)
         if type.nil?
           type = infer_signature_at(nearest) unless revised.empty?
           if !type.nil?
@@ -280,7 +289,14 @@ module Solargraph
             result.concat api_map.get_methods(fqns) unless fqns.nil?
           end
         else
-          result.concat api_map.get_instance_methods(type)
+          rest = revised
+          rest = rest[1..-1] if rest.start_with?('.')
+          if rest.nil? or rest.empty?
+            result.concat api_map.get_instance_methods(type)
+          else
+            intype = api_map.infer_signature_type(rest, type, scope: :instance)
+            result.concat api_map.get_instance_methods(intype)
+          end
         end
       elsif signature.start_with?('@@')
         result.concat get_class_variables_at(index)
@@ -298,18 +314,23 @@ module Solargraph
           result = api_map.namespaces_in(ns, namespace)
         end
       else
-        current_namespace = namespace_at(index)
-        parts = current_namespace.to_s.split('::')
-        result += get_snippets_at(index) if with_snippets
-        result += get_local_variables_and_methods_at(index)
-        result += ApiMap.get_keywords
-        while parts.length > 0
-          ns = parts.join('::')
-          result += api_map.namespaces_in(ns, namespace)
-          parts.pop
+        type = infer_literal_node_type(node_at(index - 2))
+        if type.nil?
+          current_namespace = namespace_at(index)
+          parts = current_namespace.to_s.split('::')
+          result += get_snippets_at(index) if with_snippets
+          result += get_local_variables_and_methods_at(index)
+          result += ApiMap.get_keywords
+          while parts.length > 0
+            ns = parts.join('::')
+            result += api_map.namespaces_in(ns, namespace)
+            parts.pop
+          end
+          result += api_map.namespaces_in('')
+          result += api_map.get_instance_methods('Kernel')
+        else
+          result.concat api_map.get_instance_methods(type)
         end
-        result += api_map.namespaces_in('')
-        result += api_map.get_instance_methods('Kernel')
       end
       result = reduce_starting_with(result, word_at(index)) if filtered
       result.uniq{|s| s.path}.sort{|a,b| a.label <=> b.label}
@@ -507,6 +528,44 @@ module Solargraph
           brackets += 1
         elsif char == '['
           squares += 1
+          signature = ".[]#{signature}" if squares == 0 and @code[index-2] != '%'
+        end
+        if brackets == 0 and parens == 0 and squares == 0
+          break if ['"', "'", ',', ' ', "\t", "\n", ';', '%'].include?(char)
+          signature = char + signature if char.match(/[a-z0-9:\._@]/i) and @code[index - 1] != '%'
+          if char == '@'
+            signature = "@#{signature}" if @code[index-1, 1] == '@'
+            break
+          end
+        end
+        index -= 1
+      end
+      signature = signature[1..-1] if signature.start_with?('.')
+      #signature = signature[2..-1] if signature.start_with?('[]')
+      signature
+    end
+
+    def get_signature_index_at index
+      brackets = 0
+      squares = 0
+      parens = 0
+      signature = ''
+      index -=1
+      while index >= 0
+        break if brackets > 0 or parens > 0 or squares > 0
+        char = @code[index, 1]
+        if char == ')'
+          parens -=1
+        elsif char == ']'
+          squares -=1
+        elsif char == '}'
+          brackets -= 1
+        elsif char == '('
+          parens += 1
+        elsif char == '{'
+          brackets += 1
+        elsif char == '['
+          squares += 1
           signature = ".[]#{signature}" if squares == 0
         end
         if brackets == 0 and parens == 0 and squares == 0
@@ -519,7 +578,9 @@ module Solargraph
         end
         index -= 1
       end
-      signature
+      signature = signature[1..-1] if signature.start_with?('.')
+      signature = signature[2..-1] if signature.start_with?('[]')
+      index + 1
     end
 
     def get_snippets_at(index)
