@@ -499,11 +499,9 @@ module Solargraph
     # A signature is a method call that can start with a constant, method, or
     # variable and does not include any method arguments. Examples:
     #
-    #   Code                  Signature
-    #   -----------------------------------------
-    #   String.new            String.new
-    #   @x.bar                @x.bar
-    #   y.split(', ').length  y.split.length
+    # * String.new -> String.new
+    # * @x.bar -> @x.bar
+    # * y.split(', ').length -> y.split.length
     #
     # @param index [Integer]
     # @return [String]
