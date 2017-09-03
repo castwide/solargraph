@@ -25,7 +25,7 @@ module Solargraph
       begin
         sugg = []
         workspace = params['workspace']
-        Server.prepare_workspace workspace unless @@api_hash.has_key?(workspace)
+        #Server.prepare_workspace workspace unless @@api_hash.has_key?(workspace)
         @@semaphore.synchronize {
           code_map = CodeMap.new(code: params['text'], filename: params['filename'], api_map: @@api_hash[workspace], cursor: [params['line'].to_i, params['column'].to_i])
           offset = code_map.get_offset(params['line'].to_i, params['column'].to_i)
@@ -121,13 +121,11 @@ module Solargraph
       end
 
       def prepare_workspace directory
-        Thread.new do
-          api_map = Solargraph::ApiMap.new(directory)
-          api_map.update_yardoc
-          @@semaphore.synchronize {
-            @@api_hash[directory] = api_map
-          }
-        end
+        api_map = Solargraph::ApiMap.new(directory)
+        api_map.update_yardoc
+        @@semaphore.synchronize {
+          @@api_hash[directory] = api_map
+        }
       end
     end
 

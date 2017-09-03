@@ -66,8 +66,6 @@ describe Solargraph::Server do
   it "prepares a workspace" do
     post '/prepare', workspace: @workspace
     expect(last_response).to be_ok
-    # HACK Wait for the thread in ApiMap#update_yardoc to finish
-    sleep(5)
     expect(Dir.exist?("#{@workspace}/.yardoc")).to be(true)
   end
 
