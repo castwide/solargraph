@@ -121,13 +121,13 @@ module Solargraph
       end
 
       def prepare_workspace directory
-        api_map = Solargraph::ApiMap.new(directory)
-        @@semaphore.synchronize {
-          @@api_hash[directory] = api_map
-        }
-        Thread.new {
+        Thread.new do
+          api_map = Solargraph::ApiMap.new(directory)
           api_map.update_yardoc
-        }
+          @@semaphore.synchronize {
+            @@api_hash[directory] = api_map
+          }
+        end
       end
     end
 
