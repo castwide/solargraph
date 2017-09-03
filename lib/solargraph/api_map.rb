@@ -715,10 +715,14 @@ module Solargraph
     def get_constant_nodes(node, fqns)
       result = []
       node.children.each do |n|
-        if n.kind_of?(AST::Node) and n.type == :casgn
-          cmnt = get_comment_for(n)
-          type = infer_assignment_node_type(n, fqns)
-          result.push Suggestion.new(n.children[1].to_s, kind: Suggestion::CONSTANT, documentation: cmnt, return_type: type)
+        if n.kind_of?(AST::Node)
+          if n.type == :casgn
+            cmnt = get_comment_for(n)
+            type = infer_assignment_node_type(n, fqns)
+            result.push Suggestion.new(n.children[1].to_s, kind: Suggestion::CONSTANT, documentation: cmnt, return_type: type)
+          else
+            result.concat get_constant_nodes(n, fqns) unless n.type == :class or n.type == :module
+          end
         end
       end
       result
