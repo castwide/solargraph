@@ -266,7 +266,7 @@ module Solargraph
       phrase = phrase_at(index)
       signature = get_signature_at(index)
       namespace = namespace_at(index)
-      if signature.include?('.')
+      if signature.include?('.') or @code[index - signature.length - 1] == '.'
         # Check for literals first
         nearest = @code[0, index].rindex('.')
         revised = signature[0..nearest-index-1]
