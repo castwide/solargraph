@@ -633,7 +633,7 @@ module Solargraph
             n.children.each { |c|
               if c.kind_of?(AST::Node) and c.type == :send and [:public, :protected, :private].include?(c.children[1])
                 current_scope = c.children[1]
-              elsif c.kind_of?(AST::Node) and c.type == :send and c.children[1] == :include
+              elsif c.kind_of?(AST::Node) and c.type == :send and c.children[1] == :include and n.type == :class
                 fqmod = find_fully_qualified_namespace(const_from(c.children[2]), root)
                 meths += get_instance_methods(fqmod) unless fqmod.nil? or skip.include?(fqmod)
               else
@@ -663,9 +663,11 @@ module Solargraph
           end
         end
         # This is necessary to get included modules from workspace definitions
-        get_include_strings_from(n).each { |i|
-          meths += inner_get_instance_methods(i, fqns, skip, visibility)
-        }
+        if n.type == :class
+          get_include_strings_from(n).each { |i|
+            meths += inner_get_instance_methods(i, fqns, skip, visibility)
+          }
+        end
       }
       meths.uniq
     end
