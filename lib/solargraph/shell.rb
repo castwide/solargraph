@@ -86,7 +86,8 @@ module Solargraph
         file.puts "include:",
           "  - ./**/*.rb",
           "exclude:",
-          "  - spec/**/*"
+          "  - spec/**/*",
+          "  - test/**/*"
       end
       STDOUT.puts "Configuration file initialized."
     end
