@@ -283,7 +283,7 @@ module Solargraph
             return api_map.get_global_variables
           else
             type = infer_signature_at(index)
-          end  
+          end
         end
       end
       if type.nil?
@@ -364,7 +364,10 @@ module Solargraph
         end
       end
       return [] if path.nil?
-      return api_map.yard_map.objects(path, ns_here)
+      if path.start_with?('Class<')
+        path.gsub!(/^Class<([a-z0-9_:]*)>#([a-z0-9_]*)$/i, '\\1.\\2')
+      end
+      api_map.yard_map.objects(path, ns_here)
     end
 
     # Infer the type of the signature located at the specified index.
