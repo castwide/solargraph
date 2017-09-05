@@ -263,75 +263,63 @@ module Solargraph
     def suggest_at index, filtered: false, with_snippets: false
       return [] if string_at?(index) or string_at?(index - 1) or comment_at?(index)
       result = []
-      phrase = phrase_at(index)
-      signature = get_signature_at(index)
-      namespace = namespace_at(index)
-      if signature.include?('.') or @code[index - signature.length - 1] == '.'
-        # Check for literals first
-        nearest = @code[0, index].rindex('.')
-        revised = signature[0..nearest-index-1]
-        revised = revised[2..-1] if revised.start_with?('[]')
-        cursed = get_signature_index_at(index)
-        frag = @code[cursed..index]
-        literal = nil
-        if frag.start_with?('.')
-          literal = node_at(cursed - 1)
-        else
-          beg_sig = get_signature_index_at(index)
-          literal = node_at(1 + beg_sig)
-        end
-        type = infer_literal_node_type(literal)
-        if type.nil?
-          type = infer_signature_at(nearest) unless revised.empty?
-          if !type.nil?
-            result.concat api_map.get_instance_methods(type) unless type.nil?
-          elsif !revised.include?('.')
-            fqns = api_map.find_fully_qualified_namespace(revised, namespace)
-            result.concat api_map.get_methods(fqns) unless fqns.nil?
-          end
-        else
-          rest = @code[literal.loc.expression.end_pos..index]
-          rest = rest[1..-1] if rest.start_with?('.')
-          if rest.nil? or rest.empty?
-            result.concat api_map.get_instance_methods(type)
+      if index == 0 or @code[index - 1].match(/[\.\s]/)
+        type = infer_signature_at(index)
+      else
+        signature = get_signature_at(index)
+        if signature.include?('.')
+          last_period = @code[0..index].rindex('.')
+          if last_period.nil?
+            type = infer_signature_at(index)
           else
-            intype = api_map.infer_signature_type(rest, type, scope: :instance)
-            result.concat api_map.get_instance_methods(intype)
-          end
-        end
-      elsif signature.start_with?('@@')
-        result.concat get_class_variables_at(index)
-      elsif signature.start_with?('@')
-        result.concat get_instance_variables_at(index)
-      elsif phrase.start_with?('$')
-        result.concat api_map.get_global_variables
-      elsif phrase.include?('::')
-        parts = phrase.split('::', -1)
-        ns = parts[0..-2].join('::')
-        if parts.last.include?('.')
-          ns = parts[0..-2].join('::') + '::' + parts.last[0..parts.last.index('.')-1]
-          result = api_map.get_methods(ns)
+            type = infer_signature_at(last_period)
+          end  
         else
-          result = api_map.namespaces_in(ns, namespace)
+          if signature.start_with?('@@')
+            return get_class_variables_at(index)
+          elsif signature.start_with?('@')
+            return get_instance_variables_at(index)
+          elsif signature.start_with?('$')
+            return api_map.get_global_variables
+          else
+            type = infer_signature_at(index)
+          end  
+        end
+      end
+      if type.nil?
+        phrase = phrase_at(index)
+        signature = get_signature_at(index)
+        namespace = namespace_at(index)
+        if phrase.include?('::')
+          parts = phrase.split('::', -1)
+          ns = parts[0..-2].join('::')
+          if parts.last.include?('.')
+            ns = parts[0..-2].join('::') + '::' + parts.last[0..parts.last.index('.')-1]
+            result = api_map.get_methods(ns)
+          else
+            result = api_map.namespaces_in(ns, namespace)
+          end
+        else
+          type = infer_literal_node_type(node_at(index - 2))
+          if type.nil?
+            current_namespace = namespace_at(index)
+            parts = current_namespace.to_s.split('::')
+            result += get_snippets_at(index) if with_snippets
+            result += get_local_variables_and_methods_at(index)
+            result += ApiMap.get_keywords
+            while parts.length > 0
+              ns = parts.join('::')
+              result += api_map.namespaces_in(ns, namespace)
+              parts.pop
+            end
+            result += api_map.namespaces_in('')
+            result += api_map.get_instance_methods('Kernel')
+          else
+            result.concat api_map.get_instance_methods(type)
+          end
         end
       else
-        type = infer_literal_node_type(node_at(index - 2))
-        if type.nil?
-          current_namespace = namespace_at(index)
-          parts = current_namespace.to_s.split('::')
-          result += get_snippets_at(index) if with_snippets
-          result += get_local_variables_and_methods_at(index)
-          result += ApiMap.get_keywords
-          while parts.length > 0
-            ns = parts.join('::')
-            result += api_map.namespaces_in(ns, namespace)
-            parts.pop
-          end
-          result += api_map.namespaces_in('')
-          result += api_map.get_instance_methods('Kernel')
-        else
-          result.concat api_map.get_instance_methods(type)
-        end
+        result.concat api_map.get_instance_methods(type)
       end
       result = reduce_starting_with(result, word_at(index)) if filtered
       result.uniq{|s| s.path}.sort{|a,b| a.label <=> b.label}
@@ -394,14 +382,12 @@ module Solargraph
     def infer_signature_at index
       signature = get_signature_at(index)
       # Check for literals first
-      nearest = @code[0, index].rindex('.')
-      cursed = get_signature_index_at(index)
-      frag = @code[cursed..index]
-      # Shortcut for integers without methods
-      return 'Integer' if frag.match(/^[0-9]+?\.?$/)
+      return 'Integer' if signature.match(/^[0-9]+?\.?$/)
       literal = nil
-      if frag.start_with?('.')
-        literal = node_at(cursed - 1)
+      if signature.empty? and @code[index - 1] == '.'
+        literal = node_at(index - 2)
+      elsif signature.start_with?('.')
+        literal = node_at(index - 1)
       else
         beg_sig = get_signature_index_at(index)
         literal = node_at(1 + beg_sig)
@@ -440,15 +426,18 @@ module Solargraph
           end
         end
       else
+        cursed = get_signature_index_at(index)
         rest = signature[literal.loc.expression.end_pos+(cursed-literal.loc.expression.end_pos)..-1]
-        lit_code = @code[literal.loc.expression.begin_pos..literal.loc.expression.end_pos]
-        rest = rest[lit_code.length..-1] if rest.start_with?(lit_code)
-        rest = rest[1..-1] if rest.start_with?('.')
-        rest = rest[0..-2] if rest.end_with?('.')
-        if rest.empty?
-          result = type
-        else
-          result = api_map.infer_signature_type(rest, type, scope: :instance)
+        unless rest.nil?
+          lit_code = @code[literal.loc.expression.begin_pos..literal.loc.expression.end_pos]
+          rest = rest[lit_code.length..-1] if rest.start_with?(lit_code)
+          rest = rest[1..-1] if rest.start_with?('.')
+          rest = rest[0..-2] if rest.end_with?('.')
+          if rest.empty?
+            result = type
+          else
+            result = api_map.infer_signature_type(rest, type, scope: :instance)
+          end
         end
       end
       result
@@ -467,6 +456,10 @@ module Solargraph
       inferred = nil
       parts = signature.split('.')
       ns_here = namespace_from(node)
+      unless signature.include?('.')
+        fqns = api_map.find_fully_qualified_namespace(signature, ns_here)
+        return "Class<#{fqns}>" unless fqns.nil?
+      end
       start = parts[0]
       return nil if start.nil?
       remainder = parts[1..-1]
