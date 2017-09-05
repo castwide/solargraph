@@ -277,7 +277,8 @@ module Solargraph
         if frag.start_with?('.')
           literal = node_at(cursed - 1)
         else
-          literal = node_at(cursed + 1)
+          beg_sig = get_signature_index_at(index)
+          literal = node_at(1 + beg_sig)
         end
         type = infer_literal_node_type(literal)
         if type.nil?
@@ -289,7 +290,7 @@ module Solargraph
             result.concat api_map.get_methods(fqns) unless fqns.nil?
           end
         else
-          rest = revised
+          rest = @code[literal.loc.expression.end_pos..index]
           rest = rest[1..-1] if rest.start_with?('.')
           if rest.nil? or rest.empty?
             result.concat api_map.get_instance_methods(type)
