@@ -295,4 +295,42 @@ my_var.
     sig = code_map.infer_signature_at(offset)
     expect(sig).to eq('Foo')
   end
+
+  it "infers types from literal values with chained methods" do
+    code_map = Solargraph::CodeMap.new(code: "%w[one two].join(',').to_i.")
+    type = code_map.infer_signature_at(27)
+    expect(type).to eq('Integer')
+  end
+
+  it "infers signatures for literal integers" do
+    ["0", "123"].each do |num|
+      code_map = Solargraph::CodeMap.new(code: "#{num}.")
+      type = code_map.infer_signature_at(num.length + 1)
+      expect(type).to eq('Integer')
+    end
+  end
+
+  it "infers signatures for methods of literal integers" do
+    code_map = Solargraph::CodeMap.new(code: "123.to_s.")
+    type = code_map.infer_signature_at(9)
+    expect(type).to eq('String')
+  end
+
+  it "finds suggestions for literal integers with methods" do
+    code_map = Solargraph::CodeMap.new(code: "123.to_s.")
+    sugg = code_map.suggest_at(9)
+    expect(sugg.map(&:to_s)).to include('upcase')
+  end
+
+  it "infers signatures for literal floats" do
+    code_map = Solargraph::CodeMap.new(code: "3.14.")
+    type = code_map.infer_signature_at(5)
+    expect(type).to eq('Float')
+  end
+
+  it "infers signatures for methods of literal floats" do
+    code_map = Solargraph::CodeMap.new(code: "3.14.to_s.")
+    type = code_map.infer_signature_at(10)
+    expect(type).to eq('String')
+  end
 end

@@ -393,35 +393,62 @@ module Solargraph
     # @return [String]
     def infer_signature_at index
       signature = get_signature_at(index)
-      node = parent_node_from(index, :class, :module, :def, :defs) || @node
-      result = infer_signature_from_node signature, node
-      if result.nil? or result.empty?
-        arg = nil
-        if node.type == :def or node.type == :defs or node.type == :block
-          # Check for method arguments
-          parts = signature.split('.', 2)
-          # @type [Solargraph::Suggestion]
-          arg = get_method_arguments_from(node).keep_if{|s| s.to_s == parts[0] }.first
-          unless arg.nil?
-            if parts[1].nil?
-              result = arg.return_type
-            else
-              result = api_map.infer_signature_type(parts[1], parts[0], :instance)
+      # Check for literals first
+      nearest = @code[0, index].rindex('.')
+      cursed = get_signature_index_at(index)
+      frag = @code[cursed..index]
+      # Shortcut for integers without methods
+      return 'Integer' if frag.match(/^[0-9]+?\.?$/)
+      literal = nil
+      if frag.start_with?('.')
+        literal = node_at(cursed - 1)
+      else
+        beg_sig = get_signature_index_at(index)
+        literal = node_at(1 + beg_sig)
+      end
+      type = infer_literal_node_type(literal)
+      if type.nil?
+        node = parent_node_from(index, :class, :module, :def, :defs) || @node
+        result = infer_signature_from_node signature, node
+        if result.nil? or result.empty?
+          arg = nil
+          if node.type == :def or node.type == :defs or node.type == :block
+            # Check for method arguments
+            parts = signature.split('.', 2)
+            # @type [Solargraph::Suggestion]
+            arg = get_method_arguments_from(node).keep_if{|s| s.to_s == parts[0] }.first
+            unless arg.nil?
+              if parts[1].nil?
+                result = arg.return_type
+              else
+                result = api_map.infer_signature_type(parts[1], parts[0], :instance)
+              end
+            end
+          end
+          if arg.nil?
+            # Check for yieldparams
+            parts = signature.split('.', 2)
+            yp = get_yieldparams_at(index).keep_if{|s| s.to_s == parts[0]}.first
+            unless yp.nil?
+              if parts[1].nil? or parts[1].empty?
+                result = yp.return_type
+              else
+                newsig = parts[1..-1].join('.')
+                result = api_map.infer_signature_type(newsig, yp.return_type, scope: :instance)
+              end
             end
           end
         end
-        if arg.nil?
-          # Check for yieldparams
-          parts = signature.split('.', 2)
-          yp = get_yieldparams_at(index).keep_if{|s| s.to_s == parts[0]}.first
-          unless yp.nil?
-            if parts[1].nil? or parts[1].empty?
-              result = yp.return_type
-            else
-              newsig = parts[1..-1].join('.')
-              result = api_map.infer_signature_type(newsig, yp.return_type, scope: :instance)
-            end
-          end
+      else
+        rest = signature[literal.loc.expression.end_pos+(cursed-literal.loc.expression.end_pos)..-1]
+        lit_code = @code[literal.loc.expression.begin_pos..literal.loc.expression.end_pos]
+        rest = rest[lit_code.length..-1] if rest.start_with?(lit_code)
+        rest = rest[1..-1] if rest.start_with?('.')
+        rest = rest[0..-2] if rest.end_with?('.')
+        if rest.empty?
+          result = type
+        else
+          result = api_map.infer_signature_type(rest, type, scope: :instance)
         end
       end
       result
