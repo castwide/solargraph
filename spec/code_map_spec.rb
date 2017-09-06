@@ -372,4 +372,14 @@ describe Solargraph::CodeMap do
     type = code_map.infer_signature_at(10)
     expect(type).to eq('String')
   end
+
+  it "infers signatures for multi-line % strings" do
+    code_map = Solargraph::CodeMap.new(code: %(
+      %(
+        string
+      ).
+    ))
+    type = code_map.infer_signature_at(33)
+    expect(type).to eq('String')
+  end
 end

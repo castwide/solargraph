@@ -429,17 +429,21 @@ module Solargraph
           end
         end
       else
-        cursed = get_signature_index_at(index)
-        rest = signature[literal.loc.expression.end_pos+(cursed-literal.loc.expression.end_pos)..-1]
-        unless rest.nil?
-          lit_code = @code[literal.loc.expression.begin_pos..literal.loc.expression.end_pos]
-          rest = rest[lit_code.length..-1] if rest.start_with?(lit_code)
-          rest = rest[1..-1] if rest.start_with?('.')
-          rest = rest[0..-2] if rest.end_with?('.')
-          if rest.empty?
-            result = type
-          else
-            result = api_map.infer_signature_type(rest, type, scope: :instance)
+        if signature.empty?
+          result = type
+        else
+          cursed = get_signature_index_at(index)
+          rest = signature[literal.loc.expression.end_pos+(cursed-literal.loc.expression.end_pos)..-1]
+          unless rest.nil?
+            lit_code = @code[literal.loc.expression.begin_pos..literal.loc.expression.end_pos]
+            rest = rest[lit_code.length..-1] if rest.start_with?(lit_code)
+            rest = rest[1..-1] if rest.start_with?('.')
+            rest = rest[0..-2] if rest.end_with?('.')
+            if rest.empty?
+              result = type
+            else
+              result = api_map.infer_signature_type(rest, type, scope: :instance)
+            end
           end
         end
       end
