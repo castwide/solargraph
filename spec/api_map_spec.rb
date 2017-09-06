@@ -363,4 +363,20 @@ describe Solargraph::ApiMap do
     sugg = api_map.get_instance_methods('Foo').keep_if{|s| s.label == 'bar'}.first
     expect(sugg.arguments).to eq(['baz:', "boo: 'boo'"])
   end
+
+  it "recognizes rebased namespaces" do
+    code = %(
+      class Foo
+        class ::Bar
+          def baz
+          end
+        end
+      end
+    )
+    api_map = Solargraph::ApiMap.new
+    api_map.append_source(code, 'file.rb')
+    expect(api_map.namespaces).to eq(['Foo', 'Bar'])
+    sugg = api_map.get_instance_methods('Bar')
+    expect(sugg.map(&:to_s)).to include('baz')
+  end
 end

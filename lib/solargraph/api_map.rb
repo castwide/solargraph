@@ -881,7 +881,7 @@ module Solargraph
                     @method_pins[fqn].push MethodPin.new(c, fqn, scope, visibility, get_comment_for(c))
                     map_namespaces c, tree, visibility, scope, fqn, :instance
                     next
-                  elsif c.type == :defs and
+                  elsif c.type == :defs
                     @method_pins[fqn] ||= []
                     @method_pins[fqn].push MethodPin.new(c, fqn, :class, :public, get_comment_for(c))
                     map_namespaces c, tree, :public, :class, fqn
