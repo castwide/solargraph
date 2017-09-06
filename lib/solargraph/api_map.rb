@@ -5,6 +5,8 @@ module Solargraph
   class ApiMap
     autoload :Config, 'solargraph/api_map/config'
     autoload :Cache,  'solargraph/api_map/cache'
+    autoload :MethodPin, 'solargraph/api_map/method_pin'
+    autoload :AttrPin, 'solargraph/api_map/attr_pin'
 
     KEYWORDS = [
       '__ENCODING__', '__LINE__', '__FILE__', 'BEGIN', 'END', 'alias', 'and',
@@ -517,6 +519,10 @@ module Solargraph
       @namespace_map = {}
       @namespace_tree = {}
       @required = []
+      @instance_method_nodes = {}
+      @attr_nodes = {}
+      @namespace_includes = {}
+      @superclasses = {}
     end
 
     def process_maps
@@ -618,8 +624,37 @@ module Solargraph
       meths = []
       return meths if skip.include?(fqns)
       skip.push fqns
-      nodes = get_namespace_nodes(fqns)
-      current_scope = :public
+      #nodes = get_namespace_nodes(fqns)
+      #current_scope = :public
+      # @todo Shortcut way!
+      an = @attr_nodes[fqns]
+      unless an.nil?
+        an.each do |pin|
+          meths.concat pin.suggestions
+        end
+      end
+      mn = @instance_method_nodes[fqns]
+      unless mn.nil?
+        mn.select{|pin| visibility.include?(pin.visibility) }.each do |pin|
+          c = pin.node
+          cmnt = get_comment_for(c)
+          label = "#{c.children[0]}"
+          args = get_method_args(c)
+          meths.push Suggestion.new(label, insert: c.children[0].to_s.gsub(/=/, ' = '), kind: Suggestion::METHOD, documentation: cmnt, detail: fqns, arguments: args) if c.children[0].to_s[0].match(/[a-z]/i)
+        end
+      end
+      if visibility.include?(:public) or visibility.include?(:protected)
+        sc = @superclasses[fqns]
+        meths.concat inner_get_instance_methods(sc, fqns, skip, visibility - [:private]) unless sc.nil?
+      end
+      im = @namespace_includes[fqns]
+      unless im.nil?
+        im.each do |i|
+          meths.concat inner_get_instance_methods(i, fqns, skip, visibility)
+        end
+      end
+      return meths
+      # @todo Old way
       nodes.each { |n|
         f = get_filename_for(n)
         unless yardoc_has_file?(get_filename_for(n))
@@ -948,9 +983,11 @@ module Solargraph
       }
     end
 
-    def map_namespaces node, tree = []
+    def map_namespaces node, tree = [], visibility = :public
       if node.kind_of?(AST::Node)
+        fqn = nil
         if node.type == :class or node.type == :module
+          visibility = :public
           if node.children[0].kind_of?(AST::Node) and node.children[0].children[0].kind_of?(AST::Node) and node.children[0].children[0].type == :cbase
             tree = pack_name(node.children[0])
           else
@@ -960,9 +997,33 @@ module Solargraph
           fqn = tree.join('::')
           @namespace_map[fqn] ||= []
           @namespace_map[fqn].push node
+          if node.type == :class and !node.children[1].nil?
+            sc = unpack_name(node.children[1])
+            @superclasses[fqn] = sc
+          end
         end
+        file = get_filename_for(node)
         node.children.each { |c|
-          map_namespaces c, tree
+          unless fqn.nil? or yardoc_has_file?(file)
+            if c.kind_of?(AST::Node)
+              if c.type == :def
+                @instance_method_nodes[fqn] ||= []
+                @instance_method_nodes[fqn].push MethodPin.new(c, visibility)
+              elsif c.type == :send and [:public, :protected, :private].include?(c.children[1])
+                visibility = c.children[1]
+              elsif c.type == :send and c.children[1] == :include and node.type == :class
+                @namespace_includes[fqn] ||= []
+                @namespace_includes[fqn].push unpack_name(c.children[2])
+              elsif c.type == :send and [:attr_reader, :attr_writer, :attr_accessor].include?(c.children[1])
+                #c.children[2..-1].each { |x|
+                #  meths.push Suggestion.new(x.children[0], kind: Suggestion::FIELD) if x.type == :sym
+                #}
+                @attr_nodes[fqn] ||= []
+                @attr_nodes[fqn].push AttrPin.new(c)
+              end
+            end
+          end
+          map_namespaces c, tree, visibility
         }
       end
     end

@@ -410,7 +410,7 @@ module Solargraph
               if parts[1].nil?
                 result = arg.return_type
               else
-                result = api_map.infer_signature_type(parts[1], parts[0], :instance)
+                result = api_map.infer_signature_type(parts[1], parts[0], scope: :instance)
               end
             end
           end
