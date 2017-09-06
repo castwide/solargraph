@@ -70,7 +70,7 @@ describe Solargraph::ApiMap do
   end
 
   it "finds class instance variables" do
-    vars = @api_map.get_instance_variables("Class1", scope: :class)
+    vars = @api_map.get_instance_variables("Class1", :class)
     expect(vars.map(&:to_s)).to include('@baz')
     expect(vars.map(&:to_s)).not_to include('@bar')
   end
@@ -321,5 +321,20 @@ describe Solargraph::ApiMap do
     api_map.append_source(code, 'file.rb')
     type = api_map.infer_signature_type('Foo.bar', '')
     expect(type).to eq('String')
+  end
+
+  it "finds singleton methods in class << self blocks" do
+    code = %(
+      class Foo
+        class << self
+          def bar
+          end
+        end
+      end
+    )
+    api_map = Solargraph::ApiMap.new
+    api_map.append_source(code, 'file.rb')
+    sugg = api_map.get_methods('Foo')
+    expect(sugg.map(&:to_s)).to include('bar')
   end
 end

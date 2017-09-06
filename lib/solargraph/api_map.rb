@@ -7,6 +7,8 @@ module Solargraph
     autoload :Cache,  'solargraph/api_map/cache'
     autoload :MethodPin, 'solargraph/api_map/method_pin'
     autoload :AttrPin, 'solargraph/api_map/attr_pin'
+    autoload :IvarPin, 'solargraph/api_map/ivar_pin'
+    autoload :CvarPin, 'solargraph/api_map/cvar_pin'
 
     KEYWORDS = [
       '__ENCODING__', '__LINE__', '__FILE__', 'BEGIN', 'END', 'alias', 'and',
@@ -178,22 +180,35 @@ module Solargraph
       @namespace_map[fqns] || []
     end
 
+    #def get_instance_variables(namespace, scope = :instance)
+    #  nodes = get_namespace_nodes(namespace) || @file_nodes.values
+    #  arr = []
+    #  nodes.each { |n|
+    #    arr += inner_get_instance_variables(n, namespace, scope)
+    #  }
+    #  arr
+    #end
+
     def get_instance_variables(namespace, scope = :instance)
-      nodes = get_namespace_nodes(namespace) || @file_nodes.values
-      arr = []
-      nodes.each { |n|
-        arr += inner_get_instance_variables(n, namespace, scope)
-      }
-      arr
+      result = []
+      ip = @ivar_pins[namespace]
+      unless ip.nil?
+        ip.select{ |pin| pin.scope == scope }.each do |pin|
+          result.push pin.suggestion(self)
+        end
+      end
+      result
     end
 
     def get_class_variables(namespace)
-      nodes = get_namespace_nodes(namespace) || @file_nodes.values
-      arr = []
-      nodes.each { |n|
-        arr += inner_get_class_variables(n, namespace)
-      }
-      arr
+      result = []
+      ip = @cvar_pins[namespace]
+      unless ip.nil?
+        ip.each do |pin|
+          result.push pin.suggestion(self)
+        end
+      end
+      result
     end
 
     def find_parent(node, *types)
@@ -407,31 +422,6 @@ module Solargraph
       end
     end
 
-    # @return [Array<String>]
-    def get_method_args node
-      list = nil
-      args = []
-      node.children.each { |c|
-        if c.kind_of?(AST::Node) and c.type == :args
-          list = c
-          break
-        end
-      }
-      return args if list.nil?
-      list.children.each { |c|
-        if c.type == :arg
-          args.push c.children[0]
-        elsif c.type == :optarg
-          args.push "#{c.children[0]} = #{code_for(c.children[1])}"
-        elsif c.type == :kwarg
-          args.push "#{c.children[0]}:"
-        elsif c.type == :kwoptarg
-          args.push "#{c.children[0]}: #{code_for(c.children[1])}"
-        end
-      }
-      args
-    end
-
     # Get an array of instance methods that are available in the specified
     # namespace.
     #
@@ -519,7 +509,11 @@ module Solargraph
       @namespace_map = {}
       @namespace_tree = {}
       @required = []
-      @instance_method_nodes = {}
+      #@instance_method_nodes = {}
+      #@method_nodes = {}
+      @ivar_pins = {}
+      @cvar_pins = {}
+      @method_pins = {}
       @attr_nodes = {}
       @namespace_includes = {}
       @superclasses = {}
@@ -572,51 +566,27 @@ module Solargraph
       skip.push namespace
       fqns = find_fully_qualified_namespace(namespace, root)
       return meths if fqns.nil?
-      nodes = get_namespace_nodes(fqns)
-      nodes.each { |n|
-        unless yardoc_has_file?(get_filename_for(n))
-          if n.kind_of?(AST::Node)
-            if n.type == :class and !n.children[1].nil?
-              s = unpack_name(n.children[1])
-              meths += inner_get_methods(s, root, skip)
-            end
-            vis = [:public]
-            vis.push :private, :protected if namespace == root
-            meths += inner_get_methods_from_node(n, root, :class, skip, vis)
-          end
+      mn = @method_pins[fqns]
+      unless mn.nil?
+        mn.select{ |pin| pin.scope == :class }.each do |pin|
+          meths.push pin.suggestion
         end
-      }
+      end
+      #nodes = get_namespace_nodes(fqns)
+      #nodes.each { |n|
+      #  unless yardoc_has_file?(get_filename_for(n))
+      #    if n.kind_of?(AST::Node)
+      #      if n.type == :class and !n.children[1].nil?
+      #        s = unpack_name(n.children[1])
+      #        meths += inner_get_methods(s, root, skip)
+      #      end
+      #      vis = [:public]
+      #      vis.push :private, :protected if namespace == root
+      #      meths += inner_get_methods_from_node(n, root, :class, skip, vis)
+      #    end
+      #  end
+      #}
       meths.uniq
-    end
-
-    def inner_get_methods_from_node node, root, scope, skip, visibility, current_visibility = :public
-      meths = []
-      node.children.each { |c|
-        if c.kind_of?(AST::Node)
-          if c.kind_of?(AST::Node) and c.type == :send and [:public, :protected, :private].include?(c.children[1])
-            current_visibility = c.children[1]
-          elsif (c.type == :defs and scope == :class) or (c.type == :def and scope == :instance)
-            next unless visibility.include?(current_visibility)
-            docstring = get_comment_for(c)
-            child_index = (scope == :class ? 1 : 0)
-            label = "#{c.children[child_index]}"
-            args = get_method_args(c)
-            if (c.children[child_index].to_s[0].match(/[a-z_]/i) and c.children[child_index] != :def)
-              meths.push Suggestion.new(label, insert: c.children[child_index].to_s.gsub(/=/, ' = '), kind: Suggestion::METHOD, detail: 'Method', documentation: docstring, arguments: args)
-            end
-          elsif c.type == :sclass and scope == :class and c.children[0].type == :self
-            meths.concat inner_get_methods_from_node c, root, :instance, skip, visibility
-          elsif c.type == :send and c.children[1] == :include
-            # TODO: This might not be right. Should we be getting singleton methods
-            # from an include, or only from an extend?
-            i = unpack_name(c.children[2])
-            meths.concat inner_get_methods(i, root, skip) unless i == 'Kernel'
-          else
-            meths.concat inner_get_methods_from_node(c, root, scope, skip, visibility, current_visibility)
-          end
-        end
-      }
-      meths
     end
 
     def inner_get_instance_methods(namespace, root, skip, visibility = [:public])
@@ -624,23 +594,16 @@ module Solargraph
       meths = []
       return meths if skip.include?(fqns)
       skip.push fqns
-      #nodes = get_namespace_nodes(fqns)
-      #current_scope = :public
-      # @todo Shortcut way!
       an = @attr_nodes[fqns]
       unless an.nil?
         an.each do |pin|
           meths.concat pin.suggestions
         end
       end
-      mn = @instance_method_nodes[fqns]
+      mn = @method_pins[fqns]
       unless mn.nil?
-        mn.select{|pin| visibility.include?(pin.visibility) }.each do |pin|
-          c = pin.node
-          cmnt = get_comment_for(c)
-          label = "#{c.children[0]}"
-          args = get_method_args(c)
-          meths.push Suggestion.new(label, insert: c.children[0].to_s.gsub(/=/, ' = '), kind: Suggestion::METHOD, documentation: cmnt, detail: fqns, arguments: args) if c.children[0].to_s[0].match(/[a-z]/i)
+        mn.select{|pin| visibility.include?(pin.visibility) and pin.scope == :instance }.each do |pin|
+          meths.push pin.suggestion
         end
       end
       if visibility.include?(:public) or visibility.include?(:protected)
@@ -653,57 +616,6 @@ module Solargraph
           meths.concat inner_get_instance_methods(i, fqns, skip, visibility)
         end
       end
-      return meths
-      # @todo Old way
-      nodes.each { |n|
-        f = get_filename_for(n)
-        unless yardoc_has_file?(get_filename_for(n))
-          if n.kind_of?(AST::Node)
-            if n.type == :class and !n.children[1].nil?
-              s = unpack_name(n.children[1])
-              # @todo This skip might not work properly. We might need to get a
-              #   fully qualified namespace from it first
-              meths += get_instance_methods(s, namespace, visibility: visibility - [:private]) unless skip.include?(s)
-            end
-            n.children.each { |c|
-              if c.kind_of?(AST::Node) and c.type == :send and [:public, :protected, :private].include?(c.children[1])
-                current_scope = c.children[1]
-              elsif c.kind_of?(AST::Node) and c.type == :send and c.children[1] == :include and n.type == :class
-                fqmod = find_fully_qualified_namespace(const_from(c.children[2]), root)
-                meths += get_instance_methods(fqmod) unless fqmod.nil? or skip.include?(fqmod)
-              else
-                if c.kind_of?(AST::Node) and c.type == :def
-                  if visibility.include?(current_scope)
-                    cmnt = get_comment_for(c)
-                    label = "#{c.children[0]}"
-                    args = get_method_args(c)
-                    meths.push Suggestion.new(label, insert: c.children[0].to_s.gsub(/=/, ' = '), kind: Suggestion::METHOD, documentation: cmnt, detail: fqns, arguments: args) if c.children[0].to_s[0].match(/[a-z]/i)
-                  end
-                elsif c.kind_of?(AST::Node) and c.type == :send and c.children[1] == :attr_reader
-                  c.children[2..-1].each { |x|
-                    meths.push Suggestion.new(x.children[0], kind: Suggestion::FIELD) if x.type == :sym
-                  }
-                elsif c.kind_of?(AST::Node) and c.type == :send and c.children[1] == :attr_writer
-                  c.children[2..-1].each { |x|
-                    meths.push Suggestion.new("#{x.children[0]}=", kind: Suggestion::FIELD) if x.type == :sym
-                  }
-                elsif c.kind_of?(AST::Node) and c.type == :send and c.children[1] == :attr_accessor
-                  c.children[2..-1].each { |x|
-                    meths.push Suggestion.new(x.children[0], kind: Suggestion::FIELD) if x.type == :sym
-                    meths.push Suggestion.new("#{x.children[0]}=", insert: "#{x.children[0]} = ", kind: Suggestion::FIELD) if x.type == :sym
-                  }
-                end
-              end
-            }
-          end
-        end
-        # This is necessary to get included modules from workspace definitions
-        if n.type == :class
-          get_include_strings_from(n).each { |i|
-            meths += inner_get_instance_methods(i, fqns, skip, visibility)
-          }
-        end
-      }
       meths.uniq
     end
 
@@ -763,6 +675,7 @@ module Solargraph
       result
     end
 
+=begin
     def inner_get_instance_variables(node, namespace, scope)
       arr = []
       if node.kind_of?(AST::Node)
@@ -779,7 +692,9 @@ module Solargraph
       end
       arr
     end
+=end
 
+=begin
     def inner_get_class_variables(node, namespace)
       arr = []
       if node.kind_of?(AST::Node)
@@ -794,6 +709,7 @@ module Solargraph
       end
       arr
     end
+=end
 
     # Get a fully qualified namespace for the given signature.
     # The signature should be in the form of a method chain, e.g.,
@@ -983,9 +899,8 @@ module Solargraph
       }
     end
 
-    def map_namespaces node, tree = [], visibility = :public
+    def map_namespaces node, tree = [], visibility = :public, scope = :instance, fqn = nil, local_scope = :class
       if node.kind_of?(AST::Node)
-        fqn = nil
         if node.type == :class or node.type == :module
           visibility = :public
           if node.children[0].kind_of?(AST::Node) and node.children[0].children[0].kind_of?(AST::Node) and node.children[0].children[0].type == :cbase
@@ -1004,36 +919,45 @@ module Solargraph
         end
         file = get_filename_for(node)
         node.children.each { |c|
-          unless fqn.nil? or yardoc_has_file?(file)
-            if c.kind_of?(AST::Node)
-              if c.type == :def
-                @instance_method_nodes[fqn] ||= []
-                @instance_method_nodes[fqn].push MethodPin.new(c, visibility)
-              elsif c.type == :send and [:public, :protected, :private].include?(c.children[1])
-                visibility = c.children[1]
-              elsif c.type == :send and c.children[1] == :include and node.type == :class
-                @namespace_includes[fqn] ||= []
-                @namespace_includes[fqn].push unpack_name(c.children[2])
-              elsif c.type == :send and [:attr_reader, :attr_writer, :attr_accessor].include?(c.children[1])
-                #c.children[2..-1].each { |x|
-                #  meths.push Suggestion.new(x.children[0], kind: Suggestion::FIELD) if x.type == :sym
-                #}
-                @attr_nodes[fqn] ||= []
-                @attr_nodes[fqn].push AttrPin.new(c)
+          if c.kind_of?(AST::Node)
+            if c.type == :ivasgn
+              @ivar_pins[fqn] ||= []
+              @ivar_pins[fqn].push IvarPin.new(c, fqn, local_scope, get_comment_for(c))
+            elsif c.type == :cvasgn
+              @cvar_pins[fqn] ||= []
+              @cvar_pins[fqn].push CvarPin.new(c, fqn, get_comment_for(c))
+            else
+              unless fqn.nil? or yardoc_has_file?(file)
+                if c.kind_of?(AST::Node)
+                  if c.type == :def and c.children[0].to_s[0].match(/[a-z]/i)
+                    @method_pins[fqn] ||= []
+                    @method_pins[fqn].push MethodPin.new(c, fqn, scope, visibility, get_comment_for(c))
+                    map_namespaces c, tree, visibility, scope, fqn, :instance
+                    next
+                  elsif c.type == :defs and
+                    @method_pins[fqn] ||= []
+                    @method_pins[fqn].push MethodPin.new(c, fqn, :class, :public, get_comment_for(c))
+                    map_namespaces c, tree, :public, :class, fqn
+                    next
+                  elsif c.type == :send and [:public, :protected, :private].include?(c.children[1])
+                    visibility = c.children[1]
+                  elsif c.type == :send and c.children[1] == :include and node.type == :class
+                    @namespace_includes[fqn] ||= []
+                    @namespace_includes[fqn].push unpack_name(c.children[2])
+                  elsif c.type == :send and [:attr_reader, :attr_writer, :attr_accessor].include?(c.children[1])
+                    @attr_nodes[fqn] ||= []
+                    @attr_nodes[fqn].push AttrPin.new(c)
+                  elsif c.type == :sclass and c.children[0].type == :self
+                    map_namespaces c, tree, :public, :class, fqn
+                    next
+                  end
+                end
               end
+              map_namespaces c, tree, visibility, scope, fqn
             end
           end
-          map_namespaces c, tree, visibility
         }
       end
-    end
-
-    def code_for node
-      src = @file_source[get_filename_for(node)]
-      return nil if src.nil?
-      b = node.location.expression.begin.begin_pos
-      e = node.location.expression.end.end_pos
-      src[b..e].strip.gsub(/,$/, '')
     end
 
     def clean_namespace_string namespace
