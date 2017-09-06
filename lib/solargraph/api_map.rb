@@ -180,15 +180,6 @@ module Solargraph
       @namespace_map[fqns] || []
     end
 
-    #def get_instance_variables(namespace, scope = :instance)
-    #  nodes = get_namespace_nodes(namespace) || @file_nodes.values
-    #  arr = []
-    #  nodes.each { |n|
-    #    arr += inner_get_instance_variables(n, namespace, scope)
-    #  }
-    #  arr
-    #end
-
     def get_instance_variables(namespace, scope = :instance)
       result = []
       ip = @ivar_pins[namespace]
@@ -460,7 +451,7 @@ module Solargraph
       }
       return nil
     end
-    
+
     def self.current
       if @current.nil?
         @current = ApiMap.new
@@ -468,7 +459,7 @@ module Solargraph
       end
       @current
     end
-    
+
     def get_include_strings_from *nodes
       arr = []
       nodes.each { |node|
@@ -480,7 +471,7 @@ module Solargraph
       }
       arr
     end
-    
+
     # Update the YARD documentation for the current workspace.
     #
     def update_yardoc
@@ -509,8 +500,6 @@ module Solargraph
       @namespace_map = {}
       @namespace_tree = {}
       @required = []
-      #@instance_method_nodes = {}
-      #@method_nodes = {}
       @ivar_pins = {}
       @cvar_pins = {}
       @method_pins = {}
@@ -572,20 +561,6 @@ module Solargraph
           meths.push pin.suggestion
         end
       end
-      #nodes = get_namespace_nodes(fqns)
-      #nodes.each { |n|
-      #  unless yardoc_has_file?(get_filename_for(n))
-      #    if n.kind_of?(AST::Node)
-      #      if n.type == :class and !n.children[1].nil?
-      #        s = unpack_name(n.children[1])
-      #        meths += inner_get_methods(s, root, skip)
-      #      end
-      #      vis = [:public]
-      #      vis.push :private, :protected if namespace == root
-      #      meths += inner_get_methods_from_node(n, root, :class, skip, vis)
-      #    end
-      #  end
-      #}
       meths.uniq
     end
 
@@ -674,42 +649,6 @@ module Solargraph
       end
       result
     end
-
-=begin
-    def inner_get_instance_variables(node, namespace, scope)
-      arr = []
-      if node.kind_of?(AST::Node)
-        node.children.each { |c|
-          if c.kind_of?(AST::Node)
-            is_inst = !find_parent(c, :def).nil?
-            if c.type == :ivasgn and c.children[0] and ( (scope == :instance and is_inst) or (scope != :instance and !is_inst) )
-              type = infer_assignment_node_type(c, namespace)
-              arr.push Suggestion.new(c.children[0], kind: Suggestion::VARIABLE, documentation: get_comment_for(c), return_type: type)
-            end
-            arr += inner_get_instance_variables(c, namespace, scope) unless [:class, :module].include?(c.type)
-          end
-        }
-      end
-      arr
-    end
-=end
-
-=begin
-    def inner_get_class_variables(node, namespace)
-      arr = []
-      if node.kind_of?(AST::Node)
-        node.children.each { |c|
-          next unless c.kind_of?(AST::Node)
-          if c.type == :cvasgn
-            type = infer_assignment_node_type(c, namespace)
-            arr.push Suggestion.new(c.children[0], kind: Suggestion::VARIABLE, documentation: get_comment_for(c), return_type: type)
-          end
-          arr += inner_get_class_variables(c, namespace) unless [:class, :module].include?(c.type)
-        }
-      end
-      arr
-    end
-=end
 
     # Get a fully qualified namespace for the given signature.
     # The signature should be in the form of a method chain, e.g.,
@@ -815,7 +754,7 @@ module Solargraph
       result = node.updated nil, mappable
       result
     end
-    
+
     def get_mappable_nodes arr, comment_hash
       result = []
       arr.each { |n|
@@ -829,7 +768,7 @@ module Solargraph
       }
       result
     end
-    
+
     def minify node, comment_hash
       return node if node.type == :args
       type = node.type
@@ -890,7 +829,7 @@ module Solargraph
         }
       end
     end
-    
+
     def add_to_namespace_tree tree
       cursor = @namespace_tree
       tree.each { |t|
