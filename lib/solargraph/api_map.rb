@@ -472,6 +472,14 @@ module Solargraph
       arr
     end
 
+    def code_for node
+      src = @file_source[get_filename_for(node)]
+      return nil if src.nil?
+      b = node.location.expression.begin.begin_pos
+      e = node.location.expression.end.end_pos
+      src[b..e].strip.gsub(/,$/, '')
+    end  
+
     # Update the YARD documentation for the current workspace.
     #
     def update_yardoc
@@ -558,7 +566,7 @@ module Solargraph
       mn = @method_pins[fqns]
       unless mn.nil?
         mn.select{ |pin| pin.scope == :class }.each do |pin|
-          meths.push pin.suggestion
+          meths.push pin.suggestion(self)
         end
       end
       meths.uniq
@@ -578,7 +586,7 @@ module Solargraph
       mn = @method_pins[fqns]
       unless mn.nil?
         mn.select{|pin| visibility.include?(pin.visibility) and pin.scope == :instance }.each do |pin|
-          meths.push pin.suggestion
+          meths.push pin.suggestion(self)
         end
       end
       if visibility.include?(:public) or visibility.include?(:protected)

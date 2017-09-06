@@ -15,20 +15,20 @@ module Solargraph
         @docstring = docstring
       end
 
-      def suggestion
-        @suggestion ||= generate_suggestion
+      def suggestion(api_map)
+        @suggestion ||= generate_suggestion(api_map)
       end
 
       private
 
-      def generate_suggestion
+      def generate_suggestion(api_map)
         i = node.type == :def ? 0 : 1
         label = "#{node.children[i]}"
-        Suggestion.new(label, insert: node.children[i].to_s.gsub(/=/, ' = '), kind: Suggestion::METHOD, documentation: docstring, detail: namespace, arguments: get_method_args)
+        Suggestion.new(label, insert: node.children[i].to_s.gsub(/=/, ' = '), kind: Suggestion::METHOD, documentation: docstring, detail: namespace, arguments: get_method_args(api_map))
       end
 
       # @return [Array<String>]
-      def get_method_args
+      def get_method_args(api_map)
         list = nil
         args = []
         node.children.each { |c|
@@ -40,25 +40,17 @@ module Solargraph
         return args if list.nil?
         list.children.each { |c|
           if c.type == :arg
-            args.push c.children[0]
+            args.push c.children[0].to_s
           elsif c.type == :optarg
-            args.push "#{c.children[0]} = #{code_for(c.children[1])}"
+            args.push "#{c.children[0]} = #{api_map.code_for(c.children[1])}"
           elsif c.type == :kwarg
             args.push "#{c.children[0]}:"
           elsif c.type == :kwoptarg
-            args.push "#{c.children[0]}: #{code_for(c.children[1])}"
+            args.push "#{c.children[0]}: #{api_map.code_for(c.children[1])}"
           end
         }
         args
       end
-
-      def code_for node
-        src = @file_source[get_filename_for(node)]
-        return nil if src.nil?
-        b = node.location.expression.begin.begin_pos
-        e = node.location.expression.end.end_pos
-        src[b..e].strip.gsub(/,$/, '')
-      end  
     end
   end
 end

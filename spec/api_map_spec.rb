@@ -337,4 +337,30 @@ describe Solargraph::ApiMap do
     sugg = api_map.get_methods('Foo')
     expect(sugg.map(&:to_s)).to include('bar')
   end
+
+  it "gets method arguments" do
+    code = %(
+      class Foo
+        def bar baz, boo = 'boo'
+        end
+      end
+    )
+    api_map = Solargraph::ApiMap.new
+    api_map.append_source(code, 'file.rb')
+    sugg = api_map.get_instance_methods('Foo').keep_if{|s| s.label == 'bar'}.first
+    expect(sugg.arguments).to eq(['baz', "boo = 'boo'"])
+  end
+
+  it "gets method keyword arguments" do
+    code = %(
+      class Foo
+        def bar baz:, boo: 'boo'
+        end
+      end
+    )
+    api_map = Solargraph::ApiMap.new
+    api_map.append_source(code, 'file.rb')
+    sugg = api_map.get_instance_methods('Foo').keep_if{|s| s.label == 'bar'}.first
+    expect(sugg.arguments).to eq(['baz:', "boo: 'boo'"])
+  end
 end
