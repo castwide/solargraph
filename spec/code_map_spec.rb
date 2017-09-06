@@ -4,9 +4,14 @@ describe Solargraph::CodeMap do
   before :all do
     @workspace = Dir.mktmpdir
     @filename = "#{@workspace}/test.rb"
+  end
 
-    # Unfinished instance variable at 92
-    @ivar_code = %(
+  after :all do
+    FileUtils.remove_entry @workspace
+  end
+
+  it "identifies position in def node" do
+    code_map = Solargraph::CodeMap.new(code: %(
       class Foo
         def bar
           @bar = ''
@@ -15,64 +20,7 @@ describe Solargraph::CodeMap do
           @
         end
       end
-    )
-
-    # Unfinished class variable at 93
-    # Instance variable assignment at 63
-    @cvar_code = %(
-      class Foo
-        @cvar = ''
-        def bar
-          @bar = ''
-        end
-        @
-      end
-    )
-
-    # Unfinished variable/method at 111
-    @lvar_code = %(
-      class Foo
-        def bar
-          @bar = ''
-        end
-        def baz
-          boo = ''
-          b
-        end
-      end
-    )
-
-    # Type tag
-    @type_tag = %(
-# @type [String]
-my_var = some_method_call
-my_var.
-    )
-
-    # Nested class
-    @nested = %(
-      class Foo
-        class Bar
-        end
-      end
-      Foo::Bar.
-    )
-
-    # Class variable 48/50
-    @classvar = %(
-      class Foo
-        @@var = ''
-        @@var.a
-      end
-    )
-  end
-
-  after :all do
-    FileUtils.remove_entry @workspace
-  end
-
-  it "identifies position in def node" do
-    code_map = Solargraph::CodeMap.new(code: @ivar_code)
+    ))
     node = code_map.node_at(92)
     expect(node.type).to eq(:def)
   end
@@ -90,32 +38,72 @@ my_var.
   end
 
   it "detects instance variables" do
-    code_map = Solargraph::CodeMap.new(code: @ivar_code)
+    code_map = Solargraph::CodeMap.new(code: %(
+      class Foo
+        def bar
+          @bar = ''
+        end
+        def baz
+          @
+        end
+      end
+    ))
     result = code_map.suggest_at(92)
     expect(result.map(&:to_s)).to include('@bar')
   end
 
   it "identifies position in class node" do
-    code_map = Solargraph::CodeMap.new(code: @cvar_code)
+    code_map = Solargraph::CodeMap.new(code: %(
+      class Foo
+        @cvar = ''
+        def bar
+          @bar = ''
+        end
+        @
+      end
+    ))
     node = code_map.node_at(93)
     expect(node.type).to eq(:class)
   end
 
   it "detects class variables" do
-    code_map = Solargraph::CodeMap.new(code: @cvar_code)
+    code_map = Solargraph::CodeMap.new(code: %(
+      class Foo
+        @cvar = ''
+        def bar
+          @bar = ''
+        end
+        @
+      end
+    ))
     result = code_map.suggest_at(93)
     expect(result.map(&:to_s)).to include('@cvar')
     expect(result.map(&:to_s)).not_to include('@bar')
   end
 
   it "detects class variables" do
-    code_map = Solargraph::CodeMap.new(code: @classvar)
+    code_map = Solargraph::CodeMap.new(code: %(
+      class Foo
+        @@var = ''
+        @@var.a
+      end
+    ))
     result = code_map.suggest_at(48)
     expect(result.map(&:to_s)).to include('@@var')
   end
 
   it "detects local variables and instance methods" do
-    code_map = Solargraph::CodeMap.new(code: @lvar_code)
+    code_map = Solargraph::CodeMap.new(code: %(
+      class Foo
+        def bar
+          @bar = ''
+        end
+        def baz
+          boo = ''
+          b
+        end
+      end
+    ))
     result = code_map.suggest_at(111)
     expect(result.map(&:to_s)).to include('bar')
     expect(result.map(&:to_s)).to include('baz')
@@ -158,28 +146,52 @@ my_var.
   end
 
   it "detects variable types from @type tags" do
-    code_map = Solargraph::CodeMap.new(code: @type_tag)
-    sugg = code_map.suggest_at(51)
+    code_map = Solargraph::CodeMap.new(code: %(
+      # @type [String]
+      my_var = some_method_call
+      my_var.
+    ))
+    sugg = code_map.suggest_at(69)
     expect(sugg.map{ |s| s.label }).to include('upcase')
-    sugg = code_map.resolve_object_at(49)
+    sugg = code_map.resolve_object_at(67)
     expect(sugg[0].path).to eq('String')
   end
 
   it "infers the type of an instance variable" do
-    code_map = Solargraph::CodeMap.new(code: @cvar_code)
+    code_map = Solargraph::CodeMap.new(code: %(
+      class Foo
+        @cvar = ''
+        def bar
+          @bar = ''
+        end
+        @
+      end
+    ))
     sugg = code_map.resolve_object_at(63)
     expect(sugg.length).to eq(1)
     expect(sugg[0].path).to eq('String')
   end
 
   it "detects a nested class name" do
-    code_map = Solargraph::CodeMap.new(code: @nested)
+    code_map = Solargraph::CodeMap.new(code: %(
+      class Foo
+        class Bar
+        end
+      end
+      Foo::Bar.
+    ))
     sugg = code_map.suggest_at(69)
     expect(sugg.map(&:to_s)).to include('Bar')
   end
 
   it "detects a nested class method" do
-    code_map = Solargraph::CodeMap.new(code: @nested)
+    code_map = Solargraph::CodeMap.new(code: %(
+      class Foo
+        class Bar
+        end
+      end
+      Foo::Bar.
+    ))
     sugg = code_map.suggest_at(72)
     expect(sugg.map(&:to_s)).to include('new')
   end
@@ -191,19 +203,46 @@ my_var.
   end
 
   it "accepts a filename without a workspace" do
-    code_map = Solargraph::CodeMap.new(code: @ivar_code, filename: @filename)
+    code_map = Solargraph::CodeMap.new(code: %(
+      class Foo
+        def bar
+          @bar = ''
+        end
+        def baz
+          @
+        end
+      end
+    ), filename: @filename)
     expect(code_map.filename).to eq(@filename)
     expect(code_map.workspace).to be(nil)
   end
 
   it "accepts a workspace without a filename" do
-    code_map = Solargraph::CodeMap.new(code: @ivar_code, workspace: @workspace)
+    code_map = Solargraph::CodeMap.new(code: %(
+      class Foo
+        def bar
+          @bar = ''
+        end
+        def baz
+          @
+        end
+      end
+    ), workspace: @workspace)
     expect(code_map.filename).to be(nil)
     expect(code_map.workspace).to eq(@workspace)
   end
 
   it "accepts a workspace and a filename" do
-    code_map = Solargraph::CodeMap.new(code: @ivar_code, workspace: @workspace, filename: @filename)
+    code_map = Solargraph::CodeMap.new(code: %(
+      class Foo
+        def bar
+          @bar = ''
+        end
+        def baz
+          @
+        end
+      end
+    ), workspace: @workspace, filename: @filename)
     expect(code_map.filename).to eq(@filename)
     expect(code_map.workspace).to eq(@workspace)
   end
