@@ -880,7 +880,8 @@ module Solargraph
           end
         end
         file = get_filename_for(node)
-        node.children.each { |c|
+        in_yardoc = yardoc_has_file?(file)
+        node.children.each do |c|
           if c.kind_of?(AST::Node)
             if c.type == :ivasgn
               @ivar_pins[fqn] ||= []
@@ -889,7 +890,7 @@ module Solargraph
               @cvar_pins[fqn] ||= []
               @cvar_pins[fqn].push CvarPin.new(c, fqn, get_comment_for(c))
             else
-              unless fqn.nil? or yardoc_has_file?(file)
+              unless fqn.nil? or in_yardoc
                 if c.kind_of?(AST::Node)
                   if c.type == :def and c.children[0].to_s[0].match(/[a-z]/i)
                     @method_pins[fqn] ||= []
@@ -918,7 +919,7 @@ module Solargraph
               map_namespaces c, tree, visibility, scope, fqn
             end
           end
-        }
+        end
       end
     end
 
