@@ -92,14 +92,19 @@ module Solargraph
     #
     # @return [AST::Node]
     def append_node node, comments, filename = nil
+      @stale = true
       @file_comments[filename] = associate_comments(node, comments)
       mapified = reduce(node, @file_comments[filename])
       root = AST::Node.new(:begin, [filename])
       root = root.append mapified
       @file_nodes[filename] = root
       @required.uniq!
-      process_maps
+      #process_maps
       root
+    end
+
+    def refresh force = false
+      process_maps if @stale or force
     end
 
     # Get the docstring associated with a node.
@@ -120,6 +125,7 @@ module Solargraph
     end
 
     def namespaces
+      refresh
       @namespace_map.keys
     end
 
@@ -128,6 +134,7 @@ module Solargraph
     end
 
     def namespaces_in name, root = ''
+      refresh
       result = []
       result += inner_namespaces_in(name, root, [])
       result += yard_map.get_constants name, root
@@ -142,6 +149,7 @@ module Solargraph
     end
 
     def find_fully_qualified_namespace name, root = '', skip = []
+      refresh
       return nil if skip.include?(root)
       skip.push root
       if name == ''
@@ -177,10 +185,12 @@ module Solargraph
 
     def get_namespace_nodes(fqns)
       return @file_nodes.values if fqns == '' or fqns.nil?
+      refresh
       @namespace_map[fqns] || []
     end
 
     def get_instance_variables(namespace, scope = :instance)
+      refresh
       result = []
       ip = @ivar_pins[namespace]
       unless ip.nil?
@@ -192,6 +202,7 @@ module Solargraph
     end
 
     def get_class_variables(namespace)
+      refresh
       result = []
       ip = @cvar_pins[namespace]
       unless ip.nil?
@@ -396,6 +407,7 @@ module Solargraph
     #
     # @return [Array<Solargraph::Suggestion>]
     def get_methods(namespace, root = '', visibility: [:public])
+      refresh
       namespace = clean_namespace_string(namespace)
       meths = []
       meths += inner_get_methods(namespace, root, []) #unless has_yardoc?
@@ -418,6 +430,7 @@ module Solargraph
     #
     # @return [Array<Solargraph::Suggestion>]
     def get_instance_methods(namespace, root = '', visibility: [:public])
+      refresh
       namespace = clean_namespace_string(namespace)
       if namespace.end_with?('#class')
         return get_methods(namespace.split('#').first, root, visibility: visibility)
@@ -501,6 +514,7 @@ module Solargraph
     private
 
     def clear
+      @stale = false
       @file_source = {}
       @file_nodes = {}
       @file_comments = {}
@@ -524,6 +538,7 @@ module Solargraph
         map_parents f
         map_namespaces f
       }
+      @stale = false
     end
 
     # @return [Solargraph::ApiMap::Cache]
