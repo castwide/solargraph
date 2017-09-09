@@ -15,6 +15,11 @@ module Solargraph
       GC.start
     end
 
+    def self.wait
+      @@semaphore.lock
+      @@semaphore.unlock
+    end
+
     post '/prepare' do
       STDERR.puts "Preparing #{params['workspace']}"
       Server.prepare_workspace params['workspace']
@@ -121,12 +126,14 @@ module Solargraph
       end
 
       def prepare_workspace directory
-        api_map = Solargraph::ApiMap.new(directory)
-        @@semaphore.synchronize {
-          api_map.update_yardoc
-          @@api_hash[directory] = api_map
-        }
-      end
+        Thread.new do
+          @@semaphore.synchronize {
+            api_map = Solargraph::ApiMap.new(directory)
+            api_map.update_yardoc
+            @@api_hash[directory] = api_map
+          }
+        end
+    end
     end
 
     class Helpers

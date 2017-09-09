@@ -1,5 +1,6 @@
 require 'rubygems'
 require 'parser/current'
+require 'thread'
 
 module Solargraph
   class ApiMap
@@ -9,6 +10,9 @@ module Solargraph
     autoload :AttrPin, 'solargraph/api_map/attr_pin'
     autoload :IvarPin, 'solargraph/api_map/ivar_pin'
     autoload :CvarPin, 'solargraph/api_map/cvar_pin'
+
+    @@yard_map_cache = {}
+    @@semaphore = Mutex.new
 
     KEYWORDS = [
       '__ENCODING__', '__LINE__', '__FILE__', 'BEGIN', 'END', 'alias', 'and',
@@ -61,7 +65,10 @@ module Solargraph
 
     # @return [Solargraph::YardMap]
     def yard_map
-      @yard_map ||= YardMap.new(required: required, workspace: workspace)
+      @@semaphore.synchronize {
+        @yard_map ||= @@yard_map_cache[[required, workspace]] || Solargraph::YardMap.new(required: required, workspace: workspace)
+        @@yard_map_cache[[required, workspace]] ||= @yard_map
+      }
     end
 
     # Add a file to the map.
@@ -509,6 +516,9 @@ module Solargraph
           end
         end
       end
+      @@semaphore.synchronize {
+        @@yard_map_cache.delete([required, workspace])
+      }
     end
 
     private
@@ -863,6 +873,7 @@ module Solargraph
 
     def map_namespaces node, tree = [], visibility = :public, scope = :instance, fqn = nil, local_scope = :class
       if node.kind_of?(AST::Node)
+        return if node.type == :str or node.type == :dstr
         if node.type == :class or node.type == :module
           visibility = :public
           if node.children[0].kind_of?(AST::Node) and node.children[0].children[0].kind_of?(AST::Node) and node.children[0].children[0].type == :cbase

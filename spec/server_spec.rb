@@ -66,6 +66,8 @@ describe Solargraph::Server do
   it "prepares a workspace" do
     post '/prepare', workspace: @workspace
     expect(last_response).to be_ok
+    #sleep(30)
+    Solargraph::Server.wait
     expect(Dir.exist?("#{@workspace}/.yardoc")).to be(true)
   end
 
