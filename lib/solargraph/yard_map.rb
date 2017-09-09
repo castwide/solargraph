@@ -1,7 +1,5 @@
-require 'rubygems'
 require 'parser/current'
 require 'yard'
-require 'bundler'
 
 module Solargraph
 
@@ -10,7 +8,7 @@ module Solargraph
 
     attr_reader :workspace
 
-    def initialize required: [], workspace: nil, with_bundled: false
+    def initialize required: [], workspace: nil
       @workspace = workspace
       unless workspace.nil?
         wsy = File.join(workspace, '.yardoc')
@@ -34,24 +32,7 @@ module Solargraph
       }
       yardocs.push File.join(Dir.home, '.solargraph', 'cache', '2.0.0', 'yardoc')
       yardocs.uniq!
-      include_bundled_gems if with_bundled
       cache_core
-    end
-
-    def include_bundled_gems
-      return if workspace.nil?
-      lockfile = File.join(workspace, 'Gemfile.lock')
-      return unless File.file?(lockfile)
-      parser = Bundler::LockfileParser.new(Bundler.read_file(lockfile))
-      parser.specs.each do |s|
-        STDERR.puts "Specs include #{s.name}"
-        gy = YARD::Registry.yardoc_file_for_gem(s.name)
-        if gy.nil?
-          STDERR.puts "Bundled gem not found: #{s.name}"
-        else
-          yardocs.unshift gy unless yardocs.include?(gy)
-        end
-      end
     end
 
     # @return [Array<String>]
