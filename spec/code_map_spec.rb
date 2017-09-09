@@ -382,4 +382,31 @@ describe Solargraph::CodeMap do
     type = code_map.infer_signature_at(33)
     expect(type).to eq('String')
   end
+
+  it "returns empty suggestions for unrecognized signature types" do
+    code_map = Solargraph::CodeMap.new(code: %(
+      class Foo
+        # @return [UnknownClass]
+        def bar
+        end
+      end
+      foo = Foo.new
+      foo.bar.
+    ))
+    sugg = code_map.suggest_at(124)
+    expect(sugg.length).to eq(0)
+  end
+
+  it "returns empty suggestions for undefined signature types" do
+    code_map = Solargraph::CodeMap.new(code: %(
+      class Foo
+        def bar
+        end
+      end
+      foo = Foo.new
+      foo.bar.
+    ))
+    sugg = code_map.suggest_at(89)
+    expect(sugg.length).to eq(0)
+  end
 end

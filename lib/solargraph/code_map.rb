@@ -263,10 +263,10 @@ module Solargraph
     def suggest_at index, filtered: false, with_snippets: false
       return [] if string_at?(index) or string_at?(index - 1) or comment_at?(index)
       result = []
+      signature = get_signature_at(index)
       if index == 0 or @code[index - 1].match(/[\.\s]/)
         type = infer_signature_at(index)
       else
-        signature = get_signature_at(index)
         if signature.include?('.')
           last_period = @code[0..index].rindex('.')
           if last_period.nil?
@@ -287,35 +287,37 @@ module Solargraph
         end
       end
       if type.nil?
-        phrase = phrase_at(index)
-        signature = get_signature_at(index)
-        namespace = namespace_at(index)
-        if phrase.include?('::')
-          parts = phrase.split('::', -1)
-          ns = parts[0..-2].join('::')
-          if parts.last.include?('.')
-            ns = parts[0..-2].join('::') + '::' + parts.last[0..parts.last.index('.')-1]
-            result = api_map.get_methods(ns)
-          else
-            result = api_map.namespaces_in(ns, namespace)
-          end
-        else
-          type = infer_literal_node_type(node_at(index - 2))
-          if type.nil?
-            current_namespace = namespace_at(index)
-            parts = current_namespace.to_s.split('::')
-            result += get_snippets_at(index) if with_snippets
-            result += get_local_variables_and_methods_at(index)
-            result += ApiMap.get_keywords
-            while parts.length > 0
-              ns = parts.join('::')
-              result += api_map.namespaces_in(ns, namespace)
-              parts.pop
+        unless signature.include?('.')
+          phrase = phrase_at(index)
+          signature = get_signature_at(index)
+          namespace = namespace_at(index)
+          if phrase.include?('::')
+            parts = phrase.split('::', -1)
+            ns = parts[0..-2].join('::')
+            if parts.last.include?('.')
+              ns = parts[0..-2].join('::') + '::' + parts.last[0..parts.last.index('.')-1]
+              result = api_map.get_methods(ns)
+            else
+              result = api_map.namespaces_in(ns, namespace)
             end
-            result += api_map.namespaces_in('')
-            result += api_map.get_instance_methods('Kernel')
           else
-            result.concat api_map.get_instance_methods(type)
+            type = infer_literal_node_type(node_at(index - 2))
+            if type.nil?
+              current_namespace = namespace_at(index)
+              parts = current_namespace.to_s.split('::')
+              result += get_snippets_at(index) if with_snippets
+              result += get_local_variables_and_methods_at(index)
+              result += ApiMap.get_keywords
+              while parts.length > 0
+                ns = parts.join('::')
+                result += api_map.namespaces_in(ns, namespace)
+                parts.pop
+              end
+              result += api_map.namespaces_in('')
+              result += api_map.get_instance_methods('Kernel')
+            else
+              result.concat api_map.get_instance_methods(type)
+            end
           end
         end
       else
