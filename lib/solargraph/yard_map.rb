@@ -1,4 +1,3 @@
-require 'rubygems'
 require 'parser/current'
 require 'yard'
 
