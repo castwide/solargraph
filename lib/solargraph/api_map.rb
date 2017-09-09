@@ -515,10 +515,10 @@ module Solargraph
             STDERR.puts "There was an error processing the workspace yardoc."
           end
         end
-      end
-      @@semaphore.synchronize {
-        @@yard_map_cache.delete([required, workspace])
-      }
+        @@semaphore.synchronize {
+          @@yard_map_cache.clear
+        }
+        end
     end
 
     private
