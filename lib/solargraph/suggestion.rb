@@ -39,14 +39,9 @@ module Solargraph
     def return_type
       if @return_type.nil?
         if code_object.nil?
-          unless documentation.nil?
-            if documentation.kind_of?(YARD::Docstring)
-              t = documentation.tag(:return)
-              @return_type = t.types[0] unless t.nil? or t.types.nil?
-            else
-              match = documentation.match(/@return \[([a-z0-9:_]*)/i)
-              @return_type = match[1] unless match.nil?
-            end
+          if documentation.kind_of?(YARD::Docstring)
+            t = documentation.tag(:return)
+            @return_type = t.types[0] unless t.nil? or t.types.nil?
           end
         else
           o = code_object.tag(:overload)
