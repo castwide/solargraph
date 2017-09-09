@@ -58,8 +58,8 @@ module Solargraph
 
     def documentation
       if @documentation.nil?
-        unless @code_object.nil?
-          @documentation = @code_object.docstring unless @code_object.docstring.nil?
+        unless @code_object.nil? or @code_object.docstring.nil?
+          @documentation = @code_object.docstring
         end
       end
       @documentation
