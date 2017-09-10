@@ -389,7 +389,7 @@ module Solargraph
       # Check for literals first
       return 'Integer' if signature.match(/^[0-9]+?\.?$/)
       literal = nil
-      if signature.empty? and @code[index - 1] == '.'
+      if (signature.empty? and @code[index - 1] == '.') or signature == '[].'
         literal = node_at(index - 2)
       elsif signature.start_with?('.')
         literal = node_at(index - 1)
@@ -436,16 +436,15 @@ module Solargraph
         else
           cursed = get_signature_index_at(index)
           rest = signature[literal.loc.expression.end_pos+(cursed-literal.loc.expression.end_pos)..-1]
-          unless rest.nil?
-            lit_code = @code[literal.loc.expression.begin_pos..literal.loc.expression.end_pos]
-            rest = rest[lit_code.length..-1] if rest.start_with?(lit_code)
-            rest = rest[1..-1] if rest.start_with?('.')
-            rest = rest[0..-2] if rest.end_with?('.')
-            if rest.empty?
-              result = type
-            else
-              result = api_map.infer_signature_type(rest, type, scope: :instance)
-            end
+          return type if rest.nil?
+          lit_code = @code[literal.loc.expression.begin_pos..literal.loc.expression.end_pos]
+          rest = rest[lit_code.length..-1] if rest.start_with?(lit_code)
+          rest = rest[1..-1] if rest.start_with?('.')
+          rest = rest[0..-2] if rest.end_with?('.')
+          if rest.empty?
+            result = type
+          else
+            result = api_map.infer_signature_type(rest, type, scope: :instance)
           end
         end
       end

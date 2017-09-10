@@ -383,6 +383,18 @@ describe Solargraph::CodeMap do
     expect(type).to eq('String')
   end
 
+  it "infers types for literal arrays" do
+    code_map = Solargraph::CodeMap.new(code: '[].')
+    type = code_map.infer_signature_at(3)
+    expect(type).to eq('Array')
+  end
+
+  it "returns suggestions for literal arrays" do
+    code_map = Solargraph::CodeMap.new(code: '[].')
+    sugg = code_map.suggest_at(3)
+    expect(sugg.map(&:to_s)).to include('join')
+  end
+
   it "returns empty suggestions for unrecognized signature types" do
     code_map = Solargraph::CodeMap.new(code: %(
       class Foo
