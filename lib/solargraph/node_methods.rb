@@ -51,6 +51,8 @@ module Solargraph
         return 'Integer'
       elsif node.type == :float
         return 'Float'
+      elsif node.type == :sym
+        return 'Symbol'
       end
       nil
     end

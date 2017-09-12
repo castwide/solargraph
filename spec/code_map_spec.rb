@@ -417,6 +417,12 @@ describe Solargraph::CodeMap do
     expect(sugg.map(&:to_s)).to include('join')
   end
 
+  it "infers literal symbols" do
+    code_map = Solargraph::CodeMap.new(code: ':foo.')
+    type = code_map.infer_signature_at(5)
+    expect(type).to eq('Symbol')
+  end
+
   it "returns empty suggestions for unrecognized signature types" do
     code_map = Solargraph::CodeMap.new(code: %(
       class Foo

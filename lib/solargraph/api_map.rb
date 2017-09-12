@@ -23,7 +23,7 @@ module Solargraph
     ].freeze
 
     MAPPABLE_NODES = [
-      :array, :hash, :str, :dstr, :int, :float, :block, :class, :sclass,
+      :array, :hash, :str, :dstr, :int, :float, :sym, :block, :class, :sclass,
       :module, :def, :defs, :ivasgn, :gvasgn, :lvasgn, :cvasgn, :casgn,
       :or_asgn, :const, :lvar, :args, :kwargs
     ].freeze
@@ -841,7 +841,7 @@ module Solargraph
         # TODO: The api_map should ignore local variables.
         type = node.children[0].type
         children.push node.children[0].children[0], node.children[1]
-      elsif [:array, :hash, :str, :dstr, :int, :float].include?(node.type)
+      elsif [:array, :hash, :str, :dstr, :int, :float, :sym].include?(node.type)
         # @todo Do we really care about the details?
       end
       result = node.updated(type, children)
