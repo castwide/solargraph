@@ -12,7 +12,7 @@ module Solargraph
         @included = []
         @excluded = []
         include_globs = ['**/*.rb']
-        exclude_globs = ['spec/**/*']
+        exclude_globs = ['spec/**/*', 'test/**/*']
         unless @workspace.nil?
           sfile = File.join(@workspace, '.solargraph.yml')
           if File.file?(sfile)
