@@ -387,9 +387,22 @@ describe Solargraph::CodeMap do
   end
 
   it "infers types from literal strings with chained methods" do
+    code_map = Solargraph::CodeMap.new(code: "''.split(',').length.")
+    type = code_map.infer_signature_at(21)
+    expect(type).to eq('Integer')
+  end
+
+  it "ignores special characters in strings" do
     code_map = Solargraph::CodeMap.new(code: "''.split('[').")
     type = code_map.infer_signature_at(14)
     expect(type).to eq('Array')
+    code_map = Solargraph::CodeMap.new(code: %[
+      %[
+        ()(
+      ].
+    ])
+    type = code_map.infer_signature_at(30)
+    expect(type).to eq('String')
   end
 
   it "infers types for literal arrays" do
