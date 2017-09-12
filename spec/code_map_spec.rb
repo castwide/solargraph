@@ -386,6 +386,12 @@ describe Solargraph::CodeMap do
     expect(type).to eq('String')
   end
 
+  it "infers types from literal strings with chained methods" do
+    code_map = Solargraph::CodeMap.new(code: "''.split('[').")
+    type = code_map.infer_signature_at(14)
+    expect(type).to eq('Array')
+  end
+
   it "infers types for literal arrays" do
     code_map = Solargraph::CodeMap.new(code: '[].')
     type = code_map.infer_signature_at(3)
