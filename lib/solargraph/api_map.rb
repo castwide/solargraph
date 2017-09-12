@@ -532,15 +532,16 @@ module Solargraph
       @namespace_map = {}
       @namespace_tree = {}
       @required = []
+    end
+
+    def process_maps
+      cache.clear
       @ivar_pins = {}
       @cvar_pins = {}
       @method_pins = {}
       @attr_nodes = {}
       @namespace_includes = {}
       @superclasses = {}
-    end
-
-    def process_maps
       @parent_stack = {}
       @namespace_map = {}
       @namespace_tree = {}

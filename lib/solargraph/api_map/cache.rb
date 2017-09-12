@@ -21,6 +21,11 @@ module Solargraph
       def set_assignment_node_type node, namespace, value
         @assignment_node_types[[node, namespace]] = value
       end
+
+      def clear
+        @signature_types.clear
+        @assignment_node_types.clear
+      end
     end
   end
 end

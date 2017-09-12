@@ -98,6 +98,8 @@ module Solargraph
     # @return [Solargraph::ApiMap]
     def api_map
       @api_map ||= ApiMap.new(workspace)
+      @api_map.refresh
+      @api_map
     end
 
     # Get the offset of the specified line and column.

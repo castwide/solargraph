@@ -379,4 +379,27 @@ describe Solargraph::ApiMap do
     sugg = api_map.get_instance_methods('Bar')
     expect(sugg.map(&:to_s)).to include('baz')
   end
+
+  it "updates map data on refresh" do
+    api_map = Solargraph::ApiMap.new
+    code1 = %(
+      class Foo
+        # @return [String]
+        def bar;end
+      end
+    )
+    api_map.append_source(code1, 'file.rb')
+    type = api_map.infer_signature_type('Foo.new.bar', '')
+    expect(type).to eq('String')
+    code2 = %(
+      class Foo
+        # @return [Array]
+        def bar;end
+      end
+    )
+    api_map.append_source(code2, 'file.rb')
+    api_map.refresh
+    type = api_map.infer_signature_type('Foo.new.bar', '')
+    expect(type).to eq('Array')
+  end
 end

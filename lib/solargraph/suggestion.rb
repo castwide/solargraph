@@ -93,7 +93,7 @@ module Solargraph
         arguments: @arguments,
         params: params,
         return_type: return_type,
-        documentation: @helper.html_markup_rdoc(documentation.to_s)
+        documentation: documentation.nil? ? nil : @helper.html_markup_rdoc(documentation)
       }
       obj.to_json(args)
     end
