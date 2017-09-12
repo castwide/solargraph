@@ -339,6 +339,9 @@ describe Solargraph::CodeMap do
     code_map = Solargraph::CodeMap.new(code: "%w[one two].join(',').to_i.")
     type = code_map.infer_signature_at(27)
     expect(type).to eq('Integer')
+    code_map = Solargraph::CodeMap.new(code: "[].join(',').length.")
+    type = code_map.infer_signature_at(20)
+    expect(type).to eq('Integer')
   end
 
   it "infers signatures for literal integers" do
