@@ -395,7 +395,11 @@ module Solargraph
         literal = node_at(index - 1)
       else
         beg_sig = get_signature_index_at(index)
-        literal = node_at(1 + beg_sig)
+        if @code[beg_sig] == '.'
+          literal = node_at(beg_sig - 1)
+        else
+          literal = node_at(1 + beg_sig)
+        end
       end
       type = infer_literal_node_type(literal)
       if type.nil?
@@ -431,11 +435,19 @@ module Solargraph
           end
         end
       else
-        if signature.empty?
+        if signature.empty? or signature == '[].'
           result = type
         else
           cursed = get_signature_index_at(index)
-          rest = signature[literal.loc.expression.end_pos+(cursed-literal.loc.expression.end_pos)..-1]
+          if signature.start_with?('[].')
+            rest = signature[3..-1]
+          else
+            if signature.start_with?('.')
+              rest = signature[literal.loc.expression.end_pos+(cursed-literal.loc.expression.end_pos)..-1]
+            else
+              rest = signature
+            end
+          end
           return type if rest.nil?
           lit_code = @code[literal.loc.expression.begin_pos..literal.loc.expression.end_pos]
           rest = rest[lit_code.length..-1] if rest.start_with?(lit_code)
