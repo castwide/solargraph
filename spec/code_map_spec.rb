@@ -423,6 +423,17 @@ describe Solargraph::CodeMap do
     expect(type).to eq('Symbol')
   end
 
+  it "infers constants" do
+    code_map = Solargraph::CodeMap.new(code: %(
+      class Foo
+        BAR = 'bar'
+      end
+      Foo::BAR.
+    ))
+    type = code_map.infer_signature_at(62)
+    expect(type).to eq('String')
+  end
+
   it "returns empty suggestions for unrecognized signature types" do
     code_map = Solargraph::CodeMap.new(code: %(
       class Foo

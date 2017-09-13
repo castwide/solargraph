@@ -478,6 +478,13 @@ module Solargraph
       inferred = nil
       parts = signature.split('.')
       ns_here = namespace_from(node)
+      if parts[0] and parts[0].include?('::')
+        sub = get_namespace_or_constant(parts[0], ns_here)
+        unless sub.nil?
+          return sub if signature.match(/^#{parts[0]}\.$/)
+          parts[0] = sub
+        end
+      end
       unless signature.include?('.')
         fqns = api_map.find_fully_qualified_namespace(signature, ns_here)
         return "Class<#{fqns}>" unless fqns.nil?
@@ -788,6 +795,30 @@ module Solargraph
           end
         end
       }
+      nil
+    end
+
+    def get_namespace_or_constant con, namespace
+      parts = con.split('::')
+      conc = parts.shift
+      result = nil
+      is_constant = false
+      while parts.length > 0
+        result = api_map.find_fully_qualified_namespace("#{conc}::#{parts[0]}", namespace)
+        if result.nil? or result.empty?
+          sugg = api_map.namespaces_in(conc, namespace).select{ |s| s.label == parts[0] }.first
+          return nil if sugg.nil?
+          result = sugg.return_type
+          break if result.nil?
+          is_constant = true
+          conc = result
+          parts.shift
+        else
+          is_constant = false
+          conc += "::#{parts.shift}"
+        end
+      end
+      return result if is_constant
       nil
     end
 
