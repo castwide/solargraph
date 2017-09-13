@@ -202,7 +202,7 @@ module Solargraph
       ip = @ivar_pins[namespace]
       unless ip.nil?
         ip.select{ |pin| pin.scope == scope }.each do |pin|
-          result.push pin.suggestion(self)
+          result.push pin.suggestion
         end
       end
       result
@@ -214,7 +214,7 @@ module Solargraph
       ip = @cvar_pins[namespace]
       unless ip.nil?
         ip.each do |pin|
-          result.push pin.suggestion(self)
+          result.push pin.suggestion
         end
       end
       result
@@ -897,10 +897,10 @@ module Solargraph
           if c.kind_of?(AST::Node)
             if c.type == :ivasgn
               @ivar_pins[fqn] ||= []
-              @ivar_pins[fqn].push IvarPin.new(c, fqn, local_scope, get_comment_for(c))
+              @ivar_pins[fqn].push IvarPin.new(self, c, fqn, local_scope, get_comment_for(c))
             elsif c.type == :cvasgn
               @cvar_pins[fqn] ||= []
-              @cvar_pins[fqn].push CvarPin.new(c, fqn, get_comment_for(c))
+              @cvar_pins[fqn].push CvarPin.new(self, c, fqn, get_comment_for(c))
             else
               unless fqn.nil? or in_yardoc
                 if c.kind_of?(AST::Node)
