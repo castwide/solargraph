@@ -432,6 +432,8 @@ describe Solargraph::CodeMap do
     ))
     type = code_map.infer_signature_at(62)
     expect(type).to eq('String')
+    sugg = code_map.suggest_at(62)
+    expect(sugg.map(&:to_s)).to include('upcase')
   end
 
   it "returns empty suggestions for unrecognized signature types" do
