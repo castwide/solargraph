@@ -35,7 +35,7 @@ module Solargraph
 
     METHODS_RETURNING_SELF = [
       'clone', 'dup', 'freeze', 'taint', 'untaint'
-    ]
+    ].freeze
 
     include NodeMethods
     include YardMethods
@@ -202,7 +202,7 @@ module Solargraph
       ip = @ivar_pins[namespace]
       unless ip.nil?
         ip.select{ |pin| pin.scope == scope }.each do |pin|
-          result.push pin.suggestion(self)
+          result.push pin.suggestion
         end
       end
       result
@@ -214,7 +214,7 @@ module Solargraph
       ip = @cvar_pins[namespace]
       unless ip.nil?
         ip.each do |pin|
-          result.push pin.suggestion(self)
+          result.push pin.suggestion
         end
       end
       result
@@ -872,7 +872,7 @@ module Solargraph
       }
     end
 
-    def map_namespaces node, tree = [], visibility = :public, scope = :instance, fqn = nil, local_scope = :class
+    def map_namespaces node, tree = [], visibility = :public, scope = :instance, fqn = nil
       if node.kind_of?(AST::Node)
         return if node.type == :str or node.type == :dstr
         if node.type == :class or node.type == :module
@@ -896,18 +896,20 @@ module Solargraph
         node.children.each do |c|
           if c.kind_of?(AST::Node)
             if c.type == :ivasgn
-              @ivar_pins[fqn] ||= []
-              @ivar_pins[fqn].push IvarPin.new(c, fqn, local_scope, get_comment_for(c))
+              @ivar_pins[fqn || ''] ||= []
+              par = find_parent(c, :class, :module, :def, :defs)
+              local_scope = ( (par.kind_of?(AST::Node) and par.type == :def) ? :instance : :class )
+              @ivar_pins[fqn || ''].push IvarPin.new(self, c, fqn || '', local_scope, get_comment_for(c))
             elsif c.type == :cvasgn
               @cvar_pins[fqn] ||= []
-              @cvar_pins[fqn].push CvarPin.new(c, fqn, get_comment_for(c))
+              @cvar_pins[fqn].push CvarPin.new(self, c, fqn, get_comment_for(c))
             else
               unless fqn.nil? or in_yardoc
                 if c.kind_of?(AST::Node)
                   if c.type == :def and c.children[0].to_s[0].match(/[a-z]/i)
                     @method_pins[fqn] ||= []
                     @method_pins[fqn].push MethodPin.new(c, fqn, scope, visibility, get_comment_for(c))
-                    map_namespaces c, tree, visibility, scope, fqn, :instance
+                    map_namespaces c, tree, visibility, scope, fqn
                     next
                   elsif c.type == :defs
                     @method_pins[fqn] ||= []
