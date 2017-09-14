@@ -69,6 +69,25 @@ describe Solargraph::ApiMap do
     expect(vars.map(&:to_s)).to include('@bing')
   end
 
+  it "finds root instance variables" do
+    code = %(
+      class Foo
+        @not1 = ''
+        def bar
+          @not2 = ''
+        end
+      end
+      @foobar = ''
+    )
+    api_map = Solargraph::ApiMap.new
+    api_map.append_source(code, 'file.rb')
+    api_map.refresh
+    vars = api_map.get_instance_variables('', :class).map(&:to_s)
+    expect(vars).to include('@foobar')
+    expect(vars).not_to include('@not1')
+    expect(vars).not_to include('@not2')
+  end
+
   it "finds class instance variables" do
     vars = @api_map.get_instance_variables("Class1", :class)
     expect(vars.map(&:to_s)).to include('@baz')
