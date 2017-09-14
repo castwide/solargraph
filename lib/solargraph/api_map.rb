@@ -4,12 +4,13 @@ require 'thread'
 
 module Solargraph
   class ApiMap
-    autoload :Config, 'solargraph/api_map/config'
-    autoload :Cache,  'solargraph/api_map/cache'
+    autoload :Config,    'solargraph/api_map/config'
+    autoload :Cache,     'solargraph/api_map/cache'
     autoload :MethodPin, 'solargraph/api_map/method_pin'
-    autoload :AttrPin, 'solargraph/api_map/attr_pin'
-    autoload :IvarPin, 'solargraph/api_map/ivar_pin'
-    autoload :CvarPin, 'solargraph/api_map/cvar_pin'
+    autoload :AttrPin,   'solargraph/api_map/attr_pin'
+    autoload :IvarPin,   'solargraph/api_map/ivar_pin'
+    autoload :CvarPin,   'solargraph/api_map/cvar_pin'
+    autoload :ConstPin,  'solargraph/api_map/const_pin'
 
     @@yard_map_cache = {}
     @@semaphore = Mutex.new
@@ -538,6 +539,7 @@ module Solargraph
       cache.clear
       @ivar_pins = {}
       @cvar_pins = {}
+      @const_pins = {}
       @method_pins = {}
       @attr_nodes = {}
       @namespace_includes = {}
@@ -903,6 +905,9 @@ module Solargraph
             elsif c.type == :cvasgn
               @cvar_pins[fqn] ||= []
               @cvar_pins[fqn].push CvarPin.new(self, c, fqn, get_comment_for(c))
+            elsif c.type == :casgn
+              @const_pins[fqn] ||= []
+              @const_pins[fqn].push ConstPin.new(self, c, fqn, get_comment_for(c))
             else
               unless fqn.nil? or in_yardoc
                 if c.kind_of?(AST::Node)
