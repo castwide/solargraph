@@ -896,7 +896,7 @@ module Solargraph
         node.children.each do |c|
           if c.kind_of?(AST::Node)
             if c.type == :ivasgn
-              @ivar_pins[fqn] ||= []
+              @ivar_pins[fqn || ''] ||= []
               par = find_parent(c, :class, :module, :def, :defs)
               local_scope = ( (par.kind_of?(AST::Node) and par.type == :def) ? :instance : :class )
               @ivar_pins[fqn || ''].push IvarPin.new(self, c, fqn || '', local_scope, get_comment_for(c))
