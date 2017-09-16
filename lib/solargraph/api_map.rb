@@ -852,7 +852,9 @@ module Solargraph
         type = node.children[0].type
         children.push node.children[0].children[0], node.children[1]
       elsif [:array, :hash, :str, :dstr, :int, :float].include?(node.type)
-        # @todo Do we really care about the details?
+        node.children.each do |c|
+          children.push minify(c, comment_hash) if mappable?(c)
+        end
       elsif node.type == :sym
         children.push node.children[0]
       end
