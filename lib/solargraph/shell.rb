@@ -7,6 +7,13 @@ require 'net/http'
 
 module Solargraph
   class Shell < Thor
+    map %w[--version -v] => :version
+
+    desc "--version, -v", "Print the version"
+    def version
+      puts Solargraph::VERSION
+    end
+
     desc 'prepare', 'Cache YARD files for the current environment'
     option :force, type: :boolean, aliases: :f, desc: 'Force download of YARDOC files if they already exist'
     option :host, type: :string, aliases: :h, desc: 'The host that provides YARDOC files for download', default: 'yardoc.solargraph.org'
