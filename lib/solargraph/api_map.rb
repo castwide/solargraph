@@ -4,12 +4,13 @@ require 'thread'
 
 module Solargraph
   class ApiMap
-    autoload :Config, 'solargraph/api_map/config'
-    autoload :Cache,  'solargraph/api_map/cache'
+    autoload :Config,    'solargraph/api_map/config'
+    autoload :Cache,     'solargraph/api_map/cache'
     autoload :MethodPin, 'solargraph/api_map/method_pin'
-    autoload :AttrPin, 'solargraph/api_map/attr_pin'
-    autoload :IvarPin, 'solargraph/api_map/ivar_pin'
-    autoload :CvarPin, 'solargraph/api_map/cvar_pin'
+    autoload :AttrPin,   'solargraph/api_map/attr_pin'
+    autoload :IvarPin,   'solargraph/api_map/ivar_pin'
+    autoload :CvarPin,   'solargraph/api_map/cvar_pin'
+    autoload :SymbolPin, 'solargraph/api_map/symbol_pin'
 
     @@yard_map_cache = {}
     @@semaphore = Mutex.new
@@ -216,6 +217,14 @@ module Solargraph
         ip.each do |pin|
           result.push pin.suggestion
         end
+      end
+      result
+    end
+
+    def get_symbols
+      result = []
+      @symbol_pins.each do |pin|
+        result.push pin.suggestion
       end
       result
     end
@@ -539,6 +548,7 @@ module Solargraph
       @ivar_pins = {}
       @cvar_pins = {}
       @method_pins = {}
+      @symbol_pins = []
       @attr_nodes = {}
       @namespace_includes = {}
       @superclasses = {}
@@ -841,8 +851,12 @@ module Solargraph
         # TODO: The api_map should ignore local variables.
         type = node.children[0].type
         children.push node.children[0].children[0], node.children[1]
-      elsif [:array, :hash, :str, :dstr, :int, :float, :sym].include?(node.type)
-        # @todo Do we really care about the details?
+      elsif [:array, :hash, :str, :dstr, :int, :float].include?(node.type)
+        node.children.each do |c|
+          children.push minify(c, comment_hash) if mappable?(c)
+        end
+      elsif node.type == :sym
+        children.push node.children[0]
       end
       result = node.updated(type, children)
       result
@@ -903,6 +917,8 @@ module Solargraph
             elsif c.type == :cvasgn
               @cvar_pins[fqn] ||= []
               @cvar_pins[fqn].push CvarPin.new(self, c, fqn, get_comment_for(c))
+            elsif c.type == :sym
+              @symbol_pins.push SymbolPin.new(c)
             else
               unless fqn.nil? or in_yardoc
                 if c.kind_of?(AST::Node)

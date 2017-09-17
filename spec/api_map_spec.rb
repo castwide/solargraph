@@ -421,4 +421,23 @@ describe Solargraph::ApiMap do
     type = api_map.infer_signature_type('Foo.new.bar', '')
     expect(type).to eq('Array')
   end
+
+  it "collects symbol pins" do
+    code = %(
+      x = :foo
+      class Bar
+        autoload :Baz, 'baz'
+        initiate :bang
+      end
+      puts :bong
+    )
+    api_map = Solargraph::ApiMap.new
+    api_map.append_source(code, 'file.rb')
+    api_map.refresh
+    syms = api_map.get_symbols.map(&:to_s)
+    expect(syms).to include(':foo')
+    expect(syms).to include(':Baz')
+    expect(syms).to include(':bang')
+    expect(syms).to include(':bong')
+  end
 end
