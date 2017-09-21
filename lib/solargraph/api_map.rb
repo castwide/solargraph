@@ -107,7 +107,6 @@ module Solargraph
       root = root.append mapified
       @file_nodes[filename] = root
       @required.uniq!
-      #process_maps
       root
     end
 
@@ -222,6 +221,7 @@ module Solargraph
     end
 
     def get_symbols
+      refresh
       result = []
       @symbol_pins.each do |pin|
         result.push pin.suggestion
@@ -263,6 +263,7 @@ module Solargraph
     end
 
     def infer_instance_variable(var, namespace, scope)
+      refresh
       pins = @ivar_pins[namespace]
       return nil if pins.nil?
       pin = pins.select{|p| p.name == var and p.scope == scope}.first
