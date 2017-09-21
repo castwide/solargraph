@@ -263,17 +263,11 @@ module Solargraph
     end
 
     def infer_instance_variable(var, namespace, scope)
-      result = nil
-      vn = nil
-      fqns = find_fully_qualified_namespace(namespace)
-      unless fqns.nil?
-        get_namespace_nodes(fqns).each { |node|
-          vn = find_instance_variable_assignment(var, node, scope)
-          break unless vn.nil?
-        }
-      end
-      result = infer_assignment_node_type(vn, namespace) unless vn.nil?
-      result
+      pins = @ivar_pins[namespace]
+      return nil if pins.nil?
+      pin = pins.select{|p| p.name == var and p.scope == scope}.first
+      return nil if pin.nil?
+      pin.suggestion.return_type
     end
 
     def infer_class_variable(var, namespace)

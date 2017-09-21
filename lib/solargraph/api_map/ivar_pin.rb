@@ -14,6 +14,10 @@ module Solargraph
         @docstring = docstring
       end
 
+      def name
+        node.children[0].to_s
+      end
+
       def suggestion
         @suggestion ||= generate_suggestion
       end

@@ -33,6 +33,7 @@ describe Solargraph::ApiMap do
     )
     @api_map = Solargraph::ApiMap.new
     @api_map.append_source(code, 'file.rb')
+    @api_map.refresh
   end
 
   it "finds instance methods" do
@@ -184,6 +185,7 @@ describe Solargraph::ApiMap do
     )
     api_map = Solargraph::ApiMap.new
     api_map.append_source(code, 'file.rb')
+    api_map.refresh
     suggestions = api_map.get_instance_methods('Foo', '', visibility: [:public])
     expect(suggestions.map(&:to_s)).to include('bar')
     expect(suggestions.map(&:to_s)).not_to include('baz')
@@ -198,6 +200,7 @@ describe Solargraph::ApiMap do
     )
     api_map = Solargraph::ApiMap.new
     api_map.append_source(code, 'file.rb')
+    api_map.refresh
     type = api_map.infer_instance_variable('@foo', '', :class)
     expect(type).to be(nil)
   end
@@ -211,6 +214,7 @@ describe Solargraph::ApiMap do
     )
     api_map = Solargraph::ApiMap.new
     api_map.append_source(code, 'file.rb')
+    api_map.refresh
     type = api_map.infer_signature_type('self', 'Foo', scope: :instance)
     expect(type).to eq('Foo')
   end
@@ -225,6 +229,7 @@ describe Solargraph::ApiMap do
     )
     api_map = Solargraph::ApiMap.new
     api_map.append_source(code, 'file.rb')
+    api_map.refresh
     type = api_map.infer_signature_type('self.bar', 'Foo', scope: :instance)
     expect(type).to eq('String')
   end
@@ -238,6 +243,7 @@ describe Solargraph::ApiMap do
     )
     api_map = Solargraph::ApiMap.new
     api_map.append_source(code, 'file.rb')
+    api_map.refresh
     type = api_map.infer_signature_type('self', 'Foo', scope: :class)
     expect(type).to eq('Class<Foo>')
   end
@@ -251,6 +257,7 @@ describe Solargraph::ApiMap do
     )
     api_map = Solargraph::ApiMap.new
     api_map.append_source(code, 'file.rb')
+    api_map.refresh
     type = api_map.infer_signature_type('self.new', 'Foo', scope: :class)
     expect(type).to eq('Foo')
   end
@@ -266,6 +273,7 @@ describe Solargraph::ApiMap do
     )
     api_map = Solargraph::ApiMap.new
     api_map.append_source(code, 'file.rb')
+    api_map.refresh
     type = api_map.infer_signature_type('@bar', 'Foo', scope: :instance)
     expect(type).to eq('String')
   end
@@ -281,6 +289,7 @@ describe Solargraph::ApiMap do
     )
     api_map = Solargraph::ApiMap.new
     api_map.append_source(code, 'file.rb')
+    api_map.refresh
     type = api_map.infer_signature_type('@bar', 'Foo', scope: :class)
     expect(type).to eq(nil)
   end
@@ -296,6 +305,7 @@ describe Solargraph::ApiMap do
     )
     api_map = Solargraph::ApiMap.new
     api_map.append_source(code, 'file.rb')
+    api_map.refresh
     type = api_map.infer_signature_type('@bar', 'Foo', scope: :class)
     expect(type).to eq('String')
   end
@@ -311,6 +321,7 @@ describe Solargraph::ApiMap do
     )
     api_map = Solargraph::ApiMap.new
     api_map.append_source(code, 'file.rb')
+    api_map.refresh
     type = api_map.infer_signature_type('@bar', 'Foo', scope: :instance)
     expect(type).to eq(nil)
   end
@@ -324,6 +335,7 @@ describe Solargraph::ApiMap do
     )
     api_map = Solargraph::ApiMap.new
     api_map.append_source(code, 'file.rb')
+    api_map.refresh
     type = api_map.infer_signature_type('@@bar', 'Foo')
     expect(type).to eq('String')
   end
@@ -338,6 +350,7 @@ describe Solargraph::ApiMap do
     )
     api_map = Solargraph::ApiMap.new
     api_map.append_source(code, 'file.rb')
+    api_map.refresh
     type = api_map.infer_signature_type('Foo.bar', '')
     expect(type).to eq('String')
   end
@@ -353,6 +366,7 @@ describe Solargraph::ApiMap do
     )
     api_map = Solargraph::ApiMap.new
     api_map.append_source(code, 'file.rb')
+    api_map.refresh
     sugg = api_map.get_methods('Foo')
     expect(sugg.map(&:to_s)).to include('bar')
   end
@@ -366,6 +380,7 @@ describe Solargraph::ApiMap do
     )
     api_map = Solargraph::ApiMap.new
     api_map.append_source(code, 'file.rb')
+    api_map.refresh
     sugg = api_map.get_instance_methods('Foo').keep_if{|s| s.label == 'bar'}.first
     expect(sugg.arguments).to eq(['baz', "boo = 'boo'"])
   end
@@ -379,6 +394,7 @@ describe Solargraph::ApiMap do
     )
     api_map = Solargraph::ApiMap.new
     api_map.append_source(code, 'file.rb')
+    api_map.refresh
     sugg = api_map.get_instance_methods('Foo').keep_if{|s| s.label == 'bar'}.first
     expect(sugg.arguments).to eq(['baz:', "boo: 'boo'"])
   end
@@ -394,6 +410,7 @@ describe Solargraph::ApiMap do
     )
     api_map = Solargraph::ApiMap.new
     api_map.append_source(code, 'file.rb')
+    api_map.refresh
     expect(api_map.namespaces).to eq(['Foo', 'Bar'])
     sugg = api_map.get_instance_methods('Bar')
     expect(sugg.map(&:to_s)).to include('baz')
@@ -408,6 +425,7 @@ describe Solargraph::ApiMap do
       end
     )
     api_map.append_source(code1, 'file.rb')
+    api_map.refresh
     type = api_map.infer_signature_type('Foo.new.bar', '')
     expect(type).to eq('String')
     code2 = %(

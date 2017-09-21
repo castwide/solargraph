@@ -512,7 +512,7 @@ module Solargraph
         return type if remainder.empty?
         return api_map.infer_signature_type(remainder.join('.'), type, scope: :instance)
       elsif start.start_with?('@')
-        scope = (node.type == :def ? :instance : :scope)
+        scope = (node.type == :def ? :instance : :class)
         type = api_map.infer_instance_variable(start, ns_here, scope)
         return nil if type.nil?
         return type if remainder.empty?
