@@ -296,23 +296,6 @@ module Solargraph
       result
     end
 
-    def find_instance_variable_assignment(var, node, scope)
-      node.children.each { |c|
-        if c.kind_of?(AST::Node)
-          is_inst = !find_parent(c, :def).nil?
-          if c.type == :ivasgn and ( (scope == :instance and is_inst) or (scope != :instance and !is_inst) )
-            if c.children[0].to_s == var
-              return c
-            end
-          else
-            inner = find_instance_variable_assignment(var, c, scope)
-            return inner unless inner.nil?
-          end
-        end
-      }
-      nil
-    end
-
     def find_class_variable_assignment(var, node)
       node.children.each { |c|
         next unless c.kind_of?(AST::Node)
