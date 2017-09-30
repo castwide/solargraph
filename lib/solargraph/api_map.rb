@@ -25,17 +25,6 @@ module Solargraph
       'then', 'true', 'undef', 'unless', 'until', 'when', 'while', 'yield'
     ].freeze
 
-    MAPPABLE_NODES = [
-      :array, :hash, :str, :dstr, :int, :float, :sym, :block, :class, :sclass,
-      :module, :def, :defs, :ivasgn, :gvasgn, :lvasgn, :cvasgn, :casgn,
-      :or_asgn, :const, :lvar, :args, :kwargs
-    ].freeze
-
-    MAPPABLE_METHODS = [
-      :include, :extend, :require, :autoload, :attr_reader, :attr_writer,
-      :attr_accessor, :private, :public, :protected
-    ].freeze
-
     METHODS_RETURNING_SELF = [
       'clone', 'dup', 'freeze', 'taint', 'untaint'
     ].freeze
@@ -103,7 +92,7 @@ module Solargraph
 
     # @return [Array<Solargraph::Suggestion>]
     def self.get_keywords
-      @keyword_suggestions ||= (KEYWORDS + MAPPABLE_METHODS).map{ |s|
+      @keyword_suggestions ||= KEYWORDS.map{ |s|
         Suggestion.new(s.to_s, kind: Suggestion::KEYWORD, detail: 'Keyword')
       }.freeze
     end
