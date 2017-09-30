@@ -5,6 +5,7 @@ require 'thread'
 module Solargraph
   class ApiMap
     autoload :Config,    'solargraph/api_map/config'
+    autoload :Source,    'solargraph/api_map/source'
     autoload :Cache,     'solargraph/api_map/cache'
     autoload :MethodPin, 'solargraph/api_map/method_pin'
     autoload :AttrPin,   'solargraph/api_map/attr_pin'
@@ -12,6 +13,7 @@ module Solargraph
     autoload :CvarPin,   'solargraph/api_map/cvar_pin'
     autoload :SymbolPin, 'solargraph/api_map/symbol_pin'
 
+    @@source_cache = {}
     @@yard_map_cache = {}
     @@semaphore = Mutex.new
 
@@ -54,14 +56,20 @@ module Solargraph
     def initialize workspace = nil
       @workspace = workspace.gsub(/\\/, '/') unless workspace.nil?
       clear
+      @workspace_files = []
       unless @workspace.nil?
         config = ApiMap::Config.new(@workspace)
-        config.included.each { |f|
-          unless config.excluded.include?(f)
-            append_file f
-          end
-        }
+        #config.included.each { |f|
+        #  unless config.excluded.include?(f)
+        #    append_file f
+        #  end
+        #}
+        @workspace_files.concat (config.included - config.excluded)
       end
+      @sources = {}
+      @virtual_source = nil
+      @virtual_filename = nil
+      @stale = false
     end
 
     # @return [Solargraph::YardMap]
@@ -72,6 +80,22 @@ module Solargraph
       }
     end
 
+    #def append_file filename
+    #  @stale = true
+    #  @@source_cache[filename] ||= Source.load(filename)
+    #end
+
+    def virtualize filename, code, cursor = nil
+      @stale = true
+      @virtual_filename = filename
+      @virtual_source = Source.fix(filename, code, cursor)
+    end
+
+    def append_source code, filename
+      virtualize filename, code
+    end
+
+=begin
     # Add a file to the map.
     #
     # @param filename [String]
@@ -109,6 +133,7 @@ module Solargraph
       @required.uniq!
       root
     end
+=end
 
     def refresh force = false
       process_maps if @stale or force
@@ -120,8 +145,10 @@ module Solargraph
     # @return [YARD::Docstring]
     def get_comment_for node
       filename = get_filename_for(node)
-      return nil if @file_comments[filename].nil?
-      @file_comments[filename][node.loc]
+      #return nil if @file_comments[filename].nil?
+      #@file_comments[filename][node.loc]
+      return nil if @sources[filename].nil?
+      @sources[filename].docstring_for(node)
     end
 
     # @return [Array<Solargraph::Suggestion>]
@@ -168,7 +195,7 @@ module Solargraph
       else
         if (root == '')
           return name unless @namespace_map[name].nil?
-          get_include_strings_from(*@file_nodes.values).each { |i|
+          get_include_strings_from(*file_nodes).each { |i|
             reroot = "#{root == '' ? '' : root + '::'}#{i}"
             recname = find_fully_qualified_namespace name.to_s, reroot, skip
             return recname unless recname.nil?
@@ -181,7 +208,7 @@ module Solargraph
             roots.pop
           end
           return name unless @namespace_map[name].nil?
-          get_include_strings_from(*@file_nodes.values).each { |i|
+          get_include_strings_from(*file_nodes).each { |i|
             recname = find_fully_qualified_namespace name, i, skip
             return recname unless recname.nil?
           }
@@ -191,7 +218,7 @@ module Solargraph
     end
 
     def get_namespace_nodes(fqns)
-      return @file_nodes.values if fqns == '' or fqns.nil?
+      return file_nodes if fqns == '' or fqns.nil?
       refresh
       @namespace_map[fqns] || []
     end
@@ -245,8 +272,13 @@ module Solargraph
     end
 
     def get_filename_for(node)
-      root = get_root_for(node)
-      root.nil? ? nil : root.children[0]
+      #root = get_root_for(node)
+      #root.nil? ? nil : root.children[0]
+      top = get_root_for(node)
+      @sources.each do |filename, source|
+        return filename if source.node == top
+      end
+      nil
     end
 
     def yardoc_has_file?(file)
@@ -480,11 +512,11 @@ module Solargraph
     end
 
     def code_for node
-      src = @file_source[get_filename_for(node)]
+      src = @sources[get_filename_for(node)]
       return nil if src.nil?
       b = node.location.expression.begin.begin_pos
       e = node.location.expression.end.end_pos
-      src[b..e].strip.gsub(/,$/, '')
+      src.code[b..e].strip.gsub(/,$/, '')
     end  
 
     # Update the YARD documentation for the current workspace.
@@ -513,7 +545,7 @@ module Solargraph
     def clear
       @stale = false
       @file_source = {}
-      @file_nodes = {}
+      #@file_nodes = {}
       @file_comments = {}
       @parent_stack = {}
       @namespace_map = {}
@@ -522,6 +554,11 @@ module Solargraph
     end
 
     def process_maps
+      @sources.clear
+      @workspace_files.each do |f|
+        @@source_cache[f] ||= Source.load(f)
+        @sources[f] = @@source_cache[f]
+      end
       cache.clear
       @ivar_pins = {}
       @cvar_pins = {}
@@ -533,9 +570,16 @@ module Solargraph
       @parent_stack = {}
       @namespace_map = {}
       @namespace_tree = {}
-      @file_nodes.values.each { |f|
-        map_parents f
-        map_namespaces f
+      #@file_nodes.values.each { |f|
+      #  map_parents f
+      #  map_namespaces f
+      #}
+      unless @virtual_source.nil?
+        @sources[@virtual_filename] = @virtual_source
+      end
+      @sources.values.each { |s|
+        map_parents s.node
+        map_namespaces s
       }
       @stale = false
     end
@@ -760,6 +804,7 @@ module Solargraph
       type
     end
 
+=begin
     def mappable?(node)
       if node.kind_of?(AST::Node) and MAPPABLE_NODES.include?(node.type)
         true
@@ -839,6 +884,7 @@ module Solargraph
       result = node.updated(type, children)
       result
     end
+=end
 
     def local_path? path
       return false if workspace.nil?
@@ -864,7 +910,11 @@ module Solargraph
       }
     end
 
-    def map_namespaces node, tree = [], visibility = :public, scope = :instance, fqn = nil
+    def map_namespaces source
+      inner_map_namespaces source, source.node
+    end
+
+    def inner_map_namespaces source, node, tree = [], visibility = :public, scope = :instance, fqn = nil
       if node.kind_of?(AST::Node)
         return if node.type == :str or node.type == :dstr
         if node.type == :class or node.type == :module
@@ -883,7 +933,7 @@ module Solargraph
             @superclasses[fqn] = sc
           end
         end
-        file = get_filename_for(node)
+        file = source.filename
         in_yardoc = yardoc_has_file?(file)
         node.children.each do |c|
           if c.kind_of?(AST::Node)
@@ -891,7 +941,15 @@ module Solargraph
               @ivar_pins[fqn || ''] ||= []
               par = find_parent(c, :class, :module, :def, :defs)
               local_scope = ( (par.kind_of?(AST::Node) and par.type == :def) ? :instance : :class )
-              @ivar_pins[fqn || ''].push IvarPin.new(self, c, fqn || '', local_scope, get_comment_for(c))
+              if c.children[1].nil?
+                ora = find_parent(c, :or_asgn)
+                unless ora.nil?
+                  u = c.updated(:ivasgn, c.children + ora.children[1..-1], nil)
+                  @ivar_pins[fqn || ''].push IvarPin.new(self, u, fqn || '', local_scope, get_comment_for(c))  
+                end
+              else
+                @ivar_pins[fqn || ''].push IvarPin.new(self, c, fqn || '', local_scope, get_comment_for(c))
+              end
             elsif c.type == :cvasgn
               @cvar_pins[fqn] ||= []
               @cvar_pins[fqn].push CvarPin.new(self, c, fqn, get_comment_for(c))
@@ -902,33 +960,38 @@ module Solargraph
                 if c.kind_of?(AST::Node)
                   if c.type == :def and c.children[0].to_s[0].match(/[a-z]/i)
                     @method_pins[fqn] ||= []
+                    cmnt = get_comment_for(c)
                     @method_pins[fqn].push MethodPin.new(c, fqn, scope, visibility, get_comment_for(c))
-                    map_namespaces c, tree, visibility, scope, fqn
+                    inner_map_namespaces source, c, tree, visibility, scope, fqn
                     next
                   elsif c.type == :defs
                     @method_pins[fqn] ||= []
                     @method_pins[fqn].push MethodPin.new(c, fqn, :class, :public, get_comment_for(c))
-                    map_namespaces c, tree, :public, :class, fqn
+                    inner_map_namespaces source, c, tree, :public, :class, fqn
                     next
                   elsif c.type == :send and [:public, :protected, :private].include?(c.children[1])
                     visibility = c.children[1]
-                  elsif c.type == :send and c.children[1] == :include and node.type == :class
+                  elsif c.type == :send and c.children[1] == :include #and node.type == :class
                     @namespace_includes[fqn] ||= []
                     @namespace_includes[fqn].push unpack_name(c.children[2])
                   elsif c.type == :send and [:attr_reader, :attr_writer, :attr_accessor].include?(c.children[1])
                     @attr_nodes[fqn] ||= []
                     @attr_nodes[fqn].push AttrPin.new(c)
                   elsif c.type == :sclass and c.children[0].type == :self
-                    map_namespaces c, tree, :public, :class, fqn
+                    inner_map_namespaces source, c, tree, :public, :class, fqn
                     next
                   end
                 end
               end
-              map_namespaces c, tree, visibility, scope, fqn
+              inner_map_namespaces source, c, tree, visibility, scope, fqn
             end
           end
         end
       end
+    end
+
+    def file_nodes
+      @sources.values.map{|s| s.node}
     end
 
     def clean_namespace_string namespace

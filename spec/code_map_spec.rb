@@ -116,6 +116,7 @@ describe Solargraph::CodeMap do
     expect(result.map(&:to_s)).to include('upcase')
   end
 
+=begin
   it "stubs unfinished instance variables" do
     code_map = Solargraph::CodeMap.new(code: "puts @")
     expect(code_map.parsed).to eq("puts _")
@@ -137,6 +138,7 @@ describe Solargraph::CodeMap do
     # of the parse has "#nd;end" instead of "#nd"
     expect(code_map.parsed).to eq("if true\nend\n#nd;end")
   end
+=end
 
   it "resolves signatures to documentation" do
     code_map = Solargraph::CodeMap.new(code: "x = [];x.join")

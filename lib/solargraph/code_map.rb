@@ -13,12 +13,6 @@ module Solargraph
     # @return [String]
     attr_reader :code
 
-    # The source code after modification to fix syntax errors during parsing.
-    # This string will match #code if no modifications were made.
-    #
-    # @return [String]
-    attr_reader :parsed
-
     # The filename for the source code.
     #
     # @return [String]
@@ -38,59 +32,11 @@ module Solargraph
       filename = filename.gsub(File::ALT_SEPARATOR, File::SEPARATOR) unless filename.nil? or File::ALT_SEPARATOR.nil?
       @filename = filename
       @api_map = api_map
-      @code = code.gsub(/\r/, '')
-      tries = 0
-      tmp = @code
-      cursor = CodeMap.get_offset(@code, cursor[0], cursor[1]) if cursor.kind_of?(Array)
-      fixed_cursor = false
-      begin
-        # HACK: The current file is parsed with a trailing underscore to fix
-        # incomplete trees resulting from short scripts (e.g., a lone variable
-        # assignment).
-        node, @comments = Parser::CurrentRuby.parse_with_comments(tmp + "\n_")
-        @node = self.api_map.append_node(node, @comments, filename)
-        @parsed = tmp
-        @code.freeze
-        @parsed.freeze
-      rescue Parser::SyntaxError => e
-        if tries < 10
-          tries += 1
-          if tries == 10 and e.message.include?('token $end')
-            tmp += "\nend"
-          else
-            if !fixed_cursor and !cursor.nil? and e.message.include?('token $end') and cursor >= 2
-              fixed_cursor = true
-              spot = cursor - 2
-              if tmp[cursor - 1] == '.'
-                repl = ';'
-              else
-                repl = '#'
-              end
-            else
-              spot = e.diagnostic.location.begin_pos
-              repl = '_'
-              if tmp[spot] == '@' or tmp[spot] == ':'
-                # Stub unfinished instance variables and symbols
-                spot -= 1
-              elsif tmp[spot - 1] == '.'
-                # Stub unfinished method calls
-                repl = '#' if spot == tmp.length or tmp[spot] == '\n'
-                spot -= 2
-              else
-                # Stub the whole line
-                spot = beginning_of_line_from(tmp, spot)
-                repl = '#'
-                if tmp[spot+1..-1].rstrip == 'end'
-                  repl= 'end;end'
-                end
-              end
-            end
-            tmp = tmp[0..spot] + repl + tmp[spot+repl.length+1..-1].to_s
-          end
-          retry
-        end
-        raise e
-      end
+      @source = self.api_map.virtualize filename, code, cursor
+      @node = @source.node
+      @code = @source.code
+      @comments = @source.comments
+      self.api_map.refresh
     end
 
     # Get the ApiMap that was generated for this CodeMap.
@@ -98,8 +44,8 @@ module Solargraph
     # @return [Solargraph::ApiMap]
     def api_map
       @api_map ||= ApiMap.new(workspace)
-      @api_map.refresh
-      @api_map
+      #@api_map.refresh
+      #@api_map
     end
 
     # Get the offset of the specified line and column.
