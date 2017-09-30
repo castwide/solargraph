@@ -782,16 +782,6 @@ module Solargraph
       nil
     end
 
-    def beginning_of_line_from str, i
-      while i > 0 and str[i] != "\n"
-        i -= 1
-      end
-      if i > 0 and str[i..-1].strip == ''
-        i = beginning_of_line_from str, i -1
-      end
-      i
-    end
-
     def signature_index_before index
       open_parens = 0
       cursor = index - 1

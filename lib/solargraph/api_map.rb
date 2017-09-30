@@ -59,11 +59,6 @@ module Solargraph
       @workspace_files = []
       unless @workspace.nil?
         config = ApiMap::Config.new(@workspace)
-        #config.included.each { |f|
-        #  unless config.excluded.include?(f)
-        #    append_file f
-        #  end
-        #}
         @workspace_files.concat (config.included - config.excluded)
       end
       @sources = {}
@@ -80,11 +75,6 @@ module Solargraph
       }
     end
 
-    #def append_file filename
-    #  @stale = true
-    #  @@source_cache[filename] ||= Source.load(filename)
-    #end
-
     def virtualize filename, code, cursor = nil
       @stale = true
       @virtual_filename = filename
@@ -94,46 +84,6 @@ module Solargraph
     def append_source code, filename
       virtualize filename, code
     end
-
-=begin
-    # Add a file to the map.
-    #
-    # @param filename [String]
-    # @return [AST::Node]
-    def append_file filename
-      append_source File.read(filename), filename
-    end
-
-    # Add a string of source code to the map.
-    #
-    # @param text [String]
-    # @param filename [String]
-    # @return [AST::Node]
-    def append_source text, filename = nil
-      @file_source[filename] = text
-      begin
-        node, comments = Parser::CurrentRuby.parse_with_comments(text)
-        append_node(node, comments, filename)
-      rescue Parser::SyntaxError => e
-        STDERR.puts "Error parsing '#{filename}': #{e.message}"
-        nil
-      end
-    end
-
-    # Add an AST node to the map.
-    #
-    # @return [AST::Node]
-    def append_node node, comments, filename = nil
-      @stale = true
-      @file_comments[filename] = associate_comments(node, comments)
-      mapified = reduce(node, @file_comments[filename])
-      root = AST::Node.new(:begin, [filename])
-      root = root.append mapified
-      @file_nodes[filename] = root
-      @required.uniq!
-      root
-    end
-=end
 
     def refresh force = false
       process_maps if @stale or force
@@ -272,8 +222,6 @@ module Solargraph
     end
 
     def get_filename_for(node)
-      #root = get_root_for(node)
-      #root.nil? ? nil : root.children[0]
       top = get_root_for(node)
       @sources.each do |filename, source|
         return filename if source.node == top
@@ -545,7 +493,6 @@ module Solargraph
     def clear
       @stale = false
       @file_source = {}
-      #@file_nodes = {}
       @file_comments = {}
       @parent_stack = {}
       @namespace_map = {}
@@ -570,10 +517,6 @@ module Solargraph
       @parent_stack = {}
       @namespace_map = {}
       @namespace_tree = {}
-      #@file_nodes.values.each { |f|
-      #  map_parents f
-      #  map_namespaces f
-      #}
       unless @virtual_source.nil?
         @sources[@virtual_filename] = @virtual_source
       end
@@ -587,32 +530,6 @@ module Solargraph
     # @return [Solargraph::ApiMap::Cache]
     def cache
       @cache ||= Cache.new
-    end
-
-    def associate_comments node, comments
-      comment_hash = Parser::Source::Comment.associate_locations(node, comments)
-      yard_hash = {}
-      comment_hash.each_pair { |k, v|
-        ctxt = ''
-        num = nil
-        started = false
-        v.each { |l|
-          # Trim the comment and minimum leading whitespace
-          p = l.text.gsub(/^#/, '')
-          if num.nil? and !p.strip.empty?
-            num = p.index(/[^ ]/)
-            started = true
-          elsif started and !p.strip.empty?
-            cur = p.index(/[^ ]/)
-            num = cur if cur < num
-          end
-          if started
-            ctxt += "#{p[num..-1]}\n"
-          end
-        }
-        yard_hash[k] = YARD::Docstring.parser.parse(ctxt).to_docstring
-      }
-      yard_hash
     end
 
     def inner_get_methods(namespace, root = '', skip = [])
@@ -803,88 +720,6 @@ module Solargraph
       end
       type
     end
-
-=begin
-    def mappable?(node)
-      if node.kind_of?(AST::Node) and MAPPABLE_NODES.include?(node.type)
-        true
-      elsif node.kind_of?(AST::Node) and node.type == :send and node.children[0] == nil and MAPPABLE_METHODS.include?(node.children[1])
-        true
-      else
-        false
-      end
-    end
-
-    def reduce node, comment_hash
-      return node unless node.kind_of?(AST::Node)
-      mappable = get_mappable_nodes(node.children, comment_hash)
-      result = node.updated nil, mappable
-      result
-    end
-
-    def get_mappable_nodes arr, comment_hash
-      result = []
-      arr.each { |n|
-        if mappable?(n)
-          min = minify(n, comment_hash)
-          result.push min
-        else
-          next unless n.kind_of?(AST::Node)
-          result += get_mappable_nodes(n.children, comment_hash)
-        end
-      }
-      result
-    end
-
-    def minify node, comment_hash
-      return node if node.type == :args
-      type = node.type
-      children = []
-      if node.type == :class or node.type == :block or node.type == :sclass
-        children += node.children[0, 2]
-        children += get_mappable_nodes(node.children[2..-1], comment_hash)
-      elsif node.type == :const or node.type == :args or node.type == :kwargs
-        children += node.children
-      elsif node.type == :def
-        children += node.children[0, 2]
-        children += get_mappable_nodes(node.children[2..-1], comment_hash)
-      elsif node.type == :defs
-        children += node.children[0, 3]
-        children += get_mappable_nodes(node.children[3..-1], comment_hash)
-      elsif node.type == :module
-        children += node.children[0, 1]
-        children += get_mappable_nodes(node.children[1..-1], comment_hash)
-      elsif node.type == :ivasgn or node.type == :gvasgn or node.type == :lvasgn or node.type == :cvasgn or node.type == :casgn
-        children += node.children
-      elsif node.type == :send and node.children[1] == :include
-        children += node.children[0,3]
-      elsif node.type == :send and node.children[1] == :require
-        if node.children[2].children[0].kind_of?(String)
-          path = node.children[2].children[0].to_s
-          @required.push(path) unless local_path?(path)
-        end
-        children += node.children[0, 3]
-      elsif node.type == :send and node.children[1] == :autoload
-        @required.push(node.children[3].children[0]) if node.children[3].children[0].kind_of?(String)
-        type = :require
-        children += node.children[1, 3]
-      elsif node.type == :send or node.type == :lvar
-        children += node.children
-      elsif node.type == :or_asgn
-        # TODO: The api_map should ignore local variables.
-        type = node.children[0].type
-        children.push node.children[0].children[0], node.children[1]
-      elsif [:array, :hash, :str, :dstr, :int, :float].include?(node.type)
-        node.children.each do |c|
-          children.push minify(c, comment_hash) if mappable?(c)
-        end
-      elsif node.type == :sym
-        children.push node.children[0]
-      end
-      result = node.updated(type, children)
-      result
-    end
-=end
 
     def local_path? path
       return false if workspace.nil?
