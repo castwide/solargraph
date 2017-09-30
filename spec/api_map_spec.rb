@@ -461,4 +461,19 @@ describe Solargraph::ApiMap do
       expect(File.exist?(File.join(dir, '.yardoc'))).to eq(false)
     end
   end
+
+  it "detects files excluded from yardoc" do
+    Dir.mktmpdir do |dir|
+      Dir.mkdir(File.join(dir, 'lib'))
+      File.open(File.join(dir, 'lib', 'foo.rb'), 'w') do |file|
+        file << "class Foo;end"
+      end
+      File.open(File.join(dir, '.yardopts'), 'w') do |file|
+        file << "--exclude lib"
+      end
+      api_map = Solargraph::ApiMap.new(dir)
+      api_map.update_yardoc
+      expect(File.exist?(File.join(dir, '.yardoc'))).to eq(false)
+    end
+  end
 end
