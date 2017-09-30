@@ -84,8 +84,6 @@ module Solargraph
     # @return [YARD::Docstring]
     def get_comment_for node
       filename = get_filename_for(node)
-      #return nil if @file_comments[filename].nil?
-      #@file_comments[filename][node.loc]
       return nil if @sources[filename].nil?
       @sources[filename].docstring_for(node)
     end
@@ -481,8 +479,6 @@ module Solargraph
 
     def clear
       @stale = false
-      @file_source = {}
-      @file_comments = {}
       @parent_stack = {}
       @namespace_map = {}
       @namespace_tree = {}
