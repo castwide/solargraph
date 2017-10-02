@@ -21,8 +21,25 @@ module Solargraph
     end
 
     post '/prepare' do
+      content_type :json
       STDERR.puts "Preparing #{params['workspace']}"
       Server.prepare_workspace params['workspace']
+      { "status" => "ok"}.to_json
+    end
+
+    post '/update' do
+      content_type :json
+      STDERR.puts "Updating #{params['filename']}"
+      Solargraph::ApiMap.update params['filename']
+      unless params['workspace'].nil?
+        STDERR.puts "Checking if we should update #{params['workspace']}"
+        # @type [Solargraph::ApiMap]
+        api_map = @@api_hash[params['workspace']]
+        unless api_map.nil?
+          Server.prepare_workspace params['workspace'] if api_map.yardoc_has_file?(params['filename'])
+        end
+      end
+      { "status" => "ok"}.to_json
     end
 
     post '/suggest' do

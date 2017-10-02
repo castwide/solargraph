@@ -217,7 +217,8 @@ module Solargraph
     end
 
     def yardoc_has_file?(file)
-      return false if workspace.nil?
+      return false if workspace.nil? or file.nil?
+      fixed = file.gsub(/\\/, '/')
       if @yardoc_files.nil?
         @yardoc_files = []
         yard_options[:include].each { |glob|
@@ -226,7 +227,7 @@ module Solargraph
           }
         }
       end
-      @yardoc_files.include?(file)
+      @yardoc_files.include?(fixed)
     end
 
     def infer_instance_variable(var, namespace, scope)
@@ -811,7 +812,7 @@ module Solargraph
     end
 
     def file_nodes
-      @sources.values.map{|s| s.node}
+      @sources.values.map(&:node)
     end
 
     def clean_namespace_string namespace
@@ -821,6 +822,12 @@ module Solargraph
         result = "#{subtype}#class"
       end
       result
+    end
+
+    class << self
+      def update filename
+        @@source_cache[filename] ||= Source.load(filename)
+      end
     end
   end
 end
