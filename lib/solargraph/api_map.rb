@@ -461,7 +461,6 @@ module Solargraph
       if workspace.nil?
         STDERR.puts "No workspace specified for yardoc update."
       else
-        
         Dir.chdir(workspace) do
           unless yard_files.empty?
             STDERR.puts "Updating the yardoc for #{workspace}..."
@@ -476,7 +475,13 @@ module Solargraph
         @@semaphore.synchronize {
           @@yard_map_cache.clear
         }
+        cache.clear
         end
+    end
+
+    def update filename
+      @@source_cache[filename] ||= Source.load(filename)
+      cache.clear
     end
 
     private
@@ -825,12 +830,6 @@ module Solargraph
         result = "#{subtype}#class"
       end
       result
-    end
-
-    class << self
-      def update filename
-        @@source_cache[filename] ||= Source.load(filename)
-      end
     end
   end
 end

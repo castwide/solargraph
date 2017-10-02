@@ -29,14 +29,12 @@ module Solargraph
 
     post '/update' do
       content_type :json
-      STDERR.puts "Updating #{params['filename']}"
-      Solargraph::ApiMap.update params['filename']
-      unless params['workspace'].nil?
-        STDERR.puts "Checking if we should update #{params['workspace']}"
-        # @type [Solargraph::ApiMap]
-        api_map = @@api_hash[params['workspace']]
-        unless api_map.nil?
-          Server.prepare_workspace params['workspace'] if api_map.yardoc_has_file?(params['filename'])
+      # @type [Solargraph::ApiMap]
+      api_map = @@api_hash[params['workspace']]
+      unless api_map.nil?
+        api_map.update params['filename']
+        unless params['workspace'].nil?
+          Server.update_yardoc params['workspace'] if api_map.yardoc_has_file?(params['filename'])
         end
       end
       { "status" => "ok"}.to_json
@@ -149,8 +147,18 @@ module Solargraph
             api_map.update_yardoc
             @@api_hash[directory] = api_map
           }
+          Server.update_yardoc directory
         end
-    end
+      end
+
+      def update_yardoc directory
+        Thread.new do
+          @@semaphore.synchronize {
+            api_map = @@api_hash[directory]
+            api_map.update_yardoc unless api_map.nil?
+          }
+        end
+      end
     end
 
     class Helpers
