@@ -71,6 +71,11 @@ describe Solargraph::Server do
     expect(Dir.exist?("#{@workspace}/.yardoc")).to be(true)
   end
 
+  it "updates a file" do
+    post '/update', filename: "#{@workspace}/lib/test.rb", workspace: @workspace
+    expect(last_response).to be_ok
+  end
+
   it "returns suggestions from the workspace" do
     post '/suggest', text: 'Foo.', line: 0, column: 4, workspace: @workspace
     expect(last_response).to be_ok
