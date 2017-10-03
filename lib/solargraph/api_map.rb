@@ -59,8 +59,7 @@ module Solargraph
     # @return [Solargraph::YardMap]
     def yard_map
       @@semaphore.synchronize {
-        @yard_map ||= @@yard_map_cache[[required, workspace]] || Solargraph::YardMap.new(required: required, workspace: workspace)
-        @@yard_map_cache[[required, workspace]] ||= @yard_map
+        @@yard_map_cache[[required, workspace]] ||= Solargraph::YardMap.new(required: required, workspace: workspace)
       }
     end
 
@@ -452,32 +451,9 @@ module Solargraph
       return nil if src.nil?
       b = node.location.expression.begin.begin_pos
       e = node.location.expression.end.end_pos
-      src.code[b..e].strip.gsub(/,$/, '')
+      frag = src.code[b..e].to_s
+      frag.strip.gsub(/,$/, '')
     end  
-
-    # Update the YARD documentation for the current workspace.
-    #
-    def update_yardoc
-      if workspace.nil?
-        STDERR.puts "No workspace specified for yardoc update."
-      else
-        Dir.chdir(workspace) do
-          unless yard_files.empty?
-            STDERR.puts "Updating the yardoc for #{workspace}..."
-            cmd = "yardoc -e #{Solargraph::YARD_EXTENSION_FILE}"
-            STDERR.puts "Update yardoc with #{cmd}"
-            STDERR.puts `#{cmd}`
-            unless $?.success?
-              STDERR.puts "There was an error processing the workspace yardoc."
-            end
-          end
-        end
-        @@semaphore.synchronize {
-          @@yard_map_cache.clear
-        }
-        cache.clear
-        end
-    end
 
     def update filename
       @@source_cache[filename] ||= Source.load(filename)
@@ -577,7 +553,6 @@ module Solargraph
       unless fqns.nil? or skip.include?(fqns)
         skip.push fqns
         nodes = get_namespace_nodes(fqns)
-        nodes.delete_if { |n| yardoc_has_file?(get_filename_for(n))}
         unless nodes.empty?
           cursor = @namespace_tree
           parts = fqns.split('::')
@@ -764,6 +739,7 @@ module Solargraph
         end
         file = source.filename
         in_yardoc = yardoc_has_file?(file)
+        in_yardoc = false # TODO: Get rid of local yardoc?
         node.children.each do |c|
           if c.kind_of?(AST::Node)
             if c.type == :ivasgn
@@ -802,7 +778,9 @@ module Solargraph
                     visibility = c.children[1]
                   elsif c.type == :send and c.children[1] == :include #and node.type == :class
                     @namespace_includes[fqn] ||= []
-                    @namespace_includes[fqn].push unpack_name(c.children[2])
+                    c.children[2..-1].each do |i|
+                      @namespace_includes[fqn].push unpack_name(i)
+                    end
                   elsif c.type == :send and [:attr_reader, :attr_writer, :attr_accessor].include?(c.children[1])
                     @attr_nodes[fqn] ||= []
                     @attr_nodes[fqn].push AttrPin.new(c)

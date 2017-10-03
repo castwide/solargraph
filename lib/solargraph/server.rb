@@ -33,9 +33,6 @@ module Solargraph
       api_map = @@api_hash[params['workspace']]
       unless api_map.nil?
         api_map.update params['filename']
-        unless params['workspace'].nil?
-          Server.update_yardoc params['workspace'] if api_map.yardoc_has_file?(params['filename'])
-        end
       end
       { "status" => "ok"}.to_json
     end
@@ -45,7 +42,6 @@ module Solargraph
       begin
         sugg = []
         workspace = params['workspace']
-        #Server.prepare_workspace workspace unless @@api_hash.has_key?(workspace)
         @@semaphore.synchronize {
           code_map = CodeMap.new(code: params['text'], filename: params['filename'], api_map: @@api_hash[workspace], cursor: [params['line'].to_i, params['column'].to_i])
           offset = code_map.get_offset(params['line'].to_i, params['column'].to_i)
@@ -64,7 +60,6 @@ module Solargraph
       begin
         sugg = []
         workspace = params['workspace'] || nil
-        #Server.prepare_workspace workspace unless @@api_hash.has_key?(workspace)
         @@semaphore.synchronize {
           code_map = CodeMap.new(code: params['text'], filename: params['filename'], api_map: @@api_hash[workspace], cursor: [params['line'].to_i, params['column'].to_i])
           offset = code_map.get_offset(params['line'].to_i, params['column'].to_i)
@@ -83,7 +78,6 @@ module Solargraph
       begin
         sugg = []
         workspace = params['workspace'] || nil
-        #Server.prepare_workspace workspace unless @@api_hash.has_key?(workspace)
         @@semaphore.synchronize {
           code_map = CodeMap.new(code: params['text'], filename: params['filename'], api_map: @@api_hash[workspace], cursor: [params['line'].to_i, params['column'].to_i])
           offset = code_map.get_offset(params['line'].to_i, params['column'].to_i)
@@ -141,23 +135,10 @@ module Solargraph
       end
 
       def prepare_workspace directory
-        Thread.new do
-          @@semaphore.synchronize {
-            api_map = Solargraph::ApiMap.new(directory)
-            api_map.update_yardoc
-            @@api_hash[directory] = api_map
-          }
-          Server.update_yardoc directory
-        end
-      end
-
-      def update_yardoc directory
-        Thread.new do
-          @@semaphore.synchronize {
-            api_map = @@api_hash[directory]
-            api_map.update_yardoc unless api_map.nil?
-          }
-        end
+        #Thread.new do
+          api_map = Solargraph::ApiMap.new(directory)
+          @@semaphore.synchronize { @@api_hash[directory] = api_map }
+        #end
       end
     end
 

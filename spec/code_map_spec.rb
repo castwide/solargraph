@@ -116,30 +116,6 @@ describe Solargraph::CodeMap do
     expect(result.map(&:to_s)).to include('upcase')
   end
 
-=begin
-  it "stubs unfinished instance variables" do
-    code_map = Solargraph::CodeMap.new(code: "puts @")
-    expect(code_map.parsed).to eq("puts _")
-  end
-
-  it "stubs unfinished symbols" do
-    code_map = Solargraph::CodeMap.new(code: "symbol :")
-    expect(code_map.parsed).to eq("symbol _")
-  end
-
-  it "adds missing end keyword" do
-    code_map = Solargraph::CodeMap.new(code: "if true\nString.\nend")
-    expect(code_map.parsed).to eq("if true\nString.\nend;end")
-  end
-
-  it "stubs extra end keyword" do
-    code_map = Solargraph::CodeMap.new(code: "if true\nend\nend")
-    # @hack CodeMap tries to add an end on the first pass. Thus, the result
-    # of the parse has "#nd;end" instead of "#nd"
-    expect(code_map.parsed).to eq("if true\nend\n#nd;end")
-  end
-=end
-
   it "resolves signatures to documentation" do
     code_map = Solargraph::CodeMap.new(code: "x = [];x.join")
     suggestions = code_map.resolve_object_at(12)

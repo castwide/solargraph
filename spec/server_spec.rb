@@ -50,7 +50,7 @@ describe Solargraph::Server do
   end
 
   it "returns a suggestion on hover" do
-    post '/hover', text: 'String', line: 0, column: 1
+    post '/hover', text: 'String', line: 0, column: 1, workspace: @workspace
     expect(last_response).to be_ok
     response = JSON.parse(last_response.body)
     expect(response['suggestions'].length > 0).to be(true)
@@ -66,9 +66,6 @@ describe Solargraph::Server do
   it "prepares a workspace" do
     post '/prepare', workspace: @workspace
     expect(last_response).to be_ok
-    #sleep(30)
-    Solargraph::Server.wait
-    expect(Dir.exist?("#{@workspace}/.yardoc")).to be(true)
   end
 
   it "updates a file" do
@@ -77,7 +74,7 @@ describe Solargraph::Server do
   end
 
   it "returns suggestions from the workspace" do
-    post '/suggest', text: 'Foo.', line: 0, column: 4, workspace: @workspace
+    post '/suggest', text: 'Foo.', line: 0, column: 4, workspace: @workspace, filename: "#{@workspace}/tmp.rb"
     expect(last_response).to be_ok
     response = JSON.parse(last_response.body)
     expect(response['suggestions'].map{|s| s['label']}).to include('new')

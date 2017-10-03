@@ -29,7 +29,7 @@ module Solargraph
 
       def process_glob glob
         result = []
-        Dir[glob].each do |f|
+        Dir[File.join workspace, glob].each do |f|
           result.push File.realdirpath(f)
         end
         result

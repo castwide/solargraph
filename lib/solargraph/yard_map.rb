@@ -12,7 +12,7 @@ module Solargraph
       @workspace = workspace
       unless workspace.nil?
         wsy = File.join(workspace, '.yardoc')
-        yardocs.push wsy if File.exist?(wsy)
+        #yardocs.push wsy if File.exist?(wsy)
       end
       used = []
       required.each { |r|
