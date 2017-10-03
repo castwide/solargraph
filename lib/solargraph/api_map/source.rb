@@ -141,54 +141,39 @@ module Solargraph
           node.children.each do |c|
             if c.kind_of?(AST::Node)
               if c.type == :ivasgn
-                #@ivar_pins[fqn || ''] ||= []
                 par = find_parent(stack, :class, :module, :def, :defs)
                 local_scope = ( (par.kind_of?(AST::Node) and par.type == :def) ? :instance : :class )
                 if c.children[1].nil?
                   ora = find_parent(stack, :or_asgn)
                   unless ora.nil?
                     u = c.updated(:ivasgn, c.children + ora.children[1..-1], nil)
-                    #@ivar_pins[fqn || ''].push IvarPin.new(self, u, fqn || '', local_scope, source.docstring_for(c))
                     instance_variable_pins.push Solargraph::Pin::InstanceVariable.new(self, u, fqn || '', local_scope)
                   end
                 else
-                  #@ivar_pins[fqn || ''].push IvarPin.new(self, c, fqn || '', local_scope, source.docstring_for(c))
                   instance_variable_pins.push Solargraph::Pin::InstanceVariable.new(self, c, fqn || '', local_scope)
                 end
-                #@new_ivar_pins.push Solargraph::Pin::InstanceVariable.new(source, c, fqn || '', local_scope)
               elsif c.type == :cvasgn
-                #@cvar_pins[fqn || ''] ||= []
                 if c.children[1].nil?
                   ora = find_parent(stack, :or_asgn)
                   unless ora.nil?
                     u = c.updated(:cvasgn, c.children + ora.children[1..-1], nil)
-                    #@cvar_pins[fqn || ''].push CvarPin.new(self, u, fqn || '', source.docstring_for(c))
                     class_variable_pins.push Solargraph::Pin::ClassVariable.new(self, u, fqn || '')
                   end
                 else
-                  #@cvar_pins[fqn || ''].push CvarPin.new(self, c, fqn || '', source.docstring_for(c))
                   class_variable_pins.push Solargraph::Pin::ClassVariable.new(self, c, fqn || '')
                 end
               elsif c.type == :sym
-                #@symbol_pins.push SymbolPin.new(c)
                 symbol_pins.push Solargraph::Pin::Symbol.new(self, c, fqn)
               elsif c.type == :casgn
-                #@const_pins[fqn] ||= []
-                #@const_pins[fqn].push ConstPin.new(self, c, fqn, source.docstring_for(c))
                 constant_pins.push Solargraph::Pin::Constant.new(self, c, fqn)
               else
                 unless fqn.nil?
                   if c.kind_of?(AST::Node)
                     if c.type == :def and c.children[0].to_s[0].match(/[a-z]/i)
-                      #@method_pins[fqn] ||= []
-                      #cmnt = source.docstring_for(c)
-                      #@method_pins[fqn].push MethodPin.new(source, c, fqn, scope, visibility, source.docstring_for(c))
                       method_pins.push Solargraph::Pin::Method.new(source, c, fqn, scope, visibility)
                       inner_map_node c, tree, visibility, scope, fqn, stack
                       next
                     elsif c.type == :defs
-                      #@method_pins[fqn] ||= []
-                      #@method_pins[fqn].push MethodPin.new(source, c, fqn, :class, :public, source.docstring_for(c))
                       method_pins.push Solargraph::Pin::Method.new(source, c, fqn, :class, :public)
                       inner_map_node c, tree, :public, :class, fqn, stack
                       next
