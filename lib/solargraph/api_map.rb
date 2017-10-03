@@ -333,8 +333,20 @@ module Solargraph
         elsif type == :module
           meths += yard_map.get_methods('Module')
         end
-        meths
       end
+      news = meths.select{|s| s.label == 'new'}
+      unless news.empty?
+        fqns = find_fully_qualified_namespace(namespace, root)
+        if @method_pins[fqns]
+          inits = @method_pins[fqns].select{|p| p.name == 'initialize'}
+          meths -= news unless inits.empty?
+          inits.each do |pin|
+            STDERR.puts "GOT DAMMIT"
+            meths.push Suggestion.new('new', kind: pin.kind, documentation: pin.docstring, detail: pin.namespace, arguments: pin.parameters, path: pin.path)
+          end
+        end
+      end
+      meths
     end
 
     # Get an array of instance methods that are available in the specified
