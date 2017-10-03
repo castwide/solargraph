@@ -210,23 +210,9 @@ module Solargraph
     def get_filename_for(node)
       top = get_root_for(node)
       @sources.each do |filename, source|
-        return source.filename if source.node == top
+        return source.filename if source.node.object_id == top.object_id
       end
       nil
-    end
-
-    def yardoc_has_file?(file)
-      return false if workspace.nil? or file.nil?
-      fixed = file.gsub(/\\/, '/')
-      if @yardoc_files.nil?
-        @yardoc_files = []
-        yard_options[:include].each { |glob|
-          Dir[File.join workspace, glob].each { |f|
-            @yardoc_files.push File.absolute_path(f)
-          }
-        }
-      end
-      @yardoc_files.include?(fixed)
     end
 
     def infer_instance_variable(var, namespace, scope)
@@ -239,17 +225,13 @@ module Solargraph
     end
 
     def infer_class_variable(var, namespace)
+      refresh
       fqns = find_fully_qualified_namespace(namespace)
       pins = @cvar_pins[fqns]
       return nil if pins.nil?
       pin = pins.select{|p| p.name == var}.first
       return nil if pin.nil?
-      result = pin.suggestion.return_type
-      if result.nil?
-        signature = resolve_node_signature(pin.node.children[1])
-        result = infer_signature_type(signature, fqns)
-      end
-      result
+      pin.suggestion.return_type
     end
 
     def find_class_variable_assignment(var, node)
@@ -718,8 +700,6 @@ module Solargraph
           end
         end
         file = source.filename
-        in_yardoc = yardoc_has_file?(file)
-        in_yardoc = false # TODO: Get rid of local yardoc?
         node.children.each do |c|
           if c.kind_of?(AST::Node)
             if c.type == :ivasgn
@@ -741,7 +721,7 @@ module Solargraph
             elsif c.type == :sym
               @symbol_pins.push SymbolPin.new(c)
             else
-              unless fqn.nil? or in_yardoc
+              unless fqn.nil?
                 if c.kind_of?(AST::Node)
                   if c.type == :def and c.children[0].to_s[0].match(/[a-z]/i)
                     @method_pins[fqn] ||= []
