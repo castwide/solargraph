@@ -6,7 +6,7 @@ module Solargraph
     # The root node of the parsed code.
     #
     # @return [AST::Node]
-    attr_accessor :node
+    attr_reader :node
 
     # The source code being analyzed.
     #
@@ -203,14 +203,6 @@ module Solargraph
       node = parent_node_from(index, :def, :defs, :class, :module, :sclass)
       ns = namespace_at(index) || ''
       scope = (node.type == :def ? :instance : :class)
-      #sclass = (node.type == :sclass ? node : api_map.find_parent(node, :sclass))
-      #unless sclass.nil?
-      #  if node.type == :def
-      #    scope = :class
-      #  else
-      #    return []
-      #  end
-      #end
       api_map.get_instance_variables(ns, scope)
     end
 

@@ -48,6 +48,9 @@ module Solargraph
       unless @workspace.nil?
         config = ApiMap::Config.new(@workspace)
         @workspace_files.concat (config.included - config.excluded)
+        @workspace_files.each do |wf|
+          @@source_cache[wf] ||= Source.load(wf)
+        end
       end
       @sources = {}
       @virtual_source = nil
@@ -55,10 +58,6 @@ module Solargraph
       @stale = false
       @new_method_pins = []
       @new_ivar_pins = []
-    end
-
-    def namespace_tree
-      @namespace_tree
     end
 
     # @return [Solargraph::YardMap]
@@ -74,24 +73,8 @@ module Solargraph
       @virtual_source = Source.fix(filename, code, cursor)
     end
 
-    def test_this_stuff
-      @sources[@virtual_filename] = @virtual_source
-      @namespace_tree = {}
-      @sources.values.each do |s|
-        s.namespaces.each do |n|
-          add_to_namespace_tree n.split('::')
-        end
-      end
-      puts @namespace_tree.inspect
-    end
-
     def append_source code, filename
       virtualize filename, code
-    end
-
-    def temp_append_source code, filename
-      @@source_cache[filename] = Source.virtual(filename, code)
-      @sources[filename] = @@source_cache[filename]
     end
 
     def refresh force = false
@@ -217,30 +200,6 @@ module Solargraph
         result.push s
       end
       result
-    end
-
-    def find_parent(node, *types)
-      src = nil
-      @sources.each do |s|
-        if s.include?(node)
-          src = s
-          break
-        end
-      end
-      unless s.nil?
-        parents = @parent_stack[node.object_id]
-        parents.each { |p|
-          return p if types.include?(p.type)
-        }
-      end
-      nil
-    end
-
-    def get_root_for(node)
-      s = @parent_stack[node.object_id]
-      return nil if s.nil?
-      return node if s.empty?
-      s.last
     end
 
     def get_filename_for(node)
@@ -600,22 +559,6 @@ module Solargraph
                 result.concat inner_namespaces_in(i, fqns, skip)
               end
             end
-          end
-        end
-      end
-      result
-    end
-
-    def get_constant_nodes(node, fqns)
-      result = []
-      node.children.each do |n|
-        if n.kind_of?(AST::Node)
-          if n.type == :casgn
-            cmnt = get_comment_for(n)
-            type = infer_assignment_node_type(n, fqns)
-            result.push Suggestion.new(n.children[1].to_s, kind: Suggestion::CONSTANT, documentation: cmnt, return_type: type)
-          else
-            result.concat get_constant_nodes(n, fqns) unless n.type == :class or n.type == :module
           end
         end
       end

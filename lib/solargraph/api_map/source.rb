@@ -18,14 +18,9 @@ module Solargraph
         @comments = comments
         @docstring_hash = associate_comments(node, comments)
         @filename = filename
-        @namespace_tree = {}
         @namespace_nodes = {}
         @all_nodes = []
         inner_map_node @node
-      end
-
-      def namespace_tree
-        @namespace_tree
       end
 
       def namespaces
@@ -128,7 +123,6 @@ module Solargraph
             else
               tree = tree + pack_name(node.children[0])
             end
-            add_to_namespace_tree tree
             fqn = tree.join('::')
             @namespace_nodes[fqn] ||= []
             @namespace_nodes[fqn].push node
@@ -212,14 +206,6 @@ module Solargraph
         stack.pop
       end
 
-      def add_to_namespace_tree tree
-        cursor = @namespace_tree
-        tree.each { |t|
-          cursor[t.to_s] ||= {}
-          cursor = cursor[t.to_s]
-        }
-      end
-  
       def find_parent(stack, *types)
         stack.reverse.each { |p|
           return p if types.include?(p.type)
