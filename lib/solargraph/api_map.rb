@@ -741,14 +741,14 @@ module Solargraph
                 ora = find_parent(c, :or_asgn)
                 unless ora.nil?
                   u = c.updated(:ivasgn, c.children + ora.children[1..-1], nil)
-                  @ivar_pins[fqn || ''].push IvarPin.new(self, u, fqn || '', local_scope, get_comment_for(c))  
+                  @ivar_pins[fqn || ''].push IvarPin.new(self, u, fqn || '', local_scope, source.docstring_for(c))  
                 end
               else
-                @ivar_pins[fqn || ''].push IvarPin.new(self, c, fqn || '', local_scope, get_comment_for(c))
+                @ivar_pins[fqn || ''].push IvarPin.new(self, c, fqn || '', local_scope, source.docstring_for(c))
               end
             elsif c.type == :cvasgn
               @cvar_pins[fqn] ||= []
-              @cvar_pins[fqn].push CvarPin.new(self, c, fqn, get_comment_for(c))
+              @cvar_pins[fqn].push CvarPin.new(self, c, fqn, source.docstring_for(c))
             elsif c.type == :sym
               @symbol_pins.push SymbolPin.new(c)
             else
@@ -756,13 +756,13 @@ module Solargraph
                 if c.kind_of?(AST::Node)
                   if c.type == :def and c.children[0].to_s[0].match(/[a-z]/i)
                     @method_pins[fqn] ||= []
-                    cmnt = get_comment_for(c)
-                    @method_pins[fqn].push MethodPin.new(source, c, fqn, scope, visibility, get_comment_for(c))
+                    cmnt = source.docstring_for(c)
+                    @method_pins[fqn].push MethodPin.new(source, c, fqn, scope, visibility, source.docstring_for(c))
                     inner_map_namespaces source, c, tree, visibility, scope, fqn
                     next
                   elsif c.type == :defs
                     @method_pins[fqn] ||= []
-                    @method_pins[fqn].push MethodPin.new(source, c, fqn, :class, :public, get_comment_for(c))
+                    @method_pins[fqn].push MethodPin.new(source, c, fqn, :class, :public, source.docstring_for(c))
                     inner_map_namespaces source, c, tree, :public, :class, fqn
                     next
                   elsif c.type == :send and [:public, :protected, :private].include?(c.children[1])

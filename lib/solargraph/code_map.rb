@@ -497,7 +497,7 @@ module Solargraph
 
     def get_type_comment node
       obj = nil
-      cmnt = api_map.get_comment_for(node)
+      cmnt = @source.docstring_for(node)
       unless cmnt.nil?
         tag = cmnt.tag(:type)
         obj = tag.types[0] unless tag.nil? or tag.types.empty?
