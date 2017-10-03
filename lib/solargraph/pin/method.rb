@@ -1,33 +1,40 @@
 module Solargraph
-  class ApiMap
-    class MethodPin
-      attr_reader :source
-      attr_reader :node
-      attr_reader :namespace
+  module Pin
+    class Method < Base
       attr_reader :scope
       attr_reader :visibility
-      attr_reader :docstring
-      
-      def initialize source, node, namespace, scope, visibility, docstring
-        @source = source
-        @node = node
-        @namespace = namespace
+
+      def initialize source, node, namespace, scope, visibility
+        super(source, node, namespace)
         @scope = scope
         @visibility = visibility
-        @docstring = docstring
       end
 
-      def suggestion
-        @suggestion ||= generate_suggestion
+      def name
+        @name ||= "#{node.children[(node.type == :def ? 0 : 1)]}"
+      end
+
+      def path
+        @path ||= namespace + (scope == :instance ? '#' : '.') + name
+      end
+
+      def kind
+        Solargraph::Suggestion::METHOD
+      end
+
+      def return_type
+        if @return_type.nil? and !docstring.nil?
+          tag = docstring.tag(:return)
+          @return_type = tag.types[0] unless tag.nil?
+        end
+        @return_type
+      end
+
+      def parameters
+        @parameters ||= get_method_args
       end
 
       private
-
-      def generate_suggestion
-        i = node.type == :def ? 0 : 1
-        label = "#{node.children[i]}"
-        Suggestion.new(label, insert: node.children[i].to_s.gsub(/=/, ' = '), kind: Suggestion::METHOD, documentation: docstring, detail: namespace, arguments: get_method_args)
-      end
 
       # @return [Array<String>]
       def get_method_args

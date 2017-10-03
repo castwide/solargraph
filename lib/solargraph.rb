@@ -14,6 +14,7 @@ module Solargraph
   autoload :Server,      'solargraph/server'
   autoload :YardMap,     'solargraph/yard_map'
   autoload :YardMethods, 'solargraph/yard_methods'
+  autoload :Pin,         'solargraph/pin'
 
   YARDOC_PATH = File.join(File.realpath(File.dirname(__FILE__)), '..', 'yardoc')
   YARD_EXTENSION_FILE = File.join(File.realpath(File.dirname(__FILE__)), 'yard-solargraph.rb')

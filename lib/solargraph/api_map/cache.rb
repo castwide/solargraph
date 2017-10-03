@@ -10,6 +10,10 @@ module Solargraph
         @signature_types[[signature, namespace, scope]]
       end
 
+      def has_signature_type?(signature, namespace, scope)
+        @signature_types.has_key?([signature, namespace, scope])
+      end
+
       def set_signature_type signature, namespace, scope, value
         @signature_types[[signature, namespace, scope]] = value
       end

@@ -15,7 +15,7 @@ module Solargraph
 
     attr_reader :label, :kind, :insert, :detail, :documentation, :code_object, :location, :arguments
 
-    def initialize label, kind: KEYWORD, insert: nil, detail: nil, documentation: nil, code_object: nil, location: nil, arguments: [], return_type: nil
+    def initialize label, kind: KEYWORD, insert: nil, detail: nil, documentation: nil, code_object: nil, location: nil, arguments: [], return_type: nil, path: nil
       @helper = Server::Helpers.new
       @label = label.to_s
       @kind = kind
@@ -26,10 +26,11 @@ module Solargraph
       @location = location
       @arguments = arguments
       @return_type = return_type
+      @path = path
     end
     
     def path
-      code_object.nil? ? label : code_object.path
+      @path ||= (code_object.nil? ? label : code_object.path)
     end
 
     def to_s
@@ -96,6 +97,10 @@ module Solargraph
         documentation: documentation.nil? ? nil : @helper.html_markup_rdoc(documentation)
       }
       obj.to_json(args)
+    end
+
+    def self.pull pin, return_type = nil
+      Suggestion.new(pin.name, insert: pin.name.gsub(/=/, ' = '), kind: pin.kind, documentation: pin.docstring, detail: pin.namespace, arguments: pin.parameters, path: pin.path, return_type: return_type)
     end
   end
 
