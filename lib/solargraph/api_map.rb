@@ -234,21 +234,6 @@ module Solargraph
       pin.suggestion.return_type
     end
 
-    def find_class_variable_assignment(var, node)
-      node.children.each { |c|
-        next unless c.kind_of?(AST::Node)
-        if c.type == :cvasgn
-          if c.children[0].to_s == var
-            return c
-          end
-        else
-          inner = find_class_variable_assignment(var, c)
-          return inner unless inner.nil?
-        end
-      }
-      nil
-    end
-
     def get_global_variables
       # TODO: Get them
       []
@@ -382,27 +367,6 @@ module Solargraph
         end
       end
       meths
-    end
-
-    def get_superclass(namespace, root = '')
-      fqns = find_fully_qualified_namespace(namespace, root)
-      nodes = get_namespace_nodes(fqns)
-      nodes.each { |n|
-        if n.kind_of?(AST::Node)
-          if n.type == :class and !n.children[1].nil?
-            return unpack_name(n.children[1])
-          end
-        end
-      }
-      return nil
-    end
-
-    def self.current
-      if @current.nil?
-        @current = ApiMap.new
-        @current.merge(Parser::CurrentRuby.parse(File.read("#{Solargraph::STUB_PATH}/ruby/2.3.0/core.rb")))
-      end
-      @current
     end
 
     def get_include_strings_from *nodes
@@ -652,13 +616,6 @@ module Solargraph
       type
     end
 
-    def local_path? path
-      return false if workspace.nil?
-      return true if File.exist?(File.join workspace, 'lib', path)
-      return true if File.exist?(File.join workspace, 'lib', "#{path}.rb")
-      false
-    end
-
     def map_parents node, tree = []
       if node.kind_of?(AST::Node)
         @parent_stack[node.object_id] = tree
@@ -717,7 +674,15 @@ module Solargraph
               end
             elsif c.type == :cvasgn
               @cvar_pins[fqn || ''] ||= []
-              @cvar_pins[fqn || ''].push CvarPin.new(self, c, fqn || '', source.docstring_for(c))
+              if c.children[1].nil?
+                ora = find_parent(c, :or_asgn)
+                unless ora.nil?
+                  u = c.updated(:cvasgn, c.children + ora.children[1..-1], nil)
+                  @cvar_pins[fqn || ''].push CvarPin.new(self, u, fqn || '', source.docstring_for(c))  
+                end
+              else
+                @cvar_pins[fqn || ''].push CvarPin.new(self, c, fqn || '', source.docstring_for(c))
+              end
             elsif c.type == :sym
               @symbol_pins.push SymbolPin.new(c)
             else

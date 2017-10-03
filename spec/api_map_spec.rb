@@ -329,6 +329,18 @@ describe Solargraph::ApiMap do
     expect(type).to eq('String')
   end
 
+  it "infers a class variable type in a nil guard" do
+    code = %(
+      class Foo
+        @@bar ||= ''
+      end
+    )
+    api_map = Solargraph::ApiMap.new
+    api_map.append_source(code, 'file.rb')
+    type = api_map.infer_signature_type('@@bar', 'Foo')
+    expect(type).to eq('String')
+  end
+
   it "infers a class method return type from a tag" do
     code = %(
       class Foo

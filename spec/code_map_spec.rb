@@ -66,7 +66,7 @@ describe Solargraph::CodeMap do
     expect(node.type).to eq(:class)
   end
 
-  it "detects class variables" do
+  it "detects class instance variables" do
     code_map = Solargraph::CodeMap.new(code: %(
       class Foo
         @cvar = ''
