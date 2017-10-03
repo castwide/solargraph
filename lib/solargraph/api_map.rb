@@ -413,6 +413,7 @@ module Solargraph
       @parent_stack = {}
       @namespace_map = {}
       @namespace_tree = {}
+      @required = []
       unless @virtual_source.nil?
         @sources[@virtual_filename] = @virtual_source
       end
@@ -716,6 +717,11 @@ module Solargraph
                     inner_map_namespaces source, c, tree, :public, :class, fqn
                     next
                   end
+                end
+              end
+              if c.type == :send and c.children[1] == :require
+                if c.children[2].kind_of?(AST::Node) and c.children[2].type == :str
+                  @required.push c.children[2].children[0].to_s
                 end
               end
               inner_map_namespaces source, c, tree, visibility, scope, fqn
