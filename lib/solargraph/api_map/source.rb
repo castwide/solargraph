@@ -22,6 +22,13 @@ module Solargraph
         @docstring_hash[node.loc]
       end
 
+      def code_for node
+        b = node.location.expression.begin.begin_pos
+        e = node.location.expression.end.end_pos
+        frag = code[b..e].to_s
+        frag.strip.gsub(/,$/, '')
+      end
+
       private
 
       def associate_comments node, comments
@@ -53,7 +60,7 @@ module Solargraph
       class << self
         # @return [Solargraph::ApiMap::Source]
         def load filename
-          code = File.read(filename)
+          code = File.read(filename).gsub(/\r/, '')
           node, comments = Parser::CurrentRuby.parse_with_comments(code)
           Source.new(code, node, comments, filename)
         end

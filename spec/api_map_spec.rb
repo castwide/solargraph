@@ -441,4 +441,19 @@ describe Solargraph::ApiMap do
     expect(syms).to include(':bang')
     expect(syms).to include(':bong')
   end
+
+  it "collects superclass methods" do
+    code = %(
+      class Foo
+        def foo_func
+        end
+      end
+      class Bar < Foo
+      end
+    )
+    api_map = Solargraph::ApiMap.new
+    api_map.append_source(code, 'file.rb')
+    meths = api_map.get_instance_methods('Bar')
+    expect(meths.map(&:to_s)).to include('foo_func')
+  end
 end

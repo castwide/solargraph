@@ -210,7 +210,7 @@ module Solargraph
     def get_filename_for(node)
       top = get_root_for(node)
       @sources.each do |filename, source|
-        return filename if source.node == top
+        return source.filename if source.node == top
       end
       nil
     end
@@ -446,15 +446,6 @@ module Solargraph
       arr
     end
 
-    def code_for node
-      src = @sources[get_filename_for(node)]
-      return nil if src.nil?
-      b = node.location.expression.begin.begin_pos
-      e = node.location.expression.end.end_pos
-      frag = src.code[b..e].to_s
-      frag.strip.gsub(/,$/, '')
-    end  
-
     def update filename
       @@source_cache[filename] ||= Source.load(filename)
       cache.clear
@@ -511,7 +502,7 @@ module Solargraph
       mn = @method_pins[fqns]
       unless mn.nil?
         mn.select{ |pin| pin.scope == :class }.each do |pin|
-          meths.push pin.suggestion(self)
+          meths.push pin.suggestion
         end
       end
       meths.uniq
@@ -531,7 +522,7 @@ module Solargraph
       mn = @method_pins[fqns]
       unless mn.nil?
         mn.select{|pin| visibility.include?(pin.visibility) and pin.scope == :instance }.each do |pin|
-          meths.push pin.suggestion(self)
+          meths.push pin.suggestion
         end
       end
       if visibility.include?(:public) or visibility.include?(:protected)
@@ -766,12 +757,12 @@ module Solargraph
                   if c.type == :def and c.children[0].to_s[0].match(/[a-z]/i)
                     @method_pins[fqn] ||= []
                     cmnt = get_comment_for(c)
-                    @method_pins[fqn].push MethodPin.new(c, fqn, scope, visibility, get_comment_for(c))
+                    @method_pins[fqn].push MethodPin.new(source, c, fqn, scope, visibility, get_comment_for(c))
                     inner_map_namespaces source, c, tree, visibility, scope, fqn
                     next
                   elsif c.type == :defs
                     @method_pins[fqn] ||= []
-                    @method_pins[fqn].push MethodPin.new(c, fqn, :class, :public, get_comment_for(c))
+                    @method_pins[fqn].push MethodPin.new(source, c, fqn, :class, :public, get_comment_for(c))
                     inner_map_namespaces source, c, tree, :public, :class, fqn
                     next
                   elsif c.type == :send and [:public, :protected, :private].include?(c.children[1])
