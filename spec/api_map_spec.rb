@@ -468,4 +468,15 @@ describe Solargraph::ApiMap do
     meths = api_map.get_instance_methods('Bar')
     expect(meths.map(&:to_s)).to include('foo_func')
   end
+
+  it "collects superclass methods from yardocs" do
+    code = %(
+      class Foo < String
+      end
+    )
+    api_map = Solargraph::ApiMap.new
+    api_map.append_source(code, 'file.rb')
+    meths = api_map.get_instance_methods('Foo')
+    expect(meths.map(&:to_s)).to include('upcase')
+  end
 end

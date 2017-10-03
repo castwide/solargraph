@@ -462,7 +462,10 @@ module Solargraph
       end
       if visibility.include?(:public) or visibility.include?(:protected)
         sc = @superclasses[fqns]
-        meths.concat inner_get_instance_methods(sc, fqns, skip, visibility - [:private]) unless sc.nil?
+        unless sc.nil?
+          meths.concat inner_get_instance_methods(sc, fqns, skip, visibility - [:private])
+          meths.concat yard_map.get_instance_methods(sc, fqns, visibility: visibility - [:private])
+        end
       end
       im = @namespace_includes[fqns]
       unless im.nil?
