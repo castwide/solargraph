@@ -74,7 +74,7 @@ module Solargraph
       def code_for node
         b = node.location.expression.begin.begin_pos
         e = node.location.expression.end.end_pos
-        frag = code[b..e].to_s
+        frag = code[b..e-1].to_s
         frag.strip.gsub(/,$/, '')
       end
 
