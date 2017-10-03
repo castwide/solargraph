@@ -341,7 +341,6 @@ module Solargraph
           inits = @method_pins[fqns].select{|p| p.name == 'initialize'}
           meths -= news unless inits.empty?
           inits.each do |pin|
-            STDERR.puts "GOT DAMMIT"
             meths.push Suggestion.new('new', kind: pin.kind, documentation: pin.docstring, detail: pin.namespace, arguments: pin.parameters, path: pin.path)
           end
         end

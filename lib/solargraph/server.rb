@@ -135,10 +135,12 @@ module Solargraph
       end
 
       def prepare_workspace directory
-        #Thread.new do
-          api_map = Solargraph::ApiMap.new(directory)
-          @@semaphore.synchronize { @@api_hash[directory] = api_map }
-        #end
+        Thread.new do
+          @@semaphore.synchronize do
+            api_map = Solargraph::ApiMap.new(directory)
+            @@api_hash[directory] = api_map
+          end
+        end
       end
     end
 
