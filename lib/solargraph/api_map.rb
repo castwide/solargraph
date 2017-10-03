@@ -12,6 +12,7 @@ module Solargraph
     autoload :IvarPin,   'solargraph/api_map/ivar_pin'
     autoload :CvarPin,   'solargraph/api_map/cvar_pin'
     autoload :SymbolPin, 'solargraph/api_map/symbol_pin'
+    autoload :ConstPin,  'solargraph/api_map/const_pin'
 
     @@source_cache = {}
     @@yard_map_cache = {}
@@ -405,6 +406,7 @@ module Solargraph
       cache.clear
       @ivar_pins = {}
       @cvar_pins = {}
+      @const_pins = {}
       @method_pins = {}
       @symbol_pins = []
       @attr_nodes = {}
@@ -689,6 +691,9 @@ module Solargraph
               end
             elsif c.type == :sym
               @symbol_pins.push SymbolPin.new(c)
+            elsif c.type == :casgn
+              @const_pins[fqn] ||= []
+              @const_pins[fqn].push ConstPin.new(self, c, fqn, source.docstring_for(c))
             else
               unless fqn.nil?
                 if c.kind_of?(AST::Node)
