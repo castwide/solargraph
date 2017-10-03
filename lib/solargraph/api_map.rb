@@ -193,7 +193,7 @@ module Solargraph
     end
 
     def find_parent(node, *types)
-      parents = @parent_stack[node]
+      parents = @parent_stack[node.object_id]
       parents.each { |p|
         return p if types.include?(p.type)
       }
@@ -201,7 +201,7 @@ module Solargraph
     end
 
     def get_root_for(node)
-      s = @parent_stack[node]
+      s = @parent_stack[node.object_id]
       return nil if s.nil?
       return node if s.empty?
       s.last
@@ -239,26 +239,15 @@ module Solargraph
     end
 
     def infer_class_variable(var, namespace)
-      result = nil
-      vn = nil
       fqns = find_fully_qualified_namespace(namespace)
-      unless fqns.nil?
-        get_namespace_nodes(fqns).each { |node|
-          vn = find_class_variable_assignment(var, node)
-          break unless vn.nil?
-        }
-      end
-      unless vn.nil?
-        cmnt = get_comment_for(vn)
-        unless cmnt.nil?
-          tag = cmnt.tag(:type)
-          result = tag.types[0] unless tag.nil? or tag.types.empty?
-        end
-        result = infer_literal_node_type(vn.children[1]) if result.nil?
-        if result.nil?
-          signature = resolve_node_signature(vn.children[1])
-          result = infer_signature_type(signature, namespace)
-        end
+      pins = @cvar_pins[fqns]
+      return nil if pins.nil?
+      pin = pins.select{|p| p.name == var}.first
+      return nil if pin.nil?
+      result = pin.suggestion.return_type
+      if result.nil?
+        signature = resolve_node_signature(pin.node.children[1])
+        result = infer_signature_type(signature, fqns)
       end
       result
     end
@@ -690,7 +679,7 @@ module Solargraph
 
     def map_parents node, tree = []
       if node.kind_of?(AST::Node)
-        @parent_stack[node] = tree
+        @parent_stack[node.object_id] = tree
         node.children.each { |c|
           map_parents c, [node] + tree
         }
@@ -747,8 +736,8 @@ module Solargraph
                 @ivar_pins[fqn || ''].push IvarPin.new(self, c, fqn || '', local_scope, source.docstring_for(c))
               end
             elsif c.type == :cvasgn
-              @cvar_pins[fqn] ||= []
-              @cvar_pins[fqn].push CvarPin.new(self, c, fqn, source.docstring_for(c))
+              @cvar_pins[fqn || ''] ||= []
+              @cvar_pins[fqn || ''].push CvarPin.new(self, c, fqn || '', source.docstring_for(c))
             elsif c.type == :sym
               @symbol_pins.push SymbolPin.new(c)
             else
