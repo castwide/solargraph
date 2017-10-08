@@ -440,4 +440,36 @@ describe Solargraph::CodeMap do
     sugg = code_map.suggest_at(89)
     expect(sugg.length).to eq(0)
   end
+
+  it "infers a method's return type from a tag" do
+    code_map = Solargraph::CodeMap.new(code: %(
+      class Foo
+        # @return [Hash]
+        def bar
+        end
+      end
+      foo = Foo.new
+      foo.bar
+    ))
+    sugg = code_map.resolve_object_at(code_map.get_offset(7, 12))
+    expect(sugg[0].return_type).to eq('Hash')
+  end
+
+  it "infer's a method's suggestion from its path" do
+    code_map = Solargraph::CodeMap.new(code: %(
+      my_hash = {}
+      my_hash.length
+    ))
+    sugg = code_map.resolve_object_at(code_map.get_offset(2, 18))
+    expect(sugg[0].label).to eq('length')
+  end
+
+  it "infers a local class" do
+    code_map = Solargraph::CodeMap.new(code: %(
+      class Foo;end
+      Foo
+    ))
+    sugg = code_map.resolve_object_at(code_map.get_offset(2, 8))
+    expect(sugg[0].label).to eq('Foo')
+  end
 end

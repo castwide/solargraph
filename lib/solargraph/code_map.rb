@@ -323,7 +323,7 @@ module Solargraph
       if path.start_with?('Class<')
         path.gsub!(/^Class<([a-z0-9_:]*)>#([a-z0-9_]*)$/i, '\\1.\\2')
       end
-      api_map.yard_map.objects(path, ns_here)
+      api_map.get_path_suggestions(path)
     end
 
     # Infer the type of the signature located at the specified index.

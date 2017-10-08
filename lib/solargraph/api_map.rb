@@ -27,10 +27,6 @@ module Solargraph
     include NodeMethods
     include YardMethods
 
-    # @todo Temp for testing
-    attr_reader :new_method_pins
-    attr_reader :new_ivar_pins
-
     # The root directory of the project. The ApiMap will search here for
     # additional files to parse and analyze.
     #
@@ -56,8 +52,6 @@ module Solargraph
       @virtual_source = nil
       @virtual_filename = nil
       @stale = false
-      @new_method_pins = []
-      @new_ivar_pins = []
     end
 
     # @return [Solargraph::YardMap]
@@ -396,6 +390,27 @@ module Solargraph
       @sources.values
     end
 
+    def get_path_suggestions path
+      result = []
+      if path.include?('#')
+        # It's an instance method
+        parts = path.split('#')
+        result = get_instance_methods(parts[0], '', visibility: [:public, :private, :protected]).select{|s| s.label == parts[1]}
+      elsif path.include?('.')
+        # It's a class method
+        parts = path.split('.')
+        result = get_instance_methods(parts[0], '', visibility: [:public, :private, :protected]).select{|s| s.label == parts[1]}
+      else
+        # It's a class or module
+        get_namespace_nodes(path).each do |node|
+          # TODO This is way underimplemented
+          result.push Suggestion.new(path, kind: Suggestion::CLASS)
+        end
+        result.concat yard_map.objects(path)
+      end
+      result
+    end
+
     private
 
     def clear
@@ -493,7 +508,7 @@ module Solargraph
       mn = @method_pins[fqns]
       unless mn.nil?
         mn.select{ |pin| pin.scope == :class }.each do |pin|
-          meths.push Suggestion.pull(pin)
+          meths.push Suggestion.pull(pin, resolve_pin_return_type(pin))
         end
       end
       meths.uniq
@@ -507,13 +522,13 @@ module Solargraph
       an = @attr_pins[fqns]
       unless an.nil?
         an.each do |pin|
-          meths.push Suggestion.pull(pin)
+          meths.push Suggestion.pull(pin, resolve_pin_return_type(pin))
         end
       end
       mn = @method_pins[fqns]
       unless mn.nil?
         mn.select{|pin| visibility.include?(pin.visibility) and pin.scope == :instance }.each do |pin|
-          meths.push Suggestion.pull(pin)
+          meths.push Suggestion.pull(pin, resolve_pin_return_type(pin))
         end
       end
       if visibility.include?(:public) or visibility.include?(:protected)
