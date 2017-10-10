@@ -512,81 +512,11 @@ module Solargraph
     # @param index [Integer]
     # @return [String]
     def get_signature_at index
-      brackets = 0
-      squares = 0
-      parens = 0
-      signature = ''
-      index -=1
-      while index >= 0
-        unless string_at?(index)
-          break if brackets > 0 or parens > 0 or squares > 0
-          char = @code[index, 1]
-          if char == ')'
-            parens -=1
-          elsif char == ']'
-            squares -=1
-          elsif char == '}'
-            brackets -= 1
-          elsif char == '('
-            parens += 1
-          elsif char == '{'
-            brackets += 1
-          elsif char == '['
-            squares += 1
-            signature = ".[]#{signature}" if squares == 0 and @code[index-2] != '%'
-          end
-          if brackets == 0 and parens == 0 and squares == 0
-            break if ['"', "'", ',', ' ', "\t", "\n", ';', '%'].include?(char)
-            signature = char + signature if char.match(/[a-z0-9:\._@]/i) and @code[index - 1] != '%'
-            if char == '@'
-              signature = "@#{signature}" if @code[index-1, 1] == '@'
-              break
-            end
-          end
-        end
-        index -= 1
-      end
-      signature = signature[1..-1] if signature.start_with?('.')
-      #signature = signature[2..-1] if signature.start_with?('[]')
-      signature
+      get_signature_data_at(index)[1]
     end
 
     def get_signature_index_at index
-      brackets = 0
-      squares = 0
-      parens = 0
-      signature = ''
-      index -=1
-      while index >= 0
-        break if brackets > 0 or parens > 0 or squares > 0
-        char = @code[index, 1]
-        if char == ')'
-          parens -=1
-        elsif char == ']'
-          squares -=1
-        elsif char == '}'
-          brackets -= 1
-        elsif char == '('
-          parens += 1
-        elsif char == '{'
-          brackets += 1
-        elsif char == '['
-          squares += 1
-          signature = ".[]#{signature}" if squares == 0
-        end
-        if brackets == 0 and parens == 0 and squares == 0
-          break if ['"', "'", ',', ' ', "\t", "\n", ';'].include?(char)
-          signature = char + signature if char.match(/[a-z0-9:\._@]/i)
-          if char == '@'
-            signature = "@#{signature}" if @code[index-1, 1] == '@'
-            break
-          end
-        end
-        index -= 1
-      end
-      signature = signature[1..-1] if signature.start_with?('.')
-      signature = signature[2..-1] if signature.start_with?('[]')
-      index + 1
+      get_signature_data_at(index)[0]
     end
 
     def get_snippets_at(index)
@@ -632,6 +562,45 @@ module Solargraph
     end
 
     private
+
+    def get_signature_data_at index
+      brackets = 0
+      squares = 0
+      parens = 0
+      signature = ''
+      index -=1
+      while index >= 0
+        unless string_at?(index)
+          break if brackets > 0 or parens > 0 or squares > 0
+          char = @code[index, 1]
+          if char == ')'
+            parens -=1
+          elsif char == ']'
+            squares -=1
+          elsif char == '}'
+            brackets -= 1
+          elsif char == '('
+            parens += 1
+          elsif char == '{'
+            brackets += 1
+          elsif char == '['
+            squares += 1
+            signature = ".[]#{signature}" if squares == 0 and @code[index-2] != '%'
+          end
+          if brackets == 0 and parens == 0 and squares == 0
+            break if ['"', "'", ',', ' ', "\t", "\n", ';', '%'].include?(char)
+            signature = char + signature if char.match(/[a-z0-9:\._@]/i) and @code[index - 1] != '%'
+            if char == '@'
+              signature = "@#{signature}" if @code[index-1, 1] == '@'
+              break
+            end
+          end
+        end
+        index -= 1
+      end
+      signature = signature[1..-1] if signature.start_with?('.')
+      [index + 1, signature]
+    end
 
     # Get a node's arguments as an array of suggestions. The node's type must
     # be a method (:def or :defs).
