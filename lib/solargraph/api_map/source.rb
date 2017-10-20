@@ -181,10 +181,10 @@ module Solargraph
                     elsif c.type == :send and [:attr_reader, :attr_writer, :attr_accessor].include?(c.children[1])
                       c.children[2..-1].each do |a|
                         if c.children[1] == :attr_reader or c.children[1] == :attr_accessor
-                          attribute_pins.push Solargraph::Pin::Attribute.new(self, a, fqn, :reader) #AttrPin.new(c)
+                          attribute_pins.push Solargraph::Pin::Attribute.new(self, a, fqn, :reader, docstring_for(c)) #AttrPin.new(c)
                         end
                         if c.children[1] == :attr_writer or c.children[1] == :attr_accessor
-                          attribute_pins.push Solargraph::Pin::Attribute.new(self, a, fqn, :writer) #AttrPin.new(c)
+                          attribute_pins.push Solargraph::Pin::Attribute.new(self, a, fqn, :writer, docstring_for(c)) #AttrPin.new(c)
                         end
                       end
                     elsif c.type == :sclass and c.children[0].type == :self
