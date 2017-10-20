@@ -493,4 +493,17 @@ describe Solargraph::ApiMap do
     meth = api_map.get_instance_methods('Foo').select{|s| s.label == 'bar'}.first
     expect(meth.params).to eq(['baz [String]'])
   end
+
+  it "gets instance methods from modules" do
+    code = %(
+      module Foo
+        def bar
+        end
+      end
+    )
+    api_map = Solargraph::ApiMap.new
+    api_map.append_source(code, 'file.rb')
+    meths = api_map.get_instance_methods('Foo').map(&:to_s)
+    expect(meths).to include('bar')
+  end
 end

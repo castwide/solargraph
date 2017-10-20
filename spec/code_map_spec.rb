@@ -472,4 +472,14 @@ describe Solargraph::CodeMap do
     sugg = code_map.resolve_object_at(code_map.get_offset(2, 8))
     expect(sugg[0].label).to eq('Foo')
   end
+
+  it "suggests symbols" do
+    code_map = Solargraph::CodeMap.new(code: %(
+      [:foo, :bar]
+      :f
+    ))
+    sugg = code_map.suggest_at(code_map.get_offset(2, 8)).map(&:to_s)
+    expect(sugg).to include(':foo')
+    expect(sugg).to include(':bar')
+  end
 end
