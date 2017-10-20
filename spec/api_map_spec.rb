@@ -506,4 +506,17 @@ describe Solargraph::ApiMap do
     meths = api_map.get_instance_methods('Foo').map(&:to_s)
     expect(meths).to include('bar')
   end
+
+  it "detects attribute return types from tags" do
+    code = %(
+      class Foo
+        # @return [String]
+        attr_reader :bar
+      end
+    )
+    api_map = Solargraph::ApiMap.new
+    api_map.append_source(code, 'file.rb')
+    sugg = api_map.get_instance_methods('Foo').select{|s| s.label == 'bar'}.first
+    expect(sugg.return_type).to eq('String')
+  end
 end
