@@ -189,11 +189,7 @@ module Solargraph
 
     def get_symbols
       refresh
-      result = []
-      @symbol_pins.each do |s|
-        result.push s
-      end
-      result
+      @symbol_pins.uniq(&:label)
     end
 
     def get_filename_for(node)
