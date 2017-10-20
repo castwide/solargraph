@@ -42,6 +42,10 @@ module Solargraph
       def parameters
         []
       end
+
+      def filename
+        source.filename
+      end
     end
   end
 end
