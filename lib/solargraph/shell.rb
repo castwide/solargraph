@@ -4,6 +4,7 @@ require 'fileutils'
 require 'rubygems/package'
 require 'zlib'
 require 'net/http'
+require 'socket'
 
 module Solargraph
   class Shell < Thor
@@ -54,10 +55,14 @@ module Solargraph
     option :views, type: :string, aliases: :v, desc: 'The view template directory', default: nil
     option :files, type: :string, aliases: :f, desc: 'The public files directory', default: nil
     def server
-      Solargraph::Server.set :port, options[:port]
+      port = options[:port]
+      port = available_port if port.zero?
+      Solargraph::Server.set :port, port
       Solargraph::Server.set :views, options[:views] unless options[:views].nil?
       Solargraph::Server.set :public_folder, options[:files] unless options[:files].nil?
-      Solargraph::Server.run!
+      Solargraph::Server.run! do
+        STDERR.puts "Solargraph server pid=#{Process.pid} port=#{port}"
+      end
     end
     
     desc 'suggest', 'Get code suggestions for the provided input'
@@ -97,6 +102,16 @@ module Solargraph
           "  - test/**/*"
       end
       STDOUT.puts "Configuration file initialized."
+    end
+
+    private
+
+    def available_port
+      socket = Socket.new(:INET, :STREAM, 0)
+      socket.bind(Addrinfo.tcp("127.0.0.1", 0))
+      port = socket.local_address.ip_port
+      socket.close
+      port
     end
   end
 end
