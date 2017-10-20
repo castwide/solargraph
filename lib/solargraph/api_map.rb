@@ -115,7 +115,8 @@ module Solargraph
       cp = @const_pins[fqns]
       unless cp.nil?
         cp.each do |pin|
-          result.push Suggestion.pull(pin, resolve_pin_return_type(pin))
+          #result.push Suggestion.pull(pin, resolve_pin_return_type(pin))
+          result.push pin_to_suggestion(pin)
         end
       end
       result.concat yard_map.get_constants(namespace, root)
@@ -169,7 +170,8 @@ module Solargraph
       unless ip.nil?
         ip.select{ |pin| pin.scope == scope }.each do |pin|
           #result.push pin.suggestion
-          result.push Suggestion.pull(pin, resolve_pin_return_type(pin))
+          #result.push Suggestion.pull(pin, resolve_pin_return_type(pin))
+          result.push pin_to_suggestion(pin)
         end
       end
       result
@@ -181,7 +183,8 @@ module Solargraph
       ip = @cvar_pins[namespace]
       unless ip.nil?
         ip.each do |pin|
-          result.push Suggestion.pull(pin, resolve_pin_return_type(pin))
+          #result.push Suggestion.pull(pin, resolve_pin_return_type(pin))
+          result.push pin_to_suggestion(pin)
         end
       end
       result
@@ -436,6 +439,7 @@ module Solargraph
       @namespace_map = {}
       @namespace_tree = {}
       @required = []
+      @pin_suggestions = {}
       unless @virtual_source.nil?
         @sources[@virtual_filename] = @virtual_source
       end
@@ -504,7 +508,8 @@ module Solargraph
       mn = @method_pins[fqns]
       unless mn.nil?
         mn.select{ |pin| pin.scope == :class }.each do |pin|
-          meths.push Suggestion.pull(pin, resolve_pin_return_type(pin))
+          #meths.push Suggestion.pull(pin, resolve_pin_return_type(pin))
+          meths.push pin_to_suggestion(pin)
         end
       end
       meths.uniq
@@ -518,13 +523,15 @@ module Solargraph
       an = @attr_pins[fqns]
       unless an.nil?
         an.each do |pin|
-          meths.push Suggestion.pull(pin, resolve_pin_return_type(pin))
+          #meths.push Suggestion.pull(pin, resolve_pin_return_type(pin))
+          meths.push pin_to_suggestion(pin)
         end
       end
       mn = @method_pins[fqns]
       unless mn.nil?
         mn.select{|pin| visibility.include?(pin.visibility) and pin.scope == :instance }.each do |pin|
-          meths.push Suggestion.pull(pin, resolve_pin_return_type(pin))
+          #meths.push Suggestion.pull(pin, resolve_pin_return_type(pin))
+          meths.push pin_to_suggestion(pin)
         end
       end
       if visibility.include?(:public) or visibility.include?(:protected)
@@ -572,7 +579,8 @@ module Solargraph
             cp = @const_pins[fqns]
             unless cp.nil?
               cp.each do |pin|
-                result.push Suggestion.pull(pin, resolve_pin_return_type(pin))
+                #result.push Suggestion.pull(pin, resolve_pin_return_type(pin))
+                result.push pin_to_suggestion(pin)
               end
             end
             inc = @namespace_includes[fqns]
@@ -694,6 +702,10 @@ module Solargraph
         result = "#{subtype}#class"
       end
       result
+    end
+
+    def pin_to_suggestion pin
+      @pin_suggestions[pin] ||= Suggestion.pull(pin, resolve_pin_return_type(pin))
     end
 
     def resolve_pin_return_type pin
