@@ -39,13 +39,11 @@ module Solargraph
       self.api_map.refresh
     end
 
-    # Get the ApiMap that was generated for this CodeMap.
+    # Get the associated ApiMap.
     #
     # @return [Solargraph::ApiMap]
     def api_map
       @api_map ||= ApiMap.new(workspace)
-      #@api_map.refresh
-      #@api_map
     end
 
     # Get the offset of the specified line and column.
@@ -156,25 +154,6 @@ module Solargraph
       end
     end
 
-    # Select the phrase that directly precedes the specified index.
-    # A phrase can consist of most types of characters other than whitespace,
-    # semi-colons, equal signs, parentheses, or brackets.
-    #
-    # @param index [Integer]
-    # @return [String]
-    def phrase_at index
-      word = ''
-      cursor = index - 1
-      while cursor > -1
-        char = @code[cursor, 1]
-        break if char.nil? or char == ''
-        break unless char.match(/[\s;=\(\)\[\]\{\}]/).nil?
-        word = char + word
-        cursor -= 1
-      end
-      word
-    end
-
     # Select the word that directly precedes the specified index.
     # A word can only consist of letters, numbers, and underscores.
     #
@@ -212,62 +191,53 @@ module Solargraph
     # @return [Array<Suggestions>] The completion suggestions
     def suggest_at index, filtered: false, with_snippets: false
       return [] if string_at?(index) or string_at?(index - 1) or comment_at?(index)
-      result = []
       signature = get_signature_at(index)
-      if signature.start_with?(':')
-        result.concat api_map.get_symbols
-      else
-        type = infer_signature_at(index)
-        if type.nil?
-          if signature.include?('.')
-            last_period = @code[0..index].rindex('.')
-            type = infer_signature_at(last_period)
+      unless signature.include?('.')
+        if signature.start_with?(':')
+          return api_map.get_symbols
+        elsif signature.start_with?('@@')
+          return get_class_variables_at(index)
+        elsif signature.start_with?('@')
+          return get_instance_variables_at(index)
+        elsif signature.start_with?('$')
+          return api_map.get_global_variables
+        end
+      end
+      result = []
+      type = infer_signature_at(index)
+      if type.nil? and signature.include?('.')
+        last_period = @code[0..index].rindex('.')
+        type = infer_signature_at(last_period)
+      end
+      if type.nil?
+        unless signature.include?('.')
+          namespace = namespace_at(index)
+          if signature.include?('::')
+            parts = signature.split('::', -1)
+            ns = parts[0..-2].join('::')
+            result = api_map.namespaces_in(ns, namespace)
           else
-            if signature.start_with?('@@')
-              return get_class_variables_at(index)
-            elsif signature.start_with?('@')
-              return get_instance_variables_at(index)
-            elsif signature.start_with?('$')
-              return api_map.get_global_variables
-            end
-          end
-        end
-        if type.nil?
-          unless signature.include?('.')
-            phrase = phrase_at(index)
-            namespace = namespace_at(index)
-            if phrase.include?('::')
-              parts = phrase.split('::', -1)
-              ns = parts[0..-2].join('::')
-              if parts.last.include?('.')
-                ns = parts[0..-2].join('::') + '::' + parts.last[0..parts.last.index('.')-1]
-                result = api_map.get_methods(ns)
-              else
-                result = api_map.namespaces_in(ns, namespace)
+            type = infer_literal_node_type(node_at(index - 2))
+            if type.nil?
+              current_namespace = namespace_at(index)
+              parts = current_namespace.to_s.split('::')
+              result += get_snippets_at(index) if with_snippets
+              result += get_local_variables_and_methods_at(index)
+              result += ApiMap.get_keywords
+              while parts.length > 0
+                ns = parts.join('::')
+                result += api_map.namespaces_in(ns, namespace)
+                parts.pop
               end
+              result += api_map.namespaces_in('')
+              result += api_map.get_instance_methods('Kernel')
             else
-              type = infer_literal_node_type(node_at(index - 2))
-              if type.nil?
-                current_namespace = namespace_at(index)
-                parts = current_namespace.to_s.split('::')
-                result += get_snippets_at(index) if with_snippets
-                result += get_local_variables_and_methods_at(index)
-                result += ApiMap.get_keywords
-                while parts.length > 0
-                  ns = parts.join('::')
-                  result += api_map.namespaces_in(ns, namespace)
-                  parts.pop
-                end
-                result += api_map.namespaces_in('')
-                result += api_map.get_instance_methods('Kernel')
-              else
-                result.concat api_map.get_instance_methods(type)
-              end
+              result.concat api_map.get_instance_methods(type)
             end
           end
-        else
-          result.concat api_map.get_instance_methods(type)
         end
+      else
+        result.concat api_map.get_instance_methods(type)
       end
       result = reduce_starting_with(result, word_at(index)) if filtered
       result.uniq{|s| s.path}.sort{|a,b| a.label <=> b.label}
