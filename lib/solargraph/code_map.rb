@@ -217,9 +217,7 @@ module Solargraph
       if signature.start_with?(':')
         result.concat api_map.get_symbols
       else
-        if index == 0 or @code[index - 1].match(/[\.\s]/)
-          type = infer_signature_at(index)
-        end
+        type = infer_signature_at(index)
         if type.nil?
           if signature.include?('.')
             last_period = @code[0..index].rindex('.')
@@ -231,8 +229,6 @@ module Solargraph
               return get_instance_variables_at(index)
             elsif signature.start_with?('$')
               return api_map.get_global_variables
-            else
-              type = infer_signature_at(index)
             end
           end
         end
@@ -281,7 +277,8 @@ module Solargraph
       sig = signature_index_before(index)
       return [] if sig.nil?
       word = word_at(sig)
-      suggest_at(sig).reject{|s| s.label != word}
+      sugg = suggest_at(sig - word.length)
+      sugg.select{|s| s.label == word}
     end
 
     def resolve_object_at index
