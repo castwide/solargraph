@@ -222,11 +222,7 @@ module Solargraph
         else
           if signature.include?('.')
             last_period = @code[0..index].rindex('.')
-            if last_period.nil?
-              type = infer_signature_at(index)
-            else
-              type = infer_signature_at(last_period)
-            end  
+            type = infer_signature_at(last_period)
           else
             if signature.start_with?('@@')
               return get_class_variables_at(index)
@@ -445,18 +441,10 @@ module Solargraph
       return nil if start.nil?
       remainder = parts[1..-1]
       if start.start_with?('@@')
-        #type = api_map.infer_class_variable(start, ns_here)
-        #return nil if type.nil?
-        #return type if remainder.empty?
-        #return api_map.infer_signature_type(remainder.join('.'), type, scope: :instance)
         cv = api_map.get_class_variables(ns_here).select{|s| s.label == start}.first
         return cv.return_type unless cv.nil?
       elsif start.start_with?('@')
         scope = (node.type == :def ? :instance : :class)
-        #type = api_map.infer_instance_variable(start, ns_here, scope)
-        #return nil if type.nil?
-        #return type if remainder.empty?
-        #return api_map.infer_signature_type(remainder.join('.'), type, scope: :instance)
         iv = api_map.get_instance_variables(ns_here, scope).select{|s| s.label == start}.first
         return iv.return_type unless iv.nil?
       end
