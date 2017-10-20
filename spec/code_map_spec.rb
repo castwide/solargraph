@@ -230,12 +230,14 @@ describe Solargraph::CodeMap do
       class Foo
         # @param baz [String]
         def bar baz
-          baz
+          baz.split(',').
         end
       end
-    ))
-    sig = code_map.infer_signature_at(80)
+    ), cursor: [4, 25])
+    sig = code_map.infer_signature_at(code_map.get_offset(4, 13))
     expect(sig).to eq('String')
+    sig = code_map.infer_signature_at(code_map.get_offset(4, 25))
+    expect(sig).to eq('Array')
   end
 
   it "infers signatures from yield params" do

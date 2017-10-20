@@ -219,7 +219,8 @@ module Solargraph
       else
         if index == 0 or @code[index - 1].match(/[\.\s]/)
           type = infer_signature_at(index)
-        else
+        end
+        if type.nil?
           if signature.include?('.')
             last_period = @code[0..index].rindex('.')
             type = infer_signature_at(last_period)
@@ -238,7 +239,6 @@ module Solargraph
         if type.nil?
           unless signature.include?('.')
             phrase = phrase_at(index)
-            signature = get_signature_at(index)
             namespace = namespace_at(index)
             if phrase.include?('::')
               parts = phrase.split('::', -1)
@@ -366,7 +366,8 @@ module Solargraph
               if parts[1].nil?
                 result = arg.return_type
               else
-                result = api_map.infer_signature_type(parts[1], parts[0], scope: :instance)
+                #result = api_map.infer_signature_type(parts[1], parts[0], scope: :instance)
+                result = api_map.infer_signature_type(parts[1], arg.return_type, scope: :instance)
               end
             end
           end
