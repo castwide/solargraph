@@ -51,7 +51,7 @@ module Solargraph
       @sources = {}
       @virtual_source = nil
       @virtual_filename = nil
-      @stale = false
+      @stale = true
     end
 
     # @return [Solargraph::YardMap]
@@ -62,9 +62,11 @@ module Solargraph
     end
 
     def virtualize filename, code, cursor = nil
-      @stale = true
+      refresh
       @virtual_filename = filename
       @virtual_source = Source.fix(filename, code, cursor)
+      process_virtual
+      @virtual_source
     end
 
     def append_source code, filename
@@ -455,6 +457,23 @@ module Solargraph
       }
       @required.uniq!
       @stale = false
+    end
+
+    def process_virtual
+      unless @virtual_source.nil?
+        @sources[@virtual_filename] = @virtual_source
+        @sources.values.each do |s|
+          s.namespace_nodes.each_pair do |k, v|
+            @namespace_map[k] ||= []
+            @namespace_map[k].concat v
+            add_to_namespace_tree k.split('::')
+          end
+        end
+        [@ivar_pins, @cvar_pins, @const_pins, @method_pins, @symbol_pins, @attr_pins].each do |pins|
+          pins.delete_if{|pin| pin.filename == @virtual_filename}
+        end
+        map_source @virtual_source
+      end
     end
 
     # @param [Solargraph::ApiMap::Source]
