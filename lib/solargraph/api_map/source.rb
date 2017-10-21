@@ -236,10 +236,6 @@ module Solargraph
             # incomplete trees resulting from short scripts (e.g., a lone variable
             # assignment).
             node, comments = Parser::CurrentRuby.parse_with_comments(tmp + "\n_")
-            #@node = self.api_map.append_node(node, @comments, filename)
-            #@parsed = tmp
-            #@code.freeze
-            #@parsed.freeze
             Source.new(code, node, comments, filename)
           rescue Parser::SyntaxError => e
             if tries < 10
