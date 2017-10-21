@@ -189,7 +189,7 @@ module Solargraph
     # source.
     #
     # @return [Array<Suggestions>] The completion suggestions
-    def suggest_at index, filtered: false, with_snippets: false
+    def suggest_at index, filtered: true, with_snippets: false
       return [] if string_at?(index) or string_at?(index - 1) or comment_at?(index)
       signature = get_signature_at(index)
       unless signature.include?('.')
