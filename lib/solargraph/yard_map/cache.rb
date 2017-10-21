@@ -15,7 +15,7 @@ module Solargraph
     end
 
     def set_methods namespace, scope, visibility, suggestions
-      @methods[[namespace, scope, visibility]] = suggestions
+      @methods[[namespace, scope, visibility]] = suggestions.uniq{|s| s.path}
     end
 
     def get_methods namespace, scope, visibility
@@ -23,7 +23,7 @@ module Solargraph
     end
 
     def set_instance_methods namespace, scope, visibility, suggestions
-      @instance_methods[[namespace, scope, visibility]] = suggestions
+      @instance_methods[[namespace, scope, visibility]] = suggestions.uniq{|s| s.path}
     end
 
     def get_instance_methods namespace, scope, visibility

@@ -240,8 +240,7 @@ module Solargraph
         result.concat api_map.get_instance_methods(type)
       end
       result = reduce_starting_with(result, word_at(index)) #if filtered
-      #result.uniq{|s| s.path}.sort{|a,b| a.label <=> b.label}
-      result.sort{|a,b| a.label <=> b.label}
+      result.uniq{|s| s.path}.sort{|a,b| a.label <=> b.label}
     end
 
     def signatures_at index

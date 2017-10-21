@@ -7,6 +7,7 @@ module Solargraph
     autoload :Cache, 'solargraph/yard_map/cache'
 
     attr_reader :workspace
+    attr_reader :required
 
     def initialize required: [], workspace: nil
       @workspace = workspace
@@ -15,7 +16,8 @@ module Solargraph
         #yardocs.push wsy if File.exist?(wsy)
       end
       used = []
-      required.each { |r|
+      @required = required
+      @required.each { |r|
         if workspace.nil? or !File.exist?(File.join workspace, 'lib', "#{r}.rb")
           g = r.split('/').first
           unless used.include?(g)

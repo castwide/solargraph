@@ -9,7 +9,6 @@ module Solargraph
     autoload :Cache,     'solargraph/api_map/cache'
 
     @@source_cache = {}
-    @@yard_map_cache = {}
     @@semaphore = Mutex.new
 
     KEYWORDS = [
@@ -56,9 +55,10 @@ module Solargraph
 
     # @return [Solargraph::YardMap]
     def yard_map
-      @@semaphore.synchronize {
-        @@yard_map_cache[[required, workspace]] ||= Solargraph::YardMap.new(required: required, workspace: workspace)
-      }
+      if @yard_map.nil? || @yard_map.required != required
+        @yard_map = Solargraph::YardMap.new(required: required, workspace: workspace)
+      end
+      @yard_map
     end
 
     def virtualize filename, code, cursor = nil
@@ -66,6 +66,7 @@ module Solargraph
       @virtual_filename = filename
       @virtual_source = Source.fix(filename, code, cursor)
       process_virtual
+      #refresh true
       @virtual_source
     end
 
@@ -461,6 +462,7 @@ module Solargraph
 
     def process_virtual
       unless @virtual_source.nil?
+        cache.clear
         @sources[@virtual_filename] = @virtual_source
         @sources.values.each do |s|
           s.namespace_nodes.each_pair do |k, v|
@@ -469,9 +471,12 @@ module Solargraph
             add_to_namespace_tree k.split('::')
           end
         end
-        [@ivar_pins, @cvar_pins, @const_pins, @method_pins, @symbol_pins, @attr_pins].each do |pins|
-          pins.delete_if{|pin| pin.filename == @virtual_filename}
+        [@ivar_pins.values, @cvar_pins.values, @const_pins.values, @method_pins.values, @attr_pins.values].each do |pinsets|
+          pinsets.each do |pins|
+            pins.delete_if{|pin| pin.filename == @virtual_filename}
+          end
         end
+        #@symbol_pins.delete_if{|pin| pin.filename == @virtual_filename}
         map_source @virtual_source
       end
     end
