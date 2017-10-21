@@ -2,6 +2,11 @@ require 'parser/current'
 require 'yard'
 require 'bundler'
 
+class Foo
+  class Bar
+  end
+end
+
 module Solargraph
 
   class YardMap
@@ -116,6 +121,14 @@ module Solargraph
         end
         result.push Suggestion.new(c.to_s.split('::').last, detail: detail, kind: kind, documentation: c.docstring)
       }
+      if result.empty? and !scope.empty?
+        parts = scope.split('::')
+        until parts.empty?
+          parts.pop
+          result.concat get_constants(namespace, parts.join('::'))
+          break unless result.empty?
+        end
+      end
       cache.set_constants(namespace, scope, result)
       result
     end
