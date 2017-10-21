@@ -1,5 +1,6 @@
 require 'parser/current'
 require 'yard'
+require 'bundler'
 
 module Solargraph
 
@@ -12,8 +13,8 @@ module Solargraph
     def initialize required: [], workspace: nil
       @workspace = workspace
       used = []
-      @required = required
-      @required.each { |r|
+      required.each { |r|
+        yardocs.concat bundled_gem_yardocs if r == 'bundler/setup'
         if workspace.nil? or !File.exist?(File.join workspace, 'lib', "#{r}.rb")
           g = r.split('/').first
           unless used.include?(g)
@@ -246,6 +247,25 @@ module Solargraph
         end
       }
       result
+    end
+
+    def bundled_gem_yardocs
+      result = []
+      unless workspace.nil?
+        gl = File.join(workspace, 'Gemfile.lock')
+        if File.file?(gl)
+          lockfile = Bundler::LockfileParser.new(Bundler.read_file(gl))
+          lockfile.specs.each do |s|
+            y = YARD::Registry.yardoc_file_for_gem(s.name, s.version.to_s)
+            if y.nil?
+              STDERR.puts "Bundled gem not found: #{s.name} #{s.version}"
+            else
+              result.push y
+            end
+          end
+        end
+      end
+      result.uniq
     end
 
     private
