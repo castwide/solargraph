@@ -13,7 +13,8 @@ module Solargraph
     def initialize required: [], workspace: nil
       @workspace = workspace
       used = []
-      required.each { |r|
+      @required = required
+      @required.each { |r|
         yardocs.concat bundled_gem_yardocs if r == 'bundler/setup'
         if workspace.nil? or !File.exist?(File.join workspace, 'lib', "#{r}.rb")
           g = r.split('/').first
