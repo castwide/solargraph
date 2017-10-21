@@ -21,6 +21,7 @@ Gem::Specification.new do |s|
   s.add_runtime_dependency 'sinatra', '~> 2'
   s.add_runtime_dependency 'yard', '~> 0.9'
   s.add_runtime_dependency 'bundler'
+  s.add_runtime_dependency 'puma'
 
   s.add_development_dependency 'rspec', '~> 3.5', '>= 3.5.0'
   s.add_development_dependency 'rack-test', '~> 0.7'
