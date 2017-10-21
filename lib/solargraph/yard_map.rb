@@ -11,10 +11,6 @@ module Solargraph
 
     def initialize required: [], workspace: nil
       @workspace = workspace
-      unless workspace.nil?
-        wsy = File.join(workspace, '.yardoc')
-        #yardocs.push wsy if File.exist?(wsy)
-      end
       used = []
       @required = required
       @required.each { |r|
