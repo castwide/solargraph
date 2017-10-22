@@ -631,9 +631,10 @@ module Solargraph
 
     def get_local_variables_from(node)
       node ||= @node
+      namespace = namespace_from(node)
       arr = []
       @source.local_variable_pins.each do |pin|
-        arr.push Suggestion.new(pin.name, kind: Suggestion::VARIABLE) if pin.visible_from?(node)
+        arr.push Suggestion.new(pin.name, kind: Suggestion::VARIABLE, return_type: api_map.infer_assignment_node_type(pin.node, namespace)) if pin.visible_from?(node)
       end
       arr
     end
@@ -681,8 +682,6 @@ module Solargraph
       while parts.length > 0
         result = api_map.find_fully_qualified_namespace("#{conc}::#{parts[0]}", namespace)
         if result.nil? or result.empty?
-          #sugg = api_map.namespaces_in(conc, namespace).select{ |s| s.label == parts[0] }.first
-          bla = api_map.get_constants(conc, namespace)
           sugg = api_map.get_constants(conc, namespace).select{|s| s.label == parts[0]}.first
           return nil if sugg.nil?
           result = sugg.return_type
