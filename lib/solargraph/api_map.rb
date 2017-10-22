@@ -66,7 +66,6 @@ module Solargraph
       @virtual_filename = filename
       @virtual_source = Source.fix(filename, code, cursor)
       process_virtual
-      #refresh true
       @virtual_source
     end
 
@@ -118,7 +117,6 @@ module Solargraph
       cp = @const_pins[fqns]
       unless cp.nil?
         cp.each do |pin|
-          #result.push Suggestion.pull(pin, resolve_pin_return_type(pin))
           result.push pin_to_suggestion(pin)
         end
       end
@@ -172,8 +170,6 @@ module Solargraph
       ip = @ivar_pins[namespace]
       unless ip.nil?
         ip.select{ |pin| pin.scope == scope }.each do |pin|
-          #result.push pin.suggestion
-          #result.push Suggestion.pull(pin, resolve_pin_return_type(pin))
           result.push pin_to_suggestion(pin)
         end
       end
@@ -186,7 +182,6 @@ module Solargraph
       ip = @cvar_pins[namespace]
       unless ip.nil?
         ip.each do |pin|
-          #result.push Suggestion.pull(pin, resolve_pin_return_type(pin))
           result.push pin_to_suggestion(pin)
         end
       end
@@ -532,7 +527,6 @@ module Solargraph
       mn = @method_pins[fqns]
       unless mn.nil?
         mn.select{ |pin| pin.scope == :class }.each do |pin|
-          #meths.push Suggestion.pull(pin, resolve_pin_return_type(pin))
           meths.push pin_to_suggestion(pin)
         end
       end
@@ -547,14 +541,12 @@ module Solargraph
       an = @attr_pins[fqns]
       unless an.nil?
         an.each do |pin|
-          #meths.push Suggestion.pull(pin, resolve_pin_return_type(pin))
           meths.push pin_to_suggestion(pin)
         end
       end
       mn = @method_pins[fqns]
       unless mn.nil?
         mn.select{|pin| visibility.include?(pin.visibility) and pin.scope == :instance }.each do |pin|
-          #meths.push Suggestion.pull(pin, resolve_pin_return_type(pin))
           meths.push pin_to_suggestion(pin)
         end
       end
@@ -603,7 +595,6 @@ module Solargraph
             cp = @const_pins[fqns]
             unless cp.nil?
               cp.each do |pin|
-                #result.push Suggestion.pull(pin, resolve_pin_return_type(pin))
                 result.push pin_to_suggestion(pin)
               end
             end
