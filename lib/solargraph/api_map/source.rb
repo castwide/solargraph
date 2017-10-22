@@ -12,7 +12,7 @@ module Solargraph
 
       def initialize code, node, comments, filename
         @code = code
-        root = AST::Node.new(:begin, [filename])
+        root = AST::Node.new(:source, [filename])
         root = root.append node
         @node = root
         @comments = comments
@@ -20,6 +20,8 @@ module Solargraph
         @filename = filename
         @namespace_nodes = {}
         @all_nodes = []
+        @node_stack = []
+        @node_tree = {}
         inner_map_node @node
       end
 
@@ -55,6 +57,10 @@ module Solargraph
         @class_variable_pins ||= []
       end
 
+      def local_variable_pins
+        @local_variable_pis ||= []
+      end
+
       def constant_pins
         @constant_pins ||= []
       end
@@ -76,6 +82,10 @@ module Solargraph
         e = node.location.expression.end.end_pos
         frag = code[b..e-1].to_s
         frag.strip.gsub(/,$/, '')
+      end
+
+      def tree_for node
+        @node_tree[node] || []
       end
 
       def include? node
@@ -132,8 +142,10 @@ module Solargraph
             end
           end
           file = source.filename
+          @node_stack.unshift node
           node.children.each do |c|
             if c.kind_of?(AST::Node)
+              @node_tree[c] = @node_stack.clone
               if c.type == :ivasgn
                 par = find_parent(stack, :class, :module, :def, :defs)
                 local_scope = ( (par.kind_of?(AST::Node) and par.type == :def) ? :instance : :class )
@@ -141,6 +153,7 @@ module Solargraph
                   ora = find_parent(stack, :or_asgn)
                   unless ora.nil?
                     u = c.updated(:ivasgn, c.children + ora.children[1..-1], nil)
+                    @node_tree[u] = @node_stack.clone
                     instance_variable_pins.push Solargraph::Pin::InstanceVariable.new(self, u, fqn || '', local_scope)
                   end
                 else
@@ -151,10 +164,22 @@ module Solargraph
                   ora = find_parent(stack, :or_asgn)
                   unless ora.nil?
                     u = c.updated(:cvasgn, c.children + ora.children[1..-1], nil)
+                    @node_tree[u] = @node_stack.clone
                     class_variable_pins.push Solargraph::Pin::ClassVariable.new(self, u, fqn || '')
                   end
                 else
                   class_variable_pins.push Solargraph::Pin::ClassVariable.new(self, c, fqn || '')
+                end
+              elsif c.type == :lvasgn
+                if c.children[1].nil?
+                  ora = find_parent(stack, :or_asgn)
+                  unless ora.nil?
+                    u = c.updated(:lvasgn, c.children + ora.children[1..-1], nil)
+                    @node_tree[u] = @node_stack.clone
+                    local_variable_pins.push Solargraph::Pin::LocalVariable.new(self, u, fqn || '', @node_stack.clone)
+                  end
+                else
+                  local_variable_pins.push Solargraph::Pin::LocalVariable.new(self, c, fqn || '', @node_stack.clone)
                 end
               elsif c.type == :sym
                 symbol_pins.push Solargraph::Pin::Symbol.new(self, c, fqn)
@@ -198,10 +223,11 @@ module Solargraph
                     required.push c.children[2].children[0].to_s
                   end
                 end
-                inner_map_node c, tree, visibility, scope, fqn, stack
               end
+              inner_map_node c, tree, visibility, scope, fqn, stack
             end
           end
+          @node_stack.shift
         end
         stack.pop
       end
@@ -220,11 +246,13 @@ module Solargraph
           Source.virtual(filename, code)
         end
 
+        # @return [Solargraph::ApiMap::Source]
         def virtual filename, code
           node, comments = Parser::CurrentRuby.parse_with_comments(code)
           Source.new(code, node, comments, filename)
         end
 
+        # @return [Solargraph::ApiMap::Source]
         def fix filename, code, cursor = nil
           tries = 0
           code.gsub!(/\r/, '')

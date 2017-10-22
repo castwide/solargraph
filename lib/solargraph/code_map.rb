@@ -65,7 +65,7 @@ module Solargraph
           offset += l.length
         }
       end
-      offset + col      
+      offset + col
     end
 
     # Get an array of nodes containing the specified index, starting with the
@@ -239,7 +239,7 @@ module Solargraph
       else
         result.concat api_map.get_instance_methods(type)
       end
-      result = reduce_starting_with(result, word_at(index)) #if filtered
+      result = reduce_starting_with(result, word_at(index)) if filtered
       result.uniq{|s| s.path}.sort{|a,b| a.label <=> b.label}
     end
 
@@ -333,7 +333,6 @@ module Solargraph
               if parts[1].nil?
                 result = arg.return_type
               else
-                #result = api_map.infer_signature_type(parts[1], parts[0], scope: :instance)
                 result = api_map.infer_signature_type(parts[1], arg.return_type, scope: :instance)
               end
             end
@@ -502,7 +501,8 @@ module Solargraph
     def get_local_variables_and_methods_at(index)
       result = []
       local = parent_node_from(index, :class, :module, :def, :defs) || @node
-      result += get_local_variables_from(local)
+      #result += get_local_variables_from(local)
+      result += get_local_variables_from(node_at(index))
       scope = namespace_at(index) || @node
       if local.type == :def
         result += api_map.get_instance_methods(scope, visibility: [:public, :private, :protected])
@@ -513,7 +513,8 @@ module Solargraph
         result += get_method_arguments_from local
       end
       result += get_yieldparams_at(index)
-      result += api_map.get_methods('Kernel')
+      # @todo This might not be necessary.
+      #result += api_map.get_methods('Kernel')
       result
     end
 
@@ -631,16 +632,9 @@ module Solargraph
     def get_local_variables_from(node)
       node ||= @node
       arr = []
-      node.children.each { |c|
-        if c.kind_of?(AST::Node)
-          if c.type == :lvasgn
-            type = api_map.infer_assignment_node_type(c, namespace_from(c))
-            arr.push Suggestion.new(c.children[0], kind: Suggestion::VARIABLE, documentation: api_map.get_comment_for(c), return_type: type)
-          else
-            arr += get_local_variables_from(c) unless [:class, :module, :def, :defs].include?(c.type)
-          end
-        end
-      }
+      @source.local_variable_pins.each do |pin|
+        arr.push Suggestion.new(pin.name, kind: Suggestion::VARIABLE) if pin.visible_from?(node)
+      end
       arr
     end
 
