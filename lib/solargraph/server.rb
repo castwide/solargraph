@@ -43,11 +43,13 @@ module Solargraph
       begin
         sugg = []
         workspace = params['workspace']
+        api_map = nil
         @@semaphore.synchronize {
-          code_map = CodeMap.new(code: params['text'], filename: params['filename'], api_map: @@api_hash[workspace], cursor: [params['line'].to_i, params['column'].to_i])
-          offset = code_map.get_offset(params['line'].to_i, params['column'].to_i)
-          sugg = code_map.suggest_at(offset, with_snippets: params['with_snippets'] == '1' ? true : false, filtered: (params['filtered'] || false))
+          api_map = @@api_hash[workspace]
         }
+        code_map = CodeMap.new(code: params['text'], filename: params['filename'], api_map: api_map, cursor: [params['line'].to_i, params['column'].to_i])
+        offset = code_map.get_offset(params['line'].to_i, params['column'].to_i)
+        sugg = code_map.suggest_at(offset, with_snippets: params['with_snippets'] == '1' ? true : false, filtered: true)
         { "status" => "ok", "suggestions" => sugg }.to_json
       rescue Exception => e
         STDERR.puts e
