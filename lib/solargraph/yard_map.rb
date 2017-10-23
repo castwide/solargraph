@@ -31,6 +31,7 @@ module Solargraph
             else
               STDERR.puts "Adding #{gy}"
               yardocs.unshift gy
+              add_gem_dependencies g
             end
           end
         end
@@ -326,6 +327,19 @@ module Solargraph
         'Module'
       else
         nil
+      end
+    end
+
+    def add_gem_dependencies gem_name
+      spec = Gem::Specification.find_by_name(gem_name)
+      spec.nondevelopment_dependencies.each do |dep|
+        gy = YARD::Registry.yardoc_file_for_gem(dep.name)
+        if gy.nil?
+          STDERR.puts "Required path not found: #{r}"
+        else
+          STDERR.puts "Adding #{gy}"
+          yardocs.unshift gy
+        end
       end
     end
   end
