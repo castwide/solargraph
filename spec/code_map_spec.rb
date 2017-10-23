@@ -484,4 +484,25 @@ describe Solargraph::CodeMap do
     expect(sugg).to include(':foo')
     expect(sugg).to include(':bar')
   end
+
+  it "finds local variables in scope" do
+    code_map = Solargraph::CodeMap.new(code: %(
+      class Foo
+        def bar
+          lvar = 'lvar'
+          lvar
+        end
+        def baz
+          lvar
+        end
+      end
+      lvar
+    ))
+    sugg = code_map.suggest_at(code_map.get_offset(4, 13)).map(&:to_s)
+    expect(sugg).to include('lvar')
+    sugg = code_map.suggest_at(code_map.get_offset(7, 13)).map(&:to_s)
+    expect(sugg).not_to include('lvar')
+    sugg = code_map.suggest_at(code_map.get_offset(10, 9)).map(&:to_s)
+    expect(sugg).not_to include('lvar')
+  end
 end
