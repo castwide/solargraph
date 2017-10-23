@@ -3,9 +3,16 @@ require 'parser/current'
 module Solargraph
   class ApiMap
     class Source
+      # @return [String]
       attr_reader :code
+
+      # @return [Parser::AST::Node]
       attr_reader :node
+
+      # @return [Array]
       attr_reader :comments
+
+      # @return [String]
       attr_reader :filename
 
       include NodeMethods

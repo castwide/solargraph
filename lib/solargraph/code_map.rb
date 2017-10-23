@@ -5,7 +5,7 @@ module Solargraph
 
     # The root node of the parsed code.
     #
-    # @return [AST::Node]
+    # @return [Parser::AST::Node]
     attr_reader :node
 
     # The source code being analyzed.
