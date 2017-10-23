@@ -9,7 +9,6 @@ module Solargraph
     autoload :Cache,     'solargraph/api_map/cache'
 
     @@source_cache = {}
-    @@semaphore = Mutex.new
 
     KEYWORDS = [
       '__ENCODING__', '__LINE__', '__FILE__', 'BEGIN', 'END', 'alias', 'and',
