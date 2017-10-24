@@ -19,26 +19,29 @@ module Solargraph
       @workspace = workspace
       used = []
       @required = required
-      @required.each { |r|
-        yardocs.concat bundled_gem_yardocs if r == 'bundler/setup'
-        if workspace.nil? or !File.exist?(File.join workspace, 'lib', "#{r}.rb")
-          g = r.split('/').first
-          unless used.include?(g)
-            used.push g
-            gy = YARD::Registry.yardoc_file_for_gem(g)
-            if gy.nil?
-              STDERR.puts "Required path not found: #{r}"
-            else
-              STDERR.puts "Adding #{gy}"
-              yardocs.unshift gy
-              add_gem_dependencies g
+      if @required.include?('bundler/setup')
+        yardocs.concat bundled_gem_yardocs
+      else
+        @required.each do |r|
+          if workspace.nil? or !File.exist?(File.join workspace, 'lib', "#{r}.rb")
+            g = r.split('/').first
+            unless used.include?(g)
+              used.push g
+              gy = YARD::Registry.yardoc_file_for_gem(g)
+              if gy.nil?
+                STDERR.puts "Required path not found: #{r}"
+              else
+                STDERR.puts "Adding #{gy}"
+                yardocs.unshift gy
+                add_gem_dependencies g
+              end
             end
           end
         end
-      }
+      end
       yardocs.push File.join(Dir.home, '.solargraph', 'cache', '2.0.0', 'yardoc')
       yardocs.uniq!
-      cache_core
+      #cache_core
     end
 
     # @return [Array<String>]
