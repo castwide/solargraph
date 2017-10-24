@@ -141,6 +141,7 @@ module Solargraph
         Thread.new do
           @@semaphore.synchronize do
             api_map = Solargraph::ApiMap.new(directory)
+            api_map.yard_map
             @@api_hash[directory] = api_map
           end
         end

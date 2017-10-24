@@ -54,6 +54,7 @@ module Solargraph
 
     # @return [Solargraph::YardMap]
     def yard_map
+      refresh
       if @yard_map.nil? || @yard_map.required != required
         @yard_map = Solargraph::YardMap.new(required: required, workspace: workspace)
       end
