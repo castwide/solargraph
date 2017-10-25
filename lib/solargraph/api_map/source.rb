@@ -65,7 +65,7 @@ module Solargraph
       end
 
       def local_variable_pins
-        @local_variable_pis ||= []
+        @local_variable_pins ||= []
       end
 
       def constant_pins

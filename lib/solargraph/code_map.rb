@@ -629,18 +629,21 @@ module Solargraph
       }
     end
 
+    # Find all the local variables in the node's scope.
+    #
+    # @return [Array<Solargraph::Suggestion>]
     def get_local_variables_from(node)
       node ||= @node
       namespace = namespace_from(node)
       arr = []
-      @source.local_variable_pins.each do |pin|
-        arr.push Suggestion.new(pin.name, kind: Suggestion::VARIABLE, return_type: api_map.infer_assignment_node_type(pin.node, namespace)) if pin.visible_from?(node)
+      @source.local_variable_pins.select{|p| p.visible_from?(node) }.each do |pin|
+        arr.push Suggestion.new(pin.name, kind: Suggestion::VARIABLE, return_type: api_map.infer_assignment_node_type(pin.node, namespace))
       end
       arr
     end
 
     def inner_node_at(index, node, arr)
-      node.children.each { |c|
+      node.children.each do |c|
         if c.kind_of?(AST::Node)
           unless c.loc.expression.nil?
             if index >= c.loc.expression.begin_pos
@@ -655,7 +658,7 @@ module Solargraph
           end
           inner_node_at(index, c, arr)
         end
-      }
+      end
     end
 
     def find_local_variable_node name, scope
