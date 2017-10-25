@@ -2,11 +2,6 @@ require 'parser/current'
 require 'yard'
 require 'bundler'
 
-class Foo
-  class Bar
-  end
-end
-
 module Solargraph
 
   class YardMap
@@ -19,6 +14,7 @@ module Solargraph
       @workspace = workspace
       used = []
       @required = required
+      @namespace_yardocs = {}
       if @required.include?('bundler/setup')
         yardocs.concat bundled_gem_yardocs
       else
@@ -41,6 +37,13 @@ module Solargraph
       end
       yardocs.push File.join(Dir.home, '.solargraph', 'cache', '2.0.0', 'yardoc')
       yardocs.uniq!
+      yardocs.each do |y|
+        load_yardoc y
+        YARD::Registry.all(:class, :module).each do |ns|
+          @namespace_yardocs[ns.path] ||= []
+          @namespace_yardocs[ns.path].push y
+        end
+      end
       #cache_core
     end
 
@@ -91,23 +94,20 @@ module Solargraph
     end
 
     # @return [Array<Suggestion>]
-    def get_constants namespace, scope = ''
+    def get_constants namespace , scope = ''
       cached = cache.get_constants(namespace, scope)
       return cached unless cached.nil?
       consts = []
       result = []
-      yardocs.each { |y|
-        yard = load_yardoc(y)
-        unless yard.nil?
-          ns = nil
-          if scope == ''
-            ns = yard.at(namespace)
-          else
-            ns = yard.resolve(P(scope), namespace)
+      combined_namespaces(namespace, scope).each do |ns|
+        yardocs_documenting(ns).each do |y|
+          yard = load_yardoc(y)
+          unless yard.nil?
+            found = yard.at(ns)
+            consts.concat found.children unless found.nil?
           end
-          consts += ns.children unless ns.nil?
         end
-      }
+      end
       consts.each { |c|
         detail = nil
         kind = nil
@@ -125,14 +125,6 @@ module Solargraph
         end
         result.push Suggestion.new(c.to_s.split('::').last, detail: detail, kind: kind, documentation: c.docstring)
       }
-      if result.empty? and !scope.empty?
-        parts = scope.split('::')
-        until parts.empty?
-          parts.pop
-          result.concat get_constants(namespace, parts.join('::'))
-          break unless result.empty?
-        end
-      end
       cache.set_constants(namespace, scope, result)
       result
     end
@@ -142,37 +134,39 @@ module Solargraph
       cached = cache.get_methods(namespace, scope, visibility)
       return cached unless cached.nil?
       meths = []
-      yardocs.each { |y|
-        yard = load_yardoc(y)
-        unless yard.nil?
-          ns = nil
-          ns = find_first_resolved_namespace(yard, namespace, scope)
-          unless ns.nil?
-            ns.meths(scope: :class, visibility: visibility).each { |m|
-              n = m.to_s.split(/[\.#]/).last.gsub(/=/, ' = ')
-              label = "#{n}"
-              args = get_method_args(m)
-              kind = (m.is_attribute? ? Suggestion::FIELD : Suggestion::METHOD)
-              meths.push Suggestion.new(label, insert: "#{n.gsub(/=/, ' = ')}", kind: kind, documentation: m.docstring, code_object: m, detail: "#{ns}", location: "#{m.file}:#{m.line}", arguments: args)
-            }
-            # Collect superclass methods
-            if ns.kind_of?(YARD::CodeObjects::ClassObject) and !ns.superclass.nil?
-              meths += get_methods ns.superclass.to_s, '', visibility: [:public, :protected] unless ['Object', 'BasicObject', ''].include?(ns.superclass.to_s)
-            end
-            if ns.kind_of?(YARD::CodeObjects::ClassObject) and namespace != 'Class'
-              meths += get_instance_methods('Class')
-              yard = load_yardoc(y)
-              i = yard.at("#{ns}#initialize")
-              unless i.nil?
-                meths.delete_if{|m| m.label == 'new'}
-                label = "#{i}"
-                args = get_method_args(i)
-                meths.push Suggestion.new('new', kind: Suggestion::METHOD, documentation: i.docstring, code_object: i, detail: "#{ns}", location: "#{i.file}:#{i.line}", arguments: args)
+      combined_namespaces(namespace, scope).each do |ns|
+        yardocs_documenting(ns).each do |y|
+          yard = load_yardoc(y)
+          unless yard.nil?
+            ns = nil
+            ns = find_first_resolved_namespace(yard, namespace, scope)
+            unless ns.nil?
+              ns.meths(scope: :class, visibility: visibility).each { |m|
+                n = m.to_s.split(/[\.#]/).last.gsub(/=/, ' = ')
+                label = "#{n}"
+                args = get_method_args(m)
+                kind = (m.is_attribute? ? Suggestion::FIELD : Suggestion::METHOD)
+                meths.push Suggestion.new(label, insert: "#{n.gsub(/=/, ' = ')}", kind: kind, documentation: m.docstring, code_object: m, detail: "#{ns}", location: "#{m.file}:#{m.line}", arguments: args)
+              }
+              # Collect superclass methods
+              if ns.kind_of?(YARD::CodeObjects::ClassObject) and !ns.superclass.nil?
+                meths += get_methods ns.superclass.to_s, '', visibility: [:public, :protected] unless ['Object', 'BasicObject', ''].include?(ns.superclass.to_s)
+              end
+              if ns.kind_of?(YARD::CodeObjects::ClassObject) and namespace != 'Class'
+                meths += get_instance_methods('Class')
+                yard = load_yardoc(y)
+                i = yard.at("#{ns}#initialize")
+                unless i.nil?
+                  meths.delete_if{|m| m.label == 'new'}
+                  label = "#{i}"
+                  args = get_method_args(i)
+                  meths.push Suggestion.new('new', kind: Suggestion::METHOD, documentation: i.docstring, code_object: i, detail: "#{ns}", location: "#{i.file}:#{i.line}", arguments: args)
+                end
               end
             end
           end
         end
-      }
+      end
       cache.set_methods(namespace, scope, visibility, meths)
       meths
     end
@@ -182,32 +176,34 @@ module Solargraph
       cached = cache.get_instance_methods(namespace, scope, visibility)
       return cached unless cached.nil?
       meths = []
-      yardocs.each { |y|
-        yard = load_yardoc(y)
-        unless yard.nil?
-          ns = nil
-          ns = find_first_resolved_namespace(yard, namespace, scope)
-          unless ns.nil?
-            ns.meths(scope: :instance, visibility: visibility).each { |m|
-              n = m.to_s.split(/[\.#]/).last
-              if n.to_s.match(/^[a-z]/i) and (namespace == 'Kernel' or !m.to_s.start_with?('Kernel#')) and !m.docstring.to_s.include?(':nodoc:')
-                label = "#{n}"
-                args = get_method_args(m)
-                kind = (m.is_attribute? ? Suggestion::FIELD : Suggestion::METHOD)
-                meths.push Suggestion.new(label, insert: "#{n.gsub(/=/, ' = ')}", kind: kind, documentation: m.docstring, code_object: m, detail: m.namespace, location: "#{m.file}:#{m.line}", arguments: args)
+      combined_namespaces(namespace, scope).each do |ns|
+        yardocs_documenting(ns).each do |y|
+          yard = load_yardoc(y)
+          unless yard.nil?
+            ns = nil
+            ns = find_first_resolved_namespace(yard, namespace, scope)
+            unless ns.nil?
+              ns.meths(scope: :instance, visibility: visibility).each { |m|
+                n = m.to_s.split(/[\.#]/).last
+                if n.to_s.match(/^[a-z]/i) and (namespace == 'Kernel' or !m.to_s.start_with?('Kernel#')) and !m.docstring.to_s.include?(':nodoc:')
+                  label = "#{n}"
+                  args = get_method_args(m)
+                  kind = (m.is_attribute? ? Suggestion::FIELD : Suggestion::METHOD)
+                  meths.push Suggestion.new(label, insert: "#{n.gsub(/=/, ' = ')}", kind: kind, documentation: m.docstring, code_object: m, detail: m.namespace, location: "#{m.file}:#{m.line}", arguments: args)
+                end
+              }
+              if ns.kind_of?(YARD::CodeObjects::ClassObject) and namespace != 'Object'
+                unless ns.nil?
+                  meths += get_instance_methods(ns.superclass.to_s)
+                end
               end
-            }
-            if ns.kind_of?(YARD::CodeObjects::ClassObject) and namespace != 'Object'
-              unless ns.nil?
-                meths += get_instance_methods(ns.superclass.to_s)
+              ns.instance_mixins.each do |m|
+                meths += get_instance_methods(m.to_s) unless m.to_s == 'Kernel'
               end
-            end
-            ns.instance_mixins.each do |m|
-              meths += get_instance_methods(m.to_s) unless m.to_s == 'Kernel'
             end
           end
         end
-      }
+      end
       cache.set_instance_methods(namespace, scope, visibility, meths)
       meths
     end
@@ -238,10 +234,10 @@ module Solargraph
             obj = yard.at(parts[0])
             unless obj.nil?
               meths = obj.meths(scope: [:instance]).keep_if{|m| m.name.to_s == parts[1]}
-              meths.each { |m|
+              meths.each do |m|
                 args = get_method_args(m)
                 result.push Solargraph::Suggestion.new(m.name, kind: 'Method', detail: m.path, code_object: m, arguments: args)
-              }
+              end
             end
           else
             unless obj.nil?
@@ -334,6 +330,27 @@ module Solargraph
         end
       end
     end
-  end
 
+    def combined_namespaces namespace, scope = ''
+      combined = [namespace]
+      unless scope.empty?
+        parts = scope.split('::')
+        until parts.empty?
+          combined.unshift parts.join('::') + '::' + namespace
+          parts.pop
+        end
+      end
+      combined
+    end
+
+    def yardocs_documenting namespace
+      result = []
+      if namespace == ''
+        result.concat yardocs
+      else
+        result.concat @namespace_yardocs[namespace] unless @namespace_yardocs[namespace].nil?
+      end
+      result
+    end
+  end
 end
