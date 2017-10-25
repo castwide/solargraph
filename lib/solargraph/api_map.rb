@@ -313,16 +313,16 @@ module Solargraph
       refresh
       namespace = clean_namespace_string(namespace)
       meths = []
-      meths += inner_get_methods(namespace, root, []) #unless has_yardoc?
+      meths.concat inner_get_methods(namespace, root, []) #unless has_yardoc?
       yard_meths = yard_map.get_methods(namespace, root, visibility: visibility)
       if yard_meths.any?
         meths.concat yard_meths
       else
         type = get_namespace_type(namespace, root)
         if type == :class
-          meths += yard_map.get_instance_methods('Class')
+          meths.concat yard_map.get_instance_methods('Class')
         elsif type == :module
-          meths += yard_map.get_methods('Module')
+          meths.concat yard_map.get_methods('Module')
         end
       end
       news = meths.select{|s| s.label == 'new'}
