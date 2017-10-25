@@ -13,6 +13,10 @@ module Solargraph
         @name ||= "#{node.children[0]}#{access == :writer ? '=' : ''}"
       end
 
+      def path
+        @path ||= namespace + '#' + name
+      end
+
       def return_type
         if @return_type.nil? and !docstring.nil?
           tag = docstring.tag(:return)
