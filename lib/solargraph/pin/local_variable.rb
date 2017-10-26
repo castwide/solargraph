@@ -13,13 +13,13 @@ module Solargraph
       end
 
       def visible_from? node
-        return true if @tree[0] == node
-        parents = source.tree_for(node)
-        return false if parents.nil?
+        #return true if @tree[0] == node
+        #return false if [:def, :defs, :class, :module, :block].include?(node.type)
+        parents = [node] + source.tree_for(node)
+        #return false if parents.nil?
         parents.each do |p|
           return true if @tree[0] == p
-          return false if p.type == :block
-          return false if [:def, :defs, :class, :module].include?(p.type)
+          return false if [:def, :defs, :class, :module, :block].include?(p.type)
         end
         false
       end

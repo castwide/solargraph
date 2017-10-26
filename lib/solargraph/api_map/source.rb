@@ -132,7 +132,11 @@ module Solargraph
         source = self
         if node.kind_of?(AST::Node)
           @all_nodes.push node
-          return if node.type == :str or node.type == :dstr
+          if node.type == :str or node.type == :dstr
+            stack.pop
+            return
+          end
+          @node_stack.unshift node
           if node.type == :class or node.type == :module
             visibility = :public
             if node.children[0].kind_of?(AST::Node) and node.children[0].children[0].kind_of?(AST::Node) and node.children[0].children[0].type == :cbase
@@ -149,7 +153,6 @@ module Solargraph
             end
           end
           file = source.filename
-          @node_stack.unshift node
           node.children.each do |c|
             if c.kind_of?(AST::Node)
               @node_tree[c] = @node_stack.clone
@@ -186,6 +189,7 @@ module Solargraph
                     local_variable_pins.push Solargraph::Pin::LocalVariable.new(self, u, fqn || '', @node_stack.clone)
                   end
                 else
+                  @node_tree[c] = @node_stack.clone
                   local_variable_pins.push Solargraph::Pin::LocalVariable.new(self, c, fqn || '', @node_stack.clone)
                 end
               elsif c.type == :sym
@@ -197,8 +201,8 @@ module Solargraph
                   if c.kind_of?(AST::Node)
                     if c.type == :def and c.children[0].to_s[0].match(/[a-z]/i)
                       method_pins.push Solargraph::Pin::Method.new(source, c, fqn, scope, visibility)
-                      inner_map_node c, tree, visibility, scope, fqn, stack
-                      next
+                      #inner_map_node c, tree, visibility, scope, fqn, stack
+                      #next
                     elsif c.type == :defs
                       method_pins.push Solargraph::Pin::Method.new(source, c, fqn, :class, :public)
                       inner_map_node c, tree, :public, :class, fqn, stack
