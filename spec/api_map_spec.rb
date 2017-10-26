@@ -494,6 +494,20 @@ describe Solargraph::ApiMap do
     expect(meth.params).to eq(['baz [String]'])
   end
 
+  it "includes restarg in suggestions" do
+    code = %(
+      class Foo
+        def bar *baz
+        end
+      end
+    )
+    api_map = Solargraph::ApiMap.new
+    api_map.append_source(code, 'file.rb')
+    # @type [Solargraph::Suggestion]
+    meth = api_map.get_instance_methods('Foo').select{|s| s.label == 'bar'}.first
+    expect(meth.arguments).to eq(['*baz'])
+  end
+
   it "gets instance methods from modules" do
     code = %(
       module Foo

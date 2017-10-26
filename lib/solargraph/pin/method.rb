@@ -50,6 +50,8 @@ module Solargraph
         list.children.each { |c|
           if c.type == :arg
             args.push c.children[0].to_s
+          elsif c.type == :restarg
+            args.push "*#{c.children[0]}"
           elsif c.type == :optarg
             args.push "#{c.children[0]} = #{source.code_for(c.children[1])}"
           elsif c.type == :kwarg
