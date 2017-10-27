@@ -9,5 +9,6 @@ module Solargraph
     autoload :LocalVariable, 'solargraph/pin/local_variable'
     autoload :Constant, 'solargraph/pin/constant'
     autoload :Symbol, 'solargraph/pin/symbol'
+    autoload :Directed, 'solargraph/pin/directed'
   end
 end

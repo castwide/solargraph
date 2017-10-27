@@ -33,11 +33,12 @@ module Solargraph
         inner_map_node @node
         @directives.each_pair do |k, v|
           v.each do |d|
-            # @todo Pin the attribute
-            #ns = namespace_for(k.node)
-            #if d.tag.tag_name == 'attribute'
-            #  attribute_pins.push Solargraph::Pin::Attribute.new(self, k.node, ns, :public, nil)
-            #end
+            if d.tag.tag_name == 'attribute'
+              ns = namespace_for(k.node)
+              docstring = YARD::Docstring.parser.parse(d.tag.text).to_docstring
+              # @todo Check tag.types for r/w/rw
+              attribute_pins.push Solargraph::Pin::Directed::Attribute.new(self, k.node, ns, :public, docstring, d.tag.name)
+            end
           end
         end
       end
@@ -107,7 +108,7 @@ module Solargraph
 
       def namespace_for node
         parts = []
-        @node_tree[node]&.each do |n|
+        ([node] + (@node_tree[node] || [])).each do |n|
           if n.type == :class or n.type == :module
             parts.unshift unpack_name(n.children[0])
           end
