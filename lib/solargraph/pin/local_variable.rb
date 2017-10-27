@@ -16,7 +16,7 @@ module Solargraph
         parents = [node] + (source.tree_for(node) || [])
         parents.each do |p|
           return true if @tree[0] == p
-          return false if [:def, :defs, :class, :module, :block].include?(p.type)
+          return false if [:def, :defs, :class, :module].include?(p.type)
         end
         false
       end
