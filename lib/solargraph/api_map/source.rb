@@ -23,6 +23,7 @@ module Solargraph
         root = root.append node
         @node = root
         @comments = comments
+        @directives = {}
         @docstring_hash = associate_comments(node, comments)
         @filename = filename
         @namespace_nodes = {}
@@ -30,6 +31,15 @@ module Solargraph
         @node_stack = []
         @node_tree = {}
         inner_map_node @node
+        @directives.each_pair do |k, v|
+          v.each do |d|
+            # @todo Pin the attribute
+            #ns = namespace_for(k.node)
+            #if d.tag.tag_name == 'attribute'
+            #  attribute_pins.push Solargraph::Pin::Attribute.new(self, k.node, ns, :public, nil)
+            #end
+          end
+        end
       end
 
       def namespaces
@@ -95,6 +105,16 @@ module Solargraph
         @node_tree[node] || []
       end
 
+      def namespace_for node
+        parts = []
+        @node_tree[node]&.each do |n|
+          if n.type == :class or n.type == :module
+            parts.unshift unpack_name(n.children[0])
+          end
+        end
+        parts.join('::')
+      end
+
       def include? node
         @all_nodes.include? node
       end
@@ -122,7 +142,13 @@ module Solargraph
               ctxt += "#{p[num..-1]}\n"
             end
           }
-          yard_hash[k] = YARD::Docstring.parser.parse(ctxt).to_docstring
+          parse = YARD::Docstring.parser.parse(ctxt)
+          # @todo Directives are accessible here via parse.directives
+          unless parse.directives.empty?
+            @directives[k] ||= []
+            @directives[k].concat parse.directives
+          end
+          yard_hash[k] = parse.to_docstring
         }
         yard_hash
       end
