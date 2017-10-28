@@ -165,6 +165,7 @@ module Solargraph
       while cursor > -1
         char = @code[cursor, 1]
         break if char.nil? or char == ''
+        word = char + word if char == '$'
         break unless char.match(/[a-z0-9_]/i)
         word = char + word
         cursor -= 1
@@ -550,7 +551,8 @@ module Solargraph
           end
           if brackets == 0 and parens == 0 and squares == 0
             break if ['"', "'", ',', ' ', "\t", "\n", ';', '%'].include?(char)
-            signature = char + signature if char.match(/[a-z0-9:\._@]/i) and @code[index - 1] != '%'
+            signature = char + signature if char.match(/[a-z0-9:\._@\$]/i) and @code[index - 1] != '%'
+            break if char == '$'
             if char == '@'
               signature = "@#{signature}" if @code[index-1, 1] == '@'
               break

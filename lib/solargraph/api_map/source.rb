@@ -68,6 +68,10 @@ module Solargraph
         @local_variable_pins ||= []
       end
 
+      def global_variable_pins
+        @global_variable_pins ||= []
+      end
+
       def constant_pins
         @constant_pins ||= []
       end
@@ -192,6 +196,8 @@ module Solargraph
                   @node_tree[c] = @node_stack.clone
                   local_variable_pins.push Solargraph::Pin::LocalVariable.new(self, c, fqn || '', @node_stack.clone)
                 end
+              elsif c.type == :gvasgn
+                global_variable_pins.push Solargraph::Pin::GlobalVariable.new(self, c, fqn || '')
               elsif c.type == :sym
                 symbol_pins.push Solargraph::Pin::Symbol.new(self, c, fqn)
               elsif c.type == :casgn

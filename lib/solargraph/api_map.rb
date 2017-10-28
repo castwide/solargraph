@@ -240,8 +240,13 @@ module Solargraph
     end
 
     def get_global_variables
-      # TODO: Get them
-      []
+      result = []
+      @sources.values.each do |s|
+        s.global_variable_pins.each do |p|
+          result.push pin_to_suggestion(p)
+        end
+      end
+      result
     end
 
     def infer_assignment_node_type node, namespace
