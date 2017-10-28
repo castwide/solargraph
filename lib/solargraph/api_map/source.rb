@@ -288,10 +288,10 @@ module Solargraph
               if tries == 10 and e.message.include?('token $end')
                 tmp += "\nend"
               else
-                if !fixed_cursor and !cursor.nil? and e.message.include?('token $end') and cursor >= 2
+                if !fixed_cursor and !cursor.nil? and cursor >= 2 and (e.message.include?('token $end') or tmp[cursor - 1] == '$')
                   fixed_cursor = true
                   spot = cursor - 2
-                  if tmp[cursor - 1] == '.'
+                  if tmp[cursor - 1] == '.' or tmp[cursor - 1] == '$'
                     repl = ';'
                   else
                     repl = '#'

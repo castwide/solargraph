@@ -505,4 +505,15 @@ describe Solargraph::CodeMap do
     sugg = code_map.suggest_at(code_map.get_offset(10, 9)).map(&:to_s)
     expect(sugg).not_to include('lvar')
   end
+
+  it "returns global variable suggestions" do
+    code_map = Solargraph::CodeMap.new(code: %(
+      $foo = 'foo'
+      $bar = 'bar'
+      $
+    ), cursor: [3, 7])
+    sugg = code_map.suggest_at(code_map.get_offset(3, 7)).map(&:to_s)
+    expect(sugg).to include('$foo')
+    expect(sugg).to include('$bar')
+  end
 end
