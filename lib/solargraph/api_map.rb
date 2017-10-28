@@ -40,7 +40,6 @@ module Solargraph
       clear
       @workspace_files = []
       unless @workspace.nil?
-        config = ApiMap::Config.new(@workspace)
         @workspace_files.concat (config.included - config.excluded)
         @workspace_files.each do |wf|
           begin
@@ -55,6 +54,10 @@ module Solargraph
       @virtual_filename = nil
       @stale = true
       refresh
+    end
+
+    def config
+      @config ||= ApiMap::Config.new(@workspace)
     end
 
     # @return [Solargraph::YardMap]
@@ -333,7 +336,8 @@ module Solargraph
       refresh
       namespace = clean_namespace_string(namespace)
       meths = []
-      meths.concat inner_get_methods(namespace, root, []) #unless has_yardoc?
+      skip = []
+      meths.concat inner_get_methods(namespace, root, skip)
       yard_meths = yard_map.get_methods(namespace, root, visibility: visibility)
       if yard_meths.any?
         meths.concat yard_meths
@@ -354,6 +358,11 @@ module Solargraph
           inits.each do |pin|
             meths.push Suggestion.new('new', kind: pin.kind, documentation: pin.docstring, detail: pin.namespace, arguments: pin.parameters, path: pin.path)
           end
+        end
+      end
+      if namespace == '' and root == ''
+        config.domains.each do |d|
+          meths.concat get_instance_methods(d)
         end
       end
       meths
