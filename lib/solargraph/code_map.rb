@@ -204,10 +204,13 @@ module Solargraph
         end
       end
       result = []
-      type = infer_signature_at(index)
-      if type.nil? and signature.include?('.')
-        last_period = @code[0..index].rindex('.')
-        type = infer_signature_at(last_period)
+      type = nil
+      if signature.include?('.')
+        type = infer_signature_at(index)
+        if type.nil? and signature.include?('.')
+          last_period = @code[0..index].rindex('.')
+          type = infer_signature_at(last_period)
+        end
       end
       if type.nil?
         unless signature.include?('.')

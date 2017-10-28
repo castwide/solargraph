@@ -426,7 +426,7 @@ describe Solargraph::CodeMap do
       foo = Foo.new
       foo.bar.
     ))
-    sugg = code_map.suggest_at(124)
+    sugg = code_map.suggest_at(code_map.get_offset(7, 14))
     expect(sugg.length).to eq(0)
   end
 
