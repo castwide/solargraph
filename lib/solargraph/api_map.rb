@@ -43,13 +43,18 @@ module Solargraph
         config = ApiMap::Config.new(@workspace)
         @workspace_files.concat (config.included - config.excluded)
         @workspace_files.each do |wf|
-          @@source_cache[wf] ||= Source.load(wf)
+          begin
+            @@source_cache[wf] ||= Source.load(wf)
+          rescue
+            STDERR.puts "Failed to load #{wf}"
+          end
         end
       end
       @sources = {}
       @virtual_source = nil
       @virtual_filename = nil
       @stale = true
+      refresh
     end
 
     # @return [Solargraph::YardMap]
@@ -421,8 +426,12 @@ module Solargraph
     def process_maps
       @sources.clear
       @workspace_files.each do |f|
-        @@source_cache[f] ||= Source.load(f)
-        @sources[f] = @@source_cache[f]
+        begin
+          @@source_cache[f] ||= Source.load(f)
+          @sources[f] = @@source_cache[f]
+        rescue
+          STDERR.puts "Failed to load #{f}"
+        end
       end
       cache.clear
       @ivar_pins = {}
