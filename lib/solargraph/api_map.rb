@@ -652,84 +652,47 @@ module Solargraph
     #
     # @return [String] The fully qualified namespace for the signature's type
     #   or nil if a type could not be determined
-    def inner_infer_signature_type signature, namespace, scope: :instance
-      orig = namespace
-      namespace = clean_namespace_string(namespace)
+    def inner_infer_signature_type signature, namespace, scope: :instance, top: true
       return nil if signature.nil?
       signature.gsub!(/\.$/, '')
-      if signature.nil? or signature.empty?
+      if signature.empty?
         if scope == :class
-          return "#{namespace}#class"
+          return "Class<#{namespace}>"
         else
           return "#{namespace}"
         end
       end
-      if !namespace.nil? and namespace.end_with?('#class')
-        return inner_infer_signature_type signature, namespace[0..-7], scope: (scope == :class ? :instance : :class)
-      end
       parts = signature.split('.')
-      type = find_fully_qualified_namespace(namespace)
-      type ||= ''
-      top = true
-      while parts.length > 0 and !type.nil?
-        p = parts.shift
-        next if p.empty?
-        next if !type.nil? and !type.empty? and METHODS_RETURNING_SELF.include?(p)
-        if top and scope == :class
-          if p == 'self'
-            top = false
-            return "Class<#{type}>" if parts.empty?
-            sub = inner_infer_signature_type(parts.join('.'), type, scope: :class)
-            return sub unless sub.to_s == ''
-            next
-          end
-          if p == 'new'
-            scope = :instance
-            type = namespace
-            top = false
-            next
-          end
-          first_class = find_fully_qualified_namespace(p, namespace)
-          sub = nil
-          sub = inner_infer_signature_type(parts.join('.'), first_class, scope: :class) unless first_class.nil?
-          return sub unless sub.to_s == ''
+      type = namespace || ''
+      while (parts.length > 0)
+        part = parts.shift
+        if top == true and part == 'self'
+          top = false
+          next
         end
-        if top and scope == :instance and p == 'self'
-          return type if parts.empty?
-          sub = infer_signature_type(parts.join('.'), type, scope: :instance)
-          return sub unless sub.to_s == ''
+        cls_match = type.match(/^Class<([A-Za-z0-9_:]*?)>$/)
+        if cls_match
+          type = cls_match[1]
+          scope = :class
         end
-        if top and scope == :instance and p == '[]' and !orig.nil?
-          if orig.start_with?('Array<')
-            match = orig.match(/Array<([a-z0-9:_]*)/i)[1]
-            type = match
-            next
-          end
-        end
-        unless p == 'new' and scope != :instance
+        if scope == :class and part == 'new'
+          scope = :instance
+        elsif !METHODS_RETURNING_SELF.include?(part)
+          visibility = [:public]
+          visibility.concat [:private, :protected] if top
           if scope == :instance
-            visibility = [:public]
-            visibility.push :private, :protected if top
-            meths = get_instance_methods(type, visibility: visibility)
-            meths += get_methods('') if top or type.to_s == ''
+            meth = get_instance_methods(namespace, visibility: visibility).select{|s| s.label == part}.first
           else
-            meths = get_methods(type)
+            meth = get_methods(namespace, visibility: visibility).select{|s| s.label == part}.first            
           end
-          meths.delete_if{ |m| m.insert != p }
-          return nil if meths.empty?
-          type = nil
-          match = meths[0].return_type
-          unless match.nil?
-            cleaned = clean_namespace_string(match)
-            if cleaned.end_with?('#class')
-              return inner_infer_signature_type(parts.join('.'), cleaned.split('#').first, scope: :class)
-            else
-              type = find_fully_qualified_namespace(cleaned)
-            end
-          end
+          return nil if meth.nil? or meth.return_type.nil?
+          type = meth.return_type
+          scope = :instance
         end
-        scope = :instance
         top = false
+      end
+      if scope == :class
+        type = "Class<#{type}>"
       end
       type
     end
@@ -771,6 +734,5 @@ module Solargraph
       return nil if pin.name == pin.signature.split('.').first
       infer_signature_type(pin.signature, pin.namespace)
     end
-
   end
 end
