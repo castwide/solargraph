@@ -116,6 +116,11 @@ module Solargraph
       result
     end
 
+    def get_constant_pins namespace, root
+      fqns = find_fully_qualified_namespace(namespace, root)
+      @const_pins[fqns] || []
+    end
+
     def get_constants namespace, root
       result = []
       fqns = find_fully_qualified_namespace(namespace, root)
@@ -169,6 +174,11 @@ module Solargraph
       @namespace_map[fqns] || []
     end
 
+    def get_instance_variable_pins(namespace, scope = :instance)
+      refresh
+      (@ivar_pins[namespace] || []).select{ |pin| pin.scope == scope }
+    end
+
     def get_instance_variables(namespace, scope = :instance)
       refresh
       result = []
@@ -179,6 +189,11 @@ module Solargraph
         end
       end
       result
+    end
+
+    def get_class_variable_pins(namespace)
+      refresh
+      @cvar_pins[namespace] || []
     end
 
     def get_class_variables(namespace)
@@ -729,7 +744,8 @@ module Solargraph
     end
 
     def pin_to_suggestion pin
-      @pin_suggestions[pin] ||= Suggestion.pull(pin, resolve_pin_return_type(pin))
+      #@pin_suggestions[pin] ||= Suggestion.pull(pin, resolve_pin_return_type(pin))
+      @pin_suggestions[pin] ||= Suggestion.pull(pin)
     end
 
     def resolve_pin_return_type pin
