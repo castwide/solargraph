@@ -748,11 +748,15 @@ module Solargraph
       result
     end
 
+    # @param pin [Solargraph::Pin::Base]
+    # @return [Solargraph::Suggestion]
     def pin_to_suggestion pin
       #@pin_suggestions[pin] ||= Suggestion.pull(pin, resolve_pin_return_type(pin))
       @pin_suggestions[pin] ||= Suggestion.pull(pin)
     end
 
+    # @param pin [Solargraph::Pin::Base]
+    # @return [String]
     def resolve_pin_return_type pin
       return pin.return_type unless pin.return_type.nil?
       return nil if pin.signature.nil?
