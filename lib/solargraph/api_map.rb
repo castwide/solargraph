@@ -554,7 +554,7 @@ module Solargraph
       @cache ||= Cache.new
     end
 
-    def inner_get_methods(namespace, root = '', skip = [])
+    def inner_get_methods(namespace, root = '', skip = [], visibility = [:public])
       meths = []
       return meths if skip.include?(namespace)
       skip.push namespace
@@ -564,6 +564,13 @@ module Solargraph
       unless mn.nil?
         mn.select{ |pin| pin.scope == :class }.each do |pin|
           meths.push pin_to_suggestion(pin)
+        end
+      end
+      if visibility.include?(:public) or visibility.include?(:protected)
+        sc = @superclasses[fqns]
+        unless sc.nil?
+          meths.concat inner_get_methods(sc, fqns, skip, visibility - [:private])
+          meths.concat yard_map.get_methods(sc, fqns, visibility: visibility - [:private])
         end
       end
       meths.uniq
