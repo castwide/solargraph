@@ -67,6 +67,9 @@ module Solargraph
     end
 
     def virtualize filename, code, cursor = nil
+      unless @virtual_source.nil? or @virtual_filename == filename or @workspace_files.include?(@virtual_filename)
+        eliminate @virtual_filename
+      end
       refresh
       @virtual_filename = filename
       @virtual_source = Source.fix(filename, code, cursor)
@@ -495,14 +498,18 @@ module Solargraph
             add_to_namespace_tree k.split('::')
           end
         end
-        [@ivar_pins.values, @cvar_pins.values, @const_pins.values, @method_pins.values, @attr_pins.values].each do |pinsets|
-          pinsets.each do |pins|
-            pins.delete_if{|pin| pin.filename == @virtual_filename}
-          end
-        end
-        #@symbol_pins.delete_if{|pin| pin.filename == @virtual_filename}
+        eliminate @virtual_filename
         map_source @virtual_source
       end
+    end
+
+    def eliminate filename
+      [@ivar_pins.values, @cvar_pins.values, @const_pins.values, @method_pins.values, @attr_pins.values].each do |pinsets|
+        pinsets.each do |pins|
+          pins.delete_if{|pin| pin.filename == filename}
+        end
+      end
+      #@symbol_pins.delete_if{|pin| pin.filename == filename}
     end
 
     # @param [Solargraph::ApiMap::Source]
