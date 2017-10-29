@@ -190,6 +190,7 @@ module Solargraph
                   unless ora.nil?
                     u = c.updated(:lvasgn, c.children + ora.children[1..-1], nil)
                     @node_tree[u] = @node_stack.clone
+                    @docstring_hash[u.loc] = docstring_for(ora)
                     local_variable_pins.push Solargraph::Pin::LocalVariable.new(self, u, fqn || '', @node_stack.clone)
                   end
                 else
