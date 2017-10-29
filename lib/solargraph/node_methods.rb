@@ -1,9 +1,11 @@
 module Solargraph
   module NodeMethods
+    # @return [String]
     def unpack_name(node)
       pack_name(node).join("::")
     end
-    
+
+    # @return [Array<String>]
     def pack_name(node)
       parts = []
       if node.kind_of?(AST::Node)
@@ -22,6 +24,7 @@ module Solargraph
       parts
     end
 
+    # @return [String]
     def const_from node
       if node.kind_of?(AST::Node) and node.type == :const
         result = ''
@@ -39,6 +42,7 @@ module Solargraph
       end
     end
 
+    # @return [String]
     def infer_literal_node_type node
       return nil unless node.kind_of?(AST::Node)
       if node.type == :str or node.type == :dstr

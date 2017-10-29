@@ -27,4 +27,13 @@ describe Solargraph::ApiMap::Source do
     expect(source.attribute_pins.length).to eq(1)
     expect(source.attribute_pins[0].name).to eq('bar')
   end
+
+  it "pins global variables" do
+    code = %(
+      $foo = 'foo'
+    )
+    source = Solargraph::ApiMap::Source.virtual('file.rb', code)
+    expect(source.global_variable_pins.length).to eq(1)
+    expect(source.global_variable_pins[0].name).to eq('$foo')
+  end
 end

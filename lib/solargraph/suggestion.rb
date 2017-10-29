@@ -3,74 +3,86 @@ require 'json'
 module Solargraph
 
   class Suggestion
-    CLASS = 'Class'
+    CLASS =    'Class'
     CONSTANT = 'Constant'
-    KEYWORD = 'Keyword'
-    MODULE = 'Module'
-    METHOD = 'Method'
-    VARIABLE = 'Variable'
+    FIELD =    'Field'
+    KEYWORD =  'Keyword'
+    METHOD =   'Method'
+    MODULE =   'Module'
     PROPERTY = 'Property'
-    FIELD = 'Field'
-    SNIPPET = 'Snippet'
+    SNIPPET =  'Snippet'
+    VARIABLE = 'Variable'
 
-    attr_reader :label, :kind, :insert, :detail, :documentation, :code_object, :location, :arguments
+    # @return [String]
+    attr_reader :label
 
-    def initialize label, kind: KEYWORD, insert: nil, detail: nil, documentation: nil, code_object: nil, location: nil, arguments: [], return_type: nil, path: nil
+    # @return [String]
+    attr_reader :kind
+
+    # @return [String]
+    attr_reader :insert
+
+    # @return [String]
+    attr_reader :detail
+
+    # @return [YARD::CodeObjects::Base]
+    attr_reader :code_object
+
+    # @return [String]
+    attr_reader :location
+
+    # @return [Array<String>]
+    attr_reader :arguments
+
+    def initialize label, kind: KEYWORD, insert: nil, detail: nil, docstring: nil, code_object: nil, location: nil, arguments: [], return_type: nil, path: nil
       @helper = Server::Helpers.new
       @label = label.to_s
       @kind = kind
       @insert = insert || @label
       @detail = detail
       @code_object = code_object
-      @documentation = documentation
+      @docstring = docstring
       @location = location
       @arguments = arguments
       @return_type = return_type
       @path = path
     end
-    
+
+    # @return [String]
     def path
       @path ||= (code_object.nil? ? label : code_object.path)
     end
 
+    # @return [String]
     def to_s
       label
     end
 
+    # @return [String]
     def return_type
-      if @return_type.nil?
-        if code_object.nil?
-          if documentation.kind_of?(YARD::Docstring)
-            t = documentation.tag(:return)
-            @return_type = t.types[0] unless t.nil? or t.types.nil?
-          end
-        else
-          o = code_object.tag(:overload)
-          if o.nil?
-            r = code_object.tag(:return)
-          else
-            r = o.tag(:return)
-          end
-          @return_type = r.types[0] unless r.nil? or r.types.nil?
-        end
+      if @return_type.nil? and !docstring.nil?
+        t = docstring.tag(:overload)&.tag(:return) || docstring.tag(:return)
+        @return_type = t.types[0] unless t.nil? or t.types.nil?
       end
       @return_type
     end
 
-    def documentation
-      if @documentation.nil?
-        unless @code_object.nil? or @code_object.docstring.nil?
-          @documentation = @code_object.docstring
-        end
-      end
-      @documentation
+    # @return [YARD::Docstring]
+    def docstring
+      @docstring ||= @code_object&.docstring
     end
 
+    # @return [String]
+    def documentation
+      @documentation ||= (docstring.nil? ? '' : @helper.html_markup_rdoc(docstring))
+    end
+
+    # @return [Array<String>]
     def params
       if @params.nil?
         @params = []
-        return @params if documentation.nil?
-        param_tags = documentation.tags(:param)
+        return @params if docstring.nil?
+        param_tags = docstring.tags(:param)
         unless param_tags.empty?
           param_tags.each do |t|
             txt = t.name.to_s
@@ -94,13 +106,13 @@ module Solargraph
         arguments: @arguments,
         params: params,
         return_type: return_type,
-        documentation: documentation.nil? ? nil : @helper.html_markup_rdoc(documentation)
+        documentation: documentation
       }
       obj.to_json(args)
     end
 
     def self.pull pin, return_type = nil
-      Suggestion.new(pin.name, insert: pin.name.gsub(/=/, ' = '), kind: pin.kind, documentation: pin.docstring, detail: pin.namespace, arguments: pin.parameters, path: pin.path, return_type: return_type)
+      Suggestion.new(pin.name, insert: pin.name.gsub(/=/, ' = '), kind: pin.kind, docstring: pin.docstring, detail: pin.namespace, arguments: pin.parameters, path: pin.path, return_type: return_type)
     end
   end
 

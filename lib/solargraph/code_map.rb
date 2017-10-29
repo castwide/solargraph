@@ -165,6 +165,7 @@ module Solargraph
       while cursor > -1
         char = @code[cursor, 1]
         break if char.nil? or char == ''
+        word = char + word if char == '$'
         break unless char.match(/[a-z0-9_]/i)
         word = char + word
         cursor -= 1
@@ -172,6 +173,7 @@ module Solargraph
       word
     end
 
+    # @return [Array<Solargraph::Suggestion>]
     def get_class_variables_at(index)
       ns = namespace_at(index) || ''
       api_map.get_class_variables(ns)
@@ -188,7 +190,7 @@ module Solargraph
     # Get suggestions for code completion at the specified location in the
     # source.
     #
-    # @return [Array<Suggestions>] The completion suggestions
+    # @return [Array<Solargraph::Suggestion>] The completion suggestions
     def suggest_at index, filtered: true, with_snippets: false
       return [] if string_at?(index) or string_at?(index - 1) or comment_at?(index)
       signature = get_signature_at(index)
@@ -204,10 +206,13 @@ module Solargraph
         end
       end
       result = []
-      type = infer_signature_at(index)
-      if type.nil? and signature.include?('.')
-        last_period = @code[0..index].rindex('.')
-        type = infer_signature_at(last_period)
+      type = nil
+      if signature.include?('.')
+        type = infer_signature_at(index)
+        if type.nil? and signature.include?('.')
+          last_period = @code[0..index].rindex('.')
+          type = infer_signature_at(last_period)
+        end
       end
       if type.nil?
         unless signature.include?('.')
@@ -323,6 +328,7 @@ module Solargraph
         node = parent_node_from(index, :class, :module, :def, :defs) || @node
         result = infer_signature_from_node signature, node
         if result.nil? or result.empty?
+          # The rest of this routine is dedicated to method and block parameters
           arg = nil
           if node.type == :def or node.type == :defs or node.type == :block
             # Check for method arguments
@@ -408,12 +414,12 @@ module Solargraph
       return nil if start.nil?
       remainder = parts[1..-1]
       if start.start_with?('@@')
-        cv = api_map.get_class_variables(ns_here).select{|s| s.label == start}.first
-        return cv.return_type unless cv.nil?
+        cv = api_map.get_class_variable_pins(ns_here).select{|s| s.name == start}.first
+        return (cv.return_type || api_map.infer_assignment_node_type(cv.node, cv.namespace)) unless cv.nil?
       elsif start.start_with?('@')
         scope = (node.type == :def ? :instance : :class)
-        iv = api_map.get_instance_variables(ns_here, scope).select{|s| s.label == start}.first
-        return iv.return_type unless iv.nil?
+        iv = api_map.get_instance_variable_pins(ns_here, scope).select{|s| s.name == start}.first
+        return (iv.return_type || api_map.infer_assignment_node_type(iv.node, iv.namespace)) unless iv.nil?
       end
       var = find_local_variable_node(start, node)
       if var.nil?
@@ -546,7 +552,8 @@ module Solargraph
           end
           if brackets == 0 and parens == 0 and squares == 0
             break if ['"', "'", ',', ' ', "\t", "\n", ';', '%'].include?(char)
-            signature = char + signature if char.match(/[a-z0-9:\._@]/i) and @code[index - 1] != '%'
+            signature = char + signature if char.match(/[a-z0-9:\._@\$]/i) and @code[index - 1] != '%'
+            break if char == '$'
             if char == '@'
               signature = "@#{signature}" if @code[index-1, 1] == '@'
               break
@@ -608,8 +615,8 @@ module Solargraph
         meths += api_map.get_methods('')
         meth = meths.keep_if{ |s| s.to_s == block_node.children[0].children[1].to_s }.first
         yps = []
-        unless meth.nil? or meth.documentation.nil?
-          yps = meth.documentation.tags(:yieldparam) || []
+        unless meth.nil? or meth.docstring.nil?
+          yps = meth.docstring.tags(:yieldparam) || []
         end
         i = 0
         block_node.children[1].children.each do |a|
@@ -637,7 +644,8 @@ module Solargraph
       namespace = namespace_from(node)
       arr = []
       @source.local_variable_pins.select{|p| p.visible_from?(node) }.each do |pin|
-        arr.push Suggestion.new(pin.name, kind: Suggestion::VARIABLE, return_type: api_map.infer_assignment_node_type(pin.node, namespace))
+        #arr.push Suggestion.new(pin.name, kind: Suggestion::VARIABLE, return_type: api_map.infer_assignment_node_type(pin.node, namespace))
+        arr.push Suggestion.new(pin.name, kind: Suggestion::VARIABLE)
       end
       arr
     end
@@ -685,9 +693,9 @@ module Solargraph
       while parts.length > 0
         result = api_map.find_fully_qualified_namespace("#{conc}::#{parts[0]}", namespace)
         if result.nil? or result.empty?
-          sugg = api_map.get_constants(conc, namespace).select{|s| s.label == parts[0]}.first
-          return nil if sugg.nil?
-          result = sugg.return_type
+          pin = api_map.get_constant_pins(conc, namespace).select{|s| s.name == parts[0]}.first
+          return nil if pin.nil?
+          result = pin.return_type || api_map.infer_assignment_node_type(pin.node, namespace)
           break if result.nil?
           is_constant = true
           conc = result
