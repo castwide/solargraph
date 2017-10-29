@@ -33,11 +33,15 @@ module Solargraph
         inner_map_node @node
         @directives.each_pair do |k, v|
           v.each do |d|
+            ns = namespace_for(k.node)
+            docstring = YARD::Docstring.parser.parse(d.tag.text).to_docstring
             if d.tag.tag_name == 'attribute'
-              ns = namespace_for(k.node)
-              docstring = YARD::Docstring.parser.parse(d.tag.text).to_docstring
               # @todo Check tag.types for r/w/rw
               attribute_pins.push Solargraph::Pin::Directed::Attribute.new(self, k.node, ns, :public, docstring, d.tag.name)
+            elsif d.tag.tag_name == 'method'
+              method_pins.push Solargraph::Pin::Directed::Method.new(self, k.node, ns, :instance, :public, docstring, d.tag.name.match(/^[a-z0-9_]*/i)[0])
+            else
+              STDERR.puts "Nothing to do for directive: #{d}"
             end
           end
         end

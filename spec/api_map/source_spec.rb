@@ -26,6 +26,20 @@ describe Solargraph::ApiMap::Source do
     source = Solargraph::ApiMap::Source.virtual('file.rb', code)
     expect(source.attribute_pins.length).to eq(1)
     expect(source.attribute_pins[0].name).to eq('bar')
+    expect(source.attribute_pins[0].return_type).to eq('String')
+  end
+
+  it "finds methods in YARD directives" do
+    code = %(
+      class Foo
+        # @!method bar
+        #   @return [String]
+      end
+    )
+    source = Solargraph::ApiMap::Source.virtual('file.rb', code)
+    expect(source.method_pins.length).to eq(1)
+    expect(source.method_pins[0].name).to eq('bar')
+    expect(source.method_pins[0].return_type).to eq('String')
   end
 
   it "pins global variables" do
