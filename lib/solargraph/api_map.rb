@@ -66,6 +66,7 @@ module Solargraph
       @yard_map
     end
 
+    # @return [Solargraph::ApiMap::Source]
     def virtualize filename, code, cursor = nil
       unless @virtual_source.nil? or @virtual_filename == filename or @workspace_files.include?(@virtual_filename)
         eliminate @virtual_filename
@@ -77,6 +78,7 @@ module Solargraph
       @virtual_source
     end
 
+    # @return [Solargraph::ApiMap::Source]
     def append_source code, filename
       virtualize filename, code
     end
@@ -119,11 +121,13 @@ module Solargraph
       result
     end
 
+    # @return [Array<Solargraph::Pin::Constant>]
     def get_constant_pins namespace, root
       fqns = find_fully_qualified_namespace(namespace, root)
       @const_pins[fqns] || []
     end
 
+    # @return [Array<Solargraph::Suggestion>]
     def get_constants namespace, root
       result = []
       fqns = find_fully_qualified_namespace(namespace, root)
@@ -136,6 +140,7 @@ module Solargraph
       result.concat yard_map.get_constants(namespace, root)
     end
 
+    # @return [String]
     def find_fully_qualified_namespace name, root = '', skip = []
       refresh
       return nil if skip.include?(root)
@@ -177,11 +182,13 @@ module Solargraph
       @namespace_map[fqns] || []
     end
 
+    # @return [Array<Solargraph::Pin::InstanceVariable>]
     def get_instance_variable_pins(namespace, scope = :instance)
       refresh
       (@ivar_pins[namespace] || []).select{ |pin| pin.scope == scope }
     end
 
+    # @return [Array<Solargraph::Suggestion>]
     def get_instance_variables(namespace, scope = :instance)
       refresh
       result = []
@@ -194,11 +201,13 @@ module Solargraph
       result
     end
 
+    # @return [Array<Solargraph::Pin::ClassVariable>]
     def get_class_variable_pins(namespace)
       refresh
       @cvar_pins[namespace] || []
     end
 
+    # @return [Array<Solargraph::Suggestion>]
     def get_class_variables(namespace)
       refresh
       result = []
@@ -211,11 +220,13 @@ module Solargraph
       result
     end
 
+    # @return [Array<Solargraph::Pin::Symbol>]
     def get_symbols
       refresh
       @symbol_pins.uniq(&:label)
     end
 
+    # @return [String]
     def get_filename_for(node)
       @sources.each do |filename, source|
         return source.filename if source.include?(node)
@@ -223,6 +234,7 @@ module Solargraph
       nil
     end
 
+    # @return [String]
     def infer_instance_variable(var, namespace, scope)
       refresh
       pins = @ivar_pins[namespace]
@@ -232,6 +244,7 @@ module Solargraph
       pin.return_type
     end
 
+    # @return [String]
     def infer_class_variable(var, namespace)
       refresh
       fqns = find_fully_qualified_namespace(namespace)
@@ -242,6 +255,7 @@ module Solargraph
       pin.return_type
     end
 
+    # @return [Array<Solargraph::Suggestion>]
     def get_global_variables
       result = []
       @sources.values.each do |s|
@@ -252,6 +266,7 @@ module Solargraph
       result
     end
 
+    # @return [String]
     def infer_assignment_node_type node, namespace
       type = cache.get_assignment_node_type(node, namespace)
       if type.nil?
@@ -280,6 +295,7 @@ module Solargraph
       type
     end
 
+    # @return [String]
     def infer_signature_type signature, namespace, scope: :class
       if cache.has_signature_type?(signature, namespace, scope)
         return cache.get_signature_type(signature, namespace, scope)
@@ -360,7 +376,7 @@ module Solargraph
           inits = @method_pins[fqns].select{|p| p.name == 'initialize'}
           meths -= news unless inits.empty?
           inits.each do |pin|
-            meths.push Suggestion.new('new', kind: pin.kind, documentation: pin.docstring, detail: pin.namespace, arguments: pin.parameters, path: pin.path)
+            meths.push Suggestion.new('new', kind: pin.kind, docstring: pin.docstring, detail: pin.namespace, arguments: pin.parameters, path: pin.path)
           end
         end
       end

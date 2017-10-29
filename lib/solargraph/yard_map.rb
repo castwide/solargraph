@@ -123,7 +123,7 @@ module Solargraph
         else
           next
         end
-        result.push Suggestion.new(c.to_s.split('::').last, detail: detail, kind: kind, documentation: c.docstring)
+        result.push Suggestion.new(c.to_s.split('::').last, detail: detail, kind: kind, docstring: c.docstring)
       }
       cache.set_constants(namespace, scope, result)
       result
@@ -146,7 +146,7 @@ module Solargraph
                 label = "#{n}"
                 args = get_method_args(m)
                 kind = (m.is_attribute? ? Suggestion::FIELD : Suggestion::METHOD)
-                meths.push Suggestion.new(label, insert: "#{n.gsub(/=/, ' = ')}", kind: kind, documentation: m.docstring, code_object: m, detail: "#{ns}", location: "#{m.file}:#{m.line}", arguments: args)
+                meths.push Suggestion.new(label, insert: "#{n.gsub(/=/, ' = ')}", kind: kind, docstring: m.docstring, code_object: m, detail: "#{ns}", location: "#{m.file}:#{m.line}", arguments: args)
               }
               # Collect superclass methods
               if ns.kind_of?(YARD::CodeObjects::ClassObject) and !ns.superclass.nil?
@@ -160,7 +160,7 @@ module Solargraph
                   meths.delete_if{|m| m.label == 'new'}
                   label = "#{i}"
                   args = get_method_args(i)
-                  meths.push Suggestion.new('new', kind: Suggestion::METHOD, documentation: i.docstring, code_object: i, detail: "#{ns}", location: "#{i.file}:#{i.line}", arguments: args)
+                  meths.push Suggestion.new('new', kind: Suggestion::METHOD, docstring: i.docstring, code_object: i, detail: "#{ns}", location: "#{i.file}:#{i.line}", arguments: args)
                 end
               end
             end
@@ -189,7 +189,7 @@ module Solargraph
                   label = "#{n}"
                   args = get_method_args(m)
                   kind = (m.is_attribute? ? Suggestion::FIELD : Suggestion::METHOD)
-                  meths.push Suggestion.new(label, insert: "#{n.gsub(/=/, ' = ')}", kind: kind, documentation: m.docstring, code_object: m, detail: m.namespace, location: "#{m.file}:#{m.line}", arguments: args)
+                  meths.push Suggestion.new(label, insert: "#{n.gsub(/=/, ' = ')}", kind: kind, docstring: m.docstring, code_object: m, detail: m.namespace, location: "#{m.file}:#{m.line}", arguments: args)
                 end
               }
               if ns.kind_of?(YARD::CodeObjects::ClassObject) and namespace != 'Object'

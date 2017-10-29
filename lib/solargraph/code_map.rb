@@ -173,6 +173,7 @@ module Solargraph
       word
     end
 
+    # @return [Array<Solargraph::Suggestion>]
     def get_class_variables_at(index)
       ns = namespace_at(index) || ''
       api_map.get_class_variables(ns)
@@ -189,7 +190,7 @@ module Solargraph
     # Get suggestions for code completion at the specified location in the
     # source.
     #
-    # @return [Array<Suggestions>] The completion suggestions
+    # @return [Array<Solargraph::Suggestion>] The completion suggestions
     def suggest_at index, filtered: true, with_snippets: false
       return [] if string_at?(index) or string_at?(index - 1) or comment_at?(index)
       signature = get_signature_at(index)
@@ -614,8 +615,8 @@ module Solargraph
         meths += api_map.get_methods('')
         meth = meths.keep_if{ |s| s.to_s == block_node.children[0].children[1].to_s }.first
         yps = []
-        unless meth.nil? or meth.documentation.nil?
-          yps = meth.documentation.tags(:yieldparam) || []
+        unless meth.nil? or meth.docstring.nil?
+          yps = meth.docstring.tags(:yieldparam) || []
         end
         i = 0
         block_node.children[1].children.each do |a|
