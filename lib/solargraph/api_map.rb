@@ -432,6 +432,7 @@ module Solargraph
     end
 
     def get_path_suggestions path
+      refresh
       result = []
       if path.include?('#')
         # It's an instance method
@@ -506,6 +507,7 @@ module Solargraph
     def process_virtual
       unless @virtual_source.nil?
         cache.clear
+        @namespace_map = {}
         @sources[@virtual_filename] = @virtual_source
         @sources.values.each do |s|
           s.namespace_nodes.each_pair do |k, v|
