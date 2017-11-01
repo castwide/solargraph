@@ -106,7 +106,7 @@ module Solargraph
 
     def namespaces
       refresh
-      @namespace_map.keys
+      namespace_map.keys
     end
 
     def namespace_exists? name, root = ''
@@ -153,7 +153,7 @@ module Solargraph
         end
       else
         if (root == '')
-          return name unless @namespace_map[name].nil?
+          return name unless namespace_map[name].nil?
           get_include_strings_from(*file_nodes).each { |i|
             reroot = "#{root == '' ? '' : root + '::'}#{i}"
             recname = find_fully_qualified_namespace name.to_s, reroot, skip
@@ -163,10 +163,10 @@ module Solargraph
           roots = root.to_s.split('::')
           while roots.length > 0
             fqns = roots.join('::') + '::' + name
-            return fqns unless @namespace_map[fqns].nil?
+            return fqns unless namespace_map[fqns].nil?
             roots.pop
           end
-          return name unless @namespace_map[name].nil?
+          return name unless namespace_map[name].nil?
           get_include_strings_from(*file_nodes).each { |i|
             recname = find_fully_qualified_namespace name, i, skip
             return recname unless recname.nil?
@@ -179,7 +179,7 @@ module Solargraph
     def get_namespace_nodes(fqns)
       return file_nodes if fqns == '' or fqns.nil?
       refresh
-      @namespace_map[fqns] || []
+      namespace_map[fqns] || []
     end
 
     # @return [Array<Solargraph::Pin::InstanceVariable>]
@@ -432,6 +432,7 @@ module Solargraph
     end
 
     def get_path_suggestions path
+      refresh
       result = []
       if path.include?('#')
         # It's an instance method
@@ -454,11 +455,21 @@ module Solargraph
 
     private
 
+    # @return [Hash]
+    def namespace_map
+      @namespace_map ||= {}
+    end
+
+    # @return [Hash]
+    def namespace_tree
+      @namespace_tree ||= {}
+    end
+
     def clear
       @stale = false
       @parent_stack = {}
-      @namespace_map = {}
-      @namespace_tree = {}
+      namespace_map.clear
+      namespace_tree.clear
       @required = []
     end
 
@@ -482,8 +493,8 @@ module Solargraph
       @namespace_includes = {}
       @superclasses = {}
       @parent_stack = {}
-      @namespace_map = {}
-      @namespace_tree = {}
+      namespace_map.clear
+      namespace_tree.clear
       @required = []
       @pin_suggestions = {}
       unless @virtual_source.nil?
@@ -491,8 +502,8 @@ module Solargraph
       end
       @sources.values.each do |s|
         s.namespace_nodes.each_pair do |k, v|
-          @namespace_map[k] ||= []
-          @namespace_map[k].concat v
+          namespace_map[k] ||= []
+          namespace_map[k].concat v
           add_to_namespace_tree k.split('::')
         end
       end
@@ -506,11 +517,13 @@ module Solargraph
     def process_virtual
       unless @virtual_source.nil?
         cache.clear
+        namespace_map.clear
+        namespace_tree.clear
         @sources[@virtual_filename] = @virtual_source
         @sources.values.each do |s|
           s.namespace_nodes.each_pair do |k, v|
-            @namespace_map[k] ||= []
-            @namespace_map[k].concat v
+            namespace_map[k] ||= []
+            namespace_map[k].concat v
             add_to_namespace_tree k.split('::')
           end
         end
@@ -632,7 +645,7 @@ module Solargraph
         skip.push fqns
         nodes = get_namespace_nodes(fqns)
         unless nodes.empty?
-          cursor = @namespace_tree
+          cursor = namespace_tree
           parts = fqns.split('::')
           parts.each { |p|
             cursor = cursor[p]
@@ -721,7 +734,7 @@ module Solargraph
     end
 
     def add_to_namespace_tree tree
-      cursor = @namespace_tree
+      cursor = namespace_tree
       tree.each { |t|
         cursor[t.to_s] ||= {}
         cursor = cursor[t.to_s]

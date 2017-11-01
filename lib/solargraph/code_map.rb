@@ -242,7 +242,7 @@ module Solargraph
           end
         end
       else
-        result.concat api_map.get_instance_methods(type)
+        result.concat api_map.get_instance_methods(type) unless (type == '' and signature.include?('.'))
       end
       result = reduce_starting_with(result, word_at(index)) if filtered
       result.uniq{|s| s.path}.sort{|a,b| a.label <=> b.label}
