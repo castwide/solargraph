@@ -533,4 +533,17 @@ describe Solargraph::ApiMap do
     sugg = api_map.get_instance_methods('Foo').select{|s| s.label == 'bar'}.first
     expect(sugg.return_type).to eq('String')
   end
+
+  it "rebuilds the namespace map when processing virtual sources" do
+    code = %(
+      class Foo
+      end
+    )
+    api_map = Solargraph::ApiMap.new
+    3.times do
+      api_map.append_source(code, 'file.rb')
+      sugg = api_map.get_path_suggestions('Foo')
+      expect(sugg.length).to eq(1)
+    end
+  end
 end

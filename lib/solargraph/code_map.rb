@@ -165,6 +165,7 @@ module Solargraph
       while cursor > -1
         char = @code[cursor, 1]
         break if char.nil? or char == ''
+        word = char + word if char == '$'
         break unless char.match(/[a-z0-9_]/i)
         word = char + word
         cursor -= 1
@@ -172,6 +173,7 @@ module Solargraph
       word
     end
 
+    # @return [Array<Solargraph::Suggestion>]
     def get_class_variables_at(index)
       ns = namespace_at(index) || ''
       api_map.get_class_variables(ns)
@@ -188,7 +190,7 @@ module Solargraph
     # Get suggestions for code completion at the specified location in the
     # source.
     #
-    # @return [Array<Suggestions>] The completion suggestions
+    # @return [Array<Solargraph::Suggestion>] The completion suggestions
     def suggest_at index, filtered: true, with_snippets: false
       return [] if string_at?(index) or string_at?(index - 1) or comment_at?(index)
       signature = get_signature_at(index)
@@ -240,7 +242,7 @@ module Solargraph
           end
         end
       else
-        result.concat api_map.get_instance_methods(type)
+        result.concat api_map.get_instance_methods(type) unless (type == '' and signature.include?('.'))
       end
       result = reduce_starting_with(result, word_at(index)) if filtered
       result.uniq{|s| s.path}.sort{|a,b| a.label <=> b.label}
@@ -550,7 +552,8 @@ module Solargraph
           end
           if brackets == 0 and parens == 0 and squares == 0
             break if ['"', "'", ',', ' ', "\t", "\n", ';', '%'].include?(char)
-            signature = char + signature if char.match(/[a-z0-9:\._@]/i) and @code[index - 1] != '%'
+            signature = char + signature if char.match(/[a-z0-9:\._@\$]/i) and @code[index - 1] != '%'
+            break if char == '$'
             if char == '@'
               signature = "@#{signature}" if @code[index-1, 1] == '@'
               break
@@ -612,8 +615,8 @@ module Solargraph
         meths += api_map.get_methods('')
         meth = meths.keep_if{ |s| s.to_s == block_node.children[0].children[1].to_s }.first
         yps = []
-        unless meth.nil? or meth.documentation.nil?
-          yps = meth.documentation.tags(:yieldparam) || []
+        unless meth.nil? or meth.docstring.nil?
+          yps = meth.docstring.tags(:yieldparam) || []
         end
         i = 0
         block_node.children[1].children.each do |a|
