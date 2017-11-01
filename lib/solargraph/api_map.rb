@@ -455,15 +455,21 @@ module Solargraph
 
     private
 
+    # @return [Hash]
     def namespace_map
       @namespace_map ||= {}
+    end
+
+    # @return [Hash]
+    def namespace_tree
+      @namespace_tree ||= {}
     end
 
     def clear
       @stale = false
       @parent_stack = {}
       namespace_map.clear
-      @namespace_tree = {}
+      namespace_tree.clear
       @required = []
     end
 
@@ -488,7 +494,7 @@ module Solargraph
       @superclasses = {}
       @parent_stack = {}
       namespace_map.clear
-      @namespace_tree = {}
+      namespace_tree.clear
       @required = []
       @pin_suggestions = {}
       unless @virtual_source.nil?
@@ -512,6 +518,7 @@ module Solargraph
       unless @virtual_source.nil?
         cache.clear
         namespace_map.clear
+        namespace_tree.clear
         @sources[@virtual_filename] = @virtual_source
         @sources.values.each do |s|
           s.namespace_nodes.each_pair do |k, v|
@@ -638,7 +645,7 @@ module Solargraph
         skip.push fqns
         nodes = get_namespace_nodes(fqns)
         unless nodes.empty?
-          cursor = @namespace_tree
+          cursor = namespace_tree
           parts = fqns.split('::')
           parts.each { |p|
             cursor = cursor[p]
@@ -727,7 +734,7 @@ module Solargraph
     end
 
     def add_to_namespace_tree tree
-      cursor = @namespace_tree
+      cursor = namespace_tree
       tree.each { |t|
         cursor[t.to_s] ||= {}
         cursor = cursor[t.to_s]
