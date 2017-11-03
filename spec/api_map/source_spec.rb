@@ -21,12 +21,20 @@ describe Solargraph::ApiMap::Source do
       class Foo
         # @!attribute [r] bar
         #   @return [String]
+        # @!attribute baz
+        # @!attribute [r,w] boo
       end
     )
     source = Solargraph::ApiMap::Source.virtual('file.rb', code)
-    expect(source.attribute_pins.length).to eq(1)
+    expect(source.attribute_pins.length).to eq(5)
     expect(source.attribute_pins[0].name).to eq('bar')
     expect(source.attribute_pins[0].return_type).to eq('String')
+    names = source.attribute_pins.map(&:name)
+    expect(names).not_to include('bar=')
+    expect(names).to include('baz')
+    expect(names).to include('baz=')
+    expect(names).to include('boo')
+    expect(names).to include('boo=')
   end
 
   it "finds methods in YARD directives" do
