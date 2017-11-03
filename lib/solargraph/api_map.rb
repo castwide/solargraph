@@ -66,6 +66,11 @@ module Solargraph
       @yard_map
     end
 
+    # @return [Solargraph::LiveMap]
+    def live_map
+      @live_map ||= Solargraph::LiveMap.new
+    end
+
     # @return [Solargraph::ApiMap::Source]
     def virtualize filename, code, cursor = nil
       unless @virtual_source.nil? or @virtual_filename == filename or @workspace_files.include?(@virtual_filename)
@@ -361,6 +366,13 @@ module Solargraph
       yard_meths = yard_map.get_methods(namespace, root, visibility: visibility)
       if yard_meths.any?
         meths.concat yard_meths
+        strings = meths.map(&:to_s)
+        STDERR.puts "Getting live methods for #{namespace}"
+        live_map.get_public_methods(namespace).each do |m|
+          next if strings.include?(m)
+          STDERR.puts "Adding #{m}"
+          meths.push Suggestion.new(m, kind: Suggestion::METHOD)
+        end
       else
         type = get_namespace_type(namespace, root)
         if type == :class
@@ -511,6 +523,10 @@ module Solargraph
         map_source s
       }
       @required.uniq!
+      # @todo Experimental (attempted with User < ActiveRecord::Base)
+      #if @required.include?('bundler/setup')
+      #  Bundler.setup
+      #end
       @stale = false
     end
 
