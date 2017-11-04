@@ -1,6 +1,5 @@
 require 'parser/current'
 require 'yard'
-require 'bundler'
 
 module Solargraph
 
@@ -171,13 +170,6 @@ module Solargraph
             end
           end
         end
-        #strings = meths.map(&:to_s)
-        #STDERR.puts "Getting live methods for #{namespace}"
-        #live_map.get_public_methods(namespace).each do |m|
-        #  next if strings.include?(m)
-        #  STDERR.puts "Adding #{m}"
-        #  meths.push Suggestion.new(m, kind: Suggestion::METHOD)
-        #end
       end
       cache.set_methods(namespace, scope, visibility, meths)
       meths
@@ -267,15 +259,28 @@ module Solargraph
     def bundled_gem_yardocs
       result = []
       unless workspace.nil?
-        gl = File.join(workspace, 'Gemfile.lock')
-        if File.file?(gl)
-          lockfile = Bundler::LockfileParser.new(Bundler.read_file(gl))
-          lockfile.specs.each do |s|
-            y = YARD::Registry.yardoc_file_for_gem(s.name, s.version.to_s)
-            if y.nil?
-              STDERR.puts "Bundled gem not found: #{s.name} #{s.version}"
-            else
-              result.push y
+        Bundler.with_clean_env do
+          Bundler.environment.chdir(workspace) do
+            glfn = File.join(workspace, 'Gemfile.lock')
+            spec_versions = {}
+            if File.file?(glfn)
+              lockfile = Bundler::LockfileParser.new(Bundler.read_file(glfn))
+              lockfile.specs.each do |s|
+                spec_versions[s.name] = s.version.to_s
+              end
+            end
+            Bundler.environment.dependencies.each do |s|
+              if s.type == :runtime
+                ver = spec_versions[s.name]
+                y = YARD::Registry.yardoc_file_for_gem(s.name, ver)
+                if y.nil?
+                  STDERR.puts "Bundled gem not found: #{s.name}, #{ver}"
+                else
+                  STDERR.puts "Adding #{y}"
+                  result.push y
+                  add_gem_dependencies(s.name)
+                end
+              end
             end
           end
         end
