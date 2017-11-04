@@ -439,7 +439,8 @@ module Solargraph
 
     def update filename
       @@source_cache[filename] ||= Source.load(filename)
-      cache.clear
+      #cache.clear
+      @stale = true
     end
 
     def sources
@@ -526,11 +527,7 @@ module Solargraph
         map_source s
       }
       @required.uniq!
-      # HACK: Testing inclusion of rails for use in live_map
-      if @required.include?('rails/all')
-        rails_config = File.join(workspace, 'config', 'environment.rb')
-        load rails_config if File.file?(rails_config)
-      end
+      live_map.refresh workspace, @required
       @stale = false
     end
 

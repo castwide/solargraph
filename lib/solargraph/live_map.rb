@@ -1,5 +1,18 @@
 module Solargraph
   class LiveMap
+    def refresh workspace, required
+      # HACK: Testing inclusion of rails for use in live_map
+      if required.include?('rails/all')
+        STDERR.puts "REFRESHING LIVE!!!!!"
+        rails_config = File.join(workspace, 'config', 'environment.rb')
+        if File.file?(rails_config)
+          unless require_relative(rails_config)
+            Rails.application.reloader.reload!
+          end
+        end
+      end
+    end
+
     def get_public_instance_methods(namespace, root = '')
       return [] if (namespace.nil? or namespace.empty?) and (root.nil? or root.empty?)
       con = find_constant(namespace, root)
