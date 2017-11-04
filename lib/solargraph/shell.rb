@@ -5,6 +5,7 @@ require 'rubygems/package'
 require 'zlib'
 require 'net/http'
 require 'socket'
+require 'bundler'
 
 module Solargraph
   class Shell < Thor
@@ -93,6 +94,7 @@ module Solargraph
     end
 
     desc 'config [DIRECTORY]', 'Create or overwrite a default configuration file'
+    option :extensions, type: :boolean, aliases: :e, desc: 'Add installed extensions', default: false
     def config(directory = '.')
       File.open(File.join(directory, '.solargraph.yml'), 'w') do |file|
         file.puts "include:",
@@ -100,6 +102,20 @@ module Solargraph
           "exclude:",
           "  - spec/**/*",
           "  - test/**/*"
+        if options[:extensions]
+          matches = []
+          Gem::Specification.each do |g|
+            if g.name.match(/^solargraph\-[A-Za-z0-9_\-]*?\-ext/)
+              matches.push g.name
+            end
+          end
+          unless matches.empty?
+            file.puts "extensions:"
+            matches.each do |m|
+              file.puts "  - #{m}"
+            end
+          end
+        end
       end
       STDOUT.puts "Configuration file initialized."
     end
