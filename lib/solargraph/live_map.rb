@@ -1,15 +1,12 @@
 module Solargraph
   class LiveMap
-    def refresh workspace, required
-      # HACK: Testing inclusion of rails for use in live_map
-      if required.include?('rails/all')
-        STDERR.puts "REFRESHING LIVE!!!!!"
-        rails_config = File.join(workspace, 'config', 'environment.rb')
-        if File.file?(rails_config)
-          unless require_relative(rails_config)
-            Rails.application.reloader.reload!
-          end
-        end
+    @@update_procs = []
+    
+    # @param api_map [Solargraph::ApiMap]
+    def update api_map
+      STDERR.puts "************* UPDATING THE LIVE MAP DAMMIT"
+      @@update_procs.each do |p|
+        p.call(api_map)
       end
     end
 
@@ -25,6 +22,12 @@ module Solargraph
       con = find_constant(namespace, root)
       return [] if con.nil?
       con.public_methods.map(&:to_s)
+    end
+
+    class << self
+      def on_update &proc
+        @@update_procs.push proc
+      end
     end
 
     private

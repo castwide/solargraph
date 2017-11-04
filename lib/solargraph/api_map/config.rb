@@ -6,11 +6,13 @@ module Solargraph
       attr_reader :workspace
       attr_reader :included
       attr_reader :excluded
+      attr_reader :extensions
 
       def initialize workspace = nil
         @workspace = workspace
         @included = []
         @excluded = []
+        @extensions = []
         include_globs = ['**/*.rb']
         exclude_globs = ['spec/**/*', 'test/**/*']
         unless @workspace.nil?
@@ -19,6 +21,7 @@ module Solargraph
             conf = YAML.load(File.read(sfile))
             include_globs = conf['include'] || include_globs
             exclude_globs = conf['exclude'] || []
+            @extensions = conf['extensions'] || []
           end
         end
         include_globs.each { |g| @included.concat process_glob(g) }

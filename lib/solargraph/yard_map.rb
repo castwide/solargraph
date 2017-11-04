@@ -26,7 +26,7 @@ module Solargraph
               if gy.nil?
                 STDERR.puts "Required path not found: #{r}"
               else
-                STDERR.puts "Adding #{gy}"
+                #STDERR.puts "Adding #{gy}"
                 yardocs.unshift gy
                 add_gem_dependencies g
               end
@@ -276,7 +276,7 @@ module Solargraph
                 if y.nil?
                   STDERR.puts "Bundled gem not found: #{s.name}, #{ver}"
                 else
-                  STDERR.puts "Adding #{y}"
+                  #STDERR.puts "Adding #{y}"
                   result.push y
                   add_gem_dependencies(s.name)
                 end

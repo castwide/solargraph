@@ -54,6 +54,9 @@ module Solargraph
       @virtual_source = nil
       @virtual_filename = nil
       @stale = true
+      config.extensions.each do |ext|
+        require ext
+      end
       refresh
     end
 
@@ -527,7 +530,7 @@ module Solargraph
         map_source s
       }
       @required.uniq!
-      live_map.refresh workspace, @required
+      live_map.update self
       @stale = false
     end
 
