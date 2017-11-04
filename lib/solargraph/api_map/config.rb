@@ -4,36 +4,44 @@ module Solargraph
   class ApiMap
     class Config
       attr_reader :workspace
-      attr_reader :included
-      attr_reader :excluded
-      attr_reader :extensions
+      attr_reader :raw_data
 
       def initialize workspace = nil
         @workspace = workspace
-        @included = []
-        @excluded = []
-        @extensions = []
         include_globs = ['**/*.rb']
         exclude_globs = ['spec/**/*', 'test/**/*']
         unless @workspace.nil?
           sfile = File.join(@workspace, '.solargraph.yml')
           if File.file?(sfile)
-            conf = YAML.load(File.read(sfile))
-            include_globs = conf['include'] || include_globs
-            exclude_globs = conf['exclude'] || []
-            @extensions = conf['extensions'] || []
+            @raw_data = YAML.load(File.read(sfile))
           end
         end
-        include_globs.each { |g| @included.concat process_glob(g) }
-        exclude_globs.each { |g| @excluded.concat process_glob(g) }
+        @raw_data ||= {}
+        @raw_data['include'] = @raw_data['include'] || include_globs
+        @raw_data['exclude'] = @raw_data['exclude'] || exclude_globs
+        @raw_data['extensions'] = @raw_data['extensions'] || []
+      end
+
+      def included
+        process_globs @raw_data['include']
+      end
+
+      def excluded
+        process_globs @raw_data['exclude']
+      end
+
+      def extensions
+        @raw_data['extensions']
       end
 
       private
 
-      def process_glob glob
+      def process_globs globs
         result = []
-        Dir[File.join workspace, glob].each do |f|
-          result.push File.realdirpath(f)
+        globs.each do |glob|
+          Dir[File.join workspace, glob].each do |f|
+            result.push File.realdirpath(f)
+          end
         end
         result
       end

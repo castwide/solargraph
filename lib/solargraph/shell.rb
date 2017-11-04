@@ -94,28 +94,28 @@ module Solargraph
     end
 
     desc 'config [DIRECTORY]', 'Create or overwrite a default configuration file'
-    option :extensions, type: :boolean, aliases: :e, desc: 'Add installed extensions', default: false
+    option :extensions, type: :boolean, aliases: :e, desc: 'Add installed extensions', default: true
     def config(directory = '.')
-      File.open(File.join(directory, '.solargraph.yml'), 'w') do |file|
-        file.puts "include:",
-          "  - ./**/*.rb",
-          "exclude:",
-          "  - spec/**/*",
-          "  - test/**/*"
-        if options[:extensions]
-          matches = []
-          Gem::Specification.each do |g|
-            if g.name.match(/^solargraph\-[A-Za-z0-9_\-]*?\-ext/)
-              matches.push g.name
-            end
-          end
-          unless matches.empty?
-            file.puts "extensions:"
-            matches.each do |m|
-              file.puts "  - #{m}"
-            end
+      matches = []
+      if options[:extensions]
+        STDERR.puts "Looking for extensions..."
+        Gem::Specification.each do |g|
+          puts g.name
+          if g.name.match(/^solargraph\-[A-Za-z0-9_\-]*?\-ext/)
+            require g.name
+            matches.push g.name
           end
         end
+      end
+      conf = Solargraph::ApiMap::Config.new.raw_data
+      unless matches.empty?
+        matches.each do |m|
+          conf['extensions'].push m
+        end
+      end
+      STDERR.puts conf.inspect
+      File.open(File.join(directory, '.solargraph.yml'), 'w') do |file|
+        file.puts conf.to_yaml
       end
       STDOUT.puts "Configuration file initialized."
     end
