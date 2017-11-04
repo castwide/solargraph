@@ -1,14 +1,14 @@
 module Solargraph
   class LiveMap
     def get_public_instance_methods(namespace, root = '')
-      return [] if namespace.empty? and root.empty?
+      return [] if (namespace.nil? or namespace.empty?) and (root.nil? or root.empty?)
       con = find_constant(namespace, root)
       return [] if con.nil?
       con.public_instance_methods.map(&:to_s)
     end
 
     def get_public_methods(namespace, root = '')
-      return [] if namespace.empty? and root.empty?
+      return [] if (namespace.nil? or namespace.empty?) and (root.nil? or root.empty?)
       con = find_constant(namespace, root)
       return [] if con.nil?
       con.public_methods.map(&:to_s)

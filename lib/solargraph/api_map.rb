@@ -361,6 +361,7 @@ module Solargraph
     def get_methods(namespace, root = '', visibility: [:public])
       refresh
       namespace = clean_namespace_string(namespace)
+      fqns = find_fully_qualified_namespace(namespace, root)
       meths = []
       meths.concat inner_get_methods(namespace, root, []) #unless has_yardoc?
       yard_meths = yard_map.get_methods(namespace, root, visibility: visibility)
@@ -376,7 +377,6 @@ module Solargraph
       end
       news = meths.select{|s| s.label == 'new'}
       unless news.empty?
-        fqns = find_fully_qualified_namespace(namespace, root)
         if @method_pins[fqns]
           inits = @method_pins[fqns].select{|p| p.name == 'initialize'}
           meths -= news unless inits.empty?
@@ -388,7 +388,7 @@ module Solargraph
       strings = meths.map(&:to_s)
       live_map.get_public_methods(namespace, root).each do |m|
         next if strings.include?(m) or !m.match(/^[a-z]/i)
-        meths.push Suggestion.new(m, kind: Suggestion::METHOD)
+        meths.push Suggestion.new(m, kind: Suggestion::METHOD, docstring: YARD::Docstring.new('(defined at runtime)'))
       end
     meths
     end
