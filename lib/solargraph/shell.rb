@@ -98,7 +98,6 @@ module Solargraph
     def config(directory = '.')
       matches = []
       if options[:extensions]
-        STDERR.puts "Looking for extensions..."
         Gem::Specification.each do |g|
           puts g.name
           if g.name.match(/^solargraph\-[A-Za-z0-9_\-]*?\-ext/)
@@ -113,7 +112,6 @@ module Solargraph
           conf['extensions'].push m
         end
       end
-      STDERR.puts conf.inspect
       File.open(File.join(directory, '.solargraph.yml'), 'w') do |file|
         file.puts conf.to_yaml
       end

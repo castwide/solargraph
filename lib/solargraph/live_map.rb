@@ -4,7 +4,6 @@ module Solargraph
     
     # @param api_map [Solargraph::ApiMap]
     def update api_map
-      STDERR.puts "************* UPDATING THE LIVE MAP DAMMIT"
       @@update_procs.each do |p|
         p.call(api_map)
       end
@@ -24,10 +23,8 @@ module Solargraph
       con.public_methods.map(&:to_s)
     end
 
-    class << self
-      def on_update &proc
-        @@update_procs.push proc
-      end
+    def self.on_update &proc
+      @@update_procs.push proc
     end
 
     private

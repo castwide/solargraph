@@ -38,10 +38,13 @@ module Solargraph
     def initialize workspace = nil
       @workspace = workspace.gsub(/\\/, '/') unless workspace.nil?
       clear
+      self.config.extensions.each do |ext|
+        STDERR.puts "Requiring #{ext}"
+        require ext
+      end
       @workspace_files = []
       unless @workspace.nil?
-        config = ApiMap::Config.new(@workspace)
-        @workspace_files.concat (config.included - config.excluded)
+        @workspace_files.concat (self.config.included - self.config.excluded)
         @workspace_files.each do |wf|
           begin
             @@source_cache[wf] ||= Source.load(wf)
@@ -54,10 +57,11 @@ module Solargraph
       @virtual_source = nil
       @virtual_filename = nil
       @stale = true
-      config.extensions.each do |ext|
-        require ext
-      end
       refresh
+    end
+
+    def config
+      @config ||= ApiMap::Config.new(@workspace)
     end
 
     # @return [Solargraph::YardMap]
