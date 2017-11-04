@@ -1,30 +1,53 @@
 module Solargraph
   class LiveMap
-    @@update_procs = []
+    @@plugins = []
     
-    # @param api_map [Solargraph::ApiMap]
-    def update api_map
-      @@update_procs.each do |p|
-        p.call(api_map)
+    attr_reader :workspace
+
+    def initialize workspace
+      @workspace = workspace
+      @runners = []
+      open
+    end
+
+    def open
+      unless workspace.nil?
+        @@plugins.each do |p|
+          @runners.push p.new(workspace)
+        end
       end
     end
 
+    def reload
+      close
+      open
+    end
+
+    def close
+      @runners.each do |p|
+        p.close
+      end
+      @runners.clear
+    end
+
     def get_public_instance_methods(namespace, root = '')
-      return [] if (namespace.nil? or namespace.empty?) and (root.nil? or root.empty?)
-      con = find_constant(namespace, root)
-      return [] if con.nil?
-      con.public_instance_methods.map(&:to_s)
+      result = []
+      @runners.each do |p|
+        result.concat(p.query('instance', namespace, root))
+      end
+      result
     end
 
     def get_public_methods(namespace, root = '')
-      return [] if (namespace.nil? or namespace.empty?) and (root.nil? or root.empty?)
-      con = find_constant(namespace, root)
-      return [] if con.nil?
-      con.public_methods.map(&:to_s)
+      result = []
+      @runners.each do |p|
+        result.concat(p.query('class', namespace, root))
+      end
+      result
     end
 
-    def self.on_update &proc
-      @@update_procs.push proc
+    def self.install cls
+      @@plugins.push cls
     end
 
     private

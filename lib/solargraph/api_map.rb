@@ -39,7 +39,6 @@ module Solargraph
       @workspace = workspace.gsub(/\\/, '/') unless workspace.nil?
       clear
       self.config.extensions.each do |ext|
-        STDERR.puts "Requiring #{ext}"
         require ext
       end
       @workspace_files = []
@@ -57,6 +56,7 @@ module Solargraph
       @virtual_source = nil
       @virtual_filename = nil
       @stale = true
+      live_map
       refresh
     end
 
@@ -75,7 +75,7 @@ module Solargraph
 
     # @return [Solargraph::LiveMap]
     def live_map
-      @live_map ||= Solargraph::LiveMap.new
+      @live_map ||= Solargraph::LiveMap.new(workspace)
     end
 
     # @return [Solargraph::ApiMap::Source]
@@ -534,7 +534,8 @@ module Solargraph
         map_source s
       }
       @required.uniq!
-      live_map.update self
+      #live_map.update self
+      live_map.reload
       @stale = false
     end
 

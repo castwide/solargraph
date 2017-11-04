@@ -342,7 +342,7 @@ module Solargraph
         if gy.nil?
           STDERR.puts "Required path not found: #{r}"
         else
-          STDERR.puts "Adding #{gy}"
+          #STDERR.puts "Adding #{gy}"
           yardocs.unshift gy
         end
       end
