@@ -151,4 +151,29 @@ describe Solargraph::ApiMap::Source do
     expect(source.local_variable_pins[1].name).to eq('bar')
     expect(source.local_variable_pins[1].return_type).to eq('String')
   end
+
+  it "pins top-level methods" do
+    code = %(
+      def foo(bar, baz)
+      end
+    )
+    source = Solargraph::ApiMap::Source.virtual('file.rb', code)
+    expect(source.method_pins.length).to eq(1)
+    expect(source.method_pins.first.name).to eq('foo')
+    expect(source.method_pins.first.parameters).to eq(['bar', 'baz'])
+  end
+
+  it "pins top-level methods from directives" do
+    code = %(
+      begin
+      # @!method foo(bar, baz)
+      #   @return [Array]
+      end
+    )
+    source = Solargraph::ApiMap::Source.virtual('file.rb', code)
+    expect(source.method_pins.length).to eq(1)
+    expect(source.method_pins.first.name).to eq('foo')
+    expect(source.method_pins.first.parameters).to eq(['bar', 'baz'])
+    expect(source.method_pins.first.return_type).to eq('Array')
+  end
 end

@@ -13,6 +13,11 @@ module Solargraph
     # @return [String]
     attr_reader :code
 
+    # The source object generated from the code.
+    #
+    # @return [Solargraph::ApiMap::Source]
+    attr_reader :source
+
     # The filename for the source code.
     #
     # @return [String]
@@ -236,6 +241,8 @@ module Solargraph
               end
               result += api_map.namespaces_in('')
               result += api_map.get_instance_methods('Kernel')
+              result += api_map.get_methods('')
+              result += api_map.get_instance_methods('')
             else
               result.concat api_map.get_instance_methods(type)
             end

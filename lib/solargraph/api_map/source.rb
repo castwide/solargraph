@@ -44,7 +44,9 @@ module Solargraph
                 attribute_pins.push Solargraph::Pin::Directed::Attribute.new(self, k.node, ns, :writer, docstring, "#{d.tag.name}=")
               end
             elsif d.tag.tag_name == 'method'
-              method_pins.push Solargraph::Pin::Directed::Method.new(self, k.node, ns, :instance, :public, docstring, d.tag.name.match(/^[a-z0-9_]*/i)[0])
+              gen_src = Source.virtual(filename, "def #{d.tag.name};end")
+              gen_pin = gen_src.method_pins.first
+              method_pins.push Solargraph::Pin::Directed::Method.new(gen_src, gen_pin.node, ns, :instance, :public, docstring, gen_pin.name)
             else
               STDERR.puts "Nothing to do for directive: #{d}"
             end
@@ -157,7 +159,6 @@ module Solargraph
             end
           }
           parse = YARD::Docstring.parser.parse(ctxt)
-          # @todo Directives are accessible here via parse.directives
           unless parse.directives.empty?
             @directives[k] ||= []
             @directives[k].concat parse.directives
@@ -240,14 +241,14 @@ module Solargraph
               elsif c.type == :casgn
                 constant_pins.push Solargraph::Pin::Constant.new(self, c, fqn)
               else
-                unless fqn.nil?
+                #unless fqn.nil?
                   if c.kind_of?(AST::Node)
                     if c.type == :def and c.children[0].to_s[0].match(/[a-z]/i)
-                      method_pins.push Solargraph::Pin::Method.new(source, c, fqn, scope, visibility)
+                      method_pins.push Solargraph::Pin::Method.new(source, c, fqn || '', scope, visibility)
                       #inner_map_node c, tree, visibility, scope, fqn, stack
                       #next
                     elsif c.type == :defs
-                      method_pins.push Solargraph::Pin::Method.new(source, c, fqn, :class, :public)
+                      method_pins.push Solargraph::Pin::Method.new(source, c, fqn || '', :class, :public)
                       inner_map_node c, tree, :public, :class, fqn, stack
                       next
                     elsif c.type == :send and [:public, :protected, :private].include?(c.children[1])
@@ -260,18 +261,18 @@ module Solargraph
                     elsif c.type == :send and [:attr_reader, :attr_writer, :attr_accessor].include?(c.children[1])
                       c.children[2..-1].each do |a|
                         if c.children[1] == :attr_reader or c.children[1] == :attr_accessor
-                          attribute_pins.push Solargraph::Pin::Attribute.new(self, a, fqn, :reader, docstring_for(c)) #AttrPin.new(c)
+                          attribute_pins.push Solargraph::Pin::Attribute.new(self, a, fqn || '', :reader, docstring_for(c)) #AttrPin.new(c)
                         end
                         if c.children[1] == :attr_writer or c.children[1] == :attr_accessor
-                          attribute_pins.push Solargraph::Pin::Attribute.new(self, a, fqn, :writer, docstring_for(c)) #AttrPin.new(c)
+                          attribute_pins.push Solargraph::Pin::Attribute.new(self, a, fqn || '', :writer, docstring_for(c)) #AttrPin.new(c)
                         end
                       end
                     elsif c.type == :sclass and c.children[0].type == :self
-                      inner_map_node c, tree, :public, :class, fqn, stack
+                      inner_map_node c, tree, :public, :class, fqn || '', stack
                       next
                     end
                   end
-                end
+                #end
                 if c.type == :send and c.children[1] == :require
                   if c.children[2].kind_of?(AST::Node) and c.children[2].type == :str
                     required.push c.children[2].children[0].to_s

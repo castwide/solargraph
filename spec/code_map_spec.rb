@@ -516,4 +516,12 @@ describe Solargraph::CodeMap do
     expect(sugg).to include('$foo')
     expect(sugg).to include('$bar')
   end
+
+  it "ignores unknown local methods/variables" do
+    code_map = Solargraph::CodeMap.new(code: %(
+      foo.
+    ), cursor: [1, 10])
+    sugg = code_map.suggest_at(code_map.get_offset(1, 10))
+    expect(sugg.length).to eq(0)
+  end
 end

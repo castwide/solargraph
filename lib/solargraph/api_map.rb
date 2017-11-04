@@ -716,7 +716,7 @@ module Solargraph
         elsif !METHODS_RETURNING_SELF.include?(part)
           visibility = [:public]
           visibility.concat [:private, :protected] if top
-          if scope == :instance
+          if scope == :instance || namespace == ''
             meth = get_instance_methods(namespace, visibility: visibility).select{|s| s.label == part}.first
           else
             meth = get_methods(namespace, visibility: visibility).select{|s| s.label == part}.first            
