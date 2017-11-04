@@ -528,7 +528,8 @@ module Solargraph
       @required.uniq!
       # HACK: Testing inclusion of rails for use in live_map
       if @required.include?('rails/all')
-        load File.join(workspace, "config", "environment.rb")
+        rails_config = File.join(workspace, 'config', 'environment.rb')
+        load rails_config if File.file?(rails_config)
       end
       @stale = false
     end
