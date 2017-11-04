@@ -30,18 +30,18 @@ module Solargraph
       @runners.clear
     end
 
-    def get_public_instance_methods(namespace, root = '')
+    def get_instance_methods(namespace, root = '', with_private = false)
       result = []
       @runners.each do |p|
-        result.concat(p.query('instance', namespace, root))
+        result.concat(p.query(namespace, root, 'instance', with_private ? 'private' : 'public'))
       end
       result
     end
 
-    def get_public_methods(namespace, root = '')
+    def get_methods(namespace, root = '', with_private = false)
       result = []
       @runners.each do |p|
-        result.concat(p.query('class', namespace, root))
+        result.concat(p.query(namespace, root, 'class', with_private ? 'private' : 'public'))
       end
       result
     end

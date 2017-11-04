@@ -9,6 +9,8 @@ require 'bundler'
 
 module Solargraph
   class Shell < Thor
+    include Solargraph::ServerMethods
+
     map %w[--version -v] => :version
 
     desc "--version, -v", "Print the version"
@@ -116,16 +118,6 @@ module Solargraph
         file.puts conf.to_yaml
       end
       STDOUT.puts "Configuration file initialized."
-    end
-
-    private
-
-    def available_port
-      socket = Socket.new(:INET, :STREAM, 0)
-      socket.bind(Addrinfo.tcp("127.0.0.1", 0))
-      port = socket.local_address.ip_port
-      socket.close
-      port
     end
   end
 end
