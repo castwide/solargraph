@@ -171,13 +171,13 @@ module Solargraph
             end
           end
         end
-        strings = meths.map(&:to_s)
-        STDERR.puts "Getting live methods for #{namespace}"
-        live_map.get_public_methods(namespace).each do |m|
-          next if strings.include?(m)
-          STDERR.puts "Adding #{m}"
-          meths.push Suggestion.new(m, kind: Suggestion::METHOD)
-        end
+        #strings = meths.map(&:to_s)
+        #STDERR.puts "Getting live methods for #{namespace}"
+        #live_map.get_public_methods(namespace).each do |m|
+        #  next if strings.include?(m)
+        #  STDERR.puts "Adding #{m}"
+        #  meths.push Suggestion.new(m, kind: Suggestion::METHOD)
+        #end
       end
       cache.set_methods(namespace, scope, visibility, meths)
       meths
