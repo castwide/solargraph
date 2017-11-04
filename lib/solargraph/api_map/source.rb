@@ -36,7 +36,7 @@ module Solargraph
             ns = namespace_for(k.node)
             docstring = YARD::Docstring.parser.parse(d.tag.text).to_docstring
             if d.tag.tag_name == 'attribute'
-              t = d.tag.types&.flatten&.join('')
+              t = (d.tag.types.nil? || d.tag.types.empty?) ? nil : d.tag.types.flatten.join('')
               if t.nil? or t.include?('r')
                 attribute_pins.push Solargraph::Pin::Directed::Attribute.new(self, k.node, ns, :reader, docstring, d.tag.name)
               end
