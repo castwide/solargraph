@@ -61,7 +61,8 @@ module Solargraph
     # @return [String]
     def return_type
       if @return_type.nil? and !docstring.nil?
-        t = docstring.tag(:overload)&.tag(:return) || docstring.tag(:return)
+        ol = docstring.tag(:overload)
+        t = ol.nil? ? docstring.tag(:return) : ol.tag(:return)
         @return_type = t.types[0] unless t.nil? or t.types.nil?
       end
       @return_type
@@ -69,7 +70,7 @@ module Solargraph
 
     # @return [YARD::Docstring]
     def docstring
-      @docstring ||= @code_object&.docstring
+      @docstring ||= @code_object.nil? ? nil : @code_object.docstring
     end
 
     # @return [String]
