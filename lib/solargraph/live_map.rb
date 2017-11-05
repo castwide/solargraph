@@ -16,7 +16,9 @@ module Solargraph
     def start
       unless workspace.nil?
         @@plugins.each do |p|
-          @runners.push p.new(workspace)
+          r = p.new(workspace)
+          r.start
+          @runners.push r
         end
       end
     end
@@ -32,7 +34,7 @@ module Solargraph
 
     def stop
       @runners.each do |p|
-        p.close
+        p.stop
       end
       @runners.clear
     end
