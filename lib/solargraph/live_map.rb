@@ -1,4 +1,6 @@
 module Solargraph
+  # The LiveMap allows extensions to add their own completion suggestions.
+  #
   class LiveMap
     @@plugins = []
     
@@ -7,11 +9,11 @@ module Solargraph
     def initialize workspace
       @workspace = workspace
       @runners = []
-      at_exit { close }
-      open
+      at_exit { stop }
+      start
     end
 
-    def open
+    def start
       unless workspace.nil?
         @@plugins.each do |p|
           @runners.push p.new(workspace)
@@ -20,11 +22,15 @@ module Solargraph
     end
 
     def reload
-      close
-      open
+      restart
     end
 
-    def close
+    def restart
+      stop
+      start
+    end
+
+    def stop
       @runners.each do |p|
         p.close
       end
