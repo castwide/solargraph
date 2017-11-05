@@ -7,6 +7,7 @@ module Solargraph
     def initialize workspace
       @workspace = workspace
       @runners = []
+      at_exit { close }
       open
     end
 
