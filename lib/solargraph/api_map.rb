@@ -38,9 +38,12 @@ module Solargraph
     def initialize workspace = nil
       @workspace = workspace.gsub(/\\/, '/') unless workspace.nil?
       clear
-      self.config.extensions.each do |ext|
-        require ext
-      end
+      # @todo Instead of requiring extensions to be listed in the config,
+      # we're experimenting with automatically loading them.
+      #self.config.extensions.each do |ext|
+      #  require ext
+      #end
+      require_extensions
       @workspace_files = []
       unless @workspace.nil?
         @workspace_files.concat (self.config.included - self.config.excluded)
@@ -783,6 +786,13 @@ module Solargraph
     # @return [Solargraph::Suggestion]
     def pin_to_suggestion pin
       @pin_suggestions[pin] ||= Suggestion.pull(pin)
+    end
+
+    def require_extensions
+      Gem::Specification.all_names.select{|n| n.match(/^solargraph\-[a-z0-9_\-]*?\-ext\-[0-9\.]*$/)}.each do |n|
+        STDERR.puts "Loading extension #{n}"
+        require n.match(/^(solargraph\-[a-z0-9_\-]*?\-ext)\-[0-9\.]*$/)[1]
+      end
     end
   end
 end
