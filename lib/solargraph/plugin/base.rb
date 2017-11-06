@@ -21,10 +21,8 @@ module Solargraph
       end
 
       def get_methods namespace:, root:, scope:, with_private: false
-      raise "#{self.class} needs to implement the get_methods method"
+        raise "#{self.class} needs to implement the get_methods method"
       end
     end
   end
 end
-
-p = Solargraph::Plugin::Base.new('folder')
