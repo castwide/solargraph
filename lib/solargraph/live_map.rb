@@ -42,7 +42,7 @@ module Solargraph
     def get_instance_methods(namespace, root = '', with_private = false)
       result = []
       @runners.each do |p|
-        result.concat(p.query(namespace, root, 'instance', with_private ? 'private' : 'public'))
+        result.concat(p.get_methods(namespace: namespace, root: root, scope: 'instance', with_private: with_private))
       end
       result
     end
@@ -50,7 +50,7 @@ module Solargraph
     def get_methods(namespace, root = '', with_private = false)
       result = []
       @runners.each do |p|
-        result.concat(p.query(namespace, root, 'class', with_private ? 'private' : 'public'))
+        result.concat(p.get_methods(namespace: namespace, root: root, scope: 'class', with_private: with_private))
       end
       result
     end
