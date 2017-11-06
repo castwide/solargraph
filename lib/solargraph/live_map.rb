@@ -10,7 +10,6 @@ module Solargraph
       @workspace = workspace
       @runners = []
       at_exit { stop }
-      start
     end
 
     def start
