@@ -628,6 +628,11 @@ module Solargraph
         unless sc.nil?
           meths.concat inner_get_methods(sc, fqns, skip, visibility - [:private])
           meths.concat yard_map.get_methods(sc, fqns, visibility: visibility - [:private])
+          strings = meths.map(&:to_s)
+          live_map.get_methods(sc, fqns, false).each do |m|
+            next if strings.include?(m) or !m.match(/^[a-z]/i)
+            meths.push Suggestion.new(m, kind: Suggestion::METHOD, docstring: YARD::Docstring.new('(defined at runtime)'))
+          end
         end
       end
       meths.uniq
@@ -655,6 +660,11 @@ module Solargraph
         unless sc.nil?
           meths.concat inner_get_instance_methods(sc, fqns, skip, visibility - [:private])
           meths.concat yard_map.get_instance_methods(sc, fqns, visibility: visibility - [:private])
+          strings = meths.map(&:to_s)
+          live_map.get_instance_methods(sc, fqns, false).each do |m|
+            next if strings.include?(m) or !m.match(/^[a-z]/i)
+            meths.push Suggestion.new(m, kind: Suggestion::METHOD, docstring: YARD::Docstring.new('(defined at runtime)'))
+          end
         end
       end
       im = @namespace_includes[fqns]
