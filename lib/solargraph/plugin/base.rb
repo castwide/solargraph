@@ -23,6 +23,16 @@ module Solargraph
       def get_methods namespace:, root:, scope:, with_private: false
         raise "#{self.class} needs to implement the get_methods method"
       end
+
+      protected
+
+      def respond_ok data
+        Solargraph::Plugin::Response.new('ok', data)
+      end
+
+      def respond_err exception
+        Solargraph::Plugin::Response.new('err', [], exception.message)
+      end
     end
   end
 end
