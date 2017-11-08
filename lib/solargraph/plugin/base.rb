@@ -1,11 +1,11 @@
 module Solargraph
   module Plugin
     class Base
+      # @return [Solargraph::ApiMap]
+      attr_reader :api_map
 
-      def initialize workspace
-        # @!attribute [r] workspace
-        #   @return [String]
-        define_singleton_method(:workspace) { workspace }
+      def initialize api_map
+        @api_map = api_map
         post_initialize
       end
 

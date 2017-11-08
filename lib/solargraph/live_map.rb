@@ -3,19 +3,20 @@ module Solargraph
   #
   class LiveMap
     @@plugins = []
-    
-    attr_reader :workspace
 
-    def initialize workspace
-      @workspace = workspace
+    # @return [Solargraph::ApiMap]
+    attr_reader :api_map
+
+    def initialize api_map
+      @api_map = api_map
       @runners = []
       at_exit { stop }
     end
 
     def start
-      unless workspace.nil?
+      unless api_map.workspace.nil?
         @@plugins.each do |p|
-          r = p.new(workspace)
+          r = p.new(api_map)
           r.start
           @runners.push r
         end

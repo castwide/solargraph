@@ -78,7 +78,7 @@ module Solargraph
 
     # @return [Solargraph::LiveMap]
     def live_map
-      @live_map ||= Solargraph::LiveMap.new(workspace)
+      @live_map ||= Solargraph::LiveMap.new(self)
     end
 
     # @return [Solargraph::ApiMap::Source]

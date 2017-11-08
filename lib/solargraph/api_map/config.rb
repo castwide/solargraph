@@ -19,7 +19,6 @@ module Solargraph
         @raw_data ||= {}
         @raw_data['include'] = @raw_data['include'] || include_globs
         @raw_data['exclude'] = @raw_data['exclude'] || exclude_globs
-        @raw_data['extensions'] = @raw_data['extensions'] || []
       end
 
       def included
@@ -28,10 +27,6 @@ module Solargraph
 
       def excluded
         process_globs @raw_data['exclude']
-      end
-
-      def extensions
-        @raw_data['extensions']
       end
 
       private
