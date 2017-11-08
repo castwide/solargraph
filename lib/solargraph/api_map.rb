@@ -500,15 +500,8 @@ module Solargraph
     end
 
     def process_maps
-      @sources.clear
-      @workspace_files.each do |f|
-        begin
-          @@source_cache[f] ||= Source.load(f)
-          @sources[f] = @@source_cache[f]
-        rescue
-          STDERR.puts "Failed to load #{f}"
-        end
-      end
+      rebuild_local_yardoc
+      process_workspace_files
       cache.clear
       @ivar_pins = {}
       @cvar_pins = {}
@@ -537,9 +530,26 @@ module Solargraph
         map_source s
       }
       @required.uniq!
-      #live_map.update self
       live_map.reload
       @stale = false
+    end
+
+    def rebuild_local_yardoc
+      return if workspace.nil? or !File.exist?(File.join(workspace, '.yardoc'))
+      STDERR.puts "Rebuilding local yardoc for #{workspace}"
+      Dir.chdir(workspace) { Process.spawn('yardoc') }
+    end
+
+    def process_workspace_files
+      @sources.clear
+      @workspace_files.each do |f|
+        begin
+          @@source_cache[f] ||= Source.load(f)
+          @sources[f] = @@source_cache[f]
+        rescue
+          STDERR.puts "Failed to load #{f}"
+        end
+      end
     end
 
     def process_virtual
