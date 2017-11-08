@@ -44,7 +44,7 @@ module Solargraph
                 attribute_pins.push Solargraph::Pin::Directed::Attribute.new(self, k.node, ns, :writer, docstring, "#{d.tag.name}=")
               end
             elsif d.tag.tag_name == 'method'
-              gen_src = Source.virtual(filename, "def #{d.tag.name};end")
+              gen_src = Source.virtual("def #{d.tag.name};end", filename)
               gen_pin = gen_src.method_pins.first
               method_pins.push Solargraph::Pin::Directed::Method.new(gen_src, gen_pin.node, ns, :instance, :public, docstring, gen_pin.name)
             else
@@ -298,17 +298,17 @@ module Solargraph
         # @return [Solargraph::ApiMap::Source]
         def load filename
           code = File.read(filename).gsub(/\r/, '')
-          Source.virtual(filename, code)
+          Source.virtual(code, filename)
         end
 
         # @return [Solargraph::ApiMap::Source]
-        def virtual filename, code
+        def virtual code, filename = nil
           node, comments = Parser::CurrentRuby.parse_with_comments(code)
           Source.new(code, node, comments, filename)
         end
 
         # @return [Solargraph::ApiMap::Source]
-        def fix filename, code, cursor = nil
+        def fix code, filename = nil, cursor = nil
           tries = 0
           code.gsub!(/\r/, '')
           tmp = code

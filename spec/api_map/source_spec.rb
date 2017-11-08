@@ -3,7 +3,7 @@ describe Solargraph::ApiMap::Source do
     code = %(
       require 'solargraph'
     )
-    source = Solargraph::ApiMap::Source.virtual('file.rb', code)
+    source = Solargraph::ApiMap::Source.virtual(code, 'file.rb')
     expect(source.required).to include('solargraph')
   end
 
@@ -12,7 +12,7 @@ describe Solargraph::ApiMap::Source do
       path = 'solargraph'
       require path
     )
-    source = Solargraph::ApiMap::Source.virtual('file.rb', code)
+    source = Solargraph::ApiMap::Source.virtual(code, 'file.rb')
     expect(source.required.length).to eq(0)
   end
 
@@ -25,7 +25,7 @@ describe Solargraph::ApiMap::Source do
         # @!attribute [r,w] boo
       end
     )
-    source = Solargraph::ApiMap::Source.virtual('file.rb', code)
+    source = Solargraph::ApiMap::Source.virtual(code, 'file.rb')
     expect(source.attribute_pins.length).to eq(5)
     expect(source.attribute_pins[0].name).to eq('bar')
     expect(source.attribute_pins[0].return_type).to eq('String')
@@ -44,7 +44,7 @@ describe Solargraph::ApiMap::Source do
         #   @return [String]
       end
     )
-    source = Solargraph::ApiMap::Source.virtual('file.rb', code)
+    source = Solargraph::ApiMap::Source.virtual(code, 'file.rb')
     expect(source.method_pins.length).to eq(1)
     expect(source.method_pins[0].name).to eq('bar')
     expect(source.method_pins[0].return_type).to eq('String')
@@ -54,7 +54,7 @@ describe Solargraph::ApiMap::Source do
     code = %(
       $foo = 'foo'
     )
-    source = Solargraph::ApiMap::Source.virtual('file.rb', code)
+    source = Solargraph::ApiMap::Source.virtual(code, 'file.rb')
     expect(source.global_variable_pins.length).to eq(1)
     expect(source.global_variable_pins[0].name).to eq('$foo')
   end
@@ -70,7 +70,7 @@ describe Solargraph::ApiMap::Source do
         end
       end
     )
-    source = Solargraph::ApiMap::Source.virtual('file.rb', code)
+    source = Solargraph::ApiMap::Source.virtual(code, 'file.rb')
     expect(source.method_pins.length).to eq(2)
     # @type [Solargraph::Pin::Method]
     bar = source.method_pins[0]
@@ -93,7 +93,7 @@ describe Solargraph::ApiMap::Source do
         attr_reader :bar
       end
     )
-    source = Solargraph::ApiMap::Source.virtual('file.rb', code)
+    source = Solargraph::ApiMap::Source.virtual(code, 'file.rb')
     expect(source.attribute_pins.length).to eq(1)
     # @type [Solargraph::Pin::Attribute]
     pin = source.attribute_pins[0]
@@ -105,7 +105,7 @@ describe Solargraph::ApiMap::Source do
     code = %(
       $foo = String.new('1,2').split(',')
     )
-    source = Solargraph::ApiMap::Source.virtual('file.rb', code)
+    source = Solargraph::ApiMap::Source.virtual(code, 'file.rb')
     expect(source.global_variable_pins[0].signature).to eq('String.new.split')
   end
 
@@ -118,7 +118,7 @@ describe Solargraph::ApiMap::Source do
         end
       end
     )
-    source = Solargraph::ApiMap::Source.virtual('file.rb', code)
+    source = Solargraph::ApiMap::Source.virtual(code, 'file.rb')
     expect(source.method_pins[0].docstring.to_s).to eq('My method')
     expect(source.method_pins[0].docstring.tag(:return)).to be_kind_of(YARD::Tags::Tag)
   end
@@ -131,7 +131,7 @@ describe Solargraph::ApiMap::Source do
       end
       module Baz;end
     )
-    source = Solargraph::ApiMap::Source.virtual('file.rb', code)
+    source = Solargraph::ApiMap::Source.virtual(code, 'file.rb')
     expect(source.namespaces).to include('Foo')
     expect(source.namespaces).to include('Foo::Bar')
     expect(source.namespaces).to include('Baz')
@@ -144,7 +144,7 @@ describe Solargraph::ApiMap::Source do
       # @type [String]
       bar ||= method_two
     )
-    source = Solargraph::ApiMap::Source.virtual('file.rb', code)
+    source = Solargraph::ApiMap::Source.virtual(code, 'file.rb')
     expect(source.local_variable_pins.length).to eq(2)
     expect(source.local_variable_pins[0].name).to eq('foo')
     expect(source.local_variable_pins[0].return_type).to eq('Hash')
@@ -157,7 +157,7 @@ describe Solargraph::ApiMap::Source do
       def foo(bar, baz)
       end
     )
-    source = Solargraph::ApiMap::Source.virtual('file.rb', code)
+    source = Solargraph::ApiMap::Source.virtual(code, 'file.rb')
     expect(source.method_pins.length).to eq(1)
     expect(source.method_pins.first.name).to eq('foo')
     expect(source.method_pins.first.parameters).to eq(['bar', 'baz'])
@@ -170,7 +170,7 @@ describe Solargraph::ApiMap::Source do
       #   @return [Array]
       end
     )
-    source = Solargraph::ApiMap::Source.virtual('file.rb', code)
+    source = Solargraph::ApiMap::Source.virtual(code, 'file.rb')
     expect(source.method_pins.length).to eq(1)
     expect(source.method_pins.first.name).to eq('foo')
     expect(source.method_pins.first.parameters).to eq(['bar', 'baz'])

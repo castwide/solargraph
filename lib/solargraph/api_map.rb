@@ -82,20 +82,20 @@ module Solargraph
     end
 
     # @return [Solargraph::ApiMap::Source]
-    def virtualize filename, code, cursor = nil
+    def virtualize code, filename = nil, cursor = nil
       unless @virtual_source.nil? or @virtual_filename == filename or @workspace_files.include?(@virtual_filename)
         eliminate @virtual_filename
       end
       refresh
       @virtual_filename = filename
-      @virtual_source = Source.fix(filename, code, cursor)
+      @virtual_source = Source.fix(code, filename, cursor)
       process_virtual
       @virtual_source
     end
 
     # @return [Solargraph::ApiMap::Source]
     def append_source code, filename
-      virtualize filename, code
+      virtualize code, filename
     end
 
     def refresh force = false

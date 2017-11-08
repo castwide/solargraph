@@ -37,7 +37,7 @@ module Solargraph
       filename = filename.gsub(File::ALT_SEPARATOR, File::SEPARATOR) unless filename.nil? or File::ALT_SEPARATOR.nil?
       @filename = filename
       @api_map = api_map
-      @source = self.api_map.virtualize filename, code, cursor
+      @source = self.api_map.virtualize code, filename, cursor
       @node = @source.node
       @code = @source.code
       @comments = @source.comments
