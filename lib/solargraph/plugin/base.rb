@@ -24,6 +24,10 @@ module Solargraph
         raise "#{self.class} needs to implement the get_methods method"
       end
 
+      def runtime?
+        false
+      end
+
       protected
 
       def respond_ok data
