@@ -396,7 +396,7 @@ module Solargraph
         end
       end
       strings = meths.map(&:to_s)
-      live_map.get_methods(namespace, root, visibility.include?(:private)).each do |m|
+      live_map.get_methods(namespace, root, 'class', visibility.include?(:private)).each do |m|
         next if strings.include?(m) or !m.match(/^[a-z]/i)
         meths.push Suggestion.new(m, kind: Suggestion::METHOD, docstring: YARD::Docstring.new('(defined at runtime)'))
       end
@@ -428,7 +428,7 @@ module Solargraph
         end
       end
       strings = meths.map(&:to_s)
-      live_map.get_instance_methods(namespace, root, visibility.include?(:private)).each do |m|
+      live_map.get_methods(namespace, root, 'instance', visibility.include?(:private)).each do |m|
         next if strings.include?(m) or !m.match(/^[a-z]/i)
         meths.push Suggestion.new(m, kind: Suggestion::METHOD)
       end
@@ -639,7 +639,7 @@ module Solargraph
           meths.concat inner_get_methods(sc, fqns, skip, visibility - [:private])
           meths.concat yard_map.get_methods(sc, fqns, visibility: visibility - [:private])
           strings = meths.map(&:to_s)
-          live_map.get_methods(sc, fqns, false).each do |m|
+          live_map.get_methods(sc, fqns, 'class', false).each do |m|
             next if strings.include?(m) or !m.match(/^[a-z]/i)
             meths.push Suggestion.new(m, kind: Suggestion::METHOD, docstring: YARD::Docstring.new('(defined at runtime)'))
           end
@@ -671,7 +671,7 @@ module Solargraph
           meths.concat inner_get_instance_methods(sc, fqns, skip, visibility - [:private])
           meths.concat yard_map.get_instance_methods(sc, fqns, visibility: visibility - [:private])
           strings = meths.map(&:to_s)
-          live_map.get_instance_methods(sc, fqns, false).each do |m|
+          live_map.get_methods(sc, fqns, 'instance', false).each do |m|
             next if strings.include?(m) or !m.match(/^[a-z]/i)
             meths.push Suggestion.new(m, kind: Suggestion::METHOD, docstring: YARD::Docstring.new('(defined at runtime)'))
           end

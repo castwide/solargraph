@@ -39,12 +39,12 @@ module Solargraph
       @runners.clear
     end
 
-    def get_instance_methods(namespace, root = '', with_private = false)
+    def get_methods(namespace, root = '', scope = 'instance', with_private = false)
       did_runtime = false
       result = []
       @runners.each do |p|
         next if did_runtime and p.runtime?
-        resp = p.get_methods(namespace: namespace, root: root, scope: 'instance', with_private: with_private)
+        resp = p.get_methods(namespace: namespace, root: root, scope: scope, with_private: with_private)
         STDERR.puts resp.message unless resp.ok?
         result.concat(resp.data)
         did_runtime = true if p.runtime?
@@ -52,19 +52,9 @@ module Solargraph
       result
     end
 
-    def get_methods(namespace, root = '', with_private = false)
-      did_runtime = false
-      result = []
-      @runners.each do |p|
-        next if did_runtime and p.runtime?
-        resp = p.get_methods(namespace: namespace, root: root, scope: 'class', with_private: with_private)
-        STDERR.puts resp.message unless resp.ok?
-        result.concat(resp.data)
-        did_runtime = true if p.runtime?
-      end
-      result
-    end
-
+    # Register a plugin for LiveMap to use when generating suggestions.
+    #
+    # @param cls [Class<Solargraph::Plugin::Base>]
     def self.install cls
       @@plugins.push cls
     end
