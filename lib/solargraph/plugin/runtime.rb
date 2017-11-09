@@ -17,7 +17,6 @@ module Solargraph
 
       def get_methods namespace:, root:, scope:, with_private: false
         result = []
-        STDERR.puts "Looking for #{namespace}, #{root}"
         con = find_constant(namespace, root)
         unless con.nil?
           if (scope == 'class')
@@ -34,8 +33,7 @@ module Solargraph
             end
           end
         end
-        STDERR.puts "Result: #{result}"
-        respond_ok result
+        respond_ok result.map(&:to_s)
       end
     end
   end
