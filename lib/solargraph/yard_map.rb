@@ -35,6 +35,7 @@ module Solargraph
         end
       end
       yardocs.push File.join(Dir.home, '.solargraph', 'cache', '2.0.0', 'yardoc')
+      #yardocs.push File.join(Dir.home, '.solargraph', 'cache', '2.0.0', 'yardoc-stdlib')
       yardocs.uniq!
       yardocs.each do |y|
         load_yardoc y
