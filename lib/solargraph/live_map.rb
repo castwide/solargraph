@@ -20,6 +20,9 @@ module Solargraph
           r.start
           @runners.push r
         end
+        r = Solargraph::Plugin::Runtime.new(api_map)
+        r.start
+        @runners.push r
       end
     end
 
