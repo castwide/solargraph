@@ -765,10 +765,12 @@ module Solargraph
           visibility = [:public]
           visibility.concat [:private, :protected] if top
           if scope == :instance || namespace == ''
-            meth = get_instance_methods(namespace, visibility: visibility).select{|s| s.label == part}.first
+            tmp = get_instance_methods(namespace, visibility: visibility)
           else
-            meth = get_methods(namespace, visibility: visibility).select{|s| s.label == part}.first            
+            tmp = get_methods(namespace, visibility: visibility)
           end
+          tmp.concat get_instance_methods('Kernel', visibility: [:public]) if top
+          meth = tmp.select{|s| s.label == part}.first
           return nil if meth.nil? or meth.return_type.nil?
           type = meth.return_type
           scope = :instance

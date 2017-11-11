@@ -546,4 +546,22 @@ describe Solargraph::ApiMap do
       expect(sugg.length).to eq(1)
     end
   end
+
+  it "infers Kernel method types" do
+    code = "gets"
+    api_map = Solargraph::ApiMap.new
+    api_map.append_source(code, 'file.rb')
+    type = api_map.infer_signature_type('gets', '')
+    expect(type).to eq('String')
+  end
+
+  it "infers Kernel method types from namespaces" do
+    code = "class Foo;end"
+    api_map = Solargraph::ApiMap.new
+    api_map.append_source(code, 'file.rb')
+    type = api_map.infer_signature_type('gets', 'Foo', scope: :class)
+    expect(type).to eq('String')
+    type = api_map.infer_signature_type('gets', 'Foo', scope: :instance)
+    expect(type).to eq('String')
+  end
 end
