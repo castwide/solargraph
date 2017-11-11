@@ -14,14 +14,6 @@ module Solargraph
         @method_cache[options] = values
       end
 
-      def get_instance_methods options
-        @instance_method_cache[options]
-      end
-
-      def set_instance_methods options, values
-        @instance_method_cache[options] = values
-      end
-
       def clear
         @method_cache.clear
         @instance_method_cache.clear

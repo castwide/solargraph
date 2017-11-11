@@ -118,6 +118,10 @@ module Solargraph
       erb :document
     end
 
+    post '/shutdown' do
+      exit
+    end
+
     def htmlify text
       rdoc_to_html text
     end
@@ -144,6 +148,12 @@ module Solargraph
             api_map.yard_map
             @@api_hash[directory] = api_map
           end
+        end
+      end
+
+      def stop_live_maps
+        @@api_hash.each_pair do |k, v|
+          v.live_map.stop
         end
       end
     end

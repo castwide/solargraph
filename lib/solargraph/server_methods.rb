@@ -1,3 +1,5 @@
+require 'socket'
+
 module Solargraph
   module ServerMethods
     def available_port

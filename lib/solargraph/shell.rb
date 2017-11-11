@@ -6,6 +6,7 @@ require 'zlib'
 require 'net/http'
 require 'socket'
 require 'bundler'
+require 'eventmachine'
 
 module Solargraph
   class Shell < Thor
@@ -63,11 +64,31 @@ module Solargraph
       Solargraph::Server.set :port, port
       Solargraph::Server.set :views, options[:views] unless options[:views].nil?
       Solargraph::Server.set :public_folder, options[:files] unless options[:files].nil?
+      my_pid = nil
       Solargraph::Server.run! do
         STDERR.puts "Solargraph server pid=#{Process.pid} port=#{port}"
+        my_pid = Process.pid
+        Signal.trap("INT") do
+          Solargraph::Server.stop!
+        end
+        Signal.trap("TERM") do
+          Solargraph::Server.stop!
+        end
       end
     end
     
+
+    desc 'plugin PLUGIN_NAME', 'Run a Solargraph runtime plugin'
+    option :workspace, type: :string, aliases: :w, desc: 'The workspace'
+    option :port, type: :numeric, aliases: :p, desc: 'The server port', required: true
+    option :ppid, type: :numeric, desc: 'ppid'
+    def plugin plugin_name
+      # @todo Find the correct plugin based on the provided name
+      cls = Solargraph::Plugin::Runtime
+      #SolargraphRailsExt::Server.new(options[:workspace], options[:port]).run
+      cls.serve options[:workspace], options[:port], options[:ppid]
+    end
+
     desc 'suggest', 'Get code suggestions for the provided input'
     long_desc <<-LONGDESC
       Analyze a Ruby file and output a list of code suggestions in JSON format.

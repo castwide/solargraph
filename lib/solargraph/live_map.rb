@@ -2,6 +2,8 @@ module Solargraph
   # The LiveMap allows extensions to add their own completion suggestions.
   #
   class LiveMap
+    autoload :Cache, 'solargraph/live_map/cache'
+
     @@plugins = []
 
     # @return [Solargraph::ApiMap]
@@ -10,20 +12,17 @@ module Solargraph
     def initialize api_map
       @api_map = api_map
       @runners = []
-      at_exit { stop }
     end
 
     def start
-      unless api_map.workspace.nil?
-        @@plugins.each do |p|
-          r = p.new(api_map)
-          r.start
-          @runners.push r
-        end
-        r = Solargraph::Plugin::Runtime.new(api_map)
+      @@plugins.each do |p|
+        r = p.new(api_map)
         r.start
         @runners.push r
       end
+      r = Solargraph::Plugin::Runtime.new(api_map)
+      r.start
+      @runners.push r
     end
 
     def reload
@@ -43,6 +42,11 @@ module Solargraph
     end
 
     def get_methods(namespace, root = '', scope = 'instance', with_private = false)
+      params = {
+        namespace: namespace, root: root, scope: scope, with_private: with_private
+      }
+      cached = cache.get_methods(params)
+      return cached unless cached.nil?
       did_runtime = false
       result = []
       @runners.each do |p|
@@ -52,6 +56,7 @@ module Solargraph
         result.concat(resp.data)
         did_runtime = true if p.runtime?
       end
+      cache.set_methods(params, result)
       result
     end
 
@@ -64,33 +69,9 @@ module Solargraph
 
     private
 
-    def find_constant(namespace, root)
-      result = nil
-      parts = root.split('::')
-      if parts.empty?
-        result = inner_find_constant(namespace)
-      else
-        until parts.empty?
-          result = inner_find_constant("#{parts.join('::')}::#{namespace}")
-          break unless result.nil?
-          parts.pop
-        end
-      end
-      result
-    end
-
-    def inner_find_constant(namespace)
-      cursor = Object
-      parts = namespace.split('::')
-      until parts.empty?
-        here = parts.shift
-        begin
-          cursor = cursor.const_get(here)
-        rescue NameError
-          return nil
-        end
-      end
-      cursor
+    # @return [Solargraph::LiveMap::Cache]
+    def cache
+      @cache ||= Solargraph::LiveMap::Cache.new
     end
   end
 end

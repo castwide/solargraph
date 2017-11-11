@@ -107,7 +107,8 @@ module Solargraph
         arguments: @arguments,
         params: params,
         return_type: return_type,
-        documentation: documentation
+        #documentation: documentation
+        documentation: nil
       }
     end
 
