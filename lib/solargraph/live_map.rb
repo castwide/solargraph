@@ -11,7 +11,6 @@ module Solargraph
 
     def initialize api_map
       @api_map = api_map
-      @runners = []
     end
 
     def get_methods(namespace, root = '', scope = 'instance', with_private = false)
@@ -57,10 +56,13 @@ module Solargraph
     # @return [Array<Solargraph::Plugin::Base>]
     def load_runners
       result = []
+      has_runtime = false
       @@plugins.each do |p|
-        result.push p.new(api_map)
+        r = p.new(api_map)
+        result.push r if !has_runtime or !r.runtime?
+        has_runtime = true if r.runtime?
       end
-      result.push Solargraph::Plugin::Runtime.new(api_map)
+      result.push Solargraph::Plugin::Runtime.new(api_map) unless has_runtime
       result
     end
   end
