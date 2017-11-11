@@ -31,9 +31,6 @@ module Solargraph
     # @return [String]
     attr_reader :workspace
 
-    # @return [Array<String>]
-    attr_reader :required
-
     # @param workspace [String]
     def initialize workspace = nil
       @workspace = workspace.gsub(/\\/, '/') unless workspace.nil?
@@ -65,6 +62,11 @@ module Solargraph
 
     def config
       @config ||= ApiMap::Config.new(@workspace)
+    end
+
+    # @return [Array<String>]
+    def required
+      @required ||= []
     end
 
     # @return [Solargraph::YardMap]
@@ -496,7 +498,7 @@ module Solargraph
       @parent_stack = {}
       namespace_map.clear
       namespace_tree.clear
-      @required = []
+      required.clear
     end
 
     def process_maps
