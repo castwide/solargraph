@@ -14,33 +14,6 @@ module Solargraph
       @runners = []
     end
 
-    def start
-      @@plugins.each do |p|
-        r = p.new(api_map)
-        r.start
-        @runners.push r
-      end
-      r = Solargraph::Plugin::Runtime.new(api_map)
-      r.start
-      @runners.push r
-    end
-
-    def reload
-      restart
-    end
-
-    def restart
-      stop
-      start
-    end
-
-    def stop
-      @runners.each do |p|
-        p.stop
-      end
-      @runners.clear
-    end
-
     def get_methods(namespace, root = '', scope = 'instance', with_private = false)
       params = {
         namespace: namespace, root: root, scope: scope, with_private: with_private
@@ -49,11 +22,9 @@ module Solargraph
       return cached unless cached.nil?
       did_runtime = false
       result = []
-      @runners.each do |p|
+      runners.each do |p|
         next if did_runtime and p.runtime?
-        resp = p.get_methods(namespace: namespace, root: root, scope: scope, with_private: with_private)
-        STDERR.puts resp.message unless resp.ok?
-        result.concat(resp.data)
+        result.concat p.get_methods(namespace: namespace, root: root, scope: scope, with_private: with_private)
         did_runtime = true if p.runtime?
       end
       cache.set_methods(params, result)
@@ -67,11 +38,30 @@ module Solargraph
       @@plugins.push cls
     end
 
+    def self.plugins
+      @@plugins.clone
+    end
+
     private
 
     # @return [Solargraph::LiveMap::Cache]
     def cache
       @cache ||= Solargraph::LiveMap::Cache.new
+    end
+
+    # @return [Array<Solargraph::Plugin::Base>]
+    def runners
+      @runners ||= load_runners
+    end
+
+    # @return [Array<Solargraph::Plugin::Base>]
+    def load_runners
+      result = []
+      @@plugins.each do |p|
+        result.push p.new(api_map)
+      end
+      result.push Solargraph::Plugin::Runtime.new(api_map)
+      result
     end
   end
 end

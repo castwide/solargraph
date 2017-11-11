@@ -1,20 +1,15 @@
-require 'solargraph/plugin/runtime_methods'
-
 module Solargraph
   module Plugin
     class Runtime < Base
-      include Solargraph::ServerMethods
-      include Solargraph::Plugin::RuntimeMethods
-
       def post_initialize
-        @port = available_port
-        load_environment
-      end
-
-      def start
-      end
-
-      def stop
+        return if api_map.nil?
+        api_map.required.each do |r|
+          begin
+            require r
+          rescue Exception => e
+            STDERR.puts "Failed to require #{r}: #{e.class} #{e.message}"
+          end
+        end
       end
 
       def runtime?
@@ -39,20 +34,35 @@ module Solargraph
             end
           end
         end
-        respond_ok result.map(&:to_s)
+        result.map(&:to_s)
       end
 
-      protected
+      private
 
-      def load_environment
-        return if api_map.nil?
-        api_map.required.each do |r|
+      def find_constant(namespace, root)
+        result = nil
+        parts = root.split('::')
+        until parts.empty?
+          result = inner_find_constant("#{parts.join('::')}::#{namespace}")
+          parts.pop
+          break unless result.nil?
+        end
+        result = inner_find_constant(namespace) if result.nil?
+        result
+      end
+
+      def inner_find_constant(namespace)
+        cursor = Object
+        parts = namespace.split('::')
+        until parts.empty?
+          here = parts.shift
           begin
-            require r
-          rescue Exception => e
-            STDERR.puts "Failed to require #{r}: #{e.class} #{e.message}"
+            cursor = cursor.const_get(here)
+          rescue NameError
+            return nil
           end
         end
+        cursor
       end
     end
   end

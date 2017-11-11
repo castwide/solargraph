@@ -1,10 +1,8 @@
 describe Solargraph::LiveMap do
-  it "starts and stops" do
-    api_map = Solargraph::ApiMap.new
-    live_map = Solargraph::LiveMap.new(api_map)
-    live_map.start
-    live_map.stop
-    # @todo Real expectation
-    expect(false).to eq(false)
+  it "accepts installations" do
+    tmp = Class.new(Solargraph::Plugin::Base)
+    expect(Solargraph::LiveMap.plugins.length).to eq(0)
+    Solargraph::LiveMap.install(tmp)
+    expect(Solargraph::LiveMap.plugins.length).to eq(1)
   end
 end

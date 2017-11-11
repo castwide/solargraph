@@ -56,7 +56,6 @@ module Solargraph
       @virtual_source = nil
       @virtual_filename = nil
       @stale = true
-      live_map.start
       refresh
     end
 
@@ -532,7 +531,6 @@ module Solargraph
         map_source s
       }
       @required.uniq!
-      #live_map.reload
       @stale = false
     end
 

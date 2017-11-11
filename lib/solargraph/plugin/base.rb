@@ -12,30 +12,12 @@ module Solargraph
       def post_initialize
       end
 
-      def start
-        raise "#{self.class} needs to implement the start method"
-      end
-
-      def stop
-        raise "#{self.class} needs to implement the stop method"
-      end
-
       def get_methods namespace:, root:, scope:, with_private: false
-        raise "#{self.class} needs to implement the get_methods method"
+        []
       end
 
       def runtime?
         false
-      end
-
-      protected
-
-      def respond_ok data
-        Solargraph::Plugin::Response.new('ok', data)
-      end
-
-      def respond_err exception
-        Solargraph::Plugin::Response.new('err', [], exception.message)
       end
     end
   end
