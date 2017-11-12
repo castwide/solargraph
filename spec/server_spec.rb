@@ -79,4 +79,11 @@ describe Solargraph::Server do
     response = JSON.parse(last_response.body)
     expect(response['suggestions'].map{|s| s['label']}).to include('new')
   end
+
+  it "resolves paths" do
+    post '/resolve', path: 'String#chomp', workspace: @workspace
+    expect(last_response).to be_ok
+    response = JSON.parse(last_response.body)
+    expect(response['suggestions'].length).to eq(1)
+  end
 end
