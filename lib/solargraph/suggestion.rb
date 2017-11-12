@@ -111,7 +111,7 @@ module Solargraph
         params: params,
         return_type: return_type
       }
-      result[:documentation] = documentation if args[:detailed]
+      result[:documentation] = documentation if args[:all]
       result
     end
 

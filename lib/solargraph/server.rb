@@ -47,10 +47,11 @@ module Solargraph
         @@semaphore.synchronize {
           api_map = @@api_hash[workspace]
         }
+        with_all = params['all'] == '1' ? true : false
         code_map = CodeMap.new(code: params['text'], filename: params['filename'], api_map: api_map, cursor: [params['line'].to_i, params['column'].to_i])
         offset = code_map.get_offset(params['line'].to_i, params['column'].to_i)
         sugg = code_map.suggest_at(offset, with_snippets: params['with_snippets'] == '1' ? true : false, filtered: true)
-        JSON.generate({ "status" => "ok", "suggestions" => sugg.map(&:as_json) })
+        JSON.generate({ "status" => "ok", "suggestions" => sugg.map{|s| s.as_json(all: with_all)} })
       rescue Exception => e
         STDERR.puts e
         STDERR.puts e.backtrace.join("\n")
@@ -87,7 +88,7 @@ module Solargraph
           result.concat api_map.get_path_suggestions(params['path'])
         end
       }
-      { "status" => "ok", "suggestions" => result.map{|s| s.as_json(detailed: true)} }.to_json
+      { "status" => "ok", "suggestions" => result.map{|s| s.as_json(all: true)} }.to_json
     end
 
     post '/hover' do
