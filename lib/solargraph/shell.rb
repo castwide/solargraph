@@ -3,10 +3,6 @@ require 'json'
 require 'fileutils'
 require 'rubygems/package'
 require 'zlib'
-require 'net/http'
-require 'socket'
-require 'bundler'
-require 'eventmachine'
 
 module Solargraph
   class Shell < Thor
