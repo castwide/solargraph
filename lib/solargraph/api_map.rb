@@ -449,8 +449,9 @@ module Solargraph
     end
 
     def update filename
-      @@source_cache[filename] ||= Source.load(filename)
-      #cache.clear
+      filename.gsub!(/\\/, '/')
+      eliminate filename
+      @@source_cache[filename] = Source.load(filename)
       @stale = true
     end
 
@@ -543,11 +544,13 @@ module Solargraph
     def process_workspace_files
       @sources.clear
       @workspace_files.each do |f|
-        begin
-          @@source_cache[f] ||= Source.load(f)
-          @sources[f] = @@source_cache[f]
-        rescue
-          STDERR.puts "Failed to load #{f}"
+        if File.file?(f)
+          begin
+            @@source_cache[f] ||= Source.load(f)
+            @sources[f] = @@source_cache[f]
+          rescue
+            STDERR.puts "Failed to load #{f}"
+          end
         end
       end
     end
