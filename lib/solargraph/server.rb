@@ -77,7 +77,7 @@ module Solargraph
       end
     end
 
-    post '/detail' do
+    post '/resolve' do
       content_type :json
       workspace = params['workspace'] || nil
       result = []
