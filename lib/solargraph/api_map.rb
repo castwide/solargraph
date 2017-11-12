@@ -374,7 +374,8 @@ module Solargraph
       namespace = clean_namespace_string(namespace)
       fqns = find_fully_qualified_namespace(namespace, root)
       meths = []
-      meths.concat inner_get_methods(namespace, root, []) #unless has_yardoc?
+      skip = []
+      meths.concat inner_get_methods(namespace, root, skip)
       yard_meths = yard_map.get_methods(namespace, root, visibility: visibility)
       if yard_meths.any?
         meths.concat yard_meths
@@ -401,7 +402,12 @@ module Solargraph
         next if strings.include?(m) or !m.match(/^[a-z]/i)
         meths.push Suggestion.new(m, kind: Suggestion::METHOD, docstring: YARD::Docstring.new('(defined at runtime)'), path: "#{fqns}.#{m}")
       end
-    meths
+      if namespace == '' and root == ''
+        config.domains.each do |d|
+          meths.concat get_instance_methods(d)
+        end
+      end
+      meths
     end
 
     # Get an array of instance methods that are available in the specified

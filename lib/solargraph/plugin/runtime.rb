@@ -12,10 +12,13 @@ module Solargraph
         end
       end
 
+      # @return [Boolean]
       def runtime?
         true
       end
 
+      # Get an array of method names.
+      #
       # @return [Array<String>]
       def get_methods namespace:, root:, scope:, with_private: false
         result = []
@@ -38,10 +41,12 @@ module Solargraph
         result.map(&:to_s)
       end
 
+      # Get an array of constant names.
+      #
       # @return [Array<String>]
       def get_constants namespace
         namespace = 'Object' if namespace.nil? or namespace.empty?
-        # @type [Class]
+        # @type [Module]
         con = find_constant(namespace)
         con.constants.map(&:to_s)
       end
