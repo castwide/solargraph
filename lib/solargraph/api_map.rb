@@ -399,7 +399,7 @@ module Solargraph
       strings = meths.map(&:to_s)
       live_map.get_methods(namespace, root, 'class', visibility.include?(:private)).each do |m|
         next if strings.include?(m) or !m.match(/^[a-z]/i)
-        meths.push Suggestion.new(m, kind: Suggestion::METHOD, docstring: YARD::Docstring.new('(defined at runtime)'))
+        meths.push Suggestion.new(m, kind: Suggestion::METHOD, docstring: YARD::Docstring.new('(defined at runtime)'), path: "#{fqns}.#{m}")
       end
     meths
     end
@@ -431,7 +431,7 @@ module Solargraph
       strings = meths.map(&:to_s)
       live_map.get_methods(namespace, root, 'instance', visibility.include?(:private)).each do |m|
         next if strings.include?(m) or !m.match(/^[a-z]/i)
-        meths.push Suggestion.new(m, kind: Suggestion::METHOD)
+        meths.push Suggestion.new(m, kind: Suggestion::METHOD, docstring: YARD::Docstring.new('(defined at runtime)'), path: "#{fqns}##{m}")
       end
       meths
     end
@@ -468,7 +468,7 @@ module Solargraph
       elsif path.include?('.')
         # It's a class method
         parts = path.split('.')
-        result = get_instance_methods(parts[0], '', visibility: [:public, :private, :protected]).select{|s| s.label == parts[1]}
+        result = get_methods(parts[0], '', visibility: [:public, :private, :protected]).select{|s| s.label == parts[1]}
       else
         # It's a class or module
         get_namespace_nodes(path).each do |node|
@@ -641,7 +641,7 @@ module Solargraph
           strings = meths.map(&:to_s)
           live_map.get_methods(sc, fqns, 'class', false).each do |m|
             next if strings.include?(m) or !m.match(/^[a-z]/i)
-            meths.push Suggestion.new(m, kind: Suggestion::METHOD, docstring: YARD::Docstring.new('(defined at runtime)'))
+            meths.push Suggestion.new(m, kind: Suggestion::METHOD, docstring: YARD::Docstring.new('(defined at runtime)'), path: "#{fqns}##{m}")
           end
         end
       end

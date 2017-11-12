@@ -16,6 +16,7 @@ module Solargraph
         true
       end
 
+      # @return [Array<String>]
       def get_methods namespace:, root:, scope:, with_private: false
         result = []
         con = find_constant(namespace, root)
@@ -37,9 +38,17 @@ module Solargraph
         result.map(&:to_s)
       end
 
+      # @return [Array<String>]
+      def get_constants namespace
+        namespace = 'Object' if namespace.nil? or namespace.empty?
+        # @type [Class]
+        con = find_constant(namespace)
+        con.constants.map(&:to_s)
+      end
+
       private
 
-      def find_constant(namespace, root)
+      def find_constant(namespace, root = '')
         result = nil
         parts = root.split('::')
         until parts.empty?
