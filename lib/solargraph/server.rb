@@ -76,6 +76,20 @@ module Solargraph
       end
     end
 
+    post '/detail' do
+      content_type :json
+      workspace = params['workspace'] || nil
+      result = []
+      @@semaphore.synchronize {
+        api_map = @@api_hash[workspace]
+        unless api_map.nil?
+          # @todo Get suggestions that match the path
+          result.concat api_map.get_path_suggestions(params['path'])
+        end
+      }
+      { "status" => "ok", "suggestions" => result.map{|s| s.as_json(detailed: true)} }.to_json
+    end
+
     post '/hover' do
       content_type :json
       begin

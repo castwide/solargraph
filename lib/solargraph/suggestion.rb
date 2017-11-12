@@ -96,8 +96,11 @@ module Solargraph
       @params
     end
 
+    def inject_detail
+    end
+
     def as_json args = {}
-      {
+      result = {
         label: @label,
         kind: @kind,
         insert: @insert,
@@ -106,10 +109,10 @@ module Solargraph
         location: (@location.nil? ? nil : @location.to_s),
         arguments: @arguments,
         params: params,
-        return_type: return_type,
-        #documentation: documentation
-        documentation: nil
+        return_type: return_type
       }
+      result[:documentation] = documentation if args[:detailed]
+      result
     end
 
     def to_json args = {}
