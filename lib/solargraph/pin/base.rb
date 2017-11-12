@@ -60,6 +60,10 @@ module Solargraph
       def filename
         source.filename
       end
+
+      def location
+        "#{source.filename}:#{node.location.expression.begin_pos}"
+      end
     end
   end
 end

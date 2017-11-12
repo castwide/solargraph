@@ -652,7 +652,7 @@ module Solargraph
       arr = []
       @source.local_variable_pins.select{|p| p.visible_from?(node) }.each do |pin|
         #arr.push Suggestion.new(pin.name, kind: Suggestion::VARIABLE, return_type: api_map.infer_assignment_node_type(pin.node, namespace))
-        arr.push Suggestion.new(pin.name, kind: Suggestion::VARIABLE)
+        arr.push Suggestion.new(pin.name, kind: Suggestion::VARIABLE, location: pin.location)
       end
       arr
     end

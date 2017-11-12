@@ -119,8 +119,9 @@ module Solargraph
       as_json.to_json(args)
     end
 
+    # @param pin [Solargraph::Pin::Base]
     def self.pull pin, return_type = nil
-      Suggestion.new(pin.name, insert: pin.name.gsub(/=/, ' = '), kind: pin.kind, docstring: pin.docstring, detail: pin.namespace, arguments: pin.parameters, path: pin.path, return_type: return_type)
+      Suggestion.new(pin.name, insert: pin.name.gsub(/=/, ' = '), kind: pin.kind, docstring: pin.docstring, detail: pin.namespace, arguments: pin.parameters, path: pin.path, return_type: return_type, location: pin.location)
     end
   end
 
