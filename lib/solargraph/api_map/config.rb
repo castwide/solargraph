@@ -34,8 +34,8 @@ module Solargraph
             exclude_globs = conf['exclude'] || []
             @domains = conf['domains'] || []
           end
-          include_globs.each { |g| @included.concat process_glob(g) }
-          exclude_globs.each { |g| @excluded.concat process_glob(g) }
+          @included.concat process_globs(include_globs)
+          @excluded.concat process_globs(exclude_globs)
         end
         @raw_data ||= {}
         @raw_data['include'] = @raw_data['include'] || include_globs
