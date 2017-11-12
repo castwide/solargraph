@@ -3,7 +3,6 @@ module Solargraph
     class Cache
       def initialize
         @method_cache = {}
-        @instance_method_cache = {}
       end
 
       def get_methods options
@@ -16,7 +15,6 @@ module Solargraph
 
       def clear
         @method_cache.clear
-        @instance_method_cache.clear
       end
     end
   end
