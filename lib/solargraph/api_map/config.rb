@@ -40,6 +40,7 @@ module Solargraph
         @raw_data ||= {}
         @raw_data['include'] = @raw_data['include'] || include_globs
         @raw_data['exclude'] = @raw_data['exclude'] || exclude_globs
+        # @todo If the domains config goes stable, add it to @raw_data
       end
 
       def included
