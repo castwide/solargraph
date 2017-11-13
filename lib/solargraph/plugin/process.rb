@@ -17,6 +17,8 @@ module Solargraph
               STDOUT.puts get_methods args['params']
             when 'constants'
               STDOUT.puts get_constants args['params']
+            when 'fqns'
+              STDOUT.puts get_fqns args['params']
             else
               STDOUT.puts respond_err "Unrecognized command #{args['command']}"
             end
@@ -33,7 +35,6 @@ module Solargraph
         errors = []
         paths.each do |p|
           begin
-            STDERR.puts "Runtime plugin is requiring #{p}"
             require p
           rescue Exception => e
             errors.push "Failed to require #{p}: #{e.class} #{e.message}"
@@ -71,9 +72,14 @@ module Solargraph
         result = []
         con = find_constant(args['namespace'], args['root'])
         unless con.nil?
-          result.concat con.constants.map
+          result.concat con.constants
         end
         respond_ok result
+      end
+
+      def get_fqns args
+        con = find_constant(args['namespace'], args['root'])
+        respond_ok (con.nil? ? nil : con.to_s)
       end
 
       def find_constant(namespace, root)
@@ -87,7 +93,7 @@ module Solargraph
         result = inner_find_constant(namespace) if result.nil?
         result
       end
-      
+
       def inner_find_constant(namespace)
         cursor = Object
         parts = namespace.split('::')

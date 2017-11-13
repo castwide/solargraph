@@ -31,6 +31,11 @@ module Solargraph
         response['data']
       end
 
+      def get_fqns namespace, root
+        response = send_get_fqns namespace, root
+        response['data']
+      end
+
       private
 
       def send_require paths
@@ -57,6 +62,17 @@ module Solargraph
       def send_get_constants namespace, root
         cmd = {
           command: 'constants',
+          params: {
+            namespace: namespace,
+            root: root
+          }
+        }
+        transact cmd
+      end
+
+      def send_get_fqns namespace, root
+        cmd = {
+          command: 'fqns',
           params: {
             namespace: namespace,
             root: root

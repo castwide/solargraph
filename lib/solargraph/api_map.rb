@@ -55,7 +55,6 @@ module Solargraph
       @sources = {}
       @virtual_source = nil
       @virtual_filename = nil
-      live_map
       @stale = true
       refresh
     end
@@ -135,6 +134,13 @@ module Solargraph
       result = []
       result += inner_namespaces_in(name, root, [])
       result += yard_map.get_constants name, root
+      strings = result.map(&:to_s)
+      live = live_map.get_constants(name, root)
+      live.sort.each do |c|
+        next if strings.include?(c)
+        # @todo Need to know if it's a class or module
+        result.push Suggestion.new(c, kind: Suggestion::CLASS)
+      end
       result
     end
 
@@ -154,7 +160,7 @@ module Solargraph
           result.push pin_to_suggestion(pin)
         end
       end
-      result.concat yard_map.get_constants(namespace, root)
+      result.concat yard_map.get_constants(fqns)
     end
 
     # @return [String]
@@ -190,7 +196,11 @@ module Solargraph
           }
         end
       end
-      yard_map.find_fully_qualified_namespace(name, root)
+      result = yard_map.find_fully_qualified_namespace(name, root)
+      if result.nil?
+        result = live_map.get_fqns(name, root)
+      end
+      result
     end
 
     def get_namespace_nodes(fqns)
@@ -356,12 +366,22 @@ module Solargraph
       result
     end
 
-    def get_namespace_type namespace, root = ''
+    def get_namespace_type fqns
+      return nil if fqns.nil?
       type = nil
-      fqns = find_fully_qualified_namespace(namespace, root)
       nodes = get_namespace_nodes(fqns)
       unless nodes.nil? or nodes.empty? or !nodes[0].kind_of?(AST::Node)
         type = nodes[0].type if [:class, :module].include?(nodes[0].type)
+      end
+      if type.nil?
+        obj = yard_map.objects(fqns).first
+        unless obj.nil?
+          if obj.kind == Suggestion::CLASS
+            type = :class
+          elsif obj.kind == Suggestion::MODULE
+            type = :module
+          end
+        end
       end
       type
     end
@@ -377,17 +397,17 @@ module Solargraph
       meths = []
       skip = []
       meths.concat inner_get_methods(namespace, root, skip)
-      yard_meths = yard_map.get_methods(namespace, root, visibility: visibility)
-      if yard_meths.any?
+      yard_meths = yard_map.get_methods(fqns, '', visibility: visibility)
+      #if yard_meths.any?
         meths.concat yard_meths
-      else
-        type = get_namespace_type(namespace, root)
+      #else
+        type = get_namespace_type(fqns)
         if type == :class
           meths.concat yard_map.get_instance_methods('Class')
-        elsif type == :module
+        else
           meths.concat yard_map.get_methods('Module')
         end
-      end
+      #end
       news = meths.select{|s| s.label == 'new'}
       unless news.empty?
         if @method_pins[fqns]
@@ -398,15 +418,15 @@ module Solargraph
           end
         end
       end
-      strings = meths.map(&:to_s)
-      live_map.get_methods(namespace, root, 'class', visibility.include?(:private)).each do |m|
-        next if strings.include?(m) or !m.match(/^[a-z]/i)
-        meths.push Suggestion.new(m, kind: Suggestion::METHOD, docstring: YARD::Docstring.new('(defined at runtime)'), path: "#{fqns}.#{m}")
-      end
       if namespace == '' and root == ''
         config.domains.each do |d|
           meths.concat get_instance_methods(d)
         end
+      end
+      strings = meths.map(&:to_s)
+      live_map.get_methods(fqns, '', 'class', visibility.include?(:private)).each do |m|
+        next if strings.include?(m) or !m.match(/^[a-z]/i)
+        meths.push Suggestion.new(m, kind: Suggestion::METHOD, docstring: YARD::Docstring.new('(defined at runtime)'), path: "#{fqns}.#{m}")
       end
       meths
     end
@@ -428,7 +448,7 @@ module Solargraph
       if yard_meths.any?
         meths.concat yard_meths
       else
-        type = get_namespace_type(namespace, root)
+        type = get_namespace_type(fqns)
         if type == :class
           meths += yard_map.get_instance_methods('Object')
         elsif type == :module
@@ -539,6 +559,7 @@ module Solargraph
         map_source s
       }
       @required.uniq!
+      live_map
       @stale = false
     end
 
@@ -710,7 +731,7 @@ module Solargraph
           }
           unless cursor.nil?
             cursor.keys.each { |k|
-              type = get_namespace_type(k, fqns)
+              type = get_namespace_type("#{fqns}::#{k}")
               kind = nil
               detail = nil
               if type == :class

@@ -100,6 +100,7 @@ module Solargraph
     end
 
     def as_json args = {}
+      args[:all] = true
       result = {
         label: @label,
         kind: @kind,

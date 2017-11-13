@@ -31,6 +31,31 @@ module Solargraph
       result
     end
 
+    def get_constants(namespace, root = '')
+      cached = cache.get_constants(namespace, root)
+      return cached unless cached.nil?
+      did_runtime = false
+      result = []
+      runners.each do |p|
+        next if did_runtime and p.runtime?
+        result.concat p.get_constants(namespace, root)
+        did_runtime = true if p.runtime?
+      end
+      cache.set_constants(namespace, root, result)
+      result
+    end
+
+    def get_fqns(namespace, root)
+      did_runtime = false
+      runners.each do |p|
+        next if did_runtime and p.runtime?
+        result = p.get_fqns(namespace, root)
+        return result unless result.nil?
+        did_runtime = true if p.runtime?
+      end
+      nil
+    end
+
     # Register a plugin for LiveMap to use when generating suggestions.
     #
     # @param cls [Class<Solargraph::Plugin::Base>]

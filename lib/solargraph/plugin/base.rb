@@ -12,14 +12,22 @@ module Solargraph
       def post_initialize
       end
 
+      # @return [Array<String>]
       def get_methods namespace:, root:, scope:, with_private: false
         []
       end
 
+      # @return [Array<String>]
       def get_constants namespace, root
         []
       end
 
+      # @return [String]
+      def get_fqns namespace, root
+        nil
+      end
+
+      # @return [Boolean]
       def runtime?
         false
       end

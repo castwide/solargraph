@@ -2,8 +2,14 @@ require 'parser/current'
 require 'yard'
 
 module Solargraph
-
   class YardMap
+    @@stdlib_yardoc = File.join(Dir.home, '.solargraph', 'cache', '2.0.0', 'yardoc-stdlib')
+    @@stdlib_namespaces = []
+    YARD::Registry.load! @@stdlib_yardoc
+    YARD::Registry.all(:class, :module).each do |ns|
+      @@stdlib_namespaces.push ns.path
+    end
+
     autoload :Cache, 'solargraph/yard_map/cache'
 
     attr_reader :workspace
@@ -44,7 +50,7 @@ module Solargraph
           @namespace_yardocs[ns.path].push y
         end
       end
-      #cache_core
+      cache_core
     end
 
     # @return [Solargraph::LiveMap]
@@ -321,7 +327,7 @@ module Solargraph
     end
 
     def cache_core
-      c = get_constants '', ''
+      get_constants '', ''
     end
 
     def kind_of_object obj
@@ -368,6 +374,7 @@ module Solargraph
       else
         result.concat @namespace_yardocs[namespace] unless @namespace_yardocs[namespace].nil?
       end
+      result.push @@stdlib_yardoc if result.empty? and @@stdlib_namespaces.include?(namespace)
       result
     end
   end
