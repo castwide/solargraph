@@ -36,12 +36,16 @@ module Solargraph
       end
 
       def refresh
-        if @current_required != api_map.required
-          @io.close unless @io.closed?
-          start_process
-          true
-        else
+        if api_map.nil?
           false
+        else
+          if @current_required != api_map.required
+            @io.close unless @io.closed?
+            start_process
+            true
+          else
+            false
+          end
         end
       end
 
@@ -50,9 +54,11 @@ module Solargraph
       def start_process
         STDERR.puts "Starting Runtime process"
         @io = IO.popen('solargraph-runtime', 'r+')
-        STDERR.puts "Required paths given to Runtime: #{api_map.required}"
-        send_require api_map.required unless api_map.nil?
-        @current_required = api_map.required.clone
+        unless api_map.nil?
+          STDERR.puts "Required paths given to Runtime: #{api_map.required}"
+          send_require api_map.required unless api_map.nil?
+          @current_required = api_map.required.clone
+        end
       end
 
       def send_require paths
