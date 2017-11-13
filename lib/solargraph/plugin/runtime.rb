@@ -2,8 +2,7 @@ module Solargraph
   module Plugin
     class Runtime < Base
       def post_initialize
-        @io = IO.popen('solargraph-runtime', 'r+')
-        send_require api_map.required unless api_map.nil?
+        start_process
         at_exit { @io.close unless @io.closed? }
         ObjectSpace.define_finalizer self do
           @io.close unless @io.closed?
@@ -36,7 +35,25 @@ module Solargraph
         response['data']
       end
 
+      def refresh
+        if @current_required != api_map.required
+          @io.close unless @io.closed?
+          start_process
+          true
+        else
+          false
+        end
+      end
+
       private
+
+      def start_process
+        STDERR.puts "Starting Runtime process"
+        @io = IO.popen('solargraph-runtime', 'r+')
+        STDERR.puts "Required paths given to Runtime: #{api_map.required}"
+        send_require api_map.required unless api_map.nil?
+        @current_required = api_map.required.clone
+      end
 
       def send_require paths
         cmd = {

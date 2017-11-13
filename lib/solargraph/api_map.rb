@@ -87,10 +87,11 @@ module Solargraph
       unless @virtual_source.nil? or @virtual_filename == filename or @workspace_files.include?(@virtual_filename)
         eliminate @virtual_filename
       end
-      refresh
+      #refresh
       @virtual_filename = filename
       @virtual_source = Source.fix(code, filename, cursor)
       process_virtual
+      @stale = true
       @virtual_source
     end
 
@@ -565,7 +566,7 @@ module Solargraph
         map_source s
       }
       @required.uniq!
-      live_map
+      live_map.refresh
       @stale = false
     end
 

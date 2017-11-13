@@ -28,6 +28,11 @@ module Solargraph
       end
 
       # @return [Boolean]
+      def refresh
+        false
+      end
+
+      # @return [Boolean]
       def runtime?
         false
       end

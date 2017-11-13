@@ -71,6 +71,14 @@ module Solargraph
       @@plugins.clone
     end
 
+    def refresh
+      changed = false
+      runners.each do |p|
+        changed ||= p.refresh
+      end
+      cache.clear if changed
+    end
+
     private
 
     # @return [Solargraph::LiveMap::Cache]

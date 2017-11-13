@@ -37,6 +37,7 @@ module Solargraph
           begin
             require p
           rescue Exception => e
+            STDERR.puts "Failed to require #{p}: #{e.message}"
             errors.push "Failed to require #{p}: #{e.class} #{e.message}"
           end
         end
