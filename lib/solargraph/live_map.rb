@@ -11,6 +11,7 @@ module Solargraph
 
     def initialize api_map
       @api_map = api_map
+      runners
     end
 
     def get_methods(namespace, root = '', scope = 'instance', with_private = false)
@@ -34,7 +35,11 @@ module Solargraph
     #
     # @param cls [Class<Solargraph::Plugin::Base>]
     def self.install cls
-      @@plugins.push cls
+      @@plugins.push cls unless @@plugins.include?(cls)
+    end
+
+    def self.uninstall cls
+      @@plugins.delete cls
     end
 
     def self.plugins

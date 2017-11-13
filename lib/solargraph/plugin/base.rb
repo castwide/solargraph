@@ -16,6 +16,10 @@ module Solargraph
         []
       end
 
+      def get_constants namespace, root
+        []
+      end
+
       def runtime?
         false
       end

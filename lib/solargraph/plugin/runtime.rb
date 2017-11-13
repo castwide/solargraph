@@ -2,13 +2,11 @@ module Solargraph
   module Plugin
     class Runtime < Base
       def post_initialize
-        return if api_map.nil?
-        api_map.required.each do |r|
-          begin
-            require r
-          rescue Exception => e
-            STDERR.puts "Failed to require #{r}: #{e.class} #{e.message}"
-          end
+        @io = IO.popen('solargraph-runtime', 'r+')
+        send_require api_map.required unless api_map.nil?
+        at_exit { @io.close unless @io.closed? }
+        ObjectSpace.define_finalizer self do
+          @io.close unless @io.closed?
         end
       end
 
@@ -21,62 +19,57 @@ module Solargraph
       #
       # @return [Array<String>]
       def get_methods namespace:, root:, scope:, with_private: false
-        result = []
-        con = find_constant(namespace, root)
-        unless con.nil?
-          if (scope == 'class')
-            if with_private
-              result.concat con.methods
-            else
-              result.concat con.public_methods
-            end
-          elsif (scope == 'instance')
-            if with_private
-              result.concat con.instance_methods
-            else
-              result.concat con.public_instance_methods
-            end
-          end
-        end
-        result.map(&:to_s)
+        response = send_get_methods(namespace, root, scope, with_private)
+        response['data']
       end
 
       # Get an array of constant names.
       #
       # @return [Array<String>]
-      def get_constants namespace
-        namespace = 'Object' if namespace.nil? or namespace.empty?
-        # @type [Module]
-        con = find_constant(namespace)
-        con.constants.map(&:to_s)
+      def get_constants namespace, root
+        response = send_get_constants namespace, root
+        response['data']
       end
 
       private
 
-      def find_constant(namespace, root = '')
-        result = nil
-        parts = root.split('::')
-        until parts.empty?
-          result = inner_find_constant("#{parts.join('::')}::#{namespace}")
-          parts.pop
-          break unless result.nil?
-        end
-        result = inner_find_constant(namespace) if result.nil?
-        result
+      def send_require paths
+        cmd = {
+          command: 'require',
+          paths: paths
+        }
+        transact cmd
       end
 
-      def inner_find_constant(namespace)
-        cursor = Object
-        parts = namespace.split('::')
-        until parts.empty?
-          here = parts.shift
-          begin
-            cursor = cursor.const_get(here)
-          rescue NameError
-            return nil
-          end
-        end
-        cursor
+      def send_get_methods namespace, root, scope, with_private
+        cmd = {
+          command: 'methods',
+          params: {
+            namespace: namespace,
+            root: root,
+            scope: scope,
+            with_private: with_private
+          }
+        }
+        transact cmd
+      end
+
+      def send_get_constants namespace, root
+        cmd = {
+          command: 'constants',
+          params: {
+            namespace: namespace,
+            root: root
+          }
+        }
+        transact cmd
+      end
+
+      def transact cmd
+        @io.puts cmd.to_json
+        @io.flush
+        result = @io.gets
+        JSON.parse(result)
       end
     end
   end

@@ -152,10 +152,6 @@ module Solargraph
     end
 
     class << self
-      #def run!
-      #  super
-      #end
-
       def prepare_workspace directory
         Thread.new do
           @@semaphore.synchronize do
@@ -166,11 +162,6 @@ module Solargraph
         end
       end
 
-      def stop_live_maps
-        @@api_hash.each_pair do |k, v|
-          v.live_map.stop
-        end
-      end
     end
 
     class Helpers

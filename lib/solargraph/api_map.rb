@@ -55,6 +55,7 @@ module Solargraph
       @sources = {}
       @virtual_source = nil
       @virtual_filename = nil
+      live_map
       @stale = true
       refresh
     end

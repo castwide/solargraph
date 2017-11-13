@@ -13,7 +13,7 @@ Gem::Specification.new do |s|
   s.files       = Dir['lib/**/*'] + Dir['yardoc/**/*']
   s.homepage    = 'http://solargraph.org'
   s.license     = 'MIT'
-  s.executables   = ['solargraph']
+  s.executables   = ['solargraph', 'solargraph-runtime']
 
   s.required_ruby_version = '>= 2.2.2'
   s.add_runtime_dependency 'parser', '~> 2.4'
