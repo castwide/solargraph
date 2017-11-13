@@ -136,10 +136,16 @@ module Solargraph
       result += yard_map.get_constants name, root
       strings = result.map(&:to_s)
       live = live_map.get_constants(name, root)
-      live.sort.each do |c|
-        next if strings.include?(c)
-        # @todo Need to know if it's a class or module
-        result.push Suggestion.new(c, kind: Suggestion::CLASS)
+      live.each do |c|
+        next if strings.include?(c['name'])
+        if c['class'] == 'Module'
+          kind = Suggestion::MODULE
+        elsif c['class'] == 'Class'
+          kind = Suggestion::CLASS
+        else
+          kind = Suggestion::CONSTANT
+        end
+        result.push Suggestion.new(c['name'], kind: kind, docstring: YARD::Docstring.new('(defined at runtime)'))
       end
       result
     end

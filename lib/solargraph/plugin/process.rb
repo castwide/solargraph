@@ -72,7 +72,13 @@ module Solargraph
         result = []
         con = find_constant(args['namespace'], args['root'])
         unless con.nil?
-          result.concat con.constants
+          #result.concat con.constants
+          con.constants.each do |c|
+            item = { name: c }
+            here = con.const_get(c)
+            item[:class] = here.class.to_s
+            result.push item
+          end
         end
         respond_ok result
       end
