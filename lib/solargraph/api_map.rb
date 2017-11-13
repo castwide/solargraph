@@ -486,6 +486,7 @@ module Solargraph
       filename.gsub!(/\\/, '/')
       eliminate filename
       @@source_cache[filename] = Source.load(filename)
+      rebuild_local_yardoc
       @stale = true
     end
 
@@ -536,7 +537,6 @@ module Solargraph
     end
 
     def process_maps
-      rebuild_local_yardoc
       process_workspace_files
       cache.clear
       @ivar_pins = {}
