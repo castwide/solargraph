@@ -137,18 +137,7 @@ module Solargraph
       result += inner_namespaces_in(name, root, [])
       result += yard_map.get_constants name, root
       strings = result.map(&:to_s)
-      live = live_map.get_constants(name, root)
-      live.each do |c|
-        next if strings.include?(c['name'])
-        if c['class'] == 'Module'
-          kind = Suggestion::MODULE
-        elsif c['class'] == 'Class'
-          kind = Suggestion::CLASS
-        else
-          kind = Suggestion::CONSTANT
-        end
-        result.push Suggestion.new(c['name'], kind: kind, docstring: YARD::Docstring.new('(defined at runtime)'))
-      end
+      result.concat live_map.get_constants(name, root)
       result
     end
 
@@ -399,16 +388,16 @@ module Solargraph
       skip = []
       meths.concat inner_get_methods(namespace, root, skip)
       yard_meths = yard_map.get_methods(fqns, '', visibility: visibility)
-      #if yard_meths.any?
+      if yard_meths.any?
         meths.concat yard_meths
-      #else
+      else
         type = get_namespace_type(fqns)
         if type == :class
           meths.concat yard_map.get_instance_methods('Class')
         else
           meths.concat yard_map.get_methods('Module')
         end
-      #end
+      end
       news = meths.select{|s| s.label == 'new'}
       unless news.empty?
         if @method_pins[fqns]

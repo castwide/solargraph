@@ -31,6 +31,7 @@ module Solargraph
       result
     end
 
+    # @return [Array<Solargraph::Suggestion>]
     def get_constants(namespace, root = '')
       cached = cache.get_constants(namespace, root)
       return cached unless cached.nil?
@@ -41,8 +42,18 @@ module Solargraph
         result.concat p.get_constants(namespace, root)
         did_runtime = true if p.runtime?
       end
-      cache.set_constants(namespace, root, result)
-      result
+      suggestions = []
+      result.uniq.each do |r|
+        kind = Suggestion::CONSTANT
+        if r['class'] == 'Class'
+          kind = Suggestion::CLASS
+        elsif r['class'] == 'Module'
+          kind = Suggestion::MODULE
+        end
+        suggestions.push(Suggestion.new(r['name'], kind: kind))
+      end
+      cache.set_constants(namespace, root, suggestions)
+      suggestions
     end
 
     def get_fqns(namespace, root)
