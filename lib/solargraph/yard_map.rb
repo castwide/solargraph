@@ -263,6 +263,22 @@ module Solargraph
       result
     end
 
+    # @return [Symbol] :class, :module, or nil
+    def get_namespace_type(fqns)
+      yardocs_documenting(fqns).each do |y|
+        yard = load_yardoc y
+        unless yard.nil?
+          obj = yard.at(fqns)
+          unless obj.nil?
+            return :class if obj.kind_of?(YARD::CodeObjects::ClassObject)
+            return :module if obj.kind_of?(YARD::CodeObjects::ModuleObject)
+            return nil
+          end
+        end
+      end
+      nil
+    end
+
     def bundled_gem_yardocs
       result = []
       unless workspace.nil?

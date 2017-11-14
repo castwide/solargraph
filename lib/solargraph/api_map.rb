@@ -91,7 +91,7 @@ module Solargraph
       @virtual_filename = filename
       @virtual_source = Source.fix(code, filename, cursor)
       process_virtual
-      @stale = true
+      #@stale = true
       @virtual_source
     end
 
@@ -381,14 +381,7 @@ module Solargraph
         type = nodes[0].type if [:class, :module].include?(nodes[0].type)
       end
       if type.nil?
-        obj = yard_map.objects(fqns).first
-        unless obj.nil?
-          if obj.kind == Suggestion::CLASS
-            type = :class
-          elsif obj.kind == Suggestion::MODULE
-            type = :module
-          end
-        end
+        type = yard_map.get_namespace_type(fqns)
       end
       type
     end
