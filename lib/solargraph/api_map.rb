@@ -477,6 +477,7 @@ module Solargraph
       @sources.values
     end
 
+    # @return [Array<String>]
     def get_path_suggestions path
       refresh
       result = []
@@ -497,6 +498,23 @@ module Solargraph
         result.concat yard_map.objects(path)
       end
       result
+    end
+
+    def document path
+      refresh
+      docs = []
+      sugs = get_path_suggestions(path)
+      sugs.each do |s|
+        o = YARD::CodeObjects::ClassObject.new(nil, s.path)
+        o.docstring = s.docstring
+        get_instance_methods(s.path).each do |m|
+          mo = YARD::CodeObjects::MethodObject.new(o, m.label, :instance)
+          mo.docstring = m.docstring
+        end
+        docs.push o
+      end
+      docs.concat yard_map.document(path)
+      docs
     end
 
     private
