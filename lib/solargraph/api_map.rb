@@ -479,7 +479,7 @@ module Solargraph
       filename.gsub!(/\\/, '/')
       eliminate filename
       @@source_cache[filename] = Source.load(filename)
-      rebuild_local_yardoc
+      rebuild_local_yardoc #if @workspace_files.include?(filename)
       @stale = true
     end
 
@@ -731,7 +731,7 @@ module Solargraph
           }
           unless cursor.nil?
             cursor.keys.each { |k|
-              type = get_namespace_type("#{fqns}::#{k}")
+              type = get_namespace_type("#{fqns == '' ? '' : fqns + '::'}#{k}")
               kind = nil
               detail = nil
               if type == :class
