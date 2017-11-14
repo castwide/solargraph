@@ -56,7 +56,7 @@ module Solargraph
         @io = IO.popen('solargraph-runtime', 'r+')
         unless api_map.nil?
           STDERR.puts "Required paths given to Runtime: #{api_map.required}"
-          send_require api_map.required unless api_map.nil?
+          send_require api_map.required
           @current_required = api_map.required.clone
         end
       end
