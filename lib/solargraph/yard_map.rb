@@ -94,7 +94,7 @@ module Solargraph
     # @param query [String]
     def document query
       found = []
-      yardocs.each { |y|
+      (yardocs + [@@stdlib_yardoc]).each { |y|
         yard = load_yardoc(y)
         unless yard.nil?
           obj = yard.at query
