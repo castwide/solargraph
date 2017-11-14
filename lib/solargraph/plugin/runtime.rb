@@ -1,3 +1,5 @@
+require 'json'
+
 module Solargraph
   module Plugin
     class Runtime < Base
