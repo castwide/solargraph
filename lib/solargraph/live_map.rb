@@ -77,6 +77,11 @@ module Solargraph
         changed ||= p.refresh
       end
       cache.clear if changed
+      get_constants('')
+      get_methods('', '', 'class')
+      get_methods('', '', 'instance')
+      get_methods('Kernel', '', 'class')
+      get_methods('Kernel', '', 'instance')
     end
 
     private

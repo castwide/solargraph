@@ -57,6 +57,7 @@ module Solargraph
       @virtual_filename = nil
       @stale = true
       refresh
+      yard_map
     end
 
     def config
