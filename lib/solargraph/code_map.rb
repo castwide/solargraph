@@ -229,8 +229,7 @@ module Solargraph
           else
             type = infer_literal_node_type(node_at(index - 2))
             if type.nil?
-              current_namespace = namespace_at(index)
-              parts = current_namespace.to_s.split('::')
+              parts = namespace.to_s.split('::')
               result += get_snippets_at(index) if with_snippets
               result += get_local_variables_and_methods_at(index)
               result += ApiMap.get_keywords
