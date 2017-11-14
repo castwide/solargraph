@@ -80,7 +80,7 @@ module Solargraph
     # @param query [String]
     def search query
       found = []
-      yardocs.each { |y|
+      (yardocs + [@@stdlib_yardoc]).each { |y|
         yard = load_yardoc(y)
         unless yard.nil?
           yard.paths.each { |p|

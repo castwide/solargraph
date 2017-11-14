@@ -63,15 +63,15 @@ module Solargraph
         unless con.nil?
           if (args['scope'] == 'class')
             if args['with_private']
-              result.concat con.methods(false)
+              result.concat con.methods
             else
-              result.concat con.public_methods(false)
+              result.concat con.public_methods
             end
           elsif (args['scope'] == 'instance')
             if args['with_private']
-              result.concat con.instance_methods(false)
+              result.concat con.instance_methods
             else
-              result.concat con.public_instance_methods(false)
+              result.concat con.public_instance_methods
             end
           end
         end
