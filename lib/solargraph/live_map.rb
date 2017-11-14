@@ -87,12 +87,15 @@ module Solargraph
       runners.each do |p|
         changed ||= p.refresh
       end
-      cache.clear if changed
-      get_constants('')
-      get_methods('', '', 'class')
-      get_methods('', '', 'instance')
-      get_methods('Kernel', '', 'class')
-      get_methods('Kernel', '', 'instance')
+      if changed
+        STDERR.puts "Resetting LiveMap cache"
+        cache.clear
+        get_constants('')
+        get_methods('', '', 'class')
+        get_methods('', '', 'instance')
+        get_methods('Kernel', '', 'class')
+        get_methods('Kernel', '', 'instance')
+      end
     end
 
     private

@@ -42,6 +42,7 @@ module Solargraph
           false
         else
           if @current_required != api_map.required
+            STDERR.puts "Restarting #{self.class} process"
             @io.close unless @io.nil? or @io.closed?
             start_process
             true
