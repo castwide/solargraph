@@ -1,12 +1,14 @@
 module Solargraph
   module Plugin
     class Runtime < Base
+      attr_writer :executable
+
+      def executable
+        @executable ||= 'solargraph-runtime'
+      end
+
       def post_initialize
         start_process
-        at_exit { @io.close unless @io.closed? }
-        ObjectSpace.define_finalizer self do
-          @io.close unless @io.closed?
-        end
       end
 
       # @return [Boolean]
@@ -40,7 +42,7 @@ module Solargraph
           false
         else
           if @current_required != api_map.required
-            @io.close unless @io.closed?
+            @io.close unless @io.nil? or @io.closed?
             start_process
             true
           else
@@ -49,16 +51,27 @@ module Solargraph
         end
       end
 
+      protected
+
+      def load_environment
+        return if api_map.nil?
+        STDERR.puts "Required paths given to Runtime: #{api_map.required}"
+        send_require api_map.required
+        @current_required = api_map.required.clone
+      end
+
       private
 
       def start_process
-        STDERR.puts "Starting Runtime process"
-        @io = IO.popen('solargraph-runtime', 'r+')
-        unless api_map.nil?
-          STDERR.puts "Required paths given to Runtime: #{api_map.required}"
-          send_require api_map.required
-          @current_required = api_map.required.clone
+        dir = Dir.pwd
+        unless api_map.nil? or api_map.workspace.nil?
+          dir = api_map.workspace
         end
+        STDERR.puts "Starting #{self.class} process in #{dir}"
+        Dir.chdir(dir) do
+          @io = IO.popen(executable, 'r+')
+        end
+        load_environment
       end
 
       def send_require paths

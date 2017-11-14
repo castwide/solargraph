@@ -3,6 +3,14 @@ require 'json'
 module Solargraph
   module Plugin
     class Process
+      def initialize
+        @required = []
+        post_initialize
+      end
+
+      def post_initialize
+      end
+
       def run
         until STDIN.closed?
           input = gets
@@ -36,6 +44,7 @@ module Solargraph
         paths.each do |p|
           begin
             require p
+            @required.push p
           rescue Exception => e
             STDERR.puts "Failed to require #{p}: #{e.message}"
             errors.push "Failed to require #{p}: #{e.class} #{e.message}"
@@ -54,15 +63,15 @@ module Solargraph
         unless con.nil?
           if (args['scope'] == 'class')
             if args['with_private']
-              result.concat con.methods(false)
+              result.concat con.methods
             else
-              result.concat con.public_methods(false)
+              result.concat con.public_methods
             end
           elsif (args['scope'] == 'instance')
             if args['with_private']
-              result.concat con.instance_methods(false)
+              result.concat con.instance_methods
             else
-              result.concat con.public_instance_methods(false)
+              result.concat con.public_instance_methods
             end
           end
         end
@@ -75,6 +84,7 @@ module Solargraph
         unless con.nil?
           #result.concat con.constants
           con.constants.each do |c|
+            next if c == :Solargraph and !@required.include?('solargraph')
             item = { name: c }
             here = con.const_get(c)
             item[:class] = here.class.to_s
