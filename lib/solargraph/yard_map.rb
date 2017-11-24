@@ -363,7 +363,7 @@ module Solargraph
       spec.nondevelopment_dependencies.each do |dep|
         gy = YARD::Registry.yardoc_file_for_gem(dep.name)
         if gy.nil?
-          STDERR.puts "Required path not found: #{r}"
+          STDERR.puts "Required path not found: #{dep.name}"
         else
           #STDERR.puts "Adding #{gy}"
           yardocs.unshift gy
