@@ -360,7 +360,7 @@ module Solargraph
 
     def add_gem_dependencies gem_name
       spec = Gem::Specification.find_by_name(gem_name)
-      spec.nondevelopment_dependencies.each do |dep|
+      (spec.dependencies - spec.development_dependencies).each do |dep|
         gy = YARD::Registry.yardoc_file_for_gem(dep.name)
         if gy.nil?
           STDERR.puts "Required path not found: #{dep.name}"
