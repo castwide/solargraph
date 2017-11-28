@@ -29,16 +29,24 @@ module Solargraph
         @raw_data['required'] ||= []
       end
 
+      # An array of files included in the workspace (before calculating excluded files).
+      #
       # @return [Array<String>]
       def included
+        return [] if workspace.nil?
         @included ||= process_globs(@raw_data['include'])
       end
 
+      # An array of files excluded from the workspace.
+      # 
       # @return [Array<String>]
       def excluded
+        return [] if workspace.nil?
         @excluded ||= process_globs(@raw_data['exclude'])
       end
 
+      # The calculated array of (included - excluded) files in the workspace.
+      #
       # @return [Array<String>]
       def calculated
         @calculated ||= (included - excluded)

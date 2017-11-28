@@ -83,12 +83,30 @@ module Solargraph
       @live_map ||= Solargraph::LiveMap.new(self)
     end
 
+    # @todo Get rid of the cursor parameter. Tracking stubbed lines is the
+    #   better option.
+    #
+    # @param code [String]
+    # @param filename [String]
     # @return [Solargraph::ApiMap::Source]
     def virtualize code, filename = nil, cursor = nil
+      workspace_files.delete_if do |f|
+        if File.exist?(f)
+          false
+        else
+          eliminate f
+          true
+        end
+      end
       if filename.nil? or filename.end_with?('.rb')
         eliminate @virtual_filename unless @virtual_source.nil? or @virtual_filename == filename or workspace_files.include?(@virtual_filename)
         @virtual_filename = filename
         @virtual_source = Source.fix(code, filename, cursor)
+        unless filename.nil? or workspace_files.include?(filename)
+          current_files = @workspace_files
+          @workspace_files = config(true).calculated
+          (current_files - @workspace_files).each { |f| eliminate f }
+        end
         process_virtual
       else
         unless filename.nil?
