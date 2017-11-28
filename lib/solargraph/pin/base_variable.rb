@@ -19,6 +19,10 @@ module Solargraph
         @return_type ||= literal_from_assignment
       end
 
+      def nil_assignment?
+        node.children[(node.type == :casgn ? 2 : 1)].type == :nil
+      end
+
       def signature
         @signature ||= resolve_node_signature(node.children[(node.type == :casgn ? 2 : 1)])
       end

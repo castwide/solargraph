@@ -265,7 +265,19 @@ module Solargraph
       result = []
       ip = @ivar_pins[namespace]
       unless ip.nil?
+        nil_pins = []
+        val_names = []
         ip.select{ |pin| pin.scope == scope }.each do |pin|
+          if pin.nil_assignment? and pin.return_type.nil?
+            nil_pins.push pin
+          else
+            unless val_names.include?(pin.name)
+              result.push pin_to_suggestion(pin)
+              val_names.push pin.name
+            end
+          end
+        end
+        nil_pins.reject{|p| val_names.include?(p.name)}.each do |pin|
           result.push pin_to_suggestion(pin)
         end
       end

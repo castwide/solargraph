@@ -589,4 +589,72 @@ describe Solargraph::ApiMap do
     expect(suggestions).not_to include('Foo')
     expect(suggestions).not_to include('Bar2')
   end
+
+  it "gets unique instance variable names" do
+    code = %(
+      class Foo
+        def bar
+          @bar = 'bar'
+        end
+        def baz
+          @bar = 'baz'
+        end
+      end
+    )
+    api_map = Solargraph::ApiMap.new
+    api_map.append_source(code, 'file.rb')
+    suggestions = api_map.get_instance_variables('Foo', :instance)
+    expect(suggestions.length).to eq(1)
+  end
+
+  it "accepts nil instance variable assignments without other options" do
+    code = %(
+      class Foo
+        def bar
+          @bar = nil
+        end
+      end
+    )
+    api_map = Solargraph::ApiMap.new
+    api_map.append_source(code, 'file.rb')
+    suggestions = api_map.get_instance_variables('Foo', :instance)
+    expect(suggestions.length).to eq(1)
+  end
+
+  it "prefers non-nil instance variable assignments" do
+    code = %(
+      class Foo
+        def bar
+          @bar = nil
+        end
+        def baz
+          @bar = 'baz'
+        end
+      end
+    )
+    api_map = Solargraph::ApiMap.new
+    api_map.append_source(code, 'file.rb')
+    suggestions = api_map.get_instance_variables('Foo', :instance)
+    expect(suggestions.length).to eq(1)
+    expect(suggestions[0].return_type).to eq('String')
+  end
+
+  it "accepts nil instance variable assignments with @type tags" do
+    code = %(
+      class Foo
+        def bar
+          # @type [Array]
+          @bar = nil
+        end
+        def baz
+          @bar = 'baz' # Notice the first assignment is Array, not String
+        end
+      end
+    )
+    api_map = Solargraph::ApiMap.new
+    api_map.append_source(code, 'file.rb')
+    suggestions = api_map.get_instance_variables('Foo', :instance)
+    expect(suggestions.length).to eq(1)
+    expect(suggestions[0].return_type).to eq('Array')
+  end
 end
