@@ -54,6 +54,11 @@ module Solargraph
       yard_map
     end
 
+    # @todo get rid of this
+    def namespace_pins
+      @namespace_pins
+    end
+
     # @return [Solargraph::ApiMap::Config]
     def config reload = false
       @config = ApiMap::Config.new(@workspace) if @config.nil? or reload
@@ -180,14 +185,11 @@ module Solargraph
       fqns = find_fully_qualified_namespace(namespace, root)
       if fqns.empty?
         result.concat inner_get_constants('', skip, false)
-      else fqns.empty?
+      else
         parts = fqns.split('::')
-        while parts.length > 0
-          resolved = find_namespace_pins(parts.join('::'))
-          resolved.each do |pin|
-            result.concat inner_get_constants(pin.path, skip, true)
-          end
-          parts.pop
+        resolved = find_namespace_pins(parts.join('::'))
+        resolved.each do |pin|
+          result.concat inner_get_constants(pin.path, skip, true)
         end
       end
       result.concat yard_map.get_constants(fqns)
@@ -197,7 +199,7 @@ module Solargraph
     def find_namespace_pins fqns
       set = nil
       if fqns.include?('::')
-        set = @namespace_pins[fqns.split('::')[0..-2]]
+        set = @namespace_pins[fqns.split('::')[0..-2].join('::')]
       else
         set = @namespace_pins['']
       end

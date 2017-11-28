@@ -564,4 +564,21 @@ describe Solargraph::ApiMap do
     type = api_map.infer_signature_type('gets', 'Foo', scope: :instance)
     expect(type).to eq('String')
   end
+
+  it "finds nested namespaces" do
+    code = %(
+      module Foo
+        module Bar
+          class Baz
+          end
+        end
+      end
+    )
+    api_map = Solargraph::ApiMap.new
+    api_map.append_source(code, 'file.rb')
+    suggestions = api_map.get_constants('Foo::Bar').map(&:path)
+    expect(suggestions).to include('Foo::Bar::Baz')
+    suggestions = api_map.get_constants('Bar', 'Foo').map(&:path)
+    expect(suggestions).to include('Foo::Bar::Baz')
+  end
 end
