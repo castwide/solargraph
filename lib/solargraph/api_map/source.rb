@@ -102,12 +102,18 @@ module Solargraph
         @symbol_pins ||= []
       end
 
+      # @return [Array<Solargraph::Pin::Namespace>]
+      def namespace_pins
+        @namespace_pins ||= []
+      end
+
       def required
         @required ||= []
       end
 
       def docstring_for node
-        @docstring_hash[node.loc]
+        return @docstring_hash[node.loc] if node.respond_to?(:loc)
+        nil
       end
 
       def code_for node
@@ -188,6 +194,7 @@ module Solargraph
             fqn = tree.join('::')
             @namespace_nodes[fqn] ||= []
             @namespace_nodes[fqn].push node
+            namespace_pins.push Solargraph::Pin::Namespace.new(self, node, fqn)
             if node.type == :class and !node.children[1].nil?
               sc = unpack_name(node.children[1])
               superclasses[fqn] = sc
@@ -316,8 +323,8 @@ module Solargraph
           fixed_cursor = false
           begin
             # HACK: The current file is parsed with a trailing underscore to fix
-            # incomplete trees resulting from short scripts (e.g., a lone variable
-            # assignment).
+            # incomplete trees resulting from short scripts (e.g., an unfinished
+            # variable assignment).
             node, comments = Parser::CurrentRuby.parse_with_comments(tmp + "\n_")
             Source.new(code, node, comments, filename)
           rescue Parser::SyntaxError => e

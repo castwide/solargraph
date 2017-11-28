@@ -47,8 +47,8 @@ module Solargraph
         @workspace_files.each do |wf|
           begin
             @@source_cache[wf] ||= Source.load(wf)
-          rescue
-            STDERR.puts "Failed to load #{wf}"
+          rescue Exception => e
+            STDERR.puts "Failed to load #{wf}: #{e.message}"
           end
         end
       end
@@ -254,6 +254,14 @@ module Solargraph
     def get_filename_for(node)
       @sources.each do |filename, source|
         return source.filename if source.include?(node)
+      end
+      nil
+    end
+
+    # @return [Solargraph::ApiMap::Source]
+    def get_source_for(node)
+      @sources.each do |filename, source|
+        return source if source.include?(node)
       end
       nil
     end
@@ -490,9 +498,10 @@ module Solargraph
         result = get_methods(parts[0], '', visibility: [:public, :private, :protected]).select{|s| s.label == parts[1]}
       else
         # It's a class or module
-        get_namespace_nodes(path).each do |node|
-          # TODO This is way underimplemented
-          result.push Suggestion.new(path, kind: Suggestion::CLASS)
+        unless @namespace_pins[path].nil?
+          @namespace_pins[path].each do |pin|
+            result.push pin_to_suggestion(pin)
+          end
         end
         result.concat yard_map.objects(path)
       end
@@ -531,6 +540,7 @@ module Solargraph
       @namespace_includes = {}
       @superclasses = {}
       @parent_stack = {}
+      @namespace_pins = {}
       namespace_map.clear
       namespace_tree.clear
       @required = []
@@ -566,8 +576,8 @@ module Solargraph
           begin
             @@source_cache[f] ||= Source.load(f)
             @sources[f] = @@source_cache[f]
-          rescue
-            STDERR.puts "Failed to load #{f}"
+          rescue Exception => e
+            STDERR.puts "Failed to load #{f}: #{e.message}"
           end
         end
       end
@@ -592,7 +602,7 @@ module Solargraph
     end
 
     def eliminate filename
-      [@ivar_pins.values, @cvar_pins.values, @const_pins.values, @method_pins.values, @attr_pins.values].each do |pinsets|
+      [@ivar_pins.values, @cvar_pins.values, @const_pins.values, @method_pins.values, @attr_pins.values, @namespace_pins.values].each do |pinsets|
         pinsets.each do |pins|
           pins.delete_if{|pin| pin.filename == filename}
         end
@@ -631,6 +641,10 @@ module Solargraph
       end
       source.superclasses.each_pair do |cls, sup|
         @superclasses[cls] = sup
+      end
+      source.namespace_pins.each do |pin|
+        @namespace_pins[pin.namespace] ||= []
+        @namespace_pins[pin.namespace].push pin
       end
       source.required.each do |r|
         required.push r
@@ -721,7 +735,8 @@ module Solargraph
           }
           unless cursor.nil?
             cursor.keys.each { |k|
-              type = get_namespace_type("#{fqns == '' ? '' : fqns + '::'}#{k}")
+              here = "#{fqns == '' ? '' : fqns + '::'}#{k}"
+              type = get_namespace_type(here)
               kind = nil
               detail = nil
               if type == :class
@@ -731,7 +746,7 @@ module Solargraph
                 kind = Suggestion::MODULE
                 detail = 'Module'
               end
-              result.push Suggestion.new(k, kind: kind, detail: detail)
+              result.push Suggestion.new(k, kind: kind, detail: detail, path: here)
             }
             cp = @const_pins[fqns]
             unless cp.nil?
