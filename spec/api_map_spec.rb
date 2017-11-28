@@ -565,12 +565,14 @@ describe Solargraph::ApiMap do
     expect(type).to eq('String')
   end
 
-  it "finds nested namespaces" do
+  it "handles nested namespaces" do
     code = %(
       module Foo
         module Bar
           class Baz
           end
+        end
+        module Bar2
         end
       end
     )
@@ -578,7 +580,13 @@ describe Solargraph::ApiMap do
     api_map.append_source(code, 'file.rb')
     suggestions = api_map.get_constants('Foo::Bar').map(&:path)
     expect(suggestions).to include('Foo::Bar::Baz')
+    expect(suggestions).not_to include('Foo::Bar')
+    expect(suggestions).not_to include('Foo')
+    expect(suggestions).not_to include('Bar2')
     suggestions = api_map.get_constants('Bar', 'Foo').map(&:path)
     expect(suggestions).to include('Foo::Bar::Baz')
+    expect(suggestions).not_to include('Foo::Bar')
+    expect(suggestions).not_to include('Foo')
+    expect(suggestions).not_to include('Bar2')
   end
 end

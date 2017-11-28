@@ -85,8 +85,8 @@ module Solargraph
           #result.concat con.constants
           con.constants.each do |c|
             next if c == :Solargraph and !@required.include?('solargraph')
-            item = { name: c }
             here = con.const_get(c)
+            item = { namespace: con.to_s, name: c.to_s }
             item[:class] = here.class.to_s
             result.push item
           end

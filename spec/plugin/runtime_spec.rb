@@ -45,4 +45,23 @@ describe Solargraph::Plugin::Runtime do
     runtime = Solargraph::Plugin::Runtime.new(nil)
     expect(runtime.refresh).to eq(false)
   end
+
+  it "returns internal namespace names" do
+    runtime = Solargraph::Plugin::Runtime.new(nil)
+    result = runtime.get_constants('Process', '').map{ |o| o['name'] }
+    expect(result).to include('Waiter')
+  end
+
+  it "sets local name and namespace root for constants" do
+    tmp = Class.new(Solargraph::Plugin::Runtime) do
+      define_method :executable do
+        'bundle exec solargraph-runtime'
+      end
+    end
+    runtime = tmp.new(nil)
+    result = runtime.get_constants('Process', '').select{|o| o['name'] == 'Waiter'}.first
+    expect(result).not_to be(nil)
+    expect(result['name']).to eq('Waiter')
+    expect(result['namespace']).to eq('Process')
+  end
 end
