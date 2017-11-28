@@ -60,10 +60,15 @@ module Solargraph
       @config
     end
 
+    # An array of all workspace files included in the map.
+    #
+    # @return[Array<String>]
     def workspace_files
       @workspace_files ||= []
     end
 
+    # An array of required paths in the workspace.
+    #
     # @return [Array<String>]
     def required
       @required ||= []
@@ -526,6 +531,7 @@ module Solargraph
       @sources.values
     end
 
+    # @return [Array<String>]
     def get_path_suggestions path
       refresh
       result = []
