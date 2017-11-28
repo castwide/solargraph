@@ -23,9 +23,10 @@ module Solargraph
           end
         end
         @raw_data ||= {}
-        @raw_data['include'] = @raw_data['include'] || include_globs
-        @raw_data['exclude'] = @raw_data['exclude'] || exclude_globs
-        @raw_data['domains'] = @raw_data['domains'] || []
+        @raw_data['include'] ||= include_globs
+        @raw_data['exclude'] ||= exclude_globs
+        @raw_data['domains'] ||= []
+        @raw_data['required'] ||= []
       end
 
       # @return [Array<String>]
@@ -46,6 +47,10 @@ module Solargraph
       # @return [Array<String>]
       def domains
         raw_data['domains']
+      end
+
+      def required
+        raw_data['required']
       end
 
       private

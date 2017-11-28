@@ -542,7 +542,7 @@ module Solargraph
       @namespace_pins = {}
       namespace_map.clear
       namespace_tree.clear
-      @required = []
+      @required = config.required.clone
       @pin_suggestions = {}
       unless @virtual_source.nil?
         @sources[@virtual_filename] = @virtual_source
