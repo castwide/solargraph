@@ -765,14 +765,17 @@ module Solargraph
               type = get_namespace_type(here)
               kind = nil
               detail = nil
+              return_type = nil
               if type == :class
                 kind = Suggestion::CLASS
                 detail = 'Class'
+                return_type = "Class<#{here}>"
               elsif type == :module
                 kind = Suggestion::MODULE
                 detail = 'Module'
+                return_type = "Module<#{here}>"
               end
-              result.push Suggestion.new(k, kind: kind, detail: detail, path: here)
+              result.push Suggestion.new(k, kind: kind, detail: detail, path: here, return_type: return_type)
             }
             cp = @const_pins[fqns]
             unless cp.nil?
