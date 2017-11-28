@@ -14,18 +14,13 @@ module Solargraph
         include_globs = ['**/*.rb']
         exclude_globs = ['spec/**/*', 'test/**/*']
         unless @workspace.nil?
-          #include_globs = ['**/*.rb']
-          #exclude_globs = ['spec/**/*', 'test/**/*']
           sfile = File.join(@workspace, '.solargraph.yml')
           if File.file?(sfile)
             @raw_data = YAML.load(File.read(sfile))
             conf = YAML.load(File.read(sfile))
             include_globs = conf['include'] || include_globs
             exclude_globs = conf['exclude'] || []
-            #@domains = conf['domains'] || []
           end
-          #@included.concat process_globs(include_globs)
-          #@excluded.concat process_globs(exclude_globs)
         end
         @raw_data ||= {}
         @raw_data['include'] = @raw_data['include'] || include_globs
