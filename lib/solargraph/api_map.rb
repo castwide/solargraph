@@ -35,16 +35,10 @@ module Solargraph
     def initialize workspace = nil
       @workspace = workspace.gsub(/\\/, '/') unless workspace.nil?
       clear
-      # @todo Instead of requiring extensions to be listed in the config,
-      # we're experimenting with automatically loading them.
-      #self.config.extensions.each do |ext|
-      #  require ext
-      #end
       require_extensions
-      @workspace_files = []
       unless @workspace.nil?
-        @workspace_files.concat (self.config.included - self.config.excluded)
-        @workspace_files.each do |wf|
+        workspace_files.concat (self.config.included - self.config.excluded)
+        workspace_files.each do |wf|
           begin
             @@source_cache[wf] ||= Source.load(wf)
           rescue Exception => e
@@ -61,8 +55,13 @@ module Solargraph
     end
 
     # @return [Solargraph::ApiMap::Config]
-    def config
-      @config ||= ApiMap::Config.new(@workspace)
+    def config reload = false
+      @config = ApiMap::Config.new(@workspace) if @config.nil? or reload
+      @config
+    end
+
+    def workspace_files
+      @workspace_files ||= []
     end
 
     # @return [Array<String>]
@@ -86,14 +85,12 @@ module Solargraph
 
     # @return [Solargraph::ApiMap::Source]
     def virtualize code, filename = nil, cursor = nil
-      unless @virtual_source.nil? or @virtual_filename == filename or @workspace_files.include?(@virtual_filename)
+      unless @virtual_source.nil? or @virtual_filename == filename or workspace_files.include?(@virtual_filename)
         eliminate @virtual_filename
       end
-      #refresh
       @virtual_filename = filename
       @virtual_source = Source.fix(code, filename, cursor)
       process_virtual
-      #@stale = true
       @virtual_source
     end
 
@@ -573,7 +570,7 @@ module Solargraph
 
     def process_workspace_files
       @sources.clear
-      @workspace_files.each do |f|
+      workspace_files.each do |f|
         if File.file?(f)
           begin
             @@source_cache[f] ||= Source.load(f)

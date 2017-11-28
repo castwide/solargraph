@@ -5,50 +5,52 @@ module Solargraph
     class Config
       # @return [String]
       attr_reader :workspace
+
+      # @return [Hash]
       attr_reader :raw_data
-
-      # @return [Array<String>]
-      attr_reader :included
-
-      # @return [Array<String>]
-      attr_reader :excluded
-
-      # @return [Array<String>]
-      attr_reader :domains
 
       def initialize workspace = nil
         @workspace = workspace
         include_globs = ['**/*.rb']
         exclude_globs = ['spec/**/*', 'test/**/*']
-        @included = []
-        @excluded = []
-        @domains = []
         unless @workspace.nil?
-          include_globs = ['**/*.rb']
-          exclude_globs = ['spec/**/*', 'test/**/*']
+          #include_globs = ['**/*.rb']
+          #exclude_globs = ['spec/**/*', 'test/**/*']
           sfile = File.join(@workspace, '.solargraph.yml')
           if File.file?(sfile)
             @raw_data = YAML.load(File.read(sfile))
             conf = YAML.load(File.read(sfile))
             include_globs = conf['include'] || include_globs
             exclude_globs = conf['exclude'] || []
-            @domains = conf['domains'] || []
+            #@domains = conf['domains'] || []
           end
-          @included.concat process_globs(include_globs)
-          @excluded.concat process_globs(exclude_globs)
+          #@included.concat process_globs(include_globs)
+          #@excluded.concat process_globs(exclude_globs)
         end
         @raw_data ||= {}
         @raw_data['include'] = @raw_data['include'] || include_globs
         @raw_data['exclude'] = @raw_data['exclude'] || exclude_globs
-        # @todo If the domains config goes stable, add it to @raw_data
+        @raw_data['domains'] = @raw_data['domains'] || []
       end
 
+      # @return [Array<String>]
       def included
-        process_globs @raw_data['include']
+        @included ||= process_globs(@raw_data['include'])
       end
 
+      # @return [Array<String>]
       def excluded
-        process_globs @raw_data['exclude']
+        @excluded ||= process_globs(@raw_data['exclude'])
+      end
+
+      # @return [Array<String>]
+      def calculated
+        @calculated ||= (included - excluded)
+      end
+
+      # @return [Array<String>]
+      def domains
+        raw_data['domains']
       end
 
       private
