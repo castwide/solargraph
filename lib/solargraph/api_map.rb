@@ -54,11 +54,6 @@ module Solargraph
       yard_map
     end
 
-    # @todo get rid of this
-    def namespace_pins
-      @namespace_pins
-    end
-
     # @return [Solargraph::ApiMap::Config]
     def config reload = false
       @config = ApiMap::Config.new(@workspace) if @config.nil? or reload
@@ -265,21 +260,7 @@ module Solargraph
       result = []
       ip = @ivar_pins[namespace]
       unless ip.nil?
-        nil_pins = []
-        val_names = []
-        ip.select{ |pin| pin.scope == scope }.each do |pin|
-          if pin.nil_assignment? and pin.return_type.nil?
-            nil_pins.push pin
-          else
-            unless val_names.include?(pin.name)
-              result.push pin_to_suggestion(pin)
-              val_names.push pin.name
-            end
-          end
-        end
-        nil_pins.reject{|p| val_names.include?(p.name)}.each do |pin|
-          result.push pin_to_suggestion(pin)
-        end
+        result.concat suggest_unique_variables(ip.select{ |pin| pin.scope == scope })
       end
       result
     end
@@ -294,11 +275,9 @@ module Solargraph
     def get_class_variables(namespace)
       refresh
       result = []
-      ip = @cvar_pins[namespace]
-      unless ip.nil?
-        ip.each do |pin|
-          result.push pin_to_suggestion(pin)
-        end
+      cp = @cvar_pins[namespace]
+      unless cp.nil?
+        result.concat suggest_unique_variables(cp)
       end
       result
     end
@@ -535,15 +514,19 @@ module Solargraph
 
     def update filename
       filename.gsub!(/\\/, '/')
-      return unless filename.end_with?('.rb')
-      if @workspace_files.include?(filename)
-        eliminate filename
-        @@source_cache[filename] = Source.load(filename)
-        rebuild_local_yardoc #if @workspace_files.include?(filename)
-        @stale = true
-      else
+      if filename.end_with?('.rb')
+        if @workspace_files.include?(filename)
+          eliminate filename
+          @@source_cache[filename] = Source.load(filename)
+          rebuild_local_yardoc #if @workspace_files.include?(filename)
+          @stale = true
+        else
+          @workspace_files = config(true).calculated
+          update filename if @workspace_files.include?(filename)
+        end
+      elsif File.basename(filename) == '.solargraph.yml'
+        # @todo Finish refreshing the map
         @workspace_files = config(true).calculated
-        update filename if @workspace_files.include?(filename)
       end
     end
 
@@ -880,6 +863,26 @@ module Solargraph
         STDERR.puts "Loading extension #{n}"
         require n.match(/^(solargraph\-[a-z0-9_\-]*?\-ext)\-[0-9\.]*$/)[1]
       end
+    end
+
+    def suggest_unique_variables pins
+      result = []
+      nil_pins = []
+      val_names = []
+      pins.each do |pin|
+        if pin.nil_assignment? and pin.return_type.nil?
+          nil_pins.push pin
+        else
+          unless val_names.include?(pin.name)
+            result.push pin_to_suggestion(pin)
+            val_names.push pin.name
+          end
+        end
+      end
+      nil_pins.reject{|p| val_names.include?(p.name)}.each do |pin|
+        result.push pin_to_suggestion(pin)
+      end
+      result
     end
   end
 end
