@@ -122,19 +122,22 @@ module Solargraph
       consts.each { |c|
         detail = nil
         kind = nil
+        return_type = nil
         if c.kind_of?(YARD::CodeObjects::ClassObject)
           detail = 'Class'
           kind = Suggestion::CLASS
+          return_type = "Class<#{c.to_s}>"
         elsif c.kind_of?(YARD::CodeObjects::ModuleObject)
           detail = 'Module'
           kind = Suggestion::MODULE
+          return_type = "Module<#{c.to_s}>"
         elsif c.kind_of?(YARD::CodeObjects::ConstantObject)
           detail = 'Constant'
           kind = Suggestion::CONSTANT
         else
           next
         end
-        result.push Suggestion.new(c.to_s.split('::').last, detail: detail, kind: kind, docstring: c.docstring)
+        result.push Suggestion.new(c.to_s.split('::').last, detail: c.to_s, kind: kind, docstring: c.docstring, return_type: return_type)
       }
       cache.set_constants(namespace, scope, result)
       result
