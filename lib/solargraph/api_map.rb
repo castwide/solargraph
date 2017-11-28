@@ -189,11 +189,6 @@ module Solargraph
       result
     end
 
-    # @todo Get rid of this
-    def namespace_pins
-      @namespace_pins
-    end
-
     def find_namespace_pins fqns
       set = nil
       if fqns.include?('::')
