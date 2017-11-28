@@ -85,12 +85,16 @@ module Solargraph
 
     # @return [Solargraph::ApiMap::Source]
     def virtualize code, filename = nil, cursor = nil
-      unless @virtual_source.nil? or @virtual_filename == filename or workspace_files.include?(@virtual_filename)
-        eliminate @virtual_filename
+      if filename.nil? or filename.end_with?('.rb')
+        eliminate @virtual_filename unless @virtual_source.nil? or @virtual_filename == filename or workspace_files.include?(@virtual_filename)
+        @virtual_filename = filename
+        @virtual_source = Source.fix(code, filename, cursor)
+        process_virtual
+      else
+        unless filename.nil?
+          # @todo Handle special files like .solargraph.yml
+        end
       end
-      @virtual_filename = filename
-      @virtual_source = Source.fix(code, filename, cursor)
-      process_virtual
       @virtual_source
     end
 
