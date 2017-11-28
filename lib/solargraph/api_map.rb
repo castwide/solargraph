@@ -60,6 +60,7 @@ module Solargraph
       yard_map
     end
 
+    # @return [Solargraph::ApiMap::Config]
     def config
       @config ||= ApiMap::Config.new(@workspace)
     end
@@ -122,6 +123,7 @@ module Solargraph
       }.freeze
     end
 
+    # @return [Array<String>]
     def namespaces
       refresh
       namespace_map.keys

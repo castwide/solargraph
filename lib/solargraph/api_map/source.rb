@@ -70,34 +70,42 @@ module Solargraph
         @superclasses ||= {}
       end
 
+      # @return [Array<Solargraph::Pin::Method>]
       def method_pins
         @method_pins ||= []
       end
 
+      # @return [Array<Solargraph::Pin::Attribute>]
       def attribute_pins
         @attribute_pins ||= []
       end
 
+      # @return [Array<Solargraph::Pin::InstanceVariable>]
       def instance_variable_pins
         @instance_variable_pins ||= []
       end
 
+      # @return [Array<Solargraph::Pin::ClassVariable>]
       def class_variable_pins
         @class_variable_pins ||= []
       end
 
+      # @return [Array<Solargraph::Pin::LocalVariable>]
       def local_variable_pins
         @local_variable_pins ||= []
       end
 
+      # @return [Array<Solargraph::Pin::GlobalVariable>]
       def global_variable_pins
         @global_variable_pins ||= []
       end
 
+      # @return [Array<Solargraph::Pin::Constant>]
       def constant_pins
         @constant_pins ||= []
       end
 
+      # @return [Array<Solargraph::Pin::Symbol>]
       def symbol_pins
         @symbol_pins ||= []
       end
@@ -107,15 +115,18 @@ module Solargraph
         @namespace_pins ||= []
       end
 
+      # @return [Array<String>]
       def required
         @required ||= []
       end
 
+      # @return [YARD::Docstring]
       def docstring_for node
         return @docstring_hash[node.loc] if node.respond_to?(:loc)
         nil
       end
 
+      # @return [String]
       def code_for node
         b = node.location.expression.begin.begin_pos
         e = node.location.expression.end.end_pos
@@ -127,6 +138,7 @@ module Solargraph
         @node_tree[node] || []
       end
 
+      # @return [String]
       def namespace_for node
         parts = []
         ([node] + (@node_tree[node] || [])).each do |n|
