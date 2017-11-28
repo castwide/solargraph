@@ -588,16 +588,10 @@ module Solargraph
       @namespace_map ||= {}
     end
 
-    # @return [Hash]
-    def namespace_tree
-      @namespace_tree ||= {}
-    end
-
     def clear
       @stale = false
       @parent_stack = {}
       namespace_map.clear
-      namespace_tree.clear
       required.clear
     end
 
@@ -615,7 +609,6 @@ module Solargraph
       @parent_stack = {}
       @namespace_pins = {}
       namespace_map.clear
-      namespace_tree.clear
       @required = config.required.clone
       @pin_suggestions = {}
       unless @virtual_source.nil?
@@ -625,7 +618,6 @@ module Solargraph
         s.namespace_nodes.each_pair do |k, v|
           namespace_map[k] ||= []
           namespace_map[k].concat v
-          add_to_namespace_tree k.split('::')
         end
       end
       @sources.values.each { |s|
@@ -660,13 +652,11 @@ module Solargraph
       unless @virtual_source.nil?
         cache.clear
         namespace_map.clear
-        namespace_tree.clear
         @sources[@virtual_filename] = @virtual_source
         @sources.values.each do |s|
           s.namespace_nodes.each_pair do |k, v|
             namespace_map[k] ||= []
             namespace_map[k].concat v
-            add_to_namespace_tree k.split('::')
           end
         end
         eliminate @virtual_filename
@@ -845,14 +835,6 @@ module Solargraph
         type = "Class<#{type}>"
       end
       type
-    end
-
-    def add_to_namespace_tree tree
-      cursor = namespace_tree
-      tree.each { |t|
-        cursor[t.to_s] ||= {}
-        cursor = cursor[t.to_s]
-      }
     end
 
     def file_nodes
