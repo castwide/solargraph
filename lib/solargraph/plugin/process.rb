@@ -32,6 +32,8 @@ module Solargraph
             end
           rescue JSON::ParserError => e
             STDOUT.puts respond_err "Error parsing input: #{e.message}"
+          rescue Exception => e
+            STDOUT.puts respond_err "Error processing input: #{e.message}"
           end
           STDOUT.flush
         end
