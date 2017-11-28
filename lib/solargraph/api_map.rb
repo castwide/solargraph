@@ -107,10 +107,15 @@ module Solargraph
     #
     # @param node [AST::Node]
     # @return [YARD::Docstring]
-    def get_comment_for node
+    def get_docstring_for node
       filename = get_filename_for(node)
       return nil if @sources[filename].nil?
       @sources[filename].docstring_for(node)
+    end
+
+    # @deprecated
+    def get_comment_for node
+      get_docstring_for node
     end
 
     # @return [Array<Solargraph::Suggestion>]
@@ -301,7 +306,7 @@ module Solargraph
     def infer_assignment_node_type node, namespace
       type = cache.get_assignment_node_type(node, namespace)
       if type.nil?
-        cmnt = get_comment_for(node)
+        cmnt = get_docstring_for(node)
         if cmnt.nil?
           name_i = (node.type == :casgn ? 1 : 0) 
           sig_i = (node.type == :casgn ? 2 : 1)

@@ -580,7 +580,7 @@ module Solargraph
     def get_method_arguments_from node
       return [] unless node.type == :def or node.type == :defs
       param_hash = {}
-      cmnt = api_map.get_comment_for(node)
+      cmnt = api_map.get_docstring_for(node)
       unless cmnt.nil?
         tags = cmnt.tags(:param)
         tags.each do |tag|
