@@ -11,7 +11,7 @@ describe Solargraph::YardMap do
     expect(result.map(&:to_s)).to include('try_convert')
   end
 
-  it "is not raise Exception in add_gem_dependencies" do
+  it "does not raise Exception in add_gem_dependencies" do
     allow(YARD::Registry).to receive(:yardoc_file_for_gem).with("parser").and_return(false)
     allow(YARD::Registry).to receive(:yardoc_file_for_gem).with("ast").and_return(nil)
     Solargraph::YardMap.new required: ['parser']

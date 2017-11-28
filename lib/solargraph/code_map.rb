@@ -649,9 +649,22 @@ module Solargraph
       node ||= @node
       namespace = namespace_from(node)
       arr = []
+      nil_pins = []
+      val_names = []
       @source.local_variable_pins.select{|p| p.visible_from?(node) }.each do |pin|
         #arr.push Suggestion.new(pin.name, kind: Suggestion::VARIABLE, return_type: api_map.infer_assignment_node_type(pin.node, namespace))
-        arr.push Suggestion.new(pin.name, kind: Suggestion::VARIABLE, location: pin.location)
+        if pin.nil_assignment? and pin.return_type.nil?
+          nil_pins.push pin
+        else
+          unless val_names.include?(pin.name)
+            #arr.push Suggestion.new(pin.name, kind: Suggestion::VARIABLE, location: pin.location)
+            arr.push Suggestion.pull(pin)
+            val_names.push pin.name
+          end
+        end
+      end
+      nil_pins.reject{|p| val_names.include?(p.name)}.each do |pin|
+        arr.push Suggestion.pull(pin)
       end
       arr
     end
