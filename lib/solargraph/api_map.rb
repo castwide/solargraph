@@ -563,7 +563,6 @@ module Solargraph
 
     def clear
       @stale = false
-      @parent_stack = {}
       namespace_map.clear
       required.clear
     end
@@ -579,7 +578,6 @@ module Solargraph
       @attr_pins = {}
       @namespace_includes = {}
       @superclasses = {}
-      @parent_stack = {}
       @namespace_pins = {}
       namespace_map.clear
       @required = config.required.clone
