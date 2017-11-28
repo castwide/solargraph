@@ -206,7 +206,7 @@ module Solargraph
             fqn = tree.join('::')
             @namespace_nodes[fqn] ||= []
             @namespace_nodes[fqn].push node
-            namespace_pins.push Solargraph::Pin::Namespace.new(self, node, fqn)
+            namespace_pins.push Solargraph::Pin::Namespace.new(self, node, tree[0..-2].join('::') || '')
             if node.type == :class and !node.children[1].nil?
               sc = unpack_name(node.children[1])
               superclasses[fqn] = sc

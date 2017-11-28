@@ -1,12 +1,14 @@
 module Solargraph
   module Pin
     class Namespace < Pin::Base
+      include Solargraph::NodeMethods
+
       def name
-        @name ||= namespace.split('::').last
+        @name ||= pack_name(node.children[0]).last.to_s
       end
 
       def path
-        @path ||= namespace
+        @path ||= (namespace.empty? ? '' : "#{namespace}::") + name
       end
 
       def kind

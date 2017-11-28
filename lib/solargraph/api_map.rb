@@ -157,14 +157,9 @@ module Solargraph
       !find_fully_qualified_namespace(name, root).nil?
     end
 
+    # @deprecated
     def namespaces_in name, root = ''
-      refresh
-      result = []
-      result += inner_namespaces_in(name, root, [])
-      result += yard_map.get_constants name, root
-      strings = result.map(&:to_s)
-      result.concat live_map.get_constants(name, root)
-      result
+      get_constants name, root
     end
 
     # @return [Array<Solargraph::Pin::Constant>]
@@ -174,16 +169,67 @@ module Solargraph
     end
 
     # @return [Array<Solargraph::Suggestion>]
-    def get_constants namespace, root
+    def get_constants namespace, root = ''
       result = []
+      skip = []
       fqns = find_fully_qualified_namespace(namespace, root)
-      cp = @const_pins[fqns]
+      if fqns.empty?
+        result.concat inner_get_constants('', skip, false)
+      else fqns.empty?
+        parts = fqns.split('::')
+        while parts.length > 0
+          resolved = find_namespace_pins(parts.join('::'))
+          resolved.each do |pin|
+            result.concat inner_get_constants(pin.path, skip, true)
+          end
+          parts.pop
+        end
+      end
+      result.concat yard_map.get_constants(fqns)
+      result
+    end
+
+    # @todo Get rid of this
+    def namespace_pins
+      @namespace_pins
+    end
+
+    def inner_get_constants here, skip = [], deep = true
+      return [] if skip.include?(here)
+      skip.push here
+      result = []
+      cp = @const_pins[here]
       unless cp.nil?
         cp.each do |pin|
           result.push pin_to_suggestion(pin)
         end
       end
-      result.concat yard_map.get_constants(fqns)
+      np = @namespace_pins[here]
+      unless np.nil?
+        np.each do |pin|
+          result.push pin_to_suggestion(pin)
+          if deep
+            get_include_strings_from(pin.node).each do |i|
+              result.concat inner_get_constants(i, skip, false)
+            end
+          end
+        end
+      end
+      get_include_strings_from(*get_namespace_nodes(here)).each do |i|
+        result.concat inner_get_constants(i, skip, false)
+      end
+      result
+    end
+
+    def find_namespace_pins fqns
+      set = nil
+      if fqns.include?('::')
+        set = @namespace_pins[fqns.split('::')[0..-2]]
+      else
+        set = @namespace_pins['']
+      end
+      return [] if set.nil?
+      set.select{|p| p.path == fqns}
     end
 
     # @return [String]
@@ -487,13 +533,14 @@ module Solargraph
       meths
     end
 
+    # @return [Array<String>]
     def get_include_strings_from *nodes
       arr = []
       nodes.each { |node|
         next unless node.kind_of?(AST::Node)
         arr.push unpack_name(node.children[2]) if (node.type == :send and node.children[1] == :include)
         node.children.each { |n|
-          arr += get_include_strings_from(n) if n.kind_of?(AST::Node) and n.type != :class and n.type != :module
+          arr += get_include_strings_from(n) if n.kind_of?(AST::Node) and n.type != :class and n.type != :module and n.type != :sclass
         }
       }
       arr
@@ -524,10 +571,10 @@ module Solargraph
         result = get_methods(parts[0], '', visibility: [:public, :private, :protected]).select{|s| s.label == parts[1]}
       else
         # It's a class or module
-        unless @namespace_pins[path].nil?
-          @namespace_pins[path].each do |pin|
-            result.push pin_to_suggestion(pin)
-          end
+        parts = path.split('::')
+        np = @namespace_pins[parts[0..-2].join('::')]
+        unless np.nil?
+          result.concat np.select{|p| p.name == parts.last}.map{|p| pin_to_suggestion(p)}
         end
         result.concat yard_map.objects(path)
       end
@@ -745,54 +792,6 @@ module Solargraph
         end
       end
       meths.uniq
-    end
-
-    def inner_namespaces_in name, root, skip
-      result = []
-      fqns = find_fully_qualified_namespace(name, root)
-      unless fqns.nil? or skip.include?(fqns)
-        skip.push fqns
-        nodes = get_namespace_nodes(fqns)
-        unless nodes.empty?
-          cursor = namespace_tree
-          parts = fqns.split('::')
-          parts.each { |p|
-            cursor = cursor[p]
-          }
-          unless cursor.nil?
-            cursor.keys.each { |k|
-              here = "#{fqns == '' ? '' : fqns + '::'}#{k}"
-              type = get_namespace_type(here)
-              kind = nil
-              detail = nil
-              return_type = nil
-              if type == :class
-                kind = Suggestion::CLASS
-                detail = 'Class'
-                return_type = "Class<#{here}>"
-              elsif type == :module
-                kind = Suggestion::MODULE
-                detail = 'Module'
-                return_type = "Module<#{here}>"
-              end
-              result.push Suggestion.new(k, kind: kind, detail: detail, path: here, return_type: return_type)
-            }
-            cp = @const_pins[fqns]
-            unless cp.nil?
-              cp.each do |pin|
-                result.push pin_to_suggestion(pin)
-              end
-            end
-            inc = @namespace_includes[fqns]
-            unless inc.nil?
-              inc.each do |i|
-                result.concat inner_namespaces_in(i, fqns, skip)
-              end
-            end
-          end
-        end
-      end
-      result
     end
 
     # Get a fully qualified namespace for the given signature.
