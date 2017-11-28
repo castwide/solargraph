@@ -327,13 +327,11 @@ module Solargraph
 
     # @return [Array<Solargraph::Suggestion>]
     def get_global_variables
-      result = []
+      globals = []
       @sources.values.each do |s|
-        s.global_variable_pins.each do |p|
-          result.push pin_to_suggestion(p)
-        end
+        globals.concat s.global_variable_pins
       end
-      result
+      suggest_unique_variables globals
     end
 
     # @return [String]
