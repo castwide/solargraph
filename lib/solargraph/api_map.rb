@@ -194,33 +194,6 @@ module Solargraph
       @namespace_pins
     end
 
-    def inner_get_constants here, skip = [], deep = true
-      return [] if skip.include?(here)
-      skip.push here
-      result = []
-      cp = @const_pins[here]
-      unless cp.nil?
-        cp.each do |pin|
-          result.push pin_to_suggestion(pin)
-        end
-      end
-      np = @namespace_pins[here]
-      unless np.nil?
-        np.each do |pin|
-          result.push pin_to_suggestion(pin)
-          if deep
-            get_include_strings_from(pin.node).each do |i|
-              result.concat inner_get_constants(i, skip, false)
-            end
-          end
-        end
-      end
-      get_include_strings_from(*get_namespace_nodes(here)).each do |i|
-        result.concat inner_get_constants(i, skip, false)
-      end
-      result
-    end
-
     def find_namespace_pins fqns
       set = nil
       if fqns.include?('::')
@@ -835,6 +808,33 @@ module Solargraph
         type = "Class<#{type}>"
       end
       type
+    end
+
+    def inner_get_constants here, skip = [], deep = true
+      return [] if skip.include?(here)
+      skip.push here
+      result = []
+      cp = @const_pins[here]
+      unless cp.nil?
+        cp.each do |pin|
+          result.push pin_to_suggestion(pin)
+        end
+      end
+      np = @namespace_pins[here]
+      unless np.nil?
+        np.each do |pin|
+          result.push pin_to_suggestion(pin)
+          if deep
+            get_include_strings_from(pin.node).each do |i|
+              result.concat inner_get_constants(i, skip, false)
+            end
+          end
+        end
+      end
+      get_include_strings_from(*get_namespace_nodes(here)).each do |i|
+        result.concat inner_get_constants(i, skip, false)
+      end
+      result
     end
 
     def file_nodes
