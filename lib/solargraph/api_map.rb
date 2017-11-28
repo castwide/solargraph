@@ -523,10 +523,16 @@ module Solargraph
 
     def update filename
       filename.gsub!(/\\/, '/')
-      eliminate filename
-      @@source_cache[filename] = Source.load(filename)
-      rebuild_local_yardoc #if @workspace_files.include?(filename)
-      @stale = true
+      return unless filename.end_with?('.rb')
+      if @workspace_files.include?(filename)
+        eliminate filename
+        @@source_cache[filename] = Source.load(filename)
+        rebuild_local_yardoc #if @workspace_files.include?(filename)
+        @stale = true
+      else
+        @workspace_files = config(true).calculated
+        update filename if @workspace_files.include?(filename)
+      end
     end
 
     def sources
