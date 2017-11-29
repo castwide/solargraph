@@ -567,7 +567,7 @@ module Solargraph
     def clear
       @stale = false
       namespace_map.clear
-      required.clear
+      @required = config.required.clone
     end
 
     def process_maps

@@ -16,10 +16,15 @@ module Solargraph
         unless @workspace.nil?
           sfile = File.join(@workspace, '.solargraph.yml')
           if File.file?(sfile)
-            @raw_data = YAML.load(File.read(sfile))
-            conf = YAML.load(File.read(sfile))
-            include_globs = conf['include'] || include_globs
-            exclude_globs = conf['exclude'] || []
+            begin
+              @raw_data = YAML.load(File.read(sfile))
+              conf = YAML.load(File.read(sfile))
+              include_globs = conf['include'] || include_globs
+              exclude_globs = conf['exclude'] || []
+            rescue Exception => e
+              STDERR.puts "Unable to read .solargraph.yml: #{e.class} #{e.message}"
+              @raw_data = {}
+            end
           end
         end
         @raw_data ||= {}
