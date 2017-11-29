@@ -114,22 +114,22 @@ describe Solargraph::ApiMap do
   end
 
   it "finds root namespaces" do
-    namespaces = @api_map.namespaces_in('')
+    namespaces = @api_map.get_constants('')
     expect(namespaces.map(&:to_s)).to include("Class1")
   end
 
   it "finds included namespaces" do
-    namespaces = @api_map.namespaces_in('Class1')
+    namespaces = @api_map.get_constants('Class1')
     expect(namespaces.map(&:to_s)).to include('Module1Class')
   end
 
   it "finds namespaces within namespaces" do
-    namespaces = @api_map.namespaces_in('Module1')
+    namespaces = @api_map.get_constants('Module1')
     expect(namespaces.map(&:to_s)).to include('Module1Class')
   end
 
   it "excludes namespaces outside of scope" do
-    namespaces = @api_map.namespaces_in('')
+    namespaces = @api_map.get_constants('')
     expect(namespaces.map(&:to_s)).not_to include('Module1Class')
   end
 

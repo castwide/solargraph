@@ -140,7 +140,7 @@ module Solargraph
       @sources[filename].docstring_for(node)
     end
 
-    # @deprecated
+    # @deprecated Use get_docstring_for instead.
     def get_comment_for node
       get_docstring_for node
     end
@@ -162,7 +162,7 @@ module Solargraph
       !find_fully_qualified_namespace(name, root).nil?
     end
 
-    # @deprecated
+    # @deprecated Use get_constants instead.
     def namespaces_in name, root = ''
       get_constants name, root
     end

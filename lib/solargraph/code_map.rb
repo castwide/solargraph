@@ -225,7 +225,7 @@ module Solargraph
           if signature.include?('::')
             parts = signature.split('::', -1)
             ns = parts[0..-2].join('::')
-            result = api_map.namespaces_in(ns, namespace)
+            result = api_map.get_constants(ns, namespace)
           else
             type = infer_literal_node_type(node_at(index - 2))
             if type.nil?
@@ -235,10 +235,10 @@ module Solargraph
               result += ApiMap.get_keywords
               while parts.length > 0
                 ns = parts.join('::')
-                result += api_map.namespaces_in(ns, namespace)
+                result += api_map.get_constants(ns, namespace)
                 parts.pop
               end
-              result += api_map.namespaces_in('')
+              result += api_map.get_constants('')
               result += api_map.get_instance_methods('Kernel')
               result += api_map.get_methods('')
               result += api_map.get_instance_methods('')
