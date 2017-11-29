@@ -365,6 +365,7 @@ module Solargraph
 
     # @return [String]
     def infer_signature_type signature, namespace, scope: :class
+      namespace ||= ''
       if cache.has_signature_type?(signature, namespace, scope)
         return cache.get_signature_type(signature, namespace, scope)
       end
