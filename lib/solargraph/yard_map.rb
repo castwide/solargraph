@@ -20,9 +20,9 @@ module Solargraph
       used = []
       @required = required
       @namespace_yardocs = {}
-      if @required.include?('bundler/setup')
-        yardocs.concat bundled_gem_yardocs
-      else
+      #if @required.include?('bundler/setup') or @required.include?('bundler/require')
+      #  yardocs.concat bundled_gem_yardocs
+      #else
         @required.each do |r|
           if workspace.nil? or !File.exist?(File.join workspace, 'lib', "#{r}.rb")
             g = r.split('/').first
@@ -39,7 +39,7 @@ module Solargraph
             end
           end
         end
-      end
+      #end
       yardocs.push File.join(Dir.home, '.solargraph', 'cache', '2.0.0', 'yardoc')
       #yardocs.push File.join(Dir.home, '.solargraph', 'cache', '2.0.0', 'yardoc-stdlib')
       yardocs.uniq!
