@@ -1,13 +1,12 @@
 require 'sinatra/base'
 require 'thread'
 require 'yard'
-require 'puma'
 
 module Solargraph
   class Server < Sinatra::Base
 
     set :port, 7657
-    set :server, :puma
+    set :server, :webrick
 
     @@api_hash = {}
     @@semaphore = Mutex.new
