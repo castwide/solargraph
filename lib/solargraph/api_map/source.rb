@@ -224,6 +224,7 @@ module Solargraph
                   unless ora.nil?
                     u = c.updated(:ivasgn, c.children + ora.children[1..-1], nil)
                     @node_tree[u] = @node_stack.clone
+                    @docstring_hash[u.loc] = docstring_for(ora)
                     instance_variable_pins.push Solargraph::Pin::InstanceVariable.new(self, u, fqn || '', local_scope)
                   end
                 else
@@ -235,6 +236,7 @@ module Solargraph
                   unless ora.nil?
                     u = c.updated(:cvasgn, c.children + ora.children[1..-1], nil)
                     @node_tree[u] = @node_stack.clone
+                    @docstring_hash[u.loc] = docstring_for(ora)
                     class_variable_pins.push Solargraph::Pin::ClassVariable.new(self, u, fqn || '')
                   end
                 else
@@ -260,38 +262,34 @@ module Solargraph
               elsif c.type == :casgn
                 constant_pins.push Solargraph::Pin::Constant.new(self, c, fqn)
               else
-                #unless fqn.nil?
-                  if c.kind_of?(AST::Node)
-                    if c.type == :def and c.children[0].to_s[0].match(/[a-z]/i)
-                      method_pins.push Solargraph::Pin::Method.new(source, c, fqn || '', scope, visibility)
-                      #inner_map_node c, tree, visibility, scope, fqn, stack
-                      #next
-                    elsif c.type == :defs
-                      method_pins.push Solargraph::Pin::Method.new(source, c, fqn || '', :class, :public)
-                      inner_map_node c, tree, :public, :class, fqn, stack
-                      next
-                    elsif c.type == :send and [:public, :protected, :private].include?(c.children[1])
-                      visibility = c.children[1]
-                    elsif c.type == :send and c.children[1] == :include #and node.type == :class
-                      namespace_includes[fqn] ||= []
-                      c.children[2..-1].each do |i|
-                        namespace_includes[fqn].push unpack_name(i)
-                      end
-                    elsif c.type == :send and [:attr_reader, :attr_writer, :attr_accessor].include?(c.children[1])
-                      c.children[2..-1].each do |a|
-                        if c.children[1] == :attr_reader or c.children[1] == :attr_accessor
-                          attribute_pins.push Solargraph::Pin::Attribute.new(self, a, fqn || '', :reader, docstring_for(c)) #AttrPin.new(c)
-                        end
-                        if c.children[1] == :attr_writer or c.children[1] == :attr_accessor
-                          attribute_pins.push Solargraph::Pin::Attribute.new(self, a, fqn || '', :writer, docstring_for(c)) #AttrPin.new(c)
-                        end
-                      end
-                    elsif c.type == :sclass and c.children[0].type == :self
-                      inner_map_node c, tree, :public, :class, fqn || '', stack
-                      next
+                if c.kind_of?(AST::Node)
+                  if c.type == :def and c.children[0].to_s[0].match(/[a-z]/i)
+                    method_pins.push Solargraph::Pin::Method.new(source, c, fqn || '', scope, visibility)
+                  elsif c.type == :defs
+                    method_pins.push Solargraph::Pin::Method.new(source, c, fqn || '', :class, :public)
+                    inner_map_node c, tree, :public, :class, fqn, stack
+                    next
+                  elsif c.type == :send and [:public, :protected, :private].include?(c.children[1])
+                    visibility = c.children[1]
+                  elsif c.type == :send and c.children[1] == :include #and node.type == :class
+                    namespace_includes[fqn] ||= []
+                    c.children[2..-1].each do |i|
+                      namespace_includes[fqn].push unpack_name(i)
                     end
+                  elsif c.type == :send and [:attr_reader, :attr_writer, :attr_accessor].include?(c.children[1])
+                    c.children[2..-1].each do |a|
+                      if c.children[1] == :attr_reader or c.children[1] == :attr_accessor
+                        attribute_pins.push Solargraph::Pin::Attribute.new(self, a, fqn || '', :reader, docstring_for(c)) #AttrPin.new(c)
+                      end
+                      if c.children[1] == :attr_writer or c.children[1] == :attr_accessor
+                        attribute_pins.push Solargraph::Pin::Attribute.new(self, a, fqn || '', :writer, docstring_for(c)) #AttrPin.new(c)
+                      end
+                    end
+                  elsif c.type == :sclass and c.children[0].type == :self
+                    inner_map_node c, tree, :public, :class, fqn || '', stack
+                    next
                   end
-                #end
+                end
                 if c.type == :send and c.children[1] == :require
                   if c.children[2].kind_of?(AST::Node) and c.children[2].type == :str
                     required.push c.children[2].children[0].to_s
