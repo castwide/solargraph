@@ -11,7 +11,6 @@ module Solargraph
   autoload :Snippets,      'solargraph/snippets'
   autoload :Server,        'solargraph/server'
   autoload :YardMap,       'solargraph/yard_map'
-  autoload :YardMethods,   'solargraph/yard_methods'
   autoload :Pin,           'solargraph/pin'
   autoload :LiveMap,       'solargraph/live_map'
   autoload :ServerMethods, 'solargraph/server_methods'

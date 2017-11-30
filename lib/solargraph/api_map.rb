@@ -23,7 +23,6 @@ module Solargraph
     ].freeze
 
     include NodeMethods
-    include YardMethods
 
     # The root directory of the project. The ApiMap will search here for
     # additional files to parse and analyze.
