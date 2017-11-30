@@ -23,18 +23,30 @@ module Solargraph
     post '/prepare' do
       content_type :json
       STDERR.puts "Preparing #{params['workspace']}"
-      Server.prepare_workspace params['workspace']
-      { "status" => "ok"}.to_json
+      begin
+        Server.prepare_workspace params['workspace']
+        { "status" => "ok"}.to_json
+      rescue Exception => e
+        STDERR.puts e
+        STDERR.puts e.backtrace.join("\n")
+        { "status" => "err", "message" => e.message + "\n" + e.backtrace.join("\n") }.to_json
+      end
     end
 
     post '/update' do
       content_type :json
-      # @type [Solargraph::ApiMap]
-      api_map = get_api_map(params['workspace'])
-      unless api_map.nil?
-        api_map.update params['filename']
+      begin
+        # @type [Solargraph::ApiMap]
+        api_map = get_api_map(params['workspace'])
+        unless api_map.nil?
+          api_map.update params['filename']
+        end
+        { "status" => "ok"}.to_json
+      rescue Exception => e
+        STDERR.puts e
+        STDERR.puts e.backtrace.join("\n")
+        { "status" => "err", "message" => e.message + "\n" + e.backtrace.join("\n") }.to_json
       end
-      { "status" => "ok"}.to_json
     end
 
     post '/suggest' do
@@ -74,14 +86,20 @@ module Solargraph
 
     post '/resolve' do
       content_type :json
-      workspace = params['workspace'] || nil
-      result = []
-      api_map = get_api_map(workspace)
-      unless api_map.nil?
-        # @todo Get suggestions that match the path
-        result.concat api_map.get_path_suggestions(params['path'])
+      begin
+        workspace = params['workspace'] || nil
+        result = []
+        api_map = get_api_map(workspace)
+        unless api_map.nil?
+          # @todo Get suggestions that match the path
+          result.concat api_map.get_path_suggestions(params['path'])
+        end
+        { "status" => "ok", "suggestions" => result.map{|s| s.as_json(all: true)} }.to_json
+      rescue Exception => e
+        STDERR.puts e
+        STDERR.puts e.backtrace.join("\n")
+        { "status" => "err", "message" => e.message + "\n" + e.backtrace.join("\n") }.to_json
       end
-      { "status" => "ok", "suggestions" => result.map{|s| s.as_json(all: true)} }.to_json
     end
 
     post '/hover' do
