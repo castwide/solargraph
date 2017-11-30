@@ -436,8 +436,9 @@ module Solargraph
         return type unless type.nil?
       else
         # Signature starts with a local variable
-        type = get_type_comment(var)
-        type = infer_literal_node_type(var.children[1]) if type.nil?
+        type = nil
+        lvp = source.local_variable_pins.select{|p| p.name == var.children[0].to_s and p.visible_from?(node) and (!p.nil_assignment? or p.return_type)}.first
+        type = lvp.return_type unless lvp.nil?
         if type.nil?
           vsig = resolve_node_signature(var.children[1])
           type = infer_signature_from_node vsig, node
@@ -515,7 +516,6 @@ module Solargraph
     def get_local_variables_and_methods_at(index)
       result = []
       local = parent_node_from(index, :class, :module, :def, :defs) || @node
-      #result += get_local_variables_from(local)
       result += get_local_variables_from(node_at(index))
       scope = namespace_at(index) || @node
       if local.type == :def
@@ -654,12 +654,10 @@ module Solargraph
       nil_pins = []
       val_names = []
       @source.local_variable_pins.select{|p| p.visible_from?(node) }.each do |pin|
-        #arr.push Suggestion.new(pin.name, kind: Suggestion::VARIABLE, return_type: api_map.infer_assignment_node_type(pin.node, namespace))
         if pin.nil_assignment? and pin.return_type.nil?
           nil_pins.push pin
         else
           unless val_names.include?(pin.name)
-            #arr.push Suggestion.new(pin.name, kind: Suggestion::VARIABLE, location: pin.location)
             arr.push Suggestion.pull(pin)
             val_names.push pin.name
           end

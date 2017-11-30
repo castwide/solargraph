@@ -554,4 +554,13 @@ describe Solargraph::CodeMap do
     expect(sugg.length).to eq(1)
     expect(sugg[0].return_type).to eq('Array')
   end
+
+  it "infers types for local variables in nil guards" do
+    code_map = Solargraph::CodeMap.new(code: %(
+      x ||= 'string'
+      x.
+    ))
+    type = code_map.infer_signature_at(code_map.get_offset(2, 8))
+    expect(type).to eq('String')
+  end
 end
