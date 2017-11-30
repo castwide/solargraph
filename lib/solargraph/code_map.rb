@@ -25,6 +25,7 @@ module Solargraph
 
     # The root directory of the project. The ApiMap will search here for
     # additional files to parse and analyze.
+    # @deprecated CodeMap will be server-agnostic in a future version.
     #
     # @return [String]
     attr_reader :workspace
@@ -32,6 +33,7 @@ module Solargraph
     include NodeMethods
 
     def initialize code: '', filename: nil, workspace: nil, api_map: nil, cursor: nil
+      STDERR.puts "WARNING: the `workspace` parameter in Solargraph::CodeMap#new is deprecated and will be removed in a future version." unless workspace.nil?
       @workspace = workspace
       # HACK: Adjust incoming filename's path separator for yardoc file comparisons
       filename = filename.gsub(File::ALT_SEPARATOR, File::SEPARATOR) unless filename.nil? or File::ALT_SEPARATOR.nil?
