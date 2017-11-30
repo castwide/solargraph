@@ -23,16 +23,9 @@ module Solargraph
     # @return [String]
     attr_reader :filename
 
-    # The root directory of the project. The ApiMap will search here for
-    # additional files to parse and analyze.
-    #
-    # @return [String]
-    attr_reader :workspace
-
     include NodeMethods
 
-    def initialize code: '', filename: nil, workspace: nil, api_map: nil, cursor: nil
-      @workspace = workspace
+    def initialize code: '', filename: nil, api_map: nil, cursor: nil
       # HACK: Adjust incoming filename's path separator for yardoc file comparisons
       filename = filename.gsub(File::ALT_SEPARATOR, File::SEPARATOR) unless filename.nil? or File::ALT_SEPARATOR.nil?
       @filename = filename
@@ -48,7 +41,7 @@ module Solargraph
     #
     # @return [Solargraph::ApiMap]
     def api_map
-      @api_map ||= ApiMap.new(workspace)
+      @api_map ||= ApiMap.new(nil)
     end
 
     # Get the offset of the specified line and column.
