@@ -30,7 +30,7 @@ module Solargraph
     post '/update' do
       content_type :json
       # @type [Solargraph::ApiMap]
-      api_map = @@api_hash[params['workspace']]
+      api_map = get_api_map(params['workspace'])
       unless api_map.nil?
         api_map.update params['filename']
       end
@@ -42,10 +42,7 @@ module Solargraph
       begin
         sugg = []
         workspace = params['workspace']
-        api_map = nil
-        @@semaphore.synchronize {
-          api_map = @@api_hash[workspace]
-        }
+        api_map = get_api_map(workspace)
         with_all = params['all'] == '1' ? true : false
         code_map = CodeMap.new(code: params['text'], filename: params['filename'], api_map: api_map, cursor: [params['line'].to_i, params['column'].to_i])
         offset = code_map.get_offset(params['line'].to_i, params['column'].to_i)
@@ -63,11 +60,10 @@ module Solargraph
       begin
         sugg = []
         workspace = params['workspace'] || nil
-        @@semaphore.synchronize {
-          code_map = CodeMap.new(code: params['text'], filename: params['filename'], api_map: @@api_hash[workspace], cursor: [params['line'].to_i, params['column'].to_i])
-          offset = code_map.get_offset(params['line'].to_i, params['column'].to_i)
-          sugg = code_map.signatures_at(offset)
-        }
+        api_map = get_api_map(workspace)
+        code_map = CodeMap.new(code: params['text'], filename: params['filename'], api_map: api_map, cursor: [params['line'].to_i, params['column'].to_i])
+        offset = code_map.get_offset(params['line'].to_i, params['column'].to_i)
+        sugg = code_map.signatures_at(offset)
         { "status" => "ok", "suggestions" => sugg }.to_json
       rescue Exception => e
         STDERR.puts e
@@ -80,13 +76,11 @@ module Solargraph
       content_type :json
       workspace = params['workspace'] || nil
       result = []
-      @@semaphore.synchronize {
-        api_map = @@api_hash[workspace]
-        unless api_map.nil?
-          # @todo Get suggestions that match the path
-          result.concat api_map.get_path_suggestions(params['path'])
-        end
-      }
+      api_map = get_api_map(workspace)
+      unless api_map.nil?
+        # @todo Get suggestions that match the path
+        result.concat api_map.get_path_suggestions(params['path'])
+      end
       { "status" => "ok", "suggestions" => result.map{|s| s.as_json(all: true)} }.to_json
     end
 
@@ -95,11 +89,10 @@ module Solargraph
       begin
         sugg = []
         workspace = params['workspace'] || nil
-        @@semaphore.synchronize {
-          code_map = CodeMap.new(code: params['text'], filename: params['filename'], api_map: @@api_hash[workspace], cursor: [params['line'].to_i, params['column'].to_i])
-          offset = code_map.get_offset(params['line'].to_i, params['column'].to_i)
-          sugg = code_map.resolve_object_at(offset)
-        }
+        api_map = get_api_map(workspace)
+        code_map = CodeMap.new(code: params['text'], filename: params['filename'], api_map: @@api_hash[workspace], cursor: [params['line'].to_i, params['column'].to_i])
+        offset = code_map.get_offset(params['line'].to_i, params['column'].to_i)
+        sugg = code_map.resolve_object_at(offset)
         { "status" => "ok", "suggestions" => sugg }.to_json
       rescue Exception => e
         STDERR.puts e
@@ -110,7 +103,7 @@ module Solargraph
 
     get '/search' do
       workspace = params['workspace']
-      api_map = @@api_hash[workspace]
+      api_map = get_api_map(workspace)
       required = []
       unless api_map.nil?
         required.concat api_map.required
@@ -122,7 +115,7 @@ module Solargraph
 
     get '/document' do
       workspace = params['workspace']
-      api_map = @@api_hash[workspace]
+      api_map = get_api_map(workspace)
       required = []
       unless api_map.nil?
         required.concat api_map.required
@@ -134,6 +127,20 @@ module Solargraph
 
     post '/shutdown' do
       exit
+    end
+
+    # @return [Solargraph::ApiMap]
+    def self.get_api_map workspace
+      api_map = nil
+      @@semaphore.synchronize {
+        api_map = @@api_hash[workspace]
+      }
+      api_map
+    end
+
+    # @return [Solargraph::ApiMap]
+    def get_api_map workspace
+      Server.get_api_map workspace
     end
 
     def htmlify text
@@ -153,9 +160,9 @@ module Solargraph
     class << self
       def prepare_workspace directory
         Thread.new do
+          api_map = Solargraph::ApiMap.new(directory)
+          api_map.yard_map
           @@semaphore.synchronize do
-            api_map = Solargraph::ApiMap.new(directory)
-            api_map.yard_map
             @@api_hash[directory] = api_map
           end
         end
