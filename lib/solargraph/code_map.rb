@@ -461,16 +461,6 @@ module Solargraph
       inferred
     end
 
-    def get_type_comment node
-      obj = nil
-      cmnt = @source.docstring_for(node)
-      unless cmnt.nil?
-        tag = cmnt.tag(:type)
-        obj = tag.types[0] unless tag.nil? or tag.types.empty?
-      end
-      obj
-    end
-
     # Get the signature at the specified index.
     # A signature is a method call that can start with a constant, method, or
     # variable and does not include any method arguments. Examples:
