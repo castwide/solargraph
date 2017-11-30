@@ -176,4 +176,17 @@ describe Solargraph::ApiMap::Source do
     expect(source.method_pins.first.parameters).to eq(['bar', 'baz'])
     expect(source.method_pins.first.return_type).to eq('Array')
   end
+
+  it "pins constants" do
+    code = %(
+      class Foo
+        BAR = 'bar'
+      end
+    )
+    source = Solargraph::ApiMap::Source.virtual(code, 'file.rb')
+    expect(source.constant_pins.length).to eq(1)
+    expect(source.constant_pins[0].kind).to eq(Solargraph::Suggestion::CONSTANT)
+    expect(source.constant_pins[0].return_type).to eq('String')
+    expect(source.constant_pins[0].value).to eq("'bar'")
+  end
 end
