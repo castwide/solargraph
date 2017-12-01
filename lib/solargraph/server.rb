@@ -133,13 +133,8 @@ module Solargraph
 
     get '/document' do
       workspace = params['workspace']
-      api_map = get_api_map(workspace)
-      required = []
-      unless api_map.nil?
-        required.concat api_map.required
-      end
-      yard = YardMap.new(required: required, workspace: workspace)
-      @objects = yard.document(params['query'])
+      api_map = get_api_map(workspace) || Solargraph::ApiMap.new
+      @objects = api_map.document(params['query'])
       erb :document
     end
 
