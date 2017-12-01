@@ -180,51 +180,6 @@ describe Solargraph::CodeMap do
     expect(sugg.map(&:to_s)).to include('upcase')
   end
 
-  it "accepts a filename without a workspace" do
-    code_map = Solargraph::CodeMap.new(code: %(
-      class Foo
-        def bar
-          @bar = ''
-        end
-        def baz
-          @
-        end
-      end
-    ), filename: @filename)
-    expect(code_map.filename).to eq(@filename)
-    expect(code_map.workspace).to be(nil)
-  end
-
-  it "accepts a workspace without a filename" do
-    code_map = Solargraph::CodeMap.new(code: %(
-      class Foo
-        def bar
-          @bar = ''
-        end
-        def baz
-          @
-        end
-      end
-    ), workspace: @workspace)
-    expect(code_map.filename).to be(nil)
-    expect(code_map.workspace).to eq(@workspace)
-  end
-
-  it "accepts a workspace and a filename" do
-    code_map = Solargraph::CodeMap.new(code: %(
-      class Foo
-        def bar
-          @bar = ''
-        end
-        def baz
-          @
-        end
-      end
-    ), workspace: @workspace, filename: @filename)
-    expect(code_map.filename).to eq(@filename)
-    expect(code_map.workspace).to eq(@workspace)
-  end
-
   it "infers signatures from method arguments" do
     code_map = Solargraph::CodeMap.new(code: %(
       class Foo
