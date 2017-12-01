@@ -44,13 +44,14 @@ module Solargraph
       end
       suggestions = []
       result.uniq.each do |r|
+        path = (r['namespace'].empty? ? '' : "#{r['namespace']}::") + r['name']
         kind = Suggestion::CONSTANT
         if r['class'] == 'Class'
           kind = Suggestion::CLASS
         elsif r['class'] == 'Module'
           kind = Suggestion::MODULE
         end
-        suggestions.push(Suggestion.new(r['name'], kind: kind))
+        suggestions.push(Suggestion.new(r['name'], kind: kind, path: path))
       end
       cache.set_constants(namespace, root, suggestions)
       suggestions
@@ -119,7 +120,7 @@ module Solargraph
         result.push r if !has_runtime or !r.runtime?
         has_runtime = true if r.runtime?
       end
-      result.push Solargraph::Plugin::Runtime.new(api_map) unless has_runtime
+      #result.push Solargraph::Plugin::Runtime.new(api_map) unless has_runtime
       result
     end
   end

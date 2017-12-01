@@ -20,9 +20,9 @@ module Solargraph
       used = []
       @required = required
       @namespace_yardocs = {}
-      if @required.include?('bundler/setup')
-        yardocs.concat bundled_gem_yardocs
-      else
+      #if @required.include?('bundler/setup') or @required.include?('bundler/require')
+      #  yardocs.concat bundled_gem_yardocs
+      #else
         @required.each do |r|
           if workspace.nil? or !File.exist?(File.join workspace, 'lib', "#{r}.rb")
             g = r.split('/').first
@@ -39,7 +39,7 @@ module Solargraph
             end
           end
         end
-      end
+      #end
       yardocs.push File.join(Dir.home, '.solargraph', 'cache', '2.0.0', 'yardoc')
       #yardocs.push File.join(Dir.home, '.solargraph', 'cache', '2.0.0', 'yardoc-stdlib')
       yardocs.uniq!
@@ -122,19 +122,22 @@ module Solargraph
       consts.each { |c|
         detail = nil
         kind = nil
+        return_type = nil
         if c.kind_of?(YARD::CodeObjects::ClassObject)
           detail = 'Class'
           kind = Suggestion::CLASS
+          return_type = "Class<#{c.to_s}>"
         elsif c.kind_of?(YARD::CodeObjects::ModuleObject)
           detail = 'Module'
           kind = Suggestion::MODULE
+          return_type = "Module<#{c.to_s}>"
         elsif c.kind_of?(YARD::CodeObjects::ConstantObject)
           detail = 'Constant'
           kind = Suggestion::CONSTANT
         else
           next
         end
-        result.push Suggestion.new(c.to_s.split('::').last, detail: detail, kind: kind, docstring: c.docstring)
+        result.push Suggestion.new(c.to_s.split('::').last, detail: c.to_s, kind: kind, docstring: c.docstring, return_type: return_type)
       }
       cache.set_constants(namespace, scope, result)
       result
@@ -360,10 +363,10 @@ module Solargraph
 
     def add_gem_dependencies gem_name
       spec = Gem::Specification.find_by_name(gem_name)
-      spec.nondevelopment_dependencies.each do |dep|
+      (spec.dependencies - spec.development_dependencies).each do |dep|
         gy = YARD::Registry.yardoc_file_for_gem(dep.name)
         if gy.nil?
-          STDERR.puts "Required path not found: #{r}"
+          STDERR.puts "Required path not found: #{dep.name}"
         else
           #STDERR.puts "Adding #{gy}"
           yardocs.unshift gy

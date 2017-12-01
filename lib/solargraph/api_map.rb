@@ -23,7 +23,6 @@ module Solargraph
     ].freeze
 
     include NodeMethods
-    include YardMethods
 
     # The root directory of the project. The ApiMap will search here for
     # additional files to parse and analyze.
@@ -35,20 +34,14 @@ module Solargraph
     def initialize workspace = nil
       @workspace = workspace.gsub(/\\/, '/') unless workspace.nil?
       clear
-      # @todo Instead of requiring extensions to be listed in the config,
-      # we're experimenting with automatically loading them.
-      #self.config.extensions.each do |ext|
-      #  require ext
-      #end
       require_extensions
-      @workspace_files = []
       unless @workspace.nil?
-        @workspace_files.concat (self.config.included - self.config.excluded)
-        @workspace_files.each do |wf|
+        workspace_files.concat (self.config.included - self.config.excluded)
+        workspace_files.each do |wf|
           begin
             @@source_cache[wf] ||= Source.load(wf)
-          rescue
-            STDERR.puts "Failed to load #{wf}"
+          rescue Exception => e
+            STDERR.puts "Failed to load #{wf}: #{e.message}"
           end
         end
       end
@@ -60,10 +53,21 @@ module Solargraph
       yard_map
     end
 
-    def config
-      @config ||= ApiMap::Config.new(@workspace)
+    # @return [Solargraph::ApiMap::Config]
+    def config reload = false
+      @config = ApiMap::Config.new(@workspace) if @config.nil? or reload
+      @config
     end
 
+    # An array of all workspace files included in the map.
+    #
+    # @return[Array<String>]
+    def workspace_files
+      @workspace_files ||= []
+    end
+
+    # An array of required paths in the workspace.
+    #
     # @return [Array<String>]
     def required
       @required ||= []
@@ -83,16 +87,36 @@ module Solargraph
       @live_map ||= Solargraph::LiveMap.new(self)
     end
 
+    # @todo Get rid of the cursor parameter. Tracking stubbed lines is the
+    #   better option.
+    #
+    # @param code [String]
+    # @param filename [String]
     # @return [Solargraph::ApiMap::Source]
     def virtualize code, filename = nil, cursor = nil
-      unless @virtual_source.nil? or @virtual_filename == filename or @workspace_files.include?(@virtual_filename)
-        eliminate @virtual_filename
+      workspace_files.delete_if do |f|
+        if File.exist?(f)
+          false
+        else
+          eliminate f
+          true
+        end
       end
-      #refresh
-      @virtual_filename = filename
-      @virtual_source = Source.fix(code, filename, cursor)
-      process_virtual
-      #@stale = true
+      if filename.nil? or filename.end_with?('.rb')
+        eliminate @virtual_filename unless @virtual_source.nil? or @virtual_filename == filename or workspace_files.include?(@virtual_filename)
+        @virtual_filename = filename
+        @virtual_source = Source.fix(code, filename, cursor)
+        unless filename.nil? or workspace_files.include?(filename)
+          current_files = @workspace_files
+          @workspace_files = config(true).calculated
+          (current_files - @workspace_files).each { |f| eliminate f }
+        end
+        process_virtual
+      else
+        unless filename.nil?
+          # @todo Handle special files like .solargraph.yml
+        end
+      end
       @virtual_source
     end
 
@@ -109,10 +133,15 @@ module Solargraph
     #
     # @param node [AST::Node]
     # @return [YARD::Docstring]
-    def get_comment_for node
+    def get_docstring_for node
       filename = get_filename_for(node)
       return nil if @sources[filename].nil?
       @sources[filename].docstring_for(node)
+    end
+
+    # @deprecated Use get_docstring_for instead.
+    def get_comment_for node
+      get_docstring_for node
     end
 
     # @return [Array<Solargraph::Suggestion>]
@@ -122,6 +151,7 @@ module Solargraph
       }.freeze
     end
 
+    # @return [Array<String>]
     def namespaces
       refresh
       namespace_map.keys
@@ -131,14 +161,9 @@ module Solargraph
       !find_fully_qualified_namespace(name, root).nil?
     end
 
+    # @deprecated Use get_constants instead.
     def namespaces_in name, root = ''
-      refresh
-      result = []
-      result += inner_namespaces_in(name, root, [])
-      result += yard_map.get_constants name, root
-      strings = result.map(&:to_s)
-      result.concat live_map.get_constants(name, root)
-      result
+      get_constants name, root
     end
 
     # @return [Array<Solargraph::Pin::Constant>]
@@ -148,16 +173,32 @@ module Solargraph
     end
 
     # @return [Array<Solargraph::Suggestion>]
-    def get_constants namespace, root
+    def get_constants namespace, root = ''
       result = []
+      skip = []
       fqns = find_fully_qualified_namespace(namespace, root)
-      cp = @const_pins[fqns]
-      unless cp.nil?
-        cp.each do |pin|
-          result.push pin_to_suggestion(pin)
+      if fqns.empty?
+        result.concat inner_get_constants('', skip, false)
+      else
+        parts = fqns.split('::')
+        resolved = find_namespace_pins(parts.join('::'))
+        resolved.each do |pin|
+          result.concat inner_get_constants(pin.path, skip, true)
         end
       end
       result.concat yard_map.get_constants(fqns)
+      result
+    end
+
+    def find_namespace_pins fqns
+      set = nil
+      if fqns.include?('::')
+        set = @namespace_pins[fqns.split('::')[0..-2].join('::')]
+      else
+        set = @namespace_pins['']
+      end
+      return [] if set.nil?
+      set.select{|p| p.path == fqns}
     end
 
     # @return [String]
@@ -218,9 +259,7 @@ module Solargraph
       result = []
       ip = @ivar_pins[namespace]
       unless ip.nil?
-        ip.select{ |pin| pin.scope == scope }.each do |pin|
-          result.push pin_to_suggestion(pin)
-        end
+        result.concat suggest_unique_variables(ip.select{ |pin| pin.scope == scope })
       end
       result
     end
@@ -235,11 +274,9 @@ module Solargraph
     def get_class_variables(namespace)
       refresh
       result = []
-      ip = @cvar_pins[namespace]
-      unless ip.nil?
-        ip.each do |pin|
-          result.push pin_to_suggestion(pin)
-        end
+      cp = @cvar_pins[namespace]
+      unless cp.nil?
+        result.concat suggest_unique_variables(cp)
       end
       result
     end
@@ -254,6 +291,14 @@ module Solargraph
     def get_filename_for(node)
       @sources.each do |filename, source|
         return source.filename if source.include?(node)
+      end
+      nil
+    end
+
+    # @return [Solargraph::ApiMap::Source]
+    def get_source_for(node)
+      @sources.each do |filename, source|
+        return source if source.include?(node)
       end
       nil
     end
@@ -281,20 +326,18 @@ module Solargraph
 
     # @return [Array<Solargraph::Suggestion>]
     def get_global_variables
-      result = []
+      globals = []
       @sources.values.each do |s|
-        s.global_variable_pins.each do |p|
-          result.push pin_to_suggestion(p)
-        end
+        globals.concat s.global_variable_pins
       end
-      result
+      suggest_unique_variables globals
     end
 
     # @return [String]
     def infer_assignment_node_type node, namespace
       type = cache.get_assignment_node_type(node, namespace)
       if type.nil?
-        cmnt = get_comment_for(node)
+        cmnt = get_docstring_for(node)
         if cmnt.nil?
           name_i = (node.type == :casgn ? 1 : 0) 
           sig_i = (node.type == :casgn ? 2 : 1)
@@ -321,6 +364,7 @@ module Solargraph
 
     # @return [String]
     def infer_signature_type signature, namespace, scope: :class
+      namespace ||= ''
       if cache.has_signature_type?(signature, namespace, scope)
         return cache.get_signature_type(signature, namespace, scope)
       end
@@ -453,13 +497,14 @@ module Solargraph
       meths
     end
 
+    # @return [Array<String>]
     def get_include_strings_from *nodes
       arr = []
       nodes.each { |node|
         next unless node.kind_of?(AST::Node)
         arr.push unpack_name(node.children[2]) if (node.type == :send and node.children[1] == :include)
         node.children.each { |n|
-          arr += get_include_strings_from(n) if n.kind_of?(AST::Node) and n.type != :class and n.type != :module
+          arr += get_include_strings_from(n) if n.kind_of?(AST::Node) and n.type != :class and n.type != :module and n.type != :sclass
         }
       }
       arr
@@ -467,10 +512,20 @@ module Solargraph
 
     def update filename
       filename.gsub!(/\\/, '/')
-      eliminate filename
-      @@source_cache[filename] = Source.load(filename)
-      rebuild_local_yardoc #if @workspace_files.include?(filename)
-      @stale = true
+      if filename.end_with?('.rb')
+        if @workspace_files.include?(filename)
+          eliminate filename
+          @@source_cache[filename] = Source.load(filename)
+          rebuild_local_yardoc #if @workspace_files.include?(filename)
+          @stale = true
+        else
+          @workspace_files = config(true).calculated
+          update filename if @workspace_files.include?(filename)
+        end
+      elsif File.basename(filename) == '.solargraph.yml'
+        # @todo Finish refreshing the map
+        @workspace_files = config(true).calculated
+      end
     end
 
     def sources
@@ -491,9 +546,10 @@ module Solargraph
         result = get_methods(parts[0], '', visibility: [:public, :private, :protected]).select{|s| s.label == parts[1]}
       else
         # It's a class or module
-        get_namespace_nodes(path).each do |node|
-          # TODO This is way underimplemented
-          result.push Suggestion.new(path, kind: Suggestion::CLASS)
+        parts = path.split('::')
+        np = @namespace_pins[parts[0..-2].join('::')]
+        unless np.nil?
+          result.concat np.select{|p| p.name == parts.last}.map{|p| pin_to_suggestion(p)}
         end
         result.concat yard_map.objects(path)
       end
@@ -524,17 +580,10 @@ module Solargraph
       @namespace_map ||= {}
     end
 
-    # @return [Hash]
-    def namespace_tree
-      @namespace_tree ||= {}
-    end
-
     def clear
       @stale = false
-      @parent_stack = {}
       namespace_map.clear
-      namespace_tree.clear
-      required.clear
+      @required = config.required.clone
     end
 
     def process_maps
@@ -548,10 +597,9 @@ module Solargraph
       @attr_pins = {}
       @namespace_includes = {}
       @superclasses = {}
-      @parent_stack = {}
+      @namespace_pins = {}
       namespace_map.clear
-      namespace_tree.clear
-      @required = []
+      @required = config.required.clone
       @pin_suggestions = {}
       unless @virtual_source.nil?
         @sources[@virtual_filename] = @virtual_source
@@ -560,7 +608,6 @@ module Solargraph
         s.namespace_nodes.each_pair do |k, v|
           namespace_map[k] ||= []
           namespace_map[k].concat v
-          add_to_namespace_tree k.split('::')
         end
       end
       @sources.values.each { |s|
@@ -579,13 +626,13 @@ module Solargraph
 
     def process_workspace_files
       @sources.clear
-      @workspace_files.each do |f|
+      workspace_files.each do |f|
         if File.file?(f)
           begin
             @@source_cache[f] ||= Source.load(f)
             @sources[f] = @@source_cache[f]
-          rescue
-            STDERR.puts "Failed to load #{f}"
+          rescue Exception => e
+            STDERR.puts "Failed to load #{f}: #{e.message}"
           end
         end
       end
@@ -595,13 +642,11 @@ module Solargraph
       unless @virtual_source.nil?
         cache.clear
         namespace_map.clear
-        namespace_tree.clear
         @sources[@virtual_filename] = @virtual_source
         @sources.values.each do |s|
           s.namespace_nodes.each_pair do |k, v|
             namespace_map[k] ||= []
             namespace_map[k].concat v
-            add_to_namespace_tree k.split('::')
           end
         end
         eliminate @virtual_filename
@@ -610,7 +655,7 @@ module Solargraph
     end
 
     def eliminate filename
-      [@ivar_pins.values, @cvar_pins.values, @const_pins.values, @method_pins.values, @attr_pins.values].each do |pinsets|
+      [@ivar_pins.values, @cvar_pins.values, @const_pins.values, @method_pins.values, @attr_pins.values, @namespace_pins.values].each do |pinsets|
         pinsets.each do |pins|
           pins.delete_if{|pin| pin.filename == filename}
         end
@@ -649,6 +694,10 @@ module Solargraph
       end
       source.superclasses.each_pair do |cls, sup|
         @superclasses[cls] = sup
+      end
+      source.namespace_pins.each do |pin|
+        @namespace_pins[pin.namespace] ||= []
+        @namespace_pins[pin.namespace].push pin
       end
       source.required.each do |r|
         required.push r
@@ -725,50 +774,6 @@ module Solargraph
       meths.uniq
     end
 
-    def inner_namespaces_in name, root, skip
-      result = []
-      fqns = find_fully_qualified_namespace(name, root)
-      unless fqns.nil? or skip.include?(fqns)
-        skip.push fqns
-        nodes = get_namespace_nodes(fqns)
-        unless nodes.empty?
-          cursor = namespace_tree
-          parts = fqns.split('::')
-          parts.each { |p|
-            cursor = cursor[p]
-          }
-          unless cursor.nil?
-            cursor.keys.each { |k|
-              type = get_namespace_type("#{fqns == '' ? '' : fqns + '::'}#{k}")
-              kind = nil
-              detail = nil
-              if type == :class
-                kind = Suggestion::CLASS
-                detail = 'Class'
-              elsif type == :module
-                kind = Suggestion::MODULE
-                detail = 'Module'
-              end
-              result.push Suggestion.new(k, kind: kind, detail: detail)
-            }
-            cp = @const_pins[fqns]
-            unless cp.nil?
-              cp.each do |pin|
-                result.push pin_to_suggestion(pin)
-              end
-            end
-            inc = @namespace_includes[fqns]
-            unless inc.nil?
-              inc.each do |i|
-                result.concat inner_namespaces_in(i, fqns, skip)
-              end
-            end
-          end
-        end
-      end
-      result
-    end
-
     # Get a fully qualified namespace for the given signature.
     # The signature should be in the form of a method chain, e.g.,
     # method1.method2
@@ -822,12 +827,31 @@ module Solargraph
       type
     end
 
-    def add_to_namespace_tree tree
-      cursor = namespace_tree
-      tree.each { |t|
-        cursor[t.to_s] ||= {}
-        cursor = cursor[t.to_s]
-      }
+    def inner_get_constants here, skip = [], deep = true
+      return [] if skip.include?(here)
+      skip.push here
+      result = []
+      cp = @const_pins[here]
+      unless cp.nil?
+        cp.each do |pin|
+          result.push pin_to_suggestion(pin)
+        end
+      end
+      np = @namespace_pins[here]
+      unless np.nil?
+        np.each do |pin|
+          result.push pin_to_suggestion(pin)
+          if deep
+            get_include_strings_from(pin.node).each do |i|
+              result.concat inner_get_constants(i, skip, false)
+            end
+          end
+        end
+      end
+      get_include_strings_from(*get_namespace_nodes(here)).each do |i|
+        result.concat inner_get_constants(i, skip, false)
+      end
+      result
     end
 
     def file_nodes
@@ -854,6 +878,26 @@ module Solargraph
         STDERR.puts "Loading extension #{n}"
         require n.match(/^(solargraph\-[a-z0-9_\-]*?\-ext)\-[0-9\.]*$/)[1]
       end
+    end
+
+    def suggest_unique_variables pins
+      result = []
+      nil_pins = []
+      val_names = []
+      pins.each do |pin|
+        if pin.nil_assignment? and pin.return_type.nil?
+          nil_pins.push pin
+        else
+          unless val_names.include?(pin.name)
+            result.push pin_to_suggestion(pin)
+            val_names.push pin.name
+          end
+        end
+      end
+      nil_pins.reject{|p| val_names.include?(p.name)}.each do |pin|
+        result.push pin_to_suggestion(pin)
+      end
+      result
     end
   end
 end

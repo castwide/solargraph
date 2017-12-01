@@ -25,6 +25,7 @@ module Solargraph
 
     # The root directory of the project. The ApiMap will search here for
     # additional files to parse and analyze.
+    # @deprecated CodeMap will be server-agnostic in a future version.
     #
     # @return [String]
     attr_reader :workspace
@@ -32,6 +33,7 @@ module Solargraph
     include NodeMethods
 
     def initialize code: '', filename: nil, workspace: nil, api_map: nil, cursor: nil
+      STDERR.puts "WARNING: the `workspace` parameter in Solargraph::CodeMap#new is deprecated and will be removed in a future version." unless workspace.nil?
       @workspace = workspace
       # HACK: Adjust incoming filename's path separator for yardoc file comparisons
       filename = filename.gsub(File::ALT_SEPARATOR, File::SEPARATOR) unless filename.nil? or File::ALT_SEPARATOR.nil?
@@ -225,7 +227,7 @@ module Solargraph
           if signature.include?('::')
             parts = signature.split('::', -1)
             ns = parts[0..-2].join('::')
-            result = api_map.namespaces_in(ns, namespace)
+            result = api_map.get_constants(ns, namespace)
           else
             type = infer_literal_node_type(node_at(index - 2))
             if type.nil?
@@ -235,10 +237,10 @@ module Solargraph
               result += ApiMap.get_keywords
               while parts.length > 0
                 ns = parts.join('::')
-                result += api_map.namespaces_in(ns, namespace)
+                result += api_map.get_constants(ns, namespace)
                 parts.pop
               end
-              result += api_map.namespaces_in('')
+              result += api_map.get_constants('')
               result += api_map.get_instance_methods('Kernel')
               result += api_map.get_methods('')
               result += api_map.get_instance_methods('')
@@ -434,8 +436,9 @@ module Solargraph
         return type unless type.nil?
       else
         # Signature starts with a local variable
-        type = get_type_comment(var)
-        type = infer_literal_node_type(var.children[1]) if type.nil?
+        type = nil
+        lvp = source.local_variable_pins.select{|p| p.name == var.children[0].to_s and p.visible_from?(node) and (!p.nil_assignment? or p.return_type)}.first
+        type = lvp.return_type unless lvp.nil?
         if type.nil?
           vsig = resolve_node_signature(var.children[1])
           type = infer_signature_from_node vsig, node
@@ -456,16 +459,6 @@ module Solargraph
         end
       end
       inferred
-    end
-
-    def get_type_comment node
-      obj = nil
-      cmnt = @source.docstring_for(node)
-      unless cmnt.nil?
-        tag = cmnt.tag(:type)
-        obj = tag.types[0] unless tag.nil? or tag.types.empty?
-      end
-      obj
     end
 
     # Get the signature at the specified index.
@@ -513,7 +506,6 @@ module Solargraph
     def get_local_variables_and_methods_at(index)
       result = []
       local = parent_node_from(index, :class, :module, :def, :defs) || @node
-      #result += get_local_variables_from(local)
       result += get_local_variables_from(node_at(index))
       scope = namespace_at(index) || @node
       if local.type == :def
@@ -580,7 +572,7 @@ module Solargraph
     def get_method_arguments_from node
       return [] unless node.type == :def or node.type == :defs
       param_hash = {}
-      cmnt = api_map.get_comment_for(node)
+      cmnt = api_map.get_docstring_for(node)
       unless cmnt.nil?
         tags = cmnt.tags(:param)
         tags.each do |tag|
@@ -649,9 +641,20 @@ module Solargraph
       node ||= @node
       namespace = namespace_from(node)
       arr = []
+      nil_pins = []
+      val_names = []
       @source.local_variable_pins.select{|p| p.visible_from?(node) }.each do |pin|
-        #arr.push Suggestion.new(pin.name, kind: Suggestion::VARIABLE, return_type: api_map.infer_assignment_node_type(pin.node, namespace))
-        arr.push Suggestion.new(pin.name, kind: Suggestion::VARIABLE, location: pin.location)
+        if pin.nil_assignment? and pin.return_type.nil?
+          nil_pins.push pin
+        else
+          unless val_names.include?(pin.name)
+            arr.push Suggestion.pull(pin)
+            val_names.push pin.name
+          end
+        end
+      end
+      nil_pins.reject{|p| val_names.include?(p.name)}.each do |pin|
+        arr.push Suggestion.pull(pin)
       end
       arr
     end

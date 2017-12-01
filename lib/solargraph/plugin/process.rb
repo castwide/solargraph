@@ -32,6 +32,8 @@ module Solargraph
             end
           rescue JSON::ParserError => e
             STDOUT.puts respond_err "Error parsing input: #{e.message}"
+          rescue Exception => e
+            STDOUT.puts respond_err "Error processing input: #{e.message}"
           end
           STDOUT.flush
         end
@@ -63,15 +65,15 @@ module Solargraph
         unless con.nil?
           if (args['scope'] == 'class')
             if args['with_private']
-              result.concat con.methods
+              result.concat con.methods(false)
             else
-              result.concat con.public_methods
+              result.concat con.public_methods(false)
             end
           elsif (args['scope'] == 'instance')
             if args['with_private']
-              result.concat con.instance_methods
+              result.concat con.instance_methods(false)
             else
-              result.concat con.public_instance_methods
+              result.concat con.public_instance_methods(false)
             end
           end
         end
@@ -85,8 +87,8 @@ module Solargraph
           #result.concat con.constants
           con.constants.each do |c|
             next if c == :Solargraph and !@required.include?('solargraph')
-            item = { name: c }
             here = con.const_get(c)
+            item = { namespace: con.to_s, name: c.to_s }
             item[:class] = here.class.to_s
             result.push item
           end

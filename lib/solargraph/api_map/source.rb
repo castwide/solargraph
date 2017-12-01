@@ -70,46 +70,63 @@ module Solargraph
         @superclasses ||= {}
       end
 
+      # @return [Array<Solargraph::Pin::Method>]
       def method_pins
         @method_pins ||= []
       end
 
+      # @return [Array<Solargraph::Pin::Attribute>]
       def attribute_pins
         @attribute_pins ||= []
       end
 
+      # @return [Array<Solargraph::Pin::InstanceVariable>]
       def instance_variable_pins
         @instance_variable_pins ||= []
       end
 
+      # @return [Array<Solargraph::Pin::ClassVariable>]
       def class_variable_pins
         @class_variable_pins ||= []
       end
 
+      # @return [Array<Solargraph::Pin::LocalVariable>]
       def local_variable_pins
         @local_variable_pins ||= []
       end
 
+      # @return [Array<Solargraph::Pin::GlobalVariable>]
       def global_variable_pins
         @global_variable_pins ||= []
       end
 
+      # @return [Array<Solargraph::Pin::Constant>]
       def constant_pins
         @constant_pins ||= []
       end
 
+      # @return [Array<Solargraph::Pin::Symbol>]
       def symbol_pins
         @symbol_pins ||= []
       end
 
+      # @return [Array<Solargraph::Pin::Namespace>]
+      def namespace_pins
+        @namespace_pins ||= []
+      end
+
+      # @return [Array<String>]
       def required
         @required ||= []
       end
 
+      # @return [YARD::Docstring]
       def docstring_for node
-        @docstring_hash[node.loc]
+        return @docstring_hash[node.loc] if node.respond_to?(:loc)
+        nil
       end
 
+      # @return [String]
       def code_for node
         b = node.location.expression.begin.begin_pos
         e = node.location.expression.end.end_pos
@@ -121,6 +138,7 @@ module Solargraph
         @node_tree[node] || []
       end
 
+      # @return [String]
       def namespace_for node
         parts = []
         ([node] + (@node_tree[node] || [])).each do |n|
@@ -188,6 +206,7 @@ module Solargraph
             fqn = tree.join('::')
             @namespace_nodes[fqn] ||= []
             @namespace_nodes[fqn].push node
+            namespace_pins.push Solargraph::Pin::Namespace.new(self, node, tree[0..-2].join('::') || '')
             if node.type == :class and !node.children[1].nil?
               sc = unpack_name(node.children[1])
               superclasses[fqn] = sc
@@ -205,6 +224,7 @@ module Solargraph
                   unless ora.nil?
                     u = c.updated(:ivasgn, c.children + ora.children[1..-1], nil)
                     @node_tree[u] = @node_stack.clone
+                    @docstring_hash[u.loc] = docstring_for(ora)
                     instance_variable_pins.push Solargraph::Pin::InstanceVariable.new(self, u, fqn || '', local_scope)
                   end
                 else
@@ -216,6 +236,7 @@ module Solargraph
                   unless ora.nil?
                     u = c.updated(:cvasgn, c.children + ora.children[1..-1], nil)
                     @node_tree[u] = @node_stack.clone
+                    @docstring_hash[u.loc] = docstring_for(ora)
                     class_variable_pins.push Solargraph::Pin::ClassVariable.new(self, u, fqn || '')
                   end
                 else
@@ -241,38 +262,34 @@ module Solargraph
               elsif c.type == :casgn
                 constant_pins.push Solargraph::Pin::Constant.new(self, c, fqn)
               else
-                #unless fqn.nil?
-                  if c.kind_of?(AST::Node)
-                    if c.type == :def and c.children[0].to_s[0].match(/[a-z]/i)
-                      method_pins.push Solargraph::Pin::Method.new(source, c, fqn || '', scope, visibility)
-                      #inner_map_node c, tree, visibility, scope, fqn, stack
-                      #next
-                    elsif c.type == :defs
-                      method_pins.push Solargraph::Pin::Method.new(source, c, fqn || '', :class, :public)
-                      inner_map_node c, tree, :public, :class, fqn, stack
-                      next
-                    elsif c.type == :send and [:public, :protected, :private].include?(c.children[1])
-                      visibility = c.children[1]
-                    elsif c.type == :send and c.children[1] == :include #and node.type == :class
-                      namespace_includes[fqn] ||= []
-                      c.children[2..-1].each do |i|
-                        namespace_includes[fqn].push unpack_name(i)
-                      end
-                    elsif c.type == :send and [:attr_reader, :attr_writer, :attr_accessor].include?(c.children[1])
-                      c.children[2..-1].each do |a|
-                        if c.children[1] == :attr_reader or c.children[1] == :attr_accessor
-                          attribute_pins.push Solargraph::Pin::Attribute.new(self, a, fqn || '', :reader, docstring_for(c)) #AttrPin.new(c)
-                        end
-                        if c.children[1] == :attr_writer or c.children[1] == :attr_accessor
-                          attribute_pins.push Solargraph::Pin::Attribute.new(self, a, fqn || '', :writer, docstring_for(c)) #AttrPin.new(c)
-                        end
-                      end
-                    elsif c.type == :sclass and c.children[0].type == :self
-                      inner_map_node c, tree, :public, :class, fqn || '', stack
-                      next
+                if c.kind_of?(AST::Node)
+                  if c.type == :def and c.children[0].to_s[0].match(/[a-z]/i)
+                    method_pins.push Solargraph::Pin::Method.new(source, c, fqn || '', scope, visibility)
+                  elsif c.type == :defs
+                    method_pins.push Solargraph::Pin::Method.new(source, c, fqn || '', :class, :public)
+                    inner_map_node c, tree, :public, :class, fqn, stack
+                    next
+                  elsif c.type == :send and [:public, :protected, :private].include?(c.children[1])
+                    visibility = c.children[1]
+                  elsif c.type == :send and c.children[1] == :include #and node.type == :class
+                    namespace_includes[fqn] ||= []
+                    c.children[2..-1].each do |i|
+                      namespace_includes[fqn].push unpack_name(i)
                     end
+                  elsif c.type == :send and [:attr_reader, :attr_writer, :attr_accessor].include?(c.children[1])
+                    c.children[2..-1].each do |a|
+                      if c.children[1] == :attr_reader or c.children[1] == :attr_accessor
+                        attribute_pins.push Solargraph::Pin::Attribute.new(self, a, fqn || '', :reader, docstring_for(c)) #AttrPin.new(c)
+                      end
+                      if c.children[1] == :attr_writer or c.children[1] == :attr_accessor
+                        attribute_pins.push Solargraph::Pin::Attribute.new(self, a, fqn || '', :writer, docstring_for(c)) #AttrPin.new(c)
+                      end
+                    end
+                  elsif c.type == :sclass and c.children[0].type == :self
+                    inner_map_node c, tree, :public, :class, fqn || '', stack
+                    next
                   end
-                #end
+                end
                 if c.type == :send and c.children[1] == :require
                   if c.children[2].kind_of?(AST::Node) and c.children[2].type == :str
                     required.push c.children[2].children[0].to_s
@@ -316,8 +333,8 @@ module Solargraph
           fixed_cursor = false
           begin
             # HACK: The current file is parsed with a trailing underscore to fix
-            # incomplete trees resulting from short scripts (e.g., a lone variable
-            # assignment).
+            # incomplete trees resulting from short scripts (e.g., an unfinished
+            # variable assignment).
             node, comments = Parser::CurrentRuby.parse_with_comments(tmp + "\n_")
             Source.new(code, node, comments, filename)
           rescue Parser::SyntaxError => e

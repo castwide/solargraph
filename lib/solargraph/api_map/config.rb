@@ -5,50 +5,65 @@ module Solargraph
     class Config
       # @return [String]
       attr_reader :workspace
+
+      # @return [Hash]
       attr_reader :raw_data
-
-      # @return [Array<String>]
-      attr_reader :included
-
-      # @return [Array<String>]
-      attr_reader :excluded
-
-      # @return [Array<String>]
-      attr_reader :domains
 
       def initialize workspace = nil
         @workspace = workspace
         include_globs = ['**/*.rb']
         exclude_globs = ['spec/**/*', 'test/**/*']
-        @included = []
-        @excluded = []
-        @domains = []
         unless @workspace.nil?
-          include_globs = ['**/*.rb']
-          exclude_globs = ['spec/**/*', 'test/**/*']
           sfile = File.join(@workspace, '.solargraph.yml')
           if File.file?(sfile)
-            @raw_data = YAML.load(File.read(sfile))
-            conf = YAML.load(File.read(sfile))
-            include_globs = conf['include'] || include_globs
-            exclude_globs = conf['exclude'] || []
-            @domains = conf['domains'] || []
+            begin
+              @raw_data = YAML.load(File.read(sfile))
+              conf = YAML.load(File.read(sfile))
+              include_globs = conf['include'] || include_globs
+              exclude_globs = conf['exclude'] || []
+            rescue Exception => e
+              STDERR.puts "Unable to read .solargraph.yml: #{e.class} #{e.message}"
+              @raw_data = {}
+            end
           end
-          @included.concat process_globs(include_globs)
-          @excluded.concat process_globs(exclude_globs)
         end
         @raw_data ||= {}
-        @raw_data['include'] = @raw_data['include'] || include_globs
-        @raw_data['exclude'] = @raw_data['exclude'] || exclude_globs
-        # @todo If the domains config goes stable, add it to @raw_data
+        @raw_data['include'] ||= include_globs
+        @raw_data['exclude'] ||= exclude_globs
+        @raw_data['domains'] ||= []
+        @raw_data['required'] ||= []
       end
 
+      # An array of files included in the workspace (before calculating excluded files).
+      #
+      # @return [Array<String>]
       def included
-        process_globs @raw_data['include']
+        return [] if workspace.nil?
+        @included ||= process_globs(@raw_data['include'])
       end
 
+      # An array of files excluded from the workspace.
+      # 
+      # @return [Array<String>]
       def excluded
-        process_globs @raw_data['exclude']
+        return [] if workspace.nil?
+        @excluded ||= process_globs(@raw_data['exclude'])
+      end
+
+      # The calculated array of (included - excluded) files in the workspace.
+      #
+      # @return [Array<String>]
+      def calculated
+        @calculated ||= (included - excluded)
+      end
+
+      # @return [Array<String>]
+      def domains
+        raw_data['domains']
+      end
+
+      def required
+        raw_data['required']
       end
 
       private

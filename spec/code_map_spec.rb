@@ -524,4 +524,43 @@ describe Solargraph::CodeMap do
     sugg = code_map.suggest_at(code_map.get_offset(1, 10))
     expect(sugg.length).to eq(0)
   end
+
+  it "returns unique local variables" do
+    code_map = Solargraph::CodeMap.new(code: %(
+      foo = 1
+      foo = 'foo'
+    ), cursor: [0, 0])
+    sugg = code_map.suggest_at(code_map.get_offset(0, 0)).select{|s| s.label == 'foo'}
+    expect(sugg.length).to eq(1)
+  end
+
+  it "prefers local variables with non-nil assignments" do
+    code_map = Solargraph::CodeMap.new(code: %(
+      foo = nil
+      foo = 'foo'
+    ), cursor: [0, 0])
+    sugg = code_map.suggest_at(code_map.get_offset(0, 0)).select{|s| s.label == 'foo'}
+    expect(sugg.length).to eq(1)
+    expect(sugg[0].return_type).to eq('String')
+  end
+
+  it "accepts local variables with nil assignments and return types" do
+    code_map = Solargraph::CodeMap.new(code: %(
+      # @type [Array]
+      foo = nil
+      foo = 'foo'
+    ), cursor: [0, 0])
+    sugg = code_map.suggest_at(code_map.get_offset(0, 0)).select{|s| s.label == 'foo'}
+    expect(sugg.length).to eq(1)
+    expect(sugg[0].return_type).to eq('Array')
+  end
+
+  it "infers types for local variables in nil guards" do
+    code_map = Solargraph::CodeMap.new(code: %(
+      x ||= 'string'
+      x.
+    ))
+    type = code_map.infer_signature_at(code_map.get_offset(2, 8))
+    expect(type).to eq('String')
+  end
 end
