@@ -120,7 +120,7 @@ module Solargraph
         result.push r if !has_runtime or !r.runtime?
         has_runtime = true if r.runtime?
       end
-      #result.push Solargraph::Plugin::Runtime.new(api_map) unless has_runtime
+      result.push Solargraph::Plugin::Runtime.new(api_map) unless has_runtime
       result
     end
   end
