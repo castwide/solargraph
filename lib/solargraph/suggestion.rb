@@ -26,7 +26,7 @@ module Solargraph
     attr_reader :detail
 
     # @return [YARD::CodeObjects::Base]
-    attr_reader :code_object
+    #attr_reader :code_object
 
     # @return [String]
     attr_reader :location
@@ -56,6 +56,11 @@ module Solargraph
     # @return [String]
     def to_s
       label
+    end
+
+    def code_object(create = false)
+      @code_object = generate_code_object if @code_object.nil? and create
+      @code_object
     end
 
     # @return [String]
@@ -122,6 +127,32 @@ module Solargraph
     # @param pin [Solargraph::Pin::Base]
     def self.pull pin, return_type = nil
       Suggestion.new(pin.name, insert: pin.name.gsub(/=/, ' = '), kind: pin.kind, docstring: pin.docstring, detail: pin.namespace, arguments: pin.parameters, path: pin.path, return_type: return_type || pin.return_type, location: pin.location)
+    end
+
+    private
+
+    def generate_code_object
+      o = nil
+      if kind == Solargraph::Suggestion::CLASS
+        o = YARD::CodeObjects::ClassObject.new(nil, path)
+        o.docstring = docstring
+        #get_methods(s.path).each do |m|
+        #  mo = YARD::CodeObjects::MethodObject.new(o, m.label, :class)
+        #  mo.docstring = m.docstring
+        #end
+        #get_instance_methods(s.path).each do |m|
+        #  mo = YARD::CodeObjects::MethodObject.new(o, m.label, :instance)
+        #  mo.docstring = m.docstring
+        #end
+      elsif kind == Solargraph::Suggestion::METHOD
+        scope = (s.path.include?('#') ? :instance : :class)
+        o = YARD::CodeObjects::MethodObject.new(nil, label, scope)
+        o.docstring = docstring
+      else
+        # @todo Better exception
+        raise "This kinda suggestion can't be turned into an object"
+      end
+      o
     end
   end
 

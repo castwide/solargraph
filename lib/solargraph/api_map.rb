@@ -561,19 +561,7 @@ module Solargraph
       docs = []
       sugs = get_path_suggestions(path)
       sugs.each do |s|
-        if s.kind == Solargraph::Suggestion::CLASS
-          o = YARD::CodeObjects::ClassObject.new(nil, s.path)
-          o.docstring = s.docstring
-          get_methods(s.path).each do |m|
-            mo = YARD::CodeObjects::MethodObject.new(o, m.label, :class)
-            mo.docstring = m.docstring
-          end
-          get_instance_methods(s.path).each do |m|
-            mo = YARD::CodeObjects::MethodObject.new(o, m.label, :instance)
-            mo.docstring = m.docstring
-          end
-          docs.push o
-        end
+        docs.push s.code_object(true)
       end
       docs.concat yard_map.document(path)
       docs
