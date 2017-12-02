@@ -493,6 +493,11 @@ module Solargraph
           meths += yard_map.get_instance_methods('Module')
         end
       end
+      if namespace == '' and root == ''
+        config.domains.each do |d|
+          meths.concat get_instance_methods(d)
+        end
+      end
       strings = meths.map(&:to_s)
       live_map.get_methods(namespace, root, 'instance', visibility.include?(:private)).each do |m|
         next if strings.include?(m) or !m.match(/^[a-z]/i)

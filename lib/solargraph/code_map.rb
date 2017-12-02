@@ -233,8 +233,8 @@ module Solargraph
               end
               result += api_map.get_constants('')
               result += api_map.get_instance_methods('Kernel')
-              result += api_map.get_methods('')
-              result += api_map.get_instance_methods('')
+              result += api_map.get_methods('', namespace)
+              result += api_map.get_instance_methods('', namespace)
             else
               result.concat api_map.get_instance_methods(type)
             end
