@@ -83,12 +83,14 @@ module Solargraph
       (yardocs + [@@stdlib_yardoc]).each { |y|
         yard = load_yardoc(y)
         unless yard.nil?
-          yard.paths.each { |p|
-            found.push p if p.downcase.include?(query.downcase)
-          }
+          yard.paths.each do |p|
+            if found.empty? or (query.include?('.') or query.include?('#')) or !(p.include?('.') or p.include?('#'))
+              found.push p if p.downcase.include?(query.downcase)
+            end
+          end
         end
       }
-      found.sort
+      found.uniq
     end
 
     # @param query [String]

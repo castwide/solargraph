@@ -562,9 +562,11 @@ module Solargraph
       rake_yard @sources.values
       found = []
       code_object_paths.each do |k|
-        found.push k if k.downcase.include?(query.downcase)
+        if found.empty? or (query.include?('.') or query.include?('#')) or !(k.include?('.') or k.include?('#'))
+          found.push k if k.downcase.include?(query.downcase)
+        end
       end
-      found.concat yard_map.search(query)
+      found.concat(yard_map.search(query)).uniq.sort
     end
 
     def document path
