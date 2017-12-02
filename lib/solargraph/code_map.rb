@@ -451,16 +451,14 @@ module Solargraph
       end
       if inferred.nil? and node.respond_to?(:loc)
         index = node.loc.expression.begin_pos
-        block_node = parent_node_from(index, :block)
-        unless block_node.nil? or block_node.children[0].nil?
+        block_node = parent_node_from(index, :block, :class, :module, :sclass, :def, :defs)
+        unless block_node.nil? or block_node.type != :block or block_node.children[0].nil?
           scope_node = parent_node_from(index, :class, :module, :def, :defs) || @node
-          meth = get_yielding_method(block_node, scope_node)
-          unless meth.nil? or meth.docstring.nil?
+          meth = get_yielding_method_with_yieldself(block_node, scope_node)
+          unless meth.nil?
             match = meth.docstring.all.match(/@yieldself \[([a-z0-9:_]*)/i)
-            unless match.nil?
-              self_yield = match[1]
-              inferred = api_map.infer_signature_type(signature, self_yield, scope: :instance)
-            end
+            self_yield = match[1]
+            inferred = api_map.infer_signature_type(signature, self_yield, scope: :instance)
           end
         end
       end
@@ -594,7 +592,8 @@ module Solargraph
     end
 
     def get_yieldparams_at index
-      block_node = parent_node_from(index, :block)
+      block_node = parent_node_from(index, :block, :class, :module, :def, :defs)
+      return [] if block_node.nil? or block_node.type != :block
       scope_node = parent_node_from(index, :class, :module, :def, :defs) || @node
       return [] if block_node.nil?
       get_yieldparams_from block_node, scope_node
@@ -608,9 +607,12 @@ module Solargraph
         yps = []
         unless meth.nil? or meth.docstring.nil?
           yps = meth.docstring.tags(:yieldparam) || []
-          self_yield = nil
+        end
+        self_yield = nil
+        meth = get_yielding_method_with_yieldself(block_node, scope_node)
+        unless meth.nil?
           match = meth.docstring.all.match(/@yieldself \[([a-z0-9:_]*)/i)
-          self_yield = match[1] unless match.nil?
+          self_yield = match[1]
         end
         i = 0
         block_node.children[1].children.each do |a|
@@ -640,6 +642,21 @@ module Solargraph
       end
       meths += api_map.get_methods('')
       meth = meths.keep_if{ |s| s.to_s == block_node.children[0].children[1].to_s }.first
+      meth
+    end
+
+    def get_yielding_method_with_yieldself block_node, scope_node
+      meth = get_yielding_method block_node, scope_node
+      if meth.nil? or meth.docstring.nil? or !meth.docstring.all.include?('@yieldself')
+        meth = nil
+        tree = @source.tree_for(block_node)
+        unless tree.nil?
+          tree.each do |p|
+            break if [:def, :defs, :class, :module, :sclass].include?(p.type)
+            return get_yielding_method_with_yieldself(p, scope_node) if p.type == :block
+          end
+        end
+      end
       meth
     end
 
