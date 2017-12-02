@@ -740,13 +740,9 @@ module Solargraph
       if visibility.include?(:public) or visibility.include?(:protected)
         sc = @superclasses[fqns]
         unless sc.nil?
-          meths.concat inner_get_methods(sc, fqns, skip, visibility - [:private])
-          meths.concat yard_map.get_methods(sc, fqns, visibility: visibility - [:private])
-          strings = meths.map(&:to_s)
-          live_map.get_methods(sc, fqns, 'class', false).each do |m|
-            next if strings.include?(m) or !m.match(/^[a-z]/i)
-            meths.push Suggestion.new(m, kind: Suggestion::METHOD, docstring: YARD::Docstring.new('(defined at runtime)'), path: "#{fqns}##{m}")
-          end
+          sc_visi = [:public]
+          sc_visi.push :protected if root == fqns
+          meths.concat get_methods(sc, fqns, visibility: sc_visi)
         end
       end
       meths.uniq
@@ -772,13 +768,9 @@ module Solargraph
       if visibility.include?(:public) or visibility.include?(:protected)
         sc = @superclasses[fqns]
         unless sc.nil?
-          meths.concat inner_get_instance_methods(sc, fqns, skip, visibility - [:private])
-          meths.concat yard_map.get_instance_methods(sc, fqns, visibility: visibility - [:private])
-          strings = meths.map(&:to_s)
-          live_map.get_methods(sc, fqns, 'instance', false).each do |m|
-            next if strings.include?(m) or !m.match(/^[a-z]/i)
-            meths.push Suggestion.new(m, kind: Suggestion::METHOD, docstring: YARD::Docstring.new('(defined at runtime)'))
-          end
+          sc_visi = [:public]
+          sc_visi.push :protected if sc == fqns
+          meths.concat get_instance_methods(sc, fqns, visibility: sc_visi)
         end
       end
       im = @namespace_includes[fqns]

@@ -232,9 +232,9 @@ module Solargraph
                 parts.pop
               end
               result += api_map.get_constants('')
-              result += api_map.get_instance_methods('Kernel')
+              result += api_map.get_instance_methods('Kernel', namespace)
               result += api_map.get_methods('', namespace)
-              result += api_map.get_instance_methods('', namespace)
+              #result += api_map.get_instance_methods('', namespace)
             else
               result.concat api_map.get_instance_methods(type)
             end
