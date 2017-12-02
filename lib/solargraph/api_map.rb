@@ -441,7 +441,7 @@ module Solargraph
         if type == :class
           meths.concat yard_map.get_instance_methods('Class')
         else
-          meths.concat yard_map.get_methods('Module')
+          meths.concat yard_map.get_instance_methods('Module')
         end
       end
       news = meths.select{|s| s.label == 'new'}
@@ -475,6 +475,8 @@ module Solargraph
       refresh
       namespace = clean_namespace_string(namespace)
       if namespace.end_with?('#class')
+        return get_methods(namespace.split('#').first, root, visibility: visibility)
+      elsif namespace.end_with?('#module')
         return get_methods(namespace.split('#').first, root, visibility: visibility)
       end
       meths = []
@@ -794,9 +796,12 @@ module Solargraph
       signature.gsub!(/\.$/, '')
       if signature.empty?
         if scope == :class
-          return "Class<#{namespace}>"
-        else
-          return "#{namespace}"
+          type = get_namespace_type(namespace)
+          if type == :class
+            return "Class<#{namespace}>"
+          else
+            return "Module<#{namespace}>"
+          end
         end
       end
       parts = signature.split('.')
@@ -872,6 +877,9 @@ module Solargraph
       if result == 'Class' and namespace.include?('<')
         subtype = namespace.match(/<([a-z0-9:_]*)/i)[1]
         result = "#{subtype}#class"
+      elsif result == 'Module' and namespace.include?('<')
+        subtype = namespace.match(/<([a-z0-9:_]*)/i)[1]
+        result = "#{subtype}#module"
       end
       result
     end

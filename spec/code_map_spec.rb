@@ -518,4 +518,18 @@ describe Solargraph::CodeMap do
     type = code_map.infer_signature_at(code_map.get_offset(2, 8))
     expect(type).to eq('String')
   end
+
+  it "infers types and gets Module instance methods for modules" do
+    # Use Foo2 instead of Foo because a Foo class apparently exists
+    code_map = Solargraph::CodeMap.new(code: %(
+      module Foo2
+      end
+      Foo2.
+    ))
+    type = code_map.infer_signature_at(code_map.get_offset(3, 11))
+    expect(type).to eq('Module<Foo2>')
+    sugg = code_map.suggest_at(code_map.get_offset(3, 11)).map(&:to_s)
+    expect(sugg).to include('module_exec')
+    expect(sugg).not_to include('allocate')
+  end
 end
