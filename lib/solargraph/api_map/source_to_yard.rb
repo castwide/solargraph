@@ -30,6 +30,9 @@ module Solargraph
             end
             code_object_map[pin.path].docstring = pin.docstring unless pin.docstring.nil?
           end
+          s.namespace_includes.each_pair do |n, i|
+            code_object_map[n].mixins.push code_object_map[i] unless code_object_map[i].nil?
+          end
           s.method_pins.each do |pin|
             code_object_map[pin.path] ||= YARD::CodeObjects::MethodObject.new(code_object_at(pin.namespace), pin.name, pin.scope)
             code_object_map[pin.path].docstring = pin.docstring unless pin.docstring.nil?
