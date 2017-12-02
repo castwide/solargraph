@@ -559,12 +559,20 @@ module Solargraph
     def document path
       refresh
       docs = []
-      sugs = get_path_suggestions(path)
-      sugs.each do |s|
-        docs.push s.code_object(true)
-      end
+      #sugs = get_path_suggestions(path)
+      #sugs.each do |s|
+      #  docs.push s.code_object(true)
+      #end
+      docs.push code_object_at(path) unless code_object_at(path).nil?
       docs.concat yard_map.document(path)
       docs
+    end
+
+    # Get the YARD CodeObject at the specified path.
+    #
+    # @return [YARD::CodeObjects::Base]
+    def code_object_at path
+      code_object_map[path]
     end
 
     private
@@ -607,6 +615,7 @@ module Solargraph
       @sources.values.each { |s|
         map_source s
       }
+      rake_yard
       @required.uniq!
       live_map.refresh
       @stale = false
@@ -892,6 +901,29 @@ module Solargraph
         result.push pin_to_suggestion(pin)
       end
       result
+    end
+
+    def code_object_map
+      @code_object_map ||= {}
+    end
+
+    def rake_yard
+      code_object_map.clear
+      @sources.values.each do |s|
+        s.namespace_pins.each do |pin|
+          if pin.kind == :class
+            code_object_map[pin.path] ||= YARD::CodeObjects::ClassObject.new(code_object_at(pin.namespace), pin.name)
+          else
+            code_object_map[pin.path] ||= YARD::CodeObjects::ModuleObject.new(code_object_at(pin.namespace), pin.name)
+          end
+          code_object_map[pin.path].docstring = pin.docstring unless pin.docstring.nil?
+        end
+        s.method_pins.each do |pin|
+          code_object_map[pin.path] ||= YARD::CodeObjects::MethodObject.new(code_object_at(pin.namespace), pin.name, pin.scope)
+          code_object_map[pin.path].docstring = pin.docstring unless pin.docstring.nil?
+          #code_object_map[pin.path].parameters = pin.parameters
+        end
+      end
     end
   end
 end
