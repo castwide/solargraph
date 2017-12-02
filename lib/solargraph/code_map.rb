@@ -600,7 +600,11 @@ module Solargraph
           tmp = resolve_node_signature(lvarnode.children[1])
           sig = infer_signature_from_node tmp, scope_node
         end
-        meths = api_map.get_instance_methods(sig, fqns)
+        if sig.nil?
+          meths = api_map.get_methods(fqns, fqns)
+        else
+          meths = api_map.get_instance_methods(sig, fqns)
+        end
         meths += api_map.get_methods('')
         meth = meths.keep_if{ |s| s.to_s == block_node.children[0].children[1].to_s }.first
         yps = []

@@ -371,6 +371,13 @@ module Solargraph
         return cache.get_signature_type(signature, namespace, scope)
       end
       return nil if signature.nil? or signature.empty?
+      if !signature.include?('.')
+        fqns = find_fully_qualified_namespace(signature, namespace)
+        unless fqns.nil? or fqns.empty?
+          type = (get_namespace_type(fqns) == :class ? 'Class' : 'Module')
+          return "#{type}<#{fqns}>"
+        end
+      end
       result = nil
       if namespace.end_with?('#class')
         result = infer_signature_type signature, namespace[0..-7], scope: (scope == :class ? :instance : :class)

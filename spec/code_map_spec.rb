@@ -532,4 +532,66 @@ describe Solargraph::CodeMap do
     expect(sugg).to include('module_exec')
     expect(sugg).not_to include('allocate')
   end
+
+  it "infers types of yield params for instance method blocks" do
+    code_map = Solargraph::CodeMap.new(code: %(
+      class Foo
+        # @yieldparam [String]
+        def bar
+        end
+      end
+      Foo.new.bar do |baz|
+        baz._
+      end
+    ))
+    type = code_map.infer_signature_at(code_map.get_offset(7, 12))
+    expect(type).to eq('String')
+  end
+
+  it "infers types of yield params for class method blocks" do
+    code_map = Solargraph::CodeMap.new(code: %(
+      class Foo
+        # @yieldparam [String]
+        def self.bar
+        end
+      end
+      Foo.bar do |baz|
+        baz._
+      end
+    ))
+    type = code_map.infer_signature_at(code_map.get_offset(7, 12))
+    expect(type).to eq('String')
+  end
+
+  it "infers types of yield params for internal blocks" do
+    code_map = Solargraph::CodeMap.new(code: %(
+      class Foo
+        # @yieldparam [String]
+        def self.bar
+        end
+        bar do |baz|
+          baz._
+        end
+      end
+    ))
+    type = code_map.infer_signature_at(code_map.get_offset(6, 14))
+    expect(type).to eq('String')
+  end
+
+  it "infers types of yield params for superclasses" do
+    code_map = Solargraph::CodeMap.new(code: %(
+      class Foo
+        # @yieldparam [String]
+        def self.bar
+        end
+      end
+      class Foo2 < Foo
+        bar do |baz|
+          baz._
+        end
+      end
+    ))
+    type = code_map.infer_signature_at(code_map.get_offset(8, 14))
+    expect(type).to eq('String')
+  end
 end
