@@ -507,9 +507,7 @@ module Solargraph
       if local.type == :def or local.type == :defs
         result += get_method_arguments_from local
       end
-      result += get_yieldparams_at(index)
-      # @todo This might not be necessary.
-      #result += api_map.get_methods('Kernel')
+      result.concat get_yieldparams_at(index)
       result
     end
 
@@ -591,25 +589,13 @@ module Solargraph
       return [] unless block_node.kind_of?(AST::Node) and block_node.type == :block
       result = []
       unless block_node.nil? or block_node.children[1].nil?
-        recv = resolve_node_signature(block_node.children[0].children[0])
-        fqns = namespace_from(block_node)
-        lvarnode = find_local_variable_node(recv, scope_node)
-        if lvarnode.nil?
-          sig = api_map.infer_signature_type(recv, fqns)
-        else
-          tmp = resolve_node_signature(lvarnode.children[1])
-          sig = infer_signature_from_node tmp, scope_node
-        end
-        if sig.nil?
-          meths = api_map.get_methods(fqns, fqns)
-        else
-          meths = api_map.get_instance_methods(sig, fqns)
-        end
-        meths += api_map.get_methods('')
-        meth = meths.keep_if{ |s| s.to_s == block_node.children[0].children[1].to_s }.first
+        meth = get_yielding_method(block_node, scope_node)
         yps = []
         unless meth.nil? or meth.docstring.nil?
           yps = meth.docstring.tags(:yieldparam) || []
+          self_yield = nil
+          match = meth.docstring.all.match(/@yieldself \[([a-z0-9:_]*)/i)
+          self_yield = match[1] unless match.nil?
         end
         i = 0
         block_node.children[1].children.each do |a|
@@ -617,8 +603,29 @@ module Solargraph
           result.push Suggestion.new(a.children[0], kind: Suggestion::PROPERTY, return_type: rt)
           i += 1
         end
+        result.concat api_map.get_instance_methods(self_yield, namespace_from(scope_node)) unless self_yield.nil?
       end
       result
+    end
+
+    def get_yielding_method block_node, scope_node
+      recv = resolve_node_signature(block_node.children[0].children[0])
+      fqns = namespace_from(block_node)
+      lvarnode = find_local_variable_node(recv, scope_node)
+      if lvarnode.nil?
+        sig = api_map.infer_signature_type(recv, fqns)
+      else
+        tmp = resolve_node_signature(lvarnode.children[1])
+        sig = infer_signature_from_node tmp, scope_node
+      end
+      if sig.nil?
+        meths = api_map.get_methods(fqns, fqns)
+      else
+        meths = api_map.get_instance_methods(sig, fqns)
+      end
+      meths += api_map.get_methods('')
+      meth = meths.keep_if{ |s| s.to_s == block_node.children[0].children[1].to_s }.first
+      meth
     end
 
     # @param suggestions [Array<Solargraph::Suggestion>]
