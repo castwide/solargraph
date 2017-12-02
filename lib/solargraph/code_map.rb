@@ -324,7 +324,7 @@ module Solargraph
       end
       type = infer_literal_node_type(literal)
       if type.nil?
-        node = parent_node_from(index, :class, :module, :def, :defs) || @node
+        node = parent_node_from(index, :class, :module, :def, :defs, :block) || @node
         result = infer_signature_from_node signature, node
         if result.nil? or result.empty?
           # The rest of this routine is dedicated to method and block parameters

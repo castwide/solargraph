@@ -594,4 +594,19 @@ describe Solargraph::CodeMap do
     type = code_map.infer_signature_at(code_map.get_offset(8, 14))
     expect(type).to eq('String')
   end
+
+  it "uses type tags for local variables inside blocks" do
+    code_map = Solargraph::CodeMap.new(code: %(
+      1.times do
+        # @type [Array]
+        foo = 'foo'
+        foo._
+      end
+    ))
+    type = code_map.infer_signature_at(code_map.get_offset(4, 12))
+    expect(type).to eq('Array')
+    sugg = code_map.suggest_at(code_map.get_offset(4, 12)).map(&:to_s)
+    expect(sugg).to include('each') # Array method
+    expect(sugg).not_to include('downcase') # String method
+  end
 end
