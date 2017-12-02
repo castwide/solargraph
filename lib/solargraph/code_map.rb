@@ -449,6 +449,21 @@ module Solargraph
           inferred = api_map.infer_signature_type(remainder.join('.'), type, scope: :instance)
         end
       end
+      if inferred.nil? and node.respond_to?(:loc)
+        index = node.loc.expression.begin_pos
+        block_node = parent_node_from(index, :block)
+        unless block_node.nil? or block_node.children[0].nil?
+          scope_node = parent_node_from(index, :class, :module, :def, :defs) || @node
+          meth = get_yielding_method(block_node, scope_node)
+          unless meth.nil? or meth.docstring.nil?
+            match = meth.docstring.all.match(/@yieldself \[([a-z0-9:_]*)/i)
+            unless match.nil?
+              self_yield = match[1]
+              inferred = api_map.infer_signature_type(signature, self_yield, scope: :instance)
+            end
+          end
+        end
+      end
       inferred
     end
 
