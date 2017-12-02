@@ -50,6 +50,7 @@ module Solargraph
       @virtual_source = nil
       @virtual_filename = nil
       @stale = true
+      @yard_stale = true
       refresh
       yard_map
     end
@@ -559,7 +560,8 @@ module Solargraph
 
     def search query
       refresh
-      rake_yard @sources.values
+      rake_yard(@sources.values) if @yard_stale
+      @yard_stale = false
       found = []
       code_object_paths.each do |k|
         if found.empty? or (query.include?('.') or query.include?('#')) or !(k.include?('.') or k.include?('#'))
@@ -571,7 +573,8 @@ module Solargraph
 
     def document path
       refresh
-      rake_yard @sources.values
+      rake_yard(@sources.values) if @yard_stale
+      @yard_stale = false
       docs = []
       docs.push code_object_at(path) unless code_object_at(path).nil?
       docs.concat yard_map.document(path)
@@ -621,6 +624,7 @@ module Solargraph
       @required.uniq!
       live_map.refresh
       @stale = false
+      @yard_stale = true
     end
 
     def rebuild_local_yardoc
