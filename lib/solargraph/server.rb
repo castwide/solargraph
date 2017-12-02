@@ -121,13 +121,8 @@ module Solargraph
 
     get '/search' do
       workspace = params['workspace']
-      api_map = get_api_map(workspace)
-      required = []
-      unless api_map.nil?
-        required.concat api_map.required
-      end
-      yard = YardMap.new(required: required, workspace: workspace)
-      @results = yard.search(params['query'])
+      api_map = get_api_map(workspace) || Solargraph::ApiMap.new
+      @results = api_map.search(params['query'])
       erb :search
     end
 

@@ -4,10 +4,10 @@ require 'thread'
 
 module Solargraph
   class ApiMap
-    autoload :Config,    'solargraph/api_map/config'
-    autoload :Source,    'solargraph/api_map/source'
-    autoload :Cache,     'solargraph/api_map/cache'
-
+    autoload :Config,       'solargraph/api_map/config'
+    autoload :Source,       'solargraph/api_map/source'
+    autoload :Cache,        'solargraph/api_map/cache'
+    autoload :SourceToYard, 'solargraph/api_map/source_to_yard'
     @@source_cache = {}
 
     KEYWORDS = [
@@ -23,6 +23,7 @@ module Solargraph
     ].freeze
 
     include NodeMethods
+    include Solargraph::ApiMap::SourceToYard
 
     # The root directory of the project. The ApiMap will search here for
     # additional files to parse and analyze.
@@ -556,23 +557,23 @@ module Solargraph
       result
     end
 
+    def search query
+      refresh
+      rake_yard @sources.values
+      found = []
+      code_object_paths.each do |k|
+        found.push k if k.downcase.include?(query.downcase)
+      end
+      found.concat yard_map.search(query)
+    end
+
     def document path
       refresh
+      rake_yard @sources.values
       docs = []
-      #sugs = get_path_suggestions(path)
-      #sugs.each do |s|
-      #  docs.push s.code_object(true)
-      #end
       docs.push code_object_at(path) unless code_object_at(path).nil?
       docs.concat yard_map.document(path)
       docs
-    end
-
-    # Get the YARD CodeObject at the specified path.
-    #
-    # @return [YARD::CodeObjects::Base]
-    def code_object_at path
-      code_object_map[path]
     end
 
     private
@@ -615,7 +616,6 @@ module Solargraph
       @sources.values.each { |s|
         map_source s
       }
-      rake_yard
       @required.uniq!
       live_map.refresh
       @stale = false
@@ -901,36 +901,6 @@ module Solargraph
         result.push pin_to_suggestion(pin)
       end
       result
-    end
-
-    def code_object_map
-      @code_object_map ||= {}
-    end
-
-    def rake_yard
-      code_object_map.clear
-      @sources.values.each do |s|
-        s.namespace_pins.each do |pin|
-          if pin.kind == :class
-            code_object_map[pin.path] ||= YARD::CodeObjects::ClassObject.new(code_object_at(pin.namespace), pin.name)
-          else
-            code_object_map[pin.path] ||= YARD::CodeObjects::ModuleObject.new(code_object_at(pin.namespace), pin.name)
-          end
-          code_object_map[pin.path].docstring = pin.docstring unless pin.docstring.nil?
-        end
-        s.method_pins.each do |pin|
-          code_object_map[pin.path] ||= YARD::CodeObjects::MethodObject.new(code_object_at(pin.namespace), pin.name, pin.scope)
-          code_object_map[pin.path].docstring = pin.docstring unless pin.docstring.nil?
-          code_object_map[pin.path].parameters = pin.parameters.map do |p|
-            n = p.match(/^[a-z0-9\-]*?:?/i)[0]
-            v = nil
-            if p.length > n.length
-              v = p[n.length..-1].gsub(/^ = /, '')
-            end
-            [n, v]
-          end
-        end
-      end
     end
   end
 end
