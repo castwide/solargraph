@@ -35,3 +35,12 @@ The suggest subcommand provides an interface to request suggestions without the 
 ## Integrating Solargraph into Other IDEs
 
 Documentation for Solargraph integration is forthcoming. In the meantime, refer to the [VS Code extension](https://github.com/castwide/vscode-solargraph) source for an example.
+
+## Updating the Core Documentation (EXPERIMENTAL)
+
+The Solargraph gem ships with documentation for Ruby 2.0.0. As of gem version 0.15.0, there's an option to download additional documentation for other Ruby versions from the command line.
+
+    $ solargraph list-cores      # List the installed documentation versions
+    $ solargraph available-cores # List the versions available for download
+    $ solargraph download-core   # Install the best match for your Ruby version
+    $ solargraph clear-cores     # Clear the documentation cache
