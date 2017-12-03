@@ -585,6 +585,7 @@ module Solargraph
       found.concat(yard_map.search(query)).uniq.sort
     end
 
+    # @return [Array<YARD::CodeObject::Base>]
     def document path
       refresh
       rake_yard(@sources.values) if @yard_stale

@@ -657,4 +657,23 @@ describe Solargraph::ApiMap do
     expect(suggestions.length).to eq(1)
     expect(suggestions[0].return_type).to eq('Array')
   end
+
+  it "documents local code objects" do
+    code = %(
+      # My Foobar class
+      class Foobar
+        # My baz method
+        def baz(one, two)
+        end
+      end
+    )
+    api_map = Solargraph::ApiMap.new
+    api_map.append_source(code, 'file.rb')
+    docs = api_map.document('Foobar')
+    expect(docs.length).to eq(1)
+    expect(docs[0].docstring.all).to include('My Foobar class')
+    docs = api_map.document('Foobar#baz')
+    expect(docs.length).to eq(1)
+    expect(docs[0].docstring.all).to include('My baz method')
+  end
 end
