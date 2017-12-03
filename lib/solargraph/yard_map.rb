@@ -3,14 +3,15 @@ require 'yard'
 
 module Solargraph
   class YardMap
-    @@stdlib_yardoc = File.join(Dir.home, '.solargraph', 'cache', '2.0.0', 'yardoc-stdlib')
+    autoload :Cache, 'solargraph/yard_map/cache'
+    autoload :CoreDocs, 'solargraph/yard_map/core_docs'
+
+    @@stdlib_yardoc = CoreDocs.yard_stdlib_file
     @@stdlib_namespaces = []
     YARD::Registry.load! @@stdlib_yardoc
     YARD::Registry.all(:class, :module).each do |ns|
       @@stdlib_namespaces.push ns.path
     end
-
-    autoload :Cache, 'solargraph/yard_map/cache'
 
     attr_reader :workspace
     attr_reader :required
@@ -20,28 +21,22 @@ module Solargraph
       used = []
       @required = required
       @namespace_yardocs = {}
-      #if @required.include?('bundler/setup') or @required.include?('bundler/require')
-      #  yardocs.concat bundled_gem_yardocs
-      #else
-        @required.each do |r|
-          if workspace.nil? or !File.exist?(File.join workspace, 'lib', "#{r}.rb")
-            g = r.split('/').first
-            unless used.include?(g)
-              used.push g
-              gy = YARD::Registry.yardoc_file_for_gem(g)
-              if gy.nil?
-                STDERR.puts "Required path not found: #{r}"
-              else
-                #STDERR.puts "Adding #{gy}"
-                yardocs.unshift gy
-                add_gem_dependencies g
-              end
+      @required.each do |r|
+        if workspace.nil? or !File.exist?(File.join workspace, 'lib', "#{r}.rb")
+          g = r.split('/').first
+          unless used.include?(g)
+            used.push g
+            gy = YARD::Registry.yardoc_file_for_gem(g)
+            if gy.nil?
+              STDERR.puts "Required path not found: #{r}"
+            else
+              yardocs.unshift gy
+              add_gem_dependencies g
             end
           end
         end
-      #end
-      yardocs.push File.join(Dir.home, '.solargraph', 'cache', '2.0.0', 'yardoc')
-      #yardocs.push File.join(Dir.home, '.solargraph', 'cache', '2.0.0', 'yardoc-stdlib')
+      end
+      yardocs.push CoreDocs.yardoc_file
       yardocs.uniq!
       yardocs.each do |y|
         load_yardoc y
