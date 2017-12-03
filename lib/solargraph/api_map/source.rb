@@ -353,6 +353,10 @@ module Solargraph
           stubs = []
           fixed_position = false
           tmp = code
+          # Stub periods before the offset to retain the expected node tree
+          if !offset.nil? and tmp[offset-1] == '.'
+            tmp = tmp[0, offset-1] + '_' + tmp[offset..-1]
+          end
           begin
             node, comments = Parser::CurrentRuby.parse_with_comments(tmp)
             Source.new(code, node, comments, filename, stubs)
