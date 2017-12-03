@@ -1,4 +1,3 @@
-require 'parser/current'
 require 'yard'
 
 module Solargraph
