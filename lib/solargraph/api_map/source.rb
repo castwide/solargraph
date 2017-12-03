@@ -15,9 +15,12 @@ module Solargraph
       # @return [String]
       attr_reader :filename
 
+      # @return [Array<Integer>]
+      attr_reader :stubbed_lines
+
       include NodeMethods
 
-      def initialize code, node, comments, filename
+      def initialize code, node, comments, filename, stubbed_lines = []
         @code = code
         root = AST::Node.new(:source, [filename])
         root = root.append node
@@ -30,6 +33,7 @@ module Solargraph
         @all_nodes = []
         @node_stack = []
         @node_tree = {}
+        @stubbed_lines = stubbed_lines
         inner_map_node @node
         @directives.each_pair do |k, v|
           v.each do |d|
@@ -324,66 +328,58 @@ module Solargraph
           Source.new(code, node, comments, filename)
         end
 
-        # @return [Solargraph::ApiMap::Source]
-        def fix code, filename = nil, cursor = nil
+        def get_position_at(code, offset)
+          cursor = 0
+          line = 0
+          col = nil
+          code.each_line do |l|
+            if cursor + l.length >= offset
+              col = offset - cursor
+              break
+            end
+            cursor += l.length
+            line += 1
+          end
+          raise "Invalid offset" if col.nil?
+          [line, col]
+        end
+
+        def fix code, filename = nil, offset = nil
           tries = 0
           code.gsub!(/\r/, '')
+          offset = CodeMap.get_offset(code, offset[0], offset[1]) if offset.kind_of?(Array)
+          pos = nil
+          pos = get_position_at(code, offset) unless offset.nil?
+          stubs = []
+          fixed_position = false
           tmp = code
-          cursor = CodeMap.get_offset(code, cursor[0], cursor[1]) if cursor.kind_of?(Array)
-          fixed_cursor = false
           begin
-            # HACK: The current file is parsed with a trailing underscore to fix
-            # incomplete trees resulting from short scripts (e.g., an unfinished
-            # variable assignment).
-            node, comments = Parser::CurrentRuby.parse_with_comments(tmp + "\n_")
-            Source.new(code, node, comments, filename)
+            node, comments = Parser::CurrentRuby.parse_with_comments(tmp)
+            Source.new(code, node, comments, filename, stubs)
           rescue Parser::SyntaxError => e
             if tries < 10
               tries += 1
-              if tries == 10 and e.message.include?('token $end')
+              if !fixed_position and !offset.nil?
+                fixed_position = true
+                beg = beginning_of_line_from(tmp, offset)
+                tmp = tmp[0, beg] + '#' + tmp[beg+1..-1]
+                stubs.push(pos[0])
+              elsif e.message.include?('token $end')
                 tmp += "\nend"
-              else
-                if !fixed_cursor and !cursor.nil? and cursor >= 2 and (e.message.include?('token $end') or tmp[cursor - 1] == '$')
-                  fixed_cursor = true
-                  spot = cursor - 2
-                  if tmp[cursor - 1] == '.' or tmp[cursor - 1] == '$'
-                    repl = ';'
-                  else
-                    repl = '#'
-                  end
-                else
-                  spot = e.diagnostic.location.begin_pos
-                  repl = '_'
-                  if tmp[spot] == '@' or tmp[spot] == ':'
-                    # Stub unfinished instance variables and symbols
-                    spot -= 1
-                  elsif tmp[spot - 1] == '.'
-                    # Stub unfinished method calls
-                    repl = '#' if spot == tmp.length or tmp[spot] == '\n'
-                    spot -= 2
-                  else
-                    # Stub the whole line
-                    spot = beginning_of_line_from(tmp, spot)
-                    repl = '#'
-                    if tmp[spot+1..-1].rstrip == 'end'
-                      repl= 'end;end'
-                    end
-                  end
-                end
-                tmp = tmp[0..spot] + repl + tmp[spot+repl.length+1..-1].to_s
+              elsif e.message.include?("unexpected `@'")
+                tmp = tmp[0, e.diagnostic.location.begin_pos] + '_' + tmp[e.diagnostic.location.begin_pos+1..-1]
               end
               retry
             end
-            raise e
+            STDERR.puts "Unable to parse code: #{e.message}"
+            virt = Source.virtual('', filename)
+            Source.new(code, virt.node, virt.comments, filename)
           end
         end
 
         def beginning_of_line_from str, i
-          while i > 0 and str[i] != "\n"
+          while i > 0 and str[i-1] != "\n"
             i -= 1
-          end
-          if i > 0 and str[i..-1].strip == ''
-            i = beginning_of_line_from str, i -1
           end
           i
         end

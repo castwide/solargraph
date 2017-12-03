@@ -98,6 +98,8 @@ module Solargraph
     #
     # @return [Boolean]
     def comment_at?(index)
+      line, col = Solargraph::ApiMap::Source.get_position_at(source.code, index)
+      return false if source.stubbed_lines.include?(line)
       @comments.each do |c|
         return true if index > c.location.expression.begin_pos and index <= c.location.expression.end_pos
       end
