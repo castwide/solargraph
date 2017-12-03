@@ -124,7 +124,9 @@ module Solargraph
         @io.puts cmd.to_json
         @io.flush
         result = @io.gets
-        JSON.parse(result)
+        obj = JSON.parse(result)
+        STDERR.puts obj['message'] if obj['status'] == 'err'
+        obj
       end
     end
   end

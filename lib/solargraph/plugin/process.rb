@@ -64,20 +64,14 @@ module Solargraph
         con = find_constant(args['namespace'], args['root'])
         unless con.nil?
           if (args['scope'] == 'class')
-            if args['with_private']
-              result.concat con.methods(false)
-            else
-              result.concat con.public_methods(false)
-            end
+            result.concat con.methods(false) if args['with_private']
+            result.concat con.public_methods(false)
           elsif (args['scope'] == 'instance')
-            if args['with_private']
-              result.concat con.instance_methods(false)
-            else
-              result.concat con.public_instance_methods(false)
-            end
+            result.concat con.instance_methods(false) if args['with_private']
+            result.concat con.public_instance_methods(false)
           end
         end
-        respond_ok result
+        respond_ok result.uniq
       end
 
       def get_constants args
@@ -103,11 +97,13 @@ module Solargraph
 
       def find_constant(namespace, root)
         result = nil
-        parts = root.split('::')
-        until parts.empty?
-          result = inner_find_constant("#{parts.join('::')}::#{namespace}")
-          parts.pop
-          break unless result.nil?
+        unless root.empty?
+          parts = root.split('::')
+          until parts.empty?
+            result = inner_find_constant("#{parts.join('::')}::#{namespace}")
+            parts.pop
+            break unless result.nil?
+          end
         end
         result = inner_find_constant(namespace) if result.nil?
         result
