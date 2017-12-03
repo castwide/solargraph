@@ -224,13 +224,15 @@ module Solargraph
     end
 
     def find_fully_qualified_namespace namespace, scope
-      yardocs.each { |y|
-        yard = load_yardoc(y)
-        unless yard.nil?
-          obj = find_first_resolved_namespace(yard, namespace, scope)
-          return obj.path unless obj.nil? or !obj.kind_of?(YARD::CodeObjects::NamespaceObject)
+      unless scope.empty?
+        parts = scope.split('::')
+        while parts.length > 0
+          here = "#{parts.join('::')}::#{namespace}"
+          return here unless yardocs_documenting(here).empty?
+          parts.pop
         end
-      }
+      end
+      return namespace unless yardocs_documenting(namespace).empty?
       nil
     end
 
