@@ -51,7 +51,7 @@ The Solargraph gem ships with documentation for Ruby 2.2.2. As of gem version 0.
 
 As of gem version 0.15.0, Solargraph includes experimental support for plugins.
 
-The Runtime plugin enhances code completion by querying namespaces for method names in a subprocess. If it finds any undocumented or "magic" methods, they get added to the the suggestions.
+The Runtime plugin enhances code completion by querying namespaces for method names in a subprocess. If it finds any undocumented or "magic" methods, they get added to the suggestions.
 
 This feature is currently disabled by default. If you'd like to try it, you can enable it by setting the `plugins` section in your project's .solargraph.yml file:
 
