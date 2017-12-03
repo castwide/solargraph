@@ -32,6 +32,8 @@ The server subcommand runs a local web server that listens for suggestion reques
 
 The suggest subcommand provides an interface to request suggestions without the need for a server. When executed, it accepts the parameters for a suggestion request, returns the suggestions in JSON format, and exits.
 
+**Warning:** The suggest subcommand is a candidate for deprecation. It will either change drastically or not exist in a future version.
+
 ## Integrating Solargraph into Other IDEs
 
 Documentation for Solargraph integration is forthcoming. In the meantime, refer to the [VS Code extension](https://github.com/castwide/vscode-solargraph) source for an example.

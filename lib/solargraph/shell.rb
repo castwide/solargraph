@@ -39,18 +39,6 @@ module Solargraph
         end
       end
     end
-    
-
-    desc 'plugin PLUGIN_NAME', 'Run a Solargraph runtime plugin'
-    option :workspace, type: :string, aliases: :w, desc: 'The workspace'
-    option :port, type: :numeric, aliases: :p, desc: 'The server port', required: true
-    option :ppid, type: :numeric, desc: 'ppid'
-    def plugin plugin_name
-      # @todo Find the correct plugin based on the provided name
-      cls = Solargraph::Plugin::Runtime
-      #SolargraphRailsExt::Server.new(options[:workspace], options[:port]).run
-      cls.serve options[:workspace], options[:port], options[:ppid]
-    end
 
     desc 'suggest', 'Get code suggestions for the provided input'
     long_desc <<-LONGDESC
@@ -60,6 +48,7 @@ module Solargraph
     option :column, type: :numeric, aliases: [:c, :col], desc: 'Zero-based column number', required: true
     option :filename, type: :string, aliases: :f, desc: 'File name', required: false
     def suggest(*filenames)
+      STDERR.puts "WARNING: The `solargraph suggest` command is a candidate for deprecation. It will either change drastically or not exist in a future version."
       # HACK: The ARGV array needs to be manipulated for ARGF.read to work
       ARGV.clear
       ARGV.concat filenames
