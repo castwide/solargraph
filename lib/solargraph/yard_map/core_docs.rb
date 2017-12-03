@@ -15,13 +15,13 @@ module Solargraph
           @cache_dir ||= File.join(Dir.home, '.solargraph', 'cache')
         end
 
-        # Solargraph installs the Ruby 2.0.0 to ensure minimum functionality.
-        def require_2_0_0
+        # Solargraph installs Ruby 2.2.2 documentation to ensure minimum functionality.
+        def require_minimum
           FileUtils.mkdir_p cache_dir
-          version_dir = File.join(cache_dir, '2.0.0')
+          version_dir = File.join(cache_dir, '2.2.2')
           unless File.exist?(version_dir)
-            FileUtils.cp File.join(Solargraph::YARDOC_PATH, '2.0.0.tar.gz'), cache_dir
-            install_archive File.join(cache_dir, '2.0.0.tar.gz')
+            FileUtils.cp File.join(Solargraph::YARDOC_PATH, '2.2.2.tar.gz'), cache_dir
+            install_archive File.join(cache_dir, '2.2.2.tar.gz')
           end
         end
 
@@ -85,7 +85,7 @@ module Solargraph
 
         def clear
           FileUtils.rm_rf cache_dir, secure: true
-          require_2_0_0
+          require_minimum
         end
 
         private

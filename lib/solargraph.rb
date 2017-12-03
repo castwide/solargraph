@@ -20,4 +20,4 @@ module Solargraph
   YARD_EXTENSION_FILE = File.join(File.realpath(File.dirname(__FILE__)), 'yard-solargraph.rb')
 end
 
-Solargraph::YardMap::CoreDocs.require_2_0_0
+Solargraph::YardMap::CoreDocs.require_minimum

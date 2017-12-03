@@ -38,7 +38,7 @@ Documentation for Solargraph integration is forthcoming. In the meantime, refer 
 
 ## Updating the Core Documentation (EXPERIMENTAL)
 
-The Solargraph gem ships with documentation for Ruby 2.0.0. As of gem version 0.15.0, there's an option to download additional documentation for other Ruby versions from the command line.
+The Solargraph gem ships with documentation for Ruby 2.2.2. As of gem version 0.15.0, there's an option to download additional documentation for other Ruby versions from the command line.
 
     $ solargraph list-cores      # List the installed documentation versions
     $ solargraph available-cores # List the versions available for download
