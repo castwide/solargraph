@@ -138,5 +138,27 @@ module Solargraph
       end
       STDOUT.puts "Configuration file initialized."
     end
+
+    desc 'download-core [VERSION]', 'Download core documentation'
+    def download_core version = nil
+      ver = version || Solargraph::YardMap::CoreDocs.best_download
+      puts "Downloading docs for #{ver}..."
+      Solargraph::YardMap::CoreDocs.download ver
+    end
+
+    desc 'list-cores', 'List the local documentation versions'
+    def list_cores
+      puts Solargraph::YardMap::CoreDocs.versions.join("\n")
+    end
+
+    desc 'available-cores', 'List available documentation versions'
+    def available_cores
+      puts Solargraph::YardMap::CoreDocs.available.join("\n")
+    end
+
+    desc 'clear-cores', 'Clear the cached core documentation'
+    def clear_cores
+      Solargraph::YardMap::CoreDocs.clear
+    end
   end
 end
