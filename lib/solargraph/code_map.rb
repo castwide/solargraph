@@ -421,6 +421,9 @@ module Solargraph
         scope = (node.type == :def ? :instance : :class)
         iv = api_map.get_instance_variable_pins(ns_here, scope).select{|s| s.name == start}.first
         return (iv.return_type || api_map.infer_assignment_node_type(iv.node, iv.namespace)) unless iv.nil?
+      elsif start.start_with?('$')
+        gv = api_map.get_global_variable_pins.select{|s| s.name == start}.first
+        return (gv.return_type || api_map.infer_assignment_node_type(gv.node, gv.namespace)) unless gv.nil?
       end
       var = find_local_variable_node(start, node)
       if var.nil?

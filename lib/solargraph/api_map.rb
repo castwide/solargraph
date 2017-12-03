@@ -335,6 +335,14 @@ module Solargraph
       suggest_unique_variables globals
     end
 
+    def get_global_variable_pins
+      globals = []
+      @sources.values.each do |s|
+        globals.concat s.global_variable_pins
+      end
+      globals
+    end
+
     # @return [String]
     def infer_assignment_node_type node, namespace
       type = cache.get_assignment_node_type(node, namespace)
