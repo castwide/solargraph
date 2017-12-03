@@ -4,7 +4,7 @@ module Solargraph
   class LiveMap
     autoload :Cache, 'solargraph/live_map/cache'
 
-    @@plugins = []
+    @@plugin_registry = {}
 
     # @return [Solargraph::ApiMap]
     attr_reader :api_map
@@ -68,19 +68,28 @@ module Solargraph
       nil
     end
 
+    def self.register name, klass
+      raise ArgumentError.new("A Solargraph plugin named #{name} already exists") if @@plugin_registry.has_key?(name)
+      @@plugin_registry[name] = klass
+    end
+
     # Register a plugin for LiveMap to use when generating suggestions.
+    # @deprecated See Solargraph::LiveMap.register instead
     #
     # @param cls [Class<Solargraph::Plugin::Base>]
     def self.install cls
-      @@plugins.push cls unless @@plugins.include?(cls)
+      STDERR.puts "WARNING: The Solargraph::LiveMap.install procedure for installing plugins is no longer used. This operation will be ignored."
     end
 
+    # @deprecated
     def self.uninstall cls
-      @@plugins.delete cls
+      STDERR.puts "WARNING: The Solargraph::LiveMap.uninstall procedure for uninstalling plugins is no longer used. This operation will be ignored."
     end
 
+    # @deprecated
     def self.plugins
-      @@plugins.clone
+      STDERR.puts "WARNING: Plugins have changed. The Solargraph::LiveMap.plugins attribute is no longer used."
+      []
     end
 
     def refresh
@@ -114,14 +123,13 @@ module Solargraph
     # @return [Array<Solargraph::Plugin::Base>]
     def load_runners
       result = []
-      has_runtime = false
-      @@plugins.each do |p|
-        r = p.new(api_map)
-        result.push r if !has_runtime or !r.runtime?
-        has_runtime = true if r.runtime?
+      api_map.config.plugins.each do |name|
+        r = @@plugin_registry[name].new(api_map)
+        result.push r
       end
-      #result.push Solargraph::Plugin::Runtime.new(api_map) unless has_runtime
       result
     end
   end
 end
+
+Solargraph::LiveMap.register 'runtime', Solargraph::Plugin::Runtime

@@ -46,3 +46,14 @@ The Solargraph gem ships with documentation for Ruby 2.2.2. As of gem version 0.
     $ solargraph available-cores # List the versions available for download
     $ solargraph download-core   # Install the best match for your Ruby version
     $ solargraph clear-cores     # Clear the documentation cache
+
+## Runtime Suggestions (EXPERIMENTAL)
+
+As of gem version 0.15.0, Solargraph includes experimental support for plugins.
+
+The Runtime plugin enhances code completion by querying namespaces for method names in a subprocess. If it finds any undocumented or "magic" methods, they get added to the the suggestions.
+
+This feature is currently disabled by default. If you'd like to try it, you can enable it by setting the `plugins` section in your project's .solargraph.yml file:
+
+    plugins:
+    - runtime

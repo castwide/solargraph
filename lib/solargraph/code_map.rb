@@ -700,7 +700,7 @@ module Solargraph
 
     def inner_node_at(index, node, arr)
       node.children.each do |c|
-        if c.kind_of?(AST::Node)
+        if c.kind_of?(AST::Node) and c.respond_to?(:loc)
           unless c.loc.expression.nil?
             if index >= c.loc.expression.begin_pos
               if c.respond_to?(:end)

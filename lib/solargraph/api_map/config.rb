@@ -32,6 +32,7 @@ module Solargraph
         @raw_data['exclude'] ||= exclude_globs
         @raw_data['domains'] ||= []
         @raw_data['required'] ||= []
+        @raw_data['plugins'] ||= []
       end
 
       # An array of files included in the workspace (before calculating excluded files).
@@ -64,6 +65,10 @@ module Solargraph
 
       def required
         raw_data['required']
+      end
+
+      def plugins
+        raw_data['plugins']
       end
 
       private
