@@ -464,12 +464,23 @@ describe Solargraph::CodeMap do
   it "returns global variable suggestions" do
     code_map = Solargraph::CodeMap.new(code: %(
       $foo = 'foo'
+      # @type [Array]
       $bar = 'bar'
       $
-    ), cursor: [3, 7])
-    sugg = code_map.suggest_at(code_map.get_offset(3, 7)).map(&:to_s)
+    ), cursor: [4, 7])
+    sugg = code_map.suggest_at(code_map.get_offset(4, 7)).map(&:to_s)
     expect(sugg).to include('$foo')
     expect(sugg).to include('$bar')
+  end
+
+  it "infers global variable types" do
+    code = %(
+      $foo = 'foo'
+      $foo.
+    )
+    code_map = Solargraph::CodeMap.new(code: code, cursor: [2, 11])
+    type = code_map.infer_signature_at(code_map.get_offset(2, 11))
+    expect(type).to eq('String')
   end
 
   it "ignores unknown local methods/variables" do
