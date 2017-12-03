@@ -41,7 +41,7 @@ module Solargraph
         workspace_files.each do |wf|
           begin
             @@source_cache[wf] ||= Source.load(wf)
-          rescue Exception => e
+          rescue Parser::SyntaxError => e
             STDERR.puts "Failed to load #{wf}: #{e.message}"
           end
         end
