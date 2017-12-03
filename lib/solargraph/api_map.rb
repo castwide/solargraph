@@ -537,6 +537,10 @@ module Solargraph
     def update filename
       filename.gsub!(/\\/, '/')
       if filename.end_with?('.rb')
+        if @virtual_filename == filename
+          @virtual_filename = nil
+          @virtual_source = nil
+        end
         if @workspace_files.include?(filename)
           eliminate filename
           @@source_cache[filename] = Source.load(filename)

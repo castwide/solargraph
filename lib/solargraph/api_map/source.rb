@@ -353,17 +353,16 @@ module Solargraph
           stubs = []
           fixed_position = false
           tmp = code
-          # Stub periods before the offset to retain the expected node tree
-          if !offset.nil? and tmp[offset-1] == '.'
-            tmp = tmp[0, offset-1] + '_' + tmp[offset..-1]
-          end
           begin
             node, comments = Parser::CurrentRuby.parse_with_comments(tmp)
             Source.new(code, node, comments, filename, stubs)
           rescue Parser::SyntaxError => e
             if tries < 10
               tries += 1
-              if !fixed_position and !offset.nil?
+              # Stub periods before the offset to retain the expected node tree
+              if !offset.nil? and tmp[offset-1] == '.'
+                tmp = tmp[0, offset-1] + '_' + tmp[offset..-1]
+              elsif !fixed_position and !offset.nil?
                 fixed_position = true
                 beg = beginning_of_line_from(tmp, offset)
                 tmp = tmp[0, beg] + '#' + tmp[beg+1..-1]
