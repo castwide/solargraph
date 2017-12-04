@@ -18,7 +18,8 @@ module Solargraph
     def initialize required: [], workspace: nil
       @workspace = workspace
       used = []
-      @required = required
+      # HACK: YardMap needs its own copy of this array
+      @required = required.clone
       @namespace_yardocs = {}
       @required.each do |r|
         if workspace.nil? or !File.exist?(File.join workspace, 'lib', "#{r}.rb")

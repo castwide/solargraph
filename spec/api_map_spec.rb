@@ -690,4 +690,14 @@ describe Solargraph::ApiMap do
     expect(docs.length).to eq(1)
     expect(docs[0].tag(:return).types[0]).to eq('Array')
   end
+
+  it "updates required paths from virtual sources" do
+    api_map = Solargraph::ApiMap.new
+    code_map = Solargraph::CodeMap.new(code: %(
+      require 'parser'
+      P
+    ), api_map: api_map)
+    sugg = code_map.suggest_at(code_map.get_offset(2, 7)).map(&:to_s)
+    expect(sugg).to include('Parser')
+  end
 end
