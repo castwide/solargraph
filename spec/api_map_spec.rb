@@ -676,4 +676,18 @@ describe Solargraph::ApiMap do
     expect(docs.length).to eq(1)
     expect(docs[0].docstring.all).to include('My baz method')
   end
+
+  it "documents attributes" do
+    code = %(
+      class Foobar
+        # @return [Array]
+        attr_reader :baz
+      end
+    )
+    api_map = Solargraph::ApiMap.new
+    api_map.append_source(code, 'file.rb')
+    docs = api_map.document('Foobar#baz')
+    expect(docs.length).to eq(1)
+    expect(docs[0].tag(:return).types[0]).to eq('Array')
+  end
 end

@@ -34,18 +34,9 @@ module Solargraph
             code_object_map[n].mixins.push code_object_map[i] unless code_object_map[i].nil?
           end
           s.attribute_pins.each do |pin|
-            STDERR.puts "Adding #{pin.name} attribute to #{pin.namespace}"
             code_object_map[pin.path] ||= YARD::CodeObjects::MethodObject.new(code_object_at(pin.namespace), pin.name, :instance)
             code_object_map[pin.path].docstring = pin.docstring unless pin.docstring.nil?
-            code_object_map[pin.parameters] = []
-            #code_object_map[pin.path].parameters = pin.parameters.map do |p|
-            #  n = p.match(/^[a-z0-9\-]*?:?/i)[0]
-            #  v = nil
-            #  if p.length > n.length
-            #    v = p[n.length..-1].gsub(/^ = /, '')
-            #  end
-            #  [n, v]
-            #end
+            #code_object_map[pin.path].parameters = []
           end
           s.method_pins.each do |pin|
             code_object_map[pin.path] ||= YARD::CodeObjects::MethodObject.new(code_object_at(pin.namespace), pin.name, pin.scope)
