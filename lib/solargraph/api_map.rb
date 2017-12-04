@@ -1,6 +1,7 @@
 require 'rubygems'
 require 'parser/current'
 require 'thread'
+require 'set'
 
 module Solargraph
   class ApiMap
@@ -78,7 +79,7 @@ module Solargraph
     # @return [Solargraph::YardMap]
     def yard_map
       refresh
-      if @yard_map.nil? || @yard_map.required != required
+      if @yard_map.nil? || @yard_map.required.to_set != required.to_set
         @yard_map = Solargraph::YardMap.new(required: required, workspace: workspace)
       end
       @yard_map
