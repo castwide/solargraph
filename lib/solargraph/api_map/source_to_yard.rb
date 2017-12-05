@@ -2,6 +2,8 @@ module Solargraph
   class ApiMap
     module SourceToYard
 
+      private
+      
       # Get the YARD CodeObject at the specified path.
       #
       # @return [YARD::CodeObjects::Base]
@@ -13,20 +15,24 @@ module Solargraph
         code_object_map.keys
       end
 
-      private
-
       def code_object_map
         @code_object_map ||= {}
+      end
+
+      def root_code_object
+        @root_code_object ||= YARD::CodeObjects::RootObject.new(nil, 'root')
       end
 
       def rake_yard sources
         code_object_map.clear
         sources.each do |s|
           s.namespace_pins.each do |pin|
-            if pin.kind == :class
-              code_object_map[pin.path] ||= YARD::CodeObjects::ClassObject.new(code_object_at(pin.namespace), pin.name)
+            if pin.kind == Solargraph::Suggestion::CLASS
+              code_object_map[pin.path] ||= YARD::CodeObjects::ClassObject.new(root_code_object, pin.path)
+              # @type = [YARD::CodeObjects::ClassObject]
+              o = nil
             else
-              code_object_map[pin.path] ||= YARD::CodeObjects::ModuleObject.new(code_object_at(pin.namespace), pin.name)
+              code_object_map[pin.path] ||= YARD::CodeObjects::ModuleObject.new(root_code_object, pin.path)
             end
             code_object_map[pin.path].docstring = pin.docstring unless pin.docstring.nil?
           end
