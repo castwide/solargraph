@@ -99,7 +99,8 @@ module Solargraph
       @params
     end
 
-    def inject_detail
+    def has_doc?
+      !documentation.empty?
     end
 
     def as_json args = {}
@@ -112,7 +113,8 @@ module Solargraph
         location: (@location.nil? ? nil : @location.to_s),
         arguments: @arguments,
         params: params,
-        return_type: return_type
+        return_type: return_type,
+        has_doc: has_doc?
       }
       result[:documentation] = documentation if args[:all]
       result
