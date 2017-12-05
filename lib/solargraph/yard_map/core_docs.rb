@@ -15,8 +15,10 @@ module Solargraph
           @cache_dir ||= File.join(Dir.home, '.solargraph', 'cache')
         end
 
-        # Solargraph installs Ruby 2.2.2 documentation to ensure minimum functionality.
+        # Ensure installation of minimum documentation.
+        #
         def require_minimum
+          return unless best_match.nil?
           FileUtils.mkdir_p cache_dir
           version_dir = File.join(cache_dir, '2.2.2')
           unless File.exist?(version_dir)
