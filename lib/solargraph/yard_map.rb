@@ -5,6 +5,7 @@ module Solargraph
     autoload :Cache, 'solargraph/yard_map/cache'
     autoload :CoreDocs, 'solargraph/yard_map/core_docs'
 
+    CoreDocs.require_minimum if CoreDocs.best_match.nil?
     @@stdlib_yardoc = CoreDocs.yard_stdlib_file
     @@stdlib_namespaces = []
     YARD::Registry.load! @@stdlib_yardoc
