@@ -1,16 +1,17 @@
 require 'json'
 
 module Solargraph
-
+  # Information about a class, module, method, or variable.
+  #
   class Suggestion
-    CLASS =    'Class'
+    CLASS    = 'Class'
     CONSTANT = 'Constant'
-    FIELD =    'Field'
-    KEYWORD =  'Keyword'
-    METHOD =   'Method'
-    MODULE =   'Module'
+    FIELD    = 'Field'
+    KEYWORD  = 'Keyword'
+    METHOD   = 'Method'
+    MODULE   = 'Module'
     PROPERTY = 'Property'
-    SNIPPET =  'Snippet'
+    SNIPPET  = 'Snippet'
     VARIABLE = 'Variable'
 
     # @return [String]
@@ -51,6 +52,14 @@ module Solargraph
       @path = path
     end
 
+    # The full path of the suggestion.
+    #
+    # Examples:
+    # - MyClass
+    # - MyModule::MyClass
+    # - MyClass#instance_method
+    # - MyModule.singleton_method
+    #
     # @return [String]
     def path
       @path ||= (code_object.nil? ? label : code_object.path)
@@ -99,6 +108,11 @@ module Solargraph
       @params
     end
 
+    # True if the suggestion has documentation.
+    # Useful for determining whether a client should resolve a suggestion's
+    # path to retrieve more information about it.
+    #
+    # @return [Boolean]
     def has_doc?
       !documentation.empty?
     end
@@ -124,10 +138,11 @@ module Solargraph
       as_json.to_json(args)
     end
 
+    # Generate a suggestion from a pin.
+    #
     # @param pin [Solargraph::Pin::Base]
     def self.pull pin, return_type = nil
       Suggestion.new(pin.name, insert: pin.name.gsub(/=/, ' = '), kind: pin.kind, docstring: pin.docstring, detail: pin.namespace, arguments: pin.parameters, path: pin.path, return_type: return_type || pin.return_type, location: pin.location)
     end
   end
-
 end
