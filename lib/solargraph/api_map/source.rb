@@ -278,8 +278,16 @@ module Solargraph
                   elsif c.type == :send and [:public, :protected, :private].include?(c.children[1])
                     visibility = c.children[1]
                   elsif c.type == :send and [:private_class_method].include?(c.children[1]) and c.children[2].kind_of?(AST::Node)
-                    inner_map_node c, tree, :private, :class, fqn, stack
-                    next
+                    if c.children[2].type == :sym or c.children[2].type == :str
+                      ref = method_pins.select{|p| p.name == c.children[2].children[0].to_s}.first
+                      unless ref.nil?
+                        source.method_pins.delete ref
+                        source.method_pins.push Solargraph::Pin::Method.new(ref.source, ref.node, ref.namespace, ref.scope, :private)
+                      end
+                    else
+                      inner_map_node c, tree, :private, :class, fqn, stack
+                      next
+                    end
                   elsif c.type == :send and c.children[1] == :include #and node.type == :class
                     namespace_includes[fqn] ||= []
                     c.children[2..-1].each do |i|
