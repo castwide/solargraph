@@ -189,4 +189,22 @@ describe Solargraph::ApiMap::Source do
     expect(source.constant_pins[0].return_type).to eq('String')
     expect(source.constant_pins[0].value).to eq("'bar'")
   end
+
+  it "sets correct scope and visibility for class methods" do
+    code = %(
+      class Foo
+        private_class_method def self.bar
+        end
+        private
+        def self.baz
+        end
+      end
+    )
+    source = Solargraph::ApiMap::Source.virtual(code, 'file.rb')
+    expect(source.method_pins.length).to eq(2)
+    expect(source.method_pins[0].scope).to eq(:class)
+    expect(source.method_pins[0].visibility).to eq(:private)
+    expect(source.method_pins[1].scope).to eq(:class)
+    expect(source.method_pins[1].visibility).to eq(:public)
+  end
 end

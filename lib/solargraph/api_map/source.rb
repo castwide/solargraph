@@ -270,11 +270,16 @@ module Solargraph
                   if c.type == :def and c.children[0].to_s[0].match(/[a-z]/i)
                     method_pins.push Solargraph::Pin::Method.new(source, c, fqn || '', scope, visibility)
                   elsif c.type == :defs
-                    method_pins.push Solargraph::Pin::Method.new(source, c, fqn || '', :class, :public)
-                    inner_map_node c, tree, :public, :class, fqn, stack
+                    s_visi = visibility
+                    s_visi = :public if scope != :class
+                    method_pins.push Solargraph::Pin::Method.new(source, c, fqn || '', :class, s_visi)
+                    inner_map_node c, tree, scope, :class, fqn, stack
                     next
                   elsif c.type == :send and [:public, :protected, :private].include?(c.children[1])
                     visibility = c.children[1]
+                  elsif c.type == :send and [:private_class_method].include?(c.children[1]) and c.children[2].kind_of?(AST::Node)
+                    inner_map_node c, tree, :private, :class, fqn, stack
+                    next
                   elsif c.type == :send and c.children[1] == :include #and node.type == :class
                     namespace_includes[fqn] ||= []
                     c.children[2..-1].each do |i|
