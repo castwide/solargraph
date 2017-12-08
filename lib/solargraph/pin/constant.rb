@@ -1,6 +1,12 @@
 module Solargraph
   module Pin
     class Constant < BaseVariable
+      attr_reader :visibility
+
+      def initialize source, node, namespace, visibility
+        super(source, node, namespace)
+        @visibility = visibility
+      end
 
       def name
         @name ||= node.children[1].to_s

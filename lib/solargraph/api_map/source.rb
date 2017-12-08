@@ -210,7 +210,7 @@ module Solargraph
             fqn = tree.join('::')
             @namespace_nodes[fqn] ||= []
             @namespace_nodes[fqn].push node
-            namespace_pins.push Solargraph::Pin::Namespace.new(self, node, tree[0..-2].join('::') || '')
+            namespace_pins.push Solargraph::Pin::Namespace.new(self, node, tree[0..-2].join('::') || '', :public)
             if node.type == :class and !node.children[1].nil?
               sc = unpack_name(node.children[1])
               superclasses[fqn] = sc
@@ -264,7 +264,7 @@ module Solargraph
               elsif c.type == :sym
                 symbol_pins.push Solargraph::Pin::Symbol.new(self, c, fqn)
               elsif c.type == :casgn
-                constant_pins.push Solargraph::Pin::Constant.new(self, c, fqn)
+                constant_pins.push Solargraph::Pin::Constant.new(self, c, fqn, :public)
               else
                 if c.kind_of?(AST::Node)
                   if c.type == :def and c.children[0].to_s[0].match(/[a-z]/i)
