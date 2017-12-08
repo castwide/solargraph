@@ -235,4 +235,28 @@ describe Solargraph::ApiMap::Source do
     expect(source.method_pins[0].scope).to eq(:class)
     expect(source.method_pins[0].visibility).to eq(:private)
   end
+
+  it "sets visibility for constants" do
+    code = %(
+      module Foobar
+        PUBLIC_CONST = ''
+        PRIVATE_CONST = ''
+        class PublicClass
+        end
+        class PrivateClass
+        end
+        private_constant :PRIVATE_CONST
+        private_constant :PrivateClass
+      end
+    )
+    source = Solargraph::ApiMap::Source.virtual(code, 'file.rb')
+    pub_const = source.constant_pins.select{|p| p.name == 'PUBLIC_CONST'}.first
+    expect(pub_const.visibility).to eq(:public)
+    priv_const = source.constant_pins.select{|p| p.name == 'PRIVATE_CONST'}.first
+    expect(priv_const.visibility).to eq(:private)
+    pub_class = source.namespace_pins.select{|p| p.name == 'PublicClass'}.first
+    expect(pub_class.visibility).to eq(:public)
+    priv_class = source.namespace_pins.select{|p| p.name == 'PrivateClass'}.first
+    expect(priv_class.visibility).to eq(:private)
+  end
 end

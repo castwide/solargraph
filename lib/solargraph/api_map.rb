@@ -181,12 +181,14 @@ module Solargraph
       skip = []
       fqns = find_fully_qualified_namespace(namespace, root)
       if fqns.empty?
-        result.concat inner_get_constants('', skip, false)
+        result.concat inner_get_constants('', skip, false, :public)
       else
         parts = fqns.split('::')
         resolved = find_namespace_pins(parts.join('::'))
         resolved.each do |pin|
-          result.concat inner_get_constants(pin.path, skip, true)
+          visi = :public
+          visi = :private if root != '' and pin.path == fqns
+          result.concat inner_get_constants(pin.path, skip, true, visi)
         end
       end
       result.concat yard_map.get_constants(fqns)
@@ -859,29 +861,31 @@ module Solargraph
       type
     end
 
-    def inner_get_constants here, skip = [], deep = true
+    def inner_get_constants here, skip = [], deep = true, visibility
       return [] if skip.include?(here)
       skip.push here
       result = []
       cp = @const_pins[here]
       unless cp.nil?
         cp.each do |pin|
-          result.push pin_to_suggestion(pin)
+          result.push pin_to_suggestion(pin) if pin.visibility == :public or visibility == :private
         end
       end
       np = @namespace_pins[here]
       unless np.nil?
         np.each do |pin|
-          result.push pin_to_suggestion(pin)
-          if deep
-            get_include_strings_from(pin.node).each do |i|
-              result.concat inner_get_constants(i, skip, false)
+          if pin.visibility == :public || visibility == :private
+            result.push pin_to_suggestion(pin)
+            if deep
+              get_include_strings_from(pin.node).each do |i|
+                result.concat inner_get_constants(i, skip, false, :public)
+              end
             end
           end
         end
       end
       get_include_strings_from(*get_namespace_nodes(here)).each do |i|
-        result.concat inner_get_constants(i, skip, false)
+        result.concat inner_get_constants(i, skip, false, :public)
       end
       result
     end

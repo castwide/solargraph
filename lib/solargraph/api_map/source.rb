@@ -288,6 +288,22 @@ module Solargraph
                       inner_map_node c, tree, :private, :class, fqn, stack
                       next
                     end
+                  elsif c.type == :send and [:private_constant].include?(c.children[1]) and c.children[2].kind_of?(AST::Node)
+                    if c.children[2].type == :sym or c.children[2].type == :str
+                      cn = c.children[2].children[0].to_s
+                      ref = constant_pins.select{|p| p.name == cn}.first
+                      if ref.nil?
+                        ref = namespace_pins.select{|p| p.name == cn}.first
+                        unless ref.nil?
+                          source.namespace_pins.delete ref
+                          source.namespace_pins.push Solargraph::Pin::Namespace.new(ref.source, ref.node, ref.namespace, :private)
+                        end
+                      else
+                        source.constant_pins.delete ref
+                        source.constant_pins.push Solargraph::Pin::Constant.new(ref.source, ref.node, ref.namespace, :private)
+                      end
+                    end
+                    next
                   elsif c.type == :send and c.children[1] == :include #and node.type == :class
                     namespace_includes[fqn] ||= []
                     c.children[2..-1].each do |i|

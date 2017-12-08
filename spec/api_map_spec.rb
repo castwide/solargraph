@@ -700,4 +700,30 @@ describe Solargraph::ApiMap do
     sugg = code_map.suggest_at(code_map.get_offset(2, 7)).map(&:to_s)
     expect(sugg).to include('Parser')
   end
+
+  it "detects constant visibility" do
+    api_map = Solargraph::ApiMap.new
+    api_map.append_source(%(
+      module Foobar
+        PUBLIC_CONST = ''
+        PRIVATE_CONST = ''
+        class PublicClass
+        end
+        class PrivateClass
+        end
+        private_constant :PRIVATE_CONST
+        private_constant :PrivateClass
+      end
+    ), 'file.rb')
+    sugg = api_map.get_constants('Foobar', '').map(&:to_s)
+    expect(sugg).to include('PUBLIC_CONST')
+    expect(sugg).to include('PublicClass')
+    expect(sugg).not_to include('PRIVATE_CONST')
+    expect(sugg).not_to include('PrivateClass')
+    sugg = api_map.get_constants('', 'Foobar').map(&:to_s)
+    expect(sugg).to include('PUBLIC_CONST')
+    expect(sugg).to include('PublicClass')
+    expect(sugg).to include('PRIVATE_CONST')
+    expect(sugg).to include('PrivateClass')
+  end
 end
