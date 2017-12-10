@@ -246,7 +246,8 @@ module Solargraph
         result.concat api_map.get_instance_methods(type) unless (type == '' and signature.include?('.'))
       end
       result = reduce_starting_with(result, word_at(index)) if filtered
-      result.uniq{|s| s.path}.sort{|a,b| a.label <=> b.label}
+      # Use a stable sort to keep the class order (e.g., local methods before superclass methods)
+      result.uniq(&:path).sort_by.with_index{ |x, idx| [x.label, idx] }
     end
 
     def signatures_at index
