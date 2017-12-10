@@ -348,29 +348,14 @@ module Solargraph
 
     # @return [String]
     def infer_assignment_node_type node, namespace
-      type = cache.get_assignment_node_type(node, namespace)
+      name_i = (node.type == :casgn ? 1 : 0) 
+      sig_i = (node.type == :casgn ? 2 : 1)
+      type = infer_literal_node_type(node.children[sig_i])
       if type.nil?
-        cmnt = get_docstring_for(node)
-        if cmnt.nil?
-          name_i = (node.type == :casgn ? 1 : 0) 
-          sig_i = (node.type == :casgn ? 2 : 1)
-          type = infer_literal_node_type(node.children[sig_i])
-          if type.nil?
-            sig = resolve_node_signature(node.children[sig_i])
-            # Avoid infinite loops from variable assignments that reference themselves
-            return nil if node.children[name_i].to_s == sig.split('.').first
-            type = infer_signature_type(sig, namespace)
-          end
-        else
-          t = cmnt.tag(:type)
-          if t.nil?
-            sig = resolve_node_signature(node.children[1])
-            type = infer_signature_type(sig, namespace)
-          else
-            type = t.types[0]
-          end
-        end
-        cache.set_assignment_node_type(node, namespace, type)
+        sig = resolve_node_signature(node.children[sig_i])
+        # Avoid infinite loops from variable assignments that reference themselves
+        return nil if node.children[name_i].to_s == sig.split('.').first
+        type = infer_signature_type(sig, namespace)
       end
       type
     end
