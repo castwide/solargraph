@@ -133,10 +133,6 @@ module Solargraph
       erb :document
     end
 
-    post '/shutdown' do
-      exit
-    end
-
     # @return [Solargraph::ApiMap]
     def self.get_api_map workspace
       api_map = nil
