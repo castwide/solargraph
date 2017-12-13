@@ -76,7 +76,7 @@ module Solargraph
         code_map = CodeMap.new(code: params['text'], filename: params['filename'], api_map: api_map, cursor: [params['line'].to_i, params['column'].to_i])
         offset = code_map.get_offset(params['line'].to_i, params['column'].to_i)
         sugg = code_map.signatures_at(offset)
-        { "status" => "ok", "suggestions" => sugg }.to_json
+        { "status" => "ok", "suggestions" => sugg.map{|s| s.as_json(all: true)} }.to_json
       rescue Exception => e
         STDERR.puts e
         STDERR.puts e.backtrace.join("\n")
