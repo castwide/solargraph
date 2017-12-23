@@ -726,4 +726,22 @@ describe Solargraph::ApiMap do
     expect(sugg).to include('PRIVATE_CONST')
     expect(sugg).to include('PrivateClass')
   end
+
+  it "derives method return types from superclasses" do
+    api_map = Solargraph::ApiMap.new
+    api_map.append_source(%(
+      class Foo
+        # @return [String]
+        def ghost
+        end
+      end
+      class Bar < Foo
+        def ghost
+        end
+      end
+    ), 'file.rb')
+    sugg = api_map.get_path_suggestions('Bar#ghost')
+    expect(sugg.first).not_to be(nil)
+    expect(sugg.first.return_type).to eq('String')
+  end
 end

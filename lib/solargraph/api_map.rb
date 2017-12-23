@@ -338,6 +338,7 @@ module Solargraph
       suggest_unique_variables globals
     end
 
+    # @return [Array<Solargraph::Pin::GlobalVariable>]
     def get_global_variable_pins
       globals = []
       @sources.values.each do |s|
@@ -412,6 +413,8 @@ module Solargraph
       result
     end
 
+    # @param [String] A fully qualified namespace
+    # @return [Symbol] :class, :module, or nil
     def get_namespace_type fqns
       return nil if fqns.nil?
       type = nil
@@ -522,6 +525,8 @@ module Solargraph
       arr
     end
 
+    # Update the ApiMap with the most recent version of the specified file.
+    #
     def update filename
       filename.gsub!(/\\/, '/')
       if filename.end_with?('.rb')
@@ -544,11 +549,12 @@ module Solargraph
       end
     end
 
+    # @return [Array<Solargraph::ApiMap::Source>]
     def sources
       @sources.values
     end
 
-    # @return [Array<String>]
+    # @return [Array<Solargraph::Suggestion>]
     def get_path_suggestions path
       refresh
       result = []
@@ -572,6 +578,7 @@ module Solargraph
       result
     end
 
+    # @return [Array<String>]
     def search query
       refresh
       rake_yard(@sources.values) if @yard_stale
@@ -875,10 +882,13 @@ module Solargraph
       result
     end
 
+    # @return [AST::Node]
     def file_nodes
       @sources.values.map(&:node)
     end
 
+    # @param namespace [String]
+    # @return [String]
     def clean_namespace_string namespace
       result = namespace.to_s.gsub(/<.*$/, '')
       if result == 'Class' and namespace.include?('<')
@@ -894,7 +904,17 @@ module Solargraph
     # @param pin [Solargraph::Pin::Base]
     # @return [Solargraph::Suggestion]
     def pin_to_suggestion pin
-      @pin_suggestions[pin] ||= Suggestion.pull(pin)
+      return_type = pin.return_type
+      if return_type.nil? and pin.is_a?(Solargraph::Pin::Method)
+        sc = @superclasses[pin.namespace]
+        while return_type.nil? and !sc.nil?
+          sc_path = "#{sc}#{pin.scope == :instance ? '#' : '.'}#{pin.name}"
+          sugg = get_path_suggestions(sc_path).first
+          return_type = sugg.return_type
+          sc = @superclasses[sc]
+        end
+      end
+      @pin_suggestions[pin] ||= Suggestion.pull(pin, return_type)
     end
 
     def require_extensions
