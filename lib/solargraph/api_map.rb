@@ -921,6 +921,7 @@ module Solargraph
         while return_type.nil? and !sc.nil?
           sc_path = "#{sc}#{pin.scope == :instance ? '#' : '.'}#{pin.name}"
           sugg = get_path_suggestions(sc_path).first
+          break if sugg.nil?
           return_type = sugg.return_type
           sc = @superclasses[sc]
         end
