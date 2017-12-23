@@ -70,6 +70,10 @@ module Solargraph
         @namespace_includes ||= {}
       end
 
+      def namespace_extends
+        @namespaces_extends ||= {}
+      end
+
       def superclasses
         @superclasses ||= {}
       end
@@ -304,10 +308,15 @@ module Solargraph
                       end
                     end
                     next
-                  elsif c.type == :send and c.children[1] == :include #and node.type == :class
+                  elsif c.type == :send and c.children[1] == :include
                     namespace_includes[fqn] ||= []
                     c.children[2..-1].each do |i|
                       namespace_includes[fqn].push unpack_name(i)
+                    end
+                  elsif c.type == :send and c.children[1] == :extend
+                    namespace_extends[fqn] ||= []
+                    c.children[2..-1].each do |i|
+                      namespace_extends[fqn].push unpack_name(i)
                     end
                   elsif c.type == :send and [:attr_reader, :attr_writer, :attr_accessor].include?(c.children[1])
                     c.children[2..-1].each do |a|

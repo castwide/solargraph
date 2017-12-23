@@ -626,6 +626,7 @@ module Solargraph
       @symbol_pins = []
       @attr_pins = {}
       @namespace_includes = {}
+      @namespace_extends = {}
       @superclasses = {}
       @namespace_pins = {}
       namespace_map.clear
@@ -723,6 +724,10 @@ module Solargraph
         @namespace_includes[ns] ||= []
         @namespace_includes[ns].concat(i).uniq!
       end
+      source.namespace_extends.each_pair do |ns, e|
+        @namespace_extends[ns] ||= []
+        @namespace_extends[ns].concat(e).uniq!
+      end
       source.superclasses.each_pair do |cls, sup|
         @superclasses[cls] = sup
       end
@@ -758,6 +763,12 @@ module Solargraph
           sc_visi = [:public]
           sc_visi.push :protected if root == fqns
           meths.concat get_methods(sc, fqns, visibility: sc_visi)
+        end
+      end
+      em = @namespace_extends[fqns]
+      unless em.nil?
+        em.each do |e|
+          meths.concat get_instance_methods(e, fqns, visibility: visibility)
         end
       end
       meths.uniq

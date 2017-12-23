@@ -744,4 +744,20 @@ describe Solargraph::ApiMap do
     expect(sugg.first).not_to be(nil)
     expect(sugg.first.return_type).to eq('String')
   end
+
+  it "includes extended modules in method suggestions" do
+    api_map = Solargraph::ApiMap.new
+    api_map.append_source(%(
+      module More
+        def more_method
+        end
+      end
+
+      class Foobar
+        extend More
+      end
+    ), 'file.rb')
+    sugg = api_map.get_methods('Foobar').map(&:to_s)
+    expect(sugg).to include('more_method')
+  end
 end
