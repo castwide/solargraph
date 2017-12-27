@@ -224,15 +224,10 @@ module Solargraph
           else
             type = infer_literal_node_type(node_at(index - 2))
             if type.nil?
-              parts = namespace.to_s.split('::')
               result += get_snippets_at(index) if with_snippets
               result += get_local_variables_and_methods_at(index)
               result += ApiMap.get_keywords
-              while parts.length > 0
-                ns = parts.join('::')
-                result += api_map.get_constants(ns, namespace)
-                parts.pop
-              end
+              result += api_map.get_constants('', namespace)
               result += api_map.get_constants('')
               result += api_map.get_instance_methods('Kernel', namespace)
               result += api_map.get_methods('', namespace)

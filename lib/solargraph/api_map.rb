@@ -187,7 +187,7 @@ module Solargraph
         resolved = find_namespace_pins(parts.join('::'))
         resolved.each do |pin|
           visi = :public
-          visi = :private if root != '' and pin.path == fqns
+          visi = :private if namespace == '' and root != '' and pin.path == fqns
           result.concat inner_get_constants(pin.path, skip, true, visi)
         end
       end
