@@ -367,7 +367,9 @@ module Solargraph
       if cache.has_signature_type?(signature, namespace, scope)
         return cache.get_signature_type(signature, namespace, scope)
       end
-      return nil if signature.nil? or signature.empty?
+      return nil if signature.nil?
+      return namespace if signature.empty? and scope == :instance
+      return nil if signature.empty? # @todo This might need to return Class<namespace>
       if !signature.include?('.')
         fqns = find_fully_qualified_namespace(signature, namespace)
         unless fqns.nil? or fqns.empty?
