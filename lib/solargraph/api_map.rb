@@ -438,7 +438,7 @@ module Solargraph
       fqns = find_fully_qualified_namespace(namespace, root)
       meths = []
       skip = []
-      meths.concat inner_get_methods(namespace, root, skip)
+      meths.concat inner_get_methods(namespace, root, skip, visibility)
       yard_meths = yard_map.get_methods(fqns, '', visibility: visibility)
       if yard_meths.any?
         meths.concat yard_meths
@@ -754,7 +754,7 @@ module Solargraph
       mn = @method_pins[fqns]
       unless mn.nil?
         mn.select{ |pin| pin.scope == :class }.each do |pin|
-          meths.push pin_to_suggestion(pin)
+          meths.push pin_to_suggestion(pin) if visibility.include?(pin.visibility)
         end
       end
       if visibility.include?(:public) or visibility.include?(:protected)
