@@ -49,7 +49,7 @@ module Solargraph
             code_object_map[pin.path].docstring = pin.docstring unless pin.docstring.nil?
             code_object_map[pin.path].files.push pin.source.filename
             code_object_map[pin.path].parameters = pin.parameters.map do |p|
-              n = p.match(/^[a-z0-9\-]*?:?/i)[0]
+              n = p.match(/^[a-z0-9_]*:?/i)[0]
               v = nil
               if p.length > n.length
                 v = p[n.length..-1].gsub(/^ = /, '')
