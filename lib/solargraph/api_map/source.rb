@@ -15,6 +15,8 @@ module Solargraph
       # @return [String]
       attr_reader :filename
 
+      attr_reader :mtime
+
       # @return [Array<Integer>]
       attr_reader :stubbed_lines
 
@@ -29,6 +31,7 @@ module Solargraph
         @directives = {}
         @docstring_hash = associate_comments(node, comments)
         @filename = filename
+        @mtime = (File.exist?(filename) ? File.mtime(filename) : nil)
         @namespace_nodes = {}
         @all_nodes = []
         @node_stack = []

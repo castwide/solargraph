@@ -171,7 +171,6 @@ module Solargraph
           end
         end
       end
-
     end
 
     class Helpers

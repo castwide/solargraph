@@ -132,6 +132,15 @@ module Solargraph
       process_maps if @stale or force
     end
 
+    def changed?
+      current = config.calculated
+      return true unless (Set.new(current) ^ workspace_files).empty?
+      current.each do |f|
+        return true if !File.exist?(f) or File.mtime(f) != source_file_mtime(f)
+      end
+      false
+    end
+
     # Get the docstring associated with a node.
     #
     # @param node [AST::Node]
@@ -956,6 +965,14 @@ module Solargraph
         result.push pin_to_suggestion(pin)
       end
       result
+    end
+
+    def source_file_mtime(filename)
+      # @todo This is naively inefficient.
+      sources.each do |s|
+        return s.mtime if s.filename == filename
+      end
+      nil
     end
   end
 end
