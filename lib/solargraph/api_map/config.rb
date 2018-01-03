@@ -80,7 +80,7 @@ module Solargraph
         result = []
         globs.each do |glob|
           Dir[File.join workspace, glob].each do |f|
-            result.push File.realdirpath(f)
+            result.push File.realdirpath(f).gsub(/\\/, '/')
           end
         end
         result

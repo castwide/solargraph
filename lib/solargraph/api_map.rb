@@ -34,6 +34,7 @@ module Solargraph
 
     # @param workspace [String]
     def initialize workspace = nil
+      @@source_cache.clear
       @workspace = workspace.gsub(/\\/, '/') unless workspace.nil?
       clear
       require_extensions

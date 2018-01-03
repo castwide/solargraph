@@ -171,6 +171,29 @@ module Solargraph
           end
         end
       end
+
+      def run!
+        Thread.new do
+          while true
+            @@semaphore.synchronize do
+              changed = {}
+              STDERR.puts "Count: #{@@api_hash.values.length}"
+              @@api_hash.each_pair do |w, a|
+                STDERR.puts "Checking for changes in #{w}"
+                next unless a.changed?
+                STDERR.puts "Updating changed workspace #{w}"
+                n = Solargraph::ApiMap.new(w)
+                changed[w] = n
+              end
+              changed.each_pair do |w, a|
+                @@api_hash[w] = a
+              end
+            end
+            sleep 1
+          end
+        end
+        super
+      end
     end
 
     class Helpers
