@@ -549,6 +549,8 @@ module Solargraph
         if @workspace_files.include?(filename)
           eliminate filename
           @@source_cache[filename] = Source.load(filename)
+          @sources.delete filename
+          @sources[filename] = @@source_cache[filename]
           rebuild_local_yardoc #if @workspace_files.include?(filename)
           @stale = true
         else

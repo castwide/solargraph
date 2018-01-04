@@ -177,11 +177,9 @@ module Solargraph
           while true
             @@semaphore.synchronize do
               changed = {}
-              STDERR.puts "Count: #{@@api_hash.values.length}"
               @@api_hash.each_pair do |w, a|
-                STDERR.puts "Checking for changes in #{w}"
                 next unless a.changed?
-                STDERR.puts "Updating changed workspace #{w}"
+                STDERR.puts "Reloading changed workspace #{w}"
                 n = Solargraph::ApiMap.new(w)
                 changed[w] = n
               end
