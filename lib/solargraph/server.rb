@@ -175,22 +175,26 @@ module Solargraph
       def run!
         Thread.new do
           while true
-            @@semaphore.synchronize do
-              changed = {}
-              @@api_hash.each_pair do |w, a|
-                next unless a.changed?
-                STDERR.puts "Reloading changed workspace #{w}"
-                n = Solargraph::ApiMap.new(w)
-                changed[w] = n
-              end
-              changed.each_pair do |w, a|
-                @@api_hash[w] = a
-              end
-            end
+            watch_workspaces
             sleep 1
           end
         end
         super
+      end
+
+      def watch_workspaces
+        @@semaphore.synchronize do
+          changed = {}
+          @@api_hash.each_pair do |w, a|
+            next unless a.changed?
+            STDERR.puts "Reloading changed workspace #{w}"
+            n = Solargraph::ApiMap.new(w)
+            changed[w] = n
+          end
+          changed.each_pair do |w, a|
+            @@api_hash[w] = a
+          end
+        end
       end
     end
 
