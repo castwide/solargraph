@@ -760,4 +760,15 @@ describe Solargraph::ApiMap do
     sugg = api_map.get_methods('Foobar').map(&:to_s)
     expect(sugg).to include('more_method')
   end
+
+  it "detects workspace changes" do
+    Dir.mktmpdir do |dir|
+      File.write File.join(dir, 'test.rb'), 'puts "hello"'
+      api_map = Solargraph::ApiMap.new(dir)
+      expect(api_map.changed?).to eq(false)
+      sleep(1)
+      File.write File.join(dir, 'test.rb'), 'puts "world"'
+      expect(api_map.changed?).to eq(true)
+    end
+  end
 end
