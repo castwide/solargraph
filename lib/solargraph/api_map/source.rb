@@ -22,6 +22,8 @@ module Solargraph
 
       attr_reader :directives
 
+      attr_reader :path_macros
+
       include NodeMethods
 
       def initialize code, node, comments, filename, stubbed_lines = []

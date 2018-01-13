@@ -627,6 +627,7 @@ module Solargraph
     def clear
       @stale = false
       namespace_map.clear
+      path_macros.clear
       @required = config.required.clone
     end
 
@@ -749,6 +750,7 @@ module Solargraph
         @namespace_pins[pin.namespace] ||= []
         @namespace_pins[pin.namespace].push pin
       end
+      path_macros.merge! source.path_macros
       source.required.each do |r|
         required.push r
       end
@@ -857,6 +859,7 @@ module Solargraph
         if scope == :class and part == 'new'
           scope = :instance
         elsif !METHODS_RETURNING_SELF.include?(part)
+          type = nil
           visibility = [:public]
           visibility.concat [:private, :protected] if top
           if scope == :instance || namespace == ''
@@ -866,13 +869,27 @@ module Solargraph
           end
           tmp.concat get_instance_methods('Kernel', visibility: [:public]) if top
           meth = tmp.select{|s| s.label == part}.first
-          return nil if meth.nil? or meth.return_type.nil?
-          type = meth.return_type
+          return nil if meth.nil?
+          if meth.return_type.nil? and !signature.include?('.')
+            path = "#{namespace}#{scope == :class ? '.' : '#'}#{signature}"
+            macro = path_macros[path]
+            unless macro.nil?
+              # @todo This method doesn't have access to the original call's
+              #   arguments, which makes it impossible to infer a type from an
+              #   expansion variable
+              docstring = YARD::Docstring.parser.parse(macro[0].tag.text).to_docstring
+              unless docstring.tag(:return).nil?
+                type = docstring.tag(:return).types[0]
+              end
+            end
+          else
+            type = meth.return_type
+          end
           scope = :instance
         end
         top = false
       end
-      if scope == :class
+      if scope == :class and !type.nil?
         type = "Class<#{type}>"
       end
       type
@@ -976,6 +993,11 @@ module Solargraph
         return s.mtime if s.filename == filename
       end
       nil
+    end
+
+    # @return [Hash]
+    def path_macros
+      @path_macros ||= {}
     end
   end
 end
