@@ -34,6 +34,7 @@ module Solargraph
 
     # @param workspace [String]
     def initialize workspace = nil
+      @@source_cache.clear
       @workspace = workspace.gsub(/\\/, '/') unless workspace.nil?
       clear
       require_extensions
@@ -130,6 +131,15 @@ module Solargraph
 
     def refresh force = false
       process_maps if @stale or force
+    end
+
+    def changed?
+      current = config.calculated
+      return true unless (Set.new(current) ^ workspace_files).empty?
+      current.each do |f|
+        return true if !File.exist?(f) or File.mtime(f) != source_file_mtime(f)
+      end
+      false
     end
 
     # Get the docstring associated with a node.
@@ -539,6 +549,8 @@ module Solargraph
         if @workspace_files.include?(filename)
           eliminate filename
           @@source_cache[filename] = Source.load(filename)
+          @sources.delete filename
+          @sources[filename] = @@source_cache[filename]
           rebuild_local_yardoc #if @workspace_files.include?(filename)
           @stale = true
         else
@@ -956,6 +968,14 @@ module Solargraph
         result.push pin_to_suggestion(pin)
       end
       result
+    end
+
+    def source_file_mtime(filename)
+      # @todo This is naively inefficient.
+      sources.each do |s|
+        return s.mtime if s.filename == filename
+      end
+      nil
     end
   end
 end
