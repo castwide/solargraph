@@ -25,7 +25,7 @@ module Solargraph
 
     include NodeMethods
 
-    METHODS_YIELDING_SUBTYPES = %w[
+    METHODS_WITH_YIELDPARAM_SUBTYPES = %w[
       Array#each Hash#each_pair Array#map
     ]
 
@@ -636,17 +636,11 @@ module Solargraph
         block_node.children[1].children.each do |a|
           rt = nil
           if yps[i].nil? or yps[i].types.nil? or yps[i].types.empty?
-            #xyz = infer_signature_from_node(block_node)
             zsig = api_map.resolve_node_signature(block_node.children[0])
             vartype = infer_signature_from_node(zsig.split('.').first, scope_node)
             subtypes = get_subtypes(vartype)
             zpath = infer_path_from_signature_and_node(zsig, scope_node)
-            # @todo Try to infer the yielded parameters type from a subtype, e.g., Array#each
-            #   (first example hardcoded)
-            #if (zpath == 'Array#each')
-            if METHODS_YIELDING_SUBTYPES.include?(zpath)
-              rt = subtypes[i]
-            end
+            rt = subtypes[i] if METHODS_WITH_YIELDPARAM_SUBTYPES.include?(zpath)
           else
             rt = yps[i].types[0]
           end
