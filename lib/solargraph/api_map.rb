@@ -478,10 +478,7 @@ module Solargraph
         end
       end
       strings = meths.map(&:to_s)
-      live_map.get_methods(fqns, '', 'class', visibility.include?(:private)).each do |m|
-        next if strings.include?(m) or !m.match(/^[a-z]/i)
-        meths.push Suggestion.new(m, kind: Suggestion::METHOD, docstring: YARD::Docstring.new('(defined at runtime)'), path: "#{fqns}.#{m}")
-      end
+      meths.concat live_map.get_methods(fqns, '', 'class', visibility.include?(:private))
       meths
     end
 
@@ -517,10 +514,7 @@ module Solargraph
         end
       end
       strings = meths.map(&:to_s)
-      live_map.get_methods(namespace, root, 'instance', visibility.include?(:private)).each do |m|
-        next if strings.include?(m) or !m.match(/^[a-z]/i)
-        meths.push Suggestion.new(m, kind: Suggestion::METHOD, docstring: YARD::Docstring.new('(defined at runtime)'), path: "#{fqns}##{m}")
-      end
+      meths.concat live_map.get_methods(namespace, root, 'instance', visibility.include?(:private))
       meths
     end
 

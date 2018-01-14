@@ -15,6 +15,7 @@ module Solargraph
     end
 
     def get_methods(namespace, root = '', scope = 'instance', with_private = false)
+      fqns = api_map.find_fully_qualified_namespace(namespace, root)
       params = {
         namespace: namespace, root: root, scope: scope, with_private: with_private
       }
@@ -24,7 +25,9 @@ module Solargraph
       result = []
       runners.each do |p|
         next if did_runtime and p.runtime?
-        result.concat p.get_methods(namespace: namespace, root: root, scope: scope, with_private: with_private)
+        p.get_methods(namespace: namespace, root: root, scope: scope, with_private: with_private).each do |m|
+          result.push Suggestion.new(m['name'], kind: Suggestion::METHOD, docstring: YARD::Docstring.new('(defined at runtime)'), path: "#{fqns}.#{m['name']}", arguments: m['parameters'])
+        end
         did_runtime = true if p.runtime?
       end
       cache.set_methods(params, result)

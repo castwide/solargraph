@@ -71,7 +71,14 @@ module Solargraph
             result.concat con.public_instance_methods(false)
           end
         end
-        respond_ok result.uniq
+        respond_ok (result.uniq.sort.map do |name|
+          # @type [Method]
+          meth = con.method(name)
+          {
+            name: name,
+            parameters: build_parameter_array(meth.parameters)
+          }
+        end)
       end
 
       def get_constants args
@@ -137,6 +144,26 @@ module Solargraph
           message: msg,
           data: []
         }.to_json
+      end
+
+      def build_parameter_array parameters
+        an = 1
+        parameters.map do |p|
+          if p[0] == :rest
+            str = (p[1] ? "*#{p[1]}" : "*args")
+          else
+            str = (p[1] ? p[1].to_s : "arg#{an}")
+            if p[0] == :opt
+              str += ' = ?'
+            elsif p[0] == :key
+              str += ':'
+            elsif p[0] == :keyreq
+              str += ': ?'
+            end
+          end
+          an += 1
+          str
+        end
       end
     end
   end
