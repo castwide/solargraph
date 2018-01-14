@@ -478,7 +478,10 @@ module Solargraph
         end
       end
       strings = meths.map(&:to_s)
-      meths.concat live_map.get_methods(fqns, '', 'class', visibility.include?(:private))
+      live_map.get_methods(fqns, '', 'class', visibility.include?(:private)).each do |ls|
+        next if strings.include?(ls.to_s)
+        meths.push ls
+      end
       meths
     end
 
@@ -514,7 +517,10 @@ module Solargraph
         end
       end
       strings = meths.map(&:to_s)
-      meths.concat live_map.get_methods(namespace, root, 'instance', visibility.include?(:private))
+      live_map.get_methods(fqns, '', 'class', visibility.include?(:private)).each do |ls|
+        next if strings.include?(ls.to_s)
+        meths.push ls
+      end
       meths
     end
 
