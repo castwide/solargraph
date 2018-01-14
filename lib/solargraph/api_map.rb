@@ -864,6 +864,7 @@ module Solargraph
         if scope == :class and part == 'new'
           scope = :instance
         elsif !METHODS_RETURNING_SELF.include?(part)
+          type = nil
           visibility = [:public]
           visibility.concat [:private, :protected] if top
           if scope == :instance || namespace == ''
@@ -879,7 +880,7 @@ module Solargraph
         end
         top = false
       end
-      if scope == :class
+      if scope == :class and !type.nil?
         type = "Class<#{type}>"
       end
       type
