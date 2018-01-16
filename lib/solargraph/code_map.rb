@@ -353,6 +353,8 @@ module Solargraph
               end
             end
           end
+        #elsif match = result.match(/^\$(\-?[0-9]*)$/)
+        #  STDERR.puts "TODO: handle expression variable #{match[1]}"
         end
       else
         if signature.empty? or signature == '[].'
@@ -392,7 +394,7 @@ module Solargraph
       false
     end
 
-    def infer_signature_from_node signature, node
+    def infer_signature_from_node signature, node, call_node: nil
       inferred = nil
       parts = signature.split('.')
       ns_here = namespace_from(node)
@@ -430,19 +432,22 @@ module Solargraph
           return api_map.infer_signature_type(remainder.join('.'), vartype, scope: :instance)
         end
       end
+      # @todo There might be some redundancy between find_local_variable_node and call_node
       var = find_local_variable_node(start, node)
       if var.nil?
         scope = (node.type == :def ? :instance : :class)
-        type = api_map.infer_signature_type(signature, ns_here, scope: scope)
+        type = api_map.infer_signature_type(signature, ns_here, scope: scope, call_node: call_node)
         return type unless type.nil?
       else
         # Signature starts with a local variable
         type = nil
         lvp = source.local_variable_pins.select{|p| p.name == var.children[0].to_s and p.visible_from?(node) and (!p.nil_assignment? or p.return_type)}.first
-        type = lvp.return_type unless lvp.nil?
-        if type.nil?
-          vsig = resolve_node_signature(var.children[1])
-          type = infer_signature_from_node vsig, node
+        unless lvp.nil?
+          type = lvp.return_type
+          if type.nil?
+            vsig = resolve_node_signature(var.children[1])
+            type = infer_signature_from_node vsig, node, call_node: lvp.assignment_node
+          end
         end
       end
       unless type.nil?
@@ -533,6 +538,10 @@ module Solargraph
       result.concat get_yieldparams_at(index)
       result
     end
+
+    #def get_call_arguments_at index
+    #  called = parent_node_from(index, :send)
+    #end
 
     private
 

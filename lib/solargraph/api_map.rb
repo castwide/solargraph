@@ -366,13 +366,22 @@ module Solargraph
         sig = resolve_node_signature(node.children[sig_i])
         # Avoid infinite loops from variable assignments that reference themselves
         return nil if node.children[name_i].to_s == sig.split('.').first
-        type = infer_signature_type(sig, namespace)
+        type = infer_signature_type(sig, namespace, call_node: node.children[sig_i])
       end
       type
     end
 
+    def get_call_arguments node
+      return [] unless node.type == :send
+      result = []
+      node.children[2..-1].each do |c|
+        result.push unpack_name(c)
+      end
+      result
+    end
+
     # @return [String]
-    def infer_signature_type signature, namespace, scope: :class
+    def infer_signature_type signature, namespace, scope: :class, call_node: nil
       namespace ||= ''
       if cache.has_signature_type?(signature, namespace, scope)
         return cache.get_signature_type(signature, namespace, scope)
@@ -389,20 +398,20 @@ module Solargraph
       end
       result = nil
       if namespace.end_with?('#class')
-        result = infer_signature_type signature, namespace[0..-7], scope: (scope == :class ? :instance : :class)
+        result = infer_signature_type signature, namespace[0..-7], scope: (scope == :class ? :instance : :class), call_node: call_node
       else
         parts = signature.split('.', 2)
         if parts[0].start_with?('@@')
           type = infer_class_variable(parts[0], namespace)
           if type.nil? or parts.empty?
-            result = inner_infer_signature_type(parts[1], type, scope: :instance)
+            result = inner_infer_signature_type(parts[1], type, scope: :instance, call_node: call_node)
           else
             result = type
           end
         elsif parts[0].start_with?('@')
           type = infer_instance_variable(parts[0], namespace, scope)
           if type.nil? or parts.empty?
-            result = inner_infer_signature_type(parts[1], type, scope: :instance)
+            result = inner_infer_signature_type(parts[1], type, scope: :instance, call_node: call_node)
           else
             result = type
           end
@@ -410,14 +419,14 @@ module Solargraph
           type = find_fully_qualified_namespace(parts[0], namespace)
           if type.nil?
             # It's a method call
-            type = inner_infer_signature_type(parts[0], namespace, scope: scope)
+            type = inner_infer_signature_type(parts[0], namespace, scope: scope, call_node: call_node)
             if parts[1].nil?
               result = type
             else
-              result = inner_infer_signature_type(parts[1], type, scope: :instance)
+              result = inner_infer_signature_type(parts[1], type, scope: :instance, call_node: call_node)
             end
           else
-            result = inner_infer_signature_type(parts[1], type, scope: :class)
+            result = inner_infer_signature_type(parts[1], type, scope: :class, call_node: call_node)
           end
         end
       end
@@ -830,7 +839,7 @@ module Solargraph
     #
     # @return [String] The fully qualified namespace for the signature's type
     #   or nil if a type could not be determined
-    def inner_infer_signature_type signature, namespace, scope: :instance, top: true
+    def inner_infer_signature_type signature, namespace, scope: :instance, top: true, call_node: nil
       return nil if signature.nil?
       signature.gsub!(/\.$/, '')
       if signature.empty?
@@ -878,8 +887,10 @@ module Solargraph
               #   arguments, which makes it impossible to infer a type from an
               #   expansion variable
               docstring = YARD::Docstring.parser.parse(macro[0].tag.text).to_docstring
-              unless docstring.tag(:return).nil?
-                type = docstring.tag(:return).types[0]
+              rt = docstring.tag(:return)
+              unless rt.nil? or rt.types.nil? or call_node.nil?
+                args = get_call_arguments(call_node)
+                type = "#{args[rt.types[0][1..-1].to_i-1]}"
               end
             end
           else

@@ -60,8 +60,7 @@ module Solargraph
               gen_pin = gen_src.method_pins.first
               method_pins.push Solargraph::Pin::Directed::Method.new(gen_src, gen_pin.node, ns, :instance, :public, docstring, gen_pin.name)
             elsif d.tag.tag_name == 'macro'
-              STDERR.puts "TODO: Handle a macro"
-              #STDERR.puts namespace_for(k.node)
+              # @todo Handle various types of macros (attach, new, whatever)
               path = path_for(k.node)
               @path_macros[path] = v
             else

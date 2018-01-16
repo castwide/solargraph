@@ -19,8 +19,12 @@ module Solargraph
         @return_type ||= literal_from_assignment
       end
 
+      def assignment_node
+        @assignment_node ||= node.children[(node.type == :casgn ? 2 : 1)]
+      end
+
       def nil_assignment?
-        node.children[(node.type == :casgn ? 2 : 1)].type == :nil
+        assignment_node.type == :nil
       end
 
       def signature
@@ -30,7 +34,7 @@ module Solargraph
       private
 
       def literal_from_assignment
-        infer_literal_node_type(node.children[(node.type == :casgn ? 2 : 1)])
+        infer_literal_node_type(assignment_node)
       end
     end
   end
