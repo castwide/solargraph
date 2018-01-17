@@ -508,9 +508,7 @@ module Solargraph
     def get_instance_methods(namespace, root = '', visibility: [:public])
       refresh
       namespace = clean_namespace_string(namespace)
-      if namespace.end_with?('#class')
-        return get_methods(namespace.split('#').first, root, visibility: visibility)
-      elsif namespace.end_with?('#module')
+      if namespace.end_with?('#class') or namespace.end_with?('#module')
         return get_methods(namespace.split('#').first, root, visibility: visibility)
       end
       meths = []
@@ -886,23 +884,8 @@ module Solargraph
           tmp.concat get_instance_methods('Kernel', visibility: [:public]) if top
           meth = tmp.select{|s| s.label == part}.first
           return nil if meth.nil?
-          if meth.return_type.nil? and !signature.include?('.')
-            path = "#{namespace}#{scope == :class ? '.' : '#'}#{signature}"
-            macro = path_macros[path]
-            unless macro.nil?
-              # @todo This method doesn't have access to the original call's
-              #   arguments, which makes it impossible to infer a type from an
-              #   expansion variable
-              docstring = YARD::Docstring.parser.parse(macro[0].tag.text).to_docstring
-              rt = docstring.tag(:return)
-              unless rt.nil? or rt.types.nil? or call_node.nil?
-                args = get_call_arguments(call_node)
-                type = "#{args[rt.types[0][1..-1].to_i-1]}"
-              end
-            end
-          else
-            type = meth.return_type
-          end
+          type = get_return_type_from_macro(namespace, signature, call_node, scope, visibility)
+          type = meth.return_type if type.nil?
           scope = :instance
         end
         top = false
@@ -1016,6 +999,33 @@ module Solargraph
     # @return [Hash]
     def path_macros
       @path_macros ||= {}
+    end
+
+    def get_return_type_from_macro namespace, signature, call_node, scope, visibility
+      return nil if signature.empty? or call_node.nil?
+      type = nil
+      if scope == :class
+        macmeth = get_methods(namespace, '', visibility: visibility).select{|s| s.label == signature}.first
+      else
+        macmeth = get_instance_methods(namespace, '', visibility: visibility).select{|s| s.label == signature}.first
+      end
+      unless macmeth.nil?
+        macro = path_macros[macmeth.path]
+        macro = macro.first unless macro.nil?
+        if macro.nil? and !macmeth.code_object.nil? and !macmeth.code_object.base_docstring.nil? and macmeth.code_object.base_docstring.all.include?('@!macro')
+          all = YARD::Docstring.parser.parse(macmeth.code_object.base_docstring.all).directives
+          macro = all.select{|m| m.tag.tag_name == 'macro'}.first
+        end
+        unless macro.nil?
+          docstring = YARD::Docstring.parser.parse(macro.tag.text).to_docstring
+          rt = docstring.tag(:return)
+          unless rt.nil? or rt.types.nil? or call_node.nil?
+            args = get_call_arguments(call_node)
+            type = "#{args[rt.types[0][1..-1].to_i-1]}"
+          end
+        end
+      end
+      type
     end
   end
 end
