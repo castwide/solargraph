@@ -25,6 +25,10 @@ module Solargraph
 
     include NodeMethods
 
+    METHODS_WITH_YIELDPARAM_SUBTYPES = %w[
+      Array#each Hash#each_pair Array#map
+    ]
+
     def initialize code: '', filename: nil, api_map: nil, cursor: nil
       # HACK: Adjust incoming filename's path separator for yardoc file comparisons
       filename = filename.gsub(File::ALT_SEPARATOR, File::SEPARATOR) unless filename.nil? or File::ALT_SEPARATOR.nil?
@@ -346,7 +350,11 @@ module Solargraph
             yp = get_yieldparams_at(index).keep_if{|s| s.to_s == parts[0]}.first
             unless yp.nil?
               if parts[1].nil? or parts[1].empty?
-                result = yp.return_type
+                if yp.return_type.nil?
+                  STDERR.puts "Here is where we try to get the stupid, you know, the yieldparam type"
+                else
+                  result = yp.return_type
+                end
               else
                 newsig = parts[1..-1].join('.')
                 result = api_map.infer_signature_type(newsig, yp.return_type, scope: :instance)
@@ -407,7 +415,7 @@ module Solargraph
       end
       unless signature.include?('.')
         fqns = api_map.find_fully_qualified_namespace(signature, ns_here)
-        return "Class<#{fqns}>" unless fqns.nil?
+        return "Class<#{fqns}>" unless fqns.nil? or fqns.empty?
       end
       start = parts[0]
       return nil if start.nil?
@@ -635,7 +643,16 @@ module Solargraph
         end
         i = 0
         block_node.children[1].children.each do |a|
-          rt = (yps[i].nil? ? nil : yps[i].types[0])
+          rt = nil
+          if yps[i].nil? or yps[i].types.nil? or yps[i].types.empty?
+            zsig = api_map.resolve_node_signature(block_node.children[0])
+            vartype = infer_signature_from_node(zsig.split('.').first, scope_node)
+            subtypes = get_subtypes(vartype)
+            zpath = infer_path_from_signature_and_node(zsig, scope_node)
+            rt = subtypes[i] if METHODS_WITH_YIELDPARAM_SUBTYPES.include?(zpath)
+          else
+            rt = yps[i].types[0]
+          end
           result.push Suggestion.new(a.children[0], kind: Suggestion::PROPERTY, return_type: rt)
           i += 1
         end
@@ -785,6 +802,20 @@ module Solargraph
       end
       cursor = nil if cursor < 0
       cursor
+    end
+
+    def infer_path_from_signature_and_node signature, node
+      # @todo Improve this method
+      parts = signature.split('.')
+      last = parts.pop
+      type = infer_signature_from_node(parts.join('.'), node)
+      "#{type.gsub(/<[a-z0-9:, ]*>/i, '')}##{last}"
+    end
+
+    def get_subtypes type
+      match = type.match(/<([a-z0-9_:, ]*)>/i)
+      return [] if match.nil?
+      match[1].split(',').map(&:strip)
     end
   end
 end

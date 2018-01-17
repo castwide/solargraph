@@ -21,8 +21,7 @@ module Solargraph
     option :files, type: :string, aliases: :f, desc: 'The public files directory', default: nil
     def server
       port = options[:port]
-      # This line should not be necessary with WEBrick
-      #port = available_port if port.zero?
+      port = available_port if port.zero?
       Solargraph::Server.set :port, port
       Solargraph::Server.set :views, options[:views] unless options[:views].nil?
       Solargraph::Server.set :public_folder, options[:files] unless options[:files].nil?

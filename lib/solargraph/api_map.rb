@@ -39,12 +39,13 @@ module Solargraph
       clear
       require_extensions
       unless @workspace.nil?
-        workspace_files.concat (self.config.included - self.config.excluded)
+        workspace_files.concat config.calculated
         workspace_files.each do |wf|
           begin
             @@source_cache[wf] ||= Source.load(wf)
           rescue Parser::SyntaxError => e
             STDERR.puts "Failed to load #{wf}: #{e.message}"
+            @@source_cache[wf] = Source.virtual('', wf)
           end
         end
       end
@@ -135,9 +136,15 @@ module Solargraph
 
     def changed?
       current = config.calculated
-      return true unless (Set.new(current) ^ workspace_files).empty?
+      unless (Set.new(current) ^ workspace_files).empty?
+        STDERR.puts "Change based on difference in file list"
+        return true
+      end
       current.each do |f|
-        return true if !File.exist?(f) or File.mtime(f) != source_file_mtime(f)
+        if !File.exist?(f) or File.mtime(f) != source_file_mtime(f)
+          STDERR.puts "Change based on file #{f}"
+          return true
+        end
       end
       false
     end
@@ -487,9 +494,9 @@ module Solargraph
         end
       end
       strings = meths.map(&:to_s)
-      live_map.get_methods(fqns, '', 'class', visibility.include?(:private)).each do |m|
-        next if strings.include?(m) or !m.match(/^[a-z]/i)
-        meths.push Suggestion.new(m, kind: Suggestion::METHOD, docstring: YARD::Docstring.new('(defined at runtime)'), path: "#{fqns}.#{m}")
+      live_map.get_methods(fqns, '', 'class', visibility.include?(:private)).each do |ls|
+        next if strings.include?(ls.to_s)
+        meths.push ls
       end
       meths
     end
@@ -526,9 +533,9 @@ module Solargraph
         end
       end
       strings = meths.map(&:to_s)
-      live_map.get_methods(namespace, root, 'instance', visibility.include?(:private)).each do |m|
-        next if strings.include?(m) or !m.match(/^[a-z]/i)
-        meths.push Suggestion.new(m, kind: Suggestion::METHOD, docstring: YARD::Docstring.new('(defined at runtime)'), path: "#{fqns}##{m}")
+      live_map.get_methods(fqns, '', 'class', visibility.include?(:private)).each do |ls|
+        next if strings.include?(ls.to_s)
+        meths.push ls
       end
       meths
     end

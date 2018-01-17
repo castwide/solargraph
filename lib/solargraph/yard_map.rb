@@ -225,7 +225,7 @@ module Solargraph
     end
 
     def find_fully_qualified_namespace namespace, scope
-      unless scope.empty?
+      unless scope.nil? or scope.empty?
         parts = scope.split('::')
         while parts.length > 0
           here = "#{parts.join('::')}::#{namespace}"
