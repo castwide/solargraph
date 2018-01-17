@@ -620,4 +620,16 @@ describe Solargraph::CodeMap do
     expect(sugg).to include('each') # Array method
     expect(sugg).not_to include('downcase') # String method
   end
+
+  it "infers types from subtypes for yielded params" do
+    code_map = Solargraph::CodeMap.new(code: %(
+      # @type [Array<String>]
+      x = ['foo']
+      x.each do |y|
+        y._
+      end
+    ))
+    type = code_map.infer_signature_at(code_map.get_offset(4, 10))
+    expect(type).to eq('String')
+  end
 end
