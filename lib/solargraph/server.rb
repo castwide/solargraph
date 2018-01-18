@@ -36,8 +36,9 @@ module Solargraph
     post '/update' do
       content_type :json
       begin
+        workspace = find_local_workspace(params['filename'], params['workspace'])
         # @type [Solargraph::ApiMap]
-        api_map = get_api_map(params['workspace'])
+        api_map = get_api_map(workspace)
         unless api_map.nil?
           api_map.update params['filename']
         end
@@ -53,7 +54,7 @@ module Solargraph
       content_type :json
       begin
         sugg = []
-        workspace = params['workspace']
+        workspace = find_local_workspace(params['filename'], params['workspace'])
         api_map = get_api_map(workspace)
         with_all = params['all'] == '1' ? true : false
         code_map = CodeMap.new(code: params['text'], filename: params['filename'], api_map: api_map, cursor: [params['line'].to_i, params['column'].to_i])
@@ -71,7 +72,7 @@ module Solargraph
       content_type :json
       begin
         sugg = []
-        workspace = params['workspace'] || nil
+        workspace = find_local_workspace(params['filename'], params['workspace'])
         api_map = get_api_map(workspace)
         code_map = CodeMap.new(code: params['text'], filename: params['filename'], api_map: api_map, cursor: [params['line'].to_i, params['column'].to_i])
         offset = code_map.get_offset(params['line'].to_i, params['column'].to_i)
@@ -87,7 +88,7 @@ module Solargraph
     post '/resolve' do
       content_type :json
       begin
-        workspace = params['workspace'] || nil
+        workspace = find_local_workspace(params['filename'], params['workspace'])
         result = []
         api_map = get_api_map(workspace)
         unless api_map.nil?
@@ -106,7 +107,7 @@ module Solargraph
       content_type :json
       begin
         sugg = []
-        workspace = params['workspace'] || nil
+        workspace = find_local_workspace(params['filename'], params['workspace'])
         api_map = get_api_map(workspace)
         code_map = CodeMap.new(code: params['text'], filename: params['filename'], api_map: @@api_hash[workspace], cursor: [params['line'].to_i, params['column'].to_i])
         offset = code_map.get_offset(params['line'].to_i, params['column'].to_i)
@@ -161,28 +162,51 @@ module Solargraph
       h.html_markup_ruby(code)
     end
 
+    def find_local_workspace file, workspace
+      unless file.nil? or workspace.nil?
+        return nil unless file.start_with?(workspace)
+        dir = File.dirname(file)
+        while dir.start_with?(workspace)
+          return dir if @@api_hash.has_key?(dir)
+          dir = File.dirname(dir)
+        end
+      end
+      workspace
+    end
+
     class << self
       def prepare_workspace directory
         Thread.new do
-          api_map = Solargraph::ApiMap.new(directory)
-          api_map.yard_map
-          @@semaphore.synchronize do
-            @@api_hash[directory] = api_map
+          configs = Dir['**/.solargraph.yml']
+          resolved = []
+          configs.each do |cf|
+            dir = File.dirname(cf)
+            generate_api_map dir
+            resolved.push dir
           end
+          generate_api_map directory unless resolved.include?(directory)
+        end
+      end
+
+      def generate_api_map(directory)
+        api_map = Solargraph::ApiMap.new(cf)
+        api_map.yard_map
+        @@semaphore.synchronize do
+          @@api_hash[directory] = api_map
         end
       end
 
       def run!
         Thread.new do
           while true
-            watch_workspaces
+            check_workspaces
             sleep 1
           end
         end
         super
       end
 
-      def watch_workspaces
+      def check_workspaces
         @@semaphore.synchronize do
           changed = {}
           @@api_hash.each_pair do |w, a|
