@@ -55,10 +55,7 @@ module Solargraph
       begin
         sugg = []
         workspace = find_local_workspace(params['filename'], params['workspace'])
-        STDERR.puts "Workspace: #{workspace}"
         api_map = get_api_map(workspace)
-        STDERR.puts "RESOLVED: #{api_map.class}"
-        STDERR.puts " -- Workspace: #{api_map.workspace}" unless api_map.nil?
         with_all = params['all'] == '1' ? true : false
         code_map = CodeMap.new(code: params['text'], filename: params['filename'], api_map: api_map, cursor: [params['line'].to_i, params['column'].to_i])
         offset = code_map.get_offset(params['line'].to_i, params['column'].to_i)
@@ -185,7 +182,6 @@ module Solargraph
         Thread.new do
           directory.gsub!(/\\/, '/') unless directory.nil?
           configs = Dir[File.join(directory, '**', '.solargraph.yml')]
-          STDERR.puts "Found configs in #{directory}: #{configs}"
           resolved = []
           configs.each do |cf|
             dir = File.dirname(cf)
@@ -197,7 +193,6 @@ module Solargraph
       end
 
       def generate_api_map(directory)
-        STDERR.puts "Generating ApiMap for #{directory}"
         api_map = Solargraph::ApiMap.new(directory)
         api_map.yard_map
         @@semaphore.synchronize do
