@@ -1002,13 +1002,10 @@ module Solargraph
     end
 
     def get_return_type_from_macro namespace, signature, call_node, scope, visibility
-      return nil if signature.empty? or call_node.nil?
+      return nil if signature.empty? or signature.include?('.') or call_node.nil?
+      path = "#{namespace}#{scope == :class ? '.' : '#'}#{signature}"
+      macmeth = get_path_suggestions(path).first
       type = nil
-      if scope == :class
-        macmeth = get_methods(namespace, '', visibility: visibility).select{|s| s.label == signature}.first
-      else
-        macmeth = get_instance_methods(namespace, '', visibility: visibility).select{|s| s.label == signature}.first
-      end
       unless macmeth.nil?
         macro = path_macros[macmeth.path]
         macro = macro.first unless macro.nil?
