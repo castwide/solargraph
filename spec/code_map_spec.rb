@@ -632,4 +632,19 @@ describe Solargraph::CodeMap do
     type = code_map.infer_signature_at(code_map.get_offset(4, 10))
     expect(type).to eq('String')
   end
+
+  it "detects block context from yieldself tags" do
+    code_map = Solargraph::CodeMap.new(code: %(
+      module Foo
+        # @yieldself [String]
+        def self.bar
+        end
+      end
+      Foo.bar do
+        u
+      end
+    ))
+    sugg = code_map.suggest_at(code_map.get_offset(7, 9)).map(&:to_s)
+    expect(sugg).to include('upcase')
+  end
 end
