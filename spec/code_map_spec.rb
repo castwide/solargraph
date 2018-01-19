@@ -632,4 +632,15 @@ describe Solargraph::CodeMap do
     type = code_map.infer_signature_at(code_map.get_offset(4, 10))
     expect(type).to eq('String')
   end
+
+  it "handles whitespace in signatures" do
+    code_map = Solargraph::CodeMap.new(code: %(
+      x = String.
+        new
+        .split
+      x._
+    ))
+    type = code_map.infer_signature_at(code_map.get_offset(4, 8))
+    expect(type).to eq('Array')
+  end
 end

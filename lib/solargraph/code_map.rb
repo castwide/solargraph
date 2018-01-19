@@ -545,15 +545,17 @@ module Solargraph
       index -=1
       in_whitespace = false
       while index >= 0
-        unless string_at?(index)
+        unless !in_whitespace and string_at?(index)
           break if brackets > 0 or parens > 0 or squares > 0
           char = @code[index, 1]
           if brackets.zero? and parens.zero? and squares.zero? and [' ', "\n", "\t"].include?(char)
             in_whitespace = true
           else
             if brackets.zero? and parens.zero? and squares.zero? and in_whitespace
-              unless char == '.' or @code[index..-1].strip.start_with?('.')
-                index += 1
+              unless char == '.' or @code[index+1..-1].strip.start_with?('.')
+                old = @code[index+1..-1]
+                nxt = @code[index+1..-1].lstrip
+                index += (@code[index+1..-1].length - @code[index+1..-1].lstrip.length)
                 break
               end
             end
