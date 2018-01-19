@@ -454,14 +454,7 @@ module Solargraph
         end
       end
       unless type.nil?
-        if remainder[0] == 'new'
-          remainder.shift
-          if remainder.empty?
-            inferred = type
-          else
-            inferred = api_map.infer_signature_type(remainder.join('.'), type, scope: :instance)
-          end
-        elsif remainder.empty?
+        if remainder.empty?
           inferred = type
         else
           inferred = api_map.infer_signature_type(remainder.join('.'), type, scope: :instance)
