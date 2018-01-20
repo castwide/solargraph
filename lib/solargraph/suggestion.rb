@@ -65,6 +65,10 @@ module Solargraph
       @path ||= (code_object.nil? ? label : code_object.path)
     end
 
+    def namespace
+      @namespace ||= path.split(/[#\.]/)[0]
+    end
+
     # @return [String]
     def to_s
       label
