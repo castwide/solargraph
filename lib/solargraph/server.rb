@@ -27,9 +27,7 @@ module Solargraph
         Server.prepare_workspace params['workspace']
         { "status" => "ok"}.to_json
       rescue Exception => e
-        STDERR.puts e
-        STDERR.puts e.backtrace.join("\n")
-        { "status" => "err", "message" => e.message + "\n" + e.backtrace.join("\n") }.to_json
+        send_exception e
       end
     end
 
@@ -43,9 +41,7 @@ module Solargraph
         end
         { "status" => "ok"}.to_json
       rescue Exception => e
-        STDERR.puts e
-        STDERR.puts e.backtrace.join("\n")
-        { "status" => "err", "message" => e.message + "\n" + e.backtrace.join("\n") }.to_json
+        send_exception e
       end
     end
 
@@ -61,9 +57,7 @@ module Solargraph
         sugg = code_map.suggest_at(offset, with_snippets: params['with_snippets'] == '1' ? true : false, filtered: true)
         JSON.generate({ "status" => "ok", "suggestions" => sugg.map{|s| s.as_json(all: with_all)} })
       rescue Exception => e
-        STDERR.puts e
-        STDERR.puts e.backtrace.join("\n")
-        { "status" => "err", "message" => e.message + "\n" + e.backtrace.join("\n") }.to_json
+        send_exception e
       end
     end
 
@@ -78,9 +72,7 @@ module Solargraph
         sugg = code_map.signatures_at(offset)
         { "status" => "ok", "suggestions" => sugg.map{|s| s.as_json(all: true)} }.to_json
       rescue Exception => e
-        STDERR.puts e
-        STDERR.puts e.backtrace.join("\n")
-        { "status" => "err", "message" => e.message + "\n" + e.backtrace.join("\n") }.to_json
+        send_exception e
       end
     end
 
@@ -96,9 +88,7 @@ module Solargraph
         end
         { "status" => "ok", "suggestions" => result.map{|s| s.as_json(all: true)} }.to_json
       rescue Exception => e
-        STDERR.puts e
-        STDERR.puts e.backtrace.join("\n")
-        { "status" => "err", "message" => e.message + "\n" + e.backtrace.join("\n") }.to_json
+        send_exception e
       end
     end
 
@@ -113,9 +103,7 @@ module Solargraph
         sugg = code_map.resolve_object_at(offset)
         { "status" => "ok", "suggestions" => sugg }.to_json
       rescue Exception => e
-        STDERR.puts e
-        STDERR.puts e.backtrace.join("\n")
-        { "status" => "err", "message" => e.message + "\n" + e.backtrace.join("\n") }.to_json
+        send_exception e
       end
     end
 
@@ -159,6 +147,12 @@ module Solargraph
     def ruby_to_html code
       h = Helpers.new
       h.html_markup_ruby(code)
+    end
+
+    def send_exception e
+      STDERR.puts e
+      STDERR.puts e.backtrace.join("\n")
+      { "status" => "err", "message" => e.message + "\n" + e.backtrace.join("\n") }.to_json
     end
 
     class << self
