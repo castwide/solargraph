@@ -466,11 +466,9 @@ module Solargraph
         unless block_node.nil? or block_node.type != :block or block_node.children[0].nil?
           scope_node = parent_node_from(index, :class, :module, :def, :defs) || @node
           meth = get_yielding_method_with_yieldself(block_node, scope_node)
-          STDERR.puts "TRY DAMMIT"
           unless meth.nil?
             match = meth.docstring.all.match(/@yieldself \[([a-z0-9:_]*)/i)
             self_yield = match[1]
-            STDERR.puts "HEY!"
             inferred = api_map.infer_signature_type(signature, self_yield, scope: :instance)
           end
         end
