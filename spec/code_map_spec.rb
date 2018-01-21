@@ -658,4 +658,19 @@ describe Solargraph::CodeMap do
     type = code_map.infer_signature_at(code_map.get_offset(4, 8))
     expect(type).to eq('Array')
   end
+
+  it "resolves self in yieldself tags" do
+    code_map = Solargraph::CodeMap.new(code: %(
+      class Foo
+        # @yieldself [self]
+        def bar
+        end
+      end
+      Foo.new.bar do
+        b
+      end
+      ))
+      sugg = code_map.suggest_at(code_map.get_offset(7, 9)).map(&:to_s)
+      expect(sugg).to include('bar')
+  end
 end
