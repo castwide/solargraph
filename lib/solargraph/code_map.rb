@@ -351,7 +351,7 @@ module Solargraph
             unless yp.nil?
               if parts[1].nil? or parts[1].empty?
                 if yp.return_type.nil?
-                  STDERR.puts "Here is where we try to get the stupid, you know, the yieldparam type"
+                  STDERR.puts "Here is where we try to get the yieldparam type"
                 else
                   result = yp.return_type
                 end
@@ -624,6 +624,7 @@ module Solargraph
         unless meth.nil?
           match = meth.docstring.all.match(/@yieldself \[([a-z0-9:_]*)/i)
           self_yield = match[1]
+          self_yield = meth.namespace if self_yield == 'self'
         end
         i = 0
         block_node.children[1].children.each do |a|

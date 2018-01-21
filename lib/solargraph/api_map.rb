@@ -426,6 +426,7 @@ module Solargraph
           else
             result = inner_infer_signature_type(parts[1], type, scope: :class)
           end
+          result = type if result == 'self'
         end
       end
       cache.set_signature_type signature, namespace, scope, result
