@@ -771,4 +771,33 @@ describe Solargraph::ApiMap do
       expect(api_map.changed?).to eq(true)
     end
   end
+
+  it "resolves self from return tags" do
+    api_map = Solargraph::ApiMap.new
+    api_map.append_source(%(
+      class Foo
+        # @return [self]
+        def bar
+        end
+      end
+    ), 'file.rb')
+    type = api_map.infer_signature_type('Foo.new.bar', '')
+    expect(type).to eq('Foo')
+  end
+
+  it "resolves self from included methods" do
+    api_map = Solargraph::ApiMap.new
+    api_map.append_source(%(
+      module Foo
+        # @return [self]
+        def bar
+        end
+      end
+      class Baz
+        include Foo
+      end
+    ), 'file.rb')
+    type = api_map.infer_signature_type('Baz.new.bar', '')
+    expect(type).to eq('Baz')
+  end
 end
