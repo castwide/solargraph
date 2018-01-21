@@ -646,6 +646,7 @@ describe Solargraph::CodeMap do
     ))
     sugg = code_map.suggest_at(code_map.get_offset(7, 9)).map(&:to_s)
     expect(sugg).to include('upcase')
+  end
 
   it "handles whitespace in signatures" do
     code_map = Solargraph::CodeMap.new(code: %(
