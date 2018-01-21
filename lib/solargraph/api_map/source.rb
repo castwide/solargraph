@@ -411,7 +411,7 @@ module Solargraph
               elsif !fixed_position and !offset.nil?
                 fixed_position = true
                 beg = beginning_of_line_from(tmp, offset)
-                tmp = tmp[0, beg] + '#' + tmp[beg+1..-1]
+                tmp = "#{tmp[0, beg]}##{tmp[beg+1..-1]}"
                 stubs.push(pos[0])
               elsif e.message.include?('token $end')
                 tmp += "\nend"

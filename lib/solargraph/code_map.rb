@@ -545,32 +545,46 @@ module Solargraph
       parens = 0
       signature = ''
       index -=1
+      in_whitespace = false
       while index >= 0
-        unless string_at?(index)
+        unless !in_whitespace and string_at?(index)
           break if brackets > 0 or parens > 0 or squares > 0
           char = @code[index, 1]
-          if char == ')'
-            parens -=1
-          elsif char == ']'
-            squares -=1
-          elsif char == '}'
-            brackets -= 1
-          elsif char == '('
-            parens += 1
-          elsif char == '{'
-            brackets += 1
-          elsif char == '['
-            squares += 1
-            signature = ".[]#{signature}" if squares == 0 and @code[index-2] != '%'
-          end
-          if brackets == 0 and parens == 0 and squares == 0
-            break if ['"', "'", ',', ' ', "\t", "\n", ';', '%'].include?(char)
-            signature = char + signature if char.match(/[a-z0-9:\._@\$]/i) and @code[index - 1] != '%'
-            break if char == '$'
-            if char == '@'
-              signature = "@#{signature}" if @code[index-1, 1] == '@'
-              break
+          if brackets.zero? and parens.zero? and squares.zero? and [' ', "\n", "\t"].include?(char)
+            in_whitespace = true
+          else
+            if brackets.zero? and parens.zero? and squares.zero? and in_whitespace
+              unless char == '.' or @code[index+1..-1].strip.start_with?('.')
+                old = @code[index+1..-1]
+                nxt = @code[index+1..-1].lstrip
+                index += (@code[index+1..-1].length - @code[index+1..-1].lstrip.length)
+                break
+              end
             end
+            if char == ')'
+              parens -=1
+            elsif char == ']'
+              squares -=1
+            elsif char == '}'
+              brackets -= 1
+            elsif char == '('
+              parens += 1
+            elsif char == '{'
+              brackets += 1
+            elsif char == '['
+              squares += 1
+              signature = ".[]#{signature}" if squares == 0 and @code[index-2] != '%'
+            end
+            if brackets.zero? and parens.zero? and squares.zero?
+              break if ['"', "'", ',', ';', '%'].include?(char)
+              signature = char + signature if char.match(/[a-z0-9:\._@\$]/i) and @code[index - 1] != '%'
+              break if char == '$'
+              if char == '@'
+                signature = "@#{signature}" if @code[index-1, 1] == '@'
+                break
+              end
+            end
+            in_whitespace = false
           end
         end
         index -= 1
