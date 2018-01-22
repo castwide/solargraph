@@ -811,10 +811,12 @@ module Solargraph
       parts = signature.split('.')
       last = parts.pop
       type = infer_signature_from_node(parts.join('.'), node)
+      return nil if type.nil?
       "#{type.gsub(/<[a-z0-9:, ]*>/i, '')}##{last}"
     end
 
     def get_subtypes type
+      return nil if type.nil?
       match = type.match(/<([a-z0-9_:, ]*)>/i)
       return [] if match.nil?
       match[1].split(',').map(&:strip)
