@@ -23,6 +23,7 @@ module Solargraph
         @root_code_object ||= YARD::CodeObjects::RootObject.new(nil, 'root')
       end
 
+      # @param sources [Array<Solargraph::ApiMap::Source>] Sources for code objects
       def rake_yard sources
         code_object_map.clear
         sources.each do |s|
