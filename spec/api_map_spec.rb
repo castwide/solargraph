@@ -761,13 +761,34 @@ describe Solargraph::ApiMap do
     expect(sugg).to include('more_method')
   end
 
-  it "detects workspace changes" do
+  it "detects workspace changes from modified files" do
     Dir.mktmpdir do |dir|
       File.write File.join(dir, 'test.rb'), 'puts "hello"'
       api_map = Solargraph::ApiMap.new(dir)
       expect(api_map.changed?).to eq(false)
       sleep(1)
       File.write File.join(dir, 'test.rb'), 'puts "world"'
+      expect(api_map.changed?).to eq(true)
+    end
+  end
+
+  it "detects workspace changes from new files" do
+    Dir.mktmpdir do |dir|
+      File.write File.join(dir, 'test.rb'), 'puts "hello"'
+      api_map = Solargraph::ApiMap.new(dir)
+      expect(api_map.changed?).to eq(false)
+      File.write File.join(dir, 'test2.rb'), 'puts "world"'
+      expect(api_map.changed?).to eq(true)
+    end
+  end
+
+  it "detects workspace changes from deleted files" do
+    Dir.mktmpdir do |dir|
+      File.write File.join(dir, 'test.rb'), 'puts "hello"'
+      File.write File.join(dir, 'test2.rb'), 'puts "world"'
+      api_map = Solargraph::ApiMap.new(dir)
+      expect(api_map.changed?).to eq(false)
+      File.unlink File.join(dir, 'test2.rb')
       expect(api_map.changed?).to eq(true)
     end
   end

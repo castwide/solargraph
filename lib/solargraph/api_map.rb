@@ -137,12 +137,10 @@ module Solargraph
     def changed?
       current = config.calculated
       unless (Set.new(current) ^ workspace_files).empty?
-        STDERR.puts "Change based on difference in file list"
         return true
       end
       current.each do |f|
         if !File.exist?(f) or File.mtime(f) != source_file_mtime(f)
-          STDERR.puts "Change based on file #{f}"
           return true
         end
       end
