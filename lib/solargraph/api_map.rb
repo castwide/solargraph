@@ -366,6 +366,8 @@ module Solargraph
 
     # @return [String]
     def infer_assignment_node_type node, namespace
+      cached = cache.get_assignment_node_type(node, namespace)
+      return cached unless cached.nil?
       name_i = (node.type == :casgn ? 1 : 0) 
       sig_i = (node.type == :casgn ? 2 : 1)
       type = infer_literal_node_type(node.children[sig_i])
@@ -375,6 +377,7 @@ module Solargraph
         return nil if node.children[name_i].to_s == sig.split('.').first
         type = infer_signature_type(sig, namespace)
       end
+      cache.set_assignment_node_type(node, namespace, type)
       type
     end
 
