@@ -315,14 +315,8 @@ module Solargraph
       literal = nil
       if (signature.empty? and @code[index - 1] == '.') or signature == '[].'
         literal = node_at(index - 2)
-      elsif signature.start_with?('.')
-        literal = node_at(index - 1)
       else
-        if @code[beg_sig] == '.'
-          literal = node_at(beg_sig - 1)
-        else
-          literal = node_at(1 + beg_sig)
-        end
+        literal = node_at(1 + beg_sig)
       end
       type = infer_literal_node_type(literal)
       if type.nil?

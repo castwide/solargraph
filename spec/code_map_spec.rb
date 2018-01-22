@@ -358,6 +358,14 @@ describe Solargraph::CodeMap do
     expect(type).to eq('Symbol')
   end
 
+  it "infers literal strings" do
+    code_map = Solargraph::CodeMap.new(code: %(
+      'string'.
+    ))
+    type = code_map.infer_signature_at(code_map.get_offset(1, 15))
+    expect(type).to eq('String')
+  end
+
   it "infers constants" do
     code_map = Solargraph::CodeMap.new(code: %(
       class Foo
@@ -669,8 +677,23 @@ describe Solargraph::CodeMap do
       Foo.new.bar do
         b
       end
-      ))
-      sugg = code_map.suggest_at(code_map.get_offset(7, 9)).map(&:to_s)
-      expect(sugg).to include('bar')
+    ))
+    sugg = code_map.suggest_at(code_map.get_offset(7, 9)).map(&:to_s)
+    expect(sugg).to include('bar')
+  end
+
+  it "infers yielded param types from methods yielding subtypes" do
+    code_map = Solargraph::CodeMap.new(code: %(
+      class Foo
+        # @param things [Array<String>]
+        def bar things
+          things.each do |str|
+            str
+          end
+        end
+      end
+    ))
+    type = code_map.infer_signature_at(code_map.get_offset(5, 15))
+    expect(type).to eq('String')
   end
 end
