@@ -440,9 +440,14 @@ module Solargraph
       end
       var = find_local_variable_node(start, node)
       if var.nil?
-        scope = (node.type == :def ? :instance : :class)
-        type = api_map.infer_signature_type(signature, ns_here, scope: scope)
-        return type unless type.nil?
+        arg = get_method_arguments_from(node).select{|s| s.label == start}.first
+        if arg.nil?
+          scope = (node.type == :def ? :instance : :class)
+          type = api_map.infer_signature_type(signature, ns_here, scope: scope)
+          return type unless type.nil?
+        else
+          type = arg.return_type
+        end
       else
         # Signature starts with a local variable
         type = nil
