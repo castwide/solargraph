@@ -2,6 +2,7 @@ require 'parser/current'
 
 module Solargraph
   class CodeMap
+    autoload :Statement, 'solargraph/code_map/statement'
 
     # The root node of the parsed code.
     #
@@ -308,7 +309,7 @@ module Solargraph
     #
     # @return [String]
     def infer_signature_at index
-      signature = get_signature_at(index)
+      beg_sig, signature = get_signature_data_at(index)
       # Check for literals first
       return 'Integer' if signature.match(/^[0-9]+?\.?$/)
       literal = nil
@@ -317,7 +318,6 @@ module Solargraph
       elsif signature.start_with?('.')
         literal = node_at(index - 1)
       else
-        beg_sig = get_signature_index_at(index)
         if @code[beg_sig] == '.'
           literal = node_at(beg_sig - 1)
         else
