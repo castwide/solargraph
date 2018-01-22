@@ -344,11 +344,7 @@ module Solargraph
             yp = get_yieldparams_at(index).keep_if{|s| s.to_s == parts[0]}.first
             unless yp.nil?
               if parts[1].nil? or parts[1].empty?
-                if yp.return_type.nil?
-                  STDERR.puts "Here is where we try to get the yieldparam type"
-                else
-                  result = yp.return_type
-                end
+                result = yp.return_type
               else
                 newsig = parts[1..-1].join('.')
                 result = api_map.infer_signature_type(newsig, yp.return_type, scope: :instance)
@@ -627,10 +623,10 @@ module Solargraph
       return [] unless block_node.kind_of?(AST::Node) and block_node.type == :block
       result = []
       unless block_node.nil? or block_node.children[1].nil?
-        meth = get_yielding_method(block_node, scope_node)
+        ymeth = get_yielding_method(block_node, scope_node)
         yps = []
-        unless meth.nil? or meth.docstring.nil?
-          yps = meth.docstring.tags(:yieldparam) || []
+        unless ymeth.nil? or ymeth.docstring.nil?
+          yps = ymeth.docstring.tags(:yieldparam) || []
         end
         self_yield = nil
         meth = get_yielding_method_with_yieldself(block_node, scope_node)
@@ -647,7 +643,7 @@ module Solargraph
           rt = nil
           if yps[i].nil? or yps[i].types.nil? or yps[i].types.empty?
             zsig = api_map.resolve_node_signature(block_node.children[0])
-            vartype = infer_signature_from_node(zsig.split('.').first, scope_node)
+            vartype = infer_signature_from_node(zsig.split('.')[0..-2].join('.'), scope_node)
             subtypes = get_subtypes(vartype)
             zpath = infer_path_from_signature_and_node(zsig, scope_node)
             rt = subtypes[i] if METHODS_WITH_YIELDPARAM_SUBTYPES.include?(zpath)
@@ -667,7 +663,8 @@ module Solargraph
       fqns = namespace_from(block_node)
       lvarnode = find_local_variable_node(recv, scope_node)
       if lvarnode.nil?
-        sig = api_map.infer_signature_type(recv, fqns)
+        #sig = api_map.infer_signature_type(recv, fqns)
+        sig = infer_signature_from_node(recv, scope_node)
       else
         tmp = resolve_node_signature(lvarnode.children[1])
         sig = infer_signature_from_node tmp, scope_node
