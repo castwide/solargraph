@@ -489,6 +489,7 @@ module Solargraph
       get_signature_data_at(index)[0]
     end
 
+    # @deprecated Solargraph should not be responsible for snippets.
     def get_snippets_at(index)
       result = []
       Snippets.definitions.each_pair { |name, detail|

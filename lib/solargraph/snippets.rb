@@ -1,6 +1,7 @@
 require 'json'
 
 module Solargraph
+  # @deprecated Solargraph should not be responsible for snippets.
   module Snippets
     def self.definitions
       @definitions ||= JSON.parse('{
