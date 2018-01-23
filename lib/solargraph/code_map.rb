@@ -35,7 +35,12 @@ module Solargraph
       filename = filename.gsub(File::ALT_SEPARATOR, File::SEPARATOR) unless filename.nil? or File::ALT_SEPARATOR.nil?
       @filename = filename
       @api_map = api_map
-      @source = self.api_map.virtualize code, filename, cursor
+      if filename.end_with?('.erb')
+        STDERR.puts "CODE: //#{convert_erb(code)}//"
+        @source = self.api_map.virtualize(convert_erb(code), filename, cursor)
+      else
+        @source = self.api_map.virtualize(code, filename, cursor)
+      end
       @node = @source.node
       @code = @source.code
       @comments = @source.comments
@@ -817,6 +822,43 @@ module Solargraph
       match = type.match(/<([a-z0-9_:, ]*)>/i)
       return [] if match.nil?
       match[1].split(',').map(&:strip)
+    end
+
+    # @param template [String]
+    def convert_erb template
+      result = ''
+      i = 0
+      in_code = false
+      if template.start_with? '<%'
+        i += 2
+        result += ';;'
+        in_code = true
+      end
+      while i < template.length
+        if in_code
+          if template[i, 2] == '%>'
+            i += 2
+            result += ';;'
+            in_code = false
+          else
+            result += template[i]
+          end
+        else
+          if template[i, 3] == '<%='
+            i += 2
+            result += ';;;'
+            in_code = true
+          elsif template[i, 2] == '<%'
+            i += 1
+            result += ';;'
+            in_code = true
+          else
+            result += template[i].sub(/[^\s]/, ' ')
+          end
+        end
+        i += 1
+      end
+      result
     end
   end
 end
