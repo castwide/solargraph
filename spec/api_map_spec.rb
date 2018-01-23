@@ -156,11 +156,6 @@ describe Solargraph::ApiMap do
     expect(cls).to eq('String')
   end
 
-  it "finds filenames for nodes" do
-    nodes = @api_map.get_namespace_nodes('Class1')
-    expect(@api_map.get_filename_for(nodes.first)).to eq('file.rb')
-  end
-
   it "infers local class from [Class].new method" do
     cls = @api_map.infer_signature_type('Class1.new', '')
     expect(cls).to eq('Class1')
