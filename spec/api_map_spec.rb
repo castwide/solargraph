@@ -821,4 +821,10 @@ describe Solargraph::ApiMap do
     type = api_map.infer_signature_type('Baz.new.bar', '')
     expect(type).to eq('Baz')
   end
+
+  it "does not return operators in method suggestions" do
+    api_map = Solargraph::ApiMap.new
+    sugg = api_map.get_instance_methods(Array).map(&:to_s)
+    expect(sugg).not_to include('[]')
+  end
 end

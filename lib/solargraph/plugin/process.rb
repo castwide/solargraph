@@ -71,6 +71,7 @@ module Solargraph
             result.concat con.public_instance_methods(false)
           end
         end
+        result.keep_if{|m| m.to_s.match(/^[a-z_]/i)}
         respond_ok (result.uniq.sort.map do |name|
           # @type [Method]
           meth = con.method(name)
