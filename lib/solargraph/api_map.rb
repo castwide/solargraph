@@ -58,6 +58,10 @@ module Solargraph
       yard_map
     end
 
+    # Get the configuration for the ApiMap's workspace. This method will
+    # initialize the settings from the workspace's root .solargraph.yml file
+    # if it exists.
+    #
     # @return [Solargraph::ApiMap::Config]
     def config reload = false
       @config = ApiMap::Config.new(@workspace) if @config.nil? or reload
@@ -78,6 +82,8 @@ module Solargraph
       @required ||= []
     end
 
+    # Get a YardMap associated with the current namespace.
+    #
     # @return [Solargraph::YardMap]
     def yard_map
       refresh
@@ -87,6 +93,8 @@ module Solargraph
       @yard_map
     end
 
+    # Get a LiveMap associated with the current namespace.
+    #
     # @return [Solargraph::LiveMap]
     def live_map
       @live_map ||= Solargraph::LiveMap.new(self)
@@ -130,10 +138,17 @@ module Solargraph
       virtualize code, filename
     end
 
+    # Refresh the ApiMap.
+    #
+    # @param force [Boolean] Perform a refresh even if the map is not "stale."
     def refresh force = false
       process_maps if @stale or force
     end
 
+    # True if a workspace file has been created, modified, or deleted since
+    # the last time the map was processed.
+    #
+    # @return [Boolean]
     def changed?
       current = config.calculated
       unless (Set.new(current) ^ workspace_files).empty?
@@ -162,19 +177,28 @@ module Solargraph
       get_docstring_for node
     end
 
+    # An array of suggestions based on Ruby keywords (`if`, `end`, etc.).
+    #
     # @return [Array<Solargraph::Suggestion>]
-    def self.get_keywords
+    def self.keywords
       @keyword_suggestions ||= KEYWORDS.map{ |s|
         Suggestion.new(s.to_s, kind: Suggestion::KEYWORD, detail: 'Keyword')
       }.freeze
     end
 
+    # An array of namespace names defined in the ApiMap.
+    #
     # @return [Array<String>]
     def namespaces
       refresh
       namespace_map.keys
     end
 
+    # True if the namespace exists.
+    #
+    # @param name [String] The namespace to match
+    # @param root [String] The context to search
+    # @return [Boolean]
     def namespace_exists? name, root = ''
       !find_fully_qualified_namespace(name, root).nil?
     end
@@ -184,12 +208,22 @@ module Solargraph
       get_constants name, root
     end
 
+    # Get an array of constant pins defined in the ApiMap. (This method does
+    # not include constants from external gems or the Ruby core.)
+    #
+    # @param namespace [String] The namespace to match
+    # @param root [String] The context to search
     # @return [Array<Solargraph::Pin::Constant>]
     def get_constant_pins namespace, root
       fqns = find_fully_qualified_namespace(namespace, root)
       @const_pins[fqns] || []
     end
 
+    # Get suggestions for constants in the specified namespace. The result
+    # will include constant variables, classes, and modules.
+    #
+    # @param namespace [String] The namespace to match
+    # @param root [String] The context to search
     # @return [Array<Solargraph::Suggestion>]
     def get_constants namespace, root = ''
       result = []
@@ -210,17 +244,11 @@ module Solargraph
       result
     end
 
-    def find_namespace_pins fqns
-      set = nil
-      if fqns.include?('::')
-        set = @namespace_pins[fqns.split('::')[0..-2].join('::')]
-      else
-        set = @namespace_pins['']
-      end
-      return [] if set.nil?
-      set.select{|p| p.path == fqns}
-    end
-
+    # Get a fully qualified namespace name. This method will start the search
+    # in the specified root until it finds a match for the name.
+    #
+    # @param name [String] The namespace to match
+    # @param root [String] The context to search
     # @return [String]
     def find_fully_qualified_namespace name, root = '', skip = []
       refresh
@@ -261,18 +289,22 @@ module Solargraph
       result
     end
 
-    def get_namespace_nodes(fqns)
-      return file_nodes if fqns == '' or fqns.nil?
-      refresh
-      namespace_map[fqns] || []
-    end
-
+    # Get an array of instance variable pins defined in specified namespace
+    # and scope.
+    #
+    # @param namespace [String] A fully qualified namespace
+    # @param scope [Symbol] :instance or :class
     # @return [Array<Solargraph::Pin::InstanceVariable>]
     def get_instance_variable_pins(namespace, scope = :instance)
       refresh
       (@ivar_pins[namespace] || []).select{ |pin| pin.scope == scope }
     end
 
+    # Get an array of instance variable suggestions defined in specified
+    # namespace and scope.
+    #
+    # @param namespace [String] A fully qualified namespace
+    # @param scope [Symbol] :instance or :class
     # @return [Array<Solargraph::Suggestion>]
     def get_instance_variables(namespace, scope = :instance)
       refresh
@@ -379,6 +411,15 @@ module Solargraph
       type
     end
 
+    # Get the return type for a signature within the specified namespace and
+    # scope.
+    #
+    # @example
+    #   api_map.infer_signature_type('String.new', '') #=> 'String'
+    #
+    # @param signature [String]
+    # @param namespace [String] A fully qualified namespace
+    # @param scope [Symbol] :class or :instance
     # @return [String]
     def infer_signature_type signature, namespace, scope: :class
       namespace ||= ''
@@ -434,6 +475,8 @@ module Solargraph
       result
     end
 
+    # Get the namespace's type (Class or Module).
+    #
     # @param [String] A fully qualified namespace
     # @return [Symbol] :class, :module, or nil
     def get_namespace_type fqns
@@ -533,21 +576,9 @@ module Solargraph
       meths
     end
 
-    # @return [Array<String>]
-    def get_include_strings_from *nodes
-      arr = []
-      nodes.each { |node|
-        next unless node.kind_of?(AST::Node)
-        arr.push unpack_name(node.children[2]) if (node.type == :send and node.children[1] == :include)
-        node.children.each { |n|
-          arr += get_include_strings_from(n) if n.kind_of?(AST::Node) and n.type != :class and n.type != :module and n.type != :sclass
-        }
-      }
-      arr
-    end
-
     # Update the ApiMap with the most recent version of the specified file.
     #
+    # @param filename [String]
     def update filename
       filename.gsub!(/\\/, '/')
       if filename.end_with?('.rb')
@@ -572,11 +603,16 @@ module Solargraph
       end
     end
 
+    # All sources generated from workspace files.
+    #
     # @return [Array<Solargraph::ApiMap::Source>]
     def sources
       @sources.values
     end
 
+    # Get an array of all suggestions that match the specified path.
+    #
+    # @param path [String] The path to find
     # @return [Array<Solargraph::Suggestion>]
     def get_path_suggestions path
       refresh
@@ -601,6 +637,12 @@ module Solargraph
       result
     end
 
+    # Get a list of documented paths that match the query.
+    #
+    # @example
+    #   api_map.query('str') # Results will include `String` and `Struct`
+    #
+    # @param query [String] The text to match
     # @return [Array<String>]
     def search query
       refresh
@@ -615,6 +657,12 @@ module Solargraph
       found.concat(yard_map.search(query)).uniq.sort
     end
 
+    # Get YARD documentation for the specified path.
+    #
+    # @example
+    #   api_map.document('String#split')
+    #
+    # @param path [String] The path to find
     # @return [Array<YARD::CodeObject::Base>]
     def document path
       refresh
@@ -986,6 +1034,37 @@ module Solargraph
         return s.mtime if s.filename == filename
       end
       nil
+    end
+
+    # @return [Array<Solargraph::Pin::Namespace>]
+    def find_namespace_pins fqns
+      set = nil
+      if fqns.include?('::')
+        set = @namespace_pins[fqns.split('::')[0..-2].join('::')]
+      else
+        set = @namespace_pins['']
+      end
+      return [] if set.nil?
+      set.select{|p| p.path == fqns}
+    end
+
+    def get_namespace_nodes(fqns)
+      return file_nodes if fqns == '' or fqns.nil?
+      refresh
+      namespace_map[fqns] || []
+    end
+
+    # @return [Array<String>]
+    def get_include_strings_from *nodes
+      arr = []
+      nodes.each { |node|
+        next unless node.kind_of?(AST::Node)
+        arr.push unpack_name(node.children[2]) if (node.type == :send and node.children[1] == :include)
+        node.children.each { |n|
+          arr += get_include_strings_from(n) if n.kind_of?(AST::Node) and n.type != :class and n.type != :module and n.type != :sclass
+        }
+      }
+      arr
     end
   end
 end

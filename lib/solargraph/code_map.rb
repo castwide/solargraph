@@ -231,7 +231,7 @@ module Solargraph
             if type.nil?
               result += get_snippets_at(index) if with_snippets
               result += get_local_variables_and_methods_at(index)
-              result += ApiMap.get_keywords
+              result += ApiMap.keywords
               result += api_map.get_constants('', namespace)
               result += api_map.get_constants('')
               result += api_map.get_instance_methods('Kernel', namespace)
