@@ -8,7 +8,6 @@ module Solargraph
   autoload :CodeMap,       'solargraph/code_map'
   autoload :NodeMethods,   'solargraph/node_methods'
   autoload :Suggestion,    'solargraph/suggestion'
-  autoload :Snippets,      'solargraph/snippets'
   autoload :Server,        'solargraph/server'
   autoload :YardMap,       'solargraph/yard_map'
   autoload :Pin,           'solargraph/pin'

@@ -56,7 +56,7 @@ module Solargraph
       begin
         code_map = CodeMap.new(code: text, filename: filename)
         offset = code_map.get_offset(options[:line], options[:column])
-        sugg = code_map.suggest_at(offset, with_snippets: true, filtered: true)
+        sugg = code_map.suggest_at(offset, filtered: true)
         result = { "status" => "ok", "suggestions" => sugg }.to_json
         STDOUT.puts result
       rescue Exception => e
