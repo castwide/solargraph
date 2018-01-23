@@ -10,7 +10,7 @@ Gem::Specification.new do |s|
   s.description = "IDE tools for code completion and inline documentation"
   s.authors     = ["Fred Snyder"]
   s.email       = 'admin@castwide.com'
-  s.files       = Dir['lib/**/*'] + Dir['yardoc/**/*']
+  s.files       = Dir['lib/**/*'] + Dir['yardoc/**/*'] + ['.yardopts']
   s.homepage    = 'http://solargraph.org'
   s.license     = 'MIT'
   s.executables   = ['solargraph', 'solargraph-runtime']
