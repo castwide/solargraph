@@ -228,14 +228,15 @@ module Solargraph
             result = api_map.get_constants(ns, namespace)
           else
             type = infer_literal_node_type(node_at(index - 2))
+            return [] if type.nil? and signature.empty? and !@code[0..index].rindex('.').nil? and @code[@code[0..index].rindex('.')..-1].strip == '.'
             if type.nil?
-              result += get_snippets_at(index) if with_snippets
-              result += get_local_variables_and_methods_at(index)
-              result += ApiMap.keywords
-              result += api_map.get_constants('', namespace)
-              result += api_map.get_constants('')
-              result += api_map.get_instance_methods('Kernel', namespace)
-              result += api_map.get_methods('', namespace)
+              result.concat get_snippets_at(index) if with_snippets
+              result.concat get_local_variables_and_methods_at(index)
+              result.concat ApiMap.keywords
+              result.concat api_map.get_constants('', namespace)
+              result.concat api_map.get_constants('')
+              result.concat api_map.get_instance_methods('Kernel', namespace)
+              result.concat api_map.get_methods('', namespace)
               #result += api_map.get_instance_methods('', namespace)
             else
               result.concat api_map.get_instance_methods(type)
