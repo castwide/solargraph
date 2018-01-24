@@ -23,6 +23,10 @@ module Solargraph
       'clone', 'dup', 'freeze', 'taint', 'untaint'
     ].freeze
 
+    METHODS_RETURNING_SUBTYPES = %w[
+      Array#[]
+    ]
+
     include NodeMethods
     include Solargraph::ApiMap::SourceToYard
 
@@ -460,7 +464,12 @@ module Solargraph
           if type.nil?
             # It's a method call
             type = inner_infer_signature_type(parts[0], namespace, scope: scope)
-            if parts[1].nil?
+            if parts.length < 2
+              if type.nil? and !parts.length.nil?
+                path = "#{clean_namespace_string(namespace)}#{scope == :class ? '.' : '#'}#{parts[0]}"
+                subtypes = get_subtypes(namespace)
+                type = subtypes[0] if METHODS_RETURNING_SUBTYPES.include?(path)
+              end
               result = type
             else
               result = inner_infer_signature_type(parts[1], type, scope: :instance)
@@ -1065,6 +1074,14 @@ module Solargraph
         }
       }
       arr
+    end
+
+    # @todo DRY this method. It's duplicated in CodeMap
+    def get_subtypes type
+      return nil if type.nil?
+      match = type.match(/<([a-z0-9_:, ]*)>/i)
+      return [] if match.nil?
+      match[1].split(',').map(&:strip)
     end
   end
 end
