@@ -20,6 +20,10 @@ module Solargraph
       # @return [Array<Integer>]
       attr_reader :stubbed_lines
 
+      attr_reader :directives
+
+      attr_reader :path_macros
+
       include NodeMethods
 
       def initialize code, node, comments, filename, stubbed_lines = []
@@ -29,6 +33,7 @@ module Solargraph
         @node = root
         @comments = comments
         @directives = {}
+        @path_macros = {}
         @docstring_hash = associate_comments(node, comments)
         @filename = filename
         @mtime = (!filename.nil? and File.exist?(filename) ? File.mtime(filename) : nil)
@@ -54,11 +59,19 @@ module Solargraph
               gen_src = Source.virtual("def #{d.tag.name};end", filename)
               gen_pin = gen_src.method_pins.first
               method_pins.push Solargraph::Pin::Directed::Method.new(gen_src, gen_pin.node, ns, :instance, :public, docstring, gen_pin.name)
+            elsif d.tag.tag_name == 'macro'
+              # @todo Handle various types of macros (attach, new, whatever)
+              path = path_for(k.node)
+              @path_macros[path] = v
             else
               STDERR.puts "Nothing to do for directive: #{d}"
             end
           end
         end
+      end
+
+      def macro path
+        @path_macros[path]
       end
 
       def namespaces
@@ -158,6 +171,15 @@ module Solargraph
           end
         end
         parts.join('::')
+      end
+
+      def path_for node
+        path = namespace_for(node) || ''
+        mp = (method_pins + attribute_pins).select{|p| p.node == node}.first
+        unless mp.nil?
+          path += (mp.scope == :instance ? '#' : '.') + mp.name
+        end
+        path
       end
 
       def include? node
