@@ -723,4 +723,19 @@ describe Solargraph::CodeMap do
     sugg = code_map.suggest_at(code_map.get_offset(3, 7))
     expect(sugg.length).to eq(0)
   end
+
+  it "detects return types from macro directives" do
+    code_map = Solargraph::CodeMap.new(code: %(
+      class Foo
+        # @!macro
+        #   @return [$1]
+        def self.bar klass
+        end
+      end
+      x = Foo.bar Hash
+      x
+    ))
+    type = code_map.infer_signature_at(code_map.get_offset(8, 7))
+    expect(type).to eq('Hash')
+  end
 end
