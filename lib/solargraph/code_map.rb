@@ -25,10 +25,7 @@ module Solargraph
     attr_reader :filename
 
     include NodeMethods
-
-    METHODS_WITH_YIELDPARAM_SUBTYPES = %w[
-      Array#each Hash#each_pair Array#map
-    ]
+    include CoreFills
 
     def initialize code: '', filename: nil, api_map: nil, cursor: nil
       # HACK: Adjust incoming filename's path separator for yardoc file comparisons
@@ -649,8 +646,7 @@ module Solargraph
             self_yield = infer_signature_from_node(blocksig, scope_node)
           end
         end
-        i = 0
-        block_node.children[1].children.each do |a|
+        block_node.children[1].children.each_with_index do |a, i|
           rt = nil
           if yps[i].nil? or yps[i].types.nil? or yps[i].types.empty?
             zsig = api_map.resolve_node_signature(block_node.children[0])
@@ -662,7 +658,6 @@ module Solargraph
             rt = yps[i].types[0]
           end
           result.push Suggestion.new(a.children[0], kind: Suggestion::PROPERTY, return_type: rt)
-          i += 1
         end
         result.concat api_map.get_instance_methods(self_yield, namespace_from(scope_node)) unless self_yield.nil?
       end
