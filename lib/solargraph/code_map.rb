@@ -193,7 +193,7 @@ module Solargraph
     # source.
     #
     # @return [Array<Solargraph::Suggestion>] The completion suggestions
-    def suggest_at index, filtered: true, with_snippets: false
+    def suggest_at index, filtered: true
       return [] if string_at?(index) or string_at?(index - 1) or comment_at?(index)
       signature = get_signature_at(index)
       unless signature.include?('.')
@@ -227,14 +227,12 @@ module Solargraph
             type = infer_literal_node_type(node_at(index - 2))
             return [] if type.nil? and signature.empty? and !@code[0..index].rindex('.').nil? and @code[@code[0..index].rindex('.')..-1].strip == '.'
             if type.nil?
-              result.concat get_snippets_at(index) if with_snippets
               result.concat get_local_variables_and_methods_at(index)
               result.concat ApiMap.keywords
               result.concat api_map.get_constants('', namespace)
               result.concat api_map.get_constants('')
               result.concat api_map.get_instance_methods('Kernel', namespace)
               result.concat api_map.get_methods('', namespace)
-              #result += api_map.get_instance_methods('', namespace)
             else
               result.concat api_map.get_instance_methods(type)
             end
@@ -490,26 +488,6 @@ module Solargraph
 
     def get_signature_index_at index
       get_signature_data_at(index)[0]
-    end
-
-    # @deprecated Solargraph should not be responsible for snippets.
-    def get_snippets_at(index)
-      result = []
-      Snippets.definitions.each_pair { |name, detail|
-        matched = false
-        prefix = detail['prefix']
-        while prefix.length > 0
-          if @code[index-prefix.length, prefix.length] == prefix
-            matched = true
-            break
-          end
-          prefix = prefix[0..-2]
-        end
-        if matched
-          result.push Suggestion.new(detail['prefix'], kind: Suggestion::SNIPPET, detail: name, insert: detail['body'].join("\r\n"))
-        end
-      }
-      result
     end
 
     # Get an array of local variables and methods that can be accessed from

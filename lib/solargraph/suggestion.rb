@@ -11,7 +11,6 @@ module Solargraph
     METHOD   = 'Method'
     MODULE   = 'Module'
     PROPERTY = 'Property'
-    SNIPPET  = 'Snippet'
     VARIABLE = 'Variable'
 
     # @return [String]
