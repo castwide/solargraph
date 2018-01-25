@@ -472,7 +472,7 @@ module Solargraph
           type = find_fully_qualified_namespace(parts[0], namespace)
           if type.nil?
             # It's a method call
-            type = inner_infer_signature_type(parts[0], namespace, scope: scope)
+            type = inner_infer_signature_type(parts[0], namespace, scope: scope, call_node: call_node)
             if parts.length < 2
               if type.nil? and !parts.length.nil?
                 path = "#{clean_namespace_string(namespace)}#{scope == :class ? '.' : '#'}#{parts[0]}"
