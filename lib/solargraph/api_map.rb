@@ -351,7 +351,13 @@ module Solargraph
       return nil if pins.nil?
       pin = pins.select{|p| p.name == var and p.scope == scope}.first
       return nil if pin.nil?
-      pin.return_type
+      type = pin.return_type
+      if type.nil?
+        zparts = resolve_node_signature(pin.assignment_node).split('.')
+        ztype = infer_signature_type(zparts[0..-2].join('.'), namespace, scope: :instance, call_node: pin.assignment_node)
+        type = get_return_type_from_macro(ztype, zparts[-1], pin.assignment_node, :instance, [:public, :private, :protected])
+      end
+      type
     end
 
     # @return [String]
