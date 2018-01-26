@@ -117,7 +117,8 @@ module Solargraph
     #
     # @return [Boolean]
     def has_doc?
-      !documentation.empty?
+      #!documentation.empty?
+      !docstring.nil? and !docstring.all.empty?
     end
 
     def as_json args = {}
