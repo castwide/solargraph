@@ -157,9 +157,9 @@ module Solargraph
     end
 
     def find_local_workspace file, workspace
+      workspace.gsub!(/\\/, '/') unless workspace.nil?
       unless file.nil? or workspace.nil?
         file.gsub!(/\\/, '/') unless file.nil?
-        workspace.gsub!(/\\/, '/') unless workspace.nil?
         return nil unless file.start_with?(workspace)
         dir = File.dirname(file)
         while dir.start_with?(workspace)
