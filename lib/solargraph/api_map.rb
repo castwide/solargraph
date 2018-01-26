@@ -104,7 +104,7 @@ module Solargraph
           true
         end
       end
-      if filename.nil? or filename.end_with?('.rb')
+      if filename.nil? or filename.end_with?('.rb') or filename.end_with?('.erb')
         eliminate @virtual_filename unless @virtual_source.nil? or @virtual_filename == filename or workspace_files.include?(@virtual_filename)
         @virtual_filename = filename
         @virtual_source = Source.fix(code, filename, cursor)

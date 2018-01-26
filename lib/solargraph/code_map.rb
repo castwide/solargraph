@@ -33,7 +33,6 @@ module Solargraph
       @filename = filename
       @api_map = api_map
       if filename.end_with?('.erb')
-        STDERR.puts "CODE: //#{convert_erb(code)}//"
         @source = self.api_map.virtualize(convert_erb(code), filename, cursor)
       else
         @source = self.api_map.virtualize(code, filename, cursor)
