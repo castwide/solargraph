@@ -822,4 +822,19 @@ describe Solargraph::ApiMap do
     sugg = api_map.get_instance_methods(Array).map(&:to_s)
     expect(sugg).not_to include('[]')
   end
+
+  it "detects return types from macro directives" do
+    api_map = Solargraph::ApiMap.new
+    api_map.append_source(%(
+      class Foo
+        # @!macro
+        #   @return [$1]
+        def self.bar klass
+        end
+      end
+      @x = Foo.bar Hash
+    ), 'file.rb')
+    type = api_map.infer_signature_type('@x', '')
+    expect(type).to eq('Hash')
+  end
 end

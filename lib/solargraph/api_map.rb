@@ -11,20 +11,9 @@ module Solargraph
     autoload :SourceToYard, 'solargraph/api_map/source_to_yard'
     @@source_cache = {}
 
-    KEYWORDS = [
-      '__ENCODING__', '__LINE__', '__FILE__', 'BEGIN', 'END', 'alias', 'and',
-      'begin', 'break', 'case', 'class', 'def', 'defined?', 'do', 'else',
-      'elsif', 'end', 'ensure', 'false', 'for', 'if', 'in', 'module', 'next',
-      'nil', 'not', 'or', 'redo', 'rescue', 'retry', 'return', 'self', 'super',
-      'then', 'true', 'undef', 'unless', 'until', 'when', 'while', 'yield'
-    ].freeze
-
-    METHODS_RETURNING_SELF = [
-      'clone', 'dup', 'freeze', 'taint', 'untaint'
-    ].freeze
-
     include NodeMethods
     include Solargraph::ApiMap::SourceToYard
+    include CoreFills
 
     # The root directory of the project. The ApiMap will search here for
     # additional files to parse and analyze.
@@ -362,7 +351,13 @@ module Solargraph
       return nil if pins.nil?
       pin = pins.select{|p| p.name == var and p.scope == scope}.first
       return nil if pin.nil?
-      pin.return_type
+      type = pin.return_type
+      if type.nil?
+        zparts = resolve_node_signature(pin.assignment_node).split('.')
+        ztype = infer_signature_type(zparts[0..-2].join('.'), namespace, scope: :instance, call_node: pin.assignment_node)
+        type = get_return_type_from_macro(ztype, zparts[-1], pin.assignment_node, :instance, [:public, :private, :protected])
+      end
+      type
     end
 
     # @return [String]
@@ -405,10 +400,19 @@ module Solargraph
         sig = resolve_node_signature(node.children[sig_i])
         # Avoid infinite loops from variable assignments that reference themselves
         return nil if node.children[name_i].to_s == sig.split('.').first
-        type = infer_signature_type(sig, namespace)
+        type = infer_signature_type(sig, namespace, call_node: node.children[sig_i])
       end
       cache.set_assignment_node_type(node, namespace, type)
       type
+    end
+
+    def get_call_arguments node
+      return [] unless node.type == :send
+      result = []
+      node.children[2..-1].each do |c|
+        result.push unpack_name(c)
+      end
+      result
     end
 
     # Get the return type for a signature within the specified namespace and
@@ -421,7 +425,7 @@ module Solargraph
     # @param namespace [String] A fully qualified namespace
     # @param scope [Symbol] :class or :instance
     # @return [String]
-    def infer_signature_type signature, namespace, scope: :class
+    def infer_signature_type signature, namespace, scope: :class, call_node: nil
       namespace ||= ''
       if cache.has_signature_type?(signature, namespace, scope)
         return cache.get_signature_type(signature, namespace, scope)
@@ -438,20 +442,20 @@ module Solargraph
       end
       result = nil
       if namespace.end_with?('#class')
-        result = infer_signature_type signature, namespace[0..-7], scope: (scope == :class ? :instance : :class)
+        result = infer_signature_type signature, namespace[0..-7], scope: (scope == :class ? :instance : :class), call_node: call_node
       else
         parts = signature.split('.', 2)
         if parts[0].start_with?('@@')
           type = infer_class_variable(parts[0], namespace)
           if type.nil? or parts.empty?
-            result = inner_infer_signature_type(parts[1], type, scope: :instance)
+            result = inner_infer_signature_type(parts[1], type, scope: :instance, call_node: call_node)
           else
             result = type
           end
         elsif parts[0].start_with?('@')
           type = infer_instance_variable(parts[0], namespace, scope)
           if type.nil? or parts.empty?
-            result = inner_infer_signature_type(parts[1], type, scope: :instance)
+            result = inner_infer_signature_type(parts[1], type, scope: :instance, call_node: call_node)
           else
             result = type
           end
@@ -459,14 +463,19 @@ module Solargraph
           type = find_fully_qualified_namespace(parts[0], namespace)
           if type.nil?
             # It's a method call
-            type = inner_infer_signature_type(parts[0], namespace, scope: scope)
-            if parts[1].nil?
+            type = inner_infer_signature_type(parts[0], namespace, scope: scope, call_node: call_node)
+            if parts.length < 2
+              if type.nil? and !parts.length.nil?
+                path = "#{clean_namespace_string(namespace)}#{scope == :class ? '.' : '#'}#{parts[0]}"
+                subtypes = get_subtypes(namespace)
+                type = subtypes[0] if METHODS_RETURNING_SUBTYPES.include?(path)
+              end
               result = type
             else
-              result = inner_infer_signature_type(parts[1], type, scope: :instance)
+              result = inner_infer_signature_type(parts[1], type, scope: :instance, call_node: call_node)
             end
           else
-            result = inner_infer_signature_type(parts[1], type, scope: :class)
+            result = inner_infer_signature_type(parts[1], type, scope: :class, call_node: call_node)
           end
           result = type if result == 'self'
         end
@@ -544,9 +553,7 @@ module Solargraph
     def get_instance_methods(namespace, root = '', visibility: [:public])
       refresh
       namespace = clean_namespace_string(namespace)
-      if namespace.end_with?('#class')
-        return get_methods(namespace.split('#').first, root, visibility: visibility)
-      elsif namespace.end_with?('#module')
+      if namespace.end_with?('#class') or namespace.end_with?('#module')
         return get_methods(namespace.split('#').first, root, visibility: visibility)
       end
       meths = []
@@ -684,6 +691,7 @@ module Solargraph
     def clear
       @stale = false
       namespace_map.clear
+      path_macros.clear
       @required = config.required.clone
     end
 
@@ -806,6 +814,7 @@ module Solargraph
         @namespace_pins[pin.namespace] ||= []
         @namespace_pins[pin.namespace].push pin
       end
+      path_macros.merge! source.path_macros
       source.required.each do |r|
         required.push r
       end
@@ -885,7 +894,7 @@ module Solargraph
     #
     # @return [String] The fully qualified namespace for the signature's type
     #   or nil if a type could not be determined
-    def inner_infer_signature_type signature, namespace, scope: :instance, top: true
+    def inner_infer_signature_type signature, namespace, scope: :instance, top: true, call_node: nil
       return nil if signature.nil?
       signature.gsub!(/\.$/, '')
       if signature.empty?
@@ -924,8 +933,9 @@ module Solargraph
           end
           tmp.concat get_instance_methods('Kernel', visibility: [:public]) if top
           meth = tmp.select{|s| s.label == part}.first
-          return nil if meth.nil? or meth.return_type.nil?
-          type = meth.return_type
+          return nil if meth.nil?
+          type = get_return_type_from_macro(namespace, signature, call_node, scope, visibility)
+          type = meth.return_type if type.nil?
           scope = :instance
         end
         top = false
@@ -1065,6 +1075,43 @@ module Solargraph
         }
       }
       arr
+    end
+
+    # @todo DRY this method. It's duplicated in CodeMap
+    def get_subtypes type
+      return nil if type.nil?
+      match = type.match(/<([a-z0-9_:, ]*)>/i)
+      return [] if match.nil?
+      match[1].split(',').map(&:strip)
+    end
+
+    # @return [Hash]
+    def path_macros
+      @path_macros ||= {}
+    end
+
+    def get_return_type_from_macro namespace, signature, call_node, scope, visibility
+      return nil if signature.empty? or signature.include?('.') or call_node.nil?
+      path = "#{namespace}#{scope == :class ? '.' : '#'}#{signature}"
+      macmeth = get_path_suggestions(path).first
+      type = nil
+      unless macmeth.nil?
+        macro = path_macros[macmeth.path]
+        macro = macro.first unless macro.nil?
+        if macro.nil? and !macmeth.code_object.nil? and !macmeth.code_object.base_docstring.nil? and macmeth.code_object.base_docstring.all.include?('@!macro')
+          all = YARD::Docstring.parser.parse(macmeth.code_object.base_docstring.all).directives
+          macro = all.select{|m| m.tag.tag_name == 'macro'}.first
+        end
+        unless macro.nil?
+          docstring = YARD::Docstring.parser.parse(macro.tag.text).to_docstring
+          rt = docstring.tag(:return)
+          unless rt.nil? or rt.types.nil? or call_node.nil?
+            args = get_call_arguments(call_node)
+            type = "#{args[rt.types[0][1..-1].to_i-1]}"
+          end
+        end
+      end
+      type
     end
   end
 end

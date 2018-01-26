@@ -696,4 +696,46 @@ describe Solargraph::CodeMap do
     type = code_map.infer_signature_at(code_map.get_offset(5, 15))
     expect(type).to eq('String')
   end
+
+  it "infers from subtypes for Array#[] calls" do
+    code_map = Solargraph::CodeMap.new(code: %(
+      # @type [Array<String>]
+      arr = [x]
+      arr[0]
+    ))
+    type = code_map.infer_signature_at(code_map.get_offset(3, 12))
+    expect(type).to eq('String')
+  end
+
+  it "returns empty suggestions for bare periods" do
+    code_map = Solargraph::CodeMap.new(code: %(
+      .
+    ))
+    sugg = code_map.suggest_at(code_map.get_offset(1, 7))
+    expect(sugg.length).to eq(0)
+    sugg = code_map.suggest_at(code_map.get_offset(1, 8))
+    expect(sugg.length).to eq(0)
+    code_map = Solargraph::CodeMap.new(code: %(
+      class Foo
+      end
+      .
+    ))
+    sugg = code_map.suggest_at(code_map.get_offset(3, 7))
+    expect(sugg.length).to eq(0)
+  end
+
+  it "detects return types from macro directives" do
+    code_map = Solargraph::CodeMap.new(code: %(
+      class Foo
+        # @!macro
+        #   @return [$1]
+        def self.bar klass
+        end
+      end
+      x = Foo.bar Hash
+      x
+    ))
+    type = code_map.infer_signature_at(code_map.get_offset(8, 7))
+    expect(type).to eq('Hash')
+  end
 end

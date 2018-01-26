@@ -25,7 +25,7 @@ module Solargraph
       def return_type
         if @return_type.nil? and !docstring.nil?
           tag = docstring.tag(:return)
-          @return_type = tag.types[0] unless tag.nil?
+          @return_type = tag.types[0] unless tag.nil? or tag.types.nil?
         end
         @return_type
       end

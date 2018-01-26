@@ -25,10 +25,7 @@ module Solargraph
     attr_reader :filename
 
     include NodeMethods
-
-    METHODS_WITH_YIELDPARAM_SUBTYPES = %w[
-      Array#each Hash#each_pair Array#map
-    ]
+    include CoreFills
 
     def initialize code: '', filename: nil, api_map: nil, cursor: nil
       # HACK: Adjust incoming filename's path separator for yardoc file comparisons
@@ -201,7 +198,7 @@ module Solargraph
     # source.
     #
     # @return [Array<Solargraph::Suggestion>] The completion suggestions
-    def suggest_at index, filtered: true, with_snippets: false
+    def suggest_at index, filtered: true
       return [] if string_at?(index) or string_at?(index - 1) or comment_at?(index)
       signature = get_signature_at(index)
       unless signature.include?('.')
@@ -233,15 +230,14 @@ module Solargraph
             result = api_map.get_constants(ns, namespace)
           else
             type = infer_literal_node_type(node_at(index - 2))
+            return [] if type.nil? and signature.empty? and !@code[0..index].rindex('.').nil? and @code[@code[0..index].rindex('.')..-1].strip == '.'
             if type.nil?
-              result += get_snippets_at(index) if with_snippets
-              result += get_local_variables_and_methods_at(index)
-              result += ApiMap.keywords
-              result += api_map.get_constants('', namespace)
-              result += api_map.get_constants('')
-              result += api_map.get_instance_methods('Kernel', namespace)
-              result += api_map.get_methods('', namespace)
-              #result += api_map.get_instance_methods('', namespace)
+              result.concat get_local_variables_and_methods_at(index)
+              result.concat ApiMap.keywords
+              result.concat api_map.get_constants('', namespace)
+              result.concat api_map.get_constants('')
+              result.concat api_map.get_instance_methods('Kernel', namespace)
+              result.concat api_map.get_methods('', namespace)
             else
               result.concat api_map.get_instance_methods(type)
             end
@@ -356,6 +352,8 @@ module Solargraph
               end
             end
           end
+        #elsif match = result.match(/^\$(\-?[0-9]*)$/)
+        #  STDERR.puts "TODO: handle expression variable #{match[1]}"
         end
       else
         if signature.empty? or signature == '[].'
@@ -395,7 +393,7 @@ module Solargraph
       false
     end
 
-    def infer_signature_from_node signature, node
+    def infer_signature_from_node signature, node, call_node: nil
       inferred = nil
       parts = signature.split('.')
       ns_here = namespace_from(node)
@@ -433,12 +431,13 @@ module Solargraph
           return api_map.infer_signature_type(remainder.join('.'), vartype, scope: :instance)
         end
       end
+      # @todo There might be some redundancy between find_local_variable_node and call_node
       var = find_local_variable_node(start, node)
       if var.nil?
         arg = get_method_arguments_from(node).select{|s| s.label == start}.first
         if arg.nil?
           scope = (node.type == :def ? :instance : :class)
-          type = api_map.infer_signature_type(signature, ns_here, scope: scope)
+          type = api_map.infer_signature_type(signature, ns_here, scope: scope, call_node: call_node)
           return type unless type.nil?
         else
           type = arg.return_type
@@ -447,17 +446,19 @@ module Solargraph
         # Signature starts with a local variable
         type = nil
         lvp = source.local_variable_pins.select{|p| p.name == var.children[0].to_s and p.visible_from?(node) and (!p.nil_assignment? or p.return_type)}.first
-        type = lvp.return_type unless lvp.nil?
-        if type.nil?
-          vsig = resolve_node_signature(var.children[1])
-          type = infer_signature_from_node vsig, node
+        unless lvp.nil?
+          type = lvp.return_type
+          if type.nil?
+            vsig = resolve_node_signature(var.children[1])
+            type = infer_signature_from_node vsig, node, call_node: lvp.assignment_node
+          end
         end
       end
       unless type.nil?
         if remainder.empty?
           inferred = type
         else
-          inferred = api_map.infer_signature_type(remainder.join('.'), type, scope: :instance)
+          inferred = api_map.infer_signature_type(remainder.join('.'), type, scope: :instance, call_node: call_node)
         end
       end
       if inferred.nil? and node.respond_to?(:loc)
@@ -494,26 +495,6 @@ module Solargraph
       get_signature_data_at(index)[0]
     end
 
-    # @deprecated Solargraph should not be responsible for snippets.
-    def get_snippets_at(index)
-      result = []
-      Snippets.definitions.each_pair { |name, detail|
-        matched = false
-        prefix = detail['prefix']
-        while prefix.length > 0
-          if @code[index-prefix.length, prefix.length] == prefix
-            matched = true
-            break
-          end
-          prefix = prefix[0..-2]
-        end
-        if matched
-          result.push Suggestion.new(detail['prefix'], kind: Suggestion::SNIPPET, detail: name, insert: detail['body'].join("\r\n"))
-        end
-      }
-      result
-    end
-
     # Get an array of local variables and methods that can be accessed from
     # the specified location in the code.
     #
@@ -535,6 +516,10 @@ module Solargraph
       result.concat get_yieldparams_at(index)
       result
     end
+
+    #def get_call_arguments_at index
+    #  called = parent_node_from(index, :send)
+    #end
 
     private
 
@@ -644,8 +629,7 @@ module Solargraph
             self_yield = infer_signature_from_node(blocksig, scope_node)
           end
         end
-        i = 0
-        block_node.children[1].children.each do |a|
+        block_node.children[1].children.each_with_index do |a, i|
           rt = nil
           if yps[i].nil? or yps[i].types.nil? or yps[i].types.empty?
             zsig = api_map.resolve_node_signature(block_node.children[0])
@@ -657,7 +641,6 @@ module Solargraph
             rt = yps[i].types[0]
           end
           result.push Suggestion.new(a.children[0], kind: Suggestion::PROPERTY, return_type: rt)
-          i += 1
         end
         result.concat api_map.get_instance_methods(self_yield, namespace_from(scope_node)) unless self_yield.nil?
       end
