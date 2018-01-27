@@ -234,7 +234,7 @@ module Solargraph
               result.concat api_map.get_instance_methods('Kernel', namespace)
               result.concat api_map.get_methods('', namespace)
             else
-              result.concat api_map.get_instance_methods(type)
+              result.concat api_map.get_instance_methods(type) unless @code[index - 1] != '.'
             end
           end
         end
