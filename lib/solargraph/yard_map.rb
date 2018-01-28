@@ -362,7 +362,11 @@ module Solargraph
           unless used.include?(r)
             used.push r
             result = find_yardoc(r)
-            yardocs.unshift result unless result.nil? or yardocs.include?(result)
+            if result.nil?
+              STDERR.puts "Required path not found: #{r}"
+            else
+              yardocs.unshift result unless yardocs.include?(result)
+            end
           end
         end
       end
