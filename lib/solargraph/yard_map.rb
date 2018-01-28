@@ -374,25 +374,29 @@ module Solargraph
 
     def find_yardoc path
       result = nil
-      $LOAD_PATH.each do |base|
-        source_file = File.join(base, "#{path}.rb")
-        if File.exist?(source_file)
-          if base.start_with?(Bundler.bundle_path.to_s)
-            match = File.dirname(base).split('/').last.match(/^([a-z0-9\-_]*?)-([0-9]+\.[0-9]+\.[0-9]+)/i)
-            unless match.nil? or match[1].nil?
-              result = YARD::Registry.yardoc_file_for_gem(match[1])
-              add_gem_dependencies match[1]
-              break
+      spec = Gem::Specification.find_by_path(path)
+      result = YARD::Registry.yardoc_file_for_gem(spec.name) unless spec.nil?
+      if result.nil?
+        $LOAD_PATH.each do |base|
+          source_file = File.join(base, "#{path}.rb")
+          if File.exist?(source_file)
+            if base.start_with?(Bundler.bundle_path.to_s)
+              match = File.dirname(base).split('/').last.match(/^([a-z0-9\-_]*?)-([0-9]+\.[0-9]+\.[0-9]+)/i)
+              unless match.nil? or match[1].nil?
+                result = YARD::Registry.yardoc_file_for_gem(match[1])
+                add_gem_dependencies match[1]
+                break
+              end
             end
-          end
-          yp = File.join(File.dirname(base), '.yardoc')
-          if File.exist?(yp)
-            result = yp
+            yp = File.join(File.dirname(base), '.yardoc')
+            if File.exist?(yp)
+              result = yp
+              break
+            else
+              # @todo Keep trying?
+            end
             break
-          else
-            # @todo Keep trying?
           end
-          break
         end
       end
       result
