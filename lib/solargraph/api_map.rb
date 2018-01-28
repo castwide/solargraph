@@ -922,7 +922,8 @@ module Solargraph
         end
         if scope == :class and part == 'new'
           scope = :instance
-        elsif !METHODS_RETURNING_SELF.include?(part)
+        else
+          curtype = type
           type = nil
           visibility = [:public]
           visibility.concat [:private, :protected] if top
@@ -932,10 +933,19 @@ module Solargraph
             tmp = get_methods(namespace, visibility: visibility)
           end
           tmp.concat get_instance_methods('Kernel', visibility: [:public]) if top
-          meth = tmp.select{|s| s.label == part}.first
-          return nil if meth.nil?
-          type = get_return_type_from_macro(namespace, signature, call_node, scope, visibility)
-          type = meth.return_type if type.nil?
+          matches = tmp.select{|s| s.label == part}
+          return nil if matches.empty?
+          matches.each do |m|
+            type = get_return_type_from_macro(namespace, signature, call_node, scope, visibility)
+            if type.nil?
+              if METHODS_RETURNING_SELF.include?(m.path)
+                type = curtype
+              else
+                type = m.return_type
+              end
+            end
+            break unless type.nil?
+          end
           scope = :instance
         end
         top = false

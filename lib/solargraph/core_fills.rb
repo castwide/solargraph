@@ -9,7 +9,7 @@ module Solargraph
     ].freeze
 
     METHODS_RETURNING_SELF = %w{
-      clone dup freeze taint untaint
+      Object#clone Object#dup Object#freeze Object#taint Object#untaint
     }.freeze
 
     METHODS_RETURNING_SUBTYPES = %w{
