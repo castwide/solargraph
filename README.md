@@ -2,7 +2,7 @@
 
 IDE tools for the Ruby language.
 
-Solargraph is a set of tools to integrate Ruby code completion and inline documentation into IDEs. The first supported IDE is Visual Studio Code.
+Solargraph is a set of tools to integrate Ruby code completion and inline documentation into IDEs.
 
 ## Online Demo
 
@@ -14,7 +14,23 @@ Solargraph is available as a Ruby gem:
 
     gem install solargraph
 
-To use it with Visual Studio Code, install the [Solargraph extension](https://marketplace.visualstudio.com/items?itemName=castwide.solargraph).
+## Using Solargraph
+
+Plug-ins and extensions are available for the following editors:
+
+* **Visual Studio Code**
+    * Extension: https://marketplace.visualstudio.com/items?itemName=castwide.solargraph
+    * GitHub: https://github.com/castwide/vscode-solargraph
+
+* **Atom**
+    * Package: https://atom.io/packages/ruby-solargraph
+    * GitHub: https://github.com/castwide/atom-solargraph
+
+* **Vim**
+    * GitHub: https://github.com/hackhowtofaq/vim-solargraph
+
+* **Emacs**
+    * GitHub: https://github.com/guskovd/emacs-solargraph
 
 ## How It Works
 
