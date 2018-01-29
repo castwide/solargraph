@@ -152,7 +152,7 @@ module Solargraph
                 label = "#{n}"
                 args = get_method_args(m)
                 kind = (m.is_attribute? ? Suggestion::FIELD : Suggestion::METHOD)
-                meths.push Suggestion.new(label, insert: "#{n.gsub(/=/, ' = ')}", kind: kind, docstring: m.docstring, code_object: m, detail: "#{ns}", location: "#{m.file}:#{m.line}", arguments: args)
+                meths.push Suggestion.new(label, insert: "#{n.gsub(/=/, ' = ')}", kind: kind, docstring: m.docstring, code_object: m, detail: "#{ns}", location: "#{m.file}:#{m.line - 1}:0", arguments: args)
               }
               # Collect superclass methods
               if ns.kind_of?(YARD::CodeObjects::ClassObject) and !ns.superclass.nil?
@@ -166,7 +166,7 @@ module Solargraph
                   meths.delete_if{|m| m.label == 'new'}
                   label = "#{i}"
                   args = get_method_args(i)
-                  meths.push Suggestion.new('new', kind: Suggestion::METHOD, docstring: i.docstring, code_object: i, detail: "#{ns}", location: "#{i.file}:#{i.line}", arguments: args)
+                  meths.push Suggestion.new('new', kind: Suggestion::METHOD, docstring: i.docstring, code_object: i, detail: "#{ns}", location: "#{i.file}:#{i.line - 1}:0", arguments: args)
                 end
               end
             end
@@ -197,7 +197,7 @@ module Solargraph
                   label = "#{n}"
                   args = get_method_args(m)
                   kind = (m.is_attribute? ? Suggestion::FIELD : Suggestion::METHOD)
-                  meths.push Suggestion.new(label, insert: "#{n.gsub(/=/, ' = ')}", kind: kind, docstring: m.docstring, code_object: m, detail: m.namespace, location: "#{m.file}:#{m.line}", arguments: args)
+                  meths.push Suggestion.new(label, insert: "#{n.gsub(/=/, ' = ')}", kind: kind, docstring: m.docstring, code_object: m, detail: m.namespace, location: object_location(m), arguments: args)
                 end
               }
               if ns.kind_of?(YARD::CodeObjects::ClassObject) and namespace != 'Object'
@@ -437,6 +437,11 @@ module Solargraph
       end
       result.push @@stdlib_yardoc if result.empty? and @@stdlib_namespaces.include?(namespace)
       result
+    end
+
+    def object_location obj
+      return nil if obj.file.nil? or obj.line.nil?
+      "#{obj.file}:#{obj.line - 1}:0"
     end
   end
 end
