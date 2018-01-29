@@ -817,11 +817,14 @@ describe Solargraph::ApiMap do
     expect(type).to eq('Baz')
   end
 
-  it "does not return operators in method suggestions" do
-    api_map = Solargraph::ApiMap.new
-    sugg = api_map.get_instance_methods(Array).map(&:to_s)
-    expect(sugg).not_to include('[]')
-  end
+  # @todo This spec may not apply anymore. Although CodeMap#suggest_at should
+  #   not return operators, the ApiMap needs them to identify signatures like
+  #   Array.[].
+  # it "does not return operators in method suggestions" do
+  #   api_map = Solargraph::ApiMap.new
+  #   sugg = api_map.get_instance_methods(Array).map(&:to_s)
+  #   expect(sugg).not_to include('[]')
+  # end
 
   it "detects return types from macro directives" do
     api_map = Solargraph::ApiMap.new

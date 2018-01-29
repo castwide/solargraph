@@ -241,6 +241,7 @@ module Solargraph
       else
         result.concat api_map.get_instance_methods(type) unless (type == '' and signature.include?('.'))
       end
+      result.keep_if{|s| s.label.match(/^[a-z0-9_]*(\!|\?)?$/i)}
       result = reduce_starting_with(result, word_at(index)) if filtered
       # Use a stable sort to keep the class order (e.g., local methods before superclass methods)
       result.uniq(&:path).sort_by.with_index{ |x, idx| [x.label, idx] }

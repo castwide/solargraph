@@ -940,6 +940,9 @@ module Solargraph
             if type.nil?
               if METHODS_RETURNING_SELF.include?(m.path)
                 type = curtype
+              elsif METHODS_RETURNING_SUBTYPES.include?(m.path)
+                subtypes = get_subtypes(namespace)
+                type = subtypes[0]
               else
                 type = m.return_type
               end
