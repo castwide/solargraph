@@ -840,4 +840,25 @@ describe Solargraph::ApiMap do
     type = api_map.infer_signature_type('@x', '')
     expect(type).to eq('Hash')
   end
+
+  it "rebuilds maps from file changes" do
+    api_map = Solargraph::ApiMap.new
+    api_map.virtualize(%(
+      class Foobar
+        def baz
+        end
+      end
+    ), 'file.rb')
+    sugg = api_map.get_instance_methods('Foobar').map(&:to_s)
+    expect(sugg).to include('baz')
+    api_map.virtualize(%(
+      class Foobar
+        def boo
+        end
+      end
+    ), 'file.rb')
+    sugg = api_map.get_instance_methods('Foobar').map(&:to_s)
+    expect(sugg).to include('boo')
+    expect(sugg).not_to include('baz')
+  end
 end
