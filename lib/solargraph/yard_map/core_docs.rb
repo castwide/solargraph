@@ -8,7 +8,7 @@ module Solargraph
     module CoreDocs
       class SourceNotAvailableError < StandardError;end
       
-      SOURCE = 'http://solargraph.org/download'
+      SOURCE = 'https://solargraph.org/download'
 
       class << self
         def cache_dir
