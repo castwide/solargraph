@@ -108,6 +108,7 @@ module Solargraph
       end
     end
 
+    # @deprecated Use /define instead.
     post '/hover' do
       content_type :json
       begin
@@ -133,7 +134,9 @@ module Solargraph
     get '/document' do
       workspace = params['workspace']
       api_map = get_api_map(workspace) || Solargraph::ApiMap.new
+      STDERR.puts "The damn thang is #{params['query']}"
       @objects = api_map.document(params['query'])
+      STDERR.puts "The damn result is #{@objects.length} thangs"
       erb :document
     end
 
