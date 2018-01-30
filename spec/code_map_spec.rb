@@ -132,7 +132,7 @@ describe Solargraph::CodeMap do
     sugg = code_map.suggest_at(69)
     expect(sugg.map{ |s| s.label }).to include('upcase')
     sugg = code_map.resolve_object_at(67)
-    expect(sugg[0].path).to eq('String')
+    expect(sugg[0].return_type).to eq('String')
   end
 
   it "infers the type of an instance variable" do
@@ -147,7 +147,7 @@ describe Solargraph::CodeMap do
     ))
     sugg = code_map.resolve_object_at(63)
     expect(sugg.length).to eq(1)
-    expect(sugg[0].path).to eq('String')
+    expect(sugg[0].return_type).to eq('String')
   end
 
   it "detects a nested class name" do

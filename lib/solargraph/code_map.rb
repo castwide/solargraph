@@ -258,96 +258,35 @@ module Solargraph
     # @return [Array<Solargraph::Suggestion>]
     def define_symbol_at index
       return [] if string_at?(index)
-      signature = get_signature_at(index)
-      cursor = index
-      while @code[cursor] =~ /[a-z0-9_\?]/i
-        signature += @code[cursor]
-        cursor += 1
-        break if cursor >= @code.length
-      end
-      return [] if signature.to_s == ''
-      path = nil
-      ns_here = namespace_at(index)
+      signature = get_signature_at(index, final: true)
+      return [] if signature.to_s.empty?
       node = parent_node_from(index, :class, :module, :def, :defs) || @node
-      parts = signature.split('.')
-      if parts.length > 1
-        beginner = parts[0..-2].join('.')
-        type = infer_signature_from_node(beginner, node)
-        ender = parts.last
-        path = "#{type}##{ender}"
-      else
+      ns_here = namespace_from(node)
+      unless signature.include?('.')
         if local_variable_in_node?(signature, node)
           return get_local_variables_from(node).select{|s| s.label == signature}
         elsif signature.start_with?('@@')
           return api_map.get_class_variables(ns_here).select{|s| s.label == signature}
         elsif signature.start_with?('@')
           return api_map.get_instance_variables(ns_here, (node.type == :def ? :instance : :class)).select{|s| s.label == signature}
-        else
-          path = signature
-        end
-        if path.nil?
-          path = api_map.find_fully_qualified_namespace(signature, ns_here)
-        else
-          scope = (node.type == :def ? :instance : :class)
-          if scope == :instance
-            meths = api_map.get_instance_methods('', ns_here, visibility: [:public, :private, :protected]).select{|s| s.label == signature}
-          else
-            meths = api_map.get_methods('', ns_here, visibility: [:public, :private, :protected]).select{|s| s.label == signature}
-          end
-          return meths unless meths.empty?
         end
       end
-      return [] if path.nil?
-      if path.start_with?('Class<')
-        path.gsub!(/^Class<([a-z0-9_:]*)>#([a-z0-9_]*)$/i, '\\1.\\2')
+      path = infer_path_from_signature_and_node(signature, node)
+      ps = []
+      ps = api_map.get_path_suggestions(path) unless path.nil?
+      return ps unless ps.empty?
+      ps = api_map.get_path_suggestions(signature)
+      return ps unless ps.empty?
+      scope = (node.type == :def ? :instance : :class)
+      if scope == :instance
+        api_map.get_instance_methods('', namespace_from(node), visibility: [:public, :private, :protected]).select{|s| s.to_s == signature}
+      else
+        api_map.get_methods('', namespace_from(node), visibility: [:public, :private, :protected]).select{|s| s.to_s == signature}
       end
-      api_map.get_path_suggestions(path)
     end
 
     def resolve_object_at index
-      return [] if string_at?(index)
-      signature = get_signature_at(index)
-      cursor = index
-      while @code[cursor] =~ /[a-z0-9_\?]/i
-        signature += @code[cursor]
-        cursor += 1
-        break if cursor >= @code.length
-      end
-      return [] if signature.to_s == ''
-      path = nil
-      ns_here = namespace_at(index)
-      node = parent_node_from(index, :class, :module, :def, :defs) || @node
-      parts = signature.split('.')
-      if parts.length > 1
-        beginner = parts[0..-2].join('.')
-        type = infer_signature_from_node(beginner, node)
-        ender = parts.last
-        path = "#{type}##{ender}"
-      else
-        if local_variable_in_node?(signature, node)
-          path = infer_signature_from_node(signature, node)
-        elsif signature.start_with?('@')
-          path = api_map.infer_instance_variable(signature, ns_here, (node.type == :def ? :instance : :class))
-        else
-          path = signature
-        end
-        if path.nil?
-          path = api_map.find_fully_qualified_namespace(signature, ns_here)
-        elsif path.match(/^[a-z0-9_]*(\?|\!)?$/i)
-          scope = (node.type == :def ? :instance : :class)
-          if scope == :instance
-            meths = api_map.get_instance_methods('', ns_here, visibility: [:public, :private, :protected]).select{|s| s.label == signature}
-          else
-            meths = api_map.get_methods('', ns_here, visibility: [:public, :private, :protected]).select{|s| s.label == signature}
-          end
-          return meths unless meths.empty?
-        end
-      end
-      return [] if path.nil?
-      if path.start_with?('Class<')
-        path.gsub!(/^Class<([a-z0-9_:]*)>#([a-z0-9_]*)$/i, '\\1.\\2')
-      end
-      api_map.get_path_suggestions(path)
+      define_symbol_at index
     end
 
     # Infer the type of the signature located at the specified index.
@@ -540,8 +479,17 @@ module Solargraph
     #
     # @param index [Integer]
     # @return [String]
-    def get_signature_at index
-      get_signature_data_at(index)[1]
+    def get_signature_at index, final: false
+      sig = get_signature_data_at(index)[1]
+      if final
+        cursor = index
+        while @code[cursor] =~ /[a-z0-9_\?]/i
+          sig += @code[cursor]
+          cursor += 1
+          break if cursor >= @code.length
+        end
+      end
+      sig
     end
 
     def get_signature_index_at index
