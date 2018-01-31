@@ -166,7 +166,7 @@ module Solargraph
                   meths.delete_if{|m| m.label == 'new'}
                   label = "#{i}"
                   args = get_method_args(i)
-                  meths.push Suggestion.new('new', kind: Suggestion::METHOD, docstring: i.docstring, code_object: i, detail: "#{ns}", location: object_location(m), arguments: args)
+                  meths.push Suggestion.new('new', kind: Suggestion::METHOD, docstring: i.docstring, code_object: i, detail: "#{ns}", location: object_location(i), arguments: args)
                 end
               end
             end
