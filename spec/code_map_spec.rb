@@ -738,4 +738,16 @@ describe Solargraph::CodeMap do
     type = code_map.infer_signature_at(code_map.get_offset(8, 7))
     expect(type).to eq('Hash')
   end
+
+  it "includes methods with = in suggestions" do
+    code_map = Solargraph::CodeMap.new(code: %(
+      class Foo
+        attr_accessor :bar
+      end
+      foo = Foo.new
+      foo.
+    ))
+    sugg = code_map.suggest_at(code_map.get_offset(5, 10)).map(&:to_s)
+    expect(sugg).to include('bar=')
+  end
 end
