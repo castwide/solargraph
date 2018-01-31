@@ -133,10 +133,9 @@ module Solargraph
 
     get '/document' do
       workspace = params['workspace']
+      workspace.gsub!(/\\/, '/') unless workspace.nil?
       api_map = get_api_map(workspace) || Solargraph::ApiMap.new
-      STDERR.puts "The damn thang is #{params['query']}"
       @objects = api_map.document(params['query'])
-      STDERR.puts "The damn result is #{@objects.length} thangs"
       erb :document
     end
 
