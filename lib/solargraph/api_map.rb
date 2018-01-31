@@ -673,7 +673,7 @@ module Solargraph
     # @return [Array<YARD::CodeObject::Base>]
     def document path
       refresh
-      rake_yard(@sources.values) #if @yard_stale
+      rake_yard(@sources.values) if @yard_stale
       @yard_stale = false
       docs = []
       docs.push code_object_at(path) unless code_object_at(path).nil?
