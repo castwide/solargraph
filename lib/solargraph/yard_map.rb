@@ -439,7 +439,11 @@ module Solargraph
       result
     end
 
+    # @param obj [YARD::CodeObjects::Base]
     def object_location obj
+      # @todo Locations from YardMaps are temporarily disabled pending a
+      # method for resolving the source file's absolute path.
+      return nil
       return nil if obj.file.nil? or obj.line.nil?
       "#{obj.file}:#{obj.line - 1}:0"
     end
