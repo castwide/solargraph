@@ -278,11 +278,19 @@ module Solargraph
       ps = api_map.get_path_suggestions(signature)
       return ps unless ps.empty?
       scope = (node.type == :def ? :instance : :class)
+      final = []
       if scope == :instance
-        api_map.get_instance_methods('', namespace_from(node), visibility: [:public, :private, :protected]).select{|s| s.to_s == signature}
+        final.concat api_map.get_instance_methods('', namespace_from(node), visibility: [:public, :private, :protected]).select{|s| s.to_s == signature}
       else
-        api_map.get_methods('', namespace_from(node), visibility: [:public, :private, :protected]).select{|s| s.to_s == signature}
+        final.concat api_map.get_methods('', namespace_from(node), visibility: [:public, :private, :protected]).select{|s| s.to_s == signature}
       end
+      if final.empty? and !signature.include?('.')
+        STDERR.puts "Okay, try to resolve #{signature}"
+        fqns = api_map.find_fully_qualified_namespace(signature, ns_here)
+        STDERR.puts "Full is #{fqns}"
+        final.concat api_map.get_path_suggestions(fqns) unless fqns.nil? or fqns.empty?
+      end
+      final
     end
 
     def resolve_object_at index
