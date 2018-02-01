@@ -161,11 +161,6 @@ module Solargraph
       @sources[filename].docstring_for(node)
     end
 
-    # @deprecated Use get_docstring_for instead.
-    def get_comment_for node
-      get_docstring_for node
-    end
-
     # An array of suggestions based on Ruby keywords (`if`, `end`, etc.).
     #
     # @return [Array<Solargraph::Suggestion>]
@@ -190,11 +185,6 @@ module Solargraph
     # @return [Boolean]
     def namespace_exists? name, root = ''
       !find_fully_qualified_namespace(name, root).nil?
-    end
-
-    # @deprecated Use get_constants instead.
-    def namespaces_in name, root = ''
-      get_constants name, root
     end
 
     # Get an array of constant pins defined in the ApiMap. (This method does
