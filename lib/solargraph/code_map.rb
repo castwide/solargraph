@@ -285,9 +285,7 @@ module Solargraph
         final.concat api_map.get_methods('', namespace_from(node), visibility: [:public, :private, :protected]).select{|s| s.to_s == signature}
       end
       if final.empty? and !signature.include?('.')
-        STDERR.puts "Okay, try to resolve #{signature}"
         fqns = api_map.find_fully_qualified_namespace(signature, ns_here)
-        STDERR.puts "Full is #{fqns}"
         final.concat api_map.get_path_suggestions(fqns) unless fqns.nil? or fqns.empty?
       end
       final

@@ -750,4 +750,129 @@ describe Solargraph::CodeMap do
     sugg = code_map.suggest_at(code_map.get_offset(5, 10)).map(&:to_s)
     expect(sugg).to include('bar=')
   end
+
+  it "defines class method calls" do
+    code_map = Solargraph::CodeMap.new(code: %(
+      Array.class
+    ))
+    sugg = code_map.define_symbol_at(code_map.get_offset(1, 13))
+    expect(sugg[0].path).to eq('Object#class')
+  end
+
+  it "defines instance method calls" do
+    code_map = Solargraph::CodeMap.new(code: %(
+      x = String.new
+      x.upcase
+    ))
+    sugg = code_map.define_symbol_at(code_map.get_offset(2, 9))
+    expect(sugg[0].path).to eq('String#upcase')
+  end
+
+  it "defines class variables" do
+    code_map = Solargraph::CodeMap.new(code: %(
+      class Foo
+        @@bar = 'bar'
+        @@bar
+      end
+    ))
+    sugg = code_map.define_symbol_at(code_map.get_offset(3, 10))
+    expect(sugg[0].label).to eq('@@bar')
+    expect(sugg[0].return_type).to eq('String')
+  end
+
+  it "defines instance variables" do
+    code_map = Solargraph::CodeMap.new(code: %(
+      class Foo
+        def bar
+          @bar = 'bar'
+        end
+        def baz
+          @bar
+        end
+      end
+    ))
+    sugg = code_map.define_symbol_at(code_map.get_offset(6, 11))
+    expect(sugg[0].label).to eq('@bar')
+    expect(sugg[0].return_type).to eq('String')
+  end
+
+  it "defines local instance method calls" do
+    code_map = Solargraph::CodeMap.new(code: %(
+      class Foo
+        # @return [String]
+        def bar
+        end
+        def baz
+          bar
+        end
+      end
+    ))
+    sugg = code_map.define_symbol_at(code_map.get_offset(6, 11))
+    expect(sugg[0].path).to eq('Foo#bar')
+    expect(sugg[0].return_type).to eq('String')
+  end
+
+  it "defines local class method calls" do
+    code_map = Solargraph::CodeMap.new(code: %(
+      class Foo
+        # @return [String]
+        def self.bar
+        end
+        bar
+      end
+    ))
+    sugg = code_map.define_symbol_at(code_map.get_offset(5, 9))
+    expect(sugg[0].path).to eq('Foo.bar')
+    expect(sugg[0].return_type).to eq('String')
+  end
+
+  it "defines core class names" do
+    code_map = Solargraph::CodeMap.new(code: %(
+      String
+    ))
+    sugg = code_map.define_symbol_at(code_map.get_offset(1, 7))
+    expect(sugg[0].path).to eq('String')
+  end
+
+  it "defines class names" do
+    code_map = Solargraph::CodeMap.new(code: %(
+      class Foobar;end
+      Foobar
+    ))
+    sugg = code_map.define_symbol_at(code_map.get_offset(2, 7))
+    expect(sugg[0].path).to eq('Foobar')
+  end
+
+  it "defines module names" do
+    code_map = Solargraph::CodeMap.new(code: %(
+      module Foobar;end
+      Foobar
+    ))
+    sugg = code_map.define_symbol_at(code_map.get_offset(2, 7))
+    expect(sugg[0].path).to eq('Foobar')
+  end
+
+  it "defines nested namespaces" do
+    code_map = Solargraph::CodeMap.new(code: %(
+      module Foo
+        class Bar
+        end
+      end
+      Foo::Bar
+    ))
+    sugg = code_map.define_symbol_at(code_map.get_offset(5, 12))
+    expect(sugg[0].path).to eq('Foo::Bar')
+  end
+
+  it "defines local namespaces" do
+    code_map = Solargraph::CodeMap.new(code: %(
+      module Foo
+        class Bar
+        end
+        Bar
+      end
+    ))
+    sugg = code_map.define_symbol_at(code_map.get_offset(4, 9))
+    expect(sugg[0].path).to eq('Foo::Bar')
+  end
 end
