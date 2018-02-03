@@ -949,7 +949,7 @@ module Solargraph
       type
     end
 
-    def inner_get_constants here, skip = [], deep = true, visibility
+    def inner_get_constants here, skip = [], deep = true, visibility = [:public]
       return [] if skip.include?(here)
       skip.push here
       result = []
@@ -974,6 +974,12 @@ module Solargraph
       end
       get_include_strings_from(*get_namespace_nodes(here)).each do |i|
         result.concat inner_get_constants(i, skip, false, :public)
+      end
+      if here.include?('::') and deep
+        sub = here.split('::')[0..-2].join('::')
+        result.concat inner_get_constants(sub, skip, false)
+      else
+        result.concat @namespace_pins[''].select{|p| p.path == here}.map{|p| pin_to_suggestion(p)} unless @namespace_pins[''].nil?
       end
       result
     end
