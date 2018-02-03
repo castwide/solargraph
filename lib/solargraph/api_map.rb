@@ -208,18 +208,25 @@ module Solargraph
       result = []
       skip = []
       fqns = find_fully_qualified_namespace(namespace, root)
+      return [] if fqns.nil?
       if fqns.empty?
-        result.concat inner_get_constants('', skip, false, :public)
+        result.concat inner_get_constants('', skip, false, [:public])
       else
         parts = fqns.split('::')
-        resolved = find_namespace_pins(parts.join('::'))
-        resolved.each do |pin|
-          visi = :public
-          visi = :private if namespace == '' and root != '' and pin.path == fqns
-          result.concat inner_get_constants(pin.path, skip, true, visi)
+        while parts.length > 0
+          resolved = find_namespace_pins(parts.join('::'))
+          resolved.each do |pin|
+            visi = :public
+            visi = :private if namespace == '' and root != '' and pin.path == fqns
+            result.concat inner_get_constants(pin.path, skip, true, visi)
+          end
+          parts.pop
+          break unless namespace.empty?
         end
+        result.concat inner_get_constants('', [], false) if namespace.empty?
       end
       result.concat yard_map.get_constants(fqns)
+      result.delete_if{|s| s.path == fqns}
       result
     end
 
@@ -956,12 +963,14 @@ module Solargraph
       cp = @const_pins[here]
       unless cp.nil?
         cp.each do |pin|
+          #next if skip.include?(pin.path)
           result.push pin_to_suggestion(pin) if pin.visibility == :public or visibility == :private
         end
       end
       np = @namespace_pins[here]
       unless np.nil?
         np.each do |pin|
+          #next if skip.include?(pin.path)
           if pin.visibility == :public || visibility == :private
             result.push pin_to_suggestion(pin)
             if deep
@@ -974,12 +983,6 @@ module Solargraph
       end
       get_include_strings_from(*get_namespace_nodes(here)).each do |i|
         result.concat inner_get_constants(i, skip, false, :public)
-      end
-      if here.include?('::') and deep
-        sub = here.split('::')[0..-2].join('::')
-        result.concat inner_get_constants(sub, skip, false)
-      else
-        result.concat @namespace_pins[''].select{|p| p.path == here}.map{|p| pin_to_suggestion(p)} unless @namespace_pins[''].nil?
       end
       result
     end
