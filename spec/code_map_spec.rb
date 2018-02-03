@@ -875,4 +875,12 @@ describe Solargraph::CodeMap do
     sugg = code_map.define_symbol_at(code_map.get_offset(4, 9))
     expect(sugg[0].path).to eq('Foo::Bar')
   end
+
+  it "processes ERB templates" do
+    code_map = Solargraph::CodeMap.new(code: %(
+    <% Str %>
+    ), filename: 'file.erb')
+    sugg = code_map.suggest_at(code_map.get_offset(1, 10)).map(&:to_s)
+    expect(sugg).to include('String')
+  end
 end
