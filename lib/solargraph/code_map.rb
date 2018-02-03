@@ -2,8 +2,6 @@ require 'parser/current'
 
 module Solargraph
   class CodeMap
-    autoload :Statement, 'solargraph/code_map/statement'
-
     # The root node of the parsed code.
     #
     # @return [Parser::AST::Node]
