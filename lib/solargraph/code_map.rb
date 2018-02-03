@@ -823,7 +823,11 @@ module Solargraph
       result = ''
       i = 0
       in_code = false
-      if template.start_with? '<%'
+      if template.start_with?('<%=')
+        i += 3
+        result += ';;;'
+        in_code = true
+      elsif template.start_with? '<%'
         i += 2
         result += ';;'
         in_code = true
