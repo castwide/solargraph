@@ -583,6 +583,10 @@ describe Solargraph::ApiMap do
     expect(suggestions).not_to include('Foo::Bar')
     expect(suggestions).not_to include('Foo')
     expect(suggestions).not_to include('Foo::Bar2')
+    suggestions = api_map.get_constants('', 'Foo::Bar').map(&:path)
+    expect(suggestions).to include('Foo::Bar')
+    expect(suggestions).to include('Foo::Bar::Baz')
+    expect(suggestions).to include('Foo::Bar2')
   end
 
   it "gets unique instance variable names" do

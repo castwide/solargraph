@@ -226,7 +226,7 @@ module Solargraph
         result.concat inner_get_constants('', [], false) if namespace.empty?
       end
       result.concat yard_map.get_constants(fqns)
-      result.delete_if{|s| s.path == fqns}
+      #result.delete_if{|s| s.path == fqns}
       result
     end
 
