@@ -93,6 +93,22 @@ module Solargraph
       end
     end
 
+    post '/define' do
+      content_type :json
+      begin
+        sugg = []
+        workspace = find_local_workspace(params['filename'], params['workspace'])
+        api_map = get_api_map(workspace)
+        code_map = CodeMap.new(code: params['text'], filename: params['filename'], api_map: @@api_hash[workspace], cursor: [params['line'].to_i, params['column'].to_i])
+        offset = code_map.get_offset(params['line'].to_i, params['column'].to_i)
+        sugg = code_map.define_symbol_at(offset)
+        { "status" => "ok", "suggestions" => sugg }.to_json
+      rescue Exception => e
+        send_exception e
+      end
+    end
+
+    # @deprecated Use /define instead.
     post '/hover' do
       content_type :json
       begin
@@ -117,6 +133,7 @@ module Solargraph
 
     get '/document' do
       workspace = params['workspace']
+      workspace.gsub!(/\\/, '/') unless workspace.nil?
       api_map = get_api_map(workspace) || Solargraph::ApiMap.new
       @objects = api_map.document(params['query'])
       erb :document

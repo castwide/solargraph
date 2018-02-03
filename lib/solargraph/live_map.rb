@@ -76,25 +76,6 @@ module Solargraph
       @@plugin_registry[name] = klass
     end
 
-    # Register a plugin for LiveMap to use when generating suggestions.
-    # @deprecated See Solargraph::LiveMap.register instead
-    #
-    # @param cls [Class<Solargraph::Plugin::Base>]
-    def self.install cls
-      STDERR.puts "WARNING: The Solargraph::LiveMap.install procedure for installing plugins is no longer used. This operation will be ignored."
-    end
-
-    # @deprecated
-    def self.uninstall cls
-      STDERR.puts "WARNING: The Solargraph::LiveMap.uninstall procedure for uninstalling plugins is no longer used. This operation will be ignored."
-    end
-
-    # @deprecated
-    def self.plugins
-      STDERR.puts "WARNING: Plugins have changed. The Solargraph::LiveMap.plugins attribute is no longer used."
-      []
-    end
-
     def refresh
       changed = false
       runners.each do |p|

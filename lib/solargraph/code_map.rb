@@ -238,13 +238,14 @@ module Solargraph
               result.concat api_map.get_instance_methods('Kernel', namespace)
               result.concat api_map.get_methods('', namespace)
             else
-              result.concat api_map.get_instance_methods(type)
+              result.concat api_map.get_instance_methods(type) unless @code[index - 1] != '.'
             end
           end
         end
       else
         result.concat api_map.get_instance_methods(type) unless (type == '' and signature.include?('.'))
       end
+      result.keep_if{|s| s.kind != Solargraph::Suggestion::METHOD or s.label.match(/^[a-z0-9_]*(\!|\?|=)?$/i)}
       result = reduce_starting_with(result, word_at(index)) if filtered
       # Use a stable sort to keep the class order (e.g., local methods before superclass methods)
       result.uniq(&:path).sort_by.with_index{ |x, idx| [x.label, idx] }
@@ -258,42 +259,44 @@ module Solargraph
       sugg.select{|s| s.label == word}
     end
 
-    def resolve_object_at index
+    # @return [Array<Solargraph::Suggestion>]
+    def define_symbol_at index
       return [] if string_at?(index)
-      signature = get_signature_at(index)
-      cursor = index
-      while @code[cursor] =~ /[a-z0-9_\?]/i
-        signature += @code[cursor]
-        cursor += 1
-        break if cursor >= @code.length
-      end
-      return [] if signature.to_s == ''
-      path = nil
-      ns_here = namespace_at(index)
+      signature = get_signature_at(index, final: true)
+      return [] if signature.to_s.empty?
       node = parent_node_from(index, :class, :module, :def, :defs) || @node
-      parts = signature.split('.')
-      if parts.length > 1
-        beginner = parts[0..-2].join('.')
-        type = infer_signature_from_node(beginner, node)
-        ender = parts.last
-        path = "#{type}##{ender}"
-      else
+      ns_here = namespace_from(node)
+      unless signature.include?('.')
         if local_variable_in_node?(signature, node)
-          path = infer_signature_from_node(signature, node)
+          return get_local_variables_from(node).select{|s| s.label == signature}
+        elsif signature.start_with?('@@')
+          return api_map.get_class_variables(ns_here).select{|s| s.label == signature}
         elsif signature.start_with?('@')
-          path = api_map.infer_instance_variable(signature, ns_here, (node.type == :def ? :instance : :class))
-        else
-          path = signature
-        end
-        if path.nil?
-          path = api_map.find_fully_qualified_namespace(signature, ns_here)
+          return api_map.get_instance_variables(ns_here, (node.type == :def ? :instance : :class)).select{|s| s.label == signature}
         end
       end
-      return [] if path.nil?
-      if path.start_with?('Class<')
-        path.gsub!(/^Class<([a-z0-9_:]*)>#([a-z0-9_]*)$/i, '\\1.\\2')
+      path = infer_path_from_signature_and_node(signature, node)
+      ps = []
+      ps = api_map.get_path_suggestions(path) unless path.nil?
+      return ps unless ps.empty?
+      ps = api_map.get_path_suggestions(signature)
+      return ps unless ps.empty?
+      scope = (node.type == :def ? :instance : :class)
+      final = []
+      if scope == :instance
+        final.concat api_map.get_instance_methods('', namespace_from(node), visibility: [:public, :private, :protected]).select{|s| s.to_s == signature}
+      else
+        final.concat api_map.get_methods('', namespace_from(node), visibility: [:public, :private, :protected]).select{|s| s.to_s == signature}
       end
-      api_map.get_path_suggestions(path)
+      if final.empty? and !signature.include?('.')
+        fqns = api_map.find_fully_qualified_namespace(signature, ns_here)
+        final.concat api_map.get_path_suggestions(fqns) unless fqns.nil? or fqns.empty?
+      end
+      final
+    end
+
+    def resolve_object_at index
+      define_symbol_at index
     end
 
     # Infer the type of the signature located at the specified index.
@@ -486,8 +489,17 @@ module Solargraph
     #
     # @param index [Integer]
     # @return [String]
-    def get_signature_at index
-      get_signature_data_at(index)[1]
+    def get_signature_at index, final: false
+      sig = get_signature_data_at(index)[1]
+      if final
+        cursor = index
+        while @code[cursor] =~ /[a-z0-9_\?]/i
+          sig += @code[cursor]
+          cursor += 1
+          break if cursor >= @code.length
+        end
+      end
+      sig
     end
 
     def get_signature_index_at index

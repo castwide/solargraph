@@ -1,4 +1,5 @@
 require 'yard'
+require 'bundler'
 
 module Solargraph
   class YardMap
@@ -18,24 +19,17 @@ module Solargraph
 
     def initialize required: [], workspace: nil
       @workspace = workspace
-      used = []
       # HACK: YardMap needs its own copy of this array
       @required = required.clone
       @namespace_yardocs = {}
-      @required.each do |r|
-        if workspace.nil? or !File.exist?(File.join workspace, 'lib', "#{r}.rb")
-          g = r.split('/').first
-          unless used.include?(g)
-            used.push g
-            gy = YARD::Registry.yardoc_file_for_gem(g)
-            if gy.nil?
-              STDERR.puts "Required path not found: #{r}"
-            else
-              yardocs.unshift gy
-              add_gem_dependencies g
-            end
+      if !workspace.nil? and File.exist?(File.join workspace, 'Gemfile')
+        Bundler.with_clean_env do
+          Bundler.environment.chdir(workspace) do
+            process_requires
           end
         end
+      else
+        process_requires
       end
       yardocs.push CoreDocs.yardoc_file
       yardocs.uniq!
@@ -154,11 +148,11 @@ module Solargraph
             ns = find_first_resolved_namespace(yard, namespace, scope)
             unless ns.nil?
               ns.meths(scope: :class, visibility: visibility).each { |m|
-                n = m.to_s.split(/[\.#]/).last.gsub(/=/, ' = ')
+                n = m.to_s.split(/[\.#]/).last.gsub(/=$/, ' = ')
                 label = "#{n}"
                 args = get_method_args(m)
                 kind = (m.is_attribute? ? Suggestion::FIELD : Suggestion::METHOD)
-                meths.push Suggestion.new(label, insert: "#{n.gsub(/=/, ' = ')}", kind: kind, docstring: m.docstring, code_object: m, detail: "#{ns}", location: "#{m.file}:#{m.line}", arguments: args)
+                meths.push Suggestion.new(label, insert: n, kind: kind, docstring: m.docstring, code_object: m, detail: "#{ns}", location: object_location(m), arguments: args)
               }
               # Collect superclass methods
               if ns.kind_of?(YARD::CodeObjects::ClassObject) and !ns.superclass.nil?
@@ -172,7 +166,7 @@ module Solargraph
                   meths.delete_if{|m| m.label == 'new'}
                   label = "#{i}"
                   args = get_method_args(i)
-                  meths.push Suggestion.new('new', kind: Suggestion::METHOD, docstring: i.docstring, code_object: i, detail: "#{ns}", location: "#{i.file}:#{i.line}", arguments: args)
+                  meths.push Suggestion.new('new', kind: Suggestion::METHOD, docstring: i.docstring, code_object: i, detail: "#{ns}", location: object_location(i), arguments: args)
                 end
               end
             end
@@ -197,11 +191,13 @@ module Solargraph
             unless ns.nil?
               ns.meths(scope: :instance, visibility: visibility).each { |m|
                 n = m.to_s.split(/[\.#]/).last
-                if n.to_s.match(/^[a-z]/i) and (namespace == 'Kernel' or !m.to_s.start_with?('Kernel#')) and !m.docstring.to_s.include?(':nodoc:')
+                # @todo Return method names like []?
+                #if n.to_s.match(/^[a-z]/i) and (namespace == 'Kernel' or !m.to_s.start_with?('Kernel#')) and !m.docstring.to_s.include?(':nodoc:')
+                if (namespace == 'Kernel' or !m.to_s.start_with?('Kernel#')) and !m.docstring.to_s.include?(':nodoc:')
                   label = "#{n}"
                   args = get_method_args(m)
                   kind = (m.is_attribute? ? Suggestion::FIELD : Suggestion::METHOD)
-                  meths.push Suggestion.new(label, insert: "#{n.gsub(/=/, ' = ')}", kind: kind, docstring: m.docstring, code_object: m, detail: m.namespace, location: "#{m.file}:#{m.line}", arguments: args)
+                  meths.push Suggestion.new(label, insert: "#{n.gsub(/=$/, ' = ')}", kind: kind, docstring: m.docstring, code_object: m, detail: m.namespace, location: object_location(m), arguments: args)
                 end
               }
               if ns.kind_of?(YARD::CodeObjects::ClassObject) and namespace != 'Object'
@@ -361,6 +357,53 @@ module Solargraph
       end
     end
 
+    def process_requires
+      used = []
+      @required.each do |r|
+        if workspace.nil? or !File.exist?(File.join workspace, 'lib', "#{r}.rb")
+          unless used.include?(r)
+            used.push r
+            result = find_yardoc(r)
+            if result.nil?
+              STDERR.puts "Required path not found: #{r}"
+            else
+              yardocs.unshift result unless yardocs.include?(result)
+            end
+          end
+        end
+      end
+    end
+
+    def find_yardoc path
+      result = nil
+      spec = Gem::Specification.find_by_path(path)
+      result = YARD::Registry.yardoc_file_for_gem(spec.name) unless spec.nil?
+      if result.nil?
+        $LOAD_PATH.each do |base|
+          source_file = File.join(base, "#{path}.rb")
+          if File.exist?(source_file)
+            if base.start_with?(Bundler.bundle_path.to_s)
+              match = File.dirname(base).split('/').last.match(/^([a-z0-9\-_]*?)-([0-9]+\.[0-9]+\.[0-9]+)/i)
+              unless match.nil? or match[1].nil?
+                result = YARD::Registry.yardoc_file_for_gem(match[1])
+                add_gem_dependencies match[1]
+                break
+              end
+            end
+            yp = File.join(File.dirname(base), '.yardoc')
+            if File.exist?(yp)
+              result = yp
+              break
+            else
+              # @todo Keep trying?
+            end
+            break
+          end
+        end
+      end
+      result
+    end
+
     def add_gem_dependencies gem_name
       spec = Gem::Specification.find_by_name(gem_name)
       (spec.dependencies - spec.development_dependencies).each do |dep|
@@ -368,8 +411,7 @@ module Solargraph
         if gy.nil?
           STDERR.puts "Required path not found: #{dep.name}"
         else
-          #STDERR.puts "Adding #{gy}"
-          yardocs.unshift gy
+          yardocs.unshift gy unless yardocs.include?(gy)
         end
       end
     end
@@ -395,6 +437,15 @@ module Solargraph
       end
       result.push @@stdlib_yardoc if result.empty? and @@stdlib_namespaces.include?(namespace)
       result
+    end
+
+    # @param obj [YARD::CodeObjects::Base]
+    def object_location obj
+      # @todo Locations from YardMaps are temporarily disabled pending a
+      # method for resolving the source file's absolute path.
+      return nil
+      return nil if obj.file.nil? or obj.line.nil?
+      "#{obj.file}:#{obj.line - 1}:0"
     end
   end
 end

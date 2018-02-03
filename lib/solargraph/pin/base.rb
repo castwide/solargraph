@@ -62,7 +62,7 @@ module Solargraph
       end
 
       def location
-        "#{source.filename}:#{node.location.expression.begin_pos}"
+        "#{source.filename}:#{node.location.expression.line - 1}:#{node.location.expression.column}"
       end
     end
   end
