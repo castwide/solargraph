@@ -22,6 +22,8 @@ module Solargraph
       # HACK: YardMap needs its own copy of this array
       @required = required.clone
       @namespace_yardocs = {}
+      @gem_paths = {}
+      process_gem_paths
       if !workspace.nil? and File.exist?(File.join workspace, 'Gemfile')
         Bundler.with_clean_env do
           Bundler.environment.chdir(workspace) do
@@ -374,6 +376,37 @@ module Solargraph
       end
     end
 
+    def process_gem_paths
+      if !has_bundle?
+        required.each do |r|
+          spec = Gem::Specification.find_by_path(r)
+          if spec.nil?
+            STDERR.puts "Required path not found: #{r}"
+          else
+            @gem_paths[spec.name] = spec.full_gem_path
+          end
+        end
+      else
+        Bundler.with_clean_env do
+          Bundler.environment.chdir(workspace) do
+            Bundler.environment.gems.to_a.each do |g|
+              @gem_paths[g.name] = g.full_gem_path
+            end
+          end
+          #Bundler.environment.chdir(workspace) do
+          #  required.each do |r|
+          #    spec = Bundler.rubygems.gem_from_path(r)
+          #    if spec.nil?
+          #      STDERR.puts "Required path not found: #{r}"
+          #    else
+          #      @gem_paths[spec.name] = spec.full_gem_path
+          #    end
+          #  end
+          #end
+        end
+      end
+    end
+
     def find_yardoc path
       result = nil
       spec = Gem::Specification.find_by_path(path)
@@ -441,11 +474,18 @@ module Solargraph
 
     # @param obj [YARD::CodeObjects::Base]
     def object_location obj
-      # @todo Locations from YardMaps are temporarily disabled pending a
-      # method for resolving the source file's absolute path.
-      return nil
       return nil if obj.file.nil? or obj.line.nil?
-      "#{obj.file}:#{obj.line - 1}:0"
+      @gem_paths.values.each do |path|
+        file = File.join(path, obj.file)
+        if File.exist?(file)
+          return "#{file}:#{obj.line - 1}:0"
+        end
+      end
+      nil
+    end
+
+    def has_bundle?
+      !workspace.nil? and File.exist?(File.join workspace, 'Gemfile')
     end
   end
 end
