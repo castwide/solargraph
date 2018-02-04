@@ -2,8 +2,6 @@ module Solargraph
   class ApiMap
     module SourceToYard
 
-      private
-
       # Get the YARD CodeObject at the specified path.
       #
       # @return [YARD::CodeObjects::Base]
@@ -13,14 +11,6 @@ module Solargraph
 
       def code_object_paths
         code_object_map.keys
-      end
-
-      def code_object_map
-        @code_object_map ||= {}
-      end
-
-      def root_code_object
-        @root_code_object ||= YARD::CodeObjects::RootObject.new(nil, 'root')
       end
 
       # @param sources [Array<Solargraph::ApiMap::Source>] Sources for code objects
@@ -37,7 +27,9 @@ module Solargraph
             code_object_map[pin.path].files.push pin.source.filename
           end
           s.namespace_includes.each_pair do |n, i|
-            code_object_map[n].mixins.push code_object_map[i] unless code_object_map[i].nil?
+            i.each do |inc|
+              code_object_map[n].instance_mixins.push code_object_map[inc] unless code_object_map[inc].nil?
+            end
           end
           s.attribute_pins.each do |pin|
             code_object_map[pin.path] ||= YARD::CodeObjects::MethodObject.new(code_object_at(pin.namespace), pin.name, :instance)
@@ -59,6 +51,16 @@ module Solargraph
             end
           end
         end
+      end
+
+      private
+
+      def code_object_map
+        @code_object_map ||= {}
+      end
+
+      def root_code_object
+        @root_code_object ||= YARD::CodeObjects::RootObject.new(nil, 'root')
       end
     end
   end
