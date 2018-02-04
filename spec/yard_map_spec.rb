@@ -17,4 +17,11 @@ describe Solargraph::YardMap do
     Solargraph::YardMap.new required: ['parser']
     expect(true).to eq true
   end
+
+  it "gets locations from required gems" do
+    yard_map = Solargraph::YardMap.new(required: ['solargraph'])
+    result = yard_map.objects('Solargraph::YardMap#objects')
+    expect(result.any?).to be(true)
+    expect(result[0].location).not_to be(nil)
+  end
 end

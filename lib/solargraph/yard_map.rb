@@ -248,7 +248,7 @@ module Solargraph
               meths = obj.meths(scope: [:instance]).keep_if{|m| m.name.to_s == parts[1]}
               meths.each do |m|
                 args = get_method_args(m)
-                result.push Solargraph::Suggestion.new(m.name, kind: 'Method', detail: m.path, code_object: m, arguments: args)
+                result.push Solargraph::Suggestion.new(m.name, kind: 'Method', detail: m.path, code_object: m, arguments: args, location: object_location(m))
               end
             end
           else
@@ -256,7 +256,7 @@ module Solargraph
               args = []
               args = get_method_args(obj) if obj.kind_of?(YARD::CodeObjects::MethodObject)
               kind = kind_of_object(obj)
-              result.push Solargraph::Suggestion.new(obj.name, kind: kind, detail: obj.path, code_object: obj, arguments: args)
+              result.push Solargraph::Suggestion.new(obj.name, kind: kind, detail: obj.path, code_object: obj, arguments: args, location: object_location(obj))
             end
           end
         end
