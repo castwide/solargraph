@@ -18,6 +18,12 @@ describe Solargraph::YardMap do
     expect(true).to eq true
   end
 
+  it "gracefully fails to resolve unknown require paths" do
+    expect {
+      yard_map = Solargraph::YardMap.new(required: ['invalid_path'])
+    }.not_to raise_error
+  end
+
   it "gets locations from required gems" do
     yard_map = Solargraph::YardMap.new(required: ['solargraph'])
     result = yard_map.objects('Solargraph::YardMap#objects')
