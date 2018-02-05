@@ -216,8 +216,8 @@ module Solargraph
         while parts.length > 0
           resolved = find_namespace_pins(parts.join('::'))
           resolved.each do |pin|
-            visi = :public
-            visi = :private if namespace == '' and root != '' and pin.path == fqns
+            visi = [:public]
+            visi.push :private if namespace == '' and root != '' and pin.path == fqns
             result.concat inner_get_constants(pin.path, skip, true, visi)
           end
           parts.pop
@@ -967,24 +967,24 @@ module Solargraph
       cp = @const_pins[here]
       unless cp.nil?
         cp.each do |pin|
-          result.push pin_to_suggestion(pin) if pin.visibility == :public or visibility == :private
+          result.push pin_to_suggestion(pin) if pin.visibility == :public or visibility.include?(:private)
         end
       end
       np = @namespace_pins[here]
       unless np.nil?
         np.each do |pin|
-          if pin.visibility == :public || visibility == :private
+          if pin.visibility == :public || visibility.include?(:private)
             result.push pin_to_suggestion(pin)
             if deep
               get_include_strings_from(pin.node).each do |i|
-                result.concat inner_get_constants(i, skip, false, :public)
+                result.concat inner_get_constants(i, skip, false, [:public])
               end
             end
           end
         end
       end
       get_include_strings_from(*get_namespace_nodes(here)).each do |i|
-        result.concat inner_get_constants(i, skip, false, :public)
+        result.concat inner_get_constants(i, skip, false, [:public])
       end
       result
     end
