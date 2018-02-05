@@ -967,14 +967,12 @@ module Solargraph
       cp = @const_pins[here]
       unless cp.nil?
         cp.each do |pin|
-          #next if skip.include?(pin.path)
           result.push pin_to_suggestion(pin) if pin.visibility == :public or visibility == :private
         end
       end
       np = @namespace_pins[here]
       unless np.nil?
         np.each do |pin|
-          #next if skip.include?(pin.path)
           if pin.visibility == :public || visibility == :private
             result.push pin_to_suggestion(pin)
             if deep
