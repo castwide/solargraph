@@ -838,7 +838,9 @@ module Solargraph
         unless sc.nil?
           sc_visi = [:public]
           sc_visi.push :protected if root == fqns
-          meths.concat get_methods(sc, fqns, visibility: sc_visi)
+          nfqns = find_fully_qualified_namespace(sc, fqns)
+          meths.concat inner_get_methods('', nfqns, skip, sc_visi)
+          meths.concat yard_map.get_methods(nfqns, '', visibility: sc_visi)
         end
       end
       em = @namespace_extends[fqns]
@@ -872,13 +874,16 @@ module Solargraph
         unless sc.nil?
           sc_visi = [:public]
           sc_visi.push :protected if sc == fqns
-          meths.concat get_instance_methods(sc, fqns, visibility: sc_visi)
+          nfqns = find_fully_qualified_namespace(sc, fqns)
+          meths.concat inner_get_instance_methods('', nfqns, skip, sc_visi)
+          meths.concat yard_map.get_instance_methods(nfqns, '', visibility: sc_visi)
         end
       end
       im = @namespace_includes[fqns]
       unless im.nil?
         im.each do |i|
-          meths.concat inner_get_instance_methods(i, fqns, skip, visibility)
+          nfqns = find_fully_qualified_namespace(i, fqns)
+          meths.concat inner_get_instance_methods('', nfqns, skip, visibility)
         end
       end
       meths.uniq
