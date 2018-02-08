@@ -24,15 +24,6 @@ module Solargraph
       @namespace_yardocs = {}
       @gem_paths = {}
       process_gem_paths
-      if !workspace.nil? and File.exist?(File.join workspace, 'Gemfile')
-        Bundler.with_clean_env do
-          Bundler.environment.chdir(workspace) do
-            process_requires
-          end
-        end
-      else
-        process_requires
-      end
       yardocs.push CoreDocs.yardoc_file
       yardocs.uniq!
       yardocs.each do |y|
@@ -43,11 +34,6 @@ module Solargraph
         end
       end
       cache_core
-    end
-
-    # @return [Solargraph::LiveMap]
-    def live_map
-      @live_map ||= Solargraph::LiveMap.new
     end
 
     # @return [Array<String>]
@@ -131,7 +117,7 @@ module Solargraph
         else
           next
         end
-        result.push Suggestion.new(c.to_s.split('::').last, detail: c.to_s, kind: kind, docstring: c.docstring, return_type: return_type)
+        result.push Suggestion.new(c.to_s.split('::').last, detail: c.to_s, kind: kind, docstring: c.docstring, return_type: return_type, location: object_location(c))
       }
       cache.set_constants(namespace, scope, result)
       result
@@ -218,10 +204,6 @@ module Solargraph
       meths
     end
 
-    def gem_names
-      Gem::Specification.map{ |s| s.name }.uniq
-    end
-
     def find_fully_qualified_namespace namespace, scope
       unless scope.nil? or scope.empty?
         parts = scope.split('::')
@@ -280,38 +262,6 @@ module Solargraph
       nil
     end
 
-    def bundled_gem_yardocs
-      result = []
-      unless workspace.nil?
-        Bundler.with_clean_env do
-          Bundler.environment.chdir(workspace) do
-            glfn = File.join(workspace, 'Gemfile.lock')
-            spec_versions = {}
-            if File.file?(glfn)
-              lockfile = Bundler::LockfileParser.new(Bundler.read_file(glfn))
-              lockfile.specs.each do |s|
-                spec_versions[s.name] = s.version.to_s
-              end
-            end
-            Bundler.environment.dependencies.each do |s|
-              if s.type == :runtime
-                ver = spec_versions[s.name]
-                y = YARD::Registry.yardoc_file_for_gem(s.name, ver)
-                if y.nil?
-                  STDERR.puts "Bundled gem not found: #{s.name}, #{ver}"
-                else
-                  #STDERR.puts "Adding #{y}"
-                  result.push y
-                  add_gem_dependencies(s.name)
-                end
-              end
-            end
-          end
-        end
-      end
-      result.uniq
-    end
-
     private
 
     def cache
@@ -359,31 +309,23 @@ module Solargraph
       end
     end
 
-    def process_requires
-      used = []
-      @required.each do |r|
-        if workspace.nil? or !File.exist?(File.join workspace, 'lib', "#{r}.rb")
-          unless used.include?(r)
-            used.push r
-            result = find_yardoc(r)
-            if result.nil?
-              STDERR.puts "Required path not found: #{r}"
-            else
-              yardocs.unshift result unless yardocs.include?(result)
-            end
-          end
-        end
-      end
-    end
-
     def process_gem_paths
       if !has_bundle?
         required.each do |r|
           spec = Gem::Specification.find_by_path(r)
+          begin
+            spec = Gem::Specification.find_by_name(r) if spec.nil?
+          rescue Gem::MissingSpecError => e
+            # @todo How to handle this?
+          end
           if spec.nil?
-            STDERR.puts "Required path not found: #{r}"
+            STDERR.puts "Required path not found (pgp): #{r}"
           else
+            STDERR.puts "Found #{r} at #{spec.full_gem_path}"
             @gem_paths[spec.name] = spec.full_gem_path
+            add_gem_dependencies spec
+            result = YARD::Registry.yardoc_file_for_gem(spec.name)
+            yardocs.unshift result unless result.nil? or yardocs.include?(result)
           end
         end
       else
@@ -393,52 +335,11 @@ module Solargraph
               @gem_paths[g.name] = g.full_gem_path
             end
           end
-          #Bundler.environment.chdir(workspace) do
-          #  required.each do |r|
-          #    spec = Bundler.rubygems.gem_from_path(r)
-          #    if spec.nil?
-          #      STDERR.puts "Required path not found: #{r}"
-          #    else
-          #      @gem_paths[spec.name] = spec.full_gem_path
-          #    end
-          #  end
-          #end
         end
       end
     end
 
-    def find_yardoc path
-      result = nil
-      spec = Gem::Specification.find_by_path(path)
-      result = YARD::Registry.yardoc_file_for_gem(spec.name) unless spec.nil?
-      if result.nil?
-        $LOAD_PATH.each do |base|
-          source_file = File.join(base, "#{path}.rb")
-          if File.exist?(source_file)
-            if base.start_with?(Bundler.bundle_path.to_s)
-              match = File.dirname(base).split('/').last.match(/^([a-z0-9\-_]*?)-([0-9]+\.[0-9]+\.[0-9]+)/i)
-              unless match.nil? or match[1].nil?
-                result = YARD::Registry.yardoc_file_for_gem(match[1])
-                add_gem_dependencies match[1]
-                break
-              end
-            end
-            yp = File.join(File.dirname(base), '.yardoc')
-            if File.exist?(yp)
-              result = yp
-              break
-            else
-              # @todo Keep trying?
-            end
-            break
-          end
-        end
-      end
-      result
-    end
-
-    def add_gem_dependencies gem_name
-      spec = Gem::Specification.find_by_name(gem_name)
+    def add_gem_dependencies spec
       (spec.dependencies - spec.development_dependencies).each do |dep|
         gy = YARD::Registry.yardoc_file_for_gem(dep.name)
         if gy.nil?

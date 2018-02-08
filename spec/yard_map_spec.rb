@@ -30,4 +30,10 @@ describe Solargraph::YardMap do
     expect(result.any?).to be(true)
     expect(result[0].location).not_to be(nil)
   end
+
+  it "gets method suggestions by path" do
+    yard_map = Solargraph::YardMap.new
+    sugg = yard_map.objects('String#upcase')
+    expect(sugg[0].path).to eq('String#upcase')
+  end
 end
