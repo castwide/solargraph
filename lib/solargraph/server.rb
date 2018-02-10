@@ -22,7 +22,6 @@ module Solargraph
 
     post '/prepare' do
       content_type :json
-      STDERR.puts "Preparing #{params['workspace']}"
       begin
         Server.prepare_workspace params['workspace']
         { "status" => "ok"}.to_json
@@ -99,7 +98,7 @@ module Solargraph
         sugg = []
         workspace = find_local_workspace(params['filename'], params['workspace'])
         api_map = get_api_map(workspace)
-        code_map = CodeMap.new(code: params['text'], filename: params['filename'], api_map: @@api_hash[workspace], cursor: [params['line'].to_i, params['column'].to_i])
+        code_map = CodeMap.new(code: params['text'], filename: params['filename'], api_map: api_map, cursor: [params['line'].to_i, params['column'].to_i])
         offset = code_map.get_offset(params['line'].to_i, params['column'].to_i)
         sugg = code_map.define_symbol_at(offset)
         { "status" => "ok", "suggestions" => sugg }.to_json
@@ -190,8 +189,9 @@ module Solargraph
     class << self
       def prepare_workspace directory
         return if directory.nil?
-        Thread.new do
-          directory.gsub!(/\\/, '/') unless directory.nil?
+        #Thread.new do
+          directory.gsub!(/\\/, '/')
+          STDERR.puts "Preparing #{directory}"
           configs = Dir[File.join(directory, '**', '.solargraph.yml')]
           resolved = []
           configs.each do |cf|
@@ -200,12 +200,11 @@ module Solargraph
             resolved.push dir
           end
           generate_api_map directory unless resolved.include?(directory)
-        end
+        #end
       end
 
       def generate_api_map(directory)
         api_map = Solargraph::ApiMap.new(directory)
-        api_map.yard_map
         @@semaphore.synchronize do
           @@api_hash[directory] = api_map
         end
