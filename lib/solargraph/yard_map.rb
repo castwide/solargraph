@@ -311,30 +311,35 @@ module Solargraph
 
     def process_gem_paths
       if !has_bundle?
-        required.each do |r|
-          spec = Gem::Specification.find_by_path(r)
-          begin
-            spec = Gem::Specification.find_by_name(r) if spec.nil?
-          rescue Gem::MissingSpecError => e
-            # @todo How to handle this?
-          end
-          if spec.nil?
-            STDERR.puts "Required path not found (pgp): #{r}"
-          else
-            STDERR.puts "Found #{r} at #{spec.full_gem_path}"
-            @gem_paths[spec.name] = spec.full_gem_path
-            add_gem_dependencies spec
-            result = YARD::Registry.yardoc_file_for_gem(spec.name)
-            yardocs.unshift result unless result.nil? or yardocs.include?(result)
-          end
-        end
+        process_requires
       else
         Bundler.with_clean_env do
           Bundler.environment.chdir(workspace) do
-            Bundler.environment.gems.to_a.each do |g|
-              @gem_paths[g.name] = g.full_gem_path
-            end
+            #Bundler.environment.gems.to_a.each do |g|
+            #  @gem_paths[g.name] = g.full_gem_path
+            #end
+            process_requires
           end
+        end
+      end
+    end
+
+    def process_requires
+      required.each do |r|
+        spec = Gem::Specification.find_by_path(r)
+        begin
+          spec = Gem::Specification.find_by_name(r) if spec.nil?
+        rescue Gem::MissingSpecError => e
+          # @todo How to handle this?
+        end
+        if spec.nil?
+          STDERR.puts "Required path not found (pgp): #{r}"
+        else
+          STDERR.puts "Found #{r} at #{spec.full_gem_path}"
+          @gem_paths[spec.name] = spec.full_gem_path
+          add_gem_dependencies spec
+          result = YARD::Registry.yardoc_file_for_gem(spec.name)
+          yardocs.unshift result unless result.nil? or yardocs.include?(result)
         end
       end
     end
