@@ -1,6 +1,8 @@
 require 'sinatra/base'
 require 'thread'
 require 'yard'
+require 'open3'
+require 'shellwords'
 
 module Solargraph
   class Server < Sinatra::Base
@@ -18,6 +20,18 @@ module Solargraph
     def self.wait
       @@semaphore.lock
       @@semaphore.unlock
+    end
+
+    post '/format' do
+      content_type :json
+      begin
+        filename = params['filename']
+        text = params['text']
+        o, e, s = Open3.capture3("bundle exec rubocop -f j -s #{Shellwords.escape(filename)}", stdin_data: text)
+        { "status" => "ok", "data" => JSON.parse(o) }.to_json
+      rescue Exception => e
+        send_exception e
+      end
     end
 
     post '/prepare' do
