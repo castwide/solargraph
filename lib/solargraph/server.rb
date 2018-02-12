@@ -22,13 +22,46 @@ module Solargraph
       @@semaphore.unlock
     end
 
-    post '/format' do
+    post '/diagnostics' do
       content_type :json
+      severities = {
+        'refactor' => 4,
+        'convention' => 3,
+        'warning' => 2,
+        'error' => 1,
+        'fatal' => 1
+      }
       begin
         filename = params['filename']
         text = params['text']
         o, e, s = Open3.capture3("bundle exec rubocop -f j -s #{Shellwords.escape(filename)}", stdin_data: text)
-        { "status" => "ok", "data" => JSON.parse(o) }.to_json
+        STDERR.puts e unless e.nil? or e.empty?
+        resp = JSON.parse(o)
+        diagnostics = []
+        if resp['summary']['offense_count'] > 0
+          resp['files'].each do |file|
+            file['offenses'].each do |off|
+              diag = {
+                range: {
+                  start: {
+                    line: off['location']['start_line'] - 1,
+                    character: off['location']['start_column'] - 1
+                  },
+                  end: {
+                    line: off['location']['last_line'] - 1,
+                    character: off['location']['last_column']
+                  }
+                },
+                # 1 = Error, 2 = Warning, 3 = Information, 4 = Hint
+                severity: severities[off['severity']],
+                source: off['cop_name'],
+                message: off['message'].gsub(/^#{off['cop_name']}\:/, '')
+              }
+              diagnostics.push diag
+            end
+          end
+        end
+        { "status" => "ok", "data" => diagnostics }.to_json
       rescue Exception => e
         send_exception e
       end
