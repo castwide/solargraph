@@ -30,7 +30,7 @@ module Solargraph
       end
 
       def start request
-        STDERR.puts "Requesting #{request['method']}"
+        # @todo Handle unknown method
         message = Message.select(request['method']).new(self, request)
         message.process
         message
