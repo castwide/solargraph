@@ -192,7 +192,7 @@ describe Solargraph::CodeMap do
     sig = code_map.infer_signature_at(code_map.get_offset(4, 13))
     expect(sig).to eq('String')
     sig = code_map.infer_signature_at(code_map.get_offset(4, 25))
-    expect(sig).to eq('Array')
+    expect(sig).to eq('Array<String>')
   end
 
   it "infers signatures from yield params" do
@@ -330,7 +330,7 @@ describe Solargraph::CodeMap do
   it "ignores special characters in strings" do
     code_map = Solargraph::CodeMap.new(code: "''.split('[').")
     type = code_map.infer_signature_at(14)
-    expect(type).to eq('Array')
+    expect(type).to eq('Array<String>')
     code_map = Solargraph::CodeMap.new(code: %[
       %[
         ()(
@@ -664,7 +664,7 @@ describe Solargraph::CodeMap do
       x._
     ))
     type = code_map.infer_signature_at(code_map.get_offset(4, 8))
-    expect(type).to eq('Array')
+    expect(type).to eq('Array<String>')
   end
 
   it "resolves self in yieldself tags" do
