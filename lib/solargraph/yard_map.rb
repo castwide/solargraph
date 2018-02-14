@@ -185,7 +185,11 @@ module Solargraph
                   label = "#{n}"
                   args = get_method_args(m)
                   kind = (m.is_attribute? ? Suggestion::FIELD : Suggestion::METHOD)
-                  meths.push Suggestion.new(label, insert: "#{n.gsub(/=$/, ' = ')}", kind: kind, docstring: m.docstring, code_object: m, detail: m.namespace, location: object_location(m), arguments: args)
+                  rt = nil
+                  if Solargraph::CoreFills::CUSTOM_RETURN_TYPES.has_key?(m.path)
+                    rt = Solargraph::CoreFills::CUSTOM_RETURN_TYPES[m.path]
+                  end
+                  meths.push Suggestion.new(label, insert: "#{n.gsub(/=$/, ' = ')}", kind: kind, docstring: m.docstring, code_object: m, detail: m.namespace, location: object_location(m), arguments: args, return_type: rt)
                 end
               }
               if ns.kind_of?(YARD::CodeObjects::ClassObject) and namespace != 'Object'
@@ -335,7 +339,6 @@ module Solargraph
         if spec.nil?
           STDERR.puts "Required path not found (pgp): #{r}"
         else
-          STDERR.puts "Found #{r} at #{spec.full_gem_path}"
           @gem_paths[spec.name] = spec.full_gem_path
           add_gem_dependencies spec
           result = YARD::Registry.yardoc_file_for_gem(spec.name)
