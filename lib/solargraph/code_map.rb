@@ -102,10 +102,16 @@ module Solargraph
     #
     # @return [Boolean]
     def comment_at?(index)
+      return false if string_at?(index)
       line, col = Solargraph::ApiMap::Source.get_position_at(source.code, index)
       return false if source.stubbed_lines.include?(line)
       @comments.each do |c|
         return true if index > c.location.expression.begin_pos and index <= c.location.expression.end_pos
+      end
+      # Extra test due to some comments not getting tracked
+      while (index > 0 and @code[index] != "\n")
+        return true if @code[index] == '#'
+        index -= 1
       end
       false
     end
@@ -540,6 +546,7 @@ module Solargraph
       index -=1
       in_whitespace = false
       while index >= 0
+        break if index > 0 and comment_at?(index - 1)
         unless !in_whitespace and string_at?(index)
           break if brackets > 0 or parens > 0 or squares > 0
           char = @code[index, 1]

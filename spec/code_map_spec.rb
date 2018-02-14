@@ -883,4 +883,16 @@ describe Solargraph::CodeMap do
     sugg = code_map.suggest_at(code_map.get_offset(1, 10)).map(&:to_s)
     expect(sugg).to include('String')
   end
+
+  it "stops reading signatures at comments" do
+    code_map = Solargraph::CodeMap.new(code: %(
+      # String
+      .
+    ), filename: 'file.rb')
+    offset = code_map.get_offset(2, 7)
+    signature = code_map.get_signature_at(offset)
+    expect(signature).not_to start_with('String')
+    sugg = code_map.suggest_at(offset)
+    expect(sugg).to be_empty
+  end
 end
