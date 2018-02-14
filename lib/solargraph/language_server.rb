@@ -5,5 +5,6 @@ module Solargraph
   module LanguageServer
     autoload :Host, 'solargraph/language_server/host'
     autoload :Message, 'solargraph/language_server/message'
+    autoload :Transport, 'solargraph/language_server/transport'
   end
 end

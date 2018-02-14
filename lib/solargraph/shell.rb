@@ -3,6 +3,7 @@ require 'json'
 require 'fileutils'
 require 'rubygems/package'
 require 'zlib'
+require 'eventmachine'
 
 module Solargraph
   class Shell < Thor
@@ -37,6 +38,18 @@ module Solargraph
           Solargraph::Server.stop!
         end
       end
+    end
+
+    desc 'socket', 'Run a Solargraph socket server'
+    option :host, type: :string, aliases: :h, desc: 'The server host', default: '127.0.0.1'
+    option :port, type: :numeric, aliases: :p, desc: 'The server port', default: 7658
+    def socket
+      port = options[:port]
+      port = available_port if port.zero?
+      EventMachine.run {
+        EventMachine.start_server options[:host], port, Solargraph::LanguageServer::Transport::Socket
+        puts "Solargraph is listening on port #{port}"
+      }    
     end
 
     desc 'suggest', 'Get code suggestions for the provided input'

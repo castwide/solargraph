@@ -22,6 +22,8 @@ Gem::Specification.new do |s|
   s.add_runtime_dependency 'yard', '~> 0.9'
   s.add_runtime_dependency 'bundler', '~> 1.14'
   s.add_runtime_dependency 'rubocop', '~> 0.52'
+  s.add_runtime_dependency 'eventmachine', '~> 1.2.5'
+  s.add_runtime_dependency 'reverse_markdown', '~> 1.0.5'
 
   s.add_development_dependency 'rspec', '~> 3.5', '>= 3.5.0'
   s.add_development_dependency 'rack-test', '~> 0.7'
