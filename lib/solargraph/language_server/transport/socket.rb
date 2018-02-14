@@ -3,7 +3,6 @@ module Solargraph
     module Transport
       module Socket
         def post_init
-          STDERR.puts "Someone connected to the server!"
           @in_header = true
           @content_length = 0
           @buffer = ''
