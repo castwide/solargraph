@@ -7,7 +7,6 @@ module Solargraph
         class Resolve < Base
           def process
             available = host.resolvable.select{|s| s.path == params['detail']}
-            STDERR.puts "Possible to resolve: #{available}"
             if available.empty?
               # @todo Error
             else

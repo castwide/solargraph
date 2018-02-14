@@ -12,7 +12,6 @@ module Solargraph
         def process request
           Thread.new {
             begin
-              STDERR.puts "Request: #{request}"
               message = @host.start(request)
               message.send
               send_data @host.flush
@@ -26,7 +25,6 @@ module Solargraph
       
         # @param data [String]
         def receive_data data
-          STDERR.puts "Data received: #{data}"
           data.each_byte do |char|
             @buffer.concat char
             if @in_header
