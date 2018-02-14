@@ -22,6 +22,11 @@ module Solargraph
       @@semaphore.unlock
     end
 
+    post '/json-rpc' do
+      request.body.rewind
+      STDERR.puts request.body.read
+    end
+
     post '/diagnostics' do
       content_type :json
       severities = {
