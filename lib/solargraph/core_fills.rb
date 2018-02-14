@@ -19,5 +19,9 @@ module Solargraph
     METHODS_WITH_YIELDPARAM_SUBTYPES = %w{
       Array#each Hash#each_pair Array#map
     }.freeze
+
+    CUSTOM_RETURN_TYPES = {
+      'String#split' => 'Array<String>'
+    }.freeze
   end
 end
