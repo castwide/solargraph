@@ -87,4 +87,16 @@ describe Solargraph::Server do
     response = JSON.parse(last_response.body)
     expect(response['suggestions'].length).to eq(1)
   end
+
+  it "handles nil workspaces" do
+    post '/suggest', text: 'String.new.', filename: 'test.rb', line: 0, column: 11, workspace: nil
+    expect(last_response).to be_ok
+    expect(last_response.body).to include('upcase')
+  end
+
+  it "handles empty workspaces" do
+    post '/suggest', text: 'String.new.', filename: 'test.rb', line: 0, column: 11, workspace: ''
+    expect(last_response).to be_ok
+    expect(last_response.body).to include('upcase')
+  end
 end
