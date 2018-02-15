@@ -225,6 +225,7 @@ module Solargraph
     end
 
     def find_local_workspace file, workspace
+      return nil if workspace.nil? or workspace.empty?
       workspace.gsub!(/\\/, '/') unless workspace.nil?
       unless file.nil? or workspace.nil?
         file.gsub!(/\\/, '/') unless file.nil?
