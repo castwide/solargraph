@@ -32,6 +32,7 @@ module Solargraph
       register 'initialized', Initialized
       register 'textDocument/completion', TextDocument::Completion
       register 'completionItem/resolve', CompletionItem::Resolve
+      register 'textDocument/signatureHelp', TextDocument::SignatureHelp
       register 'textDocument/didOpen', TextDocument::DidOpen
       register 'textDocument/didChange', TextDocument::DidChange
       register 'textDocument/didSave', TextDocument::DidSave
