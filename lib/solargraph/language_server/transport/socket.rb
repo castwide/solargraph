@@ -1,6 +1,8 @@
 module Solargraph
   module LanguageServer
     module Transport
+      # A module for running language servers in EventMachine.
+      #
       module Socket
         def post_init
           @in_header = true

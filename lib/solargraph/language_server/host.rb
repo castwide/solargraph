@@ -3,6 +3,8 @@ require 'set'
 
 module Solargraph
   module LanguageServer
+    # The base language server data provider.
+    #
     class Host
       attr_accessor :resolvable
       attr_reader :api_map
