@@ -28,8 +28,11 @@ module Solargraph
           @result = data
         end
 
-        def set_error data
-          @error = data
+        def set_error code, message
+          @error = {
+            code: code,
+            message: message
+          }
         end
 
         def response
@@ -48,10 +51,7 @@ module Solargraph
             response[:result] = result unless result.nil?
             response[:error] = error unless error.nil?
             json = response.to_json
-            # @todo Why does \n\n work but \r\n\r\n doesn't?
             envelope = "Content-Length: #{json.bytesize}\r\n\r\n#{json}"
-            #STDOUT.print envelope
-            #STDOUT.flush
             host.queue envelope
           end
           host.clear id
