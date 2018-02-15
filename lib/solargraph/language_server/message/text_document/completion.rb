@@ -23,10 +23,17 @@ module Solargraph
                 {
                   label: sugg.label,
                   detail: sugg.path,
-                  kind: kind_map[sugg.kind]
+                  kind: kind_map[sugg.kind],
+                  data: {
+                    identifier: sugg.location || sugg.path
+                  }
                 }
               end
-              host.resolvable = suggestions
+              suggestion_map = {}
+              suggestions.each do |s|
+                suggestion_map[s.location || s.path] = s
+              end
+              host.resolvable = suggestion_map
               set_result(
                 isIncomplete: false,
                 items: items

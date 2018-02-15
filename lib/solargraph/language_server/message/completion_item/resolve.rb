@@ -6,13 +6,13 @@ module Solargraph
       module CompletionItem
         class Resolve < Base
           def process
-            available = host.resolvable.select{|s| s.path == params['detail']}
-            if available.empty?
-              # @todo Error
+            resolved = host.resolvable[params['data']['identifier']]
+            if resolved.nil?
+              set_error(Solargraph::LanguageServer::ErrorCodes::INVALID_REQUEST, "Completion item could not be resolved")
             else
               set_result(
                 params.merge(
-                  documentation: ReverseMarkdown.convert(available[0].documentation)
+                  documentation: ReverseMarkdown.convert(resolved.documentation)
                 )
               )
             end
