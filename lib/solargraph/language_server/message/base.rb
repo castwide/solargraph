@@ -5,6 +5,7 @@ module Solargraph
         # @return [Solargraph::LanguageServer::Host]
         attr_reader :host
         attr_reader :id
+        attr_reader :request
         attr_reader :method
         attr_reader :params
         attr_reader :result
@@ -13,6 +14,7 @@ module Solargraph
         def initialize host, request
           @host = host
           @id = request['id']
+          @request = request
           @method = request['method']
           @params = request['params']
           post_initialize

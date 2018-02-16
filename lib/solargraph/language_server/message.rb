@@ -11,6 +11,7 @@ module Solargraph
       autoload :TextDocument, 'solargraph/language_server/message/text_document'
       autoload :CompletionItem, 'solargraph/language_server/message/completion_item'
       autoload :CancelRequest, 'solargraph/language_server/message/cancel_request'
+      autoload :MethodNotFound, 'solargraph/language_server/message/method_not_found'
 
       class << self
         def register path, message_class

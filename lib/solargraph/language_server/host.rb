@@ -32,8 +32,13 @@ module Solargraph
       end
 
       def start request
-        # @todo Handle unknown method
-        message = Message.select(request['method']).new(self, request)
+        message = nil
+        klass = Message.select(request['method'])
+        if klass.nil?
+          message = Message::MethodNotFound.new(self, request)
+        else
+          message = klass.new(self, request)
+        end
         message.process
         message
       end
