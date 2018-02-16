@@ -12,7 +12,7 @@ module Solargraph
             sugg.each do |s|
               info.push({
                 label: s.label + '(' + s.arguments.join(', ') + ')',
-                documentation: s.documentation
+                documentation: ReverseMarkdown.convert(s.documentation)
               })
             end
             set_result({
