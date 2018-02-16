@@ -71,6 +71,10 @@ module Solargraph
         tmp
       end
 
+      def prepare workspace
+        @api_map = Solargraph::ApiMap.new(workspace)
+      end
+
       def send_notification method, params
         response = {
           jsonrpc: "2.0",

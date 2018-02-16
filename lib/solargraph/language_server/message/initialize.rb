@@ -3,6 +3,7 @@ module Solargraph
     module Message
       class Initialize < Base
         def process
+          host.prepare params['rootPath']
           set_result(
             capabilities: {
               textDocumentSync: 1, # @todo What should this be?
