@@ -20,9 +20,12 @@ module Solargraph
               offset = code_map.get_offset(params['position']['line'], params['position']['character'])
               suggestions = code_map.suggest_at(offset)
               items = suggestions.map do |sugg|
+                detail = ''
+                detail += "(#{sugg.arguments.join(', ')}) " unless sugg.arguments.empty?
+                detail += "=> #{sugg.return_type}" unless sugg.return_type.nil?
                 {
                   label: sugg.label,
-                  detail: sugg.path,
+                  detail: detail,
                   kind: kind_map[sugg.kind],
                   data: {
                     identifier: sugg.location || sugg.path

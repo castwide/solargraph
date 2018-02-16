@@ -39,7 +39,7 @@ module Solargraph
 
         def response
           response = {}
-          response[:result] = result unless result.nil?
+          response[:result] = result
           response[:error] = error unless error.nil?
           response
         end
