@@ -3,23 +3,23 @@ module Solargraph
     module Message
       module TextDocument
         module DiagnosticsQueue
-          def start_diagnostics uri
+          def start_diagnostics host, uri
             diagnostics_semaphore.synchronize {
-              diagnostics_queue.push uri
+              diagnostics_queue.push [host, uri]
             }
           end
 
-          def more_diagnostics? uri
+          def more_diagnostics? host, uri
             result = nil
             diagnostics_semaphore.synchronize {
-              result = diagnostics_queue.include?(uri)
+              result = diagnostics_queue.include?([host, uri])
             }
             result
           end
 
-          def finish_diagnostics uri
+          def finish_diagnostics host, uri
             diagnostics_semaphore.synchronize {
-              diagnostics_queue.slice!(diagnostics_queue.index(uri)) if diagnostics_queue.include?(uri)
+              diagnostics_queue.slice!(diagnostics_queue.index([host, uri])) if diagnostics_queue.include?([host, uri])
             }              
           end
 

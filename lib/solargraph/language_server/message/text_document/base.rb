@@ -32,13 +32,13 @@ module Solargraph
               'fatal' => 1
             }
             uri = params['textDocument']['uri']
-            Base.start_diagnostics uri
+            Base.start_diagnostics host, uri
             text = host.read(filename)
             return if text.nil? or text.empty?
             cmd = "rubocop -f j -s #{Shellwords.escape(filename)}"
             o, e, s = Open3.capture3(cmd, stdin_data: text)
-            Base.finish_diagnostics(uri)
-            unless Base.more_diagnostics?(uri)
+            Base.finish_diagnostics(host, uri)
+            unless Base.more_diagnostics?(host, uri)
               resp = JSON.parse(o)
               if resp['summary']['offense_count'] > 0
                 diagnostics = []
