@@ -13,10 +13,10 @@ module Solargraph
 
         def initialize host, request
           @host = host
-          @id = request['id']
-          @request = request
-          @method = request['method']
-          @params = request['params']
+          @id = request['id'].freeze
+          @request = request.freeze
+          @method = request['method'].freeze
+          @params = request['params'].freeze
           post_initialize
         end
 

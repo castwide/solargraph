@@ -32,13 +32,7 @@ module Solargraph
       end
 
       def start request
-        message = nil
-        klass = Message.select(request['method'])
-        if klass.nil?
-          message = Message::MethodNotFound.new(self, request)
-        else
-          message = klass.new(self, request)
-        end
+        message = Message.select(request['method']).new(self, request)
         message.process
         message
       end

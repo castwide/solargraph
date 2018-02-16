@@ -12,14 +12,24 @@ module Solargraph
       autoload :CompletionItem, 'solargraph/language_server/message/completion_item'
       autoload :CancelRequest, 'solargraph/language_server/message/cancel_request'
       autoload :MethodNotFound, 'solargraph/language_server/message/method_not_found'
+      autoload :MethodNotImplemented, 'solargraph/language_server/message/method_not_implemented'
+      autoload :Extended, 'solargraph/language_server/message/extended'
 
       class << self
         def register path, message_class
           method_map[path] = message_class
         end
 
+        # @param path [String]
+        # @return [Solargraph::LanguageServer::Message::Base]
         def select path
-          method_map[path]
+          if method_map.has_key?(path)
+            method_map[path]
+          elsif path.start_with?('$/')
+            MethodNotImplemented
+          else
+            MethodNotFound
+          end
         end
 
         private
@@ -40,6 +50,8 @@ module Solargraph
       register 'textDocument/hover', TextDocument::Hover
       register 'textDocument/onTypeFormatting', TextDocument::OnTypeFormatting
       register '$/cancelRequest', CancelRequest
+      register '$/solargraph/document', Extended::Document
+      register '$/solargraph/search', Extended::Search
     end
   end
 end
