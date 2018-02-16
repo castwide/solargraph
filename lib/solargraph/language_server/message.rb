@@ -38,6 +38,7 @@ module Solargraph
       register 'textDocument/didChange', TextDocument::DidChange
       register 'textDocument/didSave', TextDocument::DidSave
       register 'textDocument/hover', TextDocument::Hover
+      register 'textDocument/onTypeFormatting', TextDocument::OnTypeFormatting
       register '$/cancelRequest', CancelRequest
     end
   end

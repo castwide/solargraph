@@ -15,6 +15,11 @@ module Solargraph
               definitionProvider: true,
               signatureHelpProvider: {
                 triggerCharacters: ['(', ',']
+              },
+              documentFormattingProvider: true,
+              documentOnTypeFormattingProvider: {
+                firstTriggerCharacter: '{',
+                moreTriggerCharacter: ['(']
               }
             }
           )

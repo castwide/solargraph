@@ -7,7 +7,6 @@ module Solargraph
         ancestors.each do |parent|
           if [:block, :def, :defs, :class, :module, :source].include? parent.type
             @tree.push parent
-            break unless parent.type == :block
           end
         end
       end
@@ -18,7 +17,7 @@ module Solargraph
           return true if @tree[0] == p
           return false if [:def, :defs, :class, :module].include?(p.type)
         end
-        false
+        true
       end
     end
   end

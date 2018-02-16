@@ -423,7 +423,7 @@ module Solargraph
             if tries < 10
               tries += 1
               # Stub periods before the offset to retain the expected node tree
-              if !offset.nil? and tmp[offset-1] == '.'
+              if !offset.nil? and ['.', '{', '('].include?(tmp[offset-1])
                 tmp = tmp[0, offset-1] + ';' + tmp[offset..-1]
               elsif !fixed_position and !offset.nil?
                 fixed_position = true

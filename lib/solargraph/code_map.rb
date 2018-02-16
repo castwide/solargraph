@@ -95,7 +95,7 @@ module Solargraph
     # @return [Boolean]
     def string_at?(index)
       n = node_at(index)
-      n.kind_of?(AST::Node) and n.type == :str
+      n.kind_of?(AST::Node) and (n.type == :str or n.type == :dstr)
     end
 
     # Determine if the specified index is inside a comment.
@@ -109,8 +109,13 @@ module Solargraph
         return true if index > c.location.expression.begin_pos and index <= c.location.expression.end_pos
       end
       # Extra test due to some comments not getting tracked
-      while (index > 0 and @code[index] != "\n")
-        return true if @code[index] == '#'
+      while (index >= 0 and @code[index] != "\n")
+        return false if string_at?(index)
+        if @code[index] == '#'
+          return true if index == 0
+          return false if string_at?(index - 1)
+          return true unless @code[index-1, 3] == '"#{'
+        end
         index -= 1
       end
       false
