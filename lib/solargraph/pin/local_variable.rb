@@ -17,7 +17,7 @@ module Solargraph
           return true if @tree[0] == p
           return false if [:def, :defs, :class, :module].include?(p.type)
         end
-        true
+        false
       end
     end
   end
