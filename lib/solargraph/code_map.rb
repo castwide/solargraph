@@ -110,7 +110,12 @@ module Solargraph
     # @return [Boolean]
     def comment_at?(index)
       return false if string_at?(index)
-      line, col = Solargraph::ApiMap::Source.get_position_at(source.code, index)
+      begin
+        line, col = Solargraph::ApiMap::Source.get_position_at(source.code, index)
+      rescue Exception => e
+        # @todo Better way to handle this?
+        line, col = Solargraph::ApiMap::Source.get_position_at(source.code, index - 1)
+      end
       return false if source.stubbed_lines.include?(line)
       @comments.each do |c|
         return true if index > c.location.expression.begin_pos and index <= c.location.expression.end_pos

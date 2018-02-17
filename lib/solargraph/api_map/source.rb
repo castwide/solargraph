@@ -190,7 +190,7 @@ module Solargraph
         if (change['range'])
           start_offset = CodeMap.get_offset(@code, change['range']['start']['line'], change['range']['start']['character'])
           end_offset = CodeMap.get_offset(@code, change['range']['end']['line'], change['range']['end']['character'])
-          rewrite = @code[0..start_offset-1] + change['text'] + @code[end_offset..-1]
+          rewrite = @code[0..start_offset-1].to_s + change['text'].to_s + @code[end_offset..-1].to_s
           if ['.', ',', '{', '(', '['].include?(change['text']) and change['range'] == 0
             @code = rewrite
             self
