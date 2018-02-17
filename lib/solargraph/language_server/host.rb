@@ -12,7 +12,7 @@ module Solargraph
       def initialize
         @api_map = Solargraph::ApiMap.new
         # @type [Hash<String, Solargraph::ApiMap::Source]
-        @files = {}
+        @file_source = {}
         @semaphore = Mutex.new
         @buffer_semaphore = Mutex.new
         @cancel = []
@@ -38,21 +38,34 @@ module Solargraph
       end
 
       def read filename
-        text = nil
-        @semaphore.synchronize { text = @files[filename] }
-        text
+        #text = nil
+        #@semaphore.synchronize { text = @files[filename] }
+        #text
+        source = nil
+        @semaphore.synchronize {
+          source = @file_source[filename]
+        }
+        source
       end
 
       def open filename, text
-        change filename, text
+        #change filename, text
+        @semaphore.synchronize {
+          @file_source[filename] = Solargraph::ApiMap::Source.virtual(text, filename)
+        }
       end
 
-      def change filename, text
-        @semaphore.synchronize { @files[filename] = text }
+      def change filename, changes
+        @semaphore.synchronize {
+          #@files[filename] = changes[0]['text']
+          changes.each do |change|
+            @file_source[filename] = @file_source[filename].synchronize(change)
+          end
+        }
       end
 
       def close filename
-        @semaphore.synchronize { @files.delete filename }
+        @semaphore.synchronize { @file_source.delete filename }
       end
 
       def queue message

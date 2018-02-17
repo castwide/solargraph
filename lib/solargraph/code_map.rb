@@ -35,8 +35,15 @@ module Solargraph
       else
         @source = self.api_map.virtualize(code, filename, cursor)
       end
-      @node = @source.node
-      @code = @source.code
+      mix source, filename, api_map
+    end
+
+    def mix source, filename, api_map
+      @source = source
+      @filename = filename
+      @api_map = api_map
+      @node = source.node
+      @code = source.code
       @comments = @source.comments
       self.api_map.refresh
     end
@@ -540,6 +547,13 @@ module Solargraph
     #def get_call_arguments_at index
     #  called = parent_node_from(index, :send)
     #end
+
+    def self.from_source(source, api_map = nil)
+      filename = source.filename.gsub(File::ALT_SEPARATOR, File::SEPARATOR) unless source.filename.nil? or File::ALT_SEPARATOR.nil?
+      code_map = self.allocate
+      code_map.mix source, filename, api_map
+      code_map
+    end
 
     private
 

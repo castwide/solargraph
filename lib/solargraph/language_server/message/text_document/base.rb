@@ -33,7 +33,7 @@ module Solargraph
             }
             uri = params['textDocument']['uri']
             Base.start_diagnostics host, uri
-            text = host.read(filename)
+            text = host.read(filename).code
             return if text.nil? or text.empty?
             cmd = "rubocop -f j -s #{Shellwords.escape(filename)}"
             o, e, s = Open3.capture3(cmd, stdin_data: text)

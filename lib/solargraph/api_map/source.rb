@@ -186,7 +186,26 @@ module Solargraph
         @all_nodes.include? node
       end
 
+      def synchronize change
+        if (change['range'])
+          start_offset = CodeMap.get_offset(@code, change['range']['start']['line'], change['range']['start']['character'])
+          end_offset = CodeMap.get_offset(@code, change['range']['end']['line'], change['range']['end']['character'])
+          rewrite = @code[0..start_offset-1] + change['text'] + @code[end_offset..-1]
+          if ['.', ',', '{', '(', '['].include?(change['text']) and change['range'] == 0
+            @code = rewrite
+            self
+          else
+            Source.fix(rewrite, filename)
+          end
+        else
+          Source.fix(change['text'], filename)
+        end
+      end
+
       private
+
+      def parse_whole
+      end
 
       def associate_comments node, comments
         comment_hash = Parser::Source::Comment.associate_locations(node, comments)

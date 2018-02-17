@@ -6,7 +6,7 @@ module Solargraph
           host.prepare params['rootPath']
           set_result(
             capabilities: {
-              textDocumentSync: 1, # @todo What should this be?
+              textDocumentSync: 2, # @todo What should this be?
               completionProvider: {
                 resolveProvider: true,
                 triggerCharacters: ['.', ':', '@']
