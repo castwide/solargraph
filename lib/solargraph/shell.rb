@@ -47,6 +47,12 @@ module Solargraph
       port = options[:port]
       port = available_port if port.zero?
       EventMachine.run {
+        Signal.trap("INT") do
+          EventMachine.stop
+        end
+        Signal.trap("TERM") do
+          EventMachine.stop
+        end
         EventMachine.start_server options[:host], port, Solargraph::LanguageServer::Transport::Socket
         STDERR.puts "Solargraph is listening on port #{port}"
       }    
