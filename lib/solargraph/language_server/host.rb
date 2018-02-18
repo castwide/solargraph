@@ -64,9 +64,7 @@ module Solargraph
           if src.nil?
             STDERR.puts "NOOOOO!!!!!!!!!!! Trying to change a file that's not open?"
           else
-            changes.each do |change|
-              @file_source[filename] = src.synchronize(change)
-            end
+            @file_source[filename] = src.synchronize(changes)
           end
         }
       end

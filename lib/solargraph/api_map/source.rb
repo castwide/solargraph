@@ -233,19 +233,30 @@ module Solargraph
         @all_nodes.include? node
       end
 
-      def synchronize change
-        if (change['range'])
-          start_offset = CodeMap.get_offset(@code, change['range']['start']['line'], change['range']['start']['character'])
-          end_offset = CodeMap.get_offset(@code, change['range']['end']['line'], change['range']['end']['character'])
-          rewrite = @code[0..start_offset-1].to_s + change['text'].to_s + @code[end_offset..-1].to_s
-          if ['.', ',', '{', '(', '['].include?(change['text']) and change['rangeLength'] == 0
-            @code = rewrite
-            self
+      def synchronize changes
+        rewrite = @code
+        reload = false
+        last_offset = nil
+        changes.each do |change|
+          ct = change['text'].gsub(/\r\n/, "\n")
+          last_offset = nil
+          if (change['range'])
+            start_offset = CodeMap.get_offset(@code, change['range']['start']['line'], change['range']['start']['character'])
+            end_offset = CodeMap.get_offset(@code, change['range']['end']['line'], change['range']['end']['character'])
+            rewrite = @code[0..start_offset-1].to_s + ct + @code[end_offset..-1].to_s
+            unless ['.', ',', '{', '(', '['].include?(change['text']) and change['rangeLength'] == 0
+              reload = true
+            end
+            last_offset = CodeMap.get_offset(@code, change['range']['start']['line'], change['range']['start']['character'])
           else
-            Source.fix(rewrite, filename)
+            reload = true
           end
+        end
+        if reload
+          Source.fix(rewrite, filename, last_offset)
         else
-          Source.fix(change['text'], filename)
+          @code = rewrite
+          self
         end
       end
 

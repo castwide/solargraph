@@ -51,6 +51,12 @@ module Solargraph
       self.api_map.refresh
     end
 
+    def self.from_source source, api_map
+      code_map = self.allocate
+      code_map.mix source, source.filename, api_map
+      code_map
+    end
+
     # Get the associated ApiMap.
     #
     # @return [Solargraph::ApiMap]
