@@ -130,17 +130,17 @@ module Solargraph
           eliminate f
           true
         end
-        filename = source.filename
-        eliminate @virtual_filename unless @virtual_source.nil? or @virtual_filename == filename or workspace_files.include?(@virtual_filename)
-        @virtual_filename = filename
-        @virtual_source = source
-        unless filename.nil? or workspace_files.include?(filename)
-          current_files = @workspace_files
-          @workspace_files = config(true).calculated
-          (current_files - @workspace_files).each { |f| eliminate f }
-        end
-        process_virtual
       end
+      filename = source.filename
+      eliminate @virtual_filename unless @virtual_source.nil? or @virtual_filename == filename or workspace_files.include?(@virtual_filename)
+      @virtual_filename = filename
+      @virtual_source = source
+      unless filename.nil? or workspace_files.include?(filename)
+        current_files = @workspace_files
+        @workspace_files = config(true).calculated
+        (current_files - @workspace_files).each { |f| eliminate f }
+      end
+      process_virtual
     end
 
     # @return [Solargraph::ApiMap::Source]

@@ -27,15 +27,17 @@ module Solargraph
 
     def initialize code: '', filename: nil, api_map: nil, cursor: nil
       # HACK: Adjust incoming filename's path separator for yardoc file comparisons
-      filename = filename.gsub(File::ALT_SEPARATOR, File::SEPARATOR) unless filename.nil? or File::ALT_SEPARATOR.nil?
-      @filename = filename
-      @api_map = api_map
+      #filename = filename.gsub(File::ALT_SEPARATOR, File::SEPARATOR) unless filename.nil? or File::ALT_SEPARATOR.nil?
+      #@filename = filename
+      #@api_map = api_map
       if !filename.nil? and filename.end_with?('.erb')
-        @source = self.api_map.virtualize(convert_erb(code), filename, cursor)
+        #@source = self.api_map.virtualize(convert_erb(code), filename, cursor)
+        src = ApiMap::Source.fix(convert_erb(code), filename, cursor)
       else
-        @source = self.api_map.virtualize(code, filename, cursor)
+        #@source = self.api_map.virtualize(code, filename, cursor)
+        src = ApiMap::Source.fix(code, filename, cursor)
       end
-      mix source, filename, api_map
+      mix src, filename, api_map
     end
 
     def mix source, filename, api_map
@@ -45,6 +47,7 @@ module Solargraph
       @node = source.node
       @code = source.code
       @comments = @source.comments
+      self.api_map.append_virtual_source source
       self.api_map.refresh
     end
 
@@ -110,12 +113,7 @@ module Solargraph
     # @return [Boolean]
     def comment_at?(index)
       return false if string_at?(index)
-      begin
-        line, col = Solargraph::ApiMap::Source.get_position_at(source.code, index)
-      rescue Exception => e
-        # @todo Better way to handle this?
-        line, col = Solargraph::ApiMap::Source.get_position_at(source.code, index - 1)
-      end
+      line, col = Solargraph::ApiMap::Source.get_position_at(source.code, index)
       return false if source.stubbed_lines.include?(line)
       @comments.each do |c|
         return true if index > c.location.expression.begin_pos and index <= c.location.expression.end_pos
@@ -552,13 +550,6 @@ module Solargraph
     #def get_call_arguments_at index
     #  called = parent_node_from(index, :send)
     #end
-
-    def self.from_source(source, api_map = nil)
-      filename = source.filename.gsub(File::ALT_SEPARATOR, File::SEPARATOR) unless source.filename.nil? or File::ALT_SEPARATOR.nil?
-      code_map = self.allocate
-      code_map.mix source, filename, api_map
-      code_map
-    end
 
     private
 
