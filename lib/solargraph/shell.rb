@@ -46,7 +46,7 @@ module Solargraph
     def socket
       port = options[:port]
       port = available_port if port.zero?
-      EventMachine.run {
+      EventMachine.run do
         Signal.trap("INT") do
           EventMachine.stop
         end
@@ -54,8 +54,8 @@ module Solargraph
           EventMachine.stop
         end
         EventMachine.start_server options[:host], port, Solargraph::LanguageServer::Transport::Socket
-        STDERR.puts "Solargraph is listening on port #{port}"
-      }    
+        STDERR.puts "Solargraph is listening PORT=#{port} PID=#{Process.pid}"
+      end
     end
 
     desc 'suggest', 'Get code suggestions for the provided input'
