@@ -51,15 +51,22 @@ module Solargraph
       def open filename, text
         #change filename, text
         @semaphore.synchronize {
-          @file_source[filename] = Solargraph::ApiMap::Source.virtual(text, filename)
+          STDERR.puts "Opening a damn file"
+          @file_source[filename] = Solargraph::ApiMap::Source.fix(text, filename)
         }
       end
 
       def change filename, changes
         @semaphore.synchronize {
+          STDERR.puts "Changing a damn file"
           #@files[filename] = changes[0]['text']
-          changes.each do |change|
-            @file_source[filename] = @file_source[filename].synchronize(change)
+          src = @file_source[filename]
+          if src.nil?
+            STDERR.puts "NOOOOO!!!!!!!!!!! Trying to change a file that's not open?"
+          else
+            changes.each do |change|
+              @file_source[filename] = src.synchronize(change)
+            end
           end
         }
       end

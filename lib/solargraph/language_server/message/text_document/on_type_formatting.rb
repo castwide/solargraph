@@ -4,10 +4,9 @@ module Solargraph
       module TextDocument
         class OnTypeFormatting < Base
           def process
-            text = host.read(filename)
-            code_map = Solargraph::CodeMap.new(code: text, filename: filename, api_map: host.api_map, cursor: [params['position']['line'], params['position']['character']])
-            offset = code_map.get_offset(params['position']['line'], params['position']['character'])
-            if code_map.string_at?(offset) and code_map.source.code[offset-2,2] == '#{'
+            src = host.read(filename)
+            offset = src.get_offset(params['position']['line'], params['position']['character'])
+            if src.string_at?(offset-1) and params['ch'] == '{' and src.code[offset-2,2] == '#{'
               set_result(
                 [
                   {

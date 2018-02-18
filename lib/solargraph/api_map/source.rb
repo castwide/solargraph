@@ -162,6 +162,53 @@ module Solargraph
         @node_tree[node] || []
       end
 
+      # Determine if the specified index is inside a string.
+      #
+      # @return [Boolean]
+      def string_at?(index)
+        n = node_at(index)
+        n.kind_of?(AST::Node) and (n.type == :str or n.type == :dstr)
+      end
+
+      # Get the nearest node that contains the specified index.
+      #
+      # @param index [Integer]
+      # @return [AST::Node]
+      def node_at(index)
+        tree_at(index).first
+      end
+
+      # Get an array of nodes containing the specified index, starting with the
+      # topmost node and ending with the nearest.
+      #
+      # @param index [Integer]
+      # @return [Array<AST::Node>]
+      def tree_at(index)
+        arr = []
+        arr.push @node
+        inner_node_at(index, @node, arr)
+        arr
+      end
+
+      def inner_node_at(index, node, arr)
+        node.children.each do |c|
+          if c.kind_of?(AST::Node) and c.respond_to?(:loc)
+            unless c.loc.expression.nil?
+              if index >= c.loc.expression.begin_pos
+                if c.respond_to?(:end)
+                  if index < c.end.end_pos
+                    arr.unshift c
+                  end
+                elsif index < c.loc.expression.end_pos
+                  arr.unshift c
+                end
+              end
+            end
+            inner_node_at(index, c, arr)
+          end
+        end
+      end
+  
       # @return [String]
       def namespace_for node
         parts = []
@@ -191,7 +238,7 @@ module Solargraph
           start_offset = CodeMap.get_offset(@code, change['range']['start']['line'], change['range']['start']['character'])
           end_offset = CodeMap.get_offset(@code, change['range']['end']['line'], change['range']['end']['character'])
           rewrite = @code[0..start_offset-1].to_s + change['text'].to_s + @code[end_offset..-1].to_s
-          if ['.', ',', '{', '(', '['].include?(change['text']) and change['range'] == 0
+          if ['.', ',', '{', '(', '['].include?(change['text']) and change['rangeLength'] == 0
             @code = rewrite
             self
           else
@@ -200,6 +247,10 @@ module Solargraph
         else
           Source.fix(change['text'], filename)
         end
+      end
+
+      def get_offset line, col
+        CodeMap.get_offset(code, line, col)
       end
 
       private
