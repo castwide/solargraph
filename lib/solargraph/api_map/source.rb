@@ -42,6 +42,7 @@ module Solargraph
         @node_stack = []
         @node_tree = {}
         @stubbed_lines = stubbed_lines
+        @stale = false
         inner_map_node @node
         @directives.each_pair do |k, v|
           v.each do |d|
@@ -68,6 +69,10 @@ module Solargraph
             end
           end
         end
+      end
+
+      def stale?
+        @stale
       end
 
       def macro path
@@ -238,24 +243,28 @@ module Solargraph
         reload = false
         last_offset = nil
         changes.each do |change|
-          ct = change['text'].gsub(/\r\n/, "\n")
           last_offset = nil
           if (change['range'])
-            start_offset = CodeMap.get_offset(@code, change['range']['start']['line'], change['range']['start']['character'])
-            end_offset = CodeMap.get_offset(@code, change['range']['end']['line'], change['range']['end']['character'])
-            rewrite = @code[0..start_offset-1].to_s + ct + @code[end_offset..-1].to_s
+            ct = change['text'].gsub(/\r\n/, "\n")
+            start_offset = CodeMap.get_offset(rewrite, change['range']['start']['line'], change['range']['start']['character'])
+            end_offset = CodeMap.get_offset(rewrite, change['range']['end']['line'], change['range']['end']['character'])
+            rewrite = rewrite[0..start_offset-1].to_s + change['text'] + rewrite[end_offset..-1].to_s
             unless ['.', ',', '{', '(', '['].include?(change['text']) and change['rangeLength'] == 0
               reload = true
             end
-            last_offset = CodeMap.get_offset(@code, change['range']['start']['line'], change['range']['start']['character'])
           else
+            rewrite = ct
             reload = true
           end
         end
-        if reload
-          Source.fix(rewrite, filename, last_offset)
+        # @todo Maybe offset source fixes for performance
+        if false and reload
+          # last_offset = CodeMap.get_offset(rewrite, changes.last['range']['end']['line'], changes.last['range']['end']['character']) - 1
+          # Source.fix(rewrite, filename, last_offset)
+          Source.fix(rewrite, filename)
         else
           @code = rewrite
+          @stale = true
           self
         end
       end
@@ -265,9 +274,6 @@ module Solargraph
       end
 
       private
-
-      def parse_whole
-      end
 
       def associate_comments node, comments
         comment_hash = Parser::Source::Comment.associate_locations(node, comments)

@@ -15,6 +15,8 @@ module Solargraph
         @file_source = {}
         @semaphore = Mutex.new
         @buffer_semaphore = Mutex.new
+        @changes_semaphore = Mutex.new
+        @changers = []
         @cancel = []
         @buffer = ''
       end
@@ -51,20 +53,40 @@ module Solargraph
       def open filename, text
         #change filename, text
         @semaphore.synchronize {
-          STDERR.puts "Opening a damn file"
           @file_source[filename] = Solargraph::ApiMap::Source.fix(text, filename)
         }
       end
 
+      # def stale? filename
+      #   @semaphore.synchronize {
+      #     @file_source[filename].stale?
+      #   }
+      # end
+
       def change filename, changes
+        sleep 0.01 while @changers.include?(filename)
+        @changes_semaphore.synchronize {
+          @changers.push filename
+        }
         @semaphore.synchronize {
-          STDERR.puts "Changing a damn file"
-          #@files[filename] = changes[0]['text']
           src = @file_source[filename]
           if src.nil?
             STDERR.puts "NOOOOO!!!!!!!!!!! Trying to change a file that's not open?"
           else
-            @file_source[filename] = src.synchronize(changes)
+            #@file_source[filename] = src.synchronize(changes)
+            src.synchronize changes
+          end
+        }
+        @changes_semaphore.synchronize {
+          @changers.slice!(@changers.index(filename))
+        }
+      end
+
+      def reload_sources
+        @semaphore.synchronize {
+          @file_source.each_pair do |name, source|
+            next if @changers.include?(name)
+            @file_source[name]= Solargraph::ApiMap::Source.fix(source.code, name) if source.stale?
           end
         }
       end

@@ -9,6 +9,9 @@ module Solargraph
           @content_length = 0
           @buffer = ''
           @host = Solargraph::LanguageServer::Host.new
+          EventMachine.add_periodic_timer 0.1 do
+            @host.reload_sources
+          end
         end
       
         def process request
@@ -50,7 +53,7 @@ module Solargraph
               end
             end
           end
-        end      
+        end
       end
     end
   end
