@@ -5,9 +5,6 @@ module Solargraph
         class Completion < Base
           def process
             begin
-              # while host.stale?(filename)
-              #   sleep 0.1
-              # end
               kind_map = {
                 'Class' => 7,
                 'Constant' => 21,

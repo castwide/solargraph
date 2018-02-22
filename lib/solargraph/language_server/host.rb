@@ -13,9 +13,9 @@ module Solargraph
         @api_map = Solargraph::ApiMap.new
         # @type [Hash<String, Solargraph::ApiMap::Source]
         @file_source = {}
-        @semaphore = Mutex.new
+        @source_semaphore = Mutex.new
         @buffer_semaphore = Mutex.new
-        @changes_semaphore = Mutex.new
+        @change_semaphore = Mutex.new
         @changers = []
         @cancel = []
         @buffer = ''
@@ -40,11 +40,8 @@ module Solargraph
       end
 
       def read filename
-        #text = nil
-        #@semaphore.synchronize { text = @files[filename] }
-        #text
         source = nil
-        @semaphore.synchronize {
+        @source_semaphore.synchronize {
           source = @file_source[filename]
         }
         source
@@ -52,23 +49,17 @@ module Solargraph
 
       def open filename, text
         #change filename, text
-        @semaphore.synchronize {
+        @source_semaphore.synchronize {
           @file_source[filename] = Solargraph::ApiMap::Source.fix(text, filename)
         }
       end
 
-      # def stale? filename
-      #   @semaphore.synchronize {
-      #     @file_source[filename].stale?
-      #   }
-      # end
-
       def change filename, changes
         sleep 0.01 while @changers.include?(filename)
-        @changes_semaphore.synchronize {
+        @change_semaphore.synchronize {
           @changers.push filename
         }
-        @semaphore.synchronize {
+        @source_semaphore.synchronize {
           src = @file_source[filename]
           if src.nil?
             STDERR.puts "NOOOOO!!!!!!!!!!! Trying to change a file that's not open?"
@@ -77,13 +68,13 @@ module Solargraph
             src.synchronize changes
           end
         }
-        @changes_semaphore.synchronize {
+        @change_semaphore.synchronize {
           @changers.slice!(@changers.index(filename))
         }
       end
 
       def reload_sources
-        @semaphore.synchronize {
+        @source_semaphore.synchronize {
           @file_source.each_pair do |name, source|
             next if @changers.include?(name)
             @file_source[name]= Solargraph::ApiMap::Source.fix(source.code, name) if source.stale?
@@ -92,7 +83,7 @@ module Solargraph
       end
 
       def close filename
-        @semaphore.synchronize { @file_source.delete filename }
+        @source_semaphore.synchronize { @file_source.delete filename }
       end
 
       def queue message
