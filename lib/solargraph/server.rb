@@ -142,6 +142,7 @@ module Solargraph
     def self.get_api_map workspace
       api_map = nil
       @@semaphore.synchronize {
+        @@api_hash[nil] ||= Solargraph::ApiMap.new
         api_map = @@api_hash[workspace]
       }
       api_map
