@@ -333,7 +333,7 @@ module Solargraph
         spec = Gem::Specification.find_by_path(r)
         begin
           spec = Gem::Specification.find_by_name(r) if spec.nil?
-        rescue Gem::MissingSpecError => e
+        rescue Gem::LoadError => e
           # @todo How to handle this?
         end
         if spec.nil?
