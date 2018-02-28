@@ -14,6 +14,8 @@ module Solargraph
       autoload :MethodNotFound, 'solargraph/language_server/message/method_not_found'
       autoload :MethodNotImplemented, 'solargraph/language_server/message/method_not_implemented'
       autoload :Extended, 'solargraph/language_server/message/extended'
+      autoload :Shutdown, 'solargraph/language_server/message/shutdown'
+      autoload :ExitNotification, 'solargraph/language_server/message/exit_notification'
 
       class << self
         def register path, message_class
@@ -28,6 +30,7 @@ module Solargraph
           elsif path.start_with?('$/')
             MethodNotImplemented
           else
+            STDERR.puts "Method not found: #{path}"
             MethodNotFound
           end
         end
@@ -52,6 +55,8 @@ module Solargraph
       register '$/cancelRequest', CancelRequest
       register '$/solargraph/document', Extended::Document
       register '$/solargraph/search', Extended::Search
+      register 'shutdown', Shutdown
+      register 'exit', ExitNotification
     end
   end
 end
