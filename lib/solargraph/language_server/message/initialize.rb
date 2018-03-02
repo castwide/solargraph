@@ -3,6 +3,7 @@ module Solargraph
     module Message
       class Initialize < Base
         def process
+          host.configure params['initializationOptions']
           host.prepare params['rootPath']
           set_result(
             capabilities: {

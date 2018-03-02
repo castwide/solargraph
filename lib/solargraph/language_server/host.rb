@@ -21,6 +21,16 @@ module Solargraph
         @buffer = ''
       end
 
+      # @param options [Hash]
+      def configure options
+        @options = options
+      end
+
+      # @return [Hash]
+      def options
+        @options ||= {}
+      end
+
       def cancel id
         @cancel.push id
       end
