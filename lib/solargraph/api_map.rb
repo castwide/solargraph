@@ -800,8 +800,8 @@ module Solargraph
         @namespace_includes[ns].concat(i).uniq!
       end
       source.namespace_extends.each_pair do |ns, e|
-        @namespace_extends[ns] ||= []
-        @namespace_extends[ns].concat(e).uniq!
+        @namespace_extends[ns || ''] ||= []
+        @namespace_extends[ns || ''].concat(e).uniq!
       end
       source.superclasses.each_pair do |cls, sup|
         @superclasses[cls] = sup
