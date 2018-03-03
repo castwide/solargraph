@@ -29,51 +29,9 @@ module Solargraph
 
     def initialize code, node, comments, filename, stubbed_lines = []
       @code = code
-      root = AST::Node.new(:source, [filename])
-      root = root.append node
-      @node = root
-      @comments = comments
-      @directives = {}
-      @path_macros = {}
-      @docstring_hash = associate_comments(node, comments)
       @filename = filename
-      @mtime = (!filename.nil? and File.exist?(filename) ? File.mtime(filename) : nil)
-      @namespace_nodes = {}
-      @all_nodes = []
-      @node_stack = []
-      @node_tree = {}
       @stubbed_lines = stubbed_lines
-      @stale = false
-      inner_map_node @node
-      @directives.each_pair do |k, v|
-        v.each do |d|
-          ns = namespace_for(k.node)
-          docstring = YARD::Docstring.parser.parse(d.tag.text).to_docstring
-          if d.tag.tag_name == 'attribute'
-            t = (d.tag.types.nil? || d.tag.types.empty?) ? nil : d.tag.types.flatten.join('')
-            if t.nil? or t.include?('r')
-              attribute_pins.push Solargraph::Pin::Directed::Attribute.new(self, k.node, ns, :reader, docstring, d.tag.name)
-            end
-            if t.nil? or t.include?('w')
-              attribute_pins.push Solargraph::Pin::Directed::Attribute.new(self, k.node, ns, :writer, docstring, "#{d.tag.name}=")
-            end
-          elsif d.tag.tag_name == 'method'
-            gen_src = Source.virtual("def #{d.tag.name};end", filename)
-            gen_pin = gen_src.method_pins.first
-            method_pins.push Solargraph::Pin::Directed::Method.new(gen_src, gen_pin.node, ns, :instance, :public, docstring, gen_pin.name)
-          elsif d.tag.tag_name == 'macro'
-            # @todo Handle various types of macros (attach, new, whatever)
-            path = path_for(k.node)
-            @path_macros[path] = v
-          else
-            STDERR.puts "Nothing to do for directive: #{d}"
-          end
-        end
-      end
-    end
-
-    def stale?
-      @stale
+      process_parsed node, comments
     end
 
     def macro path
@@ -274,7 +232,6 @@ module Solargraph
       changes.each do |change|
         reparse change
       end
-      STDERR.puts "RESULT>>>\n#{@code}\n<<<RESULT"
       self
     end
 
@@ -285,13 +242,84 @@ module Solargraph
     private
 
     def reparse change
-      # @todo The actual reparse
       if change['range']
         start_offset = CodeMap.get_offset(@code, change['range']['start']['line'], change['range']['start']['character'])
         end_offset = CodeMap.get_offset(@code, change['range']['end']['line'], change['range']['end']['character'])
-        @code = @code[0..start_offset-1].to_s + change['text'].gsub(/\r\n/, "\n") + @code[end_offset..-1].to_s
+        rewrite = @code[0..start_offset-1].to_s + change['text'].gsub(/\r\n/, "\n") + @code[end_offset..-1].to_s
+        tmp = rewrite
+        retried = false
+        begin
+          node, comments = Parser::CurrentRuby.parse_with_comments(tmp)
+          process_parsed node, comments
+          @code = rewrite
+          @fixed = tmp
+        rescue Parser::SyntaxError => e
+          if retried
+            @code = rewrite
+            hard_fix_node
+          else
+            retried = true
+            tmp = @fixed[0..start_offset-1].to_s + change['text'].gsub(/\r\n/, "\n").gsub(/[^ \t\r\n]/, ' ') + @fixed[end_offset..-1].to_s
+            retry
+          end
+        end
       else
         @code = change['text'].gsub(/\r\n/, "\n")
+        begin
+          node, comments = Parser::CurrentRuby.parse_with_comments(@code)
+          process_parsed node, comments
+          @fixed = @code
+        rescue Parser::SyntaxError => e
+          hard_fix_node
+        end
+      end
+    end
+
+    def hard_fix_node
+      tmp = @code.gsub(/[^ \t\r\n]/, ' ')
+      @fixed = tmp
+      node, comments = Parser::CurrentRuby.parse_with_comments(tmp)
+      process_parsed node, comments
+    end
+
+    def process_parsed node, comments
+      root = AST::Node.new(:source, [filename])
+      root = root.append node
+      @node = root
+      @comments = comments
+      @directives = {}
+      @path_macros = {}
+      @docstring_hash = associate_comments(node, comments)
+      @mtime = (!filename.nil? and File.exist?(filename) ? File.mtime(filename) : nil)
+      @namespace_nodes = {}
+      @all_nodes = []
+      @node_stack = []
+      @node_tree = {}
+      inner_map_node @node
+      @directives.each_pair do |k, v|
+        v.each do |d|
+          ns = namespace_for(k.node)
+          docstring = YARD::Docstring.parser.parse(d.tag.text).to_docstring
+          if d.tag.tag_name == 'attribute'
+            t = (d.tag.types.nil? || d.tag.types.empty?) ? nil : d.tag.types.flatten.join('')
+            if t.nil? or t.include?('r')
+              attribute_pins.push Solargraph::Pin::Directed::Attribute.new(self, k.node, ns, :reader, docstring, d.tag.name)
+            end
+            if t.nil? or t.include?('w')
+              attribute_pins.push Solargraph::Pin::Directed::Attribute.new(self, k.node, ns, :writer, docstring, "#{d.tag.name}=")
+            end
+          elsif d.tag.tag_name == 'method'
+            gen_src = Source.virtual("def #{d.tag.name};end", filename)
+            gen_pin = gen_src.method_pins.first
+            method_pins.push Solargraph::Pin::Directed::Method.new(gen_src, gen_pin.node, ns, :instance, :public, docstring, gen_pin.name)
+          elsif d.tag.tag_name == 'macro'
+            # @todo Handle various types of macros (attach, new, whatever)
+            path = path_for(k.node)
+            @path_macros[path] = v
+          else
+            STDERR.puts "Nothing to do for directive: #{d}"
+          end
+        end
       end
     end
 
