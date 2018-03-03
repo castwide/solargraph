@@ -367,7 +367,8 @@ module Solargraph
       return nil if pins.nil?
       pin = pins.select{|p| p.name == var and p.scope == scope}.first
       return nil if pin.nil?
-      type = pin.return_type
+      type = nil
+      type = find_fully_qualified_namespace(pin.return_type, pin.namespace) unless pin.return_type.nil?
       if type.nil?
         zparts = resolve_node_signature(pin.assignment_node).split('.')
         ztype = infer_signature_type(zparts[0..-2].join('.'), namespace, scope: :instance, call_node: pin.assignment_node)
@@ -383,8 +384,8 @@ module Solargraph
       pins = @cvar_pins[fqns]
       return nil if pins.nil?
       pin = pins.select{|p| p.name == var}.first
-      return nil if pin.nil?
-      pin.return_type
+      return nil if pin.nil? or pin.return_type.nil?
+      find_fully_qualified_namespace(pin.return_type, pin.namespace)
     end
 
     # @return [Array<Solargraph::Suggestion>]
@@ -1031,14 +1032,15 @@ module Solargraph
     # @param pin [Solargraph::Pin::Base]
     # @return [Solargraph::Suggestion]
     def pin_to_suggestion pin
-      return_type = pin.return_type
+      return_type = nil
+      return_type = find_fully_qualified_namespace(pin.return_type, pin.namespace) unless pin.return_type.nil?
       if return_type.nil? and pin.is_a?(Solargraph::Pin::Method)
         sc = @superclasses[pin.namespace]
         while return_type.nil? and !sc.nil?
           sc_path = "#{sc}#{pin.scope == :instance ? '#' : '.'}#{pin.name}"
           sugg = get_path_suggestions(sc_path).first
           break if sugg.nil?
-          return_type = sugg.return_type
+          return_type = find_fully_qualified_namespace(sugg.return_type, sugg.namespace) unless sugg.return_type.nil?
           sc = @superclasses[sc]
         end
       end
