@@ -3,7 +3,7 @@ module Solargraph
     module Message
       class ExitNotification < Base
         def process
-          EventMachine.stop
+          host.stop
           exit
         end
       end

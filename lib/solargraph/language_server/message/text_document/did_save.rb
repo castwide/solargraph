@@ -4,7 +4,7 @@ module Solargraph
       module TextDocument
         class DidSave < Base
           def process
-            host.open filename, File.read(filename)
+            host.open params['textDocument']
             publish_diagnostics
           end
         end

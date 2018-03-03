@@ -17,32 +17,40 @@ module Solargraph
               }
               # text = host.read(filename).code
               # code_map = Solargraph::CodeMap.new(code: text, filename: filename, api_map: host.api_map, cursor: [params['position']['line'], params['position']['character']])
-              source = host.read(filename)
-              code_map = Solargraph::CodeMap.from_source(source, host.api_map)
-              offset = code_map.get_offset(params['position']['line'], params['position']['character'])
-              suggestions = code_map.suggest_at(offset)
-              items = suggestions.map do |sugg|
-                detail = ''
-                detail += "(#{sugg.arguments.join(', ')}) " unless sugg.arguments.empty?
-                detail += "=> #{sugg.return_type}" unless sugg.return_type.nil?
-                {
-                  label: sugg.label,
-                  detail: detail,
-                  kind: kind_map[sugg.kind],
-                  data: {
-                    identifier: sugg.location || sugg.path
+              if host.changing?(params['textDocument']['uri'])
+                STDERR.puts "No completion items because host is changing #{params['textDocument']['uri']}"
+                set_result(
+                  isIncomplete: true,
+                  items: []
+                )
+              else
+                source = host.read(params['textDocument']['uri'])
+                code_map = Solargraph::CodeMap.from_source(source, host.api_map)
+                offset = code_map.get_offset(params['position']['line'], params['position']['character'])
+                suggestions = code_map.suggest_at(offset)
+                items = suggestions.map do |sugg|
+                  detail = ''
+                  detail += "(#{sugg.arguments.join(', ')}) " unless sugg.arguments.empty?
+                  detail += "=> #{sugg.return_type}" unless sugg.return_type.nil?
+                  {
+                    label: sugg.label,
+                    detail: detail,
+                    kind: kind_map[sugg.kind],
+                    data: {
+                      identifier: sugg.location || sugg.path
+                    }
                   }
-                }
+                end
+                suggestion_map = {}
+                suggestions.each do |s|
+                  suggestion_map[s.location || s.path] = s
+                end
+                host.resolvable = suggestion_map
+                set_result(
+                  isIncomplete: false,
+                  items: items
+                )
               end
-              suggestion_map = {}
-              suggestions.each do |s|
-                suggestion_map[s.location || s.path] = s
-              end
-              host.resolvable = suggestion_map
-              set_result(
-                isIncomplete: false,
-                items: items
-              )
             rescue Exception => e
               STDERR.puts "#{e}"
               STDERR.puts "#{e.backtrace}"

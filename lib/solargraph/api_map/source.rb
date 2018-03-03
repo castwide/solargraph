@@ -24,6 +24,8 @@ module Solargraph
 
       attr_reader :path_macros
 
+      attr_accessor :version
+
       include NodeMethods
 
       def initialize code, node, comments, filename, stubbed_lines = []
@@ -244,8 +246,8 @@ module Solargraph
         last_offset = nil
         changes.each do |change|
           last_offset = nil
+          ct = change['text'].gsub(/\r\n/, "\n")
           if (change['range'])
-            ct = change['text'].gsub(/\r\n/, "\n")
             start_offset = CodeMap.get_offset(rewrite, change['range']['start']['line'], change['range']['start']['character'])
             end_offset = CodeMap.get_offset(rewrite, change['range']['end']['line'], change['range']['end']['character'])
             rewrite = rewrite[0..start_offset-1].to_s + change['text'] + rewrite[end_offset..-1].to_s

@@ -6,7 +6,7 @@ module Solargraph
       module TextDocument
         class DidChange < Base
           def process
-            host.change filename, params['contentChanges']
+            host.change params
             publish_diagnostics
           end
         end

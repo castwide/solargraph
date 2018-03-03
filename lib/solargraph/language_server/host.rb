@@ -13,12 +13,13 @@ module Solargraph
         @api_map = Solargraph::ApiMap.new
         # @type [Hash<String, Solargraph::ApiMap::Source]
         @file_source = {}
-        @source_semaphore = Mutex.new
-        @buffer_semaphore = Mutex.new
         @change_semaphore = Mutex.new
-        @changers = []
+        @buffer_semaphore = Mutex.new
+        @change_queue = []
         @cancel = []
         @buffer = ''
+        @stopped = false
+        start_change_thread
       end
 
       # @param options [Hash]
@@ -49,47 +50,39 @@ module Solargraph
         message
       end
 
-      def read filename
+      def read uri
         source = nil
-        @source_semaphore.synchronize {
-          source = @file_source[filename]
+        @change_semaphore.synchronize {
+          source = @file_source[uri]
         }
         source
       end
 
-      def open filename, text
-        #change filename, text
-        @source_semaphore.synchronize {
-          @file_source[filename] = Solargraph::ApiMap::Source.fix(text, filename)
-        }
+      def open text_document
+        @change_semaphore.synchronize do
+          text = text_document['text'] || File.read(uri_to_file(text_document['uri']))
+          @file_source[text_document['uri']] = Solargraph::ApiMap::Source.fix(text, uri_to_file(text_document['uri']))
+          @file_source[text_document['uri']].version = text_document['version']
+          @change_queue.delete_if { |c| c['textDocument']['uri'] == text_document['uri'] and c['textDocument']['version'] < @file_source[text_document['uri']].version }
+        end
       end
 
-      def change filename, changes
-        sleep 0.01 while @changers.include?(filename)
+      def change params
         @change_semaphore.synchronize {
-          @changers.push filename
-        }
-        @source_semaphore.synchronize {
-          src = @file_source[filename]
-          if src.nil?
-            STDERR.puts "NOOOOO!!!!!!!!!!! Trying to change a file that's not open?"
+          filename = uri_to_file(params['textDocument']['uri'])
+          source = @file_source[params['textDocument']['uri']]
+          if params['textDocument']['version'] == source.version || params['textDocument']['version'] == source.version + 1
+            # @todo Change the source
+            @file_source[params['textDocument']['uri']] = source.synchronize(params['contentChanges'])
+            @file_source[params['textDocument']['uri']].version = params['textDocument']['version']
           else
-            #@file_source[filename] = src.synchronize(changes)
-            src.synchronize changes
+            @change_queue.push params
           end
-        }
-        @change_semaphore.synchronize {
-          @changers.slice!(@changers.index(filename))
         }
       end
 
       def reload_sources
-        @source_semaphore.synchronize {
-          @file_source.each_pair do |name, source|
-            next if @changers.include?(name)
-            @file_source[name]= Solargraph::ApiMap::Source.fix(source.code, name) if source.stale?
-          end
-        }
+        # @todo Is this necessary?
       end
 
       def close filename
@@ -124,6 +117,52 @@ module Solargraph
         json = response.to_json
         envelope = "Content-Length: #{json.bytesize}\r\n\r\n#{json}"
         queue envelope
+      end
+
+      def changing? file_uri
+        result = false
+        @change_semaphore.synchronize {
+          result = @change_queue.any?{|change| change['textDocument']['uri'] == file_uri}
+        }
+        result
+      end
+
+      def stop
+        @stopped = true
+        EventMachine.stop
+        exit
+      end
+
+      def stopped?
+        @stopped
+      end
+
+      private
+
+      def start_change_thread
+        Thread.new do
+          until stopped?
+            @change_semaphore.synchronize do
+              @change_queue.delete_if do |change|
+                filename = uri_to_file(change['textDocument']['uri'])
+                source = @file_source[change['textDocument']['uri']]
+                # @todo What if source is nil?
+                if change['textDocument']['version'] == source.version || change['textDocument']['version'] == source.version + 1
+                  @file_source[change['textDocument']['uri']] = source.synchronize(change['contentChanges'])
+                  @file_source[change['textDocument']['uri']].version = change['textDocument']['version']
+                  true
+                else
+                  false
+                end
+              end
+            end
+            sleep 0.001
+          end
+        end
+      end
+
+      def uri_to_file uri
+        URI.decode(uri.gsub(/^file\:\/\/\/?/, ''))
       end
     end
   end

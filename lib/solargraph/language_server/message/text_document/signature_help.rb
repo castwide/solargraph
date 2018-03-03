@@ -4,7 +4,7 @@ module Solargraph
       module TextDocument
         class SignatureHelp < TextDocument::Base
           def process
-            source = host.read(filename)
+            source = host.read(params['textDocument']['uri'])
             code_map = Solargraph::CodeMap.from_source(source, host.api_map)
             offset = code_map.get_offset(params['position']['line'], params['position']['character'])
             sugg = code_map.signatures_at(offset)
