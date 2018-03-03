@@ -72,9 +72,7 @@ module Solargraph
           filename = uri_to_file(params['textDocument']['uri'])
           source = @file_source[params['textDocument']['uri']]
           if params['textDocument']['version'] == source.version || params['textDocument']['version'] == source.version + 1
-            # @todo Change the source
-            @file_source[params['textDocument']['uri']] = source.synchronize(params['contentChanges'])
-            @file_source[params['textDocument']['uri']].version = params['textDocument']['version']
+            source.synchronize(params['contentChanges'], params['textDocument']['version'])
           else
             @change_queue.push params
           end
@@ -148,8 +146,7 @@ module Solargraph
                 source = @file_source[change['textDocument']['uri']]
                 # @todo What if source is nil?
                 if change['textDocument']['version'] == source.version || change['textDocument']['version'] == source.version + 1
-                  @file_source[change['textDocument']['uri']] = source.synchronize(change['contentChanges'])
-                  @file_source[change['textDocument']['uri']].version = change['textDocument']['version']
+                  source.synchronize(change['contentChanges'], change['textDocument']['version'])
                   true
                 else
                   false

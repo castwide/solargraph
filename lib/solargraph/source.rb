@@ -29,6 +29,7 @@ module Solargraph
 
     def initialize code, node, comments, filename, stubbed_lines = []
       @code = code
+      @fixed = code
       @filename = filename
       @stubbed_lines = stubbed_lines
       process_parsed node, comments
@@ -197,41 +198,11 @@ module Solargraph
       @all_nodes.include? node
     end
 
-    # def synchronize changes
-    #   rewrite = @code
-    #   reload = false
-    #   last_offset = nil
-    #   changes.each do |change|
-    #     last_offset = nil
-    #     ct = change['text'].gsub(/\r\n/, "\n")
-    #     if (change['range'])
-    #       start_offset = CodeMap.get_offset(rewrite, change['range']['start']['line'], change['range']['start']['character'])
-    #       end_offset = CodeMap.get_offset(rewrite, change['range']['end']['line'], change['range']['end']['character'])
-    #       rewrite = rewrite[0..start_offset-1].to_s + change['text'] + rewrite[end_offset..-1].to_s
-    #       unless ['.', ',', '{', '(', '['].include?(change['text']) and change['rangeLength'] == 0
-    #         reload = true
-    #       end
-    #     else
-    #       rewrite = ct
-    #       reload = true
-    #     end
-    #   end
-    #   # @todo Maybe offset source fixes for performance
-    #   if false and reload
-    #     # last_offset = CodeMap.get_offset(rewrite, changes.last['range']['end']['line'], changes.last['range']['end']['character']) - 1
-    #     # Source.fix(rewrite, filename, last_offset)
-    #     Source.fix(rewrite, filename)
-    #   else
-    #     @code = rewrite
-    #     @stale = true
-    #     self
-    #   end
-    # end
-
-    def synchronize changes
+    def synchronize changes, version
       changes.each do |change|
         reparse change
       end
+      @version = version
       self
     end
 
