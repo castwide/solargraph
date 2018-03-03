@@ -13,7 +13,7 @@ module Solargraph
         code_object_map.keys
       end
 
-      # @param sources [Array<Solargraph::ApiMap::Source>] Sources for code objects
+      # @param sources [Array<Solargraph::Source>] Sources for code objects
       def rake_yard sources
         code_object_map.clear
         sources.each do |s|

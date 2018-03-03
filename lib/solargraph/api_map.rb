@@ -6,7 +6,6 @@ require 'set'
 module Solargraph
   class ApiMap
     autoload :Config,       'solargraph/api_map/config'
-    autoload :Source,       'solargraph/api_map/source'
     autoload :Cache,        'solargraph/api_map/cache'
     autoload :SourceToYard, 'solargraph/api_map/source_to_yard'
     @@source_cache = {}
@@ -94,7 +93,7 @@ module Solargraph
     #
     # @param code [String]
     # @param filename [String]
-    # @return [Solargraph::ApiMap::Source]
+    # @return [Solargraph::Source]
     def virtualize code, filename = nil, cursor = nil
       workspace_files.delete_if do |f|
         if File.exist?(f)
@@ -143,7 +142,7 @@ module Solargraph
       process_virtual
     end
 
-    # @return [Solargraph::ApiMap::Source]
+    # @return [Solargraph::Source]
     def append_source code, filename
       virtualize code, filename
     end
@@ -353,7 +352,7 @@ module Solargraph
       nil
     end
 
-    # @return [Solargraph::ApiMap::Source]
+    # @return [Solargraph::Source]
     def get_source_for(node)
       @sources.each do |filename, source|
         return source if source.include?(node)
@@ -629,7 +628,7 @@ module Solargraph
 
     # All sources generated from workspace files.
     #
-    # @return [Array<Solargraph::ApiMap::Source>]
+    # @return [Array<Solargraph::Source>]
     def sources
       @sources.values
     end
@@ -791,7 +790,7 @@ module Solargraph
       #@symbol_pins.delete_if{|pin| pin.filename == filename}
     end
 
-    # @param [Solargraph::ApiMap::Source]
+    # @param [Solargraph::Source]
     def map_source source
       source.method_pins.each do |pin|
         @method_pins[pin.namespace] ||= []

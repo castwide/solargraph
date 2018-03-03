@@ -1,7 +1,7 @@
 module Solargraph
   module Pin
     class Base
-      # @return [Solargraph::ApiMap::Source]
+      # @return [Solargraph::Source]
       attr_reader :source
 
       # @return [Parser::AST::Node]

@@ -4,6 +4,7 @@ require 'yard-solargraph'
 
 module Solargraph
   autoload :Shell,          'solargraph/shell'
+  autoload :Source,         'solargraph/source'
   autoload :ApiMap,         'solargraph/api_map'
   autoload :CodeMap,        'solargraph/code_map'
   autoload :NodeMethods,    'solargraph/node_methods'

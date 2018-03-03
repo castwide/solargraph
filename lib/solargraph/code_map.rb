@@ -14,7 +14,7 @@ module Solargraph
 
     # The source object generated from the code.
     #
-    # @return [Solargraph::ApiMap::Source]
+    # @return [Solargraph::Source]
     attr_reader :source
 
     # The filename for the source code.
@@ -32,10 +32,10 @@ module Solargraph
       #@api_map = api_map
       if !filename.nil? and filename.end_with?('.erb')
         #@source = self.api_map.virtualize(convert_erb(code), filename, cursor)
-        src = ApiMap::Source.fix(convert_erb(code), filename, cursor)
+        src = Solargraph::Source.fix(convert_erb(code), filename, cursor)
       else
         #@source = self.api_map.virtualize(code, filename, cursor)
-        src = ApiMap::Source.fix(code, filename, cursor)
+        src = Solargraph::Source.fix(code, filename, cursor)
       end
       mix src, filename, api_map
     end
@@ -119,7 +119,7 @@ module Solargraph
     # @return [Boolean]
     def comment_at?(index)
       return false if string_at?(index)
-      line, col = Solargraph::ApiMap::Source.get_position_at(source.code, index)
+      line, col = Solargraph::Source.get_position_at(source.code, index)
       return false if source.stubbed_lines.include?(line)
       @comments.each do |c|
         return true if index > c.location.expression.begin_pos and index <= c.location.expression.end_pos

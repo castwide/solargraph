@@ -11,7 +11,7 @@ module Solargraph
   
       def initialize
         @api_map = Solargraph::ApiMap.new
-        # @type [Hash<String, Solargraph::ApiMap::Source]
+        # @type [Hash<String, Solargraph::Source]
         @file_source = {}
         @change_semaphore = Mutex.new
         @buffer_semaphore = Mutex.new
@@ -61,7 +61,7 @@ module Solargraph
       def open text_document
         @change_semaphore.synchronize do
           text = text_document['text'] || File.read(uri_to_file(text_document['uri']))
-          @file_source[text_document['uri']] = Solargraph::ApiMap::Source.fix(text, uri_to_file(text_document['uri']))
+          @file_source[text_document['uri']] = Solargraph::Source.fix(text, uri_to_file(text_document['uri']))
           @file_source[text_document['uri']].version = text_document['version']
           @change_queue.delete_if { |c| c['textDocument']['uri'] == text_document['uri'] and c['textDocument']['version'] < @file_source[text_document['uri']].version }
         end
