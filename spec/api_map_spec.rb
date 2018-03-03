@@ -878,4 +878,19 @@ describe Solargraph::ApiMap do
     sugg = api_map.get_methods('').map(&:to_s)
     expect(sugg).to include('baz')
   end
+
+  it "resolves fully qualified namespaces from @return tags" do
+    api_map = Solargraph::ApiMap.new
+    api_map.virtualize(%(
+      class Foobar
+        class Bazbar
+        end
+        # @return [Bazbar]
+        def get_bazbar;end
+      end
+    ), 'file.rb')
+    sugg = api_map.get_instance_methods('Foobar').select{|s| s.label == 'get_bazbar'}.first
+    expect(sugg).not_to be(nil)
+    expect(sugg.return_type).to eq('Foobar::Bazbar')
+  end
 end
