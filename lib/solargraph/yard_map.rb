@@ -330,6 +330,7 @@ module Solargraph
 
     def process_requires
       required.each do |r|
+        next if !workspace.nil? and File.exist?(File.join workspace, 'lib', "#{r}.rb")
         spec = Gem::Specification.find_by_path(r)
         begin
           spec = Gem::Specification.find_by_name(r) if spec.nil?
