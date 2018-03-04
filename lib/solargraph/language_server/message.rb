@@ -50,6 +50,7 @@ module Solargraph
       register 'textDocument/didOpen', TextDocument::DidOpen
       register 'textDocument/didChange', TextDocument::DidChange
       register 'textDocument/didSave', TextDocument::DidSave
+      register 'textDocument/didClose', TextDocument::DidClose
       register 'textDocument/hover', TextDocument::Hover
       register 'textDocument/onTypeFormatting', TextDocument::OnTypeFormatting
       register '$/cancelRequest', CancelRequest
