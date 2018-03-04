@@ -78,6 +78,7 @@ module Solargraph
           else
             @change_queue.push params
           end
+          api_map.refresh true
         }
       end
 
@@ -135,6 +136,12 @@ module Solargraph
 
       def stopped?
         @stopped
+      end
+
+      def synchronize &block
+        @change_semaphore.synchronize do
+          block.call
+        end
       end
 
       private

@@ -15,7 +15,7 @@ module Solargraph
         end
       
         def process request
-          Thread.new {
+          Thread.new do
             begin
               message = @host.start(request)
               message.send
@@ -25,7 +25,7 @@ module Solargraph
               STDERR.puts "#{e}"
               STDERR.puts "#{e.backtrace}"
             end
-          }
+          end
         end
       
         # @param data [String]

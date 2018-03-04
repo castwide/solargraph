@@ -15,42 +15,36 @@ module Solargraph
                 'Property' => 10,
                 'Variable' => 6
               }
-              # text = host.read(filename).code
-              # code_map = Solargraph::CodeMap.new(code: text, filename: filename, api_map: host.api_map, cursor: [params['position']['line'], params['position']['character']])
-              if host.changing?(params['textDocument']['uri'])
-                STDERR.puts "No completion items because host is changing #{params['textDocument']['uri']}"
-                set_result(
-                  isIncomplete: true,
-                  items: []
-                )
-              else
-                source = host.read(params['textDocument']['uri'])
-                code_map = Solargraph::CodeMap.from_source(source, host.api_map)
-                offset = code_map.get_offset(params['position']['line'], params['position']['character'])
-                suggestions = code_map.suggest_at(offset)
-                items = suggestions.map do |sugg|
-                  detail = ''
-                  detail += "(#{sugg.arguments.join(', ')}) " unless sugg.arguments.empty?
-                  detail += "=> #{sugg.return_type}" unless sugg.return_type.nil?
-                  {
-                    label: sugg.label,
-                    detail: detail,
-                    kind: kind_map[sugg.kind],
-                    data: {
-                      identifier: sugg.location || sugg.path
+              source = host.read(params['textDocument']['uri'])
+              host.synchronize do
+                  code_map = Solargraph::CodeMap.from_source(source, host.api_map)
+                  offset = code_map.get_offset(params['position']['line'], params['position']['character'])
+                  suggestions = code_map.suggest_at(offset)
+                  items = suggestions.map do |sugg|
+                    detail = ''
+                    detail += "(#{sugg.arguments.join(', ')}) " unless sugg.arguments.empty?
+                    detail += "=> #{sugg.return_type}" unless sugg.return_type.nil?
+                    result = {
+                      label: sugg.label,
+                      kind: kind_map[sugg.kind],
+                      data: {
+                        identifier: sugg.location || sugg.path
+                      }
                     }
-                  }
+                    result[:detail] = detail unless detail.empty?
+                    result
+                  end
+                  suggestion_map = {}
+                  suggestions.each do |s|
+                    suggestion_map[s.location || s.path] = s
+                  end
+                  host.resolvable = suggestion_map
+                  set_result(
+                    isIncomplete: false,
+                    items: items
+                  )
                 end
-                suggestion_map = {}
-                suggestions.each do |s|
-                  suggestion_map[s.location || s.path] = s
-                end
-                host.resolvable = suggestion_map
-                set_result(
-                  isIncomplete: false,
-                  items: items
-                )
-              end
+              # end
             rescue Exception => e
               STDERR.puts "#{e}"
               STDERR.puts "#{e.backtrace}"
