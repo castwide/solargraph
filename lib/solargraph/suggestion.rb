@@ -37,7 +37,10 @@ module Solargraph
     # @return [YARD::CodeObjects::Base]
     attr_reader :code_object
 
-    def initialize label, kind: KEYWORD, insert: nil, detail: nil, docstring: nil, code_object: nil, location: nil, arguments: [], return_type: nil, path: nil
+    # @return [Solargraph::Pin::Base]
+    attr_reader :pin
+
+    def initialize label, kind: KEYWORD, insert: nil, detail: nil, docstring: nil, code_object: nil, location: nil, arguments: [], return_type: nil, path: nil, pin: nil
       @helper = Server::Helpers.new
       @label = label.to_s
       @kind = kind
@@ -49,6 +52,7 @@ module Solargraph
       @arguments = arguments
       @return_type = return_type
       @path = path
+      @pin = pin
     end
 
     # The full path of the suggestion.
@@ -146,7 +150,7 @@ module Solargraph
     #
     # @param pin [Solargraph::Pin::Base]
     def self.pull pin, return_type = nil
-      Suggestion.new(pin.name, insert: pin.name.gsub(/=$/, ' = '), kind: pin.kind, docstring: pin.docstring, detail: pin.namespace, arguments: pin.parameters, path: pin.path, return_type: return_type || pin.return_type, location: pin.location)
+      Suggestion.new(pin.name, insert: pin.name.gsub(/=$/, ' = '), kind: pin.kind, docstring: pin.docstring, detail: pin.namespace, arguments: pin.parameters, path: pin.path, return_type: return_type || pin.return_type, location: pin.location, pin: pin)
     end
   end
 end

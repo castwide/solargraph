@@ -11,15 +11,21 @@ module Solargraph
             if resolved.nil?
               set_error(Solargraph::LanguageServer::ErrorCodes::INVALID_REQUEST, "Completion item could not be resolved")
             else
-              doc = ''
-              if host.options['enablePages'] and resolved.kind != Solargraph::Suggestion::VARIABLE and !resolved.path.nil?
-                doc.concat "[#{resolved.path}](solargraph:/document?query=#{URI.encode(resolved.path)})\n\n"
+              more = {}
+              if resolved.has_doc?
+                doc = ''
+                if host.options['enablePages'] and resolved.kind != Solargraph::Suggestion::VARIABLE and !resolved.path.nil?
+                  doc.concat "[#{resolved.path}](solargraph:/document?query=#{URI.encode(resolved.path)})\n\n"
+                end
+                doc.concat ReverseMarkdown.convert(resolved.documentation)
+                more['documentation'] = doc unless doc.strip.empty?
               end
-              doc.concat ReverseMarkdown.convert(resolved.documentation)
+              if resolved.return_type.nil? and resolved.pin.kind_of?(Solargraph::Pin::BaseVariable)
+                rt = host.api_map.infer_assignment_node_type(resolved.pin.node, resolved.pin.namespace)
+                more['detail'] = "=> #{rt}" unless rt.nil?
+              end
               set_result(
-                params.merge(
-                  documentation: doc
-                )
+                params.merge(more)
               )
             end
           end

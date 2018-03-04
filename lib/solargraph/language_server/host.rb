@@ -7,6 +7,8 @@ module Solargraph
     #
     class Host
       attr_accessor :resolvable
+
+      # @return [Solargraph::ApiMap]
       attr_reader :api_map
   
       def initialize

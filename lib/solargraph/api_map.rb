@@ -410,7 +410,7 @@ module Solargraph
     def infer_assignment_node_type node, namespace
       cached = cache.get_assignment_node_type(node, namespace)
       return cached unless cached.nil?
-      name_i = (node.type == :casgn ? 1 : 0) 
+      name_i = (node.type == :casgn ? 1 : 0)
       sig_i = (node.type == :casgn ? 2 : 1)
       type = infer_literal_node_type(node.children[sig_i])
       if type.nil?
