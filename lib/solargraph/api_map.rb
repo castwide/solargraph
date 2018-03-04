@@ -338,10 +338,10 @@ module Solargraph
       result
     end
 
-    # @return [Array<Solargraph::Pin::Symbol>]
+    # @return [Array<Solargraph::Suggestion>]
     def get_symbols
       refresh
-      @symbol_pins.uniq(&:label)
+      @symbol_pins.map{|pin| Suggestion.new(pin.name, kind: Suggestion::CONSTANT, return_type: 'Symbol')}.uniq(&:label)
     end
 
     # @return [String]
@@ -788,7 +788,7 @@ module Solargraph
           pins.delete_if{|pin| pin.filename == filename}
         end
       end
-      #@symbol_pins.delete_if{|pin| pin.filename == filename}
+      @symbol_pins.delete_if{|pin| pin.filename == filename}
     end
 
     # @param [Solargraph::Source]
@@ -814,7 +814,8 @@ module Solargraph
         @const_pins[pin.namespace].push pin
       end
       source.symbol_pins.each do |pin|
-        @symbol_pins.push Suggestion.new(pin.name, kind: Suggestion::CONSTANT, return_type: 'Symbol')
+        #@symbol_pins.push Suggestion.new(pin.name, kind: Suggestion::CONSTANT, return_type: 'Symbol')
+        @symbol_pins.push pin
       end
       source.namespace_includes.each_pair do |ns, i|
         @namespace_includes[ns] ||= []
