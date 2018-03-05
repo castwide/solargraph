@@ -204,28 +204,61 @@ module Solargraph
       word
     end
 
-    def word_range_at index
-      cursor = index - 1
+    def symbol_range_at index
+      cursor = index
       while cursor > -1
-        char = @code[cursor, 1]
+        char = @code[cursor - 1, 1]
         break if char.nil? or char == ''
-        break unless char.match(/[a-z0-9_]/i)
+        break unless char.match(/[a-z0-9_@$]/i)
         cursor -= 1
       end
-      start_offset = cursor + 1
+      start_offset = cursor
       cursor = index
       while cursor < @code.length
         char = @code[cursor, 1]
         break if char.nil? or char == ''
+        break unless char.match(/[a-z0-9_\?\!]/i)
+        cursor += 1
+      end
+      end_offset = cursor
+      end_offset = start_offset if end_offset < start_offset
+      start_pos = Solargraph::Source.get_position_at(@code, start_offset)
+      end_pos = Solargraph::Source.get_position_at(@code, end_offset)
+      {
+        start: {
+          line: start_pos[0],
+          character: start_pos[1]
+        },
+        end: {
+          line: end_pos[0],
+          character: end_pos[1]
+        }
+      }
+    end
+
+    def word_range_at index
+      cursor = index
+      while cursor > -1
+        char = @code[cursor - 1, 1]
+        break if char.nil? or char == ''
+        break unless char.match(/[a-z0-9_]/i)
+        cursor -= 1
+      end
+      start_offset = cursor
+      cursor = index
+      while cursor < @code.length
+        char = @code[cursor + 1, 1]
+        break if char.nil? or char == ''
         break unless char.match(/[a-z0-9_]/i)
         cursor += 1
       end
-      end_offset = cursor - 1
+      end_offset = cursor
       end_offset = start_offset if end_offset < start_offset
       STDERR.puts "#{start_offset} to #{end_offset}"
       start_pos = Solargraph::Source.get_position_at(@code, start_offset)
       end_pos = Solargraph::Source.get_position_at(@code, end_offset)
-      end_pos = Solargraph::Source.get_position_at(@code, end_offset - 1) if end_pos[1] > start_pos[1]
+      #end_pos = Solargraph::Source.get_position_at(@code, end_offset - 1) if end_pos[1] > start_pos[1]
+      STDERR.puts "#{start_pos.inspect} to #{end_pos.inspect}"
       {
         start: {
           line: start_pos[0],

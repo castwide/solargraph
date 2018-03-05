@@ -502,9 +502,19 @@ module Solargraph
         line = 0
         col = nil
         code.each_line do |l|
-          if cursor + l.length >= offset
+          if cursor + l.length > offset
             col = offset - cursor
             break
+          end
+          if cursor + l.length == offset
+            if l.end_with?("\n")
+              col = 0
+              line += 1
+              break
+            else
+              col = l.length
+              break
+            end
           end
           cursor += l.length
           line += 1

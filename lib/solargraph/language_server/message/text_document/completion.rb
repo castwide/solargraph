@@ -19,6 +19,7 @@ module Solargraph
               host.synchronize do
                   code_map = Solargraph::CodeMap.from_source(source, host.api_map)
                   offset = code_map.get_offset(params['position']['line'], params['position']['character'])
+                  range = code_map.symbol_range_at(offset)
                   suggestions = code_map.suggest_at(offset)
                   items = suggestions.map do |sugg|
                     detail = ''
@@ -29,6 +30,10 @@ module Solargraph
                       kind: kind_map[sugg.kind],
                       data: {
                         identifier: sugg.location || sugg.path
+                      },
+                      textEdit: {
+                        range: range,
+                        newText: sugg.label
                       }
                     }
                     result[:detail] = detail unless detail.empty?
