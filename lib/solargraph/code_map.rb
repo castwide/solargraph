@@ -254,11 +254,8 @@ module Solargraph
       end
       end_offset = cursor
       end_offset = start_offset if end_offset < start_offset
-      STDERR.puts "#{start_offset} to #{end_offset}"
       start_pos = Solargraph::Source.get_position_at(@code, start_offset)
       end_pos = Solargraph::Source.get_position_at(@code, end_offset)
-      #end_pos = Solargraph::Source.get_position_at(@code, end_offset - 1) if end_pos[1] > start_pos[1]
-      STDERR.puts "#{start_pos.inspect} to #{end_pos.inspect}"
       {
         start: {
           line: start_pos[0],
