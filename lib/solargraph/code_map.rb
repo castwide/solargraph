@@ -204,6 +204,40 @@ module Solargraph
       word
     end
 
+    def word_range_at index
+      cursor = index - 1
+      while cursor > -1
+        char = @code[cursor, 1]
+        break if char.nil? or char == ''
+        break unless char.match(/[a-z0-9_]/i)
+        cursor -= 1
+      end
+      start_offset = cursor + 1
+      cursor = index
+      while cursor < @code.length
+        char = @code[cursor, 1]
+        break if char.nil? or char == ''
+        break unless char.match(/[a-z0-9_]/i)
+        cursor += 1
+      end
+      end_offset = cursor - 1
+      end_offset = start_offset if end_offset < start_offset
+      STDERR.puts "#{start_offset} to #{end_offset}"
+      start_pos = Solargraph::Source.get_position_at(@code, start_offset)
+      end_pos = Solargraph::Source.get_position_at(@code, end_offset)
+      end_pos = Solargraph::Source.get_position_at(@code, end_offset - 1) if end_pos[1] > start_pos[1]
+      {
+        start: {
+          line: start_pos[0],
+          character: start_pos[1]
+        },
+        end: {
+          line: end_pos[0],
+          character: end_pos[1]
+        }
+      }
+    end
+
     # @return [Array<Solargraph::Suggestion>]
     def get_class_variables_at(index)
       ns = namespace_at(index) || ''
