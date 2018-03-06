@@ -8,11 +8,9 @@ module Solargraph
     class Host
       attr_accessor :resolvable
 
-      # @return [Solargraph::ApiMap]
-      attr_reader :api_map
-  
+      attr_reader :workspace
+
       def initialize
-        @api_map = Solargraph::ApiMap.new
         # @type [Hash<String, Solargraph::Source]
         @file_source = {}
         @change_semaphore = Mutex.new
@@ -78,12 +76,7 @@ module Solargraph
           else
             @change_queue.push params
           end
-          api_map.refresh true
         }
-      end
-
-      def reload_sources
-        # @todo Is this necessary?
       end
 
       def close filename
@@ -105,8 +98,9 @@ module Solargraph
         tmp
       end
 
-      def prepare workspace
-        @api_map = Solargraph::ApiMap.new(workspace)
+      # @param directory [String]
+      def prepare directory
+        @workspace = Workspace.new(directory)
       end
 
       def send_notification method, params
@@ -168,7 +162,7 @@ module Solargraph
       end
 
       def uri_to_file uri
-        URI.decode(uri.gsub(/^file\:\/\/\/?/, ''))
+        URI.decode(uri.gsub(/^file\:\/\//, '').gsub(/^\/([a-z]:)/i, '\1'))
       end
     end
   end

@@ -14,7 +14,7 @@ module Solargraph
           attr_reader :filename
 
           def uri_to_file uri
-            URI.decode(uri.gsub(/^file\:\/\/\/?/, ''))
+            URI.decode(uri.gsub(/^file\:\/\//, '').gsub(/^\/([a-z]:)/i, '\1'))
           end
 
           def post_initialize
