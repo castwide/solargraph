@@ -850,6 +850,7 @@ module Solargraph
           meths.concat get_instance_methods(e, fqns, visibility: visibility)
         end
       end
+      meths.concat get_instance_methods('', '', visibility: [:public])
       meths.uniq
     end
 
