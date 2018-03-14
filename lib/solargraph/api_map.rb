@@ -797,8 +797,8 @@ module Solargraph
         @symbol_pins.push Suggestion.new(pin.name, kind: Suggestion::CONSTANT, return_type: 'Symbol')
       end
       source.namespace_includes.each_pair do |ns, i|
-        @namespace_includes[ns] ||= []
-        @namespace_includes[ns].concat(i).uniq!
+        @namespace_includes[ns || ''] ||= []
+        @namespace_includes[ns || ''].concat(i).uniq!
       end
       source.namespace_extends.each_pair do |ns, e|
         @namespace_extends[ns || ''] ||= []
