@@ -29,7 +29,7 @@ module Solargraph
       
         # @param data [String]
         def receive_data data
-          data.each_byte do |char|
+          data.each_char do |char|
             @buffer.concat char
             if @in_header
               if @buffer.end_with?("\r\n\r\n")
@@ -50,6 +50,7 @@ module Solargraph
                 rescue Exception => e
                   STDERR.puts "Failed to parse request: #{e.message}"
                   STDERR.puts e.backtrace.inspect
+                  STDERR.puts "Buffer: #{@buffer}"
                 ensure
                   @buffer.clear
                   @in_header = true
