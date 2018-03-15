@@ -144,6 +144,7 @@ module Solargraph
         Thread.new do
           until stopped?
             @change_semaphore.synchronize do
+              @change_queue.sort!{|a, b| a.version <=> b.version}
               @change_queue.delete_if do |change|
                 filename = uri_to_file(change['textDocument']['uri'])
                 source = @file_source[change['textDocument']['uri']]
