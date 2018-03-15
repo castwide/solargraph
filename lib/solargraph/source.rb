@@ -220,7 +220,7 @@ module Solargraph
       if change['range']
         start_offset = CodeMap.get_offset(@code, change['range']['start']['line'], change['range']['start']['character'])
         end_offset = CodeMap.get_offset(@code, change['range']['end']['line'], change['range']['end']['character'])
-        rewrite = (start_offset == 0 ? '' : @code[0..start_offset-1].to_s) + change['text'].gsub(/\r\n/, "\n") + @code[end_offset..-1].to_s
+        rewrite = (start_offset == 0 ? '' : @code[0..start_offset-1].to_s) + change['text'].gsub(/\r\n/, "\n").force_encoding('utf-8') + @code[end_offset..-1].to_s
         @code = rewrite
         tmp = rewrite
         retried = false
