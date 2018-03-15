@@ -32,7 +32,7 @@ module Solargraph
         workspace_files.each do |wf|
           begin
             @@source_cache[wf] ||= Source.load(wf)
-          rescue Parser::SyntaxError => e
+          rescue Parser::SyntaxError, EncodingError => e
             STDERR.puts "Failed to load #{wf}: #{e.message}"
             @@source_cache[wf] = Source.virtual('', wf)
           end
