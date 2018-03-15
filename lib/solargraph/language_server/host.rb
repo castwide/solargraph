@@ -151,6 +151,8 @@ module Solargraph
                 if change['textDocument']['version'] == source.version || change['textDocument']['version'] == source.version + 1
                   source.synchronize(change['contentChanges'], change['textDocument']['version'])
                   true
+                elsif change['textDocument']['version'] < source.version
+                  true
                 else
                   false
                 end
