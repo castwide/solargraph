@@ -1,3 +1,5 @@
+require 'thread'
+
 module Solargraph
   module LanguageServer
     module Transport
@@ -43,10 +45,16 @@ module Solargraph
               end
             else
               if @buffer.bytesize == @content_length
-                process JSON.parse(@buffer)
-                @buffer.clear
-                @in_header = true
-                @content_length = 0
+                begin
+                  process JSON.parse(@buffer)
+                rescue Exception => e
+                  STDERR.puts "Failed to parse request: #{e.message}"
+                  STDERR.puts e.backtrace.inspect
+                ensure
+                  @buffer.clear
+                  @in_header = true
+                  @content_length = 0
+                end
               end
             end
           end

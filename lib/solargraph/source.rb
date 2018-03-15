@@ -1,4 +1,5 @@
 require 'parser/current'
+require 'time'
 
 module Solargraph
   class Source
@@ -24,6 +25,8 @@ module Solargraph
     attr_reader :path_macros
 
     attr_accessor :version
+
+    attr_reader :stime
 
     include NodeMethods
 
@@ -217,21 +220,20 @@ module Solargraph
       if change['range']
         start_offset = CodeMap.get_offset(@code, change['range']['start']['line'], change['range']['start']['character'])
         end_offset = CodeMap.get_offset(@code, change['range']['end']['line'], change['range']['end']['character'])
-        rewrite = @code[0..start_offset-1].to_s + change['text'].gsub(/\r\n/, "\n") + @code[end_offset..-1].to_s
+        rewrite = (start_offset == 0 ? '' : @code[0..start_offset-1].to_s) + change['text'].gsub(/\r\n/, "\n") + @code[end_offset..-1].to_s
+        @code = rewrite
         tmp = rewrite
         retried = false
         begin
           node, comments = Parser::CurrentRuby.parse_with_comments(tmp)
           process_parsed node, comments
-          @code = rewrite
           @fixed = tmp
         rescue Parser::SyntaxError => e
           if retried
-            @code = rewrite
             hard_fix_node
           else
             retried = true
-            tmp = @fixed[0..start_offset-1].to_s + change['text'].gsub(/\r\n/, "\n").gsub(/[^ \t\r\n]/, ' ') + @fixed[end_offset..-1].to_s
+            tmp = (start_offset == 0 ? '' : @fixed[0..start_offset-1].to_s) + change['text'].gsub(/\r\n/, "\n").gsub(/[^ \t\r\n]/, ' ') + @fixed[end_offset..-1].to_s
             retry
           end
         end
@@ -267,6 +269,17 @@ module Solargraph
       @all_nodes = []
       @node_stack = []
       @node_tree = {}
+      namespace_pins.clear
+      instance_variable_pins.clear
+      class_variable_pins.clear
+      local_variable_pins.clear
+      symbol_pins.clear
+      constant_pins.clear
+      method_pins.clear
+      namespace_includes.clear
+      namespace_extends.clear
+      superclasses.clear
+      attribute_pins.clear
       inner_map_node @node
       @directives.each_pair do |k, v|
         v.each do |d|
@@ -293,6 +306,7 @@ module Solargraph
           end
         end
       end
+      @stime = Time.now
     end
 
     def associate_comments node, comments
@@ -489,7 +503,7 @@ module Solargraph
       # @return [Solargraph::Source]
       def load filename
         code = File.read(filename).gsub(/\r/, '')
-        Source.virtual(code, filename)
+        Source.load_string(code, filename)
       end
 
       # @deprecated Use load_string instead
@@ -522,6 +536,10 @@ module Solargraph
               break
             end
           end
+          # if cursor + l.length - 1 == offset and !l.end_with?("\n")
+          #   col = l.length - 1
+          #   break
+          # end
           cursor += l.length
           line += 1
         end

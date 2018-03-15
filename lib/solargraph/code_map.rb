@@ -224,7 +224,7 @@ module Solargraph
       end_offset = start_offset if end_offset < start_offset
       start_pos = Solargraph::Source.get_position_at(@code, start_offset)
       end_pos = Solargraph::Source.get_position_at(@code, end_offset)
-      {
+      result = {
         start: {
           line: start_pos[0],
           character: start_pos[1]
@@ -234,6 +234,7 @@ module Solargraph
           character: end_pos[1]
         }
       }
+      result
     end
 
     def word_range_at index

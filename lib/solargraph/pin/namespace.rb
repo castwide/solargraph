@@ -22,6 +22,10 @@ module Solargraph
         @kind ||= (node.type == :class ? Solargraph::Suggestion::CLASS : Solargraph::Suggestion::MODULE)
       end
 
+      def type
+        node.type
+      end
+
       def return_type
         @return_type ||= (node.type == :class ? 'Class' : 'Module') + "<#{path}>"
       end

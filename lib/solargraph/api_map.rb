@@ -2,6 +2,7 @@ require 'rubygems'
 # require 'parser/current'
 require 'thread'
 require 'set'
+require 'time'
 
 module Solargraph
   class ApiMap
@@ -90,7 +91,10 @@ module Solargraph
     #
     # @param force [Boolean] Perform a refresh even if the map is not "stale."
     def refresh force = false
-      process_maps if @stale or force
+      #process_maps if @stale or force
+      if @stime.nil? or workspace.stime > @stime
+        process_maps
+      end
     end
 
     # True if a workspace file has been created, modified, or deleted since
@@ -115,9 +119,12 @@ module Solargraph
     # @param node [AST::Node]
     # @return [YARD::Docstring]
     def get_docstring_for node
-      filename = get_filename_for(node)
-      return nil if @sources[filename].nil?
-      @sources[filename].docstring_for(node)
+      # filename = get_filename_for(node)
+      # return nil if @sources[filename].nil?
+      # @sources[filename].docstring_for(node)
+      source = get_source_for(node)
+      return nil if source.nil?
+      source.docstring_for(node)
     end
 
     # An array of suggestions based on Ruby keywords (`if`, `end`, etc.).
@@ -291,7 +298,7 @@ module Solargraph
 
     # @return [String]
     def get_filename_for(node)
-      @sources.each do |filename, source|
+      @sources.each do |source|
         return source.filename if source.include?(node)
       end
       nil
@@ -299,7 +306,7 @@ module Solargraph
 
     # @return [Solargraph::Source]
     def get_source_for(node)
-      @sources.each do |filename, source|
+      @sources.each do |source|
         return source if source.include?(node)
       end
       nil
@@ -442,9 +449,9 @@ module Solargraph
     # @param [String] A fully qualified namespace
     # @return [Symbol] :class, :module, or nil
     def get_namespace_type fqns
-      pin = @namespace_pins[fqns]
+      pin = @namespace_path_pins[fqns]
       return yard_map.get_namespace_type(fqns) if pin.nil?
-      pin.first.kind
+      pin.first.type
     end
 
     # Get an array of singleton methods that are available in the specified
@@ -619,6 +626,7 @@ module Solargraph
       @namespace_extends = {}
       @superclasses = {}
       @namespace_pins = {}
+      @namespace_path_pins = {}
       namespace_map.clear
       @required = config.required.clone
       @pin_suggestions = {}
@@ -635,6 +643,7 @@ module Solargraph
       live_map.refresh
       @stale = false
       @yard_stale = true
+      @stime = Time.now
     end
 
     def rebuild_local_yardoc
@@ -703,6 +712,8 @@ module Solargraph
         @superclasses[cls] = sup
       end
       source.namespace_pins.each do |pin|
+        @namespace_path_pins[pin.path] ||= []
+        @namespace_path_pins[pin.path].push pin
         @namespace_pins[pin.namespace] ||= []
         @namespace_pins[pin.namespace].push pin
       end

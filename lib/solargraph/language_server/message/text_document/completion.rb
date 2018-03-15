@@ -4,19 +4,26 @@ module Solargraph
       module TextDocument
         class Completion < Base
           def process
-            begin
-              kind_map = {
-                'Class' => 7,
-                'Constant' => 21,
-                'Field' => 5,
-                'Keyword' => 14,
-                'Method' => 2,
-                'Module' => 9,
-                'Property' => 10,
-                'Variable' => 6
-              }
-              source = host.read(params['textDocument']['uri'])
-              host.synchronize do
+            again = false
+            host.synchronize do
+              begin
+                kind_map = {
+                  'Class' => 7,
+                  'Constant' => 21,
+                  'Field' => 5,
+                  'Keyword' => 14,
+                  'Method' => 2,
+                  'Module' => 9,
+                  'Property' => 10,
+                  'Variable' => 6
+                }
+                if host.changing?(params['textDocument']['uri'])
+                  set_result(
+                    isIncomplete: false,
+                    items: []
+                  )
+                else
+                  source = host.read(params['textDocument']['uri'])
                   code_map = Solargraph::CodeMap.from_source(source, host.api_map)
                   offset = code_map.get_offset(params['position']['line'], params['position']['character'])
                   range = code_map.symbol_range_at(offset)
@@ -49,11 +56,20 @@ module Solargraph
                     items: items
                   )
                 end
-              # end
-            rescue Exception => e
-              STDERR.puts "#{e}"
-              STDERR.puts "#{e.backtrace}"
-              set_error Solargraph::LanguageServer::ErrorCodes::INTERNAL_ERROR, e.message
+              rescue Exception => e
+                if e.message.include?('Invalid offset') #and host.changing?(params['textDocument']['uri'])
+                  STDERR.puts "Changing. Try again"
+                  again = true
+                else
+                  STDERR.puts "#{e}"
+                  STDERR.puts "#{e.backtrace}"
+                  set_error Solargraph::LanguageServer::ErrorCodes::INTERNAL_ERROR, e.message
+                end
+              end
+            end
+            if again
+              sleep 0.01
+              process
             end
           end
         end

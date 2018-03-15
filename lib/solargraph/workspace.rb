@@ -8,7 +8,7 @@ module Solargraph
     def initialize directory
       STDERR.puts "The workspace: #{directory}"
       @directory = directory
-      load_sources
+      load_sources unless directory.nil?
     end
 
     # @return [Solargraph::Workspace::Config]
@@ -41,6 +41,10 @@ module Solargraph
     # @param source [Solargraph::Source]
     def update source
       source_hash[source.filename] = source if source_hash.has_key?(filename)
+    end
+
+    def stime
+      source_hash.values.sort{|a, b| a.stime <=> b.stime}.last.stime
     end
 
     private
