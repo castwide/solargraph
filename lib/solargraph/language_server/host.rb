@@ -137,6 +137,8 @@ module Solargraph
       # @param directory [String]
       def prepare directory
         @workspace = Workspace.new(normalize_separators(directory))
+        api_map.refresh
+        @workspace
       end
 
       def send_notification method, params
