@@ -318,7 +318,7 @@ module Solargraph
         process_requires
       else
         Bundler.with_clean_env do
-          Bundler.environment.chdir(workspace) do
+          Bundler.environment.chdir(workspace.directory) do
             #Bundler.environment.gems.to_a.each do |g|
             #  @gem_paths[g.name] = g.full_gem_path
             #end
@@ -330,7 +330,7 @@ module Solargraph
 
     def process_requires
       required.each do |r|
-        next if !workspace.nil? and File.exist?(File.join workspace, 'lib', "#{r}.rb")
+        next if !workspace.nil? and File.exist?(File.join workspace.directory, 'lib', "#{r}.rb")
         spec = Gem::Specification.find_by_path(r)
         begin
           spec = Gem::Specification.find_by_name(r) if spec.nil?
@@ -395,7 +395,7 @@ module Solargraph
     end
 
     def has_bundle?
-      !workspace.nil? and File.exist?(File.join workspace, 'Gemfile')
+      !workspace.nil? and File.exist?(File.join workspace.directory, 'Gemfile')
     end
   end
 end

@@ -22,6 +22,11 @@ module Solargraph
         start_change_thread
       end
 
+      def api_map
+        @api_map = Solargraph::ApiMap.new(workspace) if @api_map.nil? or @api_map.workspace != workspace
+        @api_map
+      end
+
       # @param options [Hash]
       def configure options
         @options = options
@@ -60,6 +65,7 @@ module Solargraph
 
       def open text_document
         @change_semaphore.synchronize do
+          STDERR.puts "Opening: #{text_document.inspect}"
           text = text_document['text'] || File.read(uri_to_file(text_document['uri']))
           @file_source[text_document['uri']] = Solargraph::Source.fix(text, uri_to_file(text_document['uri']))
           @file_source[text_document['uri']].version = text_document['version']
@@ -100,7 +106,7 @@ module Solargraph
 
       # @param directory [String]
       def prepare directory
-        @workspace = Workspace.new(directory)
+        @workspace = Workspace.new(normalize_separators(directory))
       end
 
       def send_notification method, params
@@ -165,7 +171,11 @@ module Solargraph
       end
 
       def uri_to_file uri
-        URI.decode(uri.gsub(/^file\:\/\//, '').gsub(/^\/([a-z]:)/i, '\1'))
+        URI.decode(uri).gsub(/^file\:\/\//, '').gsub(/^\/([a-z]:)/i, '\1')
+      end
+
+      def normalize_separators path
+        path.gsub(File::ALT_SEPARATOR, File::SEPARATOR)
       end
     end
   end

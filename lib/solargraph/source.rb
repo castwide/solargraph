@@ -32,6 +32,7 @@ module Solargraph
       @fixed = code
       @filename = filename
       @stubbed_lines = stubbed_lines
+      @version = 0
       process_parsed node, comments
     end
 
@@ -491,8 +492,13 @@ module Solargraph
         Source.virtual(code, filename)
       end
 
-      # @return [Solargraph::Source]
+      # @deprecated Use load_string instead
       def virtual code, filename = nil
+        load_string code, filename
+      end
+
+      # @return [Solargraph::Source]
+      def load_string code, filename = nil
         node, comments = Parser::CurrentRuby.parse_with_comments(code)
         Source.new(code, node, comments, filename)
       end

@@ -47,7 +47,7 @@ module Solargraph
       @node = source.node
       @code = source.code
       @comments = @source.comments
-      self.api_map.append_virtual_source source
+      self.api_map.virtualize source
       self.api_map.refresh
     end
 

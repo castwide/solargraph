@@ -1,9 +1,12 @@
 module Solargraph
   class Workspace
+    autoload :Config, 'solargraph/workspace/config'
+
     # @return [String]
     attr_reader :directory
 
     def initialize directory
+      STDERR.puts "The workspace: #{directory}"
       @directory = directory
       load_sources
     end
@@ -23,7 +26,11 @@ module Solargraph
       source_hash.values
     end
 
-    def include? filename
+    def has_source? source
+      source_hash.has_value?(source)
+    end
+
+    def has_file? filename
       source_hash.has_key?(filename)
     end
 
@@ -45,6 +52,7 @@ module Solargraph
 
     def load_sources
       config.calculated.each do |filename|
+        STDERR.puts "Loading #{filename}"
         source_hash[filename] = Solargraph::Source.load(filename)
       end
     end

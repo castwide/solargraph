@@ -1,5 +1,5 @@
 require 'rubygems'
-require 'parser/current'
+# require 'parser/current'
 require 'thread'
 require 'set'
 
@@ -8,40 +8,25 @@ module Solargraph
     autoload :Config,       'solargraph/api_map/config'
     autoload :Cache,        'solargraph/api_map/cache'
     autoload :SourceToYard, 'solargraph/api_map/source_to_yard'
-    @@source_cache = {}
 
     include NodeMethods
     include Solargraph::ApiMap::SourceToYard
     include CoreFills
 
-    # The root directory of the project. The ApiMap will search here for
-    # additional files to parse and analyze.
+    # The workspace to analyze and process.
     #
-    # @return [String]
+    # @return [Solargraph::Workspace]
     attr_reader :workspace
 
-    # @param workspace [String]
-    def initialize workspace = nil
-      @@source_cache.clear
-      @workspace = workspace.gsub(/\\/, '/') unless workspace.nil?
+    # @param workspace [Solargraph::Workspace]
+    def initialize workspace
+      @workspace = workspace
       clear
       require_extensions
-      unless @workspace.nil?
-        workspace_files.concat config.calculated
-        workspace_files.each do |wf|
-          begin
-            @@source_cache[wf] ||= Source.load(wf)
-          rescue Parser::SyntaxError => e
-            STDERR.puts "Failed to load #{wf}: #{e.message}"
-            @@source_cache[wf] = Source.virtual('', wf)
-          end
-        end
-      end
-      @sources = {}
       @virtual_source = nil
-      @virtual_filename = nil
       @stale = true
       @yard_stale = true
+      @sources = workspace.sources
       refresh
       yard_map
     end
@@ -52,15 +37,8 @@ module Solargraph
     #
     # @return [Solargraph::ApiMap::Config]
     def config reload = false
-      @config = ApiMap::Config.new(@workspace) if @config.nil? or reload
+      @config = ApiMap::Config.new(workspace.directory) if @config.nil? or reload
       @config
-    end
-
-    # An array of all workspace files included in the map.
-    #
-    # @return[Array<String>]
-    def workspace_files
-      @workspace_files ||= []
     end
 
     # An array of required paths in the workspace.
@@ -88,63 +66,24 @@ module Solargraph
       @live_map ||= Solargraph::LiveMap.new(self)
     end
 
-    # @todo Get rid of the cursor parameter. Tracking stubbed lines is the
-    #   better option.
+    # Declare a virtual source that will be included in the map regardless of
+    # whether it's in the workspace.
     #
-    # @param code [String]
-    # @param filename [String]
-    # @return [Solargraph::Source]
-    def virtualize code, filename = nil, cursor = nil
-      workspace_files.delete_if do |f|
-        if File.exist?(f)
-          false
-        else
-          eliminate f
-          true
-        end
-      end
-      if filename.nil? or filename.end_with?('.rb') or filename.end_with?('.erb')
-        eliminate @virtual_filename unless @virtual_source.nil? or @virtual_filename == filename or workspace_files.include?(@virtual_filename)
-        @virtual_filename = filename
-        @virtual_source = Source.fix(code, filename, cursor)
-        unless filename.nil? or workspace_files.include?(filename)
-          current_files = @workspace_files
-          @workspace_files = config(true).calculated
-          (current_files - @workspace_files).each { |f| eliminate f }
-        end
-        process_virtual
+    # If the source is in the workspace, virtualizing it has no effect. Only
+    # one source can be virtualized at a time.
+    #
+    # @param [Solargraph::Source]
+    def virtualize source
+      return if @virtual_source == source
+      eliminate @virtual_source unless @virtual_source.nil?
+      if workspace.has_source?(source)
+        @sources = workspace.sources
+        @virtual_source = nil
       else
-        unless filename.nil?
-          # @todo Handle special files like .solargraph.yml
-        end
+        @virtual_source = source
+        @sources = workspace.sources + [@virtual_source]
+        process_virtual
       end
-      @virtual_source
-    end
-
-    def append_virtual_source source
-      workspace_files.delete_if do |f|
-        if File.exist?(f)
-          false
-        else
-          eliminate f
-          true
-        end
-      end
-      filename = source.filename
-      eliminate @virtual_filename unless @virtual_source.nil? or @virtual_filename == filename or workspace_files.include?(@virtual_filename)
-      @virtual_filename = filename
-      @virtual_source = source
-      unless filename.nil? or workspace_files.include?(filename)
-        current_files = @workspace_files
-        @workspace_files = config(true).calculated
-        (current_files - @workspace_files).each { |f| eliminate f }
-      end
-      process_virtual
-    end
-
-    # @return [Solargraph::Source]
-    def append_source code, filename
-      virtualize code, filename
     end
 
     # Refresh the ApiMap.
@@ -268,11 +207,14 @@ module Solargraph
       else
         if (root == '')
           return name unless namespace_map[name].nil?
-          get_include_strings_from(*file_nodes).each { |i|
-            reroot = "#{root == '' ? '' : root + '::'}#{i}"
-            recname = find_fully_qualified_namespace name.to_s, reroot, skip
-            return recname unless recname.nil?
-          }
+          im = @namespace_includes['']
+          unless im.nil?
+            im.each do |i|
+              reroot = "#{root == '' ? '' : root + '::'}#{i}"
+              recname = find_fully_qualified_namespace name.to_s, reroot, skip
+              return recname unless recname.nil?
+            end
+          end
         else
           roots = root.to_s.split('::')
           while roots.length > 0
@@ -281,10 +223,13 @@ module Solargraph
             roots.pop
           end
           return name unless namespace_map[name].nil?
-          get_include_strings_from(*file_nodes).each { |i|
-            recname = find_fully_qualified_namespace name, i, skip
-            return recname unless recname.nil?
-          }
+          im = @namespace_includes['']
+          unless im.nil?
+            im.each do |i|
+              recname = find_fully_qualified_namespace name, i, skip
+              return recname unless recname.nil?
+            end
+          end
         end
       end
       result = yard_map.find_fully_qualified_namespace(name, root)
@@ -423,15 +368,6 @@ module Solargraph
       type
     end
 
-    def get_call_arguments node
-      return [] unless node.type == :send
-      result = []
-      node.children[2..-1].each do |c|
-        result.push unpack_name(c)
-      end
-      result
-    end
-
     # Get the return type for a signature within the specified namespace and
     # scope.
     #
@@ -506,16 +442,9 @@ module Solargraph
     # @param [String] A fully qualified namespace
     # @return [Symbol] :class, :module, or nil
     def get_namespace_type fqns
-      return nil if fqns.nil?
-      type = nil
-      nodes = get_namespace_nodes(fqns)
-      unless nodes.nil? or nodes.empty? or !nodes[0].kind_of?(AST::Node)
-        type = nodes[0].type if [:class, :module].include?(nodes[0].type)
-      end
-      if type.nil?
-        type = yard_map.get_namespace_type(fqns)
-      end
-      type
+      pin = @namespace_pins[fqns]
+      return yard_map.get_namespace_type(fqns) if pin.nil?
+      pin.first.kind
     end
 
     # Get an array of singleton methods that are available in the specified
@@ -600,40 +529,6 @@ module Solargraph
       meths
     end
 
-    # Update the ApiMap with the most recent version of the specified file.
-    #
-    # @param filename [String]
-    def update filename
-      filename.gsub!(/\\/, '/')
-      if filename.end_with?('.rb')
-        if @virtual_filename == filename
-          @virtual_filename = nil
-          @virtual_source = nil
-        end
-        if @workspace_files.include?(filename)
-          eliminate filename
-          @@source_cache[filename] = Source.load(filename)
-          @sources.delete filename
-          @sources[filename] = @@source_cache[filename]
-          rebuild_local_yardoc #if @workspace_files.include?(filename)
-          @stale = true
-        else
-          @workspace_files = config(true).calculated
-          update filename if @workspace_files.include?(filename)
-        end
-      elsif File.basename(filename) == '.solargraph.yml'
-        # @todo Finish refreshing the map
-        @workspace_files = config(true).calculated
-      end
-    end
-
-    # All sources generated from workspace files.
-    #
-    # @return [Array<Solargraph::Source>]
-    def sources
-      @sources.values
-    end
-
     # Get an array of all suggestions that match the specified path.
     #
     # @param path [String] The path to find
@@ -713,7 +608,6 @@ module Solargraph
     end
 
     def process_maps
-      process_workspace_files
       cache.clear
       @ivar_pins = {}
       @cvar_pins = {}
@@ -728,18 +622,15 @@ module Solargraph
       namespace_map.clear
       @required = config.required.clone
       @pin_suggestions = {}
-      unless @virtual_source.nil?
-        @sources[@virtual_filename] = @virtual_source
-      end
-      @sources.values.each do |s|
+      @sources.each do |s|
         s.namespace_nodes.each_pair do |k, v|
           namespace_map[k] ||= []
           namespace_map[k].concat v
         end
       end
-      @sources.values.each { |s|
+      @sources.each do |s|
         map_source s
-      }
+      end
       @required.uniq!
       live_map.refresh
       @stale = false
@@ -752,32 +643,16 @@ module Solargraph
       Dir.chdir(workspace) { Process.spawn('yardoc') }
     end
 
-    def process_workspace_files
-      @sources.clear
-      workspace_files.each do |f|
-        if File.file?(f)
-          begin
-            @@source_cache[f] ||= Source.load(f)
-            @sources[f] = @@source_cache[f]
-          rescue Exception => e
-            STDERR.puts "Failed to load #{f}: #{e.message}"
-          end
-        end
-      end
-    end
-
     def process_virtual
       unless @virtual_source.nil?
         cache.clear
         namespace_map.clear
-        @sources[@virtual_filename] = @virtual_source
-        @sources.values.each do |s|
+        @sources.each do |s|
           s.namespace_nodes.each_pair do |k, v|
             namespace_map[k] ||= []
             namespace_map[k].concat v
           end
         end
-        eliminate @virtual_filename
         map_source @virtual_source
       end
     end
@@ -814,7 +689,6 @@ module Solargraph
         @const_pins[pin.namespace].push pin
       end
       source.symbol_pins.each do |pin|
-        #@symbol_pins.push Suggestion.new(pin.name, kind: Suggestion::CONSTANT, return_type: 'Symbol')
         @symbol_pins.push pin
       end
       source.namespace_includes.each_pair do |ns, i|
@@ -998,22 +872,21 @@ module Solargraph
           if pin.visibility == :public || visibility.include?(:private)
             result.push pin_to_suggestion(pin)
             if deep
-              get_include_strings_from(pin.node).each do |i|
-                result.concat inner_get_constants(i, skip, false, [:public])
+              im = @namespace_includes[pin.namespace]
+              unless im.nil?
+                im.each {|i| result.concat inner_get_constants(find_fully_qualified_namespace(i, here), skip, false, [:public])}
               end
             end
           end
         end
       end
-      get_include_strings_from(*get_namespace_nodes(here)).each do |i|
-        result.concat inner_get_constants(i, skip, false, [:public])
+      im = @namespace_includes[here]
+      unless im.nil?
+        im.each do |i|
+          result.concat inner_get_constants(find_fully_qualified_namespace(i, here), skip, false, [:public])
+        end
       end
       result
-    end
-
-    # @return [AST::Node]
-    def file_nodes
-      @sources.values.map(&:node)
     end
 
     # @param namespace [String]
@@ -1095,25 +968,6 @@ module Solargraph
       set.select{|p| p.path == fqns}
     end
 
-    def get_namespace_nodes(fqns)
-      return file_nodes if fqns == '' or fqns.nil?
-      refresh
-      namespace_map[fqns] || []
-    end
-
-    # @return [Array<String>]
-    def get_include_strings_from *nodes
-      arr = []
-      nodes.each { |node|
-        next unless node.kind_of?(AST::Node)
-        arr.push unpack_name(node.children[2]) if (node.type == :send and node.children[1] == :include)
-        node.children.each { |n|
-          arr += get_include_strings_from(n) if n.kind_of?(AST::Node) and n.type != :class and n.type != :module and n.type != :sclass
-        }
-      }
-      arr
-    end
-
     # @todo DRY this method. It's duplicated in CodeMap
     def get_subtypes type
       return nil if type.nil?
@@ -1125,6 +979,15 @@ module Solargraph
     # @return [Hash]
     def path_macros
       @path_macros ||= {}
+    end
+
+    def get_call_arguments node
+      return [] unless node.type == :send
+      result = []
+      node.children[2..-1].each do |c|
+        result.push unpack_name(c)
+      end
+      result
     end
 
     def get_return_type_from_macro namespace, signature, call_node, scope, visibility
