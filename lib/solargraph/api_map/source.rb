@@ -3,6 +3,12 @@ require 'parser/current'
 module Solargraph
   class ApiMap
     class Source
+      class FlawedBuilder < Parser::Builders::Default
+        def string_value(token)
+          value(token)
+        end
+      end
+
       # @return [String]
       attr_reader :code
 
@@ -387,7 +393,14 @@ module Solargraph
 
         # @return [Solargraph::ApiMap::Source]
         def virtual code, filename = nil
-          node, comments = Parser::CurrentRuby.parse_with_comments(code)
+          parser = Parser::CurrentRuby.new(FlawedBuilder.new)
+          # parser.tap do |p|
+          #   p.diagnostics.ignore_warnings = true
+          # end
+          # node, comments = Parser::CurrentRuby.parse_with_comments(code)
+          buffer = Parser::Source::Buffer.new('string', 1)
+          buffer.source = code
+          node, comments = parser.parse_with_comments(buffer)
           Source.new(code, node, comments, filename)
         end
 
