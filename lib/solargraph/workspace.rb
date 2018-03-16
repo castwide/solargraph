@@ -56,7 +56,7 @@ module Solargraph
 
     def load_sources
       config.calculated.each do |filename|
-        STDERR.puts "Loading #{filename}"
+        # STDERR.puts "Loading #{filename}"
         source_hash[filename] = Solargraph::Source.load(filename)
       end
     end
