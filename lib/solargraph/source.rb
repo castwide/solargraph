@@ -221,26 +221,30 @@ module Solargraph
         start_offset = CodeMap.get_offset(@code, change['range']['start']['line'], change['range']['start']['character'])
         end_offset = CodeMap.get_offset(@code, change['range']['end']['line'], change['range']['end']['character'])
         rewrite = (start_offset == 0 ? '' : @code[0..start_offset-1].to_s) + change['text'].gsub(/\r\n/, "\n").force_encoding('utf-8') + @code[end_offset..-1].to_s
+        again = true
+        if change['text'].match(/^[^a-z0-9\s]*$/i)
+          tmp = (start_offset == 0 ? '' : @code[0..start_offset-1].to_s) + change['text'].gsub(/\r\n/, "\n").gsub(/[^\s]/, ' ') + @code[end_offset..-1].to_s
+        else
+          tmp = rewrite
+        end
         @code = rewrite
-        tmp = rewrite
-        retried = false
         begin
-          node, comments = Parser::CurrentRuby.parse_with_comments(tmp)
+          node, comments = Source.parse(tmp, filename)
           process_parsed node, comments
           @fixed = tmp
         rescue Parser::SyntaxError => e
-          if retried
-            hard_fix_node
-          else
-            retried = true
+          if again
+            again = false
             tmp = (start_offset == 0 ? '' : @fixed[0..start_offset-1].to_s) + change['text'].gsub(/\r\n/, "\n").gsub(/[^ \t\r\n]/, ' ') + @fixed[end_offset..-1].to_s
             retry
+          else
+            hard_fix_node
           end
         end
       else
         @code = change['text'].gsub(/\r\n/, "\n")
         begin
-          node, comments = Parser::CurrentRuby.parse_with_comments(@code)
+          node, comments = Source.parse(@code, filename)
           process_parsed node, comments
           @fixed = @code
         rescue Parser::SyntaxError => e
@@ -252,7 +256,7 @@ module Solargraph
     def hard_fix_node
       tmp = @code.gsub(/[^ \t\r\n]/, ' ')
       @fixed = tmp
-      node, comments = Parser::CurrentRuby.parse_with_comments(tmp)
+      node, comments = Source.parse(tmp, filename)
       process_parsed node, comments
     end
 
@@ -513,11 +517,15 @@ module Solargraph
 
       # @return [Solargraph::Source]
       def load_string code, filename = nil
+        node, comments = parse(code, filename)
+        Source.new(code, node, comments, filename)
+      end
+
+      def parse code, filename = nil
         parser = Parser::CurrentRuby.new
         buffer = Parser::Source::Buffer.new(filename, 1)
         buffer.source = code
-        node, comments = parser.parse_with_comments(buffer)
-        Source.new(code, node, comments, filename)
+        parser.parse_with_comments(buffer)
       end
 
       def get_position_at(code, offset)
@@ -560,7 +568,7 @@ module Solargraph
         fixed_position = false
         tmp = code
         begin
-          node, comments = Parser::CurrentRuby.parse_with_comments(tmp)
+          node, comments = Source.parse(tmp, filename)
           Source.new(code, node, comments, filename, stubs)
         rescue Parser::SyntaxError => e
           if tries < 10
