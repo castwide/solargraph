@@ -8,7 +8,7 @@ module Solargraph
       end
 
       def kind
-        Solargraph::Suggestion::VARIABLE
+        Solargraph::LanguageServer::CompletionItemKinds::VARIABLE
       end
 
       def return_type

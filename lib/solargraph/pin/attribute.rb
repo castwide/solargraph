@@ -24,6 +24,10 @@ module Solargraph
         end
         @return_type
       end
+
+      def kind
+        Solargraph::LanguageServer::CompletionItemKinds::PROPERTY
+      end
     end
   end
 end

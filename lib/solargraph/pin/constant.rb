@@ -13,7 +13,7 @@ module Solargraph
       end
 
       def kind
-        Solargraph::Suggestion::CONSTANT
+        Solargraph::LanguageServer::CompletionItemKinds::CONSTANT
       end
 
       def value

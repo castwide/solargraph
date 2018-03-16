@@ -19,7 +19,7 @@ module Solargraph
       end
 
       def kind
-        @kind ||= (node.type == :class ? Solargraph::Suggestion::CLASS : Solargraph::Suggestion::MODULE)
+        @kind ||= (node.type == :class ? Solargraph::LanguageServer::CompletionItemKinds::CLASS : Solargraph::LanguageServer::CompletionItemKinds::MODULE)
       end
 
       def type
