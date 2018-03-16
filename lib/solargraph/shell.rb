@@ -99,7 +99,7 @@ module Solargraph
           end
         end
       end
-      conf = Solargraph::ApiMap::Config.new.raw_data
+      conf = Solargraph::Workspace::Config.new.raw_data
       unless matches.empty?
         matches.each do |m|
           conf['extensions'].push m

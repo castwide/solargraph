@@ -6,7 +6,6 @@ require 'time'
 
 module Solargraph
   class ApiMap
-    autoload :Config,       'solargraph/api_map/config'
     autoload :Cache,        'solargraph/api_map/cache'
     autoload :SourceToYard, 'solargraph/api_map/source_to_yard'
 
@@ -20,8 +19,8 @@ module Solargraph
     attr_reader :workspace
 
     # @param workspace [Solargraph::Workspace]
-    def initialize workspace
-      @workspace = workspace
+    def initialize workspace = nil
+      @workspace = workspace || Solargraph::Workspace.new(nil)
       clear
       require_extensions
       @virtual_source = nil
@@ -32,14 +31,17 @@ module Solargraph
       yard_map
     end
 
+    def self.load directory
+      self.new(Solargraph::Workspace.new(directory))
+    end
+
     # Get the configuration for the ApiMap's workspace. This method will
     # initialize the settings from the workspace's root .solargraph.yml file
     # if it exists.
     #
-    # @return [Solargraph::ApiMap::Config]
-    def config reload = false
-      @config = ApiMap::Config.new(workspace.directory) if @config.nil? or reload
-      @config
+    # @return [Solargraph::Workspace::Config]
+    def config
+      @config ||= workspace.config
     end
 
     # An array of required paths in the workspace.

@@ -1,6 +1,6 @@
 require 'tmpdir'
 
-describe Solargraph::ApiMap::Config do
+describe Solargraph::Workspace::Config do
   it "reads workspace files from config" do
     Dir.mktmpdir do |dir|
       File.open(File.join(dir, 'foo.rb'), 'w') do |file|
@@ -15,7 +15,7 @@ describe Solargraph::ApiMap::Config do
         file.puts "exclude:"
         file.puts "  - bar.rb"
       end
-      config = Solargraph::ApiMap::Config.new(dir)
+      config = Solargraph::Workspace::Config.new(dir)
       expect(config.included).to eq([File.join(dir, 'foo.rb')])
       expect(config.excluded).to eq([File.join(dir, 'bar.rb')])
     end
