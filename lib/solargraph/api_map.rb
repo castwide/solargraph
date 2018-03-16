@@ -473,7 +473,7 @@ module Solargraph
         if type == :class
           meths.concat yard_map.get_instance_methods('Class')
         else
-          meths.concat yard_map.get_instance_methods('Module')
+          meths.concat yard_map.get_instance_methods('Object') if fqns == ''
         end
       end
       news = meths.select{|s| s.label == 'new'}
