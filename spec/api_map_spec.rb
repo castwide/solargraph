@@ -866,7 +866,7 @@ describe Solargraph::ApiMap do
     expect(sugg).not_to include('baz')
   end
 
-  it "includes extended methods in the global namespace" do
+  it "detects extended methods in the global namespace" do
     api_map = Solargraph::ApiMap.new
     api_map.virtualize(%(
       module Foobar
@@ -876,6 +876,19 @@ describe Solargraph::ApiMap do
       extend Foobar
     ), 'file.rb')
     sugg = api_map.get_methods('').map(&:to_s)
+    expect(sugg).to include('baz')
+  end
+
+  it "detects included methods in the global namespace" do
+    api_map = Solargraph::ApiMap.new
+    api_map.virtualize(%(
+      module Foobar
+        def baz
+        end
+      end
+      include Foobar
+    ), 'file.rb')
+    sugg = api_map.get_instance_methods('').map(&:to_s)
     expect(sugg).to include('baz')
   end
 

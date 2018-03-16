@@ -513,7 +513,10 @@ module Solargraph
 
       # @return [Solargraph::Source]
       def load_string code, filename = nil
-        node, comments = Parser::CurrentRuby.parse_with_comments(code)
+        parser = Parser::CurrentRuby.new
+        buffer = Parser::Source::Buffer.new(filename, 1)
+        buffer.source = code
+        node, comments = parser.parse_with_comments(buffer)
         Source.new(code, node, comments, filename)
       end
 

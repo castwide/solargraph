@@ -265,12 +265,16 @@ module Solargraph
       end
 
       def run!
-        Thread.new do
-          while true
-            check_workspaces
-            sleep 1
-          end
-        end
+        # @todo The thread for checking workspaces is temporarily disabled due
+        #   to high CPU cost. We need to determine whether the process should
+        #   be optimized or eliminated altogether.
+        #
+        # Thread.new do
+        #   while true
+        #     check_workspaces
+        #     sleep 1
+        #   end
+        # end
         super
       end
 

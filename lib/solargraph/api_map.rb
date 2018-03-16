@@ -701,8 +701,8 @@ module Solargraph
         @symbol_pins.push pin
       end
       source.namespace_includes.each_pair do |ns, i|
-        @namespace_includes[ns] ||= []
-        @namespace_includes[ns].concat(i).uniq!
+        @namespace_includes[ns || ''] ||= []
+        @namespace_includes[ns || ''].concat(i).uniq!
       end
       source.namespace_extends.each_pair do |ns, e|
         @namespace_extends[ns || ''] ||= []
@@ -756,6 +756,7 @@ module Solargraph
           meths.concat get_instance_methods(e, fqns, visibility: visibility)
         end
       end
+      meths.concat get_instance_methods('', '', visibility: [:public])
       meths.uniq
     end
 
