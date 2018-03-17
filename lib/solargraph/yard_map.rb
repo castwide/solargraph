@@ -153,7 +153,7 @@ module Solargraph
                 yard = load_yardoc(y)
                 i = yard.at("#{ns}#initialize")
                 unless i.nil?
-                  meths.delete_if{|m| m.label == 'new'}
+                  meths.delete_if{|m| m.name == 'new'}
                   label = "#{i}"
                   args = get_method_args(i)
                   # @todo Generate pin

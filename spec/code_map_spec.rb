@@ -130,7 +130,7 @@ describe Solargraph::CodeMap do
       my_var.
     ))
     sugg = code_map.suggest_at(69)
-    expect(sugg.map{ |s| s.label }).to include('upcase')
+    expect(sugg.map{ |s| s.name }).to include('upcase')
     sugg = code_map.resolve_object_at(67)
     expect(sugg[0].return_type).to eq('String')
   end

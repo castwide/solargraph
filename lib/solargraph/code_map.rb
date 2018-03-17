@@ -360,11 +360,11 @@ module Solargraph
       ns_here = namespace_from(node)
       unless signature.include?('.')
         if local_variable_in_node?(signature, node)
-          return get_local_variables_from(node).select{|s| s.label == signature}
+          return get_local_variables_from(node).select{|s| s.name == signature}
         elsif signature.start_with?('@@')
-          return api_map.get_class_variables(ns_here).select{|s| s.label == signature}
+          return api_map.get_class_variables(ns_here).select{|s| s.name == signature}
         elsif signature.start_with?('@')
-          return api_map.get_instance_variables(ns_here, (node.type == :def ? :instance : :class)).select{|s| s.label == signature}
+          return api_map.get_instance_variables(ns_here, (node.type == :def ? :instance : :class)).select{|s| s.name == signature}
         end
       end
       path = infer_path_from_signature_and_node(signature, node)

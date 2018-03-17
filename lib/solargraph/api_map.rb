@@ -522,7 +522,7 @@ module Solargraph
         return get_methods(namespace.split('#').first, root, visibility: visibility)
       end
       meths = []
-      meths += inner_get_instance_methods(namespace, root, [], visibility) #unless has_yardoc?
+      meths += inner_get_instance_methods(namespace, root, [], visibility).map{|p| enhance p} #unless has_yardoc?
       fqns = find_fully_qualified_namespace(namespace, root)
       yard_meths = yard_map.get_instance_methods(fqns, '', visibility: visibility)
       if yard_meths.any?
@@ -932,6 +932,23 @@ module Solargraph
         end
       end
       @pin_suggestions[pin] ||= Suggestion.pull(pin, return_type)
+    end
+
+    def enhance pin
+      return_type = nil
+      return_type = find_fully_qualified_namespace(pin.return_type, pin.namespace) unless pin.return_type.nil?
+      if return_type.nil? and pin.is_a?(Solargraph::Pin::Method)
+        sc = @superclasses[pin.namespace]
+        while return_type.nil? and !sc.nil?
+          sc_path = "#{sc}#{pin.scope == :instance ? '#' : '.'}#{pin.name}"
+          sugg = get_path_suggestions(sc_path).first
+          break if sugg.nil?
+          return_type = find_fully_qualified_namespace(sugg.return_type, sugg.namespace) unless sugg.return_type.nil?
+          sc = @superclasses[sc]
+        end
+      end
+      pin.instance_variable_set(:@return_type, return_type) unless return_type.nil?
+      pin
     end
 
     def require_extensions
