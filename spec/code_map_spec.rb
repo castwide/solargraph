@@ -426,7 +426,7 @@ describe Solargraph::CodeMap do
       my_hash.length
     ))
     sugg = code_map.resolve_object_at(code_map.get_offset(2, 18))
-    expect(sugg[0].label).to eq('length')
+    expect(sugg[0].name).to eq('length')
   end
 
   it "infers a local class" do
@@ -435,7 +435,7 @@ describe Solargraph::CodeMap do
       Foo
     ))
     sugg = code_map.resolve_object_at(code_map.get_offset(2, 8))
-    expect(sugg[0].label).to eq('Foo')
+    expect(sugg[0].name).to eq('Foo')
   end
 
   it "suggests symbols" do
@@ -504,7 +504,7 @@ describe Solargraph::CodeMap do
       foo = 1
       foo = 'foo'
     ), cursor: [0, 0])
-    sugg = code_map.suggest_at(code_map.get_offset(0, 0)).select{|s| s.label == 'foo'}
+    sugg = code_map.suggest_at(code_map.get_offset(0, 0)).select{|s| s.name == 'foo'}
     expect(sugg.length).to eq(1)
   end
 
@@ -513,7 +513,7 @@ describe Solargraph::CodeMap do
       foo = nil
       foo = 'foo'
     ), cursor: [0, 0])
-    sugg = code_map.suggest_at(code_map.get_offset(0, 0)).select{|s| s.label == 'foo'}
+    sugg = code_map.suggest_at(code_map.get_offset(0, 0)).select{|s| s.name == 'foo'}
     expect(sugg.length).to eq(1)
     expect(sugg[0].return_type).to eq('String')
   end
@@ -524,7 +524,7 @@ describe Solargraph::CodeMap do
       foo = nil
       foo = 'foo'
     ), cursor: [0, 0])
-    sugg = code_map.suggest_at(code_map.get_offset(0, 0)).select{|s| s.label == 'foo'}
+    sugg = code_map.suggest_at(code_map.get_offset(0, 0)).select{|s| s.name == 'foo'}
     expect(sugg.length).to eq(1)
     expect(sugg[0].return_type).to eq('Array')
   end
@@ -776,7 +776,7 @@ describe Solargraph::CodeMap do
       end
     ))
     sugg = code_map.define_symbol_at(code_map.get_offset(3, 10))
-    expect(sugg[0].label).to eq('@@bar')
+    expect(sugg[0].name).to eq('@@bar')
     expect(sugg[0].return_type).to eq('String')
   end
 
@@ -792,7 +792,7 @@ describe Solargraph::CodeMap do
       end
     ))
     sugg = code_map.define_symbol_at(code_map.get_offset(6, 11))
-    expect(sugg[0].label).to eq('@bar')
+    expect(sugg[0].name).to eq('@bar')
     expect(sugg[0].return_type).to eq('String')
   end
 
