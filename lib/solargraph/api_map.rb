@@ -209,7 +209,7 @@ module Solargraph
       result = []
       if context.empty?
         visi = [:public]
-        visi.push [:private] if namespace.empty?
+        visi.push :private if namespace.empty?
         result.concat inner_get_constants(namespace, visi, skip)
       else
         parts = context.split('::')
