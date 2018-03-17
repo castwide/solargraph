@@ -185,7 +185,7 @@ describe Solargraph::Source do
     )
     source = Solargraph::Source.virtual(code, 'file.rb')
     expect(source.constant_pins.length).to eq(1)
-    expect(source.constant_pins[0].kind).to eq(Solargraph::Suggestion::CONSTANT)
+    expect(source.constant_pins[0].kind).to eq(Solargraph::LanguageServer::CompletionItemKinds::CONSTANT)
     expect(source.constant_pins[0].return_type).to eq('String')
     expect(source.constant_pins[0].value).to eq("'bar'")
   end
