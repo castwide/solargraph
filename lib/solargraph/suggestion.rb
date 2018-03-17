@@ -150,6 +150,7 @@ module Solargraph
     #
     # @param pin [Solargraph::Pin::Base]
     def self.pull pin, return_type = nil
+      return pin if pin.kind_of?(Suggestion)
       Suggestion.new(pin.name, insert: pin.name.gsub(/=$/, ' = '), kind: pin.kind, docstring: pin.docstring, detail: pin.namespace, arguments: pin.parameters, path: pin.path, return_type: return_type || pin.return_type, location: pin.location, pin: pin)
     end
   end

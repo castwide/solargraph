@@ -181,31 +181,27 @@ module Solargraph
     # will include constant variables, classes, and modules.
     #
     # @param namespace [String] The namespace to match
-    # @param root [String] The context to search
+    # @param context [String] The context to search
     # @return [Array<Solargraph::Suggestion>]
-    def get_constants namespace, root = ''
-      result = []
+    def get_constants namespace, context = ''
       skip = []
-      fqns = find_fully_qualified_namespace(namespace, root)
-      return [] if fqns.nil?
-      if fqns.empty?
-        result.concat inner_get_constants('', skip, false, [:public])
+      result = []
+      if context.empty?
+        visi = [:public]
+        visi.push :private if namespace.empty?
+        result.concat inner_get_constants(namespace, visi, skip)
       else
-        parts = fqns.split('::')
-        while parts.length > 0
-          resolved = find_namespace_pins(parts.join('::'))
-          resolved.each do |pin|
-            visi = [:public]
-            visi.push :private if namespace == '' and root != '' and pin.path == fqns
-            result.concat inner_get_constants(pin.path, skip, true, visi)
-          end
+        parts = context.split('::')
+        until parts.empty?
+          subcontext = parts.join('::')
+          fqns = find_fully_qualified_namespace(namespace, subcontext)
+          visi = [:public]
+          visi.push :private if namespace.empty? and subcontext == context
+          result.concat inner_get_constants(fqns, visi, skip)
           parts.pop
-          break unless namespace.empty?
         end
-        result.concat inner_get_constants('', [], false) if namespace.empty?
       end
-      result.concat yard_map.get_constants(fqns)
-      result
+      result.map{|pin| Suggestion.pull(pin)}
     end
 
     # Get a fully qualified namespace name. This method will start the search
@@ -881,34 +877,19 @@ module Solargraph
       type
     end
 
-    def inner_get_constants here, skip = [], deep = true, visibility = [:public]
-      return [] if skip.include?(here)
-      skip.push here
+    def inner_get_constants fqns, visibility, skip
+      return [] if skip.include?(fqns)
+      skip.push fqns
       result = []
-      cp = @const_pins[here]
-      unless cp.nil?
-        cp.each do |pin|
-          result.push pin_to_suggestion(pin) if pin.visibility == :public or visibility.include?(:private)
-        end
-      end
-      np = @namespace_pins[here]
-      unless np.nil?
-        np.each do |pin|
-          if pin.visibility == :public || visibility.include?(:private)
-            result.push pin_to_suggestion(pin)
-            if deep
-              im = @namespace_includes[pin.namespace]
-              unless im.nil?
-                im.each {|i| result.concat inner_get_constants(find_fully_qualified_namespace(i, here), skip, false, [:public])}
-              end
-            end
-          end
-        end
-      end
-      im = @namespace_includes[here]
-      unless im.nil?
-        im.each do |i|
-          result.concat inner_get_constants(find_fully_qualified_namespace(i, here), skip, false, [:public])
+      result.concat @const_pins[fqns] if @const_pins.has_key?(fqns)
+      result.concat @namespace_pins[fqns] if @namespace_pins.has_key?(fqns)
+      result.keep_if{|pin| visibility.include?(pin.visibility)}
+      result.concat yard_map.get_constants(fqns)
+      is = @namespace_includes[fqns]
+      unless is.nil?
+        is.each do |i|
+          here = find_fully_qualified_namespace(i, fqns)
+          result.concat inner_get_constants(here, [:public], skip)
         end
       end
       result
