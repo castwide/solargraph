@@ -202,31 +202,24 @@ module Solargraph
     # will include constant variables, classes, and modules.
     #
     # @param namespace [String] The namespace to match
-    # @param root [String] The context to search
+    # @param context [String] The context to search
     # @return [Array<Solargraph::Suggestion>]
-    def get_constants namespace, root = ''
-      result = []
+    def get_constants namespace, context = ''
       skip = []
-      fqns = find_fully_qualified_namespace(namespace, root)
-      return [] if fqns.nil?
-      if fqns.empty?
-        result.concat inner_get_constants('', skip, false, [:public])
+      result = []
+      if context.empty?
+        result.concat inner_get_constants(namespace, skip)
       else
-        parts = fqns.split('::')
-        while parts.length > 0
-          resolved = find_namespace_pins(parts.join('::'))
-          resolved.each do |pin|
-            visi = [:public]
-            visi.push :private if namespace == '' and root != '' and pin.path == fqns
-            result.concat inner_get_constants(pin.path, skip, true, visi)
-          end
+        parts = context.split('::')
+        until parts.empty?
+          subcontext = parts.join('::')
+          fqns = find_fully_qualified_namespace(namespace, subcontext)
+          result.concat inner_get_constants(fqns, skip)
           parts.pop
-          break unless namespace.empty?
         end
-        result.concat inner_get_constants('', [], false) if namespace.empty?
       end
-      result.concat yard_map.get_constants(fqns)
-      result
+      result.concat inner_get_constants('', skip)
+      result.map{|pin| Suggestion.pull(pin)}
     end
 
     # Get a fully qualified namespace name. This method will start the search
@@ -705,6 +698,7 @@ module Solargraph
       @namespace_extends = {}
       @superclasses = {}
       @namespace_pins = {}
+      @namespace_paths = {}
       namespace_map.clear
       @required = config.required.clone
       @pin_suggestions = {}
@@ -810,6 +804,8 @@ module Solargraph
       source.namespace_pins.each do |pin|
         @namespace_pins[pin.namespace] ||= []
         @namespace_pins[pin.namespace].push pin
+        @namespace_paths[pin.path] ||= []
+        @namespace_paths[pin.path].push pin
       end
       path_macros.merge! source.path_macros
       source.required.each do |r|
@@ -962,31 +958,21 @@ module Solargraph
       type
     end
 
-    def inner_get_constants here, skip = [], deep = true, visibility = [:public]
-      return [] if skip.include?(here)
-      skip.push here
+    def inner_get_constants fqns, skip
+      return [] if skip.include?(fqns)
+      skip.push fqns
       result = []
-      cp = @const_pins[here]
-      unless cp.nil?
-        cp.each do |pin|
-          result.push pin_to_suggestion(pin) if pin.visibility == :public or visibility.include?(:private)
+      result.concat @const_pins[fqns] if @const_pins.has_key?(fqns)
+      result.concat @namespace_pins[fqns] if @namespace_pins.has_key?(fqns)
+      result.concat yard_map.get_constants(fqns)
+      # @todo Constants from includes
+      is = @namespace_includes[fqns]
+      unless is.nil?
+        is.each do |i|
+          here = find_fully_qualified_namespace(i, fqns)
+          # result.concat @namespace_paths[here] unless @namespace_paths[here].nil?
+          result.concat inner_get_constants(here, skip)
         end
-      end
-      np = @namespace_pins[here]
-      unless np.nil?
-        np.each do |pin|
-          if pin.visibility == :public || visibility.include?(:private)
-            result.push pin_to_suggestion(pin)
-            if deep
-              get_include_strings_from(pin.node).each do |i|
-                result.concat inner_get_constants(i, skip, false, [:public])
-              end
-            end
-          end
-        end
-      end
-      get_include_strings_from(*get_namespace_nodes(here)).each do |i|
-        result.concat inner_get_constants(i, skip, false, [:public])
       end
       result
     end
