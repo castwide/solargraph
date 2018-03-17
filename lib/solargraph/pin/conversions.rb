@@ -24,8 +24,16 @@ module Solargraph
           @return_type = api_map.infer_assignment_node_type(node, namespace)
         end
         # @todo Format the documentation
-        extra[:documentation] = docstring.to_s
+        extra[:documentation] = ReverseMarkdown.convert(documentation)
         completion_item.merge(extra)
+      end
+
+      # @return [Hash]
+      def signature_help
+        {
+          label: name + '(' + arguments.join(', ') + ')',
+          documentation: ReverseMarkdown.convert(documentation)
+        }
       end
 
       private

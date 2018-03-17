@@ -10,10 +10,7 @@ module Solargraph
             sugg = code_map.signatures_at(offset)
             info = []
             sugg.each do |s|
-              info.push({
-                label: s.label + '(' + s.arguments.join(', ') + ')',
-                documentation: ReverseMarkdown.convert(s.documentation)
-              })
+              info.push s.signature_help
             end
             set_result({
               signatures: info
