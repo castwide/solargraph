@@ -208,17 +208,20 @@ module Solargraph
       skip = []
       result = []
       if context.empty?
-        result.concat inner_get_constants(namespace, skip)
+        visi = [:public]
+        visi.push [:private] if namespace.empty?
+        result.concat inner_get_constants(namespace, visi, skip)
       else
         parts = context.split('::')
         until parts.empty?
           subcontext = parts.join('::')
           fqns = find_fully_qualified_namespace(namespace, subcontext)
-          result.concat inner_get_constants(fqns, skip)
+          visi = [:public]
+          visi.push :private if namespace.empty? and subcontext == context
+          result.concat inner_get_constants(fqns, visi, skip)
           parts.pop
         end
       end
-      result.concat inner_get_constants('', skip)
       result.map{|pin| Suggestion.pull(pin)}
     end
 
@@ -698,7 +701,6 @@ module Solargraph
       @namespace_extends = {}
       @superclasses = {}
       @namespace_pins = {}
-      @namespace_paths = {}
       namespace_map.clear
       @required = config.required.clone
       @pin_suggestions = {}
@@ -804,8 +806,6 @@ module Solargraph
       source.namespace_pins.each do |pin|
         @namespace_pins[pin.namespace] ||= []
         @namespace_pins[pin.namespace].push pin
-        @namespace_paths[pin.path] ||= []
-        @namespace_paths[pin.path].push pin
       end
       path_macros.merge! source.path_macros
       source.required.each do |r|
@@ -958,20 +958,19 @@ module Solargraph
       type
     end
 
-    def inner_get_constants fqns, skip
+    def inner_get_constants fqns, visibility, skip
       return [] if skip.include?(fqns)
       skip.push fqns
       result = []
       result.concat @const_pins[fqns] if @const_pins.has_key?(fqns)
       result.concat @namespace_pins[fqns] if @namespace_pins.has_key?(fqns)
+      result.keep_if{|pin| visibility.include?(pin.visibility)}
       result.concat yard_map.get_constants(fqns)
-      # @todo Constants from includes
       is = @namespace_includes[fqns]
       unless is.nil?
         is.each do |i|
           here = find_fully_qualified_namespace(i, fqns)
-          # result.concat @namespace_paths[here] unless @namespace_paths[here].nil?
-          result.concat inner_get_constants(here, skip)
+          result.concat inner_get_constants(here, [:public], skip)
         end
       end
       result
