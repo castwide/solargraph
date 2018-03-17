@@ -330,7 +330,7 @@ module Solargraph
 
     def process_requires
       required.each do |r|
-        next if !workspace.nil? and File.exist?(File.join workspace.directory, 'lib', "#{r}.rb")
+        next if !workspace.nil? and !workspace.directory.nil? and File.exist?(File.join workspace.directory, 'lib', "#{r}.rb")
         spec = Gem::Specification.find_by_path(r)
         begin
           spec = Gem::Specification.find_by_name(r) if spec.nil?
@@ -395,7 +395,7 @@ module Solargraph
     end
 
     def has_bundle?
-      !workspace.nil? and File.exist?(File.join workspace.directory, 'Gemfile')
+      !workspace.nil? and !workspace.directory.nil? and File.exist?(File.join workspace.directory, 'Gemfile')
     end
   end
 end

@@ -847,7 +847,7 @@ describe Solargraph::ApiMap do
 
   it "rebuilds maps from file changes" do
     api_map = Solargraph::ApiMap.new
-    api_map.virtualize(%(
+    api_map.append_source(%(
       class Foobar
         def baz
         end
@@ -855,7 +855,7 @@ describe Solargraph::ApiMap do
     ), 'file.rb')
     sugg = api_map.get_instance_methods('Foobar').map(&:to_s)
     expect(sugg).to include('baz')
-    api_map.virtualize(%(
+    api_map.append_source(%(
       class Foobar
         def boo
         end
@@ -868,7 +868,7 @@ describe Solargraph::ApiMap do
 
   it "detects extended methods in the global namespace" do
     api_map = Solargraph::ApiMap.new
-    api_map.virtualize(%(
+    api_map.append_source(%(
       module Foobar
         def baz
         end
@@ -881,7 +881,7 @@ describe Solargraph::ApiMap do
 
   it "detects included methods in the global namespace" do
     api_map = Solargraph::ApiMap.new
-    api_map.virtualize(%(
+    api_map.append_source(%(
       module Foobar
         def baz
         end
@@ -894,7 +894,7 @@ describe Solargraph::ApiMap do
 
   it "resolves fully qualified namespaces from @return tags" do
     api_map = Solargraph::ApiMap.new
-    api_map.virtualize(%(
+    api_map.append_source(%(
       class Foobar
         class Bazbar
         end

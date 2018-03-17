@@ -6,7 +6,6 @@ module Solargraph
     attr_reader :directory
 
     def initialize directory
-      STDERR.puts "The workspace: #{directory}"
       @directory = directory
       load_sources unless directory.nil?
     end
@@ -44,6 +43,7 @@ module Solargraph
     end
 
     def stime
+      return nil if source_hash.empty?
       source_hash.values.sort{|a, b| a.stime <=> b.stime}.last.stime
     end
 

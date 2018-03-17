@@ -20,14 +20,17 @@ module Solargraph
 
     # @param workspace [Solargraph::Workspace]
     def initialize workspace = nil
-      @workspace = workspace || Solargraph::Workspace.new(nil)
+      # @todo Deprecate strings for the workspace parameter
+      workspace = Solargraph::Workspace.new(workspace) if workspace.kind_of?(String)
+      workspace = Solargraph::Workspace.new(nil) if workspace.nil?
+      @workspace = workspace
       clear
       require_extensions
       @virtual_source = nil
       @stale = true
       @yard_stale = true
-      @sources = workspace.sources
-      refresh
+      @sources = @workspace.sources
+      process_maps
       yard_map
     end
 
@@ -85,8 +88,15 @@ module Solargraph
       else
         @virtual_source = source
         @sources = workspace.sources + [@virtual_source]
-        process_virtual
+        # process_virtual
+        process_maps
       end
+    end
+
+    # @todo Candidate for deprecation
+    def append_source code, filename = nil
+      source = Source.load_string(code, filename)
+      virtualize source
     end
 
     # Refresh the ApiMap.
@@ -94,6 +104,7 @@ module Solargraph
     # @param force [Boolean] Perform a refresh even if the map is not "stale."
     def refresh force = false
       #process_maps if @stale or force
+      return if workspace.sources.empty?
       if @stime.nil? or workspace.stime > @stime
         process_maps
       end
@@ -105,7 +116,7 @@ module Solargraph
     # @return [Boolean]
     def changed?
       current = config.calculated
-      unless (Set.new(current) ^ workspace_files).empty?
+      unless (Set.new(current) ^ workspace.filenames).empty?
         return true
       end
       current.each do |f|
@@ -345,7 +356,7 @@ module Solargraph
     # @return [Array<Solargraph::Suggestion>]
     def get_global_variables
       globals = []
-      @sources.values.each do |s|
+      @sources.each do |s|
         globals.concat s.global_variable_pins
       end
       suggest_unique_variables globals
@@ -354,7 +365,7 @@ module Solargraph
     # @return [Array<Solargraph::Pin::GlobalVariable>]
     def get_global_variable_pins
       globals = []
-      @sources.values.each do |s|
+      @sources.each do |s|
         globals.concat s.global_variable_pins
       end
       globals
@@ -574,7 +585,7 @@ module Solargraph
     # @return [Array<String>]
     def search query
       refresh
-      rake_yard(@sources.values) if @yard_stale
+      rake_yard(@sources) if @yard_stale
       @yard_stale = false
       found = []
       code_object_paths.each do |k|
@@ -594,7 +605,7 @@ module Solargraph
     # @return [Array<YARD::CodeObject::Base>]
     def document path
       refresh
-      rake_yard(@sources.values) if @yard_stale
+      rake_yard(@sources) if @yard_stale
       @yard_stale = false
       docs = []
       docs.push code_object_at(path) unless code_object_at(path).nil?
@@ -964,7 +975,7 @@ module Solargraph
 
     def source_file_mtime(filename)
       # @todo This is naively inefficient.
-      sources.each do |s|
+      @sources.each do |s|
         return s.mtime if s.filename == filename
       end
       nil
