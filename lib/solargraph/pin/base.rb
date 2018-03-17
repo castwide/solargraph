@@ -72,6 +72,12 @@ module Solargraph
         "#{source.filename}:#{node.location.expression.line - 1}:#{node.location.expression.column}" unless source.nil? or node.nil?
       end
 
+      # @return [String]
+      def documentation
+        # @documentation ||= (docstring.nil? ? '' : @helper.html_markup_rdoc(docstring))
+        @documentation ||= docstring.to_s
+      end
+
       # True if the suggestion has documentation.
       # Useful for determining whether a client should resolve a suggestion's
       # path to retrieve more information about it.

@@ -11,7 +11,8 @@ module Solargraph
           data: {
             path: path,
             return_type: return_type,
-            location: "#{source.filename}:#{node.location.expression.line - 1}:#{node.location.expression.column}"
+            location: location,
+            uid: object_id
           }
         }
       end

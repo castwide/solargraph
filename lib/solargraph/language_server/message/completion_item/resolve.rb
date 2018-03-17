@@ -7,7 +7,7 @@ module Solargraph
       module CompletionItem
         class Resolve < Base
           def process
-            resolved = host.resolvable[params['data']['identifier']]
+            resolved = host.resolvable[params['data']['uid']]
             if resolved.nil?
               set_error(Solargraph::LanguageServer::ErrorCodes::INVALID_REQUEST, "Completion item could not be resolved")
             else
@@ -20,8 +20,8 @@ module Solargraph
                 doc.concat ReverseMarkdown.convert(resolved.documentation)
                 more['documentation'] = doc unless doc.strip.empty?
               end
-              if resolved.return_type.nil? and resolved.pin.kind_of?(Solargraph::Pin::BaseVariable)
-                rt = host.api_map.infer_assignment_node_type(resolved.pin.node, resolved.pin.namespace)
+              if resolved.return_type.nil? and resolved.kind_of?(Solargraph::Pin::BaseVariable)
+                rt = host.api_map.infer_assignment_node_type(resolved.node, resolved.namespace)
                 more['detail'] = "=> #{rt}" unless rt.nil?
               end
               set_result(

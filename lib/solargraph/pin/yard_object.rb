@@ -16,6 +16,7 @@ module Solargraph
 
       def kind
         # @todo Figure out the kind
+        Solargraph::LanguageServer::CompletionItemKinds::METHOD if code_object.kind_of?(YARD::CodeObjects::MethodObject)
       end
 
       def docstring
