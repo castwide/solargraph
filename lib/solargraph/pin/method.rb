@@ -25,6 +25,10 @@ module Solargraph
       def return_type
         if @return_type.nil? and !docstring.nil?
           tag = docstring.tag(:return)
+          if tag.nil?
+            ol = docstring.tag(:overload)
+            tag = ol.tag(:return) unless ol.nil?
+          end
           @return_type = tag.types[0] unless tag.nil? or tag.types.nil?
         end
         @return_type
@@ -32,6 +36,25 @@ module Solargraph
 
       def parameters
         @parameters ||= get_method_args
+      end
+
+      # @todo This method was temporarily migrated directly from Suggestion
+      # @return [Array<String>]
+      def params
+        if @params.nil?
+          @params = []
+          return @params if docstring.nil?
+          param_tags = docstring.tags(:param)
+          unless param_tags.empty?
+            param_tags.each do |t|
+              txt = t.name.to_s
+              txt += " [#{t.types.join(',')}]" unless t.types.nil? or t.types.empty?
+              txt += " #{t.text}" unless t.text.nil? or t.text.empty?
+              @params.push txt
+            end
+          end
+        end
+        @params
       end
 
       private

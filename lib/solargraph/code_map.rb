@@ -336,10 +336,11 @@ module Solargraph
       else
         result.concat api_map.get_instance_methods(type) unless (type == '' and signature.include?('.'))
       end
-      result.keep_if{|s| s.kind != Solargraph::Suggestion::METHOD or s.label.match(/^[a-z0-9_]*(\!|\?|=)?$/i)}
+      # result.keep_if{|s| s.kind != Solargraph::Suggestion::METHOD or s.label.match(/^[a-z0-9_]*(\!|\?|=)?$/i)}
+      result.keep_if{|s| s.kind != Solargraph::LanguageServer::CompletionItemKinds::METHOD or s.name.match(/^[a-z0-9_]*(\!|\?|=)?$/i)}
       result = reduce_starting_with(result, word_at(index)) if filtered
       # Use a stable sort to keep the class order (e.g., local methods before superclass methods)
-      result.uniq(&:path).sort_by.with_index{ |x, idx| [x.label, idx] }
+      result.uniq(&:path).sort_by.with_index{ |x, idx| [x.name, idx] }
     end
 
     def signatures_at index
@@ -700,7 +701,8 @@ module Solargraph
       return result unless args.kind_of?(AST::Node) and args.type == :args
       args.children.each do |arg|
         name = arg.children[0].to_s
-        result.push Suggestion.new(name, kind: Suggestion::PROPERTY, insert: name, return_type: param_hash[name])
+        # @todo How to make pins for this?
+        # result.push Suggestion.new(name, kind: Suggestion::PROPERTY, insert: name, return_type: param_hash[name])
       end
       result
     end
@@ -743,7 +745,8 @@ module Solargraph
           else
             rt = yps[i].types[0]
           end
-          result.push Suggestion.new(a.children[0], kind: Suggestion::PROPERTY, return_type: rt)
+          # @todo How to make pins for this?
+          # result.push Suggestion.new(a.children[0], kind: Suggestion::PROPERTY, return_type: rt)
         end
         result.concat api_map.get_instance_methods(self_yield, namespace_from(scope_node)) unless self_yield.nil?
       end
@@ -790,7 +793,8 @@ module Solargraph
     # @param word [String]
     def reduce_starting_with(suggestions, word)
       suggestions.reject { |s|
-        !s.label.start_with?(word)
+        # !s.label.start_with?(word)
+        !s.name.start_with?(word)
       }
     end
 
@@ -808,13 +812,15 @@ module Solargraph
           nil_pins.push pin
         else
           unless val_names.include?(pin.name)
-            arr.push Suggestion.pull(pin)
+            # arr.push Suggestion.pull(pin)
+            arr.push pin
             val_names.push pin.name
           end
         end
       end
       nil_pins.reject{|p| val_names.include?(p.name)}.each do |pin|
-        arr.push Suggestion.pull(pin)
+        # arr.push Suggestion.pull(pin)
+        arr.push pin
       end
       arr
     end

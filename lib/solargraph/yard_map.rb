@@ -117,7 +117,8 @@ module Solargraph
         else
           next
         end
-        result.push Suggestion.new(c.to_s.split('::').last, detail: c.to_s, kind: kind, docstring: c.docstring, return_type: return_type, location: object_location(c))
+        # result.push Suggestion.new(c.to_s.split('::').last, detail: c.to_s, kind: kind, docstring: c.docstring, return_type: return_type, location: object_location(c))
+        result.push Pin::YardObject.new(c)
       }
       cache.set_constants(namespace, scope, result)
       result
@@ -140,7 +141,8 @@ module Solargraph
                 label = "#{n}"
                 args = get_method_args(m)
                 kind = (m.is_attribute? ? Suggestion::FIELD : Suggestion::METHOD)
-                meths.push Suggestion.new(label, insert: n, kind: kind, docstring: m.docstring, code_object: m, detail: "#{ns}", location: object_location(m), arguments: args)
+                # meths.push Suggestion.new(label, insert: n, kind: kind, docstring: m.docstring, code_object: m, detail: "#{ns}", location: object_location(m), arguments: args)
+                meths.push Pin::YardObject.new(m)
               }
               # Collect superclass methods
               if ns.kind_of?(YARD::CodeObjects::ClassObject) and !ns.superclass.nil?
@@ -154,7 +156,8 @@ module Solargraph
                   meths.delete_if{|m| m.label == 'new'}
                   label = "#{i}"
                   args = get_method_args(i)
-                  meths.push Suggestion.new('new', kind: Suggestion::METHOD, docstring: i.docstring, code_object: i, detail: "#{ns}", location: object_location(i), arguments: args)
+                  # @todo Generate pin
+                  # meths.push Suggestion.new('new', kind: Suggestion::METHOD, docstring: i.docstring, code_object: i, detail: "#{ns}", location: object_location(i), arguments: args)
                 end
               end
             end
@@ -189,7 +192,8 @@ module Solargraph
                   if Solargraph::CoreFills::CUSTOM_RETURN_TYPES.has_key?(m.path)
                     rt = Solargraph::CoreFills::CUSTOM_RETURN_TYPES[m.path]
                   end
-                  meths.push Suggestion.new(label, insert: "#{n.gsub(/=$/, ' = ')}", kind: kind, docstring: m.docstring, code_object: m, detail: m.namespace, location: object_location(m), arguments: args, return_type: rt)
+                  # meths.push Suggestion.new(label, insert: "#{n.gsub(/=$/, ' = ')}", kind: kind, docstring: m.docstring, code_object: m, detail: m.namespace, location: object_location(m), arguments: args, return_type: rt)
+                  meths.push Pin::YardObject.new(m)
                 end
               }
               if ns.kind_of?(YARD::CodeObjects::ClassObject) and namespace != 'Object'
@@ -234,7 +238,8 @@ module Solargraph
               meths = obj.meths(scope: [:instance]).keep_if{|m| m.name.to_s == parts[1]}
               meths.each do |m|
                 args = get_method_args(m)
-                result.push Solargraph::Suggestion.new(m.name, kind: 'Method', detail: m.path, code_object: m, arguments: args, location: object_location(m))
+                # result.push Solargraph::Suggestion.new(m.name, kind: 'Method', detail: m.path, code_object: m, arguments: args, location: object_location(m))
+                result.push Pin::YardObject.new(m)
               end
             end
           else
@@ -242,7 +247,8 @@ module Solargraph
               args = []
               args = get_method_args(obj) if obj.kind_of?(YARD::CodeObjects::MethodObject)
               kind = kind_of_object(obj)
-              result.push Solargraph::Suggestion.new(obj.name, kind: kind, detail: obj.path, code_object: obj, arguments: args, location: object_location(obj))
+              # result.push Solargraph::Suggestion.new(obj.name, kind: kind, detail: obj.path, code_object: obj, arguments: args, location: object_location(obj))
+              result.push Pin::YardObject.new(obj)
             end
           end
         end

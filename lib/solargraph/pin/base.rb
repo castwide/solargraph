@@ -20,7 +20,8 @@ module Solargraph
 
       # @return [YARD::Docstring]
       def docstring
-        @docstring ||= source.docstring_for(node)
+        @docstring ||= source.docstring_for(node) unless source.nil?
+        @docstring
       end
 
       # @return [String]
@@ -58,13 +59,17 @@ module Solargraph
         []
       end
 
+      def arguments
+        parameters
+      end
+
       # @return [String]
       def filename
-        source.filename
+        source.filename unless source.nil?
       end
 
       def location
-        "#{source.filename}:#{node.location.expression.line - 1}:#{node.location.expression.column}"
+        "#{source.filename}:#{node.location.expression.line - 1}:#{node.location.expression.column}" unless source.nil? or node.nil?
       end
 
       # True if the suggestion has documentation.
@@ -74,6 +79,10 @@ module Solargraph
       # @return [Boolean]
       def has_doc?
         !docstring.nil? and !docstring.all.empty?
+      end
+
+      def to_s
+        name.to_s
       end
     end
   end

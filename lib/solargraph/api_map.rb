@@ -142,10 +142,10 @@ module Solargraph
 
     # An array of suggestions based on Ruby keywords (`if`, `end`, etc.).
     #
-    # @return [Array<Solargraph::Suggestion>]
+    # @return [Array<Solargraph::Pin::Keyword>]
     def self.keywords
       @keyword_suggestions ||= KEYWORDS.map{ |s|
-        Suggestion.new(s.to_s, kind: Suggestion::KEYWORD, detail: 'Keyword')
+        Pin::Keyword.new(s)
       }.freeze
     end
 
@@ -182,7 +182,7 @@ module Solargraph
     #
     # @param namespace [String] The namespace to match
     # @param context [String] The context to search
-    # @return [Array<Solargraph::Suggestion>]
+    # @return [Array<Solargraph::Pin::Base>]
     def get_constants namespace, context = ''
       skip = []
       result = []
@@ -201,7 +201,8 @@ module Solargraph
           parts.pop
         end
       end
-      result.map{|pin| Suggestion.pull(pin)}
+      # result.map{|pin| Suggestion.pull(pin)}
+      result
     end
 
     # Get a fully qualified namespace name. This method will start the search
@@ -271,7 +272,7 @@ module Solargraph
     #
     # @param namespace [String] A fully qualified namespace
     # @param scope [Symbol] :instance or :class
-    # @return [Array<Solargraph::Suggestion>]
+    # @return [Array<Solargraph::Pin::Base>]
     def get_instance_variables(namespace, scope = :instance)
       refresh
       result = []
@@ -288,7 +289,7 @@ module Solargraph
       @cvar_pins[namespace] || []
     end
 
-    # @return [Array<Solargraph::Suggestion>]
+    # @return [Array<Solargraph::Pin::Base>]
     def get_class_variables(namespace)
       refresh
       result = []
@@ -299,10 +300,11 @@ module Solargraph
       result
     end
 
-    # @return [Array<Solargraph::Suggestion>]
+    # @return [Array<Solargraph::Pin::Base>]
     def get_symbols
       refresh
-      @symbol_pins.map{|pin| Suggestion.new(pin.name, kind: Suggestion::CONSTANT, return_type: 'Symbol')}.uniq(&:label)
+      #@symbol_pins.map{|pin| Suggestion.new(pin.name, kind: Suggestion::CONSTANT, return_type: 'Symbol')}.uniq(&:label)
+      @symbol_pins
     end
 
     # @return [String]
@@ -349,7 +351,7 @@ module Solargraph
       find_fully_qualified_namespace(pin.return_type, pin.namespace)
     end
 
-    # @return [Array<Solargraph::Suggestion>]
+    # @return [Array<Solargraph::Pin::Base>]
     def get_global_variables
       globals = []
       @sources.each do |s|
@@ -466,7 +468,7 @@ module Solargraph
     # Get an array of singleton methods that are available in the specified
     # namespace.
     #
-    # @return [Array<Solargraph::Suggestion>]
+    # @return [Array<Solargraph::Pin::Base>]
     def get_methods(namespace, root = '', visibility: [:public])
       refresh
       namespace = clean_namespace_string(namespace)
@@ -485,13 +487,14 @@ module Solargraph
           meths.concat yard_map.get_instance_methods('Object') if fqns == ''
         end
       end
-      news = meths.select{|s| s.label == 'new'}
+      news = meths.select{|s| s.name == 'new'}
       unless news.empty?
         if @method_pins[fqns]
           inits = @method_pins[fqns].select{|p| p.name == 'initialize'}
           meths -= news unless inits.empty?
           inits.each do |pin|
-            meths.push Suggestion.new('new', kind: pin.kind, docstring: pin.docstring, detail: pin.namespace, arguments: pin.parameters, path: pin.path)
+            # meths.push Suggestion.new('new', kind: pin.kind, docstring: pin.docstring, detail: pin.namespace, arguments: pin.parameters, path: pin.path)
+            meths.push Pin::Directed::Method.new(pin.source, pin.node, pin.namespace, pin.scope, pin.visibility, pin.docstring, 'new')
           end
         end
       end
@@ -511,7 +514,7 @@ module Solargraph
     # Get an array of instance methods that are available in the specified
     # namespace.
     #
-    # @return [Array<Solargraph::Suggestion>]
+    # @return [Array<Solargraph::Pin::Base>]
     def get_instance_methods(namespace, root = '', visibility: [:public])
       refresh
       namespace = clean_namespace_string(namespace)
@@ -548,24 +551,25 @@ module Solargraph
     # Get an array of all suggestions that match the specified path.
     #
     # @param path [String] The path to find
-    # @return [Array<Solargraph::Suggestion>]
+    # @return [Array<Solargraph::Pin::Base>]
     def get_path_suggestions path
       refresh
       result = []
       if path.include?('#')
         # It's an instance method
         parts = path.split('#')
-        result = get_instance_methods(parts[0], '', visibility: [:public, :private, :protected]).select{|s| s.label == parts[1]}
+        result = get_instance_methods(parts[0], '', visibility: [:public, :private, :protected]).select{|s| s.name == parts[1]}
       elsif path.include?('.')
         # It's a class method
         parts = path.split('.')
-        result = get_methods(parts[0], '', visibility: [:public, :private, :protected]).select{|s| s.label == parts[1]}
+        result = get_methods(parts[0], '', visibility: [:public, :private, :protected]).select{|s| s.name == parts[1]}
       else
         # It's a class or module
         parts = path.split('::')
         np = @namespace_pins[parts[0..-2].join('::')]
         unless np.nil?
-          result.concat np.select{|p| p.name == parts.last}.map{|p| pin_to_suggestion(p)}
+          # result.concat np.select{|p| p.name == parts.last}.map{|p| pin_to_suggestion(p)}
+          result.concat np.select{|p| p.name == parts.last}
         end
         result.concat yard_map.objects(path)
       end
@@ -746,7 +750,8 @@ module Solargraph
       mn = @method_pins[fqns]
       unless mn.nil?
         mn.select{ |pin| pin.scope == :class }.each do |pin|
-          meths.push pin_to_suggestion(pin) if visibility.include?(pin.visibility)
+          #meths.push pin_to_suggestion(pin) if visibility.include?(pin.visibility)
+          meths.push pin if visibility.include?(pin.visibility)
         end
       end
       if visibility.include?(:public) or visibility.include?(:protected)
@@ -777,13 +782,15 @@ module Solargraph
       an = @attr_pins[fqns]
       unless an.nil?
         an.each do |pin|
-          meths.push pin_to_suggestion(pin)
+          # meths.push pin_to_suggestion(pin)
+          meths.push pin
         end
       end
       mn = @method_pins[fqns]
       unless mn.nil?
         mn.select{|pin| visibility.include?(pin.visibility) and pin.scope == :instance }.each do |pin|
-          meths.push pin_to_suggestion(pin)
+          # meths.push pin_to_suggestion(pin)
+          meths.push pin
         end
       end
       if visibility.include?(:public) or visibility.include?(:protected)
@@ -851,7 +858,7 @@ module Solargraph
             tmp = get_methods(namespace, visibility: visibility)
           end
           tmp.concat get_instance_methods('Kernel', visibility: [:public]) if top
-          matches = tmp.select{|s| s.label == part}
+          matches = tmp.select{|s| s.name == part}
           return nil if matches.empty?
           matches.each do |m|
             type = get_return_type_from_macro(namespace, signature, call_node, scope, visibility)
@@ -934,6 +941,7 @@ module Solargraph
       end
     end
 
+    # @return [Array<Solargraph::Pin::Base>]
     def suggest_unique_variables pins
       result = []
       nil_pins = []
@@ -943,13 +951,15 @@ module Solargraph
           nil_pins.push pin
         else
           unless val_names.include?(pin.name)
-            result.push pin_to_suggestion(pin)
+            # result.push pin_to_suggestion(pin)
+            result.push pin
             val_names.push pin.name
           end
         end
       end
       nil_pins.reject{|p| val_names.include?(p.name)}.each do |pin|
-        result.push pin_to_suggestion(pin)
+        # result.push pin_to_suggestion(pin)
+        result.push pin
       end
       result
     end
@@ -1002,6 +1012,7 @@ module Solargraph
       macmeth = get_path_suggestions(path).first
       type = nil
       unless macmeth.nil?
+        macmeths = Suggestion.pull(macmeth)
         macro = path_macros[macmeth.path]
         macro = macro.first unless macro.nil?
         if macro.nil? and !macmeth.code_object.nil? and !macmeth.code_object.base_docstring.nil? and macmeth.code_object.base_docstring.all.include?('@!macro')

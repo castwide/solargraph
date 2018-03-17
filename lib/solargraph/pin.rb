@@ -13,5 +13,7 @@ module Solargraph
     autoload :Symbol,           'solargraph/pin/symbol'
     autoload :Directed,         'solargraph/pin/directed'
     autoload :Namespace,        'solargraph/pin/namespace'
+    autoload :YardObject,       'solargraph/pin/yard_object'
+    autoload :Keyword,          'solargraph/pin/keyword'
   end
 end

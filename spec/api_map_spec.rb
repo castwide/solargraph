@@ -374,7 +374,7 @@ describe Solargraph::ApiMap do
     )
     api_map = Solargraph::ApiMap.new
     api_map.append_source(code, 'file.rb')
-    sugg = api_map.get_instance_methods('Foo').keep_if{|s| s.label == 'bar'}.first
+    sugg = api_map.get_instance_methods('Foo').keep_if{|s| s.name == 'bar'}.first
     expect(sugg.arguments).to eq(['baz', "boo = 'boo'"])
   end
 
@@ -387,7 +387,7 @@ describe Solargraph::ApiMap do
     )
     api_map = Solargraph::ApiMap.new
     api_map.append_source(code, 'file.rb')
-    sugg = api_map.get_instance_methods('Foo').keep_if{|s| s.label == 'bar'}.first
+    sugg = api_map.get_instance_methods('Foo').keep_if{|s| s.name == 'bar'}.first
     expect(sugg.arguments).to eq(['baz:', "boo: 'boo'"])
   end
 
@@ -485,7 +485,7 @@ describe Solargraph::ApiMap do
     )
     api_map = Solargraph::ApiMap.new
     api_map.append_source(code, 'file.rb')
-    meth = api_map.get_instance_methods('Foo').select{|s| s.label == 'bar'}.first
+    meth = api_map.get_instance_methods('Foo').select{|s| s.name == 'bar'}.first
     expect(meth.params).to eq(['baz [String]'])
   end
 
@@ -499,7 +499,7 @@ describe Solargraph::ApiMap do
     api_map = Solargraph::ApiMap.new
     api_map.append_source(code, 'file.rb')
     # @type [Solargraph::Suggestion]
-    meth = api_map.get_instance_methods('Foo').select{|s| s.label == 'bar'}.first
+    meth = api_map.get_instance_methods('Foo').select{|s| s.name == 'bar'}.first
     expect(meth.arguments).to eq(['*baz'])
   end
 
@@ -525,7 +525,7 @@ describe Solargraph::ApiMap do
     )
     api_map = Solargraph::ApiMap.new
     api_map.append_source(code, 'file.rb')
-    sugg = api_map.get_instance_methods('Foo').select{|s| s.label == 'bar'}.first
+    sugg = api_map.get_instance_methods('Foo').select{|s| s.name == 'bar'}.first
     expect(sugg.return_type).to eq('String')
   end
 
@@ -902,7 +902,7 @@ describe Solargraph::ApiMap do
         def get_bazbar;end
       end
     ), 'file.rb')
-    sugg = api_map.get_instance_methods('Foobar').select{|s| s.label == 'get_bazbar'}.first
+    sugg = api_map.get_instance_methods('Foobar').select{|s| s.name == 'get_bazbar'}.first
     expect(sugg).not_to be(nil)
     expect(sugg.return_type).to eq('Foobar::Bazbar')
   end
