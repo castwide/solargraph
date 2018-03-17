@@ -28,27 +28,15 @@ module Solargraph
                   offset = code_map.get_offset(params['position']['line'], params['position']['character'])
                   range = code_map.symbol_range_at(offset)
                   suggestions = code_map.suggest_at(offset)
-                  # items = suggestions.map do |sugg|
-                  #   detail = ''
-                  #   detail += "(#{sugg.arguments.join(', ')}) " unless sugg.arguments.empty?
-                  #   detail += "=> #{sugg.return_type}" unless sugg.return_type.nil?
-                  #   result = {
-                  #     label: sugg.label,
-                  #     kind: kind_map[sugg.kind],
-                  #     data: {
-                  #       identifier: sugg.location || sugg.path
-                  #     },
-                  #     textEdit: {
-                  #       range: range,
-                  #       newText: sugg.label
-                  #     }
-                  #   }
-                  #   result[:detail] = detail unless detail.empty?
-                  #   result
-                  # end
-                  items = suggestions.map(&:to_completion_item)
                   suggestion_map = {}
+                  items = []
                   suggestions.each do |s|
+                    items.push s.completion_item.merge(
+                      textEdit: {
+                        range: range,
+                        newText: s.name
+                      }
+                    )
                     suggestion_map[s.object_id] = s
                   end
                   host.resolvable = suggestion_map

@@ -2,7 +2,7 @@ module Solargraph
   module Pin
     module Conversions
       # @return [Hash]
-      def to_completion_item
+      def completion_item
         {
           label: name,
           insert: name.sub(/=$/, ' = '),
@@ -18,14 +18,14 @@ module Solargraph
       end
 
       # @return [Hash]
-      def to_resolved_item(api_map = nil)
+      def resolve_completion_item(api_map)
         extra = {}
-        extra[:documentation] = docstring.to_s
-        if return_type.nil? and !api_map.nil?
-          # @todo: resolve return type from api_map
-          extra[:return_type] = return_type
+        if return_type.nil? and self.kind_of?(Solargraph::Pin::BaseVariable)
+          @return_type = api_map.infer_assignment_node_type(node, namespace)
         end
-        to_completion_item.merge(extra)
+        # @todo Format the documentation
+        extra[:documentation] = docstring.to_s
+        completion_item.merge(extra)
       end
 
       private
@@ -36,9 +36,6 @@ module Solargraph
         detail += "=> #{return_type}" unless return_type.nil?
         return nil if detail.empty?
         detail
-      end
-
-      def completion_item_documentation
       end
     end
   end
