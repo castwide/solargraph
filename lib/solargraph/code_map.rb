@@ -348,7 +348,7 @@ module Solargraph
       return [] if sig.nil?
       word = word_at(sig)
       sugg = suggest_at(sig - word.length)
-      sugg.select{|s| s.label == word}
+      sugg.select{|s| s.name == word}
     end
 
     # @return [Array<Solargraph::Suggestion>]
@@ -481,7 +481,7 @@ module Solargraph
     def local_variable_in_node?(name, node)
       return true unless find_local_variable_node(name, node).nil?
       if node.type == :def or node.type == :defs
-        args = get_method_arguments_from(node).keep_if{|a| a.label == name}
+        args = get_method_arguments_from(node).keep_if{|a| a.name == name}
         return true unless args.empty?
       end
       false
@@ -528,7 +528,7 @@ module Solargraph
       # @todo There might be some redundancy between find_local_variable_node and call_node
       var = find_local_variable_node(start, node)
       if var.nil?
-        arg = get_method_arguments_from(node).select{|s| s.label == start}.first
+        arg = get_method_arguments_from(node).select{|s| s.name == start}.first
         if arg.nil?
           scope = (node.type == :def ? :instance : :class)
           type = api_map.infer_signature_type(signature, ns_here, scope: scope, call_node: call_node)
