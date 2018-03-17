@@ -24,7 +24,7 @@ module Solargraph
           @return_type = api_map.infer_assignment_node_type(node, namespace)
         end
         # @todo Format the documentation
-        extra[:documentation] = ReverseMarkdown.convert(documentation)
+        extra[:documentation] = documentation
         completion_item.merge(extra)
       end
 
@@ -32,7 +32,7 @@ module Solargraph
       def signature_help
         {
           label: name + '(' + arguments.join(', ') + ')',
-          documentation: ReverseMarkdown.convert(documentation)
+          documentation: documentation
         }
       end
 

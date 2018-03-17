@@ -1,5 +1,6 @@
 module Solargraph
   module Pin
+    autoload :Helper,           'solargraph/pin/helper'
     autoload :Conversions,      'solargraph/pin/conversions'
     autoload :Base,             'solargraph/pin/base'
     autoload :Method,           'solargraph/pin/method'

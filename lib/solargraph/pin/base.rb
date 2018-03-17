@@ -75,7 +75,7 @@ module Solargraph
       # @return [String]
       def documentation
         # @documentation ||= (docstring.nil? ? '' : @helper.html_markup_rdoc(docstring))
-        @documentation ||= docstring.to_s
+        @documentation ||= ReverseMarkdown.convert(helper.html_markup_rdoc(docstring)) unless docstring.nil?
       end
 
       # True if the suggestion has documentation.
@@ -85,6 +85,10 @@ module Solargraph
       # @return [Boolean]
       def has_doc?
         !docstring.nil? and !docstring.all.empty?
+      end
+
+      def helper
+        @helper ||= Solargraph::Pin::Helper.new
       end
 
       def to_s
