@@ -107,7 +107,7 @@ module Solargraph
         code_map = CodeMap.new(code: params['text'], filename: params['filename'], api_map: api_map, cursor: [params['line'].to_i, params['column'].to_i])
         offset = code_map.get_offset(params['line'].to_i, params['column'].to_i)
         sugg = code_map.suggest_at(offset, filtered: true)
-        JSON.generate({ "status" => "ok", "suggestions" => sugg.map{|s| s.as_json(all: with_all)} })
+        JSON.generate({ "status" => "ok", "suggestions" => sugg.map{|s| Suggestion.pull(s).as_json(all: with_all)} })
       rescue Exception => e
         send_exception e
       end
@@ -122,7 +122,7 @@ module Solargraph
         code_map = CodeMap.new(code: params['text'], filename: params['filename'], api_map: api_map, cursor: [params['line'].to_i, params['column'].to_i])
         offset = code_map.get_offset(params['line'].to_i, params['column'].to_i)
         sugg = code_map.signatures_at(offset)
-        { "status" => "ok", "suggestions" => sugg.map{|s| s.as_json(all: true)} }.to_json
+        { "status" => "ok", "suggestions" => sugg.map{|s| Suggestion.pull(s).as_json(all: true)} }.to_json
       rescue Exception => e
         send_exception e
       end
@@ -138,7 +138,7 @@ module Solargraph
           # @todo Get suggestions that match the path
           result.concat api_map.get_path_suggestions(params['path'])
         end
-        { "status" => "ok", "suggestions" => result.map{|s| s.as_json(all: true)} }.to_json
+        { "status" => "ok", "suggestions" => result.map{|s| Suggestion.pull(s).as_json(all: true)} }.to_json
       rescue Exception => e
         send_exception e
       end

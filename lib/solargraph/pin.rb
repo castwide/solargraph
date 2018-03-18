@@ -16,5 +16,6 @@ module Solargraph
     autoload :Namespace,        'solargraph/pin/namespace'
     autoload :YardObject,       'solargraph/pin/yard_object'
     autoload :Keyword,          'solargraph/pin/keyword'
+    autoload :Parameter,        'solargraph/pin/parameter'
   end
 end

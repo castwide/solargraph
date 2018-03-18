@@ -523,11 +523,10 @@ module Solargraph
       end
 
       def parse code, filename = nil
-        parser = Parser::CurrentRuby.new
+        parser = Parser::CurrentRuby.default_parser
         buffer = Parser::Source::Buffer.new(filename, 1)
         buffer.source = code
         parser.parse_with_comments(buffer)
-        # Parser::CurrentRuby.parse_with_comments code
       end
 
       def get_position_at(code, offset)

@@ -703,6 +703,7 @@ module Solargraph
         name = arg.children[0].to_s
         # @todo How to make pins for this?
         # result.push Suggestion.new(name, kind: Suggestion::PROPERTY, insert: name, return_type: param_hash[name])
+        result.push Solargraph::Pin::Parameter.new(@source, node, namespace_from(node), name, param_hash[name])
       end
       result
     end
@@ -747,6 +748,7 @@ module Solargraph
           end
           # @todo How to make pins for this?
           # result.push Suggestion.new(a.children[0], kind: Suggestion::PROPERTY, return_type: rt)
+          result.push Solargraph::Pin::Parameter.new(@source, a, namespace_from(node), a.children[0].to_s, rt)
         end
         result.concat api_map.get_instance_methods(self_yield, namespace_from(scope_node)) unless self_yield.nil?
       end
