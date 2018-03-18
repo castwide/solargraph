@@ -351,11 +351,12 @@ module Solargraph
       stack.push node
       source = self
       if node.kind_of?(AST::Node)
+        # @node_tree[node] = @node_stack.clone
         @all_nodes.push node
-        if node.type == :str or node.type == :dstr
-          stack.pop
-          return
-        end
+        # if node.type == :str or node.type == :dstr
+        #   stack.pop
+        #   return
+        # end
         @node_stack.unshift node
         if node.type == :class or node.type == :module
           visibility = :public

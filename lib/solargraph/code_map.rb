@@ -605,7 +605,7 @@ module Solargraph
     # @return [Array<Solargraph::Suggestion>]
     def get_local_variables_and_methods_at(index)
       result = []
-      local = parent_node_from(index, :class, :module, :def, :defs) || @node
+      local = parent_node_from(index, :class, :module, :def, :defs, :source) || @node
       result += get_local_variables_from(node_at(index))
       scope = namespace_at(index) || @node
       if local.type == :def
