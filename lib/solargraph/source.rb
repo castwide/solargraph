@@ -523,11 +523,13 @@ module Solargraph
       end
 
       def parse code, filename = nil
-        parser = Parser::CurrentRuby.default_parser
+        parser = Parser::CurrentRuby.new(FlawedBuilder.new)
+        parser.diagnostics.all_errors_are_fatal = true
+        parser.diagnostics.ignore_warnings      = true
         buffer = Parser::Source::Buffer.new(filename, 1)
         buffer.source = code
         parser.parse_with_comments(buffer)
-      end
+    end
 
       def get_position_at(code, offset)
         cursor = 0
