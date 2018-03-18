@@ -895,4 +895,13 @@ describe Solargraph::CodeMap do
     sugg = code_map.suggest_at(offset)
     expect(sugg).to be_empty
   end
+
+  it "detects local variables in strings" do
+    code_map = Solargraph::CodeMap.new(code: '
+      abc = []
+      xyz = "#{a}"
+    ', filename: 'file.rb')
+    sugg = code_map.suggest_at(code_map.get_offset(2, 16)).map(&:name)
+    expect(sugg).to include('abc')
+  end
 end
