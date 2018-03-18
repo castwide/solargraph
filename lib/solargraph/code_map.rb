@@ -2,11 +2,6 @@ require 'parser/current'
 
 module Solargraph
   class CodeMap
-    # The root node of the parsed code.
-    #
-    # @return [Parser::AST::Node]
-    attr_reader :node
-
     # The source code being analyzed.
     #
     # @return [String]
@@ -44,7 +39,6 @@ module Solargraph
       @source = source
       @filename = filename
       @api_map = api_map
-      @node = source.node
       @code = source.code
       @comments = @source.comments
       self.api_map.virtualize source
@@ -62,28 +56,6 @@ module Solargraph
     # @return [Solargraph::ApiMap]
     def api_map
       @api_map ||= ApiMap.new(nil)
-    end
-
-    # Get the offset of the specified line and column.
-    # The offset (also called the "index") is typically used to identify the
-    # cursor's location in the code when generating suggestions.
-    # The line and column numbers should start at zero.
-    #
-    # @param line [Integer]
-    # @param col [Integer]
-    # @return [Integer]
-    def get_offset line, col
-      CodeMap.get_offset @code, line, col
-    end
-
-    def self.get_offset text, line, col
-      offset = 0
-      if line > 0
-        text.lines[0..line - 1].each { |l|
-          offset += l.length
-        }
-      end
-      offset + col
     end
 
     # Get an array of nodes containing the specified index, starting with the
@@ -131,22 +103,6 @@ module Solargraph
         index -= 1
       end
       false
-    end
-
-    # Find the nearest parent node from the specified index. If one or more
-    # types are provided, find the nearest node whose type is in the list.
-    #
-    # @param index [Integer]
-    # @param types [Array<Symbol>]
-    # @return [AST::Node]
-    def parent_node_from(index, *types)
-      arr = tree_at(index)
-      arr.each { |a|
-        if a.kind_of?(AST::Node) and (types.empty? or types.include?(a.type))
-          return a
-        end
-      }
-      @node
     end
 
     # Get the namespace at the specified location. For example, given the code
@@ -273,10 +229,14 @@ module Solargraph
 
     def get_instance_variables_at(index)
       # @todo There are a lot of other cases that need to be handled here
-      node = parent_node_from(index, :def, :defs, :class, :module, :sclass)
+      node = @source.parent_node_from(index, :def, :defs, :class, :module, :sclass)
       ns = namespace_at(index) || ''
       scope = (node.type == :def ? :instance : :class)
       api_map.get_instance_variables(ns, scope)
+    end
+
+    def get_offset(line, col)
+      @source.get_offset(line, col)
     end
 
     # Get suggestions for code completion at the specified location in the
@@ -351,7 +311,7 @@ module Solargraph
       return [] if string_at?(index)
       signature = get_signature_at(index, final: true)
       return [] if signature.to_s.empty?
-      node = parent_node_from(index, :class, :module, :def, :defs) || @node
+      node = @source.parent_node_from(index, :class, :module, :def, :defs) || @source.node
       ns_here = namespace_from(node)
       unless signature.include?('.')
         if local_variable_in_node?(signature, node)
@@ -410,7 +370,7 @@ module Solargraph
       end
       type = infer_literal_node_type(literal)
       if type.nil?
-        node = parent_node_from(index, :class, :module, :def, :defs, :block) || @node
+        node = @source.parent_node_from(index, :class, :module, :def, :defs, :block) || @source.node
         result = infer_signature_from_node signature, node
         if result.nil? or result.empty?
           # The rest of this routine is dedicated to method and block parameters
@@ -552,9 +512,9 @@ module Solargraph
       end
       if inferred.nil? and node.respond_to?(:loc)
         index = node.loc.expression.begin_pos
-        block_node = parent_node_from(index, :block, :class, :module, :sclass, :def, :defs)
+        block_node = @source.parent_node_from(index, :block, :class, :module, :sclass, :def, :defs)
         unless block_node.nil? or block_node.type != :block or block_node.children[0].nil?
-          scope_node = parent_node_from(index, :class, :module, :def, :defs) || @node
+          scope_node = @source.parent_node_from(index, :class, :module, :def, :defs) || @source.node
           meth = get_yielding_method_with_yieldself(block_node, scope_node)
           unless meth.nil?
             match = meth.docstring.all.match(/@yieldself \[([a-z0-9:_]*)/i)
@@ -600,9 +560,9 @@ module Solargraph
     # @return [Array<Solargraph::Suggestion>]
     def get_local_variables_and_methods_at(index)
       result = []
-      local = parent_node_from(index, :class, :module, :def, :defs, :source) || @node
+      local = @source.parent_node_from(index, :class, :module, :def, :defs, :source) || @source.node
       result += get_local_variables_from(node_at(index))
-      scope = namespace_at(index) || @node
+      scope = namespace_at(index) || @source.node
       if local.type == :def
         result += api_map.get_instance_methods(scope, visibility: [:public, :private, :protected])
       else
@@ -704,9 +664,9 @@ module Solargraph
     end
 
     def get_yieldparams_at index
-      block_node = parent_node_from(index, :block, :class, :module, :def, :defs)
+      block_node = @source.parent_node_from(index, :block, :class, :module, :def, :defs)
       return [] if block_node.nil? or block_node.type != :block
-      scope_node = parent_node_from(index, :class, :module, :def, :defs) || @node
+      scope_node = @source.parent_node_from(index, :class, :module, :def, :defs) || @source.node
       return [] if block_node.nil?
       get_yieldparams_from block_node, scope_node
     end
@@ -743,7 +703,7 @@ module Solargraph
           end
           # @todo How to make pins for this?
           # result.push Suggestion.new(a.children[0], kind: Suggestion::PROPERTY, return_type: rt)
-          result.push Solargraph::Pin::Parameter.new(@source, a, namespace_from(node), a.children[0].to_s, rt)
+          result.push Solargraph::Pin::Parameter.new(@source, a, namespace_from(@source.node), a.children[0].to_s, rt)
         end
         result.concat api_map.get_instance_methods(self_yield, namespace_from(scope_node)) unless self_yield.nil?
       end
@@ -799,7 +759,7 @@ module Solargraph
     #
     # @return [Array<Solargraph::Suggestion>]
     def get_local_variables_from(node)
-      node ||= @node
+      node ||= @source.node
       namespace = namespace_from(node)
       arr = []
       nil_pins = []

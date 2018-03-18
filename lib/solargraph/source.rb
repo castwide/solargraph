@@ -161,6 +161,23 @@ module Solargraph
       arr
     end
 
+    # Find the nearest parent node from the specified index. If one or more
+    # types are provided, find the nearest node whose type is in the list.
+    #
+    # @param index [Integer]
+    # @param types [Array<Symbol>]
+    # @return [AST::Node]
+    def parent_node_from(index, *types)
+      arr = tree_at(index)
+      arr.each { |a|
+        if a.kind_of?(AST::Node) and (types.empty? or types.include?(a.type))
+          return a
+        end
+      }
+      # @todo return nil or root (@node)?
+      nil
+    end
+
     # @return [String]
     def namespace_for node
       parts = []
@@ -194,7 +211,17 @@ module Solargraph
     end
 
     def get_offset line, col
-      CodeMap.get_offset(code, line, col)
+      Source.get_offset(code, line, col)
+    end
+
+    def self.get_offset text, line, col
+      offset = 0
+      if line > 0
+        text.lines[0..line - 1].each { |l|
+          offset += l.length
+        }
+      end
+      offset + col
     end
 
     private
@@ -568,7 +595,7 @@ module Solargraph
       def fix code, filename = nil, offset = nil
         tries = 0
         code.gsub!(/\r/, '')
-        offset = CodeMap.get_offset(code, offset[0], offset[1]) if offset.kind_of?(Array)
+        offset = Source.get_offset(code, offset[0], offset[1]) if offset.kind_of?(Array)
         pos = nil
         pos = get_position_at(code, offset) unless offset.nil?
         stubs = []
