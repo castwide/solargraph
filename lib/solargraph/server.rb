@@ -89,7 +89,8 @@ module Solargraph
         # @type [Solargraph::ApiMap]
         api_map = get_api_map(workspace)
         unless api_map.nil?
-          api_map.update params['filename']
+          filename = params['filename']
+          api_map.append_source File.read(filename), filename
         end
         { "status" => "ok"}.to_json
       rescue Exception => e
