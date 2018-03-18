@@ -19,6 +19,10 @@ module Solargraph
       def value
         source.code_for(node.children[2])
       end
+
+      def path
+        "#{namespace}::#{name}"
+      end
     end
   end
 end
