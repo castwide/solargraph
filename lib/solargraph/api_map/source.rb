@@ -3,6 +3,12 @@ require 'parser/current'
 module Solargraph
   class ApiMap
     class Source
+      class FlawedBuilder < Parser::Builders::Default
+        def string_value(token)
+          value(token)
+        end
+      end
+
       # @return [String]
       attr_reader :code
 
@@ -387,10 +393,7 @@ module Solargraph
 
         # @return [Solargraph::ApiMap::Source]
         def virtual code, filename = nil
-          parser = Parser::CurrentRuby.new
-          buffer = Parser::Source::Buffer.new(filename, 1)
-          buffer.source = code
-          node, comments = parser.parse_with_comments(buffer)
+          node, comments = Source.parse(code, filename)
           Source.new(code, node, comments, filename)
         end
 
@@ -410,6 +413,15 @@ module Solargraph
           [line, col]
         end
 
+        def parse code, filename = nil
+          parser = Parser::CurrentRuby.new(FlawedBuilder.new)
+          parser.diagnostics.all_errors_are_fatal = true
+          parser.diagnostics.ignore_warnings      = true
+          buffer = Parser::Source::Buffer.new(filename, 1)
+          buffer.source = code
+          parser.parse_with_comments(buffer)
+        end  
+
         def fix code, filename = nil, offset = nil
           tries = 0
           code.gsub!(/\r/, '')
@@ -420,7 +432,7 @@ module Solargraph
           fixed_position = false
           tmp = code
           begin
-            node, comments = Parser::CurrentRuby.parse_with_comments(tmp)
+            node, comments = parse(tmp, filename)
             Source.new(code, node, comments, filename, stubs)
           rescue Parser::SyntaxError => e
             if tries < 10
