@@ -3,6 +3,8 @@ require 'time'
 
 module Solargraph
   class Source
+    autoload :FlawedBuilder, 'solargraph/source/flawed_builder'
+
     # @return [String]
     attr_reader :code
 
