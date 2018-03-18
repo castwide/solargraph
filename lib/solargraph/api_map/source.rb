@@ -40,7 +40,7 @@ module Solargraph
         @comments = comments
         @directives = {}
         @path_macros = {}
-        @docstring_hash = associate_comments(node, comments)
+        @docstring_hash = associate_comments(node, comments) || {}
         @filename = filename
         @mtime = (!filename.nil? and File.exist?(filename) ? File.mtime(filename) : nil)
         @namespace_nodes = {}
@@ -195,6 +195,7 @@ module Solargraph
       private
 
       def associate_comments node, comments
+        return nil if comments.nil?
         comment_hash = Parser::Source::Comment.associate_locations(node, comments)
         yard_hash = {}
         comment_hash.each_pair { |k, v|
@@ -393,7 +394,7 @@ module Solargraph
 
         # @return [Solargraph::ApiMap::Source]
         def virtual code, filename = nil
-          node, comments = Source.parse(code, filename)
+          node, comments = Source.fix(code, filename)
           Source.new(code, node, comments, filename)
         end
 
@@ -452,9 +453,9 @@ module Solargraph
               end
               retry
             end
-            STDERR.puts "Unable to parse code: #{e.message}"
-            virt = Source.virtual('', filename)
-            Source.new(code, virt.node, virt.comments, filename)
+            STDERR.puts "Unable to parse file #{filename.nil? ? 'undefined' : filename}: #{e.message}"
+            node, comments = parse(code.gsub(/[^\s]/, ' '), filename)
+            Source.new(code, node, comments, filename)
           end
         end
 
