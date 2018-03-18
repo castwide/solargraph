@@ -8,7 +8,6 @@ module Solargraph::LanguageServer::Message::TextDocument
       offset = code_map.get_offset(params['position']['line'], params['position']['character'])
       suggestions = code_map.define_symbol_at(offset)
       locations = suggestions.map do |pin|
-        STDERR.puts pin.location
         unless pin.location.nil?
           parts = pin.location.split(':')
           char = parts.pop.to_i
@@ -30,7 +29,6 @@ module Solargraph::LanguageServer::Message::TextDocument
         end
       end
       set_result locations
-      # set_error Solargraph::LanguageServer::ErrorCodes::INTERNAL_ERROR, "Not implemented"
     end
   end
 end
