@@ -18,6 +18,7 @@ module Solargraph
   autoload :CoreFills,      'solargraph/core_fills'
   autoload :LanguageServer, 'solargraph/language_server'
   autoload :Workspace,      'solargraph/workspace'
+  autoload :Page,           'solargraph/page'
 
   YARDOC_PATH = File.join(File.realpath(File.dirname(__FILE__)), '..', 'yardoc')
   YARD_EXTENSION_FILE = File.join(File.realpath(File.dirname(__FILE__)), 'yard-solargraph.rb')
