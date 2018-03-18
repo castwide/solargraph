@@ -303,7 +303,6 @@ module Solargraph
     # @return [Array<Solargraph::Pin::Base>]
     def get_symbols
       refresh
-      #@symbol_pins.map{|pin| Suggestion.new(pin.name, kind: Suggestion::CONSTANT, return_type: 'Symbol')}.uniq(&:label)
       @symbol_pins
     end
 
@@ -493,7 +492,6 @@ module Solargraph
           inits = @method_pins[fqns].select{|p| p.name == 'initialize'}
           meths -= news unless inits.empty?
           inits.each do |pin|
-            # meths.push Suggestion.new('new', kind: pin.kind, docstring: pin.docstring, detail: pin.namespace, arguments: pin.parameters, path: pin.path)
             meths.push Pin::Directed::Method.new(pin.source, pin.node, pin.namespace, pin.scope, pin.visibility, pin.docstring, 'new')
           end
         end
@@ -568,7 +566,6 @@ module Solargraph
         parts = path.split('::')
         np = @namespace_pins[parts[0..-2].join('::')]
         unless np.nil?
-          # result.concat np.select{|p| p.name == parts.last}.map{|p| pin_to_suggestion(p)}
           result.concat np.select{|p| p.name == parts.last}
         end
         result.concat yard_map.objects(path)
@@ -750,7 +747,6 @@ module Solargraph
       mn = @method_pins[fqns]
       unless mn.nil?
         mn.select{ |pin| pin.scope == :class }.each do |pin|
-          #meths.push pin_to_suggestion(pin) if visibility.include?(pin.visibility)
           meths.push pin if visibility.include?(pin.visibility)
         end
       end
@@ -782,14 +778,12 @@ module Solargraph
       an = @attr_pins[fqns]
       unless an.nil?
         an.each do |pin|
-          # meths.push pin_to_suggestion(pin)
           meths.push pin
         end
       end
       mn = @method_pins[fqns]
       unless mn.nil?
         mn.select{|pin| visibility.include?(pin.visibility) and pin.scope == :instance }.each do |pin|
-          # meths.push pin_to_suggestion(pin)
           meths.push pin
         end
       end
@@ -916,24 +910,6 @@ module Solargraph
       result
     end
 
-    # @param pin [Solargraph::Pin::Base]
-    # @return [Solargraph::Suggestion]
-    def pin_to_suggestion pin
-      return_type = nil
-      return_type = find_fully_qualified_namespace(pin.return_type, pin.namespace) unless pin.return_type.nil?
-      if return_type.nil? and pin.is_a?(Solargraph::Pin::Method)
-        sc = @superclasses[pin.namespace]
-        while return_type.nil? and !sc.nil?
-          sc_path = "#{sc}#{pin.scope == :instance ? '#' : '.'}#{pin.name}"
-          sugg = get_path_suggestions(sc_path).first
-          break if sugg.nil?
-          return_type = find_fully_qualified_namespace(sugg.return_type, sugg.namespace) unless sugg.return_type.nil?
-          sc = @superclasses[sc]
-        end
-      end
-      @pin_suggestions[pin] ||= Suggestion.pull(pin, return_type)
-    end
-
     def enhance pin
       return_type = nil
       return_type = find_fully_qualified_namespace(pin.return_type, pin.namespace) unless pin.return_type.nil?
@@ -968,14 +944,12 @@ module Solargraph
           nil_pins.push pin
         else
           unless val_names.include?(pin.name)
-            # result.push pin_to_suggestion(pin)
             result.push pin
             val_names.push pin.name
           end
         end
       end
       nil_pins.reject{|p| val_names.include?(p.name)}.each do |pin|
-        # result.push pin_to_suggestion(pin)
         result.push pin
       end
       result
