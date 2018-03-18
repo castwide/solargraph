@@ -16,7 +16,7 @@ module Solargraph
       end
 
       def kind
-        Solargraph::LanguageServer::CompletionItemKind::PROPERTY
+        Solargraph::LanguageServer::CompletionItemKinds::PROPERTY
       end
     end
   end
