@@ -8,24 +8,15 @@ module Solargraph::LanguageServer::Message::TextDocument
       offset = code_map.get_offset(params['position']['line'], params['position']['character'])
       suggestions = code_map.define_symbol_at(offset)
       contents = suggestions.map do |sugg|
-        info = link_documentation(sugg.path)
-        info.concat "\n\n#{ReverseMarkdown.convert(sugg.documentation)}" unless sugg.documentation.nil? or sugg.documentation.empty?
-        info
+        sugg.hover(host.api_map)
       end
-      host.resolvable = suggestions
+      # host.resolvable = suggestions
       set_result(
         contents: {
           kind: 'markdown',
           value: contents.join("\n\n")
         }
       )
-    end
-
-    private
-    
-    def link_documentation path
-      uri = "solargraph:/document?query=" + URI.encode(path)
-      "[#{path}](#{uri})"
     end
   end
 end

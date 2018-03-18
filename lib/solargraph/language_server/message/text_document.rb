@@ -12,6 +12,7 @@ module Solargraph
         autoload :SignatureHelp, 'solargraph/language_server/message/text_document/signature_help'
         autoload :DiagnosticsQueue, 'solargraph/language_server/message/text_document/diagnostics_queue'
         autoload :OnTypeFormatting, 'solargraph/language_server/message/text_document/on_type_formatting'
+        autoload :Definition, 'solargraph/language_server/message/text_document/definition'
       end
     end
   end

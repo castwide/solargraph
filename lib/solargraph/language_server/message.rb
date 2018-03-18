@@ -52,6 +52,7 @@ module Solargraph
       register 'textDocument/didSave', TextDocument::DidSave
       register 'textDocument/didClose', TextDocument::DidClose
       register 'textDocument/hover', TextDocument::Hover
+      register 'textDocument/definition', TextDocument::Definition
       register 'textDocument/onTypeFormatting', TextDocument::OnTypeFormatting
       register '$/cancelRequest', CancelRequest
       register '$/solargraph/document', Extended::Document

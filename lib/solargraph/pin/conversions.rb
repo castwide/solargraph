@@ -28,6 +28,21 @@ module Solargraph
         completion_item.merge(extra)
       end
 
+      # @param api_map [Solargraph::ApiMap]
+      def hover(api_map)
+        info = ''
+        if self.kind_of?(Solargraph::Pin::BaseVariable)
+          rt = return_type
+          rt = api_map.infer_assignment_node_type(node, namespace) if rt.nil?
+          info.concat link_documentation(rt) unless rt.nil?
+        else
+          info.concat link_documentation(path) unless path.nil?
+          info.concat "\n\n#{ReverseMarkdown.convert(documentation)}" unless documentation.nil? or documentation.empty?
+          info
+        end
+        info
+      end
+
       # @return [Hash]
       def signature_help
         {
@@ -46,6 +61,11 @@ module Solargraph
         return nil if detail.empty?
         detail
       end
+
+      def link_documentation path
+        uri = "solargraph:/document?query=" + URI.encode(path)
+        "[#{path}](#{uri})"
+      end  
     end
   end
 end
