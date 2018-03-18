@@ -17,6 +17,10 @@ module Solargraph
             URI.decode(uri.gsub(/^file\:\/\//, '').gsub(/^\/([a-z]:)/i, '\1'))
           end
 
+          def file_to_uri file
+            "file://#{URI.encode(file.gsub(/^([a-z]:)/i, '/\1'))}"
+          end
+
           def post_initialize
             @filename = uri_to_file(params['textDocument']['uri'])
           end

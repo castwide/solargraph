@@ -14,9 +14,8 @@ module Solargraph::LanguageServer::Message::TextDocument
           char = parts.pop.to_i
           line = parts.pop.to_i
           filename = parts.join(':')
-          # @todo The RIGHT way to handle file URIs
           {
-            uri: "file:///#{filename}",
+            uri: file_to_uri(filename),
             range: {
               start: {
                 line: line,
