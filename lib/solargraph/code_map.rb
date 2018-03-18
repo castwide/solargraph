@@ -92,10 +92,7 @@ module Solargraph
     # @param index [Integer]
     # @return [Array<AST::Node>]
     def tree_at(index)
-      arr = []
-      arr.push @node
-      inner_node_at(index, @node, arr)
-      arr
+      @source.tree_at(index)
     end
 
     # Get the nearest node that contains the specified index.
@@ -103,15 +100,14 @@ module Solargraph
     # @param index [Integer]
     # @return [AST::Node]
     def node_at(index)
-      tree_at(index).first
+      @source.node_at(index)
     end
 
     # Determine if the specified index is inside a string.
     #
     # @return [Boolean]
     def string_at?(index)
-      n = node_at(index)
-      n.kind_of?(AST::Node) and (n.type == :str or n.type == :dstr)
+      @source.string_at?(index)
     end
 
     # Determine if the specified index is inside a comment.
@@ -336,7 +332,6 @@ module Solargraph
       else
         result.concat api_map.get_instance_methods(type) unless (type == '' and signature.include?('.'))
       end
-      # result.keep_if{|s| s.kind != Solargraph::Suggestion::METHOD or s.label.match(/^[a-z0-9_]*(\!|\?|=)?$/i)}
       result.keep_if{|s| s.kind != Solargraph::LanguageServer::CompletionItemKinds::METHOD or s.name.match(/^[a-z0-9_]*(\!|\?|=)?$/i)}
       result = reduce_starting_with(result, word_at(index)) if filtered
       # Use a stable sort to keep the class order (e.g., local methods before superclass methods)
@@ -821,29 +816,9 @@ module Solargraph
         end
       end
       nil_pins.reject{|p| val_names.include?(p.name)}.each do |pin|
-        # arr.push Suggestion.pull(pin)
         arr.push pin
       end
       arr
-    end
-
-    def inner_node_at(index, node, arr)
-      node.children.each do |c|
-        if c.kind_of?(AST::Node) and c.respond_to?(:loc)
-          unless c.loc.expression.nil?
-            if index >= c.loc.expression.begin_pos
-              if c.respond_to?(:end)
-                if index < c.end.end_pos
-                  arr.unshift c
-                end
-              elsif index < c.loc.expression.end_pos
-                arr.unshift c
-              end
-            end
-          end
-          inner_node_at(index, c, arr)
-        end
-      end
     end
 
     def find_local_variable_node name, scope
