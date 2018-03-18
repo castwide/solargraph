@@ -317,6 +317,7 @@ module Solargraph
     end
 
     def associate_comments node, comments
+      return nil if comments.nil?
       comment_hash = Parser::Source::Comment.associate_locations(node, comments)
       yard_hash = {}
       comment_hash.each_pair { |k, v|
@@ -525,15 +526,6 @@ module Solargraph
         Source.new(code, node, comments, filename)
       end
 
-      def parse code, filename = nil
-        parser = Parser::CurrentRuby.new(FlawedBuilder.new)
-        parser.diagnostics.all_errors_are_fatal = true
-        parser.diagnostics.ignore_warnings      = true
-        buffer = Parser::Source::Buffer.new(filename, 1)
-        buffer.source = code
-        parser.parse_with_comments(buffer)
-    end
-
       def get_position_at(code, offset)
         cursor = 0
         line = 0
@@ -563,6 +555,15 @@ module Solargraph
         raise "Invalid offset" if col.nil?
         [line, col]
       end
+
+      def parse code, filename = nil
+        parser = Parser::CurrentRuby.new(FlawedBuilder.new)
+        parser.diagnostics.all_errors_are_fatal = true
+        parser.diagnostics.ignore_warnings      = true
+        buffer = Parser::Source::Buffer.new(filename, 1)
+        buffer.source = code
+        parser.parse_with_comments(buffer)
+      end  
 
       def fix code, filename = nil, offset = nil
         tries = 0
@@ -594,9 +595,9 @@ module Solargraph
             end
             retry
           end
-          STDERR.puts "Unable to parse code: #{e.message}"
-          virt = Source.virtual('', filename)
-          Source.new(code, virt.node, virt.comments, filename)
+          STDERR.puts "Unable to parse file #{filename.nil? ? 'undefined' : filename}: #{e.message}"
+          node, comments = parse(code.gsub(/[^\s]/, ' '), filename)
+          Source.new(code, node, comments, filename)
         end
       end
 
