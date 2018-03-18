@@ -58,6 +58,26 @@ module Solargraph
         # @todo Is this right?
         code_object.namespace.to_s
       end
+
+      def parameters
+        @parameters ||= get_method_args
+      end
+
+      private
+
+      def get_method_args
+        return [] unless code_object.kind_of?(YARD::CodeObjects::MethodObject)
+        args = []
+        code_object.parameters.each { |a|
+          p = a[0]
+          unless a[1].nil?
+            p += ' =' unless p.end_with?(':')
+            p += " #{a[1]}"
+          end
+          args.push p
+        }
+        args
+      end  
     end
   end
 end

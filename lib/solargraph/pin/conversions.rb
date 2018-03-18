@@ -39,6 +39,7 @@ module Solargraph
       private
 
       def completion_item_detail
+        STDERR.puts "Parameters for #{name}: #{parameters.join(', ')}"
         detail = ''
         detail += "(#{parameters.join(', ')}) " unless parameters.empty?
         detail += "=> #{return_type}" unless return_type.nil?

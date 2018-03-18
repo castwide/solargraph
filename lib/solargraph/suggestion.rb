@@ -17,7 +17,28 @@ module Solargraph
     attr_reader :label
 
     # @return [String]
-    attr_reader :kind
+    def kind
+      case @kind
+      when Solargraph::LanguageServer::CompletionItemKinds::CLASS
+        'Class'
+      when Solargraph::LanguageServer::CompletionItemKinds::CONSTANT
+        'Constant'
+      when Solargraph::LanguageServer::CompletionItemKinds::FIELD
+        'Field'
+      when Solargraph::LanguageServer::CompletionItemKinds::KEYWORD
+        'Keyword'
+      when Solargraph::LanguageServer::CompletionItemKinds::METHOD
+        'Method'
+      when Solargraph::LanguageServer::CompletionItemKinds::MODULE
+        'Module'
+      when Solargraph::LanguageServer::CompletionItemKinds::PROPERTY
+        'Property'
+      when Solargraph::LanguageServer::CompletionItemKinds::VARIABLE
+        'Variable'
+      else
+        nil
+      end
+    end
 
     # @return [String]
     attr_reader :insert
@@ -128,7 +149,7 @@ module Solargraph
     def as_json args = {}
       result = {
         label: @label,
-        kind: @kind,
+        kind: kind,
         insert: @insert,
         detail: @detail,
         path: path,
