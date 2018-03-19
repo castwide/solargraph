@@ -581,7 +581,6 @@ module Solargraph
     # @param query [String] The text to match
     # @return [Array<String>]
     def search query
-      STDERR.puts "Searching for #{query}"
       refresh
       rake_yard(@sources) if @yard_stale
       @yard_stale = false

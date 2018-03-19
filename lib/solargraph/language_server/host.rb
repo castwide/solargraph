@@ -140,9 +140,11 @@ module Solargraph
 
       # @param directory [String]
       def prepare directory
-        @workspace = Workspace.new(normalize_separators(directory))
-        api_map.refresh
-        @workspace
+        path = normalize_separators(directory)
+        if File.file?(File.join(path, '.solargraph.yml')) or File.file?(File.join(path, '.solargraph.yml'))
+          @workspace = Workspace.new(path)
+          api_map.refresh
+        end
       end
 
       def send_notification method, params

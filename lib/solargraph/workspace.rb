@@ -1,3 +1,5 @@
+require 'thread'
+
 module Solargraph
   class Workspace
     autoload :Config, 'solargraph/workspace/config'
@@ -7,6 +9,7 @@ module Solargraph
 
     def initialize directory
       @directory = directory
+      @load_semaphore = Mutex.new
       load_sources unless directory.nil?
     end
 
@@ -55,9 +58,25 @@ module Solargraph
     end
 
     def load_sources
+      source_hash.clear
       config.calculated.each do |filename|
-        # STDERR.puts "Loading #{filename}"
-        source_hash[filename] = Solargraph::Source.load(filename)
+        source_hash[filename] = :loading
+      end
+      return if source_hash.empty?
+      finished = false
+      config.calculated.each do |filename|
+        Thread.new do
+          source = Solargraph::Source.load(filename)
+          @load_semaphore.synchronize do
+            source_hash[filename] = source
+          end
+        end
+      end
+      until finished
+        @load_semaphore.synchronize do
+          finished = true unless source_hash.values.any?{|s| s == :loading}
+        end
+        sleep 0.01
       end
     end
   end
