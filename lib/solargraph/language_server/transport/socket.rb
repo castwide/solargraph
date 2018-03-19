@@ -15,15 +15,9 @@ module Solargraph
       
         def process request
           Thread.new do
-            begin
-              message = @host.start(request)
-              message.send
-              send_data @host.flush
-            rescue Exception => e
-              # @todo Send error message
-              STDERR.puts "#{e}"
-              STDERR.puts "#{e.backtrace}"
-            end
+            message = @host.start(request)
+            message.send
+            send_data @host.flush
           end
         end
       

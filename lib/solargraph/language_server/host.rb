@@ -55,7 +55,11 @@ module Solargraph
 
       def start request
         message = Message.select(request['method']).new(self, request)
-        message.process
+        begin
+          message.process
+        rescue Exception => e
+          message.set_error Solargraph::LanguageServer::ErrorCodes::INTERNAL_ERROR, e.message
+        end
         message
       end
 
