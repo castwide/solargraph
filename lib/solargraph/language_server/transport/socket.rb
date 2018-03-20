@@ -17,7 +17,8 @@ module Solargraph
           Thread.new do
             message = @host.start(request)
             message.send
-            send_data @host.flush
+            tmp = @host.flush
+            send_data tmp unless tmp.empty?
           end
         end
       

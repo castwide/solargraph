@@ -6,7 +6,7 @@ module Solargraph
     # The base language server data provider.
     #
     class Host
-      attr_accessor :resolvable
+      attr_writer :resolvable
 
       attr_reader :workspace
 
@@ -24,6 +24,10 @@ module Solargraph
 
       def workspace
         @workspace ||= Solargraph::Workspace.new(nil)
+      end
+
+      def resolvable
+        @resolvable ||= {}
       end
 
       def api_map
@@ -58,6 +62,8 @@ module Solargraph
         begin
           message.process
         rescue Exception => e
+          STDERR.puts e.message
+          STDERR.puts e.backtrace
           message.set_error Solargraph::LanguageServer::ErrorCodes::INTERNAL_ERROR, e.message
         end
         message
@@ -204,7 +210,7 @@ module Solargraph
                 end
               end
             end
-            sleep 0.1
+            sleep 1
           end
         end
       end
