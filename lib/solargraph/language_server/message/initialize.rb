@@ -21,6 +21,12 @@ module Solargraph
               documentOnTypeFormattingProvider: {
                 firstTriggerCharacter: '{',
                 moreTriggerCharacter: ['(']
+              },
+              workspace: {
+                workspaceFolders: {
+                  supported: true,
+                  changeNotifications: true
+                }
               }
             }
           )

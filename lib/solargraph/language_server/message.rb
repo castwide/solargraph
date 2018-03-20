@@ -16,6 +16,7 @@ module Solargraph
       autoload :Extended,             'solargraph/language_server/message/extended'
       autoload :Shutdown,             'solargraph/language_server/message/shutdown'
       autoload :ExitNotification,     'solargraph/language_server/message/exit_notification'
+      autoload :Workspace,            'solargraph/language_server/message/workspace'
 
       class << self
         def register path, message_class
@@ -42,23 +43,24 @@ module Solargraph
         end
       end
 
-      register 'initialize',                    Initialize
-      register 'initialized',                   Initialized
-      register 'textDocument/completion',       TextDocument::Completion
-      register 'completionItem/resolve',        CompletionItem::Resolve
-      register 'textDocument/signatureHelp',    TextDocument::SignatureHelp
-      register 'textDocument/didOpen',          TextDocument::DidOpen
-      register 'textDocument/didChange',        TextDocument::DidChange
-      register 'textDocument/didSave',          TextDocument::DidSave
-      register 'textDocument/didClose',         TextDocument::DidClose
-      register 'textDocument/hover',            TextDocument::Hover
-      register 'textDocument/definition',       TextDocument::Definition
-      register 'textDocument/onTypeFormatting', TextDocument::OnTypeFormatting
-      register '$/cancelRequest',               CancelRequest
-      register '$/solargraph/document',         Extended::Document
-      register '$/solargraph/search',           Extended::Search
-      register 'shutdown',                      Shutdown
-      register 'exit',                          ExitNotification
+      register 'initialize',                      Initialize
+      register 'initialized',                     Initialized
+      register 'textDocument/completion',         TextDocument::Completion
+      register 'completionItem/resolve',          CompletionItem::Resolve
+      register 'textDocument/signatureHelp',      TextDocument::SignatureHelp
+      register 'textDocument/didOpen',            TextDocument::DidOpen
+      register 'textDocument/didChange',          TextDocument::DidChange
+      register 'textDocument/didSave',            TextDocument::DidSave
+      register 'textDocument/didClose',           TextDocument::DidClose
+      register 'textDocument/hover',              TextDocument::Hover
+      register 'textDocument/definition',         TextDocument::Definition
+      register 'textDocument/onTypeFormatting',   TextDocument::OnTypeFormatting
+      register 'workspace/didChangeWatchedFiles', Workspace::DidChangeWatchedFiles
+      register '$/cancelRequest',                 CancelRequest
+      register '$/solargraph/document',           Extended::Document
+      register '$/solargraph/search',             Extended::Search
+      register 'shutdown',                        Shutdown
+      register 'exit',                            ExitNotification
     end
   end
 end
