@@ -388,13 +388,12 @@ module Solargraph
       class << self
         # @return [Solargraph::ApiMap::Source]
         def load filename
-          code = File.read(filename).gsub(/\r/, '')
-          Source.virtual(code, filename)
+          Source.virtual(File.read(filename), filename)
         end
 
         # @return [Solargraph::ApiMap::Source]
         def virtual code, filename = nil
-          node, comments = Source.fix(code, filename)
+          node, comments = Source.parse(code, filename)
           Source.new(code, node, comments, filename)
         end
 
