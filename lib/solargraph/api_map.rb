@@ -43,9 +43,9 @@ module Solargraph
     # if it exists.
     #
     # @return [Solargraph::Workspace::Config]
-    def config
-      @config ||= workspace.config
-    end
+    # def config
+    #   @config ||= workspace.config
+    # end
 
     # An array of required paths in the workspace.
     #
@@ -115,7 +115,8 @@ module Solargraph
     #
     # @return [Boolean]
     def changed?
-      current = config.calculated
+      # @todo This needs to be refactored
+      current = workspace.config.calculated
       unless (Set.new(current) ^ workspace.filenames).empty?
         return true
       end
@@ -497,7 +498,7 @@ module Solargraph
         end
       end
       if namespace == '' and root == ''
-        config.domains.each do |d|
+        workspace.config.domains.each do |d|
           meths.concat get_instance_methods(d)
         end
       end
@@ -534,7 +535,7 @@ module Solargraph
         end
       end
       if namespace == '' and root == ''
-        config.domains.each do |d|
+        workspace.config.domains.each do |d|
           meths.concat get_instance_methods(d)
         end
       end
@@ -638,7 +639,7 @@ module Solargraph
       @namespace_pins = {}
       @namespace_path_pins = {}
       namespace_map.clear
-      @required = config.required.clone
+      @required = workspace.config.required.clone
       @pin_suggestions = {}
       @sources.each do |s|
         s.namespace_nodes.each_pair do |k, v|

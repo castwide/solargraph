@@ -107,7 +107,7 @@ module Solargraph
     # @return [Array<Solargraph::Plugin::Base>]
     def load_runners
       result = []
-      api_map.config.plugins.each do |name|
+      api_map.workspace.config.plugins.each do |name|
         r = @@plugin_registry[name].new(api_map)
         result.push r
       end
