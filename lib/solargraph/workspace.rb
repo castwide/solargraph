@@ -11,8 +11,30 @@ module Solargraph
     end
 
     # @return [Solargraph::Workspace::Config]
-    def config
-      @config ||= Solargraph::Workspace::Config.new(directory)
+    def config reload = false
+      @config = Solargraph::Workspace::Config.new(directory) if @config.nil? or reload
+      @config
+    end
+
+    # def reload
+    #   @config = Solargraph::Workspace::Config.new(directory)
+    #   load_sources unless directory.nil?
+    # end
+
+    def load filename
+      return unless config(true).calculated.include?(filename)
+      if has_file?(filename)
+        STDERR.puts "Handle error: appended file already exists in workspace"
+      else
+        STDERR.puts "Adding a file! #{filename}"
+        src = Solargraph::Source.load(filename)
+        source_hash[filename] = src
+      end
+    end
+
+    def remove filename
+      return if config(true).calculated.include?(filename)
+      source_hash.delete filename
     end
 
     # @return [Array<String>]
@@ -37,6 +59,8 @@ module Solargraph
       source_hash[filename]
     end
 
+    # @todo This might be inappropriate. Look into changing the source
+    # in place instead of replacing the value.
     # @param source [Solargraph::Source]
     def update source
       source_hash[source.filename] = source if source_hash.has_key?(filename)
@@ -55,9 +79,10 @@ module Solargraph
     end
 
     def load_sources
+      source_hash.clear
       config.calculated.each do |filename|
-        source = Solargraph::Source.load(filename)
-        source_hash[filename] = source
+        src = Solargraph::Source.load(filename)
+        source_hash[filename] = src
       end
     end
   end

@@ -4,6 +4,7 @@ module Solargraph
       module TextDocument
         class DidSave < Base
           def process
+            STDERR.puts "Saving document"
             host.open params['textDocument']
             publish_diagnostics
           end

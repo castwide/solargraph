@@ -621,7 +621,7 @@ module Solargraph
       @stale = false
       namespace_map.clear
       path_macros.clear
-      @required = config.required.clone
+      @required = workspace.config.required.clone
     end
 
     def process_maps

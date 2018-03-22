@@ -80,7 +80,7 @@ module Solargraph
               source = workspace.source(filename)
               @file_source[uri] = source
             else
-              # @todo Handle error
+              # @todo Handle error?
             end
           end
         # }

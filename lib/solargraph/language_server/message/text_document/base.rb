@@ -10,16 +10,9 @@ module Solargraph
       module TextDocument
         class Base < Solargraph::LanguageServer::Message::Base
           extend DiagnosticsQueue
+          include Solargraph::LanguageServer::UriHelpers
 
           attr_reader :filename
-
-          def uri_to_file uri
-            URI.decode(uri.gsub(/^file\:\/\//, '').gsub(/^\/([a-z]:)/i, '\1'))
-          end
-
-          def file_to_uri file
-            "file://#{URI.encode(file.gsub(/^([a-z]:)/i, '/\1'))}"
-          end
 
           def post_initialize
             @filename = uri_to_file(params['textDocument']['uri'])
