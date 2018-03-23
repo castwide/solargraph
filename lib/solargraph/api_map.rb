@@ -1,5 +1,4 @@
 require 'rubygems'
-# require 'parser/current'
 require 'thread'
 require 'set'
 require 'time'
@@ -141,9 +140,6 @@ module Solargraph
     # @param node [AST::Node]
     # @return [YARD::Docstring]
     def get_docstring_for node
-      # filename = get_filename_for(node)
-      # return nil if @sources[filename].nil?
-      # @sources[filename].docstring_for(node)
       source = get_source_for(node)
       return nil if source.nil?
       source.docstring_for(node)

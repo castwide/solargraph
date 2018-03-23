@@ -73,19 +73,17 @@ module Solargraph
 
       def read uri
         source = nil
-        # @change_semaphore.synchronize {
-          if @file_source.has_key?(uri)
-            source = @file_source[uri]
+        if @file_source.has_key?(uri)
+          source = @file_source[uri]
+        else
+          filename = uri_to_file(uri)
+          if workspace.has_file?(filename)
+            source = workspace.source(filename)
+            @file_source[uri] = source
           else
-            filename = uri_to_file(uri)
-            if workspace.has_file?(filename)
-              source = workspace.source(filename)
-              @file_source[uri] = source
-            else
-              # @todo Handle error?
-            end
+            # @todo Handle error?
           end
-        # }
+        end
         source
       end
 
@@ -93,18 +91,14 @@ module Solargraph
         @change_semaphore.synchronize do
           filename = uri_to_file(text_document['uri'])
           text = text_document['text'] || File.read(filename)
-          #@file_source[text_document['uri']] = Solargraph::Source.fix(text, uri_to_file(text_document['uri']))
-          #@file_source[text_document['uri']].version = text_document['version']
           if workspace.has_file?(filename)
             # @todo Synchronize text?
             @file_source[text_document['uri']] = workspace.source(filename)
             @file_source[text_document['uri']].synchronize([{'text' => text}], text_document['version'])
           else
-            #@file_source[text_document['uri']]
             @file_source[text_document['uri']] = Solargraph::Source.fix(text, uri_to_file(text_document['uri']))
             @file_source[text_document['uri']].version = text_document['version']
           end
-          #@change_queue.delete_if { |c| c['textDocument']['uri'] == text_document['uri'] and c['textDocument']['version'] < @file_source[text_document['uri']].version }
         end
       end
 
@@ -167,11 +161,7 @@ module Solargraph
       end
 
       def changing? file_uri
-        result = false
-        # @change_semaphore.synchronize {
-          result = @change_queue.any?{|change| change['textDocument']['uri'] == file_uri}
-        # }
-        result
+        @change_queue.any?{|change| change['textDocument']['uri'] == file_uri}
       end
 
       def stop
@@ -196,7 +186,6 @@ module Solargraph
         Thread.new do
           until stopped?
             @change_semaphore.synchronize do
-              #@change_queue.sort!{|a, b| a.version <=> b.version}
               @change_queue.delete_if do |change|
                 filename = uri_to_file(change['textDocument']['uri'])
                 source = read(change['textDocument']['uri'])
