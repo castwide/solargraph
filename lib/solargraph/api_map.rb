@@ -24,10 +24,8 @@ module Solargraph
       workspace = Solargraph::Workspace.new(workspace) if workspace.kind_of?(String)
       workspace = Solargraph::Workspace.new(nil) if workspace.nil?
       @workspace = workspace
-      clear
       require_extensions
       @virtual_source = nil
-      @stale = true
       @yard_stale = true
       @sources = @workspace.sources
       process_maps
@@ -632,13 +630,6 @@ module Solargraph
       @namespace_map ||= {}
     end
 
-    def clear
-      @stale = false
-      namespace_map.clear
-      path_macros.clear
-      @required = workspace.config.required.clone
-    end
-
     def process_maps
       cache.clear
       @ivar_pins = {}
@@ -666,7 +657,6 @@ module Solargraph
       end
       @required.uniq!
       live_map.refresh
-      @stale = false
       @yard_stale = true
       @stime = Time.now
     end
