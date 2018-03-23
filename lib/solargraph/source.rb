@@ -230,6 +230,10 @@ module Solargraph
       offset + col
     end
 
+    def overwrite text
+      reparse({'text' => text})
+    end
+
     private
 
     def inner_node_at(index, node, arr)

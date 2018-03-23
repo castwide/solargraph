@@ -10,20 +10,20 @@ module Solargraph::LanguageServer::Message::Workspace
 
     def process
       params['changes'].each do |change|
-        unless change['type'] == CHANGED
-          filename = uri_to_file(change['uri'])
-          if change['type'] == CREATED
-            host.workspace.handle_created filename
-            host.synchronize { host.api_map.refresh }
-          elsif change['type'] == CHANGED
-            # @todo Should this check if the source is already loaded in the source?
-            # Possibly out of sync with the disk?
-          elsif change['type'] == DELETED
-            host.workspace.handle_deleted filename
-            host.synchronize { host.api_map.refresh }
-          else
-            # @todo Handle error
-          end
+        filename = uri_to_file(change['uri'])
+        if change['type'] == CREATED
+          host.workspace.handle_created filename
+          host.api_map.refresh
+        elsif change['type'] == CHANGED
+          # @todo Should this check if the source is already loaded in the source?
+          # Possibly out of sync with the disk?
+          host.workspace.handle_changed filename
+          host.api_map.refresh
+        elsif change['type'] == DELETED
+          host.workspace.handle_deleted filename
+          host.api_map.refresh
+        else
+          # @todo Handle error
         end
       end
     end
