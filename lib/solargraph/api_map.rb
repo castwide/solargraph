@@ -616,6 +616,14 @@ module Solargraph
       docs
     end
 
+    def query_symbols query
+      result = []
+      @sources.each do |s|
+        result.concat s.query_symbols(query)
+      end
+      result
+    end
+
     private
 
     # @return [Hash]

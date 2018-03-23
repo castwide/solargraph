@@ -13,6 +13,7 @@ module Solargraph
         autoload :DiagnosticsQueue, 'solargraph/language_server/message/text_document/diagnostics_queue'
         autoload :OnTypeFormatting, 'solargraph/language_server/message/text_document/on_type_formatting'
         autoload :Definition, 'solargraph/language_server/message/text_document/definition'
+        autoload :DocumentSymbol, 'solargraph/language_server/message/text_document/document_symbol'
       end
     end
   end

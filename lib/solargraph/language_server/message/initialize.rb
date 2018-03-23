@@ -3,6 +3,7 @@ module Solargraph
     module Message
       class Initialize < Base
         def process
+          STDERR.puts params.inspect
           host.configure params['initializationOptions']
           host.prepare params['rootPath']
           set_result(
@@ -22,6 +23,8 @@ module Solargraph
                 firstTriggerCharacter: '{',
                 moreTriggerCharacter: ['(']
               },
+              documentSymbolProvider: true,
+              workspaceSymbolProvider: true,
               workspace: {
                 workspaceFolders: {
                   supported: true,

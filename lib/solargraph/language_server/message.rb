@@ -55,7 +55,9 @@ module Solargraph
       register 'textDocument/hover',              TextDocument::Hover
       register 'textDocument/definition',         TextDocument::Definition
       register 'textDocument/onTypeFormatting',   TextDocument::OnTypeFormatting
+      register 'textDocument/documentSymbol',     TextDocument::DocumentSymbol
       register 'workspace/didChangeWatchedFiles', Workspace::DidChangeWatchedFiles
+      register 'workspace/symbol',                Workspace::WorkspaceSymbol
       register '$/cancelRequest',                 CancelRequest
       register '$/solargraph/document',           Extended::Document
       register '$/solargraph/search',             Extended::Search

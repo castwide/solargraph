@@ -234,6 +234,20 @@ module Solargraph
       reparse({'text' => text})
     end
 
+    def query_symbols query
+      return [] if query.empty?
+      down = query.downcase
+      all_symbols.select{|p| p.path.downcase.include?(down)}
+    end
+    
+    def all_symbols
+      result = []
+      result.concat namespace_pins
+      result.concat method_pins
+      result.concat constant_pins
+      result
+    end
+
     private
 
     def inner_node_at(index, node, arr)
