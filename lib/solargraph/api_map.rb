@@ -68,7 +68,8 @@ module Solargraph
     #
     # @param [Solargraph::Source]
     def virtualize source
-      return if @virtual_source == source
+      # return if @virtual_source == source
+      # eliminate @virtual_source unless @virtual_source.nil?
       eliminate @virtual_source unless @virtual_source.nil?
       if workspace.has_source?(source)
         @sources = workspace.sources
@@ -76,8 +77,8 @@ module Solargraph
       else
         @virtual_source = source
         @sources = workspace.sources + [@virtual_source]
-        # process_virtual
-        process_maps
+        process_virtual
+        # process_maps
       end
     end
 

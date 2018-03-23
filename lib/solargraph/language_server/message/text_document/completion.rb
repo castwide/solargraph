@@ -44,6 +44,7 @@ module Solargraph
               )
             else
               source = host.read(params['textDocument']['uri'])
+              host.api_map.virtualize source
               code_map = Solargraph::CodeMap.from_source(source, host.api_map)
               offset = code_map.get_offset(params['position']['line'], params['position']['character'])
               range = code_map.symbol_range_at(offset)
