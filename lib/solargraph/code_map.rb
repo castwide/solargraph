@@ -165,6 +165,7 @@ module Solargraph
         cursor -= 1
       end
       start_offset = cursor
+      start_offset -= 1 if (start_offset > 1 and @code[start_offset - 1] == ':') and (start_offset == 1 or @code[start_offset - 2] != ':')
       cursor = index
       while cursor < @code.length
         char = @code[cursor, 1]
@@ -248,7 +249,7 @@ module Solargraph
       signature = get_signature_at(index)
       unless signature.include?('.')
         if signature.start_with?(':')
-          return api_map.get_symbols
+          return api_map.get_symbols.reject{|p| p.contain?(index - 1)}.uniq(&:name)
         elsif signature.start_with?('@@')
           return get_class_variables_at(index)
         elsif signature.start_with?('@')

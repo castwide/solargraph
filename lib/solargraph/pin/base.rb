@@ -18,6 +18,19 @@ module Solargraph
         @namespace = namespace
       end
 
+      def contain?(index)
+        if index >= node.loc.expression.begin_pos
+          if node.respond_to?(:end)
+            if index < node.end.end_pos
+              return true
+            end
+          elsif index < node.loc.expression.end_pos
+            return true
+          end
+        end
+        false
+      end
+
       # @return [YARD::Docstring]
       def docstring
         @docstring ||= source.docstring_for(node) unless source.nil?
