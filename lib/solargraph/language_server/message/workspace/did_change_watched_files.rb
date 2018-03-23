@@ -24,14 +24,14 @@ module Solargraph::LanguageServer::Message::Workspace
           if change['type'] == CREATED
             STDERR.puts "Creating #{filename}"
             host.workspace.handle_created filename
-            host.api_map.new_refresh
+            host.synchronize { host.api_map.refresh }
           elsif change['type'] == CHANGED
             # @todo Should this check if the source is already loaded in the source?
             # Possibly out of sync with the disk?
           elsif change['type'] == DELETED
             STDERR.puts "Deleting #{filename}"
             host.workspace.handle_deleted filename
-            host.api_map.new_refresh
+            host.synchronize { host.api_map.refresh }
           else
             # @todo Handle error
             STDERR.puts "Invalid change type #{change['type']}"

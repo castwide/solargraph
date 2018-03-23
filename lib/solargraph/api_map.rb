@@ -94,28 +94,20 @@ module Solargraph
     #
     # @param force [Boolean] Perform a refresh even if the map is not "stale."
     def refresh force = false
-      #return # @todo Temporarily disabled while testing new refresh mechanism
-      #process_maps if @stale or force
-      return if workspace.sources.empty?
-      if @stime.nil? or workspace.stime > @stime
-        process_maps
-      end
-    end
-
-    def new_refresh
       if workspace.stime < @stime and workspace.sources.length == current_workspace_sources.length
-        STDERR.puts "No need to refresh. Keep goin!"
         return
       end
-      cache.clear
-      namespace_map.clear
+      STDERR.puts "Refreshing the ApiMap"
       current_workspace_sources.reject{|s| workspace.sources.include?(s)}.each do |source|
         STDERR.puts "Removing #{source.filename}"
         eliminate source
       end
       @sources = workspace.sources
       @sources.push @virtual_source unless @virtual_source.nil?
+      cache.clear
+      namespace_map.clear
       @sources.each do |s|
+        STDERR.puts "Namespace mapping #{s.filename}"
         s.namespace_nodes.each_pair do |k, v|
           namespace_map[k] ||= []
           namespace_map[k].concat v
@@ -699,13 +691,13 @@ module Solargraph
       end
     end
 
-    def eliminate filename
+    def eliminate source
       [@ivar_pins.values, @cvar_pins.values, @const_pins.values, @method_pins.values, @attr_pins.values, @namespace_pins.values].each do |pinsets|
         pinsets.each do |pins|
-          pins.delete_if{|pin| pin.filename == filename}
+          pins.delete_if{|pin| pin.filename == source.filename}
         end
       end
-      @symbol_pins.delete_if{|pin| pin.filename == filename}
+      @symbol_pins.delete_if{|pin| pin.filename == source.filename}
     end
 
     # @param [Solargraph::Source]
