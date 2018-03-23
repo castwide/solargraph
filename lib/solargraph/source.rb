@@ -260,6 +260,7 @@ module Solargraph
         start_offset = Source.get_offset(@code, change['range']['start']['line'], change['range']['start']['character'])
         end_offset = Source.get_offset(@code, change['range']['end']['line'], change['range']['end']['character'])
         rewrite = (start_offset == 0 ? '' : @code[0..start_offset-1].to_s) + change['text'].gsub(/\r\n/, "\n").force_encoding('utf-8') + @code[end_offset..-1].to_s
+        return if @code == rewrite
         again = true
         if change['text'].match(/^[^a-z0-9\s]*$/i)
           tmp = (start_offset == 0 ? '' : @code[0..start_offset-1].to_s) + change['text'].gsub(/\r\n/, "\n").gsub(/[^\s]/, ' ') + @code[end_offset..-1].to_s
@@ -282,7 +283,9 @@ module Solargraph
           end
         end
       else
-        @code = change['text'].gsub(/\r\n/, "\n")
+        tmp = change['text'].gsub(/\r\n/, "\n")
+        return if @code == tmp
+        @code = tmp
         begin
           node, comments = Source.parse(@code, filename)
           process_parsed node, comments
