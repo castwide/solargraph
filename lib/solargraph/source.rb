@@ -17,6 +17,9 @@ module Solargraph
     # @return [String]
     attr_reader :filename
 
+    # Get the file's modification time.
+    #
+    # @return [Time]
     attr_reader :mtime
 
     # @return [Array<Integer>]
@@ -28,6 +31,9 @@ module Solargraph
 
     attr_accessor :version
 
+    # Get the time of the last synchronization.
+    #
+    # @return [Time]
     attr_reader :stime
 
     include NodeMethods

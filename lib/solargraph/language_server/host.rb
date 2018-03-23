@@ -6,6 +6,8 @@ module Solargraph
     # The base language server data provider.
     #
     class Host
+      include Solargraph::LanguageServer::UriHelpers
+
       attr_writer :resolvable
 
       attr_reader :workspace
@@ -213,10 +215,6 @@ module Solargraph
             sleep 1
           end
         end
-      end
-
-      def uri_to_file uri
-        URI.decode(uri).gsub(/^file\:\/\//, '').gsub(/^\/([a-z]:)/i, '\1')
       end
 
       def normalize_separators path

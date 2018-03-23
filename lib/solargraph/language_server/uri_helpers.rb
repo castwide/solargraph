@@ -6,7 +6,7 @@ module Solargraph
       # @param uri [String]
       # @return [String]
       def uri_to_file uri
-        URI.decode(uri.gsub(/^file\:\/\//, '').gsub(/^\/([a-z]:)/i, '\1'))
+        URI.decode(uri).sub(/^file\:\/\//, '').sub(/^\/([a-z]\:)/i, '\1')
       end
 
       # Convert a file path to a URI.
@@ -14,7 +14,7 @@ module Solargraph
       # @param file [String]
       # @return [String]
       def file_to_uri file
-        "file://#{URI.encode(file.gsub(/^([a-z]:)/i, '/\1'))}"
+        "file://#{URI.encode(file.gsub(/^([a-z]\:)/i, '/\1'))}"
       end
     end
   end

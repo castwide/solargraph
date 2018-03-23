@@ -21,10 +21,13 @@ module Solargraph
     #   load_sources unless directory.nil?
     # end
 
-    def load filename
+    # Load a new file into the workspace. The file will not be loaded if the
+    # workspace is configured to exclude it.
+    #
+    def handle_created filename
       return unless config(true).calculated.include?(filename)
       if has_file?(filename)
-        STDERR.puts "Handle error: appended file already exists in workspace"
+        STDERR.puts "Handle error: loaded file already exists in workspace"
       else
         STDERR.puts "Adding a file! #{filename}"
         src = Solargraph::Source.load(filename)
@@ -32,8 +35,13 @@ module Solargraph
       end
     end
 
-    def remove filename
+    # Remove a file from the workspace. The file will not be removed if the
+    # file still exists and the workspace is configured to include it.
+    #
+    def handle_deleted filename
       return if config(true).calculated.include?(filename)
+      STDERR.puts "Deleting #{filename}"
+      # @todo This method PROBABLY doesn't care if the file is actually here
       source_hash.delete filename
     end
 

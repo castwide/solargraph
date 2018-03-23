@@ -38,15 +38,6 @@ module Solargraph
       self.new(Solargraph::Workspace.new(directory))
     end
 
-    # Get the configuration for the ApiMap's workspace. This method will
-    # initialize the settings from the workspace's root .solargraph.yml file
-    # if it exists.
-    #
-    # @return [Solargraph::Workspace::Config]
-    # def config
-    #   @config ||= workspace.config
-    # end
-
     # An array of required paths in the workspace.
     #
     # @return [Array<String>]
@@ -103,6 +94,7 @@ module Solargraph
     #
     # @param force [Boolean] Perform a refresh even if the map is not "stale."
     def refresh force = false
+      #return # @todo Temporarily disabled while testing new refresh mechanism
       #process_maps if @stale or force
       return if workspace.sources.empty?
       if @stime.nil? or workspace.stime > @stime
@@ -110,11 +102,41 @@ module Solargraph
       end
     end
 
+    def new_refresh
+      if workspace.stime < @stime and workspace.sources.length == current_workspace_sources.length
+        STDERR.puts "No need to refresh. Keep goin!"
+        return
+      end
+      cache.clear
+      namespace_map.clear
+      current_workspace_sources.reject{|s| workspace.sources.include?(s)}.each do |source|
+        STDERR.puts "Removing #{source.filename}"
+        eliminate source
+      end
+      @sources = workspace.sources
+      @sources.push @virtual_source unless @virtual_source.nil?
+      @sources.each do |s|
+        s.namespace_nodes.each_pair do |k, v|
+          namespace_map[k] ||= []
+          namespace_map[k].concat v
+        end
+      end
+      @sources.each do |source|
+        if source.stime > @stime
+          STDERR.puts "Updating #{source.filename}"
+          eliminate source
+          map_source source
+        end
+      end
+      @stime = Time.new
+    end
+
     # True if a workspace file has been created, modified, or deleted since
     # the last time the map was processed.
     #
     # @return [Boolean]
     def changed?
+      return true if current_workspace_sources.length != workspace.sources.length
       # @todo This needs to be refactored
       current = workspace.config.calculated
       unless (Set.new(current) ^ workspace.filenames).empty?
@@ -1021,6 +1043,10 @@ module Solargraph
         end
       end
       type
+    end
+
+    def current_workspace_sources
+      @sources - [@virtual_source]
     end
   end
 end
