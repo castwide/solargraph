@@ -94,7 +94,7 @@ module Solargraph
     #
     # @param force [Boolean] Perform a refresh even if the map is not "stale."
     def refresh force = false
-      if workspace.stime < @stime and workspace.sources.length == current_workspace_sources.length
+      if !@stime.nil? and !workspace.stime.nil? and workspace.stime < @stime and workspace.sources.length == current_workspace_sources.length
         return
       end
       STDERR.puts "Refreshing the ApiMap"
