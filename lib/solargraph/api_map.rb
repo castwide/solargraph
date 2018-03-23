@@ -95,9 +95,7 @@ module Solargraph
       if !@stime.nil? and !workspace.stime.nil? and workspace.stime < @stime and workspace.sources.length == current_workspace_sources.length
         return
       end
-      STDERR.puts "Refreshing the ApiMap"
       current_workspace_sources.reject{|s| workspace.sources.include?(s)}.each do |source|
-        STDERR.puts "Removing #{source.filename}"
         eliminate source
       end
       @sources = workspace.sources
@@ -105,7 +103,6 @@ module Solargraph
       cache.clear
       namespace_map.clear
       @sources.each do |s|
-        STDERR.puts "Namespace mapping #{s.filename}"
         s.namespace_nodes.each_pair do |k, v|
           namespace_map[k] ||= []
           namespace_map[k].concat v
@@ -113,7 +110,6 @@ module Solargraph
       end
       @sources.each do |source|
         if source.stime > @stime
-          STDERR.puts "Updating #{source.filename}"
           eliminate source
           map_source source
         end
