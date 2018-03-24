@@ -46,7 +46,7 @@ module Solargraph
     #
     # @return [Solargraph::YardMap]
     def yard_map
-      refresh
+      # refresh
       if @yard_map.nil? || @yard_map.required.to_set != required.to_set
         @yard_map = Solargraph::YardMap.new(required: required, workspace: workspace)
       end
@@ -159,7 +159,7 @@ module Solargraph
     #
     # @return [Array<String>]
     def namespaces
-      refresh
+      # refresh
       namespace_map.keys
     end
 
@@ -218,7 +218,7 @@ module Solargraph
     # @param root [String] The context to search
     # @return [String]
     def find_fully_qualified_namespace name, root = '', skip = []
-      refresh
+      # refresh
       return nil if skip.include?(root)
       skip.push root
       if name == ''
@@ -269,7 +269,7 @@ module Solargraph
     # @param scope [Symbol] :instance or :class
     # @return [Array<Solargraph::Pin::InstanceVariable>]
     def get_instance_variable_pins(namespace, scope = :instance)
-      refresh
+      # refresh
       (@ivar_pins[namespace] || []).select{ |pin| pin.scope == scope }
     end
 
@@ -280,7 +280,7 @@ module Solargraph
     # @param scope [Symbol] :instance or :class
     # @return [Array<Solargraph::Pin::Base>]
     def get_instance_variables(namespace, scope = :instance)
-      refresh
+      # refresh
       result = []
       ip = @ivar_pins[namespace]
       unless ip.nil?
@@ -291,13 +291,13 @@ module Solargraph
 
     # @return [Array<Solargraph::Pin::ClassVariable>]
     def get_class_variable_pins(namespace)
-      refresh
+      # refresh
       @cvar_pins[namespace] || []
     end
 
     # @return [Array<Solargraph::Pin::Base>]
     def get_class_variables(namespace)
-      refresh
+      # refresh
       result = []
       cp = @cvar_pins[namespace]
       unless cp.nil?
@@ -308,7 +308,7 @@ module Solargraph
 
     # @return [Array<Solargraph::Pin::Base>]
     def get_symbols
-      refresh
+      # refresh
       @symbol_pins
     end
 
@@ -330,7 +330,7 @@ module Solargraph
 
     # @return [String]
     def infer_instance_variable(var, namespace, scope)
-      refresh
+      # refresh
       pins = @ivar_pins[namespace]
       return nil if pins.nil?
       pin = pins.select{|p| p.name == var and p.scope == scope}.first
@@ -347,7 +347,7 @@ module Solargraph
 
     # @return [String]
     def infer_class_variable(var, namespace)
-      refresh
+      # refresh
       fqns = find_fully_qualified_namespace(namespace)
       pins = @cvar_pins[fqns]
       return nil if pins.nil?
@@ -475,7 +475,7 @@ module Solargraph
     #
     # @return [Array<Solargraph::Pin::Base>]
     def get_methods(namespace, root = '', visibility: [:public])
-      refresh
+      # refresh
       namespace = clean_namespace_string(namespace)
       fqns = find_fully_qualified_namespace(namespace, root)
       meths = []
@@ -520,7 +520,7 @@ module Solargraph
     #
     # @return [Array<Solargraph::Pin::Base>]
     def get_instance_methods(namespace, root = '', visibility: [:public])
-      refresh
+      # refresh
       namespace = clean_namespace_string(namespace)
       if namespace.end_with?('#class') or namespace.end_with?('#module')
         return get_methods(namespace.split('#').first, root, visibility: visibility)
@@ -557,7 +557,7 @@ module Solargraph
     # @param path [String] The path to find
     # @return [Array<Solargraph::Pin::Base>]
     def get_path_suggestions path
-      refresh
+      # refresh
       result = []
       if path.include?('#')
         # It's an instance method
@@ -587,7 +587,7 @@ module Solargraph
     # @param query [String] The text to match
     # @return [Array<String>]
     def search query
-      refresh
+      # refresh
       rake_yard(@sources) if @yard_stale
       @yard_stale = false
       found = []
@@ -607,7 +607,7 @@ module Solargraph
     # @param path [String] The path to find
     # @return [Array<YARD::CodeObject::Base>]
     def document path
-      refresh
+      # refresh
       rake_yard(@sources) if @yard_stale
       @yard_stale = false
       docs = []

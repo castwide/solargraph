@@ -1,3 +1,5 @@
+require 'yard'
+
 module Solargraph
   module Pin
     class Helper
