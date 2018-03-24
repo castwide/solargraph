@@ -4,6 +4,7 @@ require 'time'
 module Solargraph
   class Source
     autoload :FlawedBuilder, 'solargraph/source/flawed_builder'
+    autoload :Fragment,      'solargraph/source/fragment'
 
     # @return [String]
     attr_reader :code
