@@ -14,6 +14,14 @@ module Solargraph
         signature_data[0]
       end
 
+      def node
+        @source.node_at(@offset)
+      end
+
+      def namespace
+        @source.namespace_for(node)
+      end
+
       def signature
         signature_data[1]
       end

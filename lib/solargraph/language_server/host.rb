@@ -180,6 +180,14 @@ module Solargraph
         end
       end
 
+      def infer_type_at filename, line, column
+        source = read(file_to_uri(filename))
+        raise "Source not found for #{filename}" if source.nil?
+        api_map.virtualize source
+        fragment = Solargraph::Source::Fragment.new(source, source.get_offset(line, column))
+        api_map.infer_fragment_type(fragment)    
+      end
+
       private
 
       def start_change_thread

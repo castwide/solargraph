@@ -391,6 +391,10 @@ module Solargraph
       type
     end
 
+    def infer_fragment_type fragment
+      infer_signature_type fragment.signature, fragment.namespace, call_node: fragment.node
+    end
+
     # Get the return type for a signature within the specified namespace and
     # scope.
     #
