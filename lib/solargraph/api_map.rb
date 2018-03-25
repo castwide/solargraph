@@ -391,6 +391,20 @@ module Solargraph
       type
     end
 
+    def get_typed_methods type, context = ''
+      namespace_parts = clean_namespace_string(type).split('#')
+      context_parts = clean_namespace_string(context).split('#')
+      scope = (namespace_parts[1] ? :class : :instance)
+      fqns = find_fully_qualified_namespace(namespace_parts[0], context_parts[0])
+      visibility = [:public]
+      visibility.push :private, :protected if fqns == context_parts[0]
+      get_methods_refactored fqns, scope: scope, visibility: visibility
+    end
+
+    def get_methods_refactored fqns, scope: :instance, visibility: [:public], deep: true
+      inner_get_methods_refactored fqns, scope, visibility, deep, []
+    end
+
     def infer_fragment_type fragment
       infer_signature_type fragment.signature, fragment.namespace, call_node: fragment.node
     end
@@ -746,6 +760,67 @@ module Solargraph
     # @return [Solargraph::ApiMap::Cache]
     def cache
       @cache ||= Cache.new
+    end
+
+    def inner_get_methods_refactored fqns, scope, visibility, deep, skip
+      return [] if skip.include?(fqns)
+      skip.push fqns
+      result = []
+      pins = @method_pins[fqns]
+      unless pins.nil?
+        result.concat pins.select{|pin| (pin.scope == scope or fqns == '') and visibility.include?(pin.visibility)}
+      end
+      if deep
+        sc = @superclasses[fqns]
+        unless sc.nil?
+          sc_visi = [:public]
+          sc_visi.push :protected if visibility.include?(:protected)
+          sc_fqns = find_fully_qualified_namespace(sc, fqns)
+          result.concat inner_get_methods_refactored(sc_fqns, scope, sc_visibility, true, skip)
+        end
+        if scope == :instance
+          im = @namespace_includes[fqns]
+          unless im.nil?
+            im.each do |i|
+              ifqns = find_fully_qualified_namespace(i, fqns)
+              result.concat inner_get_methods_refactored(ifqns, scope, visibility, deep, skip)
+            end
+          end
+          result.concat yard_map.get_instance_methods(fqns, '', visibility: visibility)
+          result.concat inner_get_methods_refactored('Object', :instance, [:public], deep, skip) unless fqns == 'Object'
+        else
+          em = @namespace_extends[fqns]
+          unless em.nil?
+            em.each do |e|
+              efqns = find_fully_qualified_namespace(e, fqns)
+              result.concat inner_get_methods_refactored(efqns, scope, visibility, deep, skip)
+            end
+          end
+          type = get_namespace_type(fqns)
+          if type == :class
+            result.concat inner_get_methods_refactored('Class', :class, [:public], deep, skip)
+          else
+            result.concat inner_get_methods_refactored('Module', :class, [:public], deep, skip)
+          end
+        end
+        # result.concat inner_get_methods_refactored('', :instance, [:public], deep, skip)
+        # result.concat inner_get_methods_refactored('Object', :instance, [:public], deep, skip)
+      end
+      result
+    end
+
+    def inner_yard_methods fqns, visibility
+      yard_meths = yard_map.get_instance_methods(fqns, '', visibility: visibility)
+      if yard_meths.any?
+        meths.concat yard_meths
+      else
+        type = get_namespace_type(fqns)
+        if type == :class
+          meths += yard_map.get_instance_methods('Object')
+        elsif type == :module
+          meths += yard_map.get_instance_methods('Module')
+        end
+      end
     end
 
     def inner_get_methods(namespace, root = '', skip = [], visibility = [:public])

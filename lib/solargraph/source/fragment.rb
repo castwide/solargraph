@@ -5,7 +5,6 @@ module Solargraph
         # @todo Split this object from the source. The source can change; if
         #   it does, this object's data should not.
         @source = source
-        @node = source.node
         @code = source.code
         @offset = offset
       end
@@ -15,15 +14,15 @@ module Solargraph
       end
 
       def node
-        @source.node_at(@offset)
+        @node ||= @source.node_at(@offset)
       end
 
       def namespace
-        @source.namespace_for(node)
+        @namespace ||= @source.namespace_for(node)
       end
 
       def signature
-        signature_data[1]
+        @signature ||= signature_data[1]
       end
 
       def phrase

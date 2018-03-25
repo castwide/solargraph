@@ -50,6 +50,14 @@ module Solargraph
       source_hash.delete filename
     end
 
+    # Merge the source
+    #
+    # @param source [Solargraph::Source]
+    def merge source
+      return unless config(true).calculated.include?(source.filename)
+      source_hash[source.filename] = source
+    end
+
     # @return [Array<String>]
     def filenames
       source_hash.keys
