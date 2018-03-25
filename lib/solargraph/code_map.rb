@@ -283,7 +283,7 @@ module Solargraph
               result.concat api_map.get_constants('', namespace)
               result.concat api_map.get_constants('')
               result.concat api_map.get_instance_methods('Kernel', namespace)
-              result.concat api_map.get_methods('', namespace)
+              result.concat api_map.get_methods('', scope: :class)
               result.concat api_map.get_instance_methods('', namespace)
             else
               result.concat api_map.get_instance_methods(type) unless @code[index - 1] != '.'
@@ -291,7 +291,8 @@ module Solargraph
           end
         end
       else
-        result.concat api_map.get_instance_methods(type) unless (type == '' and signature.include?('.'))
+        # result.concat api_map.get_instance_methods(type) unless (type == '' and signature.include?('.'))
+        result.concat api_map.get_type_methods(type) unless (type == '' and signature.include?('.'))
       end
       result.keep_if{|s| s.kind != Solargraph::LanguageServer::CompletionItemKinds::METHOD or s.name.match(/^[a-z0-9_]*(\!|\?|=)?$/i)}
       result = reduce_starting_with(result, word_at(index)) if filtered
@@ -332,9 +333,11 @@ module Solargraph
       scope = (node.type == :def ? :instance : :class)
       final = []
       if scope == :instance
-        final.concat api_map.get_instance_methods('', namespace_from(node), visibility: [:public, :private, :protected]).select{|s| s.to_s == signature}
+        # final.concat api_map.get_instance_methods('', namespace_from(node), visibility: [:public, :private, :protected]).select{|s| s.to_s == signature}
+        final.concat api_map.get_instance_methods(namespace_from(node), visibility: [:public, :private, :protected]).select{|s| s.to_s == signature}
       else
-        final.concat api_map.get_methods('', namespace_from(node), visibility: [:public, :private, :protected]).select{|s| s.to_s == signature}
+        # final.concat api_map.get_methods('', namespace_from(node), visibility: [:public, :private, :protected]).select{|s| s.to_s == signature}
+        final.concat api_map.get_methods(namespace_from(node), scope: :class, visibility: [:public, :private, :protected]).select{|s| s.to_s == signature}
       end
       if final.empty? and !signature.include?('.')
         fqns = api_map.find_fully_qualified_namespace(signature, ns_here)
@@ -567,7 +570,7 @@ module Solargraph
       if local.type == :def
         result += api_map.get_instance_methods(scope, visibility: [:public, :private, :protected])
       else
-        result += api_map.get_methods(scope, scope, visibility: [:public, :private, :protected])
+        result += api_map.get_methods(scope, scope: :class, visibility: [:public, :private, :protected])
       end
       if local.type == :def or local.type == :defs
         result += get_method_arguments_from local
@@ -723,9 +726,9 @@ module Solargraph
         sig = infer_signature_from_node tmp, scope_node
       end
       if sig.nil?
-        meths = api_map.get_methods(fqns, fqns)
+        meths = api_map.get_type_methods(fqns, fqns)
       else
-        meths = api_map.get_instance_methods(sig, fqns)
+        meths = api_map.get_type_methods(sig, fqns)
       end
       meths += api_map.get_methods('')
       meth = meths.keep_if{ |s| s.to_s == block_node.children[0].children[1].to_s }.first
@@ -844,7 +847,8 @@ module Solargraph
       last = parts.pop
       type = infer_signature_from_node(parts.join('.'), node)
       return nil if type.nil?
-      "#{type.gsub(/<[a-z0-9:, ]*>/i, '')}##{last}"
+      namespace = api_map.send(:clean_namespace_string, type).split('#')
+      "#{namespace[0]}#{namespace[1] ? '.' : '#'}#{last}"
     end
 
     def get_subtypes type

@@ -391,18 +391,31 @@ module Solargraph
       type
     end
 
-    def get_typed_methods type, context = ''
+    def get_type_methods type, context = ''
       namespace_parts = clean_namespace_string(type).split('#')
       context_parts = clean_namespace_string(context).split('#')
       scope = (namespace_parts[1] ? :class : :instance)
       fqns = find_fully_qualified_namespace(namespace_parts[0], context_parts[0])
+      return [] if fqns.nil?
       visibility = [:public]
       visibility.push :private, :protected if fqns == context_parts[0]
-      get_methods_refactored fqns, scope: scope, visibility: visibility
+      get_methods fqns, scope: scope, visibility: visibility
     end
 
-    def get_methods_refactored fqns, scope: :instance, visibility: [:public], deep: true
-      inner_get_methods_refactored fqns, scope, visibility, deep, []
+    def get_methods fqns, scope: :instance, visibility: [:public], deep: true
+      result = []
+      if fqns == ''
+        result.concat inner_get_methods(fqns, :class, visibility, deep, [])
+        result.concat inner_get_methods(fqns, :instance, visibility, deep, [])
+      else
+        result.concat inner_get_methods(fqns, scope, visibility, deep, [])
+      end
+      result.map{|pin| enhance pin}
+    end
+
+    # @deprecated
+    def get_instance_methods fqns, ignored = '', visibility: [:public], deep: true
+      get_methods fqns, visibility: visibility
     end
 
     def infer_fragment_type fragment
@@ -492,83 +505,83 @@ module Solargraph
     # namespace.
     #
     # @return [Array<Solargraph::Pin::Base>]
-    def get_methods(namespace, root = '', visibility: [:public])
-      # refresh
-      namespace = clean_namespace_string(namespace)
-      fqns = find_fully_qualified_namespace(namespace, root)
-      meths = []
-      skip = []
-      meths.concat inner_get_methods(namespace, root, skip, visibility)
-      yard_meths = yard_map.get_methods(fqns, '', visibility: visibility)
-      if yard_meths.any?
-        meths.concat yard_meths
-      else
-        type = get_namespace_type(fqns)
-        if type == :class
-          meths.concat yard_map.get_instance_methods('Class')
-        else
-          meths.concat yard_map.get_instance_methods('Object') if fqns == ''
-        end
-      end
-      news = meths.select{|s| s.name == 'new'}
-      unless news.empty?
-        if @method_pins[fqns]
-          inits = @method_pins[fqns].select{|p| p.name == 'initialize'}
-          meths -= news unless inits.empty?
-          inits.each do |pin|
-            meths.push Pin::Directed::Method.new(pin.source, pin.node, pin.namespace, pin.scope, pin.visibility, pin.docstring, 'new')
-          end
-        end
-      end
-      if namespace == '' and root == ''
-        workspace.config.domains.each do |d|
-          meths.concat get_instance_methods(d)
-        end
-      end
-      strings = meths.map(&:to_s)
-      live_map.get_methods(fqns, '', 'class', visibility.include?(:private)).each do |ls|
-        next if strings.include?(ls.to_s)
-        meths.push ls
-      end
-      meths
-    end
+    # def get_methods(namespace, root = '', visibility: [:public])
+    #   # refresh
+    #   namespace = clean_namespace_string(namespace)
+    #   fqns = find_fully_qualified_namespace(namespace, root)
+    #   meths = []
+    #   skip = []
+    #   meths.concat inner_get_methods(namespace, root, skip, visibility)
+    #   yard_meths = yard_map.get_methods(fqns, '', visibility: visibility)
+    #   if yard_meths.any?
+    #     meths.concat yard_meths
+    #   else
+    #     type = get_namespace_type(fqns)
+    #     if type == :class
+    #       meths.concat yard_map.get_instance_methods('Class')
+    #     else
+    #       meths.concat yard_map.get_instance_methods('Object') if fqns == ''
+    #     end
+    #   end
+    #   news = meths.select{|s| s.name == 'new'}
+    #   unless news.empty?
+    #     if @method_pins[fqns]
+    #       inits = @method_pins[fqns].select{|p| p.name == 'initialize'}
+    #       meths -= news unless inits.empty?
+    #       inits.each do |pin|
+    #         meths.push Pin::Directed::Method.new(pin.source, pin.node, pin.namespace, pin.scope, pin.visibility, pin.docstring, 'new')
+    #       end
+    #     end
+    #   end
+    #   if namespace == '' and root == ''
+    #     workspace.config.domains.each do |d|
+    #       meths.concat get_instance_methods(d)
+    #     end
+    #   end
+    #   strings = meths.map(&:to_s)
+    #   live_map.get_methods(fqns, '', 'class', visibility.include?(:private)).each do |ls|
+    #     next if strings.include?(ls.to_s)
+    #     meths.push ls
+    #   end
+    #   meths
+    # end
 
     # Get an array of instance methods that are available in the specified
     # namespace.
     #
     # @return [Array<Solargraph::Pin::Base>]
-    def get_instance_methods(namespace, root = '', visibility: [:public])
-      # refresh
-      namespace = clean_namespace_string(namespace)
-      if namespace.end_with?('#class') or namespace.end_with?('#module')
-        return get_methods(namespace.split('#').first, root, visibility: visibility)
-      end
-      meths = []
-      meths += inner_get_instance_methods(namespace, root, [], visibility).map{|p| enhance p} #unless has_yardoc?
-      fqns = find_fully_qualified_namespace(namespace, root)
-      yard_meths = yard_map.get_instance_methods(fqns, '', visibility: visibility)
-      if yard_meths.any?
-        meths.concat yard_meths
-      else
-        type = get_namespace_type(fqns)
-        if type == :class
-          meths += yard_map.get_instance_methods('Object')
-        elsif type == :module
-          meths += yard_map.get_instance_methods('Module')
-        end
-      end
-      if namespace == '' and root == ''
-        workspace.config.domains.each do |d|
-          meths.concat get_instance_methods(d)
-        end
-      end
-      strings = meths.map(&:to_s)
-      live_map.get_methods(fqns, '', 'class', visibility.include?(:private)).each do |ls|
-        next if strings.include?(ls.to_s)
-        meths.push ls
-      end
-      meths
-    end
+    # def get_instance_methods(namespace, root = '', visibility: [:public])
+    #   # refresh
+    #   namespace = clean_namespace_string(namespace)
+    #   if namespace.end_with?('#class') or namespace.end_with?('#module')
+    #     return get_methods(namespace.split('#').first, root, visibility: visibility)
+    #   end
+    #   meths = []
+    #   meths += inner_get_instance_methods(namespace, root, [], visibility).map{|p| enhance p} #unless has_yardoc?
+    #   fqns = find_fully_qualified_namespace(namespace, root)
+    #   yard_meths = yard_map.get_instance_methods(fqns, '', visibility: visibility)
+    #   if yard_meths.any?
+    #     meths.concat yard_meths
+    #   else
+    #     type = get_namespace_type(fqns)
+    #     if type == :class
+    #       meths += yard_map.get_instance_methods('Object')
+    #     elsif type == :module
+    #       meths += yard_map.get_instance_methods('Module')
+    #     end
+    #   end
+    #   if namespace == '' and root == ''
+    #     workspace.config.domains.each do |d|
+    #       meths.concat get_instance_methods(d)
+    #     end
+    #   end
+    #   strings = meths.map(&:to_s)
+    #   live_map.get_methods(fqns, '', 'class', visibility.include?(:private)).each do |ls|
+    #     next if strings.include?(ls.to_s)
+    #     meths.push ls
+    #   end
+    #   meths
+    # end
 
     # Get an array of all suggestions that match the specified path.
     #
@@ -584,7 +597,7 @@ module Solargraph
       elsif path.include?('.')
         # It's a class method
         parts = path.split('.')
-        result = get_methods(parts[0], '', visibility: [:public, :private, :protected]).select{|s| s.name == parts[1]}
+        result = get_methods(parts[0], scope: :class, visibility: [:public, :private, :protected]).select{|s| s.name == parts[1]}
       else
         # It's a class or module
         parts = path.split('::')
@@ -594,7 +607,7 @@ module Solargraph
         end
         result.concat yard_map.objects(path)
       end
-      result
+      result.map{|pin| enhance pin}
     end
 
     # Get a list of documented paths that match the query.
@@ -762,45 +775,48 @@ module Solargraph
       @cache ||= Cache.new
     end
 
-    def inner_get_methods_refactored fqns, scope, visibility, deep, skip
+    def inner_get_methods fqns, scope, visibility, deep, skip
       return [] if skip.include?(fqns)
       skip.push fqns
       result = []
-      pins = @method_pins[fqns]
-      unless pins.nil?
-        result.concat pins.select{|pin| (pin.scope == scope or fqns == '') and visibility.include?(pin.visibility)}
+      if scope == :instance
+        aps = @attr_pins[fqns]
+        result.concat aps unless aps.nil?
       end
+      mps = @method_pins[fqns]
+      result.concat mps.select{|pin| (pin.scope == scope or fqns == '') and visibility.include?(pin.visibility)} unless mps.nil?
       if deep
         sc = @superclasses[fqns]
         unless sc.nil?
           sc_visi = [:public]
           sc_visi.push :protected if visibility.include?(:protected)
           sc_fqns = find_fully_qualified_namespace(sc, fqns)
-          result.concat inner_get_methods_refactored(sc_fqns, scope, sc_visibility, true, skip)
+          result.concat inner_get_methods(sc_fqns, scope, sc_visi, true, skip)
         end
         if scope == :instance
           im = @namespace_includes[fqns]
           unless im.nil?
             im.each do |i|
               ifqns = find_fully_qualified_namespace(i, fqns)
-              result.concat inner_get_methods_refactored(ifqns, scope, visibility, deep, skip)
+              result.concat inner_get_methods(ifqns, scope, visibility, deep, skip)
             end
           end
           result.concat yard_map.get_instance_methods(fqns, '', visibility: visibility)
-          result.concat inner_get_methods_refactored('Object', :instance, [:public], deep, skip) unless fqns == 'Object'
+          result.concat inner_get_methods('Object', :instance, [:public], deep, skip) unless fqns == 'Object'
         else
           em = @namespace_extends[fqns]
           unless em.nil?
             em.each do |e|
               efqns = find_fully_qualified_namespace(e, fqns)
-              result.concat inner_get_methods_refactored(efqns, scope, visibility, deep, skip)
+              result.concat inner_get_methods(efqns, :instance, visibility, deep, skip)
             end
           end
           type = get_namespace_type(fqns)
+          result.concat yard_map.get_methods(fqns, '', visibility: visibility)
           if type == :class
-            result.concat inner_get_methods_refactored('Class', :class, [:public], deep, skip)
+            result.concat inner_get_methods('Class', :instance, [:public], deep, skip)
           else
-            result.concat inner_get_methods_refactored('Module', :class, [:public], deep, skip)
+            result.concat inner_get_methods('Module', :instance, [:public], deep, skip)
           end
         end
         # result.concat inner_get_methods_refactored('', :instance, [:public], deep, skip)
@@ -809,88 +825,88 @@ module Solargraph
       result
     end
 
-    def inner_yard_methods fqns, visibility
-      yard_meths = yard_map.get_instance_methods(fqns, '', visibility: visibility)
-      if yard_meths.any?
-        meths.concat yard_meths
-      else
-        type = get_namespace_type(fqns)
-        if type == :class
-          meths += yard_map.get_instance_methods('Object')
-        elsif type == :module
-          meths += yard_map.get_instance_methods('Module')
-        end
-      end
-    end
+    # def inner_yard_methods fqns, visibility
+    #   yard_meths = yard_map.get_instance_methods(fqns, '', visibility: visibility)
+    #   if yard_meths.any?
+    #     meths.concat yard_meths
+    #   else
+    #     type = get_namespace_type(fqns)
+    #     if type == :class
+    #       meths += yard_map.get_instance_methods('Object')
+    #     elsif type == :module
+    #       meths += yard_map.get_instance_methods('Module')
+    #     end
+    #   end
+    # end
 
-    def inner_get_methods(namespace, root = '', skip = [], visibility = [:public])
-      meths = []
-      return meths if skip.include?(namespace)
-      skip.push namespace
-      fqns = find_fully_qualified_namespace(namespace, root)
-      return meths if fqns.nil?
-      mn = @method_pins[fqns]
-      unless mn.nil?
-        mn.select{ |pin| pin.scope == :class }.each do |pin|
-          meths.push pin if visibility.include?(pin.visibility)
-        end
-      end
-      if visibility.include?(:public) or visibility.include?(:protected)
-        sc = @superclasses[fqns]
-        unless sc.nil?
-          sc_visi = [:public]
-          sc_visi.push :protected if root == fqns
-          nfqns = find_fully_qualified_namespace(sc, fqns)
-          meths.concat inner_get_methods('', nfqns, skip, sc_visi)
-          meths.concat yard_map.get_methods(nfqns, '', visibility: sc_visi)
-        end
-      end
-      em = @namespace_extends[fqns]
-      unless em.nil?
-        em.each do |e|
-          meths.concat get_instance_methods(e, fqns, visibility: visibility)
-        end
-      end
-      meths.concat get_instance_methods('', '', visibility: [:public])
-      meths.uniq
-    end
+    # def inner_get_methods(namespace, root = '', skip = [], visibility = [:public])
+    #   meths = []
+    #   return meths if skip.include?(namespace)
+    #   skip.push namespace
+    #   fqns = find_fully_qualified_namespace(namespace, root)
+    #   return meths if fqns.nil?
+    #   mn = @method_pins[fqns]
+    #   unless mn.nil?
+    #     mn.select{ |pin| pin.scope == :class }.each do |pin|
+    #       meths.push pin if visibility.include?(pin.visibility)
+    #     end
+    #   end
+    #   if visibility.include?(:public) or visibility.include?(:protected)
+    #     sc = @superclasses[fqns]
+    #     unless sc.nil?
+    #       sc_visi = [:public]
+    #       sc_visi.push :protected if root == fqns
+    #       nfqns = find_fully_qualified_namespace(sc, fqns)
+    #       meths.concat inner_get_methods('', nfqns, skip, sc_visi)
+    #       meths.concat yard_map.get_methods(nfqns, '', visibility: sc_visi)
+    #     end
+    #   end
+    #   em = @namespace_extends[fqns]
+    #   unless em.nil?
+    #     em.each do |e|
+    #       meths.concat get_instance_methods(e, fqns, visibility: visibility)
+    #     end
+    #   end
+    #   meths.concat get_instance_methods('', '', visibility: [:public])
+    #   meths.uniq
+    # end
 
-    def inner_get_instance_methods(namespace, root, skip, visibility = [:public])
-      fqns = find_fully_qualified_namespace(namespace, root)
-      meths = []
-      return meths if skip.include?(fqns)
-      skip.push fqns
-      an = @attr_pins[fqns]
-      unless an.nil?
-        an.each do |pin|
-          meths.push pin
-        end
-      end
-      mn = @method_pins[fqns]
-      unless mn.nil?
-        mn.select{|pin| visibility.include?(pin.visibility) and pin.scope == :instance }.each do |pin|
-          meths.push pin
-        end
-      end
-      if visibility.include?(:public) or visibility.include?(:protected)
-        sc = @superclasses[fqns]
-        unless sc.nil?
-          sc_visi = [:public]
-          sc_visi.push :protected if sc == fqns
-          nfqns = find_fully_qualified_namespace(sc, fqns)
-          meths.concat inner_get_instance_methods('', nfqns, skip, sc_visi)
-          meths.concat yard_map.get_instance_methods(nfqns, '', visibility: sc_visi)
-        end
-      end
-      im = @namespace_includes[fqns]
-      unless im.nil?
-        im.each do |i|
-          nfqns = find_fully_qualified_namespace(i, fqns)
-          meths.concat inner_get_instance_methods('', nfqns, skip, visibility)
-        end
-      end
-      meths.uniq
-    end
+    # def inner_get_instance_methods(namespace, root, skip, visibility = [:public])
+    #   fqns = find_fully_qualified_namespace(namespace, root)
+    #   meths = []
+    #   return meths if skip.include?(fqns)
+    #   skip.push fqns
+    #   an = @attr_pins[fqns]
+    #   unless an.nil?
+    #     an.each do |pin|
+    #       meths.push pin
+    #     end
+    #   end
+    #   mn = @method_pins[fqns]
+    #   unless mn.nil?
+    #     mn.select{|pin| visibility.include?(pin.visibility) and pin.scope == :instance }.each do |pin|
+    #       meths.push pin
+    #     end
+    #   end
+    #   if visibility.include?(:public) or visibility.include?(:protected)
+    #     sc = @superclasses[fqns]
+    #     unless sc.nil?
+    #       sc_visi = [:public]
+    #       sc_visi.push :protected if sc == fqns
+    #       nfqns = find_fully_qualified_namespace(sc, fqns)
+    #       meths.concat inner_get_instance_methods('', nfqns, skip, sc_visi)
+    #       meths.concat yard_map.get_instance_methods(nfqns, '', visibility: sc_visi)
+    #     end
+    #   end
+    #   im = @namespace_includes[fqns]
+    #   unless im.nil?
+    #     im.each do |i|
+    #       nfqns = find_fully_qualified_namespace(i, fqns)
+    #       meths.concat inner_get_instance_methods('', nfqns, skip, visibility)
+    #     end
+    #   end
+    #   meths.uniq
+    # end
 
     # Get a fully qualified namespace for the given signature.
     # The signature should be in the form of a method chain, e.g.,
@@ -932,9 +948,10 @@ module Solargraph
           visibility = [:public]
           visibility.concat [:private, :protected] if top
           if scope == :instance || namespace == ''
-            tmp = get_instance_methods(namespace, visibility: visibility)
+            tmp = get_instance_methods(clean_namespace_string(namespace), visibility: visibility)
           else
-            tmp = get_methods(namespace, visibility: visibility)
+            tmp = get_methods(namespace, visibility: visibility, scope: :class)
+            # tmp = get_type_methods(namespace, (top ? namespace : ''))
           end
           tmp.concat get_instance_methods('Kernel', visibility: [:public]) if top
           matches = tmp.select{|s| s.name == part}
@@ -1084,7 +1101,9 @@ module Solargraph
 
     def get_return_type_from_macro namespace, signature, call_node, scope, visibility
       return nil if signature.empty? or signature.include?('.') or call_node.nil?
-      path = "#{namespace}#{scope == :class ? '.' : '#'}#{signature}"
+      cleaned_parts = clean_namespace_string(namespace).split('#')
+      scope = :class if cleaned_parts[1]
+      path = "#{cleaned_parts[0]}#{scope == :class ? '.' : '#'}#{signature}"
       macmeth = get_path_suggestions(path).first
       type = nil
       unless macmeth.nil?

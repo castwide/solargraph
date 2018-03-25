@@ -55,7 +55,7 @@ describe Solargraph::ApiMap do
   end
 
   it "finds singleton methods" do
-    methods = @api_map.get_methods("Class1")
+    methods = @api_map.get_methods("Class1", scope: :class)
     expect(methods.map(&:to_s)).to include('baz')
     expect(methods.map(&:to_s)).not_to include('bar')
   end
@@ -134,7 +134,8 @@ describe Solargraph::ApiMap do
   end
 
   it "finds instance variables in scoped classes" do
-    methods = @api_map.get_instance_methods('Module1Class', 'Module1')
+    # methods = @api_map.get_instance_methods('Module1Class', 'Module1')
+    methods = @api_map.get_type_methods('Module1Class', 'Module1')
     expect(methods.map(&:to_s)).to include('module1class_method')
   end
 
@@ -361,7 +362,7 @@ describe Solargraph::ApiMap do
     )
     api_map = Solargraph::ApiMap.new
     api_map.append_source(code, 'file.rb')
-    sugg = api_map.get_methods('Foo')
+    sugg = api_map.get_methods('Foo', scope: :class)
     expect(sugg.map(&:to_s)).to include('bar')
   end
 
@@ -690,15 +691,16 @@ describe Solargraph::ApiMap do
     expect(docs[0].tag(:return).types[0]).to eq('Array')
   end
 
-  it "updates required paths from virtual sources" do
-    api_map = Solargraph::ApiMap.new
-    code_map = Solargraph::CodeMap.new(code: %(
-      require 'parser'
-      P
-    ), api_map: api_map)
-    sugg = code_map.suggest_at(code_map.get_offset(2, 7)).map(&:to_s)
-    expect(sugg).to include('Parser')
-  end
+  # @todo ApiMap tests shouldn't care about CodeMap
+  # it "updates required paths from virtual sources" do
+  #   api_map = Solargraph::ApiMap.new
+  #   code_map = Solargraph::CodeMap.new(code: %(
+  #     require 'parser'
+  #     P
+  #   ), api_map: api_map)
+  #   sugg = code_map.suggest_at(code_map.get_offset(2, 7)).map(&:to_s)
+  #   expect(sugg).to include('Parser')
+  # end
 
   it "detects constant visibility" do
     api_map = Solargraph::ApiMap.new
@@ -756,7 +758,7 @@ describe Solargraph::ApiMap do
         extend More
       end
     ), 'file.rb')
-    sugg = api_map.get_methods('Foobar').map(&:to_s)
+    sugg = api_map.get_methods('Foobar', scope: :class).map(&:to_s)
     expect(sugg).to include('more_method')
   end
 
