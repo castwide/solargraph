@@ -1,7 +1,7 @@
 module Solargraph
-  class FileNotFoundError < Exception; end
-
   class Library
+    class FileNotFoundError < Exception; end
+
     # @return [Solargraph::Workspace]
     attr_reader :workspace
 
