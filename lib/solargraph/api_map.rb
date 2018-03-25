@@ -414,9 +414,9 @@ module Solargraph
     end
 
     # @deprecated
-    def get_instance_methods fqns, ignored = '', visibility: [:public], deep: true
-      get_methods fqns, visibility: visibility
-    end
+    # def get_instance_methods fqns, ignored = '', visibility: [:public], deep: true
+    #   get_methods fqns, visibility: visibility
+    # end
 
     def infer_fragment_type fragment
       infer_signature_type fragment.signature, fragment.namespace, call_node: fragment.node
@@ -511,7 +511,7 @@ module Solargraph
       if path.include?('#')
         # It's an instance method
         parts = path.split('#')
-        result = get_instance_methods(parts[0], '', visibility: [:public, :private, :protected]).select{|s| s.name == parts[1]}
+        result = get_methods(parts[0], visibility: [:public, :private, :protected]).select{|s| s.name == parts[1]}
       elsif path.include?('.')
         # It's a class method
         parts = path.split('.')
@@ -719,7 +719,7 @@ module Solargraph
               result.concat inner_get_methods(ifqns, scope, visibility, deep, skip)
             end
           end
-          result.concat yard_map.get_instance_methods(fqns, '', visibility: visibility)
+          result.concat yard_map.get_instance_methods(fqns, visibility: visibility)
           result.concat inner_get_methods('Object', :instance, [:public], deep, skip) unless fqns == 'Object'
         else
           em = @namespace_extends[fqns]
@@ -783,12 +783,12 @@ module Solargraph
           visibility = [:public]
           visibility.concat [:private, :protected] if top
           if scope == :instance || namespace == ''
-            tmp = get_instance_methods(clean_namespace_string(namespace), visibility: visibility)
+            tmp = get_methods(clean_namespace_string(namespace), visibility: visibility)
           else
             tmp = get_methods(namespace, visibility: visibility, scope: :class)
             # tmp = get_type_methods(namespace, (top ? namespace : ''))
           end
-          tmp.concat get_instance_methods('Kernel', visibility: [:public]) if top
+          tmp.concat get_methods('Kernel', visibility: [:public]) if top
           matches = tmp.select{|s| s.name == part}
           return nil if matches.empty?
           matches.each do |m|

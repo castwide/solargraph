@@ -38,18 +38,18 @@ describe Solargraph::ApiMap do
   end
 
   it "finds instance methods" do
-    methods = @api_map.get_instance_methods("Class1")
+    methods = @api_map.get_methods("Class1")
     expect(methods.map(&:to_s)).to include('bar')
     expect(methods.map(&:to_s)).not_to include('baz')
   end
 
   it "finds included instance methods" do
-    methods = @api_map.get_instance_methods("Class1")
+    methods = @api_map.get_methods("Class1")
     expect(methods.map(&:to_s)).to include('module1_method')
   end
 
   it "finds superclass instance methods" do
-    methods = @api_map.get_instance_methods("Class2")
+    methods = @api_map.get_methods("Class2")
     expect(methods.map(&:to_s)).to include('bar')
     expect(methods.map(&:to_s)).to include('module1_method')
   end
@@ -96,19 +96,19 @@ describe Solargraph::ApiMap do
   end
 
   it "finds attr_read methods" do
-    methods = @api_map.get_instance_methods("Class1")
+    methods = @api_map.get_methods("Class1")
     expect(methods.map(&:to_s)).to include('read_foo')
     expect(methods.map(&:to_s)).not_to include('read_foo=')
   end
 
   it "finds attr_write methods" do
-    methods = @api_map.get_instance_methods("Class1")
+    methods = @api_map.get_methods("Class1")
     expect(methods.map(&:to_s)).to include('write_foo=')
     expect(methods.map(&:to_s)).not_to include('write_foo')
   end
 
   it "finds attr_accessor methods" do
-    methods = @api_map.get_instance_methods("Class1")
+    methods = @api_map.get_methods("Class1")
     expect(methods.map(&:to_s)).to include('access_foo')
     expect(methods.map(&:to_s)).to include('access_foo=')
   end
@@ -181,10 +181,10 @@ describe Solargraph::ApiMap do
     )
     api_map = Solargraph::ApiMap.new
     api_map.append_source(code, 'file.rb')
-    suggestions = api_map.get_instance_methods('Foo', '', visibility: [:public])
+    suggestions = api_map.get_methods('Foo', visibility: [:public])
     expect(suggestions.map(&:to_s)).to include('bar')
     expect(suggestions.map(&:to_s)).not_to include('baz')
-    suggestions = api_map.get_instance_methods('Foo', '', visibility: [:private])
+    suggestions = api_map.get_methods('Foo', visibility: [:private])
     expect(suggestions.map(&:to_s)).not_to include('bar')
     expect(suggestions.map(&:to_s)).to include('baz')
   end
@@ -375,7 +375,7 @@ describe Solargraph::ApiMap do
     )
     api_map = Solargraph::ApiMap.new
     api_map.append_source(code, 'file.rb')
-    sugg = api_map.get_instance_methods('Foo').keep_if{|s| s.name == 'bar'}.first
+    sugg = api_map.get_methods('Foo').keep_if{|s| s.name == 'bar'}.first
     expect(sugg.arguments).to eq(['baz', "boo = 'boo'"])
   end
 
@@ -388,7 +388,7 @@ describe Solargraph::ApiMap do
     )
     api_map = Solargraph::ApiMap.new
     api_map.append_source(code, 'file.rb')
-    sugg = api_map.get_instance_methods('Foo').keep_if{|s| s.name == 'bar'}.first
+    sugg = api_map.get_methods('Foo').keep_if{|s| s.name == 'bar'}.first
     expect(sugg.arguments).to eq(['baz:', "boo: 'boo'"])
   end
 
@@ -404,7 +404,7 @@ describe Solargraph::ApiMap do
     api_map = Solargraph::ApiMap.new
     api_map.append_source(code, 'file.rb')
     expect(api_map.namespaces).to eq(['Foo', 'Bar'])
-    sugg = api_map.get_instance_methods('Bar')
+    sugg = api_map.get_methods('Bar')
     expect(sugg.map(&:to_s)).to include('baz')
   end
 
@@ -461,7 +461,7 @@ describe Solargraph::ApiMap do
     )
     api_map = Solargraph::ApiMap.new
     api_map.append_source(code, 'file.rb')
-    meths = api_map.get_instance_methods('Bar')
+    meths = api_map.get_methods('Bar')
     expect(meths.map(&:to_s)).to include('foo_func')
   end
 
@@ -472,7 +472,7 @@ describe Solargraph::ApiMap do
     )
     api_map = Solargraph::ApiMap.new
     api_map.append_source(code, 'file.rb')
-    meths = api_map.get_instance_methods('Foo')
+    meths = api_map.get_methods('Foo')
     expect(meths.map(&:to_s)).to include('upcase')
   end
 
@@ -486,7 +486,7 @@ describe Solargraph::ApiMap do
     )
     api_map = Solargraph::ApiMap.new
     api_map.append_source(code, 'file.rb')
-    meth = api_map.get_instance_methods('Foo').select{|s| s.name == 'bar'}.first
+    meth = api_map.get_methods('Foo').select{|s| s.name == 'bar'}.first
     expect(meth.params).to eq(['baz [String]'])
   end
 
@@ -500,7 +500,7 @@ describe Solargraph::ApiMap do
     api_map = Solargraph::ApiMap.new
     api_map.append_source(code, 'file.rb')
     # @type [Solargraph::Suggestion]
-    meth = api_map.get_instance_methods('Foo').select{|s| s.name == 'bar'}.first
+    meth = api_map.get_methods('Foo').select{|s| s.name == 'bar'}.first
     expect(meth.arguments).to eq(['*baz'])
   end
 
@@ -513,7 +513,7 @@ describe Solargraph::ApiMap do
     )
     api_map = Solargraph::ApiMap.new
     api_map.append_source(code, 'file.rb')
-    meths = api_map.get_instance_methods('Foo').map(&:to_s)
+    meths = api_map.get_methods('Foo').map(&:to_s)
     expect(meths).to include('bar')
   end
 
@@ -526,7 +526,7 @@ describe Solargraph::ApiMap do
     )
     api_map = Solargraph::ApiMap.new
     api_map.append_source(code, 'file.rb')
-    sugg = api_map.get_instance_methods('Foo').select{|s| s.name == 'bar'}.first
+    sugg = api_map.get_methods('Foo').select{|s| s.name == 'bar'}.first
     expect(sugg.return_type).to eq('String')
   end
 
@@ -855,7 +855,7 @@ describe Solargraph::ApiMap do
         end
       end
     ), 'file.rb')
-    sugg = api_map.get_instance_methods('Foobar').map(&:to_s)
+    sugg = api_map.get_methods('Foobar').map(&:to_s)
     expect(sugg).to include('baz')
     api_map.append_source(%(
       class Foobar
@@ -863,7 +863,7 @@ describe Solargraph::ApiMap do
         end
       end
     ), 'file.rb')
-    sugg = api_map.get_instance_methods('Foobar').map(&:to_s)
+    sugg = api_map.get_methods('Foobar').map(&:to_s)
     expect(sugg).to include('boo')
     expect(sugg).not_to include('baz')
   end
@@ -890,7 +890,7 @@ describe Solargraph::ApiMap do
       end
       include Foobar
     ), 'file.rb')
-    sugg = api_map.get_instance_methods('').map(&:to_s)
+    sugg = api_map.get_methods('').map(&:to_s)
     expect(sugg).to include('baz')
   end
 
@@ -904,7 +904,7 @@ describe Solargraph::ApiMap do
         def get_bazbar;end
       end
     ), 'file.rb')
-    sugg = api_map.get_instance_methods('Foobar').select{|s| s.name == 'get_bazbar'}.first
+    sugg = api_map.get_methods('Foobar').select{|s| s.name == 'get_bazbar'}.first
     expect(sugg).not_to be(nil)
     expect(sugg.return_type).to eq('Foobar::Bazbar')
   end

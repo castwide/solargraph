@@ -286,7 +286,7 @@ module Solargraph
               # result.concat api_map.get_methods('', scope: :class)
               # result.concat api_map.get_instance_methods('', namespace)
             else
-              result.concat api_map.get_instance_methods(type) unless @code[index - 1] != '.'
+              result.concat api_map.get_methods(type) unless @code[index - 1] != '.'
             end
           end
         end
