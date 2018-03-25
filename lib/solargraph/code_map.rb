@@ -282,9 +282,9 @@ module Solargraph
               result.concat ApiMap.keywords
               result.concat api_map.get_constants('', namespace)
               result.concat api_map.get_constants('')
-              result.concat api_map.get_instance_methods('Kernel', namespace)
-              result.concat api_map.get_methods('', scope: :class)
-              result.concat api_map.get_instance_methods('', namespace)
+              # result.concat api_map.get_instance_methods('Kernel', namespace)
+              # result.concat api_map.get_methods('', scope: :class)
+              # result.concat api_map.get_instance_methods('', namespace)
             else
               result.concat api_map.get_instance_methods(type) unless @code[index - 1] != '.'
             end
@@ -332,13 +332,7 @@ module Solargraph
       return ps unless ps.empty?
       scope = (node.type == :def ? :instance : :class)
       final = []
-      if scope == :instance
-        # final.concat api_map.get_instance_methods('', namespace_from(node), visibility: [:public, :private, :protected]).select{|s| s.to_s == signature}
-        final.concat api_map.get_instance_methods(namespace_from(node), visibility: [:public, :private, :protected]).select{|s| s.to_s == signature}
-      else
-        # final.concat api_map.get_methods('', namespace_from(node), visibility: [:public, :private, :protected]).select{|s| s.to_s == signature}
-        final.concat api_map.get_methods(namespace_from(node), scope: :class, visibility: [:public, :private, :protected]).select{|s| s.to_s == signature}
-      end
+      final.concat api_map.get_methods(namespace_from(node), scope: scope, visibility: [:public, :private, :protected]).select{|s| s.to_s == signature}
       if final.empty? and !signature.include?('.')
         fqns = api_map.find_fully_qualified_namespace(signature, ns_here)
         final.concat api_map.get_path_suggestions(fqns) unless fqns.nil? or fqns.empty?
@@ -568,7 +562,7 @@ module Solargraph
       result += get_local_variables_from(node_at(index))
       scope = namespace_at(index) || @source.node
       if local.type == :def
-        result += api_map.get_instance_methods(scope, visibility: [:public, :private, :protected])
+        result += api_map.get_methods(scope, visibility: [:public, :private, :protected])
       else
         result += api_map.get_methods(scope, scope: :class, visibility: [:public, :private, :protected])
       end
@@ -709,7 +703,7 @@ module Solargraph
           # result.push Suggestion.new(a.children[0], kind: Suggestion::PROPERTY, return_type: rt)
           result.push Solargraph::Pin::Parameter.new(@source, a, namespace_from(@source.node), a.children[0].to_s, rt)
         end
-        result.concat api_map.get_instance_methods(self_yield, namespace_from(scope_node)) unless self_yield.nil?
+        result.concat api_map.get_type_methods(self_yield, namespace_from(scope_node)) unless self_yield.nil?
       end
       result
     end
