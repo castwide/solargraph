@@ -12,7 +12,7 @@ module Solargraph
               set_error(Solargraph::LanguageServer::ErrorCodes::INVALID_REQUEST, "Completion item could not be resolved")
             else
               set_result(
-                params.merge(pin.resolve_completion_item(host.api_map))
+                params.merge(pin.resolve_completion_item(host.library.api_map))
               )
             end
           end

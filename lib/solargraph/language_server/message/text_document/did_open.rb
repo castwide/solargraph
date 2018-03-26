@@ -4,8 +4,8 @@ module Solargraph
       module TextDocument
         class DidOpen < Base
           def process
-            host.open params['textDocument']
-            publish_diagnostics
+            host.library.open uri_to_file(params['textDocument']['uri']), params['textDocument']['text'], params['textDocument']['version']
+            # publish_diagnostics
           end
         end
       end

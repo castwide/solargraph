@@ -7,7 +7,7 @@ module Solargraph
         class DidChange < Base
           def process
             host.change params
-            publish_diagnostics
+            # publish_diagnostics
           end
         end
       end

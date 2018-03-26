@@ -31,6 +31,10 @@ module Solargraph
         @signature ||= resolve_node_signature(node.children[(node.type == :casgn ? 2 : 1)])
       end
 
+      def path
+        name
+      end
+
       private
 
       def literal_from_assignment

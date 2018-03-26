@@ -17,8 +17,9 @@ module Solargraph::LanguageServer::Message::Workspace
         elsif change['type'] == CHANGED
           # @todo Should this check if the source is already loaded in the source?
           # Possibly out of sync with the disk?
-          host.workspace.handle_changed filename
-          host.api_map.refresh
+          # host.workspace.handle_changed filename
+          # host.api_map.refresh
+          STDERR.puts "TODO: Workspace changed"
         elsif change['type'] == DELETED
           host.workspace.handle_deleted filename
           host.api_map.refresh

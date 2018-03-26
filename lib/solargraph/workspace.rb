@@ -58,6 +58,13 @@ module Solargraph
       source_hash[source.filename] = source
     end
 
+    # @todo Figure out the arch
+    def remove source
+      return if config(true).calculated.include?(source.filename)
+      # @todo This method PROBABLY doesn't care if the file is actually here
+      source_hash.delete source.filename
+    end
+
     # @return [Array<String>]
     def filenames
       source_hash.keys

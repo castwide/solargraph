@@ -10,31 +10,24 @@ module Solargraph
 
       attr_writer :resolvable
 
-      attr_reader :workspace
+      # attr_reader :workspace
+      attr_reader :library
 
       def initialize
         # @type [Hash<String, Solargraph::Source]
-        @file_source = {}
+        # @file_source = {}
         @change_semaphore = Mutex.new
         @buffer_semaphore = Mutex.new
         @change_queue = []
         @cancel = []
         @buffer = ''
         @stopped = false
+        @library = nil # @todo How to initialize the library
         start_change_thread
-      end
-
-      def workspace
-        @workspace ||= Solargraph::Workspace.new(nil)
       end
 
       def resolvable
         @resolvable ||= {}
-      end
-
-      def api_map
-        @api_map = Solargraph::ApiMap.new(workspace) if @api_map.nil? or @api_map.workspace != workspace
-        @api_map
       end
 
       # @param options [Hash]
@@ -71,59 +64,68 @@ module Solargraph
         message
       end
 
-      def read uri
-        source = nil
-        if @file_source.has_key?(uri)
-          source = @file_source[uri]
-        else
-          filename = uri_to_file(uri)
-          if workspace.has_file?(filename)
-            source = workspace.source(filename)
-            @file_source[uri] = source
-          else
-            # @todo Handle error?
-          end
-        end
-        source
-      end
+      # def read uri
+      #   # source = nil
+      #   # if @file_source.has_key?(uri)
+      #   #   source = @file_source[uri]
+      #   # else
+      #   #   filename = uri_to_file(uri)
+      #   #   if workspace.has_file?(filename)
+      #   #     source = workspace.source(filename)
+      #   #     @file_source[uri] = source
+      #   #   else
+      #   #     # @todo Handle error?
+      #   #   end
+      #   # end
+      #   # source
+      #   library.source(uri_to_file(uri))
+      # end
 
-      def open text_document
-        @change_semaphore.synchronize do
-          filename = uri_to_file(text_document['uri'])
-          text = text_document['text'] || File.read(filename)
-          if workspace.has_file?(filename)
-            # @todo Synchronize text?
-            @file_source[text_document['uri']] = workspace.source(filename)
-            @file_source[text_document['uri']].synchronize([{'text' => text}], text_document['version'])
-          else
-            @file_source[text_document['uri']] = Solargraph::Source.fix(text, uri_to_file(text_document['uri']))
-            @file_source[text_document['uri']].version = text_document['version']
-          end
-        end
-      end
+      # def create text_document
+      # end
+
+      # def open text_document
+      #   @change_semaphore.synchronize do
+      #     filename = uri_to_file(text_document['uri'])
+      #     text = text_document['text'] || File.read(filename)
+      #     # if workspace.has_file?(filename)
+      #     #   # @todo Synchronize text?
+      #     #   @file_source[text_document['uri']] = workspace.source(filename)
+      #     #   @file_source[text_document['uri']].synchronize([{'text' => text}], text_document['version'])
+      #     # else
+      #     #   @file_source[text_document['uri']] = Solargraph::Source.fix(text, uri_to_file(text_document['uri']))
+      #     #   @file_source[text_document['uri']].version = text_document['version']
+      #     # end
+      #     library.create filename, text
+      #     source = library.source(filename)
+      #     source.version = text_document['version']
+      #   end
+      # end
 
       def change params
         @change_semaphore.synchronize do
           if changing? params['textDocument']['uri']
             @change_queue.push params
           else
-            source = read(params['textDocument']['uri'])
-            if source.nil?
-              # @todo Handle error
-            else
+            # source = read(params['textDocument']['uri'])
+            # if source.nil?
+            #   # @todo Handle error
+            # else
               @change_queue.push params
+              source = library.source(uri_to_file(params['textDocument']['uri']))
               if params['textDocument']['version'] == source.version + params['contentChanges'].length
                 source.synchronize(params['contentChanges'], params['textDocument']['version'])
                 @change_queue.pop
               end
-            end
+              library.api_map.refresh
+            # end
           end
         end
       end
 
-      def close filename
-        @change_semaphore.synchronize { @file_source.delete filename }
-      end
+      # def close filename
+      #   @change_semaphore.synchronize { @file_source.delete filename }
+      # end
 
       def queue message
         @buffer_semaphore.synchronize do
@@ -143,10 +145,11 @@ module Solargraph
       # @param directory [String]
       def prepare directory
         path = normalize_separators(directory)
-        if File.file?(File.join(path, '.solargraph.yml')) or File.file?(File.join(path, '.solargraph.yml'))
-          @workspace = Workspace.new(path)
-          api_map.refresh
-        end
+        # if File.file?(File.join(path, '.solargraph.yml')) or File.file?(File.join(path, '.solargraph.yml'))
+        #   @workspace = Workspace.new(path)
+        #   api_map.refresh
+        # end
+        @library = Solargraph::Library.load(path)
       end
 
       def send_notification method, params
@@ -180,14 +183,6 @@ module Solargraph
         end
       end
 
-      def infer_type_at filename, line, column
-        source = read(file_to_uri(filename))
-        raise "Source not found for #{filename}" if source.nil?
-        api_map.virtualize source
-        fragment = Solargraph::Source::Fragment.new(source, source.get_offset(line, column))
-        api_map.infer_fragment_type(fragment)    
-      end
-
       private
 
       def start_change_thread
@@ -216,6 +211,10 @@ module Solargraph
 
       def normalize_separators path
         path.gsub(File::ALT_SEPARATOR, File::SEPARATOR)
+      end
+
+      def version_hash
+        @version_hash ||= {}
       end
     end
   end

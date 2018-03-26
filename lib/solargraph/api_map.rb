@@ -190,6 +190,7 @@ module Solargraph
     # @param context [String] The context to search
     # @return [Array<Solargraph::Pin::Base>]
     def get_constants namespace, context = ''
+      namespace ||= ''
       skip = []
       result = []
       if context.empty?
@@ -219,6 +220,7 @@ module Solargraph
     # @return [String]
     def find_fully_qualified_namespace name, root = '', skip = []
       # refresh
+      return nil if name.nil?
       return nil if skip.include?(root)
       skip.push root
       if name == ''
@@ -413,13 +415,26 @@ module Solargraph
       result.map{|pin| enhance pin}
     end
 
-    # @deprecated
-    # def get_instance_methods fqns, ignored = '', visibility: [:public], deep: true
-    #   get_methods fqns, visibility: visibility
-    # end
-
     def infer_fragment_type fragment
-      infer_signature_type fragment.signature, fragment.namespace, call_node: fragment.node
+      # infer_signature_type fragment.signature, fragment.namespace, call_node: fragment.node
+      infer_signature_type fragment.base, fragment.namespace, scope: fragment.scope, call_node: fragment.node
+    end
+
+    def infer_fragment_path fragment
+      path = nil
+      if fragment.whole_signature.include?('::') and !fragment.whole_signature.include?('.')
+        path = find_fully_qualified_namespace(fragment.whole_signature, fragment.namespace)
+      else
+        if fragment.base.empty?
+          type = infer_signature_type(fragment.whole_word, fragment.namespace, scope: fragment.scope, call_node: fragment.node)
+          path = clean_namespace_string(type).split('#').first
+        else
+          type = infer_signature_type(fragment.base, fragment.namespace, scope: fragment.scope, call_node: fragment.node)
+          meth = get_type_methods(type).select{|pin| pin.name == fragment.whole_word}.first
+          path = meth.path unless meth.nil?
+        end
+      end
+      path
     end
 
     # Get the return type for a signature within the specified namespace and
@@ -469,7 +484,7 @@ module Solargraph
         else
           type = find_fully_qualified_namespace(parts[0], namespace)
           if type.nil?
-            # It's a method call
+            # It's a variable or method call
             type = inner_infer_signature_type(parts[0], namespace, scope: scope, call_node: call_node)
             if parts.length < 2
               if type.nil? and !parts.length.nil?
@@ -506,6 +521,7 @@ module Solargraph
     # @param path [String] The path to find
     # @return [Array<Solargraph::Pin::Base>]
     def get_path_suggestions path
+      return [] if path.nil?
       # refresh
       result = []
       if path.include?('#')
@@ -770,6 +786,16 @@ module Solargraph
           top = false
           next
         end
+        if top == true and !call_node.nil?
+          source = get_source_for(call_node)
+          lv = source.local_variable_pins.select{|pin| pin.name == part and pin.visible_from?(call_node)}.first
+          unless lv.nil?
+            type = enhance(lv).return_type
+            type = infer_assignment_node_type(lv.node, namespace) if type.nil?
+            scope = :instance
+            next
+          end
+        end
         cls_match = type.match(/^Class<([A-Za-z0-9_:]*?)>$/)
         if cls_match
           type = cls_match[1]
@@ -945,7 +971,8 @@ module Solargraph
         macmeths = Suggestion.pull(macmeth)
         macro = path_macros[macmeth.path]
         macro = macro.first unless macro.nil?
-        if macro.nil? and !macmeth.code_object.nil? and !macmeth.code_object.base_docstring.nil? and macmeth.code_object.base_docstring.all.include?('@!macro')
+        # @todo Smelly respond_to? call
+        if macro.nil? and macmeth.respond_to?(:code_object) and !macmeth.code_object.nil? and !macmeth.code_object.base_docstring.nil? and macmeth.code_object.base_docstring.all.include?('@!macro')
           all = YARD::Docstring.parser.parse(macmeth.code_object.base_docstring.all).directives
           macro = all.select{|m| m.tag.tag_name == 'macro'}.first
         end

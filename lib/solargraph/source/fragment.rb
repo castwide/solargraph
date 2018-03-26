@@ -1,6 +1,8 @@
 module Solargraph
   class Source
     class Fragment
+      attr_reader :offset
+
       def initialize source, offset
         # @todo Split this object from the source. The source can change; if
         #   it does, this object's data should not.
@@ -18,11 +20,57 @@ module Solargraph
       end
 
       def namespace
-        @namespace ||= @source.namespace_for(node)
+        if @namespace.nil?
+          base = @source.parent_node_from(@offset, :class, :module, :def, :defs)
+          @namespace ||= @source.namespace_for(base)
+        end
+        @namespace
+      end
+
+      def scope
+        if @scope.nil?
+          base = @source.parent_node_from(@offset, :class, :module, :def, :defs, :source)
+          @scope = (base.type == :def ? :instance : :class)
+        end
+        @scope
       end
 
       def signature
         @signature ||= signature_data[1]
+      end
+
+      def base
+        if @base.nil?
+          if signature.include?('.')
+            if signature.end_with?('.')
+              @base = signature[0..-2]
+            else
+              @base = signature.split('.')[0..-2].join('.')
+            end
+          elsif signature.include?('::')
+            if signature.end_with?('::')
+              @base = signature[0..-3]
+            else
+              @base = signature.split('::')[0..-2].join('::')
+            end
+          else
+            # @base = signature
+            @base = ''
+          end
+        end
+        @base
+      end
+
+      def remainder
+        @remainder ||= remainder_at(@offset)
+      end
+
+      def whole_word
+        @whole_word ||= word + remainder
+      end
+
+      def whole_signature
+        @whole_signature ||= signature + remainder
       end
 
       def phrase
@@ -188,7 +236,19 @@ module Solargraph
           }
         }
         result
-      end  
+      end
+
+      def remainder_at index
+        cursor = index
+        while cursor < @code.length
+          char = @code[cursor, 1]
+          break if char.nil? or char == ''
+          break unless char.match(/[a-z0-9_\?\!]/i)
+          cursor += 1
+        end
+        @code[index..cursor-1]
+      end
+
     end
   end
 end

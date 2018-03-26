@@ -189,6 +189,7 @@ module Solargraph
     def namespace_for node
       parts = []
       ([node] + (@node_tree[node] || [])).each do |n|
+        next unless n.kind_of?(AST::Node)
         if n.type == :class or n.type == :module
           parts.unshift unpack_name(n.children[0])
         end
@@ -577,8 +578,14 @@ module Solargraph
 
       # @return [Solargraph::Source]
       def load_string code, filename = nil
-        node, comments = parse(code, filename)
-        Source.new(code, node, comments, filename)
+        begin
+          node, comments = parse(code, filename)
+          Source.new(code, node, comments, filename)
+        rescue Parser::SyntaxError => e
+          tmp = code.gsub(/[^ \t\r\n]/, ' ')
+          node, comments = parse(tmp, filename)
+          Source.new(code, node, comments, filename)
+        end
       end
 
       def get_position_at(code, offset)
@@ -616,7 +623,7 @@ module Solargraph
         parser.diagnostics.all_errors_are_fatal = true
         parser.diagnostics.ignore_warnings      = true
         buffer = Parser::Source::Buffer.new(filename, 1)
-        buffer.source = code
+        buffer.source = code.gsub(/\r\n/, "\n")
         parser.parse_with_comments(buffer)
       end  
 
