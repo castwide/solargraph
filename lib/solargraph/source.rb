@@ -544,8 +544,14 @@ module Solargraph
                 required.push c.children[2].children[0].to_s
               end
             elsif c.type == :args
-              c.children.each do |u|
-                local_variable_pins.push Solargraph::Pin::MethodParameter.new(self, u, fqn || '', @node_stack.clone)
+              if @node_stack.first.type == :block
+                c.children.each do |u|
+                  local_variable_pins.push Solargraph::Pin::BlockParameter.new(self, u, fqn || '', @node_stack.clone)
+                end
+              else
+                c.children.each do |u|
+                  local_variable_pins.push Solargraph::Pin::MethodParameter.new(self, u, fqn || '', @node_stack.clone)
+                end
               end
             end
             inner_map_node c, tree, visibility, scope, fqn, stack

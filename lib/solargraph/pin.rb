@@ -18,5 +18,6 @@ module Solargraph
     autoload :Keyword,          'solargraph/pin/keyword'
     autoload :Parameter,        'solargraph/pin/parameter'
     autoload :MethodParameter,  'solargraph/pin/method_parameter'
+    autoload :BlockParameter,   'solargraph/pin/block_parameter'
   end
 end
