@@ -17,5 +17,6 @@ module Solargraph
     autoload :YardObject,       'solargraph/pin/yard_object'
     autoload :Keyword,          'solargraph/pin/keyword'
     autoload :Parameter,        'solargraph/pin/parameter'
+    autoload :MethodParameter,  'solargraph/pin/method_parameter'
   end
 end

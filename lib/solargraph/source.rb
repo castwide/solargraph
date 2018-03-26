@@ -543,6 +543,10 @@ module Solargraph
               if c.children[2].kind_of?(AST::Node) and c.children[2].type == :str
                 required.push c.children[2].children[0].to_s
               end
+            elsif c.type == :args
+              c.children.each do |u|
+                local_variable_pins.push Solargraph::Pin::MethodParameter.new(self, u, fqn || '', @node_stack.clone)
+              end
             end
             inner_map_node c, tree, visibility, scope, fqn, stack
           end
