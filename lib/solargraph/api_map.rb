@@ -219,6 +219,8 @@ module Solargraph
       namespace, scope = extract_namespace_and_scope(namespace_type)
       context = extract_namespace(context_type)
       fqns = find_fully_qualified_namespace(namespace, context)
+      subtypes = get_subtypes(namespace_type)
+      fqns = "#{fqns}<#{subtypes.join(', ')}>" unless subtypes.empty?
       return fqns if scope == :instance
       type = get_namespace_type(fqns)
       "#{type == :class ? 'Class<' : 'Module<'}#{fqns}>"
@@ -527,7 +529,9 @@ module Solargraph
                   lvp.resolve self
                   type = lvp.return_type
                   unless type.nil?
+                    STDERR.puts "Starting with #{type} from #{lvp.path}"
                     fqtype = find_fully_qualified_type(type, namespace)
+                    STDERR.puts "fqtype of #{parts[0]}: #{fqtype}"
                     if parts[1].nil?
                       return fqtype
                     else
