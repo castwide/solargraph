@@ -610,6 +610,14 @@ module Solargraph
       @superclasses[fqns]
     end
 
+    def locate_pin location
+      @sources.each do |source|
+        pin = source.locate_pin(location)
+        return pin unless pin.nil?
+      end
+      nil
+    end
+
     private
 
     # @return [Hash]
@@ -632,7 +640,6 @@ module Solargraph
       @namespace_path_pins = {}
       namespace_map.clear
       @required = workspace.config.required.clone
-      @pin_suggestions = {}
       @sources.each do |s|
         s.namespace_nodes.each_pair do |k, v|
           namespace_map[k] ||= []

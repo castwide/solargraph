@@ -19,6 +19,7 @@ module Solargraph
 
       # @param api_map [Solargraph::ApiMap]
       def resolve api_map
+        return unless return_type.nil?
         signature = resolve_node_signature(@tree[0].children[0])
         parts = signature.split('.')
         word = parts.pop

@@ -250,6 +250,11 @@ module Solargraph
       result
     end
 
+    def locate_pin location
+      return nil unless location.start_with?("#{filename}:")
+      @all_pins.select{|pin| pin.location == location}.first
+    end
+
     private
 
     def inner_node_at(index, node, arr)
@@ -370,6 +375,7 @@ module Solargraph
           end
         end
       end
+      @all_pins = namespace_pins + instance_variable_pins + class_variable_pins + local_variable_pins + symbol_pins + constant_pins + method_pins + attribute_pins
       @stime = Time.now
     end
 

@@ -7,15 +7,17 @@ module Solargraph
       module CompletionItem
         class Resolve < Base
           def process
+            if params['data']['location'].nil?
+              set_result params
+              return
+            end
             host.synchronize do
-              STDERR.puts "******************* RESOLUTION!"
-              pin = host.resolvable[params['data']['uid']]
+              # pin = host.resolvable[params['data']['uid']]
+              pin = host.library.api_map.locate_pin(params['data']['location'])
               if pin.nil?
                 set_error(Solargraph::LanguageServer::ErrorCodes::INVALID_REQUEST, "Completion item could not be resolved")
               else
-                STDERR.puts "... for #{pin.name}"
                 pin.resolve host.library.api_map
-                STDERR.puts "... which is now #{pin.return_type}"
                 set_result(
                   # params.merge(pin.resolve_completion_item(host.library.api_map))
                   pin.resolve_completion_item(host.library.api_map)

@@ -39,7 +39,6 @@ module Solargraph
             col = params['position']['character']
             pins = host.library.completions_at(filename, line, col)
             range = host.library.symbol_range_at(filename, line, col)
-            suggestion_map = {}
             items = []
             pins.each do |s|
               items.push s.completion_item.merge(
@@ -48,9 +47,7 @@ module Solargraph
                   newText: s.name
                 }
               )
-              suggestion_map[s.object_id] = s
             end
-            host.resolvable = suggestion_map
             set_result(
               isIncomplete: false,
               items: items

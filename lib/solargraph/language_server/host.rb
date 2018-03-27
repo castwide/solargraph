@@ -8,8 +8,6 @@ module Solargraph
     class Host
       include Solargraph::LanguageServer::UriHelpers
 
-      attr_writer :resolvable
-
       # attr_reader :workspace
       attr_reader :library
 
@@ -24,10 +22,6 @@ module Solargraph
         @stopped = false
         @library = nil # @todo How to initialize the library
         start_change_thread
-      end
-
-      def resolvable
-        @resolvable ||= {}
       end
 
       # @param options [Hash]

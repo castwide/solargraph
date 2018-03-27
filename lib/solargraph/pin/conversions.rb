@@ -11,8 +11,7 @@ module Solargraph
           data: {
             path: path,
             return_type: return_type,
-            location: location,
-            uid: object_id
+            location: location
           }
         }
       end
