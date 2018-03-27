@@ -215,6 +215,15 @@ module Solargraph
       result
     end
 
+    def find_fully_qualified_type namespace_type, context_type = ''
+      namespace, scope = extract_namespace_and_scope(namespace_type)
+      context = extract_namespace(context_type)
+      fqns = find_fully_qualified_namespace(namespace, context)
+      return fqns if scope == :instance
+      type = get_namespace_type(fqns)
+      "#{type == :class ? 'Class<' : 'Module<'}#{fqns}>"
+    end
+
     # Get a fully qualified namespace name. This method will start the search
     # in the specified root until it finds a match for the name.
     #
@@ -518,7 +527,7 @@ module Solargraph
                   lvp.resolve self
                   type = lvp.return_type
                   unless type.nil?
-                    fqtype = find_fully_qualified_namespace(type, namespace)
+                    fqtype = find_fully_qualified_type(type, namespace)
                     if parts[1].nil?
                       return fqtype
                     else
