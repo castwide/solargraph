@@ -870,11 +870,12 @@ module Solargraph
       extract_namespace_and_scope(type)[0]
     end
 
-    # Extract a namespace and a scope from a type.
+    # Extract a namespace and a scope (:instance or :class) from a type.
     #
     # @example
-    #   extract_namespace('String') => ['String', :instance]
-    #   extract_namespace('Class<String>') => ['String', :class]
+    #   extract_namespace('String')            #=> ['String', :instance]
+    #   extract_namespace('Class<String>')     #=> ['String', :class]
+    #   extract_namespace('Module<Enumerable') #=> ['Enumberable', :class]
     #
     # @return [Array] The namespace (String) and scope (Symbol).
     def extract_namespace_and_scope type
