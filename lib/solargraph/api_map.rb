@@ -495,7 +495,8 @@ module Solargraph
               lvp = source.local_variable_pins.select{|pin| pin.name == parts[0] and pin.visible_from?(call_node)}.first
               unless lvp.nil?
                 lvp.resolve self
-                result = lvp.return_type
+                type = lvp.return_type
+                result = infer_signature_type(parts[1], type, scope: :instance, call_node: call_node) unless type.nil?
               end
             end
             if result.nil?
