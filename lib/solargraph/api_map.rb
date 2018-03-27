@@ -453,6 +453,10 @@ module Solargraph
     # @param scope [Symbol] :class or :instance
     # @return [String]
     def infer_signature_type signature, namespace, scope: :class, call_node: nil
+      inner_infer_signature_type signature, namespace, scope, call_node, true
+    end
+
+    def inner_infer_signature_type signature, namespace, scope, call_node, top
       namespace ||= ''
       if cache.has_signature_type?(signature, namespace, scope)
         return cache.get_signature_type(signature, namespace, scope)
@@ -469,53 +473,105 @@ module Solargraph
       end
       result = nil
       if namespace.end_with?('#class')
-        result = infer_signature_type signature, namespace[0..-7], scope: (scope == :class ? :instance : :class), call_node: call_node
+        result = inner_infer_signature_type signature, namespace[0..-7], (scope == :class ? :instance : :class), call_node, false
       else
         parts = signature.split('.', 2)
         if parts[0].start_with?('@@')
           type = infer_class_variable(parts[0], namespace)
           if type.nil? or parts.empty?
-            result = inner_infer_signature_type(parts[1], type, scope: :instance, call_node: call_node)
+            result = inner_infer_signature_type(parts[1], type, :instance, call_node, false)
+            scope = :instance
           else
             result = type
+            scope = :instance
           end
         elsif parts[0].start_with?('@')
           type = infer_instance_variable(parts[0], namespace, scope)
           if type.nil? or parts.empty?
-            result = inner_infer_signature_type(parts[1], type, scope: :instance, call_node: call_node)
+            result = inner_infer_signature_type(parts[1], type, :instance, call_node, false)
+            scope = :instance
           else
             result = type
+            scope = :instance
           end
         else
           type = find_fully_qualified_namespace(parts[0], namespace)
           if type.nil?
             # It's a variable or method call
-            source = get_source_for(call_node)
-            unless source.nil?
-              lvp = source.local_variable_pins.select{|pin| pin.name == parts[0] and pin.visible_from?(call_node)}.first
-              unless lvp.nil?
-                lvp.resolve self
-                type = lvp.return_type
-                result = infer_signature_type(parts[1], type, scope: :instance, call_node: call_node) unless type.nil?
-              end
-            end
-            if result.nil?
-              type = inner_infer_signature_type(parts[0], namespace, scope: scope, call_node: call_node)
-              if parts.length < 2
-                if type.nil? and !parts.length.nil?
-                  path = "#{clean_namespace_string(namespace)}#{scope == :class ? '.' : '#'}#{parts[0]}"
-                  subtypes = get_subtypes(namespace)
-                  type = subtypes[0] if METHODS_RETURNING_SUBTYPES.include?(path)
-                end
-                result = type
+            if top and parts[0] == 'self'
+              if parts[1].nil?
+                result = namespace
               else
-                result = inner_infer_signature_type(parts[1], type, scope: :instance, call_node: call_node)
+                return inner_infer_signature_type(parts[1], namespace, scope, call_node, false)
+              end
+            elsif parts[0] == 'new' and scope == :class
+              scope = :instance
+              if parts[1].nil?
+                result = namespace
+              else
+                result = inner_infer_signature_type(parts[1], namespace, :instance, call_node, false)
+              end
+            else
+              source = get_source_for(call_node)
+              unless source.nil?
+                lvp = source.local_variable_pins.select{|pin| pin.name == parts[0] and pin.visible_from?(call_node)}.first
+                unless lvp.nil?
+                  lvp.resolve self
+                  type = lvp.return_type
+                  result = inner_infer_signature_type(parts[1], type, :instance, call_node, false) unless type.nil?
+                end
+              end
+              if result.nil?
+                visibility = [:public]
+                visibility.concat [:private, :protected] if top
+                if scope == :instance || namespace == ''
+                  tmp = get_methods(clean_namespace_string(namespace), visibility: visibility)
+                else
+                  tmp = get_methods(namespace, visibility: visibility, scope: :class)
+                  # tmp = get_type_methods(namespace, (top ? namespace : ''))
+                end
+                tmp.concat get_methods('Kernel', visibility: [:public]) if top
+                matches = tmp.select{|s| s.name == parts[0]}
+                return nil if matches.empty?
+                matches.each do |m|
+                  type = get_return_type_from_macro(namespace, signature, call_node, scope, visibility)
+                  if type.nil?
+                    if METHODS_RETURNING_SELF.include?(m.path)
+                      type = curtype
+                    elsif METHODS_RETURNING_SUBTYPES.include?(m.path)
+                      subtypes = get_subtypes(namespace)
+                      type = subtypes[0]
+                    elsif !m.return_type.nil?
+                      if m.return_type == 'self'
+                        type = namespace
+                      else
+                        type = find_fully_qualified_namespace(m.return_type, namespace)
+                      end
+                    end
+                  end
+                  break unless type.nil?
+                end
+                unless type.nil?
+                  scope = :instance
+                  if parts[1].nil?
+                    result = type
+                  else
+                    result = inner_infer_signature_type(parts[1], type, scope, call_node, false)
+                  end
+                end
               end
             end
           else
-            result = inner_infer_signature_type(parts[1], type, scope: :class, call_node: call_node)
+            return inner_infer_signature_type(parts[1], type, :class, call_node, false)
           end
-          result = type if result == 'self'
+          # @todo Assuming `self` only works at the top level
+          # result = type if result == 'self'
+        end
+      end
+      unless result.nil?
+        if scope == :class
+          nstype = get_namespace_type(result)
+          result = "#{nstype == :class ? 'Class<' : 'Module<'}#{result}>"
         end
       end
       cache.set_signature_type signature, namespace, scope, result
@@ -782,95 +838,8 @@ module Solargraph
             result.concat inner_get_methods('Module', :instance, [:public], deep, skip)
           end
         end
-        # result.concat inner_get_methods_refactored('', :instance, [:public], deep, skip)
-        # result.concat inner_get_methods_refactored('Object', :instance, [:public], deep, skip)
       end
       result
-    end
-
-    # Get a fully qualified namespace for the given signature.
-    # The signature should be in the form of a method chain, e.g.,
-    # method1.method2
-    #
-    # @return [String] The fully qualified namespace for the signature's type
-    #   or nil if a type could not be determined
-    def inner_infer_signature_type signature, namespace, scope: :instance, top: true, call_node: nil
-      return nil if signature.nil?
-      signature.gsub!(/\.$/, '')
-      if signature.empty?
-        if scope == :class
-          type = get_namespace_type(namespace)
-          if type == :class
-            return "Class<#{namespace}>"
-          else
-            return "Module<#{namespace}>"
-          end
-        end
-      end
-      parts = signature.split('.')
-      type = namespace || ''
-      while (parts.length > 0)
-        part = parts.shift
-        if top == true and part == 'self'
-          top = false
-          next
-        end
-        if top == true and !call_node.nil?
-          source = get_source_for(call_node)
-          unless source.nil?
-            lv = source.local_variable_pins.select{|pin| pin.name == part and pin.visible_from?(call_node)}.first
-            unless lv.nil?
-              lv.resolve(self)
-              type = lv.return_type
-              # type = infer_assignment_node_type(lv.node, namespace) if type.nil?
-              scope = :instance
-              next
-            end
-          end
-        end
-        cls_match = type.match(/^Class<([A-Za-z0-9_:]*?)>$/)
-        if cls_match
-          type = cls_match[1]
-          scope = :class
-        end
-        if scope == :class and part == 'new'
-          scope = :instance
-        else
-          curtype = type
-          type = nil
-          visibility = [:public]
-          visibility.concat [:private, :protected] if top
-          if scope == :instance || namespace == ''
-            tmp = get_methods(clean_namespace_string(namespace), visibility: visibility)
-          else
-            tmp = get_methods(namespace, visibility: visibility, scope: :class)
-            # tmp = get_type_methods(namespace, (top ? namespace : ''))
-          end
-          tmp.concat get_methods('Kernel', visibility: [:public]) if top
-          matches = tmp.select{|s| s.name == part}
-          return nil if matches.empty?
-          matches.each do |m|
-            type = get_return_type_from_macro(namespace, signature, call_node, scope, visibility)
-            if type.nil?
-              if METHODS_RETURNING_SELF.include?(m.path)
-                type = curtype
-              elsif METHODS_RETURNING_SUBTYPES.include?(m.path)
-                subtypes = get_subtypes(namespace)
-                type = subtypes[0]
-              else
-                type = m.return_type
-              end
-            end
-            break unless type.nil?
-          end
-          scope = :instance
-        end
-        top = false
-      end
-      if scope == :class and !type.nil?
-        type = "Class<#{type}>"
-      end
-      type
     end
 
     def inner_get_constants fqns, visibility, skip
