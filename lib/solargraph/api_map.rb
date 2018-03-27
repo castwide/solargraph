@@ -517,7 +517,14 @@ module Solargraph
                 unless lvp.nil?
                   lvp.resolve self
                   type = lvp.return_type
-                  result = inner_infer_signature_type(parts[1], type, :instance, call_node, false) unless type.nil?
+                  unless type.nil?
+                    fqtype = find_fully_qualified_namespace(type, namespace)
+                    if parts[1].nil?
+                      return fqtype
+                    else
+                      return inner_infer_signature_type(parts[1], fqtype, :instance, call_node, false) unless type.nil?
+                    end
+                  end
                 end
               end
               if result.nil?

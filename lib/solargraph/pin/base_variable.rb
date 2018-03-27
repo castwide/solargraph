@@ -3,6 +3,11 @@ module Solargraph
     class BaseVariable < Base
       include NodeMethods
 
+      def initialize source, node, namespace
+        super
+        @tried_to_detect_return_type = false
+      end
+
       def name
         node.children[0].to_s
       end
@@ -12,11 +17,16 @@ module Solargraph
       end
 
       def return_type
-        if @return_type.nil? and !docstring.nil?
-          tag = docstring.tag(:type)
-          @return_type = tag.types[0] unless tag.nil?
+        if @return_type.nil? and !@tried_to_detect_return_type
+          @tried_to_detect_return_type = true
+          if docstring.nil?
+            @return_type ||= literal_from_assignment
+          else
+            tag = docstring.tag(:type)
+            @return_type = tag.types[0] unless tag.nil?
+          end
         end
-        @return_type ||= literal_from_assignment
+        @return_type
       end
 
       def assignment_node
