@@ -27,17 +27,30 @@ module Solargraph
         type = api_map.infer_signature_type(base, namespace, scope: :class, call_node: node)
         unless type.nil?
           meth = api_map.get_type_methods(type).select{|pin| pin.name == word}.first
-          unless meth.nil? or meth.docstring.nil?
-            yps = meth.docstring.tags(:yieldparam)
-            unless yps[index].nil? or yps[index].types.nil? or yps[index].types.empty?
-              @return_type = yps[index].types[0]
-              STDERR.puts "Resolved it! #{@return_type}"
+          unless meth.nil?
+            if (Solargraph::CoreFills::METHODS_WITH_YIELDPARAM_SUBTYPES.include?(meth.path))
+              subtypes = get_subtypes(type)
+              @return_type = api_map.find_fully_qualified_namespace(subtypes[0], namespace)
             else
-              STDERR.puts "Failed to resolve #{name}, wtf"
+              unless meth.docstring.nil?
+                yps = meth.docstring.tags(:yieldparam)
+                unless yps[index].nil? or yps[index].types.nil? or yps[index].types.empty?
+                  @return_type = yps[index].types[0]
+                end
+              end
             end
           end
         end
       end
+
+      private
+
+      def get_subtypes type
+        return nil if type.nil?
+        match = type.match(/<([a-z0-9_:, ]*)>/i)
+        return [] if match.nil?
+        match[1].split(',').map(&:strip)
+      end        
     end
   end
 end

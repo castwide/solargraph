@@ -522,7 +522,10 @@ module Solargraph
                     if parts[1].nil?
                       return fqtype
                     else
-                      return inner_infer_signature_type(parts[1], fqtype, :instance, call_node, false) unless type.nil?
+                      unless type.nil?
+                        subns, subsc = extract_namespace_and_scope(fqtype)
+                        return inner_infer_signature_type(parts[1], subns, subsc, call_node, false)
+                      end
                     end
                   end
                 end
@@ -551,7 +554,7 @@ module Solargraph
                       if m.return_type == 'self'
                         type = namespace
                       else
-                        type = find_fully_qualified_namespace(m.return_type, namespace)
+                        type = m.return_type
                       end
                     end
                   end
@@ -562,7 +565,8 @@ module Solargraph
                   if parts[1].nil?
                     result = type
                   else
-                    result = inner_infer_signature_type(parts[1], type, scope, call_node, false)
+                    subns, subsc = extract_namespace_and_scope(type)
+                    result = inner_infer_signature_type(parts[1], subns, subsc, call_node, false)
                   end
                 end
               end
