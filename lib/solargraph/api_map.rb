@@ -904,32 +904,6 @@ module Solargraph
       result
     end
 
-    # def enhance pin
-    #   return pin # @todo Use Pin's resolve method instead?
-    #   return_type = nil
-    #   return_type = find_fully_qualified_namespace(pin.return_type, pin.namespace) unless pin.return_type.nil?
-    #   if return_type.nil?
-    #     if pin.is_a?(Solargraph::Pin::Method)
-    #       sc = @superclasses[pin.namespace]
-    #       while return_type.nil? and !sc.nil?
-    #         sc_path = "#{sc}#{pin.scope == :instance ? '#' : '.'}#{pin.name}"
-    #         sugg = get_path_suggestions(sc_path).first
-    #         break if sugg.nil?
-    #         return_type = find_fully_qualified_namespace(sugg.return_type, sugg.namespace) unless sugg.return_type.nil?
-    #         sc = @superclasses[sc]
-    #       end
-    #     elsif pin.is_a?(Solargraph::Pin::BaseVariable)
-    #       if pin.is_a?(Solargraph::Pin::BlockParameter)
-    #         STDERR.puts "I should try to enhance this pin based on #{pin.yielding_signature}"
-    #       else
-    #         STDERR.puts "Just do a, you know, a signature inference"
-    #       end
-    #     end
-    #   end
-    #   pin.instance_variable_set(:@return_type, return_type) unless return_type.nil?
-    #   pin
-    # end
-
     def require_extensions
       Gem::Specification.all_names.select{|n| n.match(/^solargraph\-[a-z0-9_\-]*?\-ext\-[0-9\.]*$/)}.each do |n|
         STDERR.puts "Loading extension #{n}"
