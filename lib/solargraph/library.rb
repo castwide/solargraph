@@ -62,6 +62,13 @@ module Solargraph
       api_map.get_path_suggestions(type)
     end
 
+    def signatures_at filename, line, column
+      source = read(filename)
+      fragment = Solargraph::Source::Fragment.new(source, signature_index_before(source, source.get_offset(line, column)))
+      type = api_map.infer_fragment_path(fragment)
+      api_map.get_path_suggestions(type)
+    end
+
     def symbol_range_at filename, line, column
       source = read(filename)
       index = source.get_offset(line, column)
@@ -134,6 +141,23 @@ module Solargraph
       raise FileNotFoundError, "Source not found for #{filename}" if source.nil?
       api_map.virtualize source
       source
+    end
+
+    def signature_index_before source, index
+      open_parens = 0
+      cursor = index - 1
+      while cursor >= 0
+        break if cursor < 0
+        if source.code[cursor] == ')'
+          open_parens -= 1
+        elsif source.code[cursor] == '('
+          open_parens += 1
+        end
+        break if open_parens == 1
+        cursor -= 1
+      end
+      cursor = nil if cursor < 0
+      cursor
     end
   end
 end
