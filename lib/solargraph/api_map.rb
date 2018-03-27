@@ -95,26 +95,29 @@ module Solargraph
       if !@stime.nil? and !workspace.stime.nil? and workspace.stime < @stime and workspace.sources.length == current_workspace_sources.length
         return
       end
-      current_workspace_sources.reject{|s| workspace.sources.include?(s)}.each do |source|
-        eliminate source
-      end
+      # current_workspace_sources.reject{|s| workspace.sources.include?(s)}.each do |source|
+      #   eliminate source
+      # end
+      # @sources = workspace.sources
+      # @sources.push @virtual_source unless @virtual_source.nil?
+      # cache.clear
+      # namespace_map.clear
+      # @sources.each do |s|
+      #   s.namespace_nodes.each_pair do |k, v|
+      #     namespace_map[k] ||= []
+      #     namespace_map[k].concat v
+      #   end
+      # end
+      # @sources.each do |source|
+      #   # if @stime.nil? or source.stime > @stime
+      #     eliminate source
+      #     map_source source
+      #   # end
+      # end
+      # @stime = Time.new
       @sources = workspace.sources
       @sources.push @virtual_source unless @virtual_source.nil?
-      cache.clear
-      namespace_map.clear
-      @sources.each do |s|
-        s.namespace_nodes.each_pair do |k, v|
-          namespace_map[k] ||= []
-          namespace_map[k].concat v
-        end
-      end
-      @sources.each do |source|
-        if source.stime > @stime
-          eliminate source
-          map_source source
-        end
-      end
-      @stime = Time.new
+      process_maps
     end
 
     # True if a workspace file has been created, modified, or deleted since
@@ -324,10 +327,11 @@ module Solargraph
 
     # @return [Solargraph::Source]
     def get_source_for(node)
+      matches = []
       @sources.each do |source|
-        return source if source.include?(node)
+        matches.push source if source.include?(node)
       end
-      nil
+      matches.first
     end
 
     # @return [String]
@@ -412,11 +416,12 @@ module Solargraph
       else
         result.concat inner_get_methods(fqns, scope, visibility, deep, [])
       end
-      result.map{|pin| enhance pin}
+      # result.map{|pin| enhance pin}
+      # @todo Resolve pins?
+      result
     end
 
     def infer_fragment_type fragment
-      # infer_signature_type fragment.signature, fragment.namespace, call_node: fragment.node
       infer_signature_type fragment.base, fragment.namespace, scope: fragment.scope, call_node: fragment.node
     end
 
@@ -485,16 +490,26 @@ module Solargraph
           type = find_fully_qualified_namespace(parts[0], namespace)
           if type.nil?
             # It's a variable or method call
-            type = inner_infer_signature_type(parts[0], namespace, scope: scope, call_node: call_node)
-            if parts.length < 2
-              if type.nil? and !parts.length.nil?
-                path = "#{clean_namespace_string(namespace)}#{scope == :class ? '.' : '#'}#{parts[0]}"
-                subtypes = get_subtypes(namespace)
-                type = subtypes[0] if METHODS_RETURNING_SUBTYPES.include?(path)
+            source = get_source_for(call_node)
+            unless source.nil?
+              lvp = source.local_variable_pins.select{|pin| pin.name == parts[0] and pin.visible_from?(call_node)}.first
+              unless lvp.nil?
+                lvp.resolve self
+                result = lvp.return_type
               end
-              result = type
-            else
-              result = inner_infer_signature_type(parts[1], type, scope: :instance, call_node: call_node)
+            end
+            if result.nil?
+              type = inner_infer_signature_type(parts[0], namespace, scope: scope, call_node: call_node)
+              if parts.length < 2
+                if type.nil? and !parts.length.nil?
+                  path = "#{clean_namespace_string(namespace)}#{scope == :class ? '.' : '#'}#{parts[0]}"
+                  subtypes = get_subtypes(namespace)
+                  type = subtypes[0] if METHODS_RETURNING_SUBTYPES.include?(path)
+                end
+                result = type
+              else
+                result = inner_infer_signature_type(parts[1], type, scope: :instance, call_node: call_node)
+              end
             end
           else
             result = inner_infer_signature_type(parts[1], type, scope: :class, call_node: call_node)
@@ -541,7 +556,9 @@ module Solargraph
         end
         result.concat yard_map.objects(path)
       end
-      result.map{|pin| enhance pin}
+      # @todo Resolve the pins?
+      # result.map{|pin| pin.resolve(self); pin}
+      result
     end
 
     # Get a list of documented paths that match the query.
@@ -587,6 +604,10 @@ module Solargraph
         result.concat s.query_symbols(query)
       end
       result
+    end
+
+    def superclass_of fqns
+      @superclasses[fqns]
     end
 
     private
@@ -788,12 +809,15 @@ module Solargraph
         end
         if top == true and !call_node.nil?
           source = get_source_for(call_node)
-          lv = source.local_variable_pins.select{|pin| pin.name == part and pin.visible_from?(call_node)}.first
-          unless lv.nil?
-            type = enhance(lv).return_type
-            type = infer_assignment_node_type(lv.node, namespace) if type.nil?
-            scope = :instance
-            next
+          unless source.nil?
+            lv = source.local_variable_pins.select{|pin| pin.name == part and pin.visible_from?(call_node)}.first
+            unless lv.nil?
+              lv.resolve(self)
+              type = lv.return_type
+              # type = infer_assignment_node_type(lv.node, namespace) if type.nil?
+              scope = :instance
+              next
+            end
           end
         end
         cls_match = type.match(/^Class<([A-Za-z0-9_:]*?)>$/)
@@ -873,22 +897,31 @@ module Solargraph
       result
     end
 
-    def enhance pin
-      return_type = nil
-      return_type = find_fully_qualified_namespace(pin.return_type, pin.namespace) unless pin.return_type.nil?
-      if return_type.nil? and pin.is_a?(Solargraph::Pin::Method)
-        sc = @superclasses[pin.namespace]
-        while return_type.nil? and !sc.nil?
-          sc_path = "#{sc}#{pin.scope == :instance ? '#' : '.'}#{pin.name}"
-          sugg = get_path_suggestions(sc_path).first
-          break if sugg.nil?
-          return_type = find_fully_qualified_namespace(sugg.return_type, sugg.namespace) unless sugg.return_type.nil?
-          sc = @superclasses[sc]
-        end
-      end
-      pin.instance_variable_set(:@return_type, return_type) unless return_type.nil?
-      pin
-    end
+    # def enhance pin
+    #   return pin # @todo Use Pin's resolve method instead?
+    #   return_type = nil
+    #   return_type = find_fully_qualified_namespace(pin.return_type, pin.namespace) unless pin.return_type.nil?
+    #   if return_type.nil?
+    #     if pin.is_a?(Solargraph::Pin::Method)
+    #       sc = @superclasses[pin.namespace]
+    #       while return_type.nil? and !sc.nil?
+    #         sc_path = "#{sc}#{pin.scope == :instance ? '#' : '.'}#{pin.name}"
+    #         sugg = get_path_suggestions(sc_path).first
+    #         break if sugg.nil?
+    #         return_type = find_fully_qualified_namespace(sugg.return_type, sugg.namespace) unless sugg.return_type.nil?
+    #         sc = @superclasses[sc]
+    #       end
+    #     elsif pin.is_a?(Solargraph::Pin::BaseVariable)
+    #       if pin.is_a?(Solargraph::Pin::BlockParameter)
+    #         STDERR.puts "I should try to enhance this pin based on #{pin.yielding_signature}"
+    #       else
+    #         STDERR.puts "Just do a, you know, a signature inference"
+    #       end
+    #     end
+    #   end
+    #   pin.instance_variable_set(:@return_type, return_type) unless return_type.nil?
+    #   pin
+    # end
 
     def require_extensions
       Gem::Specification.all_names.select{|n| n.match(/^solargraph\-[a-z0-9_\-]*?\-ext\-[0-9\.]*$/)}.each do |n|

@@ -1,10 +1,11 @@
 module Solargraph
   module Pin
     class BlockParameter < LocalVariable
-      def initialize source, node, namespace, ancestors
-        super
-        # @todo This needs to different from method parameters. It'll be tricky...
-        @ancestors = ancestors
+      attr_reader :index
+
+      def initialize source, node, namespace, ancestors, index
+        super(source, node, namespace, ancestors)
+        @index = index
         docstring = source.docstring_for(ancestors.first)
         unless docstring.nil?
           tags = docstring.tags(:param)
@@ -16,8 +17,25 @@ module Solargraph
         end
       end
 
-      def yielding_signature
-        resolve_node_signature(@tree[0].children[0])
+      # @param api_map [Solargraph::ApiMap]
+      def resolve api_map
+        signature = resolve_node_signature(@tree[0].children[0])
+        parts = signature.split('.')
+        word = parts.pop
+        base = parts.join('.')
+        type = api_map.infer_signature_type(base, namespace, scope: :class, call_node: node)
+        unless type.nil?
+          meth = api_map.get_type_methods(type).select{|pin| pin.name == word}.first
+          unless meth.nil? or meth.docstring.nil?
+            yps = meth.docstring.tags(:yieldparam)
+            unless yps[index].nil? or yps[index].types.nil? or yps[index].types.empty?
+              @return_type = yps[index].types[0]
+              STDERR.puts "Resolved it! #{@return_type}"
+            else
+              STDERR.puts "Failed to resolve #{name}, wtf"
+            end
+          end
+        end
       end
     end
   end

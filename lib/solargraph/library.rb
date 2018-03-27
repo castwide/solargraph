@@ -12,12 +12,14 @@ module Solargraph
       source.version = version
       source_hash[filename] = source
       workspace.merge source
+      api_map.refresh
     end
 
     def create filename, text
       source = Solargraph::Source.load_string(text.gsub(/\r\n/, "\n"), filename)
       source_hash[filename] = source
       workspace.merge source
+      api_map.refresh
     end
 
     def close filename
@@ -50,15 +52,13 @@ module Solargraph
           result.concat api_map.get_constants(fragment.base, fragment.namespace)
         end
       end
-      result
+      result.uniq(&:path).sort_by.with_index{ |x, idx| [x.name, idx] }
     end
 
     def definitions_at filename, line, column
       source = read(filename)
       fragment = Solargraph::Source::Fragment.new(source, source.get_offset(line, column))
       type = api_map.infer_fragment_path(fragment)
-      STDERR.puts "Inferred from fragment: #{type}"
-      STDERR.puts "Now I can do something with '#{fragment.whole_word}'"
       api_map.get_path_suggestions(type)
     end
 

@@ -57,6 +57,20 @@ module Solargraph
         @params
       end
 
+      def resolve api_map
+        STDERR.puts "bla"
+        # if @return_type.nil?
+        #   sc = api_map.superclass_of(pin.namespace)
+        #   while @return_type.nil? and !sc.nil?
+        #     sc_path = "#{sc}#{pin.scope == :instance ? '#' : '.'}#{pin.name}"
+        #     sugg = api_map.get_path_suggestions(sc_path).first
+        #     break if sugg.nil?
+        #     @return_type = api_map.find_fully_qualified_namespace(sugg.return_type, sugg.namespace) unless sugg.return_type.nil?
+        #     sc = superclass_of(sc)
+        #   end
+        # end
+      end
+
       private
 
       # @return [Array<String>]

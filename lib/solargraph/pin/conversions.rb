@@ -20,9 +20,10 @@ module Solargraph
       # @return [Hash]
       def resolve_completion_item(api_map)
         extra = {}
-        if return_type.nil? and self.kind_of?(Solargraph::Pin::BaseVariable)
-          @return_type = api_map.infer_assignment_node_type(node, namespace)
-        end
+        resolve api_map
+        # if return_type.nil? and self.kind_of?(Solargraph::Pin::BaseVariable)
+        #   @return_type = api_map.infer_assignment_node_type(node, namespace)
+        # end
         # @todo Format the documentation
         extra[:documentation] = documentation
         completion_item.merge(extra)

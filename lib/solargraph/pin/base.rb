@@ -107,6 +107,9 @@ module Solargraph
       def to_s
         name.to_s
       end
+
+      def resolve api_map
+      end
     end
   end
 end

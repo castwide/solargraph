@@ -6,21 +6,28 @@ module Solargraph
       module TextDocument
         class Completion < Base
           def process
-            start = Time.now
-            processed = false
-            until processed
-              if host.changing?(params['textDocument']['uri'])
-                sleep 0.1
-                if Time.now - start > 1
-                  set_result empty_set
-                  break
-                end
-              else
+            begin
+              start = Time.now
+              processed = false
+              until processed
                 host.synchronize do
-                  inner_process
-                  processed = true
+                  if host.changing?(params['textDocument']['uri'])
+                    STDERR.puts "Waiting..."
+                    if Time.now - start > 1
+                      set_result empty_set
+                      break
+                    end
+                  else
+                    inner_process
+                    processed = true
+                  end
                 end
+                sleep 0.1 unless processed
               end
+            rescue Exception => e
+              STDERR.puts e.message
+              STDERR.puts e.backtrace
+              set_result empty_set
             end
           end
 
@@ -30,7 +37,7 @@ module Solargraph
             filename = uri_to_file(params['textDocument']['uri'])
             line = params['position']['line']
             col = params['position']['character']
-            pins = host.library.completions_at(filename, line, col).uniq(&:path).sort_by.with_index{ |x, idx| [x.name, idx] }
+            pins = host.library.completions_at(filename, line, col)
             range = host.library.symbol_range_at(filename, line, col)
             suggestion_map = {}
             items = []

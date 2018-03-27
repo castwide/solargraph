@@ -207,7 +207,7 @@ module Solargraph
     end
 
     def include? node
-      @all_nodes.include? node
+      node_object_ids.include? node.object_id
     end
 
     def synchronize changes, version
@@ -343,6 +343,7 @@ module Solargraph
       namespace_extends.clear
       superclasses.clear
       attribute_pins.clear
+      @node_object_ids = nil
       inner_map_node @node
       @directives.each_pair do |k, v|
         v.each do |d|
@@ -442,6 +443,7 @@ module Solargraph
                 ora = find_parent(stack, :or_asgn)
                 unless ora.nil?
                   u = c.updated(:ivasgn, c.children + ora.children[1..-1], nil)
+                  @all_nodes.push u
                   @node_tree[u] = @node_stack.clone
                   @docstring_hash[u.loc] = docstring_for(ora)
                   instance_variable_pins.push Solargraph::Pin::InstanceVariable.new(self, u, fqn || '', local_scope)
@@ -455,6 +457,7 @@ module Solargraph
                 unless ora.nil?
                   u = c.updated(:cvasgn, c.children + ora.children[1..-1], nil)
                   @node_tree[u] = @node_stack.clone
+                  @all_nodes.push u
                   @docstring_hash[u.loc] = docstring_for(ora)
                   class_variable_pins.push Solargraph::Pin::ClassVariable.new(self, u, fqn || '')
                 end
@@ -466,6 +469,7 @@ module Solargraph
                 ora = find_parent(stack, :or_asgn)
                 unless ora.nil?
                   u = c.updated(:lvasgn, c.children + ora.children[1..-1], nil)
+                  @all_nodes.push u
                   @node_tree[u] = @node_stack.clone
                   @docstring_hash[u.loc] = docstring_for(ora)
                   local_variable_pins.push Solargraph::Pin::LocalVariable.new(self, u, fqn || '', @node_stack.clone)
@@ -545,8 +549,10 @@ module Solargraph
               end
             elsif c.type == :args
               if @node_stack.first.type == :block
+                pi = 0
                 c.children.each do |u|
-                  local_variable_pins.push Solargraph::Pin::BlockParameter.new(self, u, fqn || '', @node_stack.clone)
+                  local_variable_pins.push Solargraph::Pin::BlockParameter.new(self, u, fqn || '', @node_stack.clone, pi)
+                  pi += 1
                 end
               else
                 c.children.each do |u|
@@ -567,6 +573,10 @@ module Solargraph
         return p if types.include?(p.type)
       }
       nil
+    end
+
+    def node_object_ids
+      @node_object_ids ||= @all_nodes.map(&:object_id)
     end
 
     class << self
