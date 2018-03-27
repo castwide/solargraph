@@ -14,7 +14,7 @@ module Solargraph
                   if host.changing?(params['textDocument']['uri'])
                     STDERR.puts "Waiting..."
                     if Time.now - start > 1
-                      set_result empty_set
+                      set_result empty_result
                       break
                     end
                   else
@@ -27,7 +27,7 @@ module Solargraph
             rescue Exception => e
               STDERR.puts e.message
               STDERR.puts e.backtrace
-              set_result empty_set
+              set_error ErrorCodes::INTERNAL_ERROR, e.message
             end
           end
 

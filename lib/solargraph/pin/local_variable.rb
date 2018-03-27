@@ -23,7 +23,6 @@ module Solargraph
       def resolve api_map
         if @return_type.nil?
           @return_type = api_map.infer_signature_type(resolve_node_signature(assignment_node), namespace, call_node: node)
-          STDERR.puts "For #{name}, its #{@return_type}"
         end
       end
     end
