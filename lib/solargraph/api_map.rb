@@ -398,13 +398,12 @@ module Solargraph
     end
 
     def get_type_methods type, context = ''
-      namespace_parts = clean_namespace_string(type).split('#')
-      context_parts = clean_namespace_string(context).split('#')
-      scope = (namespace_parts[1] ? :class : :instance)
-      fqns = find_fully_qualified_namespace(namespace_parts[0], context_parts[0])
+      namespace, scope = extract_namespace_and_scope(type)
+      base = extract_namespace(context)
+      fqns = find_fully_qualified_namespace(namespace, base)
       return [] if fqns.nil?
       visibility = [:public]
-      visibility.push :private, :protected if fqns == context_parts[0]
+      visibility.push :private, :protected if fqns == base
       get_methods fqns, scope: scope, visibility: visibility
     end
 
@@ -432,7 +431,7 @@ module Solargraph
       else
         if fragment.base.empty?
           type = infer_signature_type(fragment.whole_word, fragment.namespace, scope: fragment.scope, call_node: fragment.node)
-          path = clean_namespace_string(type).split('#').first
+          path = extract_namespace(type)
         else
           type = infer_signature_type(fragment.base, fragment.namespace, scope: fragment.scope, call_node: fragment.node)
           meth = get_type_methods(type).select{|pin| pin.name == fragment.whole_word}.first
@@ -525,7 +524,7 @@ module Solargraph
                 visibility = [:public]
                 visibility.concat [:private, :protected] if top
                 if scope == :instance || namespace == ''
-                  tmp = get_methods(clean_namespace_string(namespace), visibility: visibility)
+                  tmp = get_methods(extract_namespace(namespace), visibility: visibility)
                 else
                   tmp = get_methods(namespace, visibility: visibility, scope: :class)
                   # tmp = get_type_methods(namespace, (top ? namespace : ''))
@@ -860,18 +859,32 @@ module Solargraph
       result
     end
 
-    # @param namespace [String]
+    # Extract a namespace from a type.
+    #
+    # @example
+    #   extract_namespace('String') => 'String'
+    #   extract_namespace('Class<String>') => 'String'
+    #
     # @return [String]
-    def clean_namespace_string namespace
-      result = namespace.to_s.gsub(/<.*$/, '')
-      if result == 'Class' and namespace.include?('<')
-        subtype = namespace.match(/<([a-z0-9:_]*)/i)[1]
-        result = "#{subtype}#class"
-      elsif result == 'Module' and namespace.include?('<')
-        subtype = namespace.match(/<([a-z0-9:_]*)/i)[1]
-        result = "#{subtype}#module"
+    def extract_namespace type
+      extract_namespace_and_scope(type)[0]
+    end
+
+    # Extract a namespace and a scope from a type.
+    #
+    # @example
+    #   extract_namespace('String') => ['String', :instance]
+    #   extract_namespace('Class<String>') => ['String', :class]
+    #
+    # @return [Array] The namespace (String) and scope (Symbol).
+    def extract_namespace_and_scope type
+      scope = :instance
+      result = type.to_s.gsub(/<.*$/, '')
+      if (result == 'Class' or result == 'Module') and type.include?('<')
+        result = type.match(/<([a-z0-9:_]*)/i)[1]
+        scope = :class
       end
-      result
+      [result, scope]
     end
 
     def require_extensions
@@ -946,9 +959,8 @@ module Solargraph
 
     def get_return_type_from_macro namespace, signature, call_node, scope, visibility
       return nil if signature.empty? or signature.include?('.') or call_node.nil?
-      cleaned_parts = clean_namespace_string(namespace).split('#')
-      scope = :class if cleaned_parts[1]
-      path = "#{cleaned_parts[0]}#{scope == :class ? '.' : '#'}#{signature}"
+      cleaned, scope = extract_namespace_and_scope(namespace)
+      path = "#{cleaned}#{scope == :class ? '.' : '#'}#{signature}"
       macmeth = get_path_suggestions(path).first
       type = nil
       unless macmeth.nil?

@@ -841,7 +841,7 @@ module Solargraph
       last = parts.pop
       type = infer_signature_from_node(parts.join('.'), node)
       return nil if type.nil?
-      namespace = api_map.send(:clean_namespace_string, type).split('#')
+      namespace = api_map.send(:extract_namespace, type).split('#')
       "#{namespace[0]}#{namespace[1] ? '.' : '#'}#{last}"
     end
 
