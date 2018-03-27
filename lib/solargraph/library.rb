@@ -52,7 +52,7 @@ module Solargraph
           result.concat api_map.get_constants(fragment.base, fragment.namespace)
         end
       end
-      result.uniq(&:path).sort_by.with_index{ |x, idx| [x.name, idx] }
+      result.uniq(&:path).select{|s| s.kind != Solargraph::LanguageServer::CompletionItemKinds::METHOD or s.name.match(/^[a-z0-9_]*(\!|\?|=)?$/i)}.sort_by.with_index{ |x, idx| [x.name, idx] }
     end
 
     def definitions_at filename, line, column
