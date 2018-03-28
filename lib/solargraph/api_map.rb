@@ -529,9 +529,7 @@ module Solargraph
                   lvp.resolve self
                   type = lvp.return_type
                   unless type.nil?
-                    STDERR.puts "Starting with #{type} from #{lvp.path}"
                     fqtype = find_fully_qualified_type(type, namespace)
-                    STDERR.puts "fqtype of #{parts[0]}: #{fqtype}"
                     if parts[1].nil?
                       return fqtype
                     else
