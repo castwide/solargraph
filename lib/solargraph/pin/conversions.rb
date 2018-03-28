@@ -17,29 +17,23 @@ module Solargraph
       end
 
       # @return [Hash]
-      def resolve_completion_item(api_map)
+      def resolve_completion_item
         extra = {}
-        resolve api_map
-        # if return_type.nil? and self.kind_of?(Solargraph::Pin::BaseVariable)
-        #   @return_type = api_map.infer_assignment_node_type(node, namespace)
-        # end
         # @todo Format the documentation
         extra[:documentation] = documentation
         completion_item.merge(extra)
       end
 
       # @param api_map [Solargraph::ApiMap]
-      def hover(api_map)
+      def hover
         info = ''
         if self.kind_of?(Solargraph::Pin::BaseVariable)
-          rt = return_type
-          rt = api_map.infer_assignment_node_type(node, namespace) if rt.nil?
-          info.concat link_documentation(rt) unless rt.nil?
+          STDERR.puts "Link to #{return_type}"
+          info.concat link_documentation(return_type) unless return_type.nil?
         else
           info.concat link_documentation(path) unless path.nil?
-          info.concat "\n\n#{ReverseMarkdown.convert(documentation)}" unless documentation.nil? or documentation.empty?
-          info
         end
+        info.concat "\n\n#{ReverseMarkdown.convert(documentation)}" unless documentation.nil? or documentation.empty?
         info
       end
 

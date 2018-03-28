@@ -33,7 +33,7 @@ module Solargraph
           @namespace_yardocs[ns.path].push y
         end
       end
-      cache_core
+      # cache_core
     end
 
     # @return [Array<String>]

@@ -63,18 +63,13 @@ module Solargraph
           if changing? params['textDocument']['uri']
             @change_queue.push params
           else
-            # source = read(params['textDocument']['uri'])
-            # if source.nil?
-            #   # @todo Handle error
-            # else
-              @change_queue.push params
-              source = library.source(uri_to_file(params['textDocument']['uri']))
-              if params['textDocument']['version'] == source.version + params['contentChanges'].length
-                source.synchronize(params['contentChanges'], params['textDocument']['version'])
-                @change_queue.pop
-              end
-              library.api_map.refresh
-            # end
+            source = library.checkout(uri_to_file(params['textDocument']['uri']))
+            @change_queue.push params
+            if params['textDocument']['version'] == source.version + params['contentChanges'].length
+              source.synchronize(params['contentChanges'], params['textDocument']['version'])
+              library.refresh
+              @change_queue.pop
+            end
           end
         end
       end
@@ -136,21 +131,25 @@ module Solargraph
       def start_change_thread
         Thread.new do
           until stopped?
+            changed = false
             @change_semaphore.synchronize do
               @change_queue.delete_if do |change|
                 filename = uri_to_file(change['textDocument']['uri'])
                 source = read(change['textDocument']['uri'])
                 if change['textDocument']['version'] == source.version + change['contentChanges'].length
                   source.synchronize(change['contentChanges'], change['textDocument']['version'])
+                  changed = true
                   true
                 elsif change['textDocument']['version'] <= source.version
                   # @todo Is deleting outdated changes correct behavior?
+                  changed = true
                   true
                 else
                   # @todo Change is out of order. Save it for later
                   false
                 end
               end
+              library.refresh if changed
             end
             sleep 1
           end

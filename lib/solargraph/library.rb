@@ -25,6 +25,11 @@ module Solargraph
     def close filename
     end
 
+    # Get completion suggestions at the specified file and location.
+    #
+    # @param filename [String] The file to analyze
+    # @param line [Integer] The zero-based line number
+    # @param column [Integer] The zero-based column number
     # @return [Array<Solargraph::Pin::Base>]
     def completions_at filename, line, column
       # @type [Solargraph::Source]
@@ -55,6 +60,13 @@ module Solargraph
       result.uniq(&:path).select{|s| s.kind != Solargraph::LanguageServer::CompletionItemKinds::METHOD or s.name.match(/^[a-z0-9_]*(\!|\?|=)?$/i)}.sort_by.with_index{ |x, idx| [x.name, idx] }
     end
 
+    # Get definition suggestions for the expression at the specified file and
+    # location.
+    #
+    # @param filename [String] The file to analyze
+    # @param line [Integer] The zero-based line number
+    # @param column [Integer] The zero-based column number
+    # @return [Array<Solargraph::Pin::Base>]
     def definitions_at filename, line, column
       source = read(filename)
       fragment = Solargraph::Source::Fragment.new(source, source.get_offset(line, column))
@@ -62,6 +74,13 @@ module Solargraph
       api_map.get_path_suggestions(type)
     end
 
+    # Get signature suggestions for the method at the specified file and
+    # location.
+    #
+    # @param filename [String] The file to analyze
+    # @param line [Integer] The zero-based line number
+    # @param column [Integer] The zero-based column number
+    # @return [Array<Solargraph::Pin::Base>]
     def signatures_at filename, line, column
       source = read(filename)
       fragment = Solargraph::Source::Fragment.new(source, signature_index_before(source, source.get_offset(line, column)))
@@ -69,6 +88,14 @@ module Solargraph
       api_map.get_path_suggestions(type)
     end
 
+    # Get the range (start and end locations) for the symbol at the specified
+    # file and location. A symbol range encompasses the complete word,
+    # including trailing characters.
+    #
+    # @param filename [String] The file to analyze
+    # @param line [Integer] The zero-based line number
+    # @param column [Integer] The zero-based column number
+    # @return [Hash]
     def symbol_range_at filename, line, column
       source = read(filename)
       index = source.get_offset(line, column)
@@ -105,23 +132,56 @@ module Solargraph
       result
     end
 
+    def locate_pin location
+      api_map.locate_pin location
+    end
+
+    # Get an array of pins that match a path.
+    #
+    # @param path [String]
+    # @return [Array<Solargraph::Pin::Base>]
+    def get_path_pins path
+      api_map.get_path_suggestions(path)
+    end
+
+    # Get the type for the signature at the specified location.
+    #
+    # @return [String]
     def infer_type_at filename, line, column
       source = read(filename)
       fragment = Solargraph::Source::Fragment.new(source, source.get_offset(line, column))
       api_map.infer_fragment_type(fragment)    
     end
 
-    def source filename
-      source_hash[filename]
+    # Check a file out of the library. If the file is not part of the
+    # workspace, the ApiMap will virtualize it for mapping purposes. If
+    # filename is nil, any source currently checked out of the library
+    # will be removed from the ApiMap. Only one file can be checked out
+    # (virtualized) at a time.
+    #
+    # @raise [FileNotFoundError] if the file is not in the library.
+    #
+    # @param filename [String]
+    # @return [Source]
+    def checkout filename
+      if filename.nil?
+        api_map.virtualize nil
+        nil
+      else
+        read filename
+      end
     end
 
+    # Create a library from a directory.
+    #
+    # @param directory [String] The path to be used for the workspace
+    # @return [Solargraph::Library]
     def self.load directory
       Solargraph::Library.new(Solargraph::Workspace.new(directory))
     end
 
-    # @return [Solargraph::ApiMap]
-    def api_map
-      @api_map ||= Solargraph::ApiMap.new(workspace)
+    def refresh
+      api_map.refresh
     end
 
     private
@@ -131,6 +191,12 @@ module Solargraph
       @source_hash ||= {}
     end
 
+    # @return [Solargraph::ApiMap]
+    def api_map
+      @api_map ||= Solargraph::ApiMap.new(workspace)
+    end
+    
+    # @return [Solargraph::Workspace]
     def workspace
       @workspace
     end

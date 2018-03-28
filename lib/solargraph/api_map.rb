@@ -552,7 +552,7 @@ module Solargraph
                     type = subtypes[0]
                   elsif !m.return_type.nil?
                     if m.return_type == 'self'
-                      type = namespace
+                      type = combine_type(namespace, scope)
                     else
                       type = m.return_type
                     end
@@ -597,6 +597,15 @@ module Solargraph
       pin.first.type
     end
 
+    def combine_type namespace, scope
+      if scope == :instance
+        namespace
+      else
+        type = get_namespace_type(namespace)
+        "#{type == :class ? 'Class' : 'Module'}<#{namespace}>"
+      end
+    end
+
     # Get an array of all suggestions that match the specified path.
     #
     # @param path [String] The path to find
@@ -623,8 +632,8 @@ module Solargraph
         result.concat yard_map.objects(path)
       end
       # @todo Resolve the pins?
-      # result.map{|pin| pin.resolve(self); pin}
-      result
+      result.map{|pin| pin.resolve(self); pin}
+      # result
     end
 
     # Get a list of documented paths that match the query.
@@ -679,7 +688,10 @@ module Solargraph
     def locate_pin location
       @sources.each do |source|
         pin = source.locate_pin(location)
-        return pin unless pin.nil?
+        unless pin.nil?
+          pin.resolve self
+          return pin
+        end
       end
       nil
     end
