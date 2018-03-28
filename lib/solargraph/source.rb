@@ -499,8 +499,15 @@ module Solargraph
             elsif c.type == :defs
               s_visi = visibility
               s_visi = :public if scope != :class
-              method_pins.push Solargraph::Pin::Method.new(source, c, fqn || '', :class, s_visi)
-              inner_map_node c, tree, scope, :class, fqn, stack
+              if c.children[0].is_a?(AST::Node) and c.children[0].type == :self
+                dfqn = fqn || ''
+              else
+                dfqn = unpack_name(c.children[0])
+              end
+              unless dfqn.nil?
+                method_pins.push Solargraph::Pin::Method.new(source, c, dfqn, :class, s_visi)
+                inner_map_node c, tree, scope, :class, dfqn, stack
+              end
               next
             elsif c.type == :send and [:public, :protected, :private].include?(c.children[1])
               visibility = c.children[1]
