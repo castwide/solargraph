@@ -181,7 +181,6 @@ module Solargraph
           return a
         end
       }
-      # @todo return nil or root (@node)?
       nil
     end
 

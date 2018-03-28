@@ -88,7 +88,8 @@ module Solargraph
     end
 
     # @todo This might be inappropriate. Look into changing the source
-    # in place instead of replacing the value.
+    #   in place instead of replacing the value.
+    #
     # @param source [Solargraph::Source]
     def update source
       source_hash[source.filename] = source if source_hash.has_key?(filename)

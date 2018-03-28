@@ -156,8 +156,6 @@ module Solargraph
                   meths.delete_if{|m| m.name == 'new'}
                   label = "#{i}"
                   args = get_method_args(i)
-                  # @todo Generate pin
-                  # meths.push Suggestion.new('new', kind: Suggestion::METHOD, docstring: i.docstring, code_object: i, detail: "#{ns}", location: object_location(i), arguments: args)
                   tmp = Solargraph::Pin::YardObject.new(i, object_location(i))
                   tmp.instance_variable_set(:@name, 'new')
                   meths.push tmp

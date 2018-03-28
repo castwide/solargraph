@@ -58,44 +58,6 @@ module Solargraph
         message
       end
 
-      # def read uri
-      #   # source = nil
-      #   # if @file_source.has_key?(uri)
-      #   #   source = @file_source[uri]
-      #   # else
-      #   #   filename = uri_to_file(uri)
-      #   #   if workspace.has_file?(filename)
-      #   #     source = workspace.source(filename)
-      #   #     @file_source[uri] = source
-      #   #   else
-      #   #     # @todo Handle error?
-      #   #   end
-      #   # end
-      #   # source
-      #   library.source(uri_to_file(uri))
-      # end
-
-      # def create text_document
-      # end
-
-      # def open text_document
-      #   @change_semaphore.synchronize do
-      #     filename = uri_to_file(text_document['uri'])
-      #     text = text_document['text'] || File.read(filename)
-      #     # if workspace.has_file?(filename)
-      #     #   # @todo Synchronize text?
-      #     #   @file_source[text_document['uri']] = workspace.source(filename)
-      #     #   @file_source[text_document['uri']].synchronize([{'text' => text}], text_document['version'])
-      #     # else
-      #     #   @file_source[text_document['uri']] = Solargraph::Source.fix(text, uri_to_file(text_document['uri']))
-      #     #   @file_source[text_document['uri']].version = text_document['version']
-      #     # end
-      #     library.create filename, text
-      #     source = library.source(filename)
-      #     source.version = text_document['version']
-      #   end
-      # end
-
       def change params
         @change_semaphore.synchronize do
           if changing? params['textDocument']['uri']
@@ -117,10 +79,6 @@ module Solargraph
         end
       end
 
-      # def close filename
-      #   @change_semaphore.synchronize { @file_source.delete filename }
-      # end
-
       def queue message
         @buffer_semaphore.synchronize do
           @buffer += message
@@ -139,10 +97,6 @@ module Solargraph
       # @param directory [String]
       def prepare directory
         path = normalize_separators(directory)
-        # if File.file?(File.join(path, '.solargraph.yml')) or File.file?(File.join(path, '.solargraph.yml'))
-        #   @workspace = Workspace.new(path)
-        #   api_map.refresh
-        # end
         @library = Solargraph::Library.load(path)
       end
 
