@@ -26,7 +26,6 @@ module Solargraph
       require_extensions
       @virtual_source = nil
       @yard_stale = true
-      @sources = @workspace.sources
       process_maps
       yard_map
     end
@@ -78,7 +77,6 @@ module Solargraph
         @virtual_source = source
         @sources = workspace.sources + [@virtual_source]
         process_virtual
-        # process_maps
       end
     end
 
@@ -92,32 +90,31 @@ module Solargraph
     #
     # @param force [Boolean] Perform a refresh even if the map is not "stale."
     def refresh force = false
-      if !@stime.nil? and !workspace.stime.nil? and workspace.stime < @stime and workspace.sources.length == current_workspace_sources.length
+      return unless @force or changed?
+      if force
+        process_maps
         return
       end
-      # current_workspace_sources.reject{|s| workspace.sources.include?(s)}.each do |source|
-      #   eliminate source
-      # end
-      # @sources = workspace.sources
-      # @sources.push @virtual_source unless @virtual_source.nil?
-      # cache.clear
-      # namespace_map.clear
-      # @sources.each do |s|
-      #   s.namespace_nodes.each_pair do |k, v|
-      #     namespace_map[k] ||= []
-      #     namespace_map[k].concat v
-      #   end
-      # end
-      # @sources.each do |source|
-      #   # if @stime.nil? or source.stime > @stime
-      #     eliminate source
-      #     map_source source
-      #   # end
-      # end
-      # @stime = Time.new
+      current_workspace_sources.reject{|s| workspace.sources.include?(s)}.each do |source|
+        eliminate source
+      end
       @sources = workspace.sources
       @sources.push @virtual_source unless @virtual_source.nil?
-      process_maps
+      cache.clear
+      namespace_map.clear
+      @sources.each do |s|
+        s.namespace_nodes.each_pair do |k, v|
+          namespace_map[k] ||= []
+          namespace_map[k].concat v
+        end
+      end
+      @sources.each do |source|
+        if @stime.nil? or source.stime > @stime
+          eliminate source
+          map_source source
+        end
+      end
+      @stime = Time.new
     end
 
     # True if a workspace file has been created, modified, or deleted since
@@ -126,16 +123,9 @@ module Solargraph
     # @return [Boolean]
     def changed?
       return true if current_workspace_sources.length != workspace.sources.length
-      # @todo This needs to be refactored
-      current = workspace.config.calculated
-      unless (Set.new(current) ^ workspace.filenames).empty?
-        return true
-      end
-      current.each do |f|
-        if !File.exist?(f) or File.mtime(f) != source_file_mtime(f)
-          return true
-        end
-      end
+      return true if @stime.nil?
+      return true if workspace.stime > @stime
+      return true if !@virtual_source.nil? and @virtual_source.stime > @stime
       false
     end
 
@@ -702,6 +692,8 @@ module Solargraph
     end
 
     def process_maps
+      @sources = workspace.sources
+      @sources.push @virtual_source unless @virtual_source.nil?
       cache.clear
       @ivar_pins = {}
       @cvar_pins = {}

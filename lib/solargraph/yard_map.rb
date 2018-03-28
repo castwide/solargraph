@@ -345,7 +345,8 @@ module Solargraph
           # @todo How to handle this?
         end
         if spec.nil?
-          STDERR.puts "Required path not found (pgp): #{r}"
+          # @todo Enable this message and/or find a better way to handle this
+          # STDERR.puts "Required path not found (pgp): #{r}"
         else
           @gem_paths[spec.name] = spec.full_gem_path
           add_gem_dependencies spec

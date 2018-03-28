@@ -8,6 +8,7 @@ module Solargraph
     def initialize directory
       @directory = directory
       load_sources unless directory.nil?
+      @stime = Time.now
     end
 
     # @return [Solargraph::Workspace::Config]
@@ -96,8 +97,8 @@ module Solargraph
     end
 
     def stime
-      return nil if source_hash.empty?
-      source_hash.values.sort{|a, b| a.stime <=> b.stime}.last.stime
+      return @stime if source_hash.empty?
+      @stime = source_hash.values.sort{|a, b| a.stime <=> b.stime}.last.stime
     end
 
     private

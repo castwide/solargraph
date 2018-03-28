@@ -762,6 +762,8 @@ describe Solargraph::ApiMap do
     expect(sugg).to include('more_method')
   end
 
+  # @todo Since the ApiMap relies on a Workspace, it might not make sense
+  # for the ApiMap to check the filesystem for changes.
   it "detects workspace changes from modified files" do
     Dir.mktmpdir do |dir|
       File.write File.join(dir, 'test.rb'), 'puts "hello"'
@@ -773,6 +775,8 @@ describe Solargraph::ApiMap do
     end
   end
 
+  # @todo Since the ApiMap relies on a Workspace, it might not make sense
+  # for the ApiMap to check the filesystem for changes.
   it "detects workspace changes from new files" do
     Dir.mktmpdir do |dir|
       File.write File.join(dir, 'test.rb'), 'puts "hello"'
@@ -783,6 +787,8 @@ describe Solargraph::ApiMap do
     end
   end
 
+  # @todo Since the ApiMap relies on a Workspace, it might not make sense
+  # for the ApiMap to check the filesystem for changes.
   it "detects workspace changes from deleted files" do
     Dir.mktmpdir do |dir|
       File.write File.join(dir, 'test.rb'), 'puts "hello"'
