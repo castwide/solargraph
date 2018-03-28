@@ -3,6 +3,8 @@ module Solargraph
     class Fragment
       attr_reader :offset
 
+      include NodeMethods
+
       def initialize source, offset
         # @todo Split this object from the source. The source can change; if
         #   it does, this object's data should not.
@@ -156,7 +158,16 @@ module Solargraph
           end
           index -= 1
         end
-        signature = signature[1..-1] if signature.start_with?('.')
+        if signature.start_with?('.')
+          pn = @source.node_at(index)
+          unless pn.nil?
+            literal = infer_literal_node_type(pn)
+            unless literal.nil?
+              signature = "#{literal}.new#{signature}"
+              # @todo Determine the index from the beginning of the literal node?
+            end
+          end
+        end
         [index + 1, signature]
       end  
 

@@ -463,6 +463,7 @@ module Solargraph
     # @param scope [Symbol] :class or :instance
     # @return [String]
     def infer_signature_type signature, namespace, scope: :class, call_node: nil
+      return nil if signature.start_with?('.')
       inner_infer_signature_type signature, namespace, scope, call_node, true
     end
 

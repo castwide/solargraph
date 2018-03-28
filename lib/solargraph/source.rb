@@ -255,6 +255,11 @@ module Solargraph
       @all_pins.select{|pin| pin.location == location}.first
     end
 
+    # @return [Solargraph::Source::Fragment]
+    def fragment_at line, column
+      Fragment.new(self, get_offset(line, column))
+    end
+
     private
 
     def inner_node_at(index, node, arr)
