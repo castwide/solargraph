@@ -156,7 +156,7 @@ module Solargraph
         break if open_parens == 1
         cursor -= 1
       end
-      cursor = nil if cursor < 0
+      cursor = 0 if cursor < 0
       cursor
     end
   end

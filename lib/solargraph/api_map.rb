@@ -436,6 +436,7 @@ module Solargraph
     end
 
     def infer_fragment_path fragment
+      return nil if fragment.signature.empty?
       path = nil
       if fragment.whole_signature.include?('::') and !fragment.whole_signature.include?('.')
         path = find_fully_qualified_namespace(fragment.whole_signature, fragment.namespace)
