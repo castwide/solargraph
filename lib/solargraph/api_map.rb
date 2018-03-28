@@ -41,7 +41,7 @@ module Solargraph
       @required ||= []
     end
 
-    # Get a YardMap associated with the current namespace.
+    # Get a YardMap associated with the current workspace.
     #
     # @return [Solargraph::YardMap]
     def yard_map
@@ -52,7 +52,7 @@ module Solargraph
       @yard_map
     end
 
-    # Get a LiveMap associated with the current namespace.
+    # Get a LiveMap associated with the current workspace.
     #
     # @return [Solargraph::LiveMap]
     def live_map

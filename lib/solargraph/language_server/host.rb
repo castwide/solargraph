@@ -3,7 +3,8 @@ require 'set'
 
 module Solargraph
   module LanguageServer
-    # The base language server data provider.
+    # The language server protocol's data provider. Hosts are responsible for
+    # querying the library and processing messages.
     #
     class Host
       include Solargraph::LanguageServer::UriHelpers

@@ -1,4 +1,6 @@
 module Solargraph
+  # A library handles coordination between a Workspace and an ApiMap.
+  #
   class Library
     class FileNotFoundError < Exception; end
 
@@ -132,6 +134,9 @@ module Solargraph
       result
     end
 
+    # Get the pin at the specified location or nil if the pin does not exist.
+    #
+    # @return [Solargraph::Pin::Base]
     def locate_pin location
       api_map.locate_pin location
     end
@@ -172,16 +177,16 @@ module Solargraph
       end
     end
 
+    def refresh force = false
+      api_map.refresh force
+    end
+
     # Create a library from a directory.
     #
     # @param directory [String] The path to be used for the workspace
     # @return [Solargraph::Library]
     def self.load directory
       Solargraph::Library.new(Solargraph::Workspace.new(directory))
-    end
-
-    def refresh
-      api_map.refresh
     end
 
     private

@@ -7,7 +7,6 @@ module Solargraph::LanguageServer::Message::TextDocument
       line = params['position']['line']
       col = params['position']['character']
       suggestions = host.library.definitions_at(filename, line, col)
-      STDERR.puts "Pins for #{suggestions.map(&:name)}"
       contents = suggestions.map(&:hover)
       set_result(
         contents: {

@@ -1,4 +1,8 @@
 module Solargraph
+  # A workspace consists of the files in a project's directory and the
+  # project's configuration. It provides a Source for each file to be used
+  # in an associated Library or ApiMap.
+  #
   class Workspace
     autoload :Config, 'solargraph/workspace/config'
 
