@@ -181,6 +181,14 @@ module Solargraph
       api_map.refresh force
     end
 
+    def document query
+      api_map.document query
+    end
+
+    def search query
+      api_map.search query
+    end
+
     # Create a library from a directory.
     #
     # @param directory [String] The path to be used for the workspace

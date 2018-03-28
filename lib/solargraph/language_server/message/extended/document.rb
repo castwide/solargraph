@@ -4,7 +4,7 @@ module Solargraph
       module Extended
         class Document < Base
           def process
-            objects = host.api_map.document(params['query'])
+            objects = host.library.document(params['query'])
             page = Solargraph::Page.new(host.options['viewsPath'])
             content = page.render('document', locals: {objects: objects})
             set_result(

@@ -4,7 +4,7 @@ module Solargraph
       module Extended
         class Search < Base
           def process
-            results = host.api_map.search(params['query'])
+            results = host.library.search(params['query'])
             page = Solargraph::Page.new(host.options['viewsPath'])
             content = page.render('search', locals: {query: params['query'], results: results})
             set_result(
