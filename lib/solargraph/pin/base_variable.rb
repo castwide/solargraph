@@ -45,6 +45,12 @@ module Solargraph
         name
       end
 
+      def resolve api_map
+        if return_type.nil?
+          @return_type = api_map.infer_signature_type(resolve_node_signature(assignment_node), namespace, call_node: node)
+        end
+      end
+
       private
 
       def literal_from_assignment

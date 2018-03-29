@@ -90,6 +90,10 @@ module Solargraph
       api_map.get_path_suggestions(type)
     end
 
+    def tmp_api_map
+      api_map
+    end
+
     # Get the range (start and end locations) for the symbol at the specified
     # file and location. A symbol range encompasses the complete word,
     # including trailing characters.
