@@ -8,6 +8,7 @@ module Solargraph
         super(source, node, namespace)
         @scope = scope
         @visibility = visibility
+        @fully_resolved = false
       end
 
       def name
@@ -58,7 +59,7 @@ module Solargraph
       end
 
       def resolve api_map
-        if @return_type.nil?
+        if return_type.nil?
           sc = api_map.superclass_of(namespace)
           until sc.nil?
             sc_path = "#{sc}#{scope == :instance ? '#' : '.'}#{name}"
@@ -68,6 +69,10 @@ module Solargraph
             break unless @return_type.nil?
             sc = superclass_of(sc)
           end
+        end
+        unless return_type.nil? or @fully_resolved
+          @fully_resolved = true
+          @return_type = api_map.find_fully_qualified_namespace(@return_type, namespace)
         end
       end
 

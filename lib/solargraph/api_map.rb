@@ -413,11 +413,11 @@ module Solargraph
       if fqns == ''
         result.concat inner_get_methods(fqns, :class, visibility, deep, [])
         result.concat inner_get_methods(fqns, :instance, visibility, deep, [])
+        result.concat inner_get_methods('Kernel', :instance, visibility, deep, [])
       else
         result.concat inner_get_methods(fqns, scope, visibility, deep, [])
       end
-      # result.map{|pin| enhance pin}
-      # @todo Resolve pins?
+      result.each{|pin| pin.resolve(self)}
       result
     end
 
@@ -456,11 +456,32 @@ module Solargraph
     def infer_signature_type signature, namespace, scope: :class, call_node: nil
       return nil if signature.start_with?('.')
       # inner_infer_signature_type signature, namespace, scope, call_node, true
-      pins = infer_signature_pins(signature, namespace, scope, call_node)
-      return nil if pins.empty?
-      pin = pins.first
-      pin.resolve self
-      pin.return_type
+      base, rest = signature.split('.', 2)
+      if base == 'self'
+        if rest.nil?
+          combine_type(namespace, scope)
+        else
+          inner_infer_signature_type(rest, namespace, scope, call_node, false)
+        end
+      else
+        pins = infer_signature_pins(base, namespace, scope, call_node)
+        return nil if pins.empty?
+        pin = pins.first
+        if rest.nil?
+          # if pin.signature.nil? or pin.signature.empty?
+            pin.resolve self
+            pin.return_type
+          # else
+          #   inner_infer_signature_type(pin.signature, namespace, scope, call_node, true)
+          # end
+        elsif pin.signature.nil?
+          inner_infer_signature_type(rest, pin.path, scope, call_node, true)
+        else
+          subtype = inner_infer_signature_type(pin.signature, namespace, scope, call_node, true)
+          subns, subsc = extract_namespace_and_scope(subtype)
+          inner_infer_signature_type(rest, subns, subsc, call_node, false)
+        end
+      end
     end
 
     def inner_infer_signature_type signature, namespace, scope, call_node, top
@@ -583,6 +604,7 @@ module Solargraph
     end
 
     def infer_signature_pins signature, namespace, scope, call_node
+      return [] if signature.nil?
       base, rest = signature.split('.', 2)
       if base.start_with?('@@')
         pin = get_class_variable_pins(namespace).select{|pin| pin.name == base}.first
@@ -640,6 +662,7 @@ module Solargraph
         visibility = [:public]
         visibility.push :private, :protected if top
         methods = get_methods(namespace, visibility: visibility, scope: scope).select{|pin| pin.name == base}
+        methods = get_methods('Kernel', scope: :instance).select{|pin| pin.name == base} if top
         return methods
       else
         type = inner_infer_signature_type base, namespace, scope, call_node, top
@@ -1035,6 +1058,7 @@ module Solargraph
     end
 
     def get_call_arguments node
+      return get_call_arguments(node.children[1]) if [:ivasgn, :cvasgn, :lvasgn].include?(node.type)
       return [] unless node.type == :send
       result = []
       node.children[2..-1].each do |c|
@@ -1043,10 +1067,10 @@ module Solargraph
       result
     end
 
+    # @todo This method shouldn't need to calculate the path. In fact, it should work directly off a pin.
     def get_return_type_from_macro namespace, signature, call_node, scope, visibility
       return nil if signature.empty? or signature.include?('.') or call_node.nil?
-      cleaned, scope = extract_namespace_and_scope(namespace)
-      path = "#{cleaned}#{scope == :class ? '.' : '#'}#{signature}"
+      path = "#{namespace}#{scope == :class ? '.' : '#'}#{signature}"
       macmeth = get_path_suggestions(path).first
       type = nil
       unless macmeth.nil?
