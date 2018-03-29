@@ -37,30 +37,14 @@ module Solargraph
       # @type [Solargraph::Source]
       source = read(filename)
       fragment = Solargraph::Source::Fragment.new(source, source.get_offset(line, column))
-      # result = []
-      # if fragment.signature.include?('.')
-      #   type = api_map.infer_fragment_type(fragment)
-      #   result.concat api_map.get_type_methods(type, fragment.namespace) unless type.nil?
-      # else
-      #   if fragment.signature.start_with?('@@')
-      #     result.concat api_map.get_class_variable_pins(fragment.namespace)
-      #   elsif fragment.signature.start_with?('@')
-      #     result.concat api_map.get_instance_variables(fragment.namespace, fragment.scope)
-      #   elsif fragment.signature.start_with?('$')
-      #     result.concat api_map.get_global_variable_pins
-      #   elsif fragment.signature.start_with?(':') and !fragment.signature.start_with?('::')
-      #     result.concat api_map.get_symbols
-      #   else
-      #     unless fragment.signature.include?('::')
-      #       result.concat source.local_variable_pins.select{|pin| pin.visible_from?(fragment.node)}
-      #       result.concat api_map.get_type_methods(fragment.namespace, fragment.namespace)
-      #       result.concat api_map.get_type_methods('Kernel')
-      #     end
-      #     result.concat api_map.get_constants(fragment.base, fragment.namespace)
-      #   end
-      # end
       result = api_map.complete(fragment)
       result.uniq(&:identifier).select{|s| s.kind != Solargraph::LanguageServer::CompletionItemKinds::METHOD or s.name.match(/^[a-z0-9_]*(\!|\?|=)?$/i)}.sort_by.with_index{ |x, idx| [x.name, idx] }
+    end
+
+    def whole_word_range_at filename, line, column
+      source = read(filename)
+      fragment = Solargraph::Source::Fragment.new(source, source.get_offset(line, column))
+      fragment.whole_word_range
     end
 
     # Get definition suggestions for the expression at the specified file and
@@ -104,41 +88,41 @@ module Solargraph
     # @param line [Integer] The zero-based line number
     # @param column [Integer] The zero-based column number
     # @return [Hash]
-    def symbol_range_at filename, line, column
-      source = read(filename)
-      index = source.get_offset(line, column)
-      cursor = index
-      while cursor > -1
-        char = source.code[cursor - 1, 1]
-        break if char.nil? or char == ''
-        break unless char.match(/[a-z0-9_@$]/i)
-        cursor -= 1
-      end
-      start_offset = cursor
-      start_offset -= 1 if (start_offset > 1 and source.code[start_offset - 1] == ':') and (start_offset == 1 or source.code[start_offset - 2] != ':')
-      cursor = index
-      while cursor < source.code.length
-        char = source.code[cursor, 1]
-        break if char.nil? or char == ''
-        break unless char.match(/[a-z0-9_\?\!]/i)
-        cursor += 1
-      end
-      end_offset = cursor
-      end_offset = start_offset if end_offset < start_offset
-      start_pos = Solargraph::Source.get_position_at(source.code, start_offset)
-      end_pos = Solargraph::Source.get_position_at(source.code, end_offset)
-      result = {
-        start: {
-          line: start_pos[0],
-          character: start_pos[1]
-        },
-        end: {
-          line: end_pos[0],
-          character: end_pos[1]
-        }
-      }
-      result
-    end
+    # def symbol_range_at filename, line, column
+    #   source = read(filename)
+    #   index = source.get_offset(line, column)
+    #   cursor = index
+    #   while cursor > -1
+    #     char = source.code[cursor - 1, 1]
+    #     break if char.nil? or char == ''
+    #     break unless char.match(/[a-z0-9_@$]/i)
+    #     cursor -= 1
+    #   end
+    #   start_offset = cursor
+    #   start_offset -= 1 if (start_offset > 1 and source.code[start_offset - 1] == ':') and (start_offset == 1 or source.code[start_offset - 2] != ':')
+    #   cursor = index
+    #   while cursor < source.code.length
+    #     char = source.code[cursor, 1]
+    #     break if char.nil? or char == ''
+    #     break unless char.match(/[a-z0-9_\?\!]/i)
+    #     cursor += 1
+    #   end
+    #   end_offset = cursor
+    #   end_offset = start_offset if end_offset < start_offset
+    #   start_pos = Solargraph::Source.get_position_at(source.code, start_offset)
+    #   end_pos = Solargraph::Source.get_position_at(source.code, end_offset)
+    #   result = {
+    #     start: {
+    #       line: start_pos[0],
+    #       character: start_pos[1]
+    #     },
+    #     end: {
+    #       line: end_pos[0],
+    #       character: end_pos[1]
+    #     }
+    #   }
+    #   result
+    # end
 
     # Get the pin at the specified location or nil if the pin does not exist.
     #

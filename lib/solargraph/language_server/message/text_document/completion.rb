@@ -38,15 +38,15 @@ module Solargraph
             line = params['position']['line']
             col = params['position']['character']
             pins = host.library.completions_at(filename, line, col)
-            range = host.library.symbol_range_at(filename, line, col)
+            range = host.library.whole_word_range_at(filename, line, col)
             items = []
             pins.each do |s|
-              items.push s.completion_item.merge(
+              items.push s.completion_item.merge({
                 textEdit: {
                   range: range,
                   newText: s.name
                 }
-              )
+              })
             end
             set_result(
               isIncomplete: false,

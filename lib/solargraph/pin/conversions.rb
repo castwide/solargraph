@@ -5,7 +5,6 @@ module Solargraph
       def completion_item
         {
           label: name,
-          insert: name.sub(/=$/, ' = '),
           kind: kind,
           detail: completion_item_detail,
           data: {

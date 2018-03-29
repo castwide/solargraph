@@ -18,7 +18,7 @@ module Solargraph
                 set_error(Solargraph::LanguageServer::ErrorCodes::INVALID_REQUEST, "Completion item could not be resolved")
               else
                 set_result(
-                  pin.resolve_completion_item
+                  params.merge(pin.resolve_completion_item)
                 )
               end
             end

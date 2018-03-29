@@ -399,6 +399,7 @@ module Solargraph
     end
 
     def get_type_methods type, context = ''
+      return [] if type.nil?
       namespace, scope = extract_namespace_and_scope(type)
       base = extract_namespace(context)
       fqns = find_fully_qualified_namespace(namespace, base)
@@ -474,8 +475,16 @@ module Solargraph
           # else
           #   inner_infer_signature_type(pin.signature, namespace, scope, call_node, true)
           # end
-        elsif pin.signature.nil?
-          inner_infer_signature_type(rest, pin.path, scope, call_node, true)
+        elsif pin.signature.nil? or pin.signature.empty?
+          if pin.path.nil?
+            pin.resolve self
+            fqtype = find_fully_qualified_type(pin.return_type, namespace)
+            return nil if fqtype.nil?
+            subns, subsc = extract_namespace_and_scope(fqtype)
+            inner_infer_signature_type(rest, subns, subsc, call_node, true)
+          else
+            inner_infer_signature_type(rest, pin.path, scope, call_node, true)
+          end
         else
           subtype = inner_infer_signature_type(pin.signature, namespace, scope, call_node, true)
           subns, subsc = extract_namespace_and_scope(subtype)
@@ -626,10 +635,12 @@ module Solargraph
       elsif base.start_with?('@')
         pin = get_instance_variable_pins(namespace, scope).select{|pin| pin.name == base}.first
         return [] if pin.nil?
+        pin.resolve self
         return [pin] if rest.nil?
-        fqns = find_fully_qualified_namespace(pin.return_type, namespace)
-        return [] if fqns.nil?
-        return inner_infer_signature_pins rest, namespace, scope, call_node, false
+        fqtype = find_fully_qualified_type(pin.return_type, namespace)
+        return [] if fqtype.nil?
+        subns, subsc = extract_namespace_and_scope(fqtype)
+        return inner_infer_signature_pins rest, subns, subsc, call_node, false
       elsif base.start_with?('$')
         # @todo globals
       else
