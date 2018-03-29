@@ -200,27 +200,36 @@ module Solargraph
       # @param index [Integer]
       # @return [String]
       def word_at index
-        word = ''
+        @code[beginning_of_word_at(index)..index - 1]
+      end
+
+      def beginning_of_word_at index
         cursor = index - 1
-        while cursor > -1
-          char = @code[cursor, 1]
-          break if char.nil? or char == ''
-          word = char + word if char == '$'
-          break unless char.match(/[a-z0-9_]/i)
-          word = char + word
+        # Words can end with ? or !
+        if @code[cursor, 1] == '!' or @code[cursor, 1] == '?'
           cursor -= 1
         end
-        word
+        while cursor > -1
+          char = @code[cursor, 1]
+          break if char.nil? or char.strip.empty?
+          break unless char.match(/[a-z0-9_]/i)
+          cursor -= 1
+        end
+        # Words can begin with @@, @, $, or :
+        if cursor > -1
+          if cursor > 0 and @code[cursor - 1, 2] == '@@'
+            cursor -= 2
+          elsif @code[cursor, 1] == '@' or @code[cursor, 1] == '$'
+            cursor -= 1
+          elsif @code[cursor, 1] == ':' and (cursor == 0 or @code[cursor - 1, 2] != '::')
+            cursor -= 1
+          end
+        end
+        cursor + 1
       end
 
       def word_range_at index, whole
-        cursor = index
-        while cursor > -1
-          char = @code[cursor - 1, 1]
-          break if char.nil? or char == ''
-          break unless char.match(/[a-z0-9_@$]/i)
-          cursor -= 1
-        end
+        cursor = beginning_of_word_at(index)
         start_offset = cursor
         start_offset -= 1 if (start_offset > 1 and @code[start_offset - 1] == ':') and (start_offset == 1 or @code[start_offset - 2] != ':')
         cursor = index
