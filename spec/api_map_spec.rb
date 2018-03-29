@@ -61,13 +61,13 @@ describe Solargraph::ApiMap do
   end
 
   it "finds instance variables" do
-    vars = @api_map.get_instance_variables("Class1")
+    vars = @api_map.get_instance_variable_pins("Class1")
     expect(vars.map(&:to_s)).to include('@bar')
     expect(vars.map(&:to_s)).not_to include('@baz')
   end
 
   it "finds instance variables inside blocks" do
-    vars = @api_map.get_instance_variables("Class1")
+    vars = @api_map.get_instance_variable_pins("Class1")
     expect(vars.map(&:to_s)).to include('@bing')
   end
 
@@ -83,14 +83,14 @@ describe Solargraph::ApiMap do
     )
     api_map = Solargraph::ApiMap.new
     api_map.append_source(code, 'file.rb')
-    vars = api_map.get_instance_variables('', :class).map(&:to_s)
+    vars = api_map.get_instance_variable_pins('', :class).map(&:to_s)
     expect(vars).to include('@foobar')
     expect(vars).not_to include('@not1')
     expect(vars).not_to include('@not2')
   end
 
   it "finds class instance variables" do
-    vars = @api_map.get_instance_variables("Class1", :class)
+    vars = @api_map.get_instance_variable_pins("Class1", :class)
     expect(vars.map(&:to_s)).to include('@baz')
     expect(vars.map(&:to_s)).not_to include('@bar')
   end
@@ -603,7 +603,7 @@ describe Solargraph::ApiMap do
     )
     api_map = Solargraph::ApiMap.new
     api_map.append_source(code, 'file.rb')
-    suggestions = api_map.get_instance_variables('Foo', :instance)
+    suggestions = api_map.get_instance_variable_pins('Foo', :instance)
     expect(suggestions.length).to eq(1)
   end
 
@@ -617,7 +617,7 @@ describe Solargraph::ApiMap do
     )
     api_map = Solargraph::ApiMap.new
     api_map.append_source(code, 'file.rb')
-    suggestions = api_map.get_instance_variables('Foo', :instance)
+    suggestions = api_map.get_instance_variable_pins('Foo', :instance)
     expect(suggestions.length).to eq(1)
   end
 
@@ -634,7 +634,7 @@ describe Solargraph::ApiMap do
     )
     api_map = Solargraph::ApiMap.new
     api_map.append_source(code, 'file.rb')
-    suggestions = api_map.get_instance_variables('Foo', :instance)
+    suggestions = api_map.get_instance_variable_pins('Foo', :instance)
     expect(suggestions.length).to eq(1)
     expect(suggestions[0].return_type).to eq('String')
   end
@@ -653,7 +653,7 @@ describe Solargraph::ApiMap do
     )
     api_map = Solargraph::ApiMap.new
     api_map.append_source(code, 'file.rb')
-    suggestions = api_map.get_instance_variables('Foo', :instance)
+    suggestions = api_map.get_instance_variable_pins('Foo', :instance)
     expect(suggestions.length).to eq(1)
     expect(suggestions[0].return_type).to eq('Array')
   end

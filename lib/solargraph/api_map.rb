@@ -275,41 +275,15 @@ module Solargraph
     # @param scope [Symbol] :instance or :class
     # @return [Array<Solargraph::Pin::InstanceVariable>]
     def get_instance_variable_pins(namespace, scope = :instance)
-      # refresh
-      (@ivar_pins[namespace] || []).select{ |pin| pin.scope == scope }
+      suggest_unique_variables (@ivar_pins[namespace] || []).select{ |pin| pin.scope == scope }
     end
 
-    # Get an array of instance variable suggestions defined in specified
-    # namespace and scope.
+    # Get an array of class variable pins for a namespace.
     #
     # @param namespace [String] A fully qualified namespace
-    # @param scope [Symbol] :instance or :class
-    # @return [Array<Solargraph::Pin::Base>]
-    def get_instance_variables(namespace, scope = :instance)
-      # refresh
-      result = []
-      ip = @ivar_pins[namespace]
-      unless ip.nil?
-        result.concat suggest_unique_variables(ip.select{ |pin| pin.scope == scope })
-      end
-      result
-    end
-
     # @return [Array<Solargraph::Pin::ClassVariable>]
     def get_class_variable_pins(namespace)
-      # refresh
-      @cvar_pins[namespace] || []
-    end
-
-    # @return [Array<Solargraph::Pin::Base>]
-    def get_class_variables(namespace)
-      # refresh
-      result = []
-      cp = @cvar_pins[namespace]
-      unless cp.nil?
-        result.concat suggest_unique_variables(cp)
-      end
-      result
+      suggest_unique_variables(@cvar_pins[namespace] || [])
     end
 
     # @return [Array<Solargraph::Pin::Base>]
@@ -350,15 +324,6 @@ module Solargraph
         type = get_return_type_from_macro(ztype, zparts[-1], pin.assignment_node, :instance, [:public, :private, :protected])
       end
       type
-    end
-
-    # @return [Array<Solargraph::Pin::Base>]
-    def get_global_variables
-      globals = []
-      @sources.each do |s|
-        globals.concat s.global_variable_pins
-      end
-      suggest_unique_variables globals
     end
 
     # @return [Array<Solargraph::Pin::GlobalVariable>]
@@ -558,7 +523,7 @@ module Solargraph
         if fragment.signature.start_with?('@@')
           result.concat get_class_variable_pins(fragment.namespace)
         elsif fragment.signature.start_with?('@')
-          result.concat get_instance_variables(fragment.namespace, fragment.scope)
+          result.concat get_instance_variable_pins(fragment.namespace, fragment.scope)
         elsif fragment.signature.start_with?('$')
           result.concat get_global_variable_pins
         elsif fragment.signature.start_with?(':') and !fragment.signature.start_with?('::')
