@@ -76,6 +76,10 @@ module Solargraph
         end
       end
 
+      def method?
+        true
+      end
+
       private
 
       # @return [Array<String>]

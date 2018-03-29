@@ -114,6 +114,14 @@ module Solargraph
       def identifier
         @identifier ||= "#{location}|#{path || name}"
       end
+
+      def variable?
+        false
+      end
+
+      def method?
+        false
+      end
     end
   end
 end

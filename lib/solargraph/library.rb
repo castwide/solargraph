@@ -57,8 +57,6 @@ module Solargraph
     def definitions_at filename, line, column
       source = read(filename)
       fragment = Solargraph::Source::Fragment.new(source, source.get_offset(line, column))
-      # type = api_map.infer_fragment_path(fragment)
-      # api_map.get_path_suggestions(type)
       api_map.define(fragment)
     end
 
@@ -72,8 +70,7 @@ module Solargraph
     def signatures_at filename, line, column
       source = read(filename)
       fragment = Solargraph::Source::Fragment.new(source, signature_index_before(source, source.get_offset(line, column)))
-      type = api_map.infer_fragment_path(fragment)
-      api_map.get_path_suggestions(type)
+      api_map.define(fragment).select{|pin| pin.method?}
     end
 
     def tmp_api_map

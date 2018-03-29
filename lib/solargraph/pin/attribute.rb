@@ -28,6 +28,10 @@ module Solargraph
       def kind
         Solargraph::LanguageServer::CompletionItemKinds::PROPERTY
       end
+
+      def method?
+        true
+      end
     end
   end
 end

@@ -363,25 +363,6 @@ module Solargraph
       infer_signature_type fragment.base, fragment.namespace, scope: fragment.scope, call_node: fragment.node
     end
 
-    # @todo Candidate for deprecation. ApiMap#define should handle this.
-    def infer_fragment_path fragment
-      return nil if fragment.signature.empty?
-      path = nil
-      if fragment.whole_signature.include?('::') and !fragment.whole_signature.include?('.')
-        path = find_fully_qualified_namespace(fragment.whole_signature, fragment.namespace)
-      else
-        if fragment.base.empty?
-          type = infer_signature_type(fragment.whole_word, fragment.namespace, scope: fragment.scope, call_node: fragment.node)
-          path = extract_namespace(type)
-        else
-          type = infer_signature_type(fragment.base, fragment.namespace, scope: fragment.scope, call_node: fragment.node)
-          meth = get_type_methods(type).select{|pin| pin.name == fragment.whole_word}.first
-          path = meth.path unless meth.nil?
-        end
-      end
-      path
-    end
-
     # Get the return type for a signature within the specified namespace and
     # scope.
     #
@@ -546,14 +527,18 @@ module Solargraph
     def define fragment
       return [] if fragment.string? or fragment.comment?
       pins = infer_signature_pins fragment.whole_signature, fragment.namespace, fragment.scope, fragment.node
-      result = []
-      pins.each do |pin|
-        result.push pin unless pin.path.nil?
-        pin.resolve self
-        rt = infer_signature_pins(pin.return_type, fragment.namespace, fragment.scope, fragment.node).first
-        result.push rt unless rt.nil?
+      return [] if pins.empty?
+      if pins.first.variable?
+        result = []
+        pins.select{|pin| pin.variable?}
+        pins.each do |pin|
+          pin.resolve self
+          result.concat infer_signature_pins(pin.return_type, fragment.namespace, fragment.scope, fragment.node)
+        end
+        result
+      else
+        pins.reject{|pin| pin.path.nil?}
       end
-      result
     end
 
     def infer_signature_pins signature, namespace, scope, call_node

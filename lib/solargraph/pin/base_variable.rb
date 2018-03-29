@@ -55,6 +55,10 @@ module Solargraph
         end
       end
 
+      def variable?
+        true
+      end
+
       private
 
       def literal_from_assignment
