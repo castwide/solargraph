@@ -101,7 +101,7 @@ module Solargraph
       end
 
       def helper
-        @helper ||= Solargraph::Pin::Helper.new
+        @helper ||= Solargraph::Pin::Helper.new(docstring)
       end
 
       def to_s

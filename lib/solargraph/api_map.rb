@@ -574,6 +574,7 @@ module Solargraph
 
 
     def complete fragment
+      return [] if fragment.string? or fragment.comment?
       result = []
       if fragment.base.empty?
         if fragment.signature.start_with?('@@')
@@ -600,11 +601,20 @@ module Solargraph
     end
 
     def define fragment
-      infer_signature_pins fragment.whole_signature, fragment.namespace, fragment.scope, fragment.node
+      return [] if fragment.string? or fragment.comment?
+      pins = infer_signature_pins fragment.whole_signature, fragment.namespace, fragment.scope, fragment.node
+      result = []
+      pins.each do |pin|
+        result.push pin unless pin.path.nil?
+        pin.resolve self
+        rt = infer_signature_pins(pin.return_type, fragment.namespace, fragment.scope, fragment.node).first
+        result.push rt unless rt.nil?
+      end
+      result
     end
 
     def infer_signature_pins signature, namespace, scope, call_node
-      return [] if signature.nil?
+      return [] if signature.nil? or signature.empty?
       base, rest = signature.split('.', 2)
       if base.start_with?('@@')
         pin = get_class_variable_pins(namespace).select{|pin| pin.name == base}.first
@@ -661,8 +671,9 @@ module Solargraph
       if rest.nil?
         visibility = [:public]
         visibility.push :private, :protected if top
-        methods = get_methods(namespace, visibility: visibility, scope: scope).select{|pin| pin.name == base}
-        methods = get_methods('Kernel', scope: :instance).select{|pin| pin.name == base} if top
+        methods = []
+        methods.concat get_methods(namespace, visibility: visibility, scope: scope).select{|pin| pin.name == base}
+        methods.concat get_methods('Kernel', scope: :instance).select{|pin| pin.name == base} if top
         return methods
       else
         type = inner_infer_signature_type base, namespace, scope, call_node, top

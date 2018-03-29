@@ -72,8 +72,9 @@ module Solargraph
     def definitions_at filename, line, column
       source = read(filename)
       fragment = Solargraph::Source::Fragment.new(source, source.get_offset(line, column))
-      type = api_map.infer_fragment_path(fragment)
-      api_map.get_path_suggestions(type)
+      # type = api_map.infer_fragment_path(fragment)
+      # api_map.get_path_suggestions(type)
+      api_map.define(fragment)
     end
 
     # Get signature suggestions for the method at the specified file and

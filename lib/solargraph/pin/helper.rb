@@ -8,6 +8,10 @@ module Solargraph
       attr_accessor :object
       attr_accessor :serializer
 
+      def initialize object = nil
+        @object = object
+      end
+
       def url_for(object)
         '.'
       end
