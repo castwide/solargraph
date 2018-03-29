@@ -352,17 +352,6 @@ module Solargraph
       type
     end
 
-    # @return [String]
-    def infer_class_variable(var, namespace)
-      # refresh
-      fqns = find_fully_qualified_namespace(namespace)
-      pins = @cvar_pins[fqns]
-      return nil if pins.nil?
-      pin = pins.select{|p| p.name == var}.first
-      return nil if pin.nil? or pin.return_type.nil?
-      find_fully_qualified_namespace(pin.return_type, pin.namespace)
-    end
-
     # @return [Array<Solargraph::Pin::Base>]
     def get_global_variables
       globals = []
@@ -379,23 +368,6 @@ module Solargraph
         globals.concat s.global_variable_pins
       end
       globals
-    end
-
-    # @return [String]
-    def infer_assignment_node_type node, namespace
-      cached = cache.get_assignment_node_type(node, namespace)
-      return cached unless cached.nil?
-      name_i = (node.type == :casgn ? 1 : 0)
-      sig_i = (node.type == :casgn ? 2 : 1)
-      type = infer_literal_node_type(node.children[sig_i])
-      if type.nil?
-        sig = resolve_node_signature(node.children[sig_i])
-        # Avoid infinite loops from variable assignments that reference themselves
-        return nil if node.children[name_i].to_s == sig.split('.').first
-        type = infer_signature_type(sig, namespace, call_node: node.children[sig_i])
-      end
-      cache.set_assignment_node_type(node, namespace, type)
-      type
     end
 
     def get_type_methods type, context = ''
@@ -426,6 +398,7 @@ module Solargraph
       infer_signature_type fragment.base, fragment.namespace, scope: fragment.scope, call_node: fragment.node
     end
 
+    # @todo Candidate for deprecation. ApiMap#define should handle this.
     def infer_fragment_path fragment
       return nil if fragment.signature.empty?
       path = nil
@@ -469,12 +442,8 @@ module Solargraph
         return nil if pins.empty?
         pin = pins.first
         if rest.nil?
-          # if pin.signature.nil? or pin.signature.empty?
-            pin.resolve self
-            pin.return_type
-          # else
-          #   inner_infer_signature_type(pin.signature, namespace, scope, call_node, true)
-          # end
+          pin.resolve self
+          pin.return_type
         elsif pin.signature.nil? or pin.signature.empty?
           if pin.path.nil?
             pin.resolve self
