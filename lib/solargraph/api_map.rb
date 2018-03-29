@@ -587,7 +587,7 @@ module Solargraph
           result.concat get_symbols
         else
           unless fragment.signature.include?('::')
-            result.concat source.local_variable_pins.select{|pin| pin.visible_from?(fragment.node)}
+            result.concat fragment.local_variable_pins
             result.concat get_type_methods(fragment.namespace, fragment.namespace)
             result.concat get_type_methods('Kernel')
           end

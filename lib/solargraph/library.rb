@@ -37,29 +37,30 @@ module Solargraph
       # @type [Solargraph::Source]
       source = read(filename)
       fragment = Solargraph::Source::Fragment.new(source, source.get_offset(line, column))
-      result = []
-      if fragment.signature.include?('.')
-        type = api_map.infer_fragment_type(fragment)
-        result.concat api_map.get_type_methods(type, fragment.namespace) unless type.nil?
-      else
-        if fragment.signature.start_with?('@@')
-          result.concat api_map.get_class_variable_pins(fragment.namespace)
-        elsif fragment.signature.start_with?('@')
-          result.concat api_map.get_instance_variables(fragment.namespace, fragment.scope)
-        elsif fragment.signature.start_with?('$')
-          result.concat api_map.get_global_variable_pins
-        elsif fragment.signature.start_with?(':') and !fragment.signature.start_with?('::')
-          result.concat api_map.get_symbols
-        else
-          unless fragment.signature.include?('::')
-            result.concat source.local_variable_pins.select{|pin| pin.visible_from?(fragment.node)}
-            result.concat api_map.get_type_methods(fragment.namespace, fragment.namespace)
-            result.concat api_map.get_type_methods('Kernel')
-          end
-          result.concat api_map.get_constants(fragment.base, fragment.namespace)
-        end
-      end
-      result.uniq(&:path).select{|s| s.kind != Solargraph::LanguageServer::CompletionItemKinds::METHOD or s.name.match(/^[a-z0-9_]*(\!|\?|=)?$/i)}.sort_by.with_index{ |x, idx| [x.name, idx] }
+      # result = []
+      # if fragment.signature.include?('.')
+      #   type = api_map.infer_fragment_type(fragment)
+      #   result.concat api_map.get_type_methods(type, fragment.namespace) unless type.nil?
+      # else
+      #   if fragment.signature.start_with?('@@')
+      #     result.concat api_map.get_class_variable_pins(fragment.namespace)
+      #   elsif fragment.signature.start_with?('@')
+      #     result.concat api_map.get_instance_variables(fragment.namespace, fragment.scope)
+      #   elsif fragment.signature.start_with?('$')
+      #     result.concat api_map.get_global_variable_pins
+      #   elsif fragment.signature.start_with?(':') and !fragment.signature.start_with?('::')
+      #     result.concat api_map.get_symbols
+      #   else
+      #     unless fragment.signature.include?('::')
+      #       result.concat source.local_variable_pins.select{|pin| pin.visible_from?(fragment.node)}
+      #       result.concat api_map.get_type_methods(fragment.namespace, fragment.namespace)
+      #       result.concat api_map.get_type_methods('Kernel')
+      #     end
+      #     result.concat api_map.get_constants(fragment.base, fragment.namespace)
+      #   end
+      # end
+      result = api_map.complete(fragment)
+      result.uniq(&:identifier).select{|s| s.kind != Solargraph::LanguageServer::CompletionItemKinds::METHOD or s.name.match(/^[a-z0-9_]*(\!|\?|=)?$/i)}.sort_by.with_index{ |x, idx| [x.name, idx] }
     end
 
     # Get definition suggestions for the expression at the specified file and

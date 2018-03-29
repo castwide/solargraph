@@ -105,6 +105,13 @@ module Solargraph
         @whole_word_range ||= word_range_at(@offset, true)
       end
 
+      def local_variable_pins
+        STDERR.puts "Possibilities: #{@source.local_variable_pins.map(&:name)}"
+        pins = @source.local_variable_pins.select{|pin| pin.visible_from?(node)}
+        STDERR.puts "Result: #{pins.map(&:name)}"
+        pins
+      end
+
       private
 
       def get_signature_data_at index

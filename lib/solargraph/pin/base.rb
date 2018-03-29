@@ -110,6 +110,10 @@ module Solargraph
 
       def resolve api_map
       end
+
+      def identifier
+        @identifier ||= "#{location}|#{path || name}"
+      end
     end
   end
 end
