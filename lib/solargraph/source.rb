@@ -288,7 +288,7 @@ module Solargraph
         return if @code == rewrite
         again = true
         if change['text'].match(/^[^a-z0-9\s]*$/i)
-          tmp = (start_offset == 0 ? '' : @code[0..start_offset-1].to_s) + change['text'].gsub(/\r\n/, "\n").gsub(/[^\s]/, ' ') + @code[end_offset..-1].to_s
+          tmp = (start_offset == 0 ? '' : @fixed[0..start_offset-1].to_s) + change['text'].gsub(/\r\n/, "\n").gsub(/[^\s]/, ' ') + @fixed[end_offset..-1].to_s
           again = false
         else
           tmp = rewrite

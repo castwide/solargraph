@@ -518,8 +518,12 @@ module Solargraph
           result.concat get_constants(fragment.base, fragment.namespace)
         end
       else
-        type = infer_signature_type(fragment.base, fragment.namespace, scope: fragment.scope, call_node: fragment.node)
-        result.concat get_type_methods(type)
+        if fragment.signature.include?('::') and !fragment.signature.include?('.')
+          result.concat get_constants(fragment.base, fragment.namespace)
+        else
+          type = infer_signature_type(fragment.base, fragment.namespace, scope: fragment.scope, call_node: fragment.node)
+          result.concat get_type_methods(type)
+        end
       end
       result
     end
