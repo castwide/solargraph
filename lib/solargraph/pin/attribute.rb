@@ -1,6 +1,7 @@
 module Solargraph
   module Pin
     class Attribute < Base
+      # @return [Symbol] :reader or :writer
       attr_reader :access
 
       def initialize source, node, namespace, access, docstring

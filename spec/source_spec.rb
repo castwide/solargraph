@@ -58,13 +58,197 @@ describe Solargraph::Source do
     expect(source.method_pins[0].return_type).to eq('String')
   end
 
+  it "pins class variables" do
+    source = Solargraph::Source.load_string(%(
+      module TestModule
+        @@foo = bar
+      end
+    ))
+    expect(source.class_variable_pins.length).to eq(1)
+    expect(source.class_variable_pins.first.name).to eq('@@foo')
+  end
+
+  it "pins instance variables" do
+    source = Solargraph::Source.load_string(%(
+      module TestModule
+        @cifoo = bar
+        def test_method
+          @iifoo = bar
+        end
+      end
+    ))
+    expect(source.instance_variable_pins.length).to eq(2)
+    expect(source.instance_variable_pins[0].name).to eq('@cifoo')
+    expect(source.instance_variable_pins[0].namespace).to eq('TestModule')
+    expect(source.instance_variable_pins[0].scope).to eq(:class)
+    expect(source.instance_variable_pins[1].name).to eq('@iifoo')
+    expect(source.instance_variable_pins[1].namespace).to eq('TestModule')
+    expect(source.instance_variable_pins[1].scope).to eq(:instance)
+  end
+
   it "pins global variables" do
-    code = %(
-      $foo = 'foo'
-    )
-    source = Solargraph::Source.virtual(code, 'file.rb')
+    source = Solargraph::Source.load_string(%(
+      $foo = bar
+    ))
     expect(source.global_variable_pins.length).to eq(1)
-    expect(source.global_variable_pins[0].name).to eq('$foo')
+    expect(source.global_variable_pins.first.name).to eq('$foo')
+  end
+
+  it "returns nil for unknown variable types" do
+    source = Solargraph::Source.load_string(%(
+      foo = bar
+    ))
+    expect(source.local_variable_pins.first.return_type).to eq(nil)
+  end
+
+  it "infers variable return types from @type tags" do
+    source = Solargraph::Source.load_string(%(
+      # @type [String]
+      foo = bar
+    ))
+    expect(source.local_variable_pins.first.return_type).to eq('String')
+  end
+
+  it "pins namespaces" do
+    source = Solargraph::Source.load_string(%(
+      module Foo
+        class Bar
+        end
+      end
+    ))
+    expect(source.namespace_pins.length).to eq(2)
+    expect(source.namespace_pins[0].path).to eq('Foo')
+    expect(source.namespace_pins[0].type).to eq(:module)
+    expect(source.namespace_pins[0].return_type).to eq('Module<Foo>')
+    expect(source.namespace_pins[1].path).to eq('Foo::Bar')
+    expect(source.namespace_pins[1].type).to eq(:class)
+    expect(source.namespace_pins[1].return_type).to eq('Class<Foo::Bar>')
+  end
+
+  it "pins class methods" do
+    source = Solargraph::Source.load_string(%(
+      class Foo
+        def self.bar
+        end
+      end
+    ))
+    expect(source.method_pins.length).to eq(1)
+    expect(source.method_pins.first.path).to eq('Foo.bar')
+    expect(source.method_pins.first.scope).to eq(:class)
+  end
+
+  it "pins instance methods" do
+    source = Solargraph::Source.load_string(%(
+      class Foo
+        def bar
+        end
+      end
+    ))
+    expect(source.method_pins.length).to eq(1)
+    expect(source.method_pins.first.path).to eq('Foo#bar')
+    expect(source.method_pins.first.scope).to eq(:instance)
+  end
+
+  it "detects method visibility" do
+    source = Solargraph::Source.load_string(%(
+      class Foo
+        def a_public;end
+        protected
+        def a_protected;end
+        private
+        def a_private;end
+        public
+        def a_public_2;end
+      end
+    ))
+    expect(source.method_pins[0].visibility).to eq(:public)
+    expect(source.method_pins[1].visibility).to eq(:protected)
+    expect(source.method_pins[2].visibility).to eq(:private)
+    expect(source.method_pins[3].visibility).to eq(:public)
+  end
+
+  it "detects method return types from @return tags" do
+    source = Solargraph::Source.load_string(%(
+      class Foo
+        # @return [Hash]
+        def bar;end
+      end
+    ))
+    expect(source.method_pins.first.return_type).to eq('Hash')
+  end
+
+  it "detects literal values for variable return types" do
+    source = Solargraph::Source.load_string('
+      str = \'str\'
+      dyn = "#{foo}"
+      arr = []
+      hsh = {}
+      num = 100
+      flt = 0.1
+    ')
+    expect(source.local_variable_pins[0].return_type).to eq('String')
+    expect(source.local_variable_pins[1].return_type).to eq('String')
+    expect(source.local_variable_pins[2].return_type).to eq('Array')
+    expect(source.local_variable_pins[3].return_type).to eq('Hash')
+    expect(source.local_variable_pins[4].return_type).to eq('Integer')
+    expect(source.local_variable_pins[5].return_type).to eq('Float')
+  end
+
+  it "detects attribute reader pins" do
+    source = Solargraph::Source.load_string(%(
+      class Foo
+        attr_reader :bar
+      end
+    ))
+    expect(source.attribute_pins.length).to eq(1)
+    expect(source.attribute_pins.first.name).to eq('bar')
+    expect(source.attribute_pins.first.access).to eq(:reader)
+  end
+
+  it "detects attribute writer pins" do
+    source = Solargraph::Source.load_string(%(
+      class Foo
+        attr_writer :bar
+      end
+    ))
+    expect(source.attribute_pins.length).to eq(1)
+    expect(source.attribute_pins.first.name).to eq('bar=')
+    expect(source.attribute_pins.first.access).to eq(:writer)
+  end
+
+  it "detects attribute accessor pins" do
+    source = Solargraph::Source.load_string(%(
+      class Foo
+        attr_accessor :bar
+      end
+    ))
+    expect(source.attribute_pins.length).to eq(2)
+    names = source.attribute_pins.map(&:name)
+    expect(names).to include('bar')
+    expect(names).to include('bar=')
+    accessors = source.attribute_pins.map(&:access)
+    expect(accessors).to include(:reader)
+    expect(accessors).to include(:writer)    
+  end
+
+  it "pins method parameters as local variables" do
+    source = Solargraph::Source.load_string(%(
+      class Foo
+        def bar baz
+        end
+      end
+    ))
+    expect(source.local_variable_pins.length).to eq(1)
+    expect(source.local_variable_pins.first.name).to eq('baz')
+  end
+
+  it "pins block parameters as local variables" do
+    source = Solargraph::Source.load_string(%(
+      100.times do |num|
+      end
+    ))
+    expect(source.local_variable_pins.length).to eq(1)
+    expect(source.local_variable_pins.first.name).to eq('num')
   end
 
   it "gets method data from code and tags" do
@@ -145,7 +329,7 @@ describe Solargraph::Source do
     expect(source.namespaces).to include('Baz')
   end
 
-  it "gets pins for local variables" do
+  it "pins for local variables" do
     code = %(
       # @type [Hash]
       foo = method_one

@@ -22,6 +22,7 @@ module Solargraph
         @kind ||= (node.type == :class ? Solargraph::LanguageServer::CompletionItemKinds::CLASS : Solargraph::LanguageServer::CompletionItemKinds::MODULE)
       end
 
+      # @return [Symbol] :class or :module
       def type
         node.type
       end
