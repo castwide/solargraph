@@ -77,50 +77,6 @@ module Solargraph
       api_map
     end
 
-    # Get the range (start and end locations) for the symbol at the specified
-    # file and location. A symbol range encompasses the complete word,
-    # including trailing characters.
-    #
-    # @param filename [String] The file to analyze
-    # @param line [Integer] The zero-based line number
-    # @param column [Integer] The zero-based column number
-    # @return [Hash]
-    # def symbol_range_at filename, line, column
-    #   source = read(filename)
-    #   index = source.get_offset(line, column)
-    #   cursor = index
-    #   while cursor > -1
-    #     char = source.code[cursor - 1, 1]
-    #     break if char.nil? or char == ''
-    #     break unless char.match(/[a-z0-9_@$]/i)
-    #     cursor -= 1
-    #   end
-    #   start_offset = cursor
-    #   start_offset -= 1 if (start_offset > 1 and source.code[start_offset - 1] == ':') and (start_offset == 1 or source.code[start_offset - 2] != ':')
-    #   cursor = index
-    #   while cursor < source.code.length
-    #     char = source.code[cursor, 1]
-    #     break if char.nil? or char == ''
-    #     break unless char.match(/[a-z0-9_\?\!]/i)
-    #     cursor += 1
-    #   end
-    #   end_offset = cursor
-    #   end_offset = start_offset if end_offset < start_offset
-    #   start_pos = Solargraph::Source.get_position_at(source.code, start_offset)
-    #   end_pos = Solargraph::Source.get_position_at(source.code, end_offset)
-    #   result = {
-    #     start: {
-    #       line: start_pos[0],
-    #       character: start_pos[1]
-    #     },
-    #     end: {
-    #       line: end_pos[0],
-    #       character: end_pos[1]
-    #     }
-    #   }
-    #   result
-    # end
-
     # Get the pin at the specified location or nil if the pin does not exist.
     #
     # @return [Solargraph::Pin::Base]
