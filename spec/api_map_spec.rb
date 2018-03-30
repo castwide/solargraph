@@ -914,4 +914,67 @@ describe Solargraph::ApiMap do
     expect(sugg).not_to be(nil)
     expect(sugg.return_type).to eq('Foobar::Bazbar')
   end
+
+  it "detects method parameter return types from @param tags" do
+    api_map = Solargraph::ApiMap.new
+    source = Solargraph::Source.load_string(%(
+      class Foo
+        # @param baz [Hash]
+        def bar baz
+          baz
+        end
+      end
+    ), 'file.rb')
+    api_map.virtualize source
+    fragment = source.fragment_at(4, 11)
+    pin = api_map.identify(fragment).first
+    expect(pin.variable?).to be(true)
+    expect(pin.name).to eq('baz')
+    expect(pin.return_type).to eq('Hash')
+  end
+
+  it "detects methods defined in the global namespace" do
+    api_map = Solargraph::ApiMap.new
+    source = Solargraph::Source.load_string(%(
+      def global_method
+      end
+    ), 'file.rb')
+    api_map.virtualize source
+    meths = api_map.get_methods('').map(&:name)
+    expect(meths).to include('global_method')
+  end
+
+  it "detects block parameter return types from @yieldparam tags" do
+    api_map = Solargraph::ApiMap.new
+    source = Solargraph::Source.load_string(%(
+      # @yieldparam [File]
+      def iterate
+      end
+      iterate do |f|
+        f
+      end
+    ), 'file.rb')
+    api_map.virtualize source
+    fragment = source.fragment_at(5, 9)
+    pin = api_map.identify(fragment).first
+    expect(pin.variable?).to be(true)
+    expect(pin.name).to eq('f')
+    expect(pin.return_type).to eq('File')
+  end
+
+  it "detects block parameter return types from core methods" do
+    api_map = Solargraph::ApiMap.new
+    source = Solargraph::Source.load_string(%(
+      x = String.new.split
+      x.each do |s|
+        s
+      end
+    ), 'file.rb')
+    api_map.virtualize source
+    fragment = source.fragment_at(3, 9)
+    pin = api_map.identify(fragment).first
+    expect(pin.variable?).to be(true)
+    expect(pin.name).to eq('s')
+    expect(pin.return_type).to eq('String')
+  end
 end

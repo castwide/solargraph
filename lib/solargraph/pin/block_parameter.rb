@@ -21,23 +21,20 @@ module Solargraph
       def resolve api_map
         return unless return_type.nil?
         signature = resolve_node_signature(@tree[0].children[0])
-        parts = signature.split('.')
-        word = parts.pop
-        base = parts.join('.')
-        type = api_map.infer_signature_type(base, namespace, scope: :class, call_node: node)
-        unless type.nil?
-          meth = api_map.get_type_methods(type).select{|pin| pin.name == word}.first
-          unless meth.nil?
-            if (Solargraph::CoreFills::METHODS_WITH_YIELDPARAM_SUBTYPES.include?(meth.path))
-              subtypes = get_subtypes(type)
-              @return_type = api_map.find_fully_qualified_namespace(subtypes[0], namespace)
-            else
-              unless meth.docstring.nil?
-                yps = meth.docstring.tags(:yieldparam)
-                unless yps[index].nil? or yps[index].types.nil? or yps[index].types.empty?
-                  @return_type = yps[index].types[0]
-                end
-              end
+        meth = api_map.infer_signature_pins(signature, namespace, :class, node).first
+        return nil if meth.nil?
+        if (Solargraph::CoreFills::METHODS_WITH_YIELDPARAM_SUBTYPES.include?(meth.path))
+          base = signature.split('.')[0..-2].join('.')
+          return nil if base.nil? or base.empty?
+          bmeth = api_map.infer_signature_pins(base, namespace, :class, node).first
+          return nil if bmeth.nil?
+          subtypes = get_subtypes(bmeth.return_type)
+          @return_type = api_map.find_fully_qualified_namespace(subtypes[0], namespace)
+        else
+          unless meth.docstring.nil?
+            yps = meth.docstring.tags(:yieldparam)
+            unless yps[index].nil? or yps[index].types.nil? or yps[index].types.empty?
+              @return_type = yps[index].types[0]
             end
           end
         end
