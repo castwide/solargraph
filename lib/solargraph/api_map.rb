@@ -404,6 +404,7 @@ module Solargraph
           unless fragment.signature.include?('::')
             result.concat fragment.local_variable_pins
             result.concat get_type_methods(fragment.namespace, fragment.namespace)
+            result.concat ApiMap.keywords
           end
           result.concat get_constants(fragment.base, fragment.namespace)
         end
