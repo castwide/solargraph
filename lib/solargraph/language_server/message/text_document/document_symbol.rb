@@ -2,8 +2,7 @@ class Solargraph::LanguageServer::Message::TextDocument::DocumentSymbol < Solarg
   include Solargraph::LanguageServer::UriHelpers
 
   def process
-    source = host.read(params['textDocument']['uri'])
-    pins = source.all_symbols
+    pins = host.library.file_symbols(uri_to_file(params['textDocument']['uri']))
     info = pins.map do |pin|
       parts = pin.location.split(':')
       char = parts.pop.to_i

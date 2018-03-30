@@ -127,6 +127,10 @@ module Solargraph
       api_map.query_symbols query
     end
 
+    def file_symbols filename
+      read(filename).all_symbols
+    end
+
     # Create a library from a directory.
     #
     # @param directory [String] The path to be used for the workspace
