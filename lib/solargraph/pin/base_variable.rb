@@ -38,20 +38,13 @@ module Solargraph
       end
 
       def signature
-        @signature ||= resolve_node_signature(node.children[(node.type == :casgn ? 2 : 1)])
+        @signature ||= resolve_node_signature(assignment_node)
       end
-
-      # @todo The path should probably be nil for variables. If not, they need
-      #   to contain more information; e.g., the location of the assignment
-      #   for local variables or the namespace and scope for instance
-      #   variables.
-      # def path
-      #   name
-      # end
 
       def resolve api_map
         if return_type.nil?
-          @return_type = api_map.infer_signature_type(resolve_node_signature(assignment_node), namespace, call_node: node)
+          return nil if signature.nil? or signature.empty? or signature == name or signature.split('.').first.strip == name
+          @return_type = api_map.infer_signature_type(signature, namespace, call_node: node)
         end
       end
 

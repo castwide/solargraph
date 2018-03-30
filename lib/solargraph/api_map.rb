@@ -309,23 +309,6 @@ module Solargraph
       matches.first
     end
 
-    # @return [String]
-    def infer_instance_variable(var, namespace, scope)
-      # refresh
-      pins = @ivar_pins[namespace]
-      return nil if pins.nil?
-      pin = pins.select{|p| p.name == var and p.scope == scope}.first
-      return nil if pin.nil?
-      type = nil
-      type = find_fully_qualified_namespace(pin.return_type, pin.namespace) unless pin.return_type.nil?
-      if type.nil?
-        zparts = resolve_node_signature(pin.assignment_node).split('.')
-        ztype = infer_signature_type(zparts[0..-2].join('.'), namespace, scope: :instance, call_node: pin.assignment_node)
-        type = get_return_type_from_macro(ztype, zparts[-1], pin.assignment_node, :instance, [:public, :private, :protected])
-      end
-      type
-    end
-
     # @return [Array<Solargraph::Pin::GlobalVariable>]
     def get_global_variable_pins
       globals = []
