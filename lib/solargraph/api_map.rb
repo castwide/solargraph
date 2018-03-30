@@ -355,7 +355,7 @@ module Solargraph
       else
         result.concat inner_get_methods(fqns, scope, visibility, deep, [])
       end
-      result.each{|pin| pin.resolve(self)}
+      # result.each{|pin| pin.resolve(self)}
       result
     end
 
