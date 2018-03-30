@@ -123,6 +123,10 @@ module Solargraph
       api_map.search query
     end
 
+    def query_symbols query
+      api_map.query_symbols query
+    end
+
     # Create a library from a directory.
     #
     # @param directory [String] The path to be used for the workspace
