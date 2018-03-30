@@ -285,9 +285,9 @@ module Solargraph
         start_offset = Source.get_offset(@code, change['range']['start']['line'], change['range']['start']['character'])
         end_offset = Source.get_offset(@code, change['range']['end']['line'], change['range']['end']['character'])
         rewrite = (start_offset == 0 ? '' : @code[0..start_offset-1].to_s) + change['text'].gsub(/\r\n/, "\n").force_encoding('utf-8') + @code[end_offset..-1].to_s
-        return if @code == rewrite
+        # return if @code == rewrite
         again = true
-        if change['text'].match(/^[^a-z0-9\s]*$/i)
+        if change['text'].match(/^[^a-z0-9\s]+?$/i)
           tmp = (start_offset == 0 ? '' : @fixed[0..start_offset-1].to_s) + change['text'].gsub(/\r\n/, "\n").gsub(/[^\s]/, ' ') + @fixed[end_offset..-1].to_s
           again = false
         else
@@ -304,6 +304,7 @@ module Solargraph
             tmp = (start_offset == 0 ? '' : @fixed[0..start_offset-1].to_s) + change['text'].gsub(/\r\n/, "\n").gsub(/[^\s]/, ' ') + @fixed[end_offset..-1].to_s
             retry
           else
+            @code = rewrite
             hard_fix_node
           end
         end
@@ -322,7 +323,8 @@ module Solargraph
     end
 
     def hard_fix_node
-      tmp = @code.gsub(/[^ \t\r\n]/, ' ')
+      STDERR.puts "Hard fix: #{@code}"
+      tmp = @code.gsub(/[^\s]/, ' ')
       @fixed = tmp
       node, comments = Source.parse(tmp, filename)
       process_parsed node, comments
