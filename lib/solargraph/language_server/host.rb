@@ -13,8 +13,6 @@ module Solargraph
       attr_reader :library
 
       def initialize
-        # @type [Hash<String, Solargraph::Source]
-        # @file_source = {}
         @change_semaphore = Mutex.new
         @buffer_semaphore = Mutex.new
         @change_queue = []
