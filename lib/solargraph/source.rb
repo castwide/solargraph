@@ -323,7 +323,6 @@ module Solargraph
     end
 
     def hard_fix_node
-      STDERR.puts "Hard fix: #{@code}"
       tmp = @code.gsub(/[^\s]/, ' ')
       @fixed = tmp
       node, comments = Source.parse(tmp, filename)
