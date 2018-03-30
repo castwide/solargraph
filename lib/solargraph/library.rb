@@ -136,15 +136,6 @@ module Solargraph
       api_map.get_path_suggestions(path)
     end
 
-    # Get the type for the signature at the specified location.
-    #
-    # @return [String]
-    def infer_type_at filename, line, column
-      source = read(filename)
-      fragment = Solargraph::Source::Fragment.new(source, source.get_offset(line, column))
-      api_map.infer_fragment_type(fragment)    
-    end
-
     # Check a file out of the library. If the file is not part of the
     # workspace, the ApiMap will virtualize it for mapping purposes. If
     # filename is nil, any source currently checked out of the library
