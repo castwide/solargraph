@@ -513,7 +513,6 @@ module Solargraph
           unless fragment.signature.include?('::')
             result.concat fragment.local_variable_pins
             result.concat get_type_methods(fragment.namespace, fragment.namespace)
-            result.concat get_type_methods('Kernel')
           end
           result.concat get_constants(fragment.base, fragment.namespace)
         end
@@ -525,7 +524,7 @@ module Solargraph
           result.concat get_type_methods(type)
         end
       end
-      result
+      result.uniq(&:identifier).select{|s| s.kind != Solargraph::LanguageServer::CompletionItemKinds::METHOD or s.name.match(/^[a-z0-9_]*(\!|\?|=)?$/i)}.sort_by.with_index{ |x, idx| [x.name, idx] }
     end
 
     def define fragment
@@ -534,8 +533,7 @@ module Solargraph
       return [] if pins.empty?
       if pins.first.variable?
         result = []
-        pins.select{|pin| pin.variable?}
-        pins.each do |pin|
+        pins.select{|pin| pin.variable?}.each do |pin|
           pin.resolve self
           result.concat infer_signature_pins(pin.return_type, fragment.namespace, fragment.scope, fragment.node)
         end

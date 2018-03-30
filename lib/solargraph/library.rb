@@ -37,8 +37,7 @@ module Solargraph
       # @type [Solargraph::Source]
       source = read(filename)
       fragment = Solargraph::Source::Fragment.new(source, source.get_offset(line, column))
-      result = api_map.complete(fragment)
-      result.uniq(&:identifier).select{|s| s.kind != Solargraph::LanguageServer::CompletionItemKinds::METHOD or s.name.match(/^[a-z0-9_]*(\!|\?|=)?$/i)}.sort_by.with_index{ |x, idx| [x.name, idx] }
+      api_map.complete(fragment)
     end
 
     def whole_word_range_at filename, line, column
@@ -57,7 +56,8 @@ module Solargraph
     def definitions_at filename, line, column
       source = read(filename)
       fragment = Solargraph::Source::Fragment.new(source, source.get_offset(line, column))
-      api_map.define(fragment)
+      result = api_map.define(fragment)
+      result
     end
 
     # Get signature suggestions for the method at the specified file and
