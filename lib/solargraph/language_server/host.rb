@@ -229,41 +229,39 @@ module Solargraph
       end
 
       def publish_diagnostics uri, resp
-        if resp['summary']['offense_count'] > 0
-          severities = {
-            'refactor' => 4,
-            'convention' => 3,
-            'warning' => 2,
-            'error' => 1,
-            'fatal' => 1
-          }
-          diagnostics = []
-          resp['files'].each do |file|
-            file['offenses'].each do |off|
-              diag = {
-                range: {
-                  start: {
-                    line: off['location']['start_line'] - 1,
-                    character: off['location']['start_column'] - 1
-                  },
-                  end: {
-                    line: off['location']['last_line'] - 1,
-                    character: off['location']['last_column']
-                  }
+        severities = {
+          'refactor' => 4,
+          'convention' => 3,
+          'warning' => 2,
+          'error' => 1,
+          'fatal' => 1
+        }
+        diagnostics = []
+        resp['files'].each do |file|
+          file['offenses'].each do |off|
+            diag = {
+              range: {
+                start: {
+                  line: off['location']['start_line'] - 1,
+                  character: off['location']['start_column'] - 1
                 },
-                # 1 = Error, 2 = Warning, 3 = Information, 4 = Hint
-                severity: severities[off['severity']],
-                source: off['cop_name'],
-                message: off['message'].gsub(/^#{off['cop_name']}\:/, '')
-              }
-              diagnostics.push diag
-            end
+                end: {
+                  line: off['location']['last_line'] - 1,
+                  character: off['location']['last_column']
+                }
+              },
+              # 1 = Error, 2 = Warning, 3 = Information, 4 = Hint
+              severity: severities[off['severity']],
+              source: off['cop_name'],
+              message: off['message'].gsub(/^#{off['cop_name']}\:/, '')
+            }
+            diagnostics.push diag
           end
-          send_notification "textDocument/publishDiagnostics", {
-            uri: uri,
-            diagnostics: diagnostics
-          }
         end
+        send_notification "textDocument/publishDiagnostics", {
+          uri: uri,
+          diagnostics: diagnostics
+        }
       end
     end
   end
