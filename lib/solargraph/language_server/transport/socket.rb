@@ -11,6 +11,10 @@ module Solargraph
           @content_length = 0
           @buffer = ''
           @host = Solargraph::LanguageServer::Host.new
+          EventMachine.add_periodic_timer 0.1 do
+            tmp = @host.flush
+            send_data tmp unless tmp.empty?
+          end
         end
       
         def process request

@@ -19,11 +19,13 @@ module Solargraph
         @change_semaphore = Mutex.new
         @buffer_semaphore = Mutex.new
         @change_queue = []
+        @diagnostics_queue = []
         @cancel = []
         @buffer = ''
         @stopped = false
         @library = nil # @todo How to initialize the library
         start_change_thread
+        start_diagnostics_thread
       end
 
       # @param options [Hash]
@@ -60,6 +62,11 @@ module Solargraph
         message
       end
 
+      def open uri, text, version
+        library.open uri_to_file(uri), text, version
+        @change_semaphore.synchronize { @diagnostics_queue.push uri }
+      end
+
       def change params
         @change_semaphore.synchronize do
           if changing? params['textDocument']['uri']
@@ -71,6 +78,7 @@ module Solargraph
               source.synchronize(params['contentChanges'], params['textDocument']['version'])
               library.refresh
               @change_queue.pop
+              @diagnostics_queue.push params['textDocument']['uri']
             end
           end
         end
@@ -128,36 +136,64 @@ module Solargraph
         end
       end
 
-      def diagnose file_uri
-        publish_diagnostics file_uri
-      end
-
       private
 
       def start_change_thread
         Thread.new do
           until stopped?
-            changed = false
             @change_semaphore.synchronize do
-              @change_queue.delete_if do |change|
-                filename = uri_to_file(change['textDocument']['uri'])
-                source = read(change['textDocument']['uri'])
-                if change['textDocument']['version'] == source.version + change['contentChanges'].length
-                  source.synchronize(change['contentChanges'], change['textDocument']['version'])
-                  changed = true
-                  true
-                elsif change['textDocument']['version'] <= source.version
-                  # @todo Is deleting outdated changes correct behavior?
-                  changed = true
-                  true
-                else
-                  # @todo Change is out of order. Save it for later
-                  false
+              begin
+                changed = false
+                @change_queue.delete_if do |change|
+                  filename = uri_to_file(change['textDocument']['uri'])
+                  source = read(change['textDocument']['uri'])
+                  if change['textDocument']['version'] == source.version + change['contentChanges'].length
+                    source.synchronize(change['contentChanges'], change['textDocument']['version'])
+                    @diagnostics_queue.push change['textDocument']['uri']
+                    changed = true
+                    true
+                  elsif change['textDocument']['version'] <= source.version
+                    # @todo Is deleting outdated changes correct behavior?
+                    STDERR.puts "Deleting stale change"
+                    @diagnostics_queue.push change['textDocument']['uri']
+                    changed = true
+                    true
+                  else
+                    # @todo Change is out of order. Save it for later
+                    STDERR.puts "Kept in queue: #{change['textDocument']['uri']} from #{source.version} to #{change['textDocument']['version']}"
+                    false
+                  end
                 end
+                STDERR.puts "#{@change_queue.length} pending" unless @change_queue.empty?
+                library.refresh if changed
+              rescue Exception => e
+                STDERR.puts e.message
               end
-              library.refresh if changed
             end
-            sleep 1
+          sleep 0.1
+          end
+        end
+      end
+
+      def start_diagnostics_thread
+        Thread.new do
+          until stopped?
+            unless @change_semaphore.locked?
+              begin
+                current = nil
+                @change_semaphore.synchronize do
+                  current = @diagnostics_queue.shift
+                end
+                unless current.nil?
+                  already_changing = false
+                  @change_semaphore.synchronize { already_changing = (changing?(current) or @diagnostics_queue.include?(current)) }
+                  publish_diagnostics current unless already_changing
+                end
+              rescue Exception => e
+                STDERR.puts e.message
+              end
+            end
+            sleep 0.1
           end
         end
       end
@@ -171,19 +207,22 @@ module Solargraph
       end
 
       def publish_diagnostics uri
-        return if changing?(uri)
-        severities = {
-          'refactor' => 4,
-          'convention' => 3,
-          'warning' => 2,
-          'error' => 1,
-          'fatal' => 1
-        }
-        filename = uri_to_file(uri)
-        text = library.read_code(filename)
-        cmd = "rubocop -f j -s #{Shellwords.escape(filename)}"
-        o, e, s = Open3.capture3(cmd, stdin_data: text)
-        unless changing?(uri)
+        begin
+          filename = nil
+          text = nil
+          @change_semaphore.synchronize do
+            filename = uri_to_file(uri)
+            text = library.read_code(filename)
+          end
+          severities = {
+            'refactor' => 4,
+            'convention' => 3,
+            'warning' => 2,
+            'error' => 1,
+            'fatal' => 1
+          }
+          cmd = "rubocop -f j -s #{Shellwords.escape(filename)}"
+          o, e, s = Open3.capture3(cmd, stdin_data: text)
           resp = JSON.parse(o)
           if resp['summary']['offense_count'] > 0
             diagnostics = []
@@ -213,10 +252,10 @@ module Solargraph
               diagnostics: diagnostics
             }
           end
+        rescue Exception => e
+          STDERR.puts "#{e}"
+          STDERR.puts "#{e.backtrace}"
         end
-      rescue Exception => e
-        STDERR.puts "#{e}"
-        STDERR.puts "#{e.backtrace}"
       end
     end
   end

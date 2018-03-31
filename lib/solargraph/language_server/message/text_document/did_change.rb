@@ -7,7 +7,6 @@ module Solargraph
         class DidChange < Base
           def process
             host.change params
-            host.diagnose params['textDocument']['uri']
           end
         end
       end
