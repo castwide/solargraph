@@ -131,6 +131,15 @@ module Solargraph
       read(filename).all_symbols
     end
 
+    # Get the current text of a file in the library.
+    #
+    # @param filename [String]
+    # @return [String]
+    def read_code filename
+      source = read(filename)
+      source.code
+    end
+
     # Create a library from a directory.
     #
     # @param directory [String] The path to be used for the workspace

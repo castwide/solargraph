@@ -7,7 +7,7 @@ module Solargraph
         class DidChange < Base
           def process
             host.change params
-            # publish_diagnostics
+            host.diagnose params['textDocument']['uri']
           end
         end
       end

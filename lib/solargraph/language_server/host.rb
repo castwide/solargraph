@@ -1,3 +1,6 @@
+require 'open3'
+require 'shellwords'
+# require 'rubocop'
 require 'thread'
 require 'set'
 
@@ -125,6 +128,10 @@ module Solargraph
         end
       end
 
+      def diagnose file_uri
+        publish_diagnostics file_uri
+      end
+
       private
 
       def start_change_thread
@@ -161,6 +168,55 @@ module Solargraph
 
       def version_hash
         @version_hash ||= {}
+      end
+
+      def publish_diagnostics uri
+        return if changing?(uri)
+        severities = {
+          'refactor' => 4,
+          'convention' => 3,
+          'warning' => 2,
+          'error' => 1,
+          'fatal' => 1
+        }
+        filename = uri_to_file(uri)
+        text = library.read_code(filename)
+        cmd = "rubocop -f j -s #{Shellwords.escape(filename)}"
+        o, e, s = Open3.capture3(cmd, stdin_data: text)
+        unless changing?(uri)
+          resp = JSON.parse(o)
+          if resp['summary']['offense_count'] > 0
+            diagnostics = []
+            resp['files'].each do |file|
+              file['offenses'].each do |off|
+                diag = {
+                  range: {
+                    start: {
+                      line: off['location']['start_line'] - 1,
+                      character: off['location']['start_column'] - 1
+                    },
+                    end: {
+                      line: off['location']['last_line'] - 1,
+                      character: off['location']['last_column']
+                    }
+                  },
+                  # 1 = Error, 2 = Warning, 3 = Information, 4 = Hint
+                  severity: severities[off['severity']],
+                  source: off['cop_name'],
+                  message: off['message'].gsub(/^#{off['cop_name']}\:/, '')
+                }
+                diagnostics.push diag
+              end
+            end
+            send_notification "textDocument/publishDiagnostics", {
+              uri: uri,
+              diagnostics: diagnostics
+            }
+          end
+        end
+      rescue Exception => e
+        STDERR.puts "#{e}"
+        STDERR.puts "#{e.backtrace}"
       end
     end
   end

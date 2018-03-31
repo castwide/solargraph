@@ -5,7 +5,7 @@ module Solargraph
         class DidOpen < Base
           def process
             host.library.open uri_to_file(params['textDocument']['uri']), params['textDocument']['text'], params['textDocument']['version']
-            # publish_diagnostics
+            host.diagnose params['textDocument']['uri']
           end
         end
       end
