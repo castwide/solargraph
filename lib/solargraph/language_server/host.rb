@@ -187,7 +187,11 @@ module Solargraph
                 unless current.nil?
                   already_changing = false
                   @change_semaphore.synchronize { already_changing = (changing?(current) or @diagnostics_queue.include?(current)) }
-                  publish_diagnostics current unless already_changing
+                  unless already_changing
+                    resp = read_diagnostics(current)
+                    @change_semaphore.synchronize { already_changing = (changing?(current) or @diagnostics_queue.include?(current)) }
+                    publish_diagnostics current, resp unless already_changing
+                  end
                 end
               rescue Exception => e
                 STDERR.puts e.message
@@ -206,7 +210,7 @@ module Solargraph
         @version_hash ||= {}
       end
 
-      def publish_diagnostics uri
+      def read_diagnostics uri
         begin
           filename = nil
           text = nil
@@ -214,6 +218,18 @@ module Solargraph
             filename = uri_to_file(uri)
             text = library.read_code(filename)
           end
+          cmd = "rubocop -f j -s #{Shellwords.escape(filename)}"
+          o, e, s = Open3.capture3(cmd, stdin_data: text)
+          JSON.parse(o)
+        rescue Exception => e
+          STDERR.puts "#{e}"
+          STDERR.puts "#{e.backtrace}"
+          nil
+        end
+      end
+
+      def publish_diagnostics uri, resp
+        if resp['summary']['offense_count'] > 0
           severities = {
             'refactor' => 4,
             'convention' => 3,
@@ -221,40 +237,32 @@ module Solargraph
             'error' => 1,
             'fatal' => 1
           }
-          cmd = "rubocop -f j -s #{Shellwords.escape(filename)}"
-          o, e, s = Open3.capture3(cmd, stdin_data: text)
-          resp = JSON.parse(o)
-          if resp['summary']['offense_count'] > 0
-            diagnostics = []
-            resp['files'].each do |file|
-              file['offenses'].each do |off|
-                diag = {
-                  range: {
-                    start: {
-                      line: off['location']['start_line'] - 1,
-                      character: off['location']['start_column'] - 1
-                    },
-                    end: {
-                      line: off['location']['last_line'] - 1,
-                      character: off['location']['last_column']
-                    }
+          diagnostics = []
+          resp['files'].each do |file|
+            file['offenses'].each do |off|
+              diag = {
+                range: {
+                  start: {
+                    line: off['location']['start_line'] - 1,
+                    character: off['location']['start_column'] - 1
                   },
-                  # 1 = Error, 2 = Warning, 3 = Information, 4 = Hint
-                  severity: severities[off['severity']],
-                  source: off['cop_name'],
-                  message: off['message'].gsub(/^#{off['cop_name']}\:/, '')
-                }
-                diagnostics.push diag
-              end
+                  end: {
+                    line: off['location']['last_line'] - 1,
+                    character: off['location']['last_column']
+                  }
+                },
+                # 1 = Error, 2 = Warning, 3 = Information, 4 = Hint
+                severity: severities[off['severity']],
+                source: off['cop_name'],
+                message: off['message'].gsub(/^#{off['cop_name']}\:/, '')
+              }
+              diagnostics.push diag
             end
-            send_notification "textDocument/publishDiagnostics", {
-              uri: uri,
-              diagnostics: diagnostics
-            }
           end
-        rescue Exception => e
-          STDERR.puts "#{e}"
-          STDERR.puts "#{e.backtrace}"
+          send_notification "textDocument/publishDiagnostics", {
+            uri: uri,
+            diagnostics: diagnostics
+          }
         end
       end
     end
