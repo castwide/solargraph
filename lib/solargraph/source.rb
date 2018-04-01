@@ -284,11 +284,11 @@ module Solargraph
       if change['range']
         start_offset = Source.get_offset(@code, change['range']['start']['line'], change['range']['start']['character'])
         end_offset = Source.get_offset(@code, change['range']['end']['line'], change['range']['end']['character'])
-        rewrite = (start_offset == 0 ? '' : @code[0..start_offset-1].to_s) + change['text'].gsub(/\r\n/, "\n").force_encoding('utf-8') + @code[end_offset..-1].to_s
+        rewrite = (start_offset == 0 ? '' : @code[0..start_offset-1].to_s) + change['text'].force_encoding('utf-8') + @code[end_offset..-1].to_s
         # return if @code == rewrite
         again = true
         if change['text'].match(/^[^a-z0-9\s]+?$/i)
-          tmp = (start_offset == 0 ? '' : @fixed[0..start_offset-1].to_s) + change['text'].gsub(/\r\n/, "\n").gsub(/[^\s]/, ' ') + @fixed[end_offset..-1].to_s
+          tmp = (start_offset == 0 ? '' : @fixed[0..start_offset-1].to_s) + change['text'].gsub(/[^\s]/, ' ') + @fixed[end_offset..-1].to_s
           again = false
         else
           tmp = rewrite
@@ -301,7 +301,7 @@ module Solargraph
         rescue Parser::SyntaxError => e
           if again
             again = false
-            tmp = (start_offset == 0 ? '' : @fixed[0..start_offset-1].to_s) + change['text'].gsub(/\r\n/, "\n").gsub(/[^\s]/, ' ') + @fixed[end_offset..-1].to_s
+            tmp = (start_offset == 0 ? '' : @fixed[0..start_offset-1].to_s) + change['text'].gsub(/[^\s]/, ' ') + @fixed[end_offset..-1].to_s
             retry
           else
             @code = rewrite
@@ -309,7 +309,7 @@ module Solargraph
           end
         end
       else
-        tmp = change['text'].gsub(/\r\n/, "\n")
+        tmp = change['text']
         return if @code == tmp
         @code = tmp
         begin
@@ -600,7 +600,7 @@ module Solargraph
     class << self
       # @return [Solargraph::Source]
       def load filename
-        code = File.read(filename).gsub(/\r/, '')
+        code = File.read(filename)
         Source.load_string(code, filename)
       end
 
@@ -656,13 +656,13 @@ module Solargraph
         parser.diagnostics.all_errors_are_fatal = true
         parser.diagnostics.ignore_warnings      = true
         buffer = Parser::Source::Buffer.new(filename, 1)
-        buffer.source = code.gsub(/\r\n/, "\n")
+        buffer.source = code
         parser.parse_with_comments(buffer)
       end  
 
       def fix code, filename = nil, offset = nil
         tries = 0
-        code.gsub!(/\r/, '')
+        # code.gsub!(/\r/, '')
         offset = Source.get_offset(code, offset[0], offset[1]) if offset.kind_of?(Array)
         pos = nil
         pos = get_position_at(code, offset) unless offset.nil?

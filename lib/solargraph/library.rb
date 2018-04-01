@@ -10,7 +10,7 @@ module Solargraph
     end
 
     def open filename, text, version
-      source = Solargraph::Source.load_string(text.gsub(/\r\n/, "\n"), filename)
+      source = Solargraph::Source.load_string(text, filename)
       source.version = version
       source_hash[filename] = source
       workspace.merge source
@@ -18,7 +18,7 @@ module Solargraph
     end
 
     def create filename, text
-      source = Solargraph::Source.load_string(text.gsub(/\r\n/, "\n"), filename)
+      source = Solargraph::Source.load_string(text, filename)
       source_hash[filename] = source
       workspace.merge source
       api_map.refresh
