@@ -132,6 +132,10 @@ module Solargraph
       read(filename).all_symbols
     end
 
+    def path_pins path
+      api_map.get_path_suggestions(path)
+    end
+
     # Get the current text of a file in the library.
     #
     # @param filename [String]
