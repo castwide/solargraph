@@ -186,15 +186,15 @@ module Solargraph
           return true if index > c.location.expression.begin_pos and index <= c.location.expression.end_pos
         end
         # Extra test due to some comments not getting tracked
-        while (index >= 0 and @code[index] != "\n")
-          return false if string?
-          if @code[index] == '#'
-            return true if index == 0
-            return false if string?
-            return true unless @code[index-1, 3] == '"#{'
-          end
-          index -= 1
-        end
+        # while (index >= 0 and @code[index] != "\n")
+        #   return false if string?
+        #   if @code[index] == '#'
+        #     return true if index == 0
+        #     return false if string?
+        #     return true unless @code[index-1, 3] == '"#{'
+        #   end
+        #   index -= 1
+        # end
         false
       end
 
