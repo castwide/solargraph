@@ -12,7 +12,7 @@ module Solargraph
     class Host
       include Solargraph::LanguageServer::UriHelpers
 
-      # attr_reader :workspace
+      # @return [Solargraph::Library]
       attr_reader :library
 
       def initialize
