@@ -32,7 +32,7 @@ module Solargraph
         else
           info.concat link_documentation(path) unless path.nil?
         end
-        info.concat "\n\n#{ReverseMarkdown.convert(documentation)}" unless documentation.nil? or documentation.empty?
+        info.concat "\n\n#{documentation}"
         info
       end
 

@@ -1,3 +1,5 @@
+require 'reverse_markdown'
+
 module Solargraph
   module Pin
     class Base
@@ -87,7 +89,6 @@ module Solargraph
 
       # @return [String]
       def documentation
-        # @documentation ||= (docstring.nil? ? '' : @helper.html_markup_rdoc(docstring))
         @documentation ||= ReverseMarkdown.convert(helper.html_markup_rdoc(docstring)) unless docstring.nil?
       end
 
