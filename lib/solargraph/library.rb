@@ -24,6 +24,11 @@ module Solargraph
       api_map.refresh
     end
 
+    def delete filename
+      workspace.handle_deleted filename
+      api_map.refresh
+    end
+
     def close filename
     end
 
