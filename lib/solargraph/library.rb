@@ -78,10 +78,6 @@ module Solargraph
       api_map.define(fragment).select{|pin| pin.method?}
     end
 
-    def tmp_api_map
-      api_map
-    end
-
     # Get the pin at the specified location or nil if the pin does not exist.
     #
     # @return [Solargraph::Pin::Base]
