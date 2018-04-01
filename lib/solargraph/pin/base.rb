@@ -89,7 +89,7 @@ module Solargraph
 
       # @return [String]
       def documentation
-        @documentation ||= ReverseMarkdown.convert(helper.html_markup_rdoc(docstring)) unless docstring.nil?
+        @documentation ||= ReverseMarkdown.convert(helper.html_markup_rdoc(docstring), github_flavored: true) unless docstring.nil?
       end
 
       # True if the suggestion has documentation.

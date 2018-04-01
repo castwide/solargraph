@@ -1,5 +1,6 @@
 require 'ostruct'
 require 'tilt'
+require 'redcarpet'
 
 module Solargraph
   class Page
@@ -15,7 +16,12 @@ module Solargraph
       end
 
       def htmlify text
-        text
+        markdown = Redcarpet::Markdown.new(Redcarpet::Render::HTML.new(prettify: true), fenced_code_blocks: true)
+        helper = Solargraph::Pin::Helper.new
+        conv = ReverseMarkdown.convert(helper.html_markup_rdoc(text), github_flavored: true)
+        result = markdown.render(conv)
+        STDERR.puts result
+        result
       end
 
       def ruby_to_html code
