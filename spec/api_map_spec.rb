@@ -977,4 +977,76 @@ describe Solargraph::ApiMap do
     expect(pin.name).to eq('s')
     expect(pin.return_type).to eq('String')
   end
+
+  it "infers instance variables from class and scope" do
+    api_map = Solargraph::ApiMap.new
+    source = Solargraph::Source.load_string(%(
+      class Thing
+        @civar = 'foo'
+        def iivar
+          @iivar = []
+        end
+      end  
+    ), 'file.rb')
+    api_map.virtualize source
+    expect(api_map.infer_signature_type('@civar', 'Thing', scope: :class)).to eq('String')
+    expect(api_map.infer_signature_type('@civar', 'Thing', scope: :instance)).to eq(nil)
+    expect(api_map.infer_signature_type('@iivar', 'Thing', scope: :class)).to eq(nil)
+    expect(api_map.infer_signature_type('@iivar', 'Thing', scope: :instance)).to eq('Array')
+  end
+
+  it "infers instance variables in the global namespace" do
+    api_map = Solargraph::ApiMap.new
+    source = Solargraph::Source.load_string(%(
+      class Thing
+      end
+      @thing = Thing.new
+    ), 'file.rb')
+    api_map.virtualize source
+    expect(api_map.infer_signature_type('@thing', '')).to eq('Thing')
+  end
+
+  it "infers types from instance variable signatures" do
+    api_map = Solargraph::ApiMap.new
+    source = Solargraph::Source.load_string(%(
+      @foo = '123'
+      @foo.split
+    ), 'file.rb')
+    api_map.virtualize source
+    expect(api_map.infer_signature_type('@foo.split', '')).to eq('Array<String>')
+  end
+
+  it "suggests nested namespaces" do
+    api_map = Solargraph::ApiMap.new
+    source = Solargraph::Source.load_string(%(
+      module Foo
+        class Bar
+        end
+      end
+      Foo::_
+    ), 'file.rb')
+    api_map.virtualize source
+    fragment = source.fragment_at(5, 11)
+    result = api_map.complete(fragment).map(&:name)
+    expect(result.length).to eq(1)
+    expect(result).to include('Bar')
+    fragment = source.fragment_at(5, 12)
+    result = api_map.complete(fragment).map(&:name)
+    expect(result.length).to eq(1)
+    expect(result).to include('Bar')
+  end
+
+  it "suggests completions in string interpolation" do
+    api_map = Solargraph::ApiMap.new
+    source = Solargraph::Source.load_string('
+      world = \'world\'
+      greeting = "hello #{}"
+    ', 'file.rb')
+    api_map.virtualize source
+    fragment = source.fragment_at(2, 26)
+    expect(fragment.string?).to be(false)
+    expect(fragment.comment?).to be(false)
+    items = api_map.complete(fragment).map(&:name)
+    expect(items).to include('world')
+  end
 end
