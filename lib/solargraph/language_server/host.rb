@@ -227,10 +227,6 @@ module Solargraph
         path.gsub(File::ALT_SEPARATOR, File::SEPARATOR)
       end
 
-      def version_hash
-        @version_hash ||= {}
-      end
-
       def read_diagnostics uri
         begin
           filename = nil
