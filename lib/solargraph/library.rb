@@ -19,9 +19,10 @@ module Solargraph
 
     def create filename, text
       source = Solargraph::Source.load_string(text, filename)
-      source_hash[filename] = source
-      workspace.merge source
-      api_map.refresh
+      if workspace.merge(source)
+        source_hash[filename] = source
+        api_map.refresh
+      end
     end
 
     def delete filename

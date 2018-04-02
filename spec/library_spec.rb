@@ -6,12 +6,12 @@ describe Solargraph::Library do
     }.to raise_error(Solargraph::Library::FileNotFoundError)
   end
 
-  it "can read a created file" do
+  it "ignores created files that are not in the workspace" do
     library = Solargraph::Library.new
     library.create('file.rb', 'a = b')
     expect {
       library.checkout 'file.rb'
-    }.not_to raise_error
+    }.to raise_error(Solargraph::Library::FileNotFoundError)
   end
 
   it "opens a file" do

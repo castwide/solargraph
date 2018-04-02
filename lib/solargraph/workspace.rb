@@ -25,21 +25,23 @@ module Solargraph
     # The source is ignored if the configuration excludes it.
     #
     # @param source [Solargraph::Source]
-    # @param force [Boolean] Merge without checking configuration
-    def merge source, force = false
-      return unless force or config(true).calculated.include?(source.filename)
+    # @return [Boolean] True if the source was added to the workspace
+    def merge source
+      return false unless config(true).calculated.include?(source.filename)
       source_hash[source.filename] = source
+      true
     end
 
     # Remove a source from the workspace. The source will not be removed if
     # its file exists and the workspace is configured to include it.
     #
     # @param source [Solargraph::Source]
-    # @param force [Boolean] Remove without checking configuration
-    def remove source, force = false
-      return if !force and config(true).calculated.include?(source.filename)
+    # @return [Boolean] True if the source was removed from the workspace
+    def remove source
+      return false if config(true).calculated.include?(source.filename)
       # @todo This method PROBABLY doesn't care if the file is actually here
       source_hash.delete source.filename
+      true
     end
 
     # @return [Array<String>]
