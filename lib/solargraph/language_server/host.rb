@@ -148,6 +148,17 @@ module Solargraph
         end
       end
 
+      def locate_pin params
+        pin = nil
+        @change_semaphore.synchronize do
+          pin = library.locate_pin(params['data']['location']) unless params['data']['location'].nil?
+          if pin.nil?
+            pin = library.path_pins(params['data']['path']).first
+          end
+        end
+        pin
+      end
+
       private
 
       def start_change_thread
