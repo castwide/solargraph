@@ -19,7 +19,7 @@ module Solargraph
         @path ||= namespace + (scope == :instance ? '#' : '.') + name
       end
 
-      def kind
+      def completion_item_kind
         Solargraph::LanguageServer::CompletionItemKinds::METHOD
       end
 

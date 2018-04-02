@@ -49,9 +49,17 @@ module Solargraph
         nil
       end
 
-      # @return [String]
+      # @return [Integer]
+      def completion_item_kind
+      end
+
+      # @return [Integer]
+      def symbol_kind
+      end
+
+      # @return [Integer]
       def kind
-        nil
+        completion_item_kind
       end
 
       # @return [String]

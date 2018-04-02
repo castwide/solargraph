@@ -12,7 +12,7 @@ module Solargraph
         @name ||= node.children[1].to_s
       end
 
-      def kind
+      def completion_item_kind
         Solargraph::LanguageServer::CompletionItemKinds::CONSTANT
       end
 

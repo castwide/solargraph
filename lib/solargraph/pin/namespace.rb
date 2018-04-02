@@ -18,7 +18,7 @@ module Solargraph
         @path ||= (namespace.empty? ? '' : "#{namespace}::") + name
       end
 
-      def kind
+      def completion_item_kind
         @kind ||= (node.type == :class ? Solargraph::LanguageServer::CompletionItemKinds::CLASS : Solargraph::LanguageServer::CompletionItemKinds::MODULE)
       end
 

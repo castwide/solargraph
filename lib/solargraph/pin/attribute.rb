@@ -26,7 +26,7 @@ module Solargraph
         @return_type
       end
 
-      def kind
+      def completion_item_kind
         Solargraph::LanguageServer::CompletionItemKinds::PROPERTY
       end
 

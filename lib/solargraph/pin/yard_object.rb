@@ -15,7 +15,7 @@ module Solargraph
         @name ||= code_object.name.to_s
       end
 
-      def kind
+      def completion_item_kind
         # @todo Figure out the kind
         Solargraph::LanguageServer::CompletionItemKinds::METHOD if code_object.kind_of?(YARD::CodeObjects::MethodObject)
       end
