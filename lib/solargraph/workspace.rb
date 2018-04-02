@@ -32,6 +32,14 @@ module Solargraph
       true
     end
 
+    # Determine whether a file would be merged into the workspace.
+    #
+    # @param filename [String]
+    # @return [Boolean]
+    def would_merge? filename
+      Solargraph::Workspace::Config.new(directory).calculated.include?(filename)
+    end
+
     # Remove a source from the workspace. The source will not be removed if
     # its file exists and the workspace is configured to include it.
     #

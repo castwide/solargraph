@@ -65,7 +65,6 @@ module Solargraph
       def create uri
         filename = uri_to_file(uri)
         library.create filename, File.read(filename)
-        library.refresh
       end
 
       def delete uri
@@ -75,7 +74,6 @@ module Solargraph
 
       def open uri, text, version
         library.open uri_to_file(uri), text, version
-        library.refresh
         @change_semaphore.synchronize { @diagnostics_queue.push uri }
       end
 

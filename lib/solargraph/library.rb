@@ -9,6 +9,12 @@ module Solargraph
       @workspace = workspace
     end
 
+    # Open a file in the library. Opening a file will make it available for
+    # checkout and merge it into the workspace if applicable.
+    #
+    # @param filename [String]
+    # @param text [String]
+    # @param version [Integer]
     def open filename, text, version
       source = Solargraph::Source.load_string(text, filename)
       source.version = version
@@ -17,14 +23,30 @@ module Solargraph
       api_map.refresh
     end
 
+    # Create a file source to be added to the workspace. The source is ignored
+    # if the workspace is not configured to include the file.
+    #
+    # @param filename [String]
+    # @param text [String] The contents of the file
+    # @return [Boolean] True if the file was added to the workspace.
     def create filename, text
-      source = Solargraph::Source.load_string(text, filename)
-      if workspace.merge(source)
-        source_hash[filename] = source
-        api_map.refresh
+      result = false
+      if workspace.would_merge?(filename)
+        source = Solargraph::Source.load_string(text, filename)
+        if workspace.merge(source)
+          source_hash[filename] = source
+          api_map.refresh
+          result = true
+        end
       end
+      result
     end
 
+    # Delete a file from the library. Deleting a file will make it unavailable
+    # for checkout and optionally remove it from the workspace unless the
+    # workspace configuration determines that it should still exist.
+    #
+    # @param filename [String]
     def delete filename
       source = source_hash[filename]
       return if source.nil?
@@ -33,7 +55,12 @@ module Solargraph
       api_map.refresh
     end
 
+    # Close a file in the library. Closing a file will make it unavailable for
+    # checkout although it may still exist in the workspace.
+    #
+    # @param filename [String]
     def close filename
+      source_hash.delete filename
     end
 
     # Get completion suggestions at the specified file and location.
