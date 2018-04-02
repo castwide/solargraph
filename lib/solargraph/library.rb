@@ -25,7 +25,10 @@ module Solargraph
     end
 
     def delete filename
-      workspace.remove filename
+      source = source_hash[filename]
+      return if source.nil?
+      source_hash.delete filename
+      workspace.remove source
       api_map.refresh
     end
 
