@@ -83,10 +83,6 @@ module Solargraph
         @word ||= word_at(@offset)
       end
 
-      def signature_data
-        @signature_data ||= get_signature_data_at(@offset)
-      end
-
       def string?
         @string = @source.string_at?(@offset) if @string.nil?
         @string
@@ -110,6 +106,10 @@ module Solargraph
       end
 
       private
+
+      def signature_data
+        @signature_data ||= get_signature_data_at(@offset)
+      end
 
       def get_signature_data_at index
         brackets = 0

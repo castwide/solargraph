@@ -77,4 +77,14 @@ describe Solargraph::Source::Fragment do
     fragment = source.fragment_at(1, 15)
     expect(fragment.string?).to be(false)
   end
+
+  it "ignores parens and brackets in signatures" do
+    source = Solargraph::Source.load_string('
+      foo(1).bar{|x|y}.baz()
+    ')
+    fragment = source.fragment_at(1, 24)
+    expect(fragment.signature).to eq('foo.bar.b')
+    expect(fragment.whole_signature).to eq('foo.bar.baz')
+    expect(fragment.base).to eq('foo.bar')
+  end
 end
