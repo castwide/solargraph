@@ -86,5 +86,7 @@ describe Solargraph::Source::Fragment do
     expect(fragment.signature).to eq('foo.bar.b')
     expect(fragment.whole_signature).to eq('foo.bar.baz')
     expect(fragment.base).to eq('foo.bar')
+    expect(fragment.word).to eq('b')
+    expect(fragment.whole_word).to eq('baz')
   end
 end
