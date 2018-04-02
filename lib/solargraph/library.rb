@@ -25,7 +25,7 @@ module Solargraph
     end
 
     def delete filename
-      workspace.handle_deleted filename
+      workspace.remove filename
       api_map.refresh
     end
 
