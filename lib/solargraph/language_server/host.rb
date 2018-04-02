@@ -169,7 +169,7 @@ module Solargraph
                 changed = false
                 @change_queue.delete_if do |change|
                   filename = uri_to_file(change['textDocument']['uri'])
-                  source = read(change['textDocument']['uri'])
+                  source = library.checkout(filename)
                   if change['textDocument']['version'] == source.version + change['contentChanges'].length
                     source.synchronize(change['contentChanges'], change['textDocument']['version'])
                     @diagnostics_queue.push change['textDocument']['uri']
