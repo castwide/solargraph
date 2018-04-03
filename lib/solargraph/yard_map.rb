@@ -26,6 +26,7 @@ module Solargraph
       process_gem_paths
       yardocs.push CoreDocs.yardoc_file
       yardocs.uniq!
+      yardocs.delete_if{ |y| y.start_with? workspace.directory } unless workspace.nil?
       yardocs.each do |y|
         load_yardoc y
         YARD::Registry.all(:class, :module).each do |ns|
@@ -131,6 +132,7 @@ module Solargraph
       meths = []
       combined_namespaces(namespace, scope).each do |ns|
         yardocs_documenting(ns).each do |y|
+          STDERR.puts "#{y} for #{namespace}, #{scope}"
           yard = load_yardoc(y)
           unless yard.nil?
             ns = nil
@@ -321,37 +323,68 @@ module Solargraph
     end
 
     def process_gem_paths
+      # @todo Temporarily not doing the good stuff
+      process_requires
+      return
       if !has_bundle?
         process_requires
       else
+        processed = false
         Bundler.with_clean_env do
           Bundler.environment.chdir(workspace.directory) do
-            #Bundler.environment.gems.to_a.each do |g|
-            #  @gem_paths[g.name] = g.full_gem_path
-            #end
-            process_requires
+            begin
+              # Bundler.reset!
+              # Bundler.setup
+              processed = true
+            rescue Exception => e
+              STDERR.puts "#{e.class}: #{e.message}"
+            end
+            process_requires if processed
           end
         end
+        # Bundler.reset!
+        process_requires unless processed
       end
     end
 
     def process_requires
+      tried = []
       required.each do |r|
-        next if !workspace.nil? and !workspace.directory.nil? and File.exist?(File.join workspace.directory, 'lib', "#{r}.rb")
+        # STDERR.puts "Required: #{r}"
+        # next if !workspace.nil? and !workspace.directory.nil? and File.exist?(File.join workspace.directory, 'lib', "#{r}.rb")
+        # spec = Gem::Specification.find_by_path(r)
+        # STDERR.puts "****** FOUND #{r} by path!!!!!!!!!!!" unless spec.nil?
+        # begin
+        #   if spec.nil?
+        #     spec = Gem::Specification.find_by_name(r.split('/').first) if spec.nil?
+        #     STDERR.puts "****** FOUND #{r} by name!!!!!!!!!!!" unless spec.nil?
+        #   end
+        # rescue Gem::LoadError => e
+        #   STDERR.puts "Error: #{e.message}"
+        #   # @todo How to handle this?
+        # end
+        # if spec.nil?
+        #   # @todo Enable this message and/or find a better way to handle this
+        #   # STDERR.puts "Required path not found (pgp): #{r}"
+        # else
+        #   STDERR.puts "************** GOT IT! #{spec.full_gem_path}"
+        #   @gem_paths[spec.name] = spec.full_gem_path
+        #   add_gem_dependencies spec
+        #   result = YARD::Registry.yardoc_file_for_gem(spec.name)
+        #   yardocs.unshift result unless result.nil? or yardocs.include?(result)
+        # end
         spec = Gem::Specification.find_by_path(r)
+        spec = Gem::Specification.find_by_path(r.split('/').first) if spec.nil?
         begin
-          spec = Gem::Specification.find_by_name(r) if spec.nil?
-        rescue Gem::LoadError => e
-          # @todo How to handle this?
-        end
-        if spec.nil?
-          # @todo Enable this message and/or find a better way to handle this
-          # STDERR.puts "Required path not found (pgp): #{r}"
-        else
-          @gem_paths[spec.name] = spec.full_gem_path
+          # STDERR.puts "Failed to find #{r} by path" if spec.nil?
+          spec = Gem::Specification.find_by_name(r.split('/').first) if spec.nil?
+          ver = '>= 0'
+          ver = spec.version unless spec.nil?
           add_gem_dependencies spec
-          result = YARD::Registry.yardoc_file_for_gem(spec.name)
-          yardocs.unshift result unless result.nil? or yardocs.include?(result)
+          yd = YARD::Registry.yardoc_file_for_gem(spec.name, spec.version)
+          yardocs.unshift yd unless yd.nil? or yardocs.include?(yd)
+        rescue Gem::LoadError => e
+          # STDERR.puts "LoadError on #{r}"
         end
       end
     end
