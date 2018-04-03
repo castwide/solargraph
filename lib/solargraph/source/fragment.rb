@@ -13,10 +13,6 @@ module Solargraph
         @offset = offset
       end
 
-      def signature_start
-        signature_data[0]
-      end
-
       def node
         @node ||= @source.node_at(@offset)
       end
