@@ -173,7 +173,7 @@ module Solargraph
     #
     # @param filename [String]
     # @return [String]
-    def read_code filename
+    def read_text filename
       source = read(filename)
       source.code
     end

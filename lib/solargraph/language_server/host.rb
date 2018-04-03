@@ -161,7 +161,7 @@ module Solargraph
 
       def read_text uri
         filename = uri_to_file(uri)
-        library.read_code(filename)
+        library.read_text(filename)
       end
 
       private
@@ -247,7 +247,7 @@ module Solargraph
           text = nil
           @change_semaphore.synchronize do
             filename = uri_to_file(uri)
-            text = library.read_code(filename)
+            text = library.read_text(filename)
           end
           cmd = "rubocop -f j -s #{Shellwords.escape(filename)}"
           o, e, s = Open3.capture3(cmd, stdin_data: text)
