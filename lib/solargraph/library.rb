@@ -78,12 +78,6 @@ module Solargraph
       api_map.complete(fragment)
     end
 
-    def whole_word_range_at filename, line, column
-      source = read(filename)
-      fragment = Solargraph::Source::Fragment.new(source, source.get_offset(line, column))
-      fragment.whole_word_range
-    end
-
     # Get definition suggestions for the expression at the specified file and
     # location.
     #
