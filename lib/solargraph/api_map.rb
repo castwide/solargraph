@@ -6,6 +6,7 @@ module Solargraph
   class ApiMap
     autoload :Cache,        'solargraph/api_map/cache'
     autoload :SourceToYard, 'solargraph/api_map/source_to_yard'
+    autoload :Completion,   'solargraph/api_map/completion'
 
     include NodeMethods
     include Solargraph::ApiMap::SourceToYard
@@ -388,6 +389,7 @@ module Solargraph
       end
     end
 
+    # @return [ApiMap::Completion]
     def complete fragment
       return [] if fragment.string? or fragment.comment?
       result = []
@@ -416,7 +418,8 @@ module Solargraph
           result.concat get_type_methods(type)
         end
       end
-      result.uniq(&:identifier).select{|s| s.kind != Solargraph::LanguageServer::CompletionItemKinds::METHOD or s.name.match(/^[a-z0-9_]*(\!|\?|=)?$/i)}.sort_by.with_index{ |x, idx| [x.name, idx] }
+      filtered = result.uniq(&:identifier).select{|s| s.kind != Solargraph::LanguageServer::CompletionItemKinds::METHOD or s.name.match(/^[a-z0-9_]*(\!|\?|=)?$/i)}.sort_by.with_index{ |x, idx| [x.name, idx] }
+      Completion.new(filtered, fragment.whole_word_range)
     end
 
     def define fragment

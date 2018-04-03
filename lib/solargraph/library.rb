@@ -69,7 +69,7 @@ module Solargraph
     # @param filename [String] The file to analyze
     # @param line [Integer] The zero-based line number
     # @param column [Integer] The zero-based column number
-    # @return [Array<Solargraph::Pin::Base>]
+    # @return [ApiMap::Completion]
     def completions_at filename, line, column
       # @type [Solargraph::Source]
       source = nil

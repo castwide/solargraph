@@ -5,6 +5,8 @@ module Solargraph
   class Source
     autoload :FlawedBuilder, 'solargraph/source/flawed_builder'
     autoload :Fragment,      'solargraph/source/fragment'
+    autoload :Position,      'solargraph/source/position'
+    autoload :Range,         'solargraph/source/range'
 
     # @return [String]
     attr_reader :code

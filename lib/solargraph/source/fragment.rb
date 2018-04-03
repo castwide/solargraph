@@ -221,6 +221,7 @@ module Solargraph
         cursor + 1
       end
 
+      # @return Solargraph::Source::Range
       def word_range_at index, whole
         cursor = beginning_of_word_at(index)
         start_offset = cursor
@@ -238,17 +239,18 @@ module Solargraph
         end_offset = start_offset if end_offset < start_offset
         start_pos = Solargraph::Source.get_position_at(@code, start_offset)
         end_pos = Solargraph::Source.get_position_at(@code, end_offset)
-        result = {
-          start: {
-            line: start_pos[0],
-            character: start_pos[1]
-          },
-          end: {
-            line: end_pos[0],
-            character: end_pos[1]
-          }
-        }
-        result
+        # result = {
+        #   start: {
+        #     line: start_pos[0],
+        #     character: start_pos[1]
+        #   },
+        #   end: {
+        #     line: end_pos[0],
+        #     character: end_pos[1]
+        #   }
+        # }
+        # result
+        Solargraph::Source::Range.from_to(start_pos[0], start_pos[1], end_pos[0], end_pos[1])
       end
 
       def remainder_at index

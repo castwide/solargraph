@@ -37,14 +37,13 @@ module Solargraph
             filename = uri_to_file(params['textDocument']['uri'])
             line = params['position']['line']
             col = params['position']['character']
-            pins = host.library.completions_at(filename, line, col)
-            range = host.library.whole_word_range_at(filename, line, col)
+            completion = host.library.completions_at(filename, line, col)
             items = []
-            pins.each do |s|
-              items.push s.completion_item.merge({
+            completion.pins.each do |pin|
+              items.push pin.completion_item.merge({
                 textEdit: {
-                  range: range,
-                  newText: s.name
+                  range: completion.range.to_hash,
+                  newText: pin.name
                 }
               })
             end

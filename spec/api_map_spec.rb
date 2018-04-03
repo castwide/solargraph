@@ -1027,11 +1027,11 @@ describe Solargraph::ApiMap do
     ), 'file.rb')
     api_map.virtualize source
     fragment = source.fragment_at(5, 11)
-    result = api_map.complete(fragment).map(&:name)
+    result = api_map.complete(fragment).pins.map(&:name)
     expect(result.length).to eq(1)
     expect(result).to include('Bar')
     fragment = source.fragment_at(5, 12)
-    result = api_map.complete(fragment).map(&:name)
+    result = api_map.complete(fragment).pins.map(&:name)
     expect(result.length).to eq(1)
     expect(result).to include('Bar')
   end
@@ -1046,7 +1046,7 @@ describe Solargraph::ApiMap do
     fragment = source.fragment_at(2, 26)
     expect(fragment.string?).to be(false)
     expect(fragment.comment?).to be(false)
-    items = api_map.complete(fragment).map(&:name)
+    items = api_map.complete(fragment).pins.map(&:name)
     expect(items).to include('world')
   end
 end
