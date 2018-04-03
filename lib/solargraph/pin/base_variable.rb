@@ -41,6 +41,7 @@ module Solargraph
         @signature ||= resolve_node_signature(assignment_node)
       end
 
+      # @param api_map [Solargraph::ApiMap]
       def resolve api_map
         if return_type.nil?
           return nil if signature.nil? or signature.empty? or signature == name or signature.split('.').first.strip == name
