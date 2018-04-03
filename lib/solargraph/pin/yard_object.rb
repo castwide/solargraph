@@ -27,6 +27,14 @@ module Solargraph
       def return_type
         # @todo Get the return type
         if @return_type.nil?
+          if code_object.kind_of?(YARD::CodeObjects::ClassObject)
+            @return_type ||= "Class<#{path}>"
+            return @return_type
+          end
+          if code_object.kind_of?(YARD::CodeObjects::ModuleObject)
+            @return_type ||= "Module<#{path}>"
+            return @return_type
+          end        
           if Solargraph::CoreFills::CUSTOM_RETURN_TYPES.has_key?(path)
             @return_type = Solargraph::CoreFills::CUSTOM_RETURN_TYPES[path]
           else
