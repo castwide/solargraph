@@ -28,9 +28,9 @@ module Solargraph
         start_diagnostics_thread
       end
 
-      # @param options [Hash]
-      def configure options
-        @options = options
+      # @param update [Hash]
+      def configure update
+        options.merge! update
       end
 
       # @return [Hash]

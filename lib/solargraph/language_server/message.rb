@@ -43,26 +43,27 @@ module Solargraph
         end
       end
 
-      register 'initialize',                      Initialize
-      register 'initialized',                     Initialized
-      register 'textDocument/completion',         TextDocument::Completion
-      register 'completionItem/resolve',          CompletionItem::Resolve
-      register 'textDocument/signatureHelp',      TextDocument::SignatureHelp
-      register 'textDocument/didOpen',            TextDocument::DidOpen
-      register 'textDocument/didChange',          TextDocument::DidChange
-      register 'textDocument/didSave',            TextDocument::DidSave
-      register 'textDocument/didClose',           TextDocument::DidClose
-      register 'textDocument/hover',              TextDocument::Hover
-      register 'textDocument/definition',         TextDocument::Definition
-      register 'textDocument/onTypeFormatting',   TextDocument::OnTypeFormatting
-      register 'textDocument/documentSymbol',     TextDocument::DocumentSymbol
-      register 'workspace/didChangeWatchedFiles', Workspace::DidChangeWatchedFiles
-      register 'workspace/symbol',                Workspace::WorkspaceSymbol
-      register '$/cancelRequest',                 CancelRequest
-      register '$/solargraph/document',           Extended::Document
-      register '$/solargraph/search',             Extended::Search
-      register 'shutdown',                        Shutdown
-      register 'exit',                            ExitNotification
+      register 'initialize',                       Initialize
+      register 'initialized',                      Initialized
+      register 'textDocument/completion',          TextDocument::Completion
+      register 'completionItem/resolve',           CompletionItem::Resolve
+      register 'textDocument/signatureHelp',       TextDocument::SignatureHelp
+      register 'textDocument/didOpen',             TextDocument::DidOpen
+      register 'textDocument/didChange',           TextDocument::DidChange
+      register 'textDocument/didSave',             TextDocument::DidSave
+      register 'textDocument/didClose',            TextDocument::DidClose
+      register 'textDocument/hover',               TextDocument::Hover
+      register 'textDocument/definition',          TextDocument::Definition
+      register 'textDocument/onTypeFormatting',    TextDocument::OnTypeFormatting
+      register 'textDocument/documentSymbol',      TextDocument::DocumentSymbol
+      register 'workspace/didChangeWatchedFiles',  Workspace::DidChangeWatchedFiles
+      register 'workspace/didChangeConfiguration', Workspace::DidChangeConfiguration
+      register 'workspace/symbol',                 Workspace::WorkspaceSymbol
+      register '$/cancelRequest',                  CancelRequest
+      register '$/solargraph/document',            Extended::Document
+      register '$/solargraph/search',              Extended::Search
+      register 'shutdown',                         Shutdown
+      register 'exit',                             ExitNotification
     end
   end
 end
