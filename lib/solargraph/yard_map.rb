@@ -34,7 +34,7 @@ module Solargraph
           @namespace_yardocs[ns.path].push y
         end
       end
-      # cache_core
+      cache_core
     end
 
     # @return [Array<String>]
@@ -127,12 +127,12 @@ module Solargraph
 
     # @return [Array<Suggestion>]
     def get_methods namespace, scope = '', visibility: [:public]
+      return [] if namespace == '' and scope == ''
       cached = cache.get_methods(namespace, scope, visibility)
       return cached unless cached.nil?
       meths = []
       combined_namespaces(namespace, scope).each do |ns|
         yardocs_documenting(ns).each do |y|
-          STDERR.puts "#{y} for #{namespace}, #{scope}"
           yard = load_yardoc(y)
           unless yard.nil?
             ns = nil
@@ -173,6 +173,7 @@ module Solargraph
 
     # @return [Array<Suggestion>]
     def get_instance_methods namespace, scope = '', visibility: [:public]
+      return [] if namespace == '' and scope == ''
       cached = cache.get_instance_methods(namespace, scope, visibility)
       return cached unless cached.nil?
       meths = []
@@ -323,26 +324,23 @@ module Solargraph
     end
 
     def process_gem_paths
-      # @todo Temporarily not doing the good stuff
-      process_requires
-      return
-      if !has_bundle?
+      if !has_bundle? or ENV['BUNDLE_GEMFILE'] == File.join(workspace.directory, 'Gemfile')
         process_requires
       else
         processed = false
         Bundler.with_clean_env do
           Bundler.environment.chdir(workspace.directory) do
             begin
-              # Bundler.reset!
+              Bundler.reset!
               # Bundler.setup
               processed = true
+              process_requires
             rescue Exception => e
               STDERR.puts "#{e.class}: #{e.message}"
             end
-            process_requires if processed
           end
         end
-        # Bundler.reset!
+        Bundler.reset!
         process_requires unless processed
       end
     end
@@ -350,36 +348,10 @@ module Solargraph
     def process_requires
       tried = []
       required.each do |r|
-        # STDERR.puts "Required: #{r}"
-        # next if !workspace.nil? and !workspace.directory.nil? and File.exist?(File.join workspace.directory, 'lib', "#{r}.rb")
-        # spec = Gem::Specification.find_by_path(r)
-        # STDERR.puts "****** FOUND #{r} by path!!!!!!!!!!!" unless spec.nil?
-        # begin
-        #   if spec.nil?
-        #     spec = Gem::Specification.find_by_name(r.split('/').first) if spec.nil?
-        #     STDERR.puts "****** FOUND #{r} by name!!!!!!!!!!!" unless spec.nil?
-        #   end
-        # rescue Gem::LoadError => e
-        #   STDERR.puts "Error: #{e.message}"
-        #   # @todo How to handle this?
-        # end
-        # if spec.nil?
-        #   # @todo Enable this message and/or find a better way to handle this
-        #   # STDERR.puts "Required path not found (pgp): #{r}"
-        # else
-        #   STDERR.puts "************** GOT IT! #{spec.full_gem_path}"
-        #   @gem_paths[spec.name] = spec.full_gem_path
-        #   add_gem_dependencies spec
-        #   result = YARD::Registry.yardoc_file_for_gem(spec.name)
-        #   yardocs.unshift result unless result.nil? or yardocs.include?(result)
-        # end
-        spec = Gem::Specification.find_by_path(r)
-        spec = Gem::Specification.find_by_path(r.split('/').first) if spec.nil?
         begin
-          # STDERR.puts "Failed to find #{r} by path" if spec.nil?
-          spec = Gem::Specification.find_by_name(r.split('/').first) if spec.nil?
-          ver = '>= 0'
-          ver = spec.version unless spec.nil?
+          spec = Gem::Specification.find_by_name(r.split('/').first)
+          next if spec.nil?
+          ver = spec.version
           add_gem_dependencies spec
           yd = YARD::Registry.yardoc_file_for_gem(spec.name, spec.version)
           yardocs.unshift yd unless yd.nil? or yardocs.include?(yd)

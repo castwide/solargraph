@@ -7,6 +7,7 @@ module Solargraph
     # @param workspace [Solargraph::Workspace]
     def initialize workspace = Solargraph::Workspace.new(nil)
       @workspace = workspace
+      api_map
     end
 
     # Open a file in the library. Opening a file will make it available for
@@ -71,6 +72,7 @@ module Solargraph
     # @return [Array<Solargraph::Pin::Base>]
     def completions_at filename, line, column
       # @type [Solargraph::Source]
+      source = nil
       source = read(filename)
       fragment = Solargraph::Source::Fragment.new(source, source.get_offset(line, column))
       api_map.complete(fragment)

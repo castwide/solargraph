@@ -112,7 +112,9 @@ module Solargraph
       # @param directory [String]
       def prepare directory
         path = normalize_separators(directory)
-        @library = Solargraph::Library.load(path)
+        @change_semaphore.synchronize do
+          @library = Solargraph::Library.load(path)
+        end
       end
 
       def send_notification method, params
@@ -191,7 +193,7 @@ module Solargraph
                 STDERR.puts e.message
               end
             end
-          sleep 0.1
+            sleep 0.1
           end
         end
       end

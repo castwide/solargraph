@@ -1,5 +1,4 @@
 require 'rubygems'
-require 'thread'
 require 'set'
 require 'time'
 
@@ -94,25 +93,25 @@ module Solargraph
       return unless @force or changed?
       if force
         process_maps
-        return
-      end
-      current_workspace_sources.reject{|s| workspace.sources.include?(s)}.each do |source|
-        eliminate source
-      end
-      @sources = workspace.sources
-      @sources.push @virtual_source unless @virtual_source.nil?
-      cache.clear
-      namespace_map.clear
-      @sources.each do |s|
-        s.namespace_nodes.each_pair do |k, v|
-          namespace_map[k] ||= []
-          namespace_map[k].concat v
-        end
-      end
-      @sources.each do |source|
-        if @stime.nil? or source.stime > @stime
+      else
+        current_workspace_sources.reject{|s| workspace.sources.include?(s)}.each do |source|
           eliminate source
-          map_source source
+        end
+        @sources = workspace.sources
+        @sources.push @virtual_source unless @virtual_source.nil?
+        cache.clear
+        namespace_map.clear
+        @sources.each do |s|
+          s.namespace_nodes.each_pair do |k, v|
+            namespace_map[k] ||= []
+            namespace_map[k].concat v
+          end
+        end
+        @sources.each do |source|
+          if @stime.nil? or source.stime > @stime
+            eliminate source
+            map_source source
+          end
         end
       end
       @stime = Time.new
@@ -333,9 +332,10 @@ module Solargraph
     def get_methods fqns, scope: :instance, visibility: [:public], deep: true
       result = []
       if fqns == ''
-        result.concat inner_get_methods(fqns, :class, visibility, deep, [])
-        result.concat inner_get_methods(fqns, :instance, visibility, deep, [])
-        result.concat inner_get_methods('Kernel', :instance, visibility, deep, [])
+        skip = []
+        result.concat inner_get_methods(fqns, :class, visibility, deep, skip)
+        result.concat inner_get_methods(fqns, :instance, visibility, deep, skip)
+        result.concat inner_get_methods('Kernel', :instance, visibility, deep, skip)
       else
         result.concat inner_get_methods(fqns, scope, visibility, deep, [])
       end
@@ -729,8 +729,9 @@ module Solargraph
     end
 
     def inner_get_methods fqns, scope, visibility, deep, skip
-      return [] if skip.include?(fqns)
-      skip.push fqns
+      reqstr = "#{fqns}|#{scope}|#{visibility.sort}|#{deep}"
+      return [] if skip.include?(reqstr)
+      skip.push reqstr
       result = []
       if scope == :instance
         aps = @attr_pins[fqns]
