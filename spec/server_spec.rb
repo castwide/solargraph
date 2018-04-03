@@ -65,7 +65,6 @@ describe Solargraph::Server do
 
   it "prepares a workspace" do
     post '/prepare', workspace: @workspace
-    sleep 0.1 while Solargraph::Server.get_api_map(@workspace).nil?
     expect(last_response).to be_ok
   end
 

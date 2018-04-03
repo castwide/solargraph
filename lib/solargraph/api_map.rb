@@ -391,7 +391,7 @@ module Solargraph
 
     # @return [ApiMap::Completion]
     def complete fragment
-      return [] if fragment.string? or fragment.comment?
+      return Completion.new([], fragment.whole_word_range) if fragment.string? or fragment.comment?
       result = []
       if fragment.base.empty?
         if fragment.signature.start_with?('@@')

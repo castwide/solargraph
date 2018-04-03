@@ -77,6 +77,10 @@ module Solargraph
         @parameters ||= get_method_args
       end
 
+      def method?
+        completion_item_kind == Solargraph::LanguageServer::CompletionItemKinds::METHOD
+      end
+
       private
 
       def get_method_args
