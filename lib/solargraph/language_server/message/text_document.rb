@@ -14,6 +14,7 @@ module Solargraph
         autoload :OnTypeFormatting, 'solargraph/language_server/message/text_document/on_type_formatting'
         autoload :Definition, 'solargraph/language_server/message/text_document/definition'
         autoload :DocumentSymbol, 'solargraph/language_server/message/text_document/document_symbol'
+        autoload :Formatting, 'solargraph/language_server/message/text_document/formatting'
       end
     end
   end

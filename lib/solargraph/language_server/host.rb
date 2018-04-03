@@ -159,6 +159,11 @@ module Solargraph
         pin
       end
 
+      def read_text uri
+        filename = uri_to_file(uri)
+        library.read_code(filename)
+      end
+
       private
 
       def start_change_thread
@@ -174,6 +179,13 @@ module Solargraph
                     source.synchronize(change['contentChanges'], change['textDocument']['version'])
                     @diagnostics_queue.push change['textDocument']['uri']
                     changed = true
+                    true
+                  elsif change['textDocument']['version'] == source.version + 1 #and change['contentChanges'].length == 0
+                    # HACK: This condition fixes the fact that formatting
+                    # increments the version by one regardless of the number
+                    # of changes
+                    source.synchronize(change['contentChanges'], change['textDocument']['version'])
+                    @diagnostics_queue.push change['textDocument']['uri']
                     true
                   elsif change['textDocument']['version'] <= source.version
                     # @todo Is deleting outdated changes correct behavior?
