@@ -355,6 +355,7 @@ module Solargraph
           ver = ">= 0" if ver.empty?
           add_gem_dependencies spec
           yd = YARD::Registry.yardoc_file_for_gem(spec.name, ver)
+          @gem_paths[spec.name] = spec.full_gem_path
           yardocs.unshift yd unless yd.nil? or yardocs.include?(yd)
         rescue Gem::LoadError => e
           # STDERR.puts "LoadError on #{r}"
@@ -364,6 +365,8 @@ module Solargraph
 
     def add_gem_dependencies spec
       (spec.dependencies - spec.development_dependencies).each do |dep|
+        spec = Gem::Specification.find_by_name(dep.name)
+        @gem_paths[spec.name] = spec.full_gem_path unless spec.nil?
         gy = YARD::Registry.yardoc_file_for_gem(dep.name)
         if gy.nil?
           STDERR.puts "Required path not found: #{dep.name}"
