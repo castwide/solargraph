@@ -213,6 +213,11 @@ module Solargraph
       def start_diagnostics_thread
         Thread.new do
           until stopped?
+            if options['diagnostics'] != 'rubocop'
+              @change_semaphore.synchronize { @diagnostics_queue.clear }
+              sleep 1
+              next
+            end
             unless @change_semaphore.locked?
               begin
                 current = nil
