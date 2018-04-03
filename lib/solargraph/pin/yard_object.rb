@@ -1,6 +1,13 @@
 module Solargraph
   module Pin
     class YardObject < Base
+      COMPLETION_ITEM_KIND_MAP = {
+        YARD::CodeObjects::ClassObject => Solargraph::LanguageServer::CompletionItemKinds::CLASS,
+        YARD::CodeObjects::ModuleObject => Solargraph::LanguageServer::CompletionItemKinds::MODULE,
+        YARD::CodeObjects::MethodObject => Solargraph::LanguageServer::CompletionItemKinds::METHOD,
+        YARD::CodeObjects::ConstantObject => Solargraph::LanguageServer::CompletionItemKinds::CONSTANT
+      }
+
       # @return [YARD::CodeObjects::Base]
       attr_reader :code_object
 
@@ -16,8 +23,7 @@ module Solargraph
       end
 
       def completion_item_kind
-        # @todo Figure out the kind
-        Solargraph::LanguageServer::CompletionItemKinds::METHOD if code_object.kind_of?(YARD::CodeObjects::MethodObject)
+        @completion_item_kind ||= COMPLETION_ITEM_KIND_MAP[code_object.class] || Solargraph::LanguageServer::CompletionItemKinds::KEYWORD
       end
 
       def docstring
