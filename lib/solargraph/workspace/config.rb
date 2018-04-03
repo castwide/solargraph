@@ -1,7 +1,7 @@
 require 'yaml'
 
 module Solargraph
-  class ApiMap
+  class Workspace
     class Config
       # @return [String]
       attr_reader :workspace

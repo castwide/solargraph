@@ -11,6 +11,10 @@ module Solargraph
         def name
           @name
         end
+
+        def completion_item_kind
+          Solargraph::LanguageServer::CompletionItemKinds::METHOD
+        end
       end
     end
   end

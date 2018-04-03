@@ -1,6 +1,6 @@
 describe Solargraph::ApiMap::SourceToYard do
   it "rakes sources" do
-    source = Solargraph::ApiMap::Source.virtual(%(
+    source = Solargraph::Source.virtual(%(
       module Foo
         class Bar
           def baz
@@ -18,7 +18,7 @@ describe Solargraph::ApiMap::SourceToYard do
   end
 
   it "generates docstrings" do
-    source = Solargraph::ApiMap::Source.virtual(%(
+    source = Solargraph::Source.virtual(%(
       # My foo class
       class Foo
         # @return [Hash]
@@ -41,7 +41,7 @@ describe Solargraph::ApiMap::SourceToYard do
   end
 
   it "generates mixins" do
-    source = Solargraph::ApiMap::Source.virtual(%(
+    source = Solargraph::Source.virtual(%(
       module Foo
         def bar
         end
@@ -59,7 +59,7 @@ describe Solargraph::ApiMap::SourceToYard do
   end
 
   it "generates methods for attributes" do
-    source = Solargraph::ApiMap::Source.virtual(%(
+    source = Solargraph::Source.virtual(%(
       class Foo
         attr_reader :bar
         attr_writer :baz
@@ -78,7 +78,7 @@ describe Solargraph::ApiMap::SourceToYard do
   end
 
   it "generates method parameters" do
-    source = Solargraph::ApiMap::Source.virtual(%(
+    source = Solargraph::Source.virtual(%(
       class Foo
         def bar baz, boo = 'boo'
         end

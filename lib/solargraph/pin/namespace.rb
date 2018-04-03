@@ -18,8 +18,13 @@ module Solargraph
         @path ||= (namespace.empty? ? '' : "#{namespace}::") + name
       end
 
-      def kind
-        @kind ||= (node.type == :class ? Solargraph::Suggestion::CLASS : Solargraph::Suggestion::MODULE)
+      def completion_item_kind
+        @kind ||= (node.type == :class ? Solargraph::LanguageServer::CompletionItemKinds::CLASS : Solargraph::LanguageServer::CompletionItemKinds::MODULE)
+      end
+
+      # @return [Symbol] :class or :module
+      def type
+        node.type
       end
 
       def return_type

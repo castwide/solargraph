@@ -12,12 +12,16 @@ module Solargraph
         @name ||= node.children[1].to_s
       end
 
-      def kind
-        Solargraph::Suggestion::CONSTANT
+      def completion_item_kind
+        Solargraph::LanguageServer::CompletionItemKinds::CONSTANT
       end
 
       def value
         source.code_for(node.children[2])
+      end
+
+      def path
+        "#{namespace}::#{name}"
       end
     end
   end

@@ -1,6 +1,8 @@
 require 'sinatra/base'
 require 'thread'
 require 'yard'
+require 'open3'
+require 'shellwords'
 
 module Solargraph
   class Server < Sinatra::Base
@@ -8,8 +10,10 @@ module Solargraph
     set :port, 7657
     set :server, :webrick
 
-    @@api_hash = {}
+    # @@api_hash = {}
     @@semaphore = Mutex.new
+
+    @@library = Solargraph::Library.new
 
     after do
       GC.start
@@ -20,10 +24,58 @@ module Solargraph
       @@semaphore.unlock
     end
 
+    post '/diagnostics' do
+      content_type :json
+      severities = {
+        'refactor' => 4,
+        'convention' => 3,
+        'warning' => 2,
+        'error' => 1,
+        'fatal' => 1
+      }
+      begin
+        filename = params['filename']
+        text = params['text']
+        o, e, s = Open3.capture3("bundle exec rubocop -f j -s #{Shellwords.escape(filename)}", stdin_data: text)
+        STDERR.puts e unless e.nil? or e.empty?
+        resp = JSON.parse(o)
+        diagnostics = []
+        if resp['summary']['offense_count'] > 0
+          resp['files'].each do |file|
+            file['offenses'].each do |off|
+              diag = {
+                range: {
+                  start: {
+                    line: off['location']['start_line'] - 1,
+                    character: off['location']['start_column'] - 1
+                  },
+                  end: {
+                    line: off['location']['last_line'] - 1,
+                    character: off['location']['last_column']
+                  }
+                },
+                # 1 = Error, 2 = Warning, 3 = Information, 4 = Hint
+                severity: severities[off['severity']],
+                source: off['cop_name'],
+                message: off['message'].gsub(/^#{off['cop_name']}\:/, '')
+              }
+              diagnostics.push diag
+            end
+          end
+        end
+        { "status" => "ok", "data" => diagnostics }.to_json
+      rescue Exception => e
+        send_exception e
+      end
+    end
+
     post '/prepare' do
       content_type :json
       begin
-        Server.prepare_workspace params['workspace']
+        # Server.prepare_workspace params['workspace']
+        workspace = params['workspace'].to_s.gsub(/\\/, '/')
+        STDERR.puts "Preparing #{workspace}"
+        @@library = Solargraph::Library.load(workspace) unless workspace.empty?
         { "status" => "ok"}.to_json
       rescue Exception => e
         send_exception e
@@ -33,12 +85,15 @@ module Solargraph
     post '/update' do
       content_type :json
       begin
-        workspace = find_local_workspace(params['filename'], params['workspace'])
-        # @type [Solargraph::ApiMap]
-        api_map = get_api_map(workspace)
-        unless api_map.nil?
-          api_map.update params['filename']
-        end
+        # workspace = find_local_workspace(params['filename'], params['workspace'])
+        # # @type [Solargraph::ApiMap]
+        # api_map = get_api_map(workspace)
+        # unless api_map.nil?
+        #   filename = params['filename']
+        #   api_map.append_source File.read(filename), filename
+        # end
+        filename = params['filename'].to_s.gsub(/\\/, '/')
+        @@library.open filename, File.read(filename), 0
         { "status" => "ok"}.to_json
       rescue Exception => e
         send_exception e
@@ -48,14 +103,21 @@ module Solargraph
     post '/suggest' do
       content_type :json
       begin
-        sugg = []
-        workspace = find_local_workspace(params['filename'], params['workspace'])
-        api_map = get_api_map(workspace)
+        # sugg = []
+        # workspace = find_local_workspace(params['filename'], params['workspace'])
+        # api_map = get_api_map(workspace)
+        # with_all = params['all'] == '1' ? true : false
+        # code_map = CodeMap.new(code: params['text'], filename: params['filename'], api_map: api_map, cursor: [params['line'].to_i, params['column'].to_i])
+        # offset = code_map.get_offset(params['line'].to_i, params['column'].to_i)
+        # sugg = code_map.suggest_at(offset, filtered: true)
+        # JSON.generate({ "status" => "ok", "suggestions" => sugg.map{|s| Suggestion.pull(s).as_json(all: with_all)} })
+        filename = params['filename'].to_s.gsub(/\\/, '/')
+        @@library.open filename, params['text'], 0
+        @@library.checkout filename
+        @@library.refresh
         with_all = params['all'] == '1' ? true : false
-        code_map = CodeMap.new(code: params['text'], filename: params['filename'], api_map: api_map, cursor: [params['line'].to_i, params['column'].to_i])
-        offset = code_map.get_offset(params['line'].to_i, params['column'].to_i)
-        sugg = code_map.suggest_at(offset, filtered: true)
-        JSON.generate({ "status" => "ok", "suggestions" => sugg.map{|s| s.as_json(all: with_all)} })
+        completion = @@library.completions_at(filename, params['line'].to_i, params['column'].to_i)
+        JSON.generate({ "status" => "ok", "suggestions" => completion.pins.map{|s| Suggestion.pull(s).as_json(all: with_all)} })
       rescue Exception => e
         send_exception e
       end
@@ -64,13 +126,19 @@ module Solargraph
     post '/signify' do
       content_type :json
       begin
-        sugg = []
-        workspace = find_local_workspace(params['filename'], params['workspace'])
-        api_map = get_api_map(workspace)
-        code_map = CodeMap.new(code: params['text'], filename: params['filename'], api_map: api_map, cursor: [params['line'].to_i, params['column'].to_i])
-        offset = code_map.get_offset(params['line'].to_i, params['column'].to_i)
-        sugg = code_map.signatures_at(offset)
-        { "status" => "ok", "suggestions" => sugg.map{|s| s.as_json(all: true)} }.to_json
+        # sugg = []
+        # workspace = find_local_workspace(params['filename'], params['workspace'])
+        # api_map = get_api_map(workspace)
+        # code_map = CodeMap.new(code: params['text'], filename: params['filename'], api_map: api_map, cursor: [params['line'].to_i, params['column'].to_i])
+        # offset = code_map.get_offset(params['line'].to_i, params['column'].to_i)
+        # sugg = code_map.signatures_at(offset)
+        # { "status" => "ok", "suggestions" => sugg.map{|s| Suggestion.pull(s).as_json(all: true)} }.to_json
+        filename = params['filename'].to_s.gsub(/\\/, '/')
+        @@library.open filename, params['text'], 0
+        @@library.checkout filename
+        @@library.refresh
+        sugg = @@library.signatures_at(filename, params['line'].to_i, params['column'].to_i)
+        { "status" => "ok", "suggestions" => sugg.map{|s| Suggestion.pull(s).as_json(all: true)} }.to_json
       rescue Exception => e
         send_exception e
       end
@@ -79,14 +147,16 @@ module Solargraph
     post '/resolve' do
       content_type :json
       begin
-        workspace = find_local_workspace(params['filename'], params['workspace'])
-        result = []
-        api_map = get_api_map(workspace)
-        unless api_map.nil?
-          # @todo Get suggestions that match the path
-          result.concat api_map.get_path_suggestions(params['path'])
-        end
-        { "status" => "ok", "suggestions" => result.map{|s| s.as_json(all: true)} }.to_json
+        # workspace = find_local_workspace(params['filename'], params['workspace'])
+        # result = []
+        # api_map = get_api_map(workspace)
+        # unless api_map.nil?
+        #   # @todo Get suggestions that match the path
+        #   result.concat api_map.get_path_suggestions(params['path'])
+        # end
+        # { "status" => "ok", "suggestions" => result.map{|s| Suggestion.pull(s).as_json(all: true)} }.to_json
+        result = @@library.get_path_pins(params['path'])
+        { "status" => "ok", "suggestions" => result.map{|s| Suggestion.pull(s).as_json(all: true)} }.to_json
       rescue Exception => e
         send_exception e
       end
@@ -95,13 +165,18 @@ module Solargraph
     post '/define' do
       content_type :json
       begin
-        sugg = []
-        workspace = find_local_workspace(params['filename'], params['workspace'])
-        api_map = get_api_map(workspace)
-        code_map = CodeMap.new(code: params['text'], filename: params['filename'], api_map: api_map, cursor: [params['line'].to_i, params['column'].to_i])
-        offset = code_map.get_offset(params['line'].to_i, params['column'].to_i)
-        sugg = code_map.define_symbol_at(offset)
-        { "status" => "ok", "suggestions" => sugg }.to_json
+        # sugg = []
+        # workspace = find_local_workspace(params['filename'], params['workspace'])
+        # api_map = get_api_map(workspace)
+        # code_map = CodeMap.new(code: params['text'], filename: params['filename'], api_map: api_map, cursor: [params['line'].to_i, params['column'].to_i])
+        # offset = code_map.get_offset(params['line'].to_i, params['column'].to_i)
+        # sugg = code_map.define_symbol_at(offset)
+        # { "status" => "ok", "suggestions" => sugg }.to_json
+        filename = params['filename'].to_s.gsub(/\\/, '/')
+        @@library.open filename, params['text'], 0
+        @@library.checkout filename
+        sugg = @@library.definitions_at(filename, params['line'].to_i, params['column'].to_i)
+        { "status" => "ok", "suggestions" => sugg.map{|s| Suggestion.pull(s).as_json(all: true)} }.to_json
       rescue Exception => e
         send_exception e
       end
@@ -111,47 +186,57 @@ module Solargraph
     post '/hover' do
       content_type :json
       begin
-        sugg = []
-        workspace = find_local_workspace(params['filename'], params['workspace'])
-        api_map = get_api_map(workspace)
-        code_map = CodeMap.new(code: params['text'], filename: params['filename'], api_map: @@api_hash[workspace], cursor: [params['line'].to_i, params['column'].to_i])
-        offset = code_map.get_offset(params['line'].to_i, params['column'].to_i)
-        sugg = code_map.resolve_object_at(offset)
-        { "status" => "ok", "suggestions" => sugg }.to_json
+        # sugg = []
+        # workspace = find_local_workspace(params['filename'], params['workspace'])
+        # api_map = get_api_map(workspace)
+        # code_map = CodeMap.new(code: params['text'], filename: params['filename'], api_map: @@api_hash[workspace], cursor: [params['line'].to_i, params['column'].to_i])
+        # offset = code_map.get_offset(params['line'].to_i, params['column'].to_i)
+        # sugg = code_map.resolve_object_at(offset)
+        # { "status" => "ok", "suggestions" => sugg }.to_json
+        filename = params['filename'].to_s.gsub(/\\/, '/')
+        @@library.open filename, params['text'], 0
+        @@library.refresh
+        @@library.checkout filename
+        sugg = @@library.definitions_at(filename, params['line'].to_i, params['column'].to_i)
+        { "status" => "ok", "suggestions" => sugg.map{|s| Suggestion.pull(s).as_json(all: true)} }.to_json
       rescue Exception => e
         send_exception e
       end
     end
 
     get '/search' do
-      workspace = params['workspace']
-      api_map = get_api_map(workspace) || Solargraph::ApiMap.new
-      @results = api_map.search(params['query'])
+      # workspace = params['workspace']
+      # api_map = get_api_map(workspace) || Solargraph::ApiMap.new
+      # @results = api_map.search(params['query'])
+      # erb :search
+      @results = @@library.search(params['query'])
       erb :search
     end
 
     get '/document' do
-      workspace = params['workspace']
-      workspace.gsub!(/\\/, '/') unless workspace.nil?
-      api_map = get_api_map(workspace) || Solargraph::ApiMap.new
-      @objects = api_map.document(params['query'])
+      # workspace = params['workspace']
+      # workspace.gsub!(/\\/, '/') unless workspace.nil?
+      # api_map = get_api_map(workspace) || Solargraph::ApiMap.new
+      # @objects = api_map.document(params['query'])
+      # erb :document
+      @objects = @@library.document(params['query'])
       erb :document
     end
 
     # @return [Solargraph::ApiMap]
-    def self.get_api_map workspace
-      api_map = nil
-      @@semaphore.synchronize {
-        @@api_hash[nil] ||= Solargraph::ApiMap.new if workspace.nil?
-        api_map = @@api_hash[workspace]
-      }
-      api_map
-    end
+    # def self.get_api_map workspace
+    #   api_map = nil
+    #   @@semaphore.synchronize {
+    #     @@api_hash[nil] ||= Solargraph::ApiMap.new if workspace.nil?
+    #     api_map = @@api_hash[workspace]
+    #   }
+    #   api_map
+    # end
 
     # @return [Solargraph::ApiMap]
-    def get_api_map workspace
-      Server.get_api_map workspace
-    end
+    # def get_api_map workspace
+    #   Server.get_api_map workspace
+    # end
 
     def htmlify text
       rdoc_to_html text
@@ -173,44 +258,44 @@ module Solargraph
       { "status" => "err", "message" => e.message + "\n" + e.backtrace.join("\n") }.to_json
     end
 
-    def find_local_workspace file, workspace
-      return nil if workspace.nil? or workspace.empty?
-      workspace.gsub!(/\\/, '/') unless workspace.nil?
-      unless file.nil? or workspace.nil?
-        file.gsub!(/\\/, '/') unless file.nil?
-        return nil unless file.start_with?(workspace)
-        dir = File.dirname(file)
-        while dir.start_with?(workspace)
-          return dir if @@api_hash.has_key?(dir)
-          dir = File.dirname(dir)
-        end
-      end
-      workspace
-    end
+    # def find_local_workspace file, workspace
+    #   return nil if workspace.nil? or workspace.empty?
+    #   workspace.gsub!(/\\/, '/') unless workspace.nil?
+    #   unless file.nil? or workspace.nil?
+    #     file.gsub!(/\\/, '/') unless file.nil?
+    #     return nil unless file.start_with?(workspace)
+    #     dir = File.dirname(file)
+    #     while dir.start_with?(workspace)
+    #       return dir if @@api_hash.has_key?(dir)
+    #       dir = File.dirname(dir)
+    #     end
+    #   end
+    #   workspace
+    # end
 
     class << self
-      def prepare_workspace directory
-        return if directory.nil?
-        #Thread.new do
-          directory.gsub!(/\\/, '/')
-          STDERR.puts "Preparing #{directory}"
-          configs = Dir[File.join(directory, '**', '.solargraph.yml')]
-          resolved = []
-          configs.each do |cf|
-            dir = File.dirname(cf)
-            generate_api_map dir
-            resolved.push dir
-          end
-          generate_api_map directory unless resolved.include?(directory)
-        #end
-      end
+      # def prepare_workspace directory
+      #   return if directory.nil?
+      #   #Thread.new do
+      #     directory.gsub!(/\\/, '/')
+      #     STDERR.puts "Preparing #{directory}"
+      #     configs = Dir[File.join(directory, '**', '.solargraph.yml')]
+      #     resolved = []
+      #     configs.each do |cf|
+      #       dir = File.dirname(cf)
+      #       generate_api_map dir
+      #       resolved.push dir
+      #     end
+      #     generate_api_map directory unless resolved.include?(directory)
+      #   #end
+      # end
 
-      def generate_api_map(directory)
-        api_map = Solargraph::ApiMap.new(directory)
-        @@semaphore.synchronize do
-          @@api_hash[directory] = api_map
-        end
-      end
+      # def generate_api_map(directory)
+      #   api_map = Solargraph::ApiMap.new(directory)
+      #   @@semaphore.synchronize do
+      #     @@api_hash[directory] = api_map
+      #   end
+      # end
 
       def run!
         # @todo The thread for checking workspaces is temporarily disabled due
@@ -226,20 +311,20 @@ module Solargraph
         super
       end
 
-      def check_workspaces
-        @@semaphore.synchronize do
-          changed = {}
-          @@api_hash.each_pair do |w, a|
-            next unless a.changed?
-            STDERR.puts "Reloading changed workspace #{w}"
-            n = Solargraph::ApiMap.new(w)
-            changed[w] = n
-          end
-          changed.each_pair do |w, a|
-            @@api_hash[w] = a
-          end
-        end
-      end
+      # def check_workspaces
+      #   @@semaphore.synchronize do
+      #     changed = {}
+      #     @@api_hash.each_pair do |w, a|
+      #       next unless a.changed?
+      #       STDERR.puts "Reloading changed workspace #{w}"
+      #       n = Solargraph::ApiMap.new(w)
+      #       changed[w] = n
+      #     end
+      #     changed.each_pair do |w, a|
+      #       @@api_hash[w] = a
+      #     end
+      #   end
+      # end
     end
 
     class Helpers

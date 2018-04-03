@@ -13,7 +13,7 @@ module Solargraph
         code_object_map.keys
       end
 
-      # @param sources [Array<Solargraph::ApiMap::Source>] Sources for code objects
+      # @param sources [Array<Solargraph::Source>] Sources for code objects
       def rake_yard sources
         code_object_map.clear
         sources.each do |s|
@@ -28,7 +28,7 @@ module Solargraph
           end
           s.namespace_includes.each_pair do |n, i|
             i.each do |inc|
-              code_object_map[n].instance_mixins.push code_object_map[inc] unless code_object_map[inc].nil?
+              code_object_map[n].instance_mixins.push code_object_map[inc] unless code_object_map[inc].nil? or code_object_map[n].nil?
             end
           end
           s.attribute_pins.each do |pin|

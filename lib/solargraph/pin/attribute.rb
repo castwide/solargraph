@@ -1,6 +1,7 @@
 module Solargraph
   module Pin
     class Attribute < Base
+      # @return [Symbol] :reader or :writer
       attr_reader :access
 
       def initialize source, node, namespace, access, docstring
@@ -23,6 +24,14 @@ module Solargraph
           @return_type = tag.types[0] unless tag.nil?
         end
         @return_type
+      end
+
+      def completion_item_kind
+        Solargraph::LanguageServer::CompletionItemKinds::PROPERTY
+      end
+
+      def method?
+        true
       end
     end
   end

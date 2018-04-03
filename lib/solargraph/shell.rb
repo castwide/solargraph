@@ -3,6 +3,7 @@ require 'json'
 require 'fileutils'
 require 'rubygems/package'
 require 'zlib'
+require 'eventmachine'
 
 module Solargraph
   class Shell < Thor
@@ -36,6 +37,24 @@ module Solargraph
         Signal.trap("TERM") do
           Solargraph::Server.stop!
         end
+      end
+    end
+
+    desc 'socket', 'Run a Solargraph socket server'
+    option :host, type: :string, aliases: :h, desc: 'The server host', default: '127.0.0.1'
+    option :port, type: :numeric, aliases: :p, desc: 'The server port', default: 7658
+    def socket
+      port = options[:port]
+      port = available_port if port.zero?
+      EventMachine.run do
+        Signal.trap("INT") do
+          EventMachine.stop
+        end
+        Signal.trap("TERM") do
+          EventMachine.stop
+        end
+        EventMachine.start_server options[:host], port, Solargraph::LanguageServer::Transport::Socket
+        STDERR.puts "Solargraph is listening PORT=#{port} PID=#{Process.pid}"
       end
     end
 
@@ -80,7 +99,7 @@ module Solargraph
           end
         end
       end
-      conf = Solargraph::ApiMap::Config.new.raw_data
+      conf = Solargraph::Workspace::Config.new.raw_data
       unless matches.empty?
         matches.each do |m|
           conf['extensions'].push m

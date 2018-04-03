@@ -17,7 +17,28 @@ module Solargraph
     attr_reader :label
 
     # @return [String]
-    attr_reader :kind
+    def kind
+      case @kind
+      when Solargraph::LanguageServer::CompletionItemKinds::CLASS
+        'Class'
+      when Solargraph::LanguageServer::CompletionItemKinds::CONSTANT
+        'Constant'
+      when Solargraph::LanguageServer::CompletionItemKinds::FIELD
+        'Field'
+      when Solargraph::LanguageServer::CompletionItemKinds::KEYWORD
+        'Keyword'
+      when Solargraph::LanguageServer::CompletionItemKinds::METHOD
+        'Method'
+      when Solargraph::LanguageServer::CompletionItemKinds::MODULE
+        'Module'
+      when Solargraph::LanguageServer::CompletionItemKinds::PROPERTY
+        'Property'
+      when Solargraph::LanguageServer::CompletionItemKinds::VARIABLE
+        'Variable'
+      else
+        nil
+      end
+    end
 
     # @return [String]
     attr_reader :insert
@@ -37,7 +58,10 @@ module Solargraph
     # @return [YARD::CodeObjects::Base]
     attr_reader :code_object
 
-    def initialize label, kind: KEYWORD, insert: nil, detail: nil, docstring: nil, code_object: nil, location: nil, arguments: [], return_type: nil, path: nil
+    # @return [Solargraph::Pin::Base]
+    attr_reader :pin
+
+    def initialize label, kind: KEYWORD, insert: nil, detail: nil, docstring: nil, code_object: nil, location: nil, arguments: [], return_type: nil, path: nil, pin: nil
       @helper = Server::Helpers.new
       @label = label.to_s
       @kind = kind
@@ -49,6 +73,7 @@ module Solargraph
       @arguments = arguments
       @return_type = return_type
       @path = path
+      @pin = pin
     end
 
     # The full path of the suggestion.
@@ -124,7 +149,7 @@ module Solargraph
     def as_json args = {}
       result = {
         label: @label,
-        kind: @kind,
+        kind: kind,
         insert: @insert,
         detail: @detail,
         path: path,
@@ -147,7 +172,7 @@ module Solargraph
     # @param pin [Solargraph::Pin::Base]
     def self.pull pin, return_type = nil
       return pin if pin.kind_of?(Suggestion)
-      Suggestion.new(pin.name, insert: pin.name.gsub(/=$/, ' = '), kind: pin.kind, docstring: pin.docstring, detail: pin.namespace, arguments: pin.parameters, path: pin.path, return_type: return_type || pin.return_type, location: pin.location)
+      Suggestion.new(pin.name, insert: pin.name.gsub(/=$/, ' = '), kind: pin.kind, docstring: pin.docstring, detail: pin.namespace, arguments: pin.parameters, path: pin.path, return_type: return_type || pin.return_type, location: pin.location, pin: pin)
     end
   end
 end
