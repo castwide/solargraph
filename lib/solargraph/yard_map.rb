@@ -26,7 +26,7 @@ module Solargraph
       process_gem_paths
       yardocs.push CoreDocs.yardoc_file
       yardocs.uniq!
-      yardocs.delete_if{ |y| y.start_with? workspace.directory } unless workspace.nil?
+      yardocs.delete_if{ |y| y.start_with? workspace.directory } unless workspace.nil? or workspace.directory.nil?
       yardocs.each do |y|
         load_yardoc y
         YARD::Registry.all(:class, :module).each do |ns|
@@ -351,9 +351,10 @@ module Solargraph
         begin
           spec = Gem::Specification.find_by_name(r.split('/').first)
           next if spec.nil?
-          ver = spec.version
+          ver = spec.version.to_s
+          ver = ">= 0" if ver.empty?
           add_gem_dependencies spec
-          yd = YARD::Registry.yardoc_file_for_gem(spec.name, spec.version)
+          yd = YARD::Registry.yardoc_file_for_gem(spec.name, ver)
           yardocs.unshift yd unless yd.nil? or yardocs.include?(yd)
         rescue Gem::LoadError => e
           # STDERR.puts "LoadError on #{r}"

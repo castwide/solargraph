@@ -11,12 +11,13 @@ describe Solargraph::YardMap do
     expect(result.map(&:to_s)).to include('try_convert')
   end
 
-  it "does not raise Exception in add_gem_dependencies" do
-    allow(YARD::Registry).to receive(:yardoc_file_for_gem).with("parser").and_return(false)
-    allow(YARD::Registry).to receive(:yardoc_file_for_gem).with("ast").and_return(nil)
-    Solargraph::YardMap.new required: ['parser']
-    expect(true).to eq true
-  end
+  # @todo May not apply anymore
+  # it "does not raise Exception in add_gem_dependencies" do
+  #   allow(YARD::Registry).to receive(:yardoc_file_for_gem).with("parser").and_return(false)
+  #   allow(YARD::Registry).to receive(:yardoc_file_for_gem).with("ast").and_return(nil)
+  #   Solargraph::YardMap.new required: ['parser']
+  #   expect(true).to eq true
+  # end
 
   it "gracefully fails to resolve unknown require paths" do
     expect {
