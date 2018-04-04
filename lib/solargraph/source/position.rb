@@ -12,6 +12,9 @@ module Solargraph
         @character = character
       end
 
+      # Get a hash of the position. This representation is suitable for use in
+      # the language server protocol.
+      #
       def to_hash
         {
           line: line,

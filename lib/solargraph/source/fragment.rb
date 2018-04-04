@@ -1,10 +1,13 @@
 module Solargraph
   class Source
     class Fragment
+      # @return [Integer]
       attr_reader :offset
 
       include NodeMethods
 
+      # @param source [Solargraph::Source]
+      # @param offset [Integer]
       def initialize source, offset
         # @todo Split this object from the source. The source can change; if
         #   it does, this object's data should not.
@@ -13,10 +16,16 @@ module Solargraph
         @offset = offset
       end
 
+      # Get the node at the current offset.
+      #
+      # @return [Parser::AST::Node]
       def node
         @node ||= @source.node_at(@offset)
       end
 
+      # Get the fully qualified namespace at the current offset.
+      #
+      # @return [String]
       def namespace
         if @namespace.nil?
           base = @source.parent_node_from(@offset, :class, :module, :def, :defs)
@@ -25,6 +34,9 @@ module Solargraph
         @namespace
       end
 
+      # Get the scope at the current offset.
+      #
+      # @return [Symbol] :class or :instance
       def scope
         if @scope.nil?
           base = @source.parent_node_from(@offset, :class, :module, :def, :defs, :source)
@@ -33,10 +45,18 @@ module Solargraph
         @scope
       end
 
+      # Get the signature up to the current offset. Given the text `foo.bar`,
+      # the signature at offset 5 is `foo.b`.
+      #
+      # @return [String]
       def signature
         @signature ||= signature_data[1]
       end
 
+      # Get the signature before the current word. Given the signature
+      # `String.new.split`, the base is `String.new`.
+      #
+      # @return [String]
       def base
         if @base.nil?
           if signature.include?('.')
@@ -59,44 +79,80 @@ module Solargraph
         @base
       end
 
+      # Get the remainder of the word after the current offset. Given the text
+      # `foobar` with an offset of 3, the remainder is `bar`.
+      #
+      # @return [String]
       def remainder
         @remainder ||= remainder_at(@offset)
       end
 
+      # Get the whole word at the current offset, including the remainder.
+      # Given the text `foobar.baz`, the whole word at any offset from 0 to 6
+      # is `foobar`.
+      #
+      # @return [String]
       def whole_word
         @whole_word ||= word + remainder
       end
 
+      # Get the whole signature at the current offset, including the final
+      # word and its remainder.
+      #
+      # @return [String]
       def whole_signature
         @whole_signature ||= signature + remainder
       end
 
+      # Get the entire phrase up to the current offset. Given the text
+      # `foo[bar].baz()`, the phrase at offset 10 is `foo[bar].b`.
+      #
+      # @return [String]
       def phrase
         @phrase ||= @code[signature_data[0]..@offset]
       end
 
+      # Get the word before the current offset. Given the text `foo.bar`, the
+      # word at offset 6 is `ba`.
       def word
         @word ||= word_at(@offset)
       end
 
+      # True if the current offset is inside a string.
+      #
+      # @return [Boolean]
       def string?
         @string = @source.string_at?(@offset) if @string.nil?
         @string
       end
 
+      # True if the current offset is inside a comment.
+      #
+      # @return [Boolean]
       def comment?
         @comment = get_comment_at(@offset) if @comment.nil?
         @comment
       end
 
+      # Get the range of the word up to the current offset.
+      #
+      # @return [Range]
       def word_range
         @word_range ||= word_range_at(@offset, false)
       end
 
+      # Get the range of the whole word at the current offset, including its
+      # remainder.
+      #
+      # @return [Range]
       def whole_word_range
         @whole_word_range ||= word_range_at(@offset, true)
       end
 
+      # Get an array of all the local variables in the source that are visible
+      # from the current offset.
+      #
+      # @return [Array<Solargraph::Pin::LocalVariable>]
       def local_variable_pins
         @local_variable_pins ||= @source.local_variable_pins.select{|pin| pin.visible_from?(node)}
       end
@@ -235,17 +291,6 @@ module Solargraph
         end_offset = start_offset if end_offset < start_offset
         start_pos = Solargraph::Source.get_position_at(@code, start_offset)
         end_pos = Solargraph::Source.get_position_at(@code, end_offset)
-        # result = {
-        #   start: {
-        #     line: start_pos[0],
-        #     character: start_pos[1]
-        #   },
-        #   end: {
-        #     line: end_pos[0],
-        #     character: end_pos[1]
-        #   }
-        # }
-        # result
         Solargraph::Source::Range.from_to(start_pos[0], start_pos[1], end_pos[0], end_pos[1])
       end
 
