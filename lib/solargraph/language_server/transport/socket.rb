@@ -14,6 +14,7 @@ module Solargraph
           EventMachine.add_periodic_timer 0.1 do
             tmp = @host.flush
             send_data tmp unless tmp.empty?
+            EventMachine.stop if @host.stopped?
           end
         end
       

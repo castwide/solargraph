@@ -134,8 +134,6 @@ module Solargraph
 
       def stop
         @stopped = true
-        EventMachine.stop
-        exit
       end
 
       def stopped?
