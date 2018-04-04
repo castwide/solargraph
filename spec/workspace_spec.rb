@@ -7,6 +7,7 @@ describe Solargraph::Workspace do
       File.write file, 'exit'
       workspace = Solargraph::Workspace.new(dir)
       expect(workspace.filenames).to include(file)
+      expect(workspace.has_file?(file)).to be(true)
     end
   end
 
