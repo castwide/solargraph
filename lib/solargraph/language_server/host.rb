@@ -111,7 +111,8 @@ module Solargraph
 
       # @param directory [String]
       def prepare directory
-        path = normalize_separators(directory)
+        path = nil
+        path = normalize_separators(directory) unless directory.nil?
         @change_semaphore.synchronize do
           @library = Solargraph::Library.load(path)
         end
