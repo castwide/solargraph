@@ -24,7 +24,6 @@ module Solargraph
           Thread.new do
             @message_semaphore.synchronize do
               @message_stack += 1
-              STDERR.puts "STARTING #{request['id']} #{request['method']} (stack is #{@message_stack}"
             end
             message = @host.start(request)
             message.send
@@ -32,7 +31,6 @@ module Solargraph
             send_data tmp unless tmp.empty?
             @message_semaphore.synchronize do
               @message_stack -= 1
-              STDERR.puts "FINISHED #{request['id']} (stack is #{@message_stack})"
             end
           end
         end

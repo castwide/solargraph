@@ -1012,4 +1012,24 @@ describe Solargraph::ApiMap do
     items = api_map.complete(fragment).pins.map(&:name)
     expect(items).to include('world')
   end
+
+  it "finds private methods in the same scope and context" do
+    api_map = Solargraph::ApiMap.new
+    source = Solargraph::Source.load_string('
+      class Foobar
+        def bazbar
+          s
+        end
+
+        private
+
+        def shazbot
+        end
+      end
+    ', 'file.rb')
+    api_map.virtualize source
+    fragment = source.fragment_at(3, 10)
+    items = api_map.complete(fragment).pins.map(&:path)
+    expect(items).to include('Foobar#shazbot')
+  end
 end

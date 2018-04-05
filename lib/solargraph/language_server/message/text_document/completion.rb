@@ -11,7 +11,6 @@ module Solargraph
               processed = false
               until processed
                 if host.changing?(params['textDocument']['uri'])
-                  # STDERR.puts "Waiting..."
                   if Time.now - start > 1
                     set_error Solargraph::LanguageServer::ErrorCodes::INTERNAL_ERROR, 'Completion request timed out'
                     processed = true
