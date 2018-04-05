@@ -68,8 +68,8 @@ module Solargraph
             if workspace.has_file?(abspath)
               actual = tp.return_value.class.to_s
               source = workspace.source(abspath)
-              fragment = source.fragment_at(tp.lineno, 0)
-              pin = api_map.complete(fragment).pins.select{|p| p.name == tp.method_id.to_s}.first
+              fragment = source.fragment_at(tp.lineno - 1, 0)
+              pin = source.method_pins.select{|pin| pin.name == tp.method_id.to_s and pin.namespace == fragment.namespace and pin.scope == fragment.scope}.first
               if pin.nil?
                 log_cache.push Issue.new(:warning, "Method `#{tp.method_id}` could not be found", tp.method_id, nil, actual, caller)
               else

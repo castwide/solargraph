@@ -29,7 +29,12 @@ module Solargraph
     at_exit do
       tracer.stop
       # puts "Results of trace: #{tracer.log}"
-      File.write 'solargraph.txt', tracer.log.join("\n")
+      File.open 'solargraph.txt', 'w' do |file|
+        tracer.log.each do |issue|
+          file.puts "[#{issue.severity}] #{issue.message}"
+          file.puts "  #{issue.backtrace.join("\n  ")}"
+        end
+      end
       puts "#{tracer.log.length} issues"
     end
     tracer.run
