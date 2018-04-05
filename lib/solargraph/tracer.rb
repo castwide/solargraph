@@ -8,6 +8,7 @@ module Solargraph
       @tracing = false
     end
 
+    # @return [Tracer]
     def self.load directory
       Tracer.new(Solargraph::Workspace.new(directory))
     end
