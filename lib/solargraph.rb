@@ -20,6 +20,7 @@ module Solargraph
   autoload :Page,           'solargraph/page'
   autoload :Library,        'solargraph/library'
   autoload :Tracer,         'solargraph/tracer'
+  autoload :Diagnostics,    'solargraph/diagnostics'
 
   YARDOC_PATH = File.join(File.realpath(File.dirname(__FILE__)), '..', 'yardoc')
   YARD_EXTENSION_FILE = File.join(File.realpath(File.dirname(__FILE__)), 'yard-solargraph.rb')
