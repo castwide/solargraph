@@ -35,7 +35,7 @@ module Solargraph
               last_column = 0
             else
               last_line = off['location']['last_line'] - 1
-              last_column = off['location']['last_column'] - 1
+              last_column = off['location']['last_column']
             end
             diag = {
               range: {
