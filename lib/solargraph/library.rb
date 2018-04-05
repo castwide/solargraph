@@ -191,12 +191,13 @@ module Solargraph
     def api_map
       @api_map ||= Solargraph::ApiMap.new(workspace)
     end
-    
+
     # @return [Solargraph::Workspace]
     def workspace
       @workspace
     end
 
+    # @param filename [String]
     # @return [Solargraph::Source]
     def read filename
       source = source_hash[filename]

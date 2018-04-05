@@ -26,6 +26,7 @@ module Solargraph
         completion_item.merge(extra)
       end
 
+      # @todo Candidate for deprecation
       # @param api_map [Solargraph::ApiMap]
       def hover
         info = ''

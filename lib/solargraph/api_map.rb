@@ -886,7 +886,7 @@ module Solargraph
 
     # @todo DRY this method. It's duplicated in CodeMap
     def get_subtypes type
-      return nil if type.nil?
+      return [] if type.nil?
       match = type.match(/<([a-z0-9_:, ]*)>/i)
       return [] if match.nil?
       match[1].split(',').map(&:strip)

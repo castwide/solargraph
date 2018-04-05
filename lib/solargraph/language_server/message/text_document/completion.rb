@@ -10,17 +10,15 @@ module Solargraph
               start = Time.now
               processed = false
               until processed
-                host.synchronize do
-                  if host.changing?(params['textDocument']['uri'])
-                    # STDERR.puts "Waiting..."
-                    if Time.now - start > 1
-                      set_result empty_result
-                      processed = true
-                    end
-                  else
-                    inner_process
+                if host.changing?(params['textDocument']['uri'])
+                  # STDERR.puts "Waiting..."
+                  if Time.now - start > 1
+                    set_error Solargraph::LanguageServer::ErrorCodes::INTERNAL_ERROR, 'Completion request timed out'
                     processed = true
                   end
+                else
+                  inner_process
+                  processed = true
                 end
                 sleep 0.1 unless processed
               end
@@ -37,7 +35,7 @@ module Solargraph
             filename = uri_to_file(params['textDocument']['uri'])
             line = params['position']['line']
             col = params['position']['character']
-            completion = host.library.completions_at(filename, line, col)
+            completion = host.completions_at(filename, line, col)
             items = []
             idx = 0
             completion.pins.each do |pin|

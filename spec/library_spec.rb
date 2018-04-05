@@ -89,4 +89,17 @@ describe Solargraph::Library do
     expect(completion.class).to be(Solargraph::ApiMap::Completion)
     expect(completion.pins.map(&:name)).to include('x')
   end
+
+  it "gets definitions from a file" do
+    library = Solargraph::Library.new
+    library.open 'file.rb', %(
+      class Foo
+        def bar
+        end
+      end
+    ), 0
+    library.checkout 'file.rb'
+    paths = library.definitions_at('file.rb', 2, 13).map(&:path)
+    expect(paths).to include('Foo#bar')
+  end
 end
