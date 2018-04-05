@@ -34,12 +34,17 @@ module Solargraph
 
     def clear
       log_cache.clear
+      point_cache.clear
     end
 
     private
 
     def log_cache
       @log_cache ||= []
+    end
+
+    def point_cache
+      @point_cache ||= []
     end
 
     # @return [Solargraph::Workspace]
@@ -56,21 +61,25 @@ module Solargraph
       @tracer ||= TracePoint.new(:return) do |tp|
         unless @tracing
           @tracing = true
-          abspath = File.absolute_path(tp.path)
-          if workspace.has_file?(abspath)
-            actual = tp.return_value.class.to_s
-            source = workspace.source(abspath)
-            fragment = source.fragment_at(tp.lineno, 0)
-            pin = api_map.complete(fragment).pins.select{|p| p.name == tp.method_id.to_s}.first
-            if pin.nil?
-              log_cache.push Issue.new(:warning, "Method `#{tp.method_id}` could not be found", tp.method_id, nil, actual, caller)
-            else
-              pin.resolve api_map
-              expected = pin.return_type
-              if expected.nil?
-                log_cache.push Issue.new(:warning, "`#{pin.path}` does not have a return type", tp.method_id, nil, actual, caller)
-              elsif expected != actual
-                log_cache.push Issue.new(:error, "`#{pin.path}` should return #{expected} but returned #{actual}", tp.method_id, expected, actual, caller)
+          key = [tp.path, tp.lineno, tp.return_value.class.to_s]
+          unless point_cache.include?(key)
+            point_cache.push key
+            abspath = File.absolute_path(tp.path)
+            if workspace.has_file?(abspath)
+              actual = tp.return_value.class.to_s
+              source = workspace.source(abspath)
+              fragment = source.fragment_at(tp.lineno, 0)
+              pin = api_map.complete(fragment).pins.select{|p| p.name == tp.method_id.to_s}.first
+              if pin.nil?
+                log_cache.push Issue.new(:warning, "Method `#{tp.method_id}` could not be found", tp.method_id, nil, actual, caller)
+              else
+                pin.resolve api_map
+                expected = pin.return_type
+                if expected.nil?
+                  log_cache.push Issue.new(:warning, "`#{pin.path}` does not have a return type", tp.method_id, nil, actual, caller)
+                elsif expected != actual
+                  log_cache.push Issue.new(:error, "`#{pin.path}` should return #{expected} but returned #{actual}", tp.method_id, expected, actual, caller)
+                end
               end
             end
           end
