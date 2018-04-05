@@ -596,7 +596,9 @@ module Solargraph
     end
 
     def superclass_of fqns
-      @superclasses[fqns]
+      found = @superclasses[fqns]
+      return nil if found.nil?
+      find_fully_qualified_namespace(found, fqns)
     end
 
     def locate_pin location
