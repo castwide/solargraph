@@ -480,4 +480,15 @@ describe Solargraph::Source do
     fragment = source.fragment_at(4, 0)
     expect(fragment.scope).to eq(:class)
   end
+
+  it "forces initialize methods to be private" do
+    source = Solargraph::Source.load_string('
+      class Foo
+        def initialize name
+        end
+      end
+    ')
+    pin = source.method_pins.select{|pin| pin.name == 'initialize'}.first
+    expect(pin.visibility).to be(:private)
+  end
 end

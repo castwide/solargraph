@@ -39,13 +39,16 @@ module Solargraph
             col = params['position']['character']
             completion = host.library.completions_at(filename, line, col)
             items = []
+            idx = 0
             completion.pins.each do |pin|
               items.push pin.completion_item.merge({
                 textEdit: {
                   range: completion.range.to_hash,
                   newText: pin.name
-                }
+                },
+                sortText: "#{pin.name}#{idx.to_s.rjust(4, '0')}"
               })
+              idx += 1
             end
             set_result(
               isIncomplete: false,

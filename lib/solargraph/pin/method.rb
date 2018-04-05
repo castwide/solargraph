@@ -8,6 +8,10 @@ module Solargraph
         super(source, node, namespace)
         @scope = scope
         @visibility = visibility
+        # Exception for initialize methods
+        if name == 'initialize' and scope == :instance
+          @visibility = :private
+        end
         @fully_resolved = false
       end
 
@@ -84,6 +88,7 @@ module Solargraph
 
       # @return [Array<String>]
       def get_method_args
+        return [] if node.nil?
         list = nil
         args = []
         node.children.each { |c|

@@ -744,6 +744,13 @@ module Solargraph
       end
       mps = @method_pins[fqns]
       result.concat mps.select{|pin| (pin.scope == scope or fqns == '') and visibility.include?(pin.visibility)} unless mps.nil?
+      if fqns != '' and scope == :class and !result.map(&:path).include?("#{fqns}.new")
+        # Create a [Class].new method pin from [Class]#initialize
+        init = inner_get_methods(fqns, :instance, [:private], deep, skip - [fqns]).select{|pin| pin.name == 'initialize'}.first
+        unless init.nil?
+          result.unshift Solargraph::Pin::Directed::Method.new(init.source, init.node, init.namespace, :class, :public, init.docstring, 'new', init.namespace)
+        end
+      end
       if deep
         sc = @superclasses[fqns]
         unless sc.nil?
@@ -770,8 +777,8 @@ module Solargraph
               result.concat inner_get_methods(efqns, :instance, visibility, deep, skip)
             end
           end
-          type = get_namespace_type(fqns)
           result.concat yard_map.get_methods(fqns, '', visibility: visibility)
+          type = get_namespace_type(fqns)
           if type == :class
             result.concat inner_get_methods('Class', :instance, [:public], deep, skip)
           else

@@ -18,8 +18,11 @@ module Solargraph
       # @return [Hash]
       def resolve_completion_item
         extra = {}
-        # @todo Format the documentation
-        extra[:documentation] = documentation
+        alldoc = ''
+        alldoc += link_documentation(path) unless path.nil?
+        alldoc += "\n\n" unless alldoc.empty?
+        alldoc += documentation unless documentation.nil?
+        extra[:documentation] = alldoc unless alldoc.empty?
         completion_item.merge(extra)
       end
 
@@ -27,7 +30,6 @@ module Solargraph
       def hover
         info = ''
         if self.kind_of?(Solargraph::Pin::BaseVariable)
-          STDERR.puts "Link to #{return_type}"
           info.concat link_documentation(return_type) unless return_type.nil?
         else
           info.concat link_documentation(path) unless path.nil?
