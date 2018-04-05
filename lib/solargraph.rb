@@ -23,6 +23,17 @@ module Solargraph
 
   YARDOC_PATH = File.join(File.realpath(File.dirname(__FILE__)), '..', 'yardoc')
   YARD_EXTENSION_FILE = File.join(File.realpath(File.dirname(__FILE__)), 'yard-solargraph.rb')
+
+  def self.trace
+    tracer = Tracer.load(Dir.pwd)
+    at_exit do
+      tracer.stop
+      # puts "Results of trace: #{tracer.log}"
+      File.write 'solargraph.txt', tracer.log.join("\n")
+      puts "#{tracer.log.length} issues"
+    end
+    tracer.run
+  end
 end
 
 Solargraph::YardMap::CoreDocs.require_minimum
