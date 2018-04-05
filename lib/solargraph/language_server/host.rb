@@ -243,6 +243,7 @@ module Solargraph
       end
 
       def normalize_separators path
+        return path if File::ALT_SEPARATOR.nil?
         path.gsub(File::ALT_SEPARATOR, File::SEPARATOR)
       end
 
