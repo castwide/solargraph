@@ -8,6 +8,10 @@ module Solargraph
         super(source, node, namespace)
         @scope = scope
         @visibility = visibility
+        # Exception for initialize methods
+        if name == 'initialize' and scope == :instance
+          @visibility = :private
+        end
         @fully_resolved = false
       end
 
