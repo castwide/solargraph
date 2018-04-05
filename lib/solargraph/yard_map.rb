@@ -354,7 +354,9 @@ module Solargraph
       tried = []
       required.each do |r|
         begin
-          spec = Gem::Specification.find_by_name(r.split('/').first)
+          name = r.split('/').first
+          next if name.nil?
+          spec = Gem::Specification.find_by_name(name)
           next if spec.nil?
           ver = spec.version.to_s
           ver = ">= 0" if ver.empty?
