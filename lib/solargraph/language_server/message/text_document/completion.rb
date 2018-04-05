@@ -10,18 +10,16 @@ module Solargraph
               start = Time.now
               processed = false
               until processed
-                # host.synchronize do
-                  if host.changing?(params['textDocument']['uri'])
-                    # STDERR.puts "Waiting..."
-                    if Time.now - start > 1
-                      set_result empty_result
-                      processed = true
-                    end
-                  else
-                    inner_process
+                if host.changing?(params['textDocument']['uri'])
+                  # STDERR.puts "Waiting..."
+                  if Time.now - start > 1
+                    set_result empty_result
                     processed = true
                   end
-                # end
+                else
+                  inner_process
+                  processed = true
+                end
                 sleep 0.1 unless processed
               end
             rescue Exception => e

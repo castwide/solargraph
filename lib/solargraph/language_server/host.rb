@@ -170,6 +170,7 @@ module Solargraph
         results
       end
 
+      # @return [Array<Solargraph::Pin::Base>]
       def definitions_at filename, line, column
         results = nil
         @change_semaphore.synchronize do
