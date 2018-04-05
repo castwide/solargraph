@@ -498,7 +498,11 @@ module Solargraph
             elsif c.type == :casgn
               constant_pins.push Solargraph::Pin::Constant.new(self, c, fqn, :public)
             elsif c.type == :def and c.children[0].to_s[0].match(/[a-z]/i)
-              method_pins.push Solargraph::Pin::Method.new(source, c, fqn || '', scope, visibility)
+              def_pin = Solargraph::Pin::Method.new(source, c, fqn || '', scope, visibility)
+              method_pins.push def_pin
+              if def_pin.name == 'initialize' and def_pin.scope == :instance and !fqn.nil? and !fqn.empty?
+                method_pins.push Solargraph::Pin::Directed::Method.new(source, c, def_pin.namespace, :class, :public, docstring_for(c), 'new', def_pin.namespace)
+              end
             elsif c.type == :defs
               s_visi = visibility
               s_visi = :public if scope != :class

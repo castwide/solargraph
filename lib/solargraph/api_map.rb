@@ -744,6 +744,12 @@ module Solargraph
       end
       mps = @method_pins[fqns]
       result.concat mps.select{|pin| (pin.scope == scope or fqns == '') and visibility.include?(pin.visibility)} unless mps.nil?
+      # if scope == :class
+      #   init = get_methods(fqns, scope: :instance).select{|pin| pin.name == 'initialize'}
+      #   unless init.nil?
+      #     result.push Solargraph::Pin::Directed::Method.new()
+      #   end
+      # end
       if deep
         sc = @superclasses[fqns]
         unless sc.nil?

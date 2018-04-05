@@ -480,4 +480,18 @@ describe Solargraph::Source do
     fragment = source.fragment_at(4, 0)
     expect(fragment.scope).to eq(:class)
   end
+
+  it "maps a custom [Class].new pin to [Class]#initialize" do
+    source = Solargraph::Source.load_string('
+      class Foo
+        def initialize name
+        end
+      end
+    ')
+    pin = source.method_pins.select{|pin| pin.name == 'new'}.first
+    expect(pin).not_to be(nil)
+    expect(pin.scope).to eq(:class)
+    expect(pin.return_type).to eq('Foo')
+    expect(pin.parameters).to eq(['name'])
+  end
 end
