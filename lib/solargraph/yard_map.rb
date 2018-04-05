@@ -150,19 +150,19 @@ module Solargraph
               if ns.kind_of?(YARD::CodeObjects::ClassObject) and !ns.superclass.nil?
                 meths += get_methods ns.superclass.to_s, '', visibility: [:public, :protected] unless ['Object', 'BasicObject', ''].include?(ns.superclass.to_s)
               end
-              if ns.kind_of?(YARD::CodeObjects::ClassObject) and namespace != 'Class'
-                meths += get_instance_methods('Class')
-                yard = load_yardoc(y)
-                i = yard.at("#{ns}#initialize")
-                unless i.nil?
-                  meths.delete_if{|m| m.name == 'new'}
-                  label = "#{i}"
-                  args = get_method_args(i)
-                  tmp = Solargraph::Pin::YardObject.new(i, object_location(i))
-                  tmp.instance_variable_set(:@name, 'new')
-                  meths.push tmp
-                end
-              end
+              # if ns.kind_of?(YARD::CodeObjects::ClassObject) and namespace != 'Class'
+              #   meths += get_instance_methods('Class')
+              #   yard = load_yardoc(y)
+              #   i = yard.at("#{ns}#initialize")
+              #   unless i.nil?
+              #     meths.delete_if{|m| m.name == 'new'}
+              #     label = "#{i}"
+              #     args = get_method_args(i)
+              #     tmp = Solargraph::Pin::YardObject.new(i, object_location(i))
+              #     tmp.instance_variable_set(:@name, 'new')
+              #     meths.push tmp
+              #   end
+              # end
             end
           end
         end
@@ -186,8 +186,8 @@ module Solargraph
             unless ns.nil?
               ns.meths(scope: :instance, visibility: visibility).each { |m|
                 n = m.to_s.split(/[\.#]/).last
-                # @todo Return method names like []?
-                #if n.to_s.match(/^[a-z]/i) and (namespace == 'Kernel' or !m.to_s.start_with?('Kernel#')) and !m.docstring.to_s.include?(':nodoc:')
+                # HACK: Special treatment for #initialize
+                next if n == 'initialize' and !visibility.include?(:private)
                 if (namespace == 'Kernel' or !m.to_s.start_with?('Kernel#')) and !m.docstring.to_s.include?(':nodoc:')
                   label = "#{n}"
                   args = get_method_args(m)
@@ -207,6 +207,11 @@ module Solargraph
               end
               ns.instance_mixins.each do |m|
                 meths += get_instance_methods(m.to_s) unless m.to_s == 'Kernel'
+              end
+              # HACK: Now get the #initialize method for private requests
+              if visibility.include?(:private)
+                init = ns.meths(scope: :instance).select{|m| m.to_s.split(/[\.#]/).last == 'initialize'}.first
+                meths.push Pin::YardObject.new(init, object_location(init)) unless init.nil?
               end
             end
           end

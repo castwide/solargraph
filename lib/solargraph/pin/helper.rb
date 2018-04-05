@@ -1,4 +1,6 @@
 require 'yard'
+require 'yard/templates/helpers/markup_helper'
+require 'yard/templates/helpers/html_helper'
 
 module Solargraph
   module Pin
@@ -17,7 +19,11 @@ module Solargraph
       end
 
       def options
-        @options ||= YARD::Templates::TemplateOptions.new
+        if @options.nil?
+          @options = YARD::Templates::TemplateOptions.new
+          @options.type = :rdoc
+        end
+        @options
       end
 
       # HACK: The linkify method just returns the arguments as plain text

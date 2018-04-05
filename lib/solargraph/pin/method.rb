@@ -88,6 +88,7 @@ module Solargraph
 
       # @return [Array<String>]
       def get_method_args
+        return [] if node.nil?
         list = nil
         args = []
         node.children.each { |c|
