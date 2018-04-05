@@ -451,4 +451,33 @@ describe Solargraph::Source do
     priv_class = source.namespace_pins.select{|p| p.name == 'PrivateClass'}.first
     expect(priv_class.visibility).to eq(:private)
   end
+
+  it "sets method pin scopes to class for methods in class << self" do
+    code = %(
+      module Foo
+        class << self
+          def bar
+          end
+        end
+      end
+    )
+    source = Solargraph::Source.load_string(code, 'file.rb')
+    pin = source.method_pins.first
+    expect(pin.name).to eq('bar')
+    expect(pin.scope).to eq(:class)
+  end
+
+  it "sets fragment scope to class for methods in class << self" do
+    code = %(
+      module Foo
+        class << self
+          def bar
+          end
+        end
+      end
+    )
+    source = Solargraph::Source.load_string(code, 'file.rb')
+    fragment = source.fragment_at(4, 0)
+    expect(fragment.scope).to eq(:class)
+  end
 end

@@ -39,8 +39,17 @@ module Solargraph
       # @return [Symbol] :class or :instance
       def scope
         if @scope.nil?
-          base = @source.parent_node_from(@offset, :class, :module, :def, :defs, :source)
-          @scope = (base.type == :def ? :instance : :class)
+          @scope = :class
+          tree = @source.tree_at(@offset)
+          until tree.empty?
+            cursor = tree.shift
+            break if cursor.type == :class or cursor.type == :module
+            if cursor.type == :def
+              pin = @source.method_pins.select{|pin| pin.contain?(@offset)}.first
+              # @todo The pin should never be nil here, but we're guarding it just in case
+              @scope = (pin.nil? ? :instance : pin.scope)
+            end
+          end
         end
         @scope
       end
