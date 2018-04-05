@@ -10,7 +10,7 @@ module Solargraph
               start = Time.now
               processed = false
               until processed
-                host.synchronize do
+                # host.synchronize do
                   if host.changing?(params['textDocument']['uri'])
                     # STDERR.puts "Waiting..."
                     if Time.now - start > 1
@@ -21,7 +21,7 @@ module Solargraph
                     inner_process
                     processed = true
                   end
-                end
+                # end
                 sleep 0.1 unless processed
               end
             rescue Exception => e
@@ -37,7 +37,7 @@ module Solargraph
             filename = uri_to_file(params['textDocument']['uri'])
             line = params['position']['line']
             col = params['position']['character']
-            completion = host.library.completions_at(filename, line, col)
+            completion = host.completions_at(filename, line, col)
             items = []
             idx = 0
             completion.pins.each do |pin|

@@ -6,7 +6,7 @@ module Solargraph::LanguageServer::Message::TextDocument
       filename = uri_to_file(params['textDocument']['uri'])
       line = params['position']['line']
       col = params['position']['character']
-      suggestions = host.library.definitions_at(filename, line, col)
+      suggestions = host.definitions_at(filename, line, col)
       contents = suggestions.map(&:hover)
       set_result(
         contents: {

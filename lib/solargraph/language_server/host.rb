@@ -162,6 +162,22 @@ module Solargraph
         library.read_text(filename)
       end
 
+      def completions_at filename, line, column
+        results = nil
+        @change_semaphore.synchronize do
+          results = library.completions_at filename, line, column
+        end
+        results
+      end
+
+      def definitions_at filename, line, column
+        results = nil
+        @change_semaphore.synchronize do
+          results = library.definitions_at filename, line, column
+        end
+        results
+      end
+
       private
 
       def start_change_thread
