@@ -35,7 +35,13 @@ module Solargraph
           file.puts "  #{issue.backtrace.join("\n  ")}"
         end
       end
-      puts "#{tracer.log.length} issues"
+      if tracer.log.empty?
+        puts "Solargraph trace found 0 issues."
+      else
+        errors = tracer.log(:error).length
+        warnings = tracer.log(:warning).length
+        puts "Solargraph trace found #{errors} error#{errors == 1 ? '' : 's'} and #{warnings} warning#{warnings == 1 ? '' : 's'}."
+      end
     end
     tracer.run
   end
