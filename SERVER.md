@@ -1,6 +1,6 @@
 # Solargraph Server Documentation
 
-The Solargraph server is the best way to integrate Solargraph into editors. It provides a web API for code completion, definitions, and documentation.
+**NOTE: Although the web server is still supported, it is highly recommended that client implementors use the [language server protocol](LANGUAGE_SEVRER.MD) if possible.**
 
 ## Running the Server
 
