@@ -145,17 +145,17 @@ module Solargraph
     # Determine if the specified index is inside a string.
     #
     # @return [Boolean]
-    def string_at?(index)
-      n = node_at(index)
-      n.kind_of?(AST::Node) and (n.type == :str or n.type == :dstr)
-    end
+    # def string_at?(index)
+    #   n = node_at(index)
+    #   n.kind_of?(AST::Node) and (n.type == :str or n.type == :dstr)
+    # end
 
     # Get the nearest node that contains the specified index.
     #
     # @param index [Integer]
     # @return [AST::Node]
-    def node_at(index)
-      tree_at(index).first
+    def node_at(line, column)
+      tree_at(line, column).first
     end
 
     # Get an array of nodes containing the specified index, starting with the
@@ -163,11 +163,22 @@ module Solargraph
     #
     # @param index [Integer]
     # @return [Array<AST::Node>]
-    def tree_at(index)
-      arr = []
-      arr.push @node
-      inner_node_at(index, @node, arr)
-      arr
+    def tree_at(line, column)
+      offset = get_parsed_offset(line, column)
+      @all_nodes.reverse.each do |n|
+        if n.respond_to?(:loc)
+          if n.respond_to?(:begin) and n.respond_to?(:end)
+            if offset >= n.begin.begin_pos and offset < n.end.end_pos
+              return [n] + @node_tree[n]
+            end
+          elsif !n.loc.expression.nil?
+            if offset >= n.loc.expression.begin_pos and offset < n.loc.expression.end_pos
+              return [n] + @node_tree[n]
+            end
+          end
+        end
+      end
+      [@node]
     end
 
     # Find the nearest parent node from the specified index. If one or more
@@ -176,8 +187,8 @@ module Solargraph
     # @param index [Integer]
     # @param types [Array<Symbol>]
     # @return [AST::Node]
-    def parent_node_from(index, *types)
-      arr = tree_at(index)
+    def parent_node_from(line, column, *types)
+      arr = tree_at(line, column)
       arr.each { |a|
         if a.kind_of?(AST::Node) and (types.empty? or types.include?(a.type))
           return a
@@ -219,19 +230,19 @@ module Solargraph
       self
     end
 
-    def get_offset line, col
-      Source.get_offset(code, line, col)
-    end
+    # def get_offset line, col
+    #   Source.get_offset(code, line, col)
+    # end
 
-    def self.get_offset text, line, col
-      offset = 0
-      if line > 0
-        text.lines[0..line - 1].each { |l|
-          offset += l.length
-        }
-      end
-      offset + col
-    end
+    # def self.get_offset text, line, col
+    #   offset = 0
+    #   if line > 0
+    #     text.gsub(/\r\n/, "\n").lines[0..line - 1].each { |l|
+    #       offset += l.length
+    #     }
+    #   end
+    #   offset + col
+    # end
 
     def overwrite text
       reparse({'text' => text})
@@ -258,34 +269,34 @@ module Solargraph
 
     # @return [Solargraph::Source::Fragment]
     def fragment_at line, column
-      Fragment.new(self, get_offset(line, column))
+      Fragment.new(self, line, column)
     end
 
     private
 
-    def inner_node_at(index, node, arr)
-      node.children.each do |c|
-        if c.kind_of?(AST::Node) and c.respond_to?(:loc)
-          unless c.loc.expression.nil?
-            if index >= c.loc.expression.begin_pos
-              if c.respond_to?(:end)
-                if index < c.end.end_pos
-                  arr.unshift c
-                end
-              elsif index < c.loc.expression.end_pos
-                arr.unshift c
-              end
-            end
-          end
-          inner_node_at(index, c, arr)
-        end
+    def get_offset line, column, parsed
+      offset = 0
+      feed = 0
+      (parsed ? @code.gsub(/\r\n/, "\n") : @code).lines.each do |l|
+        break if line == feed
+        offset += l.length
+        feed += 1
       end
+      offset + column
+    end
+
+    def get_original_offset line, column
+      get_offset line, column, false
+    end
+
+    def get_parsed_offset line, column
+      get_offset line, column, true
     end
 
     def reparse change
       if change['range']
-        start_offset = Source.get_offset(@code, change['range']['start']['line'], change['range']['start']['character'])
-        end_offset = Source.get_offset(@code, change['range']['end']['line'], change['range']['end']['character'])
+        start_offset = get_original_offset(change['range']['start']['line'], change['range']['start']['character'])
+        end_offset = get_original_offset(change['range']['end']['line'], change['range']['end']['character'])
         rewrite = (start_offset == 0 ? '' : @code[0..start_offset-1].to_s) + change['text'].force_encoding('utf-8') + @code[end_offset..-1].to_s
         # return if @code == rewrite
         again = true
@@ -623,35 +634,35 @@ module Solargraph
         end
       end
 
-      def get_position_at(code, offset)
-        cursor = 0
-        line = 0
-        col = nil
-        code.each_line do |l|
-          if cursor + l.length > offset
-            col = offset - cursor
-            break
-          end
-          if cursor + l.length == offset
-            if l.end_with?("\n")
-              col = 0
-              line += 1
-              break
-            else
-              col = l.length
-              break
-            end
-          end
-          # if cursor + l.length - 1 == offset and !l.end_with?("\n")
-          #   col = l.length - 1
-          #   break
-          # end
-          cursor += l.length
-          line += 1
-        end
-        raise "Invalid offset" if col.nil?
-        [line, col]
-      end
+      # def get_position_at(code, offset)
+      #   cursor = 0
+      #   line = 0
+      #   col = nil
+      #   code.each_line do |l|
+      #     if cursor + l.length > offset
+      #       col = offset - cursor
+      #       break
+      #     end
+      #     if cursor + l.length == offset
+      #       if l.end_with?("\n")
+      #         col = 0
+      #         line += 1
+      #         break
+      #       else
+      #         col = l.length
+      #         break
+      #       end
+      #     end
+      #     # if cursor + l.length - 1 == offset and !l.end_with?("\n")
+      #     #   col = l.length - 1
+      #     #   break
+      #     # end
+      #     cursor += l.length
+      #     line += 1
+      #   end
+      #   raise "Invalid offset" if col.nil?
+      #   [line, col]
+      # end
 
       def parse code, filename = nil
         parser = Parser::CurrentRuby.new(FlawedBuilder.new)

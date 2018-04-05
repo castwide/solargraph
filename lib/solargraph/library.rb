@@ -74,7 +74,7 @@ module Solargraph
       # @type [Solargraph::Source]
       source = nil
       source = read(filename)
-      fragment = Solargraph::Source::Fragment.new(source, source.get_offset(line, column))
+      fragment = Solargraph::Source::Fragment.new(source, line, column)
       api_map.complete(fragment)
     end
 
@@ -87,7 +87,7 @@ module Solargraph
     # @return [Array<Solargraph::Pin::Base>]
     def definitions_at filename, line, column
       source = read(filename)
-      fragment = Solargraph::Source::Fragment.new(source, source.get_offset(line, column))
+      fragment = Solargraph::Source::Fragment.new(source, line, column)
       result = api_map.define(fragment)
       result
     end
@@ -100,6 +100,8 @@ module Solargraph
     # @param column [Integer] The zero-based column number
     # @return [Array<Solargraph::Pin::Base>]
     def signatures_at filename, line, column
+      # @todo Temporarily disabled
+      return []
       source = read(filename)
       fragment = Solargraph::Source::Fragment.new(source, signature_index_before(source, source.get_offset(line, column)))
       api_map.define(fragment).select{|pin| pin.method?}

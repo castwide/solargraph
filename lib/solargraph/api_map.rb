@@ -405,7 +405,7 @@ module Solargraph
         else
           unless fragment.signature.include?('::')
             result.concat fragment.local_variable_pins
-            result.concat get_type_methods(fragment.namespace, fragment.namespace)
+            result.concat get_type_methods(combine_type(fragment.namespace, fragment.scope), fragment.namespace)
             result.concat ApiMap.keywords
           end
           result.concat get_constants(fragment.base, fragment.namespace)
@@ -438,15 +438,16 @@ module Solargraph
       end
     end
 
+    # @todo Maybe deprecate
     # Identify the variable, constant, or method call at the fragment's location.
     #
     # @param fragment [Solargraph::Source::Fragment]
     # @return [Array<Solargraph::Pin::Base>]
-    def identify fragment
-      pins = infer_signature_pins(fragment.whole_signature, fragment.namespace, fragment.scope, fragment.node)
-      pins.each { |pin| pin.resolve self }
-      pins
-    end
+    # def identify fragment
+    #   pins = infer_signature_pins(fragment.whole_signature, fragment.namespace, fragment.scope, fragment.node)
+    #   pins.each { |pin| pin.resolve self }
+    #   pins
+    # end
 
     def infer_signature_pins signature, namespace, scope, call_node
       return [] if signature.nil? or signature.empty?
