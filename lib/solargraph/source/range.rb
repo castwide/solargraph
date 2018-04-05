@@ -30,7 +30,7 @@ module Solargraph
       # @param c1 [Integer] Starting character
       # @param l2 [Integer] Ending line
       # @param c2 [Integer] Ending character
-      # @return [Position]
+      # @return [Range]
       def self.from_to l1, c1, l2, c2
         Range.new(Position.new(l1, c1), Position.new(l2, c2))
       end

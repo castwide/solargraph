@@ -95,6 +95,7 @@ module Solargraph
       else
         expected, scope = extract_namespace_and_scope(pin.return_type)
         return if expected == actual
+        return if expected == 'Boolean' and (value == true or value == false)
         sup = value.class.superclass
         while expected != sup.to_s
           sup = sup.superclass
