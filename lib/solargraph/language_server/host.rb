@@ -1,5 +1,3 @@
-require 'open3'
-require 'shellwords'
 # require 'rubocop'
 require 'thread'
 require 'set'
@@ -212,6 +210,7 @@ module Solargraph
 
       def start_diagnostics_thread
         Thread.new do
+          diagnoser = Diagnostics::Rubocop.new
           until stopped?
             if options['diagnostics'] != 'rubocop'
               @change_semaphore.synchronize { @diagnostics_queue.clear }
@@ -228,9 +227,21 @@ module Solargraph
                   already_changing = false
                   @change_semaphore.synchronize { already_changing = (changing?(current) or @diagnostics_queue.include?(current)) }
                   unless already_changing
-                    resp = read_diagnostics(current)
+                    filename = nil
+                    text = nil
+                    @change_semaphore.synchronize do
+                      filename = uri_to_file(current)
+                      text = library.read_text(filename)
+                    end
+                    results = diagnoser.diagnose text, filename
                     @change_semaphore.synchronize { already_changing = (changing?(current) or @diagnostics_queue.include?(current)) }
-                    publish_diagnostics current, resp unless already_changing
+                    # publish_diagnostics current, resp unless already_changing
+                    unless already_changing
+                      send_notification "textDocument/publishDiagnostics", {
+                        uri: current,
+                        diagnostics: results
+                      }
+                    end
                   end
                 end
               rescue Exception => e
@@ -245,60 +256,6 @@ module Solargraph
       def normalize_separators path
         return path if File::ALT_SEPARATOR.nil?
         path.gsub(File::ALT_SEPARATOR, File::SEPARATOR)
-      end
-
-      def read_diagnostics uri
-        begin
-          filename = nil
-          text = nil
-          @change_semaphore.synchronize do
-            filename = uri_to_file(uri)
-            text = library.read_text(filename)
-          end
-          cmd = "rubocop -f j -s #{Shellwords.escape(filename)}"
-          o, e, s = Open3.capture3(cmd, stdin_data: text)
-          JSON.parse(o)
-        rescue Exception => e
-          STDERR.puts "#{e}"
-          STDERR.puts "#{e.backtrace}"
-          nil
-        end
-      end
-
-      def publish_diagnostics uri, resp
-        severities = {
-          'refactor' => 4,
-          'convention' => 3,
-          'warning' => 2,
-          'error' => 1,
-          'fatal' => 1
-        }
-        diagnostics = []
-        resp['files'].each do |file|
-          file['offenses'].each do |off|
-            diag = {
-              range: {
-                start: {
-                  line: off['location']['start_line'] - 1,
-                  character: off['location']['start_column'] - 1
-                },
-                end: {
-                  line: off['location']['last_line'] - 1,
-                  character: off['location']['last_column']
-                }
-              },
-              # 1 = Error, 2 = Warning, 3 = Information, 4 = Hint
-              severity: severities[off['severity']],
-              source: off['cop_name'],
-              message: off['message'].gsub(/^#{off['cop_name']}\:/, '')
-            }
-            diagnostics.push diag
-          end
-        end
-        send_notification "textDocument/publishDiagnostics", {
-          uri: uri,
-          diagnostics: diagnostics
-        }
       end
     end
   end
