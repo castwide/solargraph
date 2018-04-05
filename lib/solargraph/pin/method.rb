@@ -67,7 +67,7 @@ module Solargraph
             break if sugg.nil?
             @return_type = api_map.find_fully_qualified_namespace(sugg.return_type, sugg.namespace) unless sugg.return_type.nil?
             break unless @return_type.nil?
-            sc = superclass_of(sc)
+            sc = api_map.superclass_of(sc)
           end
         end
         unless return_type.nil? or @fully_resolved
