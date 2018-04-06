@@ -205,22 +205,5 @@ module Solargraph
       api_map.virtualize source
       source
     end
-
-    # def signature_index_before source, index
-    #   open_parens = 0
-    #   cursor = index - 1
-    #   while cursor >= 0
-    #     break if cursor < 0
-    #     if source.code[cursor] == ')'
-    #       open_parens -= 1
-    #     elsif source.code[cursor] == '('
-    #       open_parens += 1
-    #     end
-    #     break if open_parens == 1
-    #     cursor -= 1
-    #   end
-    #   cursor = 0 if cursor < 0
-    #   cursor
-    # end
   end
 end
