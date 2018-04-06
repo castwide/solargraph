@@ -268,13 +268,18 @@ module Solargraph
           index -= 1
         end
         if signature.start_with?('.')
-          line, col = get_position_at(index - 1)
-          pn = @source.node_at(line, col)
-          unless pn.nil?
-            literal = infer_literal_node_type(pn)
-            unless literal.nil?
-              signature = "#{literal}.new#{signature}"
-              # @todo Determine the index from the beginning of the literal node?
+          # @todo Smelly exceptional case for arrays
+          if signature == '.[].'
+            signature = 'Array.new.'
+          else
+            line, col = get_position_at(index - 1)
+            pn = @source.node_at(line, col)
+            unless pn.nil?
+              literal = infer_literal_node_type(pn)
+              unless literal.nil?
+                signature = "#{literal}.new#{signature}"
+                # @todo Determine the index from the beginning of the literal node?
+              end
             end
           end
         end
