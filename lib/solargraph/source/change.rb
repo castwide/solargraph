@@ -15,8 +15,8 @@ module Solargraph
       end
 
       def write text, nullable = false
-        if nullable and new_text.match(/^[^a-z0-9\s]+?$/i)
-          repair text
+        if nullable and new_text.match(/\.\[\{\(\s?$/i)
+          commit "#{new_text[0..-2]} "
         elsif range.nil?
           new_text
         else
