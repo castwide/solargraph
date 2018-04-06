@@ -1035,4 +1035,17 @@ describe Solargraph::ApiMap do
     items = api_map.complete(fragment).pins.map(&:path)
     expect(items).to include('Foobar#shazbot')
   end
+
+  it "selects non-nil local variable assignments" do
+    api_map = Solargraph::ApiMap.new
+    source = Solargraph::Source.load_string('
+      a = nil
+      a = []
+      a._
+    ')
+    api_map.virtualize source
+    fragment = source.fragment_at(3, 8)
+    cmp = api_map.complete(fragment)
+    expect(cmp.pins.map(&:path)).to include('Array#each')
+  end
 end

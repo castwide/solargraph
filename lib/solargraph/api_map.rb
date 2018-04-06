@@ -276,7 +276,7 @@ module Solargraph
     # @param scope [Symbol] :instance or :class
     # @return [Array<Solargraph::Pin::InstanceVariable>]
     def get_instance_variable_pins(namespace, scope = :instance)
-      suggest_unique_variables (@ivar_pins[namespace] || []).select{ |pin| pin.scope == scope }
+      suggest_unique_variables((@ivar_pins[namespace] || []).select{ |pin| pin.scope == scope })
     end
 
     # Get an array of class variable pins for a namespace.
@@ -399,12 +399,12 @@ module Solargraph
         elsif fragment.signature.start_with?('@')
           result.concat get_instance_variable_pins(fragment.namespace, fragment.scope)
         elsif fragment.signature.start_with?('$')
-          result.concat get_global_variable_pins
+          result.concat suggest_unique_variables(get_global_variable_pins)
         elsif fragment.signature.start_with?(':') and !fragment.signature.start_with?('::')
           result.concat get_symbols
         else
           unless fragment.signature.include?('::')
-            result.concat fragment.local_variable_pins
+            result.concat suggest_unique_variables(fragment.local_variable_pins)
             result.concat get_type_methods(combine_type(fragment.namespace, fragment.scope), fragment.namespace)
             result.concat ApiMap.keywords
           end
@@ -488,7 +488,7 @@ module Solargraph
         end
         source = get_source_for(call_node)
         unless source.nil?
-          lvpins = source.local_variable_pins.select{|pin| pin.name == base and pin.visible_from?(call_node)}
+          lvpins = suggest_unique_variables(source.local_variable_pins.select{|pin| pin.name == base and pin.visible_from?(call_node)})
           unless lvpins.empty?
             if rest.nil?
               return lvpins
