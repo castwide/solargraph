@@ -85,6 +85,7 @@ module Solargraph
             if params['textDocument']['version'] == source.version + params['contentChanges'].length
               updater = generate_updater(params)
               library.synchronize updater
+              library.refresh
               @change_queue.pop
               @diagnostics_queue.push params['textDocument']['uri']
             end
