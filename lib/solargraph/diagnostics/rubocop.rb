@@ -7,11 +7,12 @@ module Solargraph
       def initialize
       end
 
+      # @return [Array<Hash>]
       def diagnose text, filename
         begin
           cmd = "rubocop -f j -s #{Shellwords.escape(filename)}"
           o, e, s = Open3.capture3(cmd, stdin_data: text)
-          make_hash text, JSON.parse(o)
+          make_array text, JSON.parse(o)
         rescue Exception => e
           STDERR.puts "#{e}"
           STDERR.puts "#{e.backtrace}"
@@ -19,7 +20,9 @@ module Solargraph
         end
       end
 
-      def make_hash text, resp
+      private
+
+      def make_array text, resp
         severities = {
           'refactor' => 4,
           'convention' => 3,
