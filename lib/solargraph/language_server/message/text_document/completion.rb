@@ -24,7 +24,15 @@ module Solargraph
             rescue Exception => e
               STDERR.puts e.message
               STDERR.puts e.backtrace
-              set_error ErrorCodes::INTERNAL_ERROR, e.message
+              # Ignore 'Invalid offset' errors, since they usually just mean
+              # that the document is in the process of changing.
+              if e.message.include?('Invalid offset')
+                # @todo Should this result be marked as incomplete? It might
+                #   be possible to resolve it after changes are finished.
+                set_result empty_result
+              else
+                set_error ErrorCodes::INTERNAL_ERROR, e.message
+              end
             end
           end
 
