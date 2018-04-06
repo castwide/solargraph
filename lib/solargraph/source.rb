@@ -279,12 +279,12 @@ module Solargraph
         rewrite = (start_offset == 0 ? '' : @code[0..start_offset-1].to_s) + change['text'].force_encoding('utf-8') + @code[end_offset..-1].to_s
         # return if @code == rewrite
         again = true
-        if change['text'].match(/^[^a-z0-9\s]+?$/i)
-          tmp = (start_offset == 0 ? '' : @fixed[0..start_offset-1].to_s) + change['text'].gsub(/[^\s]/, ' ') + @fixed[end_offset..-1].to_s
-          again = false
-        else
+        # if change['text'].match(/^[^a-z0-9\s]+?$/i)
+        #   tmp = (start_offset == 0 ? '' : @fixed[0..start_offset-1].to_s) + change['text'].gsub(/[^\s]/, ' ') + @fixed[end_offset..-1].to_s
+        #   again = false
+        # else
           tmp = rewrite
-        end
+        # end
         @code = rewrite
         begin
           node, comments = Source.parse(tmp, filename)
