@@ -83,8 +83,8 @@ module Solargraph
             source = library.checkout(uri_to_file(params['textDocument']['uri']))
             @change_queue.push params
             if params['textDocument']['version'] == source.version + params['contentChanges'].length
-              source.synchronize(params['contentChanges'], params['textDocument']['version'])
-              library.refresh
+              updater = generate_updater(params)
+              library.synchronize updater
               @change_queue.pop
               @diagnostics_queue.push params['textDocument']['uri']
             end
@@ -199,7 +199,8 @@ module Solargraph
                   filename = uri_to_file(change['textDocument']['uri'])
                   source = library.checkout(filename)
                   if change['textDocument']['version'] == source.version + change['contentChanges'].length
-                    source.synchronize(change['contentChanges'], change['textDocument']['version'])
+                    updater = generate_updater(params)
+                    library.synchronize updater
                     @diagnostics_queue.push change['textDocument']['uri']
                     changed = true
                     true
@@ -207,8 +208,10 @@ module Solargraph
                     # HACK: This condition fixes the fact that formatting
                     # increments the version by one regardless of the number
                     # of changes
-                    source.synchronize(change['contentChanges'], change['textDocument']['version'])
+                    updater = generate_updater(params)
+                    library.synchronize updater
                     @diagnostics_queue.push change['textDocument']['uri']
+                    changed = true
                     true
                   elsif change['textDocument']['version'] <= source.version
                     # @todo Is deleting outdated changes correct behavior?
@@ -281,6 +284,24 @@ module Solargraph
       def normalize_separators path
         return path if File::ALT_SEPARATOR.nil?
         path.gsub(File::ALT_SEPARATOR, File::SEPARATOR)
+      end
+
+      def generate_updater params
+        changes = []
+        params['contentChanges'].each do |chng|
+          changes.push Solargraph::Source::Change.new(
+            (chng['range'].nil? ? 
+              nil : 
+              Solargraph::Source::Range.from_to(chng['range']['start']['line'], chng['range']['start']['character'], chng['range']['end']['line'], chng['range']['end']['character'])
+            ),
+            chng['text']
+          )
+        end
+        Solargraph::Source::Updater.new(
+          uri_to_file(params['textDocument']['uri']),
+          params['textDocument']['version'],
+          changes
+        )
       end
     end
   end

@@ -163,6 +163,11 @@ module Solargraph
       api_map.get_path_suggestions(path)
     end
 
+    def synchronize updater
+      source = read(updater.filename)
+      source.synchronize updater
+    end
+
     # Get the current text of a file in the library.
     #
     # @param filename [String]

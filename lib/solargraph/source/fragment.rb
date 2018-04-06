@@ -228,6 +228,7 @@ module Solargraph
           unless !in_whitespace and string?
             break if brackets > 0 or parens > 0 or squares > 0
             char = @code[index, 1]
+            break if char.nil? # @todo Is this the right way to handle this?
             if brackets.zero? and parens.zero? and squares.zero? and [' ', "\r", "\n", "\t"].include?(char)
               in_whitespace = true
             else
