@@ -34,7 +34,7 @@ module Solargraph
       end
 
       def nil_assignment?
-        assignment_node.type == :nil
+        assignment_node.nil? or assignment_node.type == :nil
       end
 
       def signature
