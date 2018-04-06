@@ -3,6 +3,8 @@ module Solargraph
     class Fragment
       include NodeMethods
 
+      attr_reader :tree
+
       attr_reader :line
 
       attr_reader :column
@@ -10,31 +12,62 @@ module Solargraph
       # @param source [Solargraph::Source]
       # @param line [Integer]
       # @param column [Integer]
-      def initialize source, line, column
+      def initialize source, line, column, tree
         # @todo Split this object from the source. The source can change; if
         #   it does, this object's data should not.
         @source = source
+        @code = source.code
         @line = line
         @column = column
-        @code = source.code.gsub(/\r\n/, "\n")
+        @tree = tree
       end
 
       # Get the node at the current offset.
       #
       # @return [Parser::AST::Node]
       def node
-        @node ||= @source.node_at(line, column)
+        @node ||= @tree.first
       end
 
       # Get the fully qualified namespace at the current offset.
       #
       # @return [String]
       def namespace
+        # if @namespace.nil?
+        #   base = @source.parent_node_from(line, column, :class, :module, :def, :defs)
+        #   @namespace ||= @source.namespace_for(base)
+        # end
+        # @namespace
         if @namespace.nil?
-          base = @source.parent_node_from(line, column, :class, :module, :def, :defs)
-          @namespace ||= @source.namespace_for(base)
+          parts = []
+          @tree.each do |n|
+            next unless n.kind_of?(AST::Node)
+            if n.type == :class or n.type == :module
+              parts.unshift unpack_name(n.children[0])
+            end
+          end
+          @namespace = parts.join('::')
         end
         @namespace
+      end
+
+      # @return [Boolean]
+      def argument?
+        @argument ||= !recipient.nil?
+      end
+
+      # @return [String]
+      def recipient
+        if @recipient.nil?
+          @tree.each_with_index do |n, i|
+            next if n == node and !whole_word.empty?
+            if n.type == :send
+              @recipient = resolve_node_signature(n)
+              break
+            end
+          end
+        end
+        @recipient
       end
 
       # Get the scope at the current offset.
@@ -43,7 +76,7 @@ module Solargraph
       def scope
         if @scope.nil?
           @scope = :class
-          tree = @source.tree_at(line, column)
+          tree = @tree.clone
           until tree.empty?
             cursor = tree.shift
             break if cursor.type == :class or cursor.type == :module

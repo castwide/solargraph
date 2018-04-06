@@ -74,7 +74,7 @@ module Solargraph
       # @type [Solargraph::Source]
       source = nil
       source = read(filename)
-      fragment = Solargraph::Source::Fragment.new(source, line, column)
+      fragment = source.fragment_at(line, column)
       api_map.complete(fragment)
     end
 
@@ -87,7 +87,7 @@ module Solargraph
     # @return [Array<Solargraph::Pin::Base>]
     def definitions_at filename, line, column
       source = read(filename)
-      fragment = Solargraph::Source::Fragment.new(source, line, column)
+      fragment = source.fragment_at(line, column)
       result = api_map.define(fragment)
       result
     end
@@ -100,11 +100,9 @@ module Solargraph
     # @param column [Integer] The zero-based column number
     # @return [Array<Solargraph::Pin::Base>]
     def signatures_at filename, line, column
-      # @todo Temporarily disabled
-      return []
       source = read(filename)
-      fragment = Solargraph::Source::Fragment.new(source, signature_index_before(source, source.get_offset(line, column)))
-      api_map.define(fragment).select{|pin| pin.method?}
+      fragment = source.fragment_at(line, column)
+      api_map.signify(fragment)
     end
 
     # Get the pin at the specified location or nil if the pin does not exist.
@@ -208,21 +206,21 @@ module Solargraph
       source
     end
 
-    def signature_index_before source, index
-      open_parens = 0
-      cursor = index - 1
-      while cursor >= 0
-        break if cursor < 0
-        if source.code[cursor] == ')'
-          open_parens -= 1
-        elsif source.code[cursor] == '('
-          open_parens += 1
-        end
-        break if open_parens == 1
-        cursor -= 1
-      end
-      cursor = 0 if cursor < 0
-      cursor
-    end
+    # def signature_index_before source, index
+    #   open_parens = 0
+    #   cursor = index - 1
+    #   while cursor >= 0
+    #     break if cursor < 0
+    #     if source.code[cursor] == ')'
+    #       open_parens -= 1
+    #     elsif source.code[cursor] == '('
+    #       open_parens += 1
+    #     end
+    #     break if open_parens == 1
+    #     cursor -= 1
+    #   end
+    #   cursor = 0 if cursor < 0
+    #   cursor
+    # end
   end
 end

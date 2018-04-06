@@ -89,4 +89,18 @@ describe Solargraph::Source::Fragment do
     expect(fragment.word).to eq('b')
     expect(fragment.whole_word).to eq('baz')
   end
+
+  it "detects a recipient of an argument" do
+    source = Solargraph::Source.load_string('abc.def(g)')
+    fragment = source.fragment_at(0, 8)
+    # expect(fragment.argument?).to be(true)
+    expect(fragment.recipient).to eq('abc.def')
+  end
+
+  it "detects a recipient of multiple arguments" do
+    source = Solargraph::Source.load_string('abc.def(g, h)')
+    fragment = source.fragment_at(0, 11)
+    # expect(fragment.argument?).to be(true)
+    expect(fragment.recipient).to eq('abc.def')
+  end
 end

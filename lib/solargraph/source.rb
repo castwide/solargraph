@@ -142,14 +142,6 @@ module Solargraph
       @node_tree[node] || []
     end
 
-    # Determine if the specified index is inside a string.
-    #
-    # @return [Boolean]
-    # def string_at?(index)
-    #   n = node_at(index)
-    #   n.kind_of?(AST::Node) and (n.type == :str or n.type == :dstr)
-    # end
-
     # Get the nearest node that contains the specified index.
     #
     # @param index [Integer]
@@ -230,20 +222,6 @@ module Solargraph
       self
     end
 
-    # def get_offset line, col
-    #   Source.get_offset(code, line, col)
-    # end
-
-    # def self.get_offset text, line, col
-    #   offset = 0
-    #   if line > 0
-    #     text.gsub(/\r\n/, "\n").lines[0..line - 1].each { |l|
-    #       offset += l.length
-    #     }
-    #   end
-    #   offset + col
-    # end
-
     def overwrite text
       reparse({'text' => text})
     end
@@ -253,7 +231,7 @@ module Solargraph
       down = query.downcase
       all_symbols.select{|p| p.path.downcase.include?(down)}
     end
-    
+
     def all_symbols
       result = []
       result.concat namespace_pins
@@ -269,7 +247,8 @@ module Solargraph
 
     # @return [Solargraph::Source::Fragment]
     def fragment_at line, column
-      Fragment.new(self, line, column)
+      # Fragment.new(self, line, column)
+      Fragment.new(self, line, column, tree_at(line, column))
     end
 
     private

@@ -425,7 +425,7 @@ module Solargraph
     def define fragment
       return [] if fragment.string? or fragment.comment?
       pins = infer_signature_pins fragment.whole_signature, fragment.namespace, fragment.scope, fragment.node
-      return [] if pins.empty?
+      return pins if pins.empty?
       if pins.first.variable?
         result = []
         pins.select{|pin| pin.variable?}.each do |pin|
@@ -436,6 +436,13 @@ module Solargraph
       else
         pins.reject{|pin| pin.path.nil?}
       end
+    end
+
+    def signify fragment
+      return result unless fragment.argument?
+      pins = infer_signature_pins fragment.recipient, fragment.namespace, fragment.scope, fragment.node
+      pins.each { |pin| pin.resolve self }
+      pins
     end
 
     # @todo Maybe deprecate
