@@ -445,17 +445,6 @@ module Solargraph
       pins
     end
 
-    # @todo Maybe deprecate
-    # Identify the variable, constant, or method call at the fragment's location.
-    #
-    # @param fragment [Solargraph::Source::Fragment]
-    # @return [Array<Solargraph::Pin::Base>]
-    # def identify fragment
-    #   pins = infer_signature_pins(fragment.whole_signature, fragment.namespace, fragment.scope, fragment.node)
-    #   pins.each { |pin| pin.resolve self }
-    #   pins
-    # end
-
     def infer_signature_pins signature, namespace, scope, call_node
       return [] if signature.nil? or signature.empty?
       base, rest = signature.split('.', 2)
