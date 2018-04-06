@@ -269,8 +269,8 @@ module Solargraph
         end
         if signature.start_with?('.')
           # @todo Smelly exceptional case for arrays
-          if signature == '.[].'
-            signature = 'Array.new.'
+          if signature.start_with?('.[].')
+            signature.sub!(/^\.\[\]/, 'Array.new')
           else
             line, col = get_position_at(index - 1)
             pn = @source.node_at(line, col)
