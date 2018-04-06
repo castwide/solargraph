@@ -11,8 +11,8 @@ module Solargraph
         end
       end
 
-      def visible_from? node
-        parents = [node] + (source.tree_for(node) || [])
+      def visible_from? n
+        parents = [n] + (source.tree_for(n) || [])
         parents.each do |p|
           return true if @tree[0] == p
           return false if [:def, :defs, :class, :module].include?(p.type)

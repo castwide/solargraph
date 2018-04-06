@@ -174,7 +174,15 @@ module Solargraph
       def definitions_at filename, line, column
         results = nil
         @change_semaphore.synchronize do
-          results = library.definitions_at filename, line, column
+          results = library.definitions_at(filename, line, column)
+        end
+        results
+      end
+
+      def signatures_at filename, line, column
+        results = nil
+        @change_semaphore.synchronize do
+          results = library.signatures_at(filename, line, column)
         end
         results
       end

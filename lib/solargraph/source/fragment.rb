@@ -53,21 +53,13 @@ module Solargraph
 
       # @return [Boolean]
       def argument?
-        @argument ||= !recipient.nil?
+        @argument ||= !signature_position.nil?
       end
 
-      # @return [String]
+      # @return [Fragment]
       def recipient
-        if @recipient.nil?
-          @tree.each_with_index do |n, i|
-            next if n == node and !whole_word.empty?
-            if n.type == :send
-              @recipient = resolve_node_signature(n)
-              break
-            end
-          end
-        end
-        @recipient
+        return nil if signature_position.nil?
+        @recipient ||= @source.fragment_at(*signature_position)
       end
 
       # Get the scope at the current offset.
@@ -396,6 +388,26 @@ module Solargraph
         [line, col]
       end
 
+      def signature_position
+        if @signature_position.nil?
+          open_parens = 0
+          cursor = offset - 1
+          while cursor >= 0
+            break if cursor < 0
+            if @code[cursor] == ')'
+              open_parens -= 1
+            elsif @code[cursor] == '('
+              open_parens += 1
+            end
+            break if open_parens == 1
+            cursor -= 1
+          end
+          if cursor >= 0
+            @signature_position = get_position_at(cursor)
+          end
+        end
+        @signature_position
+      end
     end
   end
 end

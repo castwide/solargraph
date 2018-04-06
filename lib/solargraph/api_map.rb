@@ -303,11 +303,11 @@ module Solargraph
 
     # @return [Solargraph::Source]
     def get_source_for(node)
-      matches = []
+      return @virtual_source if !@virtual_source.nil? and @virtual_source.include?(node)
       @sources.each do |source|
-        matches.push source if source.include?(node)
+        return source if source.include?(node)
       end
-      matches.first
+      nil
     end
 
     # @return [Array<Solargraph::Pin::GlobalVariable>]
@@ -439,9 +439,9 @@ module Solargraph
     end
 
     def signify fragment
-      return result unless fragment.argument?
-      pins = infer_signature_pins fragment.recipient, fragment.namespace, fragment.scope, fragment.node
-      pins.each { |pin| pin.resolve self }
+      return [] unless fragment.argument?
+      pins = infer_signature_pins(fragment.recipient.whole_signature, fragment.recipient.namespace, fragment.recipient.scope, fragment.recipient.node)
+      # pins.each{|pin| pin.resolve self}
       pins
     end
 
