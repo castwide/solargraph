@@ -4,7 +4,6 @@ module Solargraph
       module TextDocument
         class SignatureHelp < TextDocument::Base
           def process
-            STDERR.puts "PORBLEM!" if host.changing?(params['textDocument']['uri'])
             filename = uri_to_file(params['textDocument']['uri'])
             line = params['position']['line']
             col = params['position']['character']
