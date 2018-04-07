@@ -75,10 +75,6 @@ module Solargraph
       method_pin_map[fqns] || []
     end
 
-    # def namespace_includes
-    #   @namespace_includes ||= {}
-    # end
-
     # @return [Array<Solargraph::Pin::Attribute>]
     def attribute_pins
       @attribute_pins ||= []
