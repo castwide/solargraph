@@ -71,9 +71,8 @@ module Solargraph
     # @param column [Integer] The zero-based column number
     # @return [ApiMap::Completion]
     def completions_at filename, line, column
-      # @type [Solargraph::Source]
-      source = nil
       source = read(filename)
+      api_map.virtualize source
       fragment = source.fragment_at(line, column)
       api_map.complete(fragment)
     end
@@ -87,6 +86,7 @@ module Solargraph
     # @return [Array<Solargraph::Pin::Base>]
     def definitions_at filename, line, column
       source = read(filename)
+      api_map.virtualize source
       fragment = source.fragment_at(line, column)
       result = api_map.define(fragment)
       result
@@ -101,6 +101,7 @@ module Solargraph
     # @return [Array<Solargraph::Pin::Base>]
     def signatures_at filename, line, column
       source = read(filename)
+      api_map.virtualize source
       fragment = source.fragment_at(line, column)
       api_map.signify(fragment)
     end
@@ -207,7 +208,7 @@ module Solargraph
     def read filename
       source = source_hash[filename]
       raise FileNotFoundError, "Source not found for #{filename}" if source.nil?
-      api_map.virtualize source
+      # api_map.virtualize source
       source
     end
   end
