@@ -401,11 +401,12 @@ module Solargraph
           fqn = tree.join('::')
           @namespace_nodes[fqn] ||= []
           @namespace_nodes[fqn].push node
-          namespace_pins.push Solargraph::Pin::Namespace.new(self, node, tree[0..-2].join('::') || '', :public)
+          sc = nil
           if node.type == :class and !node.children[1].nil?
             sc = unpack_name(node.children[1])
-            superclasses[fqn] = sc
+            @superclasses[fqn] = sc
           end
+          namespace_pins.push Solargraph::Pin::Namespace.new(self, node, tree[0..-2].join('::') || '', :public, sc)
         end
         file = source.filename
         node.children.each do |c|
@@ -495,7 +496,7 @@ module Solargraph
                   ref = namespace_pins.select{|p| p.name == cn}.first
                   unless ref.nil?
                     source.namespace_pins.delete ref
-                    source.namespace_pins.push Solargraph::Pin::Namespace.new(ref.source, ref.node, ref.namespace, :private)
+                    source.namespace_pins.push Solargraph::Pin::Namespace.new(ref.source, ref.node, ref.namespace, :private, (ref.superclass_reference.nil? ? nil : ref.superclass_reference.name))
                   end
                 else
                   source.constant_pins.delete ref
@@ -509,6 +510,7 @@ module Solargraph
                   namespace_includes[fqn] ||= []
                   c.children[2..-1].each do |i|
                     namespace_includes[fqn].push unpack_name(i)
+                    namespace_pins.last.reference_include unpack_name(i)
                   end
                 end
               end
@@ -518,6 +520,7 @@ module Solargraph
                   namespace_extends[fqn] ||= []
                   c.children[2..-1].each do |i|
                     namespace_extends[fqn].push unpack_name(i)
+                    namespace_pins.last.reference_extend unpack_name(i)
                   end
                 end
               end

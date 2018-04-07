@@ -5,9 +5,18 @@ module Solargraph
 
       attr_reader :visibility
 
-      def initialize source, node, namespace, visibility
+      def initialize source, node, namespace, visibility, superclass = nil
         super(source, node, namespace)
         @visibility = visibility
+        @superclass_reference = Reference.new(self, superclass) unless superclass.nil?
+      end
+
+      def reference_include name
+        include_references.push Reference.new(self, name)
+      end
+
+      def reference_extend name
+        extend_references.push Reference.new(self, name)
       end
 
       def name
@@ -20,6 +29,18 @@ module Solargraph
 
       def completion_item_kind
         @kind ||= (node.type == :class ? Solargraph::LanguageServer::CompletionItemKinds::CLASS : Solargraph::LanguageServer::CompletionItemKinds::MODULE)
+      end
+
+      def include_references
+        @include_references ||= []
+      end
+
+      def extend_references
+        @extend_references ||= []
+      end
+
+      def superclass_reference
+        @superclass_reference
       end
 
       # @return [Symbol] :class or :module

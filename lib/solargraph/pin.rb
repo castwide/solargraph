@@ -19,5 +19,6 @@ module Solargraph
     autoload :Parameter,        'solargraph/pin/parameter'
     autoload :MethodParameter,  'solargraph/pin/method_parameter'
     autoload :BlockParameter,   'solargraph/pin/block_parameter'
+    autoload :Reference,        'solargraph/pin/reference'
   end
 end
