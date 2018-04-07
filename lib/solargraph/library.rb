@@ -64,6 +64,13 @@ module Solargraph
       source_hash.delete filename
     end
 
+    def overwrite filename, version
+      source = source_hash[filename]
+      return if source.nil?
+      STDERR.puts "Save out of sync for #{filename}" if source.version > version
+      open filename, File.read(filename), version
+    end
+
     # Get completion suggestions at the specified file and location.
     #
     # @param filename [String] The file to analyze

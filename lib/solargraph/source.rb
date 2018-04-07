@@ -258,7 +258,6 @@ module Solargraph
 
     # @return [Solargraph::Source::Fragment]
     def fragment_at line, column
-      # Fragment.new(self, line, column)
       Fragment.new(self, line, column, tree_at(line, column))
     end
 

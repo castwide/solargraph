@@ -79,6 +79,25 @@ module Solargraph
         end
       end
 
+      def close uri
+        @change_semaphore.synchronize do
+          library.close uri_to_file(uri)
+        end
+      end
+
+      def save params
+        @change_semaphore.synchronize do
+          uri = params['textDocument']['uri']
+          filename = uri_to_file(uri)
+          version = params['textDocument']['version']
+          @change_queue.delete_if do |change|
+            return true if change['textDocument']['uri'] == uri and change['textDocument']['version'] <= version
+            false
+          end
+          library.overwrite filename, version
+        end
+      end
+
       def change params
         @change_semaphore.synchronize do
           if unsafe_changing? params['textDocument']['uri']
@@ -211,6 +230,7 @@ module Solargraph
             @change_semaphore.synchronize do
               begin
                 changed = false
+                @change_queue.sort!{|a, b| a['textDocument']['version'] <=> b['textDocument']['version']}
                 @change_queue.delete_if do |change|
                   filename = uri_to_file(change['textDocument']['uri'])
                   source = library.checkout(filename)
@@ -224,6 +244,7 @@ module Solargraph
                     # HACK: This condition fixes the fact that formatting
                     # increments the version by one regardless of the number
                     # of changes
+                    STDERR.puts "Dirt stupid update"
                     updater = generate_updater(change)
                     library.synchronize updater
                     @diagnostics_queue.push change['textDocument']['uri']
@@ -288,8 +309,7 @@ module Solargraph
                 end
               end
             rescue Exception => e
-              STDERR.puts e.message
-              STDERR.puts e.backtrace
+              STDERR.puts "Error in diagnostics: #{e.class}"
             end
           end
         end
