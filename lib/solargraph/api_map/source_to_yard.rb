@@ -17,7 +17,7 @@ module Solargraph
       def rake_yard sources
         code_object_map.clear
         sources.each do |s|
-          s.namespace_pin_map.values.flatten.each do |pin|
+          s.namespace_pins.each do |pin|
             next if pin.path.empty?
             if pin.kind == Solargraph::Suggestion::CLASS
               code_object_map[pin.path] ||= YARD::CodeObjects::ClassObject.new(root_code_object, pin.path)

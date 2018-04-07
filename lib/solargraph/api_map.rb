@@ -660,7 +660,7 @@ module Solargraph
         cache.clear
         namespace_map.clear
         @sources.each do |s|
-          s.namespace_pin_map.values.flatten.each do |pin|
+          s.namespace_pins.each do |pin|
             namespace_map[pin.path] ||= []
             namespace_map[pin.path].push pin
           end
@@ -709,7 +709,7 @@ module Solargraph
       source.symbol_pins.each do |pin|
         @symbol_pins.push pin
       end
-      source.namespace_pin_map.values.flatten.each do |pin|
+      source.namespace_pins.each do |pin|
         @namespace_path_pins[pin.path] ||= []
         @namespace_path_pins[pin.path].push pin
         @namespace_pins[pin.namespace] ||= []
@@ -804,8 +804,8 @@ module Solargraph
       skip.push fqns
       result = []
       result.concat @const_pins[fqns] if @const_pins.has_key?(fqns)
-      result.concat @namespace_pins[fqns] if !fqns.empty? and @namespace_pins.has_key?(fqns)
-      result.keep_if{|pin| visibility.include?(pin.visibility)}
+      result.concat @namespace_pins[fqns] if @namespace_pins.has_key?(fqns)
+      result.keep_if{|pin| !pin.name.empty? and visibility.include?(pin.visibility)}
       result.concat yard_map.get_constants(fqns)
       is = @namespace_includes[fqns]
       unless is.nil?

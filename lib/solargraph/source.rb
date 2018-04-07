@@ -69,6 +69,12 @@ module Solargraph
       namespace_pin_map[fqns] || []
     end
 
+    # @return [Array<Solargraph::Pin::Method>]
+    def method_pins fqns = nil
+      return method_pin_map.values.flatten if fqns.nil?
+      method_pin_map[fqns] || []
+    end
+
     def namespace_includes
       @namespace_includes ||= {}
     end
@@ -81,10 +87,6 @@ module Solargraph
       @superclasses ||= {}
     end
 
-    # @return [Array<Solargraph::Pin::Method>]
-    def method_pins
-      @method_pins ||= []
-    end
 
     # @return [Array<Solargraph::Pin::Attribute>]
     def attribute_pins
@@ -119,11 +121,6 @@ module Solargraph
     # @return [Array<Solargraph::Pin::Symbol>]
     def symbol_pins
       @symbol_pins ||= []
-    end
-
-    # @return [Hash<String, Solargraph::Pin::Namespace>]
-    def namespace_pin_map
-      @namespace_pin_map ||= {}
     end
 
     # @return [Array<String>]
@@ -319,7 +316,7 @@ module Solargraph
       local_variable_pins.clear
       symbol_pins.clear
       constant_pins.clear
-      method_pins.clear
+      method_pin_map.clear
       namespace_includes.clear
       namespace_extends.clear
       superclasses.clear
@@ -341,7 +338,8 @@ module Solargraph
           elsif d.tag.tag_name == 'method'
             gen_src = Source.virtual("def #{d.tag.name};end", filename)
             gen_pin = gen_src.method_pins.first
-            method_pins.push Solargraph::Pin::Directed::Method.new(gen_src, gen_pin.node, ns, :instance, :public, docstring, gen_pin.name)
+            method_pin_map[ns] ||= []
+            method_pin_map[ns].push Solargraph::Pin::Directed::Method.new(gen_src, gen_pin.node, ns, :instance, :public, docstring, gen_pin.name)
           elsif d.tag.tag_name == 'macro'
             # @todo Handle various types of macros (attach, new, whatever)
             path = path_for(k.node)
@@ -463,7 +461,8 @@ module Solargraph
             elsif c.type == :casgn
               constant_pins.push Solargraph::Pin::Constant.new(self, c, fqn, :public)
             elsif c.type == :def and c.children[0].to_s[0].match(/[a-z]/i)
-              method_pins.push Solargraph::Pin::Method.new(source, c, fqn || '', scope, visibility)
+              method_pin_map[fqn || ''] ||= []
+              method_pin_map[fqn || ''].push Solargraph::Pin::Method.new(source, c, fqn || '', scope, visibility)
             elsif c.type == :defs
               s_visi = visibility
               s_visi = :public if scope != :class
@@ -473,7 +472,8 @@ module Solargraph
                 dfqn = unpack_name(c.children[0])
               end
               unless dfqn.nil?
-                method_pins.push Solargraph::Pin::Method.new(source, c, dfqn, :class, s_visi)
+                method_pin_map[dfqn] ||= []
+                method_pin_map[dfqn].push Solargraph::Pin::Method.new(source, c, dfqn, :class, s_visi)
                 inner_map_node c, tree, scope, :class, dfqn, stack
               end
               next
@@ -481,10 +481,10 @@ module Solargraph
               visibility = c.children[1]
             elsif c.type == :send and [:private_class_method].include?(c.children[1]) and c.children[2].kind_of?(AST::Node)
               if c.children[2].type == :sym or c.children[2].type == :str
-                ref = method_pins.select{|p| p.name == c.children[2].children[0].to_s}.first
+                ref = method_pins(fqn || '').select{|p| p.name == c.children[2].children[0].to_s}.first
                 unless ref.nil?
-                  source.method_pins.delete ref
-                  source.method_pins.push Solargraph::Pin::Method.new(ref.source, ref.node, ref.namespace, ref.scope, :private)
+                  method_pin_map[fqn || ''].delete ref
+                  method_pin_map[fqn || ''].push Solargraph::Pin::Method.new(ref.source, ref.node, ref.namespace, ref.scope, :private)
                 end
               else
                 inner_map_node c, tree, :private, :class, fqn, stack
@@ -497,8 +497,8 @@ module Solargraph
                 if ref.nil?
                   ref = namespace_pin_map.values.flatten.select{|p| p.name == cn and p.namespace == fqn}.last
                   unless ref.nil?
-                    source.namespace_pin_map[ref.path].delete ref
-                    source.namespace_pin_map[ref.path].push Solargraph::Pin::Namespace.new(ref.source, ref.node, ref.namespace, :private, (ref.superclass_reference.nil? ? nil : ref.superclass_reference.name))
+                    namespace_pin_map[ref.path].delete ref
+                    namespace_pin_map[ref.path].push Solargraph::Pin::Namespace.new(ref.source, ref.node, ref.namespace, :private, (ref.superclass_reference.nil? ? nil : ref.superclass_reference.name))
                   end
                 else
                   source.constant_pins.delete ref
@@ -573,6 +573,16 @@ module Solargraph
 
     def node_object_ids
       @node_object_ids ||= @all_nodes.map(&:object_id)
+    end
+
+    # @return [Hash<String, Solargraph::Pin::Namespace>]
+    def namespace_pin_map
+      @namespace_pin_map ||= {}
+    end
+
+    # @return [Hash<String, Solargraph::Pin::Namespace>]
+    def method_pin_map
+      @method_pin_map ||= {}
     end
 
     class << self
