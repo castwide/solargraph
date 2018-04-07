@@ -116,13 +116,13 @@ describe Solargraph::Source do
         end
       end
     ))
-    expect(source.namespace_pins.length).to eq(2)
-    expect(source.namespace_pins[0].path).to eq('Foo')
-    expect(source.namespace_pins[0].type).to eq(:module)
-    expect(source.namespace_pins[0].return_type).to eq('Module<Foo>')
-    expect(source.namespace_pins[1].path).to eq('Foo::Bar')
-    expect(source.namespace_pins[1].type).to eq(:class)
-    expect(source.namespace_pins[1].return_type).to eq('Class<Foo::Bar>')
+    expect(source.namespace_pins.length).to eq(3)
+    expect(source.namespace_pins[1].path).to eq('Foo')
+    expect(source.namespace_pins[1].type).to eq(:module)
+    expect(source.namespace_pins[1].return_type).to eq('Module<Foo>')
+    expect(source.namespace_pins[2].path).to eq('Foo::Bar')
+    expect(source.namespace_pins[2].type).to eq(:class)
+    expect(source.namespace_pins[2].return_type).to eq('Class<Foo::Bar>')
   end
 
   it "pins class methods" do

@@ -103,10 +103,18 @@ module Solargraph
         cache.clear
         namespace_map.clear
         @sources.each do |s|
-          s.namespace_nodes.each_pair do |k, v|
-            namespace_map[k] ||= []
-            namespace_map[k].concat v
+          # s.namespace_nodes.each_pair do |k, v|
+          #   namespace_map[k] ||= []
+          #   namespace_map[k].concat v
+          # end
+          s.namespaces.each do |n|
+            namespace_map[n] ||= []
+            namespace_map[n].concat s.namespace_pins(n)
           end
+          # s.namespace_pins.each do |pin|
+          #   namespace_map[pin.path] ||= []
+          #   namespace_map[pin.path].push pin
+          # end
         end
         @sources.each do |source|
           if @stime.nil? or source.stime > @stime
@@ -642,10 +650,14 @@ module Solargraph
       namespace_map.clear
       @required = workspace.config.required.clone
       @sources.each do |s|
-        s.namespace_nodes.each_pair do |k, v|
-          namespace_map[k] ||= []
-          namespace_map[k].concat v
+        s.namespaces.each do |n|
+          namespace_map[n] ||= []
+          namespace_map[n].concat s.namespace_pins(n)
         end
+        # s.namespace_pins.each do |pin|
+        #   namespace_map[pin.path] ||= []
+        #   namespace_map[pin.path].push pin
+        # end
         # s.namespace_includes.each_pair do |ns, i|
         #   @namespace_includes[ns || ''] ||= []
         #   @namespace_includes[ns || ''].concat(i).uniq!
@@ -681,10 +693,14 @@ module Solargraph
         # @namespace_extends.clear
         # @superclasses.clear
         @sources.each do |s|
-          s.namespace_nodes.each_pair do |k, v|
-            namespace_map[k] ||= []
-            namespace_map[k].concat v
+          s.namespace_pin_map.values.flatten.each do |pin|
+            namespace_map[pin.path] ||= []
+            namespace_map[pin.path].push pin
           end
+          # s.namespace_nodes.each_pair do |k, v|
+          #   namespace_map[k] ||= []
+          #   namespace_map[k].concat v
+          # end
           # s.namespace_includes.each_pair do |ns, i|
           #   @namespace_includes[ns || ''] ||= []
           #   @namespace_includes[ns || ''].concat(i).uniq!
@@ -741,7 +757,7 @@ module Solargraph
       source.symbol_pins.each do |pin|
         @symbol_pins.push pin
       end
-      source.namespace_pins.each do |pin|
+      source.namespace_pin_map.values.flatten.each do |pin|
         @namespace_path_pins[pin.path] ||= []
         @namespace_path_pins[pin.path].push pin
         @namespace_pins[pin.namespace] ||= []

@@ -403,7 +403,7 @@ describe Solargraph::ApiMap do
     )
     api_map = Solargraph::ApiMap.new
     api_map.append_source(code, 'file.rb')
-    expect(api_map.namespaces).to eq(['Foo', 'Bar'])
+    expect(api_map.namespaces).to eq(['', 'Foo', 'Bar'])
     sugg = api_map.get_methods('Bar')
     expect(sugg.map(&:to_s)).to include('baz')
   end

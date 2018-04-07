@@ -8,7 +8,7 @@ module Solargraph
     autoload :Position,      'solargraph/source/position'
     autoload :Range,         'solargraph/source/range'
     autoload :Updater,       'solargraph/source/updater'
-    autoload :Change,         'solargraph/source/change'
+    autoload :Change,        'solargraph/source/change'
 
     # @return [String]
     attr_reader :code
@@ -56,12 +56,15 @@ module Solargraph
       @path_macros[path]
     end
 
+    # @return [Array<String>]
     def namespaces
-      @namespace_nodes.keys
+      @namespaces ||= namespace_pin_map.keys
     end
 
-    def namespace_nodes
-      @namespace_nodes
+    # @param fqns [String]
+    # @return [Array<Solargraph::Pin::Namespace>]
+    def namespace_pins fqns
+      namespace_pin_map[fqns] || []
     end
 
     def namespace_includes
@@ -116,9 +119,9 @@ module Solargraph
       @symbol_pins ||= []
     end
 
-    # @return [Array<Solargraph::Pin::Namespace>]
-    def namespace_pins
-      @namespace_pins ||= []
+    # @return [Hash<String, Solargraph::Pin::Namespace>]
+    def namespace_pin_map
+      @namespace_pin_map ||= {}
     end
 
     # @return [Array<String>]
@@ -245,7 +248,7 @@ module Solargraph
 
     def all_symbols
       result = []
-      result.concat namespace_pins
+      result.concat namespace_pin_map.values.flatten
       result.concat method_pins
       result.concat constant_pins
       result
@@ -297,16 +300,18 @@ module Solargraph
       root = AST::Node.new(:source, [filename])
       root = root.append node
       @node = root
+      @namespaces = nil
       @comments = comments
       @directives = {}
       @path_macros = {}
       @docstring_hash = associate_comments(node, comments)
       @mtime = (!filename.nil? and File.exist?(filename) ? File.mtime(filename) : nil)
-      @namespace_nodes = {}
       @all_nodes = []
       @node_stack = []
       @node_tree = {}
-      namespace_pins.clear
+      namespace_pin_map.clear
+      namespace_pin_map[''] = [Solargraph::Pin::Namespace.new(self, @node, '', :public)]
+      @namespace_pins = nil
       instance_variable_pins.clear
       class_variable_pins.clear
       local_variable_pins.clear
@@ -344,7 +349,7 @@ module Solargraph
           end
         end
       end
-      @all_pins = namespace_pins + instance_variable_pins + class_variable_pins + local_variable_pins + symbol_pins + constant_pins + method_pins + attribute_pins
+      @all_pins = namespace_pin_map.values.flatten + instance_variable_pins + class_variable_pins + local_variable_pins + symbol_pins + constant_pins + method_pins + attribute_pins
       @stime = Time.now
     end
 
@@ -384,12 +389,7 @@ module Solargraph
       stack.push node
       source = self
       if node.kind_of?(AST::Node)
-        # @node_tree[node] = @node_stack.clone
         @all_nodes.push node
-        # if node.type == :str or node.type == :dstr
-        #   stack.pop
-        #   return
-        # end
         @node_stack.unshift node
         if node.type == :class or node.type == :module
           visibility = :public
@@ -399,14 +399,14 @@ module Solargraph
             tree = tree + pack_name(node.children[0])
           end
           fqn = tree.join('::')
-          @namespace_nodes[fqn] ||= []
-          @namespace_nodes[fqn].push node
           sc = nil
           if node.type == :class and !node.children[1].nil?
             sc = unpack_name(node.children[1])
             @superclasses[fqn] = sc
           end
-          namespace_pins.push Solargraph::Pin::Namespace.new(self, node, tree[0..-2].join('::') || '', :public, sc)
+          nspin = Solargraph::Pin::Namespace.new(self, node, tree[0..-2].join('::') || '', :public, sc)
+          namespace_pin_map[nspin.path] ||= []
+          namespace_pin_map[nspin.path].push nspin
         end
         file = source.filename
         node.children.each do |c|
@@ -493,10 +493,10 @@ module Solargraph
                 cn = c.children[2].children[0].to_s
                 ref = constant_pins.select{|p| p.name == cn}.first
                 if ref.nil?
-                  ref = namespace_pins.select{|p| p.name == cn}.first
+                  ref = namespace_pin_map.values.flatten.select{|p| p.name == cn and p.namespace == fqn}.last
                   unless ref.nil?
-                    source.namespace_pins.delete ref
-                    source.namespace_pins.push Solargraph::Pin::Namespace.new(ref.source, ref.node, ref.namespace, :private, (ref.superclass_reference.nil? ? nil : ref.superclass_reference.name))
+                    source.namespace_pin_map[ref.path].delete ref
+                    source.namespace_pin_map[ref.path].push Solargraph::Pin::Namespace.new(ref.source, ref.node, ref.namespace, :private, (ref.superclass_reference.nil? ? nil : ref.superclass_reference.name))
                   end
                 else
                   source.constant_pins.delete ref
@@ -509,18 +509,19 @@ module Solargraph
                 if c.children[2].kind_of?(AST::Node) and c.children[2].type == :const
                   namespace_includes[fqn] ||= []
                   c.children[2..-1].each do |i|
-                    namespace_includes[fqn].push unpack_name(i)
-                    namespace_pins.last.reference_include unpack_name(i)
+                    # @todo Get rid of namespace_includes. SourceToYard requires it.
+                    namespace_includes[fqn || ''] ||= []
+                    namespace_includes[fqn || ''].push unpack_name(i)
+                    namespace_pin_map[fqn || ''].last.reference_include unpack_name(i)
                   end
                 end
               end
             elsif c.type == :send and c.children[1] == :extend and c.children[0].nil?
               if @node_tree[0].nil? or @node_tree[0].type == :source or @node_tree[0].type == :class or @node_tree[0].type == :module or (@node_tree.length > 1 and @node_tree[0].type == :begin and (@node_tree[1].type == :class or @node_tree[1].type == :module))
                 if c.children[2].kind_of?(AST::Node) and c.children[2].type == :const
-                  namespace_extends[fqn] ||= []
+                  namespace_extends[fqn || ''] ||= []
                   c.children[2..-1].each do |i|
-                    namespace_extends[fqn].push unpack_name(i)
-                    namespace_pins.last.reference_extend unpack_name(i)
+                    namespace_pin_map[fqn || ''].last.reference_extend unpack_name(i)
                   end
                 end
               end
@@ -596,36 +597,6 @@ module Solargraph
         end
       end
 
-      # def get_position_at(code, offset)
-      #   cursor = 0
-      #   line = 0
-      #   col = nil
-      #   code.each_line do |l|
-      #     if cursor + l.length > offset
-      #       col = offset - cursor
-      #       break
-      #     end
-      #     if cursor + l.length == offset
-      #       if l.end_with?("\n")
-      #         col = 0
-      #         line += 1
-      #         break
-      #       else
-      #         col = l.length
-      #         break
-      #       end
-      #     end
-      #     # if cursor + l.length - 1 == offset and !l.end_with?("\n")
-      #     #   col = l.length - 1
-      #     #   break
-      #     # end
-      #     cursor += l.length
-      #     line += 1
-      #   end
-      #   raise "Invalid offset" if col.nil?
-      #   [line, col]
-      # end
-
       def parse code, filename = nil
         parser = Parser::CurrentRuby.new(FlawedBuilder.new)
         parser.diagnostics.all_errors_are_fatal = true
@@ -633,7 +604,7 @@ module Solargraph
         buffer = Parser::Source::Buffer.new(filename, 1)
         buffer.source = code
         parser.parse_with_comments(buffer)
-      end  
+      end
 
       def fix code, filename = nil, offset = nil
         tries = 0
