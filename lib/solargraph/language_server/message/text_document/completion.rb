@@ -22,16 +22,17 @@ module Solargraph
                 sleep 0.1 unless processed
               end
             rescue Exception => e
-              STDERR.puts "Error in textDocument/completion: #{e.message}"
+              STDERR.puts "Error in textDocument/completion: #{e.class}"
+              set_result empty_result
               # Ignore 'Invalid offset' errors, since they usually just mean
               # that the document is in the process of changing.
-              if e.message.include?('Invalid offset')
-                # @todo Should this result be marked as incomplete? It might
-                #   be possible to resolve it after changes are finished.
-                set_result empty_result
-              else
-                set_error ErrorCodes::INTERNAL_ERROR, e.message
-              end
+              # if e.message.include?('Invalid offset')
+              #   # @todo Should this result be marked as incomplete? It might
+              #   #   be possible to resolve it after changes are finished.
+              #   set_result empty_result
+              # else
+              #   set_error ErrorCodes::INTERNAL_ERROR, e.message
+              # end
             end
           end
 

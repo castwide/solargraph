@@ -242,9 +242,10 @@ module Solargraph
                 end
                 refreshable = changed and @change_queue.empty?
                 library.refresh if refreshable
-              rescue Exception => er
-                STDERR.puts e.message
-                STDERR.puts e.backtrace
+              rescue Exception => e
+                # Trying to get anything out of the error except its class
+                # hangs the thread for some reason
+                STDERR.puts "An error occurred in the change thread: #{e.class}"
               end
             end
             sleep 0.1
