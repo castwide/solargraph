@@ -642,6 +642,17 @@ module Solargraph
           namespace_map[k] ||= []
           namespace_map[k].concat v
         end
+        s.namespace_includes.each_pair do |ns, i|
+          @namespace_includes[ns || ''] ||= []
+          @namespace_includes[ns || ''].concat(i).uniq!
+        end
+        s.namespace_extends.each_pair do |ns, e|
+          @namespace_extends[ns || ''] ||= []
+          @namespace_extends[ns || ''].concat(e).uniq!
+        end
+        s.superclasses.each_pair do |cls, sup|
+          @superclasses[cls] = sup
+        end
       end
       @sources.each do |s|
         map_source s
@@ -662,10 +673,24 @@ module Solargraph
       unless @virtual_source.nil?
         cache.clear
         namespace_map.clear
+        @namespace_includes.clear
+        @namespace_extends.clear
+        @superclasses.clear
         @sources.each do |s|
           s.namespace_nodes.each_pair do |k, v|
             namespace_map[k] ||= []
             namespace_map[k].concat v
+          end
+          s.namespace_includes.each_pair do |ns, i|
+            @namespace_includes[ns || ''] ||= []
+            @namespace_includes[ns || ''].concat(i).uniq!
+          end
+          s.namespace_extends.each_pair do |ns, e|
+            @namespace_extends[ns || ''] ||= []
+            @namespace_extends[ns || ''].concat(e).uniq!
+          end
+          s.superclasses.each_pair do |cls, sup|
+            @superclasses[cls] = sup
           end
         end
         map_source @virtual_source
@@ -705,17 +730,6 @@ module Solargraph
       end
       source.symbol_pins.each do |pin|
         @symbol_pins.push pin
-      end
-      source.namespace_includes.each_pair do |ns, i|
-        @namespace_includes[ns || ''] ||= []
-        @namespace_includes[ns || ''].concat(i).uniq!
-      end
-      source.namespace_extends.each_pair do |ns, e|
-        @namespace_extends[ns || ''] ||= []
-        @namespace_extends[ns || ''].concat(e).uniq!
-      end
-      source.superclasses.each_pair do |cls, sup|
-        @superclasses[cls] = sup
       end
       source.namespace_pins.each do |pin|
         @namespace_path_pins[pin.path] ||= []
@@ -937,9 +951,9 @@ module Solargraph
 
     def inner_infer_signature_type signature, namespace, scope, call_node, top
       namespace ||= ''
-      if cache.has_signature_type?(signature, namespace, scope)
-        return cache.get_signature_type(signature, namespace, scope)
-      end
+      # if cache.has_signature_type?(signature, namespace, scope)
+      #   return cache.get_signature_type(signature, namespace, scope)
+      # end
       return nil if signature.nil?
       return namespace if signature.empty? and scope == :instance
       return nil if signature.empty? # @todo This might need to return Class<namespace>

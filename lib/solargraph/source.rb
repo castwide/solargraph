@@ -503,15 +503,23 @@ module Solargraph
                 end
               end
               next
-            elsif c.type == :send and c.children[1] == :include
-              namespace_includes[fqn] ||= []
-              c.children[2..-1].each do |i|
-                namespace_includes[fqn].push unpack_name(i)
+            elsif c.type == :send and c.children[1] == :include and c.children[0].nil?
+              if @node_tree[0].nil? or @node_tree[0].type == :source or @node_tree[0].type == :class or @node_tree[0].type == :module or (@node_tree.length > 1 and @node_tree[0].type == :begin and (@node_tree[1].type == :class or @node_tree[1].type == :module))
+                if c.children[2].kind_of?(AST::Node) and c.children[2].type == :const
+                  namespace_includes[fqn] ||= []
+                  c.children[2..-1].each do |i|
+                    namespace_includes[fqn].push unpack_name(i)
+                  end
+                end
               end
-            elsif c.type == :send and c.children[1] == :extend
-              namespace_extends[fqn] ||= []
-              c.children[2..-1].each do |i|
-                namespace_extends[fqn].push unpack_name(i)
+            elsif c.type == :send and c.children[1] == :extend and c.children[0].nil?
+              if @node_tree[0].nil? or @node_tree[0].type == :source or @node_tree[0].type == :class or @node_tree[0].type == :module or (@node_tree.length > 1 and @node_tree[0].type == :begin and (@node_tree[1].type == :class or @node_tree[1].type == :module))
+                if c.children[2].kind_of?(AST::Node) and c.children[2].type == :const
+                  namespace_extends[fqn] ||= []
+                  c.children[2..-1].each do |i|
+                    namespace_extends[fqn].push unpack_name(i)
+                  end
+                end
               end
             elsif c.type == :send and [:attr_reader, :attr_writer, :attr_accessor].include?(c.children[1])
               c.children[2..-1].each do |a|
