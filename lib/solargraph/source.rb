@@ -216,38 +216,25 @@ module Solargraph
       node_object_ids.include? node.object_id
     end
 
-    # def synchronize changes, version
-    #   changes.each do |change|
-    #     reparse change
-    #   end
-    #   @version = version
-    #   self
-    # end
-
     def synchronize updater
       raise 'Invalid synchronization' unless updater.filename == filename
       original_code = @code
       original_fixed = @fixed
       @code = updater.write(original_code)
       @fixed = updater.write(original_code, true)
-      again = true
       begin
         reparse
+        @fixed = @code
       rescue Parser::SyntaxError => e
-        if again
-          again = false
-          @fixed = updater.repair(original_fixed)
-          retry
-        else
+        @fixed = updater.repair(original_fixed)
+        begin
+          reparse
+        rescue Parser::SyntaxError => e
           hard_fix_node
         end
       end
       @version = updater.version
     end
-
-    # def overwrite text
-    #   reparse({'text' => text})
-    # end
 
     def query_symbols query
       return [] if query.empty?
