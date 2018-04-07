@@ -7,6 +7,8 @@ module Solargraph
     autoload :Fragment,      'solargraph/source/fragment'
     autoload :Position,      'solargraph/source/position'
     autoload :Range,         'solargraph/source/range'
+    autoload :Updater,       'solargraph/source/updater'
+    autoload :Change,         'solargraph/source/change'
 
     # @return [String]
     attr_reader :code
@@ -214,17 +216,37 @@ module Solargraph
       node_object_ids.include? node.object_id
     end
 
-    def synchronize changes, version
-      changes.each do |change|
-        reparse change
+    # def synchronize changes, version
+    #   changes.each do |change|
+    #     reparse change
+    #   end
+    #   @version = version
+    #   self
+    # end
+
+    def synchronize updater
+      raise 'Invalid synchronization' unless updater.filename == filename
+      original = @code
+      @code = updater.write(@code)
+      @fixed = @code
+      again = true
+      begin
+        reparse
+      rescue Parser::SyntaxError => e
+        if again
+          again = false
+          @fixed = updater.repair(original)
+          retry
+        else
+          hard_fix_node
+        end
       end
-      @version = version
-      self
+      @version = updater.version
     end
 
-    def overwrite text
-      reparse({'text' => text})
-    end
+    # def overwrite text
+    #   reparse({'text' => text})
+    # end
 
     def query_symbols query
       return [] if query.empty?
@@ -272,52 +294,14 @@ module Solargraph
       get_offset line, column, true
     end
 
-    def reparse change
-      if change['range']
-        start_offset = get_original_offset(change['range']['start']['line'], change['range']['start']['character'])
-        end_offset = get_original_offset(change['range']['end']['line'], change['range']['end']['character'])
-        rewrite = (start_offset == 0 ? '' : @code[0..start_offset-1].to_s) + change['text'].force_encoding('utf-8') + @code[end_offset..-1].to_s
-        # return if @code == rewrite
-        again = true
-        # if change['text'].match(/^[^a-z0-9\s]+?$/i)
-        #   tmp = (start_offset == 0 ? '' : @fixed[0..start_offset-1].to_s) + change['text'].gsub(/[^\s]/, ' ') + @fixed[end_offset..-1].to_s
-        #   again = false
-        # else
-          tmp = rewrite
-        # end
-        @code = rewrite
-        begin
-          node, comments = Source.parse(tmp, filename)
-          process_parsed node, comments
-          @fixed = tmp
-        rescue Parser::SyntaxError => e
-          if again
-            again = false
-            tmp = (start_offset == 0 ? '' : @fixed[0..start_offset-1].to_s) + change['text'].gsub(/[^\s]/, ' ') + @fixed[end_offset..-1].to_s
-            retry
-          else
-            @code = rewrite
-            hard_fix_node
-          end
-        end
-      else
-        tmp = change['text']
-        return if @code == tmp
-        @code = tmp
-        begin
-          node, comments = Source.parse(@code, filename)
-          process_parsed node, comments
-          @fixed = @code
-        rescue Parser::SyntaxError => e
-          hard_fix_node
-        end
-      end
+    def reparse
+      node, comments = Source.parse(@fixed, filename)
+      process_parsed node, comments
     end
 
     def hard_fix_node
-      tmp = @code.gsub(/[^\s]/, ' ')
-      @fixed = tmp
-      node, comments = Source.parse(tmp, filename)
+      @fixed = @code.gsub(/[^\s]/, ' ')
+      node, comments = Source.parse(@fixed, filename)
       process_parsed node, comments
     end
 
