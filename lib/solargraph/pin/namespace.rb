@@ -48,6 +48,11 @@ module Solargraph
         node.type
       end
 
+      def location
+        return "#{source.filename}:0" if namespace.empty?
+        super
+      end
+
       def return_type
         @return_type ||= (node.type == :class ? 'Class' : 'Module') + "<#{path}>"
       end
