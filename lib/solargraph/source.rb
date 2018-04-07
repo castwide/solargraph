@@ -222,6 +222,8 @@ module Solargraph
       original_fixed = @fixed
       @code = updater.write(original_code)
       @fixed = updater.write(original_code, true)
+      @version = updater.version
+      return if @code == original_code
       begin
         reparse
         @fixed = @code
@@ -233,7 +235,6 @@ module Solargraph
           hard_fix_node
         end
       end
-      @version = updater.version
     end
 
     def query_symbols query
