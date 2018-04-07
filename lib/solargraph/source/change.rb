@@ -1,5 +1,7 @@
 module Solargraph
   class Source
+    # A change to be applied to text.
+    #
     class Change
       # @return [Range]
       attr_reader :range
@@ -7,13 +9,20 @@ module Solargraph
       # @return [String]
       attr_reader :new_text
 
-      # @param range [Range]
-      # @param new_text [String]
+      # @param range [Range] The starting and ending positions of the change.
+      #   If nil, the original text will be overwritten.
+      # @param new_text [String] The text to be changed.
       def initialize range, new_text
         @range = range
         @new_text = new_text
       end
 
+      # Write the change to the specified text.
+      #
+      # @param text [String] The text to be changed.
+      # @param nullable [Boolean] If true, minor changes that could generate
+      #   syntax errors will be repaired.
+      # @return [String] The updated text.
       def write text, nullable = false
         if nullable and new_text.match(/[\.\[\{\(\s]$/i)
           commit text, "#{new_text[0..-2]} "
@@ -24,6 +33,11 @@ module Solargraph
         end
       end
 
+      # Repair an update by replacing the new text with similarly formatted
+      # whitespace.
+      #
+      # @param text [String] The text to be changed.
+      # @return [String] The updated text.
       def repair text
         fixed = new_text.gsub(/[^\s]/, ' ')
         if range.nil?
