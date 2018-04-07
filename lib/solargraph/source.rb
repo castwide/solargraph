@@ -374,7 +374,7 @@ module Solargraph
       yard_hash
     end
 
-    def inner_map_node node, tree = [], visibility = :public, scope = :instance, fqn = nil, stack = []
+    def inner_map_node node, tree = [], visibility = :public, scope = :instance, fqn = '', stack = []
       stack.push node
       source = self
       if node.kind_of?(AST::Node)
