@@ -1,4 +1,3 @@
-# require 'rubocop'
 require 'thread'
 require 'set'
 
@@ -10,18 +9,15 @@ module Solargraph
     class Host
       include Solargraph::LanguageServer::UriHelpers
 
-      # @return [Solargraph::Library]
-      attr_reader :library
-
       def initialize
         @change_semaphore = Mutex.new
+        @cancel_semaphore = Mutex.new
         @buffer_semaphore = Mutex.new
         @change_queue = []
         @diagnostics_queue = []
         @cancel = []
         @buffer = ''
         @stopped = false
-        @library = nil # @todo How to initialize the library
         start_change_thread
         start_diagnostics_thread
       end
@@ -37,15 +33,17 @@ module Solargraph
       end
 
       def cancel id
-        @cancel.push id
+        @cancel_semaphore.synchronize { @cancel.push id }
       end
 
       def cancel? id
-        @cancel.include? id
+        result = false
+        @cancel_semaphore.synchronize { result = @cancel.include? id }
+        result
       end
 
       def clear id
-        @cancel.delete id
+        @cancel_semaphore.synchronize { @cancel.delete id }
       end
 
       def start request
@@ -61,18 +59,24 @@ module Solargraph
       end
 
       def create uri
-        filename = uri_to_file(uri)
-        library.create filename, File.read(filename)
+        @change_semaphore.synchronize do
+          filename = uri_to_file(uri)
+          library.create filename, File.read(filename)
+        end
       end
 
       def delete uri
-        filename = uri_to_file(uri)
-        library.delete filename
+        @change_semaphore.synchronize do
+          filename = uri_to_file(uri)
+          library.delete filename
+        end
       end
 
       def open uri, text, version
-        library.open uri_to_file(uri), text, version
-        @change_semaphore.synchronize { @diagnostics_queue.push uri }
+        @change_semaphore.synchronize do
+          library.open uri_to_file(uri), text, version
+          @diagnostics_queue.push uri
+        end
       end
 
       def change params
@@ -158,7 +162,11 @@ module Solargraph
 
       def read_text uri
         filename = uri_to_file(uri)
-        library.read_text(filename)
+        text = nil
+        @change_semaphore.synchronize do
+          text = library.read_text(filename)
+        end
+        text
       end
 
       def completions_at filename, line, column
@@ -188,6 +196,11 @@ module Solargraph
 
       private
 
+      # @return [Solargraph::Library]
+      def library
+        @library
+      end
+
       def unsafe_changing? file_uri
         @change_queue.any?{|change| change['textDocument']['uri'] == file_uri}
       end
@@ -196,13 +209,13 @@ module Solargraph
         Thread.new do
           until stopped?
             @change_semaphore.synchronize do
-              changed = false
               begin
+                changed = false
                 @change_queue.delete_if do |change|
                   filename = uri_to_file(change['textDocument']['uri'])
                   source = library.checkout(filename)
                   if change['textDocument']['version'] == source.version + change['contentChanges'].length
-                    updater = generate_updater(params)
+                    updater = generate_updater(change)
                     library.synchronize updater
                     @diagnostics_queue.push change['textDocument']['uri']
                     changed = true
@@ -211,7 +224,7 @@ module Solargraph
                     # HACK: This condition fixes the fact that formatting
                     # increments the version by one regardless of the number
                     # of changes
-                    updater = generate_updater(params)
+                    updater = generate_updater(change)
                     library.synchronize updater
                     @diagnostics_queue.push change['textDocument']['uri']
                     changed = true
@@ -220,25 +233,22 @@ module Solargraph
                     # @todo Is deleting outdated changes correct behavior?
                     STDERR.puts "Deleting stale change"
                     @diagnostics_queue.push change['textDocument']['uri']
-                    changed = true
                     next true
                   else
                     # @todo Change is out of order. Save it for later
-                    STDERR.puts "Kept in queue: #{change['textDocument']['uri']} from #{source.version} to #{change['textDocument']['version']}"
+                    STDERR.puts "Keeping out-of-order change in queue"
                     next false
                   end
                 end
-                STDERR.puts "Refreshing library due to step changes" if changed
-                library.refresh if changed
-                STDERR.puts "#{@change_queue.length} pending" unless @change_queue.empty?
-              rescue Exception => e
+                refreshable = changed and @change_queue.empty?
+                library.refresh if refreshable
+              rescue Exception => er
                 STDERR.puts e.message
                 STDERR.puts e.backtrace
               end
             end
             sleep 0.1
           end
-          STDERR.puts "Beauty school dropout!"
         end
       end
 
@@ -246,19 +256,21 @@ module Solargraph
         Thread.new do
           diagnoser = Diagnostics::Rubocop.new
           until stopped?
-            sleep 0.1
+            sleep 1
             if options['diagnostics'] != 'rubocop'
               @change_semaphore.synchronize { @diagnostics_queue.clear }
-              sleep 1
               next
             end
             begin
+              # Diagnosis is broken into two parts to reduce the amount of times it runs while
+              # a document is changing
               current = nil
               already_changing = nil
               @change_semaphore.synchronize do
                 current = @diagnostics_queue.shift
                 break if current.nil?
-                already_changing = (unsafe_changing?(current) or @diagnostics_queue.include?(current))
+                already_changing = unsafe_changing?(current)
+                @diagnostics_queue.delete current unless already_changing
               end
               next if current.nil? or already_changing
               filename = uri_to_file(current)
