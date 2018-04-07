@@ -63,7 +63,9 @@ module Solargraph
 
     # @param fqns [String]
     # @return [Array<Solargraph::Pin::Namespace>]
-    def namespace_pins fqns
+    # @todo Should this only return all the namespaces?
+    def namespace_pins fqns = nil
+      return namespace_pin_map.values.flatten if fqns.nil?
       namespace_pin_map[fqns] || []
     end
 
