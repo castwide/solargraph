@@ -241,9 +241,10 @@ module Solargraph
           im = @namespace_includes['']
           unless im.nil?
             im.each do |i|
-              reroot = "#{root == '' ? '' : root + '::'}#{i}"
-              recname = find_fully_qualified_namespace name.to_s, reroot, skip
-              return recname unless recname.nil?
+              # reroot = "#{root == '' ? '' : root + '::'}#{i}"
+              # recname = find_fully_qualified_namespace name.to_s, reroot, skip
+              i.resolve self
+              return i.name unless i.name.nil?
             end
           end
         else
@@ -257,8 +258,10 @@ module Solargraph
           im = @namespace_includes['']
           unless im.nil?
             im.each do |i|
-              recname = find_fully_qualified_namespace name, i, skip
-              return recname unless recname.nil?
+              # recname = find_fully_qualified_namespace name, i, skip
+              # return recname unless recname.nil?
+              i.resolve self
+              return i.name unless i.name.nil?
             end
           end
         end
@@ -599,7 +602,8 @@ module Solargraph
     def superclass_of fqns
       found = @superclasses[fqns]
       return nil if found.nil?
-      find_fully_qualified_namespace(found, fqns)
+      found.resolve self
+      found.name
     end
 
     def locate_pin location
@@ -642,17 +646,17 @@ module Solargraph
           namespace_map[k] ||= []
           namespace_map[k].concat v
         end
-        s.namespace_includes.each_pair do |ns, i|
-          @namespace_includes[ns || ''] ||= []
-          @namespace_includes[ns || ''].concat(i).uniq!
-        end
-        s.namespace_extends.each_pair do |ns, e|
-          @namespace_extends[ns || ''] ||= []
-          @namespace_extends[ns || ''].concat(e).uniq!
-        end
-        s.superclasses.each_pair do |cls, sup|
-          @superclasses[cls] = sup
-        end
+        # s.namespace_includes.each_pair do |ns, i|
+        #   @namespace_includes[ns || ''] ||= []
+        #   @namespace_includes[ns || ''].concat(i).uniq!
+        # end
+        # s.namespace_extends.each_pair do |ns, e|
+        #   @namespace_extends[ns || ''] ||= []
+        #   @namespace_extends[ns || ''].concat(e).uniq!
+        # end
+        # s.superclasses.each_pair do |cls, sup|
+        #   @superclasses[cls] = sup
+        # end
       end
       @sources.each do |s|
         map_source s
@@ -673,25 +677,25 @@ module Solargraph
       unless @virtual_source.nil?
         cache.clear
         namespace_map.clear
-        @namespace_includes.clear
-        @namespace_extends.clear
-        @superclasses.clear
+        # @namespace_includes.clear
+        # @namespace_extends.clear
+        # @superclasses.clear
         @sources.each do |s|
           s.namespace_nodes.each_pair do |k, v|
             namespace_map[k] ||= []
             namespace_map[k].concat v
           end
-          s.namespace_includes.each_pair do |ns, i|
-            @namespace_includes[ns || ''] ||= []
-            @namespace_includes[ns || ''].concat(i).uniq!
-          end
-          s.namespace_extends.each_pair do |ns, e|
-            @namespace_extends[ns || ''] ||= []
-            @namespace_extends[ns || ''].concat(e).uniq!
-          end
-          s.superclasses.each_pair do |cls, sup|
-            @superclasses[cls] = sup
-          end
+          # s.namespace_includes.each_pair do |ns, i|
+          #   @namespace_includes[ns || ''] ||= []
+          #   @namespace_includes[ns || ''].concat(i).uniq!
+          # end
+          # s.namespace_extends.each_pair do |ns, e|
+          #   @namespace_extends[ns || ''] ||= []
+          #   @namespace_extends[ns || ''].concat(e).uniq!
+          # end
+          # s.superclasses.each_pair do |cls, sup|
+          #   @superclasses[cls] = sup
+          # end
         end
         map_source @virtual_source
       end
@@ -703,6 +707,12 @@ module Solargraph
           pins.delete_if{|pin| pin.filename == source.filename}
         end
       end
+      [@namespace_includes.values, @namespace_extends.values].each do |refsets|
+        refsets.each do |refs|
+          refs.delete_if{|ref| ref.pin.filename == source.filename}
+        end
+      end
+      @superclasses.delete_if{|key, ref| ref.pin.filename == source.filename}
       @symbol_pins.delete_if{|pin| pin.filename == source.filename}
     end
 
@@ -736,6 +746,22 @@ module Solargraph
         @namespace_path_pins[pin.path].push pin
         @namespace_pins[pin.namespace] ||= []
         @namespace_pins[pin.namespace].push pin
+        # @todo Determine whether references should be resolve here or
+        #   dynamically during queries
+        unless pin.superclass_reference.nil?
+          @superclasses[pin.path] = pin.superclass_reference
+          # pin.superclass_reference.resolve self
+        end
+        pin.include_references.each do |ref|
+          @namespace_includes[pin.path] ||= []
+          @namespace_includes[pin.path].push ref
+          # ref.resolve self
+        end
+        pin.extend_references.each do |ref|
+          @namespace_extends[pin.path] ||= []
+          @namespace_extends[pin.path].push ref
+          # ref.resolve self
+        end
       end
       path_macros.merge! source.path_macros
       source.required.each do |r|
@@ -767,19 +793,22 @@ module Solargraph
         end
       end
       if deep
-        sc = @superclasses[fqns]
-        unless sc.nil?
+        scref = @superclasses[fqns]
+        unless scref.nil?
           sc_visi = [:public]
           sc_visi.push :protected if visibility.include?(:protected)
-          sc_fqns = find_fully_qualified_namespace(sc, fqns)
-          result.concat inner_get_methods(sc_fqns, scope, sc_visi, true, skip)
+          # sc_fqns = find_fully_qualified_namespace(sc, fqns)
+          scref.resolve self
+          result.concat inner_get_methods(scref.name, scope, sc_visi, true, skip) unless scref.name.nil?
         end
         if scope == :instance
           im = @namespace_includes[fqns]
           unless im.nil?
             im.each do |i|
-              ifqns = find_fully_qualified_namespace(i, fqns)
-              result.concat inner_get_methods(ifqns, scope, visibility, deep, skip)
+              # ifqns = find_fully_qualified_namespace(i, fqns)
+              # result.concat inner_get_methods(ifqns, scope, visibility, deep, skip)
+              i.resolve self
+              result.concat inner_get_methods(i.name, scope, visibility, deep, skip) unless i.name.nil?
             end
           end
           result.concat yard_map.get_instance_methods(fqns, visibility: visibility)
@@ -788,8 +817,10 @@ module Solargraph
           em = @namespace_extends[fqns]
           unless em.nil?
             em.each do |e|
-              efqns = find_fully_qualified_namespace(e, fqns)
-              result.concat inner_get_methods(efqns, :instance, visibility, deep, skip)
+              # efqns = find_fully_qualified_namespace(e, fqns)
+              # result.concat inner_get_methods(efqns, :instance, visibility, deep, skip)
+              e.resolve self
+              result.concat inner_get_methods(e.name, :instance, visibility, deep, skip) unless e.name.nil?
             end
           end
           result.concat yard_map.get_methods(fqns, '', visibility: visibility)
@@ -815,8 +846,10 @@ module Solargraph
       is = @namespace_includes[fqns]
       unless is.nil?
         is.each do |i|
-          here = find_fully_qualified_namespace(i, fqns)
-          result.concat inner_get_constants(here, [:public], skip)
+          # here = find_fully_qualified_namespace(i, fqns)
+          # result.concat inner_get_constants(here, [:public], skip)
+          i.resolve self
+          result.concat inner_get_constants(i.name, [:public], skip) unless i.name.nil?
         end
       end
       result
