@@ -357,6 +357,7 @@ module Solargraph
     # @return [String]
     def infer_signature_type signature, namespace, scope: :class, call_node: nil
       return nil if signature.start_with?('.')
+      # return 'Integer' if signature.match(/^[0-9]?$/)
       # inner_infer_signature_type signature, namespace, scope, call_node, true
       base, rest = signature.split('.', 2)
       if base == 'self'
@@ -380,7 +381,8 @@ module Solargraph
             subns, subsc = extract_namespace_and_scope(fqtype)
             inner_infer_signature_type(rest, subns, subsc, call_node, true)
           else
-            inner_infer_signature_type(rest, pin.path, scope, call_node, true)
+            subns, subsc = extract_namespace_and_scope(pin.return_type)
+            inner_infer_signature_type(rest, subns, subsc, call_node, true)
           end
         else
           subtype = inner_infer_signature_type(pin.signature, namespace, scope, call_node, true)
