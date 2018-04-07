@@ -16,25 +16,17 @@ module Solargraph
             send_data tmp unless tmp.empty?
             EventMachine.stop if @host.stopped?
           end
-          @message_semaphore = Mutex.new
-          @message_stack = 0
         end
-      
+
         def process request
           Thread.new do
-            @message_semaphore.synchronize do
-              @message_stack += 1
-            end
             message = @host.start(request)
             message.send
             tmp = @host.flush
             send_data tmp unless tmp.empty?
-            @message_semaphore.synchronize do
-              @message_stack -= 1
-            end
           end
         end
-      
+
         # @param data [String]
         def receive_data data
           data.each_char do |char|
