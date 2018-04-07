@@ -1048,4 +1048,18 @@ describe Solargraph::ApiMap do
     cmp = api_map.complete(fragment)
     expect(cmp.pins.map(&:path)).to include('Array#each')
   end
+
+  it "returns core namespaces from namespace contexts" do
+    api_map = Solargraph::ApiMap.new
+    source = Solargraph::Source.load_string(%(
+      class Foo
+        S
+      end
+    ))
+    api_map.virtualize source
+    fragment = source.fragment_at(2, 9)
+    names = api_map.complete(fragment).pins.map(&:name)
+    expect(names).to include('Foo')
+    expect(names).to include('String')
+  end
 end

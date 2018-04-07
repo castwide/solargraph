@@ -201,6 +201,7 @@ module Solargraph
           result.concat inner_get_constants(fqns, visi, skip)
           parts.pop
         end
+        result.concat inner_get_constants('', [:public], skip) if namespace.empty?
       end
       # result.map{|pin| Suggestion.pull(pin)}
       result
