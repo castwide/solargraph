@@ -226,16 +226,17 @@ module Solargraph
 
     def synchronize updater
       raise 'Invalid synchronization' unless updater.filename == filename
-      original = @code
-      @code = updater.write(@code)
-      @fixed = @code
+      original_code = @code
+      original_fixed = @fixed
+      @code = updater.write(original_code)
+      @fixed = updater.write(original_code, true)
       again = true
       begin
         reparse
       rescue Parser::SyntaxError => e
         if again
           again = false
-          @fixed = updater.repair(original)
+          @fixed = updater.repair(original_fixed)
           retry
         else
           hard_fix_node

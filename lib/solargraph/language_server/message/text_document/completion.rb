@@ -22,8 +22,7 @@ module Solargraph
                 sleep 0.1 unless processed
               end
             rescue Exception => e
-              STDERR.puts e.message
-              STDERR.puts e.backtrace
+              STDERR.puts "Error in textDocument/completion: #{e.message}"
               # Ignore 'Invalid offset' errors, since they usually just mean
               # that the document is in the process of changing.
               if e.message.include?('Invalid offset')

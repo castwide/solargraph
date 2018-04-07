@@ -20,13 +20,21 @@ module Solargraph
         @filename = filename
         @version = version
         @changes = changes
+        @input = nil
+        @did_nullify = nil
+        @output = nil
       end
 
-      def write text
+      def write text, nullable = false
+        can_nullify = (nullable and changes.length == 1)
+        return @output if @input == text and can_nullify == @did_nullify
+        @input = text
+        @output = text
+        @did_nullify = can_nullify
         changes.each do |ch|
-          text = ch.write(text, changes.length == 1)
+          @output = ch.write(@output, can_nullify)
         end
-        text
+        @output
       end
 
       def repair text

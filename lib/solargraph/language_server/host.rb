@@ -77,7 +77,7 @@ module Solargraph
 
       def change params
         @change_semaphore.synchronize do
-          if changing? params['textDocument']['uri']
+          if unsafe_changing? params['textDocument']['uri']
             @change_queue.push params
           else
             source = library.checkout(uri_to_file(params['textDocument']['uri']))
@@ -129,7 +129,11 @@ module Solargraph
       end
 
       def changing? file_uri
-        @change_queue.any?{|change| change['textDocument']['uri'] == file_uri}
+        result = false
+        @change_semaphore.synchronize do
+          result = unsafe_changing?(file_uri)
+        end
+        result
       end
 
       def stop
@@ -138,12 +142,6 @@ module Solargraph
 
       def stopped?
         @stopped
-      end
-
-      def synchronize &block
-        @change_semaphore.synchronize do
-          block.call
-        end
       end
 
       def locate_pin params
@@ -190,12 +188,16 @@ module Solargraph
 
       private
 
+      def unsafe_changing? file_uri
+        @change_queue.any?{|change| change['textDocument']['uri'] == file_uri}
+      end
+
       def start_change_thread
         Thread.new do
           until stopped?
             @change_semaphore.synchronize do
+              changed = false
               begin
-                changed = false
                 @change_queue.delete_if do |change|
                   filename = uri_to_file(change['textDocument']['uri'])
                   source = library.checkout(filename)
@@ -204,7 +206,7 @@ module Solargraph
                     library.synchronize updater
                     @diagnostics_queue.push change['textDocument']['uri']
                     changed = true
-                    true
+                    next true
                   elsif change['textDocument']['version'] == source.version + 1 #and change['contentChanges'].length == 0
                     # HACK: This condition fixes the fact that formatting
                     # increments the version by one regardless of the number
@@ -213,27 +215,30 @@ module Solargraph
                     library.synchronize updater
                     @diagnostics_queue.push change['textDocument']['uri']
                     changed = true
-                    true
+                    next true
                   elsif change['textDocument']['version'] <= source.version
                     # @todo Is deleting outdated changes correct behavior?
                     STDERR.puts "Deleting stale change"
                     @diagnostics_queue.push change['textDocument']['uri']
                     changed = true
-                    true
+                    next true
                   else
                     # @todo Change is out of order. Save it for later
                     STDERR.puts "Kept in queue: #{change['textDocument']['uri']} from #{source.version} to #{change['textDocument']['version']}"
-                    false
+                    next false
                   end
                 end
-                STDERR.puts "#{@change_queue.length} pending" unless @change_queue.empty?
+                STDERR.puts "Refreshing library due to step changes" if changed
                 library.refresh if changed
+                STDERR.puts "#{@change_queue.length} pending" unless @change_queue.empty?
               rescue Exception => e
                 STDERR.puts e.message
+                STDERR.puts e.backtrace
               end
             end
             sleep 0.1
           end
+          STDERR.puts "Beauty school dropout!"
         end
       end
 
@@ -241,43 +246,38 @@ module Solargraph
         Thread.new do
           diagnoser = Diagnostics::Rubocop.new
           until stopped?
+            sleep 0.1
             if options['diagnostics'] != 'rubocop'
               @change_semaphore.synchronize { @diagnostics_queue.clear }
               sleep 1
               next
             end
-            unless @change_semaphore.locked?
-              begin
-                current = nil
-                @change_semaphore.synchronize do
-                  current = @diagnostics_queue.shift
-                end
-                unless current.nil?
-                  already_changing = false
-                  @change_semaphore.synchronize { already_changing = (changing?(current) or @diagnostics_queue.include?(current)) }
-                  unless already_changing
-                    filename = nil
-                    text = nil
-                    @change_semaphore.synchronize do
-                      filename = uri_to_file(current)
-                      text = library.read_text(filename)
-                    end
-                    results = diagnoser.diagnose text, filename
-                    @change_semaphore.synchronize { already_changing = (changing?(current) or @diagnostics_queue.include?(current)) }
-                    # publish_diagnostics current, resp unless already_changing
-                    unless already_changing
-                      send_notification "textDocument/publishDiagnostics", {
-                        uri: current,
-                        diagnostics: results
-                      }
-                    end
-                  end
-                end
-              rescue Exception => e
-                STDERR.puts e.message
+            begin
+              current = nil
+              already_changing = nil
+              @change_semaphore.synchronize do
+                current = @diagnostics_queue.shift
+                break if current.nil?
+                already_changing = (unsafe_changing?(current) or @diagnostics_queue.include?(current))
               end
+              next if current.nil? or already_changing
+              filename = uri_to_file(current)
+              text = library.read_text(filename)
+              results = diagnoser.diagnose text, filename
+              @change_semaphore.synchronize do
+                already_changing = (unsafe_changing?(current) or @diagnostics_queue.include?(current))
+                # publish_diagnostics current, resp unless already_changing
+                unless already_changing
+                  send_notification "textDocument/publishDiagnostics", {
+                    uri: current,
+                    diagnostics: results
+                  }
+                end
+              end
+            rescue Exception => e
+              STDERR.puts e.message
+              STDERR.puts e.backtrace
             end
-            sleep 0.1
           end
         end
       end
