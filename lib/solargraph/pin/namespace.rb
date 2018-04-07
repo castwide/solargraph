@@ -20,7 +20,7 @@ module Solargraph
       end
 
       def name
-        @name ||= pack_name(node.children[0]).last.to_s
+        @name ||= (node.type == :source ? '' : pack_name(node.children[0]).last.to_s)
       end
 
       def path
@@ -49,7 +49,7 @@ module Solargraph
       end
 
       def location
-        return "#{source.filename}:0" if namespace.empty?
+        return "#{source.filename}:0" if name.empty?
         super
       end
 

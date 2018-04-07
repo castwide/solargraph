@@ -804,7 +804,7 @@ module Solargraph
       skip.push fqns
       result = []
       result.concat @const_pins[fqns] if @const_pins.has_key?(fqns)
-      result.concat @namespace_pins[fqns] if @namespace_pins.has_key?(fqns)
+      result.concat @namespace_pins[fqns] if !fqns.empty? and @namespace_pins.has_key?(fqns)
       result.keep_if{|pin| visibility.include?(pin.visibility)}
       result.concat yard_map.get_constants(fqns)
       is = @namespace_includes[fqns]
