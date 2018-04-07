@@ -5,7 +5,7 @@ module Solargraph
         class OnTypeFormatting < Base
           def process
             # @todo Temporarily disabled
-            set_result []
+            set_result nil
             return
             src = host.library.checkout(uri_to_file(params['textDocument']['uri']))
             offset = src.get_offset(params['position']['line'], params['position']['character'])
