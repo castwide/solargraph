@@ -130,16 +130,6 @@ module Solargraph
       false
     end
 
-    # Get the docstring associated with a node.
-    #
-    # @param node [AST::Node]
-    # @return [YARD::Docstring]
-    def get_docstring_for node
-      source = get_source_for(node)
-      return nil if source.nil?
-      source.docstring_for(node)
-    end
-
     # An array of suggestions based on Ruby keywords (`if`, `end`, etc.).
     #
     # @return [Array<Solargraph::Pin::Keyword>]
@@ -164,17 +154,6 @@ module Solargraph
     # @return [Boolean]
     def namespace_exists? name, root = ''
       !find_fully_qualified_namespace(name, root).nil?
-    end
-
-    # Get an array of constant pins defined in the ApiMap. (This method does
-    # not include constants from external gems or the Ruby core.)
-    #
-    # @param namespace [String] The namespace to match
-    # @param root [String] The context to search
-    # @return [Array<Solargraph::Pin::Constant>]
-    def get_constant_pins namespace, root
-      fqns = find_fully_qualified_namespace(namespace, root)
-      @const_pins[fqns] || []
     end
 
     # Get suggestions for constants in the specified namespace. The result
@@ -291,14 +270,6 @@ module Solargraph
     def get_symbols
       # refresh
       @symbol_pins
-    end
-
-    # @return [String]
-    def get_filename_for(node)
-      @sources.each do |source|
-        return source.filename if source.include?(node)
-      end
-      nil
     end
 
     # @return [Solargraph::Source]
@@ -880,18 +851,6 @@ module Solargraph
         return s.mtime if s.filename == filename
       end
       nil
-    end
-
-    # @return [Array<Solargraph::Pin::Namespace>]
-    def find_namespace_pins fqns
-      set = nil
-      if fqns.include?('::')
-        set = @namespace_pins[fqns.split('::')[0..-2].join('::')]
-      else
-        set = @namespace_pins['']
-      end
-      return [] if set.nil?
-      set.select{|p| p.path == fqns}
     end
 
     # @todo DRY this method. It's duplicated in CodeMap
