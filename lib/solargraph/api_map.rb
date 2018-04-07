@@ -103,18 +103,10 @@ module Solargraph
         cache.clear
         namespace_map.clear
         @sources.each do |s|
-          # s.namespace_nodes.each_pair do |k, v|
-          #   namespace_map[k] ||= []
-          #   namespace_map[k].concat v
-          # end
           s.namespaces.each do |n|
             namespace_map[n] ||= []
             namespace_map[n].concat s.namespace_pins(n)
           end
-          # s.namespace_pins.each do |pin|
-          #   namespace_map[pin.path] ||= []
-          #   namespace_map[pin.path].push pin
-          # end
         end
         @sources.each do |source|
           if @stime.nil? or source.stime > @stime
@@ -249,8 +241,6 @@ module Solargraph
           im = @namespace_includes['']
           unless im.nil?
             im.each do |i|
-              # reroot = "#{root == '' ? '' : root + '::'}#{i}"
-              # recname = find_fully_qualified_namespace name.to_s, reroot, skip
               i.resolve self
               return i.name unless i.name.nil?
             end
@@ -266,8 +256,6 @@ module Solargraph
           im = @namespace_includes['']
           unless im.nil?
             im.each do |i|
-              # recname = find_fully_qualified_namespace name, i, skip
-              # return recname unless recname.nil?
               i.resolve self
               return i.name unless i.name.nil?
             end
@@ -368,8 +356,6 @@ module Solargraph
     # @return [String]
     def infer_signature_type signature, namespace, scope: :class, call_node: nil
       return nil if signature.start_with?('.')
-      # return 'Integer' if signature.match(/^[0-9]?$/)
-      # inner_infer_signature_type signature, namespace, scope, call_node, true
       base, rest = signature.split('.', 2)
       if base == 'self'
         if rest.nil?
@@ -456,7 +442,6 @@ module Solargraph
     def signify fragment
       return [] unless fragment.argument?
       pins = infer_signature_pins(fragment.recipient.whole_signature, fragment.recipient.namespace, fragment.recipient.scope, fragment.recipient.node)
-      # pins.each{|pin| pin.resolve self}
       pins
     end
 
@@ -654,21 +639,6 @@ module Solargraph
           namespace_map[n] ||= []
           namespace_map[n].concat s.namespace_pins(n)
         end
-        # s.namespace_pins.each do |pin|
-        #   namespace_map[pin.path] ||= []
-        #   namespace_map[pin.path].push pin
-        # end
-        # s.namespace_includes.each_pair do |ns, i|
-        #   @namespace_includes[ns || ''] ||= []
-        #   @namespace_includes[ns || ''].concat(i).uniq!
-        # end
-        # s.namespace_extends.each_pair do |ns, e|
-        #   @namespace_extends[ns || ''] ||= []
-        #   @namespace_extends[ns || ''].concat(e).uniq!
-        # end
-        # s.superclasses.each_pair do |cls, sup|
-        #   @superclasses[cls] = sup
-        # end
       end
       @sources.each do |s|
         map_source s
@@ -689,29 +659,11 @@ module Solargraph
       unless @virtual_source.nil?
         cache.clear
         namespace_map.clear
-        # @namespace_includes.clear
-        # @namespace_extends.clear
-        # @superclasses.clear
         @sources.each do |s|
           s.namespace_pin_map.values.flatten.each do |pin|
             namespace_map[pin.path] ||= []
             namespace_map[pin.path].push pin
           end
-          # s.namespace_nodes.each_pair do |k, v|
-          #   namespace_map[k] ||= []
-          #   namespace_map[k].concat v
-          # end
-          # s.namespace_includes.each_pair do |ns, i|
-          #   @namespace_includes[ns || ''] ||= []
-          #   @namespace_includes[ns || ''].concat(i).uniq!
-          # end
-          # s.namespace_extends.each_pair do |ns, e|
-          #   @namespace_extends[ns || ''] ||= []
-          #   @namespace_extends[ns || ''].concat(e).uniq!
-          # end
-          # s.superclasses.each_pair do |cls, sup|
-          #   @superclasses[cls] = sup
-          # end
         end
         map_source @virtual_source
       end
@@ -821,8 +773,6 @@ module Solargraph
           im = @namespace_includes[fqns]
           unless im.nil?
             im.each do |i|
-              # ifqns = find_fully_qualified_namespace(i, fqns)
-              # result.concat inner_get_methods(ifqns, scope, visibility, deep, skip)
               i.resolve self
               result.concat inner_get_methods(i.name, scope, visibility, deep, skip) unless i.name.nil?
             end
@@ -833,8 +783,6 @@ module Solargraph
           em = @namespace_extends[fqns]
           unless em.nil?
             em.each do |e|
-              # efqns = find_fully_qualified_namespace(e, fqns)
-              # result.concat inner_get_methods(efqns, :instance, visibility, deep, skip)
               e.resolve self
               result.concat inner_get_methods(e.name, :instance, visibility, deep, skip) unless e.name.nil?
             end
@@ -862,8 +810,6 @@ module Solargraph
       is = @namespace_includes[fqns]
       unless is.nil?
         is.each do |i|
-          # here = find_fully_qualified_namespace(i, fqns)
-          # result.concat inner_get_constants(here, [:public], skip)
           i.resolve self
           result.concat inner_get_constants(i.name, [:public], skip) unless i.name.nil?
         end
@@ -1074,8 +1020,6 @@ module Solargraph
       else
         return inner_infer_signature_type(parts[1], type, :class, call_node, false)
       end
-      # @todo Assuming `self` only works at the top level
-      # result = type if result == 'self'
       unless result.nil?
         if scope == :class
           nstype = get_namespace_type(result)
