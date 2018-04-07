@@ -268,12 +268,14 @@ module Solargraph
           end
           index -= 1
         end
+        # @todo Smelly exceptional case for numbers
+        signature.sub!(/^[0-9]+\./, 'Integer.new.')
         if signature.start_with?('.')
           # @todo Smelly exceptional case for arrays
           if signature.start_with?('.[].')
             signature.sub!(/^\.\[\]/, 'Array.new')
           else
-            line, col = get_position_at(index - 1)
+            line, col = get_position_at(index < 0 ? 0 : index)
             pn = @source.node_at(line, col)
             unless pn.nil?
               literal = infer_literal_node_type(pn)

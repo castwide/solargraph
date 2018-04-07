@@ -1062,4 +1062,55 @@ describe Solargraph::ApiMap do
     expect(names).to include('Foo')
     expect(names).to include('String')
   end
+
+  it "switches scope for pins when inferring signatures" do
+    api_map = Solargraph::ApiMap.new
+    source = Solargraph::Source.load_string(%(
+      class Foo
+        def bar
+        end
+      end
+    ))
+    api_map.virtualize source
+    # The scope should change to :class for String to handle the new method
+    # correctly
+    type = api_map.infer_signature_type('String.new', 'Foo', scope: :instance)
+    expect(type).to eq('String')
+  end
+
+  it "completes literal strings" do
+    api_map = Solargraph::ApiMap.new
+    source = Solargraph::Source.load_string("'string'._")
+    api_map.virtualize source
+    fragment = source.fragment_at(0, 9)
+    paths = api_map.complete(fragment).pins.map(&:path)
+    expect(paths).to include('String#upcase')
+  end
+
+  it "completes literal arrays" do
+    api_map = Solargraph::ApiMap.new
+    source = Solargraph::Source.load_string("[]._")
+    api_map.virtualize source
+    fragment = source.fragment_at(0, 3)
+    paths = api_map.complete(fragment).pins.map(&:path)
+    expect(paths).to include('Array#length')
+  end
+
+  it "completes literal hashes" do
+    api_map = Solargraph::ApiMap.new
+    source = Solargraph::Source.load_string("{}._")
+    api_map.virtualize source
+    fragment = source.fragment_at(0, 3)
+    paths = api_map.complete(fragment).pins.map(&:path)
+    expect(paths).to include('Hash#has_key?')
+  end
+
+  it "completes literal integers" do
+    api_map = Solargraph::ApiMap.new
+    source = Solargraph::Source.load_string("1._")
+    api_map.virtualize source
+    fragment = source.fragment_at(0, 2)
+    paths = api_map.complete(fragment).pins.map(&:name)
+    expect(paths).to include('abs')
+  end
 end
