@@ -19,6 +19,10 @@ module Solargraph
         extend_references.push Reference.new(self, name)
       end
 
+      def reference_superclass name
+        @superclass_reference = Reference.new(self, name)
+      end
+
       def name
         @name ||= (node.type == :source ? '' : pack_name(node.children[0]).last.to_s)
       end

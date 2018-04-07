@@ -61,14 +61,14 @@ module Solargraph
       @namespaces ||= namespace_pin_map.keys
     end
 
-    # @param fqns [String]
+    # @param fqns [String] The namespace (nil for all)
     # @return [Array<Solargraph::Pin::Namespace>]
-    # @todo Should this only return all the namespaces?
     def namespace_pins fqns = nil
       return namespace_pin_map.values.flatten if fqns.nil?
       namespace_pin_map[fqns] || []
     end
 
+    # @param fqns [String] The namespace (nil for all)
     # @return [Array<Solargraph::Pin::Method>]
     def method_pins fqns = nil
       return method_pin_map.values.flatten if fqns.nil?
@@ -79,13 +79,13 @@ module Solargraph
       @namespace_includes ||= {}
     end
 
-    def namespace_extends
-      @namespaces_extends ||= {}
-    end
+    # def namespace_extends
+    #   @namespaces_extends ||= {}
+    # end
 
-    def superclasses
-      @superclasses ||= {}
-    end
+    # def superclasses
+    #   @superclasses ||= {}
+    # end
 
 
     # @return [Array<Solargraph::Pin::Attribute>]
@@ -318,8 +318,8 @@ module Solargraph
       constant_pins.clear
       method_pin_map.clear
       namespace_includes.clear
-      namespace_extends.clear
-      superclasses.clear
+      # namespace_extends.clear
+      # superclasses.clear
       attribute_pins.clear
       @node_object_ids = nil
       inner_map_node @node
@@ -400,11 +400,14 @@ module Solargraph
           end
           fqn = tree.join('::')
           sc = nil
-          if node.type == :class and !node.children[1].nil?
-            sc = unpack_name(node.children[1])
-            @superclasses[fqn] = sc
-          end
+          # if node.type == :class and !node.children[1].nil?
+          #   sc = unpack_name(node.children[1])
+          #   @superclasses[fqn] = sc
+          # end
           nspin = Solargraph::Pin::Namespace.new(self, node, tree[0..-2].join('::') || '', :public, sc)
+          if node.type == :class and !node.children[1].nil?
+            nspin.reference_superclass unpack_name(node.children[1])
+          end
           namespace_pin_map[nspin.path] ||= []
           namespace_pin_map[nspin.path].push nspin
         end
@@ -521,7 +524,7 @@ module Solargraph
             elsif c.type == :send and c.children[1] == :extend and c.children[0].nil?
               if @node_tree[0].nil? or @node_tree[0].type == :source or @node_tree[0].type == :class or @node_tree[0].type == :module or (@node_tree.length > 1 and @node_tree[0].type == :begin and (@node_tree[1].type == :class or @node_tree[1].type == :module))
                 if c.children[2].kind_of?(AST::Node) and c.children[2].type == :const
-                  namespace_extends[fqn || ''] ||= []
+                  # namespace_extends[fqn || ''] ||= []
                   c.children[2..-1].each do |i|
                     namespace_pin_map[fqn || ''].last.reference_extend unpack_name(i)
                   end
