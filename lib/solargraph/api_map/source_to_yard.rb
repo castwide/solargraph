@@ -27,9 +27,9 @@ module Solargraph
             code_object_map[pin.path].docstring = pin.docstring unless pin.docstring.nil?
             code_object_map[pin.path].files.push pin.source.filename
           end
-          s.namespace_includes.each_pair do |n, i|
-            i.each do |inc|
-              code_object_map[n].instance_mixins.push code_object_map[inc] unless code_object_map[inc].nil? or code_object_map[n].nil?
+          s.namespace_pins.each do |pin|
+            pin.include_references.each do |ref|
+              code_object_map[pin.path].instance_mixins.push code_object_map[ref.name] unless code_object_map[ref.name].nil? or code_object_map[pin.path].nil?
             end
           end
           s.attribute_pins.each do |pin|
