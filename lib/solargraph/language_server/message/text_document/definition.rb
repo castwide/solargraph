@@ -10,7 +10,7 @@ module Solargraph::LanguageServer::Message::TextDocument
       filename = uri_to_file(params['textDocument']['uri'])
       line = params['position']['line']
       col = params['position']['character']
-      suggestions = host.library.definitions_at(filename, line, col)
+      suggestions = host.definitions_at(filename, line, col)
       locations = suggestions.map do |pin|
         unless pin.location.nil?
           parts = pin.location.split(':')
