@@ -495,7 +495,6 @@ module Solargraph
         if fragment.signature.start_with?('@@')
           result.concat get_class_variable_pins(fragment.namespace)
         elsif fragment.signature.start_with?('@')
-          STDERR.puts "IVs in #{fragment.namespace} and #{fragment.scope}"
           result.concat get_instance_variable_pins(fragment.namespace, fragment.scope)
         elsif fragment.signature.start_with?('$')
           result.concat suggest_unique_variables(get_global_variable_pins)
