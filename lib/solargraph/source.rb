@@ -130,7 +130,7 @@ module Solargraph
     end
 
     def tree_for node
-      @node_tree[node] || []
+      @node_tree[node.object_id] || []
     end
 
     # Get the nearest node that contains the specified index.
@@ -152,11 +152,11 @@ module Solargraph
         if n.respond_to?(:loc)
           if n.respond_to?(:begin) and n.respond_to?(:end)
             if offset >= n.begin.begin_pos and offset < n.end.end_pos
-              return [n] + @node_tree[n]
+              return [n] + @node_tree[n.object_id]
             end
           elsif !n.loc.expression.nil?
             if offset >= n.loc.expression.begin_pos and offset < n.loc.expression.end_pos
-              return [n] + @node_tree[n]
+              return [n] + @node_tree[n.object_id]
             end
           end
         end
@@ -395,7 +395,7 @@ module Solargraph
         file = source.filename
         node.children.each do |c|
           if c.kind_of?(AST::Node)
-            @node_tree[c] = @node_stack.clone
+            @node_tree[c.object_id] = @node_stack.clone
             if c.type == :ivasgn
               par = find_parent(stack, :class, :module, :def, :defs)
               local_scope = ( (par.kind_of?(AST::Node) and par.type == :def) ? :instance : :class )
@@ -404,7 +404,7 @@ module Solargraph
                 unless ora.nil?
                   u = c.updated(:ivasgn, c.children + ora.children[1..-1], nil)
                   @all_nodes.push u
-                  @node_tree[u] = @node_stack.clone
+                  @node_tree[u.object_id] = @node_stack.clone
                   @docstring_hash[u.loc] = docstring_for(ora)
                   instance_variable_pins.push Solargraph::Pin::InstanceVariable.new(self, u, fqn || '', local_scope)
                 end
@@ -416,7 +416,7 @@ module Solargraph
                 ora = find_parent(stack, :or_asgn)
                 unless ora.nil?
                   u = c.updated(:cvasgn, c.children + ora.children[1..-1], nil)
-                  @node_tree[u] = @node_stack.clone
+                  @node_tree[u.object_id] = @node_stack.clone
                   @all_nodes.push u
                   @docstring_hash[u.loc] = docstring_for(ora)
                   class_variable_pins.push Solargraph::Pin::ClassVariable.new(self, u, fqn || '')
