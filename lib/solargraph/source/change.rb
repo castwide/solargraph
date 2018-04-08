@@ -24,7 +24,7 @@ module Solargraph
       #   syntax errors will be repaired.
       # @return [String] The updated text.
       def write text, nullable = false
-        if nullable and !range.nil? and new_text.match(/[\.\[\{\(]$/)
+        if nullable and !range.nil? and new_text.match(/[\.\[\{\(@\$:]$/)
           commit text, "#{new_text[0..-2]} "
         elsif range.nil?
           new_text

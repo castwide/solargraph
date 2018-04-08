@@ -308,7 +308,7 @@ module Solargraph
           if var.nil?
             # constants and methods
             var = infer_pin base, fragment.namespace, fragment.scope, [:public, :private, :protected]
-            base_type = var.return_type
+            base_type = var.return_type unless var.nil?
           end
         end
       else
@@ -491,12 +491,11 @@ module Solargraph
     def complete fragment
       return Completion.new([], fragment.whole_word_range) if fragment.string? or fragment.comment? or fragment.signature.start_with?('.')
       result = []
-      
-      result = []
       if fragment.base.empty?
         if fragment.signature.start_with?('@@')
           result.concat get_class_variable_pins(fragment.namespace)
         elsif fragment.signature.start_with?('@')
+          STDERR.puts "IVs in #{fragment.namespace} and #{fragment.scope}"
           result.concat get_instance_variable_pins(fragment.namespace, fragment.scope)
         elsif fragment.signature.start_with?('$')
           result.concat suggest_unique_variables(get_global_variable_pins)
