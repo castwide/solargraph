@@ -103,4 +103,20 @@ describe Solargraph::Source::Fragment do
     # expect(fragment.argument?).to be(true)
     expect(fragment.recipient.whole_signature).to eq('abc.def')
   end
+
+  it "knows positions in strings" do
+    source = Solargraph::Source.load_string("x = '123'")
+    fragment = source.fragment_at(0, 1)
+    expect(fragment.string?).to be(false)
+    fragment = source.fragment_at(0, 5)
+    expect(fragment.string?).to be(true)
+  end
+
+  it "knows positions in comments" do
+    source = Solargraph::Source.load_string("# comment\nx = '123'")
+    fragment = source.fragment_at(0, 1)
+    expect(fragment.comment?).to be(true)
+    fragment = source.fragment_at(1, 0)
+    expect(fragment.string?).to be(false)
+  end
 end
