@@ -129,6 +129,7 @@ module Solargraph
       frag.strip.gsub(/,$/, '')
     end
 
+    # @param node [Parser::AST::Node]
     def tree_for node
       @node_tree[node.object_id] || []
     end
@@ -248,6 +249,14 @@ module Solargraph
     # @return [Solargraph::Source::Fragment]
     def fragment_at line, column
       Fragment.new(self, line, column, tree_at(line, column))
+    end
+
+    def fragment_for node
+      inside = tree_for(node)
+      return nil if inside.empty?
+      line = node.loc.expression.last_line - 1
+      column = node.loc.expression.last_column
+      Fragment.new(self, line, column, inside)
     end
 
     private

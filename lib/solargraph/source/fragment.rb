@@ -202,7 +202,7 @@ module Solargraph
         if @offset.nil?
           @offset = 0
           feed = 0
-          @code.lines.each { |l|
+          @code.gsub(/\r\n/, "\n").lines.each { |l|
             break if line == feed
             @offset += l.length
             feed += 1

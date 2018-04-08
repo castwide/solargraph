@@ -6,6 +6,7 @@ module Solargraph
       def initialize source, node, namespace
         super
         @tried_to_detect_return_type = false
+        @tried_to_resolve_return_type = false
       end
 
       def name
@@ -43,9 +44,13 @@ module Solargraph
 
       # @param api_map [Solargraph::ApiMap]
       def resolve api_map
-        if return_type.nil?
+        if return_type.nil? and !@tried_to_resolve_return_type
+          @tried_to_detect_return_type = true
           return nil if signature.nil? or signature.empty? or signature == name or signature.split('.').first.strip == name
-          @return_type = api_map.infer_signature_type(signature, namespace, call_node: node)
+          # @return_type = api_map.infer_signature_type(signature, namespace, call_node: node)
+          fragment = source.fragment_for(assignment_node)
+          fragment.whole_signature
+          @return_type = api_map.signature_type(fragment) unless fragment.nil?
         end
       end
 
