@@ -199,17 +199,41 @@ module Solargraph
 
       # @return [Integer]
       def offset
-        if @offset.nil?
-          @offset = 0
-          feed = 0
-          @code.gsub(/\r\n/, "\n").lines.each { |l|
-            break if line == feed
-            @offset += l.length
-            feed += 1
-          }
-          @offset += column
+        @offset ||= get_offset(line, column)
+      end
+
+      def get_offset line, column
+        result = 0
+        feed = 0
+        @code.lines.each do |l|
+          line_length = l.length
+          char_length = l.chomp.length
+          if feed == line
+            result += column
+            break
+          end
+          result += line_length
+          feed += 1
         end
-        @offset
+        result
+      end
+
+      def get_position_at(offset)
+        cursor = 0
+        line = 0
+        col = nil
+        @code.lines.each do |l|
+          line_length = l.length
+          char_length = l.chomp.length
+          if cursor + char_length >= offset
+            col = offset - cursor
+            break
+          end
+          cursor += line_length
+          line += 1
+        end
+        raise "Invalid offset" if col.nil?
+        [line, col]
       end
 
       def signature_data
@@ -365,36 +389,6 @@ module Solargraph
           cursor += 1
         end
         @code[index..cursor-1]
-      end
-
-      def get_position_at(offset)
-        cursor = 0
-        line = 0
-        col = nil
-        @code.lines.each do |l|
-          if cursor + l.length > offset
-            col = offset - cursor
-            break
-          end
-          if cursor + l.length == offset
-            if l.end_with?("\n")
-              col = 0
-              line += 1
-              break
-            else
-              col = l.length
-              break
-            end
-          end
-          if cursor + l.length - 1 == offset and !l.end_with?("\n")
-            col = l.length - 1
-            break
-          end
-          cursor += l.length
-          line += 1
-        end
-        raise "Invalid offset" if col.nil?
-        [line, col]
       end
 
       def signature_position
