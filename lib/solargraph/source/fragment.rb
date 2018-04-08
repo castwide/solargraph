@@ -203,37 +203,12 @@ module Solargraph
       end
 
       def get_offset line, column
-        result = 0
-        feed = 0
-        @code.lines.each do |l|
-          line_length = l.length
-          char_length = l.chomp.length
-          if feed == line
-            result += column
-            break
-          end
-          result += line_length
-          feed += 1
-        end
-        result
+        Position.line_char_to_offset(@code, line, column)
       end
 
       def get_position_at(offset)
-        cursor = 0
-        line = 0
-        col = nil
-        @code.lines.each do |l|
-          line_length = l.length
-          char_length = l.chomp.length
-          if cursor + char_length >= offset
-            col = offset - cursor
-            break
-          end
-          cursor += line_length
-          line += 1
-        end
-        raise "Invalid offset" if col.nil?
-        [line, col]
+        pos = Position.from_offset(@code, offset)
+        [pos.line, pos.character]
       end
 
       def signature_data
