@@ -47,10 +47,8 @@ module Solargraph
         if return_type.nil? and !@tried_to_resolve_return_type
           @tried_to_detect_return_type = true
           return nil if signature.nil? or signature.empty? or signature == name or signature.split('.').first.strip == name
-          # @return_type = api_map.infer_signature_type(signature, namespace, call_node: node)
-          fragment = source.fragment_for(assignment_node)
-          fragment.whole_signature
-          @return_type = api_map.infer_fragment_type(fragment) unless fragment.nil?
+          # @todo This should be able to resolve signatures that start with local variables
+          @return_type = api_map.infer_type(signature, namespace, scope: :class)
         end
       end
 

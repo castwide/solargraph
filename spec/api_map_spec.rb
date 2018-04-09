@@ -1115,4 +1115,13 @@ describe Solargraph::ApiMap do
     paths = api_map.complete(fragment).pins.map(&:name)
     expect(paths).to include('abs')
   end
+
+  it "adds local variables to completion items" do
+    api_map = Solargraph::ApiMap.new
+    source = Solargraph::Source.load_string("lvar = 'foo'\nl")
+    api_map.virtualize source
+    fragment = source.fragment_at(1, 1)
+    names = api_map.complete(fragment).pins.map(&:name)
+    expect(names).to include('lvar')
+  end
 end
