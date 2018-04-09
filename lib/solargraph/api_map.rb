@@ -593,6 +593,7 @@ module Solargraph
     # @param fragment [Solargraph::Source::Fragment]
     def signify fragment
       return [] unless fragment.argument?
+      return [] if fragment.recipient.whole_signature.nil? or fragment.recipient.whole_signature.empty?
       base, rest = fragment.recipient.whole_signature.split('.', 2)
       return infer_word_pins(base, fragment.recipient.namespace, true) if rest.nil?
       type = nil
