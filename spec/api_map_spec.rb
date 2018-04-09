@@ -590,22 +590,24 @@ describe Solargraph::ApiMap do
     expect(suggestions).to include('Foo::Bar2')
   end
 
-  it "gets unique instance variable names" do
-    code = %(
-      class Foo
-        def bar
-          @bar = 'bar'
-        end
-        def baz
-          @bar = 'baz'
-        end
-      end
-    )
-    api_map = Solargraph::ApiMap.new
-    api_map.append_source(code, 'file.rb')
-    suggestions = api_map.get_instance_variable_pins('Foo', :instance)
-    expect(suggestions.length).to eq(1)
-  end
+  # @todo This is invalid. Methods for returning pins should always return
+  #   all the pins they find.
+  # it "gets unique instance variable names" do
+  #   code = %(
+  #     class Foo
+  #       def bar
+  #         @bar = 'bar'
+  #       end
+  #       def baz
+  #         @bar = 'baz'
+  #       end
+  #     end
+  #   )
+  #   api_map = Solargraph::ApiMap.new
+  #   api_map.append_source(code, 'file.rb')
+  #   suggestions = api_map.get_instance_variable_pins('Foo', :instance)
+  #   expect(suggestions.length).to eq(1)
+  # end
 
   it "accepts nil instance variable assignments without other options" do
     code = %(
@@ -635,7 +637,7 @@ describe Solargraph::ApiMap do
     api_map = Solargraph::ApiMap.new
     api_map.append_source(code, 'file.rb')
     suggestions = api_map.get_instance_variable_pins('Foo', :instance)
-    expect(suggestions.length).to eq(1)
+    expect(suggestions.length).to eq(2)
     expect(suggestions[0].return_type).to eq('String')
   end
 
@@ -654,7 +656,7 @@ describe Solargraph::ApiMap do
     api_map = Solargraph::ApiMap.new
     api_map.append_source(code, 'file.rb')
     suggestions = api_map.get_instance_variable_pins('Foo', :instance)
-    expect(suggestions.length).to eq(1)
+    expect(suggestions.length).to eq(2)
     expect(suggestions[0].return_type).to eq('Array')
   end
 

@@ -447,15 +447,14 @@ module Solargraph
 
     # @return [Solargraph::Pin::Base]
     def tail_pin signature, fqns, scope, visibility
-      return nil # @todo Maybe deprecate this method
-      return infer_pin(signature, fqns, scope, [:public, :private, :protected]) unless signature.include?('.')
+      type = combine_type(fqns, scope)
+      return infer_word_pin(signature, type, true) unless signature.include?('.')
       parts = signature.split('.')
       last = parts.pop
       base = parts.join('.')
       type = infer_type(base, fqns, scope: :scope)
       return nil if type.nil?
-      subns, subsc = extract_namespace_and_scope(type)
-      infer_pin(last, subns, subsc, [:public, :private, :protected])
+      infer_word_pin(last, type, false)
     end
 
     # Get an array of pins for a word in the provided context. A word can be
