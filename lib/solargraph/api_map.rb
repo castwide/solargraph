@@ -353,6 +353,7 @@ module Solargraph
 
     # @return [Solargraph::Pin::Base]
     def tail_pins signature, fqns, scope, visibility
+      return nil if signature.nil?
       type = combine_type(fqns, scope)
       return infer_word_pins(signature, type, true) unless signature.include?('.')
       parts = signature.split('.')
@@ -384,7 +385,7 @@ module Solargraph
       if word == 'self' and internal
         context = (internal ? namespace.split('::')[0..-2].join(';;') : '')
         fqns = find_fully_qualified_namespace(namespace, context)
-        pins.concat get_path_suggestions(fqns).first unless fqns.nil?
+        pins.concat get_path_suggestions(fqns) unless fqns.nil?
         return pins
       end
       fqns = find_fully_qualified_namespace(word, namespace)
@@ -598,10 +599,10 @@ module Solargraph
       unless lvar.nil?
         lvar.resolve self
         type = lvar.return_type
-        return nil if type.nil?
+        return [] if type.nil?
       end
       type = infer_word_type(base, fragment.recipient.namespace, fragment.recipient.scope) if type.nil?
-      return nil if type.nil?
+      return [] if type.nil?
       ns, sc = extract_namespace_and_scope(type)
       tail_pins(rest, ns, sc, [:public, :private, :protected])
     end
