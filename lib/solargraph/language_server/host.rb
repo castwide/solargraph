@@ -50,15 +50,8 @@ module Solargraph
         message = Message.select(request['method']).new(self, request)
         begin
           message.process
-        rescue NameError => e
-          STDERR.puts "NameError in Host"
-          # STDERR.puts e.message
-          # STDERR.puts e.backtrace
-          message.set_error Solargraph::LanguageServer::ErrorCodes::INTERNAL_ERROR, "NameError in Host"
         rescue Exception => e
-          STDERR.puts e.message
-          STDERR.puts e.backtrace
-          message.set_error Solargraph::LanguageServer::ErrorCodes::INTERNAL_ERROR, e.message
+          message.set_error Solargraph::LanguageServer::ErrorCodes::INTERNAL_ERROR, "[#{e.class}]"
         end
         message
       end

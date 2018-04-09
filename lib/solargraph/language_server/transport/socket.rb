@@ -11,20 +11,24 @@ module Solargraph
           @content_length = 0
           @buffer = ''
           @host = Solargraph::LanguageServer::Host.new
-          EventMachine.add_periodic_timer 0.1 do
-            tmp = @host.flush
-            send_data tmp unless tmp.empty?
-            EventMachine.stop if @host.stopped?
-          end
+          @stack = {}
+          @semaphore = Mutex.new
+          start_timers
         end
 
         def process request
           Thread.new do
+            @semaphore.synchronize {
+              @stack[request['id']] = request['method']
+            }
             message = @host.start(request)
             message.send
             tmp = @host.flush
             send_data tmp unless tmp.empty?
             GC.start unless request['method'] == 'textDocument/didChange'
+            @semaphore.synchronize {
+              @stack.delete request['id']
+            }
           end
         end
 
@@ -58,6 +62,22 @@ module Solargraph
                 end
               end
             end
+          end
+        end
+
+        private
+
+        def start_timers
+          EventMachine.add_periodic_timer 0.1 do
+            tmp = @host.flush
+            send_data tmp unless tmp.empty?
+            EventMachine.stop if @host.stopped?
+          end
+
+          EventMachine.add_periodic_timer 10 do
+            @semaphore.synchronize {
+              STDERR.puts @stack.inspect
+            }
           end
         end
       end

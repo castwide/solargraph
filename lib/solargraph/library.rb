@@ -2,7 +2,6 @@ module Solargraph
   # A library handles coordination between a Workspace and an ApiMap.
   #
   class Library
-    class FileNotFoundError < Exception; end
 
     # @param workspace [Solargraph::Workspace]
     def initialize workspace = Solargraph::Workspace.new(nil)

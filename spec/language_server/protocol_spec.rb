@@ -57,6 +57,7 @@ describe Protocol do
             end
           end
           foo = Foo
+          String
         ),
         'version' => 0
       }
@@ -83,7 +84,7 @@ describe Protocol do
               'character' => 19
             }
           },
-          'text' => '.'
+          'text' => ';'
         }
       ]
     }
@@ -126,5 +127,24 @@ describe Protocol do
     response = @protocol.response
     expect(response['error']).to be_nil
     expect(response['result']).not_to be_nil
+  end
+
+  it "handles completionItem/resolve" do
+    @protocol.request 'textDocument/completion', {
+      'textDocument' => {
+        'uri' => 'file:///file.rb'
+      },
+      'position' => {
+        'line' => 6,
+        'character' => 12
+      }
+    }
+    response = @protocol.response
+    item = response['result']['items'].select{|item| item['label'] == 'String' and item['kind'] == Solargraph::LanguageServer::CompletionItemKinds::CLASS}.first
+    expect(item).not_to be_nil
+    @protocol.request 'completionItem/resolve', item
+    response = @protocol.response
+    expect(response['result']['documentation']).not_to be_nil
+    expect(response['result']['documentation']).not_to be_empty
   end
 end

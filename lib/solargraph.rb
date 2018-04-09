@@ -3,6 +3,11 @@ require 'rubygems/package'
 require 'yard-solargraph'
 
 module Solargraph
+  class InvalidOffsetError <      RangeError; end
+  class DiagnosticsError <        RuntimeError; end
+  class FileNotFoundError <       Exception; end
+  class SourceNotAvailableError < StandardError; end
+
   autoload :Shell,          'solargraph/shell'
   autoload :Source,         'solargraph/source'
   autoload :ApiMap,         'solargraph/api_map'

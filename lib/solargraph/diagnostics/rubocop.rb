@@ -2,7 +2,6 @@ require 'open3'
 require 'shellwords'
 
 module Solargraph
-  class DiagnosticsError < RuntimeError; end
 
   module Diagnostics
     class Rubocop

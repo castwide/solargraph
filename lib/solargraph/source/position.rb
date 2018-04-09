@@ -1,4 +1,5 @@
 module Solargraph
+
   class Source
     class Position
       # @return [Integer]
@@ -58,7 +59,7 @@ module Solargraph
           cursor += line_length
           line += 1
         end
-        raise "Invalid offset" if character.nil?
+        raise InvalidOffsetError if character.nil?
         Position.new(line, character)
       end
     end
