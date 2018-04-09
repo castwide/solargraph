@@ -185,7 +185,7 @@ module Solargraph
     # @return [String]
     def namespace_for node
       parts = []
-      ([node] + (@node_tree[node] || [])).each do |n|
+      ([node] + (@node_tree[node.object_id] || [])).each do |n|
         next unless n.kind_of?(AST::Node)
         if n.type == :class or n.type == :module
           parts.unshift unpack_name(n.children[0])

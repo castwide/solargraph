@@ -62,6 +62,10 @@ module Solargraph
     # @param filename [String]
     def close filename
       source_hash.delete filename
+      if workspace.has_file?(filename)
+        source = Solargraph::Source.load(filename)
+        workspace.merge source
+      end
     end
 
     def overwrite filename, version

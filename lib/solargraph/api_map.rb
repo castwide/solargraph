@@ -1006,43 +1006,6 @@ module Solargraph
       @path_macros ||= {}
     end
 
-    def get_call_arguments node
-      return get_call_arguments(node.children[1]) if [:ivasgn, :cvasgn, :lvasgn].include?(node.type)
-      return [] unless node.type == :send
-      result = []
-      node.children[2..-1].each do |c|
-        result.push unpack_name(c)
-      end
-      result
-    end
-
-    # @todo This method shouldn't need to calculate the path. In fact, it should work directly off a pin.
-    def get_return_type_from_macro namespace, signature, call_node, scope, visibility
-      return nil if signature.empty? or signature.include?('.') or call_node.nil?
-      path = "#{namespace}#{scope == :class ? '.' : '#'}#{signature}"
-      macmeth = get_path_suggestions(path).first
-      type = nil
-      unless macmeth.nil?
-        macmeths = Suggestion.pull(macmeth)
-        macro = path_macros[macmeth.path]
-        macro = macro.first unless macro.nil?
-        # @todo Smelly respond_to? call
-        if macro.nil? and macmeth.respond_to?(:code_object) and !macmeth.code_object.nil? and !macmeth.code_object.base_docstring.nil? and macmeth.code_object.base_docstring.all.include?('@!macro')
-          all = YARD::Docstring.parser.parse(macmeth.code_object.base_docstring.all).directives
-          macro = all.select{|m| m.tag.tag_name == 'macro'}.first
-        end
-        unless macro.nil?
-          docstring = YARD::Docstring.parser.parse(macro.tag.text).to_docstring
-          rt = docstring.tag(:return)
-          unless rt.nil? or rt.types.nil? or call_node.nil?
-            args = get_call_arguments(call_node)
-            type = "#{args[rt.types[0][1..-1].to_i-1]}"
-          end
-        end
-      end
-      type
-    end
-
     def current_workspace_sources
       @sources - [@virtual_source]
     end
