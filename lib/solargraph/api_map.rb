@@ -975,7 +975,6 @@ module Solargraph
       result = []
       nil_pins = []
       pins.each do |pin|
-        pin.resolve self
         if pin.nil_assignment? and pin.return_type.nil?
           nil_pins.push pin
         else
