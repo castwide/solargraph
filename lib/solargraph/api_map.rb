@@ -448,15 +448,40 @@ module Solargraph
       infer_pin(last, subns, subsc, [:public, :private, :protected])
     end
 
+    def infer_word_pin word, base_type, internal = false
+      pin = nil
+      namespace, scope = extract_namespace_and_scope(base_type)
+      if word == 'self' and internal
+        pin = nil
+        context = (internal ? namespace.split('::')[0..-2].join(';;') : '')
+        fqns = find_fully_qualified_namespace(namespace, context)
+        pin = get_path_suggestions(fqns).first unless fqns.nil?
+        return pin
+      end
+      fqns = find_fully_qualified_namespace(word, namespace)
+      pin = get_path_suggestions(fqns).first unless fqns.nil?
+      if pin.nil? and internal
+        if word.start_with?('@@')
+          pin = get_class_variable_pins(namespace).select{|pin| pin.name == word}.first
+          return nil if pin.nil?
+        elsif word.start_with?('@')
+          pin = get_instance_variable_pins(namespace, scope).select{|pin| pin.name == word}.first
+          return nil if pin.nil?
+        end
+      end
+      if pin.nil? and word.start_with?('$')
+        pin = get_global_variable_pins.select{|pin| pin.name == word}.first
+        return nil if pin.nil?
+      end
+      pin = get_constants(namespace, (internal ? namespace : '')).select{|pin| pin.name == word}.first if pin.nil?
+      pin = get_type_methods(base_type, (internal ? base_type : '')).select{|pin| pin.name == word}.first if pin.nil?
+      pin
+    end
+
     # @return [String]
     def infer_word_type word, base_type, internal = false
       return base_type if word == 'self' and internal
-      pin = nil
-      namespace, scope = extract_namespace_and_scope(base_type)
-      fqns = find_fully_qualified_namespace(word, namespace)
-      pin = get_path_suggestions(fqns).first unless fqns.nil?
-      pin = get_constants(namespace, (internal ? namespace : '')).select{|pin| pin.name == word}.first if pin.nil?
-      pin = get_type_methods(base_type, (internal ? base_type : '')).select{|pin| pin.name == word}.first if pin.nil?
+      pin = infer_word_pin word, base_type, internal
       return nil if pin.nil?
       pin.resolve self
       pin.return_type
