@@ -202,8 +202,10 @@ module Solargraph
       # from the current offset.
       #
       # @return [Array<Solargraph::Pin::LocalVariable>]
-      def local_variable_pins
+      def local_variable_pins name = nil
         @local_variable_pins ||= @source.local_variable_pins.select{|pin| pin.visible_from?(node)}
+        return @local_variable_pins if name.nil?
+        @local_variable_pins.select{|pin| pin.name == name}
       end
 
       private

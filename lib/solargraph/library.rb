@@ -106,6 +106,7 @@ module Solargraph
     # @param column [Integer] The zero-based column number
     # @return [Array<Solargraph::Pin::Base>]
     def signatures_at filename, line, column
+      return [] # @todo Temporarily disabled
       source = read(filename)
       api_map.virtualize source
       fragment = source.fragment_at(line, column)

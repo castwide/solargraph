@@ -50,7 +50,7 @@ module Solargraph
           # @return_type = api_map.infer_signature_type(signature, namespace, call_node: node)
           fragment = source.fragment_for(assignment_node)
           fragment.whole_signature
-          @return_type = api_map.signature_type(fragment) unless fragment.nil?
+          @return_type = api_map.infer_fragment_type(fragment) unless fragment.nil?
         end
       end
 
