@@ -148,7 +148,8 @@ module Solargraph
     # @param index [Integer]
     # @return [Array<AST::Node>]
     def tree_at(line, column)
-      offset = get_parsed_offset(line, column)
+      # offset = get_parsed_offset(line, column)
+      offset = Position.line_char_to_offset(@code, line, column)
       @all_nodes.reverse.each do |n|
         if n.respond_to?(:loc)
           if n.respond_to?(:begin) and n.respond_to?(:end)
@@ -261,24 +262,24 @@ module Solargraph
 
     private
 
-    def get_offset line, column, parsed
-      offset = 0
-      feed = 0
-      (parsed ? @code.gsub(/\r\n/, "\n") : @code).lines.each do |l|
-        break if line == feed
-        offset += l.length
-        feed += 1
-      end
-      offset + column
-    end
+    # def get_offset line, column, parsed
+    #   offset = 0
+    #   feed = 0
+    #   (parsed ? @code.gsub(/\r\n/, "\n") : @code).lines.each do |l|
+    #     break if line == feed
+    #     offset += l.length
+    #     feed += 1
+    #   end
+    #   offset + column
+    # end
 
-    def get_original_offset line, column
-      get_offset line, column, false
-    end
+    # def get_original_offset line, column
+    #   get_offset line, column, false
+    # end
 
-    def get_parsed_offset line, column
-      get_offset line, column, true
-    end
+    # def get_parsed_offset line, column
+    #   get_offset line, column, true
+    # end
 
     def reparse
       node, comments = Source.parse(@fixed, filename)

@@ -50,6 +50,8 @@ module Solargraph
         message = Message.select(request['method']).new(self, request)
         begin
           message.process
+        rescue NameError => e
+          STDERR.puts "NameError in Host"
         rescue Exception => e
           STDERR.puts e.message
           STDERR.puts e.backtrace
@@ -198,7 +200,7 @@ module Solargraph
 
       # @return [Array<Solargraph::Pin::Base>]
       def definitions_at filename, line, column
-        results = nil
+        results = []
         @change_semaphore.synchronize do
           results = library.definitions_at(filename, line, column)
         end

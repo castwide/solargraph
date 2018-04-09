@@ -56,6 +56,17 @@ module Solargraph
         @argument ||= !signature_position.nil?
       end
 
+      def chained?
+        if @chained.nil?
+          @chained = false
+          @tree.each do |n|
+            @chained = true if n.type == :send
+            break
+          end
+        end
+        @chained
+      end
+
       # @return [Fragment]
       def recipient
         return nil if signature_position.nil?

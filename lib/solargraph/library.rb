@@ -95,8 +95,7 @@ module Solargraph
       source = read(filename)
       api_map.virtualize source
       fragment = source.fragment_at(line, column)
-      result = api_map.define(fragment)
-      result
+      api_map.define(fragment)
     end
 
     # Get signature suggestions for the method at the specified file and
