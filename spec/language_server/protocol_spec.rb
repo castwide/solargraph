@@ -98,4 +98,12 @@ describe Protocol do
     response = @protocol.response
     expect(response['result']['items'].length > 0).to be(true)
   end
+
+  it "handles workspace/symbol" do
+    @protocol.request 'workspace/symbol', {
+      'query' => 'test'
+    }
+    response = @protocol.response
+    expect(response['error']).to be_nil
+  end
 end
