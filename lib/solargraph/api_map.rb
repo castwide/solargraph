@@ -589,11 +589,21 @@ module Solargraph
       type
     end
 
+    # @param fragment [Solargraph::Source::Fragment]
     def signify fragment
       return [] unless fragment.argument?
-      # pins = infer_signature_pins(fragment.recipient.whole_signature, fragment.recipient.namespace, fragment.recipient.scope)
-      # pins
-      return []
+      base, rest = fragment.recipient.whole_signature.split('.')
+      type = nil
+      lvar = prefer_non_nil_variables(fragment.local_variable_pins(base)).first
+      unless lvar.nil?
+        lvar.resolve self
+        type = lvar.return_type
+        return nil if type.nil?
+      end
+      type = infer_word_type(base, fragment.recipient.namespace, fragment.recipient.scope) if type.nil?
+      return nil if type.nil?
+      ns, sc = extract_namespace_and_scope(type)
+      tail_pins(rest, ns, sc, [:public, :private, :protected])
     end
 
     # Get the namespace's type (Class or Module).
