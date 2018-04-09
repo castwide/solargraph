@@ -99,6 +99,7 @@ module Solargraph
       def documentation
         if @documentation.nil? and !docstring.nil?
           @documentation = ReverseMarkdown.convert(helper.html_markup_rdoc(docstring), github_flavored: true)
+          @documentation.strip!
         end
         @documentation
       end

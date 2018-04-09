@@ -593,7 +593,8 @@ module Solargraph
     # @param fragment [Solargraph::Source::Fragment]
     def signify fragment
       return [] unless fragment.argument?
-      base, rest = fragment.recipient.whole_signature.split('.')
+      base, rest = fragment.recipient.whole_signature.split('.', 2)
+      return infer_word_pins(base, fragment.recipient.namespace, true) if rest.nil?
       type = nil
       lvar = prefer_non_nil_variables(fragment.local_variable_pins(base)).first
       unless lvar.nil?
@@ -601,7 +602,7 @@ module Solargraph
         type = lvar.return_type
         return [] if type.nil?
       end
-      type = infer_word_type(base, fragment.recipient.namespace, fragment.recipient.scope) if type.nil?
+      type = infer_word_type(base, fragment.namespace, fragment.scope) if type.nil?
       return [] if type.nil?
       ns, sc = extract_namespace_and_scope(type)
       tail_pins(rest, ns, sc, [:public, :private, :protected])
