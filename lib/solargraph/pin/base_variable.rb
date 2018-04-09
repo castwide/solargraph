@@ -49,10 +49,10 @@ module Solargraph
           return nil if signature.nil? or signature.empty? or signature == name or signature.split('.').first.strip == name
           # @todo This should be able to resolve signatures that start with local variables
           macro_type = nil
-          pin = api_map.tail_pin(signature, namespace, :class, [:public, :private, :protected])
-          unless pin.nil? or !pin.method?
-            macro_type = get_return_type_from_macro(pin, assignment_node)
-          end
+          # pin = api_map.tail_pin(signature, namespace, :class, [:public, :private, :protected])
+          # unless pin.nil? or !pin.method?
+          #   macro_type = get_return_type_from_macro(pin, assignment_node)
+          # end
           @return_type = macro_type || api_map.infer_type(signature, namespace, scope: :class)
         end
       end
