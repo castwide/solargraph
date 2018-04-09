@@ -29,11 +29,10 @@ module Solargraph
     tracer = Tracer.load(Dir.pwd)
     at_exit do
       tracer.stop
-      # puts "Results of trace: #{tracer.log}"
       File.open 'solargraph.txt', 'w' do |file|
         tracer.log.each do |issue|
           file.puts "[#{issue.severity}] #{issue.message}"
-          file.puts "  #{issue.backtrace[0]}"
+          file.puts "  #{issue.backtrace[0, 2].join($/ + '  ')}"
         end
       end
       if tracer.log.empty?
