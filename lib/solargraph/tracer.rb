@@ -13,15 +13,12 @@ module Solargraph
       Tracer.new(Solargraph::Workspace.new(directory))
     end
 
-    def run &block
+    def run
       raise 'Tracer is already running' if trace_point.enabled?
-      if block.nil?
-        trace_point.enable
-      else
-        trace_point.enable
-        block.call
-        trace_point.disable
-      end
+      trace_point.enable
+      return unless block_given?
+      yield
+      trace_point.disable
     end
 
     def stop
