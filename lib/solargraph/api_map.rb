@@ -380,6 +380,7 @@ module Solargraph
     # @param internal [Boolean]
     # @return [Array<Solargraph::Pin::Base>]
     def infer_word_pins word, base_type, internal = false
+      return [] if word.nil?
       pins = []
       namespace, scope = extract_namespace_and_scope(base_type)
       if word == 'self' and internal

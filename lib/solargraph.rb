@@ -33,7 +33,7 @@ module Solargraph
       File.open 'solargraph.txt', 'w' do |file|
         tracer.log.each do |issue|
           file.puts "[#{issue.severity}] #{issue.message}"
-          file.puts "  #{issue.backtrace.join("\n  ")}"
+          file.puts "  #{issue.backtrace[0]}"
         end
       end
       if tracer.log.empty?

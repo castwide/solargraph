@@ -18,27 +18,21 @@ module Solargraph
       # @return [String]
       attr_reader :method_name
 
-      # The expected return type of the method, as stipulated by its `@return`
-      # tag.
+      # The method's pin.
       #
-      # @return [String]
-      attr_reader :expected
-
-      # The actual type returned by the method. If this issue is an error, the
-      # actual type is neither the expected type nor one of its subclasses.
-      #
-      # @return [String]
-      attr_reader :actual
+      # @return [Solargraph::Pin::Method]
+      attr_reader :pin
 
       # The stack of callers at the moment the issue was logged.
       #
       # @return [Array<String>]
       attr_reader :backtrace
 
-      def initialize severity, message, method_name, expected, actual, backtrace
+      def initialize severity, message, method_name, pin, backtrace
         @severity = severity
         @message = message
         @method_name = method_name.to_s
+        @pin = pin
         @backtrace = backtrace
       end
 
