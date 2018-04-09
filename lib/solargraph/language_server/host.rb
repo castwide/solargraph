@@ -52,6 +52,8 @@ module Solargraph
           message.process
         rescue NameError => e
           STDERR.puts "NameError in Host"
+          STDERR.puts e.backtrace
+          message.set_error Solargraph::LanguageServer::ErrorCodes::INTERNAL_ERROR, "NameError in Host"
         rescue Exception => e
           STDERR.puts e.message
           STDERR.puts e.backtrace
@@ -212,6 +214,12 @@ module Solargraph
         @change_semaphore.synchronize do
           results = library.signatures_at(filename, line, column)
         end
+        results
+      end
+
+      def query_symbols query
+        results = nil
+        @change_semaphore.synchronize { results = library.query_symbols(query) }
         results
       end
 
