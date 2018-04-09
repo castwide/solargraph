@@ -119,4 +119,16 @@ describe Solargraph::Source::Fragment do
     fragment = source.fragment_at(1, 0)
     expect(fragment.string?).to be(false)
   end
+
+  it "infers methods from blanks" do
+    api_map = Solargraph::ApiMap.new
+    source = Solargraph::Source.load_string(%(
+      class Foo
+      end
+    ))
+    api_map.virtualize source
+    fragment = source.fragment_at(3, 0)
+    pins = api_map.complete(fragment).pins.map(&:path)
+    expect(pins).to include('Kernel#puts')
+  end
 end

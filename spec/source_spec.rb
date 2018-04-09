@@ -491,4 +491,21 @@ describe Solargraph::Source do
     pin = source.method_pins.select{|pin| pin.name == 'initialize'}.first
     expect(pin.visibility).to be(:private)
   end
+
+  it "creates resolvable local variable pins" do
+    api_map = Solargraph::ApiMap.new
+    source = Solargraph::Source.load_string(%(
+      class Foo
+        # @return [String]
+        def bar
+        end
+      end
+      foo = Foo.new.bar
+      foo
+    ))
+    api_map.virtualize source
+    lvar = source.local_variable_pins.first
+    lvar.resolve api_map
+    expect(lvar.return_type).to eq('String')
+  end
 end
