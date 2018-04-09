@@ -64,7 +64,7 @@ module Solargraph
     # If the source is in the workspace, virtualizing it has no effect. Only
     # one source can be virtualized at a time.
     #
-    # @param [Solargraph::Source]
+    # @param source [Solargraph::Source]
     def virtualize source
       eliminate @virtual_source unless @virtual_source.nil?
       if workspace.has_source?(source)
