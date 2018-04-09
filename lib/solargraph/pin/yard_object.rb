@@ -81,6 +81,15 @@ module Solargraph
         completion_item_kind == Solargraph::LanguageServer::CompletionItemKinds::METHOD
       end
 
+      def visibility
+        :public #@todo Resolve this
+      end
+
+      def scope
+        return nil unless code_object.is_a?(YARD::CodeObjects::MethodObject)
+        code_object.scope
+      end
+
       private
 
       def get_method_args

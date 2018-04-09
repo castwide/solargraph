@@ -21,12 +21,15 @@ module Solargraph
       def resolve api_map
         return unless return_type.nil?
         signature = resolve_node_signature(@tree[0].children[0])
-        meth = api_map.infer_signature_pins(signature, namespace, :class, node).first
+        # @todo Hardcoding :class scope might not be appropriate
+        # meth = api_map.infer_pin(signature, namespace, :class, [:public, :private, :protected], true)
+        meth = api_map.tail_pin(signature, namespace, :class, [:public, :private, :protected])
         return nil if meth.nil?
         if (Solargraph::CoreFills::METHODS_WITH_YIELDPARAM_SUBTYPES.include?(meth.path))
           base = signature.split('.')[0..-2].join('.')
           return nil if base.nil? or base.empty?
-          bmeth = api_map.infer_signature_pins(base, namespace, :class, node).first
+          # @todo Maybe use a fragment so this picks up local variables
+          bmeth = api_map.tail_pin(base, namespace, :class, [:public, :private, :protected])
           return nil if bmeth.nil?
           subtypes = get_subtypes(bmeth.return_type)
           @return_type = api_map.find_fully_qualified_namespace(subtypes[0], namespace)

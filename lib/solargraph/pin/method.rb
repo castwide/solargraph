@@ -43,6 +43,28 @@ module Solargraph
         @parameters ||= get_method_args
       end
 
+      def documentation
+        if @documentation.nil?
+          @documentation ||= super || ''
+          unless docstring.nil?
+            param_tags = docstring.tags(:param)
+            unless param_tags.nil? or param_tags.empty?
+              @documentation += "\n\n"
+              @documentation += "Params:\n"
+              lines = []
+              param_tags.each do |p|
+                l = "* #{p.name}"
+                l += " [#{p.types.join(', ')}]" unless p.types.empty?
+                l += " #{p.text}"
+                lines.push l
+              end
+              @documentation += lines.join("\n")
+            end
+          end
+        end
+        @documentation
+      end
+
       # @todo This method was temporarily migrated directly from Suggestion
       # @return [Array<String>]
       def params

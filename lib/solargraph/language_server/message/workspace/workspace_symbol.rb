@@ -2,7 +2,7 @@ class Solargraph::LanguageServer::Message::Workspace::WorkspaceSymbol < Solargra
   include Solargraph::LanguageServer::UriHelpers
 
   def process
-    pins = host.library.query_symbols(params['query'])
+    pins = host.query_symbols(params['query'])
     info = pins.map do |pin|
       parts = pin.location.split(':')
       char = parts.pop.to_i

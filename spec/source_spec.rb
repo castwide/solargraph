@@ -116,13 +116,13 @@ describe Solargraph::Source do
         end
       end
     ))
-    expect(source.namespace_pins.length).to eq(2)
-    expect(source.namespace_pins[0].path).to eq('Foo')
-    expect(source.namespace_pins[0].type).to eq(:module)
-    expect(source.namespace_pins[0].return_type).to eq('Module<Foo>')
-    expect(source.namespace_pins[1].path).to eq('Foo::Bar')
-    expect(source.namespace_pins[1].type).to eq(:class)
-    expect(source.namespace_pins[1].return_type).to eq('Class<Foo::Bar>')
+    expect(source.namespace_pins.length).to eq(3)
+    expect(source.namespace_pins[1].path).to eq('Foo')
+    expect(source.namespace_pins[1].type).to eq(:module)
+    expect(source.namespace_pins[1].return_type).to eq('Module<Foo>')
+    expect(source.namespace_pins[2].path).to eq('Foo::Bar')
+    expect(source.namespace_pins[2].type).to eq(:class)
+    expect(source.namespace_pins[2].return_type).to eq('Class<Foo::Bar>')
   end
 
   it "pins class methods" do
@@ -490,5 +490,22 @@ describe Solargraph::Source do
     ')
     pin = source.method_pins.select{|pin| pin.name == 'initialize'}.first
     expect(pin.visibility).to be(:private)
+  end
+
+  it "creates resolvable local variable pins" do
+    api_map = Solargraph::ApiMap.new
+    source = Solargraph::Source.load_string(%(
+      class Foo
+        # @return [String]
+        def bar
+        end
+      end
+      foo = Foo.new.bar
+      foo
+    ))
+    api_map.virtualize source
+    lvar = source.local_variable_pins.first
+    lvar.resolve api_map
+    expect(lvar.return_type).to eq('String')
   end
 end

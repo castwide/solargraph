@@ -6,6 +6,7 @@ module Solargraph
       def initialize source, node, namespace
         super
         @tried_to_detect_return_type = false
+        @tried_to_resolve_return_type = false
       end
 
       def name
@@ -20,7 +21,7 @@ module Solargraph
         if @return_type.nil? and !@tried_to_detect_return_type
           @tried_to_detect_return_type = true
           if docstring.nil?
-            @return_type ||= literal_from_assignment
+            @return_type ||= infer_literal_node_type(assignment_node)
           else
             tag = docstring.tag(:type)
             @return_type = tag.types[0] unless tag.nil?
@@ -34,7 +35,7 @@ module Solargraph
       end
 
       def nil_assignment?
-        assignment_node.type == :nil
+        assignment_node.nil? or assignment_node.type == :nil
       end
 
       def signature
@@ -43,9 +44,16 @@ module Solargraph
 
       # @param api_map [Solargraph::ApiMap]
       def resolve api_map
-        if return_type.nil?
+        if return_type.nil? and !@tried_to_resolve_return_type
+          @tried_to_detect_return_type = true
           return nil if signature.nil? or signature.empty? or signature == name or signature.split('.').first.strip == name
-          @return_type = api_map.infer_signature_type(signature, namespace, call_node: node)
+          # @todo This should be able to resolve signatures that start with local variables
+          macro_type = nil
+          # pin = api_map.tail_pin(signature, namespace, :class, [:public, :private, :protected])
+          # unless pin.nil? or !pin.method?
+          #   macro_type = get_return_type_from_macro(pin, assignment_node)
+          # end
+          @return_type = macro_type || api_map.infer_type(signature, namespace, scope: :class)
         end
       end
 
@@ -55,8 +63,29 @@ module Solargraph
 
       private
 
-      def literal_from_assignment
-        infer_literal_node_type(assignment_node)
+      def get_call_arguments node
+        return get_call_arguments(node.children[1]) if [:ivasgn, :cvasgn, :lvasgn].include?(node.type)
+        return [] unless node.type == :send
+        result = []
+        node.children[2..-1].each do |c|
+          result.push unpack_name(c)
+        end
+        result
+      end
+
+      def get_return_type_from_macro method_pin, call_node
+        return nil if method_pin.docstring.nil?
+        type = nil
+        all = YARD::Docstring.parser.parse(method_pin.docstring.all).directives
+        macro = all.select{|m| m.tag.tag_name == 'macro'}.first
+        return nil if macro.nil?
+        macstring = YARD::Docstring.parser.parse(macro.tag.text).to_docstring
+        rt = macstring.tag(:return)
+        unless rt.nil? or rt.types.nil?
+          args = get_call_arguments(call_node)
+          type = "#{args[rt.types[0][1..-1].to_i-1]}"
+        end
+        type
       end
     end
   end

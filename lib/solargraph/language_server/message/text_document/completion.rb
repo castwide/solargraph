@@ -11,7 +11,6 @@ module Solargraph
               processed = false
               until processed
                 if host.changing?(params['textDocument']['uri'])
-                  # STDERR.puts "Waiting..."
                   if Time.now - start > 1
                     set_error Solargraph::LanguageServer::ErrorCodes::INTERNAL_ERROR, 'Completion request timed out'
                     processed = true
@@ -23,9 +22,24 @@ module Solargraph
                 sleep 0.1 unless processed
               end
             rescue Exception => e
-              STDERR.puts e.message
-              STDERR.puts e.backtrace
-              set_error ErrorCodes::INTERNAL_ERROR, e.message
+              # HACK: Ignoring NameError because inspecting it can hang the
+              # process
+              if e.class == NameError
+                STDERR.puts "Error in textDocument/completion: #{e.class}"
+                set_error ErrorCodes::INTERNAL_ERROR, "Error in textDocument/completion: #{e.class}"
+              else
+                STDERR.puts e.message
+                STDERR.puts e.backtrace
+                # Ignore 'Invalid offset' errors, since they usually just mean
+                # that the document is in the process of changing.
+                if e.message.include?('Invalid offset')
+                  # @todo Should this result be marked as incomplete? It might
+                  #   be possible to resolve it after changes are finished.
+                  set_result empty_result
+                else
+                  set_error ErrorCodes::INTERNAL_ERROR, e.message
+                end
+              end
             end
           end
 

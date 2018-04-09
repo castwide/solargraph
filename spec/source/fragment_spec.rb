@@ -89,4 +89,46 @@ describe Solargraph::Source::Fragment do
     expect(fragment.word).to eq('b')
     expect(fragment.whole_word).to eq('baz')
   end
+
+  it "detects a recipient of an argument" do
+    source = Solargraph::Source.load_string('abc.def(g)')
+    fragment = source.fragment_at(0, 8)
+    # expect(fragment.argument?).to be(true)
+    expect(fragment.recipient.whole_signature).to eq('abc.def')
+  end
+
+  it "detects a recipient of multiple arguments" do
+    source = Solargraph::Source.load_string('abc.def(g, h)')
+    fragment = source.fragment_at(0, 11)
+    # expect(fragment.argument?).to be(true)
+    expect(fragment.recipient.whole_signature).to eq('abc.def')
+  end
+
+  it "knows positions in strings" do
+    source = Solargraph::Source.load_string("x = '123'")
+    fragment = source.fragment_at(0, 1)
+    expect(fragment.string?).to be(false)
+    fragment = source.fragment_at(0, 5)
+    expect(fragment.string?).to be(true)
+  end
+
+  it "knows positions in comments" do
+    source = Solargraph::Source.load_string("# comment\nx = '123'")
+    fragment = source.fragment_at(0, 1)
+    expect(fragment.comment?).to be(true)
+    fragment = source.fragment_at(1, 0)
+    expect(fragment.string?).to be(false)
+  end
+
+  it "infers methods from blanks" do
+    api_map = Solargraph::ApiMap.new
+    source = Solargraph::Source.load_string(%(
+      class Foo
+      end
+    ))
+    api_map.virtualize source
+    fragment = source.fragment_at(3, 0)
+    pins = api_map.complete(fragment).pins.map(&:path)
+    expect(pins).to include('Kernel#puts')
+  end
 end

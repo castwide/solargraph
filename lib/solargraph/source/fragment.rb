@@ -1,37 +1,76 @@
 module Solargraph
   class Source
     class Fragment
-      # @return [Integer]
-      attr_reader :offset
-
       include NodeMethods
 
+      attr_reader :tree
+
+      attr_reader :line
+
+      attr_reader :column
+
       # @param source [Solargraph::Source]
-      # @param offset [Integer]
-      def initialize source, offset
+      # @param line [Integer]
+      # @param column [Integer]
+      def initialize source, line, column, tree
         # @todo Split this object from the source. The source can change; if
         #   it does, this object's data should not.
         @source = source
         @code = source.code
-        @offset = offset
+        @line = line
+        @column = column
+        @tree = tree
       end
 
       # Get the node at the current offset.
       #
       # @return [Parser::AST::Node]
       def node
-        @node ||= @source.node_at(@offset)
+        @node ||= @tree.first
       end
 
       # Get the fully qualified namespace at the current offset.
       #
       # @return [String]
       def namespace
+        # if @namespace.nil?
+        #   base = @source.parent_node_from(line, column, :class, :module, :def, :defs)
+        #   @namespace ||= @source.namespace_for(base)
+        # end
+        # @namespace
         if @namespace.nil?
-          base = @source.parent_node_from(@offset, :class, :module, :def, :defs)
-          @namespace ||= @source.namespace_for(base)
+          parts = []
+          @tree.each do |n|
+            next unless n.kind_of?(AST::Node)
+            if n.type == :class or n.type == :module
+              parts.unshift unpack_name(n.children[0])
+            end
+          end
+          @namespace = parts.join('::')
         end
         @namespace
+      end
+
+      # @return [Boolean]
+      def argument?
+        @argument ||= !signature_position.nil?
+      end
+
+      def chained?
+        if @chained.nil?
+          @chained = false
+          @tree.each do |n|
+            @chained = true if n.type == :send
+            break
+          end
+        end
+        @chained
+      end
+
+      # @return [Fragment]
+      def recipient
+        return nil if signature_position.nil?
+        @recipient ||= @source.fragment_at(*signature_position)
       end
 
       # Get the scope at the current offset.
@@ -40,12 +79,12 @@ module Solargraph
       def scope
         if @scope.nil?
           @scope = :class
-          tree = @source.tree_at(@offset)
+          tree = @tree.clone
           until tree.empty?
             cursor = tree.shift
             break if cursor.type == :class or cursor.type == :module
             if cursor.type == :def
-              pin = @source.method_pins.select{|pin| pin.contain?(@offset)}.first
+              pin = @source.method_pins.select{|pin| pin.contain?(offset)}.first
               # @todo The pin should never be nil here, but we're guarding it just in case
               @scope = (pin.nil? ? :instance : pin.scope)
             end
@@ -93,7 +132,7 @@ module Solargraph
       #
       # @return [String]
       def remainder
-        @remainder ||= remainder_at(@offset)
+        @remainder ||= remainder_at(offset)
       end
 
       # Get the whole word at the current offset, including the remainder.
@@ -118,28 +157,29 @@ module Solargraph
       #
       # @return [String]
       def phrase
-        @phrase ||= @code[signature_data[0]..@offset]
+        @phrase ||= @code[signature_data[0]..offset]
       end
 
       # Get the word before the current offset. Given the text `foo.bar`, the
       # word at offset 6 is `ba`.
       def word
-        @word ||= word_at(@offset)
+        @word ||= word_at(offset)
       end
 
       # True if the current offset is inside a string.
       #
       # @return [Boolean]
       def string?
-        @string = @source.string_at?(@offset) if @string.nil?
-        @string
+        # @string = @source.string_at?(offset) if @string.nil?
+        # @string
+        @string ||= (node.type == :str or node.type == :dstr)
       end
 
       # True if the current offset is inside a comment.
       #
       # @return [Boolean]
       def comment?
-        @comment = get_comment_at(@offset) if @comment.nil?
+        @comment = get_comment_at(offset) if @comment.nil?
         @comment
       end
 
@@ -147,7 +187,7 @@ module Solargraph
       #
       # @return [Range]
       def word_range
-        @word_range ||= word_range_at(@offset, false)
+        @word_range ||= word_range_at(offset, false)
       end
 
       # Get the range of the whole word at the current offset, including its
@@ -155,21 +195,37 @@ module Solargraph
       #
       # @return [Range]
       def whole_word_range
-        @whole_word_range ||= word_range_at(@offset, true)
+        @whole_word_range ||= word_range_at(offset, true)
       end
 
       # Get an array of all the local variables in the source that are visible
       # from the current offset.
       #
       # @return [Array<Solargraph::Pin::LocalVariable>]
-      def local_variable_pins
+      def local_variable_pins name = nil
         @local_variable_pins ||= @source.local_variable_pins.select{|pin| pin.visible_from?(node)}
+        return @local_variable_pins if name.nil?
+        @local_variable_pins.select{|pin| pin.name == name}
       end
 
       private
 
+      # @return [Integer]
+      def offset
+        @offset ||= get_offset(line, column)
+      end
+
+      def get_offset line, column
+        Position.line_char_to_offset(@code, line, column)
+      end
+
+      def get_position_at(offset)
+        pos = Position.from_offset(@code, offset)
+        [pos.line, pos.character]
+      end
+
       def signature_data
-        @signature_data ||= get_signature_data_at(@offset)
+        @signature_data ||= get_signature_data_at(offset)
       end
 
       def get_signature_data_at index
@@ -184,7 +240,8 @@ module Solargraph
           unless !in_whitespace and string?
             break if brackets > 0 or parens > 0 or squares > 0
             char = @code[index, 1]
-            if brackets.zero? and parens.zero? and squares.zero? and [' ', "\n", "\t"].include?(char)
+            break if char.nil? # @todo Is this the right way to handle this?
+            if brackets.zero? and parens.zero? and squares.zero? and [' ', "\r", "\n", "\t"].include?(char)
               in_whitespace = true
             else
               if brackets.zero? and parens.zero? and squares.zero? and in_whitespace
@@ -223,25 +280,33 @@ module Solargraph
           end
           index -= 1
         end
+        # @todo Smelly exceptional case for numbers
+        signature.sub!(/^[0-9]+\./, 'Integer.new.')
         if signature.start_with?('.')
-          pn = @source.node_at(index)
-          unless pn.nil?
-            literal = infer_literal_node_type(pn)
-            unless literal.nil?
-              signature = "#{literal}.new#{signature}"
-              # @todo Determine the index from the beginning of the literal node?
+          # @todo Smelly exceptional case for arrays
+          if signature.start_with?('.[].')
+            signature.sub!(/^\.\[\]/, 'Array.new')
+          else
+            line, col = get_position_at(index < 0 ? 0 : index)
+            pn = @source.node_at(line, col)
+            unless pn.nil?
+              literal = infer_literal_node_type(pn)
+              unless literal.nil?
+                signature = "#{literal}.new#{signature}"
+                # @todo Determine the index from the beginning of the literal node?
+              end
             end
           end
         end
         [index + 1, signature]
-      end  
+      end
 
       # Determine if the specified index is inside a comment.
       #
       # @return [Boolean]
       def get_comment_at(index)
         return false if string?
-        line, col = Solargraph::Source.get_position_at(@source.code, index)
+        # line, col = get_position_at(index)
         @source.comments.each do |c|
           return true if index > c.location.expression.begin_pos and index <= c.location.expression.end_pos
         end
@@ -298,8 +363,8 @@ module Solargraph
         end
         end_offset = cursor
         end_offset = start_offset if end_offset < start_offset
-        start_pos = Solargraph::Source.get_position_at(@code, start_offset)
-        end_pos = Solargraph::Source.get_position_at(@code, end_offset)
+        start_pos = get_position_at(start_offset)
+        end_pos = get_position_at(end_offset)
         Solargraph::Source::Range.from_to(start_pos[0], start_pos[1], end_pos[0], end_pos[1])
       end
 
@@ -314,6 +379,26 @@ module Solargraph
         @code[index..cursor-1]
       end
 
+      def signature_position
+        if @signature_position.nil?
+          open_parens = 0
+          cursor = offset - 1
+          while cursor >= 0
+            break if cursor < 0
+            if @code[cursor] == ')'
+              open_parens -= 1
+            elsif @code[cursor] == '('
+              open_parens += 1
+            end
+            break if open_parens == 1
+            cursor -= 1
+          end
+          if cursor >= 0
+            @signature_position = get_position_at(cursor)
+          end
+        end
+        @signature_position
+      end
     end
   end
 end

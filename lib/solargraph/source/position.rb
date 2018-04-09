@@ -21,6 +21,46 @@ module Solargraph
           character: character
         }
       end
+
+      def self.to_offset text, position
+        result = 0
+        feed = 0
+        line = position.line
+        column = position.character
+        text.lines.each do |l|
+          line_length = l.length
+          char_length = l.chomp.length
+          if feed == line
+            result += column
+            break
+          end
+          result += line_length
+          feed += 1
+        end
+        result
+      end
+
+      def self.line_char_to_offset text, line, character
+        to_offset(text, Position.new(line, character))
+      end
+
+      def self.from_offset text, offset
+        cursor = 0
+        line = 0
+        character = nil
+        text.lines.each do |l|
+          line_length = l.length
+          char_length = l.chomp.length
+          if cursor + char_length >= offset
+            character = offset - cursor
+            break
+          end
+          cursor += line_length
+          line += 1
+        end
+        raise "Invalid offset" if character.nil?
+        Position.new(line, character)
+      end
     end
   end
 end

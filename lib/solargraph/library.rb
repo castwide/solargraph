@@ -62,6 +62,17 @@ module Solargraph
     # @param filename [String]
     def close filename
       source_hash.delete filename
+      if workspace.has_file?(filename)
+        source = Solargraph::Source.load(filename)
+        workspace.merge source
+      end
+    end
+
+    def overwrite filename, version
+      source = source_hash[filename]
+      return if source.nil?
+      STDERR.puts "Save out of sync for #{filename}" if source.version > version
+      open filename, File.read(filename), version
     end
 
     # Get completion suggestions at the specified file and location.
@@ -71,10 +82,9 @@ module Solargraph
     # @param column [Integer] The zero-based column number
     # @return [ApiMap::Completion]
     def completions_at filename, line, column
-      # @type [Solargraph::Source]
-      source = nil
       source = read(filename)
-      fragment = Solargraph::Source::Fragment.new(source, source.get_offset(line, column))
+      api_map.virtualize source
+      fragment = source.fragment_at(line, column)
       api_map.complete(fragment)
     end
 
@@ -87,9 +97,9 @@ module Solargraph
     # @return [Array<Solargraph::Pin::Base>]
     def definitions_at filename, line, column
       source = read(filename)
-      fragment = Solargraph::Source::Fragment.new(source, source.get_offset(line, column))
-      result = api_map.define(fragment)
-      result
+      api_map.virtualize source
+      fragment = source.fragment_at(line, column)
+      api_map.define(fragment)
     end
 
     # Get signature suggestions for the method at the specified file and
@@ -101,8 +111,9 @@ module Solargraph
     # @return [Array<Solargraph::Pin::Base>]
     def signatures_at filename, line, column
       source = read(filename)
-      fragment = Solargraph::Source::Fragment.new(source, signature_index_before(source, source.get_offset(line, column)))
-      api_map.define(fragment).select{|pin| pin.method?}
+      api_map.virtualize source
+      fragment = source.fragment_at(line, column)
+      api_map.signify(fragment)
     end
 
     # Get the pin at the specified location or nil if the pin does not exist.
@@ -163,6 +174,11 @@ module Solargraph
       api_map.get_path_suggestions(path)
     end
 
+    def synchronize updater
+      source = read(updater.filename)
+      source.synchronize updater
+    end
+
     # Get the current text of a file in the library.
     #
     # @param filename [String]
@@ -202,25 +218,8 @@ module Solargraph
     def read filename
       source = source_hash[filename]
       raise FileNotFoundError, "Source not found for #{filename}" if source.nil?
-      api_map.virtualize source
+      # api_map.virtualize source
       source
-    end
-
-    def signature_index_before source, index
-      open_parens = 0
-      cursor = index - 1
-      while cursor >= 0
-        break if cursor < 0
-        if source.code[cursor] == ')'
-          open_parens -= 1
-        elsif source.code[cursor] == '('
-          open_parens += 1
-        end
-        break if open_parens == 1
-        cursor -= 1
-      end
-      cursor = 0 if cursor < 0
-      cursor
     end
   end
 end

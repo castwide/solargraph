@@ -52,6 +52,7 @@ module Solargraph
             }
             response[:result] = result unless result.nil?
             response[:error] = error unless error.nil?
+            response[:result] = nil if result.nil? and error.nil?
             json = response.to_json
             envelope = "Content-Length: #{json.bytesize}\r\n\r\n#{json}"
             host.queue envelope

@@ -4,6 +4,9 @@ module Solargraph
       module TextDocument
         class OnTypeFormatting < Base
           def process
+            # @todo Temporarily disabled
+            set_result nil
+            return
             src = host.library.checkout(uri_to_file(params['textDocument']['uri']))
             offset = src.get_offset(params['position']['line'], params['position']['character'])
             if src.string_at?(offset-1) and params['ch'] == '{' and src.code[offset-2,2] == '#{'
