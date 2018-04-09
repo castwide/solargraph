@@ -352,15 +352,20 @@ module Solargraph
     end
 
     # @return [Solargraph::Pin::Base]
-    def tail_pin signature, fqns, scope, visibility
+    def tail_pins signature, fqns, scope, visibility
       type = combine_type(fqns, scope)
-      return infer_word_pin(signature, type, true) unless signature.include?('.')
+      return infer_word_pins(signature, type, true) unless signature.include?('.')
       parts = signature.split('.')
       last = parts.pop
       base = parts.join('.')
-      type = infer_type(base, fqns, scope: :scope)
-      return nil if type.nil?
-      infer_word_pin(last, type, false)
+      type = infer_type(base, fqns, scope: scope)
+      return [] if type.nil?
+      infer_word_pins(last, type, true)
+    end
+
+    # @return [Solargraph::Pin::Base]
+    def tail_pin signature, fqns, scope, visibility
+      tail_pins(signature, fqns, scope, visibility).first
     end
 
     # Get an array of pins for a word in the provided context. A word can be
@@ -557,28 +562,11 @@ module Solargraph
       Completion.new(filtered, fragment.whole_word_range)
     end
 
+    # @param fragment [Solargraph::Source::Fragment]
     # @return [Array<Solargraph::Pin::Base>]
     def define fragment
       return [] if fragment.string? or fragment.comment?
-      rest = fragment.whole_signature.split('.')
-      return [] if rest.empty?
-      base = rest.shift
-      result = prefer_non_nil_variables(fragment.local_variable_pins(base))
-      if result.empty?
-        frag_type = combine_type(fragment.namespace, fragment.scope)
-        result.concat infer_word_pins(base, frag_type, true)
-      end
-      return [] if result.empty?
-      until rest.empty?
-        return [] if result.empty?
-        meth = rest.shift
-        last_pin = result.first
-        last_pin.resolve self
-        type = last_pin.return_type
-        return [] if type.nil?
-        result = infer_method_pins(meth, type)
-      end
-      result
+      tail_pins fragment.whole_signature, fragment.namespace, fragment.scope, [:public, :private, :protected]
     end
 
     def infer_fragment_type fragment
