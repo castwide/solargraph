@@ -48,9 +48,8 @@ module Solargraph
               if @buffer.bytesize == @content_length
                 begin
                   process JSON.parse(@buffer)
-                rescue Exception => e
+                rescue JSON::ParserError => e
                   STDERR.puts "Failed to parse request: #{e.message}"
-                  STDERR.puts e.backtrace.inspect
                   STDERR.puts "Buffer: #{@buffer}"
                 ensure
                   @buffer.clear

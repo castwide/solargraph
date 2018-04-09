@@ -2,6 +2,8 @@ require 'open3'
 require 'shellwords'
 
 module Solargraph
+  class DiagnosticsError < RuntimeError; end
+
   module Diagnostics
     class Rubocop
       def initialize
@@ -13,10 +15,10 @@ module Solargraph
           cmd = "rubocop -f j -s #{Shellwords.escape(filename)}"
           o, e, s = Open3.capture3(cmd, stdin_data: text)
           make_array text, JSON.parse(o)
+        rescue JSON::ParserError
+          raise DiagnosticsError, 'RuboCop returned invalid data'
         rescue Exception => e
-          STDERR.puts "#{e}"
-          STDERR.puts "#{e.backtrace}"
-          nil
+          raise DiagnosticsError, 'An internal error occurred while running diagnostics'
         end
       end
 

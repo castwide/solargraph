@@ -9,6 +9,7 @@ module Solargraph::LanguageServer::Message::Workspace
     include Solargraph::LanguageServer::UriHelpers
 
     def process
+      # @param change [Hash]
       params['changes'].each do |change|
         if change['type'] == CREATED
           STDERR.puts "TODO: Need to handle a created file?"
