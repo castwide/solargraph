@@ -353,7 +353,7 @@ module Solargraph
 
     # @return [Solargraph::Pin::Base]
     def tail_pins signature, fqns, scope, visibility
-      return nil if signature.nil?
+      return [] if signature.nil?
       type = combine_type(fqns, scope)
       return infer_word_pins(signature, type, true) unless signature.include?('.')
       parts = signature.split('.')
