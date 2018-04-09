@@ -51,7 +51,13 @@ describe Protocol do
     @protocol.request 'textDocument/didOpen', {
       'textDocument' => {
         'uri' => 'file:///file.rb',
-        'text' => 'a = ""',
+        'text' => %(
+          class Foo
+            def bar
+            end
+          end
+          foo = Foo
+        ),
         'version' => 0
       }
     }
@@ -69,12 +75,12 @@ describe Protocol do
         {
           'range' => {
             'start' => {
-              'line' => 0,
-              'character' => 6
+              'line' => 5,
+              'character' => 19
             },
             'end' => {
-              'line' => 0,
-              'character' => 6
+              'line' => 5,
+              'character' => 19
             }
           },
           'text' => '.'
@@ -105,5 +111,20 @@ describe Protocol do
     }
     response = @protocol.response
     expect(response['error']).to be_nil
+  end
+
+  it "handles textDocument/definition" do
+    @protocol.request 'textDocument/definition', {
+      'textDocument' => {
+        'uri' => 'file:///file.rb'
+      },
+      'position' => {
+        'line' => 5,
+        'character' => 17
+      }
+    }
+    response = @protocol.response
+    expect(response['error']).to be_nil
+    expect(response['result']).not_to be_nil
   end
 end
