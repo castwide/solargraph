@@ -265,7 +265,7 @@ module Solargraph
           end
         end
         # @todo Might want @source.qualify(base) here
-        base + (rest.nil? ? '' : ".#{rest}")
+        @source.qualify(base, namespace) + (rest.nil? ? '' : ".#{rest}")
       end
 
       # @return [Integer]
