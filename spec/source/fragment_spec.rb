@@ -145,4 +145,11 @@ describe Solargraph::Source::Fragment do
     expect(fragment.base_chain).to eq('')
     expect(fragment.whole_chain).to eq('method_call')
   end
+
+  it "handles signatures ending with ." do
+    source = Solargraph::Source.new('Foo::Bar.method_call.')
+    fragment = source.fragment_at(0, 21)
+    expect(fragment.signature).to eq('Foo::Bar.method_call.')
+    expect(fragment.base).to eq('Foo::Bar.method_call')
+  end
 end
