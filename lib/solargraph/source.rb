@@ -43,13 +43,18 @@ module Solargraph
 
     include NodeMethods
 
-    def initialize code, node, comments, filename, stubbed_lines = []
+    # def initialize code, node, comments, filename, stubbed_lines = []
+    def initialize code, filename = nil
       @code = code
       @fixed = code
       @filename = filename
-      @stubbed_lines = stubbed_lines
+      # @stubbed_lines = stubbed_lines
       @version = 0
-      process_parsed node, comments
+      begin
+        parse
+      rescue
+        hard_fix_node
+      end
     end
 
     def macro path
@@ -216,12 +221,12 @@ module Solargraph
       @version = updater.version
       return if @code == original_code
       begin
-        reparse
+        parse
         @fixed = @code
       rescue Parser::SyntaxError => e
         @fixed = updater.repair(original_fixed)
         begin
-          reparse
+          parse
         rescue Parser::SyntaxError => e
           hard_fix_node
         end
@@ -260,36 +265,23 @@ module Solargraph
       Fragment.new(self, line, column, inside)
     end
 
+    def parsed?
+      @parsed
+    end
+
     private
 
-    # def get_offset line, column, parsed
-    #   offset = 0
-    #   feed = 0
-    #   (parsed ? @code.gsub(/\r\n/, "\n") : @code).lines.each do |l|
-    #     break if line == feed
-    #     offset += l.length
-    #     feed += 1
-    #   end
-    #   offset + column
-    # end
-
-    # def get_original_offset line, column
-    #   get_offset line, column, false
-    # end
-
-    # def get_parsed_offset line, column
-    #   get_offset line, column, true
-    # end
-
-    def reparse
+    def parse
       node, comments = Source.parse(@fixed, filename)
       process_parsed node, comments
+      @parsed = true
     end
 
     def hard_fix_node
       @fixed = @code.gsub(/[^\s]/, ' ')
       node, comments = Source.parse(@fixed, filename)
       process_parsed node, comments
+      @parsed = false
     end
 
     def process_parsed node, comments
@@ -331,7 +323,7 @@ module Solargraph
               attribute_pins.push Solargraph::Pin::Directed::Attribute.new(self, k.node, ns, :writer, docstring, "#{d.tag.name}=")
             end
           elsif d.tag.tag_name == 'method'
-            gen_src = Source.virtual("def #{d.tag.name};end", filename)
+            gen_src = Source.new("def #{d.tag.name};end", filename)
             gen_pin = gen_src.method_pins.first
             method_pin_map[ns] ||= []
             method_pin_map[ns].push Solargraph::Pin::Directed::Method.new(gen_src, gen_pin.node, ns, :instance, :public, docstring, gen_pin.name)
@@ -583,20 +575,24 @@ module Solargraph
       end
 
       # @deprecated Use load_string instead
-      def virtual code, filename = nil
-        load_string code, filename
-      end
+      # def virtual code, filename = nil
+      #   load_string code, filename
+      # end
 
       # @return [Solargraph::Source]
       def load_string code, filename = nil
-        begin
-          node, comments = parse(code, filename)
-          Source.new(code, node, comments, filename)
-        rescue Parser::SyntaxError => e
-          tmp = code.gsub(/[^ \t\r\n]/, ' ')
-          node, comments = parse(tmp, filename)
-          Source.new(code, node, comments, filename)
-        end
+        # source = Source.allocate
+        # source.instance_variable_set(:@filename, filename)
+        # source.reparse code
+        # begin
+        #   node, comments = parse(code, filename)
+        #   Source.new(code, node, comments, filename)
+        # rescue Parser::SyntaxError => e
+        #   tmp = code.gsub(/[^ \t\r\n]/, ' ')
+        #   node, comments = parse(tmp, filename)
+        #   Source.new(code, node, comments, filename)
+        # end
+        Source.new code, filename
       end
 
       def parse code, filename = nil

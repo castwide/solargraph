@@ -11,7 +11,7 @@ describe Solargraph::Source do
     code = %(
       require 'solargraph'
     )
-    source = Solargraph::Source.virtual(code, 'file.rb')
+    source = Solargraph::Source.new(code, 'file.rb')
     expect(source.required).to include('solargraph')
   end
 
@@ -20,7 +20,7 @@ describe Solargraph::Source do
       path = 'solargraph'
       require path
     )
-    source = Solargraph::Source.virtual(code, 'file.rb')
+    source = Solargraph::Source.new(code, 'file.rb')
     expect(source.required.length).to eq(0)
   end
 
@@ -33,7 +33,7 @@ describe Solargraph::Source do
         # @!attribute [r,w] boo
       end
     )
-    source = Solargraph::Source.virtual(code, 'file.rb')
+    source = Solargraph::Source.new(code, 'file.rb')
     expect(source.attribute_pins.length).to eq(5)
     expect(source.attribute_pins[0].name).to eq('bar')
     expect(source.attribute_pins[0].return_type).to eq('String')
@@ -52,7 +52,7 @@ describe Solargraph::Source do
         #   @return [String]
       end
     )
-    source = Solargraph::Source.virtual(code, 'file.rb')
+    source = Solargraph::Source.new(code, 'file.rb')
     expect(source.method_pins.length).to eq(1)
     expect(source.method_pins[0].name).to eq('bar')
     expect(source.method_pins[0].return_type).to eq('String')
@@ -262,7 +262,7 @@ describe Solargraph::Source do
         end
       end
     )
-    source = Solargraph::Source.virtual(code, 'file.rb')
+    source = Solargraph::Source.new(code, 'file.rb')
     expect(source.method_pins.length).to eq(2)
     # @type [Solargraph::Pin::Method]
     bar = source.method_pins[0]
@@ -285,7 +285,7 @@ describe Solargraph::Source do
         attr_reader :bar
       end
     )
-    source = Solargraph::Source.virtual(code, 'file.rb')
+    source = Solargraph::Source.new(code, 'file.rb')
     expect(source.attribute_pins.length).to eq(1)
     # @type [Solargraph::Pin::Attribute]
     pin = source.attribute_pins[0]
@@ -297,7 +297,7 @@ describe Solargraph::Source do
     code = %(
       $foo = String.new('1,2').split(',')
     )
-    source = Solargraph::Source.virtual(code, 'file.rb')
+    source = Solargraph::Source.new(code, 'file.rb')
     expect(source.global_variable_pins[0].signature).to eq('String.new.split')
   end
 
@@ -310,7 +310,7 @@ describe Solargraph::Source do
         end
       end
     )
-    source = Solargraph::Source.virtual(code, 'file.rb')
+    source = Solargraph::Source.new(code, 'file.rb')
     expect(source.method_pins[0].docstring.to_s).to eq('My method')
     expect(source.method_pins[0].docstring.tag(:return)).to be_kind_of(YARD::Tags::Tag)
   end
@@ -323,7 +323,7 @@ describe Solargraph::Source do
       end
       module Baz;end
     )
-    source = Solargraph::Source.virtual(code, 'file.rb')
+    source = Solargraph::Source.new(code, 'file.rb')
     expect(source.namespaces).to include('Foo')
     expect(source.namespaces).to include('Foo::Bar')
     expect(source.namespaces).to include('Baz')
@@ -336,7 +336,7 @@ describe Solargraph::Source do
       # @type [String]
       bar ||= method_two
     )
-    source = Solargraph::Source.virtual(code, 'file.rb')
+    source = Solargraph::Source.new(code, 'file.rb')
     expect(source.local_variable_pins.length).to eq(2)
     expect(source.local_variable_pins[0].name).to eq('foo')
     expect(source.local_variable_pins[0].return_type).to eq('Hash')
@@ -349,7 +349,7 @@ describe Solargraph::Source do
       def foo(bar, baz)
       end
     )
-    source = Solargraph::Source.virtual(code, 'file.rb')
+    source = Solargraph::Source.new(code, 'file.rb')
     expect(source.method_pins.length).to eq(1)
     expect(source.method_pins.first.name).to eq('foo')
     expect(source.method_pins.first.parameters).to eq(['bar', 'baz'])
@@ -362,7 +362,7 @@ describe Solargraph::Source do
       #   @return [Array]
       end
     )
-    source = Solargraph::Source.virtual(code, 'file.rb')
+    source = Solargraph::Source.new(code, 'file.rb')
     expect(source.method_pins.length).to eq(1)
     expect(source.method_pins.first.name).to eq('foo')
     expect(source.method_pins.first.parameters).to eq(['bar', 'baz'])
@@ -375,7 +375,7 @@ describe Solargraph::Source do
         BAR = 'bar'
       end
     )
-    source = Solargraph::Source.virtual(code, 'file.rb')
+    source = Solargraph::Source.new(code, 'file.rb')
     expect(source.constant_pins.length).to eq(1)
     expect(source.constant_pins[0].kind).to eq(Solargraph::LanguageServer::CompletionItemKinds::CONSTANT)
     expect(source.constant_pins[0].return_type).to eq('String')
@@ -392,7 +392,7 @@ describe Solargraph::Source do
         end
       end
     )
-    source = Solargraph::Source.virtual(code, 'file.rb')
+    source = Solargraph::Source.new(code, 'file.rb')
     expect(source.method_pins.length).to eq(2)
     expect(source.method_pins[0].scope).to eq(:class)
     expect(source.method_pins[0].visibility).to eq(:private)
@@ -408,7 +408,7 @@ describe Solargraph::Source do
         private_class_method :bar
       end
     )
-    source = Solargraph::Source.virtual(code, 'file.rb')
+    source = Solargraph::Source.new(code, 'file.rb')
     expect(source.method_pins.length).to eq(1)
     expect(source.method_pins[0].scope).to eq(:class)
     expect(source.method_pins[0].visibility).to eq(:private)
@@ -422,7 +422,7 @@ describe Solargraph::Source do
         private_class_method 'bar'
       end
     )
-    source = Solargraph::Source.virtual(code, 'file.rb')
+    source = Solargraph::Source.new(code, 'file.rb')
     expect(source.method_pins.length).to eq(1)
     expect(source.method_pins[0].scope).to eq(:class)
     expect(source.method_pins[0].visibility).to eq(:private)
@@ -441,7 +441,7 @@ describe Solargraph::Source do
         private_constant :PrivateClass
       end
     )
-    source = Solargraph::Source.virtual(code, 'file.rb')
+    source = Solargraph::Source.new(code, 'file.rb')
     pub_const = source.constant_pins.select{|p| p.name == 'PUBLIC_CONST'}.first
     expect(pub_const.visibility).to eq(:public)
     priv_const = source.constant_pins.select{|p| p.name == 'PRIVATE_CONST'}.first
@@ -507,5 +507,18 @@ describe Solargraph::Source do
     lvar = source.local_variable_pins.first
     lvar.resolve api_map
     expect(lvar.return_type).to eq('String')
+  end
+
+  it "flags successful parses" do
+    source = Solargraph::Source.load_string(%(
+      class Foo;end
+      a = b
+    ))
+    expect(source.parsed?).to be(true)
+  end
+
+  it "flags failed parses" do
+    source = Solargraph::Source.load_string(').!')
+    expect(source.parsed?).to be(false)
   end
 end
