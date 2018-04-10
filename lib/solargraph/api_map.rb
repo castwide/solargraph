@@ -522,9 +522,9 @@ module Solargraph
     # @param fragment [Solargraph::Source::Fragment]
     # @return [ApiMap::Completion]
     def complete fragment
-      return Completion.new([], fragment.whole_word_range) if fragment.string? or fragment.comment? or fragment.broken? or fragment.calculated_signature.start_with?('.')
+      return Completion.new([], fragment.whole_word_range) if fragment.string? or fragment.comment? or fragment.calculated_signature.start_with?('.')
       result = []
-      if !fragment.calculated_signature.include?('.')
+      if !fragment.signature.include?('.')
         if fragment.signature.start_with?('@@')
           result.concat get_class_variable_pins(fragment.namespace)
         elsif fragment.signature.start_with?('@')
@@ -543,10 +543,14 @@ module Solargraph
           result.concat get_constants(fragment.base, fragment.namespace)
         end
       else
-        if fragment.calculated_signature.include?('::') and !fragment.calculated_signature.include?('.')
+        if fragment.signature.include?('::') and !fragment.signature.include?('.')
           result.concat get_constants(fragment.calculated_base, fragment.namespace)
         else
-          rest = fragment.calculated_signature.split('.')
+          if fragment.calculated_signature.end_with?('.')
+            rest = fragment.calculated_signature.split('.')
+          else
+            rest = fragment.calculated_base.split('.')
+          end
           base = rest.shift
           type = infer_word_type(base, fragment.namespace, scope: fragment.scope)
           unless type.nil?

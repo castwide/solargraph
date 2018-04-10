@@ -231,7 +231,7 @@ module Solargraph
       #
       # @return [Array<Solargraph::Pin::LocalVariable>]
       def local_variable_pins name = nil
-        @local_variable_pins ||= @source.local_variable_pins.select{|pin| pin.visible_from?(node)}
+        @local_variable_pins ||= prefer_non_nil_variables(@source.local_variable_pins.select{|pin| pin.visible_from?(node)})
         return @local_variable_pins if name.nil?
         @local_variable_pins.select{|pin| pin.name == name}
       end
@@ -245,12 +245,17 @@ module Solargraph
       end
 
       def calculated_base
-        @calculated_base ||= calculated_signature.split('.')[0..-2].join('.')
+        if @calculated_base.nil?
+          @calculated_base = calculated_signature[0..-2] if calculated_signature.end_with?('.')
+          @calculated_base ||= calculated_signature.split('.')[0..-2].join('.')
+        end
+        @calculated_base
       end
 
       private
 
       def calculate
+        return signature if signature.empty? or signature.nil?
         if signature.start_with?('.')
           return signature if column < 2
           # @todo Smelly exceptional case for arrays
@@ -266,8 +271,8 @@ module Solargraph
         end
         # @todo Smelly exceptional case for integers
         base, rest = signature.split('.', 2)
-        base.sub!(/^[0-9]+$/, 'Integer.new')
-        var = local_variable_pins.select{|pin| pin.name == base}.first
+        base.sub!(/^[0-9]+?$/, 'Integer.new')
+        var = local_variable_pins(base).first
         unless var.nil?
           done = []
           until var.nil?
@@ -276,11 +281,26 @@ module Solargraph
             type = var.calculated_signature
             break if type.nil?
             base = type
-            var = local_variable_pins.select{|pin| pin.name == base}.first
+            var = local_variable_pins(base).first
           end
         end
         base = @source.qualify(base, namespace)
         base + (rest.nil? ? '' : ".#{rest}")
+      end
+
+      # @todo DRY this method. It exists in ApiMap.
+      # @return [Array<Solargraph::Pin::Base>]
+      def prefer_non_nil_variables pins
+        result = []
+        nil_pins = []
+        pins.each do |pin|
+          if pin.nil_assignment? and pin.return_type.nil?
+            nil_pins.push pin
+          else
+            result.push pin
+          end
+        end
+        result + nil_pins
       end
 
       # @return [Integer]

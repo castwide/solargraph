@@ -125,7 +125,7 @@ module Solargraph
       end
 
       def identifier
-        @identifier ||= "#{path || name}"
+        @identifier ||= "#{path}|#{name}"
       end
 
       def variable?
