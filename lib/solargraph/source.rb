@@ -67,6 +67,7 @@ module Solargraph
     end
 
     def qualify(signature, fqns)
+      return signature if signature.nil? or signature.empty?
       base, rest = signature.split('.', 2)
       parts = fqns.split('::')
       until parts.empty?

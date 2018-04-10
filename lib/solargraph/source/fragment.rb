@@ -245,7 +245,7 @@ module Solargraph
       end
 
       def calculated_base
-        @calculated_base ||= calculated.signature.split('.')[0..-2].join('.')
+        @calculated_base ||= calculated_signature.split('.')[0..-2].join('.')
       end
 
       private

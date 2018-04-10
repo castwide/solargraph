@@ -522,9 +522,9 @@ module Solargraph
     # @param fragment [Solargraph::Source::Fragment]
     # @return [ApiMap::Completion]
     def complete fragment
-      return Completion.new([], fragment.whole_word_range) if fragment.string? or fragment.comment? or fragment.signature.start_with?('.')
+      return Completion.new([], fragment.whole_word_range) if fragment.string? or fragment.comment? or fragment.broken? or fragment.signature.start_with?('.')
       result = []
-      if fragment.base.empty?
+      if fragment.calculated_base.empty? # This indicates no periods in the signature
         if fragment.signature.start_with?('@@')
           result.concat get_class_variable_pins(fragment.namespace)
         elsif fragment.signature.start_with?('@')
@@ -543,20 +543,12 @@ module Solargraph
           result.concat get_constants(fragment.base, fragment.namespace)
         end
       else
-        if fragment.signature.include?('::') and !fragment.signature.include?('.')
-          result.concat get_constants(fragment.base, fragment.namespace)
+        if fragment.calculated_signature.include?('::') and !fragment.calculated_signature.include?('.')
+          result.concat get_constants(fragment.calculated_base, fragment.namespace)
         else
-          lvars = prefer_non_nil_variables(fragment.local_variable_pins)
-          base, rest = fragment.signature.split('.')
-          match = lvars.select{|pin| pin.name == base}.first
-          if match.nil?
-            result.concat lvars unless fragment.signature.include?('.')
-            type = infer_type(fragment.base, fragment.namespace, scope: fragment.scope)
-            result.concat get_type_methods(type)
-          else
-            match.resolve self
-            result.concat get_type_methods(match.return_type, '')
-          end
+          base, rest = fragment.signature.split('.', 2)
+          type = infer_type(base, fragment.namespace, scope: fragment.scope)
+          result.concat get_type_methods(type)
         end
       end
       filtered = result.uniq(&:identifier).select{|s| s.kind != Solargraph::LanguageServer::CompletionItemKinds::METHOD or s.name.match(/^[a-z0-9_]*(\!|\?|=)?$/i)}.sort_by.with_index{ |x, idx| [x.name, idx] }
