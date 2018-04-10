@@ -12,6 +12,7 @@ module Solargraph
 
       def resolve api_map
         unless @resolved
+          @resolved = true
           @name = api_map.find_fully_qualified_namespace(@name, pin.namespace)
         end
       end
