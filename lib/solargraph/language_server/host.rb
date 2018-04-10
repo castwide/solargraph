@@ -217,6 +217,10 @@ module Solargraph
         results
       end
 
+      def file_symbols uri
+        library.file_symbols(uri_to_file(uri))
+      end
+
       private
 
       # @return [Solargraph::Library]

@@ -147,4 +147,14 @@ describe Protocol do
     expect(response['result']['documentation']).not_to be_nil
     expect(response['result']['documentation']).not_to be_empty
   end
+
+  it "handles textDocument/documentSymbol" do
+    @protocol.request 'textDocument/documentSymbol', {
+      'textDocument' => {
+        'uri' => 'file:///file.rb'
+      }
+    }
+    response = @protocol.response
+    expect(response['error']).to be_nil
+  end
 end
