@@ -181,17 +181,6 @@ module Solargraph
       result
     end
 
-    def find_fully_qualified_type namespace_type, context_type = ''
-      namespace, scope = extract_namespace_and_scope(namespace_type)
-      context = extract_namespace(context_type)
-      fqns = find_fully_qualified_namespace(namespace, context)
-      subtypes = get_subtypes(namespace_type)
-      fqns = "#{fqns}<#{subtypes.join(', ')}>" unless subtypes.empty?
-      return fqns if scope == :instance
-      type = get_namespace_type(fqns)
-      "#{type == :class ? 'Class<' : 'Module<'}#{fqns}>"
-    end
-
     # Get a fully qualified namespace name. This method will start the search
     # in the specified root until it finds a match for the name.
     #
@@ -986,14 +975,6 @@ module Solargraph
         end
       end
       result + nil_pins
-    end
-
-    def source_file_mtime(filename)
-      # @todo This is naively inefficient.
-      @sources.each do |s|
-        return s.mtime if s.filename == filename
-      end
-      nil
     end
 
     # @todo DRY this method. It's duplicated in CodeMap
