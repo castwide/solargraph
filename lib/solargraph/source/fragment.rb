@@ -33,11 +33,6 @@ module Solargraph
       #
       # @return [String]
       def namespace
-        # if @namespace.nil?
-        #   base = @source.parent_node_from(line, column, :class, :module, :def, :defs)
-        #   @namespace ||= @source.namespace_for(base)
-        # end
-        # @namespace
         if @namespace.nil?
           parts = []
           @tree.each do |n|
@@ -198,8 +193,6 @@ module Solargraph
       #
       # @return [Boolean]
       def string?
-        # @string = @source.string_at?(offset) if @string.nil?
-        # @string
         @string ||= (node.type == :str or node.type == :dstr)
       end
 

@@ -27,9 +27,6 @@ module Solargraph
     # @return [Time]
     attr_reader :mtime
 
-    # @return [Array<Integer>]
-    attr_reader :stubbed_lines
-
     attr_reader :directives
 
     attr_reader :path_macros
@@ -43,7 +40,6 @@ module Solargraph
 
     include NodeMethods
 
-    # def initialize code, node, comments, filename, stubbed_lines = []
     def initialize code, filename = nil
       @code = code
       @fixed = code
@@ -589,24 +585,8 @@ module Solargraph
         Source.load_string(code, filename)
       end
 
-      # @deprecated Use load_string instead
-      # def virtual code, filename = nil
-      #   load_string code, filename
-      # end
-
       # @return [Solargraph::Source]
       def load_string code, filename = nil
-        # source = Source.allocate
-        # source.instance_variable_set(:@filename, filename)
-        # source.reparse code
-        # begin
-        #   node, comments = parse(code, filename)
-        #   Source.new(code, node, comments, filename)
-        # rescue Parser::SyntaxError => e
-        #   tmp = code.gsub(/[^ \t\r\n]/, ' ')
-        #   node, comments = parse(tmp, filename)
-        #   Source.new(code, node, comments, filename)
-        # end
         Source.new code, filename
       end
 
@@ -621,7 +601,6 @@ module Solargraph
 
       def fix code, filename = nil, offset = nil
         tries = 0
-        # code.gsub!(/\r/, '')
         offset = Source.get_offset(code, offset[0], offset[1]) if offset.kind_of?(Array)
         pos = nil
         pos = get_position_at(code, offset) unless offset.nil?
