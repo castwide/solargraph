@@ -251,7 +251,22 @@ module Solargraph
       private
 
       def calculate
+        if signature.start_with?('.')
+          return signature if column < 2
+          # @todo Smelly exceptional case for arrays
+          return signature.sub(/^\.\[\]/, 'Array.new') if signature.start_with?('.[].')
+          pn = @source.node_at(line, column - 2)
+          unless pn.nil?
+            literal = infer_literal_node_type(pn)
+            unless literal.nil?
+              return "#{literal}.new#{signature}"
+            end
+          end
+          return signature
+        end
+        # @todo Smelly exceptional case for integers
         base, rest = signature.split('.', 2)
+        base.sub!(/^[0-9]+$/, 'Integer.new')
         var = local_variable_pins.select{|pin| pin.name == base}.first
         unless var.nil?
           done = []
@@ -264,8 +279,8 @@ module Solargraph
             var = local_variable_pins.select{|pin| pin.name == base}.first
           end
         end
-        # @todo Might want @source.qualify(base) here
-        @source.qualify(base, namespace) + (rest.nil? ? '' : ".#{rest}")
+        base = @source.qualify(base, namespace)
+        base + (rest.nil? ? '' : ".#{rest}")
       end
 
       # @return [Integer]
@@ -339,23 +354,6 @@ module Solargraph
           index -= 1
         end
         # @todo Smelly exceptional case for numbers
-        signature.sub!(/^[0-9]+\./, 'Integer.new.')
-        if signature.start_with?('.')
-          # @todo Smelly exceptional case for arrays
-          if signature.start_with?('.[].')
-            signature.sub!(/^\.\[\]/, 'Array.new')
-          else
-            line, col = get_position_at(index < 0 ? 0 : index)
-            pn = @source.node_at(line, col)
-            unless pn.nil?
-              literal = infer_literal_node_type(pn)
-              unless literal.nil?
-                signature = "#{literal}.new#{signature}"
-                # @todo Determine the index from the beginning of the literal node?
-              end
-            end
-          end
-        end
         [index + 1, signature]
       end
 

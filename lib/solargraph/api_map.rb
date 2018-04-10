@@ -522,9 +522,9 @@ module Solargraph
     # @param fragment [Solargraph::Source::Fragment]
     # @return [ApiMap::Completion]
     def complete fragment
-      return Completion.new([], fragment.whole_word_range) if fragment.string? or fragment.comment? or fragment.broken? or fragment.signature.start_with?('.')
+      return Completion.new([], fragment.whole_word_range) if fragment.string? or fragment.comment? or fragment.broken? or fragment.calculated_signature.start_with?('.')
       result = []
-      if fragment.calculated_base.empty? # This indicates no periods in the signature
+      if !fragment.calculated_signature.include?('.')
         if fragment.signature.start_with?('@@')
           result.concat get_class_variable_pins(fragment.namespace)
         elsif fragment.signature.start_with?('@')
@@ -546,9 +546,16 @@ module Solargraph
         if fragment.calculated_signature.include?('::') and !fragment.calculated_signature.include?('.')
           result.concat get_constants(fragment.calculated_base, fragment.namespace)
         else
-          base, rest = fragment.signature.split('.', 2)
-          type = infer_type(base, fragment.namespace, scope: fragment.scope)
-          result.concat get_type_methods(type)
+          rest = fragment.calculated_signature.split('.')
+          base = rest.shift
+          type = infer_word_type(base, fragment.namespace, scope: fragment.scope)
+          unless type.nil?
+            rest.each do |m|
+              type = infer_method_type(m, type)
+              next if type.nil?
+            end
+            result.concat get_type_methods(type) unless type.nil?
+          end
         end
       end
       filtered = result.uniq(&:identifier).select{|s| s.kind != Solargraph::LanguageServer::CompletionItemKinds::METHOD or s.name.match(/^[a-z0-9_]*(\!|\?|=)?$/i)}.sort_by.with_index{ |x, idx| [x.name, idx] }
