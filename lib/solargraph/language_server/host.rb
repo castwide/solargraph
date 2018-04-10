@@ -77,6 +77,14 @@ module Solargraph
         end
       end
 
+      def open? uri
+        result = nil
+        @change_semaphore.synchronize do
+          result = library.open?(uri_to_file(uri))
+        end
+        result
+      end
+
       def close uri
         @change_semaphore.synchronize do
           library.close uri_to_file(uri)
@@ -252,7 +260,7 @@ module Solargraph
                     # HACK: This condition fixes the fact that formatting
                     # increments the version by one regardless of the number
                     # of changes
-                    STDERR.puts "Dirt stupid update"
+                    STDERR.puts "Warning: change applied to #{uri_to_file(change['textDocument']['uri'])} is possibly out of sync"
                     updater = generate_updater(change)
                     library.synchronize updater
                     @diagnostics_queue.push change['textDocument']['uri']
@@ -260,12 +268,11 @@ module Solargraph
                     next true
                   elsif change['textDocument']['version'] <= source.version
                     # @todo Is deleting outdated changes correct behavior?
-                    STDERR.puts "Deleting stale change"
+                    STDERR.puts "Warning: outdated to change to #{change['textDocument']['uri']} was ignored"
                     @diagnostics_queue.push change['textDocument']['uri']
                     next true
                   else
                     # @todo Change is out of order. Save it for later
-                    STDERR.puts "Keeping out-of-order change in queue"
                     next false
                   end
                 end

@@ -17,7 +17,7 @@ describe Solargraph::Library do
     }.to raise_error(Solargraph::FileNotFoundError)
   end
 
-  it "adds created files when included in the workspace" do
+  it "does not open created files in the workspace" do
     Dir.mktmpdir do |dir|
       file = File.join(dir, 'file.rb')
       File.write(file, 'a = b')
@@ -26,7 +26,7 @@ describe Solargraph::Library do
       expect(result).to be(true)
       expect {
         library.checkout file
-      }.not_to raise_error
+      }.to raise_error(Solargraph::FileNotFoundError)
     end
   end
 
