@@ -615,7 +615,7 @@ module Solargraph
         parser.diagnostics.all_errors_are_fatal = true
         parser.diagnostics.ignore_warnings      = true
         buffer = Parser::Source::Buffer.new(filename, 1)
-        buffer.source = code
+        buffer.source = code.force_encoding(Encoding::UTF_8)
         parser.parse_with_comments(buffer)
       end
 
