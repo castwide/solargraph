@@ -52,7 +52,7 @@ module Solargraph
       @version = 0
       begin
         parse
-      rescue
+      rescue Parser::SyntaxError
         hard_fix_node
       end
     end
