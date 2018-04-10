@@ -42,6 +42,17 @@ module Solargraph
         @signature ||= resolve_node_signature(assignment_node)
       end
 
+      def calculated_signature
+        if @calculated_signature.nil?
+          if signature.empty?
+            type = infer_literal_node_type(assignment_node)
+            @calculated_signature = "#{type}.new" unless type.nil?
+          end
+          @calculated_signature ||= signature
+        end
+        @calculated_signature
+      end
+
       # @param api_map [Solargraph::ApiMap]
       def resolve api_map
         if return_type.nil? and !@tried_to_resolve_return_type

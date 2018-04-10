@@ -152,4 +152,25 @@ describe Solargraph::Source::Fragment do
     expect(fragment.signature).to eq('Foo::Bar.method_call.')
     expect(fragment.base).to eq('Foo::Bar.method_call')
   end
+
+  it "calculates local variables with literal assignments" do
+    source = Solargraph::Source.new(%(
+      abc = '123'
+      abc._
+    ))
+    fragment = source.fragment_at(2, 10)
+    expect(fragment.signature).to eq('abc.')
+    expect(fragment.calculated_signature).to eq('String.new.')
+  end
+
+  it "calculates local variables that reference each other" do
+    source = Solargraph::Source.new(%(
+      str1 = '123'
+      str2 = str1
+      str2._
+    ))
+    fragment = source.fragment_at(3, 11)
+    expect(fragment.signature).to eq('str2.')
+    expect(fragment.calculated_signature).to eq('String.new.')
+  end
 end

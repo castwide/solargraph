@@ -101,6 +101,14 @@ module Solargraph
         @signature ||= signature_data[1]
       end
 
+      def valid?
+        @source.parsed?
+      end
+
+      def broken?
+        !valid?
+      end
+
       # Get the signature before the current word. Given the signature
       # `String.new.split`, the base is `String.new`.
       #
@@ -228,7 +236,37 @@ module Solargraph
         @local_variable_pins.select{|pin| pin.name == name}
       end
 
+      def calculated_signature
+        @calculated_signature ||= calculate
+      end
+
+      def calculated_whole_signature
+        @calculated_whole_signature ||= calculated_signature + remainder
+      end
+
+      def calculated_base
+        @calculated_base ||= calculated.signature.split('.')[0..-2].join('.')
+      end
+
       private
+
+      def calculate
+        base, rest = signature.split('.', 2)
+        var = local_variable_pins.select{|pin| pin.name == base}.first
+        unless var.nil?
+          done = []
+          until var.nil?
+            break if done.include?(var)
+            done.push var
+            type = var.calculated_signature
+            break if type.nil?
+            base = type
+            var = local_variable_pins.select{|pin| pin.name == base}.first
+          end
+        end
+        # @todo Might want @source.qualify(base) here
+        base + (rest.nil? ? '' : ".#{rest}")
+      end
 
       # @return [Integer]
       def offset
