@@ -131,4 +131,18 @@ describe Solargraph::Source::Fragment do
     pins = api_map.complete(fragment).pins.map(&:path)
     expect(pins).to include('Kernel#puts')
   end
+
+  it "returns signature roots" do
+    source = Solargraph::Source.new('Foo::Bar.method_call')
+    fragment = source.fragment_at(0, 10)
+    expect(fragment.root).to eq('Foo::Bar')
+  end
+
+  it "returns signature chains" do
+    source = Solargraph::Source.new('Foo::Bar.method_call.deeper')
+    fragment = source.fragment_at(0, 10)
+    expect(fragment.chain).to eq('m')
+    expect(fragment.base_chain).to eq('')
+    expect(fragment.whole_chain).to eq('method_call')
+  end
 end

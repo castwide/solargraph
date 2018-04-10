@@ -127,6 +127,26 @@ module Solargraph
         @base
       end
 
+      # @return [String]
+      def root
+        @root ||= signature.split('.').first
+      end
+
+      # @return [String]
+      def chain
+        @chain ||= signature.split('.')[1..-1].join('.')
+      end
+
+      # @return [String]
+      def base_chain
+        @base_chain ||= signature.split('.')[1..-2].join('.')
+      end
+
+      # @return [String]
+      def whole_chain
+        @whole_chain ||= whole_signature.split('.')[1..-1].join('.')
+      end
+
       # Get the remainder of the word after the current offset. Given the text
       # `foobar` with an offset of 3, the remainder is `bar`.
       #
