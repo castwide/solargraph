@@ -24,7 +24,7 @@ module Solargraph
 
       # @param update [Hash]
       def configure update
-        options.merge! update
+        options.merge! update unless update.nil?
       end
 
       # @return [Hash]

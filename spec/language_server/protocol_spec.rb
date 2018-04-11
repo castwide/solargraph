@@ -39,10 +39,7 @@ describe Protocol do
   end
 
   it "handles initialize" do
-    @protocol.request 'initialize', {
-      'rootPath' => nil,
-      'initializationOptions' => {}
-    }
+    @protocol.request 'initialize', {}
     response = @protocol.response
     expect(response['result'].keys).to include('capabilities')
   end
