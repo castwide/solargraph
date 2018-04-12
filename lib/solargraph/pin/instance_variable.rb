@@ -7,6 +7,10 @@ module Solargraph
         super(location, namespace, name, docstring, assignment, literal)
         @scope = scope
       end
+
+      def kind
+        Pin::INSTANCE_VARIABLE
+      end
     end
   end
 end

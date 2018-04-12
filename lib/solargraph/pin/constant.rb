@@ -9,7 +9,7 @@ module Solargraph
       end
 
       def kind
-        Source::Pin::CONSTANT
+        Pin::CONSTANT
       end
 
       # def name

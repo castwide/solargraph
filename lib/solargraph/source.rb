@@ -68,7 +68,7 @@ module Solargraph
     # @return [Array<String>]
     def namespaces
       # @namespaces ||= namespace_pin_map.keys
-      @namespaces ||= pins.select{|pin| pin.kind == Pin::NAMESPACE}
+      @namespaces ||= pins.select{|pin| pin.kind == Pin::NAMESPACE}.map(&:path)
     end
 
     def qualify(signature, fqns)
@@ -109,7 +109,7 @@ module Solargraph
 
     # @return [Array<Solargraph::Pin::InstanceVariable>]
     def instance_variable_pins
-      @instance_variable_pins ||= []
+      @instance_variable_pins ||= pins.select{|pin| pin.kind == Pin::INSTANCE_VARIABLE}
     end
 
     # @return [Array<Solargraph::Pin::ClassVariable>]
@@ -129,7 +129,7 @@ module Solargraph
 
     # @return [Array<Solargraph::Pin::Constant>]
     def constant_pins
-      @constant_pins ||= []
+      @constant_pins ||= pins.select{|pin| pin.kind == Pin::CONSTANT}
     end
 
     # @return [Array<Solargraph::Pin::Symbol>]
@@ -191,7 +191,7 @@ module Solargraph
       #   end
       # end
       # [@node]
-      stack
+      stack = []
       inner_tree_at @node, offset, stack
       stack
     end
@@ -200,8 +200,8 @@ module Solargraph
       stack.push node
       node.children.each do |c|
         next unless c.is_a?(AST::Node)
-        next if n.loc.expression.nil?
-        if offset >= n.loc.expression.begin_pos and offset < n.loc.expression.end_pos
+        next if c.loc.expression.nil?
+        if offset >= c.loc.expression.begin_pos and offset < c.loc.expression.end_pos
           inner_tree_at(c, offset, stack)
           break
         end
@@ -310,6 +310,7 @@ module Solargraph
 
     def parse
       node, comments = inner_parse(@fixed, filename)
+      @node = node
       process_parsed node, comments
       @parsed = true
     end
@@ -317,6 +318,7 @@ module Solargraph
     def hard_fix_node
       @fixed = @code.gsub(/[^\s]/, ' ')
       node, comments = inner_parse(@fixed, filename)
+      @node = node
       process_parsed node, comments
       @parsed = false
     end

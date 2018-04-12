@@ -3,11 +3,13 @@ module Solargraph
     class Method < Base
       attr_reader :scope
       attr_reader :visibility
-      
-      def initialize location, namespace, name, docstring, scope, visibility
+      attr_reader :parameters
+
+      def initialize location, namespace, name, docstring, scope, visibility, args
         super(location, namespace, name, docstring)
         @scope = scope
         @visibility = visibility
+        @parameters = args
       #   super(source, node, namespace)
       #   @scope = scope
       #   @visibility = visibility
@@ -42,9 +44,9 @@ module Solargraph
         @return_type
       end
 
-      def parameters
-        @parameters ||= get_method_args
-      end
+      # def parameters
+      #   @parameters ||= get_method_args
+      # end
 
       def documentation
         if @documentation.nil?
@@ -112,34 +114,34 @@ module Solargraph
       private
 
       # @return [Array<String>]
-      def get_method_args
-        return [] if node.nil?
-        list = nil
-        args = []
-        node.children.each { |c|
-          if c.kind_of?(AST::Node) and c.type == :args
-            list = c
-            break
-          end
-        }
-        return args if list.nil?
-        list.children.each { |c|
-          if c.type == :arg
-            args.push c.children[0].to_s
-          elsif c.type == :restarg
-            args.push "*#{c.children[0]}"
-          elsif c.type == :optarg
-            args.push "#{c.children[0]} = #{source.code_for(c.children[1])}"
-          elsif c.type == :kwarg
-            args.push "#{c.children[0]}:"
-          elsif c.type == :kwoptarg
-            args.push "#{c.children[0]}: #{source.code_for(c.children[1])}"
-          elsif c.type == :blockarg
-            args.push "&#{c.children[0]}"
-          end
-        }
-        args
-      end
+      # def get_method_args
+      #   return [] if node.nil?
+      #   list = nil
+      #   args = []
+      #   node.children.each { |c|
+      #     if c.kind_of?(AST::Node) and c.type == :args
+      #       list = c
+      #       break
+      #     end
+      #   }
+      #   return args if list.nil?
+      #   list.children.each { |c|
+      #     if c.type == :arg
+      #       args.push c.children[0].to_s
+      #     elsif c.type == :restarg
+      #       args.push "*#{c.children[0]}"
+      #     elsif c.type == :optarg
+      #       args.push "#{c.children[0]} = #{source.code_for(c.children[1])}"
+      #     elsif c.type == :kwarg
+      #       args.push "#{c.children[0]}:"
+      #     elsif c.type == :kwoptarg
+      #       args.push "#{c.children[0]}: #{source.code_for(c.children[1])}"
+      #     elsif c.type == :blockarg
+      #       args.push "&#{c.children[0]}"
+      #     end
+      #   }
+      #   args
+      # end
     end
   end
 end
