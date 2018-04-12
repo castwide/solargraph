@@ -17,6 +17,10 @@ module Solargraph
         end
       end
 
+      def kind
+        Source::Pin::BLOCK_PARAMETER
+      end
+
       # @param api_map [Solargraph::ApiMap]
       def resolve api_map
         return unless return_type.nil?

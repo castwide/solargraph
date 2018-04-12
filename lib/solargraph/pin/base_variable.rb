@@ -1,16 +1,12 @@
 module Solargraph
   module Pin
     class BaseVariable < Base
-      include NodeMethods
+      attr_reader :signature
 
-      def initialize source, node, namespace
-        super
-        @tried_to_detect_return_type = false
-        @tried_to_resolve_return_type = false
-      end
-
-      def name
-        node.children[0].to_s
+      def initialize location, namespace, name, docstring, signature, literal
+        super(location, namespace, name, docstring)
+        @signature = signature
+        @return_type = literal
       end
 
       def completion_item_kind
@@ -18,55 +14,38 @@ module Solargraph
       end
 
       def return_type
-        if @return_type.nil? and !@tried_to_detect_return_type
-          @tried_to_detect_return_type = true
-          if docstring.nil?
-            @return_type ||= infer_literal_node_type(assignment_node)
-          else
-            tag = docstring.tag(:type)
-            @return_type = tag.types[0] unless tag.nil?
-          end
+        if @return_type.nil? and !docstring.nil?
+          tag = docstring.tag(:type)
+          @return_type = tag.types[0] unless tag.nil?
         end
         @return_type
       end
 
-      def assignment_node
-        @assignment_node ||= node.children[(node.type == :casgn ? 2 : 1)]
-      end
-
-      def nil_assignment?
-        assignment_node.nil? or assignment_node.type == :nil
-      end
-
-      def signature
-        @signature ||= resolve_node_signature(assignment_node)
-      end
-
       def calculated_signature
-        if @calculated_signature.nil?
-          if signature.empty?
-            type = infer_literal_node_type(assignment_node)
-            @calculated_signature = "#{type}.new" unless type.nil?
-          end
-          @calculated_signature ||= signature
-        end
-        @calculated_signature
+        # if @calculated_signature.nil?
+        #   if signature.empty?
+        #     type = infer_literal_node_type(assignment_node)
+        #     @calculated_signature = "#{type}.new" unless type.nil?
+        #   end
+        #   @calculated_signature ||= signature
+        # end
+        # @calculated_signature
       end
 
       # @param api_map [Solargraph::ApiMap]
-      def resolve api_map
-        if return_type.nil? and !@tried_to_resolve_return_type
-          @tried_to_detect_return_type = true
-          return nil if signature.nil? or signature.empty? or signature == name or signature.split('.').first.strip == name
-          # @todo This should be able to resolve signatures that start with local variables
-          macro_type = nil
-          # pin = api_map.tail_pin(signature, namespace, :class, [:public, :private, :protected])
-          # unless pin.nil? or !pin.method?
-          #   macro_type = get_return_type_from_macro(pin, assignment_node)
-          # end
-          @return_type = macro_type || api_map.infer_type(signature, namespace, scope: :class)
-        end
-      end
+      # def resolve api_map
+      #   if return_type.nil? and !@tried_to_resolve_return_type
+      #     @tried_to_detect_return_type = true
+      #     return nil if signature.nil? or signature.empty? or signature == name or signature.split('.').first.strip == name
+      #     # @todo This should be able to resolve signatures that start with local variables
+      #     macro_type = nil
+      #     # pin = api_map.tail_pin(signature, namespace, :class, [:public, :private, :protected])
+      #     # unless pin.nil? or !pin.method?
+      #     #   macro_type = get_return_type_from_macro(pin, assignment_node)
+      #     # end
+      #     @return_type = macro_type || api_map.infer_type(signature, namespace, scope: :class)
+      #   end
+      # end
 
       def variable?
         true

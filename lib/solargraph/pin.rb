@@ -20,5 +20,17 @@ module Solargraph
     autoload :MethodParameter,  'solargraph/pin/method_parameter'
     autoload :BlockParameter,   'solargraph/pin/block_parameter'
     autoload :Reference,        'solargraph/pin/reference'
+    autoload :Documenting,      'solargraph/pin/documenting'
+
+    ATTRIBUTE = 1
+    CLASS_VARIABLE = 2
+    CONSTANT = 3
+    GLOBAL_VARIABLE = 4
+    INSTANCE_VARIABLE = 5
+    KEYWORD = 6
+    LOCAL_VARIABLE = 7
+    METHOD = 8
+    NAMESPACE = 9
+    SYMBOL = 10
   end
 end

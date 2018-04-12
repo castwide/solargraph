@@ -3,11 +3,11 @@ module Solargraph
     class Location
       attr_reader :filename
       attr_reader :range
-    end
 
-    def initialize filename, range
-      @filename = filename
-      @range = range
+      def initialize filename, range
+        @filename = filename
+        @range = range
+      end
     end
   end
 end

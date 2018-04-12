@@ -7,8 +7,10 @@ module Solargraph
     autoload :Fragment,      'solargraph/source/fragment'
     autoload :Position,      'solargraph/source/position'
     autoload :Range,         'solargraph/source/range'
+    autoload :Location,      'solargraph/source/location'
     autoload :Updater,       'solargraph/source/updater'
     autoload :Change,        'solargraph/source/change'
+    autoload :Mapper,        'solargraph/source/mapper'
 
     # @return [String]
     attr_reader :code
@@ -38,6 +40,12 @@ module Solargraph
     # @return [Time]
     attr_reader :stime
 
+    attr_reader :pins
+
+    attr_reader :requires
+
+    attr_reader :locals
+
     include NodeMethods
 
     def initialize code, filename = nil
@@ -59,7 +67,8 @@ module Solargraph
 
     # @return [Array<String>]
     def namespaces
-      @namespaces ||= namespace_pin_map.keys
+      # @namespaces ||= namespace_pin_map.keys
+      @namespaces ||= pins.select{|pin| pin.kind == Pin::NAMESPACE}
     end
 
     def qualify(signature, fqns)
@@ -80,20 +89,22 @@ module Solargraph
     # @param fqns [String] The namespace (nil for all)
     # @return [Array<Solargraph::Pin::Namespace>]
     def namespace_pins fqns = nil
-      return namespace_pin_map.values.flatten if fqns.nil?
-      namespace_pin_map[fqns] || []
+      # return namespace_pin_map.values.flatten if fqns.nil?
+      # namespace_pin_map[fqns] || []
+      @namespace_pins ||= pins.select{|pin| pin.kind == Pin::NAMESPACE}
     end
 
     # @param fqns [String] The namespace (nil for all)
     # @return [Array<Solargraph::Pin::Method>]
     def method_pins fqns = nil
-      return method_pin_map.values.flatten if fqns.nil?
-      method_pin_map[fqns] || []
+      # return method_pin_map.values.flatten if fqns.nil?
+      # method_pin_map[fqns] || []
+      @method_pins ||= pins.select{|pin| pin.kind == Solargraph::Pin::METHOD}
     end
 
     # @return [Array<Solargraph::Pin::Attribute>]
     def attribute_pins
-      @attribute_pins ||= []
+      @attribute_pins ||= pins.select{|pin| pin.kind == Pin::ATTRIBUTE}
     end
 
     # @return [Array<Solargraph::Pin::InstanceVariable>]
@@ -103,17 +114,17 @@ module Solargraph
 
     # @return [Array<Solargraph::Pin::ClassVariable>]
     def class_variable_pins
-      @class_variable_pins ||= []
+      @class_variable_pins ||= pins.select{|pin| pin.kind == Pin::CLASS_VARIABLE}
     end
 
     # @return [Array<Solargraph::Pin::LocalVariable>]
     def local_variable_pins
-      @local_variable_pins ||= []
+      @local_variable_pins ||= locals.select{|pin| pin.variable?}
     end
 
     # @return [Array<Solargraph::Pin::GlobalVariable>]
     def global_variable_pins
-      @global_variable_pins ||= []
+      @global_variable_pins ||= pins.select{|pin| pin.kind == Pin::GLOBAL_VARIABLE}
     end
 
     # @return [Array<Solargraph::Pin::Constant>]
@@ -126,10 +137,10 @@ module Solargraph
       @symbol_pins ||= []
     end
 
-    # @return [Array<String>]
-    def required
-      @required ||= []
-    end
+    # # @return [Array<String>]
+    # def required
+    #   @required ||= []
+    # end
 
     # @return [YARD::Docstring]
     def docstring_for node
@@ -166,20 +177,35 @@ module Solargraph
     def tree_at(line, column)
       # offset = get_parsed_offset(line, column)
       offset = Position.line_char_to_offset(@code, line, column)
-      @all_nodes.reverse.each do |n|
-        if n.respond_to?(:loc)
-          if n.respond_to?(:begin) and n.respond_to?(:end)
-            if offset >= n.begin.begin_pos and offset < n.end.end_pos
-              return [n] + @node_tree[n.object_id]
-            end
-          elsif !n.loc.expression.nil?
-            if offset >= n.loc.expression.begin_pos and offset < n.loc.expression.end_pos
-              return [n] + @node_tree[n.object_id]
-            end
-          end
+      # @all_nodes.reverse.each do |n|
+      #   if n.respond_to?(:loc)
+      #     if n.respond_to?(:begin) and n.respond_to?(:end)
+      #       if offset >= n.begin.begin_pos and offset < n.end.end_pos
+      #         return [n] + @node_tree[n.object_id]
+      #       end
+      #     elsif !n.loc.expression.nil?
+      #       if offset >= n.loc.expression.begin_pos and offset < n.loc.expression.end_pos
+      #         return [n] + @node_tree[n.object_id]
+      #       end
+      #     end
+      #   end
+      # end
+      # [@node]
+      stack
+      inner_tree_at @node, offset, stack
+      stack
+    end
+
+    def inner_tree_at node, offset, stack
+      stack.push node
+      node.children.each do |c|
+        next unless c.is_a?(AST::Node)
+        next if n.loc.expression.nil?
+        if offset >= n.loc.expression.begin_pos and offset < n.loc.expression.end_pos
+          inner_tree_at(c, offset, stack)
+          break
         end
       end
-      [@node]
     end
 
     # Find the nearest parent node from the specified index. If one or more
@@ -283,72 +309,82 @@ module Solargraph
     private
 
     def parse
-      node, comments = Source.parse(@fixed, filename)
+      node, comments = inner_parse(@fixed, filename)
       process_parsed node, comments
       @parsed = true
     end
 
     def hard_fix_node
       @fixed = @code.gsub(/[^\s]/, ' ')
-      node, comments = Source.parse(@fixed, filename)
+      node, comments = inner_parse(@fixed, filename)
       process_parsed node, comments
       @parsed = false
     end
 
+    def inner_parse code, filename
+      parser = Parser::CurrentRuby.new(FlawedBuilder.new)
+      parser.diagnostics.all_errors_are_fatal = true
+      parser.diagnostics.ignore_warnings      = true
+      buffer = Parser::Source::Buffer.new(filename, 1)
+      buffer.source = code.force_encoding(Encoding::UTF_8)
+      parser.parse_with_comments(buffer)
+    end
+
     def process_parsed node, comments
-      root = AST::Node.new(:source, [filename])
-      root = root.append node
-      @node = root
-      @namespaces = nil
-      @comments = comments
-      @directives = {}
-      @path_macros = {}
-      @docstring_hash = associate_comments(node, comments)
-      @mtime = (!filename.nil? and File.exist?(filename) ? File.mtime(filename) : nil)
-      @all_nodes = []
-      @node_stack = []
-      @node_tree = {}
-      namespace_pin_map.clear
-      namespace_pin_map[''] = [Solargraph::Pin::Namespace.new(self, @node, '', :public)]
-      @namespace_pins = nil
-      instance_variable_pins.clear
-      class_variable_pins.clear
-      local_variable_pins.clear
-      symbol_pins.clear
-      constant_pins.clear
-      method_pin_map.clear
-      # namespace_includes.clear
-      attribute_pins.clear
-      @node_object_ids = nil
-      inner_map_node @node
-      @directives.each_pair do |k, v|
-        v.each do |d|
-          ns = namespace_for(k.node)
-          docstring = YARD::Docstring.parser.parse(d.tag.text).to_docstring
-          if d.tag.tag_name == 'attribute'
-            t = (d.tag.types.nil? || d.tag.types.empty?) ? nil : d.tag.types.flatten.join('')
-            if t.nil? or t.include?('r')
-              attribute_pins.push Solargraph::Pin::Directed::Attribute.new(self, k.node, ns, :reader, docstring, d.tag.name)
-            end
-            if t.nil? or t.include?('w')
-              attribute_pins.push Solargraph::Pin::Directed::Attribute.new(self, k.node, ns, :writer, docstring, "#{d.tag.name}=")
-            end
-          elsif d.tag.tag_name == 'method'
-            gen_src = Source.new("def #{d.tag.name};end", filename)
-            gen_pin = gen_src.method_pins.first
-            method_pin_map[ns] ||= []
-            method_pin_map[ns].push Solargraph::Pin::Directed::Method.new(gen_src, gen_pin.node, ns, :instance, :public, docstring, gen_pin.name)
-          elsif d.tag.tag_name == 'macro'
-            # @todo Handle various types of macros (attach, new, whatever)
-            path = path_for(k.node)
-            @path_macros[path] = v
-          else
-            STDERR.puts "Nothing to do for directive: #{d}"
-          end
-        end
-      end
-      @all_pins = namespace_pin_map.values.flatten + instance_variable_pins + class_variable_pins + local_variable_pins + symbol_pins + constant_pins + method_pins + attribute_pins
-      @stime = Time.now
+      @pins, @locals, @requires, @symbols = Mapper.map filename, code, node, comments
+      # root = AST::Node.new(:source, [filename])
+      # root = root.append node
+      # @node = root
+      # @namespaces = nil
+      # @comments = comments
+      # @directives = {}
+      # @path_macros = {}
+      # @docstring_hash = associate_comments(node, comments)
+      # @mtime = (!filename.nil? and File.exist?(filename) ? File.mtime(filename) : nil)
+      # @all_nodes = []
+      # @node_stack = []
+      # @node_tree = {}
+      # namespace_pin_map.clear
+      # namespace_pin_map[''] = [Solargraph::Pin::Namespace.new(self, @node, '', :public)]
+      # @namespace_pins = nil
+      # instance_variable_pins.clear
+      # class_variable_pins.clear
+      # local_variable_pins.clear
+      # symbol_pins.clear
+      # constant_pins.clear
+      # method_pin_map.clear
+      # # namespace_includes.clear
+      # attribute_pins.clear
+      # @node_object_ids = nil
+      # inner_map_node @node
+      # @directives.each_pair do |k, v|
+      #   v.each do |d|
+      #     ns = namespace_for(k.node)
+      #     docstring = YARD::Docstring.parser.parse(d.tag.text).to_docstring
+      #     if d.tag.tag_name == 'attribute'
+      #       t = (d.tag.types.nil? || d.tag.types.empty?) ? nil : d.tag.types.flatten.join('')
+      #       if t.nil? or t.include?('r')
+      #         attribute_pins.push Solargraph::Pin::Directed::Attribute.new(self, k.node, ns, :reader, docstring, d.tag.name)
+      #       end
+      #       if t.nil? or t.include?('w')
+      #         attribute_pins.push Solargraph::Pin::Directed::Attribute.new(self, k.node, ns, :writer, docstring, "#{d.tag.name}=")
+      #       end
+      #     elsif d.tag.tag_name == 'method'
+      #       gen_src = Source.new("def #{d.tag.name};end", filename)
+      #       gen_pin = gen_src.method_pins.first
+      #       method_pin_map[ns] ||= []
+      #       method_pin_map[ns].push Solargraph::Pin::Directed::Method.new(gen_src, gen_pin.node, ns, :instance, :public, docstring, gen_pin.name)
+      #     elsif d.tag.tag_name == 'macro'
+      #       # @todo Handle various types of macros (attach, new, whatever)
+      #       path = path_for(k.node)
+      #       @path_macros[path] = v
+      #     else
+      #       STDERR.puts "Nothing to do for directive: #{d}"
+      #     end
+      #   end
+      # end
+      # @all_pins = namespace_pin_map.values.flatten + instance_variable_pins + class_variable_pins + local_variable_pins + symbol_pins + constant_pins + method_pins + attribute_pins
+      # @stime = Time.now
     end
 
     def associate_comments node, comments
@@ -588,15 +624,6 @@ module Solargraph
       # @return [Solargraph::Source]
       def load_string code, filename = nil
         Source.new code, filename
-      end
-
-      def parse code, filename = nil
-        parser = Parser::CurrentRuby.new(FlawedBuilder.new)
-        parser.diagnostics.all_errors_are_fatal = true
-        parser.diagnostics.ignore_warnings      = true
-        buffer = Parser::Source::Buffer.new(filename, 1)
-        buffer.source = code.force_encoding(Encoding::UTF_8)
-        parser.parse_with_comments(buffer)
       end
 
       def fix code, filename = nil, offset = nil

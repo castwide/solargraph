@@ -1,6 +1,15 @@
 module Solargraph
   module Pin
+    # @todo Move this stuff. It should be the responsibility of the language server.
     module Conversions
+      # @return [Integer]
+      def completion_item_kind
+      end
+
+      # @return [Integer]
+      def symbol_kind
+      end
+
       # @return [Hash]
       def completion_item
         {

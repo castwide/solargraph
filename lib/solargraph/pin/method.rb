@@ -3,20 +3,23 @@ module Solargraph
     class Method < Base
       attr_reader :scope
       attr_reader :visibility
-
-      def initialize source, node, namespace, scope, visibility
-        super(source, node, namespace)
+      
+      def initialize location, namespace, name, docstring, scope, visibility
+        super(location, namespace, name, docstring)
         @scope = scope
         @visibility = visibility
-        # Exception for initialize methods
-        if name == 'initialize' and scope == :instance
-          @visibility = :private
-        end
-        @fully_resolved = false
+      #   super(source, node, namespace)
+      #   @scope = scope
+      #   @visibility = visibility
+      #   # Exception for initialize methods
+      #   if name == 'initialize' and scope == :instance
+      #     @visibility = :private
+      #   end
+      #   @fully_resolved = false
       end
 
-      def name
-        @name ||= "#{node.children[(node.type == :def ? 0 : 1)]}"
+      def kind
+        Solargraph::Pin::METHOD
       end
 
       def path

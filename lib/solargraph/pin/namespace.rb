@@ -5,8 +5,9 @@ module Solargraph
 
       attr_reader :visibility
 
-      def initialize source, node, namespace, visibility, superclass = nil
-        super(source, node, namespace)
+      def initialize location, namespace, name, docstring, type, visibility, superclass
+        super(location, namespace, name, docstring)
+        @type = type
         @visibility = visibility
         @superclass_reference = Reference.new(self, superclass) unless superclass.nil?
       end
