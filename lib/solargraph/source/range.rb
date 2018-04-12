@@ -5,13 +5,13 @@ module Solargraph
       attr_reader :start
 
       # @return [Position]
-      attr_reader :end
+      attr_reader :ending
 
       # @param start [Position]
       # @param ending [Position]
       def initialize start, ending
         @start = start
-        @end = ending
+        @ending = ending
       end
 
       # Get a hash of the range. This representation is suitable for use in
@@ -20,8 +20,16 @@ module Solargraph
       def to_hash
         {
           start: start.to_hash,
-          end: self.end.to_hash
+          end: ending.to_hash
         }
+      end
+
+      def contain? position
+        return false if position.line < start.line
+        return false if position.line == start.line and position.character < start.character
+        return false if position.line > ending.line
+        return false if position.line == ending.line and position.character >= ending.character
+        true
       end
 
       # Create a range from a pair of lines and characters.

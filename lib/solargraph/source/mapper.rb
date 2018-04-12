@@ -28,6 +28,7 @@ module Solargraph
         root = AST::Node.new(:source, [filename])
         root = root.append node
         process root
+        process_directives
         [@pins, @locals, @requires, @symbols]
       end
 
@@ -65,7 +66,6 @@ module Solargraph
       def process node, tree = [], visibility = :public, scope = :instance, fqn = '', stack = []
         stack.push node
         if node.kind_of?(AST::Node)
-          # @all_nodes.push node
           @node_stack.unshift node
           if node.type == :class or node.type == :module
             visibility = :public
@@ -80,15 +80,10 @@ module Solargraph
               sc = unpack_name(node.children[1])
             end
             pins.push Solargraph::Pin::Namespace.new(get_node_location(node), tree[0..-2].join('::') || '', pack_name(node.children[0]).last.to_s, docstring_for(node), node.type, visibility, sc)
-            # namespace_pin_map[nspin.path] ||= []
-            # namespace_pin_map[nspin.path].push nspin
-            # get_node_range(node)
-            # namespaces.add nspin.path
           end
           file = filename
           node.children.each do |c|
             if c.kind_of?(AST::Node)
-              # @node_tree[c.object_id] = @node_stack.clone
               if c.type == :ivasgn
                 par = find_parent(stack, :class, :module, :def, :defs)
                 local_scope = ( (par.kind_of?(AST::Node) and par.type == :def) ? :instance : :class )
@@ -96,14 +91,10 @@ module Solargraph
                   ora = find_parent(stack, :or_asgn)
                   unless ora.nil?
                     u = c.updated(:ivasgn, c.children + ora.children[1..-1], nil)
-                    # @all_nodes.push u
-                    # @node_tree[u.object_id] = @node_stack.clone
                     @docstring_hash[u.loc] = docstring_for(ora)
-                    # instance_variable_pins.push Solargraph::Pin::InstanceVariable.new(self, u, fqn || '', local_scope)
-                    pins.push Solargraph::Pin::InstanceVariable.new(get_node_location(u), fqn || '', c.children[0].to_s, docstring_for(u), local_scope)
+                    pins.push Solargraph::Pin::InstanceVariable.new(get_node_location(u), fqn || '', c.children[0].to_s, docstring_for(u), resolve_node_signature(u.children[1]), infer_literal_node_type(u.children[1]), local_scope)
                   end
                 else
-                  # instance_variable_pins.push Solargraph::Pin::InstanceVariable.new(self, c, fqn || '', local_scope)
                   pins.push Solargraph::Pin::InstanceVariable.new(get_node_location(c), fqn || '',c.children[0].to_s, docstring_for(c), resolve_node_signature(c.children[1]), infer_literal_node_type(c.children[1]), local_scope)
                 end
               elsif c.type == :cvasgn
@@ -111,14 +102,10 @@ module Solargraph
                   ora = find_parent(stack, :or_asgn)
                   unless ora.nil?
                     u = c.updated(:cvasgn, c.children + ora.children[1..-1], nil)
-                    # @node_tree[u.object_id] = @node_stack.clone
-                    # @all_nodes.push u
                     @docstring_hash[u.loc] = docstring_for(ora)
-                    # class_variable_pins.push Solargraph::Pin::ClassVariable.new(self, u, fqn || '')
                     pins.push Solargraph::Pin::ClassVariable.new(get_node_location(u), fqn || '', c.children[0].to_s, docstring_for(u))
                   end
                 else
-                  # class_variable_pins.push Solargraph::Pin::ClassVariable.new(self, c, fqn || '')
                   pins.push Solargraph::Pin::ClassVariable.new(get_node_location(c), fqn || '', c.children[0].to_s, docstring_for(c), code_for(c.children[1]), resolve_node_signature(c.children[1]))
                 end
               elsif c.type == :lvasgn
@@ -126,31 +113,20 @@ module Solargraph
                   ora = find_parent(stack, :or_asgn)
                   unless ora.nil?
                     u = c.updated(:lvasgn, c.children + ora.children[1..-1], nil)
-                    # @all_nodes.push u
-                    # @node_tree[u] = @node_stack.clone
                     @docstring_hash[u.loc] = docstring_for(ora)
-                    # local_variable_pins.push Solargraph::Pin::LocalVariable.new(self, u, fqn || '', @node_stack.clone)
                     @locals.push Solargraph::Pin::LocalVariable.new(get_node_location(u), fqn, u.children[0].to_s, docstring_for(u), resolve_node_signature(c.children[1]), infer_literal_node_type(c.children[1]))
                   end
                 else
-                  # @node_tree[c] = @node_stack.clone
-                  # local_variable_pins.push Solargraph::Pin::LocalVariable.new(self, c, fqn || '', @node_stack.clone)
                   @locals.push Solargraph::Pin::LocalVariable.new(get_node_location(c), fqn, c.children[0].to_s, docstring_for(c), resolve_node_signature(c.children[1]), infer_literal_node_type(c.children[1]))
                 end
               elsif c.type == :gvasgn
-                # global_variable_pins.push Solargraph::Pin::GlobalVariable.new(self, c, fqn || '')
                 pins.push Solargraph::Pin::GlobalVariable.new(get_node_location(c), fqn, c.children[0].to_s, docstring_for(c), resolve_node_signature(c.children[1]), infer_literal_node_type(c.children[1]))
               elsif c.type == :sym
-                # symbol_pins.push Solargraph::Pin::Symbol.new(self, c, fqn)
                 @symbols.push Solargraph::Pin::Symbol.new(get_node_location(c), ":#{c.children[0]}")
 
               elsif c.type == :casgn
-                # constant_pins.push Solargraph::Pin::Constant.new(self, c, fqn, :public)
-                # pins.push Solargraph::Pin::Constant.new(self, c, fqn, :public)
                 pins.push Solargraph::Pin::Constant.new(get_node_location(c), fqn, c.children[1].to_s, docstring_for(c), resolve_node_signature(c.children[2]), infer_literal_node_type(c.children[2]), :public)
               elsif c.type == :def and c.children[0].to_s[0].match(/[a-z]/i)
-                # method_pin_map[fqn || ''] ||= []
-                # method_pin_map[fqn || ''].push Solargraph::Pin::Method.new(source, c, fqn || '', scope, visibility)
                 pins.push Solargraph::Pin::Method.new(get_node_location(c), fqn || '', c.children[(c.type == :def ? 0 : 1)].to_s, docstring_for(c), scope, visibility, get_method_args(c))
               elsif c.type == :defs
                 s_visi = visibility
@@ -161,9 +137,6 @@ module Solargraph
                   dfqn = unpack_name(c.children[0])
                 end
                 unless dfqn.nil?
-                  # method_pin_map[dfqn] ||= []
-                  # method_pin_map[dfqn].push Solargraph::Pin::Method.new(source, c, dfqn, :class, s_visi)
-                  # pins.push Solargraph::Pin::Method.new(source, c, dfqn, :class, s_visi)
                   pins.push Solargraph::Pin::Method.new(get_node_location(c), dfqn, "#{c.children[(node.type == :def ? 0 : 1)]}", docstring_for(c), :class, s_visi, get_method_args(c))
                   process c, tree, scope, :class, dfqn, stack
                 end
@@ -175,9 +148,6 @@ module Solargraph
                   ref = pins.select{|p| p.namespace == (fqn || '') and p.name == c.children[2].children[0].to_s}.first
                   unless ref.nil?
                     pins.delete ref
-                    # method_pin_map[fqn || ''].delete ref
-                    # method_pin_map[fqn || ''].push Solargraph::Pin::Method.new(ref.source, ref.node, ref.namespace, ref.scope, :private)
-                    # pins.push Solargraph::Pin::Method.new(ref.source, ref.node, ref.namespace, ref.scope, :private)
                     pins.push Solargraph::Pin::Method.new(ref.location, ref.namespace, ref.name, ref.docstring, ref.scope, :private, ref.parameters)
                   end
                 else
@@ -222,13 +192,9 @@ module Solargraph
               elsif c.type == :send and [:attr_reader, :attr_writer, :attr_accessor].include?(c.children[1])
                 c.children[2..-1].each do |a|
                   if c.children[1] == :attr_reader or c.children[1] == :attr_accessor
-                    # attribute_pins.push Solargraph::Pin::Attribute.new(self, a, fqn || '', :reader, docstring_for(c)) #AttrPin.new(c)
-                    # pins.push Solargraph::Pin::Attribute.new(self, a, fqn || '', :reader, docstring_for(c)) #AttrPin.new(c)
                     pins.push Solargraph::Pin::Attribute.new(get_node_location(c), fqn || '', "#{a.children[0]}", docstring_for(c), :reader) #AttrPin.new(c)
                   end
                   if c.children[1] == :attr_writer or c.children[1] == :attr_accessor
-                    # attribute_pins.push Solargraph::Pin::Attribute.new(self, a, fqn || '', :writer, docstring_for(c)) #AttrPin.new(c)
-                    # pins.push Solargraph::Pin::Attribute.new(self, a, fqn || '', :writer, docstring_for(c)) #AttrPin.new(c)
                     pins.push Solargraph::Pin::Attribute.new(get_node_location(c), fqn || '', "#{a.children[0]}=", docstring_for(c), :writer) #AttrPin.new(c)
                   end
                 end
@@ -237,7 +203,6 @@ module Solargraph
                 next
               elsif c.type == :send and c.children[1] == :require
                 if c.children[2].kind_of?(AST::Node) and c.children[2].type == :str
-                  # @todo Need a require array?
                   @requires.push c.children[2].children[0].to_s
                 end
               elsif c.type == :args
@@ -308,7 +273,43 @@ module Solargraph
           yard_hash[k] = parse.to_docstring
         }
         yard_hash
-      end  
+      end
+
+      def namespace_for(node)
+        position = Source::Position.new(node.loc.line - 1, node.loc.column)
+        @pins.select{|pin| pin.kind == Pin::NAMESPACE and pin.location.range.contain?(position)}.last
+      end
+
+      def process_directives
+        @directives.each_pair do |k, v|
+          v.each do |d|
+            ns = namespace_for(k.node)
+            docstring = YARD::Docstring.parser.parse(d.tag.text).to_docstring
+            if d.tag.tag_name == 'attribute'
+              t = (d.tag.types.nil? || d.tag.types.empty?) ? nil : d.tag.types.flatten.join('')
+              if t.nil? or t.include?('r')
+                # location, namespace, name, docstring, access
+                pins.push Solargraph::Pin::Attribute.new(get_node_location(k.node), namespace_for(k.node).path, d.tag.name, docstring, :reader)
+              end
+              if t.nil? or t.include?('w')
+                pins.push Solargraph::Pin::Attribute.new(get_node_location(k.node), namespace_for(k.node).path, "#{d.tag.name}=", docstring, :reader)
+              end
+            elsif d.tag.tag_name == 'method'
+              gen_src = Source.new("def #{d.tag.name};end", filename)
+              gen_pin = gen_src.pins.first
+              nsp = namespace_for(k.node)
+              next if nsp.nil? # @todo Add methods to global namespace?
+              pins.push Solargraph::Pin::Method.new(get_node_location(k.node), nsp.path, gen_pin.name, docstring, :instance, :public, [])
+            elsif d.tag.tag_name == 'macro'
+              # @todo Handle various types of macros (attach, new, whatever)
+              path = path_for(k.node)
+              @path_macros[path] = v
+            else
+              STDERR.puts "Nothing to do for directive: #{d}"
+            end
+          end
+        end
+      end
 
       def find_parent(stack, *types)
         stack.reverse.each { |p|

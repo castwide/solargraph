@@ -34,10 +34,11 @@ describe Solargraph::Source do
       end
     )
     source = Solargraph::Source.new(code, 'file.rb')
-    expect(source.attribute_pins.length).to eq(5)
-    expect(source.attribute_pins[0].name).to eq('bar')
-    expect(source.attribute_pins[0].return_type).to eq('String')
-    names = source.attribute_pins.map(&:name)
+    attribute_pins = source.attribute_pins
+    expect(attribute_pins.length).to eq(5)
+    expect(attribute_pins[0].name).to eq('bar')
+    expect(attribute_pins[0].return_type).to eq('String')
+    names = attribute_pins.map(&:name)
     expect(names).not_to include('bar=')
     expect(names).to include('baz')
     expect(names).to include('baz=')
@@ -355,6 +356,7 @@ describe Solargraph::Source do
     expect(source.method_pins.first.parameters).to eq(['bar', 'baz'])
   end
 
+  # @todo This might not be valid
   it "pins top-level methods from directives" do
     code = %(
       begin
