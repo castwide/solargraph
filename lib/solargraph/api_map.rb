@@ -188,16 +188,14 @@ module Solargraph
     # @param root [String] The context to search
     # @return [String]
     def find_fully_qualified_namespace name, root = '', skip = []
-      return name if name == root
-      # refresh
       return nil if name.nil?
       return nil if skip.include?(root)
       skip.push root
       if name == ''
         if root == ''
           return ''
-        # else
-        #   return find_fully_qualified_namespace(root, '', skip)
+        else
+          return find_fully_qualified_namespace(root, '', skip)
         end
       else
         if (root == '')
