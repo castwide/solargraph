@@ -589,4 +589,12 @@ describe Solargraph::Source do
     pin = source.locate_block_pin(3, 0)
     expect(pin.kind).to eq(Solargraph::Pin::BLOCK)
   end
+
+  it "locates symbol pins" do
+    source = Solargraph::Source.new(%(
+      foo = :foo
+    ))
+    expect(source.symbols.length).to eq(1)
+    expect(source.symbols.first.name).to eq(':foo')
+  end
 end

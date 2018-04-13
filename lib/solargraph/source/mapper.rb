@@ -111,15 +111,18 @@ module Solargraph
                   pins.push Solargraph::Pin::ClassVariable.new(get_node_location(c), fqn || '', c.children[0].to_s, docstring_for(c), resolve_node_signature(c.children[1]), infer_literal_node_type(c.children[1]))
                 end
               elsif c.type == :lvasgn
+                here = get_node_start_position(c)
+                block = get_block_pin(here)
+                presence = Source::Range.new(here, block.location.range.ending)
                 if c.children[1].nil?
                   ora = find_parent(stack, :or_asgn)
                   unless ora.nil?
                     u = c.updated(:lvasgn, c.children + ora.children[1..-1], nil)
                     @docstring_hash[u.loc] = docstring_for(ora)
-                    @locals.push Solargraph::Pin::LocalVariable.new(get_node_location(u), fqn, u.children[0].to_s, docstring_for(u), resolve_node_signature(c.children[1]), infer_literal_node_type(c.children[1]))
+                    @locals.push Solargraph::Pin::LocalVariable.new(get_node_location(u), fqn, u.children[0].to_s, docstring_for(u), resolve_node_signature(c.children[1]), infer_literal_node_type(c.children[1]), block, presence)
                   end
                 else
-                  @locals.push Solargraph::Pin::LocalVariable.new(get_node_location(c), fqn, c.children[0].to_s, docstring_for(c), resolve_node_signature(c.children[1]), infer_literal_node_type(c.children[1]))
+                  @locals.push Solargraph::Pin::LocalVariable.new(get_node_location(c), fqn, c.children[0].to_s, docstring_for(c), resolve_node_signature(c.children[1]), infer_literal_node_type(c.children[1]), block, presence)
                 end
               elsif c.type == :gvasgn
                 pins.push Solargraph::Pin::GlobalVariable.new(get_node_location(c), fqn, c.children[0].to_s, docstring_for(c), resolve_node_signature(c.children[1]), infer_literal_node_type(c.children[1]))
@@ -173,7 +176,7 @@ module Solargraph
                     if ref.kind == Pin::CONSTANT
                       pins.push ref.class.new(ref.location, ref.namespace, ref.name, ref.docstring, ref.signature, ref.return_type, :private)
                     else
-                      pins.push ref.class.new(ref.location, ref.namespace, ref.name, ref.docstring, ref.type, :private, ref.superclass_reference.name)
+                      pins.push ref.class.new(ref.location, ref.namespace, ref.name, ref.docstring, ref.type, :private, (ref.superclass_reference.nil? ? nil : ref.superclass_reference.name))
                     end
                   end
                 end
@@ -258,10 +261,18 @@ module Solargraph
         last
       end
 
+      def get_block_pin position
+        @pins.select{|pin| [Pin::BLOCK, Pin::NAMESPACE, Pin::METHOD].include?(pin.kind) and pin.location.range.contain?(position)}.last
+      end
+
       # @return [YARD::Docstring]
       def docstring_for node
         return @docstring_hash[node.loc] if node.respond_to?(:loc)
         nil
+      end
+
+      def get_node_start_position(node)
+        Position.new(node.loc.line - 1, node.loc.column)
       end
 
       def get_node_location(node)

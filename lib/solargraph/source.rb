@@ -138,6 +138,10 @@ module Solargraph
       locals
     end
 
+    def locals
+      @locals
+    end
+
     # @return [Array<Solargraph::Pin::GlobalVariable>]
     def global_variable_pins
       @global_variable_pins ||= pins.select{|pin| pin.kind == Pin::GLOBAL_VARIABLE}
@@ -150,7 +154,11 @@ module Solargraph
 
     # @return [Array<Solargraph::Pin::Symbol>]
     def symbol_pins
-      @symbol_pins ||= []
+      @symbols
+    end
+
+    def symbols
+      symbol_pins
     end
 
     # # @return [Array<String>]
