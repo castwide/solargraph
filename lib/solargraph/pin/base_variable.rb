@@ -6,7 +6,7 @@ module Solargraph
       def initialize location, namespace, name, docstring, signature, literal
         super(location, namespace, name, docstring)
         @signature = signature
-        @return_type = literal
+        @literal = literal
       end
 
       def completion_item_kind
@@ -14,9 +14,13 @@ module Solargraph
       end
 
       def return_type
-        if @return_type.nil? and !docstring.nil?
-          tag = docstring.tag(:type)
-          @return_type = tag.types[0] unless tag.nil?
+        if @return_type.nil?
+          if !docstring.nil?
+            tag = docstring.tag(:type)
+            @return_type = tag.types[0] unless tag.nil?
+          else
+            @return_type = @literal
+          end
         end
         @return_type
       end
