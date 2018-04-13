@@ -43,7 +43,7 @@ module Solargraph
       # @return [Hash]
       def signature_help
         {
-          label: name + '(' + arguments.join(', ') + ')',
+          label: name + '(' + parameters.join(', ') + ')',
           documentation: documentation
         }
       end
