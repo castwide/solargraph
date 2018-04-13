@@ -28,7 +28,7 @@ module Solargraph
         root = AST::Node.new(:source, [filename])
         root = root.append node
         # @todo Is the root namespace a class or a module? Assuming class for now.
-        @pins.push Pin::Namespace.new(get_node_location(node), '', '', nil, :class, :public, nil)
+        @pins.push Pin::Namespace.new(get_node_location(nil), '', '', nil, :class, :public, nil)
         process root
         process_directives
         [@pins, @locals, @requires, @symbols]
@@ -267,7 +267,7 @@ module Solargraph
       def get_node_location(node)
         if node.nil?
           st = Position.new(0, 0)
-          en = Position.from_offset(@code, @code.length)
+          en = Position.from_offset(@code, @code.length - 1)
         else
           st = Position.new(node.loc.line - 1, node.loc.column)
           en = Position.new(node.loc.last_line - 1, node.loc.last_column)

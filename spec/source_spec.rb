@@ -574,9 +574,9 @@ describe Solargraph::Source do
     expect(pin.path).to eq('Foo#bar')
     pin = source.locate_named_path_pin(5, 0)
     expect(pin.path).to eq('Foo::Inner')
-    # @todo Should the global namespace return nil?
+    # The global namespace is considered a named path with an empty name
     pin = source.locate_named_path_pin(7, 0)
-    expect(pin).to be_nil
+    expect(pin.path).to eq('')
   end
 
   it "locates block pins" do
