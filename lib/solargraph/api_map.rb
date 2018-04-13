@@ -594,7 +594,7 @@ module Solargraph
       base, rest = fragment.recipient.whole_signature.split('.', 2)
       return infer_word_pins(base, fragment.recipient.namespace, true) if rest.nil?
       type = nil
-      lvar = prefer_non_nil_variables(fragment.local_variable_pins(base)).first
+      lvar = prefer_non_nil_variables(fragment.locals.select{|pin| pin.name == base}).first
       unless lvar.nil?
         lvar.resolve self
         type = lvar.return_type
