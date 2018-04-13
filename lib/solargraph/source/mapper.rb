@@ -278,7 +278,7 @@ module Solargraph
       def get_node_location(node)
         if node.nil?
           st = Position.new(0, 0)
-          en = Position.from_offset(@code, @code.length - 1)
+          en = Position.from_offset(@code, @code.length)
         else
           st = Position.new(node.loc.line - 1, node.loc.column)
           en = Position.new(node.loc.last_line - 1, node.loc.last_column)

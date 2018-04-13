@@ -597,4 +597,10 @@ describe Solargraph::Source do
     expect(source.symbols.length).to eq(1)
     expect(source.symbols.first.name).to eq(':foo')
   end
+
+  it "detects the global namespace at the end of a file" do
+    source = Solargraph::Source.load_string("lvar = 'foo'\nl")
+    pin = source.locate_named_path_pin(1, 1)
+    expect(pin.path).to eq('')
+  end
 end

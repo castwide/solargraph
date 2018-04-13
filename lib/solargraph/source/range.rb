@@ -28,7 +28,7 @@ module Solargraph
         return false if position.line < start.line
         return false if position.line == start.line and position.character < start.character
         return false if position.line > ending.line
-        return false if position.line == ending.line and position.character >= ending.character
+        return false if position.line == ending.line and position.character > ending.character
         true
       end
 
