@@ -133,7 +133,9 @@ module Solargraph
 
     # @return [Array<Solargraph::Pin::LocalVariable>]
     def local_variable_pins
-      @local_variable_pins ||= locals.select{|pin| pin.variable?}
+      # @todo Probably don't need to differentiate here
+      # @local_variable_pins ||= locals.select{|pin| pin.variable?}
+      locals
     end
 
     # @return [Array<Solargraph::Pin::GlobalVariable>]
@@ -155,6 +157,16 @@ module Solargraph
     # def required
     #   @required ||= []
     # end
+
+    def locate_path_pin line, character
+      position = Solargraph::Source::Position.new(line, character)
+      found = nil
+      pins.each do |pin|
+        next unless [Pin::NAMESPACE, Pin::METHOD].include?(pin.kind)
+        found = pin if pin.location.range.contain?(position)
+      end
+      found
+    end
 
     # @return [YARD::Docstring]
     def docstring_for node

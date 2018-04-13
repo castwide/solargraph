@@ -558,4 +558,21 @@ describe Solargraph::Source do
     pin = source.pins.select{|pin| pin.path == 'Foo'}.first
     expect(pin.extend_references.first.name).to eq('Bar')
   end
+
+  it "locates pin paths" do
+    source = Solargraph::Source.new(%(
+      class Foo
+        def bar
+        end
+        class Inner
+        end
+      end
+    ))
+    pin = source.locate_path_pin(2, 0)
+    expect(pin.path).to eq('Foo')
+    pin = source.locate_path_pin(3, 0)
+    expect(pin.path).to eq('Foo#bar')
+    pin = source.locate_path_pin(5, 0)
+    expect(pin.path).to eq('Foo::Inner')    
+  end
 end
