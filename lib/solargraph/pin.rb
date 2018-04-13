@@ -21,6 +21,7 @@ module Solargraph
     autoload :Reference,        'solargraph/pin/reference'
     autoload :Documenting,      'solargraph/pin/documenting'
     autoload :Block,            'solargraph/pin/block'
+    autoload :Localized,        'solargraph/pin/localized'
 
     ATTRIBUTE = 1
     CLASS_VARIABLE = 2

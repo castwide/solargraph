@@ -1,14 +1,22 @@
 module Solargraph
   module Pin
     class LocalVariable < BaseVariable
-      def initialize location, namespace, name, docstring, assignment, literal
-        super
+      include Localized
+
+      def initialize location, namespace, name, docstring, assignment, literal, block, presence
+        super(location, namespace, name, docstring, assignment, literal)
+        @block = block
+        @presence = presence
         # @tree = []
         # ancestors.each do |parent|
         #   if [:block, :def, :defs, :class, :module, :source].include? parent.type
         #     @tree.push parent
         #   end
         # end
+      end
+
+      def kind
+        Pin::LOCAL_VARIABLE
       end
 
       # def visible_from? n

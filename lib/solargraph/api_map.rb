@@ -863,13 +863,13 @@ module Solargraph
       end
       mps = @method_pins[fqns]
       result.concat mps.select{|pin| (pin.scope == scope or fqns == '') and visibility.include?(pin.visibility)} unless mps.nil?
-      if fqns != '' and scope == :class and !result.map(&:path).include?("#{fqns}.new")
-        # Create a [Class].new method pin from [Class]#initialize
-        init = inner_get_methods(fqns, :instance, [:private], deep, skip - [fqns]).select{|pin| pin.name == 'initialize'}.first
-        unless init.nil?
-          result.unshift Solargraph::Pin::Directed::Method.new(init.source, init.node, init.namespace, :class, :public, init.docstring, 'new', init.namespace)
-        end
-      end
+      # if fqns != '' and scope == :class and !result.map(&:path).include?("#{fqns}.new")
+      #   # Create a [Class].new method pin from [Class]#initialize
+      #   init = inner_get_methods(fqns, :instance, [:private], deep, skip - [fqns]).select{|pin| pin.name == 'initialize'}.first
+      #   unless init.nil?
+      #     result.unshift Solargraph::Pin::Directed::Method.new(init.source, init.node, init.namespace, :class, :public, init.docstring, 'new', init.namespace)
+      #   end
+      # end
       if deep
         scref = @superclasses[fqns]
         unless scref.nil?

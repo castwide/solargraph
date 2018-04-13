@@ -1,6 +1,6 @@
 module Solargraph
   module Pin
-    class Symbol < Base
+    class Symbol
       attr_reader :location
 
       attr_reader :name
@@ -12,6 +12,10 @@ module Solargraph
 
       def filename
         location.filename
+      end
+
+      def kind
+        Pin::SYMBOL
       end
     end
   end

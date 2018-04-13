@@ -15,7 +15,7 @@ module Solargraph
         @type = type
         @visibility = visibility
         # @superclass_reference = Reference.new(self, superclass) unless superclass.nil?
-        @superclass_reference = Pin::Reference.new(location, namespace, superclass)
+        @superclass_reference = Pin::Reference.new(location, namespace, superclass) unless superclass.nil?
       end
 
       # @return [Array<Pin::Reference>]

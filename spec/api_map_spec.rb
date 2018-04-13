@@ -376,7 +376,7 @@ describe Solargraph::ApiMap do
     api_map = Solargraph::ApiMap.new
     api_map.append_source(code, 'file.rb')
     sugg = api_map.get_methods('Foo').keep_if{|s| s.name == 'bar'}.first
-    expect(sugg.arguments).to eq(['baz', "boo = 'boo'"])
+    expect(sugg.parameters).to eq(['baz', "boo = 'boo'"])
   end
 
   it "gets method keyword arguments" do
@@ -443,7 +443,7 @@ describe Solargraph::ApiMap do
     )
     api_map = Solargraph::ApiMap.new
     api_map.append_source(code, 'file.rb')
-    syms = api_map.get_symbols.map(&:to_s)
+    syms = api_map.get_symbols.map(&:name)
     expect(syms).to include(':foo')
     expect(syms).to include(':Baz')
     expect(syms).to include(':bang')
@@ -501,7 +501,7 @@ describe Solargraph::ApiMap do
     api_map.append_source(code, 'file.rb')
     # @type [Solargraph::Suggestion]
     meth = api_map.get_methods('Foo').select{|s| s.name == 'bar'}.first
-    expect(meth.arguments).to eq(['*baz'])
+    expect(meth.parameters).to eq(['*baz'])
   end
 
   it "gets instance methods from modules" do

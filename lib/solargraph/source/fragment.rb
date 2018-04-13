@@ -22,6 +22,14 @@ module Solargraph
         @tree = tree
       end
 
+      def character
+        @column
+      end
+
+      def position
+        @position ||= Position.new(line, column)
+      end
+
       # Get the node at the current offset.
       #
       # @return [Parser::AST::Node]
@@ -219,18 +227,19 @@ module Solargraph
         @whole_word_range ||= word_range_at(offset, true)
       end
 
+      def block
+        @block ||= @source.locate_block_pin(line, character)
+      end
+
       # Get an array of all the local variables in the source that are visible
       # from the current offset.
       #
       # @return [Array<Solargraph::Pin::LocalVariable>]
-      def local_variable_pins name = nil
-        @local_variable_pins ||= prefer_non_nil_variables(@source.local_variable_pins.select{|pin| pin.visible_from?(node)})
-        return @local_variable_pins if name.nil?
-        @local_variable_pins.select{|pin| pin.name == name}
-      end
+      # def local_variable_pins name = nil
+      # end
 
       def locals
-        local_variable_pins
+        @locals ||= @source.local_variable_pins.select{|pin| pin.visible_from?(block, position)}
       end
 
       def calculated_signature
