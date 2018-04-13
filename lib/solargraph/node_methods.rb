@@ -57,6 +57,8 @@ module Solargraph
         return 'Float'
       elsif node.type == :sym
         return 'Symbol'
+      elsif node.type == :nil
+        return 'NilClass'
       end
       nil
     end

@@ -19,13 +19,13 @@ module Solargraph
       end
 
       # @return [Array<Pin::Reference>]
-      def included_references
-        @included_references ||= []
+      def include_references
+        @include_references ||= []
       end
 
       # @return [Array<String>]
-      def extended_references
-        @extended_references ||= []
+      def extend_references
+        @extend_references ||= []
       end
 
       def kind

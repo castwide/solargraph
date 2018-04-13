@@ -45,6 +45,10 @@ module Solargraph
       def variable?
         false
       end
+
+      # @todo Deprecate
+      def resolve api_map
+      end
     end
   end
 end

@@ -877,7 +877,8 @@ module Solargraph
           sc_visi.push :protected if visibility.include?(:protected)
           # sc_fqns = find_fully_qualified_namespace(sc, fqns)
           scref.resolve self
-          result.concat inner_get_methods(scref.name, scope, sc_visi, true, skip) unless scref.name.nil?
+          fqsc = find_fully_qualified_namespace(scref.name, scref.namespace)
+          result.concat inner_get_methods(fqsc, scope, sc_visi, true, skip) unless fqsc.nil?
         end
         if scope == :instance
           im = @namespace_includes[fqns]

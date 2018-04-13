@@ -47,6 +47,10 @@ module Solargraph
       #   end
       # end
 
+      def nil_assignment?
+        return_type == 'NilClass'
+      end
+
       def variable?
         true
       end

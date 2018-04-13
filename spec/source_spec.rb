@@ -485,8 +485,6 @@ describe Solargraph::Source do
     expect(fragment.scope).to eq(:class)
   end
 
-  # @todo It might be more appropriate to create a Class#new method
-  #   instead (or both)
   it "forces initialize methods to be private" do
     source = Solargraph::Source.load_string('
       class Foo
@@ -496,6 +494,17 @@ describe Solargraph::Source do
     ')
     pin = source.method_pins.select{|pin| pin.name == 'initialize'}.first
     expect(pin.visibility).to be(:private)
+  end
+
+  it "creates Class.new methods for Class#initialize" do
+    source = Solargraph::Source.load_string('
+      class Foo
+        def initialize name
+        end
+      end
+    ')
+    pin = source.method_pins.select{|pin| pin.name == 'new'}.first
+    expect(pin).not_to be_nil
   end
 
   # @todo Pin#resolve is being deprecated. Qualifying namespaces is (mostly)
@@ -528,5 +537,25 @@ describe Solargraph::Source do
   it "flags failed parses" do
     source = Solargraph::Source.load_string(').!')
     expect(source.parsed?).to be(false)
+  end
+
+  it "adds include references" do
+    source = Solargraph::Source.new(%(
+      class Foo
+        include Bar
+      end
+    ))
+    pin = source.pins.select{|pin| pin.path == 'Foo'}.first
+    expect(pin.include_references.first.name).to eq('Bar')
+  end
+
+  it "adds extend references" do
+    source = Solargraph::Source.new(%(
+      class Foo
+        extend Bar
+      end
+    ))
+    pin = source.pins.select{|pin| pin.path == 'Foo'}.first
+    expect(pin.extend_references.first.name).to eq('Bar')
   end
 end

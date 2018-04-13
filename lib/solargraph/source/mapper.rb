@@ -129,7 +129,13 @@ module Solargraph
               elsif c.type == :casgn
                 pins.push Solargraph::Pin::Constant.new(get_node_location(c), fqn, c.children[1].to_s, docstring_for(c), resolve_node_signature(c.children[2]), infer_literal_node_type(c.children[2]), :public)
               elsif c.type == :def and c.children[0].to_s[0].match(/[a-z]/i)
-                pins.push Solargraph::Pin::Method.new(get_node_location(c), fqn || '', c.children[(c.type == :def ? 0 : 1)].to_s, docstring_for(c), scope, visibility, get_method_args(c))
+               methpin = Solargraph::Pin::Method.new(get_node_location(c), fqn || '', c.children[(c.type == :def ? 0 : 1)].to_s, docstring_for(c), scope, visibility, get_method_args(c))
+               if methpin.name == 'initialize' and methpin.scope == :instance
+                pins.push Solargraph::Pin::Method.new(methpin.location, methpin.namespace, methpin.name, methpin.docstring, methpin.scope, :private, methpin.parameters)
+                pins.push Solargraph::Pin::Method.new(methpin.location, methpin.namespace, 'new', methpin.docstring, :class, :public, methpin.parameters)
+               else
+                pins.push methpin
+               end
               elsif c.type == :defs
                 s_visi = visibility
                 s_visi = :public if scope != :class
@@ -173,12 +179,13 @@ module Solargraph
                 end
                 next
               elsif c.type == :send and c.children[1] == :include and c.children[0].nil?
-                # @todo What to do about references?
-                if @node_tree[0].nil? or @node_tree[0].type == :source or @node_tree[0].type == :class or @node_tree[0].type == :module or (@node_tree.length > 1 and @node_tree[0].type == :begin and (@node_tree[1].type == :class or @node_tree[1].type == :module))
+                last_node = @node_stack.first
+                last_node = @node_stack[@node_stack.length - 2] if !last_node.nil? and last_node.type == :begin
+                if last_node.nil? or last_node.type == :class or last_node.type == :module
                   if c.children[2].kind_of?(AST::Node) and c.children[2].type == :const
                     c.children[2..-1].each do |i|
-                      pin = @pins.select{|pin| pin.kind == Pin::NAMESPACE and pin.path == fqn}.last
-                      unless pin.nil?
+                      nspin = @pins.select{|pin| pin.kind == Pin::NAMESPACE and pin.path == fqn}.last
+                      unless nspin.nil?
                         iref = Pin::Reference.new(get_node_location(c), nspin.path, unpack_name(i))
                         nspin.include_references.push(iref)
                       end
@@ -186,13 +193,14 @@ module Solargraph
                   end
                 end
               elsif c.type == :send and c.children[1] == :extend and c.children[0].nil?
-                # @todo What to do about references?
-                if @node_tree[0].nil? or @node_tree[0].type == :source or @node_tree[0].type == :class or @node_tree[0].type == :module or (@node_tree.length > 1 and @node_tree[0].type == :begin and (@node_tree[1].type == :class or @node_tree[1].type == :module))
+                last_node = @node_stack.first
+                last_node = @node_stack[@node_stack.length - 2] if !last_node.nil? and last_node.type == :begin
+                if last_node.nil? or last_node.type == :class or last_node.type == :module
                   if c.children[2].kind_of?(AST::Node) and c.children[2].type == :const
                     # namespace_extends[fqn || ''] ||= []
                     c.children[2..-1].each do |i|
-                      pin = @pins.select{|pin| pin.kind == Pin::NAMESPACE and pin.path == fqn}.last
-                      unless pin.nil?
+                      nspin = @pins.select{|pin| pin.kind == Pin::NAMESPACE and pin.path == fqn}.last
+                      unless nspin.nil?
                         ref = Pin::Reference.new(get_node_location(c), nspin.path, unpack_name(i))
                         nspin.extend_references.push(ref)
                       end

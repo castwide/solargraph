@@ -15,6 +15,10 @@ module Solargraph
         @namespace = namespace
         @name = name
       end
+
+      # @todo Deprecaate
+      def resolve api_map
+      end
     end
   end
 end

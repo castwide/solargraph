@@ -65,6 +65,16 @@ module Solargraph
       @path_macros[path]
     end
 
+    # @todo Temporary blank
+    def path_macros
+      @path_macros ||= {}
+    end
+
+    # @todo Name problem
+    def required
+      requires
+    end
+
     # @return [Array<String>]
     def namespaces
       # @namespaces ||= namespace_pin_map.keys
