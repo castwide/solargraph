@@ -340,6 +340,7 @@ module Solargraph
     def parse
       node, comments = inner_parse(@fixed, filename)
       @node = node
+      @comments = comments
       process_parsed node, comments
       @parsed = true
     end
@@ -348,6 +349,7 @@ module Solargraph
       @fixed = @code.gsub(/[^\s]/, ' ')
       node, comments = inner_parse(@fixed, filename)
       @node = node
+      @comments = comments
       process_parsed node, comments
       @parsed = false
     end
