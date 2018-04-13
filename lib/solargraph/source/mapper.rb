@@ -365,7 +365,7 @@ module Solargraph
               pin = @pins.select{|pin| [Pin::NAMESPACE, Pin::METHOD].include?(pin.kind) and pin.location.range.contain?(here)}.first
               @path_macros[pin.path] = v
             else
-              STDERR.puts "Nothing to do for directive: #{d}"
+              # STDERR.puts "Nothing to do for directive: #{d}"
             end
           end
         end
