@@ -8,6 +8,13 @@ module Solargraph
         YARD::CodeObjects::ConstantObject => Solargraph::LanguageServer::CompletionItemKinds::CONSTANT
       }
 
+      KIND_MAP = {
+        YARD::CodeObjects::ClassObject => Pin::NAMESPACE,
+        YARD::CodeObjects::ModuleObject => Pin::NAMESPACE,
+        YARD::CodeObjects::MethodObject => Pin::METHOD,
+        YARD::CodeObjects::ConstantObject => Pin::CONSTANT
+      }
+
       # @return [YARD::CodeObjects::Base]
       attr_reader :code_object
 
@@ -20,6 +27,10 @@ module Solargraph
       def name
         # @name ||= code_object.to_s.split('::').last
         @name ||= code_object.name.to_s
+      end
+
+      def kind
+        @kind ||= KIND_MAP[code_object.class] || Pin::KEYWORD
       end
 
       def completion_item_kind

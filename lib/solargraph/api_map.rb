@@ -556,7 +556,7 @@ module Solargraph
           end
         end
       end
-      filtered = result.uniq(&:identifier).select{|s| s.kind != Solargraph::LanguageServer::CompletionItemKinds::METHOD or s.name.match(/^[a-z0-9_]*(\!|\?|=)?$/i)}.sort_by.with_index{ |x, idx| [x.name, idx] }
+      filtered = result.uniq(&:identifier).select{|s| s.kind != Pin::METHOD or s.name.match(/^[a-z0-9_]*(\!|\?|=)?$/i)}.sort_by.with_index{ |x, idx| [x.name, idx] }
       Completion.new(filtered, fragment.whole_word_range)
     end
 
@@ -777,6 +777,7 @@ module Solargraph
         if pin.kind == Pin::BLOCK_PARAMETER and !pin.block.receiver.nil?
           # @todo Scope and visibility might not be correct here
           rcv = tail_pin(pin.block.receiver, pin.block.namespace, :class, [:public])
+          next if rcv.nil?
           if CoreFills::METHODS_WITH_YIELDPARAM_SUBTYPES.include?(rcv.path)
             prev = tail_pin(pin.block.receiver.split('.')[0..-2].join('.'), pin.block.namespace, :class, :public)
             next if prev.nil?
