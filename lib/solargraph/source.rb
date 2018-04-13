@@ -164,6 +164,7 @@ module Solargraph
       pins.each do |pin|
         next unless [Pin::NAMESPACE, Pin::METHOD].include?(pin.kind)
         found = pin if pin.location.range.contain?(position)
+        break if pin.location.range.start.line > line
       end
       found
     end
