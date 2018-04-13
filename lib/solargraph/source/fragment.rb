@@ -73,7 +73,7 @@ module Solargraph
       def scope
         if @scope.nil?
           @scope = :class
-          @scope = :instance if block.kind == Pin::METHOD and block.scope == :instance
+          @scope = :instance if named_path.kind == Pin::METHOD and named_path.scope == :instance
         end
         @scope
       end
@@ -212,6 +212,10 @@ module Solargraph
 
       def block
         @block ||= @source.locate_block_pin(line, character)
+      end
+
+      def named_path
+        @named_path ||= @source.locate_named_path_pin(line, character)
       end
 
       # Get an array of all the local variables in the source that are visible
