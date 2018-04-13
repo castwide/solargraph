@@ -559,7 +559,7 @@ describe Solargraph::Source do
     expect(pin.extend_references.first.name).to eq('Bar')
   end
 
-  it "locates pin paths" do
+  it "locates named path pins" do
     source = Solargraph::Source.new(%(
       class Foo
         def bar
@@ -568,11 +568,25 @@ describe Solargraph::Source do
         end
       end
     ))
-    pin = source.locate_path_pin(2, 0)
+    pin = source.locate_named_path_pin(2, 0)
     expect(pin.path).to eq('Foo')
-    pin = source.locate_path_pin(3, 0)
+    pin = source.locate_named_path_pin(3, 0)
     expect(pin.path).to eq('Foo#bar')
-    pin = source.locate_path_pin(5, 0)
-    expect(pin.path).to eq('Foo::Inner')    
+    pin = source.locate_named_path_pin(5, 0)
+    expect(pin.path).to eq('Foo::Inner')
+    # @todo Should the global namespace return nil?
+    pin = source.locate_named_path_pin(7, 0)
+    expect(pin).to be_nil
+  end
+
+  it "locates block pins" do
+    source = Solargraph::Source.new(%(
+      class Foo
+        100.times do
+        end
+      end
+    ))
+    pin = source.locate_block_pin(3, 0)
+    expect(pin.kind).to eq(Solargraph::Pin::BLOCK)
   end
 end

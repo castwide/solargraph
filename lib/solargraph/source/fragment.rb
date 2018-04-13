@@ -229,6 +229,10 @@ module Solargraph
         @local_variable_pins.select{|pin| pin.name == name}
       end
 
+      def locals
+        local_variable_pins
+      end
+
       def calculated_signature
         @calculated_signature ||= calculate
       end

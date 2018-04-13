@@ -237,6 +237,8 @@ module Solargraph
                     @locals.push Solargraph::Pin::MethodParameter.new(get_node_location(u), fqn || '', "#{u.children[0]}", docstring_for(c))
                   end
                 end
+              elsif c.type == :block
+                @pins.push Solargraph::Pin::Block.new(get_node_location(c), fqn || '', '', docstring_for(c))
               end
               process c, tree, visibility, scope, fqn, stack
             end

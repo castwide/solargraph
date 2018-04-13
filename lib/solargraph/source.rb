@@ -158,12 +158,19 @@ module Solargraph
     #   @required ||= []
     # end
 
-    def locate_path_pin line, character
+    def locate_named_path_pin line, character
+      _locate_pin line, character, Pin::NAMESPACE, Pin::METHOD
+    end
+
+    def locate_block_pin line, character
+      _locate_pin line, character, Pin::NAMESPACE, Pin::METHOD, Pin::BLOCK
+    end
+
+    def _locate_pin line, character, *kinds
       position = Solargraph::Source::Position.new(line, character)
       found = nil
       pins.each do |pin|
-        next unless [Pin::NAMESPACE, Pin::METHOD].include?(pin.kind)
-        found = pin if pin.location.range.contain?(position)
+        found = pin if (kinds.empty? or kinds.include?(pin.kind)) and pin.location.range.contain?(position)
         break if pin.location.range.start.line > line
       end
       found

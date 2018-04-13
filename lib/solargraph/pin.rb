@@ -20,6 +20,7 @@ module Solargraph
     autoload :BlockParameter,   'solargraph/pin/block_parameter'
     autoload :Reference,        'solargraph/pin/reference'
     autoload :Documenting,      'solargraph/pin/documenting'
+    autoload :Block,            'solargraph/pin/block'
 
     ATTRIBUTE = 1
     CLASS_VARIABLE = 2
@@ -31,5 +32,6 @@ module Solargraph
     METHOD = 8
     NAMESPACE = 9
     SYMBOL = 10
+    BLOCK = 11
   end
 end
