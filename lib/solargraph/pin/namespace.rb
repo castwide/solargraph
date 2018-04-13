@@ -7,13 +7,25 @@ module Solargraph
 
       attr_reader :type
 
-      attr_reader :superclass
+      # @return [Pin::Reference]
+      attr_reader :superclass_reference
 
       def initialize location, namespace, name, docstring, type, visibility, superclass
         super(location, namespace, name, docstring)
         @type = type
         @visibility = visibility
-        @superclass_reference = Reference.new(self, superclass) unless superclass.nil?
+        # @superclass_reference = Reference.new(self, superclass) unless superclass.nil?
+        @superclass_reference = Pin::Reference.new(location, namespace, superclass)
+      end
+
+      # @return [Array<Pin::Reference>]
+      def included_references
+        @included_references ||= []
+      end
+
+      # @return [Array<String>]
+      def extended_references
+        @extended_references ||= []
       end
 
       def kind

@@ -90,20 +90,20 @@ module Solargraph
     #   }
     # end
 
-    def qualify(signature, fqns)
-      return signature if signature.nil? or signature.empty?
-      base, rest = signature.split('.', 2)
-      parts = fqns.split('::')
-      until parts.empty?
-        here = parts.join('::')
-        parts.pop
-        name = "#{here}::#{base}"
-        next if namespace_pins(name).empty?
-        base = name
-        break
-      end
-      base + (rest.nil? ? '' : ".#{rest}")
-    end
+    # def qualify(signature, fqns)
+    #   return signature if signature.nil? or signature.empty?
+    #   base, rest = signature.split('.', 2)
+    #   parts = fqns.split('::')
+    #   until parts.empty?
+    #     here = parts.join('::')
+    #     parts.pop
+    #     name = "#{here}::#{base}"
+    #     next if namespace_pins(name).empty?
+    #     base = name
+    #     break
+    #   end
+    #   base + (rest.nil? ? '' : ".#{rest}")
+    # end
 
     # @param fqns [String] The namespace (nil for all)
     # @return [Array<Solargraph::Pin::Namespace>]

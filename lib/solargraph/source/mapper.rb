@@ -27,6 +27,8 @@ module Solargraph
         # HACK make sure the first node gets processed
         root = AST::Node.new(:source, [filename])
         root = root.append node
+        # @todo Is the root namespace a class or a module? Assuming class for now.
+        @pins.push Pin::Namespace.new(get_node_location(node), '', '', nil, :class, :public, nil)
         process root
         process_directives
         [@pins, @locals, @requires, @symbols]
@@ -165,30 +167,38 @@ module Solargraph
                     if ref.kind == Pin::CONSTANT
                       pins.push ref.class.new(ref.location, ref.namespace, ref.name, ref.docstring, ref.signature, ref.return_type, :private)
                     else
-                      pins.push ref.class.new(ref.location, ref.namespace, ref.name, ref.docstring, ref.type, :private, ref.superclass)
+                      pins.push ref.class.new(ref.location, ref.namespace, ref.name, ref.docstring, ref.type, :private, ref.superclass_reference.name)
                     end
                   end
                 end
                 next
               elsif c.type == :send and c.children[1] == :include and c.children[0].nil?
                 # @todo What to do about references?
-                # if @node_tree[0].nil? or @node_tree[0].type == :source or @node_tree[0].type == :class or @node_tree[0].type == :module or (@node_tree.length > 1 and @node_tree[0].type == :begin and (@node_tree[1].type == :class or @node_tree[1].type == :module))
-                #   if c.children[2].kind_of?(AST::Node) and c.children[2].type == :const
-                #     c.children[2..-1].each do |i|
-                #       namespace_pins(fqn || '').last.reference_include unpack_name(i)
-                #     end
-                #   end
-                # end
+                if @node_tree[0].nil? or @node_tree[0].type == :source or @node_tree[0].type == :class or @node_tree[0].type == :module or (@node_tree.length > 1 and @node_tree[0].type == :begin and (@node_tree[1].type == :class or @node_tree[1].type == :module))
+                  if c.children[2].kind_of?(AST::Node) and c.children[2].type == :const
+                    c.children[2..-1].each do |i|
+                      pin = @pins.select{|pin| pin.kind == Pin::NAMESPACE and pin.path == fqn}.last
+                      unless pin.nil?
+                        iref = Pin::Reference.new(get_node_location(c), nspin.path, unpack_name(i))
+                        nspin.include_references.push(iref)
+                      end
+                    end
+                  end
+                end
               elsif c.type == :send and c.children[1] == :extend and c.children[0].nil?
                 # @todo What to do about references?
-                # if @node_tree[0].nil? or @node_tree[0].type == :source or @node_tree[0].type == :class or @node_tree[0].type == :module or (@node_tree.length > 1 and @node_tree[0].type == :begin and (@node_tree[1].type == :class or @node_tree[1].type == :module))
-                #   if c.children[2].kind_of?(AST::Node) and c.children[2].type == :const
-                #     # namespace_extends[fqn || ''] ||= []
-                #     c.children[2..-1].each do |i|
-                #       namespace_pin_map[fqn || ''].last.reference_extend unpack_name(i)
-                #     end
-                #   end
-                # end
+                if @node_tree[0].nil? or @node_tree[0].type == :source or @node_tree[0].type == :class or @node_tree[0].type == :module or (@node_tree.length > 1 and @node_tree[0].type == :begin and (@node_tree[1].type == :class or @node_tree[1].type == :module))
+                  if c.children[2].kind_of?(AST::Node) and c.children[2].type == :const
+                    # namespace_extends[fqn || ''] ||= []
+                    c.children[2..-1].each do |i|
+                      pin = @pins.select{|pin| pin.kind == Pin::NAMESPACE and pin.path == fqn}.last
+                      unless pin.nil?
+                        ref = Pin::Reference.new(get_node_location(c), nspin.path, unpack_name(i))
+                        nspin.extend_references.push(ref)
+                      end
+                    end
+                  end
+                end
               elsif c.type == :send and [:attr_reader, :attr_writer, :attr_accessor].include?(c.children[1])
                 c.children[2..-1].each do |a|
                   if c.children[1] == :attr_reader or c.children[1] == :attr_accessor
@@ -237,8 +247,13 @@ module Solargraph
       end
 
       def get_node_location(node)
-        st = Position.new(node.loc.line - 1, node.loc.column)
-        en = Position.new(node.loc.last_line - 1, node.loc.last_column)
+        if node.nil?
+          st = Position.new(0, 0)
+          en = Position.from_offset(@code, @code.length)
+        else
+          st = Position.new(node.loc.line - 1, node.loc.column)
+          en = Position.new(node.loc.last_line - 1, node.loc.last_column)
+        end
         range = Range.new(st, en)
         Location.new(filename, range)
       end  
@@ -296,10 +311,10 @@ module Solargraph
               end
             elsif d.tag.tag_name == 'method'
               gen_src = Source.new("def #{d.tag.name};end", filename)
-              gen_pin = gen_src.pins.first
+              gen_pin = gen_src.pins.last # Method is last pin after root namespace
               nsp = namespace_for(k.node)
               next if nsp.nil? # @todo Add methods to global namespace?
-              pins.push Solargraph::Pin::Method.new(get_node_location(k.node), nsp.path, gen_pin.name, docstring, :instance, :public, [])
+              @pins.push Solargraph::Pin::Method.new(get_node_location(k.node), nsp.path, gen_pin.name, docstring, :instance, :public, [])
             elsif d.tag.tag_name == 'macro'
               # @todo Handle various types of macros (attach, new, whatever)
               path = path_for(k.node)

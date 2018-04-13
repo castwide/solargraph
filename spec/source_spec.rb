@@ -117,13 +117,14 @@ describe Solargraph::Source do
         end
       end
     ))
-    expect(source.namespace_pins.length).to eq(2)
-    expect(source.namespace_pins[0].path).to eq('Foo')
-    expect(source.namespace_pins[0].type).to eq(:module)
-    expect(source.namespace_pins[0].return_type).to eq('Module<Foo>')
-    expect(source.namespace_pins[1].path).to eq('Foo::Bar')
-    expect(source.namespace_pins[1].type).to eq(:class)
-    expect(source.namespace_pins[1].return_type).to eq('Class<Foo::Bar>')
+    # There are actually 3 namespaces including the root
+    expect(source.namespace_pins.length).to eq(3)
+    expect(source.namespace_pins[1].path).to eq('Foo')
+    expect(source.namespace_pins[1].type).to eq(:module)
+    expect(source.namespace_pins[1].return_type).to eq('Module<Foo>')
+    expect(source.namespace_pins[2].path).to eq('Foo::Bar')
+    expect(source.namespace_pins[2].type).to eq(:class)
+    expect(source.namespace_pins[2].return_type).to eq('Class<Foo::Bar>')
   end
 
   it "pins class methods" do
@@ -356,20 +357,21 @@ describe Solargraph::Source do
     expect(source.method_pins.first.parameters).to eq(['bar', 'baz'])
   end
 
-  # @todo This might not be valid
-  it "pins top-level methods from directives" do
-    code = %(
-      begin
-      # @!method foo(bar, baz)
-      #   @return [Array]
-      end
-    )
-    source = Solargraph::Source.new(code, 'file.rb')
-    expect(source.method_pins.length).to eq(1)
-    expect(source.method_pins.first.name).to eq('foo')
-    expect(source.method_pins.first.parameters).to eq(['bar', 'baz'])
-    expect(source.method_pins.first.return_type).to eq('Array')
-  end
+  # @todo This might not be valid. Note that even the example in the spec
+  #   requires a hack; it only worked from inside a `begin` block.
+  # it "pins top-level methods from directives" do
+  #   code = %(
+  #     begin
+  #     # @!method foo(bar, baz)
+  #     #   @return [Array]
+  #     end
+  #   )
+  #   source = Solargraph::Source.new(code, 'file.rb')
+  #   expect(source.method_pins.length).to eq(1)
+  #   expect(source.method_pins.first.name).to eq('foo')
+  #   expect(source.method_pins.first.parameters).to eq(['bar', 'baz'])
+  #   expect(source.method_pins.first.return_type).to eq('Array')
+  # end
 
   it "pins constants" do
     code = %(
@@ -483,6 +485,8 @@ describe Solargraph::Source do
     expect(fragment.scope).to eq(:class)
   end
 
+  # @todo It might be more appropriate to create a Class#new method
+  #   instead (or both)
   it "forces initialize methods to be private" do
     source = Solargraph::Source.load_string('
       class Foo
@@ -494,22 +498,24 @@ describe Solargraph::Source do
     expect(pin.visibility).to be(:private)
   end
 
-  it "creates resolvable local variable pins" do
-    api_map = Solargraph::ApiMap.new
-    source = Solargraph::Source.load_string(%(
-      class Foo
-        # @return [String]
-        def bar
-        end
-      end
-      foo = Foo.new.bar
-      foo
-    ))
-    api_map.virtualize source
-    lvar = source.local_variable_pins.first
-    lvar.resolve api_map
-    expect(lvar.return_type).to eq('String')
-  end
+  # @todo Pin#resolve is being deprecated. Qualifying namespaces is (mostly)
+  #   the responsibility of the ApiMap.
+  # it "creates resolvable local variable pins" do
+  #   api_map = Solargraph::ApiMap.new
+  #   source = Solargraph::Source.load_string(%(
+  #     class Foo
+  #       # @return [String]
+  #       def bar
+  #       end
+  #     end
+  #     foo = Foo.new.bar
+  #     foo
+  #   ))
+  #   api_map.virtualize source
+  #   lvar = source.local_variable_pins.first
+  #   lvar.resolve api_map
+  #   expect(lvar.return_type).to eq('String')
+  # end
 
   it "flags successful parses" do
     source = Solargraph::Source.load_string(%(
