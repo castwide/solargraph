@@ -18,6 +18,7 @@ module Solargraph
         @docstring_hash = associate_comments(node, comments)
         # @todo Stuff that needs to be resolved
         @variables = []
+        @path_macros = {}
 
         @pins = []
         @requires = []
@@ -251,6 +252,15 @@ module Solargraph
         stack.pop
       end
 
+      # def path_for node
+      #   path = namespace_for(node) || ''
+      #   mp = (method_pins + attribute_pins).select{|p| p.node == node}.first
+      #   unless mp.nil?
+      #     path += (mp.scope == :instance ? '#' : '.') + mp.name
+      #   end
+      #   path
+      # end
+  
       def get_last_in_stack_not_begin stack
         index = stack.length - 1
         last = stack[index]
@@ -346,8 +356,10 @@ module Solargraph
               @pins.push Solargraph::Pin::Method.new(get_node_location(k.node), nsp.path, gen_pin.name, docstring, :instance, :public, [])
             elsif d.tag.tag_name == 'macro'
               # @todo Handle various types of macros (attach, new, whatever)
-              path = path_for(k.node)
-              @path_macros[path] = v
+              # path = path_for(k.node)
+              here = get_node_start_position(k.node)
+              pin = @pins.select{|pin| [Pin::NAMESPACE, Pin::METHOD].include?(pin.kind) and pin.location.range.contain?(here)}.first
+              @path_macros[pin.path] = v
             else
               STDERR.puts "Nothing to do for directive: #{d}"
             end
