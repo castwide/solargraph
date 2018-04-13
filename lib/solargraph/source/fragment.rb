@@ -38,18 +38,11 @@ module Solargraph
       #
       # @return [String]
       def namespace
-        # if @namespace.nil?
-        #   parts = []
-        #   @tree.each do |n|
-        #     next unless n.kind_of?(AST::Node)
-        #     if n.type == :class or n.type == :module
-        #       parts.unshift unpack_name(n.children[0])
-        #     end
-        #   end
-        #   @namespace = parts.join('::')
-        # end
-        # @namespace
-        @namespace ||= @source.locate_namespace_pin(line, character).path
+        if @namespace.nil?
+          pin = @source.locate_namespace_pin(line, character)
+          @namespace = (pin.nil? ? '' : pin.path)
+        end
+        @namespace
       end
 
       # @return [Boolean]

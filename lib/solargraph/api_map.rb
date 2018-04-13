@@ -363,8 +363,8 @@ module Solargraph
       pin.resolve self
       return pin.return_type unless pin.return_type.nil?
       return nil unless pin.variable?
-      return nil if pin.signature.split('.').first == word
       return nil if pin.signature.nil?
+      return nil if pin.signature.split('.').first == word
       ns, sc = extract_namespace_and_scope(base_type)
       infer_type pin.signature, ns, scope: sc
     end
