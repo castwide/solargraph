@@ -524,7 +524,7 @@ module Solargraph
           result.concat get_symbols
         else
           unless fragment.signature.include?('::')
-            result.concat prefer_non_nil_variables(fragment.local_variable_pins)
+            result.concat prefer_non_nil_variables(fragment.locals)
             result.concat get_type_methods(combine_type(fragment.namespace, fragment.scope), fragment.namespace)
             result.concat get_type_methods('Kernel')
             result.concat ApiMap.keywords

@@ -41,17 +41,18 @@ module Solargraph
       #
       # @return [String]
       def namespace
-        if @namespace.nil?
-          parts = []
-          @tree.each do |n|
-            next unless n.kind_of?(AST::Node)
-            if n.type == :class or n.type == :module
-              parts.unshift unpack_name(n.children[0])
-            end
-          end
-          @namespace = parts.join('::')
-        end
-        @namespace
+        # if @namespace.nil?
+        #   parts = []
+        #   @tree.each do |n|
+        #     next unless n.kind_of?(AST::Node)
+        #     if n.type == :class or n.type == :module
+        #       parts.unshift unpack_name(n.children[0])
+        #     end
+        #   end
+        #   @namespace = parts.join('::')
+        # end
+        # @namespace
+        @namespace ||= @source.locate_named_path_pin(line, character).path
       end
 
       # @return [Boolean]
@@ -278,16 +279,16 @@ module Solargraph
         # @todo Smelly exceptional case for integers
         base, rest = signature.split('.', 2)
         base.sub!(/^[0-9]+?$/, 'Integer.new')
-        var = local_variable_pins(base).first
+        var = locals.select{|pin| pin.name == base}.first
         unless var.nil?
           done = []
           until var.nil?
             break if done.include?(var)
             done.push var
-            type = var.calculated_signature
+            type = var.signature
             break if type.nil?
             base = type
-            var = local_variable_pins(base).first
+            var = locals.select{|pin| pin.name == base}.first
           end
         end
         base + (rest.nil? ? '' : ".#{rest}")
