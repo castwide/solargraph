@@ -100,6 +100,7 @@ describe Protocol do
       }
     }
     response = @protocol.response
+    expect(response['error']).to be_nil
     expect(response['result']['items'].length > 0).to be(true)
   end
 
@@ -137,6 +138,7 @@ describe Protocol do
       }
     }
     response = @protocol.response
+    expect(response['error']).to be_nil
     item = response['result']['items'].select{|item| item['label'] == 'String' and item['kind'] == Solargraph::LanguageServer::CompletionItemKinds::CLASS}.first
     expect(item).not_to be_nil
     @protocol.request 'completionItem/resolve', item

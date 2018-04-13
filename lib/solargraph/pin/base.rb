@@ -34,6 +34,10 @@ module Solargraph
       def kind
       end
 
+      def completion_item_kind
+        LanguageServer::CompletionItemKinds::KEYWORD
+      end
+
       # @return [String]
       def return_type
       end

@@ -26,10 +26,6 @@ module Solargraph
         @return_type
       end
 
-      def completion_item_kind
-        Solargraph::LanguageServer::CompletionItemKinds::PROPERTY
-      end
-
       def method?
         true
       end

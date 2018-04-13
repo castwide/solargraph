@@ -32,6 +32,10 @@ module Solargraph
         Pin::NAMESPACE
       end
 
+      def completion_item_kind
+        (type == :class ? LanguageServer::CompletionItemKinds::CLASS : LanguageServer::CompletionItemKinds::MODULE)
+      end
+
       # def reference_include name
       #   include_references.push Reference.new(self, name)
       # end
