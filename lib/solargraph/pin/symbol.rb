@@ -9,6 +9,10 @@ module Solargraph
         @name = name
         @location = location
       end
+
+      def filename
+        location.filename
+      end
     end
   end
 end

@@ -105,10 +105,10 @@ module Solargraph
                   unless ora.nil?
                     u = c.updated(:cvasgn, c.children + ora.children[1..-1], nil)
                     @docstring_hash[u.loc] = docstring_for(ora)
-                    pins.push Solargraph::Pin::ClassVariable.new(get_node_location(u), fqn || '', c.children[0].to_s, docstring_for(u))
+                    pins.push Solargraph::Pin::ClassVariable.new(get_node_location(u), fqn || '', c.children[0].to_s, docstring_for(u), resolve_node_signature(u.children[1]), infer_literal_node_type(u.children[1]))
                   end
                 else
-                  pins.push Solargraph::Pin::ClassVariable.new(get_node_location(c), fqn || '', c.children[0].to_s, docstring_for(c), code_for(c.children[1]), resolve_node_signature(c.children[1]))
+                  pins.push Solargraph::Pin::ClassVariable.new(get_node_location(c), fqn || '', c.children[0].to_s, docstring_for(c), resolve_node_signature(c.children[1]), infer_literal_node_type(c.children[1]))
                 end
               elsif c.type == :lvasgn
                 if c.children[1].nil?
@@ -179,8 +179,7 @@ module Solargraph
                 end
                 next
               elsif c.type == :send and c.children[1] == :include and c.children[0].nil?
-                last_node = @node_stack.first
-                last_node = @node_stack[@node_stack.length - 2] if !last_node.nil? and last_node.type == :begin
+                last_node = get_last_in_stack_not_begin(stack)
                 if last_node.nil? or last_node.type == :class or last_node.type == :module
                   if c.children[2].kind_of?(AST::Node) and c.children[2].type == :const
                     c.children[2..-1].each do |i|
@@ -193,8 +192,7 @@ module Solargraph
                   end
                 end
               elsif c.type == :send and c.children[1] == :extend and c.children[0].nil?
-                last_node = @node_stack.first
-                last_node = @node_stack[@node_stack.length - 2] if !last_node.nil? and last_node.type == :begin
+                last_node = get_last_in_stack_not_begin(stack)
                 if last_node.nil? or last_node.type == :class or last_node.type == :module
                   if c.children[2].kind_of?(AST::Node) and c.children[2].type == :const
                     # namespace_extends[fqn || ''] ||= []
@@ -246,6 +244,16 @@ module Solargraph
           @node_stack.shift
         end
         stack.pop
+      end
+
+      def get_last_in_stack_not_begin stack
+        index = stack.length - 1
+        last = stack[index]
+        while !last.nil? and last.type == :begin
+          index -= 1
+          last = stack[index]
+        end
+        last
       end
 
       # @return [YARD::Docstring]
@@ -358,11 +366,11 @@ module Solargraph
           elsif c.type == :restarg
             args.push "*#{c.children[0]}"
           elsif c.type == :optarg
-            args.push "#{c.children[0]} = #{source.code_for(c.children[1])}"
+            args.push "#{c.children[0]} = #{code_for(c.children[1])}"
           elsif c.type == :kwarg
             args.push "#{c.children[0]}:"
           elsif c.type == :kwoptarg
-            args.push "#{c.children[0]}: #{source.code_for(c.children[1])}"
+            args.push "#{c.children[0]}: #{code_for(c.children[1])}"
           elsif c.type == :blockarg
             args.push "&#{c.children[0]}"
           end

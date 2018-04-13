@@ -19,6 +19,10 @@ module Solargraph
       # @todo Deprecaate
       def resolve api_map
       end
+
+      def filename
+        location.filename
+      end
     end
   end
 end

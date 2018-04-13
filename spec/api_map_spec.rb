@@ -45,7 +45,7 @@ describe Solargraph::ApiMap do
 
   it "finds included instance methods" do
     methods = @api_map.get_methods("Class1")
-    expect(methods.map(&:to_s)).to include('module1_method')
+    expect(methods.map(&:name)).to include('module1_method')
   end
 
   it "finds superclass instance methods" do
@@ -389,7 +389,7 @@ describe Solargraph::ApiMap do
     api_map = Solargraph::ApiMap.new
     api_map.append_source(code, 'file.rb')
     sugg = api_map.get_methods('Foo').keep_if{|s| s.name == 'bar'}.first
-    expect(sugg.arguments).to eq(['baz:', "boo: 'boo'"])
+    expect(sugg.parameters).to eq(['baz:', "boo: 'boo'"])
   end
 
   it "recognizes rebased namespaces" do

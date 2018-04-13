@@ -787,10 +787,10 @@ module Solargraph
       end
       [@namespace_includes.values, @namespace_extends.values].each do |refsets|
         refsets.each do |refs|
-          refs.delete_if{|ref| ref.pin.filename == source.filename}
+          refs.delete_if{|ref| ref.filename == source.filename}
         end
       end
-      @superclasses.delete_if{|key, ref| ref.pin.filename == source.filename}
+      @superclasses.delete_if{|key, ref| ref.filename == source.filename}
       @symbol_pins.delete_if{|pin| pin.filename == source.filename}
     end
 

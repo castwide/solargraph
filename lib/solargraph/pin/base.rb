@@ -22,6 +22,10 @@ module Solargraph
         @docstring = docstring
       end
 
+      def filename
+        location.filename
+      end
+
       # @return [String]
       def path
       end
