@@ -418,7 +418,12 @@ module Solargraph
       pin = infer_word_pin(word, base_type, internal)
       return nil if pin.nil?
       pin.resolve self
-      pin.return_type
+      return pin.return_type unless pin.return_type.nil?
+      return nil unless pin.variable?
+      return nil if pin.signature.split('.').first == word
+      return nil if pin.signature.nil?
+      ns, sc = extract_namespace_and_scope(base_type)
+      infer_type pin.signature, ns, scope: sc
     end
 
     # Get an array of pins for a method name in the provided context. Private
