@@ -84,32 +84,28 @@ module Solargraph
     # @param fqns [String] The namespace (nil for all)
     # @return [Array<Solargraph::Pin::Namespace>]
     def namespace_pins fqns = nil
-      # return namespace_pin_map.values.flatten if fqns.nil?
-      # namespace_pin_map[fqns] || []
-      @namespace_pins ||= pins.select{|pin| pin.kind == Pin::NAMESPACE}
+      pins.select{|pin| pin.kind == Pin::NAMESPACE}
     end
 
     # @param fqns [String] The namespace (nil for all)
     # @return [Array<Solargraph::Pin::Method>]
     def method_pins fqns = nil
-      # return method_pin_map.values.flatten if fqns.nil?
-      # method_pin_map[fqns] || []
-      @method_pins ||= pins.select{|pin| pin.kind == Solargraph::Pin::METHOD}
+      pins.select{|pin| pin.kind == Solargraph::Pin::METHOD}
     end
 
     # @return [Array<Solargraph::Pin::Attribute>]
     def attribute_pins
-      @attribute_pins ||= pins.select{|pin| pin.kind == Pin::ATTRIBUTE}
+      pins.select{|pin| pin.kind == Pin::ATTRIBUTE}
     end
 
     # @return [Array<Solargraph::Pin::InstanceVariable>]
     def instance_variable_pins
-      @instance_variable_pins ||= pins.select{|pin| pin.kind == Pin::INSTANCE_VARIABLE}
+      pins.select{|pin| pin.kind == Pin::INSTANCE_VARIABLE}
     end
 
     # @return [Array<Solargraph::Pin::ClassVariable>]
     def class_variable_pins
-      @class_variable_pins ||= pins.select{|pin| pin.kind == Pin::CLASS_VARIABLE}
+      pins.select{|pin| pin.kind == Pin::CLASS_VARIABLE}
     end
 
     def locals
@@ -118,12 +114,12 @@ module Solargraph
 
     # @return [Array<Solargraph::Pin::GlobalVariable>]
     def global_variable_pins
-      @global_variable_pins ||= pins.select{|pin| pin.kind == Pin::GLOBAL_VARIABLE}
+      pins.select{|pin| pin.kind == Pin::GLOBAL_VARIABLE}
     end
 
     # @return [Array<Solargraph::Pin::Constant>]
     def constant_pins
-      @constant_pins ||= pins.select{|pin| pin.kind == Pin::CONSTANT}
+      pins.select{|pin| pin.kind == Pin::CONSTANT}
     end
 
     # @return [Array<Solargraph::Pin::Symbol>]
@@ -134,11 +130,6 @@ module Solargraph
     def symbols
       symbol_pins
     end
-
-    # # @return [Array<String>]
-    # def required
-    #   @required ||= []
-    # end
 
     def locate_named_path_pin line, character
       _locate_pin line, character, Pin::NAMESPACE, Pin::METHOD
@@ -202,22 +193,7 @@ module Solargraph
     # @param index [Integer]
     # @return [Array<AST::Node>]
     def tree_at(line, column)
-      # offset = get_parsed_offset(line, column)
       offset = Position.line_char_to_offset(@code, line, column)
-      # @all_nodes.reverse.each do |n|
-      #   if n.respond_to?(:loc)
-      #     if n.respond_to?(:begin) and n.respond_to?(:end)
-      #       if offset >= n.begin.begin_pos and offset < n.end.end_pos
-      #         return [n] + @node_tree[n.object_id]
-      #       end
-      #     elsif !n.loc.expression.nil?
-      #       if offset >= n.loc.expression.begin_pos and offset < n.loc.expression.end_pos
-      #         return [n] + @node_tree[n.object_id]
-      #       end
-      #     end
-      #   end
-      # end
-      # [@node]
       stack = []
       inner_tree_at @node, offset, stack
       stack
@@ -363,32 +339,6 @@ module Solargraph
 
     def process_parsed node, comments
       @pins, @locals, @requires, @symbols, @path_macros = Mapper.map filename, code, node, comments
-      # @directives.each_pair do |k, v|
-      #   v.each do |d|
-      #     ns = namespace_for(k.node)
-      #     docstring = YARD::Docstring.parser.parse(d.tag.text).to_docstring
-      #     if d.tag.tag_name == 'attribute'
-      #       t = (d.tag.types.nil? || d.tag.types.empty?) ? nil : d.tag.types.flatten.join('')
-      #       if t.nil? or t.include?('r')
-      #         attribute_pins.push Solargraph::Pin::Directed::Attribute.new(self, k.node, ns, :reader, docstring, d.tag.name)
-      #       end
-      #       if t.nil? or t.include?('w')
-      #         attribute_pins.push Solargraph::Pin::Directed::Attribute.new(self, k.node, ns, :writer, docstring, "#{d.tag.name}=")
-      #       end
-      #     elsif d.tag.tag_name == 'method'
-      #       gen_src = Source.new("def #{d.tag.name};end", filename)
-      #       gen_pin = gen_src.method_pins.first
-      #       method_pin_map[ns] ||= []
-      #       method_pin_map[ns].push Solargraph::Pin::Directed::Method.new(gen_src, gen_pin.node, ns, :instance, :public, docstring, gen_pin.name)
-      #     elsif d.tag.tag_name == 'macro'
-      #       # @todo Handle various types of macros (attach, new, whatever)
-      #       path = path_for(k.node)
-      #       @path_macros[path] = v
-      #     else
-      #       STDERR.puts "Nothing to do for directive: #{d}"
-      #     end
-      #   end
-      # end
       @stime = Time.now
     end
 
