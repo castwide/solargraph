@@ -211,6 +211,13 @@ module Solargraph
       tree_at(line, column).first
     end
 
+    def string_at?(line, column)
+      node = node_at(line, column)
+      # @todo raise InvalidOffset or InvalidRange or something?
+      return false if node.nil?
+      node.type == :str or node.type == :dstr
+    end
+
     # Get an array of nodes containing the specified index, starting with the
     # nearest node and ending with the root.
     #
@@ -239,7 +246,7 @@ module Solargraph
     end
 
     def inner_tree_at node, offset, stack
-      stack.push node
+      stack.unshift node
       node.children.each do |c|
         next unless c.is_a?(AST::Node)
         next if c.loc.expression.nil?
@@ -333,7 +340,7 @@ module Solargraph
 
     # @return [Solargraph::Source::Fragment]
     def fragment_at line, column
-      Fragment.new(self, line, column, tree_at(line, column))
+      Fragment.new(self, line, column)
     end
 
     def fragment_for node
@@ -359,7 +366,7 @@ module Solargraph
     end
 
     def hard_fix_node
-      @fixed = @code.gsub(/[^\s]/, ' ')
+      @fixed = @code.gsub(/[^\s]/, '_')
       node, comments = inner_parse(@fixed, filename)
       @node = node
       @comments = comments

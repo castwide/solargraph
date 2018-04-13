@@ -12,14 +12,11 @@ module Solargraph
       # @param source [Solargraph::Source]
       # @param line [Integer]
       # @param column [Integer]
-      def initialize source, line, column, tree
-        # @todo Split this object from the source. The source can change; if
-        #   it does, this object's data should not.
+      def initialize source, line, column
         @source = source
         @code = source.code
         @line = line
         @column = column
-        @tree = tree
       end
 
       def character
@@ -33,9 +30,9 @@ module Solargraph
       # Get the node at the current offset.
       #
       # @return [Parser::AST::Node]
-      def node
-        @node ||= @tree.first
-      end
+      # def node
+      #   @node ||= @tree.first
+      # end
 
       # Get the fully qualified namespace at the current offset.
       #
@@ -83,16 +80,7 @@ module Solargraph
       def scope
         if @scope.nil?
           @scope = :class
-          tree = @tree.clone
-          until tree.empty?
-            cursor = tree.shift
-            break if cursor.type == :class or cursor.type == :module
-            if cursor.type == :def
-              pin = @source.method_pins.select{|pin| pin.contain?(offset)}.first
-              # @todo The pin should never be nil here, but we're guarding it just in case
-              @scope = (pin.nil? ? :instance : pin.scope)
-            end
-          end
+          @scope = :instance if block.kind == Pin::METHOD and block.scope == :instance
         end
         @scope
       end
@@ -202,7 +190,8 @@ module Solargraph
       #
       # @return [Boolean]
       def string?
-        @string ||= (node.type == :str or node.type == :dstr)
+        # @string ||= (node.type == :str or node.type == :dstr)
+        @string ||= @source.string_at?(line, character)
       end
 
       # True if the current offset is inside a comment.

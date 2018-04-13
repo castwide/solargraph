@@ -182,7 +182,7 @@ describe Solargraph::Source::Fragment do
     ))
     fragment = source.fragment_at(2, 15)
     expect(fragment.signature).to eq('foo')
-    expect(fragment.calculated_signature).to eq('Foo.new')    
+    expect(fragment.calculated_signature).to eq('Foo.new')
     fragment = source.fragment_at(3, 10)
     expect(fragment.signature).to eq('bar.')
     expect(fragment.calculated_signature).to eq('Foo.new.')
