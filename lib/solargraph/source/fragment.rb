@@ -277,7 +277,6 @@ module Solargraph
             var = local_variable_pins(base).first
           end
         end
-        base = @source.qualify(base, namespace)
         base + (rest.nil? ? '' : ".#{rest}")
       end
 
