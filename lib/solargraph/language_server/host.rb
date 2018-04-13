@@ -60,9 +60,8 @@ module Solargraph
 
       def create uri
         filename = uri_to_file(uri)
-        return if File.directory?(filename)
         @change_semaphore.synchronize do
-          library.create filename, File.read(filename)
+          library.create_from_disk filename
         end
       end
 

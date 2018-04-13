@@ -45,6 +45,14 @@ module Solargraph
       true
     end
 
+    def create_from_disk filename
+      return if File.directory?(filename) or !File.exist?(filename)
+      return unless workspace.would_merge?(filename)
+      source = Solargraph::Source.load_string(File.read(filename), filename)
+      workspace.merge(source)
+      api_map.refresh
+    end
+
     # Delete a file from the library. Deleting a file will make it unavailable
     # for checkout and optionally remove it from the workspace unless the
     # workspace configuration determines that it should still exist.
