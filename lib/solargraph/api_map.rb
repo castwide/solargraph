@@ -482,13 +482,20 @@ module Solargraph
         if fragment.signature.include?('::') and !fragment.signature.include?('.')
           result.concat get_constants(fragment.calculated_base, fragment.namespace)
         else
-          if fragment.calculated_signature.end_with?('.')
-            rest = fragment.calculated_signature.split('.')
-          else
-            rest = fragment.calculated_base.split('.')
-          end
+          type = nil
+          rest = fragment.signature.split('.')
           base = rest.shift
-          type = infer_word_type(base, fragment.namespace, scope: fragment.scope)
+          lvar = resolve_locals(prefer_non_nil_variables(fragment.locals.select{|pin| pin.name == base})).first
+          type = lvar.return_type unless lvar.nil?
+          if type.nil?
+            if fragment.calculated_signature.end_with?('.')
+              rest = fragment.calculated_signature.split('.')
+            else
+              rest = fragment.calculated_base.split('.')
+            end
+            base = rest.shift
+            type = infer_word_type(base, fragment.namespace, scope: fragment.scope)
+          end
           unless type.nil?
             rest.each do |m|
               type = infer_method_type(m, type)
