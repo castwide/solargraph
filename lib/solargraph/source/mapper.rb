@@ -32,7 +32,7 @@ module Solargraph
         @pins.push Pin::Namespace.new(get_node_location(nil), '', '', nil, :class, :public, nil)
         process root
         process_directives
-        [@pins, @locals, @requires, @symbols]
+        [@pins, @locals, @requires, @symbols, @path_macros]
       end
 
       class << self
@@ -231,18 +231,21 @@ module Solargraph
                   c.children.each do |u|
                     # @todo Fix this
                     # pins.push Solargraph::Pin::BlockParameter.new(self, u, fqn || '', @node_stack.clone, pi)
-                    @locals.push Solargraph::Pin::BlockParameter.new(get_node_location(u), fqn || '', "#{u.children[0]}", docstring_for(c))
+                    here = get_node_start_position(c)
+                    blk = get_block_pin(here)
+                    @locals.push Solargraph::Pin::BlockParameter.new(get_node_location(u), fqn || '', "#{u.children[0]}", docstring_for(c), blk)
+                    blk.parameters.push @locals.push.last
                     pi += 1
                   end
                 else
                   c.children.each do |u|
-                    # @todo Fix this
-                    # pins.push Solargraph::Pin::MethodParameter.new(self, u, fqn || '', @node_stack.clone)
-                    @locals.push Solargraph::Pin::MethodParameter.new(get_node_location(u), fqn || '', "#{u.children[0]}", docstring_for(c))
+                    here = get_node_start_position(c)
+                    blk = get_block_pin(here)
+                    @locals.push Solargraph::Pin::MethodParameter.new(get_node_location(u), fqn || '', "#{u.children[0]}", docstring_for(c), blk)
                   end
                 end
               elsif c.type == :block
-                @pins.push Solargraph::Pin::Block.new(get_node_location(c), fqn || '', '', docstring_for(c))
+                @pins.push Solargraph::Pin::Block.new(get_node_location(c), fqn || '', '', docstring_for(c), resolve_node_signature(c.children[0]))
               end
               process c, tree, visibility, scope, fqn, stack
             end

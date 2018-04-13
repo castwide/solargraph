@@ -388,7 +388,7 @@ module Solargraph
     end
 
     def process_parsed node, comments
-      @pins, @locals, @requires, @symbols = Mapper.map filename, code, node, comments
+      @pins, @locals, @requires, @symbols, @path_macros = Mapper.map filename, code, node, comments
       # @directives.each_pair do |k, v|
       #   v.each do |d|
       #     ns = namespace_for(k.node)

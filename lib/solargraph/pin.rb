@@ -34,5 +34,6 @@ module Solargraph
     NAMESPACE = 9
     SYMBOL = 10
     BLOCK = 11
+    BLOCK_PARAMETER = 12
   end
 end

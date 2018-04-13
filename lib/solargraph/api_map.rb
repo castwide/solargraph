@@ -529,7 +529,7 @@ module Solargraph
           result.concat get_symbols
         else
           unless fragment.signature.include?('::')
-            result.concat prefer_non_nil_variables(fragment.locals)
+            result.concat resolve_locals(prefer_non_nil_variables(fragment.locals))
             result.concat get_type_methods(combine_type(fragment.namespace, fragment.scope), fragment.namespace)
             result.concat get_type_methods('Kernel')
             result.concat ApiMap.keywords
@@ -770,6 +770,28 @@ module Solargraph
       Dir.chdir(workspace) { Process.spawn('yardoc') }
     end
 
+    # @todo Smelly instance variable access
+    def resolve_locals pins
+      pins.each do |pin|
+        next unless pin.return_type.nil?
+        if pin.kind == Pin::BLOCK_PARAMETER and !pin.block.receiver.nil?
+          # @todo Scope and visibility might not be correct here
+          rcv = tail_pin(pin.block.receiver, pin.block.namespace, :class, [:public])
+          if CoreFills::METHODS_WITH_YIELDPARAM_SUBTYPES.include?(rcv.path)
+            prev = tail_pin(pin.block.receiver.split('.')[0..-2].join('.'), pin.block.namespace, :class, :public)
+            next if prev.nil?
+            subs = get_subtypes(prev.return_type)
+            pin.instance_variable_set(:@return_type, subs[0])
+            next
+          end
+          next if rcv.docstring.nil?
+          yps = rcv.docstring.tags(:yieldparam)
+          yp = yps[pin.index]
+          pin.instance_variable_set(:@return_type, yp.types[0]) unless yp.nil? or yp.types.empty?
+        end
+      end
+    end
+
     def process_virtual
       unless @virtual_source.nil?
         cache.clear
@@ -974,7 +996,7 @@ module Solargraph
       result = []
       nil_pins = []
       pins.each do |pin|
-        if pin.nil_assignment?
+        if pin.variable? and pin.nil_assignment?
           nil_pins.push pin
         else
           result.push pin
