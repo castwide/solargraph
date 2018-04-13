@@ -136,8 +136,8 @@ module Solargraph
               elsif c.type == :def and c.children[0].to_s[0].match(/[a-z]/i)
                methpin = Solargraph::Pin::Method.new(get_node_location(c), fqn || '', c.children[(c.type == :def ? 0 : 1)].to_s, docstring_for(c), scope, visibility, get_method_args(c))
                if methpin.name == 'initialize' and methpin.scope == :instance
-                pins.push Solargraph::Pin::Method.new(methpin.location, methpin.namespace, methpin.name, methpin.docstring, methpin.scope, :private, methpin.parameters)
                 pins.push Solargraph::Pin::Method.new(methpin.location, methpin.namespace, 'new', methpin.docstring, :class, :public, methpin.parameters)
+                pins.push Solargraph::Pin::Method.new(methpin.location, methpin.namespace, methpin.name, methpin.docstring, methpin.scope, :private, methpin.parameters)
                else
                 pins.push methpin
                end
