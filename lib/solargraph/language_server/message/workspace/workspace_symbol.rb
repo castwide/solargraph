@@ -4,25 +4,13 @@ class Solargraph::LanguageServer::Message::Workspace::WorkspaceSymbol < Solargra
   def process
     pins = host.query_symbols(params['query'])
     info = pins.map do |pin|
-      parts = pin.location.split(':')
-      char = parts.pop.to_i
-      line = parts.pop.to_i
-      filename = parts.join(':')
+      uri = file_to_uri(pin.location.filename)
       {
         name: pin.path,
         kind: Solargraph::LanguageServer::SymbolKinds::NAMESPACE,
         location: {
-          uri: file_to_uri(filename),
-          range: {
-            start: {
-              line: line,
-              character: char
-            },
-            end: {
-              line: line,
-              character: char
-            }
-          }
+          uri: uri,
+          range: pin.location.range.to_hash
         }
       }
     end
