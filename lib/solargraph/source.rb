@@ -170,6 +170,10 @@ module Solargraph
       _locate_pin line, character, Pin::NAMESPACE, Pin::METHOD
     end
 
+    def locate_namespace_pin line, character
+      _locate_pin line, character, Pin::NAMESPACE
+    end
+
     def locate_block_pin line, character
       _locate_pin line, character, Pin::NAMESPACE, Pin::METHOD, Pin::BLOCK
     end

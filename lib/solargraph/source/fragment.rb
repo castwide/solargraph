@@ -49,7 +49,7 @@ module Solargraph
         #   @namespace = parts.join('::')
         # end
         # @namespace
-        @namespace ||= @source.locate_named_path_pin(line, character).path
+        @namespace ||= @source.locate_namespace_pin(line, character).path
       end
 
       # @return [Boolean]
@@ -268,7 +268,7 @@ module Solargraph
         # @todo Smelly exceptional case for integers
         base, rest = signature.split('.', 2)
         base.sub!(/^[0-9]+?$/, 'Integer.new')
-        var = locals.select{|pin| pin.name == base}.first
+        var = prefer_non_nil_variables(locals).select{|pin| pin.name == base}.first
         unless var.nil?
           done = []
           until var.nil?
@@ -289,7 +289,7 @@ module Solargraph
         result = []
         nil_pins = []
         pins.each do |pin|
-          if pin.nil_assignment? and pin.return_type.nil?
+          if pin.variable? and pin.nil_assignment?
             nil_pins.push pin
           else
             result.push pin
