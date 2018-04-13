@@ -107,7 +107,7 @@ describe Solargraph::Source do
       # @type [String]
       foo = bar
     ))
-    expect(source.local_variable_pins.first.return_type).to eq('String')
+    expect(source.locals.first.return_type).to eq('String')
   end
 
   it "pins namespaces" do
@@ -188,12 +188,12 @@ describe Solargraph::Source do
       num = 100
       flt = 0.1
     ')
-    expect(source.local_variable_pins[0].return_type).to eq('String')
-    expect(source.local_variable_pins[1].return_type).to eq('String')
-    expect(source.local_variable_pins[2].return_type).to eq('Array')
-    expect(source.local_variable_pins[3].return_type).to eq('Hash')
-    expect(source.local_variable_pins[4].return_type).to eq('Integer')
-    expect(source.local_variable_pins[5].return_type).to eq('Float')
+    expect(source.locals[0].return_type).to eq('String')
+    expect(source.locals[1].return_type).to eq('String')
+    expect(source.locals[2].return_type).to eq('Array')
+    expect(source.locals[3].return_type).to eq('Hash')
+    expect(source.locals[4].return_type).to eq('Integer')
+    expect(source.locals[5].return_type).to eq('Float')
   end
 
   it "detects attribute reader pins" do
@@ -339,11 +339,11 @@ describe Solargraph::Source do
       bar ||= method_two
     )
     source = Solargraph::Source.new(code, 'file.rb')
-    expect(source.local_variable_pins.length).to eq(2)
-    expect(source.local_variable_pins[0].name).to eq('foo')
-    expect(source.local_variable_pins[0].return_type).to eq('Hash')
-    expect(source.local_variable_pins[1].name).to eq('bar')
-    expect(source.local_variable_pins[1].return_type).to eq('String')
+    expect(source.locals.length).to eq(2)
+    expect(source.locals[0].name).to eq('foo')
+    expect(source.locals[0].return_type).to eq('Hash')
+    expect(source.locals[1].name).to eq('bar')
+    expect(source.locals[1].return_type).to eq('String')
   end
 
   it "pins top-level methods" do
@@ -521,7 +521,7 @@ describe Solargraph::Source do
   #     foo
   #   ))
   #   api_map.virtualize source
-  #   lvar = source.local_variable_pins.first
+  #   lvar = source.locals.first
   #   lvar.resolve api_map
   #   expect(lvar.return_type).to eq('String')
   # end

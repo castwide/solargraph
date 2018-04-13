@@ -571,7 +571,7 @@ module Solargraph
       parts = fragment.whole_signature.split('.')
       base = parts.shift
       type = nil
-      lvar = prefer_non_nil_variables(fragment.local_variable_pins(base)).first
+      lvar = prefer_non_nil_variables(fragment.locals(base)).first
       unless lvar.nil?
         lvar.resolve self
         type = lvar.return_type

@@ -51,6 +51,8 @@ module Solargraph
         begin
           message.process
         rescue Exception => e
+          STDERR.puts e.message
+          STDERR.puts e.backtrace
           message.set_error Solargraph::LanguageServer::ErrorCodes::INTERNAL_ERROR, "[#{e.class}] #{e.message}"
         end
         message

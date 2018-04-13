@@ -229,7 +229,7 @@ module Solargraph
       # end
 
       def locals
-        @locals ||= @source.local_variable_pins.select{|pin| pin.visible_from?(block, position)}
+        @locals ||= @source.locals.select{|pin| pin.visible_from?(block, position)}
       end
 
       def calculated_signature
@@ -268,7 +268,7 @@ module Solargraph
         # @todo Smelly exceptional case for integers
         base, rest = signature.split('.', 2)
         base.sub!(/^[0-9]+?$/, 'Integer.new')
-        var = prefer_non_nil_variables(locals).select{|pin| pin.name == base}.first
+        var = prefer_non_nil_variables(locals).select{|pin| pin.variable? and pin.name == base}.first
         unless var.nil?
           done = []
           until var.nil?

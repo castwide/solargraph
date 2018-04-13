@@ -81,25 +81,6 @@ module Solargraph
       @namespaces ||= pins.select{|pin| pin.kind == Pin::NAMESPACE}.map(&:path)
     end
 
-    # # @return [Array<Solargraph::Pin::Base>]
-    # def pins opts = nil
-    #   filter_pins @pins, opts
-    # end
-
-    # # @return [Array<Solargraph::Pin::Base>]
-    # def locals opts = nil
-    #   filter_pins @locals, opts
-    # end
-
-    # def filter_pins all, opts
-    #   return all if opts.nil?
-    #   all.select{ |pin|
-    #     opts.all? {|k, v|
-    #       pin.public_send(k) == v
-    #     }
-    #   }
-    # end
-
     # @param fqns [String] The namespace (nil for all)
     # @return [Array<Solargraph::Pin::Namespace>]
     def namespace_pins fqns = nil
@@ -129,13 +110,6 @@ module Solargraph
     # @return [Array<Solargraph::Pin::ClassVariable>]
     def class_variable_pins
       @class_variable_pins ||= pins.select{|pin| pin.kind == Pin::CLASS_VARIABLE}
-    end
-
-    # @return [Array<Solargraph::Pin::LocalVariable>]
-    def local_variable_pins
-      # @todo Probably don't need to differentiate here
-      # @local_variable_pins ||= locals.select{|pin| pin.variable?}
-      locals
     end
 
     def locals

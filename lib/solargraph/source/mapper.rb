@@ -42,6 +42,7 @@ module Solargraph
         end
       end
 
+      # @param node [Parser::AST::Node]
       # @return [String]
       def code_for node
         b = node.location.expression.begin.begin_pos
