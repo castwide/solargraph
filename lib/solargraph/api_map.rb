@@ -262,63 +262,6 @@ module Solargraph
       @symbol_pins
     end
 
-    # Find a class, instance, or global variable by name in the provided
-    # namespace and scope.
-    #
-    # @param name [String] The variable name, e.g., `@foo`, `@@bar`, or `$baz`
-    # @param fqns [String] The fully qualified namespace
-    # @param scope [Symbol] :class or :instance
-    # @return [Solargraph::Pin::BaseVariable]
-    def find_variable_pin name, fqns, scope
-      var = nil
-      return nil if name.nil?
-      if name.start_with?('@@')
-        # class variable
-        var = get_class_variable_pins(fqns).select{|pin| pin.name == name}.first
-        return nil if var.nil?
-      elsif name.start_with?('@')
-        # instance variable
-        var = get_instance_variable_pins(fqns, scope).select{|pin| pin.name == name}.first
-        return nil if var.nil?
-      elsif name.start_with?('$')
-        # global variable
-        var = get_global_variable_pins.select{|pin| pin.name == name}.first
-        return nil if var.nil?
-      end
-      var
-    end
-
-    def find_namespace_pin fqns
-      crawl_constants fqns, '', [:public, :private]
-    end
-
-    def crawl_constants name, fqns, visibility
-      return nil if name.nil?
-      chain = name.split('::')
-      cursor = chain.shift
-      return nil if cursor.nil?
-      unless fqns.empty?
-        bases = fqns.split('::')
-        result = nil
-        until bases.empty?
-          built = bases.join('::')
-          result = get_constants(built, '').select{|pin| pin.name == cursor and visibility.include?(pin.visibility)}.first
-          break unless result.nil?
-          bases.pop
-          visibility -= [:private]
-        end
-        return nil if result.nil?
-      end
-      result = get_constants(fqns, '').select{|pin| pin.name == cursor and visibility.include?(pin.visibility)}.first
-      visibility -= [:private]
-      until chain.empty? or result.nil?
-        fqns = result.path
-        cursor = chain.shift
-        result = get_constants(fqns, '').select{|pin| pin.name == cursor and visibility.include?(pin.visibility)}.first
-      end
-      result
-    end
-
     # This method checks the signature from the namespace's internal context,
     # i.e., the first word in the signature can be a private or protected
     # method, a private constant, an instance variable, or a class variable.
@@ -468,17 +411,17 @@ module Solargraph
       method.return_type
     end
 
-    def infer_deep_signature_type chain, base_type
-      return nil if base_type.nil?
-      internal = true
-      until chain.empty?
-        base = chain.shift
-        base_type = infer_method_type(base, base_type, internal)
-        return nil if base_type.nil?
-        internal = false
-      end
-      base_type
-    end
+    # def infer_deep_signature_type chain, base_type
+    #   return nil if base_type.nil?
+    #   internal = true
+    #   until chain.empty?
+    #     base = chain.shift
+    #     base_type = infer_method_type(base, base_type, internal)
+    #     return nil if base_type.nil?
+    #     internal = false
+    #   end
+    #   base_type
+    # end
 
     # @return [Array<Solargraph::Pin::GlobalVariable>]
     def get_global_variable_pins
@@ -565,26 +508,6 @@ module Solargraph
     def define fragment
       return [] if fragment.string? or fragment.comment?
       tail_pins fragment.whole_signature, fragment.namespace, fragment.scope, [:public, :private, :protected]
-    end
-
-    def infer_fragment_type fragment
-      parts = fragment.whole_signature.split('.')
-      base = parts.shift
-      type = nil
-      lvar = prefer_non_nil_variables(fragment.locals(base)).first
-      unless lvar.nil?
-        lvar.resolve self
-        type = lvar.return_type
-        return nil if type.nil?
-      end
-      type = infer_word_type(base, fragment.namespace, fragment.scope) if type.nil?
-      return nil if type.nil?
-      until parts.empty?
-        meth = parts.shift
-        type = infer_word_type(meth, type)
-        return nil if type.nil?
-      end
-      type
     end
 
     # @param fragment [Solargraph::Source::Fragment]
@@ -891,19 +814,11 @@ module Solargraph
       end
       mps = @method_pins[fqns]
       result.concat mps.select{|pin| (pin.scope == scope or fqns == '') and visibility.include?(pin.visibility)} unless mps.nil?
-      # if fqns != '' and scope == :class and !result.map(&:path).include?("#{fqns}.new")
-      #   # Create a [Class].new method pin from [Class]#initialize
-      #   init = inner_get_methods(fqns, :instance, [:private], deep, skip - [fqns]).select{|pin| pin.name == 'initialize'}.first
-      #   unless init.nil?
-      #     result.unshift Solargraph::Pin::Directed::Method.new(init.source, init.node, init.namespace, :class, :public, init.docstring, 'new', init.namespace)
-      #   end
-      # end
       if deep
         scref = @superclasses[fqns]
         unless scref.nil?
           sc_visi = [:public]
           sc_visi.push :protected if visibility.include?(:protected)
-          # sc_fqns = find_fully_qualified_namespace(sc, fqns)
           scref.resolve self
           fqsc = find_fully_qualified_namespace(scref.name, scref.namespace)
           result.concat inner_get_methods(fqsc, scope, sc_visi, true, skip) unless fqsc.nil?
