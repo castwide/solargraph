@@ -65,6 +65,7 @@ module Solargraph
     # one source can be virtualized at a time.
     #
     # @param source [Solargraph::Source]
+    # @return [Solargraph::Source]
     def virtualize source
       eliminate @virtual_source unless @virtual_source.nil?
       if workspace.has_source?(source)
@@ -78,10 +79,18 @@ module Solargraph
           process_virtual
         end
       end
+      source
     end
 
-    # @todo Candidate for deprecation
-    def append_source code, filename = nil
+    # Create a Source from the code and filename, and virtualize the result.
+    # This method can be useful for directly testing the ApiMap. In practice,
+    # applications should use a Library to synchronize the ApiMap to a
+    # workspace.
+    #
+    # @param code [String]
+    # @param filename [String]
+    # @return [Solargraph::Source]
+    def virtualize_string code, filename = nil
       source = Source.load_string(code, filename)
       virtualize source
     end
@@ -232,7 +241,7 @@ module Solargraph
     # Local variables are not accessible.
     #
     # @return [String]
-    def infer_type signature, namespace = '', scope: :instance
+    def infer_signature_type signature, namespace = '', scope: :instance
       context = combine_type(namespace, scope)
       parts = signature.split('.')
       base = parts.shift
@@ -793,7 +802,7 @@ module Solargraph
       parts = signature.split('.')
       last = parts.pop
       base = parts.join('.')
-      type = infer_type(base, fqns, scope: scope)
+      type = infer_signature_type(base, fqns, scope: scope)
       return [] if type.nil?
       infer_word_pins(last, type, true)
     end
@@ -868,7 +877,7 @@ module Solargraph
       return nil if pin.signature.nil?
       return nil if pin.signature.split('.').first == word
       ns, sc = extract_namespace_and_scope(base_type)
-      infer_type pin.signature, ns, scope: sc
+      infer_signature_type pin.signature, ns, scope: sc
     end
 
     # Get an array of pins for a method name in the provided context. Private

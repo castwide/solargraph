@@ -34,7 +34,7 @@ describe Solargraph::ApiMap do
       end
     )
     @api_map = Solargraph::ApiMap.new
-    @api_map.append_source(code, 'file.rb')
+    @api_map.virtualize_string(code, 'file.rb')
   end
 
   it "finds instance methods" do
@@ -82,7 +82,7 @@ describe Solargraph::ApiMap do
       @foobar = ''
     )
     api_map = Solargraph::ApiMap.new
-    api_map.append_source(code, 'file.rb')
+    api_map.virtualize_string(code, 'file.rb')
     vars = api_map.get_instance_variable_pins('', :class).map(&:to_s)
     expect(vars).to include('@foobar')
     expect(vars).not_to include('@not1')
@@ -158,16 +158,16 @@ describe Solargraph::ApiMap do
   # end
 
   it "infers local class from [Class].new method" do
-    cls = @api_map.infer_type('Class1.new', '')
+    cls = @api_map.infer_signature_type('Class1.new', '')
     expect(cls).to eq('Class1')
-    cls = @api_map.infer_type('Module1::Module1Class.new', '')
+    cls = @api_map.infer_signature_type('Module1::Module1Class.new', '')
     expect(cls).to eq('Module1::Module1Class')
-    cls = @api_map.infer_type('Module1Class.new', 'Module1')
+    cls = @api_map.infer_signature_type('Module1Class.new', 'Module1')
     expect(cls).to eq('Module1::Module1Class')
   end
 
   it "infers core class from [Class].new method" do
-    cls = @api_map.infer_type('String.new', '', scope: :class)
+    cls = @api_map.infer_signature_type('String.new', '', scope: :class)
     expect(cls).to eq('String')
   end
 
@@ -180,7 +180,7 @@ describe Solargraph::ApiMap do
       end
     )
     api_map = Solargraph::ApiMap.new
-    api_map.append_source(code, 'file.rb')
+    api_map.virtualize_string(code, 'file.rb')
     suggestions = api_map.get_methods('Foo', visibility: [:public])
     expect(suggestions.map(&:to_s)).to include('bar')
     expect(suggestions.map(&:to_s)).not_to include('baz')
@@ -194,8 +194,8 @@ describe Solargraph::ApiMap do
       @foo = @foo
     )
     api_map = Solargraph::ApiMap.new
-    api_map.append_source(code, 'file.rb')
-    type = api_map.infer_type('@foo', '')
+    api_map.virtualize_string(code, 'file.rb')
+    type = api_map.infer_signature_type('@foo', '')
     expect(type).to be(nil)
   end
 
@@ -207,8 +207,8 @@ describe Solargraph::ApiMap do
       end
     )
     api_map = Solargraph::ApiMap.new
-    api_map.append_source(code, 'file.rb')
-    type = api_map.infer_type('self', 'Foo', scope: :instance)
+    api_map.virtualize_string(code, 'file.rb')
+    type = api_map.infer_signature_type('self', 'Foo', scope: :instance)
     expect(type).to eq('Foo')
   end
 
@@ -221,8 +221,8 @@ describe Solargraph::ApiMap do
       end
     )
     api_map = Solargraph::ApiMap.new
-    api_map.append_source(code, 'file.rb')
-    type = api_map.infer_type('self.bar', 'Foo', scope: :instance)
+    api_map.virtualize_string(code, 'file.rb')
+    type = api_map.infer_signature_type('self.bar', 'Foo', scope: :instance)
     expect(type).to eq('String')
   end
 
@@ -234,8 +234,8 @@ describe Solargraph::ApiMap do
       end
     )
     api_map = Solargraph::ApiMap.new
-    api_map.append_source(code, 'file.rb')
-    type = api_map.infer_type('self', 'Foo', scope: :class)
+    api_map.virtualize_string(code, 'file.rb')
+    type = api_map.infer_signature_type('self', 'Foo', scope: :class)
     expect(type).to eq('Class<Foo>')
   end
 
@@ -247,8 +247,8 @@ describe Solargraph::ApiMap do
       end
     )
     api_map = Solargraph::ApiMap.new
-    api_map.append_source(code, 'file.rb')
-    type = api_map.infer_type('self.new', 'Foo', scope: :class)
+    api_map.virtualize_string(code, 'file.rb')
+    type = api_map.infer_signature_type('self.new', 'Foo', scope: :class)
     expect(type).to eq('Foo')
   end
 
@@ -262,8 +262,8 @@ describe Solargraph::ApiMap do
       end
     )
     api_map = Solargraph::ApiMap.new
-    api_map.append_source(code, 'file.rb')
-    type = api_map.infer_type('@bar', 'Foo', scope: :instance)
+    api_map.virtualize_string(code, 'file.rb')
+    type = api_map.infer_signature_type('@bar', 'Foo', scope: :instance)
     expect(type).to eq('String')
   end
 
@@ -277,8 +277,8 @@ describe Solargraph::ApiMap do
       end
     )
     api_map = Solargraph::ApiMap.new
-    api_map.append_source(code, 'file.rb')
-    type = api_map.infer_type('@bar', 'Foo', scope: :class)
+    api_map.virtualize_string(code, 'file.rb')
+    type = api_map.infer_signature_type('@bar', 'Foo', scope: :class)
     expect(type).to eq(nil)
   end
 
@@ -292,8 +292,8 @@ describe Solargraph::ApiMap do
       end
     )
     api_map = Solargraph::ApiMap.new
-    api_map.append_source(code, 'file.rb')
-    type = api_map.infer_type('@bar', 'Foo', scope: :class)
+    api_map.virtualize_string(code, 'file.rb')
+    type = api_map.infer_signature_type('@bar', 'Foo', scope: :class)
     expect(type).to eq('String')
   end
 
@@ -307,8 +307,8 @@ describe Solargraph::ApiMap do
       end
     )
     api_map = Solargraph::ApiMap.new
-    api_map.append_source(code, 'file.rb')
-    type = api_map.infer_type('@bar', 'Foo', scope: :instance)
+    api_map.virtualize_string(code, 'file.rb')
+    type = api_map.infer_signature_type('@bar', 'Foo', scope: :instance)
     expect(type).to eq(nil)
   end
 
@@ -320,8 +320,8 @@ describe Solargraph::ApiMap do
       end
     )
     api_map = Solargraph::ApiMap.new
-    api_map.append_source(code, 'file.rb')
-    type = api_map.infer_type('@@bar', 'Foo')
+    api_map.virtualize_string(code, 'file.rb')
+    type = api_map.infer_signature_type('@@bar', 'Foo')
     expect(type).to eq('String')
   end
 
@@ -332,8 +332,8 @@ describe Solargraph::ApiMap do
       end
     )
     api_map = Solargraph::ApiMap.new
-    api_map.append_source(code, 'file.rb')
-    type = api_map.infer_type('@@bar', 'Foo')
+    api_map.virtualize_string(code, 'file.rb')
+    type = api_map.infer_signature_type('@@bar', 'Foo')
     expect(type).to eq('String')
   end
 
@@ -346,8 +346,8 @@ describe Solargraph::ApiMap do
       end
     )
     api_map = Solargraph::ApiMap.new
-    api_map.append_source(code, 'file.rb')
-    type = api_map.infer_type('Foo.bar', '')
+    api_map.virtualize_string(code, 'file.rb')
+    type = api_map.infer_signature_type('Foo.bar', '')
     expect(type).to eq('String')
   end
 
@@ -361,7 +361,7 @@ describe Solargraph::ApiMap do
       end
     )
     api_map = Solargraph::ApiMap.new
-    api_map.append_source(code, 'file.rb')
+    api_map.virtualize_string(code, 'file.rb')
     sugg = api_map.get_methods('Foo', scope: :class)
     expect(sugg.map(&:to_s)).to include('bar')
   end
@@ -374,7 +374,7 @@ describe Solargraph::ApiMap do
       end
     )
     api_map = Solargraph::ApiMap.new
-    api_map.append_source(code, 'file.rb')
+    api_map.virtualize_string(code, 'file.rb')
     sugg = api_map.get_methods('Foo').keep_if{|s| s.name == 'bar'}.first
     expect(sugg.parameters).to eq(['baz', "boo = 'boo'"])
   end
@@ -387,7 +387,7 @@ describe Solargraph::ApiMap do
       end
     )
     api_map = Solargraph::ApiMap.new
-    api_map.append_source(code, 'file.rb')
+    api_map.virtualize_string(code, 'file.rb')
     sugg = api_map.get_methods('Foo').keep_if{|s| s.name == 'bar'}.first
     expect(sugg.parameters).to eq(['baz:', "boo: 'boo'"])
   end
@@ -402,7 +402,7 @@ describe Solargraph::ApiMap do
       end
     )
     api_map = Solargraph::ApiMap.new
-    api_map.append_source(code, 'file.rb')
+    api_map.virtualize_string(code, 'file.rb')
     expect(api_map.namespaces).to eq(['', 'Foo', 'Bar'])
     sugg = api_map.get_methods('Bar')
     expect(sugg.map(&:to_s)).to include('baz')
@@ -416,9 +416,9 @@ describe Solargraph::ApiMap do
         def bar;end
       end
     )
-    api_map.append_source(code1, 'file.rb')
+    api_map.virtualize_string(code1, 'file.rb')
     api_map.refresh
-    type = api_map.infer_type('Foo.new.bar', '', scope: :class)
+    type = api_map.infer_signature_type('Foo.new.bar', '', scope: :class)
     expect(type).to eq('String')
     code2 = %(
       class Foo
@@ -426,9 +426,9 @@ describe Solargraph::ApiMap do
         def bar;end
       end
     )
-    api_map.append_source(code2, 'file.rb')
+    api_map.virtualize_string(code2, 'file.rb')
     api_map.refresh
-    type = api_map.infer_type('Foo.new.bar', '')
+    type = api_map.infer_signature_type('Foo.new.bar', '')
     expect(type).to eq('Array')
   end
 
@@ -442,7 +442,7 @@ describe Solargraph::ApiMap do
       puts :bong
     )
     api_map = Solargraph::ApiMap.new
-    api_map.append_source(code, 'file.rb')
+    api_map.virtualize_string(code, 'file.rb')
     syms = api_map.get_symbols.map(&:name)
     expect(syms).to include(':foo')
     expect(syms).to include(':Baz')
@@ -460,7 +460,7 @@ describe Solargraph::ApiMap do
       end
     )
     api_map = Solargraph::ApiMap.new
-    api_map.append_source(code, 'file.rb')
+    api_map.virtualize_string(code, 'file.rb')
     meths = api_map.get_methods('Bar')
     expect(meths.map(&:to_s)).to include('foo_func')
   end
@@ -471,7 +471,7 @@ describe Solargraph::ApiMap do
       end
     )
     api_map = Solargraph::ApiMap.new
-    api_map.append_source(code, 'file.rb')
+    api_map.virtualize_string(code, 'file.rb')
     meths = api_map.get_methods('Foo')
     expect(meths.map(&:to_s)).to include('upcase')
   end
@@ -485,7 +485,7 @@ describe Solargraph::ApiMap do
       end
     )
     api_map = Solargraph::ApiMap.new
-    api_map.append_source(code, 'file.rb')
+    api_map.virtualize_string(code, 'file.rb')
     meth = api_map.get_methods('Foo').select{|s| s.name == 'bar'}.first
     expect(meth.params).to eq(['baz [String]'])
   end
@@ -498,7 +498,7 @@ describe Solargraph::ApiMap do
       end
     )
     api_map = Solargraph::ApiMap.new
-    api_map.append_source(code, 'file.rb')
+    api_map.virtualize_string(code, 'file.rb')
     # @type [Solargraph::Suggestion]
     meth = api_map.get_methods('Foo').select{|s| s.name == 'bar'}.first
     expect(meth.parameters).to eq(['*baz'])
@@ -512,7 +512,7 @@ describe Solargraph::ApiMap do
       end
     )
     api_map = Solargraph::ApiMap.new
-    api_map.append_source(code, 'file.rb')
+    api_map.virtualize_string(code, 'file.rb')
     meths = api_map.get_methods('Foo').map(&:to_s)
     expect(meths).to include('bar')
   end
@@ -525,7 +525,7 @@ describe Solargraph::ApiMap do
       end
     )
     api_map = Solargraph::ApiMap.new
-    api_map.append_source(code, 'file.rb')
+    api_map.virtualize_string(code, 'file.rb')
     sugg = api_map.get_methods('Foo').select{|s| s.name == 'bar'}.first
     expect(sugg.return_type).to eq('String')
   end
@@ -537,7 +537,7 @@ describe Solargraph::ApiMap do
     )
     api_map = Solargraph::ApiMap.new
     3.times do
-      api_map.append_source(code, 'file.rb')
+      api_map.virtualize_string(code, 'file.rb')
       sugg = api_map.get_path_suggestions('Foo')
       expect(sugg.length).to eq(1)
     end
@@ -546,18 +546,18 @@ describe Solargraph::ApiMap do
   it "infers Kernel method types" do
     code = "gets"
     api_map = Solargraph::ApiMap.new
-    api_map.append_source(code, 'file.rb')
-    type = api_map.infer_type('gets', '')
+    api_map.virtualize_string(code, 'file.rb')
+    type = api_map.infer_signature_type('gets', '')
     expect(type).to eq('String')
   end
 
   it "infers Kernel method types from namespaces" do
     code = "class Foo;end"
     api_map = Solargraph::ApiMap.new
-    api_map.append_source(code, 'file.rb')
-    type = api_map.infer_type('gets', 'Foo', scope: :class)
+    api_map.virtualize_string(code, 'file.rb')
+    type = api_map.infer_signature_type('gets', 'Foo', scope: :class)
     expect(type).to eq('String')
-    type = api_map.infer_type('gets', 'Foo', scope: :instance)
+    type = api_map.infer_signature_type('gets', 'Foo', scope: :instance)
     expect(type).to eq('String')
   end
 
@@ -573,7 +573,7 @@ describe Solargraph::ApiMap do
       end
     )
     api_map = Solargraph::ApiMap.new
-    api_map.append_source(code, 'file.rb')
+    api_map.virtualize_string(code, 'file.rb')
     suggestions = api_map.get_constants('Foo::Bar').map(&:path)
     expect(suggestions).to include('Foo::Bar::Baz')
     expect(suggestions).not_to include('Foo::Bar')
@@ -604,7 +604,7 @@ describe Solargraph::ApiMap do
   #     end
   #   )
   #   api_map = Solargraph::ApiMap.new
-  #   api_map.append_source(code, 'file.rb')
+  #   api_map.virtualize_string(code, 'file.rb')
   #   suggestions = api_map.get_instance_variable_pins('Foo', :instance)
   #   expect(suggestions.length).to eq(1)
   # end
@@ -618,7 +618,7 @@ describe Solargraph::ApiMap do
       end
     )
     api_map = Solargraph::ApiMap.new
-    api_map.append_source(code, 'file.rb')
+    api_map.virtualize_string(code, 'file.rb')
     suggestions = api_map.get_instance_variable_pins('Foo', :instance)
     expect(suggestions.length).to eq(1)
   end
@@ -635,7 +635,7 @@ describe Solargraph::ApiMap do
       end
     )
     api_map = Solargraph::ApiMap.new
-    api_map.append_source(code, 'file.rb')
+    api_map.virtualize_string(code, 'file.rb')
     suggestions = api_map.get_instance_variable_pins('Foo', :instance)
     expect(suggestions.length).to eq(2)
     expect(suggestions[0].return_type).to eq('String')
@@ -654,7 +654,7 @@ describe Solargraph::ApiMap do
       end
     )
     api_map = Solargraph::ApiMap.new
-    api_map.append_source(code, 'file.rb')
+    api_map.virtualize_string(code, 'file.rb')
     suggestions = api_map.get_instance_variable_pins('Foo', :instance)
     expect(suggestions.length).to eq(2)
     expect(suggestions[0].return_type).to eq('Array')
@@ -670,7 +670,7 @@ describe Solargraph::ApiMap do
       end
     )
     api_map = Solargraph::ApiMap.new
-    api_map.append_source(code, 'file.rb')
+    api_map.virtualize_string(code, 'file.rb')
     docs = api_map.document('Foobar')
     expect(docs.length).to eq(1)
     expect(docs[0].docstring.all).to include('My Foobar class')
@@ -687,7 +687,7 @@ describe Solargraph::ApiMap do
       end
     )
     api_map = Solargraph::ApiMap.new
-    api_map.append_source(code, 'file.rb')
+    api_map.virtualize_string(code, 'file.rb')
     docs = api_map.document('Foobar#baz')
     expect(docs.length).to eq(1)
     expect(docs[0].tag(:return).types[0]).to eq('Array')
@@ -706,7 +706,7 @@ describe Solargraph::ApiMap do
 
   it "detects constant visibility" do
     api_map = Solargraph::ApiMap.new
-    api_map.append_source(%(
+    api_map.virtualize_string(%(
       module Foobar
         PUBLIC_CONST = ''
         PRIVATE_CONST = ''
@@ -732,7 +732,7 @@ describe Solargraph::ApiMap do
 
   it "derives method return types from superclasses" do
     api_map = Solargraph::ApiMap.new
-    api_map.append_source(%(
+    api_map.virtualize_string(%(
       class Foo
         # @return [String]
         def ghost
@@ -750,7 +750,7 @@ describe Solargraph::ApiMap do
 
   it "includes extended modules in method suggestions" do
     api_map = Solargraph::ApiMap.new
-    api_map.append_source(%(
+    api_map.virtualize_string(%(
       module More
         def more_method
         end
@@ -766,20 +766,20 @@ describe Solargraph::ApiMap do
 
   it "resolves self from return tags" do
     api_map = Solargraph::ApiMap.new
-    api_map.append_source(%(
+    api_map.virtualize_string(%(
       class Foo
         # @return [self]
         def bar
         end
       end
     ), 'file.rb')
-    type = api_map.infer_type('Foo.new.bar', '')
+    type = api_map.infer_signature_type('Foo.new.bar', '')
     expect(type).to eq('Foo')
   end
 
   it "resolves self from included methods" do
     api_map = Solargraph::ApiMap.new
-    api_map.append_source(%(
+    api_map.virtualize_string(%(
       module Foo
         # @return [self]
         def bar
@@ -789,7 +789,7 @@ describe Solargraph::ApiMap do
         include Foo
       end
     ), 'file.rb')
-    type = api_map.infer_type('Baz.new.bar', '')
+    type = api_map.infer_signature_type('Baz.new.bar', '')
     expect(type).to eq('Baz')
   end
 
@@ -804,7 +804,7 @@ describe Solargraph::ApiMap do
 
   it "detects return types from macro directives" do
     api_map = Solargraph::ApiMap.new
-    api_map.append_source(%(
+    api_map.virtualize_string(%(
       class Foo
         # @!macro
         #   @return [$1]
@@ -813,13 +813,13 @@ describe Solargraph::ApiMap do
       end
       @x = Foo.bar Hash
     ), 'file.rb')
-    type = api_map.infer_type('@x', '')
+    type = api_map.infer_signature_type('@x', '')
     expect(type).to eq('Hash')
   end
 
   it "rebuilds maps from file changes" do
     api_map = Solargraph::ApiMap.new
-    api_map.append_source(%(
+    api_map.virtualize_string(%(
       class Foobar
         def baz
         end
@@ -827,7 +827,7 @@ describe Solargraph::ApiMap do
     ), 'file.rb')
     sugg = api_map.get_methods('Foobar').map(&:to_s)
     expect(sugg).to include('baz')
-    api_map.append_source(%(
+    api_map.virtualize_string(%(
       class Foobar
         def boo
         end
@@ -840,7 +840,7 @@ describe Solargraph::ApiMap do
 
   it "detects extended methods in the global namespace" do
     api_map = Solargraph::ApiMap.new
-    api_map.append_source(%(
+    api_map.virtualize_string(%(
       module Foobar
         def baz
         end
@@ -853,7 +853,7 @@ describe Solargraph::ApiMap do
 
   it "detects included methods in the global namespace" do
     api_map = Solargraph::ApiMap.new
-    api_map.append_source(%(
+    api_map.virtualize_string(%(
       module Foobar
         def baz
         end
@@ -866,7 +866,7 @@ describe Solargraph::ApiMap do
 
   it "resolves fully qualified namespaces from @return tags" do
     api_map = Solargraph::ApiMap.new
-    api_map.append_source(%(
+    api_map.virtualize_string(%(
       class Foobar
         class Bazbar
         end
@@ -957,10 +957,10 @@ describe Solargraph::ApiMap do
       end  
     ), 'file.rb')
     api_map.virtualize source
-    expect(api_map.infer_type('@civar', 'Thing', scope: :class)).to eq('String')
-    expect(api_map.infer_type('@civar', 'Thing', scope: :instance)).to eq(nil)
-    expect(api_map.infer_type('@iivar', 'Thing', scope: :class)).to eq(nil)
-    expect(api_map.infer_type('@iivar', 'Thing', scope: :instance)).to eq('Array')
+    expect(api_map.infer_signature_type('@civar', 'Thing', scope: :class)).to eq('String')
+    expect(api_map.infer_signature_type('@civar', 'Thing', scope: :instance)).to eq(nil)
+    expect(api_map.infer_signature_type('@iivar', 'Thing', scope: :class)).to eq(nil)
+    expect(api_map.infer_signature_type('@iivar', 'Thing', scope: :instance)).to eq('Array')
   end
 
   it "infers instance variables in the global namespace" do
@@ -971,7 +971,7 @@ describe Solargraph::ApiMap do
       @thing = Thing.new
     ), 'file.rb')
     api_map.virtualize source
-    expect(api_map.infer_type('@thing', '', scope: :class)).to eq('Thing')
+    expect(api_map.infer_signature_type('@thing', '', scope: :class)).to eq('Thing')
   end
 
   it "infers types from instance variable signatures" do
@@ -981,7 +981,7 @@ describe Solargraph::ApiMap do
       @foo.split
     ), 'file.rb')
     api_map.virtualize source
-    expect(api_map.infer_type('@foo.split', '', scope: :class)).to eq('Array<String>')
+    expect(api_map.infer_signature_type('@foo.split', '', scope: :class)).to eq('Array<String>')
   end
 
   it "suggests nested namespaces" do
@@ -1076,7 +1076,7 @@ describe Solargraph::ApiMap do
     api_map.virtualize source
     # The scope should change to :class for String to handle the new method
     # correctly
-    type = api_map.infer_type('String.new', 'Foo', scope: :instance)
+    type = api_map.infer_signature_type('String.new', 'Foo', scope: :instance)
     expect(type).to eq('String')
   end
 
