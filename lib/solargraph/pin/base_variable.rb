@@ -3,10 +3,17 @@ module Solargraph
     class BaseVariable < Base
       attr_reader :signature
 
-      def initialize location, namespace, name, docstring, signature, literal
+      attr_reader :context
+
+      def initialize location, namespace, name, docstring, signature, literal, context
         super(location, namespace, name, docstring)
         @signature = signature
         @literal = literal
+        @context = context
+      end
+
+      def scope
+        @scope ||= (context.kind == Pin::METHOD and context.scope == :instance ? :instance : :class)
       end
 
       def completion_item_kind

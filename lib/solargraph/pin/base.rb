@@ -57,6 +57,10 @@ module Solargraph
       # @todo Deprecate
       def resolve api_map
       end
+
+      def named_context
+        namespace
+      end
     end
   end
 end

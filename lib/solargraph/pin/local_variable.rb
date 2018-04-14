@@ -4,8 +4,7 @@ module Solargraph
       include Localized
 
       def initialize location, namespace, name, docstring, assignment, literal, block, presence
-        super(location, namespace, name, docstring, assignment, literal)
-        @block = block
+        super(location, namespace, name, docstring, assignment, literal, block)
         @presence = presence
         # @tree = []
         # ancestors.each do |parent|

@@ -32,6 +32,14 @@ module Solargraph
         Pin::NAMESPACE
       end
 
+      def named_context
+        path
+      end
+
+      def scope
+        :class
+      end
+
       def completion_item_kind
         (type == :class ? LanguageServer::CompletionItemKinds::CLASS : LanguageServer::CompletionItemKinds::MODULE)
       end
