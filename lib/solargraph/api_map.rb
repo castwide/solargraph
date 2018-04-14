@@ -152,14 +152,14 @@ module Solargraph
     # @param root [String] The context to search
     # @return [Boolean]
     def namespace_exists? name, root = ''
-      !find_fully_qualified_namespace(name, root).nil?
+      !qualify(name, root).nil?
     end
 
     # Get suggestions for constants in the specified namespace. The result
     # may contain both constant and namespace pins.
     #
-    # @param fqns [String] The fully qualified namespace
-    # @param visibility [Array<Symbol>] :public and/or :private
+    # @param namespace [String] The namespace
+    # @param context [String] The context
     # @return [Array<Solargraph::Pin::Base>]
     def get_constants namespace, context = ''
       namespace ||= ''
@@ -168,13 +168,13 @@ module Solargraph
       bases = context.split('::')
       while bases.length > 0
         built = bases.join('::')
-        fqns = find_fully_qualified_namespace(namespace, built)
+        fqns = qualify(namespace, built)
         visibility = [:public]
         visibility.push :private if fqns == context
         result.concat inner_get_constants(fqns, visibility, skip)
         bases.pop
       end
-      fqns = find_fully_qualified_namespace(namespace, '')
+      fqns = qualify(namespace, '')
       visibility = [:public]
       visibility.push :private if fqns == context
       result.concat inner_get_constants(fqns, visibility, skip)
@@ -182,53 +182,18 @@ module Solargraph
     end
 
     # Get a fully qualified namespace name. This method will start the search
-    # in the specified root until it finds a match for the name.
+    # in the specified context until it finds a match for the name.
     #
-    # @param name [String] The namespace to match
-    # @param root [String] The context to search
+    # @param namespace [String] The namespace to match
+    # @param context [String] The context to search
     # @return [String]
-    def find_fully_qualified_namespace name, root = '', skip = []
-      return nil if name.nil?
-      return nil if skip.include?(root)
-      skip.push root
-      if name == ''
-        if root == ''
-          return ''
-        else
-          return find_fully_qualified_namespace(root, '', skip)
-        end
-      else
-        if (root == '')
-          return name unless namespace_map[name].nil?
-          im = @namespace_includes['']
-          unless im.nil?
-            im.each do |i|
-              i.resolve self
-              return i.name unless i.name.nil?
-            end
-          end
-        else
-          roots = root.to_s.split('::')
-          while roots.length > 0
-            fqns = roots.join('::') + '::' + name
-            return fqns unless namespace_map[fqns].nil?
-            roots.pop
-          end
-          return name unless namespace_map[name].nil?
-          im = @namespace_includes['']
-          unless im.nil?
-            im.each do |i|
-              i.resolve self
-              return i.name unless i.name.nil?
-            end
-          end
-        end
-      end
-      result = yard_map.find_fully_qualified_namespace(name, root)
-      if result.nil?
-        result = live_map.get_fqns(name, root)
-      end
-      result
+    def qualify namespace, context = ''
+      inner_qualify namespace, context, []
+    end
+
+    # @deprecated Use #qualify instead
+    def find_fully_qualified_namespace namespace, context = ''
+      qualify namespace, context
     end
 
     # Get an array of instance variable pins defined in specified namespace
@@ -282,146 +247,6 @@ module Solargraph
       type
     end
 
-    # @return [Solargraph::Pin::Base]
-    def tail_pins signature, fqns, scope, visibility
-      return [] if signature.nil?
-      type = combine_type(fqns, scope)
-      return infer_word_pins(signature, type, true) unless signature.include?('.')
-      parts = signature.split('.')
-      last = parts.pop
-      base = parts.join('.')
-      type = infer_type(base, fqns, scope: scope)
-      return [] if type.nil?
-      infer_word_pins(last, type, true)
-    end
-
-    # @return [Solargraph::Pin::Base]
-    def tail_pin signature, fqns, scope, visibility
-      tail_pins(signature, fqns, scope, visibility).first
-    end
-
-    # Get an array of pins for a word in the provided context. A word can be
-    # a constant, a global variable, or a method name. Private and protected
-    # words are excluded by default. Set the `internal` parameter to `true` to
-    # to include private and protected methods, private constants, instance
-    # variables, and class variables.
-    #
-    # @param word [String]
-    # @param base_type [String]
-    # @param internal [Boolean]
-    # @return [Array<Solargraph::Pin::Base>]
-    def infer_word_pins word, base_type, internal = false
-      pins = []
-      namespace, scope = extract_namespace_and_scope(base_type)
-      if word == 'self' and internal
-        context = (internal ? namespace.split('::')[0..-2].join(';;') : '')
-        fqns = find_fully_qualified_namespace(namespace, context)
-        pins.concat get_path_suggestions(fqns) unless fqns.nil?
-        return pins
-      end
-      fqns = find_fully_qualified_namespace(word, namespace)
-      unless fqns.nil?
-        pins.concat get_path_suggestions(fqns) unless fqns.nil?
-        return pins
-      end
-      if internal
-        if word.start_with?('@@')
-          pins.concat get_class_variable_pins(namespace).select{|pin| pin.name == word}
-          return pins
-        elsif word.start_with?('@')
-          pins.concat get_instance_variable_pins(namespace, scope).select{|pin| pin.name == word}
-          return pins
-        end
-      end
-      if word.start_with?('$')
-        pins.concat get_global_variable_pins.select{|pin| pin.name == word}
-        return pins
-      end
-      pins.concat get_constants(namespace, (internal ? namespace : '')).select{|pin| pin.name == word}
-      if pins.empty?
-        pins.concat get_type_methods(base_type, (internal ? base_type : '')).select{|pin| pin.name == word}
-        pins.concat get_type_methods('Kernel').select{|pin| pin.name == word}
-      end
-      pins
-    end
-
-    # @return [Solargraph::Pin::Base]
-    def infer_word_pin word, base_type, internal = false
-      infer_word_pins(word, base_type, internal).first
-    end
-
-    # @return [String]
-    def infer_word_type word, base_type, internal = false
-      return base_type if word == 'self' and internal
-      if word == 'new'
-        namespace, scope = extract_namespace_and_scope(base_type)
-        return namespace if scope == :class
-      end
-      pin = infer_word_pin(word, base_type, internal)
-      return nil if pin.nil?
-      pin.resolve self
-      return pin.return_type unless pin.return_type.nil?
-      return nil unless pin.variable?
-      return nil if pin.signature.nil?
-      return nil if pin.signature.split('.').first == word
-      ns, sc = extract_namespace_and_scope(base_type)
-      infer_type pin.signature, ns, scope: sc
-    end
-
-    # Get an array of pins for a method name in the provided context. Private
-    # and protected methods are excluded by default. Set the `internal`
-    # parameter to `true` to include all methods.
-    #
-    # @param method_name [String] The name of the method
-    # @param base_type [String] The context type (e.g., `String` or `Class<String>`)
-    # @param internal [Boolean] True if the call came from inside the base type
-    # @return [Array<Solargraph::Pin::Base>]
-    def infer_method_pins method_name, base_type, internal = false
-      get_type_methods(base_type, (internal ? base_type : '')).select{|pin| pin.name == method_name}
-    end
-
-    # Get the first pin that matches a method name in the provided context.
-    # Private and protected methods are excluded by default. Set the `internal`
-    # parameter to `true` to include all methods.
-    #
-    # @param method_name [String] The name of the method
-    # @param base_type [String] The context type (e.g., `String` or `Class<String>`)
-    # @param internal [Boolean] True if the call came from inside the base type
-    # @return [Solargraph::Pin::Base]
-    def infer_method_pin method_name, base_type, internal = false
-      infer_method_pins(method_name, base_type, internal).first
-    end
-
-    # Infer the type returned by a method in the provided context. Private and
-    # protected methods are excluded by default. Set the `internal` parameter
-    # to `true` to include all methods.
-    #
-    # @param method_name [String] The name of the method
-    # @param base_type [String] The context type (e.g., `String` or `Class<String>`)
-    # @param internal [Boolean] True if the call came from inside the base type
-    # @return [String]
-    def infer_method_type method_name, base_type, internal = false
-      namespace, scope = extract_namespace_and_scope(base_type)
-      method = infer_method_pin(method_name, base_type, internal)
-      return nil if method.nil?
-      method.resolve self
-      return namespace if method.name == 'new' and scope == :class
-      return base_type if method.return_type == 'self'
-      method.return_type
-    end
-
-    # def infer_deep_signature_type chain, base_type
-    #   return nil if base_type.nil?
-    #   internal = true
-    #   until chain.empty?
-    #     base = chain.shift
-    #     base_type = infer_method_type(base, base_type, internal)
-    #     return nil if base_type.nil?
-    #     internal = false
-    #   end
-    #   base_type
-    # end
-
     # @return [Array<Solargraph::Pin::GlobalVariable>]
     def get_global_variable_pins
       globals = []
@@ -429,17 +254,6 @@ module Solargraph
         globals.concat s.global_variable_pins
       end
       globals
-    end
-
-    def get_type_methods type, context = ''
-      return [] if type.nil?
-      namespace, scope = extract_namespace_and_scope(type)
-      base = extract_namespace(context)
-      fqns = find_fully_qualified_namespace(namespace, base)
-      return [] if fqns.nil?
-      visibility = [:public]
-      visibility.push :private, :protected if fqns == base
-      get_methods fqns, scope: scope, visibility: visibility
     end
 
     def get_methods fqns, scope: :instance, visibility: [:public], deep: true
@@ -453,6 +267,17 @@ module Solargraph
         result.concat inner_get_methods(fqns, scope, visibility, deep, skip)
       end
       result
+    end
+
+    def get_type_methods type, context = ''
+      return [] if type.nil?
+      namespace, scope = extract_namespace_and_scope(type)
+      base = extract_namespace(context)
+      fqns = find_fully_qualified_namespace(namespace, base)
+      return [] if fqns.nil?
+      visibility = [:public]
+      visibility.push :private, :protected if fqns == base
+      get_methods fqns, scope: scope, visibility: visibility
     end
 
     # @param fragment [Solargraph::Source::Fragment]
@@ -533,34 +358,6 @@ module Solargraph
       return [] if type.nil?
       ns, sc = extract_namespace_and_scope(type)
       tail_pins(rest, ns, sc, [:public, :private, :protected])
-    end
-
-    # Get the namespace's type (Class or Module).
-    #
-    # @param [String] A fully qualified namespace
-    # @return [Symbol] :class, :module, or nil
-    def get_namespace_type fqns
-      pin = @namespace_path_pins[fqns]
-      return yard_map.get_namespace_type(fqns) if pin.nil?
-      pin.first.type
-    end
-
-    # Convert a namespace and scope into a type.
-    #
-    # @example
-    #   combine_type('String', :instance) => 'String'
-    #   combine_type('String', :class)    => 'Class<String>'
-    #
-    # @param namespace [String]
-    # @param scope [Symbol] :class or :instance
-    def combine_type namespace, scope
-      return '' if namespace.empty?
-      if scope == :instance
-        namespace
-      else
-        type = get_namespace_type(namespace)
-        "#{type == :class ? 'Class' : 'Module'}<#{namespace}>"
-      end
     end
 
     # Get an array of all suggestions that match the specified path.
@@ -942,6 +739,206 @@ module Solargraph
 
     def current_workspace_sources
       @sources - [@virtual_source]
+    end
+
+    def inner_qualify name, root, skip
+      return nil if name.nil?
+      return nil if skip.include?(root)
+      skip.push root
+      if name == ''
+        if root == ''
+          return ''
+        else
+          return inner_qualify(root, '', skip)
+        end
+      else
+        if (root == '')
+          return name unless namespace_map[name].nil?
+          im = @namespace_includes['']
+          unless im.nil?
+            im.each do |i|
+              i.resolve self
+              return i.name unless i.name.nil?
+            end
+          end
+        else
+          roots = root.to_s.split('::')
+          while roots.length > 0
+            fqns = roots.join('::') + '::' + name
+            return fqns unless namespace_map[fqns].nil?
+            roots.pop
+          end
+          return name unless namespace_map[name].nil?
+          im = @namespace_includes['']
+          unless im.nil?
+            im.each do |i|
+              i.resolve self
+              return i.name unless i.name.nil?
+            end
+          end
+        end
+      end
+      result = yard_map.find_fully_qualified_namespace(name, root)
+      if result.nil?
+        result = live_map.get_fqns(name, root)
+      end
+      result
+    end
+
+    # @return [Solargraph::Pin::Base]
+    def tail_pins signature, fqns, scope, visibility
+      return [] if signature.nil?
+      type = combine_type(fqns, scope)
+      return infer_word_pins(signature, type, true) unless signature.include?('.')
+      parts = signature.split('.')
+      last = parts.pop
+      base = parts.join('.')
+      type = infer_type(base, fqns, scope: scope)
+      return [] if type.nil?
+      infer_word_pins(last, type, true)
+    end
+
+    # @return [Solargraph::Pin::Base]
+    def tail_pin signature, fqns, scope, visibility
+      tail_pins(signature, fqns, scope, visibility).first
+    end
+
+    # Get an array of pins for a word in the provided context. A word can be
+    # a constant, a global variable, or a method name. Private and protected
+    # words are excluded by default. Set the `internal` parameter to `true` to
+    # to include private and protected methods, private constants, instance
+    # variables, and class variables.
+    #
+    # @param word [String]
+    # @param base_type [String]
+    # @param internal [Boolean]
+    # @return [Array<Solargraph::Pin::Base>]
+    def infer_word_pins word, base_type, internal = false
+      pins = []
+      namespace, scope = extract_namespace_and_scope(base_type)
+      if word == 'self' and internal
+        context = (internal ? namespace.split('::')[0..-2].join(';;') : '')
+        fqns = find_fully_qualified_namespace(namespace, context)
+        pins.concat get_path_suggestions(fqns) unless fqns.nil?
+        return pins
+      end
+      fqns = find_fully_qualified_namespace(word, namespace)
+      unless fqns.nil?
+        pins.concat get_path_suggestions(fqns) unless fqns.nil?
+        return pins
+      end
+      if internal
+        if word.start_with?('@@')
+          pins.concat get_class_variable_pins(namespace).select{|pin| pin.name == word}
+          return pins
+        elsif word.start_with?('@')
+          pins.concat get_instance_variable_pins(namespace, scope).select{|pin| pin.name == word}
+          return pins
+        end
+      end
+      if word.start_with?('$')
+        pins.concat get_global_variable_pins.select{|pin| pin.name == word}
+        return pins
+      end
+      pins.concat get_constants(namespace, (internal ? namespace : '')).select{|pin| pin.name == word}
+      if pins.empty?
+        pins.concat get_type_methods(base_type, (internal ? base_type : '')).select{|pin| pin.name == word}
+        pins.concat get_type_methods('Kernel').select{|pin| pin.name == word}
+      end
+      pins
+    end
+
+    # @return [Solargraph::Pin::Base]
+    def infer_word_pin word, base_type, internal = false
+      infer_word_pins(word, base_type, internal).first
+    end
+
+    # @return [String]
+    def infer_word_type word, base_type, internal = false
+      return base_type if word == 'self' and internal
+      if word == 'new'
+        namespace, scope = extract_namespace_and_scope(base_type)
+        return namespace if scope == :class
+      end
+      pin = infer_word_pin(word, base_type, internal)
+      return nil if pin.nil?
+      pin.resolve self
+      return pin.return_type unless pin.return_type.nil?
+      return nil unless pin.variable?
+      return nil if pin.signature.nil?
+      return nil if pin.signature.split('.').first == word
+      ns, sc = extract_namespace_and_scope(base_type)
+      infer_type pin.signature, ns, scope: sc
+    end
+
+    # Get an array of pins for a method name in the provided context. Private
+    # and protected methods are excluded by default. Set the `internal`
+    # parameter to `true` to include all methods.
+    #
+    # @param method_name [String] The name of the method
+    # @param base_type [String] The context type (e.g., `String` or `Class<String>`)
+    # @param internal [Boolean] True if the call came from inside the base type
+    # @return [Array<Solargraph::Pin::Base>]
+    def infer_method_pins method_name, base_type, internal = false
+      get_type_methods(base_type, (internal ? base_type : '')).select{|pin| pin.name == method_name}
+    end
+
+    # Get the first pin that matches a method name in the provided context.
+    # Private and protected methods are excluded by default. Set the `internal`
+    # parameter to `true` to include all methods.
+    #
+    # @param method_name [String] The name of the method
+    # @param base_type [String] The context type (e.g., `String` or `Class<String>`)
+    # @param internal [Boolean] True if the call came from inside the base type
+    # @return [Solargraph::Pin::Base]
+    def infer_method_pin method_name, base_type, internal = false
+      infer_method_pins(method_name, base_type, internal).first
+    end
+
+    # Infer the type returned by a method in the provided context. Private and
+    # protected methods are excluded by default. Set the `internal` parameter
+    # to `true` to include all methods.
+    #
+    # @param method_name [String] The name of the method
+    # @param base_type [String] The context type (e.g., `String` or `Class<String>`)
+    # @param internal [Boolean] True if the call came from inside the base type
+    # @return [String]
+    def infer_method_type method_name, base_type, internal = false
+      namespace, scope = extract_namespace_and_scope(base_type)
+      method = infer_method_pin(method_name, base_type, internal)
+      return nil if method.nil?
+      method.resolve self
+      return namespace if method.name == 'new' and scope == :class
+      return base_type if method.return_type == 'self'
+      method.return_type
+    end
+
+    # Get the namespace's type (Class or Module).
+    #
+    # @param [String] A fully qualified namespace
+    # @return [Symbol] :class, :module, or nil
+    def get_namespace_type fqns
+      pin = @namespace_path_pins[fqns]
+      return yard_map.get_namespace_type(fqns) if pin.nil?
+      pin.first.type
+    end
+
+    # Convert a namespace and scope into a type.
+    #
+    # @example
+    #   combine_type('String', :instance) => 'String'
+    #   combine_type('String', :class)    => 'Class<String>'
+    #
+    # @param namespace [String]
+    # @param scope [Symbol] :class or :instance
+    def combine_type namespace, scope
+      return '' if namespace.empty?
+      if scope == :instance
+        namespace
+      else
+        type = get_namespace_type(namespace)
+        "#{type == :class ? 'Class' : 'Module'}<#{namespace}>"
+      end
     end
   end
 end
