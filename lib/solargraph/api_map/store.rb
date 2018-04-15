@@ -69,8 +69,9 @@ module Solargraph
       end
 
       def get_path_pins path
-        # @todo This can be more efficient by splitting out the last component (#|.|::)
-        pins.select{ |pin| pin.path == path }
+        base = path.sub(/(#|\.|::)[a-z0-9_]*(\?|\!)?$/i, '')
+        base = '' if base == path
+        namespace_pins(base).select{ |pin| pin.path == path }
       end
 
       def get_instance_variables(fqns, scope = :instance)
