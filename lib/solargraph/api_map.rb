@@ -312,16 +312,6 @@ module Solargraph
       Completion.new(filtered, fragment.whole_word_range)
     end
 
-    def extract_namespace_and_scope type
-      scope = :instance
-      result = type.to_s.gsub(/<.*$/, '')
-      if (result == 'Class' or result == 'Module') and type.include?('<')
-        result = type.match(/<([a-z0-9:_]*)/i)[1]
-        scope = :class
-      end
-      [result, scope]
-    end
-
     # @param fragment [Solargraph::Source::Fragment]
     # @return [Array<Solargraph::Pin::Base>]
     def define fragment
@@ -707,6 +697,16 @@ module Solargraph
       pin = @namespace_path_pins[fqns]
       return yard_map.get_namespace_type(fqns) if pin.nil?
       pin.first.type
+    end
+
+    def extract_namespace_and_scope type
+      scope = :instance
+      result = type.to_s.gsub(/<.*$/, '')
+      if (result == 'Class' or result == 'Module') and type.include?('<')
+        result = type.match(/<([a-z0-9:_]*)/i)[1]
+        scope = :class
+      end
+      [result, scope]
     end
   end
 end
