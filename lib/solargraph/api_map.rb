@@ -18,10 +18,7 @@ module Solargraph
     attr_reader :workspace
 
     # @param workspace [Solargraph::Workspace]
-    def initialize workspace = nil
-      # @todo Deprecate strings for the workspace parameter
-      workspace = Solargraph::Workspace.new(workspace) if workspace.kind_of?(String)
-      workspace = Solargraph::Workspace.new(nil) if workspace.nil?
+    def initialize workspace = Solargraph::Workspace.new(nil)
       @workspace = workspace
       require_extensions
       @virtual_source = nil
@@ -304,11 +301,6 @@ module Solargraph
         elsif fragment.signature.include?('::') and !fragment.signature.include?('.')
           result.concat get_constants(fragment.base, fragment.namespace)
         else
-          # @todo Instead of inferring the pin, infer the type? One should
-          #   attempt resolution; the other should not. Basically, get rid of
-          #   the infer_signature_pin shortcut. Either you want all the pins or
-          #   you want the best guess for the type.
-          # pin = probe.infer_signature_pin(fragment.base, fragment.named_path, fragment.locals)
           type = probe.infer_signature_type(fragment.base, fragment.named_path, fragment.locals)
           unless type.nil?
             namespace, scope = extract_namespace_and_scope(type)
@@ -348,6 +340,7 @@ module Solargraph
     end
 
     # @param fragment [Solargraph::Source::Fragment]
+    # @return [Array<Solargraph::Pin::Base>]
     def signify fragment
       return [] unless fragment.argument?
       return [] if fragment.recipient.whole_signature.nil? or fragment.recipient.whole_signature.empty?
@@ -476,12 +469,6 @@ module Solargraph
       live_map.refresh
       @yard_stale = true
       @stime = Time.now
-    end
-
-    def rebuild_local_yardoc
-      return if workspace.nil? or !File.exist?(File.join(workspace, '.yardoc'))
-      STDERR.puts "Rebuilding local yardoc for #{workspace}"
-      Dir.chdir(workspace) { Process.spawn('yardoc') }
     end
 
     def process_virtual
