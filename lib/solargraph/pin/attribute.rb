@@ -14,6 +14,10 @@ module Solargraph
         Solargraph::Pin::ATTRIBUTE
       end
 
+      def completion_item_kind
+        Solargraph::LanguageServer::CompletionItemKinds::PROPERTY
+      end
+
       def path
         @path ||= namespace + '#' + name
       end
