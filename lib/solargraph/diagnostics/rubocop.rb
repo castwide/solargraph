@@ -2,6 +2,7 @@ require 'open3'
 require 'shellwords'
 
 module Solargraph
+
   module Diagnostics
     class Rubocop
       def initialize
@@ -12,17 +13,17 @@ module Solargraph
         begin
           cmd = "rubocop -f j -s #{Shellwords.escape(filename)}"
           o, e, s = Open3.capture3(cmd, stdin_data: text)
-          make_array text, JSON.parse(o)
-        rescue Exception => e
-          STDERR.puts "#{e}"
-          STDERR.puts "#{e.backtrace}"
-          nil
+          raise DiagnosticsError, "RuboCop is not available" if e.include?('Gem::Exception')
+          raise DiagnosticsError, "RuboCop returned empty data" if o.empty?
+          make_array JSON.parse(o)
+        rescue JSON::ParserError
+          raise DiagnosticsError, 'RuboCop returned invalid data'
         end
       end
 
       private
 
-      def make_array text, resp
+      def make_array resp
         severities = {
           'refactor' => 4,
           'convention' => 3,

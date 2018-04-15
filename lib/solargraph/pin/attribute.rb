@@ -4,14 +4,18 @@ module Solargraph
       # @return [Symbol] :reader or :writer
       attr_reader :access
 
-      def initialize source, node, namespace, access, docstring
-        super(source, node, namespace)
+      def initialize location, namespace, name, docstring, access
+        super(location, namespace, name, docstring)
         @access = access
         @docstring = docstring
       end
 
-      def name
-        @name ||= "#{node.children[0]}#{access == :writer ? '=' : ''}"
+      def kind
+        Solargraph::Pin::ATTRIBUTE
+      end
+
+      def completion_item_kind
+        Solargraph::LanguageServer::CompletionItemKinds::PROPERTY
       end
 
       def path
@@ -24,14 +28,6 @@ module Solargraph
           @return_type = tag.types[0] unless tag.nil?
         end
         @return_type
-      end
-
-      def completion_item_kind
-        Solargraph::LanguageServer::CompletionItemKinds::PROPERTY
-      end
-
-      def method?
-        true
       end
     end
   end

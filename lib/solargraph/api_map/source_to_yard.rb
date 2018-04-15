@@ -25,7 +25,7 @@ module Solargraph
               code_object_map[pin.path] ||= YARD::CodeObjects::ModuleObject.new(root_code_object, pin.path)
             end
             code_object_map[pin.path].docstring = pin.docstring unless pin.docstring.nil?
-            code_object_map[pin.path].files.push pin.source.filename
+            code_object_map[pin.path].files.push pin.location.filename
           end
           s.namespace_pins.each do |pin|
             pin.include_references.each do |ref|
@@ -35,13 +35,13 @@ module Solargraph
           s.attribute_pins.each do |pin|
             code_object_map[pin.path] ||= YARD::CodeObjects::MethodObject.new(code_object_at(pin.namespace), pin.name, :instance)
             code_object_map[pin.path].docstring = pin.docstring unless pin.docstring.nil?
-            code_object_map[pin.path].files.push pin.source.filename
+            code_object_map[pin.path].files.push pin.location.filename
             #code_object_map[pin.path].parameters = []
           end
           s.method_pins.each do |pin|
             code_object_map[pin.path] ||= YARD::CodeObjects::MethodObject.new(code_object_at(pin.namespace), pin.name, pin.scope)
             code_object_map[pin.path].docstring = pin.docstring unless pin.docstring.nil?
-            code_object_map[pin.path].files.push pin.source.filename
+            code_object_map[pin.path].files.push pin.location.filename
             code_object_map[pin.path].parameters = pin.parameters.map do |p|
               n = p.match(/^[a-z0-9_]*:?/i)[0]
               v = nil

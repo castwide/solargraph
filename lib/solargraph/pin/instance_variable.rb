@@ -1,11 +1,12 @@
 module Solargraph
   module Pin
     class InstanceVariable < BaseVariable
-      attr_reader :scope
+      def kind
+        Pin::INSTANCE_VARIABLE
+      end
 
-      def initialize source, node, namespace, scope
-        super(source, node, namespace)
-        @scope = scope
+      def scope
+        @scope ||= (context.kind == Pin::NAMESPACE ? :class : context.scope)
       end
     end
   end

@@ -1,11 +1,12 @@
 module Solargraph
   module Pin
+    # @todo Move this stuff. It should be the responsibility of the language server.
     module Conversions
       # @return [Hash]
       def completion_item
         {
           label: name,
-          kind: kind,
+          kind: completion_item_kind,
           detail: completion_item_detail,
           data: {
             path: path,
@@ -42,7 +43,7 @@ module Solargraph
       # @return [Hash]
       def signature_help
         {
-          label: name + '(' + arguments.join(', ') + ')',
+          label: name + '(' + parameters.join(', ') + ')',
           documentation: documentation
         }
       end
@@ -51,7 +52,7 @@ module Solargraph
 
       def completion_item_detail
         detail = ''
-        detail += "(#{parameters.join(', ')}) " unless parameters.empty?
+        detail += "(#{parameters.join(', ')}) " unless kind != Pin::METHOD or parameters.empty?
         detail += "=> #{return_type}" unless return_type.nil?
         return nil if detail.empty?
         detail

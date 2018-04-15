@@ -12,41 +12,29 @@ module Solargraph
       # @param source [Solargraph::Source]
       # @param line [Integer]
       # @param column [Integer]
-      def initialize source, line, column, tree
-        # @todo Split this object from the source. The source can change; if
-        #   it does, this object's data should not.
+      def initialize source, line, column
         @source = source
         @code = source.code
         @line = line
         @column = column
-        @tree = tree
+        @calculated_literal = false
       end
 
-      # Get the node at the current offset.
-      #
-      # @return [Parser::AST::Node]
-      def node
-        @node ||= @tree.first
+      def character
+        @column
+      end
+
+      def position
+        @position ||= Position.new(line, column)
       end
 
       # Get the fully qualified namespace at the current offset.
       #
       # @return [String]
       def namespace
-        # if @namespace.nil?
-        #   base = @source.parent_node_from(line, column, :class, :module, :def, :defs)
-        #   @namespace ||= @source.namespace_for(base)
-        # end
-        # @namespace
         if @namespace.nil?
-          parts = []
-          @tree.each do |n|
-            next unless n.kind_of?(AST::Node)
-            if n.type == :class or n.type == :module
-              parts.unshift unpack_name(n.children[0])
-            end
-          end
-          @namespace = parts.join('::')
+          pin = @source.locate_namespace_pin(line, character)
+          @namespace = (pin.nil? ? '' : pin.path)
         end
         @namespace
       end
@@ -79,16 +67,7 @@ module Solargraph
       def scope
         if @scope.nil?
           @scope = :class
-          tree = @tree.clone
-          until tree.empty?
-            cursor = tree.shift
-            break if cursor.type == :class or cursor.type == :module
-            if cursor.type == :def
-              pin = @source.method_pins.select{|pin| pin.contain?(offset)}.first
-              # @todo The pin should never be nil here, but we're guarding it just in case
-              @scope = (pin.nil? ? :instance : pin.scope)
-            end
-          end
+          @scope = :instance if named_path.kind == Pin::METHOD and named_path.scope == :instance
         end
         @scope
       end
@@ -99,6 +78,14 @@ module Solargraph
       # @return [String]
       def signature
         @signature ||= signature_data[1]
+      end
+
+      def valid?
+        @source.parsed?
+      end
+
+      def broken?
+        !valid?
       end
 
       # Get the signature before the current word. Given the signature
@@ -125,6 +112,26 @@ module Solargraph
           end
         end
         @base
+      end
+
+      # @return [String]
+      def root
+        @root ||= signature.split('.').first
+      end
+
+      # @return [String]
+      def chain
+        @chain ||= signature.split('.')[1..-1].join('.')
+      end
+
+      # @return [String]
+      def base_chain
+        @base_chain ||= signature.split('.')[1..-2].join('.')
+      end
+
+      # @return [String]
+      def whole_chain
+        @whole_chain ||= whole_signature.split('.')[1..-1].join('.')
       end
 
       # Get the remainder of the word after the current offset. Given the text
@@ -170,9 +177,8 @@ module Solargraph
       #
       # @return [Boolean]
       def string?
-        # @string = @source.string_at?(offset) if @string.nil?
-        # @string
-        @string ||= (node.type == :str or node.type == :dstr)
+        # @string ||= (node.type == :str or node.type == :dstr)
+        @string ||= @source.string_at?(line, character)
       end
 
       # True if the current offset is inside a comment.
@@ -198,14 +204,31 @@ module Solargraph
         @whole_word_range ||= word_range_at(offset, true)
       end
 
-      # Get an array of all the local variables in the source that are visible
-      # from the current offset.
-      #
-      # @return [Array<Solargraph::Pin::LocalVariable>]
-      def local_variable_pins name = nil
-        @local_variable_pins ||= @source.local_variable_pins.select{|pin| pin.visible_from?(node)}
-        return @local_variable_pins if name.nil?
-        @local_variable_pins.select{|pin| pin.name == name}
+      def block
+        @block ||= @source.locate_block_pin(line, character)
+      end
+
+      def named_path
+        @named_path ||= @source.locate_named_path_pin(line, character)
+      end
+
+      def locals
+        @locals ||= @source.locals.select{|pin| pin.visible_from?(block, position)}
+      end
+
+      def base_literal?
+        !base_literal.nil?
+      end
+
+      def base_literal
+        if @base_literal.nil? and !@calculated_literal
+          @calculated_literal = true
+          if signature.start_with?('.')
+            pn = @source.node_at(line, column - 2)
+            @base_literal = infer_literal_node_type(pn) unless pn.nil?
+          end
+        end
+        @base_literal
       end
 
       private
@@ -280,23 +303,17 @@ module Solargraph
           end
           index -= 1
         end
-        # @todo Smelly exceptional case for numbers
-        signature.sub!(/^[0-9]+\./, 'Integer.new.')
-        if signature.start_with?('.')
-          # @todo Smelly exceptional case for arrays
-          if signature.start_with?('.[].')
-            signature.sub!(/^\.\[\]/, 'Array.new')
-          else
-            line, col = get_position_at(index < 0 ? 0 : index)
-            pn = @source.node_at(line, col)
-            unless pn.nil?
-              literal = infer_literal_node_type(pn)
-              unless literal.nil?
-                signature = "#{literal}.new#{signature}"
-                # @todo Determine the index from the beginning of the literal node?
-              end
-            end
-          end
+        # @todo Smelly exceptional case for integer literals
+        match = signature.match(/^[0-9]+/)
+        if match
+          index += match[0].length
+          signature = signature[match[0].length..-1].to_s
+          @base_literal = 'Integer'
+        # @todo Smelly exceptional case for array literals
+        elsif signature.start_with?('.[]')
+          index += 3
+          signature = signature[index+3..-1].to_s
+          @base_literal = 'Array'
         end
         [index + 1, signature]
       end

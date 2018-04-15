@@ -12,13 +12,27 @@ module Solargraph
     autoload :GlobalVariable,   'solargraph/pin/global_variable'
     autoload :Constant,         'solargraph/pin/constant'
     autoload :Symbol,           'solargraph/pin/symbol'
-    autoload :Directed,         'solargraph/pin/directed'
     autoload :Namespace,        'solargraph/pin/namespace'
     autoload :YardObject,       'solargraph/pin/yard_object'
     autoload :Keyword,          'solargraph/pin/keyword'
-    autoload :Parameter,        'solargraph/pin/parameter'
     autoload :MethodParameter,  'solargraph/pin/method_parameter'
     autoload :BlockParameter,   'solargraph/pin/block_parameter'
     autoload :Reference,        'solargraph/pin/reference'
+    autoload :Documenting,      'solargraph/pin/documenting'
+    autoload :Block,            'solargraph/pin/block'
+    autoload :Localized,        'solargraph/pin/localized'
+
+    ATTRIBUTE = 1
+    CLASS_VARIABLE = 2
+    CONSTANT = 3
+    GLOBAL_VARIABLE = 4
+    INSTANCE_VARIABLE = 5
+    KEYWORD = 6
+    LOCAL_VARIABLE = 7
+    METHOD = 8
+    NAMESPACE = 9
+    SYMBOL = 10
+    BLOCK = 11
+    BLOCK_PARAMETER = 12
   end
 end

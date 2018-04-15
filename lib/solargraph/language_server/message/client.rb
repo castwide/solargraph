@@ -1,5 +1,9 @@
 module Solargraph
-  module Client
-    autoload :RegisterCapability, 'solargraph/language_server/message/client/register_capability'
+  module LanguageServer
+    module Message
+      module Client
+        autoload :RegisterCapability, 'solargraph/language_server/message/client/register_capability'
+      end
+    end
   end
 end

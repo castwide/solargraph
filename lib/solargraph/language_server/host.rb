@@ -24,7 +24,7 @@ module Solargraph
 
       # @param update [Hash]
       def configure update
-        options.merge! update
+        options.merge! update unless update.nil?
       end
 
       # @return [Hash]
@@ -50,23 +50,18 @@ module Solargraph
         message = Message.select(request['method']).new(self, request)
         begin
           message.process
-        rescue NameError => e
-          STDERR.puts "NameError in Host"
-          STDERR.puts e.message
-          STDERR.puts e.backtrace
-          message.set_error Solargraph::LanguageServer::ErrorCodes::INTERNAL_ERROR, "NameError in Host"
         rescue Exception => e
           STDERR.puts e.message
           STDERR.puts e.backtrace
-          message.set_error Solargraph::LanguageServer::ErrorCodes::INTERNAL_ERROR, e.message
+          message.set_error Solargraph::LanguageServer::ErrorCodes::INTERNAL_ERROR, "[#{e.class}] #{e.message}"
         end
         message
       end
 
       def create uri
+        filename = uri_to_file(uri)
         @change_semaphore.synchronize do
-          filename = uri_to_file(uri)
-          library.create filename, File.read(filename)
+          library.create_from_disk filename
         end
       end
 
@@ -82,6 +77,14 @@ module Solargraph
           library.open uri_to_file(uri), text, version
           @diagnostics_queue.push uri
         end
+      end
+
+      def open? uri
+        result = nil
+        @change_semaphore.synchronize do
+          result = library.open?(uri_to_file(uri))
+        end
+        result
       end
 
       def close uri
@@ -224,6 +227,10 @@ module Solargraph
         results
       end
 
+      def file_symbols uri
+        library.file_symbols(uri_to_file(uri))
+      end
+
       private
 
       # @return [Solargraph::Library]
@@ -255,7 +262,7 @@ module Solargraph
                     # HACK: This condition fixes the fact that formatting
                     # increments the version by one regardless of the number
                     # of changes
-                    STDERR.puts "Dirt stupid update"
+                    STDERR.puts "Warning: change applied to #{uri_to_file(change['textDocument']['uri'])} is possibly out of sync"
                     updater = generate_updater(change)
                     library.synchronize updater
                     @diagnostics_queue.push change['textDocument']['uri']
@@ -263,12 +270,11 @@ module Solargraph
                     next true
                   elsif change['textDocument']['version'] <= source.version
                     # @todo Is deleting outdated changes correct behavior?
-                    STDERR.puts "Deleting stale change"
+                    STDERR.puts "Warning: outdated to change to #{change['textDocument']['uri']} was ignored"
                     @diagnostics_queue.push change['textDocument']['uri']
                     next true
                   else
                     # @todo Change is out of order. Save it for later
-                    STDERR.puts "Keeping out-of-order change in queue"
                     next false
                   end
                 end
@@ -319,8 +325,20 @@ module Solargraph
                   }
                 end
               end
-            rescue Exception => e
-              STDERR.puts "Error in diagnostics: #{e.class}"
+            rescue DiagnosticsError => e
+              STDERR.puts "Error in diagnostics: #{e.message}"
+              options['diagnostics'] = false
+              send_notification 'window/showMessage', {
+                type: LanguageServer::MessageTypes::ERROR,
+                message: "Error in diagnostics: #{e.message}"
+              }
+            rescue Errno::ENOENT => e
+              STDERR.puts "Error in diagnostics: RuboCop could not be found"
+              options['diagnostics'] = false
+              send_notification 'window/showMessage', {
+                type: LanguageServer::MessageTypes::ERROR,
+                message: "Error in diagnostics: RuboCop could not be found"
+              }
             end
           end
         end
@@ -336,7 +354,7 @@ module Solargraph
         params['contentChanges'].each do |chng|
           changes.push Solargraph::Source::Change.new(
             (chng['range'].nil? ? 
-              nil : 
+              nil :
               Solargraph::Source::Range.from_to(chng['range']['start']['line'], chng['range']['start']['character'], chng['range']['end']['line'], chng['range']['end']['character'])
             ),
             chng['text']

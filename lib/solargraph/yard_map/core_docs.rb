@@ -6,7 +6,6 @@ require 'fileutils'
 module Solargraph
   class YardMap
     module CoreDocs
-      class SourceNotAvailableError < StandardError;end
       
       SOURCE = 'https://solargraph.org/download'
 

@@ -2,7 +2,6 @@ module Solargraph
   # A library handles coordination between a Workspace and an ApiMap.
   #
   class Library
-    class FileNotFoundError < Exception; end
 
     # @param workspace [Solargraph::Workspace]
     def initialize workspace = Solargraph::Workspace.new(nil)
@@ -24,6 +23,14 @@ module Solargraph
       api_map.refresh
     end
 
+    # True if the specified file is currently open in the workspace.
+    #
+    # @param filename [String]
+    # @return [Boolean]
+    def open? filename
+      source_hash.has_key? filename
+    end
+
     # Create a file source to be added to the workspace. The source is ignored
     # if the workspace is not configured to include the file.
     #
@@ -31,16 +38,19 @@ module Solargraph
     # @param text [String] The contents of the file
     # @return [Boolean] True if the file was added to the workspace.
     def create filename, text
-      result = false
-      if workspace.would_merge?(filename)
-        source = Solargraph::Source.load_string(text, filename)
-        if workspace.merge(source)
-          source_hash[filename] = source
-          api_map.refresh
-          result = true
-        end
-      end
-      result
+      return false unless workspace.would_merge?(filename)
+      source = Solargraph::Source.load_string(text, filename)
+      workspace.merge(source)
+      api_map.refresh
+      true
+    end
+
+    def create_from_disk filename
+      return if File.directory?(filename) or !File.exist?(filename)
+      return unless workspace.would_merge?(filename)
+      source = Solargraph::Source.load_string(File.read(filename), filename)
+      workspace.merge(source)
+      api_map.refresh
     end
 
     # Delete a file from the library. Deleting a file will make it unavailable

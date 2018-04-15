@@ -25,6 +25,14 @@ module Solargraph
       # @return [String] The updated text.
       def write text, nullable = false
         if nullable and !range.nil? and new_text.match(/[\.\[\{\(@\$:]$/)
+          if new_text == ':'
+            offset = Position.to_offset(text, range.start)
+            if text[offset - 1] == ':'
+              p = Position.from_offset(text, offset - 1)
+              r = Change.new(Range.new(p, range.start), ' ')
+              text = r.write(text)
+            end
+          end
           commit text, "#{new_text[0..-2]} "
         elsif range.nil?
           new_text
@@ -50,20 +58,9 @@ module Solargraph
       private
 
       def commit text, insert
-        start_offset = get_offset(text, range.start.line, range.start.character)
-        end_offset = get_offset(text, range.end.line, range.end.character)
+        start_offset = Position.to_offset(text, range.start)
+        end_offset = Position.to_offset(text, range.ending)
         (start_offset == 0 ? '' : text[0..start_offset-1].to_s) + insert.force_encoding('utf-8') + text[end_offset..-1].to_s
-      end
-
-      def get_offset text, line, column
-        offset = 0
-        feed = 0
-        text.lines.each do |l|
-          break if line == feed
-          offset += l.length
-          feed += 1
-        end
-        offset + column
       end
     end
   end

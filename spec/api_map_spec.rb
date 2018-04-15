@@ -34,7 +34,7 @@ describe Solargraph::ApiMap do
       end
     )
     @api_map = Solargraph::ApiMap.new
-    @api_map.append_source(code, 'file.rb')
+    @api_map.virtualize_string(code, 'file.rb')
   end
 
   it "finds instance methods" do
@@ -45,7 +45,7 @@ describe Solargraph::ApiMap do
 
   it "finds included instance methods" do
     methods = @api_map.get_methods("Class1")
-    expect(methods.map(&:to_s)).to include('module1_method')
+    expect(methods.map(&:name)).to include('module1_method')
   end
 
   it "finds superclass instance methods" do
@@ -82,7 +82,7 @@ describe Solargraph::ApiMap do
       @foobar = ''
     )
     api_map = Solargraph::ApiMap.new
-    api_map.append_source(code, 'file.rb')
+    api_map.virtualize_string(code, 'file.rb')
     vars = api_map.get_instance_variable_pins('', :class).map(&:to_s)
     expect(vars).to include('@foobar')
     expect(vars).not_to include('@not1')
@@ -133,11 +133,12 @@ describe Solargraph::ApiMap do
     expect(namespaces.map(&:to_s)).not_to include('Module1Class')
   end
 
-  it "finds instance variables in scoped classes" do
-    # methods = @api_map.get_instance_methods('Module1Class', 'Module1')
-    methods = @api_map.get_type_methods('Module1Class', 'Module1')
-    expect(methods.map(&:to_s)).to include('module1class_method')
-  end
+  # @todo Deprecating get_type_methods
+  # it "finds instance variables in scoped classes" do
+  #   # methods = @api_map.get_instance_methods('Module1Class', 'Module1')
+  #   methods = @api_map.get_type_methods('Module1Class', 'Module1')
+  #   expect(methods.map(&:to_s)).to include('module1class_method')
+  # end
 
   it "finds namespaces beneath the current scope" do
     expect(@api_map.namespace_exists?('Class1', 'Module1')).to be true
@@ -157,20 +158,6 @@ describe Solargraph::ApiMap do
   #   expect(cls).to eq('String')
   # end
 
-  it "infers local class from [Class].new method" do
-    cls = @api_map.infer_type('Class1.new', '')
-    expect(cls).to eq('Class1')
-    cls = @api_map.infer_type('Module1::Module1Class.new', '')
-    expect(cls).to eq('Module1::Module1Class')
-    cls = @api_map.infer_type('Module1Class.new', 'Module1')
-    expect(cls).to eq('Module1::Module1Class')
-  end
-
-  it "infers core class from [Class].new method" do
-    cls = @api_map.infer_type('String.new', '', scope: :class)
-    expect(cls).to eq('String')
-  end
-
   it "checks visibility of instance methods" do
     code = %(
       class Foo
@@ -180,175 +167,13 @@ describe Solargraph::ApiMap do
       end
     )
     api_map = Solargraph::ApiMap.new
-    api_map.append_source(code, 'file.rb')
+    api_map.virtualize_string(code, 'file.rb')
     suggestions = api_map.get_methods('Foo', visibility: [:public])
     expect(suggestions.map(&:to_s)).to include('bar')
     expect(suggestions.map(&:to_s)).not_to include('baz')
     suggestions = api_map.get_methods('Foo', visibility: [:private])
     expect(suggestions.map(&:to_s)).not_to include('bar')
     expect(suggestions.map(&:to_s)).to include('baz')
-  end
-
-  it "avoids infinite loops from variable assignments that reference themselves" do
-    code = %(
-      @foo = @foo
-    )
-    api_map = Solargraph::ApiMap.new
-    api_map.append_source(code, 'file.rb')
-    type = api_map.infer_type('@foo', '')
-    expect(type).to be(nil)
-  end
-
-  it "recognizes self in instance scope" do
-    code = %(
-      class Foo
-        def bar
-        end
-      end
-    )
-    api_map = Solargraph::ApiMap.new
-    api_map.append_source(code, 'file.rb')
-    type = api_map.infer_type('self', 'Foo', scope: :instance)
-    expect(type).to eq('Foo')
-  end
-
-  it "recognizes self in instance method chain" do
-    code = %(
-      class Foo
-        # @return [String]
-        def bar
-        end
-      end
-    )
-    api_map = Solargraph::ApiMap.new
-    api_map.append_source(code, 'file.rb')
-    type = api_map.infer_type('self.bar', 'Foo', scope: :instance)
-    expect(type).to eq('String')
-  end
-
-  it "recognizes self in class scope" do
-    code = %(
-      class Foo
-        def bar
-        end
-      end
-    )
-    api_map = Solargraph::ApiMap.new
-    api_map.append_source(code, 'file.rb')
-    type = api_map.infer_type('self', 'Foo', scope: :class)
-    expect(type).to eq('Class<Foo>')
-  end
-
-  it "recognizes self in class method chain" do
-    code = %(
-      class Foo
-        def bar
-        end
-      end
-    )
-    api_map = Solargraph::ApiMap.new
-    api_map.append_source(code, 'file.rb')
-    type = api_map.infer_type('self.new', 'Foo', scope: :class)
-    expect(type).to eq('Foo')
-  end
-
-  it "infers an instance variable type from a tag" do
-    code = %(
-      class Foo
-        def bar
-          # @type [String]
-          @bar = unknown_method
-        end
-      end
-    )
-    api_map = Solargraph::ApiMap.new
-    api_map.append_source(code, 'file.rb')
-    type = api_map.infer_type('@bar', 'Foo', scope: :instance)
-    expect(type).to eq('String')
-  end
-
-  it "does not infer an instance variable type in the class scope" do
-    code = %(
-      class Foo
-        def bar
-          # @type [String]
-          @bar = unknown_method
-        end
-      end
-    )
-    api_map = Solargraph::ApiMap.new
-    api_map.append_source(code, 'file.rb')
-    type = api_map.infer_type('@bar', 'Foo', scope: :class)
-    expect(type).to eq(nil)
-  end
-
-  it "infers a class instance variable type from a tag" do
-    code = %(
-      class Foo
-        # @type [String]
-        @bar = unknown_method
-        def bar
-        end
-      end
-    )
-    api_map = Solargraph::ApiMap.new
-    api_map.append_source(code, 'file.rb')
-    type = api_map.infer_type('@bar', 'Foo', scope: :class)
-    expect(type).to eq('String')
-  end
-
-  it "does not infer a class instance variable type in the instance scope" do
-    code = %(
-      class Foo
-        # @type [String]
-        @bar = unknown_method
-        def bar
-        end
-      end
-    )
-    api_map = Solargraph::ApiMap.new
-    api_map.append_source(code, 'file.rb')
-    type = api_map.infer_type('@bar', 'Foo', scope: :instance)
-    expect(type).to eq(nil)
-  end
-
-  it "infers a class variable type from a tag" do
-    code = %(
-      class Foo
-        # @type [String]
-        @@bar = unknown_method
-      end
-    )
-    api_map = Solargraph::ApiMap.new
-    api_map.append_source(code, 'file.rb')
-    type = api_map.infer_type('@@bar', 'Foo')
-    expect(type).to eq('String')
-  end
-
-  it "infers a class variable type in a nil guard" do
-    code = %(
-      class Foo
-        @@bar ||= ''
-      end
-    )
-    api_map = Solargraph::ApiMap.new
-    api_map.append_source(code, 'file.rb')
-    type = api_map.infer_type('@@bar', 'Foo')
-    expect(type).to eq('String')
-  end
-
-  it "infers a class method return type from a tag" do
-    code = %(
-      class Foo
-        # @return [String]
-        def self.bar
-        end
-      end
-    )
-    api_map = Solargraph::ApiMap.new
-    api_map.append_source(code, 'file.rb')
-    type = api_map.infer_type('Foo.bar', '')
-    expect(type).to eq('String')
   end
 
   it "finds singleton methods in class << self blocks" do
@@ -361,7 +186,7 @@ describe Solargraph::ApiMap do
       end
     )
     api_map = Solargraph::ApiMap.new
-    api_map.append_source(code, 'file.rb')
+    api_map.virtualize_string(code, 'file.rb')
     sugg = api_map.get_methods('Foo', scope: :class)
     expect(sugg.map(&:to_s)).to include('bar')
   end
@@ -374,9 +199,9 @@ describe Solargraph::ApiMap do
       end
     )
     api_map = Solargraph::ApiMap.new
-    api_map.append_source(code, 'file.rb')
+    api_map.virtualize_string(code, 'file.rb')
     sugg = api_map.get_methods('Foo').keep_if{|s| s.name == 'bar'}.first
-    expect(sugg.arguments).to eq(['baz', "boo = 'boo'"])
+    expect(sugg.parameters).to eq(['baz', "boo = 'boo'"])
   end
 
   it "gets method keyword arguments" do
@@ -387,9 +212,9 @@ describe Solargraph::ApiMap do
       end
     )
     api_map = Solargraph::ApiMap.new
-    api_map.append_source(code, 'file.rb')
+    api_map.virtualize_string(code, 'file.rb')
     sugg = api_map.get_methods('Foo').keep_if{|s| s.name == 'bar'}.first
-    expect(sugg.arguments).to eq(['baz:', "boo: 'boo'"])
+    expect(sugg.parameters).to eq(['baz:', "boo: 'boo'"])
   end
 
   it "recognizes rebased namespaces" do
@@ -402,34 +227,10 @@ describe Solargraph::ApiMap do
       end
     )
     api_map = Solargraph::ApiMap.new
-    api_map.append_source(code, 'file.rb')
-    expect(api_map.namespaces).to eq(['', 'Foo', 'Bar'])
+    api_map.virtualize_string(code, 'file.rb')
+    expect(api_map.namespaces.to_a).to eq(['Foo', 'Bar'])
     sugg = api_map.get_methods('Bar')
     expect(sugg.map(&:to_s)).to include('baz')
-  end
-
-  it "updates map data on refresh" do
-    api_map = Solargraph::ApiMap.new
-    code1 = %(
-      class Foo
-        # @return [String]
-        def bar;end
-      end
-    )
-    api_map.append_source(code1, 'file.rb')
-    api_map.refresh
-    type = api_map.infer_type('Foo.new.bar', '', scope: :class)
-    expect(type).to eq('String')
-    code2 = %(
-      class Foo
-        # @return [Array]
-        def bar;end
-      end
-    )
-    api_map.append_source(code2, 'file.rb')
-    api_map.refresh
-    type = api_map.infer_type('Foo.new.bar', '')
-    expect(type).to eq('Array')
   end
 
   it "collects symbol pins" do
@@ -442,8 +243,8 @@ describe Solargraph::ApiMap do
       puts :bong
     )
     api_map = Solargraph::ApiMap.new
-    api_map.append_source(code, 'file.rb')
-    syms = api_map.get_symbols.map(&:to_s)
+    api_map.virtualize_string(code, 'file.rb')
+    syms = api_map.get_symbols.map(&:name)
     expect(syms).to include(':foo')
     expect(syms).to include(':Baz')
     expect(syms).to include(':bang')
@@ -460,7 +261,7 @@ describe Solargraph::ApiMap do
       end
     )
     api_map = Solargraph::ApiMap.new
-    api_map.append_source(code, 'file.rb')
+    api_map.virtualize_string(code, 'file.rb')
     meths = api_map.get_methods('Bar')
     expect(meths.map(&:to_s)).to include('foo_func')
   end
@@ -471,7 +272,7 @@ describe Solargraph::ApiMap do
       end
     )
     api_map = Solargraph::ApiMap.new
-    api_map.append_source(code, 'file.rb')
+    api_map.virtualize_string(code, 'file.rb')
     meths = api_map.get_methods('Foo')
     expect(meths.map(&:to_s)).to include('upcase')
   end
@@ -485,7 +286,7 @@ describe Solargraph::ApiMap do
       end
     )
     api_map = Solargraph::ApiMap.new
-    api_map.append_source(code, 'file.rb')
+    api_map.virtualize_string(code, 'file.rb')
     meth = api_map.get_methods('Foo').select{|s| s.name == 'bar'}.first
     expect(meth.params).to eq(['baz [String]'])
   end
@@ -498,10 +299,10 @@ describe Solargraph::ApiMap do
       end
     )
     api_map = Solargraph::ApiMap.new
-    api_map.append_source(code, 'file.rb')
+    api_map.virtualize_string(code, 'file.rb')
     # @type [Solargraph::Suggestion]
     meth = api_map.get_methods('Foo').select{|s| s.name == 'bar'}.first
-    expect(meth.arguments).to eq(['*baz'])
+    expect(meth.parameters).to eq(['*baz'])
   end
 
   it "gets instance methods from modules" do
@@ -512,7 +313,7 @@ describe Solargraph::ApiMap do
       end
     )
     api_map = Solargraph::ApiMap.new
-    api_map.append_source(code, 'file.rb')
+    api_map.virtualize_string(code, 'file.rb')
     meths = api_map.get_methods('Foo').map(&:to_s)
     expect(meths).to include('bar')
   end
@@ -525,7 +326,7 @@ describe Solargraph::ApiMap do
       end
     )
     api_map = Solargraph::ApiMap.new
-    api_map.append_source(code, 'file.rb')
+    api_map.virtualize_string(code, 'file.rb')
     sugg = api_map.get_methods('Foo').select{|s| s.name == 'bar'}.first
     expect(sugg.return_type).to eq('String')
   end
@@ -537,28 +338,10 @@ describe Solargraph::ApiMap do
     )
     api_map = Solargraph::ApiMap.new
     3.times do
-      api_map.append_source(code, 'file.rb')
+      api_map.virtualize_string(code, 'file.rb')
       sugg = api_map.get_path_suggestions('Foo')
       expect(sugg.length).to eq(1)
     end
-  end
-
-  it "infers Kernel method types" do
-    code = "gets"
-    api_map = Solargraph::ApiMap.new
-    api_map.append_source(code, 'file.rb')
-    type = api_map.infer_type('gets', '')
-    expect(type).to eq('String')
-  end
-
-  it "infers Kernel method types from namespaces" do
-    code = "class Foo;end"
-    api_map = Solargraph::ApiMap.new
-    api_map.append_source(code, 'file.rb')
-    type = api_map.infer_type('gets', 'Foo', scope: :class)
-    expect(type).to eq('String')
-    type = api_map.infer_type('gets', 'Foo', scope: :instance)
-    expect(type).to eq('String')
   end
 
   it "handles nested namespaces" do
@@ -573,7 +356,7 @@ describe Solargraph::ApiMap do
       end
     )
     api_map = Solargraph::ApiMap.new
-    api_map.append_source(code, 'file.rb')
+    api_map.virtualize_string(code, 'file.rb')
     suggestions = api_map.get_constants('Foo::Bar').map(&:path)
     expect(suggestions).to include('Foo::Bar::Baz')
     expect(suggestions).not_to include('Foo::Bar')
@@ -604,7 +387,7 @@ describe Solargraph::ApiMap do
   #     end
   #   )
   #   api_map = Solargraph::ApiMap.new
-  #   api_map.append_source(code, 'file.rb')
+  #   api_map.virtualize_string(code, 'file.rb')
   #   suggestions = api_map.get_instance_variable_pins('Foo', :instance)
   #   expect(suggestions.length).to eq(1)
   # end
@@ -618,28 +401,33 @@ describe Solargraph::ApiMap do
       end
     )
     api_map = Solargraph::ApiMap.new
-    api_map.append_source(code, 'file.rb')
+    api_map.virtualize_string(code, 'file.rb')
     suggestions = api_map.get_instance_variable_pins('Foo', :instance)
     expect(suggestions.length).to eq(1)
   end
 
-  it "prefers non-nil instance variable assignments" do
-    code = %(
-      class Foo
-        def bar
-          @bar = nil
-        end
-        def baz
-          @bar = 'baz'
-        end
-      end
-    )
-    api_map = Solargraph::ApiMap.new
-    api_map.append_source(code, 'file.rb')
-    suggestions = api_map.get_instance_variable_pins('Foo', :instance)
-    expect(suggestions.length).to eq(2)
-    expect(suggestions[0].return_type).to eq('String')
-  end
+  # @todo This might need to change or go. Non-nil assignment means little
+  #   to the ApiMap when the variable doesn't have a type tag, because the
+  #   Probe is now responsible for inferring signatures.
+  # it "prefers non-nil instance variable assignments" do
+  #   code = %(
+  #     class Foo
+  #       def bar
+  #         @bar = nil
+  #       end
+  #       def baz
+  #         @bar = 'baz'
+  #       end
+  #     end
+  #   )
+  #   api_map = Solargraph::ApiMap.new
+  #   api_map.virtualize_string(code, 'file.rb')
+  #   pins = api_map.get_instance_variable_pins('Foo', :instance)
+  #   expect(suggestions.length).to eq(2)
+  #   type = api_map.probe.infer_signature_type('@bar', pins[0].context)
+  #   expect(type).to eq('String')
+  #   # expect(suggestions[0].return_type).to eq('String')
+  # end
 
   it "accepts nil instance variable assignments with @type tags" do
     code = %(
@@ -654,7 +442,7 @@ describe Solargraph::ApiMap do
       end
     )
     api_map = Solargraph::ApiMap.new
-    api_map.append_source(code, 'file.rb')
+    api_map.virtualize_string(code, 'file.rb')
     suggestions = api_map.get_instance_variable_pins('Foo', :instance)
     expect(suggestions.length).to eq(2)
     expect(suggestions[0].return_type).to eq('Array')
@@ -670,7 +458,7 @@ describe Solargraph::ApiMap do
       end
     )
     api_map = Solargraph::ApiMap.new
-    api_map.append_source(code, 'file.rb')
+    api_map.virtualize_string(code, 'file.rb')
     docs = api_map.document('Foobar')
     expect(docs.length).to eq(1)
     expect(docs[0].docstring.all).to include('My Foobar class')
@@ -687,7 +475,7 @@ describe Solargraph::ApiMap do
       end
     )
     api_map = Solargraph::ApiMap.new
-    api_map.append_source(code, 'file.rb')
+    api_map.virtualize_string(code, 'file.rb')
     docs = api_map.document('Foobar#baz')
     expect(docs.length).to eq(1)
     expect(docs[0].tag(:return).types[0]).to eq('Array')
@@ -706,7 +494,7 @@ describe Solargraph::ApiMap do
 
   it "detects constant visibility" do
     api_map = Solargraph::ApiMap.new
-    api_map.append_source(%(
+    api_map.virtualize_string(%(
       module Foobar
         PUBLIC_CONST = ''
         PRIVATE_CONST = ''
@@ -730,27 +518,30 @@ describe Solargraph::ApiMap do
     expect(sugg).to include('PrivateClass')
   end
 
-  it "derives method return types from superclasses" do
-    api_map = Solargraph::ApiMap.new
-    api_map.append_source(%(
-      class Foo
-        # @return [String]
-        def ghost
-        end
-      end
-      class Bar < Foo
-        def ghost
-        end
-      end
-    ), 'file.rb')
-    sugg = api_map.get_path_suggestions('Bar#ghost')
-    expect(sugg.first).not_to be(nil)
-    expect(sugg.first.return_type).to eq('String')
-  end
+  # @todo No longer valid. The pins don't need to pick up the return type from
+  #   the superclass. Instead, completion returns both pins and type inference
+  #   uses the first method that returns a type.
+  # it "derives method return types from superclasses" do
+  #   api_map = Solargraph::ApiMap.new
+  #   api_map.virtualize_string(%(
+  #     class Foo
+  #       # @return [String]
+  #       def ghost
+  #       end
+  #     end
+  #     class Bar < Foo
+  #       def ghost
+  #       end
+  #     end
+  #   ), 'file.rb')
+  #   sugg = api_map.get_path_suggestions('Bar#ghost')
+  #   expect(sugg.first).not_to be(nil)
+  #   expect(sugg.first.return_type).to eq('String')
+  # end
 
   it "includes extended modules in method suggestions" do
     api_map = Solargraph::ApiMap.new
-    api_map.append_source(%(
+    api_map.virtualize_string(%(
       module More
         def more_method
         end
@@ -764,35 +555,6 @@ describe Solargraph::ApiMap do
     expect(sugg).to include('more_method')
   end
 
-  it "resolves self from return tags" do
-    api_map = Solargraph::ApiMap.new
-    api_map.append_source(%(
-      class Foo
-        # @return [self]
-        def bar
-        end
-      end
-    ), 'file.rb')
-    type = api_map.infer_type('Foo.new.bar', '')
-    expect(type).to eq('Foo')
-  end
-
-  it "resolves self from included methods" do
-    api_map = Solargraph::ApiMap.new
-    api_map.append_source(%(
-      module Foo
-        # @return [self]
-        def bar
-        end
-      end
-      class Baz
-        include Foo
-      end
-    ), 'file.rb')
-    type = api_map.infer_type('Baz.new.bar', '')
-    expect(type).to eq('Baz')
-  end
-
   # @todo This spec may not apply anymore. Although CodeMap#suggest_at should
   #   not return operators, the ApiMap needs them to identify signatures like
   #   Array.[].
@@ -802,24 +564,9 @@ describe Solargraph::ApiMap do
   #   expect(sugg).not_to include('[]')
   # end
 
-  it "detects return types from macro directives" do
-    api_map = Solargraph::ApiMap.new
-    api_map.append_source(%(
-      class Foo
-        # @!macro
-        #   @return [$1]
-        def self.bar klass
-        end
-      end
-      @x = Foo.bar Hash
-    ), 'file.rb')
-    type = api_map.infer_type('@x', '')
-    expect(type).to eq('Hash')
-  end
-
   it "rebuilds maps from file changes" do
     api_map = Solargraph::ApiMap.new
-    api_map.append_source(%(
+    api_map.virtualize_string(%(
       class Foobar
         def baz
         end
@@ -827,7 +574,7 @@ describe Solargraph::ApiMap do
     ), 'file.rb')
     sugg = api_map.get_methods('Foobar').map(&:to_s)
     expect(sugg).to include('baz')
-    api_map.append_source(%(
+    api_map.virtualize_string(%(
       class Foobar
         def boo
         end
@@ -840,7 +587,7 @@ describe Solargraph::ApiMap do
 
   it "detects extended methods in the global namespace" do
     api_map = Solargraph::ApiMap.new
-    api_map.append_source(%(
+    api_map.virtualize_string(%(
       module Foobar
         def baz
         end
@@ -853,7 +600,7 @@ describe Solargraph::ApiMap do
 
   it "detects included methods in the global namespace" do
     api_map = Solargraph::ApiMap.new
-    api_map.append_source(%(
+    api_map.virtualize_string(%(
       module Foobar
         def baz
         end
@@ -864,21 +611,23 @@ describe Solargraph::ApiMap do
     expect(sugg).to include('baz')
   end
 
-  it "resolves fully qualified namespaces from @return tags" do
-    api_map = Solargraph::ApiMap.new
-    api_map.append_source(%(
-      class Foobar
-        class Bazbar
-        end
-        # @return [Bazbar]
-        def get_bazbar;end
-      end
-    ), 'file.rb')
-    sugg = api_map.get_methods('Foobar').select{|s| s.name == 'get_bazbar'}.first
-    expect(sugg).not_to be(nil)
-    sugg.resolve api_map
-    expect(sugg.return_type).to eq('Foobar::Bazbar')
-  end
+  # @todo Return types are not modified by resolution. Qualification of
+  #   namespaces is handled elsewhere.
+  # it "resolves fully qualified namespaces from @return tags" do
+  #   api_map = Solargraph::ApiMap.new
+  #   api_map.virtualize_string(%(
+  #     class Foobar
+  #       class Bazbar
+  #       end
+  #       # @return [Bazbar]
+  #       def get_bazbar;end
+  #     end
+  #   ), 'file.rb')
+  #   sugg = api_map.get_methods('Foobar').select{|s| s.name == 'get_bazbar'}.first
+  #   expect(sugg).not_to be(nil)
+  #   # sugg.resolve api_map
+  #   expect(sugg.return_type).to eq('Foobar::Bazbar')
+  # end
 
   # @todo ApiMap#identify may be deprecated
   # it "detects method parameter return types from @param tags" do
@@ -945,44 +694,6 @@ describe Solargraph::ApiMap do
   #   expect(pin.name).to eq('s')
   #   expect(pin.return_type).to eq('String')
   # end
-
-  it "infers instance variables from class and scope" do
-    api_map = Solargraph::ApiMap.new
-    source = Solargraph::Source.load_string(%(
-      class Thing
-        @civar = 'foo'
-        def iivar
-          @iivar = []
-        end
-      end  
-    ), 'file.rb')
-    api_map.virtualize source
-    expect(api_map.infer_type('@civar', 'Thing', scope: :class)).to eq('String')
-    expect(api_map.infer_type('@civar', 'Thing', scope: :instance)).to eq(nil)
-    expect(api_map.infer_type('@iivar', 'Thing', scope: :class)).to eq(nil)
-    expect(api_map.infer_type('@iivar', 'Thing', scope: :instance)).to eq('Array')
-  end
-
-  it "infers instance variables in the global namespace" do
-    api_map = Solargraph::ApiMap.new
-    source = Solargraph::Source.load_string(%(
-      class Thing
-      end
-      @thing = Thing.new
-    ), 'file.rb')
-    api_map.virtualize source
-    expect(api_map.infer_type('@thing', '', scope: :class)).to eq('Thing')
-  end
-
-  it "infers types from instance variable signatures" do
-    api_map = Solargraph::ApiMap.new
-    source = Solargraph::Source.load_string(%(
-      @foo = '123'
-      @foo.split
-    ), 'file.rb')
-    api_map.virtualize source
-    expect(api_map.infer_type('@foo.split', '', scope: :class)).to eq('Array<String>')
-  end
 
   it "suggests nested namespaces" do
     api_map = Solargraph::ApiMap.new
@@ -1063,21 +774,6 @@ describe Solargraph::ApiMap do
     names = api_map.complete(fragment).pins.map(&:name)
     expect(names).to include('Foo')
     expect(names).to include('String')
-  end
-
-  it "switches scope for pins when inferring signatures" do
-    api_map = Solargraph::ApiMap.new
-    source = Solargraph::Source.load_string(%(
-      class Foo
-        def bar
-        end
-      end
-    ))
-    api_map.virtualize source
-    # The scope should change to :class for String to handle the new method
-    # correctly
-    type = api_map.infer_type('String.new', 'Foo', scope: :instance)
-    expect(type).to eq('String')
   end
 
   it "completes literal strings" do

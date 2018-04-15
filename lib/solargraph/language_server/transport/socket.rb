@@ -11,11 +11,7 @@ module Solargraph
           @content_length = 0
           @buffer = ''
           @host = Solargraph::LanguageServer::Host.new
-          EventMachine.add_periodic_timer 0.1 do
-            tmp = @host.flush
-            send_data tmp unless tmp.empty?
-            EventMachine.stop if @host.stopped?
-          end
+          start_timers
         end
 
         def process request
@@ -24,7 +20,7 @@ module Solargraph
             message.send
             tmp = @host.flush
             send_data tmp unless tmp.empty?
-            GC.start unless request['method'] = 'textDocument/didChange'
+            GC.start unless request['method'] == 'textDocument/didChange'
           end
         end
 
@@ -48,9 +44,8 @@ module Solargraph
               if @buffer.bytesize == @content_length
                 begin
                   process JSON.parse(@buffer)
-                rescue Exception => e
+                rescue JSON::ParserError => e
                   STDERR.puts "Failed to parse request: #{e.message}"
-                  STDERR.puts e.backtrace.inspect
                   STDERR.puts "Buffer: #{@buffer}"
                 ensure
                   @buffer.clear
@@ -59,6 +54,16 @@ module Solargraph
                 end
               end
             end
+          end
+        end
+
+        private
+
+        def start_timers
+          EventMachine.add_periodic_timer 0.1 do
+            tmp = @host.flush
+            send_data tmp unless tmp.empty?
+            EventMachine.stop if @host.stopped?
           end
         end
       end

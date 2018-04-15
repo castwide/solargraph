@@ -57,6 +57,9 @@ module Solargraph
         return 'Float'
       elsif node.type == :sym
         return 'Symbol'
+      # @todo Maybe ignore nils
+      # elsif node.type == :nil
+      #   return 'NilClass'
       end
       nil
     end
@@ -67,7 +70,9 @@ module Solargraph
     #
     # @return [String]
     def resolve_node_signature node
-      drill_signature node, ''
+      result = drill_signature node, ''
+      return nil if result.empty?
+      result
     end
 
     private

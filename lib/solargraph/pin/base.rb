@@ -4,136 +4,61 @@ module Solargraph
   module Pin
     class Base
       include Conversions
+      include Documenting
 
-      # @return [Solargraph::Source]
-      attr_reader :source
-
-      # @return [Parser::AST::Node]
-      attr_reader :node
+      attr_reader :location
 
       # @return [String]
       attr_reader :namespace
 
-      def initialize source, node, namespace
-        @source = source
-        @node = node
-        @namespace = namespace
-      end
+      attr_reader :name
 
-      def contain?(index)
-        if index >= node.loc.expression.begin_pos
-          if node.respond_to?(:end)
-            if index < node.end.end_pos
-              return true
-            end
-          elsif index < node.loc.expression.end_pos
-            return true
-          end
-        end
-        false
-      end
-
-      # @return [YARD::Docstring]
-      def docstring
-        @docstring ||= source.docstring_for(node) unless source.nil?
-        @docstring
-      end
+      attr_reader :docstring
 
       # @return [String]
-      def name
-        nil
+      attr_reader :return_type
+
+      attr_reader :kind
+
+      attr_reader :path
+
+      def initialize location, namespace, name, docstring
+        @location = location
+        @namespace = namespace
+        @name = name
+        @docstring = docstring
+      end
+
+      def filename
+        location.filename
       end
 
       # @return [String]
       def path
-        nil
-      end
-
-      # @return [Integer]
-      def completion_item_kind
-      end
-
-      # @return [Integer]
-      def symbol_kind
       end
 
       # @return [Integer]
       def kind
-        completion_item_kind
       end
 
-      # @return [String]
-      def return_type
-        nil
-      end
-
-      # @return [String]
-      def signature
-        nil
-      end
-
-      # @return [String]
-      def value
-        nil
-      end
-
-      # @return [Array<String>]
-      def parameters
-        []
-      end
-
-      def arguments
-        parameters
-      end
-
-      # @return [String]
-      def filename
-        source.filename unless source.nil?
-      end
-
-      def location
-        "#{source.filename}:#{node.location.expression.line - 1}:#{node.location.expression.column}" unless source.nil? or node.nil?
-      end
-
-      # @return [String]
-      def documentation
-        if @documentation.nil? and !docstring.nil?
-          @documentation = ReverseMarkdown.convert(helper.html_markup_rdoc(docstring), github_flavored: true)
-          @documentation.strip!
-        end
-        @documentation
-      end
-
-      # True if the suggestion has documentation.
-      # Useful for determining whether a client should resolve a suggestion's
-      # path to retrieve more information about it.
-      #
-      # @return [Boolean]
-      def has_doc?
-        !docstring.nil? and !docstring.all.empty?
-      end
-
-      def helper
-        @helper ||= Solargraph::Pin::Helper.new
+      def completion_item_kind
+        LanguageServer::CompletionItemKinds::KEYWORD
       end
 
       def to_s
         name.to_s
       end
 
-      def resolve api_map
-      end
-
       def identifier
-        @identifier ||= "#{path || name}"
+        @identifier ||= "#{path}|#{name}"
       end
 
       def variable?
         false
       end
 
-      def method?
-        false
+      def named_context
+        namespace
       end
     end
   end

@@ -1,18 +1,31 @@
 module Solargraph
   module Pin
-    class MethodParameter < LocalVariable
-      def initialize source, node, namespace, ancestors
-        super
-        # Look for the return type in the method's @param tags
-        docstring = source.docstring_for(ancestors.first)
-        unless docstring.nil?
-          tags = docstring.tags(:param)
-          tags.each do |tag|
-            if tag.name == name and !tag.types.nil? and !tag.types.empty?
-              @return_type = tag.types[0]
-            end
+    class MethodParameter < Base
+      include Localized
+
+      attr_reader :block
+
+      def initialize location, namespace, name, docstring, block
+        super(location, namespace, name, docstring)
+        @block = block
+        @presence = block.location.range
+      end
+
+      def completion_item_kind
+        Solargraph::LanguageServer::CompletionItemKinds::VARIABLE
+      end
+
+      def return_type
+        if @return_type.nil? and !block.docstring.nil?
+          found = nil
+          params = block.docstring.tags(:param)
+          params.each do |p|
+            next unless p.name == name
+            found = p
           end
+          @return_type = found.types[0] unless found.nil? or found.types.nil?
         end
+        @return_type
       end
     end
   end
