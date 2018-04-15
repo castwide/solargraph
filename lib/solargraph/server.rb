@@ -161,12 +161,12 @@ module Solargraph
 
     get '/search' do
       @results = @@library.search(params['query'])
-      erb :search
+      erb :search, locals: { query: params['query'], results: @results }
     end
 
     get '/document' do
       @objects = @@library.document(params['query'])
-      erb :document
+      erb :document, locals: { objects: @objects }
     end
 
     def htmlify text
