@@ -8,5 +8,6 @@ module Solargraph
     autoload :Message, 'solargraph/language_server/message'
     autoload :Transport, 'solargraph/language_server/transport'
     autoload :UriHelpers, 'solargraph/language_server/uri_helpers'
+    autoload :MessageTypes, 'solargraph/language_server/message_types'
   end
 end
