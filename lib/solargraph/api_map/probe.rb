@@ -15,15 +15,26 @@ module Solargraph
         return [] if signature.nil? or signature.empty?
         base, rest = signature.split('.', 2)
         return infer_word_pins(base, context_pin, locals) if rest.nil?
-        pin = infer_word_pin(base, context_pin, locals)
-        return [] if pin.nil?
+        pins = infer_word_pins(base, context_pin, locals)
+        return [] if pins.empty?
+        # pin = pins.first
         rest = rest.split('.')
         last = rest.pop
         rest.each do |meth|
-          pin = infer_method_name_pin(meth, pin)
-          return [] if pin.nil?
+          found = nil
+          pins.each do |pin|
+            found = infer_method_name_pin(meth, pin)
+            next if found.nil?
+            pins = [pin]
+            break
+          end
+          return [] if found.nil?
         end
-        infer_method_name_pins(last, pin)
+        pins.each do |pin|
+          found = infer_method_name_pins(last, pin)
+          return found unless found.empty?
+        end
+        nil
       end
 
       # Get the first pin with a return type.
@@ -73,16 +84,13 @@ module Solargraph
         return api_map.pins.select{|pin| word_matches_context?(word, namespace, scope, pin)} if variable_name?(word)
         result = []
         result.concat api_map.get_methods(namespace, scope: scope, visibility: [:public, :private, :protected]).select{|pin| pin.name == word}
-        return result unless result.empty?
+        # return result unless result.empty?
         result.concat api_map.get_constants('', namespace).select{|pin| pin.name == word}
         result
       end
 
       def infer_method_name_pin method_name, context_pin, internal = false
-        pin = infer_method_name_pins(method_name, context_pin, internal).reject{|pin| pin.return_type.nil?}.first
-        return nil if pin.nil?
-        return virtual_new_pin(pin, context_pin) if pin.path == 'Class#new' and context_pin.named_context != 'Class'
-        pin
+        infer_method_name_pins(method_name, context_pin, internal).reject{|pin| pin.return_type.nil?}.first
       end
 
       # Method name search is external by default
@@ -92,7 +100,8 @@ module Solargraph
         visibility.push :protected, :private if internal
         result = api_map.get_methods(namespace, scope: scope, visibility: visibility).select{|pin| pin.name == method_name}
         # @todo This needs more rules. Probably need to update YardObject for it.
-        return result unless method_name == 'new' and (result.empty? or result.first.path == 'Class#new')
+        return result if result.empty?
+        return result unless method_name == 'new' and result.first.path == 'Class#new'
         result.unshift virtual_new_pin(result.first, context_pin)
         result
       end

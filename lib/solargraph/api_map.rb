@@ -265,9 +265,9 @@ module Solargraph
     # @param fragment [Solargraph::Source::Fragment]
     # @return [ApiMap::Completion]
     def complete fragment
-      return Completion.new([], fragment.whole_word_range) if fragment.string? or fragment.comment? or fragment.calculated_signature.start_with?('.')
+      return Completion.new([], fragment.whole_word_range) if fragment.string? or fragment.comment?
       result = []
-      if !fragment.signature.include?('.')
+      if !fragment.signature.include?('.') and !fragment.base_literal?
         if fragment.signature.start_with?('@@')
           result.concat get_class_variable_pins(fragment.namespace)
         elsif fragment.signature.start_with?('@')
@@ -276,9 +276,6 @@ module Solargraph
           result.concat get_global_variable_pins
         elsif fragment.signature.start_with?(':') and !fragment.signature.start_with?('::')
           result.concat get_symbols
-        elsif fragment.signature.start_with?('.')
-          # @todo The fragment might start with a literal value.
-          STDERR.puts "Literal value?"
         else
           unless fragment.signature.include?('::')
             # result.concat resolve_locals(prefer_non_nil_variables(fragment.locals))
@@ -292,8 +289,21 @@ module Solargraph
           result.concat get_constants(fragment.base, fragment.namespace)
         end
       else
-        if fragment.signature.include?('::') and !fragment.signature.include?('.')
-          result.concat get_constants(fragment.calculated_base, fragment.namespace)
+        if fragment.base_literal?
+          pin = get_path_suggestions(fragment.base_literal).select{|pin| pin.kind == Pin::NAMESPACE}.first
+          unless pin.nil?
+            if fragment.base.empty?
+              result.concat get_methods(pin.path)
+            else
+              type = probe.infer_signature_type(fragment.base, pin, fragment.locals)
+              unless type.nil?
+                namespace, scope = extract_namespace_and_scope(type)
+                result.concat get_methods(namespace, scope: scope)
+              end
+            end
+          end
+        elsif fragment.signature.include?('::') and !fragment.signature.include?('.')
+          result.concat get_constants(fragment.base, fragment.namespace)
         else
           pin = probe.infer_signature_pin(fragment.base, fragment.named_path, fragment.locals)
           unless pin.nil?
