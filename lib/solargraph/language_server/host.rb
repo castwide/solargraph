@@ -197,34 +197,46 @@ module Solargraph
       end
 
       def completions_at filename, line, column
-        results = nil
+        result = nil
         @change_semaphore.synchronize do
-          results = library.completions_at filename, line, column
+          result = library.completions_at filename, line, column
         end
-        results
+        result
       end
 
       # @return [Array<Solargraph::Pin::Base>]
       def definitions_at filename, line, column
-        results = []
+        result = []
         @change_semaphore.synchronize do
-          results = library.definitions_at(filename, line, column)
+          result = library.definitions_at(filename, line, column)
         end
-        results
+        result
       end
 
       def signatures_at filename, line, column
-        results = nil
+        result = nil
         @change_semaphore.synchronize do
-          results = library.signatures_at(filename, line, column)
+          result = library.signatures_at(filename, line, column)
         end
-        results
+        result
       end
 
       def query_symbols query
-        results = nil
-        @change_semaphore.synchronize { results = library.query_symbols(query) }
-        results
+        result = nil
+        @change_semaphore.synchronize { result = library.query_symbols(query) }
+        result
+      end
+
+      def search query
+        result = nil
+        @change_semaphore.synchronize { result = library.search(query) }
+        result
+      end
+
+      def document query
+        result = nil
+        @change_semaphore.synchronize { result = library.document(query) }
+        result
       end
 
       def file_symbols uri

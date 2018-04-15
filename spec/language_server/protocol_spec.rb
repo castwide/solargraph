@@ -210,4 +210,22 @@ describe Protocol do
     response = @protocol.response
     expect(@protocol.host.open?('file:///file.rb')).to be(false)
   end
+
+  it "handles $/solargraph/search" do
+    @protocol.request '$/solargraph/search', {
+      'query' => 'Foo#bar'
+    }
+    response = @protocol.response
+    expect(response['error']).to be_nil
+    expect(response['result']['content']).not_to be_empty
+  end
+
+  it "handles $/solargraph/document" do
+    @protocol.request '$/solargraph/document', {
+      'query' => 'String'
+    }
+    response = @protocol.response
+    expect(response['error']).to be_nil
+    expect(response['result']['content']).not_to be_empty
+  end
 end
