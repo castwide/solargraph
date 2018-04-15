@@ -156,4 +156,20 @@ describe Protocol do
     response = @protocol.response
     expect(response['error']).to be_nil
   end
+
+  it "handles textDocument/hover" do
+    @protocol.request 'textDocument/hover', {
+      'textDocument' => {
+        'uri' => 'file:///file.rb'
+      },
+      'position' => {
+        'line' => 5,
+        'character' => 17
+      }
+    }
+    response = @protocol.response
+    expect(response['error']).to be_nil
+    # Given this request hovers over `Foo`, the result should not be empty
+    expect(response['result']['contents']).not_to be_empty
+  end
 end

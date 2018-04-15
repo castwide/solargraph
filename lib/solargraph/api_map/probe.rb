@@ -17,7 +17,6 @@ module Solargraph
         return infer_word_pins(base, context_pin, locals) if rest.nil?
         pins = infer_word_pins(base, context_pin, locals)
         return [] if pins.empty?
-        # pin = pins.first
         rest = rest.split('.')
         last = rest.pop
         rest.each do |meth|
@@ -44,7 +43,6 @@ module Solargraph
         pins = infer_signature_pins(signature, context_pin, locals)
         pins.each do |pin|
           type = resolve_pin_type(pin)
-          # @todo Use the pin context or the current context to qualify?
           return qualify(type, pin.path) unless type.nil?
         end
         nil
