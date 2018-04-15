@@ -8,7 +8,7 @@
 <ul class="doc-list">
     <% object.meths(scope: :class).sort{|a, b| a.name <=> b.name}.each do |meth| %>
         <li>
-            <% esc = URI.escape("\"solargraph:/document?#{meth.path}\"").gsub('%23', URI.escape('%23')) %>
+            <% esc = URI.escape("\"solargraph:/document?query=#{meth.path}\"").gsub('%23', URI.escape('%23')) %>
             <a href="command:solargraph._openDocument?<%= esc %>"><%= meth.name %></a>
         </li>
     <% end %>
@@ -19,7 +19,7 @@
 <ul class="doc-list">
     <% object.meths(scope: :instance).sort{|a, b| a.name <=> b.name}.each do |meth| %>
         <li>
-            <% esc = URI.escape("\"solargraph:/document?#{meth.path}\"").gsub('%23', URI.escape('%23')) %>
+            <% esc = URI.escape("\"solargraph:/document?query=#{meth.path}\"").gsub('%23', URI.escape('%23')) %>
             <a href="command:solargraph._openDocument?<%= esc %>"><%= meth.name %></a>
         </li>
     <% end %>

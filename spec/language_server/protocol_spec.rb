@@ -3,6 +3,9 @@ require 'thread'
 class Protocol
   attr_reader :response
 
+  # @return [Solargraph::LanguageServer::Host]
+  attr_reader :host
+
   def initialize host
     @host = host
     @message_id = 0
@@ -61,7 +64,7 @@ describe Protocol do
       }
     }
     response = @protocol.response
-    # @todo What to expect?
+    expect(@protocol.host.open?('file:///file.rb')).to be(true)
   end
 
   it "handles textDocument/didChange" do
@@ -187,5 +190,42 @@ describe Protocol do
     response = @protocol.response
     expect(response['error']).to be_nil
     expect(response['result']['signatures']).not_to be_empty
+  end
+
+  it "handles workspace/symbol" do
+    @protocol.request 'workspace/symbol', {
+      'query' => 'Foo'
+    }
+    response = @protocol.response
+    expect(response['error']).to be_nil
+    expect(response['result']).not_to be_empty
+  end
+
+  it "handles textDocument/didClose" do
+    @protocol.request 'textDocument/didClose', {
+      'textDocument' => {
+        'uri' => 'file:///file.rb'
+      }
+    }
+    response = @protocol.response
+    expect(@protocol.host.open?('file:///file.rb')).to be(false)
+  end
+
+  it "handles $/solargraph/search" do
+    @protocol.request '$/solargraph/search', {
+      'query' => 'Foo#bar'
+    }
+    response = @protocol.response
+    expect(response['error']).to be_nil
+    expect(response['result']['content']).not_to be_empty
+  end
+
+  it "handles $/solargraph/document" do
+    @protocol.request '$/solargraph/document', {
+      'query' => 'String'
+    }
+    response = @protocol.response
+    expect(response['error']).to be_nil
+    expect(response['result']['content']).not_to be_empty
   end
 end

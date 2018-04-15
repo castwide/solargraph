@@ -49,7 +49,11 @@ module Solargraph
     #
     # @return [Array<String>]
     def required
-      @required ||= []
+      result = []
+      @sources.each do |s|
+        result.concat s.required
+      end
+      result.uniq
     end
 
     # Get a YardMap associated with the current workspace.
@@ -490,14 +494,6 @@ module Solargraph
       result + nil_pins
     end
 
-    # @todo DRY this method. It's duplicated in CodeMap
-    def get_subtypes type
-      return [] if type.nil?
-      match = type.match(/<([a-z0-9_:, ]*)>/i)
-      return [] if match.nil?
-      match[1].split(',').map(&:strip)
-    end
-
     # @return [Hash]
     def path_macros
       @path_macros ||= {}
@@ -519,13 +515,6 @@ module Solargraph
         end
       else
         if (root == '')
-          # return name unless namespace_map[name].nil?
-          # im = @namespace_includes['']
-          # unless im.nil?
-          #   im.each do |i|
-          #     return i.name unless i.name.nil?
-          #   end
-          # end
           return name if store.namespace_exists?(name)
           # @todo What to do about the @namespace_includes stuff above?
         else
@@ -536,16 +525,6 @@ module Solargraph
             roots.pop
           end
           return name if store.namespace_exists?(name)
-          # im = @namespace_includes['']
-          # unless im.nil?
-          #   im.each do |i|
-          #     return i.name unless i.name.nil?
-          #   end
-          # end
-          # @todo Is this correct at all?
-          # store.get_includes('').each do |im|
-          #   return im
-          # end
         end
       end
       result = yard_map.find_fully_qualified_namespace(name, root)

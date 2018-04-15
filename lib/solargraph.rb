@@ -29,6 +29,7 @@ module Solargraph
 
   YARDOC_PATH = File.join(File.realpath(File.dirname(__FILE__)), '..', 'yardoc')
   YARD_EXTENSION_FILE = File.join(File.realpath(File.dirname(__FILE__)), 'yard-solargraph.rb')
+  VIEWS_PATH = File.join(File.realpath(File.dirname(__FILE__)), 'solargraph', 'views')
 
   def self.trace
     tracer = Tracer.load(Dir.pwd)

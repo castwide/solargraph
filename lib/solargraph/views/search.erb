@@ -1,10 +1,11 @@
-<h1>Search Results for <kbd><%= params['query'] %></kbd></h1>
+<h1>Search Results for <kbd><%= query %></kbd></h1>
 
-<% unless @results.empty? %>
-    <ul>
-    <% @results.each do |result| %>
+<% unless results.empty? %>
+    <ul class="doc-list">
+    <% results.each do |result| %>
         <li>
-            <a href="#"><%= result %></a>
+            <%# esc = URI.escape("\"solargraph:/document?query=#{result}\"").gsub('%23', URI.escape('%23')) %>
+            <a href="solargraph:/document?query=<%= URI.escape(result) %>"><%= result %></a>
         </li>
     <% end %>
     </ul>
