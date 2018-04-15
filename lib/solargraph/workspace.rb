@@ -10,7 +10,9 @@ module Solargraph
     attr_reader :directory
 
     def initialize directory
+      # @todo Convert to an absolute path?
       @directory = directory
+      @directory = nil if @directory == ''
       load_sources
     end
 
