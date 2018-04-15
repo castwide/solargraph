@@ -611,21 +611,23 @@ describe Solargraph::ApiMap do
     expect(sugg).to include('baz')
   end
 
-  it "resolves fully qualified namespaces from @return tags" do
-    api_map = Solargraph::ApiMap.new
-    api_map.virtualize_string(%(
-      class Foobar
-        class Bazbar
-        end
-        # @return [Bazbar]
-        def get_bazbar;end
-      end
-    ), 'file.rb')
-    sugg = api_map.get_methods('Foobar').select{|s| s.name == 'get_bazbar'}.first
-    expect(sugg).not_to be(nil)
-    sugg.resolve api_map
-    expect(sugg.return_type).to eq('Foobar::Bazbar')
-  end
+  # @todo Return types are not modified by resolution. Qualification of
+  #   namespaces is handled elsewhere.
+  # it "resolves fully qualified namespaces from @return tags" do
+  #   api_map = Solargraph::ApiMap.new
+  #   api_map.virtualize_string(%(
+  #     class Foobar
+  #       class Bazbar
+  #       end
+  #       # @return [Bazbar]
+  #       def get_bazbar;end
+  #     end
+  #   ), 'file.rb')
+  #   sugg = api_map.get_methods('Foobar').select{|s| s.name == 'get_bazbar'}.first
+  #   expect(sugg).not_to be(nil)
+  #   # sugg.resolve api_map
+  #   expect(sugg.return_type).to eq('Foobar::Bazbar')
+  # end
 
   # @todo ApiMap#identify may be deprecated
   # it "detects method parameter return types from @param tags" do

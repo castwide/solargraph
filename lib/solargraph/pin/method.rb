@@ -10,14 +10,6 @@ module Solargraph
         @scope = scope
         @visibility = visibility
         @parameters = args
-      #   super(source, node, namespace)
-      #   @scope = scope
-      #   @visibility = visibility
-      #   # Exception for initialize methods
-      #   if name == 'initialize' and scope == :instance
-      #     @visibility = :private
-      #   end
-      #   @fully_resolved = false
       end
 
       def kind
@@ -83,24 +75,6 @@ module Solargraph
           end
         end
         @params
-      end
-
-      def resolve api_map
-        if return_type.nil?
-          sc = api_map.superclass_of(namespace)
-          until sc.nil?
-            sc_path = "#{sc}#{scope == :instance ? '#' : '.'}#{name}"
-            sugg = api_map.get_path_suggestions(sc_path).first
-            break if sugg.nil?
-            @return_type = api_map.find_fully_qualified_namespace(sugg.return_type, sugg.namespace) unless sugg.return_type.nil?
-            break unless @return_type.nil?
-            sc = api_map.superclass_of(sc)
-          end
-        end
-        unless return_type.nil? or @fully_resolved
-          @fully_resolved = true
-          @return_type = api_map.find_fully_qualified_namespace(@return_type, namespace)
-        end
       end
 
       def method?

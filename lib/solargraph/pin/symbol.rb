@@ -23,7 +23,7 @@ module Solargraph
       def path
         nil
       end
-      
+
       def identifier
         name
       end
