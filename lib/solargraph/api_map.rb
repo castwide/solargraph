@@ -29,16 +29,15 @@ module Solargraph
       yard_map
     end
 
+    # Create an ApiMap with a workspace in the specified directory.
+    #
+    # @return [ApiMap]
     def self.load directory
       self.new(Solargraph::Workspace.new(directory))
     end
 
     def store
       @store ||= ApiMap::Store.new(@sources)
-    end
-
-    def pins
-      @pins ||= []
     end
 
     # An array of required paths in the workspace.
@@ -390,6 +389,7 @@ module Solargraph
       nil
     end
 
+    # @return [Probe]
     def probe
       @probe ||= Probe.new(self)
     end
