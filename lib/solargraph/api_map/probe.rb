@@ -56,11 +56,6 @@ module Solargraph
         return nil if pin.nil?
         type = resolve_pin_type(pin)
         qualify(type, pin.named_context)
-        # if pin.variable? and !pin.signature.nil?
-        #   pin = infer_signature_pin(pin.signature, context_pin, locals - [pin])
-        #   return qualify(pin.return_type, pin.named_context) unless pin.return_type.nil?
-        # end
-        # nil
       end
 
       private
@@ -68,7 +63,6 @@ module Solargraph
       # This method will return the first pin it finds that has a return type
       def infer_word_pin word, context_pin, locals
         pins = infer_word_pins(word, context_pin, locals)
-        # tagged = pins.reject{|pin| pin.return_type.nil?}.first
         pins.each { |pin| return pin unless pin.return_type.nil? }
         pins.each do |pin|
           next if pin.signature.nil?
@@ -85,7 +79,6 @@ module Solargraph
         return api_map.pins.select{|pin| word_matches_context?(word, namespace, scope, pin)} if variable_name?(word)
         result = []
         result.concat api_map.get_methods(namespace, scope: scope, visibility: [:public, :private, :protected]).select{|pin| pin.name == word}
-        # return result unless result.empty?
         result.concat api_map.get_constants('', namespace).select{|pin| pin.name == word}
         result
       end
@@ -214,7 +207,6 @@ module Solargraph
           bmeth = @api_map.probe.infer_signature_pin(base, pin.block, [])
           return nil if bmeth.nil?
           subtypes = get_subtypes(bmeth.return_type)
-          # @return_type = api_map.find_fully_qualified_namespace(subtypes[0], namespace)
           return subtypes[0]
         else
           unless meth.docstring.nil?

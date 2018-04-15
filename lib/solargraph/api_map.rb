@@ -236,7 +236,6 @@ module Solargraph
 
     # @return [Array<Solargraph::Pin::Base>]
     def get_symbols
-      # refresh
       @symbol_pins
     end
 
@@ -356,7 +355,6 @@ module Solargraph
     # @return [Array<Solargraph::Pin::Base>]
     def get_path_suggestions path
       return [] if path.nil?
-      # refresh
       result = []
       if path.include?('#')
         # It's an instance method
@@ -375,8 +373,6 @@ module Solargraph
         end
         result.concat yard_map.objects(path)
       end
-      # @todo Resolve the pins?
-      # result.map{|pin| pin.resolve(self); pin}
       result
     end
 
@@ -544,21 +540,16 @@ module Solargraph
         @namespace_path_pins[pin.path].push pin
         @namespace_pins[pin.namespace] ||= []
         @namespace_pins[pin.namespace].push pin
-        # @todo Determine whether references should be resolve here or
-        #   dynamically during queries
         unless pin.superclass_reference.nil?
           @superclasses[pin.path] = pin.superclass_reference
-          # pin.superclass_reference.resolve self
         end
         pin.include_references.each do |ref|
           @namespace_includes[pin.path] ||= []
           @namespace_includes[pin.path].push ref
-          # ref.resolve self
         end
         pin.extend_references.each do |ref|
           @namespace_extends[pin.path] ||= []
           @namespace_extends[pin.path].push ref
-          # ref.resolve self
         end
       end
       path_macros.merge! source.path_macros
@@ -588,7 +579,6 @@ module Solargraph
         unless scref.nil?
           sc_visi = [:public]
           sc_visi.push :protected if visibility.include?(:protected)
-          # scref.resolve self
           fqsc = find_fully_qualified_namespace(scref.name, scref.namespace)
           result.concat inner_get_methods(fqsc, scope, sc_visi, true, skip) unless fqsc.nil?
         end
@@ -596,7 +586,6 @@ module Solargraph
           im = @namespace_includes[fqns]
           unless im.nil?
             im.each do |i|
-              # i.resolve self
               result.concat inner_get_methods(i.name, scope, visibility, deep, skip) unless i.name.nil?
             end
           end
@@ -606,7 +595,6 @@ module Solargraph
           em = @namespace_extends[fqns]
           unless em.nil?
             em.each do |e|
-              # e.resolve self
               result.concat inner_get_methods(e.name, :instance, visibility, deep, skip) unless e.name.nil?
             end
           end
@@ -633,7 +621,6 @@ module Solargraph
       is = @namespace_includes[fqns]
       unless is.nil?
         is.each do |i|
-          # i.resolve self
           result.concat inner_get_constants(i.name, [:public], skip) unless i.name.nil?
         end
       end
@@ -694,7 +681,6 @@ module Solargraph
           im = @namespace_includes['']
           unless im.nil?
             im.each do |i|
-              # i.resolve self
               return i.name unless i.name.nil?
             end
           end
@@ -709,7 +695,6 @@ module Solargraph
           im = @namespace_includes['']
           unless im.nil?
             im.each do |i|
-              # i.resolve self
               return i.name unless i.name.nil?
             end
           end

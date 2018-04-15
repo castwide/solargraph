@@ -28,13 +28,6 @@ module Solargraph
         @position ||= Position.new(line, column)
       end
 
-      # Get the node at the current offset.
-      #
-      # @return [Parser::AST::Node]
-      # def node
-      #   @node ||= @tree.first
-      # end
-
       # Get the fully qualified namespace at the current offset.
       #
       # @return [String]
@@ -219,32 +212,9 @@ module Solargraph
         @named_path ||= @source.locate_named_path_pin(line, character)
       end
 
-      # Get an array of all the local variables in the source that are visible
-      # from the current offset.
-      #
-      # @return [Array<Solargraph::Pin::LocalVariable>]
-      # def local_variable_pins name = nil
-      # end
-
       def locals
         @locals ||= @source.locals.select{|pin| pin.visible_from?(block, position)}
       end
-
-      # def calculated_signature
-      #   @calculated_signature ||= calculate
-      # end
-
-      # def calculated_whole_signature
-      #   @calculated_whole_signature ||= calculated_signature + remainder
-      # end
-
-      # def calculated_base
-      #   if @calculated_base.nil?
-      #     @calculated_base = calculated_signature[0..-2] if calculated_signature.end_with?('.')
-      #     @calculated_base ||= calculated_signature.split('.')[0..-2].join('.')
-      #   end
-      #   @calculated_base
-      # end
 
       def base_literal?
         !base_literal.nil?
@@ -262,55 +232,6 @@ module Solargraph
       end
 
       private
-
-      def calculate
-        return signature if signature.empty? or signature.nil?
-        if signature.start_with?('.')
-          return signature if column < 2
-          # @todo Smelly exceptional case for arrays
-          return signature.sub(/^\.\[\]/, 'Array') if signature.start_with?('.[].')
-          pn = @source.node_at(line, column - 2)
-          unless pn.nil?
-            literal = infer_literal_node_type(pn)
-            unless literal.nil?
-              # return "#{literal}.new#{signature}"
-              return literal
-            end
-          end
-          return signature
-        end
-        # @todo Smelly exceptional case for integers
-        base, rest = signature.split('.', 2)
-        base.sub!(/^[0-9]+?$/, 'Integer.new')
-        # var = prefer_non_nil_variables(locals).select{|pin| pin.variable? and pin.name == base}.first
-        # unless var.nil?
-        #   done = []
-        #   until var.nil?
-        #     break if done.include?(var)
-        #     done.push var
-        #     type = var.signature
-        #     break if type.nil?
-        #     base = type
-        #     var = locals.select{|pin| pin.name == base}.first
-        #   end
-        # end
-        base + (rest.nil? ? '' : ".#{rest}")
-      end
-
-      # @todo DRY this method. It exists in ApiMap.
-      # @return [Array<Solargraph::Pin::Base>]
-      # def prefer_non_nil_variables pins
-      #   result = []
-      #   nil_pins = []
-      #   pins.each do |pin|
-      #     if pin.variable? and pin.nil_assignment?
-      #       nil_pins.push pin
-      #     else
-      #       result.push pin
-      #     end
-      #   end
-      #   result + nil_pins
-      # end
 
       # @return [Integer]
       def offset
