@@ -12,6 +12,7 @@ module Solargraph
       #
       # @return [Array<Pin::Base>]
       def infer_signature_pins signature, context_pin, locals
+        return [] if signature.nil? or signature.empty?
         base, rest = signature.split('.', 2)
         return infer_word_pins(base, context_pin, locals) if rest.nil?
         pin = infer_word_pin(base, context_pin, locals)
@@ -66,7 +67,8 @@ module Solargraph
 
       # Word search is ALWAYS internal
       def infer_word_pins word, context_pin, locals
-        # @todo Check the locals
+        lvars = locals.select{|pin| pin.name == word}
+        return lvars unless lvars.empty?
         namespace, scope = extract_namespace_and_scope_from_pin(context_pin)
         return api_map.pins.select{|pin| word_matches_context?(word, namespace, scope, pin)} if variable_name?(word)
         result = []

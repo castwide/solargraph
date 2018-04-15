@@ -116,6 +116,7 @@ module Solargraph
                 end
               elsif c.type == :lvasgn
                 here = get_node_start_position(c)
+                context = get_named_path_pin(here)
                 block = get_block_pin(here)
                 presence = Source::Range.new(here, block.location.range.ending)
                 if c.children[1].nil?
@@ -123,13 +124,13 @@ module Solargraph
                   unless ora.nil?
                     u = c.updated(:lvasgn, c.children + ora.children[1..-1], nil)
                     @docstring_hash[u.loc] = docstring_for(ora)
-                    @locals.push Solargraph::Pin::LocalVariable.new(get_node_location(u), fqn, u.children[0].to_s, docstring_for(u), resolve_node_signature(c.children[1]), infer_literal_node_type(c.children[1]), block, presence)
+                    @locals.push Solargraph::Pin::LocalVariable.new(get_node_location(u), fqn, u.children[0].to_s, docstring_for(u), resolve_node_signature(c.children[1]), infer_literal_node_type(c.children[1]), context, block, presence)
                   end
                 else
-                  @locals.push Solargraph::Pin::LocalVariable.new(get_node_location(c), fqn, c.children[0].to_s, docstring_for(c), resolve_node_signature(c.children[1]), infer_literal_node_type(c.children[1]), block, presence)
+                  @locals.push Solargraph::Pin::LocalVariable.new(get_node_location(c), fqn, c.children[0].to_s, docstring_for(c), resolve_node_signature(c.children[1]), infer_literal_node_type(c.children[1]), context, block, presence)
                 end
               elsif c.type == :gvasgn
-                pins.push Solargraph::Pin::GlobalVariable.new(get_node_location(c), fqn, c.children[0].to_s, docstring_for(c), resolve_node_signature(c.children[1]), infer_literal_node_type(c.children[1]))
+                pins.push Solargraph::Pin::GlobalVariable.new(get_node_location(c), fqn, c.children[0].to_s, docstring_for(c), resolve_node_signature(c.children[1]), infer_literal_node_type(c.children[1]), context)
               elsif c.type == :sym
                 @symbols.push Solargraph::Pin::Symbol.new(get_node_location(c), ":#{c.children[0]}")
 
