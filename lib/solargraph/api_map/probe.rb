@@ -34,7 +34,7 @@ module Solargraph
           found = infer_method_name_pins(last, pin)
           return found unless found.empty?
         end
-        nil
+        []
       end
 
       # Get the return type for the signature.

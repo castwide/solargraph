@@ -26,4 +26,14 @@ describe Solargraph::ApiMap::Probe do
     type = api_map.probe.infer_signature_type('bar', source.pins.first, source.locals)
     expect(type).to eq('Foo::Bar')
   end
+
+  it "returns empty arrays for unrecognized signatures" do
+    api_map = Solargraph::ApiMap.new
+    source = Solargraph::Source.new(%(
+      foobarbaz
+    ))
+    api_map.virtualize source
+    pins = api_map.probe.infer_signature_pins('foobarbaz', source.pins.first, source.locals)
+    expect(pins).to be_empty
+  end
 end
