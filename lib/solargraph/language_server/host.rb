@@ -326,7 +326,8 @@ module Solargraph
                 end
               end
             rescue Exception => e
-              STDERR.puts "Error in diagnostics: #{e.class}"
+              STDERR.puts "Error in diagnostics: #{e.message}"
+              option['diagnostics'] = false
             end
           end
         end
