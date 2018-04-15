@@ -49,7 +49,11 @@ module Solargraph
     #
     # @return [Array<String>]
     def required
-      @required ||= []
+      result = []
+      @sources.each do |s|
+        result.concat s.required
+      end
+      result.uniq
     end
 
     # Get a YardMap associated with the current workspace.
