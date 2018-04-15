@@ -36,6 +36,7 @@ module Solargraph
       self.new(Solargraph::Workspace.new(directory))
     end
 
+    # @return [ApiMap::Store]
     def store
       @store ||= ApiMap::Store.new(@sources)
     end
