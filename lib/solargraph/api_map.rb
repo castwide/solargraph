@@ -420,16 +420,6 @@ module Solargraph
 
     private
 
-    # @return [Solargraph::Pin::Base]
-    def tail_pins signature, context, locals
-      # return [] if signature.nil?
-      # return probe.infer_signature_pins(signature, context, locals) unless signature.include?('.')
-      # parts = signature.split('.')
-      # last = parts.pop
-      # base = parts.join('.')
-      probe.infer_signature_pins(signature, context, locals)
-    end
-
     # @return [Hash]
     def namespace_map
       @namespace_map ||= {}
