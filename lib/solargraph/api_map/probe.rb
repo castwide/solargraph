@@ -78,8 +78,11 @@ module Solargraph
         namespace, scope = extract_namespace_and_scope_from_pin(context_pin)
         return api_map.pins.select{|pin| word_matches_context?(word, namespace, scope, pin)} if variable_name?(word)
         result = []
-        result.concat api_map.get_methods(namespace, scope: scope, visibility: [:public, :private, :protected]).select{|pin| pin.name == word}
-        result.concat api_map.get_constants('', namespace).select{|pin| pin.name == word}
+        result.concat api_map.get_path_suggestions(word)
+        unless word.include?('::')
+          result.concat api_map.get_methods(namespace, scope: scope, visibility: [:public, :private, :protected]).select{|pin| pin.name == word}
+          result.concat api_map.get_constants('', namespace).select{|pin| pin.name == word}
+        end
         result
       end
 
