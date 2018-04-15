@@ -42,27 +42,15 @@ module Solargraph
       # @return [String]
       def infer_signature_type signature, context_pin, locals
         pins = infer_signature_pins(signature, context_pin, locals)
-        return nil if pins.empty?
         pins.each do |pin|
           type = resolve_pin_type(pin)
           # @todo Use the pin context or the current context to qualify?
-          return qualify(type, pin.named_context) unless type.nil?
+          return qualify(type, pin.path) unless type.nil?
         end
         nil
       end
 
       private
-
-      # This method will return the first pin it finds that has a return type
-      def infer_word_pin word, context_pin, locals
-        pins = infer_word_pins(word, context_pin, locals)
-        pins.each { |pin| return pin unless pin.return_type.nil? }
-        pins.each do |pin|
-          next if pin.signature.nil?
-          return infer_signature_pin(pin.signature, context_pin, locals - [pin])
-        end
-        nil
-      end
 
       # Word search is ALWAYS internal
       def infer_word_pins word, context_pin, locals
@@ -176,8 +164,8 @@ module Solargraph
       # @return [Pin::Method]
       def virtual_new_pin new_pin, context_pin
         pin = Pin::Method.new(new_pin.location, new_pin.namespace, new_pin.name, new_pin.docstring, new_pin.scope, new_pin.visibility, new_pin.parameters)
-        # @todo Smelly instance variable access. Also, context_pin.name is almost certainly wrong.
-        pin.instance_variable_set(:@return_type, context_pin.name)
+        # @todo Smelly instance variable access.
+        pin.instance_variable_set(:@return_type, context_pin.path)
         pin
       end
 
@@ -187,10 +175,12 @@ module Solargraph
       end
 
       def resolve_pin_type pin
+        pin.return_type
         return pin.return_type unless pin.return_type.nil?
         # @todo Only resolving block parameters for now
-        return nil unless pin.kind == Pin::BLOCK_PARAMETER
-        resolve_block_parameter pin
+        return resolve_block_parameter(pin) if pin.kind == Pin::BLOCK_PARAMETER
+        return resolve_variable(pin) if pin.variable?
+        nil
       end
 
       def resolve_block_parameter pin
@@ -216,6 +206,12 @@ module Solargraph
           end
         end
         nil
+      end
+
+      def resolve_variable(pin)
+        return nil if pin.nil_assignment?
+        # @todo Do we need the locals here?
+        return infer_signature_type(pin.signature, pin.context, [])
       end
 
       def get_subtypes type
