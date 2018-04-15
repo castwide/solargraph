@@ -15,6 +15,9 @@ module Solargraph
 
       attr_reader :docstring
 
+      # @return [String]
+      attr_reader :return_type
+
       def initialize location, namespace, name, docstring
         @location = location
         @namespace = namespace
@@ -36,10 +39,6 @@ module Solargraph
 
       def completion_item_kind
         LanguageServer::CompletionItemKinds::KEYWORD
-      end
-
-      # @return [String]
-      def return_type
       end
 
       def to_s

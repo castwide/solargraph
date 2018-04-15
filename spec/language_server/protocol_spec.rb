@@ -50,11 +50,12 @@ describe Protocol do
         'uri' => 'file:///file.rb',
         'text' => %(
           class Foo
-            def bar
+            def bar baz
             end
           end
-          foo = Foo
+          foo = Foo.new
           String
+          foo.bar()
         ),
         'version' => 0
       }
@@ -73,12 +74,12 @@ describe Protocol do
         {
           'range' => {
             'start' => {
-              'line' => 5,
-              'character' => 19
+              'line' => 6,
+              'character' => 16
             },
             'end' => {
-              'line' => 5,
-              'character' => 19
+              'line' => 6,
+              'character' => 16
             }
           },
           'text' => ';'
@@ -171,5 +172,20 @@ describe Protocol do
     expect(response['error']).to be_nil
     # Given this request hovers over `Foo`, the result should not be empty
     expect(response['result']['contents']).not_to be_empty
+  end
+
+  it "handles textDocument/signatureHelp" do
+    @protocol.request 'textDocument/signatureHelp', {
+      'textDocument' => {
+        'uri' => 'file:///file.rb'
+      },
+      'position' => {
+        'line' => 7,
+        'character' => 18
+      }
+    }
+    response = @protocol.response
+    expect(response['error']).to be_nil
+    expect(response['result']['signatures']).not_to be_empty
   end
 end

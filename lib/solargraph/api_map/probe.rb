@@ -1,6 +1,13 @@
 module Solargraph
   class ApiMap
     class Probe
+      class VirtualPin
+        attr_reader :return_type
+        def initialize return_type
+          @return_type = return_type
+        end
+      end
+
       # @return [Solargraph::ApiMap]
       attr_reader :api_map
 
@@ -15,7 +22,11 @@ module Solargraph
         return [] if signature.nil? or signature.empty?
         base, rest = signature.split('.', 2)
         return infer_word_pins(base, context_pin, locals) if rest.nil?
-        pins = infer_word_pins(base, context_pin, locals)
+        pins = infer_word_pins(base, context_pin, locals).map do |pin|
+          next pin unless pin.return_type.nil?
+          type = resolve_pin_type(pin)
+          VirtualPin.new(type)
+        end
         return [] if pins.empty?
         rest = rest.split('.')
         last = rest.pop
