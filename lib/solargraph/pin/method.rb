@@ -76,10 +76,6 @@ module Solargraph
         end
         @params
       end
-
-      def method?
-        true
-      end
     end
   end
 end

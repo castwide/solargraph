@@ -29,10 +29,6 @@ module Solargraph
         end
         @return_type
       end
-
-      def method?
-        true
-      end
     end
   end
 end

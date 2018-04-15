@@ -18,6 +18,10 @@ module Solargraph
       # @return [String]
       attr_reader :return_type
 
+      attr_reader :kind
+
+      attr_reader :path
+
       def initialize location, namespace, name, docstring
         @location = location
         @namespace = namespace
