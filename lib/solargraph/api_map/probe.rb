@@ -23,9 +23,9 @@ module Solargraph
         rest.each do |meth|
           found = nil
           pins.each do |pin|
-            found = infer_method_name_pin(meth, pin)
-            next if found.nil?
-            pins = [pin]
+            found = infer_method_name_pins(meth, pin)
+            next if found.empty?
+            pins = found
             break
           end
           return [] if found.nil?
@@ -79,7 +79,7 @@ module Solargraph
       # Word search is ALWAYS internal
       def infer_word_pins word, context_pin, locals
         lvars = locals.select{|pin| pin.name == word}
-        return lvars unless lvars.empty?
+        return resolve_locals(lvars) unless lvars.empty?
         namespace, scope = extract_namespace_and_scope_from_pin(context_pin)
         return api_map.pins.select{|pin| word_matches_context?(word, namespace, scope, pin)} if variable_name?(word)
         result = []
@@ -164,6 +164,8 @@ module Solargraph
       def extract_namespace_and_scope_from_pin pin
         return [pin.namespace, pin.scope] if pin.kind == Pin::METHOD
         return [pin.namespace, :class] if pin.kind == Pin::NAMESPACE
+        # @todo Is :class appropriate for blocks?
+        return [pin.namespace, :class] if pin.kind == Pin::BLOCK
         raise "Unable to extract namespace and scope from #{pin.path}"
       end
 
@@ -186,6 +188,11 @@ module Solargraph
         # @todo Smelly instance variable access. Also, context_pin.name is almost certainly wrong.
         pin.instance_variable_set(:@return_type, context_pin.name)
         pin
+      end
+
+      def resolve_locals lvars
+        lvars.each{|l| l.resolve @api_map}
+        lvars
       end
     end
   end
