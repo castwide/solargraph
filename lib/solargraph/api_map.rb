@@ -116,18 +116,8 @@ module Solargraph
         end
         @sources = workspace.sources
         @sources.push @virtual_source unless @virtual_source.nil?
-        # cache.clear
-        # namespace_map.clear
-        # @sources.each do |s|
-        #   s.namespaces.each do |n|
-        #     namespace_map[n] ||= []
-        #     namespace_map[n].concat s.namespace_pins(n)
-        #   end
-        # end
         @sources.each do |source|
           if @stime.nil? or source.stime > @stime
-            # eliminate source
-            # map_source source
             store.update source
           end
         end
@@ -158,13 +148,7 @@ module Solargraph
 
     # An array of namespace names defined in the ApiMap.
     #
-    # @todo Candidate for deprecation
     # @return [Array<String>]
-    # def namespaces
-    #   # refresh
-    #   namespace_map.keys
-    # end
-
     def namespaces
       store.namespaces
     end
@@ -226,13 +210,6 @@ module Solargraph
     # @param scope [Symbol] :instance or :class
     # @return [Array<Solargraph::Pin::InstanceVariable>]
     def get_instance_variable_pins(namespace, scope = :instance)
-      # raw = @ivar_pins[namespace]
-      # return [] if raw.nil?
-      # # @todo This is a crazy workaround because instance variables in the
-      # #   global namespace might be in either scope
-      # pins = prefer_non_nil_variables(raw)
-      # return pins if namespace.empty?
-      # pins.select{ |pin| pin.scope == scope }
       store.get_instance_variables(namespace, scope)
     end
 
@@ -287,11 +264,8 @@ module Solargraph
           result.concat get_symbols
         else
           unless fragment.signature.include?('::')
-            # result.concat resolve_locals(prefer_non_nil_variables(fragment.locals))
             result.concat prefer_non_nil_variables(fragment.locals)
-            # result.concat get_type_methods(combine_type(fragment.namespace, fragment.scope), fragment.namespace)
             result.concat get_methods(fragment.namespace, scope: fragment.scope, visibility: [:public, :private, :protected])
-            # result.concat get_type_methods('Kernel')
             result.concat get_methods('Kernel')
             result.concat ApiMap.keywords
           end
@@ -357,23 +331,6 @@ module Solargraph
     def get_path_suggestions path
       return [] if path.nil?
       result = []
-      # if path.include?('#')
-      #   # It's an instance method
-      #   parts = path.split('#')
-      #   result = get_methods(parts[0], visibility: [:public, :private, :protected]).select{|s| s.name == parts[1]}
-      # elsif path.include?('.')
-      #   # It's a class method
-      #   parts = path.split('.')
-      #   result = get_methods(parts[0], scope: :class, visibility: [:public, :private, :protected]).select{|s| s.name == parts[1]}
-      # else
-      #   # It's a class or module
-      #   parts = path.split('::')
-      #   np = @namespace_pins[parts[0..-2].join('::')]
-      #   unless np.nil?
-      #     result.concat np.select{|p| p.name == parts.last}
-      #   end
-      #   result.concat yard_map.objects(path)
-      # end
       result.concat store.get_path_pins(path)
       result.concat yard_map.objects(path)
       result
@@ -439,117 +396,18 @@ module Solargraph
 
     private
 
-    # @return [Hash]
-    # def namespace_map
-    #   @namespace_map ||= {}
-    # end
-
-    # def process_maps
-    #   @sources = workspace.sources
-    #   @sources.push @virtual_source unless @virtual_source.nil?
-    #   cache.clear
-    #   @ivar_pins = {}
-    #   @cvar_pins = {}
-    #   @const_pins = {}
-    #   @method_pins = {}
-    #   @symbol_pins = []
-    #   @attr_pins = {}
-    #   @namespace_includes = {}
-    #   @namespace_extends = {}
-    #   @superclasses = {}
-    #   @namespace_pins = {}
-    #   @namespace_path_pins = {}
-    #   namespace_map.clear
-    #   @required = workspace.config.required.clone
-    #   @sources.each do |s|
-    #     s.namespaces.each do |n|
-    #       namespace_map[n] ||= []
-    #       namespace_map[n].concat s.namespace_pins(n)
-    #     end
-    #   end
-    #   @sources.each do |s|
-    #     map_source s
-    #   end
-    #   @required.uniq!
-    #   live_map.refresh
-    #   @yard_stale = true
-    #   @stime = Time.now
-    # end
-
     def process_virtual
       unless @virtual_source.nil?
-        # cache.clear
-        # namespace_map.clear
-        # @sources.each do |s|
-        #   s.namespace_pins.each do |pin|
-        #     namespace_map[pin.path] ||= []
-        #     namespace_map[pin.path].push pin
-        #   end
-        # end
         map_source @virtual_source
       end
     end
 
     def eliminate source
-      # [@ivar_pins.values, @cvar_pins.values, @const_pins.values, @method_pins.values, @attr_pins.values, @namespace_pins.values].each do |pinsets|
-      #   pinsets.each do |pins|
-      #     pins.delete_if{|pin| pin.filename == source.filename}
-      #   end
-      # end
-      # [@namespace_includes.values, @namespace_extends.values].each do |refsets|
-      #   refsets.each do |refs|
-      #     refs.delete_if{|ref| ref.filename == source.filename}
-      #   end
-      # end
-      # @superclasses.delete_if{|key, ref| ref.filename == source.filename}
-      # @symbol_pins.delete_if{|pin| pin.filename == source.filename}
       store.remove source
     end
 
     # @param [Solargraph::Source]
     def map_source source
-      # pins.concat source.pins
-
-      # source.method_pins.each do |pin|
-      #   @method_pins[pin.namespace] ||= []
-      #   @method_pins[pin.namespace].push pin
-      # end
-      # source.attribute_pins.each do |pin|
-      #   @attr_pins[pin.namespace] ||= []
-      #   @attr_pins[pin.namespace].push pin
-      # end
-      # source.instance_variable_pins.each do |pin|
-      #   @ivar_pins[pin.namespace] ||= []
-      #   @ivar_pins[pin.namespace].push pin
-      # end
-      # source.class_variable_pins.each do |pin|
-      #   @cvar_pins[pin.namespace] ||= []
-      #   @cvar_pins[pin.namespace].push pin
-      # end
-      # source.constant_pins.each do |pin|
-      #   @const_pins[pin.namespace] ||= []
-      #   @const_pins[pin.namespace].push pin
-      # end
-      # source.symbol_pins.each do |pin|
-      #   @symbol_pins.push pin
-      # end
-      # source.namespace_pins.each do |pin|
-      #   @namespace_path_pins[pin.path] ||= []
-      #   @namespace_path_pins[pin.path].push pin
-      #   @namespace_pins[pin.namespace] ||= []
-      #   @namespace_pins[pin.namespace].push pin
-      #   unless pin.superclass_reference.nil?
-      #     @superclasses[pin.path] = pin.superclass_reference
-      #   end
-      #   pin.include_references.each do |ref|
-      #     @namespace_includes[pin.path] ||= []
-      #     @namespace_includes[pin.path].push ref
-      #   end
-      #   pin.extend_references.each do |ref|
-      #     @namespace_extends[pin.path] ||= []
-      #     @namespace_extends[pin.path].push ref
-      #   end
-      # end
       store.update source
       path_macros.merge! source.path_macros
       source.required.each do |r|
@@ -568,21 +426,10 @@ module Solargraph
       skip.push reqstr
       result = []
       if scope == :instance
-        # aps = @attr_pins[fqns]
-        # result.concat aps unless aps.nil?
         result.concat store.get_attrs(fqns)
       end
-      # mps = @method_pins[fqns]
-      # result.concat mps.select{|pin| (pin.scope == scope or fqns == '') and visibility.include?(pin.visibility)} unless mps.nil?
       result.concat store.get_methods(fqns, scope: scope, visibility: visibility)
       if deep
-        # scref = @superclasses[fqns]
-        # unless scref.nil?
-        #   sc_visi = [:public]
-        #   sc_visi.push :protected if visibility.include?(:protected)
-        #   fqsc = find_fully_qualified_namespace(scref.name, scref.namespace)
-        #   result.concat inner_get_methods(fqsc, scope, sc_visi, true, skip) unless fqsc.nil?
-        # end
         sc = store.get_superclass(fqns)
         unless sc.nil?
           fqsc = qualify(sc, fqns)
@@ -591,12 +438,6 @@ module Solargraph
           result.concat inner_get_methods(fqsc, scope, sc_visi, true, skip) unless fqsc.nil?
         end
         if scope == :instance
-          # im = @namespace_includes[fqns]
-          # unless im.nil?
-          #   im.each do |i|
-          #     result.concat inner_get_methods(i.name, scope, visibility, deep, skip) unless i.name.nil?
-          #   end
-          # end
           store.get_includes(fqns).each do |im|
             fqim = qualify(im, fqns)
             result.concat inner_get_methods(fqim, scope, visibility, deep, skip) unless fqim.nil?
@@ -604,12 +445,6 @@ module Solargraph
           result.concat yard_map.get_instance_methods(fqns, visibility: visibility)
           result.concat inner_get_methods('Object', :instance, [:public], deep, skip) unless fqns == 'Object'
         else
-          # em = @namespace_extends[fqns]
-          # unless em.nil?
-          #   em.each do |e|
-          #     result.concat inner_get_methods(e.name, :instance, visibility, deep, skip) unless e.name.nil?
-          #   end
-          # end
           store.get_extends(fqns).each do |em|
             fqem = qualify(em, fqns)
             result.concat inner_get_methods(fqem, :instance, visibility, deep, skip) unless fqem.nil?
@@ -630,17 +465,8 @@ module Solargraph
       return [] if skip.include?(fqns)
       skip.push fqns
       result = []
-      # result.concat @const_pins[fqns] if @const_pins.has_key?(fqns)
-      # result.concat @namespace_pins[fqns] if @namespace_pins.has_key?(fqns)
-      # result.keep_if{|pin| !pin.name.empty? and visibility.include?(pin.visibility)}
       result.concat store.get_constants(fqns, visibility)
       result.concat yard_map.get_constants(fqns)
-      # is = @namespace_includes[fqns]
-      # unless is.nil?
-      #   is.each do |i|
-      #     result.concat inner_get_constants(i.name, [:public], skip) unless i.name.nil?
-      #   end
-      # end
       store.get_includes(fqns).each do |is|
         fqis = qualify(is, fqns)
         result.concat inner_get_constants(fqis, [:public], skip) unless fqis.nil?
@@ -711,11 +537,9 @@ module Solargraph
           roots = root.to_s.split('::')
           while roots.length > 0
             fqns = roots.join('::') + '::' + name
-            # return fqns unless namespace_map[fqns].nil?
             return fqns if store.namespace_exists?(fqns)
             roots.pop
           end
-          # return name unless namespace_map[name].nil?
           return name if store.namespace_exists?(name)
           # im = @namespace_includes['']
           # unless im.nil?
@@ -724,9 +548,9 @@ module Solargraph
           #   end
           # end
           # @todo Is this correct at all?
-          store.get_includes('').each do |im|
-            return im
-          end
+          # store.get_includes('').each do |im|
+          #   return im
+          # end
         end
       end
       result = yard_map.find_fully_qualified_namespace(name, root)
@@ -741,7 +565,6 @@ module Solargraph
     # @param [String] A fully qualified namespace
     # @return [Symbol] :class, :module, or nil
     def get_namespace_type fqns
-      # pin = @namespace_path_pins[fqns]
       pin = store.get_path_pins(fqns).first
       return yard_map.get_namespace_type(fqns) if pin.nil?
       pin.type
