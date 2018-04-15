@@ -333,6 +333,16 @@ module Solargraph
       probe.infer_signature_pins fragment.whole_signature, fragment.named_path, fragment.locals
     end
 
+    # Infer a return type from a fragment. This method will attempt to resolve
+    # signatures.
+    #
+    # @param fragment [Solargraph::Source::Fragment]
+    # @return [String]
+    def infer_type fragment
+      return nil if fragment.string? or fragment.comment?
+      probe.infer_signature_type fragment.whole_signature, fragment.named_path, fragment.locals
+    end
+
     # @param fragment [Solargraph::Source::Fragment]
     def signify fragment
       return [] unless fragment.argument?

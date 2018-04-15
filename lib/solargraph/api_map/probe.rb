@@ -54,12 +54,13 @@ module Solargraph
       def infer_signature_type signature, context_pin, locals
         pin = infer_signature_pin(signature, context_pin, locals)
         return nil if pin.nil?
-        return qualify(pin.return_type, pin.named_context) unless pin.return_type.nil?
+        type = resolve_pin_type(pin)
+        qualify(type, pin.named_context)
         # if pin.variable? and !pin.signature.nil?
         #   pin = infer_signature_pin(pin.signature, context_pin, locals - [pin])
         #   return qualify(pin.return_type, pin.named_context) unless pin.return_type.nil?
         # end
-        nil
+        # nil
       end
 
       private
@@ -79,7 +80,7 @@ module Solargraph
       # Word search is ALWAYS internal
       def infer_word_pins word, context_pin, locals
         lvars = locals.select{|pin| pin.name == word}
-        return resolve_locals(lvars) unless lvars.empty?
+        return lvars unless lvars.empty?
         namespace, scope = extract_namespace_and_scope_from_pin(context_pin)
         return api_map.pins.select{|pin| word_matches_context?(word, namespace, scope, pin)} if variable_name?(word)
         result = []
@@ -193,6 +194,44 @@ module Solargraph
       def resolve_locals lvars
         lvars.each{|l| l.resolve @api_map}
         lvars
+      end
+
+      def resolve_pin_type pin
+        return pin.return_type unless pin.return_type.nil?
+        # @todo Only resolving block parameters for now
+        return nil unless pin.kind == Pin::BLOCK_PARAMETER
+        resolve_block_parameter pin
+      end
+
+      def resolve_block_parameter pin
+        return pin.return_type unless pin.return_type.nil?
+        signature = pin.block.receiver
+        meth = @api_map.probe.infer_signature_pin(signature, pin.block, [])
+        return nil if meth.nil?
+        if (Solargraph::CoreFills::METHODS_WITH_YIELDPARAM_SUBTYPES.include?(meth.path))
+          base = signature.split('.')[0..-2].join('.')
+          return nil if base.nil? or base.empty?
+          bmeth = @api_map.probe.infer_signature_pin(base, pin.block, [])
+          return nil if bmeth.nil?
+          subtypes = get_subtypes(bmeth.return_type)
+          # @return_type = api_map.find_fully_qualified_namespace(subtypes[0], namespace)
+          return subtypes[0]
+        else
+          unless meth.docstring.nil?
+            yps = meth.docstring.tags(:yieldparam)
+            unless yps[pin.index].nil? or yps[pin.index].types.nil? or yps[pin.index].types.empty?
+              return yps[pin.index].types[0]
+            end
+          end
+        end
+        nil
+      end
+
+      def get_subtypes type
+        return nil if type.nil?
+        match = type.match(/<([a-z0-9_:, ]*)>/i)
+        return [] if match.nil?
+        match[1].split(',').map(&:strip)
       end
     end
   end
