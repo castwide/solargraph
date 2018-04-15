@@ -304,9 +304,14 @@ module Solargraph
         elsif fragment.signature.include?('::') and !fragment.signature.include?('.')
           result.concat get_constants(fragment.base, fragment.namespace)
         else
-          pin = probe.infer_signature_pin(fragment.base, fragment.named_path, fragment.locals)
-          unless pin.nil?
-            namespace, scope = extract_namespace_and_scope(pin.return_type)
+          # @todo Instead of inferring the pin, infer the type? One should
+          #   attempt resolution; the other should not. Basically, get rid of
+          #   the infer_signature_pin shortcut. Either you want all the pins or
+          #   you want the best guess for the type.
+          # pin = probe.infer_signature_pin(fragment.base, fragment.named_path, fragment.locals)
+          type = probe.infer_signature_type(fragment.base, fragment.named_path, fragment.locals)
+          unless type.nil?
+            namespace, scope = extract_namespace_and_scope(type)
             result.concat get_methods(namespace, scope: scope)
           end
         end

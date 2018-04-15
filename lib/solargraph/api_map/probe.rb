@@ -37,25 +37,18 @@ module Solargraph
         nil
       end
 
-      # Get the first pin with a return type.
-      #
-      # @return [Pin::Base]
-      def infer_signature_pin(signature, context_pin, locals)
-        pins = infer_signature_pins(signature, context_pin, locals)
-        pins.each do |pin|
-          return pin unless pin.return_type.nil?
-        end
-        pins.first
-      end
-
       # Get the return type for the signature.
       #
       # @return [String]
       def infer_signature_type signature, context_pin, locals
-        pin = infer_signature_pin(signature, context_pin, locals)
-        return nil if pin.nil?
-        type = resolve_pin_type(pin)
-        qualify(type, pin.named_context)
+        pins = infer_signature_pins(signature, context_pin, locals)
+        return nil if pins.empty?
+        pins.each do |pin|
+          type = resolve_pin_type(pin)
+          # @todo Use the pin context or the current context to qualify?
+          return qualify(type, pin.named_context) unless type.nil?
+        end
+        nil
       end
 
       private
@@ -73,6 +66,7 @@ module Solargraph
 
       # Word search is ALWAYS internal
       def infer_word_pins word, context_pin, locals
+        return [] if word.empty?
         lvars = locals.select{|pin| pin.name == word}
         return lvars unless lvars.empty?
         namespace, scope = extract_namespace_and_scope_from_pin(context_pin)
@@ -202,12 +196,14 @@ module Solargraph
       def resolve_block_parameter pin
         return pin.return_type unless pin.return_type.nil?
         signature = pin.block.receiver
-        meth = @api_map.probe.infer_signature_pin(signature, pin.block, [])
+        # @todo Not sure if assuming the first pin is good here
+        meth = @api_map.probe.infer_signature_pins(signature, pin.block, []).first
         return nil if meth.nil?
         if (Solargraph::CoreFills::METHODS_WITH_YIELDPARAM_SUBTYPES.include?(meth.path))
           base = signature.split('.')[0..-2].join('.')
           return nil if base.nil? or base.empty?
-          bmeth = @api_map.probe.infer_signature_pin(base, pin.block, [])
+          # @todo Not sure if assuming the first pin is good here
+          bmeth = @api_map.probe.infer_signature_pins(base, pin.block, []).first
           return nil if bmeth.nil?
           subtypes = get_subtypes(bmeth.return_type)
           return subtypes[0]
