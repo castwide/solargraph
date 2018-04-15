@@ -142,6 +142,8 @@ module Solargraph
                 methpin = Solargraph::Pin::Method.new(get_node_location(c), fqn || '', c.children[(c.type == :def ? 0 : 1)].to_s, docstring_for(c), scope, visibility, get_method_args(c))
                 if methpin.name == 'initialize' and methpin.scope == :instance
                   pins.push Solargraph::Pin::Method.new(methpin.location, methpin.namespace, 'new', methpin.docstring, :class, :public, methpin.parameters)
+                  # @todo Smelly instance variable access.
+                  pins.last.instance_variable_set(:@return_type, methpin.namespace)
                   pins.push Solargraph::Pin::Method.new(methpin.location, methpin.namespace, methpin.name, methpin.docstring, methpin.scope, :private, methpin.parameters)
                 else
                   pins.push methpin
