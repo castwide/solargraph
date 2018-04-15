@@ -83,7 +83,7 @@ module Solargraph
       def process_exclusions globs
         remainder = globs.select do |glob|
           if glob_is_directory?(glob)
-            exdir = File.join(workspace, glob_to_directory(glob))
+            exdir = File.realdirpath(File.join(workspace, glob_to_directory(glob)))
             included.delete_if { |file| file.start_with?(exdir) }
             false
           else
