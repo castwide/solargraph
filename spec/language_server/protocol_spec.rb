@@ -188,4 +188,13 @@ describe Protocol do
     expect(response['error']).to be_nil
     expect(response['result']['signatures']).not_to be_empty
   end
+
+  it "handles workspace/symbol" do
+    @protocol.request 'workspace/symbol', {
+      'query' => 'Foo'
+    }
+    response = @protocol.response
+    expect(response['error']).to be_nil
+    expect(response['result']).not_to be_empty
+  end
 end

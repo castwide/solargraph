@@ -9,6 +9,7 @@ module Solargraph
       # @return [Hash]
       attr_reader :raw_data
 
+      # @param workspace [String]
       def initialize workspace = nil
         @workspace = workspace
         include_globs = ['**/*.rb']

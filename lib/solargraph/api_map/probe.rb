@@ -75,10 +75,6 @@ module Solargraph
         result
       end
 
-      def infer_method_name_pin method_name, context_pin, internal = false
-        infer_method_name_pins(method_name, context_pin, internal).reject{|pin| pin.return_type.nil?}.first
-      end
-
       # Method name search is external by default
       def infer_method_name_pins method_name, context_pin, internal = false
         namespace, scope = extract_namespace_and_scope(context_pin.return_type)
@@ -174,11 +170,6 @@ module Solargraph
         # @todo Smelly instance variable access.
         pin.instance_variable_set(:@return_type, context_pin.path)
         pin
-      end
-
-      def resolve_locals lvars
-        lvars.each{|l| l.resolve @api_map}
-        lvars
       end
 
       def resolve_pin_type pin

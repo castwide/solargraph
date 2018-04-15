@@ -5,7 +5,7 @@ module Solargraph
         def process
           set_error(
             Solargraph::LanguageServer::ErrorCodes::METHOD_NOT_FOUND,
-            "Method not found: #{request['message']}"
+            "Method not found: #{request['method']}"
           )
         end
       end
