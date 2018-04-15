@@ -61,10 +61,8 @@ module Solargraph
         return api_map.pins.select{|pin| word_matches_context?(word, namespace, scope, pin)} if variable_name?(word)
         result = []
         result.concat api_map.get_path_suggestions(word)
-        unless word.include?('::')
-          result.concat api_map.get_methods(namespace, scope: scope, visibility: [:public, :private, :protected]).select{|pin| pin.name == word}
-          result.concat api_map.get_constants('', namespace).select{|pin| pin.name == word}
-        end
+        result.concat api_map.get_methods(namespace, scope: scope, visibility: [:public, :private, :protected]).select{|pin| pin.name == word} unless word.include?('::')
+        result.concat api_map.get_constants('', namespace).select{|pin| pin.name == word}
         result
       end
 
@@ -177,7 +175,6 @@ module Solargraph
       def resolve_pin_type pin
         pin.return_type
         return pin.return_type unless pin.return_type.nil?
-        # @todo Only resolving block parameters for now
         return resolve_block_parameter(pin) if pin.kind == Pin::BLOCK_PARAMETER
         return resolve_variable(pin) if pin.variable?
         nil
