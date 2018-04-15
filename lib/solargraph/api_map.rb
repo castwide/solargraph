@@ -40,6 +40,10 @@ module Solargraph
       @store ||= ApiMap::Store.new(@sources)
     end
 
+    def pins
+      store.pins
+    end
+
     # An array of required paths in the workspace.
     #
     # @return [Array<String>]
@@ -74,7 +78,7 @@ module Solargraph
     # @param source [Solargraph::Source]
     # @return [Solargraph::Source]
     def virtualize source
-      eliminate @virtual_source unless @virtual_source.nil?
+      store.remove @virtual_source unless @virtual_source.nil?
       if workspace.has_source?(source)
         @sources = workspace.sources
         @virtual_source = nil
@@ -110,16 +114,10 @@ module Solargraph
       if force
         @api_map = ApiMap::Store.new(@sources)
       else
-        current_workspace_sources.reject{|s| workspace.sources.include?(s)}.each do |source|
-          eliminate source
-        end
+        store.remove *(current_workspace_sources.reject{ |s| workspace.sources.include?(s) })
         @sources = workspace.sources
         @sources.push @virtual_source unless @virtual_source.nil?
-        @sources.each do |source|
-          if @stime.nil? or source.stime > @stime
-            store.update source
-          end
-        end
+        store.update *(@sources.select{ |s| @stime.nil? or s.stime > @stime })
       end
       @stime = Time.new
     end
@@ -400,10 +398,6 @@ module Solargraph
       unless @virtual_source.nil?
         map_source @virtual_source
       end
-    end
-
-    def eliminate source
-      store.remove source
     end
 
     # @param [Solargraph::Source]

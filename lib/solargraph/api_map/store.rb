@@ -3,11 +3,9 @@ require 'set'
 module Solargraph
   class ApiMap
     class Store
-      def initialize seeds
-        seeds.each do |seed|
-          pins.concat seed.pins
-          symbols.concat seed.symbols
-        end
+      # @param sources [Solargraph::Source]
+      def initialize sources
+        update *sources
         index
       end
 
@@ -15,17 +13,21 @@ module Solargraph
         @pins ||= []
       end
 
-      def remove source
-        pins.delete_if { |pin| pin.filename == source.filename }
-        symbols.delete_if { |pin| pin.filename == source.filename }
+      def remove *sources
+        sources.each do |source|
+          pins.delete_if { |pin| pin.filename == source.filename }
+          symbols.delete_if { |pin| pin.filename == source.filename }
+        end
         index
       end
 
-      def update source
-        pins.delete_if { |pin| pin.filename == source.filename }
-        symbols.delete_if { |pin| pin.filename == source.filename }
-        pins.concat source.pins
-        symbols.concat source.symbols
+      def update *sources
+        sources.each do |source|
+          pins.delete_if { |pin| pin.filename == source.filename }
+          symbols.delete_if { |pin| pin.filename == source.filename }
+          pins.concat source.pins
+          symbols.concat source.symbols
+        end
         index
       end
 
