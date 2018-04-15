@@ -327,7 +327,11 @@ module Solargraph
               end
             rescue Exception => e
               STDERR.puts "Error in diagnostics: #{e.message}"
-              option['diagnostics'] = false
+              options['diagnostics'] = false
+              send_notification 'window/showMessage', {
+                type: LanguageServer::MessageTypes::ERROR,
+                message: "Error in diagnostics: #{e.message}"
+              }
             end
           end
         end
@@ -343,7 +347,7 @@ module Solargraph
         params['contentChanges'].each do |chng|
           changes.push Solargraph::Source::Change.new(
             (chng['range'].nil? ? 
-              nil : 
+              nil :
               Solargraph::Source::Range.from_to(chng['range']['start']['line'], chng['range']['start']['character'], chng['range']['end']['line'], chng['range']['end']['character'])
             ),
             chng['text']
