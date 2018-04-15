@@ -11,6 +11,10 @@ module Solargraph
         @presence = block.location.range
       end
 
+      def completion_item_kind
+        Solargraph::LanguageServer::CompletionItemKinds::VARIABLE
+      end
+
       def return_type
         if @return_type.nil? and !block.docstring.nil?
           found = nil

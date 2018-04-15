@@ -17,6 +17,10 @@ module Solargraph
         Pin::BLOCK_PARAMETER
       end
 
+      def completion_item_kind
+        Solargraph::LanguageServer::CompletionItemKinds::VARIABLE
+      end
+
       def index
         block.parameters.index(self)
       end
