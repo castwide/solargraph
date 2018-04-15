@@ -31,7 +31,7 @@ module Solargraph
 
       def get_constants fqns, visibility = [:public]
         namespace_pins(fqns).select { |pin|
-          (pin.kind == Pin::NAMESPACE or pin.kind == Pin::CONSTANT) and visibility.include?(pin.visibility)
+          !pin.name.empty? and (pin.kind == Pin::NAMESPACE or pin.kind == Pin::CONSTANT) and visibility.include?(pin.visibility)
         }
       end
 
