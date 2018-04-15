@@ -9,6 +9,9 @@ module Solargraph
     # @return [String]
     attr_reader :directory
 
+    MAX_WORKSPACE_SIZE = 5000
+
+    # @param directory [String]
     def initialize directory
       # @todo Convert to an absolute path?
       @directory = directory
@@ -96,7 +99,9 @@ module Solargraph
     def load_sources
       source_hash.clear
       unless directory.nil?
-        config(true).calculated.each do |filename|
+        size = config(true).calculated.length
+        raise WorkspaceTooLargeError.new(size) if size > MAX_WORKSPACE_SIZE
+        config.calculated.each do |filename|
           src = Solargraph::Source.load(filename)
           source_hash[filename] = src
         end

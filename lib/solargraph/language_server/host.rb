@@ -144,7 +144,15 @@ module Solargraph
         path = nil
         path = normalize_separators(directory) unless directory.nil?
         @change_semaphore.synchronize do
-          @library = Solargraph::Library.load(path)
+          begin
+            @library = Solargraph::Library.load(path)
+          rescue WorkspaceTooLargeError => e
+            send_notification 'window/showMessage', {
+              'type' => Solargraph::LanguageServer::MessageTypes::WARNING,
+              'message' => "The workspace is too large to index (#{e.size} files, max #{Workspace::MAX_WORKSPACE_SIZE})"
+            }
+            @library = Solargraph::Library.load(nil)
+          end
         end
       end
 
