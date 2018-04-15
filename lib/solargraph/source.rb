@@ -150,7 +150,8 @@ module Solargraph
         found = pin if (kinds.empty? or kinds.include?(pin.kind)) and pin.location.range.contain?(position)
         break if pin.location.range.start.line > line
       end
-      found
+      # @todo Assuming the root pin is always valid
+      found || pins.first
     end
 
     # @return [YARD::Docstring]
