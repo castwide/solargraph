@@ -353,6 +353,9 @@ module Solargraph
                 type: LanguageServer::MessageTypes::ERROR,
                 message: "Error in diagnostics: #{e.message}"
               }
+            rescue Exception => e
+              STDERR.puts "#{e.message}"
+              STDERR.puts "#{e.backtrace}"
             end
           end
         end

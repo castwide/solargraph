@@ -51,7 +51,7 @@ module Solargraph
     def required
       result = []
       @sources.each do |s|
-        result.concat s.required
+        result.concat s.required.map(&:name)
       end
       result.uniq
     end

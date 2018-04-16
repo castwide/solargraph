@@ -217,7 +217,7 @@ module Solargraph
       result = []
       source = read(filename)
       refs = {}
-      source.required.each do |ref|
+      source.requires.each do |ref|
         refs[ref.name] = ref
       end
       api_map.yard_map.unresolved_requires.each do |r|

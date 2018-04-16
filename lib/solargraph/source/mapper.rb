@@ -231,7 +231,8 @@ module Solargraph
                 next
               elsif c.type == :send and c.children[1] == :require
                 if c.children[2].kind_of?(AST::Node) and c.children[2].type == :str
-                  @requires.push c.children[2].children[0].to_s
+                  # @requires.push c.children[2].children[0].to_s
+                  @requires.push Solargraph::Pin::Reference.new(get_node_location(c), fqn, c.children[2].children[0].to_s)
                 end
               elsif c.type == :args
                 if @node_stack.first.type == :block
