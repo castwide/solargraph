@@ -41,7 +41,8 @@ module Solargraph
     end
     private_constant :Binder
 
-    def initialize directory
+    def initialize directory = VIEWS_PATH
+      directory = VIEWS_PATH if directory.nil? or !File.directory?(directory)
       @render_method = proc { |template, layout: false, locals: {}|
         binder = Binder.new(locals, @render_method)
         if layout

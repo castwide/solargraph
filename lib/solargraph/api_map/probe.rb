@@ -1,6 +1,13 @@
 module Solargraph
   class ApiMap
     class Probe
+      class VirtualPin
+        attr_reader :return_type
+        def initialize return_type
+          @return_type = return_type
+        end
+      end
+
       # @return [Solargraph::ApiMap]
       attr_reader :api_map
 
@@ -15,7 +22,11 @@ module Solargraph
         return [] if signature.nil? or signature.empty?
         base, rest = signature.split('.', 2)
         return infer_word_pins(base, context_pin, locals) if rest.nil?
-        pins = infer_word_pins(base, context_pin, locals)
+        pins = infer_word_pins(base, context_pin, locals).map do |pin|
+          next pin unless pin.return_type.nil?
+          type = resolve_pin_type(pin)
+          VirtualPin.new(type)
+        end
         return [] if pins.empty?
         rest = rest.split('.')
         last = rest.pop
@@ -43,7 +54,7 @@ module Solargraph
         pins = infer_signature_pins(signature, context_pin, locals)
         pins.each do |pin|
           type = resolve_pin_type(pin)
-          return qualify(type, pin.path) unless type.nil?
+          return qualify(type, pin.named_context) unless type.nil?
         end
         nil
       end
@@ -62,10 +73,6 @@ module Solargraph
         result.concat api_map.get_methods(namespace, scope: scope, visibility: [:public, :private, :protected]).select{|pin| pin.name == word} unless word.include?('::')
         result.concat api_map.get_constants('', namespace).select{|pin| pin.name == word}
         result
-      end
-
-      def infer_method_name_pin method_name, context_pin, internal = false
-        infer_method_name_pins(method_name, context_pin, internal).reject{|pin| pin.return_type.nil?}.first
       end
 
       # Method name search is external by default
@@ -163,11 +170,6 @@ module Solargraph
         # @todo Smelly instance variable access.
         pin.instance_variable_set(:@return_type, context_pin.path)
         pin
-      end
-
-      def resolve_locals lvars
-        lvars.each{|l| l.resolve @api_map}
-        lvars
       end
 
       def resolve_pin_type pin

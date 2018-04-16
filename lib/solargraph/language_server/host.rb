@@ -205,34 +205,46 @@ module Solargraph
       end
 
       def completions_at filename, line, column
-        results = nil
+        result = nil
         @change_semaphore.synchronize do
-          results = library.completions_at filename, line, column
+          result = library.completions_at filename, line, column
         end
-        results
+        result
       end
 
       # @return [Array<Solargraph::Pin::Base>]
       def definitions_at filename, line, column
-        results = []
+        result = []
         @change_semaphore.synchronize do
-          results = library.definitions_at(filename, line, column)
+          result = library.definitions_at(filename, line, column)
         end
-        results
+        result
       end
 
       def signatures_at filename, line, column
-        results = nil
+        result = nil
         @change_semaphore.synchronize do
-          results = library.signatures_at(filename, line, column)
+          result = library.signatures_at(filename, line, column)
         end
-        results
+        result
       end
 
       def query_symbols query
-        results = nil
-        @change_semaphore.synchronize { results = library.query_symbols(query) }
-        results
+        result = nil
+        @change_semaphore.synchronize { result = library.query_symbols(query) }
+        result
+      end
+
+      def search query
+        result = nil
+        @change_semaphore.synchronize { result = library.search(query) }
+        result
+      end
+
+      def document query
+        result = nil
+        @change_semaphore.synchronize { result = library.document(query) }
+        result
       end
 
       def file_symbols uri
@@ -333,8 +345,20 @@ module Solargraph
                   }
                 end
               end
-            rescue Exception => e
-              STDERR.puts "Error in diagnostics: #{e.class}"
+            rescue DiagnosticsError => e
+              STDERR.puts "Error in diagnostics: #{e.message}"
+              options['diagnostics'] = false
+              send_notification 'window/showMessage', {
+                type: LanguageServer::MessageTypes::ERROR,
+                message: "Error in diagnostics: #{e.message}"
+              }
+            rescue Errno::ENOENT => e
+              STDERR.puts "Error in diagnostics: RuboCop could not be found"
+              options['diagnostics'] = false
+              send_notification 'window/showMessage', {
+                type: LanguageServer::MessageTypes::ERROR,
+                message: "Error in diagnostics: RuboCop could not be found"
+              }
             end
           end
         end
@@ -350,7 +374,7 @@ module Solargraph
         params['contentChanges'].each do |chng|
           changes.push Solargraph::Source::Change.new(
             (chng['range'].nil? ? 
-              nil : 
+              nil :
               Solargraph::Source::Range.from_to(chng['range']['start']['line'], chng['range']['start']['character'], chng['range']['end']['line'], chng['range']['end']['character'])
             ),
             chng['text']

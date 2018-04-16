@@ -9,6 +9,7 @@ module Solargraph
       # @return [Hash]
       attr_reader :raw_data
 
+      # @param workspace [String]
       def initialize workspace = nil
         @workspace = workspace
         include_globs = ['**/*.rb']
@@ -28,6 +29,8 @@ module Solargraph
         @raw_data['domains'] ||= []
         @raw_data['required'] ||= []
         @raw_data['plugins'] ||= []
+        included
+        excluded
       end
 
       # An array of files included in the workspace (before calculating excluded files).
@@ -35,8 +38,7 @@ module Solargraph
       # @return [Array<String>]
       def included
         return [] if workspace.nil?
-        #@included ||= process_globs(@raw_data['include'])
-        process_globs(@raw_data['include'])
+        @included ||= process_globs(@raw_data['include'])
       end
 
       # An array of files excluded from the workspace.
@@ -44,16 +46,14 @@ module Solargraph
       # @return [Array<String>]
       def excluded
         return [] if workspace.nil?
-        #@excluded ||= process_globs(@raw_data['exclude'])
-        process_globs(@raw_data['exclude'])
+        @excluded ||= process_exclusions(@raw_data['exclude'])
       end
 
       # The calculated array of (included - excluded) files in the workspace.
       #
       # @return [Array<String>]
       def calculated
-        #@calculated ||= (included - excluded)
-        included - excluded
+        @calculated ||= included - excluded
       end
 
       # @return [Array<String>]
@@ -79,6 +79,27 @@ module Solargraph
           end
         end
         result
+      end
+
+      def process_exclusions globs
+        remainder = globs.select do |glob|
+          if glob_is_directory?(glob)
+            exdir = File.realdirpath(File.join(workspace, glob_to_directory(glob)))
+            included.delete_if { |file| file.start_with?(exdir) }
+            false
+          else
+            true
+          end
+        end
+        process_globs remainder
+      end
+
+      def glob_is_directory? glob
+        File.directory?(glob) or File.directory?(glob_to_directory(glob))
+      end
+
+      def glob_to_directory glob
+        glob.gsub(/(\/\*|\/\*\*\/\*\*?)$/, '')
       end
     end
   end

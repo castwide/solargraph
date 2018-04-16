@@ -13,17 +13,17 @@ module Solargraph
         begin
           cmd = "rubocop -f j -s #{Shellwords.escape(filename)}"
           o, e, s = Open3.capture3(cmd, stdin_data: text)
-          make_array text, JSON.parse(o)
+          raise DiagnosticsError, "RuboCop is not available" if e.include?('Gem::Exception')
+          raise DiagnosticsError, "RuboCop returned empty data" if o.empty?
+          make_array JSON.parse(o)
         rescue JSON::ParserError
           raise DiagnosticsError, 'RuboCop returned invalid data'
-        rescue Exception => e
-          raise DiagnosticsError, 'An internal error occurred while running diagnostics'
         end
       end
 
       private
 
-      def make_array text, resp
+      def make_array resp
         severities = {
           'refactor' => 4,
           'convention' => 3,

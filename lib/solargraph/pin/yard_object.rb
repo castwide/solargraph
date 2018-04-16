@@ -88,10 +88,6 @@ module Solargraph
         @parameters ||= get_method_args
       end
 
-      def method?
-        completion_item_kind == Solargraph::LanguageServer::CompletionItemKinds::METHOD
-      end
-
       def visibility
         :public #@todo Resolve this
       end

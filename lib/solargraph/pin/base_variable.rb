@@ -39,15 +39,6 @@ module Solargraph
       def variable?
         true
       end
-
-      def signature
-        if @signature.nil? and !return_type.nil?
-          # @todo This is a shortcut that assumes the return_type does not
-          #   reference a complex type like Class<String>.
-          @signature = "#{return_type}.new"
-        end
-        @signature
-      end
     end
   end
 end

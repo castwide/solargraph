@@ -14,6 +14,10 @@ module Solargraph
         Solargraph::Pin::ATTRIBUTE
       end
 
+      def completion_item_kind
+        Solargraph::LanguageServer::CompletionItemKinds::PROPERTY
+      end
+
       def path
         @path ||= namespace + '#' + name
       end
@@ -24,10 +28,6 @@ module Solargraph
           @return_type = tag.types[0] unless tag.nil?
         end
         @return_type
-      end
-
-      def method?
-        true
       end
     end
   end
