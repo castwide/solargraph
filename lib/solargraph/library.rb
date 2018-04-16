@@ -198,6 +198,27 @@ module Solargraph
       source.code
     end
 
+    def diagnose filename
+      result = []
+      source = read(filename)
+      refs = {}
+      source.required.each do |ref|
+        refs[ref.name] = ref
+      end
+      api_map.yard_map.unresolved_requires.each do |r|
+        if refs.has_key?(r)
+          result.push(
+            range: refs[r].location.range.to_hash,
+            # 1 = Error, 2 = Warning, 3 = Information, 4 = Hint
+            severity: Diagnostics::Severities::WARNING,
+            source: 'Solargraph',
+            message: "Required path #{r} could not be resolved."
+          )
+        end
+      end
+      result
+    end
+
     # Create a library from a directory.
     #
     # @param directory [String] The path to be used for the workspace

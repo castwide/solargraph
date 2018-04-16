@@ -335,6 +335,7 @@ module Solargraph
               filename = uri_to_file(current)
               text = library.read_text(filename)
               results = diagnoser.diagnose text, filename
+              results.concat library.diagnose(filename)
               @change_semaphore.synchronize do
                 already_changing = (unsafe_changing?(current) or @diagnostics_queue.include?(current))
                 # publish_diagnostics current, resp unless already_changing
