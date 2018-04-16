@@ -132,5 +132,10 @@ module Solargraph
     def clear_cores
       Solargraph::YardMap::CoreDocs.clear
     end
+
+    desc 'reporters', 'Get a list of diagnostics reporters'
+    def reporters
+      puts Solargraph::Diagnostics::REPORTERS.keys.sort
+    end
   end
 end

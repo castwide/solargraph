@@ -213,24 +213,16 @@ module Solargraph
       source.code
     end
 
+    # Get diagnostics about a file.
+    #
+    # @return [Array<Hash>]
     def diagnose filename
       result = []
       source = read(filename)
-      if workspace.config.report.include?('require_not_found')
-        refs = {}
-        source.requires.each do |ref|
-          refs[ref.name] = ref
-        end
-        api_map.yard_map.unresolved_requires.each do |r|
-          if refs.has_key?(r)
-            result.push(
-              range: refs[r].location.range.to_hash,
-              severity: Diagnostics::Severities::WARNING,
-              source: 'Solargraph',
-              message: "Required path #{r} could not be resolved."
-            )
-          end
-        end
+      workspace.config.reporters.each do |name|
+        reporter = Diagnostics::REPORTERS[name]
+        raise DiagnosticsError, "Diagnostics reporter #{name} does not exist" if reporter.nil?
+        result.concat reporter.new.diagnose(source, api_map)
       end
       result
     end

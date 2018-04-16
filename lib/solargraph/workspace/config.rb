@@ -26,7 +26,7 @@ module Solargraph
         @raw_data ||= {}
         @raw_data['include'] ||= include_globs
         @raw_data['exclude'] ||= exclude_globs
-        @raw_data['report'] ||= []
+        @raw_data['reporters'] ||= []
         @raw_data['domains'] ||= []
         @raw_data['required'] ||= []
         @raw_data['plugins'] ||= []
@@ -70,8 +70,8 @@ module Solargraph
         raw_data['plugins']
       end
 
-      def report
-        raw_data['report']
+      def reporters
+        raw_data['reporters']
       end
 
       private

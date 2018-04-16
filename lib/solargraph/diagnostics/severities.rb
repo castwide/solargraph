@@ -1,6 +1,8 @@
 module Solargraph
   module Diagnostics
-    # @todo This might belong in language_server
+    # These severity constants match the DiagnosticSeverity constants in the
+    # language server protocol.
+    #
     module Severities
       ERROR = 1
       WARNING = 2

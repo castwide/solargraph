@@ -3,7 +3,7 @@ require 'shellwords'
 
 module Solargraph
   module Diagnostics
-    class Rubocop
+    class Rubocop < Base
       # The rubocop command
       #
       # @return [String]
@@ -14,8 +14,10 @@ module Solargraph
       end
 
       # @return [Array<Hash>]
-      def diagnose text, filename
+      def diagnose source, api_map
         begin
+          text = source.code
+          filename = source.filename
           raise DiagnosticsError, 'No command specified' if command.nil? or command.empty?
           cmd = "#{Shellwords.escape(command)} -f j -s #{Shellwords.escape(filename)}"
           o, e, s = Open3.capture3(cmd, stdin_data: text)

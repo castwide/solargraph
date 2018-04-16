@@ -333,9 +333,10 @@ module Solargraph
               end
               next if current.nil? or already_changing
               filename = uri_to_file(current)
-              text = library.read_text(filename)
-              results = diagnoser.diagnose text, filename
-              results.concat library.diagnose(filename)
+              # text = library.read_text(filename)
+              # results = diagnoser.diagnose text, filename
+              # results.concat library.diagnose(filename)
+              results = library.diagnose(filename)
               @change_semaphore.synchronize do
                 already_changing = (unsafe_changing?(current) or @diagnostics_queue.include?(current))
                 # publish_diagnostics current, resp unless already_changing
