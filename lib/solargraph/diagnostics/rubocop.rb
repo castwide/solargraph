@@ -2,22 +2,30 @@ require 'open3'
 require 'shellwords'
 
 module Solargraph
-
   module Diagnostics
     class Rubocop
-      def initialize
+      # The rubocop command
+      #
+      # @return [String]
+      attr_reader :command
+
+      def initialize(command = 'rubocop')
+        @command = command
       end
 
       # @return [Array<Hash>]
       def diagnose text, filename
         begin
-          cmd = "rubocop -f j -s #{Shellwords.escape(filename)}"
+          raise DiagnosticsError, 'No command specified' if command.nil? or command.empty?
+          cmd = "#{Shellwords.escape(command)} -f j -s #{Shellwords.escape(filename)}"
           o, e, s = Open3.capture3(cmd, stdin_data: text)
-          raise DiagnosticsError, "RuboCop is not available" if e.include?('Gem::Exception')
+          raise DiagnosticsError, "Command '#{command}' is not available (gem exception)" if e.include?('Gem::Exception')
           raise DiagnosticsError, "RuboCop returned empty data" if o.empty?
           make_array JSON.parse(o)
         rescue JSON::ParserError
           raise DiagnosticsError, 'RuboCop returned invalid data'
+        rescue Errno::ENOENT
+          raise DiagnosticsError, "Command '#{command}' is not available"
         end
       end
 
