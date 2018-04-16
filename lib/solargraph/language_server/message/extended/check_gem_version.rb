@@ -4,6 +4,10 @@ module Solargraph
   module LanguageServer
     module Message
       module Extended
+        # Check if a more recent version of the Solargraph gem is available.
+        # Notify the client when an update exists. If the `verbose` parameter
+        # is true, notify the client when the gem is up to date.
+        #
         class CheckGemVersion < Base
           def process
             o, s = Open3.capture2("gem search solargraph")

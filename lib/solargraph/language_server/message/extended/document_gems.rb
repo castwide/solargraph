@@ -4,6 +4,9 @@ module Solargraph
   module LanguageServer
     module Message
       module Extended
+        # Update YARD documentation for installed gems. If the `rebuild`
+        # parameter is true, rebuild existing yardocs.
+        #
         class DocumentGems < Base
           def process
             cmd = "yard gems"

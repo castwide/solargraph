@@ -4,7 +4,8 @@ require 'set'
 module Solargraph
   module LanguageServer
     # The language server protocol's data provider. Hosts are responsible for
-    # querying the library and processing messages.
+    # querying the library and processing messages. They also provide thread
+    # safety for multi-threaded transports.
     #
     class Host
       include Solargraph::LanguageServer::UriHelpers
@@ -23,6 +24,8 @@ module Solargraph
         start_diagnostics_thread
       end
 
+      # Update the configuration options with the provided hash.
+      #
       # @param update [Hash]
       def configure update
         options.merge! update unless update.nil?
@@ -47,6 +50,11 @@ module Solargraph
         @cancel_semaphore.synchronize { @cancel.delete id }
       end
 
+      # Start processing a request from the client. After the message is
+      # processed, the transport is responsible for sending the response.
+      #
+      # @param request [Hash] The contents of the message.
+      # @return [Solargraph::LanguageServer::Message] The message handler.
       def start request
         if request['method']
           message = Message.select(request['method']).new(self, request)
@@ -67,6 +75,11 @@ module Solargraph
         end
       end
 
+      # Respond to a notification that a file was created in the workspace.
+      # The library will determine whether the file should be added to the
+      # workspace; see Solargraph::Library#create_from_disk.
+      #
+      # @param uri [String] The file uri.
       def create uri
         filename = uri_to_file(uri)
         @change_semaphore.synchronize do
@@ -74,6 +87,9 @@ module Solargraph
         end
       end
 
+      # Delete the specified file from the library.
+      #
+      # @param uri [String] The file uri.
       def delete uri
         @change_semaphore.synchronize do
           filename = uri_to_file(uri)
@@ -81,6 +97,11 @@ module Solargraph
         end
       end
 
+      # Open the specified file in the library.
+      #
+      # @param uri [String] The file uri.
+      # @param text [String] The contents of the file.
+      # @param version [Integer] A version number.
       def open uri, text, version
         @change_semaphore.synchronize do
           library.open uri_to_file(uri), text, version
@@ -88,6 +109,9 @@ module Solargraph
         end
       end
 
+      # True if the specified file is currently open in the library.
+      #
+      # @return [Boolean]
       def open? uri
         result = nil
         @change_semaphore.synchronize do
@@ -133,12 +157,18 @@ module Solargraph
         end
       end
 
+      # Queue a message to be sent to the client.
+      #
+      # @param message [String] The message to send.
       def queue message
         @buffer_semaphore.synchronize do
           @buffer += message
         end
       end
 
+      # Clear the message buffer and return the most recent data.
+      #
+      # @return [String] The most recent data or an empty string.
       def flush
         tmp = nil
         @buffer_semaphore.synchronize do
@@ -148,6 +178,8 @@ module Solargraph
         tmp
       end
 
+      # Prepare a library for the specified directory.
+      #
       # @param directory [String]
       def prepare directory
         path = nil
@@ -165,6 +197,10 @@ module Solargraph
         end
       end
 
+      # Send a notification to the client.
+      #
+      # @param method [String] The message method
+      # @param params [Hash] The method parameters
       def send_notification method, params
         response = {
           jsonrpc: "2.0",
@@ -176,6 +212,12 @@ module Solargraph
         queue envelope
       end
 
+      # Send a request to the client and execute the provided block to process
+      # the response.
+      #
+      # @param method [String] The message method
+      # @param params [Hash] The method parameters
+      # @yieldparam [Hash] The result sent by the client
       def send_request method, params, &block
         message = {
           jsonrpc: "2.0",
@@ -190,6 +232,9 @@ module Solargraph
         @next_request_id += 1
       end
 
+      # True if the specified file is in the process of changing.
+      #
+      # @return [Boolean]
       def changing? file_uri
         result = false
         @change_semaphore.synchronize do
