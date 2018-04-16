@@ -69,4 +69,10 @@ describe Solargraph::YardMap do
       expect(incl).to be_empty
     end
   end
+
+  it "tracks unresolved requires" do
+    yard_map = Solargraph::YardMap.new(required: ['bundler', 'not_a_valid_path'])
+    expect(yard_map.unresolved_requires).to include('not_a_valid_path')
+    expect(yard_map.unresolved_requires).not_to include('bundler')
+  end
 end
