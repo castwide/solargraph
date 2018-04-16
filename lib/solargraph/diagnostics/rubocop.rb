@@ -32,6 +32,7 @@ module Solargraph
       private
 
       def make_array resp
+        # Conversion of RuboCop severity names to LSP constants
         severities = {
           'refactor' => 4,
           'convention' => 3,
