@@ -5,7 +5,14 @@ module Solargraph
       attr_reader :presence
 
       def visible_from?(block, position)
-        self.block == block and presence.contain?(position)
+        in_context?(block) and presence.contain?(position)
+      end
+
+      private
+
+      def in_context?(other)
+        return false if other.filename != filename
+        other == block or other.named_context == named_context
       end
     end
   end
