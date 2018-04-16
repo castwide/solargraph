@@ -18,6 +18,7 @@ module Solargraph
         @cancel = []
         @buffer = ''
         @stopped = false
+        @next_request_id = 0
         start_change_thread
         start_diagnostics_thread
       end
@@ -47,15 +48,23 @@ module Solargraph
       end
 
       def start request
-        message = Message.select(request['method']).new(self, request)
-        begin
-          message.process
-        rescue Exception => e
-          STDERR.puts e.message
-          STDERR.puts e.backtrace
-          message.set_error Solargraph::LanguageServer::ErrorCodes::INTERNAL_ERROR, "[#{e.class}] #{e.message}"
+        if request['method']
+          message = Message.select(request['method']).new(self, request)
+          begin
+            message.process
+          rescue Exception => e
+            STDERR.puts e.message
+            STDERR.puts e.backtrace
+            message.set_error Solargraph::LanguageServer::ErrorCodes::INTERNAL_ERROR, "[#{e.class}] #{e.message}"
+          end
+          message
+        elsif request['id']
+          # @todo What if the id is invalid?
+          requests[request['id']].process(request['result'])
+          requests.delete request['id']
+        else
+          STDERR.puts "Invalid message received."
         end
-        message
       end
 
       def create uri
@@ -167,6 +176,20 @@ module Solargraph
         queue envelope
       end
 
+      def send_request method, params, &block
+        message = {
+          jsonrpc: "2.0",
+          method: method,
+          params: params,
+          id: @next_request_id
+        }
+        json = message.to_json
+        requests[@next_request_id] = Request.new(@next_request_id, &block)
+        envelope = "Content-Length: #{json.bytesize}\r\n\r\n#{json}"
+        queue envelope
+        @next_request_id += 1
+      end
+
       def changing? file_uri
         result = false
         @change_semaphore.synchronize do
@@ -251,6 +274,21 @@ module Solargraph
         library.file_symbols(uri_to_file(uri))
       end
 
+      def show_message text, type = LanguageServer::MessageTypes::INFO
+        send_notification 'window/showMessage', {
+          type: type,
+          message: text
+        }
+      end
+
+      def show_message_request text, type, actions, &block
+        send_request 'window/showMessageRequest', {
+          type: type,
+          message: text,
+          actions: actions
+        }, &block
+      end
+
       private
 
       # @return [Solargraph::Library]
@@ -260,6 +298,10 @@ module Solargraph
 
       def unsafe_changing? file_uri
         @change_queue.any?{|change| change['textDocument']['uri'] == file_uri}
+      end
+
+      def requests
+        @requests ||= {}
       end
 
       def start_change_thread
@@ -290,7 +332,7 @@ module Solargraph
                     next true
                   elsif change['textDocument']['version'] <= source.version
                     # @todo Is deleting outdated changes correct behavior?
-                    STDERR.puts "Warning: outdated to change to #{change['textDocument']['uri']} was ignored"
+                    STDERR.puts "Warning: outdated change to #{change['textDocument']['uri']} was ignored"
                     @diagnostics_queue.push change['textDocument']['uri']
                     next true
                   else

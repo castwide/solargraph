@@ -9,6 +9,7 @@ module Solargraph
       module Extended
         autoload :Document, 'solargraph/language_server/message/extended/document'
         autoload :Search, 'solargraph/language_server/message/extended/search'
+        autoload :CheckGemVersion, 'solargraph/language_server/message/extended/check_gem_version'
       end
     end
   end
