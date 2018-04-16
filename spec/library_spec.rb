@@ -102,4 +102,31 @@ describe Solargraph::Library do
     paths = library.definitions_at('file.rb', 2, 13).map(&:path)
     expect(paths).to include('Foo#bar')
   end
+
+  it "ignores invalid filenames in create_from_disk" do
+    library = Solargraph::Library.new
+    filename = 'not_a_real_file.rb'
+    expect(library.create_from_disk(filename)).to be(false)
+    expect(library.contain?(filename)).to be(false)
+  end
+
+  it "adds mergeable files to the workspace in create_from_disk" do
+    Dir.mktmpdir do |dir|
+      library = Solargraph::Library.load(dir)
+      filename = File.join(dir, 'created.rb')
+      File.write(filename, "puts 'hello'")
+      expect(library.create_from_disk(filename)).to be(true)
+      expect(library.contain?(filename)).to be(true)
+    end
+  end
+
+  it "ignores non-mergeable files in create_from_disk" do
+    Dir.mktmpdir do |dir|
+      library = Solargraph::Library.load(dir)
+      filename = File.join(dir, 'created.txt')
+      File.write(filename, "puts 'hello'")
+      expect(library.create_from_disk(filename)).to be(false)
+      expect(library.contain?(filename)).to be(false)
+    end
+  end
 end

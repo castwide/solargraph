@@ -353,13 +353,6 @@ module Solargraph
                 type: LanguageServer::MessageTypes::ERROR,
                 message: "Error in diagnostics: #{e.message}"
               }
-            rescue Errno::ENOENT => e
-              STDERR.puts "Error in diagnostics: RuboCop could not be found"
-              options['diagnostics'] = false
-              send_notification 'window/showMessage', {
-                type: LanguageServer::MessageTypes::ERROR,
-                message: "Error in diagnostics: RuboCop could not be found"
-              }
             end
           end
         end

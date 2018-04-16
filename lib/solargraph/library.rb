@@ -31,7 +31,16 @@ module Solargraph
       source_hash.has_key? filename
     end
 
-    # Create a file source to be added to the workspace. The source is ignored
+    # True if the specified file is included in the workspace (but not
+    # necessarily open).
+    #
+    # @param filename [String]
+    # @return [Boolean]
+    def contain? filename
+      workspace.has_file?(filename)
+    end
+
+    # Create a file source to be added to the workspace. The file is ignored
     # if the workspace is not configured to include the file.
     #
     # @param filename [String]
@@ -45,12 +54,18 @@ module Solargraph
       true
     end
 
+    # Create a file source from a file on disk. The file is ignored if the
+    # workspace is not configured to include the file.
+    #
+    # @param filename [String]
+    # @return [Boolean] True if the file was added to the workspace.
     def create_from_disk filename
-      return if File.directory?(filename) or !File.exist?(filename)
-      return unless workspace.would_merge?(filename)
+      return false if File.directory?(filename) or !File.exist?(filename)
+      return false unless workspace.would_merge?(filename)
       source = Solargraph::Source.load_string(File.read(filename), filename)
       workspace.merge(source)
       api_map.refresh
+      true
     end
 
     # Delete a file from the library. Deleting a file will make it unavailable
