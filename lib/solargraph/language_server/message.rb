@@ -64,6 +64,7 @@ module Solargraph
       register '$/solargraph/document',            Extended::Document
       register '$/solargraph/search',              Extended::Search
       register '$/solargraph/checkGemVersion',     Extended::CheckGemVersion
+      register '$/solargraph/documentGems',        Extended::DocumentGems
       register 'shutdown',                         Shutdown
       register 'exit',                             ExitNotification
     end
