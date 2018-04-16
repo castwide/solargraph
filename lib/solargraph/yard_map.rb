@@ -14,7 +14,10 @@ module Solargraph
       @@stdlib_namespaces.push ns.path
     end
 
+    # @return [Solargraph::Workspace]
     attr_reader :workspace
+
+    # @return [Array<String>]
     attr_reader :required
 
     def initialize required: [], workspace: nil
@@ -353,9 +356,13 @@ module Solargraph
     def process_requires
       tried = []
       required.each do |r|
+        # @todo Ignoring requires in the workspace's lib directory handles a lot of common cases.
+        next if !workspace.nil? and File.exist?(File.join(workspace.directory, "lib", "#{r}.rb"))
         begin
           name = r.split('/').first
           next if name.nil?
+          # @todo Ignoring requires that match the workspace's gem name handles a few more.
+          next if !workspace.nil? and File.exist?(File.join(workspace.directory, "#{name}.gemspec"))
           spec = Gem::Specification.find_by_name(name)
           next if spec.nil?
           ver = spec.version.to_s
@@ -365,7 +372,7 @@ module Solargraph
           @gem_paths[spec.name] = spec.full_gem_path
           yardocs.unshift yd unless yd.nil? or yardocs.include?(yd)
         rescue Gem::LoadError => e
-          # STDERR.puts "LoadError on #{r}"
+          STDERR.puts "Required path #{r} could not be found in the workspace or gems"
         end
       end
     end
