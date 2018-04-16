@@ -5,9 +5,9 @@ module Solargraph
         class OnTypeFormatting < Base
           def process
             src = host.send(:library).checkout(uri_to_file(params['textDocument']['uri']))
-            fragment = src.fragment_at(params['position']['line'], params['position']['character'])
+            fragment = src.fragment_at(params['position']['line'], params['position']['character'] - 1)
             offset = fragment.send(:offset)
-            if fragment.string? and params['ch'] == '{' and src.code[offset-2,2] == '#{'
+            if fragment.string? and params['ch'] == '{' and src.code[offset-1,2] == '#{'
               set_result(
                 [
                   {
