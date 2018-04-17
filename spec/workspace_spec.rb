@@ -1,24 +1,23 @@
 require 'tmpdir'
 
 describe Solargraph::Workspace do
-  let(:dir_path) { File.realpath(Dir.mktmpdir) }
-  after(:each) { FileUtils.remove_entry(dir_path) }
+  let(:dir_path)  { File.realpath(Dir.mktmpdir) }
+  let(:file_path) { File.join(dir_path, 'file.rb') }
+
+  before(:each)   { File.write(file_path, 'exit') }
+  after(:each)    { FileUtils.remove_entry(dir_path) }
 
   it "loads sources from a directory" do
-    file = File.join(dir_path, 'file.rb')
-    File.write file, 'exit'
     workspace = Solargraph::Workspace.new(dir_path)
-    expect(workspace.filenames).to include(file)
-    expect(workspace.has_file?(file)).to be(true)
+    expect(workspace.filenames).to include(file_path)
+    expect(workspace.has_file?(file_path)).to be(true)
   end
 
   it "ignores non-Ruby files by default" do
-    file = File.join(dir_path, 'file.rb')
-    File.write file, 'exit'
     not_ruby = File.join(dir_path, 'not_ruby.txt')
     File.write not_ruby, 'text'
     workspace = Solargraph::Workspace.new(dir_path)
-    expect(workspace.filenames).to include(file)
+    expect(workspace.filenames).to include(file_path)
     expect(workspace.filenames).not_to include(not_ruby)
   end
 
@@ -30,26 +29,22 @@ describe Solargraph::Workspace do
   end
 
   it "updates sources" do
-    file = File.join(dir_path, 'file.rb')
-    File.write file, 'exit'
     workspace = Solargraph::Workspace.new(dir_path)
-    original = workspace.source(file)
-    updated = Solargraph::Source.load_string('puts "updated"', file)
+    original = workspace.source(file_path)
+    updated = Solargraph::Source.load_string('puts "updated"', file_path)
     workspace.merge updated
-    expect(workspace.filenames).to include(file)
-    expect(workspace.source(file)).not_to eq(original)
-    expect(workspace.source(file)).to eq(updated)
+    expect(workspace.filenames).to include(file_path)
+    expect(workspace.source(file_path)).not_to eq(original)
+    expect(workspace.source(file_path)).to eq(updated)
   end
 
   it "removes deleted sources" do
-    file = File.join(dir_path, 'file.rb')
-    File.write file, 'exit'
     workspace = Solargraph::Workspace.new(dir_path)
-    expect(workspace.filenames).to include(file)
-    original = workspace.source(file)
-    File.unlink file
+    expect(workspace.filenames).to include(file_path)
+    original = workspace.source(file_path)
+    File.unlink file_path
     workspace.remove original
-    expect(workspace.filenames).not_to include(file)
+    expect(workspace.filenames).not_to include(file_path)
   end
 
   it "raises an exception for workspace size limits" do
