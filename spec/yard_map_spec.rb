@@ -98,4 +98,15 @@ describe Solargraph::YardMap do
     expect(yard_map.unresolved_requires).to include('not_a_valid_path')
     expect(yard_map.unresolved_requires).not_to include('bundler')
   end
+
+  it "uses a clean bundler environment in workspaces with unloaded gemfiles" do
+    Dir.mktmpdir do |dir|
+      File.write(File.join(dir, 'Gemfile'), %(
+        gem 'bundler'
+      ))
+      yard_map = Solargraph::YardMap.new(required: ['bundler'], workspace: Solargraph::Workspace.new(dir))
+      incl = yard_map.yardocs.select { |y| y.include?('bundler') }
+      expect(incl).not_to be_empty
+    end
+  end
 end

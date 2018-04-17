@@ -337,16 +337,19 @@ module Solargraph
 
     def process_gem_paths
       if !has_bundle? or ENV['BUNDLE_GEMFILE'] == File.join(workspace.directory, 'Gemfile')
+        # Trust the current environment if Bundler is not being used or the
+        # workspace's Gemfile was loaded
         process_requires
       else
+        # Temporarily load the workspace in a clean environment to identify
+        # its gems
         processed = false
         Bundler.with_clean_env do
           Bundler.environment.chdir(workspace.directory) do
             begin
               Bundler.reset!
-              # Bundler.setup
-              processed = true
               process_requires
+              processed = true
             rescue Exception => e
               STDERR.puts "#{e.class}: #{e.message}"
             end

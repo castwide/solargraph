@@ -166,10 +166,10 @@ module Solargraph
     # True if the namespace exists.
     #
     # @param name [String] The namespace to match
-    # @param root [String] The context to search
+    # @param context [String] The context to search
     # @return [Boolean]
-    def namespace_exists? name, root = ''
-      !qualify(name, root).nil?
+    def namespace_exists? name, context = ''
+      !qualify(name, context).nil?
     end
 
     # Get suggestions for constants in the specified namespace. The result
@@ -330,6 +330,12 @@ module Solargraph
       probe.infer_signature_type fragment.whole_signature, fragment.named_path, fragment.locals
     end
 
+    # Get an array of pins that describe the method being called by the
+    # argument list where the fragment is located. This is useful for queries
+    # that need to know what parameters the current method expects to receive.
+    #
+    # If the fragment is not inside an argument list, return an empty array.
+    #
     # @param fragment [Solargraph::Source::Fragment]
     # @return [Array<Solargraph::Pin::Base>]
     def signify fragment
@@ -385,6 +391,9 @@ module Solargraph
       docs
     end
 
+    # Get an array of all symbols in the workspace that match the query.
+    #
+    # @return [Array<Pin::Base>]
     def query_symbols query
       result = []
       @sources.each do |s|
@@ -485,6 +494,10 @@ module Solargraph
       result
     end
 
+    # Require extensions for the experimental plugin architecture. Any
+    # installed gem with a name that starts with "solargraph-" is considered
+    # an extension.
+    #
     def require_extensions
       Gem::Specification.all_names.select{|n| n.match(/^solargraph\-[a-z0-9_\-]*?\-ext\-[0-9\.]*$/)}.each do |n|
         STDERR.puts "Loading extension #{n}"
