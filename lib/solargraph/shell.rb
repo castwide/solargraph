@@ -3,7 +3,14 @@ require 'json'
 require 'fileutils'
 require 'rubygems/package'
 require 'zlib'
-require 'eventmachine'
+begin
+  require 'eventmachine'
+rescue LoadError => e
+  # @see https://github.com/eventmachine/eventmachine/issues/820
+  STDERR.puts "EventMachine failed to load with error: [#{e.class}] #{e.message}"
+  STDERR.puts "Loading em/pure_ruby instead"
+  require 'em/pure_ruby'
+end
 
 module Solargraph
   class Shell < Thor
@@ -54,6 +61,7 @@ module Solargraph
           EventMachine.stop
         end
         EventMachine.start_server options[:host], port, Solargraph::LanguageServer::Transport::Socket
+        # Emitted for the benefit of clients that start the process on port 0
         STDERR.puts "Solargraph is listening PORT=#{port} PID=#{Process.pid}"
       end
     end
