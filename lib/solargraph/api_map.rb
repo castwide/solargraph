@@ -45,6 +45,10 @@ module Solargraph
       store.pins
     end
 
+    def domains
+      @domains ||= []
+    end
+
     # An array of required paths in the workspace.
     #
     # @return [Array<String>]
@@ -84,6 +88,10 @@ module Solargraph
     # @return [Solargraph::Source]
     def virtualize source
       store.remove @virtual_source unless @virtual_source.nil?
+      domains.clear
+      domains.concat workspace.config.domains
+      domains.concat source.domains unless source.nil?
+      domains.uniq!
       if workspace.has_source?(source)
         @sources = workspace.sources
         @virtual_source = nil
@@ -243,6 +251,10 @@ module Solargraph
       if fqns == ''
         result.concat inner_get_methods(fqns, :class, visibility, deep, skip)
         result.concat inner_get_methods(fqns, :instance, visibility, deep, skip)
+        domains.each do |domain|
+          namespace, scope = extract_namespace_and_scope(domain)
+          result.concat inner_get_methods(namespace, scope, [:public], deep, skip)
+        end
         result.concat inner_get_methods('Kernel', :instance, visibility, deep, skip)
       else
         result.concat inner_get_methods(fqns, scope, visibility, deep, skip)
@@ -270,10 +282,6 @@ module Solargraph
             result.concat get_methods(fragment.namespace, scope: fragment.scope, visibility: [:public, :private, :protected])
             result.concat get_methods('Kernel')
             result.concat ApiMap.keywords
-            (workspace.config.domains + fragment.source.domains).uniq.each do |domain|
-              namespace, scope = extract_namespace_and_scope(domain)
-              result.concat get_methods(namespace, scope: scope)
-            end
           end
           result.concat get_constants(fragment.base, fragment.namespace)
         end
