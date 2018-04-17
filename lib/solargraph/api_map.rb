@@ -249,12 +249,12 @@ module Solargraph
       result = []
       skip = []
       if fqns == ''
-        result.concat inner_get_methods(fqns, :class, visibility, deep, skip)
-        result.concat inner_get_methods(fqns, :instance, visibility, deep, skip)
         domains.each do |domain|
           namespace, scope = extract_namespace_and_scope(domain)
           result.concat inner_get_methods(namespace, scope, [:public], deep, skip)
         end
+        result.concat inner_get_methods(fqns, :class, visibility, deep, skip)
+        result.concat inner_get_methods(fqns, :instance, visibility, deep, skip)
         result.concat inner_get_methods('Kernel', :instance, visibility, deep, skip)
       else
         result.concat inner_get_methods(fqns, scope, visibility, deep, skip)
