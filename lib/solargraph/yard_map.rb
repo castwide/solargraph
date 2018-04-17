@@ -268,7 +268,7 @@ module Solargraph
     end
 
     def process_gem_paths
-      if !has_bundle? or ENV['BUNDLE_GEMFILE'] == File.join(workspace.directory, 'Gemfile')
+      if !has_bundle? or workspace.nil? or ENV['BUNDLE_GEMFILE'] == File.join(workspace.directory, 'Gemfile')
         # Trust the current environment if Bundler is not being used or the
         # workspace's Gemfile was loaded
         process_requires
