@@ -313,7 +313,6 @@ module Solargraph
           unresolved_requires.push r if yd.nil?
           yardocs.unshift yd unless yd.nil? or yardocs.include?(yd)
         rescue Gem::LoadError => e
-          # STDERR.puts "Required path #{r} could not be found in the workspace or gems"
           unresolved_requires.push r
         end
       end
@@ -356,13 +355,12 @@ module Solargraph
     end
 
     # @param obj [YARD::CodeObjects::Base]
+    # @return [Solargraph::Source::Location]
     def object_location obj
       return nil if obj.file.nil? or obj.line.nil?
       @gem_paths.values.each do |path|
         file = File.join(path, obj.file)
-        if File.exist?(file)
-          return "#{file}:#{obj.line - 1}:0"
-        end
+        return Solargraph::Source::Location.new(file, Solargraph::Source::Range.from_to(obj.line - 1, 0, obj.line - 1, 0)) if File.exist?(file)
       end
       nil
     end

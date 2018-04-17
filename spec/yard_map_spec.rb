@@ -144,4 +144,11 @@ describe Solargraph::YardMap do
     result = yard_map.objects('String#upcase', 'FakeNamespace')
     expect(result).not_to be_empty
   end
+
+  it "finds locations for YardObject pins" do
+    yard_map = Solargraph::YardMap.new(required: ['yard'])
+    result = yard_map.objects('YARD::CodeObjects::Base#line')
+    expect(result).not_to be_empty
+    expect(result[0].location).to be_a(Solargraph::Source::Location)
+  end
 end

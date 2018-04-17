@@ -71,14 +71,13 @@ module Solargraph
       end
 
       def location
-        # @todo Get the location
         @location
       end
 
       def path
         code_object.path
       end
-      
+
       def namespace
         # @todo Is this right?
         code_object.namespace.to_s
@@ -111,7 +110,7 @@ module Solargraph
           args.push p
         }
         args
-      end  
+      end
     end
   end
 end
