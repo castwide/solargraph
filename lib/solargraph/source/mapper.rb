@@ -19,6 +19,7 @@ module Solargraph
         # @todo Stuff that needs to be resolved
         @variables = []
         @path_macros = {}
+        @domains = []
 
         @pins = []
         @requires = []
@@ -32,7 +33,7 @@ module Solargraph
         @pins.push Pin::Namespace.new(get_node_location(nil), '', '', nil, :class, :public, nil)
         process root
         process_directives
-        [@pins, @locals, @requires, @symbols, @path_macros]
+        [@pins, @locals, @requires, @symbols, @path_macros, @domains]
       end
 
       class << self
@@ -264,15 +265,6 @@ module Solargraph
         stack.pop
       end
 
-      # def path_for node
-      #   path = namespace_for(node) || ''
-      #   mp = (method_pins + attribute_pins).select{|p| p.node == node}.first
-      #   unless mp.nil?
-      #     path += (mp.scope == :instance ? '#' : '.') + mp.name
-      #   end
-      #   path
-      # end
-  
       def get_last_in_stack_not_begin stack
         index = stack.length - 1
         last = stack[index]
@@ -380,6 +372,8 @@ module Solargraph
               here = get_node_start_position(k.node)
               pin = @pins.select{|pin| [Pin::NAMESPACE, Pin::METHOD].include?(pin.kind) and pin.location.range.contain?(here)}.first
               @path_macros[pin.path] = v
+            elsif d.tag.tag_name == 'domain'
+              @domains.push d.tag.text
             else
               # STDERR.puts "Nothing to do for directive: #{d}"
             end

@@ -270,6 +270,10 @@ module Solargraph
             result.concat get_methods(fragment.namespace, scope: fragment.scope, visibility: [:public, :private, :protected])
             result.concat get_methods('Kernel')
             result.concat ApiMap.keywords
+            (workspace.config.domains + fragment.source.domains).uniq.each do |domain|
+              namespace, scope = extract_namespace_and_scope(domain)
+              result.concat get_methods(namespace, scope: scope)
+            end
           end
           result.concat get_constants(fragment.base, fragment.namespace)
         end

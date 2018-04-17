@@ -9,6 +9,8 @@ module Solargraph
 
       attr_reader :column
 
+      attr_reader :source
+
       # @param source [Solargraph::Source]
       # @param line [Integer]
       # @param column [Integer]
