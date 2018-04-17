@@ -1,7 +1,7 @@
 require 'tmpdir'
 
 describe Solargraph::Workspace do
-  let(:dir_path) { Dir.mktmpdir }
+  let(:dir_path) { File.realpath(Dir.mktmpdir) }
   after(:each) { FileUtils.remove_entry(dir_path) }
 
   it "loads sources from a directory" do
