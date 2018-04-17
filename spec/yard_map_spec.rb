@@ -109,4 +109,39 @@ describe Solargraph::YardMap do
       expect(incl).not_to be_empty
     end
   end
+
+  it "adds gem dependencies" do
+    Dir.mktmpdir do |dir|
+      File.write(File.join(dir, 'Gemfile'), %(
+        gem 'solargraph'
+      ))
+      yard_map = Solargraph::YardMap.new(required: ['solargraph'], workspace: Solargraph::Workspace.new(dir))
+      incl = yard_map.yardocs.select { |y| y.include?('eventmachine') }
+      expect(incl).not_to be_empty
+    end
+  end
+
+  it "finds method objects" do
+    yard_map = Solargraph::YardMap.new
+    result = yard_map.objects('String#upcase')
+    expect(result).not_to be_empty
+  end
+
+  it "finds method objects in nested namespaces" do
+    yard_map = Solargraph::YardMap.new
+    result = yard_map.objects('Encoding::Converter#convert')
+    expect(result).not_to be_empty
+  end
+
+  it "finds method objects in nested contexts" do
+    yard_map = Solargraph::YardMap.new
+    result = yard_map.objects('Converter#convert', 'Encoding')
+    expect(result).not_to be_empty
+  end
+
+  it "finds method objects in unidentified contexts" do
+    yard_map = Solargraph::YardMap.new
+    result = yard_map.objects('String#upcase', 'FakeNamespace')
+    expect(result).not_to be_empty
+  end
 end

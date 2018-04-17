@@ -143,33 +143,15 @@ module Solargraph
           yard = load_yardoc(y)
           unless yard.nil?
             ns = nil
-            ns = find_first_resolved_namespace(yard, namespace, scope)
+            ns = find_first_resolved_object(yard, namespace, scope)
             unless ns.nil?
               ns.meths(scope: :class, visibility: visibility).each { |m|
-                n = m.to_s.split(/[\.#]/).last.gsub(/=$/, ' = ')
-                label = "#{n}"
-                args = get_method_args(m)
-                kind = (m.is_attribute? ? Suggestion::FIELD : Suggestion::METHOD)
-                # meths.push Suggestion.new(label, insert: n, kind: kind, docstring: m.docstring, code_object: m, detail: "#{ns}", location: object_location(m), arguments: args)
                 meths.push Pin::YardObject.new(m, object_location(m))
               }
               # Collect superclass methods
               if ns.kind_of?(YARD::CodeObjects::ClassObject) and !ns.superclass.nil?
                 meths += get_methods ns.superclass.to_s, '', visibility: [:public, :protected] unless ['Object', 'BasicObject', ''].include?(ns.superclass.to_s)
               end
-              # if ns.kind_of?(YARD::CodeObjects::ClassObject) and namespace != 'Class'
-              #   meths += get_instance_methods('Class')
-              #   yard = load_yardoc(y)
-              #   i = yard.at("#{ns}#initialize")
-              #   unless i.nil?
-              #     meths.delete_if{|m| m.name == 'new'}
-              #     label = "#{i}"
-              #     args = get_method_args(i)
-              #     tmp = Solargraph::Pin::YardObject.new(i, object_location(i))
-              #     tmp.instance_variable_set(:@name, 'new')
-              #     meths.push tmp
-              #   end
-              # end
             end
           end
         end
@@ -189,21 +171,13 @@ module Solargraph
           yard = load_yardoc(y)
           unless yard.nil?
             ns = nil
-            ns = find_first_resolved_namespace(yard, namespace, scope)
+            ns = find_first_resolved_object(yard, namespace, scope)
             unless ns.nil?
               ns.meths(scope: :instance, visibility: visibility).each { |m|
                 n = m.to_s.split(/[\.#]/).last
                 # HACK: Special treatment for #initialize
                 next if n == 'initialize' and !visibility.include?(:private)
                 if (namespace == 'Kernel' or !m.to_s.start_with?('Kernel#')) and !m.docstring.to_s.include?(':nodoc:')
-                  label = "#{n}"
-                  args = get_method_args(m)
-                  kind = (m.is_attribute? ? Suggestion::FIELD : Suggestion::METHOD)
-                  rt = nil
-                  if Solargraph::CoreFills::CUSTOM_RETURN_TYPES.has_key?(m.path)
-                    rt = Solargraph::CoreFills::CUSTOM_RETURN_TYPES[m.path]
-                  end
-                  # meths.push Suggestion.new(label, insert: "#{n.gsub(/=$/, ' = ')}", kind: kind, docstring: m.docstring, code_object: m, detail: m.namespace, location: object_location(m), arguments: args, return_type: rt)
                   meths.push Pin::YardObject.new(m, object_location(m))
                 end
               }
@@ -246,26 +220,9 @@ module Solargraph
       yardocs.each { |y|
         yard = load_yardoc(y)
         unless yard.nil?
-          obj = find_first_resolved_namespace(yard, path, space)
-          if obj.nil? and path.include?('#')
-            parts = path.split('#')
-            obj = yard.at(parts[0])
-            unless obj.nil?
-              meths = obj.meths(scope: [:instance]).keep_if{|m| m.name.to_s == parts[1]}
-              meths.each do |m|
-                args = get_method_args(m)
-                # result.push Solargraph::Suggestion.new(m.name, kind: 'Method', detail: m.path, code_object: m, arguments: args, location: object_location(m))
-                result.push Pin::YardObject.new(m, object_location(m))
-              end
-            end
-          else
-            unless obj.nil?
-              args = []
-              args = get_method_args(obj) if obj.kind_of?(YARD::CodeObjects::MethodObject)
-              kind = kind_of_object(obj)
-              # result.push Solargraph::Suggestion.new(obj.name, kind: kind, detail: obj.path, code_object: obj, arguments: args, location: object_location(obj))
-              result.push Pin::YardObject.new(obj, object_location(obj))
-            end
+          obj = find_first_resolved_object(yard, path, space)
+          unless obj.nil?
+            result.push Pin::YardObject.new(obj, object_location(obj))
           end
         end
       }
@@ -294,20 +251,7 @@ module Solargraph
       @cache ||= Cache.new
     end
 
-    def get_method_args meth
-      args = []
-      meth.parameters.each { |a|
-        p = a[0]
-        unless a[1].nil?
-          p += ' =' unless p.end_with?(':')
-          p += " #{a[1]}"
-        end
-        args.push p
-      }
-      args
-    end
-
-    def find_first_resolved_namespace yard, namespace, scope
+    def find_first_resolved_object yard, namespace, scope
       unless scope.nil?
         parts = scope.split('::')
         while parts.length > 0
@@ -321,18 +265,6 @@ module Solargraph
 
     def cache_core
       get_constants '', ''
-    end
-
-    def kind_of_object obj
-      if obj.kind_of?(YARD::CodeObjects::MethodObject)
-        'Method'
-      elsif obj.kind_of?(YARD::CodeObjects::ClassObject)
-        'Class'
-      elsif obj.kind_of?(YARD::CodeObjects::ModuleObject)
-        'Module'
-      else
-        nil
-      end
     end
 
     def process_gem_paths
@@ -393,7 +325,7 @@ module Solargraph
         @gem_paths[spec.name] = spec.full_gem_path unless spec.nil?
         gy = YARD::Registry.yardoc_file_for_gem(dep.name)
         if gy.nil?
-          STDERR.puts "Required path not found: #{dep.name}"
+          unresolved_requires.push dep.name
         else
           yardocs.unshift gy unless yardocs.include?(gy)
         end
