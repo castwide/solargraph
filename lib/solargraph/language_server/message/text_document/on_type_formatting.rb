@@ -20,7 +20,8 @@ module Solargraph
                 ]
               )
             else
-              set_result []
+              # @todo Is `nil` or `[]` more appropriate here?
+              set_result nil
             end
           end
         end

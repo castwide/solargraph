@@ -361,13 +361,10 @@ module Solargraph
       tried = []
       unresolved_requires.clear
       required.each do |r|
-        # @todo Ignoring requires in the workspace's lib directory handles a lot of common cases.
-        next if !workspace.nil? and !workspace.directory.nil? and File.exist?(File.join(workspace.directory, "lib", "#{r}.rb"))
+        next if !workspace.nil? and workspace.would_require?(r)
         begin
           name = r.split('/').first
           next if name.nil?
-          # @todo Ignoring requires that match the workspace's gem name handles a few more.
-          next if !workspace.nil? and !workspace.directory.nil? and File.exist?(File.join(workspace.directory, "#{name}.gemspec"))
           spec = Gem::Specification.find_by_name(name)
           if spec.nil?
             unresolved_requires.push r

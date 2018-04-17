@@ -61,9 +61,18 @@ describe Solargraph::YardMap do
     # This spec assumes that the bundler gem is installed on the path
     # and has generated yardocs
     Dir.mktmpdir do |dir|
-      Dir.mkdir(File.join(dir, 'lib'))
-      filename = File.join(dir, 'bundler.gemspec')
-      File.write(filename, "puts 'test'")
+      Dir.mkdir(File.join(dir, 'alt_lib'))
+      # This gemspec changes the default require path
+      File.write(File.join(dir, 'alt.gemspec'), %(
+        Gem::Specification.new do |s|
+          s.name          = 'test'
+          s.version       = '1.0.0'
+          s.summary       = "Test"
+          s.files         = Dir['**/*']
+          s.require_paths = ['alt_lib']
+        end
+      ))
+      File.write(File.join(dir, 'alt_lib', 'bundler.rb'), "puts 'test'")
       yard_map = Solargraph::YardMap.new(required: ['bundler'], workspace: Solargraph::Workspace.new(dir))
       incl = yard_map.yardocs.select{|y| y.include?('bundler')}
       expect(incl).to be_empty

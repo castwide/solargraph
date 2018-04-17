@@ -74,6 +74,10 @@ module Solargraph
         raw_data['reporters']
       end
 
+      def require_paths
+        @require_paths ||= generate_require_paths
+      end
+
       private
 
       def process_globs globs
@@ -105,6 +109,9 @@ module Solargraph
 
       def glob_to_directory glob
         glob.gsub(/(\/\*|\/\*\*\/\*\*?)$/, '')
+      end
+
+      def generate_require_paths
       end
     end
   end

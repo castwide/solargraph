@@ -90,6 +90,26 @@ module Solargraph
       @stime = source_hash.values.sort{|a, b| a.stime <=> b.stime}.last.stime
     end
 
+    def require_paths
+      @require_paths ||= generate_require_paths
+    end
+
+    def would_require? path
+      require_paths.each do |rp|
+        return true if File.exist?(File.join(rp, "#{path}.rb"))
+      end
+      false
+    end
+
+    def gemspec?
+      return true unless gemspecs.empty?
+    end
+
+    def gemspecs
+      return [] if directory.nil?
+      @gemspecs ||= Dir[File.join(directory, '**/*.gemspec')]
+    end
+
     private
 
     # @return [Hash<String, Solargraph::Source>]
@@ -108,6 +128,18 @@ module Solargraph
         end
       end
       @stime = Time.now
+    end
+
+    def generate_require_paths
+      return [] if directory.nil?
+      return [File.join(directory, 'lib')] unless gemspec?
+      result = []
+      gemspecs.each do |file|
+        spec = Gem::Specification.load(file)
+        result.concat spec.require_paths.map{ |path| File.join(directory, path) } unless spec.nil?
+      end
+      result.push File.join(directory, 'lib') if result.empty?
+      result
     end
   end
 end
