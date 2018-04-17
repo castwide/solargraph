@@ -6,22 +6,23 @@ module Solargraph
           host.configure params['initializationOptions']
           host.prepare params['rootPath']
           set_result(
+            # @todo Dynamic capabilities are stubbed here.
             capabilities: {
               textDocumentSync: 2, # @todo What should this be?
-              completionProvider: {
-                resolveProvider: true,
-                triggerCharacters: ['.', ':', '@']
-              },
-              hoverProvider: true,
+              # completionProvider: {
+              #   resolveProvider: true,
+              #   triggerCharacters: ['.', ':', '@']
+              # },
+              # hoverProvider: true,
               definitionProvider: true,
-              signatureHelpProvider: {
-                triggerCharacters: ['(', ',']
-              },
+              # signatureHelpProvider: {
+              #   triggerCharacters: ['(', ',']
+              # },
               documentFormattingProvider: true,
-              documentOnTypeFormattingProvider: {
-                firstTriggerCharacter: '{',
-                moreTriggerCharacter: ['(']
-              },
+              # documentOnTypeFormattingProvider: {
+              #   firstTriggerCharacter: '{',
+              #   moreTriggerCharacter: ['(']
+              # },
               documentSymbolProvider: true,
               workspaceSymbolProvider: true,
               workspace: {
@@ -32,6 +33,10 @@ module Solargraph
               }
             }
           )
+          # Initialize dynamic options in case the client didn't send them
+          host.options['completion'] ||= (host.options['completion'] != false)
+          host.options['hover'] ||= (host.options['hover'] != false)
+          host.options['autoformat'] ||= (host.options['autoformat'] != false)
         end
       end
     end
