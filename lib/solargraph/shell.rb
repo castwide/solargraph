@@ -3,14 +3,7 @@ require 'json'
 require 'fileutils'
 require 'rubygems/package'
 require 'zlib'
-begin
-  require 'eventmachine'
-rescue LoadError => e
-  # @see https://github.com/eventmachine/eventmachine/issues/820
-  STDERR.puts "EventMachine failed to load with error: [#{e.class}] #{e.message}"
-  STDERR.puts "Loading em/pure_ruby instead"
-  require 'em/pure_ruby'
-end
+require 'eventmachine'
 
 module Solargraph
   class Shell < Thor
