@@ -13,14 +13,6 @@ describe Solargraph::YardMap do
     expect(result.map(&:to_s)).to include('try_convert')
   end
 
-  # @todo May not apply anymore
-  # it "does not raise Exception in add_gem_dependencies" do
-  #   allow(YARD::Registry).to receive(:yardoc_file_for_gem).with("parser").and_return(false)
-  #   allow(YARD::Registry).to receive(:yardoc_file_for_gem).with("ast").and_return(nil)
-  #   Solargraph::YardMap.new required: ['parser']
-  #   expect(true).to eq true
-  # end
-
   it "gracefully fails to resolve unknown require paths" do
     expect {
       yard_map = Solargraph::YardMap.new(required: ['invalid_path'])
@@ -74,7 +66,7 @@ describe Solargraph::YardMap do
       ))
       File.write(File.join(dir, 'alt_lib', 'bundler.rb'), "puts 'test'")
       yard_map = Solargraph::YardMap.new(required: ['bundler'], workspace: Solargraph::Workspace.new(dir))
-      incl = yard_map.yardocs.select{|y| y.include?('bundler')}
+      incl = yard_map.yardocs.select { |y| y.include?('bundler') }
       expect(incl).to be_empty
     end
   end
