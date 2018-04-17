@@ -71,6 +71,28 @@ describe Solargraph::YardMap do
     end
   end
 
+  it "supports nested gemspecs" do
+    # This spec assumes that the bundler gem is installed on the path
+    # and has generated yardocs
+    Dir.mktmpdir do |dir|
+      Dir.mkdir(File.join(dir, 'foo'))
+      Dir.mkdir(File.join(dir, 'foo', 'bar'))
+      Dir.mkdir(File.join(dir, 'foo', 'bar', 'lib'))
+      File.write(File.join(dir, 'foo', 'bar', 'lib', 'bundler.rb'), "puts 'hello'")
+      File.write(File.join(dir, 'foo', 'bar', 'alt.gemspec'), %(
+        Gem::Specification.new do |s|
+          s.name          = 'test'
+          s.version       = '1.0.0'
+          s.summary       = "Test"
+          s.files         = Dir['**/*']
+        end
+      ))
+      yard_map = Solargraph::YardMap.new(required: ['bundler'], workspace: Solargraph::Workspace.new(dir))
+      incl = yard_map.yardocs.select { |y| y.include?('bundler') }
+      expect(incl).to be_empty
+    end
+  end
+
   it "tracks unresolved requires" do
     yard_map = Solargraph::YardMap.new(required: ['bundler', 'not_a_valid_path'])
     expect(yard_map.unresolved_requires).to include('not_a_valid_path')

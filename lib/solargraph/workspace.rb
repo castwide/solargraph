@@ -136,7 +136,8 @@ module Solargraph
       result = []
       gemspecs.each do |file|
         spec = Gem::Specification.load(file)
-        result.concat spec.require_paths.map{ |path| File.join(directory, path) } unless spec.nil?
+        base = File.dirname(file)
+        result.concat spec.require_paths.map{ |path| File.join(base, path) } unless spec.nil?
       end
       result.push File.join(directory, 'lib') if result.empty?
       result
