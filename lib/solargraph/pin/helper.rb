@@ -18,8 +18,8 @@ module Solargraph
 
       def html_markup_rdoc(text)
         # @todo The :rdoc markup class might not be immediately available.
-        #   If not, return nil under the assumption that the problem will fix
-        #   itself.
+        #   If not, return nil for now under the assumption that the problem
+        #   will eventually fix itself.
         return nil if markup_class(:rdoc).nil?
         super
       end
