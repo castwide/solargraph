@@ -217,6 +217,10 @@ module Solargraph
     #
     # @return [Array<Hash>]
     def diagnose filename
+      # @todo Only open files get diagnosed. Determine whether anything or
+      #   everything in the workspace should get diagnosed, or if there should
+      #   be an option to do so.
+      return [] unless open?(filename)
       result = []
       source = read(filename)
       workspace.config.reporters.each do |name|
@@ -252,6 +256,7 @@ module Solargraph
       @workspace
     end
 
+    # @raise [FileNotFoundError] if the file is not open
     # @param filename [String]
     # @return [Solargraph::Source]
     def read filename
