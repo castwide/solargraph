@@ -123,6 +123,7 @@ module Solargraph
       def close uri
         @change_semaphore.synchronize do
           library.close uri_to_file(uri)
+          @diagnostics_queue.push uri
         end
       end
 
