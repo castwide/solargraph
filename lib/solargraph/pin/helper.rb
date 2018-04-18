@@ -1,6 +1,4 @@
 require 'yard'
-require 'yard/templates/helpers/markup_helper'
-require 'yard/templates/helpers/html_helper'
 
 module Solargraph
   module Pin
@@ -18,10 +16,18 @@ module Solargraph
         '.'
       end
 
+      def html_markup_rdoc(text)
+        # @todo The :rdoc markup class might not be immediately available.
+        #   If not, return nil under the assumption that the problem will fix
+        #   itself.
+        return nil if markup_class(:rdoc).nil?
+        super
+      end
+
       def options
         if @options.nil?
           @options = YARD::Templates::TemplateOptions.new
-          @options.type = :rdoc
+          @options[:type] = :rdoc
         end
         @options
       end
