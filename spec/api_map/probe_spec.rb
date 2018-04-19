@@ -53,4 +53,26 @@ describe Solargraph::ApiMap::Probe do
     type = api_map.probe.infer_signature_type('Bar', mod, [])
     expect(type).to eq('Class<Foo::Bar>')
   end
+
+  it "infers pins in correct scope for instance variables" do
+    api_map = Solargraph::ApiMap.new
+    # @foo is String in class scope and Array in instance scope
+    source = Solargraph::Source.load_string(%(
+      module MyModule
+        @foo = 'foo'
+        def foo
+          @foo = []
+        end
+      end
+    ))
+    api_map.virtualize source
+    mod = source.pins.select{|pin| pin.path == 'MyModule'}.first
+    pins = api_map.probe.infer_signature_pins('@foo', mod, [])
+    expect(pins.length).to eq(1)
+    expect(pins.first.return_type).to eq('String')
+    meth = source.pins.select{|pin| pin.path == 'MyModule#foo'}.first
+    pins = api_map.probe.infer_signature_pins('@foo', meth, [])
+    expect(pins.length).to eq(1)
+    expect(pins.first.return_type).to eq('Array')
+  end
 end
