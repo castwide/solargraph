@@ -335,6 +335,14 @@ module Solargraph
         }, &block
       end
 
+      # Get a list of IDs for server requests that are waiting for responses
+      # from the client.
+      #
+      # @return [Array<Integer>]
+      def pending_requests
+        requests.keys
+      end
+
       private
 
       # @return [Solargraph::Library]

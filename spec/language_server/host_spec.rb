@@ -10,7 +10,7 @@ describe Solargraph::LanguageServer::Host do
     end
   end
 
-  it "receives responses to message requests" do
+  it "processes responses to message requests" do
     host = Solargraph::LanguageServer::Host.new
     done_somethings = 0
     host.send_request 'window/showMessageRequest', {
@@ -19,9 +19,9 @@ describe Solargraph::LanguageServer::Host do
     } do |response|
       done_somethings += 1 if response == 'Do something'
     end
-    # Assuming the ID is 0 because it's the first message
+    expect(host.pending_requests.length).to eq(1)
     host.start({
-      'id' => 0,
+      'id' => host.pending_requests.first,
       'result' => 'Do something'
     })
     expect(done_somethings).to eq(1)
