@@ -39,12 +39,13 @@ module Solargraph
   YARD_EXTENSION_FILE = File.join(File.realpath(File.dirname(__FILE__)), 'yard-solargraph.rb')
   VIEWS_PATH = File.join(File.realpath(File.dirname(__FILE__)), 'solargraph', 'views')
 
-  def self.trace
+  def self.trace logfile: 'solargraph.log', level: :error
     tracer = Tracer.load(Dir.pwd)
     at_exit do
       tracer.stop
-      File.open 'solargraph.txt', 'w' do |file|
+      File.open logfile, 'w' do |file|
         tracer.log.each do |issue|
+          next unless level == :warning or issue.severity == :error
           file.puts "[#{issue.severity}] #{issue.message}"
           file.puts "  #{issue.backtrace[0, 2].join($/ + '  ')}"
         end
@@ -54,7 +55,7 @@ module Solargraph
       else
         errors = tracer.log(:error).length
         warnings = tracer.log(:warning).length
-        puts "Solargraph trace found #{errors} error#{errors == 1 ? '' : 's'} and #{warnings} warning#{warnings == 1 ? '' : 's'}."
+        puts "Solargraph trace found #{errors} error#{errors == 1 ? '' : 's'} and #{level == :error ? 'ignored ' : ''}#{warnings} warning#{warnings == 1 ? '' : 's'}."
       end
     end
     tracer.run
