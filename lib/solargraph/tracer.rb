@@ -157,7 +157,10 @@ module Solargraph
         # Issue a warning for undefined return types unless the value is nil
         log_cache.push Issue.new(:warning, "`#{pin.path}` does not have a return type and returned #{value.class.to_s}", pin.name, pin, backtrace) unless value.nil?
       else
-        expected, scope = extract_namespace_and_scope(pin.return_type)
+        type, scope = extract_namespace_and_scope(pin.return_type)
+        expected = nil
+        expected = 'Boolean' if type == 'Boolean'
+        expected = @api_map.qualify(type, pin.namespace) if expected.nil?
         log_cache.push Issue.new(:error, "`#{pin.path}` should return #{pin.return_type} but returned #{value.class.to_s}", pin.name, pin, backtrace) unless satisfied?(expected, value)
       end
     end
