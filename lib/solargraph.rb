@@ -1,12 +1,20 @@
 require 'solargraph/version'
 require 'rubygems/package'
 require 'yard-solargraph'
+require 'sinatra'
 
 module Solargraph
   class InvalidOffsetError <      RangeError; end
   class DiagnosticsError <        RuntimeError; end
-  class FileNotFoundError <       Exception; end
+  class FileNotFoundError <       RuntimeError; end
   class SourceNotAvailableError < StandardError; end
+
+  class WorkspaceTooLargeError < RuntimeError
+    attr_reader :size
+    def initialize size
+      @size = size
+    end
+  end
 
   autoload :Shell,          'solargraph/shell'
   autoload :Source,         'solargraph/source'

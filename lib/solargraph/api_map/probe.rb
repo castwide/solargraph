@@ -66,6 +66,7 @@ module Solargraph
         return [] if word.empty?
         lvars = locals.select{|pin| pin.name == word}
         return lvars unless lvars.empty?
+        return api_map.get_global_variable_pins.select{|pin| pin.name == word} if word.start_with?('$')
         namespace, scope = extract_namespace_and_scope_from_pin(context_pin)
         return api_map.pins.select{|pin| word_matches_context?(word, namespace, scope, pin)} if variable_name?(word)
         result = []
@@ -139,13 +140,12 @@ module Solargraph
       end
 
       # Extract a namespace and a scope from a pin. For now, the pin must
-      # be either a method or a namespace. It probably makes sense to support
-      # blocks at some point.
+      # be either a namespace, a method, or a block.
       #
       # @return [Array] The namespace (String) and scope (Symbol).
       def extract_namespace_and_scope_from_pin pin
         return [pin.namespace, pin.scope] if pin.kind == Pin::METHOD
-        return [pin.namespace, :class] if pin.kind == Pin::NAMESPACE
+        return [pin.path, :class] if pin.kind == Pin::NAMESPACE
         # @todo Is :class appropriate for blocks?
         return [pin.namespace, :class] if pin.kind == Pin::BLOCK
         raise "Unable to extract namespace and scope from #{pin.path}"

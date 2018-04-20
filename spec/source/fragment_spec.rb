@@ -153,6 +153,31 @@ describe Solargraph::Source::Fragment do
     expect(fragment.base).to eq('Foo::Bar.method_call')
   end
 
+  it "includes local variables from a block's named context" do
+    source = Solargraph::Source.new(%(
+      lvar = 'lvar'
+      100.times do
+        puts
+      end
+    ))
+    fragment = source.fragment_at(3, 0)
+    expect(fragment.locals.length).to eq(1)
+    expect(fragment.locals[0].name).to eq('lvar')
+  end
+
+  it "excludes local variables from different blocks" do
+    source = Solargraph::Source.new(%(
+      100.times do
+        lvar = 'lvar'
+      end
+      100.times do
+
+      end
+    ))
+    fragment = source.fragment_at(5, 0)
+    expect(fragment.locals).to be_empty
+  end
+
   # @todo Fragment is no longer responsible for calculating locals.
   # it "calculates local variables with literal assignments" do
   #   source = Solargraph::Source.new(%(

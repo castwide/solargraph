@@ -4,12 +4,10 @@ module Solargraph
       module TextDocument
         class OnTypeFormatting < Base
           def process
-            # @todo Temporarily disabled
-            set_result nil
-            return
-            src = host.library.checkout(uri_to_file(params['textDocument']['uri']))
-            offset = src.get_offset(params['position']['line'], params['position']['character'])
-            if src.string_at?(offset-1) and params['ch'] == '{' and src.code[offset-2,2] == '#{'
+            src = host.send(:library).checkout(uri_to_file(params['textDocument']['uri']))
+            fragment = src.fragment_at(params['position']['line'], params['position']['character'] - 1)
+            offset = fragment.send(:offset)
+            if fragment.string? and params['ch'] == '{' and src.code[offset-1,2] == '#{'
               set_result(
                 [
                   {
@@ -22,7 +20,8 @@ module Solargraph
                 ]
               )
             else
-              set_result []
+              # @todo Is `nil` or `[]` more appropriate here?
+              set_result nil
             end
           end
         end

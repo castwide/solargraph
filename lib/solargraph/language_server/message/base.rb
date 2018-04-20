@@ -16,7 +16,7 @@ module Solargraph
           @id = request['id'].freeze
           @request = request.freeze
           @method = request['method'].freeze
-          @params = request['params'].freeze
+          @params = (request['params'] || {}).freeze
           post_initialize
         end
 

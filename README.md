@@ -32,6 +32,16 @@ Plug-ins and extensions are available for the following editors:
 * **Emacs**
     * GitHub: https://github.com/guskovd/emacs-solargraph
 
+### Gem Support
+
+Solargraph is capable of providing code completion and documentation for gems that have YARD documentation. You can make sure your gems are documented by running `yard gems` from the command line. (The first time you run it might take a while if you have a lot of gems installed).
+
+When editing code, a `require` call that references a gem will pull the documentation into the code maps and include the gem's API in code completion and intellisense.
+
+### More Information
+
+See [http://solargraph.org/tips](http://solargraph.org/tips) for more tips on using Solargraph with an editor.
+
 ## How It Works
 
 Solargraph uses [parser](https://github.com/whitequark/parser) for code analysis and [YARD](https://github.com/lsegal/yard) for API documentation.

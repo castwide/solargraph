@@ -12,7 +12,7 @@ describe Solargraph::Source do
       require 'solargraph'
     )
     source = Solargraph::Source.new(code, 'file.rb')
-    expect(source.requires).to include('solargraph')
+    expect(source.requires.map(&:name)).to include('solargraph')
   end
 
   it "ignores dynamic require calls" do

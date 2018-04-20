@@ -4,7 +4,8 @@ require 'set'
 module Solargraph
   module LanguageServer
     # The language server protocol's data provider. Hosts are responsible for
-    # querying the library and processing messages.
+    # querying the library and processing messages. They also provide thread
+    # safety for multi-threaded transports.
     #
     class Host
       include Solargraph::LanguageServer::UriHelpers
@@ -18,10 +19,13 @@ module Solargraph
         @cancel = []
         @buffer = ''
         @stopped = false
+        @next_request_id = 0
         start_change_thread
         start_diagnostics_thread
       end
 
+      # Update the configuration options with the provided hash.
+      #
       # @param update [Hash]
       def configure update
         options.merge! update unless update.nil?
@@ -46,18 +50,36 @@ module Solargraph
         @cancel_semaphore.synchronize { @cancel.delete id }
       end
 
+      # Start processing a request from the client. After the message is
+      # processed, the transport is responsible for sending the response.
+      #
+      # @param request [Hash] The contents of the message.
+      # @return [Solargraph::LanguageServer::Message] The message handler.
       def start request
-        message = Message.select(request['method']).new(self, request)
-        begin
-          message.process
-        rescue Exception => e
-          STDERR.puts e.message
-          STDERR.puts e.backtrace
-          message.set_error Solargraph::LanguageServer::ErrorCodes::INTERNAL_ERROR, "[#{e.class}] #{e.message}"
+        if request['method']
+          message = Message.select(request['method']).new(self, request)
+          begin
+            message.process
+          rescue Exception => e
+            STDERR.puts e.message
+            STDERR.puts e.backtrace
+            message.set_error Solargraph::LanguageServer::ErrorCodes::INTERNAL_ERROR, "[#{e.class}] #{e.message}"
+          end
+          message
+        elsif request['id']
+          # @todo What if the id is invalid?
+          requests[request['id']].process(request['result'])
+          requests.delete request['id']
+        else
+          STDERR.puts "Invalid message received."
         end
-        message
       end
 
+      # Respond to a notification that a file was created in the workspace.
+      # The library will determine whether the file should be added to the
+      # workspace; see Solargraph::Library#create_from_disk.
+      #
+      # @param uri [String] The file uri.
       def create uri
         filename = uri_to_file(uri)
         @change_semaphore.synchronize do
@@ -65,6 +87,9 @@ module Solargraph
         end
       end
 
+      # Delete the specified file from the library.
+      #
+      # @param uri [String] The file uri.
       def delete uri
         @change_semaphore.synchronize do
           filename = uri_to_file(uri)
@@ -72,6 +97,11 @@ module Solargraph
         end
       end
 
+      # Open the specified file in the library.
+      #
+      # @param uri [String] The file uri.
+      # @param text [String] The contents of the file.
+      # @param version [Integer] A version number.
       def open uri, text, version
         @change_semaphore.synchronize do
           library.open uri_to_file(uri), text, version
@@ -79,6 +109,9 @@ module Solargraph
         end
       end
 
+      # True if the specified file is currently open in the library.
+      #
+      # @return [Boolean]
       def open? uri
         result = nil
         @change_semaphore.synchronize do
@@ -90,6 +123,7 @@ module Solargraph
       def close uri
         @change_semaphore.synchronize do
           library.close uri_to_file(uri)
+          @diagnostics_queue.push uri
         end
       end
 
@@ -124,12 +158,18 @@ module Solargraph
         end
       end
 
+      # Queue a message to be sent to the client.
+      #
+      # @param message [String] The message to send.
       def queue message
         @buffer_semaphore.synchronize do
           @buffer += message
         end
       end
 
+      # Clear the message buffer and return the most recent data.
+      #
+      # @return [String] The most recent data or an empty string.
       def flush
         tmp = nil
         @buffer_semaphore.synchronize do
@@ -139,15 +179,29 @@ module Solargraph
         tmp
       end
 
+      # Prepare a library for the specified directory.
+      #
       # @param directory [String]
       def prepare directory
         path = nil
         path = normalize_separators(directory) unless directory.nil?
         @change_semaphore.synchronize do
-          @library = Solargraph::Library.load(path)
+          begin
+            @library = Solargraph::Library.load(path)
+          rescue WorkspaceTooLargeError => e
+            send_notification 'window/showMessage', {
+              'type' => Solargraph::LanguageServer::MessageTypes::WARNING,
+              'message' => "The workspace is too large to index (#{e.size} files, max #{Workspace::MAX_WORKSPACE_SIZE})"
+            }
+            @library = Solargraph::Library.load(nil)
+          end
         end
       end
 
+      # Send a notification to the client.
+      #
+      # @param method [String] The message method
+      # @param params [Hash] The method parameters
       def send_notification method, params
         response = {
           jsonrpc: "2.0",
@@ -159,6 +213,29 @@ module Solargraph
         queue envelope
       end
 
+      # Send a request to the client and execute the provided block to process
+      # the response.
+      #
+      # @param method [String] The message method
+      # @param params [Hash] The method parameters
+      # @yieldparam [Hash] The result sent by the client
+      def send_request method, params, &block
+        message = {
+          jsonrpc: "2.0",
+          method: method,
+          params: params,
+          id: @next_request_id
+        }
+        json = message.to_json
+        requests[@next_request_id] = Request.new(@next_request_id, &block)
+        envelope = "Content-Length: #{json.bytesize}\r\n\r\n#{json}"
+        queue envelope
+        @next_request_id += 1
+      end
+
+      # True if the specified file is in the process of changing.
+      #
+      # @return [Boolean]
       def changing? file_uri
         result = false
         @change_semaphore.synchronize do
@@ -243,6 +320,29 @@ module Solargraph
         library.file_symbols(uri_to_file(uri))
       end
 
+      def show_message text, type = LanguageServer::MessageTypes::INFO
+        send_notification 'window/showMessage', {
+          type: type,
+          message: text
+        }
+      end
+
+      def show_message_request text, type, actions, &block
+        send_request 'window/showMessageRequest', {
+          type: type,
+          message: text,
+          actions: actions
+        }, &block
+      end
+
+      # Get a list of IDs for server requests that are waiting for responses
+      # from the client.
+      #
+      # @return [Array<Integer>]
+      def pending_requests
+        requests.keys
+      end
+
       private
 
       # @return [Solargraph::Library]
@@ -252,6 +352,10 @@ module Solargraph
 
       def unsafe_changing? file_uri
         @change_queue.any?{|change| change['textDocument']['uri'] == file_uri}
+      end
+
+      def requests
+        @requests ||= {}
       end
 
       def start_change_thread
@@ -282,7 +386,7 @@ module Solargraph
                     next true
                   elsif change['textDocument']['version'] <= source.version
                     # @todo Is deleting outdated changes correct behavior?
-                    STDERR.puts "Warning: outdated to change to #{change['textDocument']['uri']} was ignored"
+                    STDERR.puts "Warning: outdated change to #{change['textDocument']['uri']} was ignored"
                     @diagnostics_queue.push change['textDocument']['uri']
                     next true
                   else
@@ -325,8 +429,10 @@ module Solargraph
               end
               next if current.nil? or already_changing
               filename = uri_to_file(current)
-              text = library.read_text(filename)
-              results = diagnoser.diagnose text, filename
+              # text = library.read_text(filename)
+              # results = diagnoser.diagnose text, filename
+              # results.concat library.diagnose(filename)
+              results = library.diagnose(filename)
               @change_semaphore.synchronize do
                 already_changing = (unsafe_changing?(current) or @diagnostics_queue.include?(current))
                 # publish_diagnostics current, resp unless already_changing
@@ -344,13 +450,9 @@ module Solargraph
                 type: LanguageServer::MessageTypes::ERROR,
                 message: "Error in diagnostics: #{e.message}"
               }
-            rescue Errno::ENOENT => e
-              STDERR.puts "Error in diagnostics: RuboCop could not be found"
-              options['diagnostics'] = false
-              send_notification 'window/showMessage', {
-                type: LanguageServer::MessageTypes::ERROR,
-                message: "Error in diagnostics: RuboCop could not be found"
-              }
+            rescue Exception => e
+              STDERR.puts "#{e.message}"
+              STDERR.puts "#{e.backtrace}"
             end
           end
         end

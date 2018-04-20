@@ -26,6 +26,7 @@ module Solargraph
         @raw_data ||= {}
         @raw_data['include'] ||= include_globs
         @raw_data['exclude'] ||= exclude_globs
+        @raw_data['reporters'] ||= []
         @raw_data['domains'] ||= []
         @raw_data['required'] ||= []
         @raw_data['plugins'] ||= []
@@ -69,6 +70,14 @@ module Solargraph
         raw_data['plugins']
       end
 
+      def reporters
+        raw_data['reporters']
+      end
+
+      def require_paths
+        @require_paths ||= generate_require_paths
+      end
+
       private
 
       def process_globs globs
@@ -100,6 +109,9 @@ module Solargraph
 
       def glob_to_directory glob
         glob.gsub(/(\/\*|\/\*\*\/\*\*?)$/, '')
+      end
+
+      def generate_require_paths
       end
     end
   end

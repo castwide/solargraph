@@ -58,4 +58,12 @@ describe Solargraph::Workspace do
       expect(workspace.filenames).not_to include(file)
     end
   end
+
+  it "raises an exception for workspace size limits" do
+    config = double
+    allow(config).to receive(:calculated).and_return(Array.new(Solargraph::Workspace::MAX_WORKSPACE_SIZE + 1))
+    expect {
+      workspace = Solargraph::Workspace.new('.', config)
+    }.to raise_error(Solargraph::WorkspaceTooLargeError)
+  end
 end
