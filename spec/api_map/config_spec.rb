@@ -3,6 +3,7 @@ require 'tmpdir'
 describe Solargraph::Workspace::Config do
   it "reads workspace files from config" do
     Dir.mktmpdir do |dir|
+      dir = File.realdirpath(dir)
       File.open(File.join(dir, 'foo.rb'), 'w') do |file|
         file << 'test'
       end

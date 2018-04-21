@@ -3,6 +3,7 @@ require 'tmpdir'
 describe Solargraph::Workspace do
   it "loads sources from a directory" do
     Dir.mktmpdir do |dir|
+      dir = File.realdirpath(dir)
       file = File.join(dir, 'file.rb')
       File.write file, 'exit'
       workspace = Solargraph::Workspace.new(dir)
@@ -13,6 +14,7 @@ describe Solargraph::Workspace do
 
   it "ignores non-Ruby files by default" do
     Dir.mktmpdir do |dir|
+      dir = File.realdirpath(dir)
       file = File.join(dir, 'file.rb')
       File.write file, 'exit'
       not_ruby = File.join(dir, 'not_ruby.txt')
@@ -25,6 +27,7 @@ describe Solargraph::Workspace do
 
   it "does not merge non-workspace sources" do
     Dir.mktmpdir do |dir|
+      dir = File.realdirpath(dir)
       workspace = Solargraph::Workspace.new(dir)
       source = Solargraph::Source.load_string('exit', 'not_ruby.txt')
       workspace.merge source
@@ -34,6 +37,7 @@ describe Solargraph::Workspace do
 
   it "updates sources" do
     Dir.mktmpdir do |dir|
+      dir = File.realdirpath(dir)
       file = File.join(dir, 'file.rb')
       File.write file, 'exit'
       workspace = Solargraph::Workspace.new(dir)
@@ -48,6 +52,7 @@ describe Solargraph::Workspace do
 
   it "removes deleted sources" do
     Dir.mktmpdir do |dir|
+      dir = File.realdirpath(dir)
       file = File.join(dir, 'file.rb')
       File.write file, 'exit'
       workspace = Solargraph::Workspace.new(dir)
