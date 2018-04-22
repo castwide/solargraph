@@ -18,14 +18,17 @@ describe Solargraph::Library do
   end
 
   it "does not open created files in the workspace" do
-    Dir.mktmpdir do |dir|
-      file = File.join(dir, 'file.rb')
-      File.write(file, 'a = b')
-      library = Solargraph::Library.load(dir)
-      result = library.create(file, File.read(file))
+    Dir.mktmpdir do |temp_dir_path|
+      # Ensure we resolve any symlinks to their real path
+      workspace_path = File.realpath(temp_dir_path)
+      file_path = File.join(workspace_path, 'file.rb')
+      File.write(file_path, 'a = b')
+      library = Solargraph::Library.load(workspace_path)
+      result = library.create(file_path, File.read(file_path))
+
       expect(result).to be(true)
       expect {
-        library.checkout file
+        library.checkout file_path
       }.to raise_error(Solargraph::FileNotFoundError)
     end
   end
@@ -111,12 +114,14 @@ describe Solargraph::Library do
   end
 
   it "adds mergeable files to the workspace in create_from_disk" do
-    Dir.mktmpdir do |dir|
-      library = Solargraph::Library.load(dir)
-      filename = File.join(dir, 'created.rb')
-      File.write(filename, "puts 'hello'")
-      expect(library.create_from_disk(filename)).to be(true)
-      expect(library.contain?(filename)).to be(true)
+    Dir.mktmpdir do |temp_dir_path|
+      # Ensure we resolve any symlinks to their real path
+      workspace_path = File.realpath(temp_dir_path)
+      library = Solargraph::Library.load(workspace_path)
+      file_path = File.join(workspace_path, 'created.rb')
+      File.write(file_path, "puts 'hello'")
+      expect(library.create_from_disk(file_path)).to be(true)
+      expect(library.contain?(file_path)).to be(true)
     end
   end
 
