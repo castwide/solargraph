@@ -2,7 +2,7 @@ require 'tmpdir'
 
 describe Solargraph::Workspace::Config do
   let(:config) { described_class.new(workspace_path) }
-  let(:workspace_path) { Dir.mktmpdir }
+  let(:workspace_path) { File.realpath(Dir.mktmpdir) }
 
   after(:each) { FileUtils.remove_entry(workspace_path) }
 
