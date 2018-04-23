@@ -57,6 +57,7 @@ module Solargraph
       @sources.each do |s|
         result.concat s.required.map(&:name)
       end
+      result.concat workspace.config.required
       result.uniq
     end
 
