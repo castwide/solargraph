@@ -122,9 +122,13 @@ module Solargraph
       unless directory.nil?
         size = config.calculated.length
         raise WorkspaceTooLargeError.new(size) if size > MAX_WORKSPACE_SIZE
+
         config.calculated.each do |filename|
-          src = Solargraph::Source.load(filename)
-          source_hash[filename] = src
+          begin
+            source_hash[filename] = Solargraph::Source.load(filename)
+          rescue EncodingError => e
+            warn("Unable to parse #{filename} - #{e.class}: #{e.message}")
+          end
         end
       end
       @stime = Time.now
