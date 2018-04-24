@@ -26,7 +26,9 @@ module Solargraph
       @required = required.clone
       @namespace_yardocs = {}
       @gem_paths = {}
-      process_gem_paths
+      # @todo Bundler shuffle might not be necessary
+      # process_gem_paths
+      process_requires
       yardocs.push CoreDocs.yardoc_file
       yardocs.uniq!
       yardocs.delete_if{ |y| y.start_with? workspace.directory } unless workspace.nil? or workspace.directory.nil?
