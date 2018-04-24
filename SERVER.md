@@ -1,6 +1,6 @@
 # Solargraph Server Documentation
 
-**NOTE: Although the web server is still supported, it is highly recommended that client implementors use the [language server protocol](LANGUAGE_SERVER.md) if possible.**
+**NOTE: The legacy web server is a candidate for deprecation. It is highly recommended that client implementors use the [language server protocol](LANGUAGE_SERVER.md) if possible.**
 
 ## Running the Server
 

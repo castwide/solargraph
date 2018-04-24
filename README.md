@@ -57,8 +57,9 @@ a TCP transport. The default port is 7658.
 
 ### The Legacy Server
 
-The server subcommand runs a local web server that listens for suggestion requests. Although this server will continue to be supported for the foreseeable future,
-updating to the language server is highly recommended.
+The server subcommand runs a local web server that listens for suggestion requests.
+
+**Warning:** This integration method is very likely to be deprecated in the near future. Using the language server is highly recommended.
 
 ### Standalone Suggest
 
