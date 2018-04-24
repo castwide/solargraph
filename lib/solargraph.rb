@@ -21,7 +21,6 @@ module Solargraph
   autoload :ApiMap,         'solargraph/api_map'
   autoload :NodeMethods,    'solargraph/node_methods'
   autoload :Suggestion,     'solargraph/suggestion'
-  autoload :Server,         'solargraph/server'
   autoload :YardMap,        'solargraph/yard_map'
   autoload :Pin,            'solargraph/pin'
   autoload :LiveMap,        'solargraph/live_map'

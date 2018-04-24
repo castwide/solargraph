@@ -410,48 +410,6 @@ module Solargraph
       def load_string code, filename = nil
         Source.new code, filename
       end
-
-      def fix code, filename = nil, offset = nil
-        tries = 0
-        offset = Source.get_offset(code, offset[0], offset[1]) if offset.kind_of?(Array)
-        pos = nil
-        pos = get_position_at(code, offset) unless offset.nil?
-        stubs = []
-        fixed_position = false
-        tmp = code.sub(/\.(\s*\z)$/, ' \1')
-        begin
-          node, comments = Source.parse(tmp, filename)
-          Source.new(code, node, comments, filename, stubs)
-        rescue Parser::SyntaxError => e
-          if tries < 10
-            tries += 1
-            # Stub periods before the offset to retain the expected node tree
-            if !offset.nil? and ['.', '{', '('].include?(tmp[offset-1])
-              tmp = tmp[0, offset-1] + ';' + tmp[offset..-1]
-            elsif !fixed_position and !offset.nil?
-              fixed_position = true
-              beg = beginning_of_line_from(tmp, offset)
-              tmp = "#{tmp[0, beg]}##{tmp[beg+1..-1]}"
-              stubs.push(pos[0])
-            elsif e.message.include?('token $end')
-              tmp += "\nend"
-            elsif e.message.include?("unexpected `@'")
-              tmp = tmp[0, e.diagnostic.location.begin_pos] + '_' + tmp[e.diagnostic.location.begin_pos+1..-1]
-            end
-            retry
-          end
-          STDERR.puts "Unable to parse file #{filename.nil? ? 'undefined' : filename}: #{e.message}"
-          node, comments = parse(code.gsub(/[^\s]/, ' '), filename)
-          Source.new(code, node, comments, filename)
-        end
-      end
-
-      def beginning_of_line_from str, i
-        while i > 0 and str[i-1] != "\n"
-          i -= 1
-        end
-        i
-      end
     end
   end
 end

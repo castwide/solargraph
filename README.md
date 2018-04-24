@@ -48,17 +48,12 @@ Solargraph uses [parser](https://github.com/whitequark/parser) for code analysis
 
 ## Using the `solargraph` Executable
 
-The gem includes an executable that provides access to the library's features. For code completion, IDEs will typically integrate using `solargraph socket`, `solargraph server`, or `solargraph suggest`.
+The gem includes an executable that provides access to the library's features. For code completion, IDEs will typically integrate using `solargraph socket` or `solargraph suggest`.
 
 ### Language Server Protocol
 
 The language server protocol is the recommended way for integrating Solargraph into editors and IDEs. Run `solargraph socket` to start a language server using
 a TCP transport. The default port is 7658.
-
-### The Legacy Server
-
-The server subcommand runs a local web server that listens for suggestion requests. Although this server will continue to be supported for the foreseeable future,
-updating to the language server is highly recommended.
 
 ### Standalone Suggest
 
