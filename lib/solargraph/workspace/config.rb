@@ -26,9 +26,9 @@ module Solargraph
         @raw_data ||= {}
         @raw_data['include'] ||= include_globs
         @raw_data['exclude'] ||= exclude_globs
-        @raw_data['reporters'] ||= []
+        @raw_data['require'] ||= []
         @raw_data['domains'] ||= []
-        @raw_data['required'] ||= []
+        @raw_data['reporters'] ||= []
         @raw_data['plugins'] ||= []
         included
         excluded
@@ -63,7 +63,7 @@ module Solargraph
       end
 
       def required
-        raw_data['required']
+        raw_data['require']
       end
 
       def plugins
