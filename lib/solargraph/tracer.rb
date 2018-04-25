@@ -146,7 +146,10 @@ module Solargraph
           next
         end
         lvar = tp.binding.local_variable_get(param.name.to_sym)
-        expected, scope = extract_namespace_and_scope(tag)
+        type, scope = extract_namespace_and_scope(tag)
+        expected = nil
+        expected = 'Boolean' if type == 'Boolean'
+        expected = @api_map.qualify(type, pin.namespace) if expected.nil?
         log_cache.push Issue.new(:error, "`#{pin.path}` parameter `#{param.name}` expected #{expected} but received #{lvar.class.to_s}", pin.name, pin, backtrace) unless satisfied?(expected, lvar)
       end
     end
