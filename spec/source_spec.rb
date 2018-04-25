@@ -603,4 +603,10 @@ describe Solargraph::Source do
     pin = source.locate_named_path_pin(1, 1)
     expect(pin.path).to eq('')
   end
+
+  it "fixes invalid byte sequences in UTF-8 encoding" do
+    expect {
+      Solargraph::Source.load('spec/fixtures/invalid_byte.rb')
+    }.not_to raise_error
+  end
 end

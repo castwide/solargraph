@@ -56,17 +56,4 @@ describe Solargraph::Workspace do
       Solargraph::Workspace.new('.', config)
     }.to raise_error(Solargraph::WorkspaceTooLargeError)
   end
-
-  it "skips files that raise an encoding exception" do
-    invalid_byte_file_path = File.join(dir_path, 'invalid_byte.rb')
-    FileUtils.cp('spec/fixtures/invalid_byte.rb', invalid_byte_file_path)
-
-    # Ensure that we continue parsing files in the workspace after encountering
-    # a recoverable error. 'invalid_byte.rb' will throw an encoding error
-    # during parsing
-    config = double(:config, calculated: [invalid_byte_file_path, file_path])
-
-    expect(workspace).not_to have_file(invalid_byte_file_path)
-    expect(workspace).to have_file(file_path)
-  end
 end

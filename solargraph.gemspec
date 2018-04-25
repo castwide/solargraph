@@ -31,6 +31,4 @@ Gem::Specification.new do |s|
 
   s.add_development_dependency 'rspec', '~> 3.5', '>= 3.5.0'
   s.add_development_dependency 'simplecov', '~> 0.14'
-  s.add_development_dependency 'debase', '~> 0.2'
-  s.add_development_dependency 'ruby-debug-ide', '~> 0.6'
 end
