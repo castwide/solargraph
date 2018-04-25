@@ -9,7 +9,6 @@ module Solargraph
             capabilities: {
               textDocumentSync: 2, # @todo What should this be?
               definitionProvider: true,
-              documentFormattingProvider: true,
               documentSymbolProvider: true,
               workspaceSymbolProvider: true,
               workspace: {

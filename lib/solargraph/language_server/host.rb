@@ -373,7 +373,8 @@ module Solargraph
           'completion' => true,
           'hover' => true,
           'autoformat' => true,
-          'diagnostics' => true
+          'diagnostics' => true,
+          'formatting' => true
         }
       end
 
