@@ -26,8 +26,6 @@ module Solargraph
       @required = required.clone
       @namespace_yardocs = {}
       @gem_paths = {}
-      # @todo Bundler shuffle might not be necessary
-      # process_gem_paths
       process_requires
       yardocs.push CoreDocs.yardoc_file
       yardocs.uniq!
@@ -267,31 +265,6 @@ module Solargraph
 
     def cache_core
       get_constants '', ''
-    end
-
-    def process_gem_paths
-      if !has_bundle? or workspace.nil? or ENV['BUNDLE_GEMFILE'] == File.join(workspace.directory, 'Gemfile')
-        # Trust the current environment if Bundler is not being used or the
-        # workspace's Gemfile was loaded
-        process_requires
-      else
-        # Temporarily load the workspace in a clean environment to identify
-        # its gems
-        processed = false
-        Bundler.with_clean_env do
-          Bundler.environment.chdir(workspace.directory) do
-            begin
-              Bundler.reset!
-              process_requires
-              processed = true
-            rescue Exception => e
-              STDERR.puts "#{e.class}: #{e.message}"
-            end
-          end
-        end
-        Bundler.reset!
-        process_requires unless processed
-      end
     end
 
     def process_requires
