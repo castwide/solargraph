@@ -33,7 +33,7 @@ module Solargraph
 
       # @return [Hash]
       def options
-        @options ||= {}
+        @options ||= default_configuration
       end
 
       def cancel id
@@ -366,6 +366,15 @@ module Solargraph
       # @return [Array<Integer>]
       def pending_requests
         requests.keys
+      end
+
+      def default_configuration
+        {
+          'completion' => true,
+          'hover' => true,
+          'autoformat' => true,
+          'diagnostics' => true
+        }
       end
 
       private

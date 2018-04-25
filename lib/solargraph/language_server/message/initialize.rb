@@ -33,10 +33,6 @@ module Solargraph
               }
             }
           )
-          # Initialize dynamic options in case the client didn't send them
-          host.options['completion'] ||= (host.options['completion'] != false)
-          host.options['hover'] ||= (host.options['hover'] != false)
-          host.options['autoformat'] ||= (host.options['autoformat'] != false)
         end
       end
     end
