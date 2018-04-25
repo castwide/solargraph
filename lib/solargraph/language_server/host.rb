@@ -54,7 +54,7 @@ module Solargraph
       # processed, the transport is responsible for sending the response.
       #
       # @param request [Hash] The contents of the message.
-      # @return [Solargraph::LanguageServer::Message] The message handler.
+      # @return [Solargraph::LanguageServer::Message::Base] The message handler.
       def start request
         if request['method']
           message = Message.select(request['method']).new(self, request)
