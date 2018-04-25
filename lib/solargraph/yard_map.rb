@@ -92,7 +92,7 @@ module Solargraph
       found
     end
 
-    # @return [Array<Suggestion>]
+    # @return [Array<Solargraph::Pin::Base>]
     def get_constants namespace , scope = ''
       cached = cache.get_constants(namespace, scope)
       return cached unless cached.nil?
@@ -113,26 +113,22 @@ module Solargraph
         return_type = nil
         if c.kind_of?(YARD::CodeObjects::ClassObject)
           detail = 'Class'
-          kind = Suggestion::CLASS
           return_type = "Class<#{c.to_s}>"
         elsif c.kind_of?(YARD::CodeObjects::ModuleObject)
           detail = 'Module'
-          kind = Suggestion::MODULE
           return_type = "Module<#{c.to_s}>"
         elsif c.kind_of?(YARD::CodeObjects::ConstantObject)
           detail = 'Constant'
-          kind = Suggestion::CONSTANT
         else
           next
         end
-        # result.push Suggestion.new(c.to_s.split('::').last, detail: c.to_s, kind: kind, docstring: c.docstring, return_type: return_type, location: object_location(c))
         result.push Pin::YardObject.new(c, object_location(c))
       }
       cache.set_constants(namespace, scope, result)
       result
     end
 
-    # @return [Array<Suggestion>]
+    # @return [Array<Solargraph::Pin::Base>]
     def get_methods namespace, scope = '', visibility: [:public]
       return [] if namespace == '' and scope == ''
       cached = cache.get_methods(namespace, scope, visibility)
@@ -160,7 +156,7 @@ module Solargraph
       meths
     end
 
-    # @return [Array<Suggestion>]
+    # @return [Array<Solargraph::Pin::Base>]
     def get_instance_methods namespace, scope = '', visibility: [:public]
       return [] if namespace == '' and scope == ''
       cached = cache.get_instance_methods(namespace, scope, visibility)
