@@ -298,23 +298,18 @@ module Solargraph
       tried = []
       unresolved_requires.clear
       required.each do |r|
-        next if !workspace.nil? and workspace.would_require?(r)
         begin
-          name = r.split('/').first
-          next if name.nil?
-          spec = Gem::Specification.find_by_name(name)
-          if spec.nil?
-            unresolved_requires.push r
-            next
-          end
+          spec = Gem::Specification.find_by_path(r) || Gem::Specification.find_by_name(r.split('/').first)
           ver = spec.version.to_s
           ver = ">= 0" if ver.empty?
           add_gem_dependencies spec
+          next if !workspace.nil? and workspace.would_require?(r)
           yd = YARD::Registry.yardoc_file_for_gem(spec.name, ver)
           @gem_paths[spec.name] = spec.full_gem_path
           unresolved_requires.push r if yd.nil?
           yardocs.unshift yd unless yd.nil? or yardocs.include?(yd)
         rescue Gem::LoadError => e
+          next if !workspace.nil? and workspace.would_require?(r)
           unresolved_requires.push r
         end
       end

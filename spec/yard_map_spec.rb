@@ -111,14 +111,9 @@ describe Solargraph::YardMap do
   end
 
   it "adds gem dependencies" do
-    Dir.mktmpdir do |dir|
-      File.write(File.join(dir, 'Gemfile'), %(
-        gem 'solargraph'
-      ))
-      yard_map = Solargraph::YardMap.new(required: ['solargraph'], workspace: Solargraph::Workspace.new(dir))
-      incl = yard_map.yardocs.select { |y| y.include?('eventmachine') }
-      expect(incl).not_to be_empty
-    end
+    yard_map = Solargraph::YardMap.new(required: ['solargraph'])
+    incl = yard_map.yardocs.select { |y| y.include?('eventmachine') }
+    expect(incl).not_to be_empty
   end
 
   it "finds method objects" do
