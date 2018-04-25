@@ -20,10 +20,10 @@ module Solargraph
               }
             }
           }
-          result['capabilities'].merge! static_completion unless dynamic_completion?
-          result['capabilities'].merge! static_signature_help unless dynamic_signature_help?
-          result['capabilities'].merge! static_on_type_formatting unless dynamic_on_type_formatting?
-          result['capabilities'].merge! static_hover unless dynamic_hover?
+          result[:capabilities].merge! static_completion unless dynamic_completion?
+          result[:capabilities].merge! static_signature_help unless dynamic_signature_help?
+          result[:capabilities].merge! static_on_type_formatting unless dynamic_on_type_formatting?
+          result[:capabilities].merge! static_hover unless dynamic_hover?
           set_result result
         end
 
