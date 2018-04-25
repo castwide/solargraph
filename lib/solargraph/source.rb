@@ -203,6 +203,7 @@ module Solargraph
     end
 
     def inner_tree_at node, offset, stack
+      return if node.nil?
       stack.unshift node
       node.children.each do |c|
         next unless c.is_a?(AST::Node)
