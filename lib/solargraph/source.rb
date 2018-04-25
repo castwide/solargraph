@@ -58,7 +58,7 @@ module Solargraph
       @version = 0
       begin
         parse
-      rescue Parser::SyntaxError
+      rescue Parser::SyntaxError, EncodingError
         hard_fix_node
       end
     end
@@ -266,11 +266,11 @@ module Solargraph
       begin
         parse
         @fixed = @code
-      rescue Parser::SyntaxError => e
+      rescue Parser::SyntaxError, EncodingError => e
         @fixed = updater.repair(original_fixed)
         begin
           parse
-        rescue Parser::SyntaxError => e
+        rescue Parser::SyntaxError, EncodingError => e
           hard_fix_node
         end
       end
@@ -337,7 +337,7 @@ module Solargraph
       parser.diagnostics.all_errors_are_fatal = true
       parser.diagnostics.ignore_warnings      = true
       buffer = Parser::Source::Buffer.new(filename, 1)
-      buffer.source = code.force_encoding(Encoding::UTF_8)
+      buffer.source = code.encode('UTF-8', 'binary', invalid: :replace, undef: :replace, replace: ' ')
       parser.parse_with_comments(buffer)
     end
 
