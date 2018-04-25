@@ -452,8 +452,8 @@ module Solargraph
               next
             end
             begin
-              # Diagnosis is broken into two parts to reduce the amount of times it runs while
-              # a document is changing
+              # Diagnosis is broken into two parts to reduce the number of
+              # times it runs while a document is changing
               current = nil
               already_changing = nil
               @change_semaphore.synchronize do
@@ -464,13 +464,9 @@ module Solargraph
               end
               next if current.nil? or already_changing
               filename = uri_to_file(current)
-              # text = library.read_text(filename)
-              # results = diagnoser.diagnose text, filename
-              # results.concat library.diagnose(filename)
               results = library.diagnose(filename)
               @change_semaphore.synchronize do
                 already_changing = (unsafe_changing?(current) or @diagnostics_queue.include?(current))
-                # publish_diagnostics current, resp unless already_changing
                 unless already_changing
                   send_notification "textDocument/publishDiagnostics", {
                     uri: current,
