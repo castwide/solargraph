@@ -1,7 +1,6 @@
 require 'solargraph/version'
 require 'rubygems/package'
 require 'yard-solargraph'
-require 'sinatra'
 
 module Solargraph
   class InvalidOffsetError <      RangeError; end
