@@ -15,7 +15,7 @@ Gem::Specification.new do |s|
   s.license     = 'MIT'
   s.executables   = ['solargraph', 'solargraph-runtime']
 
-  s.required_ruby_version = '>= 2.0'
+  s.required_ruby_version = '>= 2.1'
 
   s.add_runtime_dependency 'parser', '~> 2.4'
   s.add_runtime_dependency 'thor', '~> 0.19', '>= 0.19.4'
