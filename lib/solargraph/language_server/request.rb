@@ -7,7 +7,7 @@ module Solargraph
       end
 
       def process result
-        @block.call(result)
+        @block.call(result) unless @block.nil?
       end
     end
   end

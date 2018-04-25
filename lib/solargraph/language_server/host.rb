@@ -33,7 +33,7 @@ module Solargraph
 
       # @return [Hash]
       def options
-        @options ||= {}
+        @options ||= default_configuration
       end
 
       def cancel id
@@ -54,7 +54,7 @@ module Solargraph
       # processed, the transport is responsible for sending the response.
       #
       # @param request [Hash] The contents of the message.
-      # @return [Solargraph::LanguageServer::Message] The message handler.
+      # @return [Solargraph::LanguageServer::Message::Base] The message handler.
       def start request
         if request['method']
           message = Message.select(request['method']).new(self, request)
@@ -214,10 +214,12 @@ module Solargraph
       end
 
       # Send a request to the client and execute the provided block to process
-      # the response.
+      # the response. If an ID is not provided, the host will use an auto-
+      # incrementing integer.
       #
       # @param method [String] The message method
       # @param params [Hash] The method parameters
+      # @param id [String] An optional ID
       # @yieldparam [Hash] The result sent by the client
       def send_request method, params, &block
         message = {
@@ -231,6 +233,29 @@ module Solargraph
         envelope = "Content-Length: #{json.bytesize}\r\n\r\n#{json}"
         queue envelope
         @next_request_id += 1
+      end
+
+      def register_capabilities methods
+        send_request 'client/registerCapability', {
+          registrations: methods.map { |m|
+            {
+              id: m,
+              method: m,
+              registerOptions: dynamic_capability_options[m]
+            }
+          }
+        }
+      end
+
+      def unregister_capabilities methods
+        send_request 'client/unregisterCapability', {
+          unregisterations: methods.map { |m|
+            {
+              id: m,
+              method: m
+            }
+          }
+        }
       end
 
       # True if the specified file is in the process of changing.
@@ -341,6 +366,15 @@ module Solargraph
       # @return [Array<Integer>]
       def pending_requests
         requests.keys
+      end
+
+      def default_configuration
+        {
+          'completion' => true,
+          'hover' => true,
+          'autoformat' => true,
+          'diagnostics' => true
+        }
       end
 
       private
@@ -479,6 +513,34 @@ module Solargraph
           params['textDocument']['version'],
           changes
         )
+      end
+
+      def dynamic_capability_options
+        @dynamic_capability_options ||= {
+          # textDocumentSync: 2, # @todo What should this be?
+          'textDocument/completion' => {
+            resolveProvider: true,
+            triggerCharacters: ['.', ':', '@']
+          },
+          # hoverProvider: true,
+          # definitionProvider: true,
+          'textDocument/signatureHelp' => {
+            triggerCharacters: ['(', ',']
+          },
+          # documentFormattingProvider: true,
+          'textDocument/onTypeFormatting' => {
+            firstTriggerCharacter: '{',
+            moreTriggerCharacter: ['(']
+          },
+          # documentSymbolProvider: true,
+          # workspaceSymbolProvider: true,
+          # workspace: {
+            # workspaceFolders: {
+              # supported: true,
+              # changeNotifications: true
+            # }
+          # }
+        }
       end
     end
   end
