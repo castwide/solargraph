@@ -123,6 +123,7 @@ module Solargraph
       def close uri
         @change_semaphore.synchronize do
           library.close uri_to_file(uri)
+          @diagnostics_queue.push uri
         end
       end
 
@@ -357,6 +358,14 @@ module Solargraph
           message: text,
           actions: actions
         }, &block
+      end
+
+      # Get a list of IDs for server requests that are waiting for responses
+      # from the client.
+      #
+      # @return [Array<Integer>]
+      def pending_requests
+        requests.keys
       end
 
       private

@@ -1,21 +1,11 @@
 require 'ostruct'
 require 'tilt'
-require 'redcarpet'
+require 'kramdown'
 require 'htmlentities'
 require 'coderay'
 
 module Solargraph
   class Page
-    class SolargraphRenderer < Redcarpet::Render::HTML
-      def normal_text text
-        HTMLEntities.new.encode(text, :named)
-      end
-      def block_code code, language
-        CodeRay.scan(code, language || :ruby).div
-      end
-    end
-    private_constant :SolargraphRenderer
-
     class Binder < OpenStruct
       def initialize locals, render_method
         super(locals)
@@ -31,8 +21,17 @@ module Solargraph
         helper = Solargraph::Pin::Helper.new
         html = helper.html_markup_rdoc(text)
         conv = ReverseMarkdown.convert(html, github_flavored: true)
-        markdown = Redcarpet::Markdown.new(SolargraphRenderer.new(prettify: true), fenced_code_blocks: true)
-        markdown.render(conv)
+        Kramdown::Document.new(
+          conv,
+          input: 'GFM',
+          entity_output: :symbolic,
+          syntax_highlighter_opts: {
+            block: {
+              line_numbers: false,
+            },
+            default_lang: :ruby
+          },
+        ).to_html
       end
 
       def ruby_to_html code

@@ -1,69 +1,72 @@
+require 'fileutils'
 require 'tmpdir'
 
 describe Solargraph::Workspace do
+  let(:workspace) { described_class.new(dir_path) }
+  let(:dir_path)  { File.realpath(Dir.mktmpdir) }
+  let(:file_path) { File.join(dir_path, 'file.rb') }
+
+  before(:each)   { File.write(file_path, 'exit') }
+  after(:each)    { FileUtils.remove_entry(dir_path) }
+
   it "loads sources from a directory" do
-    Dir.mktmpdir do |dir|
-      file = File.join(dir, 'file.rb')
-      File.write file, 'exit'
-      workspace = Solargraph::Workspace.new(dir)
-      expect(workspace.filenames).to include(file)
-      expect(workspace.has_file?(file)).to be(true)
-    end
+    expect(workspace.filenames).to include(file_path)
+    expect(workspace.has_file?(file_path)).to be(true)
   end
 
   it "ignores non-Ruby files by default" do
-    Dir.mktmpdir do |dir|
-      file = File.join(dir, 'file.rb')
-      File.write file, 'exit'
-      not_ruby = File.join(dir, 'not_ruby.txt')
-      File.write not_ruby, 'text'
-      workspace = Solargraph::Workspace.new(dir)
-      expect(workspace.filenames).to include(file)
-      expect(workspace.filenames).not_to include(not_ruby)
-    end
+    not_ruby = File.join(dir_path, 'not_ruby.txt')
+    File.write not_ruby, 'text'
+
+    expect(workspace.filenames).to include(file_path)
+    expect(workspace.filenames).not_to include(not_ruby)
   end
 
   it "does not merge non-workspace sources" do
-    Dir.mktmpdir do |dir|
-      workspace = Solargraph::Workspace.new(dir)
-      source = Solargraph::Source.load_string('exit', 'not_ruby.txt')
-      workspace.merge source
-      expect(workspace.filenames).not_to include(source.filename)
-    end
+    source = Solargraph::Source.load_string('exit', 'not_ruby.txt')
+    workspace.merge source
+
+    expect(workspace.filenames).not_to include(source.filename)
   end
 
   it "updates sources" do
-    Dir.mktmpdir do |dir|
-      file = File.join(dir, 'file.rb')
-      File.write file, 'exit'
-      workspace = Solargraph::Workspace.new(dir)
-      original = workspace.source(file)
-      updated = Solargraph::Source.load_string('puts "updated"', file)
-      workspace.merge updated
-      expect(workspace.filenames).to include(file)
-      expect(workspace.source(file)).not_to eq(original)
-      expect(workspace.source(file)).to eq(updated)
-    end
+    original = workspace.source(file_path)
+    updated = Solargraph::Source.load_string('puts "updated"', file_path)
+    workspace.merge updated
+
+    expect(workspace.filenames).to include(file_path)
+    expect(workspace.source(file_path)).not_to eq(original)
+    expect(workspace.source(file_path)).to eq(updated)
   end
 
   it "removes deleted sources" do
-    Dir.mktmpdir do |dir|
-      file = File.join(dir, 'file.rb')
-      File.write file, 'exit'
-      workspace = Solargraph::Workspace.new(dir)
-      expect(workspace.filenames).to include(file)
-      original = workspace.source(file)
-      File.unlink file
-      workspace.remove original
-      expect(workspace.filenames).not_to include(file)
-    end
+    expect(workspace.filenames).to include(file_path)
+
+    original = workspace.source(file_path)
+    File.unlink file_path
+    workspace.remove original
+
+    expect(workspace.filenames).not_to include(file_path)
   end
 
   it "raises an exception for workspace size limits" do
-    config = double
-    allow(config).to receive(:calculated).and_return(Array.new(Solargraph::Workspace::MAX_WORKSPACE_SIZE + 1))
+    config = double(:config, calculated: Array.new(Solargraph::Workspace::MAX_WORKSPACE_SIZE + 1))
+
     expect {
-      workspace = Solargraph::Workspace.new('.', config)
+      Solargraph::Workspace.new('.', config)
     }.to raise_error(Solargraph::WorkspaceTooLargeError)
+  end
+
+  it "skips files that raise an encoding exception" do
+    invalid_byte_file_path = File.join(dir_path, 'invalid_byte.rb')
+    FileUtils.cp('spec/fixtures/invalid_byte.rb', invalid_byte_file_path)
+
+    # Ensure that we continue parsing files in the workspace after encountering
+    # a recoverable error. 'invalid_byte.rb' will throw an encoding error
+    # during parsing
+    config = double(:config, calculated: [invalid_byte_file_path, file_path])
+
+    expect(workspace).not_to have_file(invalid_byte_file_path)
+    expect(workspace).to have_file(file_path)
   end
 end

@@ -54,6 +54,7 @@ module Solargraph
           EventMachine.stop
         end
         EventMachine.start_server options[:host], port, Solargraph::LanguageServer::Transport::Socket
+        # Emitted for the benefit of clients that start the process on port 0
         STDERR.puts "Solargraph is listening PORT=#{port} PID=#{Process.pid}"
       end
     end

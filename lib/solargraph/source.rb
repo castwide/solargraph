@@ -284,7 +284,8 @@ module Solargraph
 
     def all_symbols
       result = []
-      result.concat namespace_pin_map.values.flatten
+      # result.concat namespace_pin_map.values.flatten
+      result.concat namespace_pins.reject{ |pin| pin.name.empty? }
       result.concat method_pins
       result.concat constant_pins
       result

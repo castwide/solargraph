@@ -18,7 +18,7 @@ module Solargraph
             if available > current
               host.show_message_request "Solagraph gem version #{available} is available.",
                                         LanguageServer::MessageTypes::INFO,
-                                        ['Update now'] { |result|
+                                        ['Update now'] do |result|
                                           break unless result == 'Update now'
                                           o, s = Open3.capture2("gem update solargraph")
                                           if s == 0
@@ -26,7 +26,7 @@ module Solargraph
                                           else
                                             host.show_message 'An error occurred while updating the gem.', LanguageServer::MessageTypes::ERROR
                                           end
-                                        }
+                                        end
             elsif params['verbose']
               host.show_message "The Solargraph gem is up to date (version #{Solargraph::VERSION})."
             end

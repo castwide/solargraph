@@ -218,10 +218,16 @@ module Solargraph
         @locals ||= @source.locals.select{|pin| pin.visible_from?(block, position)}
       end
 
+      # True if the fragment is a signature that stems from a literal value.
+      #
+      # @return [Boolean]
       def base_literal?
         !base_literal.nil?
       end
 
+      # The type of literal value at the root of the signature (or nil).
+      #
+      # @return [String]
       def base_literal
         if @base_literal.nil? and !@calculated_literal
           @calculated_literal = true

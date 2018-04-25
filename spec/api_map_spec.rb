@@ -820,4 +820,27 @@ describe Solargraph::ApiMap do
     names = api_map.complete(fragment).pins.map(&:name)
     expect(names).to include('lvar')
   end
+
+  it "completes global variables" do
+    api_map = Solargraph::ApiMap.new
+    source = Solargraph::Source.new(%(
+      $foo = 'foo'
+      $f
+    ))
+    api_map.virtualize source
+    fragment = source.fragment_at(2, 8)
+    names = api_map.complete(fragment).pins.map(&:name)
+    expect(names).to include('$foo')
+  end
+
+  it "infers global variable types" do
+    api_map = Solargraph::ApiMap.new
+    source = Solargraph::Source.new(%(
+      $foo = 'foo'
+    ))
+    api_map.virtualize source
+    fragment = source.fragment_at(1, 7)
+    pin = api_map.define(fragment).first
+    expect(pin.return_type).to eq('String')
+  end
 end
