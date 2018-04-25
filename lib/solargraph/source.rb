@@ -58,7 +58,7 @@ module Solargraph
       @version = 0
       begin
         parse
-      rescue Parser::SyntaxError
+      rescue Parser::SyntaxError, EncodingError
         hard_fix_node
       end
     end
@@ -203,6 +203,7 @@ module Solargraph
     end
 
     def inner_tree_at node, offset, stack
+      return if node.nil?
       stack.unshift node
       node.children.each do |c|
         next unless c.is_a?(AST::Node)
@@ -266,11 +267,11 @@ module Solargraph
       begin
         parse
         @fixed = @code
-      rescue Parser::SyntaxError => e
+      rescue Parser::SyntaxError, EncodingError => e
         @fixed = updater.repair(original_fixed)
         begin
           parse
-        rescue Parser::SyntaxError => e
+        rescue Parser::SyntaxError, EncodingError => e
           hard_fix_node
         end
       end
@@ -284,7 +285,8 @@ module Solargraph
 
     def all_symbols
       result = []
-      result.concat namespace_pin_map.values.flatten
+      # result.concat namespace_pin_map.values.flatten
+      result.concat namespace_pins.reject{ |pin| pin.name.empty? }
       result.concat method_pins
       result.concat constant_pins
       result
@@ -336,7 +338,7 @@ module Solargraph
       parser.diagnostics.all_errors_are_fatal = true
       parser.diagnostics.ignore_warnings      = true
       buffer = Parser::Source::Buffer.new(filename, 1)
-      buffer.source = code.force_encoding(Encoding::UTF_8)
+      buffer.source = code.encode('UTF-8', 'binary', invalid: :replace, undef: :replace, replace: ' ')
       parser.parse_with_comments(buffer)
     end
 

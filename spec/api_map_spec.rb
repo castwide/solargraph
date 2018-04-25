@@ -843,4 +843,16 @@ describe Solargraph::ApiMap do
     pin = api_map.define(fragment).first
     expect(pin.return_type).to eq('String')
   end
+
+  it "filters for methods in signify" do
+    api_map = Solargraph::ApiMap.new
+    source = Solargraph::Source.new(%(
+      x = 'string'
+      x()
+    ))
+    api_map.virtualize source
+    fragment = source.fragment_at(2, 8)
+    pins = api_map.signify(fragment)
+    expect(pins).to be_empty
+  end
 end

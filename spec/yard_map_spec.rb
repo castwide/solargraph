@@ -20,11 +20,11 @@ describe Solargraph::YardMap do
   end
 
   it "gets locations from required gems" do
-    # This spec assumes that the bundler gem is installed on the path
+    # This spec assumes that the parser gem is installed on the path
     # and has generated yardocs
     Dir.mktmpdir do |dir|
-      yard_map = Solargraph::YardMap.new(required: ['bundler'], workspace: Solargraph::Workspace.new(dir))
-      result = yard_map.objects('Bundler')
+      yard_map = Solargraph::YardMap.new(required: ['parser'], workspace: Solargraph::Workspace.new(dir))
+      result = yard_map.objects('Parser')
       expect(result.any?).to be(true)
       expect(result[0].location).not_to be(nil)
     end
@@ -37,20 +37,20 @@ describe Solargraph::YardMap do
   end
 
   it "does not include YARD for requires with matching files in the workspace's lib directory" do
-    # This spec assumes that the bundler gem is installed on the path
+    # This spec assumes that the parser gem is installed on the path
     # and has generated yardocs
     Dir.mktmpdir do |dir|
       Dir.mkdir(File.join(dir, 'lib'))
-      filename = File.join(dir, 'lib', 'bundler.rb')
+      filename = File.join(dir, 'lib', 'parser.rb')
       File.write(filename, "puts 'test'")
-      yard_map = Solargraph::YardMap.new(required: ['bundler'], workspace: Solargraph::Workspace.new(dir))
-      incl = yard_map.yardocs.select{|y| y.include?('bundler')}
+      yard_map = Solargraph::YardMap.new(required: ['parser'], workspace: Solargraph::Workspace.new(dir))
+      incl = yard_map.yardocs.select{|y| y.include?('parser')}
       expect(incl).to be_empty
     end
   end
 
   it "does not include YARD for requires with a matching gemspec in the workspace's directory" do
-    # This spec assumes that the bundler gem is installed on the path
+    # This spec assumes that the parser gem is installed on the path
     # and has generated yardocs
     Dir.mktmpdir do |dir|
       Dir.mkdir(File.join(dir, 'alt_lib'))
@@ -64,21 +64,21 @@ describe Solargraph::YardMap do
           s.require_paths = ['alt_lib']
         end
       ))
-      File.write(File.join(dir, 'alt_lib', 'bundler.rb'), "puts 'test'")
-      yard_map = Solargraph::YardMap.new(required: ['bundler'], workspace: Solargraph::Workspace.new(dir))
-      incl = yard_map.yardocs.select { |y| y.include?('bundler') }
+      File.write(File.join(dir, 'alt_lib', 'parser.rb'), "puts 'test'")
+      yard_map = Solargraph::YardMap.new(required: ['parser'], workspace: Solargraph::Workspace.new(dir))
+      incl = yard_map.yardocs.select { |y| y.include?('parser') }
       expect(incl).to be_empty
     end
   end
 
   it "supports nested gemspecs" do
-    # This spec assumes that the bundler gem is installed on the path
+    # This spec assumes that the parser gem is installed on the path
     # and has generated yardocs
     Dir.mktmpdir do |dir|
       Dir.mkdir(File.join(dir, 'foo'))
       Dir.mkdir(File.join(dir, 'foo', 'bar'))
       Dir.mkdir(File.join(dir, 'foo', 'bar', 'lib'))
-      File.write(File.join(dir, 'foo', 'bar', 'lib', 'bundler.rb'), "puts 'hello'")
+      File.write(File.join(dir, 'foo', 'bar', 'lib', 'parser.rb'), "puts 'hello'")
       File.write(File.join(dir, 'foo', 'bar', 'alt.gemspec'), %(
         Gem::Specification.new do |s|
           s.name          = 'test'
@@ -87,38 +87,33 @@ describe Solargraph::YardMap do
           s.files         = Dir['**/*']
         end
       ))
-      yard_map = Solargraph::YardMap.new(required: ['bundler'], workspace: Solargraph::Workspace.new(dir))
-      incl = yard_map.yardocs.select { |y| y.include?('bundler') }
+      yard_map = Solargraph::YardMap.new(required: ['parser'], workspace: Solargraph::Workspace.new(dir))
+      incl = yard_map.yardocs.select { |y| y.include?('parser') }
       expect(incl).to be_empty
     end
   end
 
   it "tracks unresolved requires" do
-    yard_map = Solargraph::YardMap.new(required: ['bundler', 'not_a_valid_path'])
+    yard_map = Solargraph::YardMap.new(required: ['parser', 'not_a_valid_path'])
     expect(yard_map.unresolved_requires).to include('not_a_valid_path')
-    expect(yard_map.unresolved_requires).not_to include('bundler')
+    expect(yard_map.unresolved_requires).not_to include('parser')
   end
 
   it "uses a clean bundler environment in workspaces with unloaded gemfiles" do
     Dir.mktmpdir do |dir|
       File.write(File.join(dir, 'Gemfile'), %(
-        gem 'bundler'
+        gem 'parser'
       ))
-      yard_map = Solargraph::YardMap.new(required: ['bundler'], workspace: Solargraph::Workspace.new(dir))
-      incl = yard_map.yardocs.select { |y| y.include?('bundler') }
+      yard_map = Solargraph::YardMap.new(required: ['parser'], workspace: Solargraph::Workspace.new(dir))
+      incl = yard_map.yardocs.select { |y| y.include?('parser') }
       expect(incl).not_to be_empty
     end
   end
 
   it "adds gem dependencies" do
-    Dir.mktmpdir do |dir|
-      File.write(File.join(dir, 'Gemfile'), %(
-        gem 'solargraph'
-      ))
-      yard_map = Solargraph::YardMap.new(required: ['solargraph'], workspace: Solargraph::Workspace.new(dir))
-      incl = yard_map.yardocs.select { |y| y.include?('eventmachine') }
-      expect(incl).not_to be_empty
-    end
+    yard_map = Solargraph::YardMap.new(required: ['solargraph'])
+    incl = yard_map.yardocs.select { |y| y.include?('eventmachine') }
+    expect(incl).not_to be_empty
   end
 
   it "finds method objects" do

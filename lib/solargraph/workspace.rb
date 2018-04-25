@@ -122,9 +122,9 @@ module Solargraph
       unless directory.nil?
         size = config.calculated.length
         raise WorkspaceTooLargeError.new(size) if size > MAX_WORKSPACE_SIZE
+
         config.calculated.each do |filename|
-          src = Solargraph::Source.load(filename)
-          source_hash[filename] = src
+          source_hash[filename] = Solargraph::Source.load(filename)
         end
       end
       @stime = Time.now

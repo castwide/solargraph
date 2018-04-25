@@ -6,20 +6,25 @@ module Solargraph
       include Conversions
       include Documenting
 
+      # @return [Solargraph::Source::Location]
       attr_reader :location
 
       # @return [String]
       attr_reader :namespace
 
+      # @return [String]
       attr_reader :name
 
+      # @return [YARD::Docstring]
       attr_reader :docstring
 
       # @return [String]
       attr_reader :return_type
 
+      # @return [Integer]
       attr_reader :kind
 
+      # @return [String]
       attr_reader :path
 
       def initialize location, namespace, name, docstring
@@ -29,18 +34,12 @@ module Solargraph
         @docstring = docstring
       end
 
+      # @return [String]
       def filename
         location.filename
       end
 
-      # @return [String]
-      def path
-      end
-
       # @return [Integer]
-      def kind
-      end
-
       def completion_item_kind
         LanguageServer::CompletionItemKinds::KEYWORD
       end
@@ -49,6 +48,7 @@ module Solargraph
         name.to_s
       end
 
+      # @return [String]
       def identifier
         @identifier ||= "#{path}|#{name}"
       end
@@ -57,6 +57,7 @@ module Solargraph
         false
       end
 
+      # @return [String]
       def named_context
         namespace
       end

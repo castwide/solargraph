@@ -49,7 +49,9 @@ describe Solargraph::Plugin::Runtime do
   it "returns internal namespace names" do
     runtime = Solargraph::Plugin::Runtime.new(nil)
     result = runtime.get_constants('Process', '').map{ |o| o['name'] }
-    expect(result).to include('Waiter')
+    # Process::Tms is known to exist at runtime but not in documentation in
+    # Ruby 2.3.3 et al.
+    expect(result).to include('Tms')
   end
 
   it "sets local name and namespace root for constants" do
@@ -59,9 +61,9 @@ describe Solargraph::Plugin::Runtime do
       end
     end
     runtime = tmp.new(nil)
-    result = runtime.get_constants('Process', '').select{|o| o['name'] == 'Waiter'}.first
+    result = runtime.get_constants('Process', '').select{|o| o['name'] == 'Tms'}.first
     expect(result).not_to be(nil)
-    expect(result['name']).to eq('Waiter')
+    expect(result['name']).to eq('Tms')
     expect(result['namespace']).to eq('Process')
   end
 end

@@ -57,6 +57,7 @@ module Solargraph
       @sources.each do |s|
         result.concat s.required.map(&:name)
       end
+      result.concat workspace.config.required
       result.uniq
     end
 
@@ -341,7 +342,9 @@ module Solargraph
     def signify fragment
       return [] unless fragment.argument?
       return [] if fragment.recipient.whole_signature.nil? or fragment.recipient.whole_signature.empty?
-      probe.infer_signature_pins fragment.recipient.whole_signature, fragment.named_path, fragment.locals
+      probe.infer_signature_pins(
+        fragment.recipient.whole_signature, fragment.named_path, fragment.locals
+      ).select{ |pin| pin.kind == Pin::METHOD }
     end
 
     # Get an array of all suggestions that match the specified path.
