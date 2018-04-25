@@ -9,6 +9,7 @@ module Solargraph
           meths.push 'textDocument/signatureHelp' if host.options['hover']
           meths.push 'textDocument/onTypeFormatting' if host.options['autoformat']
           meths.push 'textDocument/formatting' if host.options['formatting']
+          STDERR.puts meths.inspect
           host.register_capabilities meths unless meths.empty?
         end
       end
