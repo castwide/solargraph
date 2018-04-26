@@ -24,14 +24,13 @@ module Solargraph
         end
 
         # @param path [String]
-        # @return [Solargraph::LanguageServer::Message::Base]
+        # @return [Class<Solargraph::LanguageServer::Message::Base>]
         def select path
           if method_map.has_key?(path)
             method_map[path]
           elsif path.start_with?('$/')
             MethodNotImplemented
           else
-            STDERR.puts "Method not found: #{path}"
             MethodNotFound
           end
         end
