@@ -855,4 +855,19 @@ describe Solargraph::ApiMap do
     pins = api_map.signify(fragment)
     expect(pins).to be_empty
   end
+
+  it "includes methods from domain directives in sources" do
+    api_map = Solargraph::ApiMap.new
+    # @todo Comments with directives need to be associated with a node in order
+    #   to get processed. There may not be a simple way to get around that
+    #   requirement.
+    source = Solargraph::Source.new(%(
+      # @!domain String
+      x
+      ))
+    api_map.virtualize source
+    fragment = source.fragment_at(2, 0)
+    names = api_map.complete(fragment).pins.map(&:name)
+    expect(names).to include('upcase')
+  end
 end
