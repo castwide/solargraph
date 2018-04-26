@@ -347,38 +347,6 @@ module Solargraph
       @stime = Time.now
     end
 
-    def associate_comments node, comments
-      return nil if comments.nil?
-      comment_hash = Parser::Source::Comment.associate_locations(node, comments)
-      yard_hash = {}
-      comment_hash.each_pair { |k, v|
-        ctxt = ''
-        num = nil
-        started = false
-        v.each { |l|
-          # Trim the comment and minimum leading whitespace
-          p = l.text.gsub(/^#/, '')
-          if num.nil? and !p.strip.empty?
-            num = p.index(/[^ ]/)
-            started = true
-          elsif started and !p.strip.empty?
-            cur = p.index(/[^ ]/)
-            num = cur if cur < num
-          end
-          if started
-            ctxt += "#{p[num..-1]}\n"
-          end
-        }
-        parse = YARD::Docstring.parser.parse(ctxt)
-        unless parse.directives.empty?
-          @directives[k] ||= []
-          @directives[k].concat parse.directives
-        end
-        yard_hash[k] = parse.to_docstring
-      }
-      yard_hash
-    end
-
     def find_parent(stack, *types)
       stack.reverse.each { |p|
         return p if types.include?(p.type)
