@@ -8,6 +8,10 @@ class Protocol
 
   def initialize host
     @host = host
+    @data_reader = Solargraph::LanguageServer::Transport::DataReader.new
+    @data_reader.set_message_handler do |message|
+      @response = message
+    end
     @message_id = 0
   end
 
@@ -21,18 +25,7 @@ class Protocol
     @message_id += 1
     message = @host.start msg
     message.send
-    open @host.flush
-  end
-
-  private
-
-  def open envelope
-    if envelope.nil?
-      @response = nil
-    else
-      header, content = envelope.split("\r\n\r\n")
-      @response = JSON.parse(content)
-    end
+    @data_reader.receive @host.flush
   end
 end
 
@@ -45,6 +38,12 @@ describe Protocol do
     @protocol.request 'initialize', {}
     response = @protocol.response
     expect(response['result'].keys).to include('capabilities')
+  end
+
+  it "handles initialized" do
+    @protocol.request 'initialized', nil
+    response = @protocol.response
+    expect(response['error']).to be_nil
   end
 
   it "handles textDocument/didOpen" do
@@ -227,5 +226,16 @@ describe Protocol do
     response = @protocol.response
     expect(response['error']).to be_nil
     expect(response['result']['content']).not_to be_empty
+  end
+
+  it "handles workspace/didChangeConfiguration" do
+    @protocol.request 'workspace/didChangeConfiguration', {
+      'settings' => {
+        'solargraph' => {
+          'autoformat' => false
+        }
+      }
+    }
+    expect(@protocol.host.options['autoformat']).to be(false)
   end
 end

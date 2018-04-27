@@ -44,7 +44,6 @@ module Solargraph
           false
         else
           if @current_required != api_map.required
-            STDERR.puts "Restarting #{self.class} process"
             @io.close unless @io.nil? or @io.closed?
             start_process
             true
@@ -70,7 +69,6 @@ module Solargraph
         unless api_map.nil? or api_map.workspace.nil?
           dir = api_map.workspace
         end
-        STDERR.puts "Starting #{self.class} process in #{dir}"
         Dir.chdir(dir) do
           @io = IO.popen(executable, 'r+')
         end
