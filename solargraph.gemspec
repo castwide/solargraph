@@ -20,7 +20,6 @@ Gem::Specification.new do |s|
   s.add_runtime_dependency 'thor', '~> 0.19', '>= 0.19.4'
   s.add_runtime_dependency 'sinatra', '~> 2'
   s.add_runtime_dependency 'yard', '~> 0.9'
-  s.add_runtime_dependency 'bundler', '~> 1.14'
   s.add_runtime_dependency 'eventmachine', '~> 1.2', '>= 1.2.5'
   s.add_runtime_dependency 'reverse_markdown', '~> 1.0', '>= 1.0.5'
   s.add_runtime_dependency 'kramdown'
