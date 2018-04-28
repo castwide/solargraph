@@ -19,7 +19,7 @@ module Solargraph::LanguageServer::Message::Workspace
       meths.push 'textDocument/onTypeFormatting' if update.has_key?('autoformat') and !update['autoformat'] and host.options['autoformat']
       host.unregister_capabilities meths unless meths.empty?
 
-      host.configure params['settings']['solargraph']
+      host.configure update
     end
   end
 end

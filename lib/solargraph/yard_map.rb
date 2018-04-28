@@ -1,5 +1,4 @@
 require 'yard'
-require 'bundler'
 
 module Solargraph
   class YardMap
@@ -329,10 +328,6 @@ module Solargraph
         return Solargraph::Source::Location.new(file, Solargraph::Source::Range.from_to(obj.line - 1, 0, obj.line - 1, 0)) if File.exist?(file)
       end
       nil
-    end
-
-    def has_bundle?
-      !workspace.nil? and !workspace.directory.nil? and File.exist?(File.join workspace.directory, 'Gemfile')
     end
   end
 end
