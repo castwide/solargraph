@@ -79,7 +79,6 @@ module Solargraph
 
     # @return [Array<String>]
     def namespaces
-      # @namespaces ||= namespace_pin_map.keys
       @namespaces ||= pins.select{|pin| pin.kind == Pin::NAMESPACE}.map(&:path)
     end
 
@@ -156,25 +155,6 @@ module Solargraph
       found || pins.first
     end
 
-    # @return [YARD::Docstring]
-    def docstring_for node
-      return @docstring_hash[node.loc] if node.respond_to?(:loc)
-      nil
-    end
-
-    # @return [String]
-    def code_for node
-      b = node.location.expression.begin.begin_pos
-      e = node.location.expression.end.end_pos
-      frag = code[b..e-1].to_s
-      frag.strip.gsub(/,$/, '')
-    end
-
-    # @param node [Parser::AST::Node]
-    def tree_for node
-      @node_tree[node.object_id] || []
-    end
-
     # Get the nearest node that contains the specified index.
     #
     # @param index [Integer]
@@ -215,47 +195,6 @@ module Solargraph
       end
     end
 
-    # Find the nearest parent node from the specified index. If one or more
-    # types are provided, find the nearest node whose type is in the list.
-    #
-    # @param index [Integer]
-    # @param types [Array<Symbol>]
-    # @return [AST::Node]
-    def parent_node_from(line, column, *types)
-      arr = tree_at(line, column)
-      arr.each { |a|
-        if a.kind_of?(AST::Node) and (types.empty? or types.include?(a.type))
-          return a
-        end
-      }
-      nil
-    end
-
-    # @return [String]
-    def namespace_for node
-      parts = []
-      ([node] + (@node_tree[node.object_id] || [])).each do |n|
-        next unless n.kind_of?(AST::Node)
-        if n.type == :class or n.type == :module
-          parts.unshift unpack_name(n.children[0])
-        end
-      end
-      parts.join('::')
-    end
-
-    def path_for node
-      path = namespace_for(node) || ''
-      mp = (method_pins + attribute_pins).select{|p| p.node == node}.first
-      unless mp.nil?
-        path += (mp.scope == :instance ? '#' : '.') + mp.name
-      end
-      path
-    end
-
-    def include? node
-      node_object_ids.include? node.object_id
-    end
-
     def synchronize updater
       raise 'Invalid synchronization' unless updater.filename == filename
       original_code = @code
@@ -285,7 +224,6 @@ module Solargraph
 
     def all_symbols
       result = []
-      # result.concat namespace_pin_map.values.flatten
       result.concat namespace_pins.reject{ |pin| pin.name.empty? }
       result.concat method_pins
       result.concat constant_pins
@@ -300,14 +238,6 @@ module Solargraph
     # @return [Solargraph::Source::Fragment]
     def fragment_at line, column
       Fragment.new(self, line, column)
-    end
-
-    def fragment_for node
-      inside = tree_for(node)
-      return nil if inside.empty?
-      line = node.loc.expression.last_line - 1
-      column = node.loc.expression.last_column
-      Fragment.new(self, line, column, inside)
     end
 
     def parsed?
@@ -345,27 +275,6 @@ module Solargraph
     def process_parsed node, comments
       @pins, @locals, @requires, @symbols, @path_macros, @domains = Mapper.map filename, code, node, comments
       @stime = Time.now
-    end
-
-    def find_parent(stack, *types)
-      stack.reverse.each { |p|
-        return p if types.include?(p.type)
-      }
-      nil
-    end
-
-    def node_object_ids
-      @node_object_ids ||= @all_nodes.map(&:object_id)
-    end
-
-    # @return [Hash<String, Solargraph::Pin::Namespace>]
-    def namespace_pin_map
-      @namespace_pin_map ||= {}
-    end
-
-    # @return [Hash<String, Solargraph::Pin::Namespace>]
-    def method_pin_map
-      @method_pin_map ||= {}
     end
 
     class << self
