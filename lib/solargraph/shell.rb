@@ -16,30 +16,6 @@ module Solargraph
       puts Solargraph::VERSION
     end
 
-    desc 'server', 'Start a Solargraph server'
-    option :port, type: :numeric, aliases: :p, desc: 'The server port', default: 7657
-    option :views, type: :string, aliases: :v, desc: 'The view template directory', default: nil
-    option :files, type: :string, aliases: :f, desc: 'The public files directory', default: nil
-    def server
-      port = options[:port]
-      port = available_port if port.zero?
-      Solargraph::Server.set :port, port
-      Solargraph::Server.set :views, options[:views] unless options[:views].nil?
-      Solargraph::Server.set :public_folder, options[:files] unless options[:files].nil?
-      my_pid = nil
-      Solargraph::Server.run! do
-        # This line should not be necessary with WEBrick
-        #STDERR.puts "Solargraph server pid=#{Process.pid} port=#{port}"
-        my_pid = Process.pid
-        Signal.trap("INT") do
-          Solargraph::Server.stop!
-        end
-        Signal.trap("TERM") do
-          Solargraph::Server.stop!
-        end
-      end
-    end
-
     desc 'socket', 'Run a Solargraph socket server'
     option :host, type: :string, aliases: :h, desc: 'The server host', default: '127.0.0.1'
     option :port, type: :numeric, aliases: :p, desc: 'The server port', default: 7658

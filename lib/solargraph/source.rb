@@ -79,7 +79,6 @@ module Solargraph
 
     # @return [Array<String>]
     def namespaces
-      # @namespaces ||= namespace_pin_map.keys
       @namespaces ||= pins.select{|pin| pin.kind == Pin::NAMESPACE}.map(&:path)
     end
 
@@ -156,25 +155,6 @@ module Solargraph
       found || pins.first
     end
 
-    # @return [YARD::Docstring]
-    def docstring_for node
-      return @docstring_hash[node.loc] if node.respond_to?(:loc)
-      nil
-    end
-
-    # @return [String]
-    def code_for node
-      b = node.location.expression.begin.begin_pos
-      e = node.location.expression.end.end_pos
-      frag = code[b..e-1].to_s
-      frag.strip.gsub(/,$/, '')
-    end
-
-    # @param node [Parser::AST::Node]
-    def tree_for node
-      @node_tree[node.object_id] || []
-    end
-
     # Get the nearest node that contains the specified index.
     #
     # @param index [Integer]
@@ -215,47 +195,6 @@ module Solargraph
       end
     end
 
-    # Find the nearest parent node from the specified index. If one or more
-    # types are provided, find the nearest node whose type is in the list.
-    #
-    # @param index [Integer]
-    # @param types [Array<Symbol>]
-    # @return [AST::Node]
-    def parent_node_from(line, column, *types)
-      arr = tree_at(line, column)
-      arr.each { |a|
-        if a.kind_of?(AST::Node) and (types.empty? or types.include?(a.type))
-          return a
-        end
-      }
-      nil
-    end
-
-    # @return [String]
-    def namespace_for node
-      parts = []
-      ([node] + (@node_tree[node.object_id] || [])).each do |n|
-        next unless n.kind_of?(AST::Node)
-        if n.type == :class or n.type == :module
-          parts.unshift unpack_name(n.children[0])
-        end
-      end
-      parts.join('::')
-    end
-
-    def path_for node
-      path = namespace_for(node) || ''
-      mp = (method_pins + attribute_pins).select{|p| p.node == node}.first
-      unless mp.nil?
-        path += (mp.scope == :instance ? '#' : '.') + mp.name
-      end
-      path
-    end
-
-    def include? node
-      node_object_ids.include? node.object_id
-    end
-
     def synchronize updater
       raise 'Invalid synchronization' unless updater.filename == filename
       original_code = @code
@@ -285,7 +224,6 @@ module Solargraph
 
     def all_symbols
       result = []
-      # result.concat namespace_pin_map.values.flatten
       result.concat namespace_pins.reject{ |pin| pin.name.empty? }
       result.concat method_pins
       result.concat constant_pins
@@ -300,14 +238,6 @@ module Solargraph
     # @return [Solargraph::Source::Fragment]
     def fragment_at line, column
       Fragment.new(self, line, column)
-    end
-
-    def fragment_for node
-      inside = tree_for(node)
-      return nil if inside.empty?
-      line = node.loc.expression.last_line - 1
-      column = node.loc.expression.last_column
-      Fragment.new(self, line, column, inside)
     end
 
     def parsed?
@@ -347,59 +277,6 @@ module Solargraph
       @stime = Time.now
     end
 
-    def associate_comments node, comments
-      return nil if comments.nil?
-      comment_hash = Parser::Source::Comment.associate_locations(node, comments)
-      yard_hash = {}
-      comment_hash.each_pair { |k, v|
-        ctxt = ''
-        num = nil
-        started = false
-        v.each { |l|
-          # Trim the comment and minimum leading whitespace
-          p = l.text.gsub(/^#/, '')
-          if num.nil? and !p.strip.empty?
-            num = p.index(/[^ ]/)
-            started = true
-          elsif started and !p.strip.empty?
-            cur = p.index(/[^ ]/)
-            num = cur if cur < num
-          end
-          if started
-            ctxt += "#{p[num..-1]}\n"
-          end
-        }
-        parse = YARD::Docstring.parser.parse(ctxt)
-        unless parse.directives.empty?
-          @directives[k] ||= []
-          @directives[k].concat parse.directives
-        end
-        yard_hash[k] = parse.to_docstring
-      }
-      yard_hash
-    end
-
-    def find_parent(stack, *types)
-      stack.reverse.each { |p|
-        return p if types.include?(p.type)
-      }
-      nil
-    end
-
-    def node_object_ids
-      @node_object_ids ||= @all_nodes.map(&:object_id)
-    end
-
-    # @return [Hash<String, Solargraph::Pin::Namespace>]
-    def namespace_pin_map
-      @namespace_pin_map ||= {}
-    end
-
-    # @return [Hash<String, Solargraph::Pin::Namespace>]
-    def method_pin_map
-      @method_pin_map ||= {}
-    end
-
     class << self
       # @return [Solargraph::Source]
       def load filename
@@ -410,48 +287,6 @@ module Solargraph
       # @return [Solargraph::Source]
       def load_string code, filename = nil
         Source.new code, filename
-      end
-
-      def fix code, filename = nil, offset = nil
-        tries = 0
-        offset = Source.get_offset(code, offset[0], offset[1]) if offset.kind_of?(Array)
-        pos = nil
-        pos = get_position_at(code, offset) unless offset.nil?
-        stubs = []
-        fixed_position = false
-        tmp = code.sub(/\.(\s*\z)$/, ' \1')
-        begin
-          node, comments = Source.parse(tmp, filename)
-          Source.new(code, node, comments, filename, stubs)
-        rescue Parser::SyntaxError => e
-          if tries < 10
-            tries += 1
-            # Stub periods before the offset to retain the expected node tree
-            if !offset.nil? and ['.', '{', '('].include?(tmp[offset-1])
-              tmp = tmp[0, offset-1] + ';' + tmp[offset..-1]
-            elsif !fixed_position and !offset.nil?
-              fixed_position = true
-              beg = beginning_of_line_from(tmp, offset)
-              tmp = "#{tmp[0, beg]}##{tmp[beg+1..-1]}"
-              stubs.push(pos[0])
-            elsif e.message.include?('token $end')
-              tmp += "\nend"
-            elsif e.message.include?("unexpected `@'")
-              tmp = tmp[0, e.diagnostic.location.begin_pos] + '_' + tmp[e.diagnostic.location.begin_pos+1..-1]
-            end
-            retry
-          end
-          STDERR.puts "Unable to parse file #{filename.nil? ? 'undefined' : filename}: #{e.message}"
-          node, comments = parse(code.gsub(/[^\s]/, ' '), filename)
-          Source.new(code, node, comments, filename)
-        end
-      end
-
-      def beginning_of_line_from str, i
-        while i > 0 and str[i-1] != "\n"
-          i -= 1
-        end
-        i
       end
     end
   end
