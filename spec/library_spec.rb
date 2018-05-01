@@ -25,8 +25,17 @@ describe Solargraph::Library do
       File.write(file_path, 'a = b')
       library = Solargraph::Library.load(workspace_path)
       result = library.create(file_path, File.read(file_path))
-
       expect(result).to be(true)
+      expect(library.open?(file_path)).to be(false)
+    end
+  end
+
+  it "raises an exception for files that do not exist" do
+    Dir.mktmpdir do |temp_dir_path|
+      # Ensure we resolve any symlinks to their real path
+      workspace_path = File.realpath(temp_dir_path)
+      file_path = File.join(workspace_path, 'not_real.rb')
+      library = Solargraph::Library.load(workspace_path)
       expect {
         library.checkout file_path
       }.to raise_error(Solargraph::FileNotFoundError)

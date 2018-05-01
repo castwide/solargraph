@@ -162,7 +162,7 @@ module Solargraph
     # will be removed from the ApiMap. Only one file can be checked out
     # (virtualized) at a time.
     #
-    # @raise [FileNotFoundError] if the file is not in the library.
+    # @raise [FileNotFoundError] if the file does not exist.
     #
     # @param filename [String]
     # @return [Source]
@@ -256,14 +256,19 @@ module Solargraph
       @workspace
     end
 
-    # @raise [FileNotFoundError] if the file is not open
+    # Get the source for an open file or create a new source if the file
+    # exists on disk. Sources created from disk are not added to the open
+    # workspace files, i.e., the version on disk remains the authoritative
+    # version.
+    #
+    # @raise [FileNotFoundError] if the file does not exist
     # @param filename [String]
     # @return [Solargraph::Source]
     def read filename
-      source = source_hash[filename]
-      raise FileNotFoundError, "Source not found for #{filename}" if source.nil?
-      # api_map.virtualize source
-      source
+      return source_hash[filename] if open?(filename)
+      return workspace.source(filename) if workspace.has_file?(filename)
+      raise FileNotFoundError, "File not found: #{filename}" unless File.file?(filename)
+      Solargraph::Source.load(filename)
     end
   end
 end

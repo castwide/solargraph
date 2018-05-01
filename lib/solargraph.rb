@@ -10,6 +10,8 @@ module Solargraph
 
   class WorkspaceTooLargeError < RuntimeError
     attr_reader :size
+
+    # @param size [Integer] The number of files included in the workspace
     def initialize size
       @size = size
     end

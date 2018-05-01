@@ -13,7 +13,7 @@ module Solargraph
       def initialize workspace = nil
         @workspace = workspace
         include_globs = ['**/*.rb']
-        exclude_globs = ['spec/**/*', 'test/**/*']
+        exclude_globs = ['spec/**/*', 'test/**/*', 'vendor/**/*']
         unless @workspace.nil?
           sfile = File.join(@workspace, '.solargraph.yml')
           if File.file?(sfile)
