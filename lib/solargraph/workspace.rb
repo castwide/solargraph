@@ -121,7 +121,7 @@ module Solargraph
       source_hash.clear
       unless directory.nil?
         size = config.calculated.length
-        raise WorkspaceTooLargeError.new(size) if size > MAX_WORKSPACE_SIZE
+        raise WorkspaceTooLargeError.new(size) if config.max_files > 0 and size > config.max_files
 
         config.calculated.each do |filename|
           source_hash[filename] = Solargraph::Source.load(filename)

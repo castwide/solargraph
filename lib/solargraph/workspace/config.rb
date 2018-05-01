@@ -30,6 +30,7 @@ module Solargraph
         @raw_data['domains'] ||= []
         @raw_data['reporters'] ||= []
         @raw_data['plugins'] ||= []
+        @raw_data['max_files'] ||= Workspace::MAX_WORKSPACE_SIZE
         included
         excluded
       end
@@ -72,6 +73,10 @@ module Solargraph
 
       def reporters
         raw_data['reporters']
+      end
+
+      def max_files
+        raw_data['max_files']
       end
 
       private
