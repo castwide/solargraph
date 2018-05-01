@@ -266,6 +266,7 @@ module Solargraph
     # @return [Solargraph::Source]
     def read filename
       return source_hash[filename] if open?(filename)
+      return workspace.source(filename) if workspace.has_file?(filename)
       raise FileNotFoundError, "File not found: #{filename}" unless File.file?(filename)
       Solargraph::Source.load(filename)
     end
