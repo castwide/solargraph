@@ -162,7 +162,7 @@ module Solargraph
     # will be removed from the ApiMap. Only one file can be checked out
     # (virtualized) at a time.
     #
-    # @raise [FileNotFoundError] if the file is not in the library.
+    # @raise [FileNotFoundError] if the file does not exist.
     #
     # @param filename [String]
     # @return [Source]
