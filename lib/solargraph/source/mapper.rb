@@ -249,9 +249,14 @@ module Solargraph
                   end
                 else
                   c.children.each do |u|
-                    here = get_node_start_position(c)
-                    blk = get_block_pin(here)
-                    @locals.push Solargraph::Pin::MethodParameter.new(get_node_location(u), fqn || '', "#{u.children[0]}", docstring_for(c), blk)
+                    # here = get_node_start_position(c)
+                    # blk = get_block_pin(here)
+                    # @locals.push Solargraph::Pin::MethodParameter.new(get_node_location(u), fqn || '', "#{u.children[0]}", docstring_for(c), blk)
+                    here = get_node_start_position(u)
+                    context = get_named_path_pin(here)
+                    block = get_block_pin(here)
+                    presence = Source::Range.new(here, block.location.range.ending)
+                    @locals.push Solargraph::Pin::MethodParameter.new(get_node_location(u), fqn, u.children[0].to_s, docstring_for(c), resolve_node_signature(u.children[1]), infer_literal_node_type(u.children[1]), context, block, presence)
                   end
                 end
               elsif c.type == :block
