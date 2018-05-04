@@ -10,6 +10,7 @@ module Solargraph::LanguageServer::Message::Workspace
       meths.push 'textDocument/hover' if update.has_key?('hover') and update['hover']  and !host.options['hover']
       meths.push 'textDocument/signatureHelp' if update.has_key?('hover') and update['hover'] and !host.options['hover']
       meths.push 'textDocument/onTypeFormatting' if update.has_key?('autoformat') and update['autoformat'] and !host.options['autoformat']
+      meths.push "textDocument/formatting" if update.has_key?('formatting') and update['formatting'] and !host.options['formatting']
       host.register_capabilities meths unless meths.empty?
 
       meths = []
@@ -17,6 +18,7 @@ module Solargraph::LanguageServer::Message::Workspace
       meths.push 'textDocument/hover' if update.has_key?('hover') and !update['hover'] and host.options['hover']
       meths.push 'textDocument/signatureHelp' if update.has_key?('hover') and !update['hover'] and host.options['hover']
       meths.push 'textDocument/onTypeFormatting' if update.has_key?('autoformat') and !update['autoformat'] and host.options['autoformat']
+      meths.push "textDocument/formatting" if update.has_key?('formatting') and !update['formatting'] and host.options['formatting']
       host.unregister_capabilities meths unless meths.empty?
 
       host.configure update
