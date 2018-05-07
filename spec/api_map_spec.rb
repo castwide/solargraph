@@ -870,4 +870,42 @@ describe Solargraph::ApiMap do
     names = api_map.complete(fragment).pins.map(&:name)
     expect(names).to include('upcase')
   end
+
+  it "includes private module instance methods in class namespaces" do
+    api_map = Solargraph::ApiMap.new
+    source = Solargraph::Source.new(%(
+      class Foo
+      end
+      ))
+    api_map.virtualize source
+    fragment = source.fragment_at(2, 0)
+    names = api_map.complete(fragment).pins.map(&:name)
+    expect(names).to include('private')
+    expect(names).to include('module_function')
+  end
+
+  it "includes private module instance methods in module namespaces" do
+    api_map = Solargraph::ApiMap.new
+    source = Solargraph::Source.new(%(
+      module Foo
+      end
+      ))
+    api_map.virtualize source
+    fragment = source.fragment_at(2, 0)
+    names = api_map.complete(fragment).pins.map(&:name)
+    expect(names).to include('private')
+    expect(names).to include('module_function')
+  end
+
+  it "excludes private module instance methods from the global namespace" do
+    api_map = Solargraph::ApiMap.new
+    source = Solargraph::Source.new(%(
+      x
+      ))
+    api_map.virtualize source
+    fragment = source.fragment_at(2, 0)
+    names = api_map.complete(fragment).pins.map(&:name)
+    expect(names).not_to include('private')
+    expect(names).not_to include('module_function')
+  end
 end

@@ -168,14 +168,14 @@ module Solargraph
             ns = nil
             ns = find_first_resolved_object(yard, namespace, scope)
             unless ns.nil?
-              ns.meths(scope: :instance, visibility: visibility).each { |m|
+              ns.meths(scope: :instance, visibility: visibility).each do |m|
                 n = m.to_s.split(/[\.#]/).last
                 # HACK: Special treatment for #initialize
                 next if n == 'initialize' and !visibility.include?(:private)
                 if (namespace == 'Kernel' or !m.to_s.start_with?('Kernel#')) and !m.docstring.to_s.include?(':nodoc:')
                   meths.push Pin::YardObject.new(m, object_location(m))
                 end
-              }
+              end
               if ns.kind_of?(YARD::CodeObjects::ClassObject) and namespace != 'Object'
                 unless ns.nil?
                   meths += get_instance_methods(ns.superclass.to_s)
