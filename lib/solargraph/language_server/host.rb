@@ -372,9 +372,9 @@ module Solargraph
         {
           'completion' => true,
           'hover' => true,
-          'autoformat' => true,
-          'diagnostics' => true,
-          'formatting' => true
+          'autoformat' => false,
+          'diagnostics' => false,
+          'formatting' => false
         }
       end
 
@@ -447,7 +447,7 @@ module Solargraph
           diagnoser = Diagnostics::Rubocop.new
           until stopped?
             sleep 1
-            if options['diagnostics'] != 'rubocop'
+            if !options['diagnostics']
               @change_semaphore.synchronize { @diagnostics_queue.clear }
               next
             end

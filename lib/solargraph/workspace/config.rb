@@ -28,7 +28,7 @@ module Solargraph
         @raw_data['exclude'] ||= exclude_globs
         @raw_data['require'] ||= []
         @raw_data['domains'] ||= []
-        @raw_data['reporters'] ||= []
+        @raw_data['reporters'] ||= %w[rubocop require_not_found]
         @raw_data['plugins'] ||= []
         @raw_data['max_files'] ||= Workspace::MAX_WORKSPACE_SIZE
         included

@@ -99,6 +99,11 @@ describe Solargraph::YardMap do
     expect(yard_map.unresolved_requires).not_to include('parser')
   end
 
+  # @todo This spec might be outdated, or at least inaccurately worded. YardMap
+  #   no longer adapts the environment based on the bundler. Instead, the user
+  #   is expected to use the bundler for processes where necessary. Attempts to
+  #   change the environment for workspaces that contained a Gemfile were
+  #   consistently dodgy.
   it "uses a clean bundler environment in workspaces with unloaded gemfiles" do
     Dir.mktmpdir do |dir|
       File.write(File.join(dir, 'Gemfile'), %(
