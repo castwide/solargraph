@@ -134,7 +134,6 @@ module Solargraph
                 pins.push Solargraph::Pin::GlobalVariable.new(get_node_location(c), fqn, c.children[0].to_s, docstring_for(c), resolve_node_signature(c.children[1]), infer_literal_node_type(c.children[1]), @pins.first)
               elsif c.type == :sym
                 @symbols.push Solargraph::Pin::Symbol.new(get_node_location(c), ":#{c.children[0]}")
-
               elsif c.type == :casgn
                 here = get_node_start_position(c)
                 block = get_block_pin(here)
@@ -191,6 +190,8 @@ module Solargraph
                   end
                 end
                 next
+              elsif c.type == :send and c.children[1] == :module_function
+                # @todo Handle module_function
               elsif c.type == :send and c.children[1] == :include and c.children[0].nil?
                 last_node = get_last_in_stack_not_begin(stack)
                 if last_node.nil? or last_node.type == :class or last_node.type == :module or last_node.type == :source
