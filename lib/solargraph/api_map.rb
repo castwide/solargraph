@@ -475,7 +475,7 @@ module Solargraph
           result.concat yard_map.get_methods(fqns, '', visibility: visibility)
           type = get_namespace_type(fqns)
           result.concat inner_get_methods('Class', :instance, fqns == '' ? [:public] : visibility, deep, skip) if type == :class
-          result.concat inner_get_methods('Module', :instance, fqns == '' ? [:public] : visibility, deep, skip)
+          result.concat inner_get_methods('Module', :instance, fqns == '' ? [:public] : visibility, deep, skip) if type == :module
         end
       end
       result

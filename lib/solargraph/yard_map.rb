@@ -170,6 +170,8 @@ module Solargraph
             unless ns.nil?
               ns.meths(scope: :instance, visibility: visibility).each do |m|
                 n = m.to_s.split(/[\.#]/).last
+                # HACK: Exception for Module#module_function in Class
+                next if ns.name == :Class and m.path == 'Module#module_function'
                 # HACK: Special treatment for #initialize
                 next if n == 'initialize' and !visibility.include?(:private)
                 if (namespace == 'Kernel' or !m.to_s.start_with?('Kernel#')) and !m.docstring.to_s.include?(':nodoc:')

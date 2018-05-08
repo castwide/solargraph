@@ -881,7 +881,6 @@ describe Solargraph::ApiMap do
     fragment = source.fragment_at(2, 0)
     names = api_map.complete(fragment).pins.map(&:name)
     expect(names).to include('private')
-    expect(names).to include('module_function')
   end
 
   it "includes private module instance methods in module namespaces" do
