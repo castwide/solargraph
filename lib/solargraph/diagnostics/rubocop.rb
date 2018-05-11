@@ -21,6 +21,7 @@ module Solargraph
           raise DiagnosticsError, 'No command specified' if command.nil? or command.empty?
           cmd = "#{Shellwords.escape(command)} -f j -s #{Shellwords.escape(filename)}"
           o, e, s = Open3.capture3(cmd, stdin_data: text)
+          STDERR.puts e unless e.empty?
           raise DiagnosticsError, "Command '#{command}' is not available (gem exception)" if e.include?('Gem::Exception')
           raise DiagnosticsError, "RuboCop returned empty data" if o.empty?
           make_array JSON.parse(o)
