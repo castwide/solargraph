@@ -33,4 +33,22 @@ describe Solargraph::Source::Change do
     updated = change.write(text)
     expect(updated).to eq('bar')
   end
+
+  it "blanks single colons in nullable changes" do
+    text = 'bar'
+    new_text = ':'
+    range = Solargraph::Source::Range.from_to(0, 3, 0, 3)
+    change = Solargraph::Source::Change.new(range, new_text)
+    updated = change.write(text, true)
+    expect(updated).to eq('bar ')
+  end
+
+  it "blanks double colons in nullable changes" do
+    text = 'bar:'
+    new_text = ':'
+    range = Solargraph::Source::Range.from_to(0, 4, 0, 4)
+    change = Solargraph::Source::Change.new(range, new_text)
+    updated = change.write(text, true)
+    expect(updated).to eq('bar  ')
+  end
 end
