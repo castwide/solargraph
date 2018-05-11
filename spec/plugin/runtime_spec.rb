@@ -1,3 +1,5 @@
+require 'tmpdir'
+
 describe Solargraph::Plugin::Runtime do
   it "finds runtime methods" do
     runtime = Solargraph::Plugin::Runtime.new(nil)
@@ -65,5 +67,15 @@ describe Solargraph::Plugin::Runtime do
     expect(result).not_to be(nil)
     expect(result['name']).to eq('Tms')
     expect(result['namespace']).to eq('Process')
+  end
+
+  it "uses the workspace directory" do
+    Dir.mktmpdir do |dir|
+      api_map = Solargraph::ApiMap.load(dir)
+      runtime = Solargraph::Plugin::Runtime.new(api_map)
+      result = runtime.get_methods(namespace: 'File', root: '', scope: :class).map{|r| r['name']}
+      expect(result).to include('exist?')
+      runtime.stop
+    end
   end
 end
