@@ -66,8 +66,8 @@ module Solargraph
 
       def start_process
         dir = Dir.pwd
-        unless api_map.nil? or api_map.workspace.nil?
-          dir = api_map.workspace
+        unless api_map.nil? or api_map.workspace.nil? or api_map.workspace.directory.nil?
+          dir = api_map.workspace.directory
         end
         Dir.chdir(dir) do
           @io = IO.popen(executable, 'r+')
