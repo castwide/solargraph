@@ -709,7 +709,7 @@ describe Solargraph::ApiMap do
     result = api_map.complete(fragment).pins.map(&:name)
     expect(result.length).to eq(1)
     expect(result).to include('Bar')
-    fragment = source.fragment_at(5, 12)
+    fragment = source.fragment_at(5, 11)
     result = api_map.complete(fragment).pins.map(&:name)
     expect(result.length).to eq(1)
     expect(result).to include('Bar')
@@ -772,7 +772,6 @@ describe Solargraph::ApiMap do
     api_map.virtualize source
     fragment = source.fragment_at(2, 9)
     names = api_map.complete(fragment).pins.map(&:name)
-    expect(names).to include('Foo')
     expect(names).to include('String')
   end
 
@@ -975,5 +974,21 @@ describe Solargraph::ApiMap do
     api_map.virtualize source
     meths = api_map.get_methods('Foo', scope: :class).map(&:name)
     expect(meths).to include('bar')
+  end
+
+  it "filters completion results based on the current word" do
+    api_map = Solargraph::ApiMap.new
+    source = Solargraph::Source.new(%(
+      re
+      ))
+    api_map.virtualize source
+    fragment = source.fragment_at(1, 8)
+    names = api_map.complete(fragment).pins.map(&:name)
+    expect(names).to include('rescue')
+    expect(names).not_to include('raise')
+    fragment = source.fragment_at(1, 7)
+    names = api_map.complete(fragment).pins.map(&:name)
+    expect(names).to include('rescue')
+    expect(names).to include('raise')
   end
 end
