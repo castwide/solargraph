@@ -229,14 +229,16 @@ module Solargraph
               elsif c.type == :send and c.children[1] == :extend and c.children[0].nil?
                 last_node = get_last_in_stack_not_begin(stack)
                 if last_node.nil? or last_node.type == :class or last_node.type == :module or last_node.type == :source
-                  if c.children[2].kind_of?(AST::Node) and c.children[2].type == :const
-                    # namespace_extends[fqn || ''] ||= []
-                    c.children[2..-1].each do |i|
-                      nspin = @pins.select{|pin| pin.kind == Pin::NAMESPACE and pin.path == fqn}.last
-                      unless nspin.nil?
+                  c.children[2..-1].each do |i|
+                    nspin = @pins.select{|pin| pin.kind == Pin::NAMESPACE and pin.path == fqn}.last
+                    unless nspin.nil?
+                      ref = nil
+                      if i.type == :self
+                        ref = Pin::Reference.new(get_node_location(c), nspin.path, nspin.path)
+                      elsif i.type == :const
                         ref = Pin::Reference.new(get_node_location(c), nspin.path, unpack_name(i))
-                        nspin.extend_references.push(ref)
                       end
+                      nspin.extend_references.push(ref) unless ref.nil?
                     end
                   end
                 end

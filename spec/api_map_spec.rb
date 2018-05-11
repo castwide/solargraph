@@ -962,4 +962,18 @@ describe Solargraph::ApiMap do
     class_meths = api_map.get_methods('Foo', scope: :instance, visibility: [:public]).map(&:name)
     expect(class_meths).to include('baz')
   end
+
+  it "understands `extend self`" do
+    api_map = Solargraph::ApiMap.new
+    source = Solargraph::Source.new(%(
+      module Foo
+        extend self
+        def bar
+        end
+      end
+      ))
+    api_map.virtualize source
+    meths = api_map.get_methods('Foo', scope: :class).map(&:name)
+    expect(meths).to include('bar')
+  end
 end
