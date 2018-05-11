@@ -9,7 +9,6 @@ module Solargraph
             capabilities: {
               textDocumentSync: 2, # @todo What should this be?
               definitionProvider: true,
-              documentFormattingProvider: true,
               documentSymbolProvider: true,
               workspaceSymbolProvider: true,
               workspace: {
@@ -24,6 +23,7 @@ module Solargraph
           result[:capabilities].merge! static_signature_help unless dynamic_signature_help?
           result[:capabilities].merge! static_on_type_formatting unless dynamic_on_type_formatting?
           result[:capabilities].merge! static_hover unless dynamic_hover?
+          result[:capabilities].merge! static_document_formatting unless dynamic_document_formatting?
           set_result result
         end
 
@@ -83,6 +83,19 @@ module Solargraph
         end
 
         def dynamic_hover?
+          params['capabilities'] and
+            params['capabilities']['textDocument'] and
+            params['capabilities']['textDocument']['hover'] and
+            params['capabilities']['textDocument']['hover']['dynamicRegistration']
+        end
+
+        def static_document_formatting
+          {
+            documentFormattingProvider: true
+          }
+        end
+
+        def dynamic_document_formatting?
           params['capabilities'] and
             params['capabilities']['textDocument'] and
             params['capabilities']['textDocument']['hover'] and

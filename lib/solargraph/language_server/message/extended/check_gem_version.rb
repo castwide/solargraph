@@ -30,6 +30,10 @@ module Solargraph
             elsif params['verbose']
               host.show_message "The Solargraph gem is up to date (version #{Solargraph::VERSION})."
             end
+            set_result({
+              installed: current,
+              available: available
+            })
           end
         end
       end

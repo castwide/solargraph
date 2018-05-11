@@ -855,4 +855,125 @@ describe Solargraph::ApiMap do
     pins = api_map.signify(fragment)
     expect(pins).to be_empty
   end
+
+  it "includes methods from domain directives in sources" do
+    api_map = Solargraph::ApiMap.new
+    # @todo Comments with directives need to be associated with a node in order
+    #   to get processed. There may not be a simple way to get around that
+    #   requirement.
+    source = Solargraph::Source.new(%(
+      # @!domain String
+      x
+      ))
+    api_map.virtualize source
+    fragment = source.fragment_at(2, 0)
+    names = api_map.complete(fragment).pins.map(&:name)
+    expect(names).to include('upcase')
+  end
+
+  it "includes private module instance methods in class namespaces" do
+    api_map = Solargraph::ApiMap.new
+    source = Solargraph::Source.new(%(
+      class Foo
+      end
+      ))
+    api_map.virtualize source
+    fragment = source.fragment_at(2, 0)
+    names = api_map.complete(fragment).pins.map(&:name)
+    expect(names).to include('private')
+  end
+
+  it "includes private module instance methods in module namespaces" do
+    api_map = Solargraph::ApiMap.new
+    source = Solargraph::Source.new(%(
+      module Foo
+      end
+      ))
+    api_map.virtualize source
+    fragment = source.fragment_at(2, 0)
+    names = api_map.complete(fragment).pins.map(&:name)
+    expect(names).to include('private')
+    expect(names).to include('module_function')
+  end
+
+  it "excludes private module instance methods from the global namespace" do
+    api_map = Solargraph::ApiMap.new
+    source = Solargraph::Source.new(%(
+      x
+      ))
+    api_map.virtualize source
+    fragment = source.fragment_at(2, 0)
+    names = api_map.complete(fragment).pins.map(&:name)
+    expect(names).not_to include('private')
+    expect(names).not_to include('module_function')
+  end
+
+  it "maps methods scoped with module_function" do
+    api_map = Solargraph::ApiMap.new
+    source = Solargraph::Source.new(%(
+      module Foo
+        module_function
+        def bar
+        end
+      end
+      ))
+    api_map.virtualize source
+    class_meths = api_map.get_methods('Foo', scope: :class, visibility: [:public]).map(&:name)
+    expect(class_meths).to include('bar')
+    class_meths = api_map.get_methods('Foo', scope: :instance, visibility: [:private]).map(&:name)
+    expect(class_meths).to include('bar')
+  end
+
+  it "maps methods scoped defined inside module_function" do
+    api_map = Solargraph::ApiMap.new
+    source = Solargraph::Source.new(%(
+      module Foo
+        module_function def bar
+        end
+        def baz
+        end
+      end
+      ))
+    api_map.virtualize source
+    class_meths = api_map.get_methods('Foo', scope: :class, visibility: [:public]).map(&:name)
+    expect(class_meths).to include('bar')
+    class_meths = api_map.get_methods('Foo', scope: :instance, visibility: [:private]).map(&:name)
+    expect(class_meths).to include('bar')
+    class_meths = api_map.get_methods('Foo', scope: :instance, visibility: [:public]).map(&:name)
+    expect(class_meths).to include('baz')
+  end
+
+  it "maps methods scoped in module_function arguments" do
+    api_map = Solargraph::ApiMap.new
+    source = Solargraph::Source.new(%(
+      module Foo
+        def bar
+        end
+        def baz
+        end
+        module_function :bar
+      end
+      ))
+    api_map.virtualize source
+    class_meths = api_map.get_methods('Foo', scope: :class, visibility: [:public]).map(&:name)
+    expect(class_meths).to include('bar')
+    class_meths = api_map.get_methods('Foo', scope: :instance, visibility: [:private]).map(&:name)
+    expect(class_meths).to include('bar')
+    class_meths = api_map.get_methods('Foo', scope: :instance, visibility: [:public]).map(&:name)
+    expect(class_meths).to include('baz')
+  end
+
+  it "understands `extend self`" do
+    api_map = Solargraph::ApiMap.new
+    source = Solargraph::Source.new(%(
+      module Foo
+        extend self
+        def bar
+        end
+      end
+      ))
+    api_map.virtualize source
+    meths = api_map.get_methods('Foo', scope: :class).map(&:name)
+    expect(meths).to include('bar')
+  end
 end

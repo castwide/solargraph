@@ -88,7 +88,7 @@ module Solargraph
       end
 
       def visibility
-        :public #@todo Resolve this
+        @visibility ||= (code_object.respond_to?(:visibility) ? code_object.visibility : :public)
       end
 
       def scope

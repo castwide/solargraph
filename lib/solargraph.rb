@@ -1,7 +1,6 @@
 require 'solargraph/version'
 require 'rubygems/package'
 require 'yard-solargraph'
-require 'sinatra'
 
 module Solargraph
   class InvalidOffsetError <      RangeError; end
@@ -11,6 +10,8 @@ module Solargraph
 
   class WorkspaceTooLargeError < RuntimeError
     attr_reader :size
+
+    # @param size [Integer] The number of files included in the workspace
     def initialize size
       @size = size
     end
@@ -20,8 +21,6 @@ module Solargraph
   autoload :Source,         'solargraph/source'
   autoload :ApiMap,         'solargraph/api_map'
   autoload :NodeMethods,    'solargraph/node_methods'
-  autoload :Suggestion,     'solargraph/suggestion'
-  autoload :Server,         'solargraph/server'
   autoload :YardMap,        'solargraph/yard_map'
   autoload :Pin,            'solargraph/pin'
   autoload :LiveMap,        'solargraph/live_map'

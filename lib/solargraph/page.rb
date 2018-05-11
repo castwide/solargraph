@@ -14,7 +14,7 @@ module Solargraph
         end
         define_singleton_method :erb do |template, layout: false, locals: {}|
           render_method.call(template, layout: layout, locals: locals)
-        end        
+        end
       end
 
       def htmlify text

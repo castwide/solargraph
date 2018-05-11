@@ -19,7 +19,7 @@ module Solargraph
         sources.each do |s|
           s.namespace_pins.each do |pin|
             next if pin.path.empty?
-            if pin.kind == Solargraph::Suggestion::CLASS
+            if pin.type == :class
               code_object_map[pin.path] ||= YARD::CodeObjects::ClassObject.new(root_code_object, pin.path)
             else
               code_object_map[pin.path] ||= YARD::CodeObjects::ModuleObject.new(root_code_object, pin.path)

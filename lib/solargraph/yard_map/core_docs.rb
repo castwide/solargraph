@@ -77,7 +77,7 @@ module Solargraph
 
         def download version
           FileUtils.mkdir_p cache_dir
-          uri = URI.parse("http://solargraph.org/download/#{version}.tar.gz")
+          uri = URI.parse("#{SOURCE}/#{version}.tar.gz")
           response = Net::HTTP.get_response(uri)
           zipfile = File.join(cache_dir, "#{version}.tar.gz")
           File.binwrite zipfile, response.body

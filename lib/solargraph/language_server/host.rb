@@ -54,7 +54,7 @@ module Solargraph
       # processed, the transport is responsible for sending the response.
       #
       # @param request [Hash] The contents of the message.
-      # @return [Solargraph::LanguageServer::Message] The message handler.
+      # @return [Solargraph::LanguageServer::Message::Base] The message handler.
       def start request
         if request['method']
           message = Message.select(request['method']).new(self, request)
@@ -372,8 +372,9 @@ module Solargraph
         {
           'completion' => true,
           'hover' => true,
-          'autoformat' => true,
-          'diagnostics' => true
+          'autoformat' => false,
+          'diagnostics' => false,
+          'formatting' => false
         }
       end
 
@@ -446,13 +447,13 @@ module Solargraph
           diagnoser = Diagnostics::Rubocop.new
           until stopped?
             sleep 1
-            if options['diagnostics'] != 'rubocop'
+            if !options['diagnostics']
               @change_semaphore.synchronize { @diagnostics_queue.clear }
               next
             end
             begin
-              # Diagnosis is broken into two parts to reduce the amount of times it runs while
-              # a document is changing
+              # Diagnosis is broken into two parts to reduce the number of
+              # times it runs while a document is changing
               current = nil
               already_changing = nil
               @change_semaphore.synchronize do
@@ -463,13 +464,9 @@ module Solargraph
               end
               next if current.nil? or already_changing
               filename = uri_to_file(current)
-              # text = library.read_text(filename)
-              # results = diagnoser.diagnose text, filename
-              # results.concat library.diagnose(filename)
               results = library.diagnose(filename)
               @change_semaphore.synchronize do
                 already_changing = (unsafe_changing?(current) or @diagnostics_queue.include?(current))
-                # publish_diagnostics current, resp unless already_changing
                 unless already_changing
                   send_notification "textDocument/publishDiagnostics", {
                     uri: current,

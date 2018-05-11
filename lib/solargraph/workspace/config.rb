@@ -13,7 +13,7 @@ module Solargraph
       def initialize workspace = nil
         @workspace = workspace
         include_globs = ['**/*.rb']
-        exclude_globs = ['spec/**/*', 'test/**/*']
+        exclude_globs = ['spec/**/*', 'test/**/*', 'vendor/**/*']
         unless @workspace.nil?
           sfile = File.join(@workspace, '.solargraph.yml')
           if File.file?(sfile)
@@ -28,8 +28,9 @@ module Solargraph
         @raw_data['exclude'] ||= exclude_globs
         @raw_data['require'] ||= []
         @raw_data['domains'] ||= []
-        @raw_data['reporters'] ||= []
+        @raw_data['reporters'] ||= %w[rubocop require_not_found]
         @raw_data['plugins'] ||= []
+        @raw_data['max_files'] ||= Workspace::MAX_WORKSPACE_SIZE
         included
         excluded
       end
@@ -72,6 +73,10 @@ module Solargraph
 
       def reporters
         raw_data['reporters']
+      end
+
+      def max_files
+        raw_data['max_files']
       end
 
       private

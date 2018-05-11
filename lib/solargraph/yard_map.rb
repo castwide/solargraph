@@ -1,5 +1,4 @@
 require 'yard'
-require 'bundler'
 
 module Solargraph
   class YardMap
@@ -92,7 +91,7 @@ module Solargraph
       found
     end
 
-    # @return [Array<Suggestion>]
+    # @return [Array<Solargraph::Pin::Base>]
     def get_constants namespace , scope = ''
       cached = cache.get_constants(namespace, scope)
       return cached unless cached.nil?
@@ -113,26 +112,22 @@ module Solargraph
         return_type = nil
         if c.kind_of?(YARD::CodeObjects::ClassObject)
           detail = 'Class'
-          kind = Suggestion::CLASS
           return_type = "Class<#{c.to_s}>"
         elsif c.kind_of?(YARD::CodeObjects::ModuleObject)
           detail = 'Module'
-          kind = Suggestion::MODULE
           return_type = "Module<#{c.to_s}>"
         elsif c.kind_of?(YARD::CodeObjects::ConstantObject)
           detail = 'Constant'
-          kind = Suggestion::CONSTANT
         else
           next
         end
-        # result.push Suggestion.new(c.to_s.split('::').last, detail: c.to_s, kind: kind, docstring: c.docstring, return_type: return_type, location: object_location(c))
         result.push Pin::YardObject.new(c, object_location(c))
       }
       cache.set_constants(namespace, scope, result)
       result
     end
 
-    # @return [Array<Suggestion>]
+    # @return [Array<Solargraph::Pin::Base>]
     def get_methods namespace, scope = '', visibility: [:public]
       return [] if namespace == '' and scope == ''
       cached = cache.get_methods(namespace, scope, visibility)
@@ -160,7 +155,7 @@ module Solargraph
       meths
     end
 
-    # @return [Array<Suggestion>]
+    # @return [Array<Solargraph::Pin::Base>]
     def get_instance_methods namespace, scope = '', visibility: [:public]
       return [] if namespace == '' and scope == ''
       cached = cache.get_instance_methods(namespace, scope, visibility)
@@ -173,14 +168,16 @@ module Solargraph
             ns = nil
             ns = find_first_resolved_object(yard, namespace, scope)
             unless ns.nil?
-              ns.meths(scope: :instance, visibility: visibility).each { |m|
+              ns.meths(scope: :instance, visibility: visibility).each do |m|
                 n = m.to_s.split(/[\.#]/).last
+                # HACK: Exception for Module#module_function in Class
+                next if ns.name == :Class and m.path == 'Module#module_function'
                 # HACK: Special treatment for #initialize
                 next if n == 'initialize' and !visibility.include?(:private)
                 if (namespace == 'Kernel' or !m.to_s.start_with?('Kernel#')) and !m.docstring.to_s.include?(':nodoc:')
                   meths.push Pin::YardObject.new(m, object_location(m))
                 end
-              }
+              end
               if ns.kind_of?(YARD::CodeObjects::ClassObject) and namespace != 'Object'
                 unless ns.nil?
                   meths += get_instance_methods(ns.superclass.to_s)
@@ -333,10 +330,6 @@ module Solargraph
         return Solargraph::Source::Location.new(file, Solargraph::Source::Range.from_to(obj.line - 1, 0, obj.line - 1, 0)) if File.exist?(file)
       end
       nil
-    end
-
-    def has_bundle?
-      !workspace.nil? and !workspace.directory.nil? and File.exist?(File.join workspace.directory, 'Gemfile')
     end
   end
 end
