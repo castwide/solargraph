@@ -200,7 +200,7 @@ module Solargraph
                 elsif c.children[2].type == :sym or c.children[2].type == :str
                   # @todo What to do about references?
                   c.children[2..-1].each do |x|
-                    cn = x.children[2].children[0].to_s
+                    cn = x.children[0].to_s
                     ref = pins.select{|p| p.namespace == (fqn || '') and p.name == cn}.first
                     unless ref.nil?
                       pins.delete ref

@@ -907,4 +907,59 @@ describe Solargraph::ApiMap do
     expect(names).not_to include('private')
     expect(names).not_to include('module_function')
   end
+
+  it "maps methods scoped with module_function" do
+    api_map = Solargraph::ApiMap.new
+    source = Solargraph::Source.new(%(
+      module Foo
+        module_function
+        def bar
+        end
+      end
+      ))
+    api_map.virtualize source
+    class_meths = api_map.get_methods('Foo', scope: :class, visibility: [:public]).map(&:name)
+    expect(class_meths).to include('bar')
+    class_meths = api_map.get_methods('Foo', scope: :instance, visibility: [:private]).map(&:name)
+    expect(class_meths).to include('bar')
+  end
+
+  it "maps methods scoped defined inside module_function" do
+    api_map = Solargraph::ApiMap.new
+    source = Solargraph::Source.new(%(
+      module Foo
+        module_function def bar
+        end
+        def baz
+        end
+      end
+      ))
+    api_map.virtualize source
+    class_meths = api_map.get_methods('Foo', scope: :class, visibility: [:public]).map(&:name)
+    expect(class_meths).to include('bar')
+    class_meths = api_map.get_methods('Foo', scope: :instance, visibility: [:private]).map(&:name)
+    expect(class_meths).to include('bar')
+    class_meths = api_map.get_methods('Foo', scope: :instance, visibility: [:public]).map(&:name)
+    expect(class_meths).to include('baz')
+  end
+
+  it "maps methods scoped in module_function arguments" do
+    api_map = Solargraph::ApiMap.new
+    source = Solargraph::Source.new(%(
+      module Foo
+        def bar
+        end
+        def baz
+        end
+        module_function :bar
+      end
+      ))
+    api_map.virtualize source
+    class_meths = api_map.get_methods('Foo', scope: :class, visibility: [:public]).map(&:name)
+    expect(class_meths).to include('bar')
+    class_meths = api_map.get_methods('Foo', scope: :instance, visibility: [:private]).map(&:name)
+    expect(class_meths).to include('bar')
+    class_meths = api_map.get_methods('Foo', scope: :instance, visibility: [:public]).map(&:name)
+    expect(class_meths).to include('baz')
+  end
 end
