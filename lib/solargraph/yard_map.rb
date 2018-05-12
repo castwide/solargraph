@@ -1,16 +1,27 @@
 require 'yard'
 
 module Solargraph
+  # The YardMap provides access to YARD documentation for the Ruby core, the
+  # stdlib, and gems.
+  #
   class YardMap
     autoload :Cache, 'solargraph/yard_map/cache'
     autoload :CoreDocs, 'solargraph/yard_map/core_docs'
 
     CoreDocs.require_minimum
     @@stdlib_yardoc = CoreDocs.yard_stdlib_file
-    @@stdlib_namespaces = []
+    @@stdlib_paths = {}
     YARD::Registry.load! @@stdlib_yardoc
     YARD::Registry.all(:class, :module).each do |ns|
-      @@stdlib_namespaces.push ns.path
+      next if ns.file.nil?
+      path = ns.file.sub(/^(ext|lib)\//, '').sub(/\.(rb|c)$/, '')
+      next if path.start_with?('-')
+      @@stdlib_paths[path] ||= []
+      @@stdlib_paths[path].push ns
+      base = path.split('/').first
+      next if base == path
+      @@stdlib_paths[base] ||= []
+      @@stdlib_paths[base].push ns
     end
 
     # @return [Solargraph::Workspace]
@@ -25,6 +36,7 @@ module Solargraph
       @required = required.clone
       @namespace_yardocs = {}
       @gem_paths = {}
+      @stdlib_namespaces = []
       process_requires
       yardocs.push CoreDocs.yardoc_file
       yardocs.uniq!
@@ -105,6 +117,7 @@ module Solargraph
             consts.concat found.children unless found.nil?
           end
         end
+        consts.concat @stdlib_namespaces.select{|ns| ns.namespace.path == namespace}
       end
       consts.each { |c|
         detail = nil
@@ -148,6 +161,17 @@ module Solargraph
                 meths += get_methods ns.superclass.to_s, '', visibility: [:public, :protected] unless ['Object', 'BasicObject', ''].include?(ns.superclass.to_s)
               end
             end
+          end
+        end
+        @stdlib_namespaces.select{|ns| ns.path == namespace}.each do |ns|
+          ns.meths(scope: :class, visibility: visibility).each { |m|
+            meths.push Pin::YardObject.new(m, object_location(m))
+          }
+          # Collect superclass methods
+          if ns.kind_of?(YARD::CodeObjects::ClassObject) and !ns.superclass.nil?
+            meths += get_methods ns.superclass.to_s, '', visibility: [:public, :protected] unless ['Object', 'BasicObject', ''].include?(ns.superclass.to_s)
+            # @todo Why is this necessary here? Shouldn't it be included somewhere else?
+            meths += get_instance_methods('Class')
           end
         end
       end
@@ -194,6 +218,31 @@ module Solargraph
             end
           end
         end
+        @stdlib_namespaces.select{|ns| ns.path == namespace}.each do |ns|
+          ns.meths(scope: :instance, visibility: visibility).each do |m|
+            n = m.to_s.split(/[\.#]/).last
+            # HACK: Exception for Module#module_function in Class
+            next if ns.name == :Class and m.path == 'Module#module_function'
+            # HACK: Special treatment for #initialize
+            next if n == 'initialize' and !visibility.include?(:private)
+            if (namespace == 'Kernel' or !m.to_s.start_with?('Kernel#')) and !m.docstring.to_s.include?(':nodoc:')
+              meths.push Pin::YardObject.new(m, object_location(m))
+            end
+          end
+          if ns.kind_of?(YARD::CodeObjects::ClassObject) and namespace != 'Object'
+            unless ns.nil?
+              meths += get_instance_methods(ns.superclass.to_s)
+            end
+          end
+          ns.instance_mixins.each do |m|
+            meths += get_instance_methods(m.to_s) unless m.to_s == 'Kernel'
+          end
+          # HACK: Now get the #initialize method for private requests
+          if visibility.include?(:private)
+            init = ns.meths(scope: :instance).select{|m| m.to_s.split(/[\.#]/).last == 'initialize'}.first
+            meths.push Pin::YardObject.new(init, object_location(init)) unless init.nil?
+          end
+        end
       end
       cache.set_instance_methods(namespace, scope, visibility, meths)
       meths
@@ -205,10 +254,12 @@ module Solargraph
         while parts.length > 0
           here = "#{parts.join('::')}::#{namespace}"
           return here unless yardocs_documenting(here).empty?
+          return here if @stdlib_namespaces.any?{|ns| ns.path == here}
           parts.pop
         end
       end
       return namespace unless yardocs_documenting(namespace).empty?
+      return namespace if @stdlib_namespaces.any?{|ns| ns.path == namespace}
       nil
     end
 
@@ -268,6 +319,7 @@ module Solargraph
       tried = []
       unresolved_requires.clear
       required.each do |r|
+        next if r.nil?
         begin
           spec = Gem::Specification.find_by_path(r) || Gem::Specification.find_by_name(r.split('/').first)
           ver = spec.version.to_s
@@ -280,7 +332,12 @@ module Solargraph
           yardocs.unshift yd unless yd.nil? or yardocs.include?(yd)
         rescue Gem::LoadError => e
           next if !workspace.nil? and workspace.would_require?(r)
-          unresolved_requires.push r
+          stdnames = []
+          @@stdlib_paths.each_pair do |path, objects|
+            stdnames.concat objects if path == r or r.start_with?("#{path}/")
+          end
+          @stdlib_namespaces.concat stdnames
+          unresolved_requires.push r if stdnames.empty?
         end
       end
     end
@@ -317,7 +374,7 @@ module Solargraph
       else
         result.concat @namespace_yardocs[namespace] unless @namespace_yardocs[namespace].nil?
       end
-      result.push @@stdlib_yardoc if result.empty? and @@stdlib_namespaces.include?(namespace)
+      # result.push @@stdlib_yardoc if result.empty? and @@stdlib_namespaces.include?(namespace)
       result
     end
 
