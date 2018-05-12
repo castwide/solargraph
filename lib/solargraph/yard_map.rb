@@ -18,10 +18,6 @@ module Solargraph
       next if path.start_with?('-')
       @@stdlib_paths[path] ||= []
       @@stdlib_paths[path].push ns
-      base = path.split('/').first
-      next if base == path
-      @@stdlib_paths[base] ||= []
-      @@stdlib_paths[base].push ns
     end
 
     # @return [Solargraph::Workspace]
@@ -111,6 +107,9 @@ module Solargraph
       result = []
       combined_namespaces(namespace, scope).each do |ns|
         yardocs_documenting(ns).each do |y|
+          # @todo Getting constants from the stdlib works slightly differently
+          #   from methods
+          next if y == @@stdlib_yardoc
           yard = load_yardoc(y)
           unless yard.nil?
             found = yard.at(ns)
@@ -301,7 +300,7 @@ module Solargraph
           next if !workspace.nil? and workspace.would_require?(r)
           stdnames = []
           @@stdlib_paths.each_pair do |path, objects|
-            stdnames.concat objects if path == r or r.start_with?("#{path}/")
+            stdnames.concat objects if path == r or path.start_with?("#{r}/")
           end
           @stdlib_namespaces.concat stdnames
           unresolved_requires.push r if stdnames.empty?
