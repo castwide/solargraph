@@ -163,17 +163,6 @@ module Solargraph
             end
           end
         end
-        @stdlib_namespaces.select{|ns| ns.path == namespace}.each do |ns|
-          ns.meths(scope: :class, visibility: visibility).each { |m|
-            meths.push Pin::YardObject.new(m, object_location(m))
-          }
-          # Collect superclass methods
-          if ns.kind_of?(YARD::CodeObjects::ClassObject) and !ns.superclass.nil?
-            meths += get_methods ns.superclass.to_s, '', visibility: [:public, :protected] unless ['Object', 'BasicObject', ''].include?(ns.superclass.to_s)
-            # @todo Why is this necessary here? Shouldn't it be included somewhere else?
-            meths += get_instance_methods('Class')
-          end
-        end
       end
       cache.set_methods(namespace, scope, visibility, meths)
       meths
@@ -218,31 +207,6 @@ module Solargraph
             end
           end
         end
-        @stdlib_namespaces.select{|ns| ns.path == namespace}.each do |ns|
-          ns.meths(scope: :instance, visibility: visibility).each do |m|
-            n = m.to_s.split(/[\.#]/).last
-            # HACK: Exception for Module#module_function in Class
-            next if ns.name == :Class and m.path == 'Module#module_function'
-            # HACK: Special treatment for #initialize
-            next if n == 'initialize' and !visibility.include?(:private)
-            if (namespace == 'Kernel' or !m.to_s.start_with?('Kernel#')) and !m.docstring.to_s.include?(':nodoc:')
-              meths.push Pin::YardObject.new(m, object_location(m))
-            end
-          end
-          if ns.kind_of?(YARD::CodeObjects::ClassObject) and namespace != 'Object'
-            unless ns.nil?
-              meths += get_instance_methods(ns.superclass.to_s)
-            end
-          end
-          ns.instance_mixins.each do |m|
-            meths += get_instance_methods(m.to_s) unless m.to_s == 'Kernel'
-          end
-          # HACK: Now get the #initialize method for private requests
-          if visibility.include?(:private)
-            init = ns.meths(scope: :instance).select{|m| m.to_s.split(/[\.#]/).last == 'initialize'}.first
-            meths.push Pin::YardObject.new(init, object_location(init)) unless init.nil?
-          end
-        end
       end
       cache.set_instance_methods(namespace, scope, visibility, meths)
       meths
@@ -274,6 +238,9 @@ module Solargraph
           end
         end
       }
+      @stdlib_namespaces.each do |ns|
+        result.push Pin::YardObject.new(ns, object_location(ns)) if ns.path == path
+      end
       result
     end
 
@@ -374,7 +341,9 @@ module Solargraph
       else
         result.concat @namespace_yardocs[namespace] unless @namespace_yardocs[namespace].nil?
       end
-      # result.push @@stdlib_yardoc if result.empty? and @@stdlib_namespaces.include?(namespace)
+      if @stdlib_namespaces.map(&:path).include?(namespace)
+        result.push @@stdlib_yardoc
+      end
       result
     end
 

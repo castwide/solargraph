@@ -28,9 +28,11 @@ describe Solargraph::Pin::BlockParameter do
     expect(type).to eq('String')
   end
 
-  it "prioritizes return type tags" do
+  it "prioritizes param type tags" do
     api_map = Solargraph::ApiMap.new
     source = Solargraph::Source.load_string(%(
+      require 'set'
+
       # @yieldparam [Array]
       def yielder
       end
@@ -41,7 +43,7 @@ describe Solargraph::Pin::BlockParameter do
       end
     ), 'file.rb')
     api_map.virtualize source
-    fragment = source.fragment_at(7, 9)
+    fragment = source.fragment_at(9, 9)
     type = api_map.infer_type(fragment)
     expect(type).to eq('Set')
   end
