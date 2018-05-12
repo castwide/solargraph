@@ -17,6 +17,7 @@ module Solargraph
       # Get a hash of the range. This representation is suitable for use in
       # the language server protocol.
       #
+      # @return [Hash<Symbol, Position>]
       def to_hash
         {
           start: start.to_hash,
@@ -24,6 +25,9 @@ module Solargraph
         }
       end
 
+      # True if the specified position is inside the range.
+      #
+      # @return [Boolean]
       def contain? position
         return false if position.line < start.line
         return false if position.line == start.line and position.character < start.character
@@ -38,7 +42,7 @@ module Solargraph
       # @param c1 [Integer] Starting character
       # @param l2 [Integer] Ending line
       # @param c2 [Integer] Ending character
-      # @return [Position]
+      # @return [Range]
       def self.from_to l1, c1, l2, c2
         Range.new(Position.new(l1, c1), Position.new(l2, c2))
       end

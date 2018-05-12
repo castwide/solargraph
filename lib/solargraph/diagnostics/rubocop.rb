@@ -3,6 +3,8 @@ require 'shellwords'
 
 module Solargraph
   module Diagnostics
+    # This reporter provides linting through RuboCop.
+    #
     class Rubocop < Base
       # The rubocop command
       #

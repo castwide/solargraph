@@ -1,11 +1,19 @@
 module Solargraph
   class Source
+    # The Mapper generates pins and other data for Sources.
+    #
+    # This class is used internally by the Source class on initialization,
+    # e.g., via Source.new or Source.load. Users should not normally need to
+    # call it directly.
+    #
     class Mapper
       include NodeMethods
 
       private_class_method :new
 
-      # @return [Array<Solargraph::Pin::Base>]
+      # Generate the data.
+      #
+      # @return [Array]
       def map filename, code, node, comments
         @filename = filename
         @code = code
@@ -37,7 +45,7 @@ module Solargraph
       end
 
       class << self
-        # @return [Array<Solargraph::Pin::Base>]
+        # @return [Array]
         def map filename, code, node, comments
           new.map filename, code, node, comments
         end
