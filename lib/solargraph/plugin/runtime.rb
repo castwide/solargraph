@@ -53,6 +53,10 @@ module Solargraph
         end
       end
 
+      def stop
+        @io.close
+      end
+
       protected
 
       def load_environment

@@ -310,7 +310,8 @@ module Solargraph
           end
         end
       end
-      filtered = result.uniq(&:identifier).select{|s| s.kind != Pin::METHOD or s.name.match(/^[a-z0-9_]*(\!|\?|=)?$/i)}.sort_by.with_index{ |x, idx| [x.name, idx] }
+      frag_start = fragment.word.to_s.downcase
+      filtered = result.uniq(&:identifier).select{|s| s.name.downcase.start_with?(frag_start) and (s.kind != Pin::METHOD or s.name.match(/^[a-z0-9_]*(\!|\?|=)?$/i))}.sort_by.with_index{ |x, idx| [x.name, idx] }
       Completion.new(filtered, fragment.whole_word_range)
     end
 
@@ -475,7 +476,7 @@ module Solargraph
           result.concat yard_map.get_methods(fqns, '', visibility: visibility)
           type = get_namespace_type(fqns)
           result.concat inner_get_methods('Class', :instance, fqns == '' ? [:public] : visibility, deep, skip) if type == :class
-          result.concat inner_get_methods('Module', :instance, fqns == '' ? [:public] : visibility, deep, skip)
+          result.concat inner_get_methods('Module', :instance, fqns == '' ? [:public] : visibility, deep, skip) if type == :module
         end
       end
       result

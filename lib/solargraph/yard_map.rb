@@ -1,16 +1,23 @@
 require 'yard'
 
 module Solargraph
+  # The YardMap provides access to YARD documentation for the Ruby core, the
+  # stdlib, and gems.
+  #
   class YardMap
     autoload :Cache, 'solargraph/yard_map/cache'
     autoload :CoreDocs, 'solargraph/yard_map/core_docs'
 
     CoreDocs.require_minimum
     @@stdlib_yardoc = CoreDocs.yard_stdlib_file
-    @@stdlib_namespaces = []
+    @@stdlib_paths = {}
     YARD::Registry.load! @@stdlib_yardoc
     YARD::Registry.all(:class, :module).each do |ns|
-      @@stdlib_namespaces.push ns.path
+      next if ns.file.nil?
+      path = ns.file.sub(/^(ext|lib)\//, '').sub(/\.(rb|c)$/, '')
+      next if path.start_with?('-')
+      @@stdlib_paths[path] ||= []
+      @@stdlib_paths[path].push ns
     end
 
     # @return [Solargraph::Workspace]
@@ -25,6 +32,7 @@ module Solargraph
       @required = required.clone
       @namespace_yardocs = {}
       @gem_paths = {}
+      @stdlib_namespaces = []
       process_requires
       yardocs.push CoreDocs.yardoc_file
       yardocs.uniq!
@@ -99,12 +107,16 @@ module Solargraph
       result = []
       combined_namespaces(namespace, scope).each do |ns|
         yardocs_documenting(ns).each do |y|
+          # @todo Getting constants from the stdlib works slightly differently
+          #   from methods
+          next if y == @@stdlib_yardoc
           yard = load_yardoc(y)
           unless yard.nil?
             found = yard.at(ns)
             consts.concat found.children unless found.nil?
           end
         end
+        consts.concat @stdlib_namespaces.select{|ns| ns.namespace.path == namespace}
       end
       consts.each { |c|
         detail = nil
@@ -170,6 +182,8 @@ module Solargraph
             unless ns.nil?
               ns.meths(scope: :instance, visibility: visibility).each do |m|
                 n = m.to_s.split(/[\.#]/).last
+                # HACK: Exception for Module#module_function in Class
+                next if ns.name == :Class and m.path == 'Module#module_function'
                 # HACK: Special treatment for #initialize
                 next if n == 'initialize' and !visibility.include?(:private)
                 if (namespace == 'Kernel' or !m.to_s.start_with?('Kernel#')) and !m.docstring.to_s.include?(':nodoc:')
@@ -203,10 +217,12 @@ module Solargraph
         while parts.length > 0
           here = "#{parts.join('::')}::#{namespace}"
           return here unless yardocs_documenting(here).empty?
+          return here if @stdlib_namespaces.any?{|ns| ns.path == here}
           parts.pop
         end
       end
       return namespace unless yardocs_documenting(namespace).empty?
+      return namespace if @stdlib_namespaces.any?{|ns| ns.path == namespace}
       nil
     end
 
@@ -221,6 +237,9 @@ module Solargraph
           end
         end
       }
+      @stdlib_namespaces.each do |ns|
+        result.push Pin::YardObject.new(ns, object_location(ns)) if ns.path == path
+      end
       result
     end
 
@@ -266,6 +285,7 @@ module Solargraph
       tried = []
       unresolved_requires.clear
       required.each do |r|
+        next if r.nil?
         begin
           spec = Gem::Specification.find_by_path(r) || Gem::Specification.find_by_name(r.split('/').first)
           ver = spec.version.to_s
@@ -278,7 +298,12 @@ module Solargraph
           yardocs.unshift yd unless yd.nil? or yardocs.include?(yd)
         rescue Gem::LoadError => e
           next if !workspace.nil? and workspace.would_require?(r)
-          unresolved_requires.push r
+          stdnames = []
+          @@stdlib_paths.each_pair do |path, objects|
+            stdnames.concat objects if path == r or path.start_with?("#{r}/")
+          end
+          @stdlib_namespaces.concat stdnames
+          unresolved_requires.push r if stdnames.empty?
         end
       end
     end
@@ -315,7 +340,9 @@ module Solargraph
       else
         result.concat @namespace_yardocs[namespace] unless @namespace_yardocs[namespace].nil?
       end
-      result.push @@stdlib_yardoc if result.empty? and @@stdlib_namespaces.include?(namespace)
+      if @stdlib_namespaces.map(&:path).include?(namespace)
+        result.push @@stdlib_yardoc
+      end
       result
     end
 

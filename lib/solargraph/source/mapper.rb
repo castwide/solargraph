@@ -1,11 +1,19 @@
 module Solargraph
   class Source
+    # The Mapper generates pins and other data for Sources.
+    #
+    # This class is used internally by the Source class on initialization,
+    # e.g., via Source.new or Source.load. Users should not normally need to
+    # call it directly.
+    #
     class Mapper
       include NodeMethods
 
       private_class_method :new
 
-      # @return [Array<Solargraph::Pin::Base>]
+      # Generate the data.
+      #
+      # @return [Array]
       def map filename, code, node, comments
         @filename = filename
         @code = code
@@ -37,7 +45,7 @@ module Solargraph
       end
 
       class << self
-        # @return [Array<Solargraph::Pin::Base>]
+        # @return [Array]
         def map filename, code, node, comments
           new.map filename, code, node, comments
         end
@@ -134,7 +142,6 @@ module Solargraph
                 pins.push Solargraph::Pin::GlobalVariable.new(get_node_location(c), fqn, c.children[0].to_s, docstring_for(c), resolve_node_signature(c.children[1]), infer_literal_node_type(c.children[1]), @pins.first)
               elsif c.type == :sym
                 @symbols.push Solargraph::Pin::Symbol.new(get_node_location(c), ":#{c.children[0]}")
-
               elsif c.type == :casgn
                 here = get_node_start_position(c)
                 block = get_block_pin(here)
@@ -146,12 +153,15 @@ module Solargraph
                   # @todo Smelly instance variable access.
                   pins.last.instance_variable_set(:@return_type, methpin.namespace)
                   pins.push Solargraph::Pin::Method.new(methpin.location, methpin.namespace, methpin.name, methpin.docstring, methpin.scope, :private, methpin.parameters)
+                elsif visibility == :module_function
+                  pins.push Solargraph::Pin::Method.new(methpin.location, methpin.namespace, methpin.name, methpin.docstring, :class, :public, methpin.parameters)
+                  pins.push Solargraph::Pin::Method.new(methpin.location, methpin.namespace, methpin.name, methpin.docstring, :instance, :private, methpin.parameters)
                 else
                   pins.push methpin
                 end
               elsif c.type == :defs
                 s_visi = visibility
-                s_visi = :public if scope != :class
+                s_visi = :public if s_visi == :module_function or scope != :class
                 if c.children[0].is_a?(AST::Node) and c.children[0].type == :self
                   dfqn = fqn || ''
                 else
@@ -191,6 +201,26 @@ module Solargraph
                   end
                 end
                 next
+              elsif c.type == :send and c.children[1] == :module_function
+                # @todo Handle module_function
+                if c.children[2].nil?
+                  visibility = :module_function
+                elsif c.children[2].type == :sym or c.children[2].type == :str
+                  # @todo What to do about references?
+                  c.children[2..-1].each do |x|
+                    cn = x.children[0].to_s
+                    ref = pins.select{|p| p.namespace == (fqn || '') and p.name == cn}.first
+                    unless ref.nil?
+                      pins.delete ref
+                      pins.push Solargraph::Pin::Method.new(ref.location, ref.namespace, ref.name, ref.docstring, :class, :public, ref.parameters)
+                      pins.push Solargraph::Pin::Method.new(ref.location, ref.namespace, ref.name, ref.docstring, :instance, :private, ref.parameters)
+                    end
+                  end
+                elsif c.children[2].type == :def
+                  # @todo A single function
+                  process c, tree, :module_function, :class, fqn, stack
+                  next
+                end
               elsif c.type == :send and c.children[1] == :include and c.children[0].nil?
                 last_node = get_last_in_stack_not_begin(stack)
                 if last_node.nil? or last_node.type == :class or last_node.type == :module or last_node.type == :source
@@ -207,14 +237,16 @@ module Solargraph
               elsif c.type == :send and c.children[1] == :extend and c.children[0].nil?
                 last_node = get_last_in_stack_not_begin(stack)
                 if last_node.nil? or last_node.type == :class or last_node.type == :module or last_node.type == :source
-                  if c.children[2].kind_of?(AST::Node) and c.children[2].type == :const
-                    # namespace_extends[fqn || ''] ||= []
-                    c.children[2..-1].each do |i|
-                      nspin = @pins.select{|pin| pin.kind == Pin::NAMESPACE and pin.path == fqn}.last
-                      unless nspin.nil?
+                  c.children[2..-1].each do |i|
+                    nspin = @pins.select{|pin| pin.kind == Pin::NAMESPACE and pin.path == fqn}.last
+                    unless nspin.nil?
+                      ref = nil
+                      if i.type == :self
+                        ref = Pin::Reference.new(get_node_location(c), nspin.path, nspin.path)
+                      elsif i.type == :const
                         ref = Pin::Reference.new(get_node_location(c), nspin.path, unpack_name(i))
-                        nspin.extend_references.push(ref)
                       end
+                      nspin.extend_references.push(ref) unless ref.nil?
                     end
                   end
                 end

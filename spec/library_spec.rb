@@ -78,7 +78,7 @@ describe Solargraph::Library do
     end
   end
 
-  it "makes a closed file unavailable" do
+  it "makes a closed file unavailable if it doesn't exist on disk" do
     library = Solargraph::Library.new
     library.open 'file.rb', 'a = b', 0
     expect {
@@ -88,6 +88,22 @@ describe Solargraph::Library do
     expect {
       library.checkout 'file.rb'
     }.to raise_error(Solargraph::FileNotFoundError)
+  end
+
+  it "keeps a closed file available if it exists on disk" do
+    Dir.mktmpdir do |dir|
+      library = Solargraph::Library.new
+      file = File.join(dir, 'file.rb')
+      File.write file, 'a = b'
+      library.open file, 'a = b', 0
+      expect {
+        library.checkout file
+      }.not_to raise_error
+      library.close file
+      expect {
+        library.checkout file
+      }.not_to raise_error(Solargraph::FileNotFoundError)
+    end
   end
 
   it "returns a Completion" do
