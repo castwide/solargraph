@@ -1,4 +1,6 @@
 module Solargraph
+  # Module functions for processing YARD types.
+  #
   module TypeMethods
     module_function
 
@@ -8,6 +10,7 @@ module Solargraph
     #   extract_namespace('String') => 'String'
     #   extract_namespace('Class<String>') => 'String'
     #
+    # @param type [String]
     # @return [String]
     def extract_namespace type
       extract_namespace_and_scope(type)[0]
@@ -20,6 +23,7 @@ module Solargraph
     #   extract_namespace('Class<String>')     #=> ['String', :class]
     #   extract_namespace('Module<Enumerable') #=> ['Enumberable', :class]
     #
+    # @param type [String]
     # @return [Array] The namespace (String) and scope (Symbol).
     def extract_namespace_and_scope type
       scope = :instance
