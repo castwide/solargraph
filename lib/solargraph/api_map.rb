@@ -9,6 +9,7 @@ module Solargraph
     autoload :Completion,   'solargraph/api_map/completion'
     autoload :Probe,        'solargraph/api_map/probe'
     autoload :Store,        'solargraph/api_map/store'
+    autoload :TypeMethods,  'solargraph/api_map/type_methods'
 
     include Solargraph::ApiMap::SourceToYard
     include CoreFills
