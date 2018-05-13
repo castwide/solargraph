@@ -21,7 +21,7 @@ module Solargraph
         def process request
           Thread.new do
             message = @host.start(request)
-            message.send
+            message.send_response
             tmp = @host.flush
             send_data tmp unless tmp.empty?
             GC.start unless request['method'] == 'textDocument/didChange'

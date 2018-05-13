@@ -24,7 +24,7 @@ class Protocol
     }
     @message_id += 1
     message = @host.start msg
-    message.send
+    message.send_response
     @data_reader.receive @host.flush
   end
 end
