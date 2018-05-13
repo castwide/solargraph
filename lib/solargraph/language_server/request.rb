@@ -9,6 +9,10 @@ module Solargraph
       def process result
         @block.call(result) unless @block.nil?
       end
+
+      def send
+        # noop
+      end
     end
   end
 end
