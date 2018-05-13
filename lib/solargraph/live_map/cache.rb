@@ -4,6 +4,7 @@ module Solargraph
       def initialize
         @method_cache = {}
         @constant_cache = {}
+        @path_cache = {}
       end
 
       def get_methods options
@@ -12,6 +13,7 @@ module Solargraph
 
       def set_methods options, values
         @method_cache[options] = values
+        values.each { |pin| @path_cache[pin.path] = pin }
       end
 
       def get_constants namespace, root
@@ -22,9 +24,14 @@ module Solargraph
         @constant_cache[[namespace, root]] = values
       end
 
+      def get_path_pin path
+        @path_cache[path]
+      end
+
       def clear
         @method_cache.clear
         @constant_cache.clear
+        @path_cache.clear
       end
     end
   end
