@@ -6,7 +6,12 @@ module Solargraph
         def initialize return_type
           @return_type = return_type
         end
+        def namespace
+          @namespace ||= TypeMethods.extract_namespace(@return_type)
+        end
       end
+
+      include TypeMethods
 
       # @return [Solargraph::ApiMap]
       attr_reader :api_map
@@ -77,8 +82,11 @@ module Solargraph
       end
 
       # Method name search is external by default
+      # @param method_name [String]
+      # @param context_pin [Solargraph::Pin::Base]
       def infer_method_name_pins method_name, context_pin, internal = false
-        namespace, scope = extract_namespace_and_scope(context_pin.return_type)
+        relname, scope = extract_namespace_and_scope(context_pin.return_type)
+        namespace = api_map.qualify(relname, context_pin.namespace)
         visibility = [:public]
         visibility.push :protected, :private if internal
         result = api_map.get_methods(namespace, scope: scope, visibility: visibility).select{|pin| pin.name == method_name}
@@ -108,35 +116,6 @@ module Solargraph
         res = api_map.qualify(rns, context)
         return res if rsc == :instance
         type.sub(/<#{rns}>/, "<#{res}>")
-      end
-
-      # Extract a namespace from a type.
-      #
-      # @example
-      #   extract_namespace('String') => 'String'
-      #   extract_namespace('Class<String>') => 'String'
-      #
-      # @return [String]
-      def extract_namespace type
-        extract_namespace_and_scope(type)[0]
-      end
-
-      # Extract a namespace and a scope (:instance or :class) from a type.
-      #
-      # @example
-      #   extract_namespace('String')            #=> ['String', :instance]
-      #   extract_namespace('Class<String>')     #=> ['String', :class]
-      #   extract_namespace('Module<Enumerable') #=> ['Enumberable', :class]
-      #
-      # @return [Array] The namespace (String) and scope (Symbol).
-      def extract_namespace_and_scope type
-        scope = :instance
-        result = type.to_s.gsub(/<.*$/, '')
-        if (result == 'Class' or result == 'Module') and type.include?('<')
-          result = type.match(/<([a-z0-9:_]*)/i)[1]
-          scope = :class
-        end
-        [result, scope]
       end
 
       # Extract a namespace and a scope from a pin. For now, the pin must

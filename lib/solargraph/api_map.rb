@@ -9,9 +9,11 @@ module Solargraph
     autoload :Completion,   'solargraph/api_map/completion'
     autoload :Probe,        'solargraph/api_map/probe'
     autoload :Store,        'solargraph/api_map/store'
+    autoload :TypeMethods,  'solargraph/api_map/type_methods'
 
     include Solargraph::ApiMap::SourceToYard
     include CoreFills
+    include TypeMethods
 
     # The workspace to analyze and process.
     #
@@ -568,16 +570,6 @@ module Solargraph
       pin = store.get_path_pins(fqns).first
       return yard_map.get_namespace_type(fqns) if pin.nil?
       pin.type
-    end
-
-    def extract_namespace_and_scope type
-      scope = :instance
-      result = type.to_s.gsub(/<.*$/, '')
-      if (result == 'Class' or result == 'Module') and type.include?('<')
-        result = type.match(/<([a-z0-9:_]*)/i)[1]
-        scope = :class
-      end
-      [result, scope]
     end
   end
 end
