@@ -13,7 +13,7 @@ module Solargraph
       def initialize workspace = nil
         @workspace = workspace
         include_globs = ['**/*.rb']
-        exclude_globs = ['spec/**/*', 'test/**/*', 'vendor/**/*']
+        exclude_globs = ['spec/**/*', 'test/**/*', 'vendor/**/*', '.bundle/**/*']
         unless @workspace.nil?
           sfile = File.join(@workspace, '.solargraph.yml')
           if File.file?(sfile)
@@ -44,7 +44,7 @@ module Solargraph
       end
 
       # An array of files excluded from the workspace.
-      # 
+      #
       # @return [Array<String>]
       def excluded
         return [] if workspace.nil?
