@@ -8,7 +8,7 @@ begin
 rescue LoadError
 end
 
-desc "Open an irb session preloaded with this library"
+desc "Open a Pry session preloaded with this library"
 task :console do
-  sh "irb -I lib -r solargraph.rb"
+  sh "pry -I lib -r solargraph.rb"
 end
