@@ -317,7 +317,11 @@ module Solargraph
     # @return [Array<Solargraph::Pin::Base>]
     def define fragment
       return [] if fragment.string? or fragment.comment?
-      probe.infer_signature_pins fragment.whole_signature, fragment.named_path, fragment.locals
+      if fragment.base_literal?
+        probe.infer_signature_pins fragment.whole_signature, Probe::VirtualPin.new(fragment.base_literal), fragment.locals
+      else
+        probe.infer_signature_pins fragment.whole_signature, fragment.named_path, fragment.locals
+      end
     end
 
     # Infer a return type from a fragment. This method will attempt to resolve
