@@ -330,10 +330,6 @@ module Solargraph
         nil
       end
 
-      def get_node_start_position(node)
-        Position.new(node.loc.line - 1, node.loc.column)
-      end
-
       def get_node_location(node)
         if node.nil?
           st = Position.new(0, 0)

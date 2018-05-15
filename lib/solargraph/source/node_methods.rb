@@ -78,6 +78,14 @@ module Solargraph
         result
       end
 
+      def get_node_start_position(node)
+        Position.new(node.loc.line - 1, node.loc.column)
+      end
+
+      def get_node_end_position(node)
+        Position.new(node.loc.last_line - 1, node.loc.last_column)
+      end
+
       def drill_signature node, signature
         return signature unless node.kind_of?(AST::Node)
         if node.type == :const or node.type == :cbase

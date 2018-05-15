@@ -150,10 +150,10 @@ module Solargraph
       result = []
       pins.each do |pin|
         (workspace.sources + source_hash.values).uniq.each do |source|
-          source.references(pin.name).each do |n|
-          end
+          result.concat source.references(pin.name)
         end
       end
+      result
     end
 
     # Get the pin at the specified location or nil if the pin does not exist.

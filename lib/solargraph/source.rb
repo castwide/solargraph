@@ -133,9 +133,11 @@ module Solargraph
       symbol_pins
     end
 
-    # @return [Array<Parser::AST::Node>]
+    # @return [Array<Source::Location>]
     def references name
-      inner_node_references(name, node)
+      inner_node_references(name, node).map do |n|
+        Location.new(filename, Solargraph::Source::Range.new(get_node_start_position(n), get_node_end_position(n)))
+      end
     end
 
     def locate_named_path_pin line, character
@@ -258,7 +260,7 @@ module Solargraph
         if (top.type == :const and top.children[1].to_s == name) or (top.type == :send and top.children[1].to_s == name)
           result.push top
         end
-        top.children.each { |c| result.concat inner_references(name, c) }
+        top.children.each { |c| result.concat inner_node_references(name, c) }
       end
       result
     end
