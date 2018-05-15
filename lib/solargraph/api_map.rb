@@ -20,6 +20,14 @@ module Solargraph
     # @return [Solargraph::Workspace]
     attr_reader :workspace
 
+    # @return [ApiMap::Store]
+    attr_reader :store
+
+    # Get a LiveMap associated with the current workspace.
+    #
+    # @return [Solargraph::LiveMap]
+    attr_reader :live_map
+
     # @param workspace [Solargraph::Workspace]
     def initialize workspace = Solargraph::Workspace.new(nil)
       @workspace = workspace
@@ -28,7 +36,7 @@ module Solargraph
       @yard_stale = true
       # process_maps
       @sources = workspace.sources
-      yard_map
+      refresh_store_and_maps
     end
 
     # Create an ApiMap with a workspace in the specified directory.
@@ -36,11 +44,6 @@ module Solargraph
     # @return [ApiMap]
     def self.load directory
       self.new(Solargraph::Workspace.new(directory))
-    end
-
-    # @return [ApiMap::Store]
-    def store
-      @store ||= ApiMap::Store.new(@sources)
     end
 
     def pins
@@ -68,17 +71,10 @@ module Solargraph
     # @return [Solargraph::YardMap]
     def yard_map
       # refresh
-      if @yard_map.nil? || @yard_map.required.to_set != required.to_set
+      if @yard_map.required.to_set != required.to_set
         @yard_map = Solargraph::YardMap.new(required: required, workspace: workspace)
       end
       @yard_map
-    end
-
-    # Get a LiveMap associated with the current workspace.
-    #
-    # @return [Solargraph::LiveMap]
-    def live_map
-      @live_map ||= Solargraph::LiveMap.new(self)
     end
 
     # Declare a virtual source that will be included in the map regardless of
@@ -425,6 +421,12 @@ module Solargraph
     end
 
     private
+
+    def refresh_store_and_maps
+      @store = ApiMap::Store.new(@sources)
+      @live_map = Solargraph::LiveMap.new(self)
+      @yard_map = Solargraph::YardMap.new(required: required, workspace: workspace)
+    end
 
     def process_virtual
       unless @virtual_source.nil?
