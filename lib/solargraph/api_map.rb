@@ -291,7 +291,7 @@ module Solargraph
             if fragment.base.empty?
               result.concat get_methods(pin.path)
             else
-              type = probe.infer_signature_type(fragment.base, pin, fragment.locals)
+              type = probe.infer_signature_type("#{pin.path}.new.#{fragment.base}", pin, fragment.locals)
               unless type.nil?
                 namespace, scope = extract_namespace_and_scope(type)
                 result.concat get_methods(namespace, scope: scope)
