@@ -141,6 +141,21 @@ module Solargraph
       api_map.signify(fragment)
     end
 
+    def references_from filename, line, column
+      source = read(filename)
+      api_map.virtualize source
+      fragment = source.fragment_at(line, column)
+      pins = api_map.define(fragment)
+      return [] if pins.empty?
+      result = []
+      pins.each do |pin|
+        (workspace.sources + source_hash.values).uniq.each do |source|
+          source.references(pin.name).each do |n|
+          end
+        end
+      end
+    end
+
     # Get the pin at the specified location or nil if the pin does not exist.
     #
     # @return [Solargraph::Pin::Base]

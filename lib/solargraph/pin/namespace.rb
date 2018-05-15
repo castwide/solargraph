@@ -1,8 +1,6 @@
 module Solargraph
   module Pin
     class Namespace < Pin::Base
-      include Solargraph::NodeMethods
-
       attr_reader :visibility
 
       attr_reader :type

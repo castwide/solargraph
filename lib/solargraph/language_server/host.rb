@@ -323,6 +323,14 @@ module Solargraph
         result
       end
 
+      def references_from filename, line, column
+        result = nil
+        @change_semaphore.synchronize do
+          result = library.references_from(filename, line, column)
+        end
+        result
+      end
+
       def query_symbols query
         result = nil
         @change_semaphore.synchronize { result = library.query_symbols(query) }
