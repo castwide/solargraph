@@ -291,7 +291,7 @@ module Solargraph
             if fragment.base.empty?
               result.concat get_methods(pin.path)
             else
-              type = probe.infer_signature_type(fragment.base, pin, fragment.locals)
+              type = probe.infer_signature_type("#{pin.path}.new.#{fragment.base}", pin, fragment.locals)
               unless type.nil?
                 namespace, scope = extract_namespace_and_scope(type)
                 result.concat get_methods(namespace, scope: scope)
@@ -317,7 +317,11 @@ module Solargraph
     # @return [Array<Solargraph::Pin::Base>]
     def define fragment
       return [] if fragment.string? or fragment.comment?
-      probe.infer_signature_pins fragment.whole_signature, fragment.named_path, fragment.locals
+      if fragment.base_literal?
+        probe.infer_signature_pins fragment.whole_signature, Probe::VirtualPin.new(fragment.base_literal), fragment.locals
+      else
+        probe.infer_signature_pins fragment.whole_signature, fragment.named_path, fragment.locals
+      end
     end
 
     # Infer a return type from a fragment. This method will attempt to resolve
