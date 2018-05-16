@@ -246,4 +246,21 @@ describe Protocol do
     expect(response['result']['installed']).to be_a(String)
     expect(response['result']['available']).to be_a(String)
   end
+
+  it "handles $/solargraph/documentGems" do
+    @protocol.request '$/solargraph/documentGems', {}
+    response = @protocol.response
+    expect(response['error']).to be_nil
+  end
+
+  it "handles textDocument/formatting" do
+    @protocol.request 'textDocument/formatting', {
+      'textDocument' => {
+        'uri' => Solargraph::LanguageServer::UriHelpers.file_to_uri(File.realpath('spec/fixtures/formattable.rb'))
+      }
+    }
+    response = @protocol.response
+    expect(response['error']).to be_nil
+    expect(response['result'].first['newText']).to be_a(String)
+  end
 end
