@@ -1,22 +1,6 @@
 module Solargraph
   class ApiMap
     class Probe
-      class VirtualPin
-        attr_reader :return_type
-        def initialize return_type
-          @return_type = return_type
-        end
-        def namespace
-          @namespace ||= TypeMethods.extract_namespace(@return_type)
-        end
-        def kind
-          Pin::METHOD
-        end
-        def scope
-          :instance
-        end
-      end
-
       include TypeMethods
 
       # @return [Solargraph::ApiMap]
@@ -36,7 +20,7 @@ module Solargraph
         pins = infer_word_pins(base, context_pin, locals).map do |pin|
           next pin unless pin.return_type.nil?
           type = resolve_pin_type(pin)
-          VirtualPin.new(type)
+          Pin::ProxyMethod.new(type)
         end
         return [] if pins.empty?
         rest = rest.split('.')
