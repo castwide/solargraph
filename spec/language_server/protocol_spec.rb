@@ -200,6 +200,21 @@ describe Protocol do
     expect(response['result']).not_to be_empty
   end
 
+  it "handles textDocument/references" do
+    @protocol.request 'textDocument/references', {
+      'textDocument' => {
+        'uri' => 'file:///file.rb'
+      },
+      'position' => {
+        'line' => 7,
+        'character' => 15
+      }
+    }
+    response = @protocol.response
+    expect(response['error']).to be_nil
+    expect(response['result'].empty?).to be(false)
+  end
+
   it "handles textDocument/didClose" do
     @protocol.request 'textDocument/didClose', {
       'textDocument' => {
