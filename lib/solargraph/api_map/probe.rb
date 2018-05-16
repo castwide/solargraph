@@ -1,16 +1,6 @@
 module Solargraph
   class ApiMap
     class Probe
-      class VirtualPin
-        attr_reader :return_type
-        def initialize return_type
-          @return_type = return_type
-        end
-        def namespace
-          @namespace ||= TypeMethods.extract_namespace(@return_type)
-        end
-      end
-
       include TypeMethods
 
       # @return [Solargraph::ApiMap]
@@ -29,8 +19,8 @@ module Solargraph
         return infer_word_pins(base, context_pin, locals) if rest.nil?
         pins = infer_word_pins(base, context_pin, locals).map do |pin|
           next pin unless pin.return_type.nil?
-          type = resolve_pin_type(pin)
-          VirtualPin.new(type)
+          type = resolve_pin_type(pin, locals - [pin])
+          Pin::ProxyMethod.new(type)
         end
         return [] if pins.empty?
         rest = rest.split('.')
@@ -58,7 +48,7 @@ module Solargraph
       def infer_signature_type signature, context_pin, locals
         pins = infer_signature_pins(signature, context_pin, locals)
         pins.each do |pin|
-          type = resolve_pin_type(pin)
+          type = resolve_pin_type(pin, locals - [pin])
           return qualify(type, pin.named_context) unless type.nil?
         end
         nil
@@ -151,11 +141,11 @@ module Solargraph
         pin
       end
 
-      def resolve_pin_type pin
+      def resolve_pin_type pin, locals
         pin.return_type
         return pin.return_type unless pin.return_type.nil?
         return resolve_block_parameter(pin) if pin.kind == Pin::BLOCK_PARAMETER
-        return resolve_variable(pin) if pin.variable?
+        return resolve_variable(pin, locals) if pin.variable?
         nil
       end
 
@@ -184,10 +174,10 @@ module Solargraph
         nil
       end
 
-      def resolve_variable(pin)
+      def resolve_variable(pin, locals)
         return nil if pin.nil_assignment?
         # @todo Do we need the locals here?
-        return infer_signature_type(pin.signature, pin.context, [])
+        return infer_signature_type(pin.signature, pin.context, locals)
       end
 
       def get_subtypes type
