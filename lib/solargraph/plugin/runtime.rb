@@ -61,7 +61,6 @@ module Solargraph
 
       def load_environment
         return if api_map.nil?
-        STDERR.puts "Required paths given to Runtime: #{api_map.required}"
         send_require api_map.required
         @current_required = api_map.required.clone
       end
