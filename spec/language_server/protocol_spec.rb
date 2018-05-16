@@ -238,4 +238,12 @@ describe Protocol do
     }
     expect(@protocol.host.options['autoformat']).to be(false)
   end
+
+  it "handles $/solargraph/checkGemVersion" do
+    @protocol.request '$/solargraph/checkGemVersion', { verbose: false }
+    response = @protocol.response
+    expect(response['error']).to be_nil
+    expect(response['result']['installed']).to be_a(String)
+    expect(response['result']['available']).to be_a(String)
+  end
 end
