@@ -21,6 +21,7 @@ module Solargraph
     autoload :Documenting,      'solargraph/pin/documenting'
     autoload :Block,            'solargraph/pin/block'
     autoload :Localized,        'solargraph/pin/localized'
+    autoload :ProxyMethod,      'solargraph/pin/proxy_method'
 
     ATTRIBUTE = 1
     CLASS_VARIABLE = 2

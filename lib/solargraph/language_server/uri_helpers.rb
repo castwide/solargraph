@@ -1,6 +1,8 @@
 module Solargraph
   module LanguageServer
     module UriHelpers
+      module_function
+
       # Convert a file URI to a path.
       #
       # @param uri [String]

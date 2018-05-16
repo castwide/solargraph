@@ -318,7 +318,7 @@ module Solargraph
     def define fragment
       return [] if fragment.string? or fragment.comment?
       if fragment.base_literal?
-        probe.infer_signature_pins fragment.whole_signature, Probe::VirtualPin.new(fragment.base_literal), fragment.locals
+        probe.infer_signature_pins fragment.whole_signature, Pin::ProxyMethod.new(fragment.base_literal), fragment.locals
       else
         probe.infer_signature_pins fragment.whole_signature, fragment.named_path, fragment.locals
       end
@@ -347,7 +347,7 @@ module Solargraph
       return [] if fragment.recipient.whole_signature.nil? or fragment.recipient.whole_signature.empty?
       result = []
       if fragment.recipient.base_literal?
-        result.concat probe.infer_signature_pins(fragment.recipient.whole_signature, Probe::VirtualPin.new(fragment.recipient.base_literal), fragment.locals)
+        result.concat probe.infer_signature_pins(fragment.recipient.whole_signature, Pin::ProxyMethod.new(fragment.recipient.base_literal), fragment.locals)
       else
         result.concat probe.infer_signature_pins(fragment.recipient.whole_signature, fragment.named_path, fragment.locals)
       end
