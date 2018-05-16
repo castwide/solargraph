@@ -326,7 +326,7 @@ module Solargraph
         elsif signature.start_with?('.')
           pos = Position.from_offset(source.code, index)
           node = source.node_at(pos.line, pos.character)
-          lit = source.infer_literal_node_type(node)
+          lit = infer_literal_node_type(node)
           unless lit.nil?
             signature = signature[1..-1].to_s
             index += 1
