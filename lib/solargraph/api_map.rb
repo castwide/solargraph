@@ -345,9 +345,13 @@ module Solargraph
     def signify fragment
       return [] unless fragment.argument?
       return [] if fragment.recipient.whole_signature.nil? or fragment.recipient.whole_signature.empty?
-      probe.infer_signature_pins(
-        fragment.recipient.whole_signature, fragment.named_path, fragment.locals
-      ).select{ |pin| pin.kind == Pin::METHOD }
+      result = []
+      if fragment.recipient.base_literal?
+        result.concat probe.infer_signature_pins(fragment.recipient.whole_signature, Probe::VirtualPin.new(fragment.recipient.base_literal), fragment.locals)
+      else
+        result.concat probe.infer_signature_pins(fragment.recipient.whole_signature, fragment.named_path, fragment.locals)
+      end
+      result.select{ |pin| pin.kind == Pin::METHOD }
     end
 
     # Get an array of all suggestions that match the specified path.
