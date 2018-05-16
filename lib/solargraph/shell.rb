@@ -69,7 +69,6 @@ module Solargraph
       matches = []
       if options[:extensions]
         Gem::Specification.each do |g|
-          puts g.name
           if g.name.match(/^solargraph\-[A-Za-z0-9_\-]*?\-ext/)
             require g.name
             matches.push g.name
