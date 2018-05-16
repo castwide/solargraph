@@ -1030,4 +1030,17 @@ describe Solargraph::ApiMap do
     expect(names).to include('rescue')
     expect(names).to include('raise')
   end
+
+  it "infers local variable types derived from other local variables" do
+    api_map = Solargraph::ApiMap.new
+    source = Solargraph::Source.new(%(
+      x = '123'
+      y = x.split
+      y._
+      ))
+    api_map.virtualize source
+    fragment = source.fragment_at(3, 8)
+    names = api_map.complete(fragment).pins.map(&:name)
+    expect(names).to include('join')
+  end
 end
