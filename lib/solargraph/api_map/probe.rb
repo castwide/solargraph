@@ -9,6 +9,12 @@ module Solargraph
         def namespace
           @namespace ||= TypeMethods.extract_namespace(@return_type)
         end
+        def kind
+          Pin::METHOD
+        end
+        def scope
+          :instance
+        end
       end
 
       include TypeMethods

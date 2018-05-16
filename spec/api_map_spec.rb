@@ -811,6 +811,32 @@ describe Solargraph::ApiMap do
     expect(paths).to include('abs')
   end
 
+  it "completes method chains from literal strings" do
+    api_map = Solargraph::ApiMap.new
+    # Preceding code can affect detection of literals
+    source = Solargraph::Source.load_string(%(
+      puts 'hello'
+      '123'.upcase._
+    ))
+    api_map.virtualize source
+    fragment = source.fragment_at(2, 19)
+    names = api_map.complete(fragment).pins.map(&:name)
+    expect(names).to include('split')
+  end
+
+  it "defines methods chained from literal strings" do
+    api_map = Solargraph::ApiMap.new
+    # Preceding code can affect detection of literals
+    source = Solargraph::Source.load_string(%(
+      puts 'hello'
+      '123'.upcase.split
+    ))
+    api_map.virtualize source
+    fragment = source.fragment_at(2, 20)
+    paths = api_map.define(fragment).map(&:path)
+    expect(paths).to include('String#split')
+  end
+
   it "adds local variables to completion items" do
     api_map = Solargraph::ApiMap.new
     source = Solargraph::Source.load_string("lvar = 'foo'\nl")
