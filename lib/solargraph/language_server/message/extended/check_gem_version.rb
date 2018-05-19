@@ -11,7 +11,7 @@ module Solargraph
         class CheckGemVersion < Base
           def process
             o, s = Open3.capture2("gem search solargraph")
-            match = o.match(/solargraph \([0-9\.]*?\)/)
+            match = o.match(/solargraph \(([\d]*\.[\d]*\.[\d]*)\)/)
             # @todo Error if no match or status code != 0
             available = Gem::Version.new(match[1])
             current = Gem::Version.new(Solargraph::VERSION)
