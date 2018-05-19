@@ -149,8 +149,13 @@ module Solargraph
       return [] if pins.empty?
       result = []
       pins.each do |pin|
+        result.push pin.location if pin.kind == Solargraph::Pin::METHOD and !pin.location.nil?
         (workspace.sources + source_hash.values).uniq.each do |source|
-          result.concat source.references(pin.name)
+          found = source.references(pin.name).select do |loc|
+            referenced = definitions_at(loc.filename, loc.range.ending.line, loc.range.ending.character).first
+            !referenced.nil? and referenced.path == pin.path
+          end
+          result.concat found
         end
       end
       result
