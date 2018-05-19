@@ -3,8 +3,6 @@ module Solargraph
     class Fragment
       include NodeMethods
 
-      attr_reader :tree
-
       attr_reader :line
 
       attr_reader :column
@@ -45,17 +43,6 @@ module Solargraph
       # @return [Boolean]
       def argument?
         @argument ||= !signature_position.nil?
-      end
-
-      def chained?
-        if @chained.nil?
-          @chained = false
-          @tree.each do |n|
-            @chained = true if n.type == :send
-            break
-          end
-        end
-        @chained
       end
 
       # @return [Fragment]
