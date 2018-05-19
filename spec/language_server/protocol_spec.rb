@@ -263,4 +263,10 @@ describe Protocol do
     expect(response['error']).to be_nil
     expect(response['result'].first['newText']).to be_a(String)
   end
+
+  it "handles $/solargraph/downloadCore" do
+    @protocol.request '$/solargraph/downloadCore', {}
+    response = @protocol.response
+    expect(response['error']).to be_nil
+  end
 end
