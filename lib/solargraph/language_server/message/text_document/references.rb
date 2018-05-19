@@ -8,7 +8,7 @@ module Solargraph::LanguageServer::Message::TextDocument
         referenced = host.definitions_at(loc.filename, loc.range.ending.line, loc.range.ending.character).first
         !referenced.nil? and referenced.path == definition.path
       end
-      locs.unshift definition.location if params['context'] and params['context']['includeDeclaration'] and definition.kind == Solargraph::Pin::METHOD
+      locs.unshift definition.location if params['context'] and params['context']['includeDeclaration'] and definition.kind == Solargraph::Pin::METHOD and !definition.location.nil?
       result = locs.map do |loc|
         {
           uri: file_to_uri(loc.filename),
