@@ -258,6 +258,11 @@ module Solargraph
       else
         result.concat inner_get_methods(fqns, scope, visibility, deep, skip)
       end
+      live = live_map.get_methods(fqns, '', scope.to_s, visibility.include?(:private))
+      unless live.empty?
+        exist = result.map(&:name)
+        result.concat live.reject{|p| exist.include?(p.name)}
+      end
       result
     end
 
@@ -363,6 +368,10 @@ module Solargraph
       result = []
       result.concat store.get_path_pins(path)
       result.concat yard_map.objects(path)
+      if result.empty?
+        lp = live_map.get_path_pin(path)
+        result.push lp unless lp.nil?
+      end
       result
     end
 
