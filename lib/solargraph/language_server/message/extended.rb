@@ -11,6 +11,7 @@ module Solargraph
         autoload :Search, 'solargraph/language_server/message/extended/search'
         autoload :CheckGemVersion, 'solargraph/language_server/message/extended/check_gem_version'
         autoload :DocumentGems, 'solargraph/language_server/message/extended/document_gems'
+        autoload :DownloadCore, 'solargraph/language_server/message/extended/download_core'
       end
     end
   end
