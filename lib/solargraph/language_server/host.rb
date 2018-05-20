@@ -446,7 +446,7 @@ module Solargraph
         Thread.new do
           diagnoser = Diagnostics::Rubocop.new
           until stopped?
-            sleep 1
+            sleep 0.1
             if !options['diagnostics']
               @change_semaphore.synchronize { @diagnostics_queue.clear }
               next
