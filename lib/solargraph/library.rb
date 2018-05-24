@@ -150,7 +150,7 @@ module Solargraph
       result = []
       # @param pin [Solargraph::Pin::Base]
       pins.uniq.each do |pin|
-        if pin.kind == Solargraph::Pin::METHOD and !pin.location.nil?
+        if pin.kind != Solargraph::Pin::NAMESPACE and !pin.location.nil?
           mn_loc = get_symbol_name_location(pin)
           result.push mn_loc unless mn_loc.nil?
         end
