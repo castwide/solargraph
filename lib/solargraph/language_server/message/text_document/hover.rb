@@ -38,6 +38,6 @@ module Solargraph::LanguageServer::Message::TextDocument
     def link_documentation path
       uri = "solargraph:/document?query=" + URI.encode(path)
       "[#{path}](#{uri})"
-    end  
+    end
   end
 end

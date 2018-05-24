@@ -151,4 +151,13 @@ describe Solargraph::YardMap do
     expect(result).not_to be_empty
     expect(result[0].location).to be_a(Solargraph::Source::Location)
   end
+
+  it "finds appropriate stdlib constants" do
+    yard_map = Solargraph::YardMap.new(required: ['net/http'])
+    result = yard_map.get_constants('').map(&:path)
+    expect(result).to include('Net')
+    result = yard_map.get_constants('Net').map(&:path)
+    expect(result).to include('Net::HTTP')
+    expect(result).not_to include('Net::FTP')
+  end
 end

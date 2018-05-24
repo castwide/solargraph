@@ -709,7 +709,7 @@ describe Solargraph::ApiMap do
     result = api_map.complete(fragment).pins.map(&:name)
     expect(result.length).to eq(1)
     expect(result).to include('Bar')
-    fragment = source.fragment_at(5, 12)
+    fragment = source.fragment_at(5, 11)
     result = api_map.complete(fragment).pins.map(&:name)
     expect(result.length).to eq(1)
     expect(result).to include('Bar')
@@ -772,7 +772,6 @@ describe Solargraph::ApiMap do
     api_map.virtualize source
     fragment = source.fragment_at(2, 9)
     names = api_map.complete(fragment).pins.map(&:name)
-    expect(names).to include('Foo')
     expect(names).to include('String')
   end
 
@@ -810,6 +809,45 @@ describe Solargraph::ApiMap do
     fragment = source.fragment_at(0, 2)
     paths = api_map.complete(fragment).pins.map(&:name)
     expect(paths).to include('abs')
+  end
+
+  it "completes method chains from literal strings" do
+    api_map = Solargraph::ApiMap.new
+    # Preceding code can affect detection of literals
+    source = Solargraph::Source.load_string(%(
+      puts 'hello'
+      '123'.upcase._
+    ))
+    api_map.virtualize source
+    fragment = source.fragment_at(2, 19)
+    names = api_map.complete(fragment).pins.map(&:name)
+    expect(names).to include('split')
+  end
+
+  it "defines methods chained from literal strings" do
+    api_map = Solargraph::ApiMap.new
+    # Preceding code can affect detection of literals
+    source = Solargraph::Source.load_string(%(
+      puts 'hello'
+      '123'.upcase.split
+    ))
+    api_map.virtualize source
+    fragment = source.fragment_at(2, 20)
+    paths = api_map.define(fragment).map(&:path)
+    expect(paths).to include('String#split')
+  end
+
+  it "signifies methods chained from literal arrays" do
+    api_map = Solargraph::ApiMap.new
+    # Preceding code can affect detection of literals
+    source = Solargraph::Source.load_string(%(
+      puts 'hello'
+      %w[1 2 3].join.split()
+    ))
+    api_map.virtualize source
+    fragment = source.fragment_at(2, 27)
+    paths = api_map.signify(fragment).map(&:path)
+    expect(paths).to include('String#split')
   end
 
   it "adds local variables to completion items" do
@@ -975,5 +1013,52 @@ describe Solargraph::ApiMap do
     api_map.virtualize source
     meths = api_map.get_methods('Foo', scope: :class).map(&:name)
     expect(meths).to include('bar')
+  end
+
+  it "filters completion results based on the current word" do
+    api_map = Solargraph::ApiMap.new
+    source = Solargraph::Source.new(%(
+      re
+      ))
+    api_map.virtualize source
+    fragment = source.fragment_at(1, 8)
+    names = api_map.complete(fragment).pins.map(&:name)
+    expect(names).to include('rescue')
+    expect(names).not_to include('raise')
+    fragment = source.fragment_at(1, 7)
+    names = api_map.complete(fragment).pins.map(&:name)
+    expect(names).to include('rescue')
+    expect(names).to include('raise')
+  end
+
+  it "infers local variable types derived from other local variables" do
+    api_map = Solargraph::ApiMap.new
+    source = Solargraph::Source.new(%(
+      x = '123'
+      y = x.split
+      y._
+      ))
+    api_map.virtualize source
+    fragment = source.fragment_at(3, 8)
+    names = api_map.complete(fragment).pins.map(&:name)
+    expect(names).to include('join')
+  end
+
+  it "detects class variables" do
+    api_map = Solargraph::ApiMap.new
+    source = Solargraph::Source.new(%(
+      module Foo
+        @@foo = 'foo'
+        def bar
+          @@foo
+        end
+      end
+    ))
+    api_map.virtualize source
+    fragment = source.fragment_at(4, 12)
+    pins = api_map.complete(fragment).pins
+    expect(pins.length).to eq(1)
+    expect(pins.first.name).to eq('@@foo')
+    expect(pins.first.return_type).to eq('String')
   end
 end

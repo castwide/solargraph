@@ -16,6 +16,7 @@ module Solargraph
       # Get a hash of the position. This representation is suitable for use in
       # the language server protocol.
       #
+      # @return [Hash]
       def to_hash
         {
           line: line,
@@ -23,6 +24,11 @@ module Solargraph
         }
       end
 
+      # Get a numeric offset for the specified text and position.
+      #
+      # @param text [String]
+      # @param position [Position]
+      # @return [Integer]
       def self.to_offset text, position
         result = 0
         feed = 0
@@ -41,10 +47,22 @@ module Solargraph
         result
       end
 
+      # Get a numeric offset for the specified text and a position identified
+      # by its line and character.
+      #
+      # @param text [String]
+      # @param line [Integer]
+      # @param character [Integer]
+      # @return [Integer]
       def self.line_char_to_offset text, line, character
         to_offset(text, Position.new(line, character))
       end
 
+      # Get a position for the specified text and offset.
+      #
+      # @param text [String]
+      # @param offset [Integer]
+      # @return [Position]
       def self.from_offset text, offset
         cursor = 0
         line = 0

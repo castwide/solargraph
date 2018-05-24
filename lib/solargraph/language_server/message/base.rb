@@ -37,14 +37,7 @@ module Solargraph
           }
         end
 
-        def response
-          response = {}
-          response[:result] = result
-          response[:error] = error unless error.nil?
-          response
-        end
-
-        def send
+        def send_response
           unless id.nil? or host.cancel?(id)
             response = {
               jsonrpc: "2.0",

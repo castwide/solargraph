@@ -56,6 +56,7 @@ module Solargraph
       register 'textDocument/formatting',          TextDocument::Formatting
       register 'textDocument/onTypeFormatting',    TextDocument::OnTypeFormatting
       register 'textDocument/documentSymbol',      TextDocument::DocumentSymbol
+      register 'textDocument/references',          TextDocument::References
       register 'workspace/didChangeWatchedFiles',  Workspace::DidChangeWatchedFiles
       register 'workspace/didChangeConfiguration', Workspace::DidChangeConfiguration
       register 'workspace/symbol',                 Workspace::WorkspaceSymbol
@@ -64,6 +65,7 @@ module Solargraph
       register '$/solargraph/search',              Extended::Search
       register '$/solargraph/checkGemVersion',     Extended::CheckGemVersion
       register '$/solargraph/documentGems',        Extended::DocumentGems
+      register '$/solargraph/downloadCore',        Extended::DownloadCore
       register 'shutdown',                         Shutdown
       register 'exit',                             ExitNotification
     end

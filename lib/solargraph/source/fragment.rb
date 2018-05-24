@@ -3,12 +3,11 @@ module Solargraph
     class Fragment
       include NodeMethods
 
-      attr_reader :tree
-
       attr_reader :line
 
       attr_reader :column
 
+      # @return [Solargraph::Source]
       attr_reader :source
 
       # @param source [Solargraph::Source]
@@ -44,17 +43,6 @@ module Solargraph
       # @return [Boolean]
       def argument?
         @argument ||= !signature_position.nil?
-      end
-
-      def chained?
-        if @chained.nil?
-          @chained = false
-          @tree.each do |n|
-            @chained = true if n.type == :send
-            break
-          end
-        end
-        @chained
       end
 
       # @return [Fragment]
@@ -319,9 +307,18 @@ module Solargraph
           @base_literal = 'Integer'
         # @todo Smelly exceptional case for array literals
         elsif signature.start_with?('.[]')
-          index += 3
-          signature = signature[index+3..-1].to_s
+          index += 2
+          signature = signature[3..-1].to_s
           @base_literal = 'Array'
+        elsif signature.start_with?('.')
+          pos = Position.from_offset(source.code, index)
+          node = source.node_at(pos.line, pos.character)
+          lit = infer_literal_node_type(node)
+          unless lit.nil?
+            signature = signature[1..-1].to_s
+            index += 1
+            @base_literal = lit
+          end
         end
         [index + 1, signature]
       end

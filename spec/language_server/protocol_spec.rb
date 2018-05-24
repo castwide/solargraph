@@ -24,7 +24,7 @@ class Protocol
     }
     @message_id += 1
     message = @host.start msg
-    message.send
+    message.send_response
     @data_reader.receive @host.flush
   end
 end
@@ -200,6 +200,21 @@ describe Protocol do
     expect(response['result']).not_to be_empty
   end
 
+  it "handles textDocument/references" do
+    @protocol.request 'textDocument/references', {
+      'textDocument' => {
+        'uri' => 'file:///file.rb'
+      },
+      'position' => {
+        'line' => 7,
+        'character' => 15
+      }
+    }
+    response = @protocol.response
+    expect(response['error']).to be_nil
+    expect(response['result'].empty?).to be(false)
+  end
+
   it "handles textDocument/didClose" do
     @protocol.request 'textDocument/didClose', {
       'textDocument' => {
@@ -237,5 +252,36 @@ describe Protocol do
       }
     }
     expect(@protocol.host.options['autoformat']).to be(false)
+  end
+
+  it "handles $/solargraph/checkGemVersion" do
+    @protocol.request '$/solargraph/checkGemVersion', { verbose: false }
+    response = @protocol.response
+    expect(response['error']).to be_nil
+    expect(response['result']['installed']).to be_a(String)
+    expect(response['result']['available']).to be_a(String)
+  end
+
+  it "handles $/solargraph/documentGems" do
+    @protocol.request '$/solargraph/documentGems', {}
+    response = @protocol.response
+    expect(response['error']).to be_nil
+  end
+
+  it "handles textDocument/formatting" do
+    @protocol.request 'textDocument/formatting', {
+      'textDocument' => {
+        'uri' => Solargraph::LanguageServer::UriHelpers.file_to_uri(File.realpath('spec/fixtures/formattable.rb'))
+      }
+    }
+    response = @protocol.response
+    expect(response['error']).to be_nil
+    expect(response['result'].first['newText']).to be_a(String)
+  end
+
+  it "handles $/solargraph/downloadCore" do
+    @protocol.request '$/solargraph/downloadCore', {}
+    response = @protocol.response
+    expect(response['error']).to be_nil
   end
 end

@@ -9,14 +9,24 @@ module Solargraph
     autoload :Completion,   'solargraph/api_map/completion'
     autoload :Probe,        'solargraph/api_map/probe'
     autoload :Store,        'solargraph/api_map/store'
+    autoload :TypeMethods,  'solargraph/api_map/type_methods'
 
     include Solargraph::ApiMap::SourceToYard
     include CoreFills
+    include TypeMethods
 
     # The workspace to analyze and process.
     #
     # @return [Solargraph::Workspace]
     attr_reader :workspace
+
+    # @return [ApiMap::Store]
+    attr_reader :store
+
+    # Get a LiveMap associated with the current workspace.
+    #
+    # @return [Solargraph::LiveMap]
+    attr_reader :live_map
 
     # @param workspace [Solargraph::Workspace]
     def initialize workspace = Solargraph::Workspace.new(nil)
@@ -26,7 +36,7 @@ module Solargraph
       @yard_stale = true
       # process_maps
       @sources = workspace.sources
-      yard_map
+      refresh_store_and_maps
     end
 
     # Create an ApiMap with a workspace in the specified directory.
@@ -34,11 +44,6 @@ module Solargraph
     # @return [ApiMap]
     def self.load directory
       self.new(Solargraph::Workspace.new(directory))
-    end
-
-    # @return [ApiMap::Store]
-    def store
-      @store ||= ApiMap::Store.new(@sources)
     end
 
     def pins
@@ -66,17 +71,10 @@ module Solargraph
     # @return [Solargraph::YardMap]
     def yard_map
       # refresh
-      if @yard_map.nil? || @yard_map.required.to_set != required.to_set
+      if @yard_map.required.to_set != required.to_set
         @yard_map = Solargraph::YardMap.new(required: required, workspace: workspace)
       end
       @yard_map
-    end
-
-    # Get a LiveMap associated with the current workspace.
-    #
-    # @return [Solargraph::LiveMap]
-    def live_map
-      @live_map ||= Solargraph::LiveMap.new(self)
     end
 
     # Declare a virtual source that will be included in the map regardless of
@@ -229,7 +227,7 @@ module Solargraph
     # @param namespace [String] A fully qualified namespace
     # @return [Array<Solargraph::Pin::ClassVariable>]
     def get_class_variable_pins(namespace)
-      prefer_non_nil_variables(@cvar_pins[namespace] || [])
+      prefer_non_nil_variables(store.get_class_variables(namespace))
     end
 
     # @return [Array<Solargraph::Pin::Base>]
@@ -259,6 +257,11 @@ module Solargraph
         result.concat inner_get_methods('Kernel', :instance, visibility, deep, skip)
       else
         result.concat inner_get_methods(fqns, scope, visibility, deep, skip)
+      end
+      live = live_map.get_methods(fqns, '', scope.to_s, visibility.include?(:private))
+      unless live.empty?
+        exist = result.map(&:name)
+        result.concat live.reject{|p| exist.include?(p.name)}
       end
       result
     end
@@ -293,7 +296,7 @@ module Solargraph
             if fragment.base.empty?
               result.concat get_methods(pin.path)
             else
-              type = probe.infer_signature_type(fragment.base, pin, fragment.locals)
+              type = probe.infer_signature_type("#{pin.path}.new.#{fragment.base}", pin, fragment.locals)
               unless type.nil?
                 namespace, scope = extract_namespace_and_scope(type)
                 result.concat get_methods(namespace, scope: scope)
@@ -310,7 +313,8 @@ module Solargraph
           end
         end
       end
-      filtered = result.uniq(&:identifier).select{|s| s.kind != Pin::METHOD or s.name.match(/^[a-z0-9_]*(\!|\?|=)?$/i)}.sort_by.with_index{ |x, idx| [x.name, idx] }
+      frag_start = fragment.word.to_s.downcase
+      filtered = result.uniq(&:identifier).select{|s| s.name.downcase.start_with?(frag_start) and (s.kind != Pin::METHOD or s.name.match(/^[a-z0-9_]*(\!|\?|=)?$/i))}.sort_by.with_index{ |x, idx| [x.name, idx] }
       Completion.new(filtered, fragment.whole_word_range)
     end
 
@@ -318,7 +322,11 @@ module Solargraph
     # @return [Array<Solargraph::Pin::Base>]
     def define fragment
       return [] if fragment.string? or fragment.comment?
-      probe.infer_signature_pins fragment.whole_signature, fragment.named_path, fragment.locals
+      if fragment.base_literal?
+        probe.infer_signature_pins fragment.whole_signature, Pin::ProxyMethod.new(fragment.base_literal), fragment.locals
+      else
+        probe.infer_signature_pins fragment.whole_signature, fragment.named_path, fragment.locals
+      end
     end
 
     # Infer a return type from a fragment. This method will attempt to resolve
@@ -342,9 +350,13 @@ module Solargraph
     def signify fragment
       return [] unless fragment.argument?
       return [] if fragment.recipient.whole_signature.nil? or fragment.recipient.whole_signature.empty?
-      probe.infer_signature_pins(
-        fragment.recipient.whole_signature, fragment.named_path, fragment.locals
-      ).select{ |pin| pin.kind == Pin::METHOD }
+      result = []
+      if fragment.recipient.base_literal?
+        result.concat probe.infer_signature_pins(fragment.recipient.whole_signature, Pin::ProxyMethod.new(fragment.recipient.base_literal), fragment.locals)
+      else
+        result.concat probe.infer_signature_pins(fragment.recipient.whole_signature, fragment.named_path, fragment.locals)
+      end
+      result.select{ |pin| pin.kind == Pin::METHOD }
     end
 
     # Get an array of all suggestions that match the specified path.
@@ -356,6 +368,10 @@ module Solargraph
       result = []
       result.concat store.get_path_pins(path)
       result.concat yard_map.objects(path)
+      if result.empty?
+        lp = live_map.get_path_pin(path)
+        result.push lp unless lp.nil?
+      end
       result
     end
 
@@ -422,6 +438,12 @@ module Solargraph
     end
 
     private
+
+    def refresh_store_and_maps
+      @store = ApiMap::Store.new(@sources)
+      @live_map = Solargraph::LiveMap.new(self)
+      @yard_map = Solargraph::YardMap.new(required: required, workspace: workspace)
+    end
 
     def process_virtual
       unless @virtual_source.nil?
@@ -567,16 +589,6 @@ module Solargraph
       pin = store.get_path_pins(fqns).first
       return yard_map.get_namespace_type(fqns) if pin.nil?
       pin.type
-    end
-
-    def extract_namespace_and_scope type
-      scope = :instance
-      result = type.to_s.gsub(/<.*$/, '')
-      if (result == 'Class' or result == 'Module') and type.include?('<')
-        result = type.match(/<([a-z0-9:_]*)/i)[1]
-        scope = :class
-      end
-      [result, scope]
     end
   end
 end

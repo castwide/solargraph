@@ -16,7 +16,8 @@ module Solargraph
                   supported: true,
                   changeNotifications: true
                 }
-              }
+              },
+              referencesProvider: true
             }
           }
           result[:capabilities].merge! static_completion unless dynamic_completion?

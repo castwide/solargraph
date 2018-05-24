@@ -15,6 +15,7 @@ module Solargraph
         autoload :Definition, 'solargraph/language_server/message/text_document/definition'
         autoload :DocumentSymbol, 'solargraph/language_server/message/text_document/document_symbol'
         autoload :Formatting, 'solargraph/language_server/message/text_document/formatting'
+        autoload :References, 'solargraph/language_server/message/text_document/references'
       end
     end
   end

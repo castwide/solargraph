@@ -18,13 +18,13 @@ module Solargraph
           start_timers
         end
 
-        def process message
+        def process request
           Thread.new do
-            message = @host.start(message)
-            message.send
+            message = @host.start(request)
+            message.send_response
             tmp = @host.flush
             send_data tmp unless tmp.empty?
-            GC.start unless message['method'] == 'textDocument/didChange'
+            GC.start unless request['method'] == 'textDocument/didChange'
           end
         end
 

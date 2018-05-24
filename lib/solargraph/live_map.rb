@@ -9,11 +9,17 @@ module Solargraph
     # @return [Solargraph::ApiMap]
     attr_reader :api_map
 
+    # @param api_map [Solargraph::ApiMap]
     def initialize api_map
       @api_map = api_map
       runners
     end
 
+    def get_path_pin path
+      cache.get_path_pin(path)
+    end
+
+    # @return [Array<Solargraph::Pin::Base>]
     def get_methods(namespace, root = '', scope = 'instance', with_private = false)
       fqns = api_map.find_fully_qualified_namespace(namespace, root)
       params = {
@@ -26,7 +32,7 @@ module Solargraph
       runners.each do |p|
         next if did_runtime and p.runtime?
         p.get_methods(namespace: namespace, root: root, scope: scope, with_private: with_private).each do |m|
-          result.push Suggestion.new(m['name'], kind: Suggestion::METHOD, docstring: YARD::Docstring.new('(defined at runtime)'), path: "#{fqns}.#{m['name']}", arguments: m['parameters'])
+          result.push Solargraph::Pin::Method.new(nil, namespace, m['name'], YARD::Docstring.new('(defined at runtime)'), scope.to_sym, nil, [])
         end
         did_runtime = true if p.runtime?
       end
@@ -34,7 +40,7 @@ module Solargraph
       result
     end
 
-    # @return [Array<Solargraph::Suggestion>]
+    # @return [Array<Solargraph::Pin::Base>]
     def get_constants(namespace, root = '')
       cached = cache.get_constants(namespace, root)
       return cached unless cached.nil?
