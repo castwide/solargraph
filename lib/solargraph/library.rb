@@ -148,14 +148,18 @@ module Solargraph
       pins = api_map.define(fragment)
       return [] if pins.empty?
       result = []
-      pins.each do |pin|
-        result.push pin.location if pin.kind == Solargraph::Pin::METHOD and !pin.location.nil?
-        (workspace.sources + source_hash.values).uniq.each do |source|
+      # @param pin [Solargraph::Pin::Base]
+      pins.uniq.each do |pin|
+        if pin.kind == Solargraph::Pin::METHOD and !pin.location.nil?
+          mn_loc = get_symbol_name_location(pin)
+          result.push mn_loc unless mn_loc.nil?
+        end
+        (workspace.sources + source_hash.values).uniq(&:filename).each do |source|
           found = source.references(pin.name).select do |loc|
             referenced = definitions_at(loc.filename, loc.range.ending.line, loc.range.ending.character).first
             !referenced.nil? and referenced.path == pin.path
           end
-          result.concat found
+          result.concat found.sort{|a, b| a.range.start.line <=> b.range.start.line}
         end
       end
       result
@@ -289,6 +293,19 @@ module Solargraph
       return workspace.source(filename) if workspace.has_file?(filename)
       raise FileNotFoundError, "File not found: #{filename}" unless File.file?(filename)
       Solargraph::Source.load(filename)
+    end
+
+    def get_symbol_name_location pin
+      decsrc = read(pin.location.filename)
+      offset = Solargraph::Source::Position.to_offset(decsrc.code, pin.location.range.start)
+      soff = decsrc.code.index(pin.name, offset)
+      eoff = soff + pin.name.length
+      Solargraph::Source::Location.new(
+        pin.location.filename, Solargraph::Source::Range.new(
+          Solargraph::Source::Position.from_offset(decsrc.code, soff),
+          Solargraph::Source::Position.from_offset(decsrc.code, eoff)
+        )
+      )
     end
   end
 end

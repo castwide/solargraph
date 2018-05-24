@@ -11,6 +11,7 @@ module Solargraph
               definitionProvider: true,
               documentSymbolProvider: true,
               workspaceSymbolProvider: true,
+              renameProvider: true,
               workspace: {
                 workspaceFolders: {
                   supported: true,
