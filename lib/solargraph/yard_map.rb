@@ -155,6 +155,15 @@ module Solargraph
               ns.meths(scope: :class, visibility: visibility).each { |m|
                 meths.push Pin::YardObject.new(m, object_location(m))
               }
+              # HACK: Convert #initialize to .new
+              if visibility.include?(:public)
+                init = ns.meths(scope: :instance).select{|m| m.to_s.split(/[\.#]/).last == 'initialize'}.first
+                unless init.nil?
+                  ip = Solargraph::Pin::YardObject.new(init, object_location(init))
+                  np = Solargraph::Pin::Method.new(ip.location, ip.namespace, 'new', ip.docstring, :class, :public, ip.parameters)
+                  meths.push np
+                end
+              end
               # Collect superclass methods
               if ns.kind_of?(YARD::CodeObjects::ClassObject) and !ns.superclass.nil?
                 meths += get_methods ns.superclass.to_s, '', visibility: [:public, :protected] unless ['Object', 'BasicObject', ''].include?(ns.superclass.to_s)
