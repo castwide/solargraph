@@ -152,11 +152,13 @@ module Solargraph
             ns = nil
             ns = find_first_resolved_object(yard, namespace, scope)
             unless ns.nil?
+              has_new = false
               ns.meths(scope: :class, visibility: visibility).each { |m|
+                has_new = true if m.name == 'new'
                 meths.push Pin::YardObject.new(m, object_location(m))
               }
               # HACK: Convert #initialize to .new
-              if visibility.include?(:public)
+              if visibility.include?(:public) and !has_new
                 init = ns.meths(scope: :instance).select{|m| m.to_s.split(/[\.#]/).last == 'initialize'}.first
                 unless init.nil?
                   ip = Solargraph::Pin::YardObject.new(init, object_location(init))
