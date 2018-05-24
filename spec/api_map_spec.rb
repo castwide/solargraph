@@ -1043,4 +1043,22 @@ describe Solargraph::ApiMap do
     names = api_map.complete(fragment).pins.map(&:name)
     expect(names).to include('join')
   end
+
+  it "detects class variables" do
+    api_map = Solargraph::ApiMap.new
+    source = Solargraph::Source.new(%(
+      module Foo
+        @@foo = 'foo'
+        def bar
+          @@foo
+        end
+      end
+    ))
+    api_map.virtualize source
+    fragment = source.fragment_at(4, 12)
+    pins = api_map.complete(fragment).pins
+    expect(pins.length).to eq(1)
+    expect(pins.first.name).to eq('@@foo')
+    expect(pins.first.return_type).to eq('String')
+  end
 end

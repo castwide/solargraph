@@ -227,7 +227,7 @@ module Solargraph
     # @param namespace [String] A fully qualified namespace
     # @return [Array<Solargraph::Pin::ClassVariable>]
     def get_class_variable_pins(namespace)
-      prefer_non_nil_variables(@cvar_pins[namespace] || [])
+      prefer_non_nil_variables(store.get_class_variables(namespace))
     end
 
     # @return [Array<Solargraph::Pin::Base>]

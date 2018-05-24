@@ -80,6 +80,10 @@ module Solargraph
         namespace_pins(fqns).select{|pin| pin.kind == Pin::INSTANCE_VARIABLE and pin.scope == scope}
       end
 
+      def get_class_variables(fqns)
+        namespace_pins(fqns).select{|pin| pin.kind == Pin::CLASS_VARIABLE}
+      end
+
       def get_symbols
         symbols.uniq(&:name)
       end
