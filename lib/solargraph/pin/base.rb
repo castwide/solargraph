@@ -61,6 +61,11 @@ module Solargraph
       def named_context
         namespace
       end
+
+      # @return [Array<ComplexType>]
+      def complex_types
+        []
+      end
     end
   end
 end

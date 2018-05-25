@@ -25,15 +25,12 @@ module Solargraph
       end
 
       def return_type
-        if @return_type.nil? and !docstring.nil?
-          tag = docstring.tag(:return)
-          if tag.nil?
-            ol = docstring.tag(:overload)
-            tag = ol.tag(:return) unless ol.nil?
-          end
-          @return_type = tag.types[0] unless tag.nil? or tag.types.nil?
-        end
+        @return_type = complex_types.first.tag if @return_type.nil? and !complex_types.empty?
         @return_type
+      end
+
+      def complex_types
+        @complex_types ||= generate_complex_types
       end
 
       def documentation
@@ -75,6 +72,19 @@ module Solargraph
           end
         end
         @params
+      end
+
+      private
+
+      def generate_complex_types
+        return [] if docstring.nil?
+        tag = docstring.tag(:return)
+        if tag.nil?
+          ol = docstring.tag(:overload)
+          tag = ol.tag(:return) unless ol.nil?
+        end
+        return [] if tag.nil?
+        ComplexType.parse *tag.types
       end
     end
   end

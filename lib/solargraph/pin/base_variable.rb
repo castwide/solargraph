@@ -21,15 +21,27 @@ module Solargraph
       end
 
       def return_type
+        # if @return_type.nil?
+        #   if !docstring.nil?
+        #     tag = docstring.tag(:type)
+        #     @return_type = tag.types[0] unless tag.nil?
+        #   else
+        #     @return_type = @literal
+        #   end
+        # end
+        # @return_type
         if @return_type.nil?
-          if !docstring.nil?
-            tag = docstring.tag(:type)
-            @return_type = tag.types[0] unless tag.nil?
-          else
+          if complex_types.empty?
             @return_type = @literal
+          else
+            @return_type = complex_types.first.tag
           end
         end
         @return_type
+      end
+
+      def complex_types
+        @complex_types ||= generate_complex_types
       end
 
       def nil_assignment?
@@ -38,6 +50,15 @@ module Solargraph
 
       def variable?
         true
+      end
+
+      private
+
+      def generate_complex_types
+        return [] if docstring.nil?
+        tag = docstring.tag(:type)
+        return [] if tag.nil?
+        ComplexType.parse *tag.types
       end
     end
   end
