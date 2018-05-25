@@ -8,7 +8,6 @@ module Solargraph::LanguageServer::Message::TextDocument
           range: loc.range.to_hash
         }
       end
-      STDERR.puts result.inspect
       set_result result
     end
   end
