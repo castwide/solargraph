@@ -22,6 +22,14 @@ module Solargraph
       @subtypes.concat ComplexType.parse substring
     end
 
+    def namespace
+      @namespace ||= ((name == 'Class' or name == 'Module') and !subtypes.empty?) ? subtypes.first.name : name
+    end
+
+    def scope
+      @scope ||= ((name == 'Class' or name == 'Module') and !subtypes.empty?) ? :class : :instance
+    end
+
     class << self
       # @return [Array<ComplexType>]
       def parse *strings

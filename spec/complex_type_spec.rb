@@ -39,4 +39,25 @@ describe Solargraph::ComplexType do
     expect(types.first.subtypes[0].name).to eq('Symbol')
     expect(types.first.subtypes[1].name).to eq('String')
   end
+
+  it "detects namespace and scope for simple types" do
+    types = Solargraph::ComplexType.parse 'Class'
+    expect(types.length).to eq(1)
+    expect(types.first.namespace).to eq('Class')
+    expect(types.first.scope).to eq(:instance)
+  end
+
+  it "detects namespace and scope for classes with subtypes" do
+    types = Solargraph::ComplexType.parse 'Class<String>'
+    expect(types.length).to eq(1)
+    expect(types.first.namespace).to eq('String')
+    expect(types.first.scope).to eq(:class)
+  end
+
+  it "detects namespace and scope for modules with subtypes" do
+    types = Solargraph::ComplexType.parse 'Module<Foo>'
+    expect(types.length).to eq(1)
+    expect(types.first.namespace).to eq('Foo')
+    expect(types.first.scope).to eq(:class)
+  end
 end
