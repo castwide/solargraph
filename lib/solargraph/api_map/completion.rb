@@ -1,5 +1,8 @@
 module Solargraph
   class ApiMap
+    # The result of a completion request containing the pins that describe
+    # completion options and the range to be replaced.
+    #
     class Completion
       # @return [Array<Solargraph::Pin::Base>]
       attr_reader :pins
