@@ -41,6 +41,7 @@ module Solargraph
     # @return [Time]
     attr_reader :stime
 
+    # @return [Array<Solargraph::Pin::Base>]
     attr_reader :pins
 
     attr_reader :requires
