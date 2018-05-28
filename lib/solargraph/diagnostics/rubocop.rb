@@ -26,9 +26,8 @@ module Solargraph
           cmd = "#{Shellwords.escape(command)} -f j -s #{Shellwords.escape(filename)}"
           unless api_map.workspace.nil? or api_map.workspace.directory.nil?
             rc = File.join(api_map.workspace.directory, '.rubocop.yml')
-            cmd += " -c #{rc}" if File.file?(rc)
+            cmd += " -c #{Shellwords.escape(rc)}" if File.file?(rc)
           end
-          STDERR.puts "THA COMMAND: #{cmd}"
           o, e, s = Open3.capture3(cmd, stdin_data: text)
           STDERR.puts e unless e.empty?
           raise DiagnosticsError, "Command '#{command}' is not available (gem exception)" if e.include?('Gem::Exception')
