@@ -15,6 +15,8 @@ module Solargraph
         @command = command
       end
 
+      # @param source [Solargraph::Source]
+      # @param api_map [Solargraph::ApiMap]
       # @return [Array<Hash>]
       def diagnose source, api_map
         begin
@@ -22,6 +24,11 @@ module Solargraph
           filename = source.filename
           raise DiagnosticsError, 'No command specified' if command.nil? or command.empty?
           cmd = "#{Shellwords.escape(command)} -f j -s #{Shellwords.escape(filename)}"
+          unless api_map.workspace.nil? or api_map.workspace.directory.nil?
+            rc = File.join(api_map.workspace.directory, '.rubocop.yml')
+            cmd += " -c #{rc}" if File.file?(rc)
+          end
+          STDERR.puts "THA COMMAND: #{cmd}"
           o, e, s = Open3.capture3(cmd, stdin_data: text)
           STDERR.puts e unless e.empty?
           raise DiagnosticsError, "Command '#{command}' is not available (gem exception)" if e.include?('Gem::Exception')
