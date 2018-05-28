@@ -67,6 +67,10 @@ module Solargraph
         raw_data['require']
       end
 
+      def require_paths
+        raw_data['require_paths'] || []
+      end
+
       def plugins
         raw_data['plugins']
       end
