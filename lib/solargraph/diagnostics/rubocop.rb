@@ -6,6 +6,15 @@ module Solargraph
     # This reporter provides linting through RuboCop.
     #
     class Rubocop < Base
+      # Conversion of RuboCop severity names to LSP constants
+      SEVERITIES = {
+        'refactor' => 4,
+        'convention' => 3,
+        'warning' => 2,
+        'error' => 1,
+        'fatal' => 1
+      }
+
       # The rubocop command
       #
       # @return [String]
@@ -43,14 +52,6 @@ module Solargraph
       private
 
       def make_array resp
-        # Conversion of RuboCop severity names to LSP constants
-        severities = {
-          'refactor' => 4,
-          'convention' => 3,
-          'warning' => 2,
-          'error' => 1,
-          'fatal' => 1
-        }
         diagnostics = []
         resp['files'].each do |file|
           file['offenses'].each do |off|
@@ -73,7 +74,7 @@ module Solargraph
                 }
               },
               # 1 = Error, 2 = Warning, 3 = Information, 4 = Hint
-              severity: severities[off['severity']],
+              severity: SEVERITIES[off['severity']],
               source: off['cop_name'],
               message: off['message'].gsub(/^#{off['cop_name']}\:/, '')
             }
