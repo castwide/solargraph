@@ -32,11 +32,12 @@ module Solargraph
           text = source.code
           filename = source.filename
           raise DiagnosticsError, 'No command specified' if command.nil? or command.empty?
-          cmd = "#{Shellwords.escape(command)} -f j -s #{Shellwords.escape(filename)}"
+          cmd = "#{Shellwords.escape(command)} -f j"
           unless api_map.workspace.nil? or api_map.workspace.directory.nil?
             rc = File.join(api_map.workspace.directory, '.rubocop.yml')
-            cmd += " -c #{Shellwords.escape(rc)}" if File.file?(rc)
+            cmd += " -c #{Shellwords.escape(fix_drive_letter(rc))}" if File.file?(rc)
           end
+          cmd += " -s #{Shellwords.escape(fix_drive_letter(filename))}"
           o, e, s = Open3.capture3(cmd, stdin_data: text)
           STDERR.puts e unless e.empty?
           raise DiagnosticsError, "Command '#{command}' is not available (gem exception)" if e.include?('Gem::Exception')
@@ -82,6 +83,16 @@ module Solargraph
           end
         end
         diagnostics
+      end
+
+      # RuboCop internally uses capitalized drive letters for Windows paths,
+      # so we need to convert the paths provided to the command.
+      #
+      # @param path [String]
+      # @return [String]
+      def fix_drive_letter path
+        return path unless path.match(/^[a-z]:/)
+        path[0].upcase + path[1..-1]
       end
     end
   end
