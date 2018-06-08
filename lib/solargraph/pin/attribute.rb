@@ -4,10 +4,14 @@ module Solargraph
       # @return [Symbol] :reader or :writer
       attr_reader :access
 
-      def initialize location, namespace, name, docstring, access
+      # @return [Symbol] :class or :instance
+      attr_reader :scope
+
+      def initialize location, namespace, name, docstring, access, scope
         super(location, namespace, name, docstring)
         @access = access
         @docstring = docstring
+        @scope = scope
       end
 
       def kind

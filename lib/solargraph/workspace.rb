@@ -132,15 +132,21 @@ module Solargraph
 
     def generate_require_paths
       return [] if directory.nil?
-      return [File.join(directory, 'lib')] unless gemspec?
+      return configured_require_paths unless gemspec?
       result = []
       gemspecs.each do |file|
         spec = Gem::Specification.load(file)
         base = File.dirname(file)
         result.concat spec.require_paths.map{ |path| File.join(base, path) } unless spec.nil?
       end
+      result.concat config.require_paths
       result.push File.join(directory, 'lib') if result.empty?
       result
+    end
+
+    def configured_require_paths
+      return [File.join(directory, 'lib')] if config.require_paths.empty?
+      config.require_paths.map{|p| File.join(directory, p)}
     end
   end
 end

@@ -470,9 +470,7 @@ module Solargraph
       return [] if skip.include?(reqstr)
       skip.push reqstr
       result = []
-      if scope == :instance
-        result.concat store.get_attrs(fqns)
-      end
+      result.concat store.get_attrs(fqns, scope)
       result.concat store.get_methods(fqns, scope: scope, visibility: visibility)
       if deep
         sc = store.get_superclass(fqns)

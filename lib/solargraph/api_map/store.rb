@@ -43,8 +43,8 @@ module Solargraph
         }
       end
 
-      def get_attrs fqns
-        namespace_pins(fqns).select{ |pin| pin.kind == Pin::ATTRIBUTE }
+      def get_attrs fqns, scope
+        namespace_pins(fqns).select{ |pin| pin.kind == Pin::ATTRIBUTE and pin.scope == scope }
       end
 
       def get_superclass fqns
