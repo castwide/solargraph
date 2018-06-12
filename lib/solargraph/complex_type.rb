@@ -18,14 +18,15 @@ module Solargraph
       @tag = name
       @tag += "<#{substring}>" unless substring.empty?
       @subtypes = []
-      return if substring.empty?
-      @subtypes.concat ComplexType.parse substring
+      @subtypes.concat(ComplexType.parse(substring)) unless substring.empty?
     end
 
+    # @return [String]
     def namespace
       @namespace ||= ((name == 'Class' or name == 'Module') and !subtypes.empty?) ? subtypes.first.name : name
     end
 
+    # @return [Symbol] :class or :instance
     def scope
       @scope ||= ((name == 'Class' or name == 'Module') and !subtypes.empty?) ? :class : :instance
     end
