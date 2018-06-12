@@ -10,7 +10,10 @@ module Solargraph::LanguageServer::Message::Workspace
       meths.push 'textDocument/hover' if update.has_key?('hover') and update['hover']  and !host.options['hover']
       meths.push 'textDocument/signatureHelp' if update.has_key?('hover') and update['hover'] and !host.options['hover']
       meths.push 'textDocument/onTypeFormatting' if update.has_key?('autoformat') and update['autoformat'] and !host.options['autoformat']
-      meths.push "textDocument/formatting" if update.has_key?('formatting') and update['formatting'] and !host.options['formatting']
+      meths.push 'textDocument/formatting' if update.has_key?('formatting') and update['formatting'] and !host.options['formatting']
+      meths.push 'textDocument/documentSymbol' if update.has_key?('symbols') and update['symbols'] and !host.options['symbols']
+      meths.push 'workspace/workspaceSymbol' if update.has_key?('symbols') and update['symbols'] and !host.options['symbols']
+      meths.push 'textDocument/definition' if update.has_key?('definitions') and update['definitions'] and !host.options['definitions']
       host.register_capabilities meths unless meths.empty?
 
       meths = []
@@ -18,7 +21,10 @@ module Solargraph::LanguageServer::Message::Workspace
       meths.push 'textDocument/hover' if update.has_key?('hover') and !update['hover'] and host.options['hover']
       meths.push 'textDocument/signatureHelp' if update.has_key?('hover') and !update['hover'] and host.options['hover']
       meths.push 'textDocument/onTypeFormatting' if update.has_key?('autoformat') and !update['autoformat'] and host.options['autoformat']
-      meths.push "textDocument/formatting" if update.has_key?('formatting') and !update['formatting'] and host.options['formatting']
+      meths.push 'textDocument/formatting' if update.has_key?('formatting') and !update['formatting'] and host.options['formatting']
+      meths.push 'textDocument/documentSymbol' if update.has_key?('symbols') and !update['symbols'] and host.options['symbols']
+      meths.push 'workspace/workspaceSymbol' if update.has_key?('symbols') and !update['symbols'] and host.options['symbols']
+      meths.push 'textDocument/definition' if update.has_key?('definitions') and !update['definitions'] and host.options['definitions']
       host.unregister_capabilities meths unless meths.empty?
 
       host.configure update

@@ -9,8 +9,6 @@ module Solargraph
             capabilities: {
               textDocumentSync: 2, # @todo What should this be?
               definitionProvider: true,
-              documentSymbolProvider: true,
-              workspaceSymbolProvider: true,
               renameProvider: true,
               workspace: {
                 workspaceFolders: {
@@ -26,6 +24,7 @@ module Solargraph
           result[:capabilities].merge! static_on_type_formatting unless dynamic_on_type_formatting?
           result[:capabilities].merge! static_hover unless dynamic_hover?
           result[:capabilities].merge! static_document_formatting unless dynamic_document_formatting?
+          result[:capabilities].merge! static_document_symbols unless dynamic_document_symbols?
           set_result result
         end
 
@@ -102,6 +101,32 @@ module Solargraph
             params['capabilities']['textDocument'] and
             params['capabilities']['textDocument']['hover'] and
             params['capabilities']['textDocument']['hover']['dynamicRegistration']
+        end
+
+        def static_document_symbols
+          {
+            documentSymbolProvider: true
+          }
+        end
+
+        def dynamic_document_symbols?
+          params['capabilities'] and
+            params['capabilities']['textDocument'] and
+            params['capabilities']['textDocument']['documentSymbol'] and
+            params['capabilities']['textDocument']['documentSymbol']['dynamicRegistration']
+        end
+
+        def static_workspace_symbols
+          {
+            workspaceSymbolProvider: true
+          }
+        end
+
+        def dynamic_workspace_symbols?
+          params['capabilities'] and
+            params['capabilities']['workspace'] and
+            params['capabilities']['workspace']['symbol'] and
+            params['capabilities']['workspace']['symbol']['dynamicRegistration']
         end
       end
     end
