@@ -44,6 +44,11 @@ module Solargraph
         LanguageServer::CompletionItemKinds::KEYWORD
       end
 
+      # @return [Integer]
+      def symbol_kind
+        nil
+      end
+
       def to_s
         name.to_s
       end

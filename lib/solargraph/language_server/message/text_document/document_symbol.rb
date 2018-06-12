@@ -6,7 +6,7 @@ class Solargraph::LanguageServer::Message::TextDocument::DocumentSymbol < Solarg
     info = pins.map do |pin|
       {
         name: pin.path,
-        kind: Solargraph::LanguageServer::SymbolKinds::NAMESPACE,
+        kind: pin.symbol_kind,
         location: {
           uri: file_to_uri(pin.location.filename),
           range: pin.location.range.to_hash

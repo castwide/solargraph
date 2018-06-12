@@ -16,6 +16,11 @@ module Solargraph
         Solargraph::LanguageServer::CompletionItemKinds::CONSTANT
       end
 
+      # @return [Integer]
+      def symbol_kind
+        LanguageServer::SymbolKinds::CONSTANT
+      end
+
       def path
         "#{namespace}::#{name}"
       end
