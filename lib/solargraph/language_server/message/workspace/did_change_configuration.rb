@@ -14,6 +14,7 @@ module Solargraph::LanguageServer::Message::Workspace
       meths.push 'textDocument/documentSymbol' if update.has_key?('symbols') and update['symbols'] and !host.options['symbols']
       meths.push 'workspace/workspaceSymbol' if update.has_key?('symbols') and update['symbols'] and !host.options['symbols']
       meths.push 'textDocument/definition' if update.has_key?('definitions') and update['definitions'] and !host.options['definitions']
+      meths.push 'textDocument/references' if update.has_key?('references') and update['references'] and !host.options['references']
       host.register_capabilities meths unless meths.empty?
 
       meths = []
@@ -25,6 +26,7 @@ module Solargraph::LanguageServer::Message::Workspace
       meths.push 'textDocument/documentSymbol' if update.has_key?('symbols') and !update['symbols'] and host.options['symbols']
       meths.push 'workspace/workspaceSymbol' if update.has_key?('symbols') and !update['symbols'] and host.options['symbols']
       meths.push 'textDocument/definition' if update.has_key?('definitions') and !update['definitions'] and host.options['definitions']
+      meths.push 'textDocument/references' if update.has_key?('references') and !update['references'] and host.options['references']
       host.unregister_capabilities meths unless meths.empty?
 
       host.configure update

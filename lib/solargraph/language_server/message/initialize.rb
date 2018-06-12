@@ -8,15 +8,12 @@ module Solargraph
           result = {
             capabilities: {
               textDocumentSync: 2, # @todo What should this be?
-              definitionProvider: true,
-              renameProvider: true,
               workspace: {
                 workspaceFolders: {
                   supported: true,
                   changeNotifications: true
                 }
-              },
-              referencesProvider: true
+              }
             }
           }
           result[:capabilities].merge! static_completion unless dynamic_completion?
@@ -25,6 +22,10 @@ module Solargraph
           result[:capabilities].merge! static_hover unless dynamic_hover?
           result[:capabilities].merge! static_document_formatting unless dynamic_document_formatting?
           result[:capabilities].merge! static_document_symbols unless dynamic_document_symbols?
+          result[:capabilities].merge! static_workspace_symbols unless dynamic_workspace_symbols?
+          result[:capabilities].merge! static_definitions unless dynamic_definitions?
+          result[:capabilities].merge! static_rename unless dynamic_rename?
+          result[:capabilities].merge! static_references unless dynamic_references?
           set_result result
         end
 
@@ -40,10 +41,7 @@ module Solargraph
         end
 
         def dynamic_completion?
-          params['capabilities'] and
-            params['capabilities']['textDocument'] and
-            params['capabilities']['textDocument']['completion'] and
-            params['capabilities']['textDocument']['completion']['dynamicRegistration']
+          dynamic_registration_for? 'textDocument', 'completion'
         end
 
         def static_signature_help
@@ -55,10 +53,7 @@ module Solargraph
         end
 
         def dynamic_signature_help?
-          params['capabilities'] and
-            params['capabilities']['textDocument'] and
-            params['capabilities']['textDocument']['signatureHelp'] and
-            params['capabilities']['textDocument']['signatureHelp']['dynamicRegistration']
+          dynamic_registration_for? 'textDocument', 'signatureHelp'
         end
 
         def static_on_type_formatting
@@ -71,10 +66,7 @@ module Solargraph
         end
 
         def dynamic_on_type_formatting?
-          params['capabilities'] and
-            params['capabilities']['textDocument'] and
-            params['capabilities']['textDocument']['onTypeFormatting'] and
-            params['capabilities']['textDocument']['onTypeFormatting']['dynamicRegistration']
+          dynamic_registration_for? 'textDocument', 'onTypeFormatting'
         end
 
         def static_hover
@@ -84,10 +76,7 @@ module Solargraph
         end
 
         def dynamic_hover?
-          params['capabilities'] and
-            params['capabilities']['textDocument'] and
-            params['capabilities']['textDocument']['hover'] and
-            params['capabilities']['textDocument']['hover']['dynamicRegistration']
+          dynamic_registration_for? 'textDocument', 'hover'
         end
 
         def static_document_formatting
@@ -97,10 +86,7 @@ module Solargraph
         end
 
         def dynamic_document_formatting?
-          params['capabilities'] and
-            params['capabilities']['textDocument'] and
-            params['capabilities']['textDocument']['hover'] and
-            params['capabilities']['textDocument']['hover']['dynamicRegistration']
+          dynamic_registration_for? 'textDocument', 'formatting'
         end
 
         def static_document_symbols
@@ -110,10 +96,7 @@ module Solargraph
         end
 
         def dynamic_document_symbols?
-          params['capabilities'] and
-            params['capabilities']['textDocument'] and
-            params['capabilities']['textDocument']['documentSymbol'] and
-            params['capabilities']['textDocument']['documentSymbol']['dynamicRegistration']
+          dynamic_registration_for? 'textDocument', 'documentSymbol'
         end
 
         def static_workspace_symbols
@@ -123,10 +106,44 @@ module Solargraph
         end
 
         def dynamic_workspace_symbols?
+          dynamic_registration_for? 'workspace', 'symbol'
+        end
+
+        def static_definitions
+          {
+            definitionProvider: true
+          }
+        end
+
+        def dynamic_definitions?
+          dynamic_registration_for? 'textDocument', 'definition'
+        end
+
+        def static_rename
+          {
+            renameProvider: true
+          }
+        end
+
+        def dynamic_rename?
+          dynamic_registration_for? 'textDocument', 'rename'
+        end
+
+        def static_references
+          {
+            referencesProvider: true
+          }
+        end
+
+        def dynamic_references?
+          dynamic_registration_for? 'textDocument', 'references'
+        end
+
+        def dynamic_registration_for? section, capability
           params['capabilities'] and
-            params['capabilities']['workspace'] and
-            params['capabilities']['workspace']['symbol'] and
-            params['capabilities']['workspace']['symbol']['dynamicRegistration']
+            params['capabilities'][section] and
+            params['capabilities'][section][capability] and
+            params['capabilities'][section][capability]['dynamicRegistration']
         end
       end
     end

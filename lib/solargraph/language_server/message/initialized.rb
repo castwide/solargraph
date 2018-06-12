@@ -12,6 +12,7 @@ module Solargraph
           meths.push 'textDocument/documentSymbol' if host.options['symbols']
           meths.push 'workspace/workspaceSymbol' if host.options['symbols']
           meths.push 'textDocument/definition' if host.options['definitions']
+          meths.push 'textDocument/references' if host.options['references']
           host.register_capabilities meths unless meths.empty?
         end
       end

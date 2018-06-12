@@ -380,11 +380,13 @@ module Solargraph
         {
           'completion' => true,
           'hover' => true,
+          'symbols' => true,
+          'definitions' => true,
+          'rename' => true,
+          'references' => true,
           'autoformat' => false,
           'diagnostics' => false,
-          'formatting' => false,
-          'symbols' => true,
-          'definitions' => true
+          'formatting' => false
         }
       end
 
@@ -547,6 +549,21 @@ module Solargraph
               # changeNotifications: true
             # }
           # }
+          'textDocument/definition' => {
+            definitionProvider: true
+          },
+          'textDocument/references' => {
+            referencesProvider: true
+          },
+          'textDocument/rename' => {
+            renameProvider: true
+          },
+          'textDocument/documentSymbol' => {
+
+          },
+          'workspace/workspaceSymbol' => {
+            
+          }
         }
       end
     end
