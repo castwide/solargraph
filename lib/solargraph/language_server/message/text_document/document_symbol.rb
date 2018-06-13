@@ -4,14 +4,16 @@ class Solargraph::LanguageServer::Message::TextDocument::DocumentSymbol < Solarg
   def process
     pins = host.file_symbols params['textDocument']['uri']
     info = pins.map do |pin|
-      {
-        name: pin.path,
+      result = {
+        name: pin.name,
+        containerName: pin.namespace,
         kind: pin.symbol_kind,
         location: {
           uri: file_to_uri(pin.location.filename),
           range: pin.location.range.to_hash
         }
       }
+      result
     end
     set_result info
   end

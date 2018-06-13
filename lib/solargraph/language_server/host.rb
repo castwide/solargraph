@@ -559,10 +559,10 @@ module Solargraph
             renameProvider: true
           },
           'textDocument/documentSymbol' => {
-
+            documentSymbolProvider: true
           },
           'workspace/workspaceSymbol' => {
-            
+            workspaceSymbolProvider: true
           }
         }
       end
