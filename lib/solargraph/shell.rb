@@ -35,6 +35,11 @@ module Solargraph
       end
     end
 
+    desc 'stdio', 'Run a Solargraph stdio server'
+    def stdio
+      puts "@todo"
+    end
+
     desc 'suggest', 'Get code suggestions for the provided input'
     long_desc <<-LONGDESC
       Analyze a Ruby file and output a list of code suggestions in JSON format.
