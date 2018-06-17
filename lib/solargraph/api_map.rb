@@ -244,6 +244,13 @@ module Solargraph
       globals
     end
 
+    # Get an array of methods available in a particular context.
+    #
+    # @param fqns [String] The fully qualified namespace to search for methods
+    # @param scope [Symbol] :class or :instance
+    # @param visibility [Array<Symbol>] :public, :protected, and/or :private
+    # @param deep [Boolean] True to include superclasses, mixins, etc.
+    # @return [Array<Solargraph::Pin::Base>]
     def get_methods fqns, scope: :instance, visibility: [:public], deep: true
       result = []
       skip = []
@@ -266,6 +273,10 @@ module Solargraph
       result
     end
 
+    # Get a set of available completions for the specified fragment. The
+    # resulting Completion object contains an array of pins and the range of
+    # text to replace in the source.
+    #
     # @param fragment [Solargraph::Source::Fragment]
     # @return [ApiMap::Completion]
     def complete fragment
@@ -318,6 +329,8 @@ module Solargraph
       Completion.new(filtered, fragment.whole_word_range)
     end
 
+    # Get an array of pins that describe the symbol at the specified fragment.
+    #
     # @param fragment [Solargraph::Source::Fragment]
     # @return [Array<Solargraph::Pin::Base>]
     def define fragment
@@ -421,11 +434,11 @@ module Solargraph
       result
     end
 
+    # @return [Solargraph::Pin::Base]
     def locate_pin location
       @sources.each do |source|
         pin = source.locate_pin(location)
         unless pin.nil?
-          # pin.resolve self
           return pin
         end
       end
