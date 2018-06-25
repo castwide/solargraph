@@ -5,6 +5,8 @@ module Solargraph
     module Transport
       class Stdio
         def initialize
+          # binmode is necessary to avoid EOL conversions
+          STDOUT.binmode
           @host = Solargraph::LanguageServer::Host.new
           @data_reader = Solargraph::LanguageServer::Transport::DataReader.new
           @data_reader.set_message_handler do |message|
@@ -37,10 +39,7 @@ module Solargraph
         end
 
         def send_data message
-          # @todo Converting EOL is necessary for the data to be sent
-          #   correctly on Windows. It might not be necessary on other
-          #   platforms.
-          STDOUT.write message.gsub(/\r\n/, "\n")
+          STDOUT.write message
           STDOUT.flush
         end
 
