@@ -37,7 +37,16 @@ module Solargraph
 
     desc 'stdio', 'Run a Solargraph stdio server'
     def stdio
-      puts "@todo"
+      EventMachine.run do
+        Signal.trap("INT") do
+          EventMachine.stop
+        end
+        Signal.trap("TERM") do
+          EventMachine.stop
+        end
+        Solargraph::LanguageServer::Transport::Stdio.run
+        STDERR.puts "Solargraph is listening on stdio PID=#{Process.pid}"
+      end
     end
 
     desc 'suggest', 'Get code suggestions for the provided input'
