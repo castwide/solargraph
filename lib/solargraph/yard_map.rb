@@ -238,6 +238,8 @@ module Solargraph
     end
 
     def objects path, space = ''
+      cached = cache.get_objects(path, space)
+      return cached unless cached.nil?
       result = []
       yardocs.each { |y|
         yard = load_yardoc(y)
@@ -251,6 +253,7 @@ module Solargraph
       @stdlib_namespaces.each do |ns|
         result.push Pin::YardObject.new(ns, object_location(ns)) if ns.path == path
       end
+      cache.set_objects(path, space, result)
       result
     end
 
@@ -272,6 +275,7 @@ module Solargraph
 
     private
 
+    # @return [Solargraph::YardMap::Cache]
     def cache
       @cache ||= Cache.new
     end
