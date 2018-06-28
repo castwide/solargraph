@@ -46,10 +46,12 @@ module Solargraph
       self.new(Solargraph::Workspace.new(directory))
     end
 
+    # @return [Array<Solargraph::Pin::Base>]
     def pins
       store.pins
     end
 
+    # @return [Array<String>]
     def domains
       @domains ||= []
     end
