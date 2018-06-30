@@ -4,32 +4,31 @@ module Solargraph::LanguageServer::Message::Workspace
   class DidChangeConfiguration < Solargraph::LanguageServer::Message::Base
     def process
       update = params['settings']['solargraph']
+      host.configure update
 
       meths = []
-      meths.push 'textDocument/completion' if update.has_key?('completion') and update['completion'] and !host.options['completion']
-      meths.push 'textDocument/hover' if update.has_key?('hover') and update['hover']  and !host.options['hover']
-      meths.push 'textDocument/signatureHelp' if update.has_key?('hover') and update['hover'] and !host.options['hover']
-      meths.push 'textDocument/onTypeFormatting' if update.has_key?('autoformat') and update['autoformat'] and !host.options['autoformat']
-      meths.push 'textDocument/formatting' if update.has_key?('formatting') and update['formatting'] and !host.options['formatting']
-      meths.push 'textDocument/documentSymbol' if update.has_key?('symbols') and update['symbols'] and !host.options['symbols']
-      meths.push 'workspace/workspaceSymbol' if update.has_key?('symbols') and update['symbols'] and !host.options['symbols']
-      meths.push 'textDocument/definition' if update.has_key?('definitions') and update['definitions'] and !host.options['definitions']
-      meths.push 'textDocument/references' if update.has_key?('references') and update['references'] and !host.options['references']
+      meths.push 'textDocument/completion' if host.options['completion']
+      meths.push 'textDocument/hover' if host.options['hover']
+      meths.push 'textDocument/signatureHelp' if host.options['hover']
+      meths.push 'textDocument/onTypeFormatting' if host.options['autoformat']
+      meths.push 'textDocument/formatting' if host.options['formatting']
+      meths.push 'textDocument/documentSymbol' if host.options['symbols']
+      meths.push 'workspace/workspaceSymbol' if host.options['symbols']
+      meths.push 'textDocument/definition' if host.options['definitions']
+      meths.push 'textDocument/references' if host.options['references']
       host.register_capabilities meths unless meths.empty?
 
       meths = []
-      meths.push 'textDocument/completion' if update.has_key?('completion') and !update['completion'] and host.options['completion']
-      meths.push 'textDocument/hover' if update.has_key?('hover') and !update['hover'] and host.options['hover']
-      meths.push 'textDocument/signatureHelp' if update.has_key?('hover') and !update['hover'] and host.options['hover']
-      meths.push 'textDocument/onTypeFormatting' if update.has_key?('autoformat') and !update['autoformat'] and host.options['autoformat']
-      meths.push 'textDocument/formatting' if update.has_key?('formatting') and !update['formatting'] and host.options['formatting']
-      meths.push 'textDocument/documentSymbol' if update.has_key?('symbols') and !update['symbols'] and host.options['symbols']
-      meths.push 'workspace/workspaceSymbol' if update.has_key?('symbols') and !update['symbols'] and host.options['symbols']
-      meths.push 'textDocument/definition' if update.has_key?('definitions') and !update['definitions'] and host.options['definitions']
-      meths.push 'textDocument/references' if update.has_key?('references') and !update['references'] and host.options['references']
+      meths.push 'textDocument/completion' if !host.options['completion']
+      meths.push 'textDocument/hover' if !host.options['hover']
+      meths.push 'textDocument/signatureHelp' if !host.options['hover']
+      meths.push 'textDocument/onTypeFormatting' if !host.options['autoformat']
+      meths.push 'textDocument/formatting' if !host.options['formatting']
+      meths.push 'textDocument/documentSymbol' if !host.options['symbols']
+      meths.push 'workspace/workspaceSymbol' if !host.options['symbols']
+      meths.push 'textDocument/definition' if !host.options['definitions']
+      meths.push 'textDocument/references' if !host.options['references']
       host.unregister_capabilities meths unless meths.empty?
-
-      host.configure update
     end
   end
 end
