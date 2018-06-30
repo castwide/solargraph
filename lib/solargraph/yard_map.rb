@@ -238,6 +238,8 @@ module Solargraph
     end
 
     def objects path, space = ''
+      cached = cache.get_objects(path, space)
+      return cached unless cached.nil?
       result = []
       yardocs.each { |y|
         yard = load_yardoc(y)
@@ -251,6 +253,7 @@ module Solargraph
       @stdlib_namespaces.each do |ns|
         result.push Pin::YardObject.new(ns, object_location(ns)) if ns.path == path
       end
+      cache.set_objects(path, space, result)
       result
     end
 
@@ -272,6 +275,7 @@ module Solargraph
 
     private
 
+    # @return [Solargraph::YardMap::Cache]
     def cache
       @cache ||= Cache.new
     end
@@ -297,12 +301,12 @@ module Solargraph
       unresolved_requires.clear
       required.each do |r|
         next if r.nil?
+        next if !workspace.nil? and workspace.would_require?(r)
         begin
           spec = Gem::Specification.find_by_path(r) || Gem::Specification.find_by_name(r.split('/').first)
           ver = spec.version.to_s
           ver = ">= 0" if ver.empty?
           add_gem_dependencies spec
-          next if !workspace.nil? and workspace.would_require?(r)
           yd = YARD::Registry.yardoc_file_for_gem(spec.name, ver)
           @gem_paths[spec.name] = spec.full_gem_path
           unresolved_requires.push r if yd.nil?

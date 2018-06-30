@@ -267,10 +267,10 @@ module Solargraph
               elsif c.type == :send and [:attr_reader, :attr_writer, :attr_accessor].include?(c.children[1])
                 c.children[2..-1].each do |a|
                   if c.children[1] == :attr_reader or c.children[1] == :attr_accessor
-                    pins.push Solargraph::Pin::Attribute.new(get_node_location(c), fqn || '', "#{a.children[0]}", docstring_for(c), :reader) #AttrPin.new(c)
+                    pins.push Solargraph::Pin::Attribute.new(get_node_location(c), fqn || '', "#{a.children[0]}", docstring_for(c), :reader, scope)
                   end
                   if c.children[1] == :attr_writer or c.children[1] == :attr_accessor
-                    pins.push Solargraph::Pin::Attribute.new(get_node_location(c), fqn || '', "#{a.children[0]}=", docstring_for(c), :writer) #AttrPin.new(c)
+                    pins.push Solargraph::Pin::Attribute.new(get_node_location(c), fqn || '', "#{a.children[0]}=", docstring_for(c), :writer, scope)
                   end
                 end
               elsif c.type == :sclass and c.children[0].type == :self
@@ -402,10 +402,10 @@ module Solargraph
               t = (d.tag.types.nil? || d.tag.types.empty?) ? nil : d.tag.types.flatten.join('')
               if t.nil? or t.include?('r')
                 # location, namespace, name, docstring, access
-                pins.push Solargraph::Pin::Attribute.new(get_node_location(k.node), namespace_for(k.node).path, d.tag.name, docstring, :reader)
+                pins.push Solargraph::Pin::Attribute.new(get_node_location(k.node), namespace_for(k.node).path, d.tag.name, docstring, :reader, :instance)
               end
               if t.nil? or t.include?('w')
-                pins.push Solargraph::Pin::Attribute.new(get_node_location(k.node), namespace_for(k.node).path, "#{d.tag.name}=", docstring, :reader)
+                pins.push Solargraph::Pin::Attribute.new(get_node_location(k.node), namespace_for(k.node).path, "#{d.tag.name}=", docstring, :writer, :instance)
               end
             elsif d.tag.tag_name == 'method'
               gen_src = Source.new("def #{d.tag.name};end", filename)

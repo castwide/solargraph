@@ -20,6 +20,11 @@ module Solargraph
         Solargraph::LanguageServer::CompletionItemKinds::VARIABLE
       end
 
+      # @return [Integer]
+      def symbol_kind
+        Solargraph::LanguageServer::SymbolKinds::VARIABLE
+      end
+
       def return_type
         if @return_type.nil?
           if !docstring.nil?

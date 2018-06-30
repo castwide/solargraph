@@ -7,7 +7,7 @@ module Solargraph
         {
           label: name,
           kind: completion_item_kind,
-          detail: completion_item_detail,
+          detail: detail,
           data: {
             path: path,
             return_type: return_type,
@@ -48,15 +48,15 @@ module Solargraph
         }
       end
 
-      private
-
-      def completion_item_detail
+      def detail
         detail = ''
         detail += "(#{parameters.join(', ')}) " unless kind != Pin::METHOD or parameters.empty?
         detail += "=> #{return_type}" unless return_type.nil?
         return nil if detail.empty?
         detail
       end
+
+      private
 
       def link_documentation path
         uri = "solargraph:/document?query=" + URI.encode(path)

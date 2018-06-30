@@ -41,6 +41,7 @@ module Solargraph
     # @return [Time]
     attr_reader :stime
 
+    # @return [Array<Solargraph::Pin::Base>]
     attr_reader :pins
 
     attr_reader :requires
@@ -136,7 +137,16 @@ module Solargraph
     # @return [Array<Source::Location>]
     def references name
       inner_node_references(name, node).map do |n|
-        Location.new(filename, Solargraph::Source::Range.new(get_node_start_position(n), get_node_end_position(n)))
+        offset = Position.to_offset(code, get_node_start_position(n))
+        soff = code.index(name, offset)
+        eoff = soff + name.length
+        Location.new(
+          filename,
+          Solargraph::Source::Range.new(
+            Position.from_offset(code, soff),
+            Position.from_offset(code, eoff)
+          )
+        )
       end
     end
 
@@ -165,7 +175,8 @@ module Solargraph
 
     # Get the nearest node that contains the specified index.
     #
-    # @param index [Integer]
+    # @param line [Integer]
+    # @param column [Integer]
     # @return [AST::Node]
     def node_at(line, column)
       tree_at(line, column).first

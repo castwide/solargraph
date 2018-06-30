@@ -24,6 +24,11 @@ module Solargraph
         Solargraph::LanguageServer::CompletionItemKinds::METHOD
       end
 
+      # @return [Integer]
+      def symbol_kind
+        LanguageServer::SymbolKinds::METHOD
+      end
+
       def return_type
         if @return_type.nil? and !docstring.nil?
           tag = docstring.tag(:return)

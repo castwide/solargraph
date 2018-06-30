@@ -57,6 +57,7 @@ module Solargraph
       register 'textDocument/onTypeFormatting',    TextDocument::OnTypeFormatting
       register 'textDocument/documentSymbol',      TextDocument::DocumentSymbol
       register 'textDocument/references',          TextDocument::References
+      register 'textDocument/rename',              TextDocument::Rename
       register 'workspace/didChangeWatchedFiles',  Workspace::DidChangeWatchedFiles
       register 'workspace/didChangeConfiguration', Workspace::DidChangeConfiguration
       register 'workspace/symbol',                 Workspace::WorkspaceSymbol

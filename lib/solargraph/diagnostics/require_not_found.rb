@@ -3,8 +3,6 @@ module Solargraph
     # RequireNotFound reports required paths that could not be resolved to
     # either a file in the workspace or a gem.
     #
-    # @todo Some stdlib paths can result in false positives.
-    #
     class RequireNotFound < Base
       def diagnose source, api_map
         result = []

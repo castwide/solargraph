@@ -9,6 +9,7 @@ module Solargraph
         index
       end
 
+      # @return [Array<Solargraph::Pin::Base>]
       def pins
         @pins ||= []
       end
@@ -31,6 +32,7 @@ module Solargraph
         index
       end
 
+      # @return [Array<Solargraph::Pin::Base>]
       def get_constants fqns, visibility = [:public]
         namespace_pins(fqns).select { |pin|
           !pin.name.empty? and (pin.kind == Pin::NAMESPACE or pin.kind == Pin::CONSTANT) and visibility.include?(pin.visibility)
@@ -43,10 +45,13 @@ module Solargraph
         }
       end
 
-      def get_attrs fqns
-        namespace_pins(fqns).select{ |pin| pin.kind == Pin::ATTRIBUTE }
+      # @return [Array<Solargraph::Pin::Base>]
+      def get_attrs fqns, scope
+        namespace_pins(fqns).select{ |pin| pin.kind == Pin::ATTRIBUTE and pin.scope == scope }
       end
 
+      # @param fqns [String]
+      # @return [String]
       def get_superclass fqns
         fqns_pins(fqns).each do |pin|
           return pin.superclass_reference.name unless pin.superclass_reference.nil?
@@ -54,6 +59,8 @@ module Solargraph
         nil
       end
 
+      # @param fqns [String]
+      # @return [Array<String>]
       def get_includes fqns
         result = []
         fqns_pins(fqns).each do |pin|
@@ -62,6 +69,8 @@ module Solargraph
         result
       end
 
+      # @param fqns [String]
+      # @return [Array<String>]
       def get_extends fqns
         result = []
         fqns_pins(fqns).each do |pin|
@@ -70,28 +79,39 @@ module Solargraph
         result
       end
 
+      # @param path [String]
+      # @return [Array<Solargraph::Pin::Base>]
       def get_path_pins path
         base = path.sub(/(#|\.|::)[a-z0-9_]*(\?|\!)?$/i, '')
         base = '' if base == path
         namespace_pins(base).select{ |pin| pin.path == path }
       end
 
+      # @param fqns [String]
+      # @param scope [Symbol] :class or :instance
+      # @return [Array<Solargraph::Pin::Base>]
       def get_instance_variables(fqns, scope = :instance)
         namespace_pins(fqns).select{|pin| pin.kind == Pin::INSTANCE_VARIABLE and pin.scope == scope}
       end
 
+      # @param fqns [String]
+      # @return [Array<Solargraph::Pin::Base>]
       def get_class_variables(fqns)
         namespace_pins(fqns).select{|pin| pin.kind == Pin::CLASS_VARIABLE}
       end
 
+      # @return [Array<Solargraph::Pin::Base>]
       def get_symbols
         symbols.uniq(&:name)
       end
 
+      # @param fqns [String]
+      # @return [Boolean]
       def namespace_exists?(fqns)
         fqns_pins(fqns).any?
       end
 
+      # @return [Set<String>]
       def namespaces
         @namespaces ||= Set.new
       end

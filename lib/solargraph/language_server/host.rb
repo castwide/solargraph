@@ -14,12 +14,15 @@ module Solargraph
         @change_semaphore = Mutex.new
         @cancel_semaphore = Mutex.new
         @buffer_semaphore = Mutex.new
+        @register_semaphore = Mutex.new
         @change_queue = []
         @diagnostics_queue = []
         @cancel = []
         @buffer = ''
         @stopped = false
         @next_request_id = 0
+        @dynamic_capabilities = Set.new
+        @registered_capabilities = []
         start_change_thread
         start_diagnostics_thread
       end
@@ -28,7 +31,8 @@ module Solargraph
       #
       # @param update [Hash]
       def configure update
-        options.merge! update unless update.nil?
+        return if update.nil?
+        options.merge! update
       end
 
       # @return [Hash]
@@ -94,6 +98,11 @@ module Solargraph
         @change_semaphore.synchronize do
           filename = uri_to_file(uri)
           library.delete filename
+          # Remove diagnostics for deleted files
+          send_notification "textDocument/publishDiagnostics", {
+            uri: uri,
+            diagnostics: []
+          }
         end
       end
 
@@ -235,27 +244,64 @@ module Solargraph
         @next_request_id += 1
       end
 
+      # Register the methods as capabilities with the client.
+      # This method will avoid duplicating registrations and ignore methods
+      # that were not flagged for dynamic registration by the client.
+      #
+      # @param methods [Array<String>] The methods to register
       def register_capabilities methods
-        send_request 'client/registerCapability', {
-          registrations: methods.map { |m|
-            {
-              id: m,
-              method: m,
-              registerOptions: dynamic_capability_options[m]
+        @register_semaphore.synchronize do
+          send_request 'client/registerCapability', {
+            registrations: methods.reject{|m| @dynamic_capabilities.include?(m) and @registered_capabilities.include?(m)}.map { |m|
+              @registered_capabilities.push m
+              {
+                id: m,
+                method: m,
+                registerOptions: dynamic_capability_options[m]
+              }
             }
           }
-        }
+        end
       end
 
+      # Unregister the methods with the client.
+      # This method will avoid duplicating unregistrations and ignore methods
+      # that were not flagged for dynamic registration by the client.
+      #
+      # @param methods [Array<String>] The methods to unregister
       def unregister_capabilities methods
-        send_request 'client/unregisterCapability', {
-          unregisterations: methods.map { |m|
-            {
-              id: m,
-              method: m
+        @register_semaphore.synchronize do
+          send_request 'client/unregisterCapability', {
+            unregisterations: methods.select{|m| @registered_capabilities.include?(m)}.map{ |m|
+              @registered_capabilities.delete m
+              {
+                id: m,
+                method: m
+              }
             }
           }
-        }
+        end
+      end
+
+      # Flag a method as available for dynamic registration.
+      #
+      # @param method [String] The method name, e.g., 'textDocument/completion'
+      def allow_registration method
+        @register_semaphore.synchronize do
+          @dynamic_capabilities.add method
+        end
+      end
+
+      # True if the specified method has been registered.
+      #
+      # @param method [String] The method name, e.g., 'textDocument/completion'
+      # @return [Boolean]
+      def registered? method
+        result = nil
+        @register_semaphore.synchronize do
+          result = @registered_capabilities.include?(method)
+        end
+        result
       end
 
       # True if the specified file is in the process of changing.
@@ -380,6 +426,10 @@ module Solargraph
         {
           'completion' => true,
           'hover' => true,
+          'symbols' => true,
+          'definitions' => true,
+          'rename' => true,
+          'references' => true,
           'autoformat' => false,
           'diagnostics' => false,
           'formatting' => false
@@ -545,6 +595,21 @@ module Solargraph
               # changeNotifications: true
             # }
           # }
+          'textDocument/definition' => {
+            definitionProvider: true
+          },
+          'textDocument/references' => {
+            referencesProvider: true
+          },
+          'textDocument/rename' => {
+            renameProvider: true
+          },
+          'textDocument/documentSymbol' => {
+            documentSymbolProvider: true
+          },
+          'workspace/workspaceSymbol' => {
+            workspaceSymbolProvider: true
+          }
         }
       end
     end
