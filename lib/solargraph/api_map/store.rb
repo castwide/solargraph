@@ -3,7 +3,7 @@ require 'set'
 module Solargraph
   class ApiMap
     class Store
-      # @param sources [Solargraph::Source]
+      # @param sources [Array<Solargraph::Source>]
       def initialize sources
         update *sources
         index
