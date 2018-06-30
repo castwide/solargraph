@@ -94,6 +94,11 @@ module Solargraph
         @change_semaphore.synchronize do
           filename = uri_to_file(uri)
           library.delete filename
+          # Remove diagnostics for deleted files
+          send_notification "textDocument/publishDiagnostics", {
+            uri: uri,
+            diagnostics: []
+          }
         end
       end
 
