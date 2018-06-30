@@ -26,4 +26,17 @@ describe Solargraph::LanguageServer::Host do
     })
     expect(done_somethings).to eq(1)
   end
+
+  it "creates files from disk" do
+    Dir.mktmpdir do |dir|
+      host = Solargraph::LanguageServer::Host.new
+      host.prepare dir
+      file = File.join(dir, 'test.rb')
+      File.write(file, "foo = 'foo'")
+      uri = Solargraph::LanguageServer::UriHelpers.file_to_uri(file)
+      result = host.create(uri)
+      expect(result).to be(true)
+      expect(host.open?(uri)).to be(true)
+    end
+  end
 end
