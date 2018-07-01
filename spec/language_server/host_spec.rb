@@ -28,7 +28,9 @@ describe Solargraph::LanguageServer::Host do
   end
 
   it "creates files from disk" do
-    Dir.mktmpdir do |dir|
+    Dir.mktmpdir do |orig|
+      # @todo Path issue needs to be resolved
+      dir = File.realpath(orig)
       host = Solargraph::LanguageServer::Host.new
       host.prepare dir
       file = File.join(dir, 'test.rb')
@@ -36,7 +38,6 @@ describe Solargraph::LanguageServer::Host do
       uri = Solargraph::LanguageServer::UriHelpers.file_to_uri(file)
       result = host.create(uri)
       expect(result).to be(true)
-      expect(host.open?(uri)).to be(true)
     end
   end
 end
