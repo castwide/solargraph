@@ -18,14 +18,14 @@ module Solargraph
           }
           result[:capabilities].merge! static_completion unless dynamic_registration_for?('textDocument', 'completion')
           result[:capabilities].merge! static_signature_help unless dynamic_registration_for?('textDocument', 'signatureHelp')
-          result[:capabilities].merge! static_on_type_formatting unless dynamic_registration_for?('textDocument', 'onTypeFormatting')
+          # result[:capabilities].merge! static_on_type_formatting unless dynamic_registration_for?('textDocument', 'onTypeFormatting')
           result[:capabilities].merge! static_hover unless dynamic_registration_for?('textDocument', 'hover')
           result[:capabilities].merge! static_document_formatting unless dynamic_registration_for?('textDocument', 'formatting')
           result[:capabilities].merge! static_document_symbols unless dynamic_registration_for?('textDocument', 'documentSymbol')
-          result[:capabilities].merge! static_workspace_symbols #unless dynamic_registration_for?('workspace', 'symbol')
           result[:capabilities].merge! static_definitions unless dynamic_registration_for?('textDocument', 'definition')
-          result[:capabilities].merge! static_rename #unless dynamic_registration_for?('textDocument', 'rename')
-          result[:capabilities].merge! static_references #unless dynamic_registration_for?('textDocument', 'references')
+          result[:capabilities].merge! static_rename unless dynamic_registration_for?('textDocument', 'rename')
+          result[:capabilities].merge! static_references unless dynamic_registration_for?('textDocument', 'references')
+          result[:capabilities].merge! static_workspace_symbols unless dynamic_registration_for?('workspace', 'symbol')
           set_result result
         end
 
@@ -101,10 +101,12 @@ module Solargraph
 
         # @return [Boolean]
         def dynamic_registration_for? section, capability
-          params['capabilities'] and
+          result = params['capabilities'] and
             params['capabilities'][section] and
             params['capabilities'][section][capability] and
             params['capabilities'][section][capability]['dynamicRegistration']
+          host.allow_registration "#{section}/#{capability}" if result
+          result
         end
       end
     end

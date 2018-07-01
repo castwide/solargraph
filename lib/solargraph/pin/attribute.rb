@@ -23,7 +23,7 @@ module Solargraph
       end
 
       def path
-        @path ||= namespace + '#' + name
+        @path ||= namespace + (scope == :instance ? '#' : '.') + name
       end
 
       def return_type

@@ -4,7 +4,7 @@ module Solargraph
     module Conversions
       # @return [Hash]
       def completion_item
-        {
+        @completion_item ||= {
           label: name,
           kind: completion_item_kind,
           detail: detail,
@@ -18,50 +18,43 @@ module Solargraph
 
       # @return [Hash]
       def resolve_completion_item
-        extra = {}
-        alldoc = ''
-        alldoc += link_documentation(path) unless path.nil?
-        alldoc += "\n\n" unless alldoc.empty?
-        alldoc += documentation unless documentation.nil?
-        extra[:documentation] = alldoc unless alldoc.empty?
-        completion_item.merge(extra)
-      end
-
-      # @todo Candidate for deprecation
-      # @param api_map [Solargraph::ApiMap]
-      def hover
-        info = ''
-        if self.kind_of?(Solargraph::Pin::BaseVariable)
-          info.concat link_documentation(return_type) unless return_type.nil?
-        else
-          info.concat link_documentation(path) unless path.nil?
+        if @resolve_completion_item.nil?
+          extra = {}
+          alldoc = ''
+          alldoc += link_documentation(path) unless path.nil?
+          alldoc += "\n\n" unless alldoc.empty?
+          alldoc += documentation unless documentation.nil?
+          extra[:documentation] = alldoc unless alldoc.empty?
+          @resolve_completion_item = completion_item.merge(extra)
         end
-        info.concat "\n\n#{documentation}"
-        info
+        @resolve_completion_item
       end
 
       # @return [Hash]
       def signature_help
-        {
+        @signature_help ||= {
           label: name + '(' + parameters.join(', ') + ')',
           documentation: documentation
         }
       end
 
+      # @return [String]
       def detail
-        detail = ''
-        detail += "(#{parameters.join(', ')}) " unless kind != Pin::METHOD or parameters.empty?
-        detail += "=> #{return_type}" unless return_type.nil?
-        return nil if detail.empty?
-        detail
+        if @detail.nil?
+          @detail = ''
+          @detail += "(#{parameters.join(', ')}) " unless kind != Pin::METHOD or parameters.empty?
+          @detail += "=> #{return_type}" unless return_type.nil?
+          @detail.strip!
+        end
+        return nil if @detail.empty?
+        @detail
       end
 
       private
 
       def link_documentation path
-        uri = "solargraph:/document?query=" + URI.encode(path)
-        "[#{path}](#{uri})"
-      end  
+        @link_documentation ||= "[#{path}](solargraph:/document?query=#{URI.encode(path)})"
+      end
     end
   end
 end

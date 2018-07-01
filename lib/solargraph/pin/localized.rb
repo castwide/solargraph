@@ -6,7 +6,7 @@ module Solargraph
       # @return [Source::Range]
       attr_reader :presence
 
-      # @param other [Pin::Block] The caller's block
+      # @param other [Pin::Base] The caller's block
       # @param position [Source::Position] The caller's position
       # @return [Boolean]
       def visible_from?(other, position)
