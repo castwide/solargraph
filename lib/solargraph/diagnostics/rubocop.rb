@@ -8,11 +8,11 @@ module Solargraph
     class Rubocop < Base
       # Conversion of RuboCop severity names to LSP constants
       SEVERITIES = {
-        'refactor' => 4,
-        'convention' => 3,
-        'warning' => 2,
-        'error' => 1,
-        'fatal' => 1
+        'refactor' => Severities::HINT,
+        'convention' => Severities::INFORMATION,
+        'warning' => Severities::WARNING,
+        'error' => Severities::ERROR,
+        'fatal' => Severities::ERROR
       }
 
       # The rubocop command
