@@ -106,7 +106,7 @@ module Solargraph
             params['capabilities'][section][capability] and
             params['capabilities'][section][capability]['dynamicRegistration'])
           # HACK: Capability for workspace/workspaceSymbol is workspace/symbol
-          adjcap = (section == 'workspace' and capability == 'symbol' ? 'workspaceSymbol' : capability)
+          adjcap = (section == 'workspace' and capability == 'symbol') ? 'workspaceSymbol' : capability
           host.allow_registration("#{section}/#{adjcap}") if result
           result
         end
