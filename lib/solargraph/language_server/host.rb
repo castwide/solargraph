@@ -609,7 +609,7 @@ module Solargraph
           'textDocument/documentSymbol' => {
             documentSymbolProvider: true
           },
-          'workspace/workspaceSymbol' => {
+          'workspace/symbol' => {
             workspaceSymbolProvider: true
           }
         }

@@ -54,7 +54,7 @@ describe Protocol do
   it "configured dynamic registration capabilities from initialize" do
     expect(@protocol.host.can_register?('textDocument/completion')).to be(true)
     expect(@protocol.host.can_register?('textDocument/hover')).to be(false)
-    expect(@protocol.host.can_register?('workspace/workspaceSymbol')).to be(false)
+    expect(@protocol.host.can_register?('workspace/symbol')).to be(false)
   end
 
   it "handles initialized" do

@@ -25,9 +25,7 @@ module Solargraph
           result[:capabilities].merge! static_definitions unless dynamic_registration_for?('textDocument', 'definition')
           result[:capabilities].merge! static_rename unless dynamic_registration_for?('textDocument', 'rename')
           result[:capabilities].merge! static_references unless dynamic_registration_for?('textDocument', 'references')
-          # HACK: workspace/workspaceSymbol only works in VS Code if it's statically registered.
-          result[:capabilities].merge! static_workspace_symbols
-          dynamic_registration_for?('workspace', 'symbol')
+          result[:capabilities].merge! static_workspace_symbols unless dynamic_registration_for?('workspace', 'symbol')
           set_result result
         end
 
@@ -107,9 +105,7 @@ module Solargraph
             params['capabilities'][section] and
             params['capabilities'][section][capability] and
             params['capabilities'][section][capability]['dynamicRegistration'])
-          # HACK: Capability for workspace/workspaceSymbol is workspace/symbol
-          adjcap = (section == 'workspace' and capability == 'symbol') ? 'workspaceSymbol' : capability
-          host.allow_registration("#{section}/#{adjcap}") if result
+          host.allow_registration("#{section}/#{capability}") if result
           result
         end
       end

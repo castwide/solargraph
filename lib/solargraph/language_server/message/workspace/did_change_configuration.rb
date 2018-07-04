@@ -17,7 +17,7 @@ module Solargraph::LanguageServer::Message::Workspace
       (host.options['hover'] ? y : n).push('textDocument/hover', 'textDocument/signatureHelp')
       (host.options['autoformat'] ? y : n).push('textDocument/onTypeFormatting')
       (host.options['formatting'] ? y : n).push('textDocument/formatting')
-      (host.options['symbols'] ? y : n).push('textDocument/documentSymbol', 'workspace/workspaceSymbol')
+      (host.options['symbols'] ? y : n).push('textDocument/documentSymbol', 'workspace/symbol')
       (host.options['definitions'] ? y : n).push('textDocument/definition')
       (host.options['references'] ? y : n).push('textDocument/references')
       host.register_capabilities y
