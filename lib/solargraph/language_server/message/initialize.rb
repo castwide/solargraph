@@ -3,7 +3,6 @@ module Solargraph
     module Message
       class Initialize < Base
         def process
-          STDERR.puts params['capabilities']
           host.configure params['initializationOptions']
           host.prepare params['rootPath']
           result = {
