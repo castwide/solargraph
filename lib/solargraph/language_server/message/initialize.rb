@@ -3,6 +3,7 @@ module Solargraph
     module Message
       class Initialize < Base
         def process
+          STDERR.puts params['capabilities']
           host.configure params['initializationOptions']
           host.prepare params['rootPath']
           result = {
@@ -25,7 +26,9 @@ module Solargraph
           result[:capabilities].merge! static_definitions unless dynamic_registration_for?('textDocument', 'definition')
           result[:capabilities].merge! static_rename unless dynamic_registration_for?('textDocument', 'rename')
           result[:capabilities].merge! static_references unless dynamic_registration_for?('textDocument', 'references')
-          result[:capabilities].merge! static_workspace_symbols unless dynamic_registration_for?('workspace', 'symbol')
+          # HACK: workspace/workspaceSymbol only works in VS Code if it's statically registered.
+          result[:capabilities].merge! static_workspace_symbols
+          dynamic_registration_for?('workspace', 'symbol')
           set_result result
         end
 
