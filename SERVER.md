@@ -1,6 +1,6 @@
 # Solargraph Server Documentation
 
-**NOTE: The legacy web server is a candidate for deprecation. It is highly recommended that client implementors use the [language server protocol](LANGUAGE_SERVER.md) if possible.**
+**NOTE: The legacy web server is deprecated and no longer available as of gem version 0.18.0. It is highly recommended that client implementors use the [language server protocol](LANGUAGE_SERVER.md) if possible.**
 
 ## Running the Server
 
