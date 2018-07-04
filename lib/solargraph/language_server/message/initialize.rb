@@ -101,11 +101,13 @@ module Solargraph
 
         # @return [Boolean]
         def dynamic_registration_for? section, capability
-          result = params['capabilities'] and
+          result = (params['capabilities'] and
             params['capabilities'][section] and
             params['capabilities'][section][capability] and
-            params['capabilities'][section][capability]['dynamicRegistration']
-          host.allow_registration "#{section}/#{capability}" if result
+            params['capabilities'][section][capability]['dynamicRegistration'])
+          # HACK: Capability for workspace/workspaceSymbol is workspace/symbol
+          adjcap = (section == 'workspace' and capability == 'symbol' ? 'workspaceSymbol' : capability)
+          host.allow_registration("#{section}/#{adjcap}") if result
           result
         end
       end

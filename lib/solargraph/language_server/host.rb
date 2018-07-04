@@ -252,7 +252,7 @@ module Solargraph
       def register_capabilities methods
         @register_semaphore.synchronize do
           send_request 'client/registerCapability', {
-            registrations: methods.reject{|m| @dynamic_capabilities.include?(m) and @registered_capabilities.include?(m)}.map { |m|
+            registrations: methods.reject{|m| !@dynamic_capabilities.include?(m) or @registered_capabilities.include?(m)}.map { |m|
               @registered_capabilities.push m
               {
                 id: m,
