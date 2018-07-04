@@ -35,9 +35,23 @@ describe Protocol do
   end
 
   it "handles initialize" do
-    @protocol.request 'initialize', {}
+    @protocol.request 'initialize', {
+      'capabilities' => {
+        'textDocument' => {
+          'completion' => {
+            'dynamicRegistration' => true
+          },
+          'hover' => {
+            'dynamicRegistration' => false
+          }
+        }
+      }
+    }
     response = @protocol.response
     expect(response['result'].keys).to include('capabilities')
+    expect(@protocol.host.can_register?('textDocument/completion')).to be(true)
+    expect(@protocol.host.can_register?('textDocument/hover')).to be(false)
+    expect(@protocol.host.can_register?('workspace/workspaceSymbol')).to be(false)
   end
 
   it "handles initialized" do
