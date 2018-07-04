@@ -253,7 +253,6 @@ module Solargraph
         @register_semaphore.synchronize do
           send_request 'client/registerCapability', {
             registrations: methods.select{|m| can_register?(m) and !registered?(m)}.map { |m|
-              STDERR.puts "Register #{m}"
               @registered_capabilities.add m
               {
                 id: m,
