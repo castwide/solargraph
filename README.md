@@ -48,22 +48,18 @@ Solargraph uses [parser](https://github.com/whitequark/parser) for code analysis
 
 ## Using the `solargraph` Executable
 
-The gem includes an executable that provides access to the library's features. For code completion, IDEs will typically integrate using `solargraph socket` or `solargraph suggest`.
+The gem includes an executable that provides access to the library's features. For code completion, IDEs will typically integrate using `solargraph stdio` or `solargraph socket`.
 
 ### Language Server Protocol
 
-The language server protocol is the recommended way for integrating Solargraph into editors and IDEs. Run `solargraph socket` to start a language server using
-a TCP transport. The default port is 7658.
+The language server protocol is the recommended way for integrating Solargraph into editors and IDEs. Clients can connect using either stdio or TCP.
+See [LANUAGE_SERVER.md](LANGUAGE_SERVER.md) for more information.
 
 ### Standalone Suggest
 
 The suggest subcommand provides an interface to request suggestions without the need for a server. When executed, it accepts the parameters for a suggestion request, returns the suggestions in JSON format, and exits.
 
 **Warning:** The suggest subcommand is a candidate for deprecation. It will either change drastically or not exist in a future version.
-
-## Integrating Solargraph into Other IDEs
-
-Documentation for Solargraph integration is forthcoming. In the meantime, refer to the [VS Code extension](https://github.com/castwide/vscode-solargraph) source for an example.
 
 ## Updating the Core Documentation
 
@@ -98,8 +94,8 @@ Unable to load the EventMachine C extension; To use the pure-ruby reactor, requi
 This is due to a problem compiling the native EventMachine extension on Windows. The workaround is to install the pure Ruby version:
 
 ```
-> gem uninstall eventmachine
-> gem install eventmachine --platform ruby -- --use-system-libraries
+$ gem uninstall eventmachine
+$ gem install eventmachine --platform ruby -- --use-system-libraries
 ```
 
 More information: https://github.com/eventmachine/eventmachine/issues/820#issuecomment-368267506
