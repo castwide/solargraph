@@ -154,7 +154,7 @@ module Solargraph
                 here = get_node_start_position(c)
                 block = get_block_pin(here)
                 pins.push Solargraph::Pin::Constant.new(get_node_location(c), fqn, c.children[1].to_s, docstring_for(c), resolve_node_signature(c.children[2]), infer_literal_node_type(c.children[2]), block, :public)
-              elsif c.type == :def and c.children[0].to_s[0].match(/[a-z]/i)
+              elsif c.type == :def
                 methpin = Solargraph::Pin::Method.new(get_node_location(c), fqn || '', c.children[(c.type == :def ? 0 : 1)].to_s, docstring_for(c), scope, visibility, get_method_args(c))
                 if methpin.name == 'initialize' and methpin.scope == :instance
                   pins.push Solargraph::Pin::Method.new(methpin.location, methpin.namespace, 'new', methpin.docstring, :class, :public, methpin.parameters)
