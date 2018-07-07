@@ -38,4 +38,17 @@ describe Solargraph::LanguageServer::Host do
       expect(result).to be(true)
     end
   end
+
+  it "deletes files" do
+    Dir.mktmpdir do |dir|
+      expect {
+        host = Solargraph::LanguageServer::Host.new
+        file = File.join(dir, 'test.rb')
+        File.write(file, "foo = 'foo'")
+        host.prepare dir
+        uri = Solargraph::LanguageServer::UriHelpers.file_to_uri(file)
+        host.delete(uri)
+      }.not_to raise_error
+    end
+  end
 end
