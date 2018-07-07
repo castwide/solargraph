@@ -323,4 +323,10 @@ describe Protocol do
     response = @protocol.response
     expect(response['error']).to be_nil
   end
+
+  it "handles MethodNotFound errors" do
+    @protocol.request 'notamethod', {}
+    response = @protocol.response
+    expect(response['error']['code']).to be(Solargraph::LanguageServer::ErrorCodes::METHOD_NOT_FOUND)
+  end
 end
