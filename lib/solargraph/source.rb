@@ -93,7 +93,7 @@ module Solargraph
     # @param fqns [String] The namespace (nil for all)
     # @return [Array<Solargraph::Pin::Method>]
     def method_pins fqns = nil
-      pins.select{|pin| pin.kind == Solargraph::Pin::METHOD}
+      pins.select{|pin| pin.kind == Solargraph::Pin::METHOD or pin.kind == Solargraph::Pin::ATTRIBUTE}
     end
 
     # @return [Array<Solargraph::Pin::Attribute>]
