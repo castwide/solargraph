@@ -101,11 +101,11 @@ module Solargraph
 
         # @return [Boolean]
         def dynamic_registration_for? section, capability
-          result = params['capabilities'] and
+          result = (params['capabilities'] and
             params['capabilities'][section] and
             params['capabilities'][section][capability] and
-            params['capabilities'][section][capability]['dynamicRegistration']
-          host.allow_registration "#{section}/#{capability}" if result
+            params['capabilities'][section][capability]['dynamicRegistration'])
+          host.allow_registration("#{section}/#{capability}") if result
           result
         end
       end

@@ -26,4 +26,29 @@ describe Solargraph::LanguageServer::Host do
     })
     expect(done_somethings).to eq(1)
   end
+
+  it "creates files from disk" do
+    Dir.mktmpdir do |dir|
+      host = Solargraph::LanguageServer::Host.new
+      host.prepare dir
+      file = File.join(dir, 'test.rb')
+      File.write(file, "foo = 'foo'")
+      uri = Solargraph::LanguageServer::UriHelpers.file_to_uri(file)
+      result = host.create(uri)
+      expect(result).to be(true)
+    end
+  end
+
+  it "deletes files" do
+    Dir.mktmpdir do |dir|
+      expect {
+        host = Solargraph::LanguageServer::Host.new
+        file = File.join(dir, 'test.rb')
+        File.write(file, "foo = 'foo'")
+        host.prepare dir
+        uri = Solargraph::LanguageServer::UriHelpers.file_to_uri(file)
+        host.delete(uri)
+      }.not_to raise_error
+    end
+  end
 end

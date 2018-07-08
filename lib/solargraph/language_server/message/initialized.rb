@@ -12,7 +12,7 @@ module Solargraph
             textDocument/definition
             textDocument/references
             textDocument/rename
-            workspace/workspaceSymbol
+            workspace/symbol
           ]
         end
       end

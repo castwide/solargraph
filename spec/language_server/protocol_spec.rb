@@ -35,15 +35,36 @@ describe Protocol do
   end
 
   it "handles initialize" do
-    @protocol.request 'initialize', {}
+    @protocol.request 'initialize', {
+      'capabilities' => {
+        'textDocument' => {
+          'completion' => {
+            'dynamicRegistration' => true
+          },
+          'hover' => {
+            'dynamicRegistration' => false
+          }
+        }
+      }
+    }
     response = @protocol.response
     expect(response['result'].keys).to include('capabilities')
+  end
+
+  it "configured dynamic registration capabilities from initialize" do
+    expect(@protocol.host.can_register?('textDocument/completion')).to be(true)
+    expect(@protocol.host.can_register?('textDocument/hover')).to be(false)
+    expect(@protocol.host.can_register?('workspace/symbol')).to be(false)
   end
 
   it "handles initialized" do
     @protocol.request 'initialized', nil
     response = @protocol.response
     expect(response['error']).to be_nil
+  end
+
+  it "configured default dynamic registration capabilities from initialized" do
+    expect(@protocol.host.registered?('textDocument/completion')).to be(true)
   end
 
   it "handles textDocument/didOpen" do
@@ -263,11 +284,13 @@ describe Protocol do
     @protocol.request 'workspace/didChangeConfiguration', {
       'settings' => {
         'solargraph' => {
-          'autoformat' => false
+          'autoformat' => false,
+          'completion' => false
         }
       }
     }
     expect(@protocol.host.options['autoformat']).to be(false)
+    expect(@protocol.host.registered?('textDocument/completion')).to be(false)
   end
 
   it "handles $/solargraph/checkGemVersion" do
@@ -299,5 +322,11 @@ describe Protocol do
     @protocol.request '$/solargraph/downloadCore', {}
     response = @protocol.response
     expect(response['error']).to be_nil
+  end
+
+  it "handles MethodNotFound errors" do
+    @protocol.request 'notamethod', {}
+    response = @protocol.response
+    expect(response['error']['code']).to be(Solargraph::LanguageServer::ErrorCodes::METHOD_NOT_FOUND)
   end
 end

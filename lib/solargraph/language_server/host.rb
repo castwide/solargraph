@@ -22,7 +22,7 @@ module Solargraph
         @stopped = false
         @next_request_id = 0
         @dynamic_capabilities = Set.new
-        @registered_capabilities = []
+        @registered_capabilities = Set.new
         start_change_thread
         start_diagnostics_thread
       end
@@ -252,8 +252,8 @@ module Solargraph
       def register_capabilities methods
         @register_semaphore.synchronize do
           send_request 'client/registerCapability', {
-            registrations: methods.reject{|m| @dynamic_capabilities.include?(m) and @registered_capabilities.include?(m)}.map { |m|
-              @registered_capabilities.push m
+            registrations: methods.select{|m| can_register?(m) and !registered?(m)}.map { |m|
+              @registered_capabilities.add m
               {
                 id: m,
                 method: m,
@@ -272,7 +272,7 @@ module Solargraph
       def unregister_capabilities methods
         @register_semaphore.synchronize do
           send_request 'client/unregisterCapability', {
-            unregisterations: methods.select{|m| @registered_capabilities.include?(m)}.map{ |m|
+            unregisterations: methods.select{|m| registered?(m)}.map{ |m|
               @registered_capabilities.delete m
               {
                 id: m,
@@ -292,16 +292,18 @@ module Solargraph
         end
       end
 
+      # @param method [String]
+      # @return [Boolean]
+      def can_register? method
+        @dynamic_capabilities.include?(method)
+      end
+
       # True if the specified method has been registered.
       #
       # @param method [String] The method name, e.g., 'textDocument/completion'
       # @return [Boolean]
       def registered? method
-        result = nil
-        @register_semaphore.synchronize do
-          result = @registered_capabilities.include?(method)
-        end
-        result
+        @registered_capabilities.include?(method)
       end
 
       # True if the specified file is in the process of changing.
@@ -607,7 +609,7 @@ module Solargraph
           'textDocument/documentSymbol' => {
             documentSymbolProvider: true
           },
-          'workspace/workspaceSymbol' => {
+          'workspace/symbol' => {
             workspaceSymbolProvider: true
           }
         }

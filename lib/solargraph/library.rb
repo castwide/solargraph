@@ -96,8 +96,11 @@ module Solargraph
     def overwrite filename, version
       source = source_hash[filename]
       return if source.nil?
-      STDERR.puts "Save out of sync for #{filename}" if source.version > version
-      open filename, File.read(filename), version
+      if source.version > version
+        STDERR.puts "Save out of sync for #{filename} (current #{source.version}, overwrite #{version})" if source.version > version
+      else
+        open filename, File.read(filename), version
+      end
     end
 
     # Get completion suggestions at the specified file and location.
