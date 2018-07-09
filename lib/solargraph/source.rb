@@ -64,7 +64,7 @@ module Solargraph
           hard_fix_node
         end
       rescue Exception => e
-        raise ParserError, "Error parsing #{filename || '(source)'}: [#{e.class}] #{e.message}"
+        raise RuntimeError, "Error parsing #{filename || '(source)'}: [#{e.class}] #{e.message}"
       end
     end
 
