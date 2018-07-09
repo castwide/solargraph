@@ -53,15 +53,18 @@ module Solargraph
     include NodeMethods
 
     def initialize code, filename = nil
-      @code = code
-      @fixed = code
-      @filename = filename
-      # @stubbed_lines = stubbed_lines
-      @version = 0
       begin
-        parse
-      rescue Parser::SyntaxError, EncodingError
-        hard_fix_node
+        @code = code
+        @fixed = code
+        @filename = filename
+        @version = 0
+        begin
+          parse
+        rescue Parser::SyntaxError, EncodingError
+          hard_fix_node
+        end
+      rescue Exception => e
+        raise ParserError, "Error parsing #{filename || '(source)'}: [#{e.class}] #{e.message}"
       end
     end
 
