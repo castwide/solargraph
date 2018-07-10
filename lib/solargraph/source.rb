@@ -53,15 +53,18 @@ module Solargraph
     include NodeMethods
 
     def initialize code, filename = nil
-      @code = code
-      @fixed = code
-      @filename = filename
-      # @stubbed_lines = stubbed_lines
-      @version = 0
       begin
-        parse
-      rescue Parser::SyntaxError, EncodingError
-        hard_fix_node
+        @code = code
+        @fixed = code
+        @filename = filename
+        @version = 0
+        begin
+          parse
+        rescue Parser::SyntaxError, EncodingError
+          hard_fix_node
+        end
+      rescue Exception => e
+        raise RuntimeError, "Error parsing #{filename || '(source)'}: [#{e.class}] #{e.message}"
       end
     end
 
@@ -93,7 +96,7 @@ module Solargraph
     # @param fqns [String] The namespace (nil for all)
     # @return [Array<Solargraph::Pin::Method>]
     def method_pins fqns = nil
-      pins.select{|pin| pin.kind == Solargraph::Pin::METHOD}
+      pins.select{|pin| pin.kind == Solargraph::Pin::METHOD or pin.kind == Solargraph::Pin::ATTRIBUTE}
     end
 
     # @return [Array<Solargraph::Pin::Attribute>]
@@ -160,17 +163,6 @@ module Solargraph
 
     def locate_block_pin line, character
       _locate_pin line, character, Pin::NAMESPACE, Pin::METHOD, Pin::BLOCK
-    end
-
-    def _locate_pin line, character, *kinds
-      position = Solargraph::Source::Position.new(line, character)
-      found = nil
-      pins.each do |pin|
-        found = pin if (kinds.empty? or kinds.include?(pin.kind)) and pin.location.range.contain?(position)
-        break if pin.location.range.start.line > line
-      end
-      # @todo Assuming the root pin is always valid
-      found || pins.first
     end
 
     # Get the nearest node that contains the specified index.
@@ -242,11 +234,9 @@ module Solargraph
     end
 
     def all_symbols
-      result = []
-      result.concat namespace_pins.reject{ |pin| pin.name.empty? }
-      result.concat method_pins
-      result.concat constant_pins
-      result
+      @all_symbols ||= pins.select{ |pin|
+        [Pin::ATTRIBUTE, Pin::CONSTANT, Pin::METHOD, Pin::NAMESPACE].include?(pin.kind)
+      }
     end
 
     def locate_pin location
@@ -264,6 +254,17 @@ module Solargraph
     end
 
     private
+
+    def _locate_pin line, character, *kinds
+      position = Solargraph::Source::Position.new(line, character)
+      found = nil
+      pins.each do |pin|
+        found = pin if (kinds.empty? or kinds.include?(pin.kind)) and pin.location.range.contain?(position)
+        break if pin.location.range.start.line > line
+      end
+      # @todo Assuming the root pin is always valid
+      found || pins.first
+    end
 
     def inner_node_references name, top
       result = []

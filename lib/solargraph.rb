@@ -3,12 +3,11 @@ require 'rubygems/package'
 require 'yard-solargraph'
 
 module Solargraph
-  class InvalidOffsetError <      RangeError; end
-  class DiagnosticsError <        RuntimeError; end
-  class FileNotFoundError <       RuntimeError; end
+  class InvalidOffsetError <      RangeError;    end
+  class DiagnosticsError <        RuntimeError;  end
+  class FileNotFoundError <       RuntimeError;  end
   class SourceNotAvailableError < StandardError; end
-
-  class WorkspaceTooLargeError < RuntimeError
+  class WorkspaceTooLargeError <  RuntimeError
     attr_reader :size
 
     # @param size [Integer] The number of files included in the workspace

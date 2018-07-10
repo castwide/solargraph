@@ -227,6 +227,18 @@ module Solargraph
         @base_literal
       end
 
+      def literal?
+        !literal.nil?
+      end
+
+      def literal
+        if @literal.nil? and !@calculated_actual_literal
+          @calculated_actual_literal = true
+          pn = @source.node_at(line, column)
+          @literal = infer_literal_node_type(pn)
+        end
+      end
+
       private
 
       # @return [Integer]

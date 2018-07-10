@@ -24,6 +24,11 @@ module Solargraph
         Solargraph::LanguageServer::CompletionItemKinds::METHOD
       end
 
+      # @return [Integer]
+      def symbol_kind
+        LanguageServer::SymbolKinds::METHOD
+      end
+
       def return_type
         @return_type = complex_types.first.tag if @return_type.nil? and !complex_types.empty?
         @return_type

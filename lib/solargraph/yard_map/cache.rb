@@ -4,6 +4,7 @@ module Solargraph
       @constants = {}
       @methods = {}
       @instance_methods = {}
+      @objects = {}
     end
 
     def set_constants namespace, scope, suggestions
@@ -30,5 +31,12 @@ module Solargraph
       @instance_methods[[namespace, scope, visibility]]
     end
 
+    def set_objects path, space, pins
+      @objects[[path, space]] = pins
+    end
+
+    def get_objects path, space
+      @objects[[path, space]]
+    end
   end
 end

@@ -23,7 +23,7 @@ module Solargraph
       end
 
       def path
-        @path ||= namespace + '#' + name
+        @path ||= namespace + (scope == :instance ? '#' : '.') + name
       end
 
       def return_type
@@ -32,6 +32,12 @@ module Solargraph
           @return_type = tag.types[0] unless tag.nil?
         end
         @return_type
+      end
+
+      def parameters
+        # Since attributes are generally equivalent to methods, treat
+        # them as methods without parameters
+        []
       end
     end
   end

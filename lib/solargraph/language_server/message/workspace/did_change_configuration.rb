@@ -4,24 +4,24 @@ module Solargraph::LanguageServer::Message::Workspace
   class DidChangeConfiguration < Solargraph::LanguageServer::Message::Base
     def process
       update = params['settings']['solargraph']
-
-      meths = []
-      meths.push 'textDocument/completion' if update.has_key?('completion') and update['completion'] and !host.options['completion']
-      meths.push 'textDocument/hover' if update.has_key?('hover') and update['hover']  and !host.options['hover']
-      meths.push 'textDocument/signatureHelp' if update.has_key?('hover') and update['hover'] and !host.options['hover']
-      meths.push 'textDocument/onTypeFormatting' if update.has_key?('autoformat') and update['autoformat'] and !host.options['autoformat']
-      meths.push "textDocument/formatting" if update.has_key?('formatting') and update['formatting'] and !host.options['formatting']
-      host.register_capabilities meths unless meths.empty?
-
-      meths = []
-      meths.push 'textDocument/completion' if update.has_key?('completion') and !update['completion'] and host.options['completion']
-      meths.push 'textDocument/hover' if update.has_key?('hover') and !update['hover'] and host.options['hover']
-      meths.push 'textDocument/signatureHelp' if update.has_key?('hover') and !update['hover'] and host.options['hover']
-      meths.push 'textDocument/onTypeFormatting' if update.has_key?('autoformat') and !update['autoformat'] and host.options['autoformat']
-      meths.push "textDocument/formatting" if update.has_key?('formatting') and !update['formatting'] and host.options['formatting']
-      host.unregister_capabilities meths unless meths.empty?
-
       host.configure update
+      register_from_options
+    end
+
+    private
+
+    def register_from_options
+      y = []
+      n = []
+      (host.options['completion'] ? y : n).push('textDocument/completion')
+      (host.options['hover'] ? y : n).push('textDocument/hover', 'textDocument/signatureHelp')
+      (host.options['autoformat'] ? y : n).push('textDocument/onTypeFormatting')
+      (host.options['formatting'] ? y : n).push('textDocument/formatting')
+      (host.options['symbols'] ? y : n).push('textDocument/documentSymbol', 'workspace/symbol')
+      (host.options['definitions'] ? y : n).push('textDocument/definition')
+      (host.options['references'] ? y : n).push('textDocument/references')
+      host.register_capabilities y
+      host.unregister_capabilities n
     end
   end
 end

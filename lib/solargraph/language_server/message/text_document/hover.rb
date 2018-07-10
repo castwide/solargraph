@@ -1,4 +1,5 @@
 require 'uri'
+require 'htmlentities'
 
 module Solargraph::LanguageServer::Message::TextDocument
   class Hover < Base
@@ -20,6 +21,7 @@ module Solargraph::LanguageServer::Message::TextDocument
         if !this_path.nil? and this_path != last_path
           parts.push link_documentation(this_path)
         end
+        parts.push HTMLEntities.new.encode(pin.detail) unless pin.kind == Solargraph::Pin::NAMESPACE or pin.detail.nil?
         parts.push pin.documentation unless pin.documentation.nil? or pin.documentation.empty?
         contents.push parts.join("\n\n") unless parts.empty?
         last_path = this_path unless this_path.nil?
