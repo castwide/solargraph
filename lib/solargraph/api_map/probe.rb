@@ -144,7 +144,8 @@ module Solargraph
       def virtual_new_pin new_pin, context_pin
         pin = Pin::Method.new(new_pin.location, new_pin.namespace, new_pin.name, new_pin.docstring, new_pin.scope, new_pin.visibility, new_pin.parameters)
         # @todo Smelly instance variable access.
-        pin.instance_variable_set(:@return_type, context_pin.path)
+        # pin.instance_variable_set(:@return_type, context_pin.path)
+        pin.instance_variable_set(:@return_complex_types, ComplexType.parse(context_pin.path))
         pin
       end
 

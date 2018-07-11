@@ -51,7 +51,7 @@ module Solargraph
           if code_object.kind_of?(YARD::CodeObjects::ModuleObject)
             @return_type ||= "Module<#{path}>"
             return @return_type
-          end        
+          end
           if Solargraph::CoreFills::CUSTOM_RETURN_TYPES.has_key?(path)
             @return_type = Solargraph::CoreFills::CUSTOM_RETURN_TYPES[path]
           else

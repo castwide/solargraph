@@ -67,18 +67,23 @@ module Solargraph
         namespace
       end
 
+      def return_type
+        return nil if return_complex_types.empty?
+        return_complex_types.first.tag
+      end
+
       def return_namespace
         return nil if complex_types.empty?
-        @return_namespace ||= complex_types.first.namespace
+        @return_namespace ||= return_complex_types.first.namespace
       end
 
       def return_scope
         return nil if complex_types.empty?
-        @return_scope ||= complex_types.first.scope
+        @return_scope ||= return_complex_types.first.scope
       end
 
       # @return [Array<ComplexType>]
-      def complex_types
+      def return_complex_types
         []
       end
     end

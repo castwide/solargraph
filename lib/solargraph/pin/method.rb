@@ -29,13 +29,8 @@ module Solargraph
         LanguageServer::SymbolKinds::METHOD
       end
 
-      def return_type
-        @return_type = complex_types.first.tag if @return_type.nil? and !complex_types.empty?
-        @return_type
-      end
-
-      def complex_types
-        @complex_types ||= generate_complex_types
+      def return_complex_types
+        @return_complex_types ||= generate_complex_types
       end
 
       def documentation

@@ -25,17 +25,20 @@ module Solargraph
         block.parameters.index(self)
       end
 
-      def return_type
-        if @return_type.nil? and !block.docstring.nil?
-          found = nil
-          params = block.docstring.tags(:param)
-          params.each do |p|
-            next unless p.name == name
-            found = p
+      def return_complex_types
+        if @return_complex_types.nil?
+          @return_complex_types = []
+          unless block.docstring.nil?
+            found = nil
+            params = block.docstring.tags(:param)
+            params.each do |p|
+              next unless p.name == name
+              found = p
+            end
+            @return_complex_types.concat ComplexType.parse(*found.types) unless found.nil? or found.types.nil?
           end
-          @return_type = found.types[0] unless found.nil? or found.types.nil?
         end
-        @return_type
+        @return_complex_types
       end
     end
   end

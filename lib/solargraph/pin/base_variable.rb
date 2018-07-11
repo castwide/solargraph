@@ -36,17 +36,17 @@ module Solargraph
         # end
         # @return_type
         if @return_type.nil?
-          if complex_types.empty?
+          if return_complex_types.empty?
             @return_type = @literal
           else
-            @return_type = complex_types.first.tag
+            @return_type = return_complex_types.first.tag
           end
         end
         @return_type
       end
 
-      def complex_types
-        @complex_types ||= generate_complex_types
+      def return_complex_types
+        @return_complex_types ||= generate_complex_types
       end
 
       def nil_assignment?
