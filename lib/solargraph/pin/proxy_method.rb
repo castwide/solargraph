@@ -4,7 +4,7 @@ module Solargraph
     # to type inference methods. ApiMap::Probe can treat it as an anonymous
     # method while analyzing signatures.
     #
-    class ProxyMethod
+    class ProxyMethod < Base
       # @return [String]
       attr_reader :return_type
 

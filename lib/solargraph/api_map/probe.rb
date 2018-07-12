@@ -59,6 +59,7 @@ module Solargraph
       # Word search is ALWAYS internal
       def infer_word_pins word, context_pin, locals
         return [] if word.empty?
+        return infer_self(context_pin) if word == 'self'
         lvars = locals.select{|pin| pin.name == word}
         return lvars unless lvars.empty?
         return api_map.get_global_variable_pins.select{|pin| pin.name == word} if word.start_with?('$')
@@ -76,6 +77,18 @@ module Solargraph
         result.concat api_map.get_methods(namespace, scope: scope, visibility: [:public, :private, :protected]).select{|pin| pin.name == word} unless word.include?('::')
         result.concat api_map.get_constants('', namespace).select{|pin| pin.name == word} if result.empty?
         result
+      end
+
+      def infer_self context_pin
+        if context_pin.kind == Pin::METHOD
+          if context_pin.scope == :instance
+            return [Pin::ProxyMethod.new(context_pin.namespace)]
+          else
+            return api_map.get_path_suggestions(context_pin.namespace)
+          end
+        else
+          return api_map.get_path_suggestions(context_pin.path)
+        end
       end
 
       # Method name search is external by default
