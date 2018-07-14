@@ -51,4 +51,16 @@ describe Solargraph::LanguageServer::Host do
       }.not_to raise_error
     end
   end
+
+  it "cancels requests" do
+    host = Solargraph::LanguageServer::Host.new
+    host.cancel 1
+    expect(host.cancel?(1)).to be(true)
+  end
+
+  it "stops" do
+    host = Solargraph::LanguageServer::Host.new
+    host.stop
+    expect(host.stopped?).to be(true)
+  end
 end

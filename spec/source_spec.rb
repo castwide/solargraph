@@ -63,10 +63,12 @@ describe Solargraph::Source do
     source = Solargraph::Source.load_string(%(
       module TestModule
         @@foo = bar
+        @@bar ||= baz
       end
     ))
-    expect(source.class_variable_pins.length).to eq(1)
-    expect(source.class_variable_pins.first.name).to eq('@@foo')
+    expect(source.class_variable_pins.length).to eq(2)
+    expect(source.class_variable_pins.map(&:name)).to include('@@foo')
+    expect(source.class_variable_pins.map(&:name)).to include('@@bar')
   end
 
   it "pins instance variables" do
@@ -608,5 +610,53 @@ describe Solargraph::Source do
     expect {
       Solargraph::Source.load('spec/fixtures/invalid_byte.rb')
     }.not_to raise_error
+  end
+
+  it "maps instance variables scoped in module_function defs" do
+    source = Solargraph::Source.new(%(
+      module Foo
+        module_function def bar
+          @bar = 'bar'
+        end
+        module_function def baz
+          @baz ||= 'baz'
+        end
+        def moon
+          @moon ||= 'moon'
+        end
+        module_function :moon
+      end
+    ))
+    ['@bar', '@baz', '@moon'].each do |var|
+      pins = source.instance_variable_pins.select{ |pin| pin.name == var }
+      expect(pins.length).to eq(2)
+      expect(pins.map(&:scope)).to include(:class)
+      expect(pins.map(&:scope)).to include(:instance)
+    end
+  end
+
+  it "maps class methods with qualified names" do
+    source = Solargraph::Source.new(%(
+      class Foo
+        def Bar.baz
+        end
+      end
+    ))
+    pin = source.pins.select{ |pin| pin.path == 'Bar.baz' }.first
+    expect(pin).not_to be(nil)
+    expect(pin.namespace).to eq('Bar')
+  end
+
+  it "maps block parameters" do
+    source = Solargraph::Source.new(%(
+      class Foo
+        def baz &block
+        end
+      end
+    ))
+    # @type [Solargraph::Pin::Method]
+    pin = source.method_pins.first
+    expect(pin.parameters.length).to eq(1)
+    expect(pin.parameters.first).to eq('&block')
   end
 end
