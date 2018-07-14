@@ -20,8 +20,6 @@ module Solargraph
         @node = node
         @comments = comments
         @node_stack = []
-        # @node_tree = []
-        @comment_hash = {}
         @directives = {}
         @docstring_hash = associate_comments(node, comments)
         # @todo Stuff that needs to be resolved
@@ -58,10 +56,6 @@ module Solargraph
         e = node.location.expression.end.end_pos
         frag = @code[b..e-1].to_s
         frag.strip.gsub(/,$/, '')
-      end
-
-      def comment_hash
-        @comment_hash
       end
 
       def filename
