@@ -22,6 +22,10 @@ module Solargraph
         Solargraph::LanguageServer::CompletionItemKinds::PROPERTY
       end
 
+      def symbol_kind
+        Solargraph::LanguageServer::SymbolKinds::PROPERTY
+      end
+
       def path
         @path ||= namespace + (scope == :instance ? '#' : '.') + name
       end

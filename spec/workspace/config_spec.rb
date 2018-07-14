@@ -43,4 +43,10 @@ describe Solargraph::Workspace::Config do
     config = Solargraph::Workspace::Config.new(dir_path)
     expect(config.calculated).not_to include(file)
   end
+
+  it "includes base reporters by default" do
+    config = Solargraph::Workspace::Config.new(dir_path)
+    expect(config.reporters).to include('rubocop')
+    expect(config.reporters).to include('require_not_found')
+  end
 end
