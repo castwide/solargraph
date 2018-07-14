@@ -650,7 +650,7 @@ describe Solargraph::Source do
   it "maps block parameters" do
     source = Solargraph::Source.new(%(
       class Foo
-        def baz &block
+        def bar &block
         end
       end
     ))
@@ -658,5 +658,18 @@ describe Solargraph::Source do
     pin = source.method_pins.first
     expect(pin.parameters.length).to eq(1)
     expect(pin.parameters.first).to eq('&block')
+  end
+
+  it "maps path macros" do
+    source = Solargraph::Source.new(%(
+      class Foo
+        # @!macro [attach]
+        #   @return [$1]
+        def bar klass
+        end
+      end
+    ))
+    expect(source.path_macros.length).to eq(1)
+    # @todo More tests
   end
 end
