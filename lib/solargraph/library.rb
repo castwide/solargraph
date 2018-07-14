@@ -251,7 +251,7 @@ module Solargraph
       result = []
       source = read(filename)
       workspace.config.reporters.each do |name|
-        reporter = Diagnostics::REPORTERS[name]
+        reporter = Diagnostics.reporter(name)
         raise DiagnosticsError, "Diagnostics reporter #{name} does not exist" if reporter.nil?
         result.concat reporter.new.diagnose(source, api_map)
       end
