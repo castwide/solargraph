@@ -25,13 +25,15 @@ module Solargraph
       # @return [String] The updated text.
       def write text, nullable = false
         if nullable and !range.nil? and new_text.match(/[\.\[\{\(@\$:]$/)
-          if new_text == ':'
+          [':', '@'].each do |dupable|
+            next unless new_text == dupable
             offset = Position.to_offset(text, range.start)
-            if text[offset - 1] == ':'
+            if text[offset - 1] == dupable
               p = Position.from_offset(text, offset - 1)
               r = Change.new(Range.new(p, range.start), ' ')
               text = r.write(text)
             end
+            break
           end
           commit text, "#{new_text[0..-2]} "
         elsif range.nil?
