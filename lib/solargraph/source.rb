@@ -235,7 +235,7 @@ module Solargraph
 
     def all_symbols
       @all_symbols ||= pins.select{ |pin|
-        [Pin::ATTRIBUTE, Pin::CONSTANT, Pin::METHOD, Pin::NAMESPACE].include?(pin.kind)
+        [Pin::ATTRIBUTE, Pin::CONSTANT, Pin::METHOD, Pin::NAMESPACE].include?(pin.kind) and !pin.name.empty?
       }
     end
 

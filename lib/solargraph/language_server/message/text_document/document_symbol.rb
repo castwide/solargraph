@@ -3,7 +3,7 @@ class Solargraph::LanguageServer::Message::TextDocument::DocumentSymbol < Solarg
 
   def process
     pins = host.file_symbols params['textDocument']['uri']
-    info = pins.reject{|pin| pin.name.empty?}.map do |pin|
+    info = pins.map do |pin|
       result = {
         name: pin.name,
         containerName: pin.namespace,
