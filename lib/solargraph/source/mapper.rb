@@ -18,7 +18,6 @@ module Solargraph
         @filename = filename
         @code = code
         @node = node
-        @comments = comments
         @node_stack = []
         @directives = {}
         @docstring_hash = associate_comments(node, comments)
@@ -60,10 +59,6 @@ module Solargraph
 
       def filename
         @filename
-      end
-
-      def comments
-        @comments
       end
 
       def pins
@@ -326,10 +321,6 @@ module Solargraph
 
       def get_named_path_pin position
         @pins.select{|pin| [Pin::NAMESPACE, Pin::METHOD].include?(pin.kind) and pin.location.range.contain?(position)}.last
-      end
-
-      def get_namespace_pin position
-        @pins.select{|pin| pin.kind == Pin::NAMESPACE and pin.location.range.contain?(position)}.last
       end
 
       # @return [YARD::Docstring]
