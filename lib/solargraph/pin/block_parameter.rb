@@ -21,6 +21,10 @@ module Solargraph
         Solargraph::LanguageServer::CompletionItemKinds::VARIABLE
       end
 
+      def symbol_kind
+        Solargraph::LanguageServer::SymbolKinds::VARIABLE
+      end
+
       def index
         block.parameters.index(self)
       end

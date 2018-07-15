@@ -101,10 +101,16 @@ module Solargraph
       false
     end
 
+    # True if the workspace contains at least one gemspec file.
+    #
+    # @return [Boolean]
     def gemspec?
-      return true unless gemspecs.empty?
+      !gemspecs.empty?
     end
 
+    # Get an array of all gemspec files in the workspace.
+    #
+    # @return [Array<String>]
     def gemspecs
       return [] if directory.nil?
       @gemspecs ||= Dir[File.join(directory, '**/*.gemspec')]
@@ -121,7 +127,7 @@ module Solargraph
       source_hash.clear
       unless directory.nil?
         size = config.calculated.length
-        raise WorkspaceTooLargeError.new(size) if config.max_files > 0 and size > config.max_files
+        raise WorkspaceTooLargeError.new(size, config.max_files) if config.max_files > 0 and size > config.max_files
 
         config.calculated.each do |filename|
           source_hash[filename] = Solargraph::Source.load(filename)

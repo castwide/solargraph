@@ -34,6 +34,7 @@ module Solargraph
 
       private
 
+      # @return [Hash]
       def reporter_hash
         @reporter_hash ||= {}
       end

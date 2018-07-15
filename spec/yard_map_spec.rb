@@ -169,4 +169,10 @@ describe Solargraph::YardMap do
     expect(yard_map.unresolved_requires).not_to include('net/http')
     expect(yard_map.unresolved_requires).to include('unknown_path')
   end
+
+  it "combines namespaces in queries" do
+    yard_map = Solargraph::YardMap.new(required: ['net/http'])
+    pins = yard_map.get_methods('HTTP', 'Net').map(&:name)
+    expect(pins).to include('new')
+  end
 end

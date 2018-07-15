@@ -218,14 +218,19 @@ module Solargraph
       api_map.query_symbols query
     end
 
+    # @param filename [String]
+    # @return [Array<Solargraph::Pin::Base>]
     def file_symbols filename
       read(filename).all_symbols
     end
 
+    # @param path [String]
+    # @return [Array<Solargraph::Pin::Base>]
     def path_pins path
       api_map.get_path_suggestions(path)
     end
 
+    # @param updater [Solargraph::Source::Updater]
     def synchronize updater
       source = read(updater.filename)
       source.synchronize updater
@@ -242,6 +247,7 @@ module Solargraph
 
     # Get diagnostics about a file.
     #
+    # @param filename [String]
     # @return [Array<Hash>]
     def diagnose filename
       # @todo Only open files get diagnosed. Determine whether anything or
