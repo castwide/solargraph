@@ -527,6 +527,7 @@ module Solargraph
         fqis = qualify(is, fqns)
         result.concat inner_get_constants(fqis, [:public], skip) unless fqis.nil?
       end
+      result.concat live_map.get_constants(fqns)
       result
     end
 
