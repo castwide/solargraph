@@ -21,7 +21,7 @@ module Solargraph
         if @resolve_completion_item.nil?
           extra = {}
           alldoc = ''
-          alldoc += link_documentation(path) unless path.nil?
+          alldoc += link_documentation unless link_documentation.nil?
           alldoc += "\n\n" unless alldoc.empty?
           alldoc += documentation unless documentation.nil?
           extra[:documentation] = alldoc unless alldoc.empty?
@@ -50,10 +50,19 @@ module Solargraph
         @detail
       end
 
+      # Get a markdown-flavored link to a documentation page.
+      #
+      # @return [String]
+      def link_documentation
+        @link_documentation ||= generate_link
+      end
+
       private
 
-      def link_documentation path
-        @link_documentation ||= "[#{path}](solargraph:/document?query=#{URI.encode(path)})"
+      def generate_link
+        this_path = path || return_type
+        return nil if this_path.nil?
+        "[#{this_path.gsub('_', '\\\\_')}](solargraph:/document?query=#{URI.encode(this_path)})"
       end
     end
   end
