@@ -62,7 +62,7 @@ module Solargraph
         return [] if word.empty?
         return infer_self(context_pin) if word == 'self'
         lvars = locals.select{|pin| pin.name == word}
-        return lvars unless lvars.empty?
+        return resolve_word_types(lvars, locals) unless lvars.empty?
         return api_map.get_global_variable_pins.select{|pin| pin.name == word} if word.start_with?('$')
         namespace, scope = extract_namespace_and_scope_from_pin(context_pin)
         return api_map.pins.select{|pin| word_matches_context?(word, namespace, scope, pin)} if variable_name?(word)
@@ -77,7 +77,16 @@ module Solargraph
         result.concat api_map.get_path_suggestions(word) if result.empty?
         result.concat api_map.get_methods(namespace, scope: scope, visibility: [:public, :private, :protected]).select{|pin| pin.name == word} unless word.include?('::')
         result.concat api_map.get_constants('', namespace).select{|pin| pin.name == word} if result.empty?
-        result
+        resolve_word_types(result, locals)
+      end
+
+      def resolve_word_types(pins, locals)
+        pins.each do |p|
+          next unless p.return_type.nil?
+          type = resolve_pin_type(p, locals)
+          # @todo Smelly instance variable access
+          p.instance_variable_set(:@return_type, type)
+        end
       end
 
       def infer_self context_pin
