@@ -300,7 +300,6 @@ describe Solargraph::ApiMap do
     )
     api_map = Solargraph::ApiMap.new
     api_map.virtualize_string(code, 'file.rb')
-    # @type [Solargraph::Suggestion]
     meth = api_map.get_methods('Foo').select{|s| s.name == 'bar'}.first
     expect(meth.parameters).to eq(['*baz'])
   end
