@@ -167,22 +167,22 @@ module Solargraph
       def resolve_pin_type pin, locals
         pin.return_type
         return pin.return_type unless pin.return_type.nil?
-        return resolve_block_parameter(pin) if pin.kind == Pin::BLOCK_PARAMETER
+        return resolve_block_parameter(pin, locals) if pin.kind == Pin::BLOCK_PARAMETER
         return resolve_variable(pin, locals) if pin.variable?
         nil
       end
 
-      def resolve_block_parameter pin
+      def resolve_block_parameter pin, locals
         return pin.return_type unless pin.return_type.nil?
         signature = pin.block.receiver
         # @todo Not sure if assuming the first pin is good here
-        meth = @api_map.probe.infer_signature_pins(signature, pin.block, []).first
+        meth = @api_map.probe.infer_signature_pins(signature, pin.block, locals).first
         return nil if meth.nil?
         if (Solargraph::CoreFills::METHODS_WITH_YIELDPARAM_SUBTYPES.include?(meth.path))
           base = signature.split('.')[0..-2].join('.')
           return nil if base.nil? or base.empty?
           # @todo Not sure if assuming the first pin is good here
-          bmeth = @api_map.probe.infer_signature_pins(base, pin.block, []).first
+          bmeth = @api_map.probe.infer_signature_pins(base, pin.block, locals).first
           return nil if bmeth.nil?
           subtypes = get_subtypes(bmeth.return_type)
           return subtypes[0]
