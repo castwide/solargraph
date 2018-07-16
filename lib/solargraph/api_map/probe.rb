@@ -48,6 +48,7 @@ module Solargraph
       def infer_signature_type signature, context_pin, locals
         pins = infer_signature_pins(signature, context_pin, locals)
         pins.each do |pin|
+          return pin.return_type unless pin.return_type.nil?
           type = resolve_pin_type(pin, locals - [pin])
           return qualify(type, pin.named_context) unless type.nil?
         end
@@ -176,15 +177,18 @@ module Solargraph
         return pin.return_type unless pin.return_type.nil?
         signature = pin.block.receiver
         # @todo Not sure if assuming the first pin is good here
-        meth = @api_map.probe.infer_signature_pins(signature, pin.block, locals).first
+        meth = infer_signature_pins(signature, pin.block, locals).first
         return nil if meth.nil?
         if (Solargraph::CoreFills::METHODS_WITH_YIELDPARAM_SUBTYPES.include?(meth.path))
           base = signature.split('.')[0..-2].join('.')
           return nil if base.nil? or base.empty?
           # @todo Not sure if assuming the first pin is good here
-          bmeth = @api_map.probe.infer_signature_pins(base, pin.block, locals).first
+          bmeth = infer_signature_pins(base, pin.block, locals).first
           return nil if bmeth.nil?
-          subtypes = get_subtypes(bmeth.return_type)
+          btype = bmeth.return_type
+          btype = infer_signature_type(bmeth.signature, pin.block, locals) if btype.nil? and bmeth.variable?
+          subtypes = get_subtypes(btype)
+          return nil if subtypes.nil?
           return subtypes[0]
         else
           unless meth.docstring.nil?
