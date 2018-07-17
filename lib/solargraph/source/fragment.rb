@@ -319,7 +319,7 @@ module Solargraph
                 brackets += 1
               elsif char == '['
                 squares += 1
-                signature = ".[]#{signature}" if squares == 0 and @code[index-2] != '%'
+                signature = ".[]#{signature}" if parens.zero? and brackets.zero? and squares.zero? and @code[index-2] != '%'
               end
               if brackets.zero? and parens.zero? and squares.zero?
                 break if ['"', "'", ',', ';', '%'].include?(char)
