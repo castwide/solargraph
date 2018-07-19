@@ -3,8 +3,14 @@ module Solargraph
     class Fragment
       include NodeMethods
 
+      # The zero-based line number of the fragment's location.
+      #
+      # @return [Integer]
       attr_reader :line
 
+      # The zero-based column number of the fragment's location.
+      #
+      # @return [Integer]
       attr_reader :column
 
       # @return [Solargraph::Source]
@@ -21,10 +27,14 @@ module Solargraph
         @calculated_literal = false
       end
 
+      # An alias for #column.
+      #
+      # @return [Integer]
       def character
         @column
       end
 
+      # @return [Source::Position]
       def position
         @position ||= Position.new(line, column)
       end
@@ -40,6 +50,8 @@ module Solargraph
         @namespace
       end
 
+      # True if the fragment is inside a method argument.
+      #
       # @return [Boolean]
       def argument?
         @argument ||= !signature_position.nil?
@@ -159,6 +171,8 @@ module Solargraph
 
       # Get the word before the current offset. Given the text `foo.bar`, the
       # word at offset 6 is `ba`.
+      #
+      # @return [String]
       def word
         @word ||= word_at(offset)
       end
@@ -194,14 +208,17 @@ module Solargraph
         @whole_word_range ||= word_range_at(offset, true)
       end
 
+      # @return [Solargraph::Pin::Base]
       def block
         @block ||= @source.locate_block_pin(line, character)
       end
 
+      # @return [Solargraph::Pin::Base]
       def named_path
         @named_path ||= @source.locate_named_path_pin(line, character)
       end
 
+      # @return [Array<Solargraph::Pin::Base>]
       def locals
         @locals ||= @source.locals.select{|pin| pin.visible_from?(block, position)}
       end
@@ -227,10 +244,17 @@ module Solargraph
         @base_literal
       end
 
+      # True if the fragment is inside a literal value.
+      #
+      # @return [Boolean]
       def literal?
         !literal.nil?
       end
 
+      # The fragment's literal type, or nil if the fragment is not inside a
+      # literal value.
+      #
+      # @return [String]
       def literal
         if @literal.nil? and !@calculated_actual_literal
           @calculated_actual_literal = true
@@ -295,11 +319,11 @@ module Solargraph
                 brackets += 1
               elsif char == '['
                 squares += 1
-                signature = ".[]#{signature}" if squares == 0 and @code[index-2] != '%'
+                signature = ".[]#{signature}" if parens.zero? and brackets.zero? and squares.zero? and @code[index-2] != '%'
               end
               if brackets.zero? and parens.zero? and squares.zero?
                 break if ['"', "'", ',', ';', '%'].include?(char)
-                signature = char + signature if char.match(/[a-z0-9:\._@\$]/i) and @code[index - 1] != '%'
+                signature = char + signature if char.match(/[a-z0-9:\._@\$\?\!]/i) and @code[index - 1] != '%'
                 break if char == '$'
                 if char == '@'
                   signature = "@#{signature}" if @code[index-1, 1] == '@'

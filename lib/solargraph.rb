@@ -8,11 +8,17 @@ module Solargraph
   class FileNotFoundError <       RuntimeError;  end
   class SourceNotAvailableError < StandardError; end
   class WorkspaceTooLargeError <  RuntimeError
+    # @return [Integer]
     attr_reader :size
 
+    # @return [Integer]
+    attr_reader :max
+
     # @param size [Integer] The number of files included in the workspace
-    def initialize size
+    # @param max [Integer] The maximum number of files allowed
+    def initialize size, max
       @size = size
+      @max = max
     end
   end
 

@@ -159,5 +159,20 @@ describe Solargraph::YardMap do
     result = yard_map.get_constants('Net').map(&:path)
     expect(result).to include('Net::HTTP')
     expect(result).not_to include('Net::FTP')
+    result = yard_map.objects('Net::HTTP').map(&:path)
+    expect(result).to include('Net::HTTP')
+    expect(result).not_to include('Net::FTP')
+  end
+
+  it "tracks unresolved requires" do
+    yard_map = Solargraph::YardMap.new(required: ['net/http', 'unknown_path'])
+    expect(yard_map.unresolved_requires).not_to include('net/http')
+    expect(yard_map.unresolved_requires).to include('unknown_path')
+  end
+
+  it "combines namespaces in queries" do
+    yard_map = Solargraph::YardMap.new(required: ['net/http'])
+    pins = yard_map.get_methods('HTTP', 'Net').map(&:name)
+    expect(pins).to include('new')
   end
 end

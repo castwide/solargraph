@@ -54,13 +54,14 @@ module Solargraph
       suggestions = []
       result.uniq.each do |r|
         path = (r['namespace'].empty? ? '' : "#{r['namespace']}::") + r['name']
-        kind = Suggestion::CONSTANT
+        kind = Pin::CONSTANT
         if r['class'] == 'Class'
-          kind = Suggestion::CLASS
+          suggestions.push Pin::Namespace.new(nil, r['namespace'], r['name'], YARD::Docstring.new("(defined at runtime)"), :class, :public, nil)
         elsif r['class'] == 'Module'
-          kind = Suggestion::MODULE
+          suggestions.push Pin::Namespace.new(nil, r['namespace'], r['name'], YARD::Docstring.new("(defined at runtime)"), :module, :public, nil)
+        else
+          suggestions.push Pin::Constant.new(nil, r['namespace'], r['name'], YARD::Docstring.new("(defined at runtime"), nil, nil, nil, :public)
         end
-        suggestions.push(Suggestion.new(r['name'], kind: kind, path: path))
       end
       cache.set_constants(namespace, root, suggestions)
       suggestions

@@ -300,7 +300,6 @@ describe Solargraph::ApiMap do
     )
     api_map = Solargraph::ApiMap.new
     api_map.virtualize_string(code, 'file.rb')
-    # @type [Solargraph::Suggestion]
     meth = api_map.get_methods('Foo').select{|s| s.name == 'bar'}.first
     expect(meth.parameters).to eq(['*baz'])
   end
@@ -1060,5 +1059,39 @@ describe Solargraph::ApiMap do
     expect(pins.length).to eq(1)
     expect(pins.first.name).to eq('@@foo')
     expect(pins.first.return_type).to eq('String')
+  end
+
+  it "defines self instance methods" do
+    api_map = Solargraph::ApiMap.new
+    source = Solargraph::Source.new(%(
+      class Foo
+        def meth1
+        end
+        def meth2
+          self.meth1
+        end
+      end
+    ))
+    api_map.virtualize source
+    fragment = source.fragment_at(5, 16)
+    pins = api_map.define(fragment)
+    expect(pins.length).to eq(1)
+    expect(pins.first.path).to eq('Foo#meth1')
+  end
+
+  it "defines self class methods" do
+    api_map = Solargraph::ApiMap.new
+    source = Solargraph::Source.new(%(
+      class Foo
+        def self.meth1
+        end
+        self.meth1
+      end
+    ))
+    api_map.virtualize source
+    fragment = source.fragment_at(4, 14)
+    pins = api_map.define(fragment)
+    expect(pins.length).to eq(1)
+    expect(pins.first.path).to eq('Foo.meth1')
   end
 end

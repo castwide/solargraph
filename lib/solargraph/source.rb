@@ -44,6 +44,7 @@ module Solargraph
     # @return [Array<Solargraph::Pin::Base>]
     attr_reader :pins
 
+    # @return [Array<Solargraph::Pin::Reference>]
     attr_reader :requires
 
     attr_reader :domains
@@ -78,6 +79,7 @@ module Solargraph
     end
 
     # @todo Name problem
+    # @return [Array<Solargraph::Pin::Reference>]
     def required
       requires
     end
@@ -114,6 +116,7 @@ module Solargraph
       pins.select{|pin| pin.kind == Pin::CLASS_VARIABLE}
     end
 
+    # @return [Array<Solargraph::Pin::Base>]
     def locals
       @locals
     end
@@ -133,6 +136,7 @@ module Solargraph
       @symbols
     end
 
+    # @return [Array<Solargraph::Pin::Symbol>]
     def symbols
       symbol_pins
     end
@@ -174,6 +178,11 @@ module Solargraph
       tree_at(line, column).first
     end
 
+    # True if the specified location is inside a string.
+    #
+    # @param line [Integer]
+    # @param column [Integer]
+    # @return [Boolean]
     def string_at?(line, column)
       node = node_at(line, column)
       # @todo raise InvalidOffset or InvalidRange or something?
@@ -235,7 +244,7 @@ module Solargraph
 
     def all_symbols
       @all_symbols ||= pins.select{ |pin|
-        [Pin::ATTRIBUTE, Pin::CONSTANT, Pin::METHOD, Pin::NAMESPACE].include?(pin.kind)
+        [Pin::ATTRIBUTE, Pin::CONSTANT, Pin::METHOD, Pin::NAMESPACE].include?(pin.kind) and !pin.name.empty?
       }
     end
 

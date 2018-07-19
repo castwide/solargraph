@@ -17,7 +17,6 @@ module Solargraph
         end
 
         def completion_item_kind
-          # Solargraph::Suggestion::METHOD
           Solargraph::LanguageServer::CompletionItemKinds::METHOD
         end
       end

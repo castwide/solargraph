@@ -61,20 +61,21 @@ module Solargraph
 
       def get_methods args
         result = []
+        # @type [Class]
         con = find_constant(args['namespace'], args['root'])
         unless con.nil?
           if (args['scope'] == 'class')
-            result.concat con.methods(false) if args['with_private']
-            result.concat con.public_methods(false)
+            result.concat con.methods if args['with_private']
+            result.concat con.public_methods
           elsif (args['scope'] == 'instance')
-            result.concat con.instance_methods(false) if args['with_private']
-            result.concat con.public_instance_methods(false)
+            result.concat con.instance_methods if args['with_private']
+            result.concat con.public_instance_methods
           end
         end
         result.keep_if{|m| m.to_s.match(/^[a-z_]/i)}
         respond_ok (result.uniq.sort.map do |name|
           # @type [Method]
-          meth = con.method(name)
+          meth = args['scope'] == 'class' ? con.method(name) : con.instance_method(name)
           {
             name: name,
             parameters: build_parameter_array(meth.parameters)

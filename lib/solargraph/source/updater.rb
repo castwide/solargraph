@@ -25,6 +25,7 @@ module Solargraph
         @output = nil
       end
 
+      # @return [String]
       def write text, nullable = false
         can_nullify = (nullable and changes.length == 1)
         return @output if @input == text and can_nullify == @did_nullify
@@ -37,6 +38,7 @@ module Solargraph
         @output
       end
 
+      # @return [String]
       def repair text
         changes.each do |ch|
           text = ch.repair(text)

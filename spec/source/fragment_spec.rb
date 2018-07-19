@@ -93,15 +93,19 @@ describe Solargraph::Source::Fragment do
   it "detects a recipient of an argument" do
     source = Solargraph::Source.load_string('abc.def(g)')
     fragment = source.fragment_at(0, 8)
-    # expect(fragment.argument?).to be(true)
+    expect(fragment.argument?).to be(true)
     expect(fragment.recipient.whole_signature).to eq('abc.def')
+    recipient = source.fragment_at(0, 0)
+    expect(recipient.argument?).to be(false)
   end
 
   it "detects a recipient of multiple arguments" do
     source = Solargraph::Source.load_string('abc.def(g, h)')
     fragment = source.fragment_at(0, 11)
-    # expect(fragment.argument?).to be(true)
+    expect(fragment.argument?).to be(true)
     expect(fragment.recipient.whole_signature).to eq('abc.def')
+    recipient = source.fragment_at(0, 0)
+    expect(recipient.argument?).to be(false)
   end
 
   it "knows positions in strings" do
@@ -178,65 +182,16 @@ describe Solargraph::Source::Fragment do
     expect(fragment.locals).to be_empty
   end
 
-  # @todo Fragment is no longer responsible for calculating locals.
-  # it "calculates local variables with literal assignments" do
-  #   source = Solargraph::Source.new(%(
-  #     abc = '123'
-  #     abc._
-  #   ))
-  #   fragment = source.fragment_at(2, 10)
-  #   expect(fragment.signature).to eq('abc.')
-  #   expect(fragment.calculated_signature).to eq('String.new.')
-  # end
-
-  # it "calculates local variables that reference each other" do
-  #   source = Solargraph::Source.new(%(
-  #     str1 = '123'
-  #     str2 = str1
-  #     str2._
-  #   ))
-  #   fragment = source.fragment_at(3, 11)
-  #   expect(fragment.signature).to eq('str2.')
-  #   expect(fragment.calculated_signature).to eq('String.new.')
-  # end
-
-  # it "returns assignments in calculated signatures" do
-  #   source = Solargraph::Source.new(%(
-  #     foo = Foo.new
-  #     bar = foo
-  #     bar._
-  #   ))
-  #   fragment = source.fragment_at(2, 15)
-  #   expect(fragment.signature).to eq('foo')
-  #   expect(fragment.calculated_signature).to eq('Foo.new')
-  #   fragment = source.fragment_at(3, 10)
-  #   expect(fragment.signature).to eq('bar.')
-  #   expect(fragment.calculated_signature).to eq('Foo.new.')
-  # end
-
-  # @todo This might not be the responsibility of the fragment.
-  # it "calculates unrecognized namespaces" do
-  #   source = Solargraph::Source.new(%(
-  #     Foo.new
-  #   ))
-  #   fragment = source.fragment_at(1, 13)
-  #   expect(fragment.signature).to eq('Foo.new')
-  #   expect(fragment.calculated_signature).to eq('Foo.new')
-  # end
-
-  # @todo This might not be the responsibility of the fragment.
-  # it "calculates nested namespaces" do
-  #   source = Solargraph::Source.new(%(
-  #     class Foo
-  #       class Bar
-  #         def self.make
-  #           Bar.new
-  #         end
-  #       end
-  #     end
-  #   ))
-  #   fragment = source.fragment_at(4, 19)
-  #   expect(fragment.signature).to eq('Bar.new')
-  #   expect(fragment.calculated_signature).to eq('Foo::Bar.new')
-  # end
+  it "includes ? and ! in signatures" do
+    source = Solargraph::Source.new(%(
+      foo.bar?(foo.baz?)
+    ))
+    recipient_fragment = source.fragment_at(1, 11)
+    expect(recipient_fragment.whole_word).to eq('bar?')
+    expect(recipient_fragment.whole_signature).to eq('foo.bar?')
+    argument_fragment = source.fragment_at(1, 20)
+    expect(argument_fragment.whole_word).to eq('baz?')
+    expect(argument_fragment.whole_signature).to eq('foo.baz?')
+    expect(argument_fragment.recipient.whole_signature).to eq('foo.bar?')
+  end
 end
