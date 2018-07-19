@@ -5,9 +5,6 @@ module Solargraph
     # method while analyzing signatures.
     #
     class ProxyMethod < Base
-      # @return [String]
-      attr_reader :return_type
-
       def initialize *return_types
         @return_complex_types = ComplexType.parse(*return_types.reject(&:nil?))
       end
@@ -15,6 +12,7 @@ module Solargraph
       # @return [String]
       def namespace
         # @namespace ||= ApiMap::TypeMethods.extract_namespace(return_type)
+        return nil if @return_complex_types.empty?
         @namespace ||= @return_complex_types.first.namespace
       end
 

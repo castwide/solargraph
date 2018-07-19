@@ -84,7 +84,7 @@ module Solargraph
 
       # @return [Array<ComplexType>]
       def return_complex_types
-        []
+        @return_complex_types ||= []
       end
     end
   end

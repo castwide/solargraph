@@ -176,7 +176,6 @@ module Solargraph
       # @param locals [Array<Solargraph::Pin::Base>]
       # @return [String]
       def resolve_pin_type pin, locals
-        pin.return_type
         return pin.return_type unless pin.return_type.nil?
         return resolve_block_parameter(pin, locals) if pin.kind == Pin::BLOCK_PARAMETER
         return resolve_variable(pin, locals) if pin.variable?
