@@ -66,6 +66,11 @@ module Solargraph
       def named_context
         namespace
       end
+
+      def == other
+        return false unless self.class == other.class
+        location == other.location and namespace == other.namespace and name == other.name and docstring == other.docstring
+      end
     end
   end
 end

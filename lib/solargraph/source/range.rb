@@ -46,6 +46,11 @@ module Solargraph
       def self.from_to l1, c1, l2, c2
         Range.new(Position.new(l1, c1), Position.new(l2, c2))
       end
+
+      def == other
+        return false unless other.is_a?(Range)
+        start == other.start and ending == other.ending
+      end
     end
   end
 end

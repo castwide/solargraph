@@ -81,6 +81,11 @@ module Solargraph
         raise InvalidOffsetError if character.nil?
         Position.new(line, character)
       end
+
+      def == other
+        return false unless other.is_a?(Position)
+        line == other.line and character == other.character
+      end
     end
   end
 end
