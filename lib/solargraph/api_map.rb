@@ -124,7 +124,7 @@ module Solargraph
     #
     # @param force [Boolean] Perform a refresh even if the map is not "stale."
     def refresh force = false
-      return unless @force or changed?
+      return unless force or changed?
       if force
         @api_map = ApiMap::Store.new(@sources)
       else

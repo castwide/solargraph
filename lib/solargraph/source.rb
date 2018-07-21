@@ -313,8 +313,28 @@ module Solargraph
     end
 
     def process_parsed node, comments
-      @pins, @locals, @requires, @symbols, @path_macros, @domains = Mapper.map filename, code, node, comments
-      @stime = Time.now
+      new_map_data = Mapper.map(filename, code, node, comments)
+      synchronize_mapped *new_map_data
+    end
+
+    def synchronize_mapped new_pins, new_locals, new_requires, new_symbols, new_path_macros, new_domains
+      resync = (
+        @pins.nil? or
+        @locals.nil? or
+        @pins[1..-1] != new_pins[1..-1] or
+        @locals != new_locals
+        # @requires != new_requires or
+        # @path_macros != new_path_macros or
+        # @new_domains != new_domains
+      )
+      @pins = new_pins
+      @locals = new_locals
+      @requires = new_requires
+      @symbols = new_symbols
+      @path_macros = new_path_macros
+      @domains = new_domains
+      # Check for bare minimum change required to synchronize workspaces, etc.
+      @stime = Time.now if resync
     end
 
     class << self
