@@ -38,6 +38,11 @@ module Solargraph
         @return_type
       end
 
+      def visibility
+        # @todo Check attribute visibility
+        :public
+      end
+
       def parameters
         # Since attributes are generally equivalent to methods, treat
         # them as methods without parameters
