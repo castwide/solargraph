@@ -477,12 +477,18 @@ module Solargraph
               begin
                 changed = false
                 @change_queue.sort!{|a, b| a['textDocument']['version'] <=> b['textDocument']['version']}
+                pending = {}
+                @change_queue.each do |obj|
+                  pending[obj['textDocument']['uri']] ||= 0
+                  pending[obj['textDocument']['uri']] += 1
+                end
                 @change_queue.delete_if do |change|
                   filename = uri_to_file(change['textDocument']['uri'])
                   source = library.checkout(filename)
                   if change['textDocument']['version'] == source.version + change['contentChanges'].length
+                    pending[change['textDocument']['uri']] -= 1
                     updater = generate_updater(change)
-                    library.synchronize updater
+                    library.synchronize updater, pending[change['textDocument']['uri']] == 0
                     @diagnostics_queue.push change['textDocument']['uri']
                     changed = true
                     next true
@@ -491,8 +497,9 @@ module Solargraph
                     # increments the version by one regardless of the number
                     # of changes
                     STDERR.puts "Warning: change applied to #{uri_to_file(change['textDocument']['uri'])} is possibly out of sync"
+                    pending[change['textDocument']['uri']] -= 1
                     updater = generate_updater(change)
-                    library.synchronize updater
+                    library.synchronize updater, pending[change['textDocument']['uri']] == 0
                     @diagnostics_queue.push change['textDocument']['uri']
                     changed = true
                     next true

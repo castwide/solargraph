@@ -207,7 +207,7 @@ module Solargraph
     end
 
     # @param updater [Source::Updater]
-    def synchronize updater
+    def synchronize updater, reparse = true
       raise 'Invalid synchronization' unless updater.filename == filename
       original_code = @code
       original_fixed = @fixed
@@ -215,6 +215,7 @@ module Solargraph
       @fixed = updater.write(original_code, true)
       @version = updater.version
       return if @code == original_code
+      return unless reparse
       begin
         parse
         @fixed = @code
@@ -248,6 +249,8 @@ module Solargraph
       @all_pins.select{|pin| pin.location == location}.first
     end
 
+    # @param line [Integer] A zero-based line number
+    # @param column [Integer] A zero-based column number
     # @return [Solargraph::Source::Fragment]
     def fragment_at line, column
       Fragment.new(self, line, column)
