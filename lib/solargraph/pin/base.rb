@@ -69,7 +69,10 @@ module Solargraph
 
       def == other
         return false unless self.class == other.class
-        location == other.location and namespace == other.namespace and name == other.name and docstring == other.docstring
+        location == other.location and
+          namespace == other.namespace and
+          name == other.name and
+          ( (docstring.nil? and other.docstring.nil?) or (docstring == other.docstring and docstring.all == other.docstring.all) )
       end
     end
   end
