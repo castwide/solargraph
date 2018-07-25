@@ -24,6 +24,7 @@ module Solargraph
 
   autoload :Shell,          'solargraph/shell'
   autoload :Source,         'solargraph/source'
+  autoload :SourceRemote,   'solargraph/source_remote'
   autoload :ApiMap,         'solargraph/api_map'
   autoload :YardMap,        'solargraph/yard_map'
   autoload :Pin,            'solargraph/pin'
@@ -33,8 +34,10 @@ module Solargraph
   autoload :CoreFills,      'solargraph/core_fills'
   autoload :LanguageServer, 'solargraph/language_server'
   autoload :Workspace,      'solargraph/workspace'
+  autoload :WorkspaceRemote,'solargraph/workspace_remote'
   autoload :Page,           'solargraph/page'
   autoload :Library,        'solargraph/library'
+  autoload :LibraryRemote,  'solargraph/library_remote'
   autoload :Diagnostics,    'solargraph/diagnostics'
 
   YARDOC_PATH = File.join(File.realpath(File.dirname(__FILE__)), '..', 'yardoc')

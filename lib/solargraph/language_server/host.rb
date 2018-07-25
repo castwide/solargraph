@@ -15,6 +15,7 @@ module Solargraph
         @cancel_semaphore = Mutex.new
         @buffer_semaphore = Mutex.new
         @register_semaphore = Mutex.new
+        @initialized = false
         @change_queue = []
         @diagnostics_queue = []
         @cancel = []
@@ -65,6 +66,15 @@ module Solargraph
         @cancel_semaphore.synchronize { @cancel.delete id }
       end
 
+      # Get / Set initialized property
+      #
+      # @param val [Boolean]
+      # @return [Boolean]
+      def initialized val = nil
+        @initialized = val unless val.nil?
+        @initialized
+      end
+
       # Start processing a request from the client. After the message is
       # processed, the transport is responsible for sending the response.
       #
@@ -72,15 +82,26 @@ module Solargraph
       # @return [Solargraph::LanguageServer::Message::Base] The message handler.
       def start request
         if request['method']
-          message = Message.select(request['method']).new(self, request)
-          begin
-            message.process
-          rescue Exception => e
-            STDERR.puts e.message
-            STDERR.puts e.backtrace
-            message.set_error Solargraph::LanguageServer::ErrorCodes::INTERNAL_ERROR, "[#{e.class}] #{e.message}"
+          if request['method'] == 'initialize'
+            message = start_method request
+            params = request['params'] || {}
+            # if using files extension load files from client
+            if params['capabilities']['xfilesProvider'] and params['capabilities']['xcontentProvider']
+              prepare_remote params['rootPath']
+            # otherwise load files locally
+            else
+              prepare params['rootPath']
+              @initialized = true
+            end
+            message
+          else
+            # wait till initialized to process - each request is in own thread
+            # so this will only block the request thread
+            while !@initialized
+              sleep 1
+            end
+            start_method request
           end
-          message
         elsif request['id']
           # @todo What if the id is invalid?
           requests[request['id']].process(request['result'])
@@ -88,6 +109,18 @@ module Solargraph
         else
           STDERR.puts "Invalid message received."
         end
+      end
+
+      def start_method request
+        message = Message.select(request['method']).new(self, request)
+        begin
+          message.process
+        rescue Exception => e
+          STDERR.puts e.message
+          STDERR.puts e.backtrace
+          message.set_error Solargraph::LanguageServer::ErrorCodes::INTERNAL_ERROR, "[#{e.class}] #{e.message}"
+        end
+        message
       end
 
       # Respond to a notification that a file was created in the workspace.
@@ -219,6 +252,24 @@ module Solargraph
             }
             @library = Solargraph::Library.load(nil)
           end
+        end
+      end
+
+      # Prepare a library for the specified directory using remote file
+      # system.
+      #
+      # @param directory [String]
+      def prepare_remote directory
+        path = nil
+        path = normalize_separators(directory) unless directory.nil?
+        begin
+          @library = Solargraph::LibraryRemote.load(self, path)
+        rescue WorkspaceTooLargeError => e
+          send_notification 'window/showMessage', {
+            'type' => Solargraph::LanguageServer::MessageTypes::WARNING,
+            'message' => "The workspace is too large to index (#{e.size} files, max #{e.max})"
+          }
+          @library = Solargraph::Library.load(nil)
         end
       end
 
