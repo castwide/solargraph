@@ -88,5 +88,4 @@ describe Solargraph::WorkspaceRemote do
       end
     end
   end
-
 end

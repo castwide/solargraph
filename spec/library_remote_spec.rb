@@ -63,5 +63,4 @@ describe Solargraph::LibraryRemote do
       end
     end
   end
-
 end

@@ -1,6 +1,5 @@
 module Solargraph
   class WorkspaceRemote < Solargraph::Workspace
-
   	autoload :ConfigRemote, 'solargraph/workspace_remote/config_remote'
 
     # @param directory [String]
@@ -52,6 +51,5 @@ module Solargraph
       end
       @stime = Time.now
     end
-
   end
 end

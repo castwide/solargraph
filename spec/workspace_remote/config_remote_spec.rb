@@ -39,5 +39,4 @@ describe Solargraph::WorkspaceRemote::ConfigRemote do
       ]
     end
   end
-
 end

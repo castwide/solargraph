@@ -1,6 +1,5 @@
 module Solargraph
   class LibraryRemote < Solargraph::Library
-
     # @param workspace [Solargraph::Workspace]
     def initialize host
       @host = host
@@ -25,6 +24,5 @@ module Solargraph
       library.workspace workspace
       library
     end
-
   end
 end

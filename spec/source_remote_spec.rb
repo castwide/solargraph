@@ -12,5 +12,4 @@ describe Solargraph::SourceRemote do
       expect(source).to be_kind_of(Solargraph::SourceRemote)
     end
   end
-
 end

@@ -66,7 +66,9 @@ module Solargraph
         @cancel_semaphore.synchronize { @cancel.delete id }
       end
 
-      # Get / Set initialized property
+      # Get / Set initialized property. False when server is started.
+      # Initialization begins after first initialize request. Set to true
+      # after initialization completes.
       #
       # @param val [Boolean]
       # @return [Boolean]
@@ -98,7 +100,7 @@ module Solargraph
             # wait till initialized to process - each request is in own thread
             # so this will only block the request thread
             while !@initialized
-              sleep 1
+              sleep 0.1
             end
             start_method request
           end
