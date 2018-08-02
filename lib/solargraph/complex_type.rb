@@ -21,13 +21,19 @@ module Solargraph
       @subtypes.concat(ComplexType.parse(substring)) unless substring.empty?
     end
 
+    def duck_type?
+      @duck_type ||= name.start_with?('#')
+    end
+
     # @return [String]
     def namespace
+      @namespace ||= 'Object' if duck_type?
       @namespace ||= ((name == 'Class' or name == 'Module') and !subtypes.empty?) ? subtypes.first.name : name
     end
 
     # @return [Symbol] :class or :instance
     def scope
+      @scope ||= :instance if duck_type?
       @scope ||= ((name == 'Class' or name == 'Module') and !subtypes.empty?) ? :class : :instance
     end
 
