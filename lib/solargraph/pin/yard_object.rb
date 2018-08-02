@@ -42,7 +42,6 @@ module Solargraph
       end
 
       def return_type
-        # @todo Get the return type
         if @return_type.nil?
           if code_object.kind_of?(YARD::CodeObjects::ClassObject)
             @return_type ||= "Class<#{path}>"

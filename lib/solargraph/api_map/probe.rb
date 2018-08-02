@@ -48,7 +48,7 @@ module Solargraph
       def infer_signature_type signature, context_pin, locals
         pins = infer_signature_pins(signature, context_pin, locals)
         pins.each do |pin|
-          return pin.return_type unless pin.return_type.nil?
+          return qualify(pin.return_type, pin.named_context) unless pin.return_type.nil?
           type = resolve_pin_type(pin, locals - [pin])
           return qualify(type, pin.named_context) unless type.nil?
         end

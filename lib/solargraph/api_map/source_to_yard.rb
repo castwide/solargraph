@@ -32,15 +32,10 @@ module Solargraph
               code_object_map[pin.path].instance_mixins.push code_object_map[ref.name] unless code_object_map[ref.name].nil? or code_object_map[pin.path].nil?
             end
           end
-          s.attribute_pins.each do |pin|
-            code_object_map[pin.path] ||= YARD::CodeObjects::MethodObject.new(code_object_at(pin.namespace), pin.name, :instance)
-            code_object_map[pin.path].docstring = pin.docstring unless pin.docstring.nil?
-            code_object_map[pin.path].files.push pin.location.filename
-            #code_object_map[pin.path].parameters = []
-          end
           s.method_pins.each do |pin|
             code_object_map[pin.path] ||= YARD::CodeObjects::MethodObject.new(code_object_at(pin.namespace), pin.name, pin.scope)
             code_object_map[pin.path].docstring = pin.docstring unless pin.docstring.nil?
+            code_object_map[pin.path].visibility = pin.visibility || :public
             code_object_map[pin.path].files.push pin.location.filename
             code_object_map[pin.path].parameters = pin.parameters.map do |p|
               n = p.match(/^[a-z0-9_]*:?/i)[0]
