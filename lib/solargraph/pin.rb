@@ -22,6 +22,7 @@ module Solargraph
     autoload :Block,            'solargraph/pin/block'
     autoload :Localized,        'solargraph/pin/localized'
     autoload :ProxyMethod,      'solargraph/pin/proxy_method'
+    autoload :DuckMethod,       'solargraph/pin/duck_method'
 
     ATTRIBUTE = 1
     CLASS_VARIABLE = 2
