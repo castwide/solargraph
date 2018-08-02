@@ -4,7 +4,11 @@ module Solargraph
       class Initialize < Base
         def process
           host.configure params['initializationOptions']
-          host.prepare params['rootPath']
+          if params['rootUri']
+            host.prepare UriHelpers.uri_to_file(params['rootUri'])
+          else
+            host.prepare params['rootPath']
+          end
           result = {
             capabilities: {
               textDocumentSync: 2, # @todo What should this be?
