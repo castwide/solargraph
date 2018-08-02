@@ -68,4 +68,14 @@ describe Solargraph::ComplexType do
     expect(types.first.scope).to eq(:instance)
     expect(types.first.duck_type?).to be(true)
   end
+
+  it "identifies nil types" do
+    %w[nil Nil NIL].each do |t|
+      types = Solargraph::ComplexType.parse(t)
+      expect(types.length).to eq(1)
+      expect(types.first.namespace).to eq('NilClass')
+      expect(types.first.scope).to eq(:instance)
+      expect(types.first.nil_type?).to be(true)
+    end
+  end
 end
