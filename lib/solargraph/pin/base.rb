@@ -27,6 +27,10 @@ module Solargraph
       # @return [String]
       attr_reader :path
 
+      # @param location [Solargraph::Source::Location]
+      # @param namespace [String]
+      # @param name [String]
+      # @param docstring [YARD::Docstring]
       def initialize location, namespace, name, docstring
         @location = location
         @namespace = namespace
@@ -58,6 +62,7 @@ module Solargraph
         @identifier ||= "#{path}|#{name}"
       end
 
+      # @return [Boolean]
       def variable?
         false
       end
@@ -67,21 +72,35 @@ module Solargraph
         namespace
       end
 
+      # The first return type associated with the pin.
+      # Use return_complex_types for an array of all return types.
+      #
+      # @return [String]
       def return_type
         return nil if return_complex_types.empty?
         return_complex_types.first.tag
       end
 
+      # The namespace of the first return type.
+      # Use return_complex_types for an array of all return types.
+      #
+      # @return [String]
       def return_namespace
-        return nil if complex_types.empty?
+        return nil if return_complex_types.empty?
         @return_namespace ||= return_complex_types.first.namespace
       end
 
+      # The scope of the first return type.
+      # Use return_complex_types for an array of all return types.
+      #
+      # @return [String]
       def return_scope
         return nil if complex_types.empty?
         @return_scope ||= return_complex_types.first.scope
       end
 
+      # All of the pin's return types as an array of ComplexTypes.
+      #
       # @return [Array<ComplexType>]
       def return_complex_types
         @return_complex_types ||= []
