@@ -1094,4 +1094,21 @@ describe Solargraph::ApiMap do
     expect(pins.length).to eq(1)
     expect(pins.first.path).to eq('Foo.meth1')
   end
+
+  it "includes duck type methods in completion results" do
+    api_map = Solargraph::ApiMap.new
+    source = Solargraph::Source.new(%(
+      class Foobar
+        # @param sound [#vocalize]
+        def quack sound
+          sound._
+        end
+      end
+    ))
+    api_map.virtualize source
+    fragment = source.fragment_at(4, 16)
+    cmp = api_map.complete(fragment)
+    names = cmp.pins.map(&:name)
+    expect(names).to include('vocalize')
+  end
 end
