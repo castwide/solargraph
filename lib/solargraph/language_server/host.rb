@@ -123,7 +123,6 @@ module Solargraph
       # @param text [String] The contents of the file.
       # @param version [Integer] A version number.
       def open uri, text, version
-        STDERR.puts "Opening #{uri}"
         @change_semaphore.synchronize do
           library.open uri_to_file(uri), text, version
           @diagnostics_queue.push uri
