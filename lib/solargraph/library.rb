@@ -2,7 +2,6 @@ module Solargraph
   # A library handles coordination between a Workspace and an ApiMap.
   #
   class Library
-
     # @param workspace [Solargraph::Workspace]
     def initialize workspace = Solargraph::Workspace.new(nil)
       @workspace = workspace
@@ -93,6 +92,8 @@ module Solargraph
       end
     end
 
+    # @param filename [String]
+    # @param version [Integer]
     def overwrite filename, version
       source = source_hash[filename]
       return if source.nil?
@@ -206,14 +207,22 @@ module Solargraph
       api_map.refresh force
     end
 
+    # @param query [String]
+    # @return [Array<YARD::CodeObject::Base>]
     def document query
       api_map.document query
     end
 
+    # @param query [String]
+    # @return [Array<String>]
     def search query
       api_map.search query
     end
 
+    # Get an array of all symbols in the workspace that match the query.
+    #
+    # @param query [String]
+    # @return [Array<Pin::Base>]
     def query_symbols query
       api_map.query_symbols query
     end

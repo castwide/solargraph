@@ -3,6 +3,9 @@ require 'set'
 require 'time'
 
 module Solargraph
+  # An aggregate provider for information about workspaces, sources, gems, and
+  # the Ruby core.
+  #
   class ApiMap
     autoload :Cache,        'solargraph/api_map/cache'
     autoload :SourceToYard, 'solargraph/api_map/source_to_yard'
@@ -441,6 +444,7 @@ module Solargraph
 
     # Get an array of all symbols in the workspace that match the query.
     #
+    # @param query [String]
     # @return [Array<Pin::Base>]
     def query_symbols query
       result = []
