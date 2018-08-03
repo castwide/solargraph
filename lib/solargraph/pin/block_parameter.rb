@@ -3,8 +3,7 @@ module Solargraph
     class BlockParameter < Base
       include Localized
 
-      attr_reader :index
-
+      # @return [Pin::Block]
       attr_reader :block
 
       def initialize location, namespace, name, docstring, block
@@ -13,22 +12,29 @@ module Solargraph
         @presence = block.location.range
       end
 
+      # @return [Integer]
       def kind
         Pin::BLOCK_PARAMETER
       end
 
+      # @return [Integer]
       def completion_item_kind
         Solargraph::LanguageServer::CompletionItemKinds::VARIABLE
       end
 
+      # @return [Integer]
       def symbol_kind
         Solargraph::LanguageServer::SymbolKinds::VARIABLE
       end
 
+      # The parameter's zero-based location in the block's signature.
+      #
+      # @return [Integer]
       def index
         block.parameters.index(self)
       end
 
+      # @return [String]
       def return_type
         if @return_type.nil? and !block.docstring.nil?
           found = nil
