@@ -194,4 +194,14 @@ describe Solargraph::Source::Fragment do
     expect(argument_fragment.whole_signature).to eq('foo.baz?')
     expect(argument_fragment.recipient.whole_signature).to eq('foo.bar?')
   end
+
+  it "detects comments in code with CRLF line endings" do
+    source = Solargraph::Source.new("# comment line 0\r\n# comment line 1\r\nputs 'code'")
+    fragment = source.fragment_at(1, 0)
+    expect(fragment.comment?).to be(false)
+    fragment = source.fragment_at(1, 1)
+    expect(fragment.comment?).to be(true)
+    fragment = source.fragment_at(2, 0)
+    expect(fragment.comment?).to be(false)
+  end
 end
