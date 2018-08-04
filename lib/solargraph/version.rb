@@ -1,3 +1,3 @@
 module Solargraph
-  VERSION = '0.23.6'
+  VERSION = '0.23.7'
 end

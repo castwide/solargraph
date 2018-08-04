@@ -189,8 +189,7 @@ module Solargraph
       #
       # @return [Boolean]
       def comment?
-        @comment = get_comment_at(offset) if @comment.nil?
-        @comment
+        @comment ||= check_comment(line, column)
       end
 
       # Get the range of the word up to the current offset.
@@ -291,7 +290,8 @@ module Solargraph
         index -=1
         in_whitespace = false
         while index >= 0
-          break if index > 0 and comment?
+          pos = Position.from_offset(@code, index)
+          break if index > 0 and check_comment(pos.line, pos.character)
           unless !in_whitespace and string?
             break if brackets > 0 or parens > 0 or squares > 0
             char = @code[index, 1]
@@ -359,15 +359,26 @@ module Solargraph
         [index + 1, signature]
       end
 
-      # Determine if the specified index is inside a comment.
+      # Determine if the specified location is inside a comment.
       #
+      # @param lin [Integer]
+      # @param col [Integer]
       # @return [Boolean]
-      def get_comment_at(index)
-        return false if string?
-        # line, col = get_position_at(index)
+      def check_comment(lin, col)
+        index = Position.line_char_to_offset(source_from_parser, lin, col)
         @source.comments.each do |c|
           return true if index > c.location.expression.begin_pos and index <= c.location.expression.end_pos
         end
+        false
+      end
+
+      # True if the line and column are inside the specified range.
+      #
+      # @param location [Parser::Source::Range]
+      def compare_range line, column, location
+        return true if line == location.first_line and line == location.last_line and column >= location.column and column < location.last_column
+        return true if line > location.first_line and line < location.last_line
+        return true if line == location.last_line and column >= location.last_column and column < location.last_column
         false
       end
 
@@ -456,6 +467,14 @@ module Solargraph
           end
         end
         @signature_position
+      end
+
+      # Range tests that depend on positions identified from parsed code, such
+      # as comment ranges, need to normalize EOLs to \n.
+      #
+      # @return [String]
+      def source_from_parser
+        @source_from_parser ||= @source.code.gsub(/\r\n/, "\n")
       end
     end
   end
