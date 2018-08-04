@@ -19,5 +19,5 @@ before_install:
 - bundle install
 before_script: bundle exec yard gems
 script: bundle exec rspec
-# cache:
-#   - bundler
+cache:
+  - bundler
