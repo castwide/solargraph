@@ -51,6 +51,10 @@ describe Protocol do
     expect(response['result'].keys).to include('capabilities')
   end
 
+  it "is not stopped after initialization" do
+    expect(@protocol.host.stopped?).to be(false)
+  end
+
   it "configured dynamic registration capabilities from initialize" do
     expect(@protocol.host.can_register?('textDocument/completion')).to be(true)
     expect(@protocol.host.can_register?('textDocument/hover')).to be(false)
@@ -328,5 +332,64 @@ describe Protocol do
     @protocol.request 'notamethod', {}
     response = @protocol.response
     expect(response['error']['code']).to be(Solargraph::LanguageServer::ErrorCodes::METHOD_NOT_FOUND)
+  end
+
+  it "handles didChangeWatchedFiles for created files" do
+    @protocol.request 'workspace/didChangeWatchedFiles', {
+      'changes' => [
+        {
+          'type' => Solargraph::LanguageServer::Message::Workspace::DidChangeWatchedFiles::CREATED,
+          'uri' => 'file:///watched-file.rb'
+        }
+      ]
+    }
+    response = @protocol.response
+    expect(response['error']).to be_nil
+  end
+
+  it "handles didChangeWatchedFiles for changed files" do
+    @protocol.request 'workspace/didChangeWatchedFiles', {
+      'changes' => [
+        {
+          'type' => Solargraph::LanguageServer::Message::Workspace::DidChangeWatchedFiles::CHANGED,
+          'uri' => 'file:///watched-file.rb'
+        }
+      ]
+    }
+    response = @protocol.response
+    expect(response['error']).to be_nil
+  end
+
+  it "handles didChangeWatchedFiles for deleted files" do
+    @protocol.request 'workspace/didChangeWatchedFiles', {
+      'changes' => [
+        {
+          'type' => Solargraph::LanguageServer::Message::Workspace::DidChangeWatchedFiles::DELETED,
+          'uri' => 'file:///watched-file.rb'
+        }
+      ]
+    }
+    response = @protocol.response
+    expect(response['error']).to be_nil
+  end
+
+  it "handles didChangeWatchedFiles for invalid change types" do
+    @protocol.request 'workspace/didChangeWatchedFiles', {
+      'changes' => [
+        {
+          'type' => -99999,
+          'uri' => 'file:///watched-file.rb'
+        }
+      ]
+    }
+    response = @protocol.response
+    expect(response['error']).not_to be_nil
+  end
+
+  it "handles exit" do
+    @protocol.request 'exit', {}
+    response = @protocol.response
+    expect(response['error']).to be_nil
+    expect(@protocol.host.stopped?).to be(true)
   end
 end

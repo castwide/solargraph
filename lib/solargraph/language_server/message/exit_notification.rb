@@ -4,7 +4,6 @@ module Solargraph
       class ExitNotification < Base
         def process
           host.stop
-          exit
         end
       end
     end
