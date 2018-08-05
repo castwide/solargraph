@@ -324,7 +324,7 @@ module Solargraph
         @pins.select{|pin| [Pin::NAMESPACE, Pin::METHOD].include?(pin.kind) and pin.location.range.contain?(position)}.last
       end
 
-      # @return [YARD::Docstring]
+      # @return [YARD::Docstring, nil]
       def docstring_for node
         return @docstring_hash[node.loc] if node.respond_to?(:loc)
         nil

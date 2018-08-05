@@ -7,7 +7,7 @@ module Solargraph
       # @return [Solargraph::Source::Range]
       attr_reader :range
 
-      # @param filename [String]
+      # @param filename [String, nil]
       # @param range [Solargraph::Source::Range]
       def initialize filename, range
         @filename = filename

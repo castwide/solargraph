@@ -55,7 +55,7 @@ module Solargraph
     include NodeMethods
 
     # @param code [String]
-    # @param filename [String]
+    # @param filename [String, nil]
     def initialize code, filename = nil
       begin
         @code = code
