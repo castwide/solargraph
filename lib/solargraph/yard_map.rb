@@ -52,10 +52,13 @@ module Solargraph
       @yardocs ||= []
     end
 
+    # @return [Array<String>]
     def unresolved_requires
       @unresolved_requires ||= []
     end
 
+    # @param y [String]
+    # @return [YARD::Registry]
     def load_yardoc y
       begin
         if y.kind_of?(Array)
@@ -71,6 +74,7 @@ module Solargraph
     end
 
     # @param query [String]
+    # @return [Array<String>]
     def search query
       found = []
       (yardocs + [@@stdlib_yardoc]).each { |y|
@@ -87,6 +91,7 @@ module Solargraph
     end
 
     # @param query [String]
+    # @return [YARD::CodeObjects::Base]
     def document query
       found = []
       (yardocs + [@@stdlib_yardoc]).each { |y|
@@ -99,6 +104,8 @@ module Solargraph
       found
     end
 
+    # @param namespace [String]
+    # @param scope [String]
     # @return [Array<Solargraph::Pin::Base>]
     def get_constants namespace , scope = ''
       cached = cache.get_constants(namespace, scope)
@@ -139,6 +146,9 @@ module Solargraph
       result
     end
 
+    # @param namespace [String]
+    # @param scope [String]
+    # @param visibility [Array<Symbol>]
     # @return [Array<Solargraph::Pin::Base>]
     def get_methods namespace, scope = '', visibility: [:public]
       return [] if namespace == '' and scope == ''
@@ -178,6 +188,9 @@ module Solargraph
       meths
     end
 
+    # @param namespace [String]
+    # @param scope [String]
+    # @param visibility [Array<Symbol>]
     # @return [Array<Solargraph::Pin::Base>]
     def get_instance_methods namespace, scope = '', visibility: [:public]
       return [] if namespace == '' and scope == ''
@@ -222,6 +235,9 @@ module Solargraph
       meths
     end
 
+    # @param namespace [String]
+    # @param scope [String]
+    # @return [String]
     def find_fully_qualified_namespace namespace, scope
       unless scope.nil? or scope.empty?
         parts = scope.split('::')
@@ -237,6 +253,9 @@ module Solargraph
       nil
     end
 
+    # @param path [String]
+    # @param space [String]
+    # @return [Array<Pin::YardObject>]
     def objects path, space = ''
       cached = cache.get_objects(path, space)
       return cached unless cached.nil?
@@ -257,6 +276,7 @@ module Solargraph
       result
     end
 
+    # @param fqns [String]
     # @return [Symbol] :class, :module, or nil
     def get_namespace_type(fqns)
       yardocs_documenting(fqns).each do |y|
@@ -323,6 +343,7 @@ module Solargraph
       end
     end
 
+    # @param spec [Gem::Specification]
     def add_gem_dependencies spec
       (spec.dependencies - spec.development_dependencies).each do |dep|
         spec = Gem::Specification.find_by_name(dep.name)
@@ -336,6 +357,9 @@ module Solargraph
       end
     end
 
+    # @param namespace [String]
+    # @param scope [String]
+    # @return [Array<String>]
     def combined_namespaces namespace, scope = ''
       combined = [namespace]
       unless scope.empty?
@@ -348,6 +372,8 @@ module Solargraph
       combined
     end
 
+    # @param namespace [String]
+    # @return [Array<String>]
     def yardocs_documenting namespace
       result = []
       if namespace == ''

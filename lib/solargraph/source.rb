@@ -44,24 +44,31 @@ module Solargraph
     # @return [Array<Solargraph::Pin::Base>]
     attr_reader :pins
 
+    # @return [Array<Solargraph::Pin::Reference>]
     attr_reader :requires
 
     attr_reader :domains
 
+    # @return [Array<Solargraph::Pin::Base>]
     attr_reader :locals
 
     include NodeMethods
 
+    # @param code [String]
+    # @param filename [String]
     def initialize code, filename = nil
-      @code = code
-      @fixed = code
-      @filename = filename
-      # @stubbed_lines = stubbed_lines
-      @version = 0
       begin
-        parse
-      rescue Parser::SyntaxError, EncodingError
-        hard_fix_node
+        @code = code
+        @fixed = code
+        @filename = filename
+        @version = 0
+        begin
+          parse
+        rescue Parser::SyntaxError, EncodingError
+          hard_fix_node
+        end
+      rescue Exception => e
+        raise RuntimeError, "Error parsing #{filename || '(source)'}: [#{e.class}] #{e.message}"
       end
     end
 
@@ -75,6 +82,7 @@ module Solargraph
     end
 
     # @todo Name problem
+    # @return [Array<Solargraph::Pin::Reference>]
     def required
       requires
     end
@@ -111,6 +119,7 @@ module Solargraph
       pins.select{|pin| pin.kind == Pin::CLASS_VARIABLE}
     end
 
+    # @return [Array<Solargraph::Pin::Base>]
     def locals
       @locals
     end
@@ -130,10 +139,12 @@ module Solargraph
       @symbols
     end
 
+    # @return [Array<Solargraph::Pin::Symbol>]
     def symbols
       symbol_pins
     end
 
+    # @param name [String]
     # @return [Array<Source::Location>]
     def references name
       inner_node_references(name, node).map do |n|
@@ -171,6 +182,11 @@ module Solargraph
       tree_at(line, column).first
     end
 
+    # True if the specified location is inside a string.
+    #
+    # @param line [Integer]
+    # @param column [Integer]
+    # @return [Boolean]
     def string_at?(line, column)
       node = node_at(line, column)
       # @todo raise InvalidOffset or InvalidRange or something?
@@ -190,19 +206,7 @@ module Solargraph
       stack
     end
 
-    def inner_tree_at node, offset, stack
-      return if node.nil?
-      stack.unshift node
-      node.children.each do |c|
-        next unless c.is_a?(AST::Node)
-        next if c.loc.expression.nil?
-        if offset >= c.loc.expression.begin_pos and offset < c.loc.expression.end_pos
-          inner_tree_at(c, offset, stack)
-          break
-        end
-      end
-    end
-
+    # @param updater [Source::Updater]
     def synchronize updater
       raise 'Invalid synchronization' unless updater.filename == filename
       original_code = @code
@@ -224,15 +228,18 @@ module Solargraph
       end
     end
 
+    # @param query [String]
+    # @return [Array<Solargraph::Pin::Base>]
     def query_symbols query
       return [] if query.empty?
       down = query.downcase
       all_symbols.select{|p| p.path.downcase.include?(down)}
     end
 
+    # @return [Array<Solargraph::Pin::Base>]
     def all_symbols
       @all_symbols ||= pins.select{ |pin|
-        [Pin::ATTRIBUTE, Pin::CONSTANT, Pin::METHOD, Pin::NAMESPACE].include?(pin.kind)
+        [Pin::ATTRIBUTE, Pin::CONSTANT, Pin::METHOD, Pin::NAMESPACE].include?(pin.kind) and !pin.name.empty?
       }
     end
 
@@ -274,6 +281,19 @@ module Solargraph
       result
     end
 
+    def inner_tree_at node, offset, stack
+      return if node.nil?
+      stack.unshift node
+      node.children.each do |c|
+        next unless c.is_a?(AST::Node)
+        next if c.loc.expression.nil?
+        if offset >= c.loc.expression.begin_pos and offset < c.loc.expression.end_pos
+          inner_tree_at(c, offset, stack)
+          break
+        end
+      end
+    end
+
     def parse
       node, comments = inner_parse(@fixed, filename)
       @node = node
@@ -306,12 +326,15 @@ module Solargraph
     end
 
     class << self
+      # @param filename [String]
       # @return [Solargraph::Source]
       def load filename
         code = File.read(filename)
         Source.load_string(code, filename)
       end
 
+      # @param code [String]
+      # @param filename [String]
       # @return [Solargraph::Source]
       def load_string code, filename = nil
         Source.new code, filename

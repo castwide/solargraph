@@ -48,4 +48,14 @@ describe Solargraph::Pin::Method do
     pin = source.pins.select{|pin| pin.path == '#foo'}.first
     expect(pin.return_type).to eq('Hash')
   end
+
+  it "is a kind of method" do
+    source = Solargraph::Source.new(%(
+      def foo; end
+    ))
+    pin = source.method_pins.first
+    expect(pin.kind).to eq(Solargraph::Pin::METHOD)
+    expect(pin.completion_item_kind).to eq(Solargraph::LanguageServer::CompletionItemKinds::METHOD)
+    expect(pin.symbol_kind).to eq(Solargraph::LanguageServer::SymbolKinds::METHOD)
+  end
 end

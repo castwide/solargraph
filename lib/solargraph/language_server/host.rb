@@ -40,16 +40,27 @@ module Solargraph
         @options ||= default_configuration
       end
 
+      # Cancel the method with the specified ID.
+      #
+      # @param id [Integer]
       def cancel id
         @cancel_semaphore.synchronize { @cancel.push id }
       end
 
+      # True if the host received a request to cancel the method with the
+      # specified ID.
+      #
+      # @param id [Integer]
+      # @return [Boolean]
       def cancel? id
         result = false
         @cancel_semaphore.synchronize { result = @cancel.include? id }
         result
       end
 
+      # Delete the specified ID from the list of cancelled IDs if it exists.
+      #
+      # @param id [Integer]
       def clear id
         @cancel_semaphore.synchronize { @cancel.delete id }
       end
@@ -120,6 +131,7 @@ module Solargraph
 
       # True if the specified file is currently open in the library.
       #
+      # @param uri [String]
       # @return [Boolean]
       def open? uri
         result = nil
@@ -129,6 +141,9 @@ module Solargraph
         result
       end
 
+      # Close the file specified by the URI.
+      #
+      # @param uri [String]
       def close uri
         @change_semaphore.synchronize do
           library.close uri_to_file(uri)
@@ -200,7 +215,7 @@ module Solargraph
           rescue WorkspaceTooLargeError => e
             send_notification 'window/showMessage', {
               'type' => Solargraph::LanguageServer::MessageTypes::WARNING,
-              'message' => "The workspace is too large to index (#{e.size} files, max #{Workspace::MAX_WORKSPACE_SIZE})"
+              'message' => "The workspace is too large to index (#{e.size} files, max #{e.max})"
             }
             @library = Solargraph::Library.load(nil)
           end
@@ -397,6 +412,8 @@ module Solargraph
         result
       end
 
+      # @param uri [String]
+      # @return [Array<Solargraph::Pin::Base>]
       def file_symbols uri
         library.file_symbols(uri_to_file(uri))
       end

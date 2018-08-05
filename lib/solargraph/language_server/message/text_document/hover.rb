@@ -9,22 +9,17 @@ module Solargraph::LanguageServer::Message::TextDocument
       col = params['position']['character']
       contents = []
       suggestions = host.definitions_at(filename, line, col)
-      last_path = nil
+      last_link = nil
       suggestions.each do |pin|
         parts = []
-        this_path = nil
-        if pin.kind_of?(Solargraph::Pin::BaseVariable)
-          this_path = pin.return_type
-        else
-          this_path = pin.path
-        end
-        if !this_path.nil? and this_path != last_path
-          parts.push link_documentation(this_path)
+        this_link = pin.link_documentation
+        if !this_link.nil? and this_link != last_link
+          parts.push this_link
         end
         parts.push HTMLEntities.new.encode(pin.detail) unless pin.kind == Solargraph::Pin::NAMESPACE or pin.detail.nil?
         parts.push pin.documentation unless pin.documentation.nil? or pin.documentation.empty?
         contents.push parts.join("\n\n") unless parts.empty?
-        last_path = this_path unless this_path.nil?
+        last_link = this_link unless this_link.nil?
       end
       set_result(
         contents: {
@@ -32,14 +27,6 @@ module Solargraph::LanguageServer::Message::TextDocument
           value: contents.join("\n\n")
         }
       )
-    end
-
-    private
-
-    # @todo: DRY this method. It exists in Conversions
-    def link_documentation path
-      uri = "solargraph:/document?query=" + URI.encode(path)
-      "[#{path}](#{uri})"
     end
   end
 end

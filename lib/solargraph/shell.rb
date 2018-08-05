@@ -125,7 +125,7 @@ module Solargraph
 
     desc 'reporters', 'Get a list of diagnostics reporters'
     def reporters
-      puts Solargraph::Diagnostics::REPORTERS.keys.sort
+      puts Solargraph::Diagnostics.reporters
     end
   end
 end

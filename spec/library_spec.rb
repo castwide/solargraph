@@ -106,6 +106,21 @@ describe Solargraph::Library do
     end
   end
 
+  it "keeps a closed file in the workspace" do
+    Dir.mktmpdir do |dir|
+      file = File.join(dir, 'file.rb')
+      File.write file, 'a = b'
+      library = Solargraph::Library.load(dir)
+      library.open file, File.read(file), 0
+      expect {
+        library.checkout file
+      }.not_to raise_error
+      library.close file
+      expect(library.open?(file)).to be(false)
+      expect(library.contain?(file)).to be(true)
+    end
+  end
+
   it "returns a Completion" do
     library = Solargraph::Library.new
     library.open 'file.rb', %(
@@ -158,5 +173,15 @@ describe Solargraph::Library do
       expect(library.create_from_disk(filename)).to be(false)
       expect(library.contain?(filename)).to be(false)
     end
+  end
+
+  it "diagnoses files" do
+    library = Solargraph::Library.new
+    library.open('file.rb', %(
+      puts 'hello'
+    ), 0)
+    result = library.diagnose 'file.rb'
+    expect(result).to be_a(Array)
+    # @todo More tests
   end
 end

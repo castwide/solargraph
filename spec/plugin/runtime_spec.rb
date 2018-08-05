@@ -57,12 +57,7 @@ describe Solargraph::Plugin::Runtime do
   end
 
   it "sets local name and namespace root for constants" do
-    tmp = Class.new(Solargraph::Plugin::Runtime) do
-      define_method :executable do
-        'bundle exec solargraph-runtime'
-      end
-    end
-    runtime = tmp.new(nil)
+    runtime = Solargraph::Plugin::Runtime.new(nil)
     result = runtime.get_constants('Process', '').select{|o| o['name'] == 'Tms'}.first
     expect(result).not_to be(nil)
     expect(result['name']).to eq('Tms')

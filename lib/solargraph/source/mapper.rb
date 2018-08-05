@@ -18,10 +18,7 @@ module Solargraph
         @filename = filename
         @code = code
         @node = node
-        @comments = comments
         @node_stack = []
-        # @node_tree = []
-        @comment_hash = {}
         @directives = {}
         @docstring_hash = associate_comments(node, comments)
         # @todo Stuff that needs to be resolved
@@ -60,16 +57,8 @@ module Solargraph
         frag.strip.gsub(/,$/, '')
       end
 
-      def comment_hash
-        @comment_hash
-      end
-
       def filename
         @filename
-      end
-
-      def comments
-        @comments
       end
 
       def pins
@@ -159,7 +148,8 @@ module Solargraph
                 if methpin.name == 'initialize' and methpin.scope == :instance
                   pins.push Solargraph::Pin::Method.new(methpin.location, methpin.namespace, 'new', methpin.docstring, :class, :public, methpin.parameters)
                   # @todo Smelly instance variable access.
-                  pins.last.instance_variable_set(:@return_type, methpin.namespace)
+                  # pins.last.instance_variable_set(:@return_type, methpin.namespace)
+                  pins.last.instance_variable_set(:@return_complex_types, ComplexType.parse(methpin.namespace))
                   pins.push Solargraph::Pin::Method.new(methpin.location, methpin.namespace, methpin.name, methpin.docstring, methpin.scope, :private, methpin.parameters)
                 elsif visibility == :module_function
                   pins.push Solargraph::Pin::Method.new(methpin.location, methpin.namespace, methpin.name, methpin.docstring, :class, :public, methpin.parameters)
@@ -332,10 +322,6 @@ module Solargraph
 
       def get_named_path_pin position
         @pins.select{|pin| [Pin::NAMESPACE, Pin::METHOD].include?(pin.kind) and pin.location.range.contain?(position)}.last
-      end
-
-      def get_namespace_pin position
-        @pins.select{|pin| pin.kind == Pin::NAMESPACE and pin.location.range.contain?(position)}.last
       end
 
       # @return [YARD::Docstring]

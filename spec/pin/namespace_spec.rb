@@ -10,4 +10,12 @@ describe Solargraph::Pin::Namespace do
     expect(pin.namespace).to eq('Foo')
     expect(pin.path).to eq('Foo::Bar')
   end
+
+  it "has class scope" do
+    source = Solargraph::Source.load_string(%(
+      class Foo
+      end
+    ))
+    expect(source.namespace_pins.first.scope).to eq(:class)
+  end
 end

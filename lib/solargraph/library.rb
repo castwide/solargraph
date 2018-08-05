@@ -2,7 +2,6 @@ module Solargraph
   # A library handles coordination between a Workspace and an ApiMap.
   #
   class Library
-
     # @param workspace [Solargraph::Workspace]
     def initialize workspace = Solargraph::Workspace.new(nil)
       @workspace = workspace
@@ -93,6 +92,8 @@ module Solargraph
       end
     end
 
+    # @param filename [String]
+    # @param version [Integer]
     def overwrite filename, version
       source = source_hash[filename]
       return if source.nil?
@@ -206,26 +207,39 @@ module Solargraph
       api_map.refresh force
     end
 
+    # @param query [String]
+    # @return [Array<YARD::CodeObject::Base>]
     def document query
       api_map.document query
     end
 
+    # @param query [String]
+    # @return [Array<String>]
     def search query
       api_map.search query
     end
 
+    # Get an array of all symbols in the workspace that match the query.
+    #
+    # @param query [String]
+    # @return [Array<Pin::Base>]
     def query_symbols query
       api_map.query_symbols query
     end
 
+    # @param filename [String]
+    # @return [Array<Solargraph::Pin::Base>]
     def file_symbols filename
       read(filename).all_symbols
     end
 
+    # @param path [String]
+    # @return [Array<Solargraph::Pin::Base>]
     def path_pins path
       api_map.get_path_suggestions(path)
     end
 
+    # @param updater [Solargraph::Source::Updater]
     def synchronize updater
       source = read(updater.filename)
       source.synchronize updater
@@ -242,6 +256,7 @@ module Solargraph
 
     # Get diagnostics about a file.
     #
+    # @param filename [String]
     # @return [Array<Hash>]
     def diagnose filename
       # @todo Only open files get diagnosed. Determine whether anything or
@@ -251,7 +266,7 @@ module Solargraph
       result = []
       source = read(filename)
       workspace.config.reporters.each do |name|
-        reporter = Diagnostics::REPORTERS[name]
+        reporter = Diagnostics.reporter(name)
         raise DiagnosticsError, "Diagnostics reporter #{name} does not exist" if reporter.nil?
         result.concat reporter.new.diagnose(source, api_map)
       end

@@ -1,10 +1,21 @@
 module Solargraph
   class Source
+    # Information about a location in a source, including the location's word
+    # and signature, literal values at the base of signatures, and whether the
+    # location is inside a string or comment. ApiMaps use Fragments to provide
+    # results for completion and definition queries.
+    #
     class Fragment
       include NodeMethods
 
+      # The zero-based line number of the fragment's location.
+      #
+      # @return [Integer]
       attr_reader :line
 
+      # The zero-based column number of the fragment's location.
+      #
+      # @return [Integer]
       attr_reader :column
 
       # @return [Solargraph::Source]
@@ -21,10 +32,14 @@ module Solargraph
         @calculated_literal = false
       end
 
+      # An alias for #column.
+      #
+      # @return [Integer]
       def character
         @column
       end
 
+      # @return [Source::Position]
       def position
         @position ||= Position.new(line, column)
       end
@@ -40,6 +55,8 @@ module Solargraph
         @namespace
       end
 
+      # True if the fragment is inside a method argument.
+      #
       # @return [Boolean]
       def argument?
         @argument ||= !signature_position.nil?
@@ -159,6 +176,8 @@ module Solargraph
 
       # Get the word before the current offset. Given the text `foo.bar`, the
       # word at offset 6 is `ba`.
+      #
+      # @return [String]
       def word
         @word ||= word_at(offset)
       end
@@ -175,8 +194,7 @@ module Solargraph
       #
       # @return [Boolean]
       def comment?
-        @comment = get_comment_at(offset) if @comment.nil?
-        @comment
+        @comment ||= check_comment(line, column)
       end
 
       # Get the range of the word up to the current offset.
@@ -194,14 +212,17 @@ module Solargraph
         @whole_word_range ||= word_range_at(offset, true)
       end
 
+      # @return [Solargraph::Pin::Base]
       def block
         @block ||= @source.locate_block_pin(line, character)
       end
 
+      # @return [Solargraph::Pin::Base]
       def named_path
         @named_path ||= @source.locate_named_path_pin(line, character)
       end
 
+      # @return [Array<Solargraph::Pin::Base>]
       def locals
         @locals ||= @source.locals.select{|pin| pin.visible_from?(block, position)}
       end
@@ -227,10 +248,17 @@ module Solargraph
         @base_literal
       end
 
+      # True if the fragment is inside a literal value.
+      #
+      # @return [Boolean]
       def literal?
         !literal.nil?
       end
 
+      # The fragment's literal type, or nil if the fragment is not inside a
+      # literal value.
+      #
+      # @return [String]
       def literal
         if @literal.nil? and !@calculated_actual_literal
           @calculated_actual_literal = true
@@ -267,7 +295,8 @@ module Solargraph
         index -=1
         in_whitespace = false
         while index >= 0
-          break if index > 0 and comment?
+          pos = Position.from_offset(@code, index)
+          break if index > 0 and check_comment(pos.line, pos.character)
           unless !in_whitespace and string?
             break if brackets > 0 or parens > 0 or squares > 0
             char = @code[index, 1]
@@ -295,11 +324,11 @@ module Solargraph
                 brackets += 1
               elsif char == '['
                 squares += 1
-                signature = ".[]#{signature}" if squares == 0 and @code[index-2] != '%'
+                signature = ".[]#{signature}" if parens.zero? and brackets.zero? and squares.zero? and @code[index-2] != '%'
               end
               if brackets.zero? and parens.zero? and squares.zero?
                 break if ['"', "'", ',', ';', '%'].include?(char)
-                signature = char + signature if char.match(/[a-z0-9:\._@\$]/i) and @code[index - 1] != '%'
+                signature = char + signature if char.match(/[a-z0-9:\._@\$\?\!]/i) and @code[index - 1] != '%'
                 break if char == '$'
                 if char == '@'
                   signature = "@#{signature}" if @code[index-1, 1] == '@'
@@ -335,15 +364,26 @@ module Solargraph
         [index + 1, signature]
       end
 
-      # Determine if the specified index is inside a comment.
+      # Determine if the specified location is inside a comment.
       #
+      # @param lin [Integer]
+      # @param col [Integer]
       # @return [Boolean]
-      def get_comment_at(index)
-        return false if string?
-        # line, col = get_position_at(index)
+      def check_comment(lin, col)
+        index = Position.line_char_to_offset(source_from_parser, lin, col)
         @source.comments.each do |c|
           return true if index > c.location.expression.begin_pos and index <= c.location.expression.end_pos
         end
+        false
+      end
+
+      # True if the line and column are inside the specified range.
+      #
+      # @param location [Parser::Source::Range]
+      def compare_range line, column, location
+        return true if line == location.first_line and line == location.last_line and column >= location.column and column < location.last_column
+        return true if line > location.first_line and line < location.last_line
+        return true if line == location.last_line and column >= location.last_column and column < location.last_column
         false
       end
 
@@ -432,6 +472,14 @@ module Solargraph
           end
         end
         @signature_position
+      end
+
+      # Range tests that depend on positions identified from parsed code, such
+      # as comment ranges, need to normalize EOLs to \n.
+      #
+      # @return [String]
+      def source_from_parser
+        @source_from_parser ||= @source.code.gsub(/\r\n/, "\n")
       end
     end
   end

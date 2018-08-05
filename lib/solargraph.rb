@@ -3,17 +3,22 @@ require 'rubygems/package'
 require 'yard-solargraph'
 
 module Solargraph
-  class InvalidOffsetError <      RangeError; end
-  class DiagnosticsError <        RuntimeError; end
-  class FileNotFoundError <       RuntimeError; end
+  class InvalidOffsetError <      RangeError;    end
+  class DiagnosticsError <        RuntimeError;  end
+  class FileNotFoundError <       RuntimeError;  end
   class SourceNotAvailableError < StandardError; end
-
-  class WorkspaceTooLargeError < RuntimeError
+  class WorkspaceTooLargeError <  RuntimeError
+    # @return [Integer]
     attr_reader :size
 
+    # @return [Integer]
+    attr_reader :max
+
     # @param size [Integer] The number of files included in the workspace
-    def initialize size
+    # @param max [Integer] The maximum number of files allowed
+    def initialize size, max
       @size = size
+      @max = max
     end
   end
 
@@ -32,6 +37,7 @@ module Solargraph
   autoload :Library,        'solargraph/library'
   autoload :Tracer,         'solargraph/tracer'
   autoload :Diagnostics,    'solargraph/diagnostics'
+  autoload :ComplexType,    'solargraph/complex_type'
 
   YARDOC_PATH = File.join(File.realpath(File.dirname(__FILE__)), '..', 'yardoc')
   YARD_EXTENSION_FILE = File.join(File.realpath(File.dirname(__FILE__)), 'yard-solargraph.rb')

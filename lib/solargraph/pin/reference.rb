@@ -10,16 +10,16 @@ module Solargraph
       # @return [String]
       attr_reader :name
 
+      # @param location [Source::Location]
+      # @param namespace [String]
+      # @param name [String]
       def initialize location, namespace, name
         @location = location
         @namespace = namespace
         @name = name
       end
 
-      # @todo Deprecaate
-      def resolve api_map
-      end
-
+      # @return [String]
       def filename
         location.filename
       end

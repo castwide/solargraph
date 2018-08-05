@@ -48,6 +48,7 @@ module Solargraph
       def infer_signature_type signature, context_pin, locals
         pins = infer_signature_pins(signature, context_pin, locals)
         pins.each do |pin|
+          return qualify(pin.return_type, pin.named_context) unless pin.return_type.nil?
           type = resolve_pin_type(pin, locals - [pin])
           return qualify(type, pin.named_context) unless type.nil?
         end
@@ -59,8 +60,9 @@ module Solargraph
       # Word search is ALWAYS internal
       def infer_word_pins word, context_pin, locals
         return [] if word.empty?
+        return infer_self(context_pin) if word == 'self'
         lvars = locals.select{|pin| pin.name == word}
-        return lvars unless lvars.empty?
+        return resolve_word_types(lvars, locals) unless lvars.empty?
         return api_map.get_global_variable_pins.select{|pin| pin.name == word} if word.start_with?('$')
         namespace, scope = extract_namespace_and_scope_from_pin(context_pin)
         return api_map.pins.select{|pin| word_matches_context?(word, namespace, scope, pin)} if variable_name?(word)
@@ -75,7 +77,28 @@ module Solargraph
         result.concat api_map.get_path_suggestions(word) if result.empty?
         result.concat api_map.get_methods(namespace, scope: scope, visibility: [:public, :private, :protected]).select{|pin| pin.name == word} unless word.include?('::')
         result.concat api_map.get_constants('', namespace).select{|pin| pin.name == word} if result.empty?
-        result
+        resolve_word_types(result, locals)
+      end
+
+      def resolve_word_types(pins, locals)
+        pins.each do |p|
+          next unless p.return_type.nil?
+          type = resolve_pin_type(p, locals)
+          # @todo Smelly instance variable access
+          p.instance_variable_set(:@return_type, type)
+        end
+      end
+
+      def infer_self context_pin
+        if context_pin.kind == Pin::METHOD
+          if context_pin.scope == :instance
+            return [Pin::ProxyMethod.new(context_pin.namespace)]
+          else
+            return api_map.get_path_suggestions(context_pin.namespace)
+          end
+        else
+          return api_map.get_path_suggestions(context_pin.path)
+        end
       end
 
       # Method name search is external by default
@@ -144,7 +167,8 @@ module Solargraph
       def virtual_new_pin new_pin, context_pin
         pin = Pin::Method.new(new_pin.location, new_pin.namespace, new_pin.name, new_pin.docstring, new_pin.scope, new_pin.visibility, new_pin.parameters)
         # @todo Smelly instance variable access.
-        pin.instance_variable_set(:@return_type, context_pin.path)
+        # pin.instance_variable_set(:@return_type, context_pin.path)
+        pin.instance_variable_set(:@return_complex_types, ComplexType.parse(context_pin.path))
         pin
       end
 
@@ -152,26 +176,28 @@ module Solargraph
       # @param locals [Array<Solargraph::Pin::Base>]
       # @return [String]
       def resolve_pin_type pin, locals
-        pin.return_type
         return pin.return_type unless pin.return_type.nil?
-        return resolve_block_parameter(pin) if pin.kind == Pin::BLOCK_PARAMETER
+        return resolve_block_parameter(pin, locals) if pin.kind == Pin::BLOCK_PARAMETER
         return resolve_variable(pin, locals) if pin.variable?
         nil
       end
 
-      def resolve_block_parameter pin
+      def resolve_block_parameter pin, locals
         return pin.return_type unless pin.return_type.nil?
         signature = pin.block.receiver
         # @todo Not sure if assuming the first pin is good here
-        meth = @api_map.probe.infer_signature_pins(signature, pin.block, []).first
+        meth = infer_signature_pins(signature, pin.block, locals).first
         return nil if meth.nil?
         if (Solargraph::CoreFills::METHODS_WITH_YIELDPARAM_SUBTYPES.include?(meth.path))
           base = signature.split('.')[0..-2].join('.')
           return nil if base.nil? or base.empty?
           # @todo Not sure if assuming the first pin is good here
-          bmeth = @api_map.probe.infer_signature_pins(base, pin.block, []).first
+          bmeth = infer_signature_pins(base, pin.block, locals).first
           return nil if bmeth.nil?
-          subtypes = get_subtypes(bmeth.return_type)
+          btype = bmeth.return_type
+          btype = infer_signature_type(bmeth.signature, pin.block, locals) if btype.nil? and bmeth.variable?
+          subtypes = get_subtypes(btype)
+          return nil if subtypes.nil?
           return subtypes[0]
         else
           unless meth.docstring.nil?

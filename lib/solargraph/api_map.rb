@@ -3,6 +3,9 @@ require 'set'
 require 'time'
 
 module Solargraph
+  # An aggregate provider for information about workspaces, sources, gems, and
+  # the Ruby core.
+  #
   class ApiMap
     autoload :Cache,        'solargraph/api_map/cache'
     autoload :SourceToYard, 'solargraph/api_map/source_to_yard'
@@ -319,10 +322,23 @@ module Solargraph
         elsif fragment.signature.include?('::') and !fragment.signature.include?('.')
           result.concat get_constants(fragment.base, fragment.namespace)
         else
-          type = probe.infer_signature_type(fragment.base, fragment.named_path, fragment.locals)
-          unless type.nil?
-            namespace, scope = extract_namespace_and_scope(type)
-            result.concat get_methods(namespace, scope: scope)
+          pins = probe.infer_signature_pins(fragment.base, fragment.named_path, fragment.locals)
+          unless pins.empty?
+            pin = pins.first
+            if pin.return_complex_types.any? and pin.return_complex_types.first.duck_type?
+              result.push Pin::DuckMethod.new(pin.location, pin.return_type[1..-1])
+              result.concat(get_methods('Object', scope: :instance))
+            end
+            if result.empty?
+              pins.each do |pin|
+                type = pin.return_type
+                unless type.nil?
+                  namespace, scope = extract_namespace_and_scope(type)
+                  result.concat get_methods(namespace, scope: scope)
+                  break
+                end
+              end
+            end
           end
         end
       end
@@ -336,7 +352,8 @@ module Solargraph
     # @param fragment [Solargraph::Source::Fragment]
     # @return [Array<Solargraph::Pin::Base>]
     def define fragment
-      return [] if fragment.string? or fragment.comment? or fragment.literal?
+      return get_path_suggestions(fragment.namespace) if fragment.whole_signature == 'self'
+      return [] if fragment.string? or fragment.comment? or fragment.literal? or fragment.whole_signature == 'self'
       if fragment.base_literal?
         probe.infer_signature_pins fragment.whole_signature, Pin::ProxyMethod.new(fragment.base_literal), fragment.locals
       else
@@ -427,6 +444,7 @@ module Solargraph
 
     # Get an array of all symbols in the workspace that match the query.
     #
+    # @param query [String]
     # @return [Array<Pin::Base>]
     def query_symbols query
       result = []
@@ -526,6 +544,7 @@ module Solargraph
         fqis = qualify(is, fqns)
         result.concat inner_get_constants(fqis, [:public], skip) unless fqis.nil?
       end
+      result.concat live_map.get_constants(fqns)
       result
     end
 
