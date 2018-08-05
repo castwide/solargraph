@@ -86,6 +86,10 @@ module Solargraph
         @parameters ||= get_method_args
       end
 
+      def parameter_names
+        @parameter_names ||= parameters.map{|p| p.split(/[ =:]/).first}
+      end
+
       def visibility
         @visibility ||= (code_object.respond_to?(:visibility) ? code_object.visibility : :public)
       end

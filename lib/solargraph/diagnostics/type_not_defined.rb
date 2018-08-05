@@ -31,7 +31,7 @@ module Solargraph
 
       def check_param_types pin, api_map, source
         result = []
-        pin.parameters.each do |par|
+        pin.parameter_names.each do |par|
           next if defined_param_type?(pin, par, api_map)
           result.push(
             range: extract_first_line(pin, source),
@@ -47,7 +47,7 @@ module Solargraph
         result = []
         unless pin.docstring.nil?
           pin.docstring.tags(:param).each do |par|
-            next if pin.parameters.include?(par.name)
+            next if pin.parameter_names.include?(par.name)
             result.push(
               range: extract_first_line(pin, source),
               severity: Diagnostics::Severities::WARNING,
@@ -73,6 +73,7 @@ module Solargraph
       end
 
       def defined_return_type? pin, api_map
+        return true if pin.name == 'initialize' and pin.scope == :instance
         return true unless pin.return_type.nil?
         matches = api_map.get_methods(pin.namespace, scope: pin.scope, visibility: [:public, :private, :protected]).select{|p| p.name == pin.name}
         matches.shift
@@ -84,7 +85,7 @@ module Solargraph
         matches = api_map.get_methods(pin.namespace, scope: pin.scope, visibility: [:public, :private, :protected]).select{|p| p.name == pin.name}
         matches.shift
         matches.each do |m|
-          next unless pin.parameters == m.parameters
+          next unless pin.parameter_names == m.parameter_names
           return true if param_in_docstring?(param, m.docstring)
         end
         false

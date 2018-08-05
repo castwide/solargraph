@@ -51,6 +51,10 @@ module Solargraph
         # them as methods without parameters
         []
       end
+
+      def parameter_names
+        []
+      end
     end
   end
 end

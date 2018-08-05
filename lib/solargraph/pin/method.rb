@@ -12,6 +12,10 @@ module Solargraph
         @parameters = args
       end
 
+      def parameter_names
+        @parameter_names ||= parameters.map{|p| p.split(/[ =:]/).first}
+      end
+
       def kind
         Solargraph::Pin::METHOD
       end

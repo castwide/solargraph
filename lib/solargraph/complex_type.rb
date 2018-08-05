@@ -12,7 +12,13 @@ module Solargraph
     # @return [Array<ComplexType>]
     attr_reader :subtypes
 
-    def initialize name, substring
+    # Create a ComplexType with the specified name and an optional substring.
+    # The substring is parameter of a parameterized type, e.g., for the type
+    # `Array<String>`, the name is `Array` and the substring is `String`.
+    #
+    # @param name [String] The name of the type
+    # @param substring [String] The substring of the type
+    def initialize name, substring = ''
       @name = name
       @substring = substring
       @tag = name
@@ -21,10 +27,12 @@ module Solargraph
       @subtypes.concat(ComplexType.parse(substring)) unless substring.empty?
     end
 
+    # @return [Boolean]
     def duck_type?
       @duck_type ||= name.start_with?('#')
     end
 
+    # @return [Boolean]
     def nil_type?
       @nil_type ||= (name.downcase == 'nil')
     end
@@ -43,6 +51,7 @@ module Solargraph
     end
 
     class << self
+      # @param *strings [Array<String>] The type definitions to parse
       # @return [Array<ComplexType>]
       def parse *strings
         types = []
