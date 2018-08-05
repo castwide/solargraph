@@ -86,6 +86,10 @@ module Solargraph
         @parameters ||= get_method_args
       end
 
+      def parameter_names
+        @parameter_names ||= parameters.map{|p| p.split(/[ =:]/).first}
+      end
+
       def visibility
         @visibility ||= (code_object.respond_to?(:visibility) ? code_object.visibility : :public)
       end
@@ -100,14 +104,14 @@ module Solargraph
       def get_method_args
         return [] unless code_object.kind_of?(YARD::CodeObjects::MethodObject)
         args = []
-        code_object.parameters.each { |a|
+        code_object.parameters.each do |a|
           p = a[0]
           unless a[1].nil?
             p += ' =' unless p.end_with?(':')
             p += " #{a[1]}"
           end
           args.push p
-        }
+        end
         args
       end
     end

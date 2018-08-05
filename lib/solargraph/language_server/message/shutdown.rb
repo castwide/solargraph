@@ -3,7 +3,7 @@ module Solargraph
     module Message
       class Shutdown < Base
         def process
-          set_result({})
+          # Nothing to do?
         end
       end
     end

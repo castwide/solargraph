@@ -30,12 +30,15 @@ module Solargraph
         @path ||= namespace + (scope == :instance ? '#' : '.') + name
       end
 
-      def return_type
-        if @return_type.nil? and !docstring.nil?
-          tag = docstring.tag(:return)
-          @return_type = tag.types[0] unless tag.nil?
+      def return_complex_types
+        if @return_complex_types.nil?
+          @return_complex_types = []
+          unless docstring.nil?
+            tag = docstring.tag(:return)
+            @return_complex_types.concat ComplexType.parse(*tag.types) unless tag.nil?
+          end
         end
-        @return_type
+        @return_complex_types
       end
 
       def visibility
@@ -46,6 +49,10 @@ module Solargraph
       def parameters
         # Since attributes are generally equivalent to methods, treat
         # them as methods without parameters
+        []
+      end
+
+      def parameter_names
         []
       end
     end

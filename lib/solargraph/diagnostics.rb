@@ -7,6 +7,7 @@ module Solargraph
     autoload :Severities, 'solargraph/diagnostics/severities'
     autoload :Rubocop, 'solargraph/diagnostics/rubocop'
     autoload :RequireNotFound, 'solargraph/diagnostics/require_not_found'
+    autoload :TypeNotDefined, 'solargraph/diagnostics/type_not_defined'
 
     class << self
       # Add a reporter with a name to identify it in .solargraph.yml files.
@@ -42,5 +43,6 @@ module Solargraph
 
     register 'rubocop', Rubocop
     register 'require_not_found', RequireNotFound
+    register 'type_not_defined', TypeNotDefined
   end
 end

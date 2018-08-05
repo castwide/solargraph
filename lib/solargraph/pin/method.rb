@@ -12,6 +12,10 @@ module Solargraph
         @parameters = args
       end
 
+      def parameter_names
+        @parameter_names ||= parameters.map{|p| p.split(/[ =:]/).first}
+      end
+
       def kind
         Solargraph::Pin::METHOD
       end
@@ -29,16 +33,8 @@ module Solargraph
         LanguageServer::SymbolKinds::METHOD
       end
 
-      def return_type
-        if @return_type.nil? and !docstring.nil?
-          tag = docstring.tag(:return)
-          if tag.nil?
-            ol = docstring.tag(:overload)
-            tag = ol.tag(:return) unless ol.nil?
-          end
-          @return_type = tag.types[0] unless tag.nil? or tag.types.nil?
-        end
-        @return_type
+      def return_complex_types
+        @return_complex_types ||= generate_complex_types
       end
 
       def documentation
@@ -63,23 +59,17 @@ module Solargraph
         @documentation
       end
 
-      # @todo This method was temporarily migrated directly from Suggestion
-      # @return [Array<String>]
-      def params
-        if @params.nil?
-          @params = []
-          return @params if docstring.nil?
-          param_tags = docstring.tags(:param)
-          unless param_tags.empty?
-            param_tags.each do |t|
-              txt = t.name.to_s
-              txt += " [#{t.types.join(',')}]" unless t.types.nil? or t.types.empty?
-              txt += " #{t.text}" unless t.text.nil? or t.text.empty?
-              @params.push txt
-            end
-          end
+      private
+
+      def generate_complex_types
+        return [] if docstring.nil?
+        tag = docstring.tag(:return)
+        if tag.nil?
+          ol = docstring.tag(:overload)
+          tag = ol.tag(:return) unless ol.nil?
         end
-        @params
+        return [] if tag.nil?
+        ComplexType.parse *tag.types
       end
     end
   end

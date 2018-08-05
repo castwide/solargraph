@@ -322,10 +322,26 @@ module Solargraph
         elsif fragment.signature.include?('::') and !fragment.signature.include?('.')
           result.concat get_constants(fragment.base, fragment.namespace)
         else
-          type = probe.infer_signature_type(fragment.base, fragment.named_path, fragment.locals)
-          unless type.nil?
-            namespace, scope = extract_namespace_and_scope(type)
-            result.concat get_methods(namespace, scope: scope)
+          pins = probe.infer_signature_pins(fragment.base, fragment.named_path, fragment.locals)
+          unless pins.empty?
+            pin = pins.first
+            if pin.return_complex_types.any? and pin.return_complex_types.first.duck_type?
+              pin.return_complex_types.each do |t|
+                next unless t.duck_type?
+                result.push Pin::DuckMethod.new(pin.location, t.tag[1..-1])
+              end
+              result.concat(get_methods('Object', scope: :instance))
+            end
+            if result.empty?
+              pins.each do |pin|
+                type = pin.return_type
+                unless type.nil?
+                  namespace, scope = extract_namespace_and_scope(type)
+                  result.concat get_methods(namespace, scope: scope)
+                  break
+                end
+              end
+            end
           end
         end
       end
