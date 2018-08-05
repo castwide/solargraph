@@ -1,34 +1,63 @@
 module Solargraph
   module Diagnostics
-    # RequireNotFound reports required paths that could not be resolved to
-    # either a file in the workspace or a gem.
+    # TypeNotDefined reports methods with undefined return types, untagged
+    # parameters, and invalid param tags.
     #
     class TypeNotDefined < Base
       def diagnose source, api_map
         result = []
         source.pins.select{|p| p.kind == Pin::METHOD or p.kind == Pin::ATTRIBUTE}.each do |pin|
-          unless defined_return_type?(pin, api_map)
-            result.push(
-              range: extract_first_line(pin, source),
-              severity: Diagnostics::Severities::WARNING,
-              source: 'Solargraph',
-              message: "Method `#{pin.name}` has undefined return type."
-            )
-          end
-          pin.parameters.each do |par|
-            next if defined_param_type?(pin, par, api_map)
-            result.push(
-              range: extract_first_line(pin, source),
-              severity: Diagnostics::Severities::WARNING,
-              source: 'Solargraph',
-              message: "Method `#{pin.name}` has undefined param `#{par}`."
-            )
-          end
+          result.concat check_return_type(pin, api_map)
+          result.concat check_param_types(pin, api_map)
+          result.concat check_param_tags(pin, api_map)
         end
         result
       end
 
       private
+
+      def check_return_type pin, api_map
+        result = []
+        unless defined_return_type?(pin, api_map)
+          result.push(
+            range: extract_first_line(pin, source),
+            severity: Diagnostics::Severities::WARNING,
+            source: 'Solargraph',
+            message: "Method `#{pin.name}` has undefined return type."
+          )
+        end
+        result
+      end
+
+      def check_param_types pin, api_map
+        result = []
+        pin.parameters.each do |par|
+          next if defined_param_type?(pin, par, api_map)
+          result.push(
+            range: extract_first_line(pin, source),
+            severity: Diagnostics::Severities::WARNING,
+            source: 'Solargraph',
+            message: "Method `#{pin.name}` has undefined param `#{par}`."
+          )
+        end
+        result
+      end
+
+      def check_param_tags pin, api_map
+        result = []
+        unless pin.docstring.nil?
+          pin.docstring.tags(:param).each do |par|
+            next unless pin.parameters.include?(par.name)
+            result.push(
+              range: extract_first_line(pin, source),
+              severity: Diagnostics::Severities::WARNING,
+              source: 'Solargraph',
+              message: "Method `#{pin.name}` has mistagged param `#{par.name}`."
+            )
+          end
+        end
+        result
+      end
 
       def extract_first_line pin, source
         {
@@ -46,16 +75,25 @@ module Solargraph
       def defined_return_type? pin, api_map
         return true unless pin.return_type.nil?
         matches = api_map.get_methods(pin.namespace, scope: pin.scope, visibility: [:public, :private, :protected]).select{|p| p.name == pin.name}
+        matches.shift
         matches.any?{|m| !m.return_type.nil?}
       end
 
       def defined_param_type? pin, param, api_map
-        return true if pin.typed_parameters.any?{|p| p.name == param}
+        return true if param_in_docstring?(param, pin.docstring)
         matches = api_map.get_methods(pin.namespace, scope: pin.scope, visibility: [:public, :private, :protected]).select{|p| p.name == pin.name}
+        matches.shift
         matches.each do |m|
-          return true if m.typed_parameters.any?{|p| p.name == param}
+          next unless pin.params == m.params
+          return true if param_in_docstring?(param, m.docstring)
         end
         false
+      end
+
+      def param_in_docstring? param, docstring
+        return false if docstring.nil?
+        tags = docstring.tags(:param)
+        tags.any?{|t| t.name == param}
       end
 
       # @param position [Solargraph::Source::Position]

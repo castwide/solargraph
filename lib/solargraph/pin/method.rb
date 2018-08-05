@@ -63,10 +63,6 @@ module Solargraph
         @documentation
       end
 
-      def typed_parameters
-        @typed_parameters ||= []
-      end
-
       # @todo This method was temporarily migrated directly from Suggestion
       # @return [Array<String>]
       # def params
