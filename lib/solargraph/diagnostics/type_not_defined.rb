@@ -47,7 +47,7 @@ module Solargraph
         result = []
         unless pin.docstring.nil?
           pin.docstring.tags(:param).each do |par|
-            next unless pin.parameters.include?(par.name)
+            next if pin.parameters.include?(par.name)
             result.push(
               range: extract_first_line(pin, source),
               severity: Diagnostics::Severities::WARNING,
