@@ -18,9 +18,6 @@ module Solargraph
       # @return [YARD::Docstring]
       attr_reader :docstring
 
-      # @return [String]
-      attr_reader :return_type
-
       # @return [Integer]
       attr_reader :kind
 
