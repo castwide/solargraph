@@ -177,6 +177,7 @@ module Solargraph
       def resolve_pin_type pin, locals
         return pin.return_type unless pin.return_type.nil?
         return resolve_block_parameter(pin, locals) if pin.kind == Pin::BLOCK_PARAMETER
+        return resolve_method_parameter(pin) if pin.is_a?(Pin::MethodParameter)
         return resolve_variable(pin, locals) if pin.variable?
         nil
       end
@@ -205,6 +206,18 @@ module Solargraph
               return yps[pin.index].types[0]
             end
           end
+        end
+        nil
+      end
+
+      def resolve_method_parameter pin
+        matches = api_map.get_methods(pin.namespace, scope: pin.scope, visibility: [:public, :private, :protected]).select{|p| p.name == pin.context.name}
+        matches.each do |m|
+          next unless pin.context.parameters == m.parameters
+          next if m.docstring.nil?
+          tag = m.docstring.tags(:param).select{|t| t.name == pin.name}.first
+          next if tag.nil? or tag.types.nil?
+          return tag.types[0]
         end
         nil
       end

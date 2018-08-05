@@ -7,16 +7,16 @@ module Solargraph
       def diagnose source, api_map
         result = []
         source.pins.select{|p| p.kind == Pin::METHOD or p.kind == Pin::ATTRIBUTE}.each do |pin|
-          result.concat check_return_type(pin, api_map)
-          result.concat check_param_types(pin, api_map)
-          result.concat check_param_tags(pin, api_map)
+          result.concat check_return_type(pin, api_map, source)
+          result.concat check_param_types(pin, api_map, source)
+          result.concat check_param_tags(pin, api_map, source)
         end
         result
       end
 
       private
 
-      def check_return_type pin, api_map
+      def check_return_type pin, api_map, source
         result = []
         unless defined_return_type?(pin, api_map)
           result.push(
@@ -29,7 +29,7 @@ module Solargraph
         result
       end
 
-      def check_param_types pin, api_map
+      def check_param_types pin, api_map, source
         result = []
         pin.parameters.each do |par|
           next if defined_param_type?(pin, par, api_map)
@@ -43,7 +43,7 @@ module Solargraph
         result
       end
 
-      def check_param_tags pin, api_map
+      def check_param_tags pin, api_map, source
         result = []
         unless pin.docstring.nil?
           pin.docstring.tags(:param).each do |par|
@@ -84,7 +84,7 @@ module Solargraph
         matches = api_map.get_methods(pin.namespace, scope: pin.scope, visibility: [:public, :private, :protected]).select{|p| p.name == pin.name}
         matches.shift
         matches.each do |m|
-          next unless pin.params == m.params
+          next unless pin.parameters == m.parameters
           return true if param_in_docstring?(param, m.docstring)
         end
         false
