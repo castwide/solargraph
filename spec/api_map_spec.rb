@@ -288,7 +288,7 @@ describe Solargraph::ApiMap do
     api_map = Solargraph::ApiMap.new
     api_map.virtualize_string(code, 'file.rb')
     meth = api_map.get_methods('Foo').select{|s| s.name == 'bar'}.first
-    expect(meth.params).to eq(['baz [String]'])
+    expect(meth.parameters).to eq(['baz'])
   end
 
   it "includes restarg in suggestions" do

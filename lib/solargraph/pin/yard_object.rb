@@ -100,14 +100,14 @@ module Solargraph
       def get_method_args
         return [] unless code_object.kind_of?(YARD::CodeObjects::MethodObject)
         args = []
-        code_object.parameters.each { |a|
+        code_object.parameters.each do |a|
           p = a[0]
           unless a[1].nil?
             p += ' =' unless p.end_with?(':')
             p += " #{a[1]}"
           end
           args.push p
-        }
+        end
         args
       end
     end
