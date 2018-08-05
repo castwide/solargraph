@@ -521,7 +521,6 @@ module Solargraph
 
       def start_diagnostics_thread
         Thread.new do
-          diagnoser = Diagnostics::Rubocop.new
           until stopped?
             sleep 0.1
             if !options['diagnostics']
