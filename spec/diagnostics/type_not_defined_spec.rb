@@ -95,4 +95,17 @@ describe Solargraph::Diagnostics::TypeNotDefined do
     result = Solargraph::Diagnostics::TypeNotDefined.new.diagnose(source, api_map)
     expect(result).to be_empty
   end
+
+  it "works with optional and keyword arguments" do
+    source = Solargraph::Source.load_string(%(
+      # @param bar [String]
+      # @param baz [String]
+      # @return [String]
+      def foo(bar = 'bar', baz: 'baz')
+      end
+    ))
+    api_map.virtualize source
+    result = Solargraph::Diagnostics::TypeNotDefined.new.diagnose(source, api_map)
+    expect(result).to be_empty
+  end
 end
