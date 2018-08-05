@@ -291,7 +291,9 @@ module Solargraph
                     context = get_named_path_pin(here)
                     block = get_block_pin(here)
                     presence = Source::Range.new(here, block.location.range.ending)
-                    @locals.push Solargraph::Pin::MethodParameter.new(get_node_location(u), fqn, u.children[0].to_s, docstring_for(c), resolve_node_signature(u.children[1]), infer_literal_node_type(u.children[1]), context, block, presence)
+                    param = Solargraph::Pin::MethodParameter.new(get_node_location(u), fqn, u.children[0].to_s, docstring_for(c), resolve_node_signature(u.children[1]), infer_literal_node_type(u.children[1]), context, block, presence)
+                    @locals.push param
+                    context.typed_parameters.push param unless param.return_type.nil?
                   end
                 end
               elsif c.type == :block
