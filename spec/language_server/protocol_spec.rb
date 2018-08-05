@@ -386,6 +386,12 @@ describe Protocol do
     expect(response['error']).not_to be_nil
   end
 
+  it "handles shutdown" do
+    @protocol.request 'shutdown', {}
+    response = @protocol.response
+    expect(response['error']).to be_nil
+  end
+
   it "handles exit" do
     @protocol.request 'exit', {}
     response = @protocol.response

@@ -12,6 +12,10 @@ module Solargraph
         @parameters = args
       end
 
+      def parameter_names
+        @parameter_names ||= parameters.map{|p| p.split(/[ =:]/).first}
+      end
+
       def kind
         Solargraph::Pin::METHOD
       end
@@ -53,25 +57,6 @@ module Solargraph
           end
         end
         @documentation
-      end
-
-      # @todo This method was temporarily migrated directly from Suggestion
-      # @return [Array<String>]
-      def params
-        if @params.nil?
-          @params = []
-          return @params if docstring.nil?
-          param_tags = docstring.tags(:param)
-          unless param_tags.empty?
-            param_tags.each do |t|
-              txt = t.name.to_s
-              txt += " [#{t.types.join(',')}]" unless t.types.nil? or t.types.empty?
-              txt += " #{t.text}" unless t.text.nil? or t.text.empty?
-              @params.push txt
-            end
-          end
-        end
-        @params
       end
 
       private

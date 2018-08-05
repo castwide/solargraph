@@ -288,7 +288,7 @@ describe Solargraph::ApiMap do
     api_map = Solargraph::ApiMap.new
     api_map.virtualize_string(code, 'file.rb')
     meth = api_map.get_methods('Foo').select{|s| s.name == 'bar'}.first
-    expect(meth.params).to eq(['baz [String]'])
+    expect(meth.parameters).to eq(['baz'])
   end
 
   it "includes restarg in suggestions" do
@@ -1110,5 +1110,23 @@ describe Solargraph::ApiMap do
     cmp = api_map.complete(fragment)
     names = cmp.pins.map(&:name)
     expect(names).to include('vocalize')
+  end
+
+  it "detects multiple duck type methods" do
+    api_map = Solargraph::ApiMap.new
+    source = Solargraph::Source.new(%(
+      class Foobar
+        # @param sound [#vocalize, #emit]
+        def quack sound
+          sound._
+        end
+      end
+    ))
+    api_map.virtualize source
+    fragment = source.fragment_at(4, 16)
+    cmp = api_map.complete(fragment)
+    names = cmp.pins.map(&:name)
+    expect(names).to include('vocalize')
+    expect(names).to include('emit')
   end
 end

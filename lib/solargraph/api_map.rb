@@ -326,7 +326,10 @@ module Solargraph
           unless pins.empty?
             pin = pins.first
             if pin.return_complex_types.any? and pin.return_complex_types.first.duck_type?
-              result.push Pin::DuckMethod.new(pin.location, pin.return_type[1..-1])
+              pin.return_complex_types.each do |t|
+                next unless t.duck_type?
+                result.push Pin::DuckMethod.new(pin.location, t.tag[1..-1])
+              end
               result.concat(get_methods('Object', scope: :instance))
             end
             if result.empty?
