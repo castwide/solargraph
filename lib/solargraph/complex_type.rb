@@ -26,7 +26,7 @@ module Solargraph
     end
 
     def nil_type?
-      @nil_type ||= name.casecmp?('nil')
+      @nil_type ||= (name.downcase == 'nil')
     end
 
     # @return [String]
