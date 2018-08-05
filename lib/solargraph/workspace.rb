@@ -11,7 +11,7 @@ module Solargraph
 
     MAX_WORKSPACE_SIZE = 5000
 
-    # @param directory [String]
+    # @param directory [String, nil]
     def initialize directory, config = nil
       # @todo Convert to an absolute path?
       @directory = directory

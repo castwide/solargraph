@@ -388,7 +388,7 @@ module Solargraph
     end
 
     # @param obj [YARD::CodeObjects::Base]
-    # @return [Solargraph::Source::Location]
+    # @return [Solargraph::Source::Location, nil]
     def object_location obj
       return nil if obj.file.nil? or obj.line.nil?
       @gem_paths.values.each do |path|

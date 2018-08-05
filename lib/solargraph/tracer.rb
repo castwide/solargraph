@@ -136,8 +136,7 @@ module Solargraph
           log_cache.push Issue.new(:warning, "Unnamed parameter(s) in #{pin.path}", pin.name, pin, backtrace) unless tp.binding.local_variables.empty?
           next
         end
-        tag = param.types.first
-        if tag.nil?
+        if param.types.empty?
           log_cache.push Issue.new(:warning, "Parameter `#{param.name}` does not have a type", pin.name, pin, backtrace)
           next
         end
@@ -146,11 +145,20 @@ module Solargraph
           next
         end
         lvar = tp.binding.local_variable_get(param.name.to_sym)
-        type, scope = extract_namespace_and_scope(tag)
-        expected = nil
-        expected = 'Boolean' if type == 'Boolean'
-        expected = @api_map.qualify(type, pin.namespace) if expected.nil?
-        log_cache.push Issue.new(:error, "`#{pin.path}` parameter `#{param.name}` expected #{expected} but received #{lvar.class.to_s}", pin.name, pin, backtrace) unless satisfied?(expected, lvar)
+        types = Solargraph::ComplexType.parse(*param.types)
+        valid = false
+        types.each do |ct|
+          ns = ct.namespace
+          expected = nil
+          expected = 'Boolean' if ns == 'Boolean'
+          expected = 'NilClass' if ns.downcase == 'nil'
+          expected = @api_map.qualify(ns, pin.namespace) if expected.nil?
+          if satisfied?(expected, lvar)
+            valid = true
+            break
+          end
+        end
+        log_cache.push Issue.new(:error, "`#{pin.path}` parameter `#{param.name}` expected [#{types.map(&:tag).join(', ')}] but received #{lvar.class.to_s}", pin.name, pin, backtrace) unless valid
       end
     end
 
@@ -160,11 +168,19 @@ module Solargraph
         # Issue a warning for undefined return types unless the value is nil
         log_cache.push Issue.new(:warning, "`#{pin.path}` does not have a return type and returned #{value.class.to_s}", pin.name, pin, backtrace) unless value.nil?
       else
-        type, scope = extract_namespace_and_scope(pin.return_type)
-        expected = nil
-        expected = 'Boolean' if type == 'Boolean'
-        expected = @api_map.qualify(type, pin.namespace) if expected.nil?
-        log_cache.push Issue.new(:error, "`#{pin.path}` should return #{pin.return_type} but returned #{value.class.to_s}", pin.name, pin, backtrace) unless satisfied?(expected, value)
+        valid = false
+        pin.return_complex_types.each do |ct|
+          ns = ct.namespace
+          expected = nil
+          expected = 'Boolean' if ns == 'Boolean'
+          expected = 'NilClass' if ns.downcase == 'nil'
+          expected = @api_map.qualify(ns, pin.namespace) if expected.nil?
+          if satisfied?(expected, value)
+            valid = true
+            break
+          end
+        end
+        log_cache.push Issue.new(:error, "`#{pin.path}` should return [#{pin.return_complex_types.map(&:tag).join(', ')}] but returned #{value.class.to_s}", pin.name, pin, backtrace) unless valid
       end
     end
 
