@@ -1,3 +1,5 @@
+require 'tempfile'
+
 module Solargraph
   class Source
     # The Mapper generates pins and other data for Sources.
@@ -364,7 +366,8 @@ module Solargraph
               ctxt += "#{p[num..-1]}\n"
             end
           }
-          parse = YARD::Docstring.parser.parse(ctxt)
+          parse = nil
+          suppress_stdout { parse = YARD::Docstring.parser.parse(ctxt) }
           unless parse.directives.empty?
             @directives[k] ||= []
             @directives[k].concat parse.directives
@@ -383,7 +386,8 @@ module Solargraph
         @directives.each_pair do |k, v|
           v.each do |d|
             ns = namespace_for(k.node)
-            docstring = YARD::Docstring.parser.parse(d.tag.text).to_docstring
+            docstring = nil
+            suppress_stdout { docstring = YARD::Docstring.parser.parse(d.tag.text).to_docstring }
             if d.tag.tag_name == 'attribute'
               t = (d.tag.types.nil? || d.tag.types.empty?) ? nil : d.tag.types.flatten.join('')
               if t.nil? or t.include?('r')
@@ -448,6 +452,26 @@ module Solargraph
           end
         }
         args
+      end
+
+      # Suppress writing data to STDOUT during execution of a block.
+      #
+      # @example
+      #   suppress_stdout { puts 'This will not get printed' }
+      #
+      def suppress_stdout
+        original_stdout = STDOUT.clone
+        # @todo It would be better to redirect to /dev/null or StringIO if
+        #   there's a cross-platform solution for it.
+        tempfile = Tempfile.new
+        STDOUT.reopen tempfile
+        begin
+          yield
+        ensure
+          STDOUT.reopen original_stdout
+          tempfile.close
+          tempfile.unlink
+        end
       end
     end
   end
