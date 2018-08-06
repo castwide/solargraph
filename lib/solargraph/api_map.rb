@@ -123,13 +123,15 @@ module Solargraph
       virtualize source
     end
 
-    # Refresh the ApiMap.
+    # Refresh the ApiMap. This method checks for pending changes before
+    # performing the refresh unless the `force` parameter is true.
     #
     # @param force [Boolean] Perform a refresh even if the map is not "stale."
+    # @return [Boolean] True if a refresh was performed.
     def refresh force = false
-      return unless force or changed?
+      return false unless force or changed?
       if force
-        @api_map = ApiMap::Store.new(@sources)
+        refresh_store_and_maps
       else
         store.remove *(current_workspace_sources.reject{ |s| workspace.sources.include?(s) })
         @sources = workspace.sources
@@ -137,6 +139,7 @@ module Solargraph
         store.update *(@sources.select{ |s| @stime.nil? or s.stime > @stime })
       end
       @stime = Time.new
+      true
     end
 
     # True if a workspace file has been created, modified, or deleted since
