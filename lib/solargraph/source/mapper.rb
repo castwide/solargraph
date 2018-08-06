@@ -463,7 +463,7 @@ module Solargraph
         original_stdout = STDOUT.clone
         # @todo It would be better to redirect to /dev/null or StringIO if
         #   there's a cross-platform solution for it.
-        tempfile = Tempfile.new
+        tempfile = Tempfile.new('tmp')
         STDOUT.reopen tempfile
         begin
           yield
