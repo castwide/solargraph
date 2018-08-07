@@ -339,7 +339,8 @@ module Solargraph
               pins.each do |pin|
                 type = pin.return_type
                 unless type.nil? or type == 'void'
-                  namespace, scope = extract_namespace_and_scope(type)
+                  docns, scope = extract_namespace_and_scope(type)
+                  namespace = qualify(docns, pin.namespace)
                   result.concat get_methods(namespace, scope: scope)
                   break
                 end
