@@ -371,8 +371,7 @@ module Solargraph
               ctxt += "#{p[num..-1]}\n"
             end
           }
-          parse = nil
-          redirect_stdout { parse = YARD::Docstring.parser.parse(ctxt) }
+          parse = YARD::Docstring.parser.parse(ctxt)
           unless parse.directives.empty?
             @directives[k] ||= []
             @directives[k].concat parse.directives
@@ -394,8 +393,7 @@ module Solargraph
         @directives.each_pair do |k, v|
           v.each do |d|
             ns = namespace_for(k.node)
-            docstring = nil
-            redirect_stdout { docstring = YARD::Docstring.parser.parse(d.tag.text).to_docstring }
+            docstring = YARD::Docstring.parser.parse(d.tag.text).to_docstring
             if d.tag.tag_name == 'attribute'
               t = (d.tag.types.nil? || d.tag.types.empty?) ? nil : d.tag.types.flatten.join('')
               if t.nil? or t.include?('r')
@@ -460,23 +458,6 @@ module Solargraph
           end
         }
         args
-      end
-
-      # Redirect STDOUT during execution of a block.
-      #
-      # @example
-      #   redirect_stdout { puts 'This will go to STDERR instead' }
-      #
-      # @param ios [IO] The IO stream where STDOUT should be redirected
-      #   (STDERR by default)
-      def redirect_stdout ios = STDERR
-        original_stdout = STDOUT.clone
-        STDOUT.reopen ios
-        begin
-          yield
-        ensure
-          STDOUT.reopen original_stdout
-        end
       end
     end
   end
