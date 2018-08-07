@@ -303,6 +303,7 @@ module Solargraph
       end
     end
 
+    # @return [void]
     def parse
       node, comments = inner_parse(@fixed, filename)
       @node = node

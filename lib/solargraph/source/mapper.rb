@@ -59,10 +59,12 @@ module Solargraph
         frag.strip.gsub(/,$/, '')
       end
 
+      # @return [String]
       def filename
         @filename
       end
 
+      # @return [Array<Solargraph::Pin::Base>]
       def pins
         @pins ||= []
       end
@@ -332,6 +334,8 @@ module Solargraph
         nil
       end
 
+      # @param node [Parser::AST::Node]
+      # @return [Solargraph::Source::Location]
       def get_node_location(node)
         if node.nil?
           st = Position.new(0, 0)
@@ -342,8 +346,11 @@ module Solargraph
         end
         range = Range.new(st, en)
         Location.new(filename, range)
-      end  
+      end
 
+      # @param node [Parser::AST::Node]
+      # @param comments [Array]
+      # @return [Hash]
       def associate_comments node, comments
         return nil if comments.nil?
         comment_hash = Parser::Source::Comment.associate_locations(node, comments)
@@ -377,11 +384,14 @@ module Solargraph
         yard_hash
       end
 
+      # @param node [Parser::AST::Node]
+      # @return [Solargraph::Pin::Namespace]
       def namespace_for(node)
         position = Source::Position.new(node.loc.line - 1, node.loc.column)
         @pins.select{|pin| pin.kind == Pin::NAMESPACE and pin.location.range.contain?(position)}.last
       end
 
+      # @return [void]
       def process_directives
         @directives.each_pair do |k, v|
           v.each do |d|

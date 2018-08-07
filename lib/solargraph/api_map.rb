@@ -338,7 +338,7 @@ module Solargraph
             if result.empty?
               pins.each do |pin|
                 type = pin.return_type
-                unless type.nil?
+                unless type.nil? or type == 'void'
                   namespace, scope = extract_namespace_and_scope(type)
                   result.concat get_methods(namespace, scope: scope)
                   break
