@@ -367,7 +367,7 @@ module Solargraph
             end
           }
           parse = nil
-          suppress_stdout { parse = YARD::Docstring.parser.parse(ctxt) }
+          redirect_stdout { parse = YARD::Docstring.parser.parse(ctxt) }
           unless parse.directives.empty?
             @directives[k] ||= []
             @directives[k].concat parse.directives
@@ -387,7 +387,7 @@ module Solargraph
           v.each do |d|
             ns = namespace_for(k.node)
             docstring = nil
-            suppress_stdout { docstring = YARD::Docstring.parser.parse(d.tag.text).to_docstring }
+            redirect_stdout { docstring = YARD::Docstring.parser.parse(d.tag.text).to_docstring }
             if d.tag.tag_name == 'attribute'
               t = (d.tag.types.nil? || d.tag.types.empty?) ? nil : d.tag.types.flatten.join('')
               if t.nil? or t.include?('r')
@@ -454,23 +454,20 @@ module Solargraph
         args
       end
 
-      # Suppress writing data to STDOUT during execution of a block.
+      # Redirect STDOUT during execution of a block.
       #
       # @example
-      #   suppress_stdout { puts 'This will not get printed' }
+      #   redirect_stdout { puts 'This will go to STDERR instead' }
       #
-      def suppress_stdout
+      # @param ios [IO] The IO stream where STDOUT should be redirected
+      #   (STDERR by default)
+      def redirect_stdout ios = STDERR
         original_stdout = STDOUT.clone
-        # @todo It would be better to redirect to /dev/null or StringIO if
-        #   there's a cross-platform solution for it.
-        tempfile = Tempfile.new('tmp')
-        STDOUT.reopen tempfile
+        STDOUT.reopen ios
         begin
           yield
         ensure
           STDOUT.reopen original_stdout
-          tempfile.close
-          tempfile.unlink
         end
       end
     end

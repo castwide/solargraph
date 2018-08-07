@@ -34,6 +34,7 @@ module Solargraph
 
     attr_reader :path_macros
 
+    # @return [Integer]
     attr_accessor :version
 
     # Get the time of the last synchronization.
@@ -207,6 +208,8 @@ module Solargraph
     end
 
     # @param updater [Source::Updater]
+    # @param reparse [Boolean]
+    # @return [void]
     def synchronize updater, reparse = true
       raise 'Invalid synchronization' unless updater.filename == filename
       original_code = @code
@@ -244,6 +247,8 @@ module Solargraph
       }
     end
 
+    # @param location [Solargraph::Source::Location]
+    # @return [Solargraph::Pin::Base]
     def locate_pin location
       return nil unless location.start_with?("#{filename}:")
       @all_pins.select{|pin| pin.location == location}.first
@@ -256,6 +261,7 @@ module Solargraph
       Fragment.new(self, line, column)
     end
 
+    # @return [Boolean]
     def parsed?
       @parsed
     end
