@@ -100,7 +100,7 @@ module Solargraph
       #
       # @return [String]
       def return_scope
-        return nil if complex_types.empty?
+        return nil if return_complex_types.empty?
         @return_scope ||= return_complex_types.first.scope
       end
 
