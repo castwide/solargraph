@@ -1,5 +1,3 @@
-require 'tempfile'
-
 module Solargraph
   class Source
     # The Mapper generates pins and other data for Sources.
