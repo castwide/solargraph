@@ -34,6 +34,7 @@ module Solargraph
 
     attr_reader :path_macros
 
+    # @return [Integer]
     attr_accessor :version
 
     # Get the time of the last synchronization.
@@ -207,7 +208,9 @@ module Solargraph
     end
 
     # @param updater [Source::Updater]
-    def synchronize updater
+    # @param reparse [Boolean]
+    # @return [void]
+    def synchronize updater, reparse = true
       raise 'Invalid synchronization' unless updater.filename == filename
       original_code = @code
       original_fixed = @fixed
@@ -215,6 +218,7 @@ module Solargraph
       @fixed = updater.write(original_code, true)
       @version = updater.version
       return if @code == original_code
+      return unless reparse
       begin
         parse
         @fixed = @code
@@ -243,16 +247,21 @@ module Solargraph
       }
     end
 
+    # @param location [Solargraph::Source::Location]
+    # @return [Solargraph::Pin::Base]
     def locate_pin location
       return nil unless location.start_with?("#{filename}:")
       @all_pins.select{|pin| pin.location == location}.first
     end
 
+    # @param line [Integer] A zero-based line number
+    # @param column [Integer] A zero-based column number
     # @return [Solargraph::Source::Fragment]
     def fragment_at line, column
       Fragment.new(self, line, column)
     end
 
+    # @return [Boolean]
     def parsed?
       @parsed
     end
@@ -294,6 +303,7 @@ module Solargraph
       end
     end
 
+    # @return [void]
     def parse
       node, comments = inner_parse(@fixed, filename)
       @node = node
@@ -321,8 +331,28 @@ module Solargraph
     end
 
     def process_parsed node, comments
-      @pins, @locals, @requires, @symbols, @path_macros, @domains = Mapper.map filename, code, node, comments
-      @stime = Time.now
+      new_map_data = Mapper.map(filename, code, node, comments)
+      synchronize_mapped *new_map_data
+    end
+
+    def synchronize_mapped new_pins, new_locals, new_requires, new_symbols, new_path_macros, new_domains
+      resync = (
+        @pins.nil? or
+        @locals.nil? or
+        @pins[1..-1] != new_pins[1..-1] or
+        @locals != new_locals
+        # @requires != new_requires or
+        # @path_macros != new_path_macros or
+        # @new_domains != new_domains
+      )
+      @pins = new_pins
+      @locals = new_locals
+      @requires = new_requires
+      @symbols = new_symbols
+      @path_macros = new_path_macros
+      @domains = new_domains
+      # Check for bare minimum change required to synchronize workspaces, etc.
+      @stime = Time.now if resync
     end
 
     class << self

@@ -69,6 +69,14 @@ module Solargraph
         namespace
       end
 
+      def == other
+        return false unless self.class == other.class
+        location == other.location and
+          namespace == other.namespace and
+          name == other.name and
+          ( (docstring.nil? and other.docstring.nil?) or (docstring == other.docstring and docstring.all == other.docstring.all) )
+      end
+
       # The first return type associated with the pin.
       # Use return_complex_types for an array of all return types.
       #

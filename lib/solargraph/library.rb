@@ -240,9 +240,9 @@ module Solargraph
     end
 
     # @param updater [Solargraph::Source::Updater]
-    def synchronize updater
+    def synchronize updater, reparse = true
       source = read(updater.filename)
-      source.synchronize updater
+      source.synchronize updater, reparse
     end
 
     # Get the current text of a file in the library.

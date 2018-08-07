@@ -13,6 +13,11 @@ module Solargraph
         @filename = filename
         @range = range
       end
+
+      def == other
+        return false unless other.is_a?(Location)
+        filename == other.filename and range == other.range
+      end
     end
   end
 end

@@ -57,10 +57,12 @@ module Solargraph
         frag.strip.gsub(/,$/, '')
       end
 
+      # @return [String]
       def filename
         @filename
       end
 
+      # @return [Array<Solargraph::Pin::Base>]
       def pins
         @pins ||= []
       end
@@ -330,6 +332,8 @@ module Solargraph
         nil
       end
 
+      # @param node [Parser::AST::Node]
+      # @return [Solargraph::Source::Location]
       def get_node_location(node)
         if node.nil?
           st = Position.new(0, 0)
@@ -340,8 +344,11 @@ module Solargraph
         end
         range = Range.new(st, en)
         Location.new(filename, range)
-      end  
+      end
 
+      # @param node [Parser::AST::Node]
+      # @param comments [Array]
+      # @return [Hash]
       def associate_comments node, comments
         return nil if comments.nil?
         comment_hash = Parser::Source::Comment.associate_locations(node, comments)
@@ -364,7 +371,8 @@ module Solargraph
               ctxt += "#{p[num..-1]}\n"
             end
           }
-          parse = YARD::Docstring.parser.parse(ctxt)
+          parse = nil
+          redirect_stdout { parse = YARD::Docstring.parser.parse(ctxt) }
           unless parse.directives.empty?
             @directives[k] ||= []
             @directives[k].concat parse.directives
@@ -374,16 +382,20 @@ module Solargraph
         yard_hash
       end
 
+      # @param node [Parser::AST::Node]
+      # @return [Solargraph::Pin::Namespace]
       def namespace_for(node)
         position = Source::Position.new(node.loc.line - 1, node.loc.column)
         @pins.select{|pin| pin.kind == Pin::NAMESPACE and pin.location.range.contain?(position)}.last
       end
 
+      # @return [void]
       def process_directives
         @directives.each_pair do |k, v|
           v.each do |d|
             ns = namespace_for(k.node)
-            docstring = YARD::Docstring.parser.parse(d.tag.text).to_docstring
+            docstring = nil
+            redirect_stdout { docstring = YARD::Docstring.parser.parse(d.tag.text).to_docstring }
             if d.tag.tag_name == 'attribute'
               t = (d.tag.types.nil? || d.tag.types.empty?) ? nil : d.tag.types.flatten.join('')
               if t.nil? or t.include?('r')
@@ -448,6 +460,23 @@ module Solargraph
           end
         }
         args
+      end
+
+      # Redirect STDOUT during execution of a block.
+      #
+      # @example
+      #   redirect_stdout { puts 'This will go to STDERR instead' }
+      #
+      # @param ios [IO] The IO stream where STDOUT should be redirected
+      #   (STDERR by default)
+      def redirect_stdout ios = STDERR
+        original_stdout = STDOUT.clone
+        STDOUT.reopen ios
+        begin
+          yield
+        ensure
+          STDOUT.reopen original_stdout
+        end
       end
     end
   end
