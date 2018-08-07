@@ -40,7 +40,7 @@ module Solargraph
                 items.push pin.completion_item.merge({
                   textEdit: {
                     range: completion.range.to_hash,
-                    newText: pin.name
+                    newText: pin.name.sub(/=$/, ' = ')
                   },
                   sortText: "#{pin.name}#{idx.to_s.rjust(4, '0')}"
                 })
