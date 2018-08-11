@@ -50,7 +50,7 @@ describe Solargraph::Workspace do
   end
 
   it "raises an exception for workspace size limits" do
-    config = double(:config, calculated: Array.new(Solargraph::Workspace::MAX_WORKSPACE_SIZE + 1), max_files: Solargraph::Workspace::MAX_WORKSPACE_SIZE)
+    config = double(:config, calculated: Array.new(Solargraph::Workspace::Config::MAX_FILES + 1), max_files: Solargraph::Workspace::Config::MAX_FILES)
 
     expect {
       Solargraph::Workspace.new('.', config)
@@ -58,7 +58,7 @@ describe Solargraph::Workspace do
   end
 
   it "allows for unlimited files in config" do
-    config = double(:config, calculated: Array.new(Solargraph::Workspace::MAX_WORKSPACE_SIZE + 1), max_files: 0)
+    config = double(:config, calculated: Array.new(Solargraph::Workspace::Config::MAX_FILES + 1), max_files: 0)
     # @todo Creating the workspace raises a TypeError because the filenames are nil
     expect {
       Solargraph::Workspace.new('.', config)

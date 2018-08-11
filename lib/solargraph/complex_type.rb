@@ -65,7 +65,7 @@ module Solargraph
               next if point_stack == 1
             elsif char == '>'
               point_stack -= 1
-              raise 'Invalid close in type' if point_stack < 0
+              raise "Invalid close in type #{type_string}" if point_stack < 0
             elsif char == ',' and point_stack == 0
               types.push ComplexType.new base.strip, subtype_string.strip
               base = ''

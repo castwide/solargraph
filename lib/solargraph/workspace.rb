@@ -9,8 +9,6 @@ module Solargraph
     # @return [String]
     attr_reader :directory
 
-    MAX_WORKSPACE_SIZE = 5000
-
     # @param directory [String]
     def initialize directory, config = nil
       # @todo Convert to an absolute path?
@@ -20,6 +18,7 @@ module Solargraph
       load_sources
     end
 
+    # @param reload [Boolean] Force a reload of the config file
     # @return [Solargraph::Workspace::Config]
     def config reload = false
       @config = Solargraph::Workspace::Config.new(directory) if @config.nil? or reload
@@ -85,15 +84,25 @@ module Solargraph
       source_hash[filename]
     end
 
+    # The time of the last workspace synchronization.
+    #
+    # @return [Time]
     def stime
       return @stime if source_hash.empty?
       @stime = source_hash.values.sort{|a, b| a.stime <=> b.stime}.last.stime
     end
 
+    # The require paths associated with the workspace.
+    #
+    # @return [Array<String>]
     def require_paths
       @require_paths ||= generate_require_paths
     end
 
+    # True if the path resolves to a file in the workspace's require paths.
+    #
+    # @param path [String]
+    # @return [Boolean]
     def would_require? path
       require_paths.each do |rp|
         return true if File.exist?(File.join(rp, "#{path}.rb"))
