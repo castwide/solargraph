@@ -1,5 +1,7 @@
-require 'open3'
-require 'shellwords'
+# require 'open3'
+# require 'shellwords'
+require 'rubocop'
+require 'stringio'
 
 module Solargraph
   module Diagnostics
@@ -15,43 +17,41 @@ module Solargraph
         'fatal' => Severities::ERROR
       }
 
-      # The rubocop command
-      #
-      # @return [String]
-      attr_reader :command
-
-      def initialize(command = 'rubocop')
-        @command = command
-      end
-
       # @param source [Solargraph::Source]
       # @param api_map [Solargraph::ApiMap]
       # @return [Array<Hash>]
       def diagnose source, api_map
         begin
-          text = source.code
-          filename = source.filename
-          raise DiagnosticsError, 'No command specified' if command.nil? or command.empty?
-          cmd = "#{Shellwords.escape(command)} -f j"
+          args = ['-f', 'j']
           unless api_map.workspace.nil? or api_map.workspace.directory.nil?
             rc = File.join(api_map.workspace.directory, '.rubocop.yml')
-            cmd += " -c #{Shellwords.escape(fix_drive_letter(rc))}" if File.file?(rc)
+            args.push('-c', fix_drive_letter(rc)) if File.file?(rc)
           end
-          cmd += " -s #{Shellwords.escape(fix_drive_letter(filename))}"
-          o, e, s = Open3.capture3(cmd, stdin_data: text)
-          STDERR.puts e unless e.empty?
-          raise DiagnosticsError, "Command '#{command}' is not available (gem exception)" if e.include?('Gem::Exception')
-          raise DiagnosticsError, "RuboCop returned empty data" if o.empty?
-          make_array JSON.parse(o)
+          args.push source.filename
+          options, paths = RuboCop::Options.new.parse(args)
+          options[:stdin] = source.code
+          runner = RuboCop::Runner.new(options, RuboCop::ConfigStore.new)
+          result = redirect_stdout{ runner.run(paths) }
+          make_array JSON.parse(result)
         rescue JSON::ParserError
           raise DiagnosticsError, 'RuboCop returned invalid data'
-        rescue Errno::ENOENT
-          raise DiagnosticsError, "Command '#{command}' is not available"
         end
       end
 
       private
 
+      # @todo This is a smelly way to redirect output, but the RuboCop specs do the
+      #   same thing.
+      # @return [String]
+      def redirect_stdout
+        redir = StringIO.new
+        $stdout = redir
+        yield if block_given?
+        $stdout = STDOUT
+        redir.string
+      end
+
+      # @return [Array<Hash>]
       def make_array resp
         diagnostics = []
         resp['files'].each do |file|

@@ -17,11 +17,4 @@ describe Solargraph::Diagnostics::Rubocop do
     result = rubocop.diagnose(@source, @api_map)
     expect(result).to be_a(Array)
   end
-
-  it "raises a DiagnosticsError without a valid executable" do
-    rubocop = Solargraph::Diagnostics::Rubocop.new('not_a_valid_executable')
-    expect {
-      rubocop.diagnose(@source, @api_map)
-    }.to raise_error(Solargraph::DiagnosticsError)
-  end
 end
