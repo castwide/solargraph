@@ -58,6 +58,26 @@ describe Solargraph::LanguageServer::Host do
     expect(host.cancel?(1)).to be(true)
   end
 
+  it "runs diagnostics on opened files" do
+    Dir.mktmpdir do |dir|
+      host = Solargraph::LanguageServer::Host.new
+      host.configure({ 'diagnostics' => true })
+      file = File.join(dir, 'test.rb')
+      File.write(file, "foo = 'foo'")
+      host.prepare dir
+      uri = Solargraph::LanguageServer::UriHelpers.file_to_uri(file)
+      host.open(file, File.read(file), 1)
+      buffer = host.flush
+      times = 0
+      while buffer.empty? and times < 5
+        sleep 1
+        times += 1
+        buffer = host.flush
+      end
+      expect(buffer).to include('textDocument/publishDiagnostics')
+    end
+  end
+
   it "stops" do
     host = Solargraph::LanguageServer::Host.new
     host.stop
