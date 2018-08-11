@@ -69,7 +69,9 @@ describe Solargraph::LanguageServer::Host do
       host.open(file, File.read(file), 1)
       buffer = host.flush
       times = 0
-      while buffer.empty? and times < 5
+      # @todo Weak timeout for waiting until the diagnostics thread
+      #   sends a notification
+      while buffer.empty? and times < 10
         sleep 1
         times += 1
         buffer = host.flush
