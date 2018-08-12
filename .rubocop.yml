@@ -1,0 +1,4 @@
+Layout/EndOfLine:
+  EnforcedStyle: lf
+Style/MethodDefParentheses:
+  Enabled: false
