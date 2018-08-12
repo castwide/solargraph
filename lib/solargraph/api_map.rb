@@ -358,7 +358,10 @@ module Solargraph
           pins = probe.infer_signature_pins(fragment.base, fragment.named_path, fragment.locals)
           unless pins.empty?
             pin = pins.first
-            if pin.return_complex_types.any? and pin.return_complex_types.first.duck_type?
+            if pin.variable? and pin.return_type.nil? and !pin.signature.nil?
+              type = probe.infer_signature_type(pin.signature, pin.context, fragment.locals)
+              result.concat(get_methods(type)) unless type.nil?
+            elsif pin.return_complex_types.any? and pin.return_complex_types.first.duck_type?
               pin.return_complex_types.each do |t|
                 next unless t.duck_type?
                 result.push Pin::DuckMethod.new(pin.location, t.tag[1..-1])

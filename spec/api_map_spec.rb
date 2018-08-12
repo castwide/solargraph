@@ -1129,4 +1129,18 @@ describe Solargraph::ApiMap do
     expect(names).to include('vocalize')
     expect(names).to include('emit')
   end
+
+  it "detects completion items for instance variables" do
+    code = %(
+      @thing = String.new
+      @thing._
+    )
+    api_map = Solargraph::ApiMap.new
+    source = Solargraph::Source.new(code)
+    api_map.virtualize source
+    fragment = source.fragment_at(2, 13)
+    cmp = api_map.complete(fragment)
+    names = cmp.pins.map(&:name)
+    expect(names).to include('upcase')
+  end
 end
