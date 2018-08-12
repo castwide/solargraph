@@ -227,6 +227,9 @@ module Solargraph
     end
 
     # @deprecated Use #qualify instead
+    # @param namespace [String]
+    # @param context [String]
+    # @return [String]
     def find_fully_qualified_namespace namespace, context = ''
       qualify namespace, context
     end
@@ -494,6 +497,7 @@ module Solargraph
       result
     end
 
+    # @param location [Solargraph::Source::Location]
     # @return [Solargraph::Pin::Base]
     def locate_pin location
       @sources.each do |source|
