@@ -1,17 +1,23 @@
 module Solargraph
   class ApiMap
+    # A deep analysis provider for ApiMaps.
+    #
     class Probe
       include TypeMethods
 
       # @return [Solargraph::ApiMap]
       attr_reader :api_map
 
+      # @param api_map [ApiMap]
       def initialize api_map
         @api_map = api_map
       end
 
       # Get all matching pins for the signature.
       #
+      # @param signature [String]
+      # @param context_pin [Pin::Base]
+      # @param locals [Array<Pin::Base>]
       # @return [Array<Pin::Base>]
       def infer_signature_pins signature, context_pin, locals
         return [] if signature.nil? or signature.empty?
@@ -44,6 +50,9 @@ module Solargraph
 
       # Get the return type for the signature.
       #
+      # @param signature [String]
+      # @param context_pin [Pin::Base]
+      # @param locals [Array<Pin::Base>]
       # @return [String]
       def infer_signature_type signature, context_pin, locals
         pins = infer_signature_pins(signature, context_pin, locals)
