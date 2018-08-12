@@ -84,7 +84,8 @@ module Solargraph
           cparts.pop
         end
         result.concat api_map.get_path_suggestions(word) if result.empty?
-        result.concat api_map.get_methods(namespace, scope: scope, visibility: [:public, :private, :protected]).select{|pin| pin.name == word} unless word.include?('::')
+        # result.concat api_map.get_methods(namespace, scope: scope, visibility: [:public, :private, :protected]).select{|pin| pin.name == word} unless word.include?('::')
+        result.concat api_map.get_method_stack(namespace, word, scope: scope) unless word.include?('::')
         result.concat api_map.get_constants('', namespace).select{|pin| pin.name == word} if result.empty?
         resolve_word_types(result, locals)
       end
@@ -118,7 +119,8 @@ module Solargraph
         namespace = api_map.qualify(relname, context_pin.namespace)
         visibility = [:public]
         visibility.push :protected, :private if internal
-        result = api_map.get_methods(namespace, scope: scope, visibility: visibility).select{|pin| pin.name == method_name}
+        # result = api_map.get_methods(namespace, scope: scope, visibility: visibility).select{|pin| pin.name == method_name}
+        result = api_map.get_method_stack(namespace, method_name, scope: scope).select{|pin| visibility.include?(pin.visibility)}
         # @todo This needs more rules. Probably need to update YardObject for it.
         return result if result.empty?
         return result unless method_name == 'new' and result.first.path == 'Class#new'
@@ -221,7 +223,8 @@ module Solargraph
       end
 
       def resolve_method_parameter pin
-        matches = api_map.get_methods(pin.namespace, scope: pin.scope, visibility: [:public, :private, :protected]).select{|p| p.name == pin.context.name}
+        # matches = api_map.get_methods(pin.namespace, scope: pin.scope, visibility: [:public, :private, :protected]).select{|p| p.name == pin.context.name}
+        matches = api_map.get_method_stack(pin.namespace, pin.context.name, scope: pin.scope)
         matches.each do |m|
           next unless pin.context.parameters == m.parameters
           next if m.docstring.nil?

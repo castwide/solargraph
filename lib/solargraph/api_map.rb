@@ -44,6 +44,7 @@ module Solargraph
 
     # Create an ApiMap with a workspace in the specified directory.
     #
+    # @param directory [String]
     # @return [ApiMap]
     def self.load directory
       self.new(Solargraph::Workspace.new(directory))
@@ -91,6 +92,8 @@ module Solargraph
     # @param source [Solargraph::Source]
     # @return [Solargraph::Source]
     def virtualize source
+      # @todo Confirm the correct way to handle caches
+      cache.clear if (source.nil? and !@virtual_source.nil?) or (!source.nil? and !@virtual_source.nil? and source.pins != @virtual_source.pins)
       store.remove @virtual_source unless @virtual_source.nil?
       domains.clear
       domains.concat workspace.config.domains
@@ -138,6 +141,7 @@ module Solargraph
         @sources.push @virtual_source unless @virtual_source.nil?
         store.update *(@sources.select{ |s| @stime.nil? or s.stime > @stime })
       end
+      cache.clear
       @stime = Time.new
       true
     end
@@ -187,6 +191,8 @@ module Solargraph
     # @return [Array<Solargraph::Pin::Base>]
     def get_constants namespace, context = ''
       namespace ||= ''
+      cached = cache.get_constants(namespace, context)
+      return cached unless cached.nil?
       skip = []
       result = []
       bases = context.split('::')
@@ -202,6 +208,7 @@ module Solargraph
       visibility = [:public]
       visibility.push :private if fqns == context
       result.concat inner_get_constants(fqns, visibility, skip)
+      cache.set_constants(namespace, context, result)
       result
     end
 
@@ -212,7 +219,11 @@ module Solargraph
     # @param context [String] The context to search
     # @return [String]
     def qualify namespace, context = ''
-      inner_qualify namespace, context, []
+      cached = cache.get_qualified_namespace(namespace, context)
+      return cached unless cached.nil?
+      result = inner_qualify(namespace, context, [])
+      cache.set_qualified_namespace(namespace, context, result)
+      result
     end
 
     # @deprecated Use #qualify instead
@@ -260,6 +271,8 @@ module Solargraph
     # @param deep [Boolean] True to include superclasses, mixins, etc.
     # @return [Array<Solargraph::Pin::Base>]
     def get_methods fqns, scope: :instance, visibility: [:public], deep: true
+      cached = cache.get_methods(fqns, scope, visibility, deep)
+      return cached unless cached.nil?
       result = []
       skip = []
       if fqns == ''
@@ -278,6 +291,23 @@ module Solargraph
         exist = result.map(&:name)
         result.concat live.reject{|p| exist.include?(p.name)}
       end
+      cache.set_methods(fqns, scope, visibility, deep, result)
+      result
+    end
+
+    # Get a stack of method pins for a method name in a namespace. The order
+    # of the pins corresponds to the ancestry chain, with highest precedence
+    # first.
+    #
+    # @param fqns [String]
+    # @param name [String]
+    # @param scope [Symbol] :instance or :class
+    # @return [Array<Solargraph::Pin::Base>]
+    def get_method_stack fqns, name, scope: :instance
+      cached = cache.get_method_stack(fqns, name, scope)
+      return cached unless cached.nil?
+      result = get_methods(fqns, scope: scope, visibility: [:private, :protected, :public]).select{|p| p.name == name}
+      cache.set_method_stack(fqns, name, scope, result)
       result
     end
 
@@ -479,19 +509,20 @@ module Solargraph
 
     private
 
+    # @return [void]
     def refresh_store_and_maps
       @store = ApiMap::Store.new(@sources)
       @live_map = Solargraph::LiveMap.new(self)
       @yard_map = Solargraph::YardMap.new(required: required, workspace: workspace)
     end
 
+    # @return [void]
     def process_virtual
-      unless @virtual_source.nil?
-        map_source @virtual_source
-      end
+      map_source @virtual_source unless @virtual_source.nil?
     end
 
-    # @param [Solargraph::Source]
+    # @param source [Solargraph::Source]
+    # @return [void]
     def map_source source
       store.update source
       path_macros.merge! source.path_macros
