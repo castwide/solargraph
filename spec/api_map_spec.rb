@@ -1143,4 +1143,18 @@ describe Solargraph::ApiMap do
     names = cmp.pins.map(&:name)
     expect(names).to include('upcase')
   end
+
+  it "detects completion items for class variables" do
+    code = %(
+      @@thing = String.new
+      @@thing._
+    )
+    api_map = Solargraph::ApiMap.new
+    source = Solargraph::Source.new(code)
+    api_map.virtualize source
+    fragment = source.fragment_at(2, 14)
+    cmp = api_map.complete(fragment)
+    names = cmp.pins.map(&:name)
+    expect(names).to include('upcase')
+  end
 end
