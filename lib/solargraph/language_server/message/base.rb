@@ -4,13 +4,27 @@ module Solargraph
       class Base
         # @return [Solargraph::LanguageServer::Host]
         attr_reader :host
+
+        # @return [Integer]
         attr_reader :id
+
+        # @return [Hash]
         attr_reader :request
+
+        # @return [String]
         attr_reader :method
+
+        # @return [Hash]
         attr_reader :params
+
+        # @return [Hash, Array, nil]
         attr_reader :result
+
+        # @return [Hash, nil]
         attr_reader :error
 
+        # @param host [Solargraph::LanguageServer::Host]
+        # @param request [Hash]
         def initialize host, request
           @host = host
           @id = request['id'].freeze
@@ -20,16 +34,21 @@ module Solargraph
           post_initialize
         end
 
-        def post_initialize
-        end
+        # @return [void]
+        def post_initialize; end
 
-        def process
-        end
+        # @return [void]
+        def process; end
 
+        # @param data [Hash, Array, nil]
+        # @return [void]
         def set_result data
           @result = data
         end
 
+        # @param code [Integer] See Solargraph::LanguageServer::ErrorCodes
+        # @param message [String]
+        # @return [void]
         def set_error code, message
           @error = {
             code: code,
@@ -37,6 +56,7 @@ module Solargraph
           }
         end
 
+        # @return [void]
         def send_response
           unless id.nil? or host.cancel?(id)
             response = {
