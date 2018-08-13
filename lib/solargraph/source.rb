@@ -339,6 +339,7 @@ module Solargraph
       resync = (
         @pins.nil? or
         @locals.nil? or
+        @pins.first.location.range.ending.line != new_pins.first.location.range.ending.line or
         @pins[1..-1] != new_pins[1..-1] or
         @locals != new_locals
         # @requires != new_requires or
