@@ -62,7 +62,6 @@ module Solargraph
         @qualified_namespaces[[name, context]] = value
       end
 
-      # Clearing the cache
       # @return [void]
       def clear
         @signature_types.clear

@@ -14,12 +14,13 @@ module Solargraph
       # Generate the data.
       #
       # @return [Array]
-      def map filename, code, node, comments
+      def map filename, code, node, comments, original_comments
         @filename = filename
         @code = code
         @node = node
         @node_stack = []
         @directives = {}
+        @docstring_hash = nil
         @docstring_hash = associate_comments(node, comments)
         # @todo Stuff that needs to be resolved
         @variables = []
@@ -37,14 +38,15 @@ module Solargraph
         # @todo Is the root namespace a class or a module? Assuming class for now.
         @pins.push Pin::Namespace.new(get_node_location(nil), '', '', nil, :class, :public, nil)
         process root
-        process_directives
+        same_comments = (!original_comments.nil? and comments.map(&:text) == original_comments.map(&:text))
+        process_directives unless same_comments
         [@pins, @locals, @requires, @symbols, @path_macros, @domains]
       end
 
       class << self
         # @return [Array]
-        def map filename, code, node, comments
-          new.map filename, code, node, comments
+        def map filename, code, node, comments, original_comments
+          new.map filename, code, node, comments, original_comments
         end
       end
 

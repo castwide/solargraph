@@ -315,9 +315,9 @@ module Solargraph
     def hard_fix_node
       @fixed = @code.gsub(/[^\s]/, '_')
       node, comments = inner_parse(@fixed, filename)
+      process_parsed node, comments
       @node = node
       @comments = comments
-      process_parsed node, comments
       @parsed = false
     end
 
@@ -331,7 +331,7 @@ module Solargraph
     end
 
     def process_parsed node, comments
-      new_map_data = Mapper.map(filename, code, node, comments)
+      new_map_data = Mapper.map(filename, code, node, comments, @comments)
       synchronize_mapped *new_map_data
     end
 
@@ -345,7 +345,7 @@ module Solargraph
         # @pins[1..-1] != new_pins[1..-1] or
         # @locals != new_locals
         @requires != new_requires or
-        @path_macros != new_path_macros or
+        (@path_macros != new_path_macros and !new_path_macros.nil?) or
         @domains != new_domains
       )
       return unless unsynced
@@ -353,7 +353,7 @@ module Solargraph
       @locals = new_locals
       @requires = new_requires
       @symbols = new_symbols
-      @path_macros = new_path_macros
+      @path_macros = new_path_macros unless new_path_macros.nil?
       @domains = new_domains
       @stime = Time.now
     end
