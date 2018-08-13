@@ -74,8 +74,8 @@ module Solargraph
         return resolve_word_types(lvars, locals) unless lvars.empty?
         return api_map.get_global_variable_pins.select{|pin| pin.name == word} if word.start_with?('$')
         namespace, scope = extract_namespace_and_scope_from_pin(context_pin)
-        return api_map.get_class_variable_pins(namespace) if word.start_with?('@@')
-        return api_map.get_instance_variable_pins(namespace, scope) if word.start_with?('@')
+        return api_map.get_class_variable_pins(namespace).select{|pin| pin.name == word} if word.start_with?('@@')
+        return api_map.get_instance_variable_pins(namespace, scope).select{|pin| pin.name == word} if word.start_with?('@')
         return api_map.pins.select{|pin| word_matches_context?(word, namespace, scope, pin)} if variable_name?(word)
         result = []
         cparts = namespace.split('::')
@@ -99,6 +99,7 @@ module Solargraph
           # @todo Smelly instance variable access
           p.instance_variable_set(:@return_type, type)
         end
+        pins
       end
 
       def infer_self context_pin
