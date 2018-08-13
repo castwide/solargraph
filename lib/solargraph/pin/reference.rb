@@ -23,6 +23,13 @@ module Solargraph
       def filename
         location.filename
       end
+
+      def == other
+        return false unless self.class == other.class
+        location == other.location and
+          namespace = other.namespace and
+          name == other.name
+      end
     end
   end
 end

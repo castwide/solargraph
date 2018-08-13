@@ -336,24 +336,44 @@ module Solargraph
     end
 
     def synchronize_mapped new_pins, new_locals, new_requires, new_symbols, new_path_macros, new_domains
-      resync = (
-        @pins.nil? or
-        @locals.nil? or
-        @pins.first.location.range.ending.line != new_pins.first.location.range.ending.line or
-        @pins[1..-1] != new_pins[1..-1] or
-        @locals != new_locals
-        # @requires != new_requires or
-        # @path_macros != new_path_macros or
-        # @new_domains != new_domains
+      relocated = try_relocate(new_pins, new_locals)
+      unsynced = (
+        !relocated or
+        # @pins.nil? or
+        # @locals.nil? or
+        # @pins.first.location.range.ending.line != new_pins.first.location.range.ending.line or
+        # @pins[1..-1] != new_pins[1..-1] or
+        # @locals != new_locals
+        @requires != new_requires or
+        @path_macros != new_path_macros or
+        @domains != new_domains
       )
+      return unless unsynced
       @pins = new_pins
       @locals = new_locals
       @requires = new_requires
       @symbols = new_symbols
       @path_macros = new_path_macros
       @domains = new_domains
-      # Check for bare minimum change required to synchronize workspaces, etc.
-      @stime = Time.now if resync
+      @stime = Time.now
+    end
+
+    # @param new_pins [Array<Solargraph::Pin::Base>]
+    # @return [Boolean]
+    def try_relocate new_pins, new_locals
+      return false if @pins.nil? or @locals.nil? or new_pins.length != @pins.length or new_locals.length != @locals.length
+      new_pins.each_index do |i|
+        return false unless new_pins[i].nearly?(@pins[i])
+        @pins[i].instance_variable_set(:@location, new_pins[i].location)
+      end
+      new_locals.each_index do |i|
+        return false unless new_locals[i].nearly?(@locals[i])
+        @locals[i].instance_variable_set(:@location, new_locals[i].location)
+        if @locals[i].is_a?(Solargraph::Pin::LocalVariable)
+          @locals[i].instance_variable_set(:@presence, new_locals[i].presence)
+        end
+      end
+      true
     end
 
     class << self
