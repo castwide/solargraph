@@ -8,8 +8,8 @@ module Solargraph
       # @return [Pin::Reference]
       attr_reader :superclass_reference
 
-      def initialize location, namespace, name, docstring, type, visibility, superclass
-        super(location, namespace, name, docstring)
+      def initialize location, namespace, name, comments, type, visibility, superclass
+        super(location, namespace, name, comments)
         @type = type
         @visibility = visibility
         # @superclass_reference = Reference.new(self, superclass) unless superclass.nil?

@@ -7,10 +7,9 @@ module Solargraph
       # @return [Symbol] :class or :instance
       attr_reader :scope
 
-      def initialize location, namespace, name, docstring, access, scope
-        super(location, namespace, name, docstring)
+      def initialize location, namespace, name, comments, access, scope
+        super(location, namespace, name, comments)
         @access = access
-        @docstring = docstring
         @scope = scope
       end
 

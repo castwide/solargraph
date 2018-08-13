@@ -18,6 +18,9 @@ module Solargraph
       # @return [YARD::Docstring]
       attr_reader :docstring
 
+      # @return [String]
+      attr_reader :comments
+
       # @return [Integer]
       attr_reader :kind
 
@@ -27,12 +30,12 @@ module Solargraph
       # @param location [Solargraph::Source::Location]
       # @param namespace [String]
       # @param name [String]
-      # @param docstring [YARD::Docstring]
-      def initialize location, namespace, name, docstring
+      # @param comments [String]
+      def initialize location, namespace, name, comments
         @location = location
         @namespace = namespace
         @name = name
-        @docstring = docstring
+        @comments = comments || ''
       end
 
       # @return [String]
@@ -81,7 +84,7 @@ module Solargraph
         return false unless self.class == other.class
         namespace == other.namespace and
           name == other.name and
-          ( (docstring.nil? and other.docstring.nil?) or (docstring == other.docstring and docstring.all == other.docstring.all) )
+          comments == other.comments
       end
 
       # The first return type associated with the pin.
@@ -116,6 +119,34 @@ module Solargraph
       # @return [Array<ComplexType>]
       def return_complex_types
         @return_complex_types ||= []
+      end
+
+      def docstring
+        parse_comments unless defined?(@docstring)
+        @docstring
+      end
+
+      def directives
+        parse_comments unless defined?(@directives)
+        @directives
+      end
+
+      def maybe_directives?
+        return !@directives.empty? if defined?(@directives)
+        @maybe_directives ||= comments.include?('@!')
+      end
+
+      private
+
+      def parse_comments
+        if comments.empty?
+          @docstring = nil
+          @directives = []
+        else
+          parse = YARD::Docstring.parser.parse(comments)
+          @docstring = parse.to_docstring
+          @directives = parse.directives
+        end
       end
     end
   end

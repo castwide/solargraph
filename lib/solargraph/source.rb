@@ -63,6 +63,7 @@ module Solargraph
         @fixed = code
         @filename = filename
         @version = 0
+        @domains = []
         begin
           parse
         rescue Parser::SyntaxError, EncodingError
@@ -331,30 +332,24 @@ module Solargraph
     end
 
     def process_parsed node, comments
-      new_map_data = Mapper.map(filename, code, node, comments, @comments)
+      new_map_data = Mapper.map(filename, code, node, comments)
       synchronize_mapped *new_map_data
     end
 
-    def synchronize_mapped new_pins, new_locals, new_requires, new_symbols, new_path_macros, new_domains
+    def synchronize_mapped new_pins, new_locals, new_requires, new_symbols #, new_path_macros, new_domains
       relocated = try_relocate(new_pins, new_locals)
-      unsynced = (
-        !relocated or
-        # @pins.nil? or
-        # @locals.nil? or
-        # @pins.first.location.range.ending.line != new_pins.first.location.range.ending.line or
-        # @pins[1..-1] != new_pins[1..-1] or
-        # @locals != new_locals
-        @requires != new_requires or
-        (@path_macros != new_path_macros and !new_path_macros.nil?) or
-        @domains != new_domains
-      )
-      return unless unsynced
+      return if relocated
       @pins = new_pins
       @locals = new_locals
       @requires = new_requires
       @symbols = new_symbols
-      @path_macros = new_path_macros unless new_path_macros.nil?
-      @domains = new_domains
+      @domains = []
+      @path_macros = {}
+      dirpins = []
+      @pins.select(&:maybe_directives?).each do |pin|
+        dirpins.push pin unless pin.directives.empty?
+      end
+      process_directives dirpins
       @stime = Time.now
     end
 
@@ -374,6 +369,38 @@ module Solargraph
         end
       end
       true
+    end
+
+    # @return [void]
+    def process_directives pins
+      pins.each do |pin|
+        pin.directives.each do |d|
+          # ns = namespace_for(k.node)
+          ns = (pin.kind == Pin::NAMESPACE ? pin.path : pin.namespace)
+          docstring = YARD::Docstring.parser.parse(d.tag.text).to_docstring
+          if d.tag.tag_name == 'attribute'
+            t = (d.tag.types.nil? || d.tag.types.empty?) ? nil : d.tag.types.flatten.join('')
+            if t.nil? or t.include?('r')
+              # location, namespace, name, docstring, access
+              @pins.push Solargraph::Pin::Attribute.new(pin.location, pin.path, d.tag.name, docstring.all, :reader, :instance)
+            end
+            if t.nil? or t.include?('w')
+              @pins.push Solargraph::Pin::Attribute.new(pin.location, pin.path, "#{d.tag.name}=", docstring.all, :writer, :instance)
+            end
+          elsif d.tag.tag_name == 'method'
+            gen_src = Source.new("def #{d.tag.name};end", filename)
+            gen_pin = gen_src.pins.last # Method is last pin after root namespace
+            # next if ns.nil? or ns.empty? # @todo Add methods to global namespace?
+            @pins.push Solargraph::Pin::Method.new(pin.location, pin.path, gen_pin.name, docstring.all, :instance, :public, [])
+          elsif d.tag.tag_name == 'macro'
+            @path_macros[pin.path] = d
+          elsif d.tag.tag_name == 'domain'
+            @domains.push d.tag.text
+          else
+            # STDERR.puts "Nothing to do for directive: #{d}"
+          end
+        end
+      end
     end
 
     class << self

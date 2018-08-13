@@ -901,7 +901,8 @@ describe Solargraph::ApiMap do
     source = Solargraph::Source.new(%(
       # @!domain String
       x
-      ))
+    ))
+    expect(source.domains).to include('String')
     api_map.virtualize source
     fragment = source.fragment_at(2, 0)
     names = api_map.complete(fragment).pins.map(&:name)

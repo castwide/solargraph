@@ -3,8 +3,8 @@ module Solargraph
     class LocalVariable < BaseVariable
       include Localized
 
-      def initialize location, namespace, name, docstring, assignment, literal, context, block, presence
-        super(location, namespace, name, docstring, assignment, literal, context)
+      def initialize location, namespace, name, comments, assignment, literal, context, block, presence
+        super(location, namespace, name, comments, assignment, literal, context)
         @block = block
         @presence = presence
       end

@@ -191,6 +191,7 @@ module Solargraph
       # @return [String]
       def resolve_pin_type pin, locals
         return pin.return_type unless pin.return_type.nil?
+        return pin.namespace if pin.kind == Pin::METHOD and pin.name == 'new' and pin.scope == :class
         return resolve_block_parameter(pin, locals) if pin.kind == Pin::BLOCK_PARAMETER
         return resolve_method_parameter(pin) if pin.is_a?(Pin::MethodParameter)
         return resolve_variable(pin, locals) if pin.variable?

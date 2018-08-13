@@ -6,8 +6,8 @@ module Solargraph
       # @return [Pin::Block]
       attr_reader :block
 
-      def initialize location, namespace, name, docstring, block
-        super(location, namespace, name, docstring)
+      def initialize location, namespace, name, comments, block
+        super(location, namespace, name, comments)
         @block = block
         @presence = block.location.range
       end

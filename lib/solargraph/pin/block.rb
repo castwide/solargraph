@@ -4,8 +4,8 @@ module Solargraph
       attr_reader :receiver
       attr_reader :parameters
 
-      def initialize location, namespace, name, docstring, receiver
-        super(location, namespace, name, docstring)
+      def initialize location, namespace, name, comments, receiver
+        super(location, namespace, name, comments)
         @receiver = receiver
       end
 

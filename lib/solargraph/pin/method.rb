@@ -5,8 +5,8 @@ module Solargraph
       attr_reader :visibility
       attr_reader :parameters
 
-      def initialize location, namespace, name, docstring, scope, visibility, args
-        super(location, namespace, name, docstring)
+      def initialize location, namespace, name, comments, scope, visibility, args
+        super(location, namespace, name, comments)
         @scope = scope
         @visibility = visibility
         @parameters = args

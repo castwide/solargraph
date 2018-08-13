@@ -5,8 +5,8 @@ module Solargraph
 
       attr_reader :context
 
-      def initialize location, namespace, name, docstring, signature, literal, context
-        super(location, namespace, name, docstring)
+      def initialize location, namespace, name, comments, signature, literal, context
+        super(location, namespace, name, comments)
         @signature = signature
         @literal = literal
         @context = context
