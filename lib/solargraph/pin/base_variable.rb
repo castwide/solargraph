@@ -57,6 +57,11 @@ module Solargraph
         true
       end
 
+      def nearly? other
+        return false unless super
+        signature == other.signature
+      end
+
       private
 
       def generate_complex_types
