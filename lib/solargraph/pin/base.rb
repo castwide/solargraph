@@ -77,12 +77,19 @@ module Solargraph
         location == other.location and
           namespace == other.namespace and
           name == other.name and
-          ( (docstring.nil? and other.docstring.nil?) or (docstring == other.docstring and docstring.all == other.docstring.all) )
+          comments == other.comments
       end
 
+      # True if the specified pin is a near match to this one. A near match
+      # indicates that the pins contain the same pertinent data, with the only
+      # significant difference being their locations in the source.
+      #
+      # @param other [Solargraph::Pin::Base]
+      # @return [Boolean]
       def nearly? other
         return false unless self.class == other.class
-        namespace == other.namespace and
+        ( (location.nil? and other.location.nil?) or (location.filename == other.location.filename) ) and
+          namespace == other.namespace and
           name == other.name and
           comments == other.comments
       end
@@ -121,23 +128,46 @@ module Solargraph
         @return_complex_types ||= []
       end
 
+      # @return [YARD::Docstring]
       def docstring
         parse_comments unless defined?(@docstring)
         @docstring
       end
 
+      # @param [Array<YARD::Tags::Directive>]
       def directives
         parse_comments unless defined?(@directives)
         @directives
       end
 
+      # Perform a quick check to see if this pin possibly includes YARD
+      # directives. This method does not require parsing the comments.
+      #
+      # After the comments have been parsed, this method will return false if
+      # no directives were found, regardless of whether it previously appeared
+      # possible.
+      #
+      # @return [Boolean]
       def maybe_directives?
         return !@directives.empty? if defined?(@directives)
         @maybe_directives ||= comments.include?('@!')
       end
 
+      # Try to change this pin's location to that of another pin. Relocation
+      # is only possible if the pins are near matches (see the #nearly?
+      # method).
+      #
+      # @param pin [Base] The pin with the new location
+      # @return [Boolean] True if this pin was relocated
+      def try_relocate pin
+        return false unless nearly?(pin)
+        @location = pin.location
+        true
+      end
+
       private
 
+      # @return [void]
       def parse_comments
         if comments.empty?
           @docstring = nil

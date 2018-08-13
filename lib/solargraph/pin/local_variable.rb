@@ -12,6 +12,12 @@ module Solargraph
       def kind
         Pin::LOCAL_VARIABLE
       end
+
+      def try_relocate pin
+        return false unless super
+        @presence = pin.presence
+        true
+      end
     end
   end
 end

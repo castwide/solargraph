@@ -358,15 +358,10 @@ module Solargraph
     def try_relocate new_pins, new_locals
       return false if @pins.nil? or @locals.nil? or new_pins.length != @pins.length or new_locals.length != @locals.length
       new_pins.each_index do |i|
-        return false unless new_pins[i].nearly?(@pins[i])
-        @pins[i].instance_variable_set(:@location, new_pins[i].location)
+        return false unless @pins[i].try_relocate(new_pins[i])
       end
       new_locals.each_index do |i|
-        return false unless new_locals[i].nearly?(@locals[i])
-        @locals[i].instance_variable_set(:@location, new_locals[i].location)
-        if @locals[i].is_a?(Solargraph::Pin::LocalVariable)
-          @locals[i].instance_variable_set(:@presence, new_locals[i].presence)
-        end
+        return false unless @locals[i].try_relocate(new_locals[i])
       end
       true
     end
