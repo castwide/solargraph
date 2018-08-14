@@ -81,8 +81,8 @@ module Solargraph
       end
 
       # True if the specified pin is a near match to this one. A near match
-      # indicates that the pins contain the same pertinent data, with the only
-      # significant difference being their locations in the source.
+      # indicates that the pins contain mostly the same data. Any differences
+      # between them should not have an impact on the API surface.
       #
       # @param other [Solargraph::Pin::Base, Object]
       # @return [Boolean]
@@ -153,13 +153,13 @@ module Solargraph
         @maybe_directives ||= comments.include?('@!')
       end
 
-      # Try to change this pin's location to that of another pin. Relocation
-      # is only possible if the pins are near matches (see the #nearly?
-      # method).
+      # Try to merge data from another pin. Merges are only possible if the
+      # pins are near matches (see the #nearly? method). The changes should
+      # not have any side effects on the API surface.
       #
       # @param pin [Base] The pin with the new location
-      # @return [Boolean] True if this pin was relocated
-      def try_relocate pin
+      # @return [Boolean] True if the pins were merged
+      def try_merge! pin
         return false unless nearly?(pin)
         @location = pin.location
         true

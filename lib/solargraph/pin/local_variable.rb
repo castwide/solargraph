@@ -13,7 +13,7 @@ module Solargraph
         Pin::LOCAL_VARIABLE
       end
 
-      def try_relocate pin
+      def try_merge! pin
         return false unless super
         @presence = pin.presence
         true

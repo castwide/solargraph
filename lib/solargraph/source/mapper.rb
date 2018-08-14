@@ -314,7 +314,7 @@ module Solargraph
         @pins.select{|pin| [Pin::NAMESPACE, Pin::METHOD].include?(pin.kind) and pin.location.range.contain?(position)}.last
       end
 
-      # @return [YARD::Docstring]
+      # @return [String]
       def comments_for node
         result = @node_comments[node.loc]
         return nil if result.nil?
@@ -342,7 +342,7 @@ module Solargraph
       def associate_comments node, comments
         return nil if comments.nil?
         comment_hash = Parser::Source::Comment.associate_locations(node, comments)
-        yard_hash = {}
+        result_hash = {}
         comment_hash.each_pair { |k, v|
           ctxt = ''
           num = nil
@@ -359,9 +359,9 @@ module Solargraph
             end
             ctxt += "#{p[num..-1]}\n" if started
           }
-          yard_hash[k] = ctxt
+          result_hash[k] = ctxt
         }
-        yard_hash
+        result_hash
       end
 
       # @param node [Parser::AST::Node]

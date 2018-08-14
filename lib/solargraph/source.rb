@@ -1,5 +1,6 @@
 require 'parser/current'
 require 'time'
+require 'yard'
 
 module Solargraph
   class Source
@@ -337,8 +338,7 @@ module Solargraph
     end
 
     def synchronize_mapped new_pins, new_locals, new_requires, new_symbols #, new_path_macros, new_domains
-      relocated = try_relocate(new_pins, new_locals)
-      return if relocated
+      return if try_merge(new_pins, new_locals)
       @pins = new_pins
       @locals = new_locals
       @requires = new_requires
@@ -354,14 +354,15 @@ module Solargraph
     end
 
     # @param new_pins [Array<Solargraph::Pin::Base>]
+    # @param new_locals [Array<Solargraph::Pin::Base>]
     # @return [Boolean]
-    def try_relocate new_pins, new_locals
+    def try_merge new_pins, new_locals
       return false if @pins.nil? or @locals.nil? or new_pins.length != @pins.length or new_locals.length != @locals.length
       new_pins.each_index do |i|
-        return false unless @pins[i].try_relocate(new_pins[i])
+        return false unless @pins[i].try_merge!(new_pins[i])
       end
       new_locals.each_index do |i|
-        return false unless @locals[i].try_relocate(new_locals[i])
+        return false unless @locals[i].try_merge!(new_locals[i])
       end
       true
     end

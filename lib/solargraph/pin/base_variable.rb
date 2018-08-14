@@ -53,7 +53,7 @@ module Solargraph
         signature == other.signature
       end
 
-      def try_relocate pin
+      def try_merge! pin
         return false unless super
         @signature = pin.signature
         true
