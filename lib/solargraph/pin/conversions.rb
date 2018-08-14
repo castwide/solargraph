@@ -57,6 +57,14 @@ module Solargraph
         @link_documentation ||= generate_link
       end
 
+      def reset_conversions
+        @completion_item = nil
+        @resolve_completion_item = nil
+        @signature_help = nil
+        @detail = nil
+        @link_documentation = nil
+      end
+
       private
 
       def generate_link

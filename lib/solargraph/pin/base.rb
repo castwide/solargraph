@@ -90,8 +90,10 @@ module Solargraph
         return false unless self.class == other.class
         namespace == other.namespace and
           name == other.name and
-          comments == other.comments and
-          return_complex_types == other.return_complex_types
+          #compare_comments(other) and
+          #return_complex_types == other.return_complex_types
+          directives == other.directives #and
+          #return_complex_types == other.return_complex_types
       end
 
       # The first return type associated with the pin.
@@ -157,11 +159,18 @@ module Solargraph
       # pins are near matches (see the #nearly? method). The changes should
       # not have any side effects on the API surface.
       #
-      # @param pin [Base] The pin with the new location
+      # @param pin [Pin::Base] The pin to merge into this one
       # @return [Boolean] True if the pins were merged
       def try_merge! pin
         return false unless nearly?(pin)
         @location = pin.location
+        if comments != pin.comments
+          @comments = pin.comments
+          @docstring = pin.docstring
+          @return_complex_types = pin.return_complex_types
+          @documentation = nil
+          reset_conversions
+        end
         true
       end
 
