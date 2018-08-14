@@ -1,8 +1,13 @@
 module Solargraph
   module Pin
     class Method < Base
+      # @return [Symbol] :instance or :class
       attr_reader :scope
+
+      # @return [Symbol] :public, :private, or :protected
       attr_reader :visibility
+
+      # @return [Array<String>]
       attr_reader :parameters
 
       def initialize location, namespace, name, comments, scope, visibility, args
@@ -12,6 +17,7 @@ module Solargraph
         @parameters = args
       end
 
+      # @return [Array<String>]
       def parameter_names
         @parameter_names ||= parameters.map{|p| p.split(/[ =:]/).first}
       end
@@ -57,6 +63,13 @@ module Solargraph
           end
         end
         @documentation
+      end
+
+      def nearly? other
+        return false unless super
+        parameters == other.parameters and
+          scope == other.scope and
+          visibility == other.visibility
       end
 
       private

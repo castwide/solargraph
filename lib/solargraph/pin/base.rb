@@ -72,26 +72,26 @@ module Solargraph
         namespace
       end
 
+      # Pin equality is determined using the #nearly? method and also
+      # requiring both pins to have the same location.
+      #
       def == other
-        return false unless self.class == other.class
-        location == other.location and
-          namespace == other.namespace and
-          name == other.name and
-          comments == other.comments
+        return false unless nearly? other
+        location == other.location
       end
 
       # True if the specified pin is a near match to this one. A near match
       # indicates that the pins contain the same pertinent data, with the only
       # significant difference being their locations in the source.
       #
-      # @param other [Solargraph::Pin::Base]
+      # @param other [Solargraph::Pin::Base, Object]
       # @return [Boolean]
       def nearly? other
         return false unless self.class == other.class
-        ( (location.nil? and other.location.nil?) or (location.filename == other.location.filename) ) and
-          namespace == other.namespace and
+        namespace == other.namespace and
           name == other.name and
-          comments == other.comments
+          comments == other.comments and
+          return_complex_types == other.return_complex_types
       end
 
       # The first return type associated with the pin.

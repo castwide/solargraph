@@ -26,15 +26,6 @@ module Solargraph
       end
 
       def return_type
-        # if @return_type.nil?
-        #   if !docstring.nil?
-        #     tag = docstring.tag(:type)
-        #     @return_type = tag.types[0] unless tag.nil?
-        #   else
-        #     @return_type = @literal
-        #   end
-        # end
-        # @return_type
         if @return_type.nil?
           if return_complex_types.empty?
             @return_type = @literal
