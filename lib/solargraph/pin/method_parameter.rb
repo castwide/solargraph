@@ -17,6 +17,15 @@ module Solargraph
         super
         @return_complex_types
       end
+
+      def try_merge! pin
+        return false unless super
+        # @todo This is a little expensive, but it's necessary because
+        #   parameter data depends on the method's docstring.
+        @return_complex_types = pin.return_complex_types
+        reset_conversions
+        true
+      end
     end
   end
 end
