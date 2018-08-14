@@ -48,9 +48,15 @@ module Solargraph
         true
       end
 
-      def nearly? other
+      def == other
         return false unless super
         signature == other.signature
+      end
+
+      def try_relocate pin
+        return false unless super
+        @signature = pin.signature
+        true
       end
 
       private

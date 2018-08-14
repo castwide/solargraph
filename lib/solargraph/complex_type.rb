@@ -50,6 +50,11 @@ module Solargraph
       @scope ||= ((name == 'Class' or name == 'Module') and !subtypes.empty?) ? :class : :instance
     end
 
+    def == other
+      return false unless self.class == other.class
+      tag == other.tag
+    end
+
     class << self
       # @param *strings [Array<String>] The type definitions to parse
       # @return [Array<ComplexType>]
