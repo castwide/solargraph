@@ -25,17 +25,6 @@ module Solargraph
         Solargraph::LanguageServer::SymbolKinds::VARIABLE
       end
 
-      def return_type
-        if @return_type.nil?
-          if return_complex_types.empty?
-            @return_type = @literal
-          else
-            @return_type = return_complex_types.first.tag
-          end
-        end
-        @return_type
-      end
-
       def return_complex_types
         @return_complex_types ||= generate_complex_types
       end
@@ -56,16 +45,19 @@ module Solargraph
       def try_merge! pin
         return false unless super
         @signature = pin.signature
+        @return_complex_types = pin.return_complex_types
         true
       end
 
       private
 
       def generate_complex_types
-        return [] if docstring.nil?
-        tag = docstring.tag(:type)
-        return [] if tag.nil?
-        ComplexType.parse *tag.types
+        unless docstring.nil?
+          tag = docstring.tag(:type)
+          return ComplexType.parse(*tag.types) unless tag.nil?
+        end
+        return ComplexType.parse(@literal) unless @literal.nil?
+        []
       end
     end
   end
