@@ -121,7 +121,6 @@ module Solargraph
     def refresh force = false
       return false unless force or changed?
       if force
-        STDERR.puts "Force refresh"
         refresh_store_and_maps
       else
         store.remove *(current_workspace_sources.reject{ |s| workspace.sources.include?(s) })
@@ -515,7 +514,6 @@ module Solargraph
     def refresh_store_and_maps
       @yard_stale = true
       @live_map = Solargraph::LiveMap.new(self)
-      STDERR.puts "Changing yard map from refresh_" if yard_map_changed?
       @yard_map = Solargraph::YardMap.new(required: required, workspace: workspace) if yard_map_changed?
       @store = ApiMap::Store.new(@sources, yard_map.pins)
     end
@@ -523,7 +521,6 @@ module Solargraph
     # @return [void]
     def process_virtual
       map_source @virtual_source unless @virtual_source.nil?
-      STDERR.puts "Changing yard map from process_" if yard_map_changed?
       if yard_map_changed?
         @yard_map = Solargraph::YardMap.new(required: required, workspace: workspace)
         @store = ApiMap::Store.new(@sources, yard_map.pins)
@@ -650,11 +647,7 @@ module Solargraph
           return name if store.namespace_exists?(name)
         end
       end
-      # result = yard_map.find_fully_qualified_namespace(name, root)
-      # if result.nil?
-        result = live_map.get_fqns(name, root)
-      # end
-      result
+      live_map.get_fqns(name, root)
     end
 
     # Get the namespace's type (Class or Module).
