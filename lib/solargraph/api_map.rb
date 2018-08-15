@@ -97,7 +97,6 @@ module Solargraph
           process_virtual
         end
       end
-      refresh_store_and_maps if yard_map_changed?
       source
     end
 
@@ -122,6 +121,7 @@ module Solargraph
     def refresh force = false
       return false unless force or changed?
       if force
+        STDERR.puts "Force refresh"
         refresh_store_and_maps
       else
         store.remove *(current_workspace_sources.reject{ |s| workspace.sources.include?(s) })
@@ -505,6 +505,7 @@ module Solargraph
     end
 
     def unresolved_requires
+      return [] if yard_map_changed?
       yard_map.unresolved_requires
     end
 
@@ -514,12 +515,19 @@ module Solargraph
     def refresh_store_and_maps
       @yard_stale = true
       @live_map = Solargraph::LiveMap.new(self)
+      STDERR.puts "Changing yard map from refresh_" if yard_map_changed?
+      @yard_map = Solargraph::YardMap.new(required: required, workspace: workspace) if yard_map_changed?
       @store = ApiMap::Store.new(@sources, yard_map.pins)
     end
 
     # @return [void]
     def process_virtual
       map_source @virtual_source unless @virtual_source.nil?
+      STDERR.puts "Changing yard map from process_" if yard_map_changed?
+      if yard_map_changed?
+        @yard_map = Solargraph::YardMap.new(required: required, workspace: workspace)
+        @store = ApiMap::Store.new(@sources, yard_map.pins)
+      end
     end
 
     # @param source [Solargraph::Source]
@@ -527,9 +535,6 @@ module Solargraph
     def map_source source
       store.update source
       path_macros.merge! source.path_macros
-      source.required.each do |r|
-        required.push r
-      end
     end
 
     # @return [Solargraph::ApiMap::Cache]
@@ -663,19 +668,14 @@ module Solargraph
     end
 
     def yard_map_changed?
-      @yard_map.nil? or @yard_map.required.to_set != required.to_set
+      yard_map.required.uniq.sort != required.uniq.sort
     end
 
     # Get a YardMap associated with the current workspace.
     #
     # @return [Solargraph::YardMap]
     def yard_map
-      if yard_map_changed?
-        @yard_map = Solargraph::YardMap.new(required: required, workspace: workspace)
-        @store.update_from_yard @yard_map.pins unless @store.nil?
-        cache.clear
-      end
-      @yard_map
+      @yard_map ||= Solargraph::YardMap.new(required: required, workspace: workspace)
     end
   end
 end
