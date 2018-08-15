@@ -17,7 +17,7 @@ module Solargraph
 
       def remove *sources
         sources.each do |source|
-          pins.delete_if { |pin| pin.filename == source.filename }
+          pins.delete_if { |pin| !pin.yard_pin? and pin.filename == source.filename }
           symbols.delete_if { |pin| pin.filename == source.filename }
         end
         index
@@ -28,7 +28,7 @@ module Solargraph
         index
       end
 
-      def update_from_yard yard_pins
+      def update_yard yard_pins
         pins.delete_if(&:yard_pin?)
         pins.concat yard_pins
         index

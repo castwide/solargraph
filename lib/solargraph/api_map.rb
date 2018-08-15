@@ -23,9 +23,6 @@ module Solargraph
     # @return [Solargraph::Workspace]
     attr_reader :workspace
 
-    # @return [ApiMap::Store]
-    attr_reader :store
-
     # Get a LiveMap associated with the current workspace.
     #
     # @return [Solargraph::LiveMap]
@@ -127,6 +124,7 @@ module Solargraph
         @sources = workspace.sources
         @sources.push @virtual_source unless @virtual_source.nil?
         store.update *(@sources.select{ |s| @stime.nil? or s.stime > @stime })
+        store.update_yard(yard_map.pins) if yard_map.change(required)
       end
       cache.clear
       @stime = Time.new
@@ -504,26 +502,31 @@ module Solargraph
     end
 
     def unresolved_requires
-      return [] if yard_map_changed?
+      # return [] if yard_map_changed?
       yard_map.unresolved_requires
     end
 
     private
 
+    # @return [ApiMap::Store]
+    def store
+      @store ||= ApiMap::Store.new(@sources, yard_map.pins)
+    end
+
     # @return [void]
     def refresh_store_and_maps
       @yard_stale = true
       @live_map = Solargraph::LiveMap.new(self)
-      @yard_map = Solargraph::YardMap.new(required: required, workspace: workspace) if yard_map_changed?
-      @store = ApiMap::Store.new(@sources, yard_map.pins)
+      store.update_yard(yard_map.pins) if yard_map.change(required)
+      cache.clear
     end
 
     # @return [void]
     def process_virtual
       map_source @virtual_source unless @virtual_source.nil?
-      if yard_map_changed?
-        @yard_map = Solargraph::YardMap.new(required: required, workspace: workspace)
-        @store = ApiMap::Store.new(@sources, yard_map.pins)
+      if yard_map.change(required)
+        store.update_yard(yard_map.pins)
+        cache.clear
       end
     end
 
@@ -658,10 +661,6 @@ module Solargraph
       pin = store.get_path_pins(fqns).first
       return nil if pin.nil?
       pin.type
-    end
-
-    def yard_map_changed?
-      yard_map.required.uniq.sort != required.uniq.sort
     end
 
     # Get a YardMap associated with the current workspace.

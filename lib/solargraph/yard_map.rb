@@ -5,6 +5,7 @@ module Solargraph
   # stdlib, and gems.
   #
   class YardMap
+    autoload :Cache,    'solargraph/yard_map/cache'
     autoload :CoreDocs, 'solargraph/yard_map/core_docs'
 
     CoreDocs.require_minimum
@@ -32,20 +33,22 @@ module Solargraph
       @gem_paths = {}
       @stdlib_namespaces = []
       process_requires
-      yardocs.push CoreDocs.yardoc_file
+      # yardocs.push CoreDocs.yardoc_file
       yardocs.uniq!
       yardocs.delete_if{ |y| y.start_with? workspace.directory } unless workspace.nil? or workspace.directory.nil?
     end
 
+    # @return [Array<Solargraph::Pin::Base>]
     def pins
-      @pins ||= begin
-        result = []
-        objects.each do |o|
-          pin = generate_pin(o)
-          result.push pin unless pin.nil?
-        end
-        result
-      end
+      @pins ||= []
+      # @pins ||= begin
+      #   result = []
+      #   objects.each do |o|
+      #     pin = generate_pin(o)
+      #     result.push pin unless pin.nil?
+      #   end
+      #   result
+      # end
     end
 
     # @return [Array<String>]
@@ -74,29 +77,47 @@ module Solargraph
       end
     end
 
+    # @param paths [Array<String>]
+    # @return [Boolean]
+    def change new_requires
+      if new_requires.uniq.sort == required.uniq.sort
+        false
+      else
+        required.clear
+        required.concat new_requires
+        process_requires
+        true
+      end
+    end
+
     private
 
-    def objects
-      all = []
-      yardocs.each do |y|
-        load_yardoc y
-        all.concat YARD::Registry.all
-      end
-      unless @stdlib_namespaces.empty?
-        yard = load_yardoc @@stdlib_yardoc
-        @stdlib_namespaces.each do |ns|
-          next if all.include?(ns)
-          all.push ns
-          all.concat recurse_namespace_object(ns)
-        end
-      end
-      all
+    # @return [YardMap::Cache]
+    def cache
+      @cache ||= YardMap::Cache.new
     end
+
+    # def objects
+    #   all = []
+    #   yardocs.each do |y|
+    #     load_yardoc y
+    #     all.concat YARD::Registry.all
+    #   end
+    #   unless @stdlib_namespaces.empty?
+    #     yard = load_yardoc @@stdlib_yardoc
+    #     @stdlib_namespaces.each do |ns|
+    #       next if all.include?(ns)
+    #       all.push ns
+    #       all.concat recurse_namespace_object(ns)
+    #     end
+    #   end
+    #   all
+    # end
 
     def recurse_namespace_object ns
       result = []
       ns.children.each do |c|
-        result.push c
+        result.push generate_pin(c)
         result.concat recurse_namespace_object(c) if c.respond_to?(:children)
       end
       result
@@ -116,20 +137,37 @@ module Solargraph
     end
 
     def process_requires
-      tried = []
+      pins.clear
       unresolved_requires.clear
       required.each do |r|
-        next if r.nil?
+        next if r.nil? or r.empty?
         next if !workspace.nil? and workspace.would_require?(r)
+        cached = cache.get_path_pins(r)
+        unless cached.nil?
+          pins.concat cached
+          next
+        end
+        result = []
         begin
           spec = Gem::Specification.find_by_path(r) || Gem::Specification.find_by_name(r.split('/').first)
           ver = spec.version.to_s
           ver = ">= 0" if ver.empty?
-          add_gem_dependencies spec
+          # @todo Ignoring dependencies for now
+          # add_gem_dependencies spec
           yd = YARD::Registry.yardoc_file_for_gem(spec.name, ver)
           @gem_paths[spec.name] = spec.full_gem_path
-          unresolved_requires.push r if yd.nil?
-          yardocs.unshift yd unless yd.nil? or yardocs.include?(yd)
+          if yd.nil?
+            unresolved_requires.push r
+          else
+            unless yardocs.include?(yd)
+              yardocs.unshift yd
+              # @todo Generate the pins
+              load_yardoc yd
+              YARD::Registry.each do |o|
+                result.push generate_pin(o)
+              end
+            end
+          end
         rescue Gem::LoadError => e
           next if !workspace.nil? and workspace.would_require?(r)
           stdnames = []
@@ -137,14 +175,41 @@ module Solargraph
             stdnames.concat objects if path == r or path.start_with?("#{r}/")
           end
           @stdlib_namespaces.concat stdnames
-          unresolved_requires.push r if stdnames.empty?
+          if stdnames.empty?
+            unresolved_requires.push r
+          else
+            yard = load_yardoc @@stdlib_yardoc
+            done = []
+            stdnames.each do |ns|
+              next if done.include?(ns)
+              done.push ns
+              result.push generate_pin(ns)
+              result.concat recurse_namespace_object(ns)
+            end
+          end
         end
+        result.delete_if(&:nil?)
+        unless result.empty?
+          cache.set_path_pins r, result
+          pins.concat result
+        end
+      end
+      pins.concat core_pins
+    end
+
+    def core_pins
+      @core_pins ||= begin
+        result = []
+        load_yardoc CoreDocs.yardoc_file
+        YARD::Registry.each do |o|
+          result.push generate_pin(o)
+        end
+        result
       end
     end
 
     # @param spec [Gem::Specification]
     def add_gem_dependencies spec
-      return # @todo Ignore dependencies for now
       (spec.dependencies - spec.development_dependencies).each do |dep|
         depspec = Gem::Specification.find_by_name(dep.name)
         @gem_paths[spec.name] = depspec.full_gem_path unless depspec.nil?
