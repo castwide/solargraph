@@ -219,6 +219,8 @@ module Solargraph
     # @param context [String] The context to search
     # @return [String]
     def qualify namespace, context = ''
+      # @todo The return for self might work better elsewhere
+      return qualify(context) if namespace == 'self'
       cached = cache.get_qualified_namespace(namespace, context)
       return cached unless cached.nil?
       result = inner_qualify(namespace, context, [])
