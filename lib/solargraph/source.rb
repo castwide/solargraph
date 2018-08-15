@@ -339,7 +339,7 @@ module Solargraph
     end
 
     def synchronize_mapped new_pins, new_locals, new_requires, new_symbols #, new_path_macros, new_domains
-      return if try_merge(new_pins, new_locals)
+      return if @requires == new_requires and @symbols == new_symbols and try_merge(new_pins, new_locals)
       @pins = new_pins
       @locals = new_locals
       @requires = new_requires

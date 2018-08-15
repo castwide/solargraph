@@ -670,7 +670,11 @@ module Solargraph
     #
     # @return [Solargraph::YardMap]
     def yard_map
-      @yard_map = Solargraph::YardMap.new(required: required, workspace: workspace) if @yard_map.nil? or yard_map_changed?
+      if yard_map_changed?
+        @yard_map = Solargraph::YardMap.new(required: required, workspace: workspace)
+        @store.update_from_yard @yard_map.pins unless @store.nil?
+        cache.clear
+      end
       @yard_map
     end
   end

@@ -28,6 +28,12 @@ module Solargraph
         index
       end
 
+      def update_from_yard yard_pins
+        pins.delete_if(&:yard_pin?)
+        pins.concat yard_pins
+        index
+      end
+
       # @return [Array<Solargraph::Pin::Base>]
       def get_constants fqns, visibility = [:public]
         namespace_pins(fqns).select { |pin|
