@@ -5,8 +5,8 @@ module Solargraph
     class Store
       # @param sources [Array<Solargraph::Source>]
       def initialize sources, yard_pins
-        update *sources
-        @pins.concat yard_pins
+        inner_update *sources
+        pins.concat yard_pins
         index
       end
 
@@ -24,12 +24,7 @@ module Solargraph
       end
 
       def update *sources
-        sources.each do |source|
-          pins.delete_if { |pin| pin.filename == source.filename }
-          symbols.delete_if { |pin| pin.filename == source.filename }
-          pins.concat source.pins
-          symbols.concat source.symbols
-        end
+        inner_update *sources
         index
       end
 
@@ -153,6 +148,15 @@ module Solargraph
           namespace_map[pin.namespace] ||= []
           namespace_map[pin.namespace].push pin
           namespaces.add pin.path if pin.kind == Pin::NAMESPACE and !pin.path.empty?
+        end
+      end
+
+      def inner_update *sources
+        sources.each do |source|
+          pins.delete_if { |pin| !pin.yard_pin? and pin.filename == source.filename }
+          symbols.delete_if { |pin| pin.filename == source.filename }
+          pins.concat source.pins
+          symbols.concat source.symbols
         end
       end
     end
