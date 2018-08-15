@@ -62,6 +62,7 @@ module Solargraph
         types = []
         strings.each do |type_string|
           point_stack = 0
+          curly_stack = 0
           base = ''
           subtype_string = ''
           type_string.each_char do |char|
@@ -71,6 +72,9 @@ module Solargraph
             elsif char == '>'
               point_stack -= 1
               raise "Invalid close in type #{type_string}" if point_stack < 0
+            elsif char == '{'
+              # @todo Temporarily short-circuiting types with {}
+              break
             elsif char == ',' and point_stack == 0
               types.push ComplexType.new base.strip, subtype_string.strip
               base = ''
