@@ -36,8 +36,6 @@ module Solargraph
       @workspace = workspace
       require_extensions
       @virtual_source = nil
-      @yard_stale = true
-      # process_maps
       @sources = workspace.sources
       refresh_store_and_maps
     end
@@ -71,17 +69,6 @@ module Solargraph
       result.concat workspace.config.required
       result.uniq
     end
-
-    # Get a YardMap associated with the current workspace.
-    #
-    # @return [Solargraph::YardMap]
-    # def yard_map
-    #   # refresh
-    #   if @yard_map.required.to_set != required.to_set
-    #     @yard_map = Solargraph::YardMap.new(required: required, workspace: workspace)
-    #   end
-    #   @yard_map
-    # end
 
     # Declare a virtual source that will be included in the map regardless of
     # whether it's in the workspace.
@@ -516,15 +503,17 @@ module Solargraph
       @probe ||= Probe.new(self)
     end
 
+    def unresolved_requires
+      yard_map.unresolved_requires
+    end
+
     private
 
     # @return [void]
     def refresh_store_and_maps
-      @store = ApiMap::Store.new(@sources, [])
+      @yard_stale = true
       @live_map = Solargraph::LiveMap.new(self)
-      @yard_map = Solargraph::YardMap.new(required: required, workspace: workspace)
-      @store = ApiMap::Store.new(@sources, @yard_map.all_pins)
-      # @store.concat @yard_map.all_pins
+      @store = ApiMap::Store.new(@sources, yard_map.pins)
     end
 
     # @return [void]
@@ -577,7 +566,7 @@ module Solargraph
           # result.concat yard_map.get_methods(fqns, '', visibility: visibility)
           type = get_namespace_type(fqns)
           result.concat inner_get_methods('Class', :instance, fqns == '' ? [:public] : visibility, deep, skip) if type == :class
-          result.concat inner_get_methods('Module', :instance, fqns == '' ? [:public] : visibility, deep, skip) if type == :module
+          result.concat inner_get_methods('Module', :instance, fqns == '' ? [:public] : visibility, deep, skip) #if type == :module
         end
       end
       result
@@ -668,8 +657,18 @@ module Solargraph
     # @return [Symbol] :class, :module, or nil
     def get_namespace_type fqns
       pin = store.get_path_pins(fqns).first
-      # return yard_map.get_namespace_type(fqns) if pin.nil?
+      return nil if pin.nil?
       pin.type
+    end
+
+    # Get a YardMap associated with the current workspace.
+    #
+    # @return [Solargraph::YardMap]
+    def yard_map
+      if @yard_map.nil? or @yard_map.required.to_set != required.to_set
+        @yard_map = Solargraph::YardMap.new(required: required, workspace: workspace)
+      end
+      @yard_map
     end
   end
 end
