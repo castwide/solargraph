@@ -29,7 +29,6 @@ module Solargraph
       @workspace = workspace
       # HACK: YardMap needs its own copy of this array
       @required = required.clone
-      @namespace_yardocs = {}
       @gem_paths = {}
       @stdlib_namespaces = []
       process_requires
@@ -38,34 +37,14 @@ module Solargraph
       yardocs.delete_if{ |y| y.start_with? workspace.directory } unless workspace.nil? or workspace.directory.nil?
     end
 
-    def all_objects
-      all = []
-      yardocs.each do |y|
-        load_yardoc y
-        all.concat YARD::Registry.all
-      end
-      all
-    end
-
-    def all_pins
-      result = []
-      all_objects.each do |o|
-        pin = generate_pin(o)
-        result.push pin unless pin.nil?
-      end
-      result
-    end
-
-    def generate_pin code_object
-      location = object_location(code_object)
-      if code_object.is_a?(YARD::CodeObjects::NamespaceObject)
-        Solargraph::Pin::YardPin::Namespace.new(code_object, location)
-      elsif code_object.is_a?(YARD::CodeObjects::MethodObject)
-        Solargraph::Pin::YardPin::Method.new(code_object, location)
-      elsif code_object.is_a?(YARD::CodeObjects::ConstantObject)
-        Solargraph::Pin::YardPin::Constant.new(code_object, location)
-      else
-        nil
+    def pins
+      @pins ||= begin
+        result = []
+        objects.each do |o|
+          pin = generate_pin(o)
+          result.push pin unless pin.nil?
+        end
+        result
       end
     end
 
@@ -96,6 +75,28 @@ module Solargraph
     end
 
     private
+
+    def objects
+      all = []
+      yardocs.each do |y|
+        load_yardoc y
+        all.concat YARD::Registry.all
+      end
+      all
+    end
+
+    def generate_pin code_object
+      location = object_location(code_object)
+      if code_object.is_a?(YARD::CodeObjects::NamespaceObject)
+        Solargraph::Pin::YardPin::Namespace.new(code_object, location)
+      elsif code_object.is_a?(YARD::CodeObjects::MethodObject)
+        Solargraph::Pin::YardPin::Method.new(code_object, location)
+      elsif code_object.is_a?(YARD::CodeObjects::ConstantObject)
+        Solargraph::Pin::YardPin::Constant.new(code_object, location)
+      else
+        nil
+      end
+    end
 
     def process_requires
       tried = []
@@ -137,21 +138,6 @@ module Solargraph
           yardocs.unshift gy unless yardocs.include?(gy)
         end
       end
-    end
-
-    # @param namespace [String]
-    # @return [Array<String>]
-    def yardocs_documenting namespace
-      result = []
-      if namespace == ''
-        result.concat yardocs
-      else
-        result.concat @namespace_yardocs[namespace] unless @namespace_yardocs[namespace].nil?
-      end
-      if @stdlib_namespaces.map(&:path).include?(namespace)
-        result.push @@stdlib_yardoc
-      end
-      result
     end
 
     # @param obj [YARD::CodeObjects::Base]
