@@ -82,8 +82,24 @@ module Solargraph
         load_yardoc y
         all.concat YARD::Registry.all
       end
-      all.concat @stdlib_namespaces
+      unless @stdlib_namespaces.empty?
+        yard = load_yardoc @@stdlib_yardoc
+        @stdlib_namespaces.each do |ns|
+          next if all.include?(ns)
+          all.push ns
+          all.concat recurse_namespace_object(ns)
+        end
+      end
       all
+    end
+
+    def recurse_namespace_object ns
+      result = []
+      ns.children.each do |c|
+        result.push c
+        result.concat recurse_namespace_object(c) if c.respond_to?(:children)
+      end
+      result
     end
 
     def generate_pin code_object
