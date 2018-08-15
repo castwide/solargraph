@@ -4,8 +4,9 @@ module Solargraph
   class ApiMap
     class Store
       # @param sources [Array<Solargraph::Source>]
-      def initialize sources
+      def initialize sources, yard_pins
         update *sources
+        @pins.concat yard_pins
         index
       end
 

@@ -10,15 +10,16 @@ module Solargraph
         source.requires.each do |ref|
           refs[ref.name] = ref
         end
-        api_map.yard_map.unresolved_requires.each do |r|
-          next unless refs.has_key?(r)
-          result.push(
-            range: refs[r].location.range.to_hash,
-            severity: Diagnostics::Severities::WARNING,
-            source: 'Solargraph',
-            message: "Required path #{r} could not be resolved."
-          )
-        end
+        # @todo Fix for YardMap changes
+        # api_map.yard_map.unresolved_requires.each do |r|
+        #   next unless refs.has_key?(r)
+        #   result.push(
+        #     range: refs[r].location.range.to_hash,
+        #     severity: Diagnostics::Severities::WARNING,
+        #     source: 'Solargraph',
+        #     message: "Required path #{r} could not be resolved."
+        #   )
+        # end
         result
       end
     end

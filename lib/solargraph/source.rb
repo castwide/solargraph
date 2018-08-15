@@ -71,6 +71,7 @@ module Solargraph
           hard_fix_node
         end
       rescue Exception => e
+        STDERR.puts "FUCKIN WHAT #{e.backtrace}"
         raise RuntimeError, "Error parsing #{filename || '(source)'}: [#{e.class}] #{e.message}"
       end
     end

@@ -13,7 +13,6 @@ module Solargraph
     autoload :Constant,         'solargraph/pin/constant'
     autoload :Symbol,           'solargraph/pin/symbol'
     autoload :Namespace,        'solargraph/pin/namespace'
-    autoload :YardObject,       'solargraph/pin/yard_object'
     autoload :Keyword,          'solargraph/pin/keyword'
     autoload :MethodParameter,  'solargraph/pin/method_parameter'
     autoload :BlockParameter,   'solargraph/pin/block_parameter'
@@ -23,6 +22,7 @@ module Solargraph
     autoload :Localized,        'solargraph/pin/localized'
     autoload :ProxyMethod,      'solargraph/pin/proxy_method'
     autoload :DuckMethod,       'solargraph/pin/duck_method'
+    autoload :YardPin,          'solargraph/pin/yard_pin'
 
     ATTRIBUTE = 1
     CLASS_VARIABLE = 2

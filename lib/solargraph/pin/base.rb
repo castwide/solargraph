@@ -40,6 +40,7 @@ module Solargraph
 
       # @return [String]
       def filename
+        return nil if location.nil?
         location.filename
       end
 
@@ -64,6 +65,10 @@ module Solargraph
 
       # @return [Boolean]
       def variable?
+        false
+      end
+
+      def yard_pin?
         false
       end
 

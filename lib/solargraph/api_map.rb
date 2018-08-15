@@ -75,13 +75,13 @@ module Solargraph
     # Get a YardMap associated with the current workspace.
     #
     # @return [Solargraph::YardMap]
-    def yard_map
-      # refresh
-      if @yard_map.required.to_set != required.to_set
-        @yard_map = Solargraph::YardMap.new(required: required, workspace: workspace)
-      end
-      @yard_map
-    end
+    # def yard_map
+    #   # refresh
+    #   if @yard_map.required.to_set != required.to_set
+    #     @yard_map = Solargraph::YardMap.new(required: required, workspace: workspace)
+    #   end
+    #   @yard_map
+    # end
 
     # Declare a virtual source that will be included in the map regardless of
     # whether it's in the workspace.
@@ -444,7 +444,7 @@ module Solargraph
       return [] if path.nil?
       result = []
       result.concat store.get_path_pins(path)
-      result.concat yard_map.objects(path)
+      # result.concat yard_map.objects(path)
       if result.empty?
         lp = live_map.get_path_pin(path)
         result.push lp unless lp.nil?
@@ -468,7 +468,7 @@ module Solargraph
           found.push k if k.downcase.include?(query.downcase)
         end
       end
-      found.concat(yard_map.search(query)).uniq.sort
+      # found.concat(yard_map.search(query)).uniq.sort
     end
 
     # Get YARD documentation for the specified path.
@@ -483,7 +483,7 @@ module Solargraph
       @yard_stale = false
       docs = []
       docs.push code_object_at(path) unless code_object_at(path).nil?
-      docs.concat yard_map.document(path)
+      # docs.concat yard_map.document(path)
       docs
     end
 
@@ -520,9 +520,11 @@ module Solargraph
 
     # @return [void]
     def refresh_store_and_maps
-      @store = ApiMap::Store.new(@sources)
+      @store = ApiMap::Store.new(@sources, [])
       @live_map = Solargraph::LiveMap.new(self)
       @yard_map = Solargraph::YardMap.new(required: required, workspace: workspace)
+      @store = ApiMap::Store.new(@sources, @yard_map.all_pins)
+      # @store.concat @yard_map.all_pins
     end
 
     # @return [void]
@@ -565,14 +567,14 @@ module Solargraph
             fqim = qualify(im, fqns)
             result.concat inner_get_methods(fqim, scope, visibility, deep, skip) unless fqim.nil?
           end
-          result.concat yard_map.get_instance_methods(fqns, visibility: visibility)
+          # result.concat yard_map.get_instance_methods(fqns, visibility: visibility)
           result.concat inner_get_methods('Object', :instance, [:public], deep, skip) unless fqns == 'Object'
         else
           store.get_extends(fqns).each do |em|
             fqem = qualify(em, fqns)
             result.concat inner_get_methods(fqem, :instance, visibility, deep, skip) unless fqem.nil?
           end
-          result.concat yard_map.get_methods(fqns, '', visibility: visibility)
+          # result.concat yard_map.get_methods(fqns, '', visibility: visibility)
           type = get_namespace_type(fqns)
           result.concat inner_get_methods('Class', :instance, fqns == '' ? [:public] : visibility, deep, skip) if type == :class
           result.concat inner_get_methods('Module', :instance, fqns == '' ? [:public] : visibility, deep, skip) if type == :module
@@ -586,7 +588,7 @@ module Solargraph
       skip.push fqns
       result = []
       result.concat store.get_constants(fqns, visibility)
-      result.concat yard_map.get_constants(fqns)
+      # result.concat yard_map.get_constants(fqns)
       store.get_includes(fqns).each do |is|
         fqis = qualify(is, fqns)
         result.concat inner_get_constants(fqis, [:public], skip) unless fqis.nil?
@@ -653,10 +655,10 @@ module Solargraph
           return name if store.namespace_exists?(name)
         end
       end
-      result = yard_map.find_fully_qualified_namespace(name, root)
-      if result.nil?
+      # result = yard_map.find_fully_qualified_namespace(name, root)
+      # if result.nil?
         result = live_map.get_fqns(name, root)
-      end
+      # end
       result
     end
 
@@ -666,7 +668,7 @@ module Solargraph
     # @return [Symbol] :class, :module, or nil
     def get_namespace_type fqns
       pin = store.get_path_pins(fqns).first
-      return yard_map.get_namespace_type(fqns) if pin.nil?
+      # return yard_map.get_namespace_type(fqns) if pin.nil?
       pin.type
     end
   end
