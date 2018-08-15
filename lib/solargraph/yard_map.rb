@@ -82,6 +82,7 @@ module Solargraph
         load_yardoc y
         all.concat YARD::Registry.all
       end
+      all.concat @stdlib_namespaces
       all
     end
 

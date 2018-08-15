@@ -97,6 +97,7 @@ module Solargraph
           process_virtual
         end
       end
+      refresh_store_and_maps if yard_map_changed?
       source
     end
 
@@ -661,13 +662,15 @@ module Solargraph
       pin.type
     end
 
+    def yard_map_changed?
+      @yard_map.nil? or @yard_map.required.to_set != required.to_set
+    end
+
     # Get a YardMap associated with the current workspace.
     #
     # @return [Solargraph::YardMap]
     def yard_map
-      if @yard_map.nil? or @yard_map.required.to_set != required.to_set
-        @yard_map = Solargraph::YardMap.new(required: required, workspace: workspace)
-      end
+      @yard_map = Solargraph::YardMap.new(required: required, workspace: workspace) if @yard_map.nil? or yard_map_changed?
       @yard_map
     end
   end
