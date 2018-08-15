@@ -41,14 +41,6 @@ module Solargraph
     # @return [Array<Solargraph::Pin::Base>]
     def pins
       @pins ||= []
-      # @pins ||= begin
-      #   result = []
-      #   objects.each do |o|
-      #     pin = generate_pin(o)
-      #     result.push pin unless pin.nil?
-      #   end
-      #   result
-      # end
     end
 
     # @return [Array<String>]
@@ -96,23 +88,6 @@ module Solargraph
     def cache
       @cache ||= YardMap::Cache.new
     end
-
-    # def objects
-    #   all = []
-    #   yardocs.each do |y|
-    #     load_yardoc y
-    #     all.concat YARD::Registry.all
-    #   end
-    #   unless @stdlib_namespaces.empty?
-    #     yard = load_yardoc @@stdlib_yardoc
-    #     @stdlib_namespaces.each do |ns|
-    #       next if all.include?(ns)
-    #       all.push ns
-    #       all.concat recurse_namespace_object(ns)
-    #     end
-    #   end
-    #   all
-    # end
 
     def recurse_namespace_object ns
       result = []
