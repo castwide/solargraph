@@ -83,7 +83,7 @@ module Solargraph
     end
 
     def core_pins
-      @core_pins ||= begin
+      @@core_pins ||= begin
         result = []
         load_yardoc CoreDocs.yardoc_file
         YARD::Registry.each do |o|
