@@ -76,14 +76,14 @@ module Solargraph
 
       def defined_return_type? pin, api_map
         return true unless pin.return_type.nil?
-        matches = api_map.get_methods(pin.namespace, scope: pin.scope, visibility: [:public, :private, :protected]).select{|p| p.name == pin.name}
+        matches = api_map.get_method_stack(pin.namespace, pin.name, scope: pin.scope)
         matches.shift
         matches.any?{|m| !m.return_type.nil?}
       end
 
       def defined_param_type? pin, param, api_map
         return true if param_in_docstring?(param, pin.docstring)
-        matches = api_map.get_methods(pin.namespace, scope: pin.scope, visibility: [:public, :private, :protected]).select{|p| p.name == pin.name}
+        matches = api_map.get_method_stack(pin.namespace, pin.name, scope: pin.scope)
         matches.shift
         matches.each do |m|
           next unless pin.parameter_names == m.parameter_names

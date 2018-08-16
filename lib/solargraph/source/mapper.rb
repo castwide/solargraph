@@ -144,13 +144,13 @@ module Solargraph
               elsif c.type == :def
                 methpin = Solargraph::Pin::Method.new(get_node_location(c), fqn || '', c.children[(c.type == :def ? 0 : 1)].to_s, comments_for(c), scope, visibility, get_method_args(c))
                 if methpin.name == 'initialize' and methpin.scope == :instance
-                  pins.push Solargraph::Pin::Method.new(methpin.location, methpin.namespace, 'new', methpin.docstring, :class, :public, methpin.parameters)
+                  pins.push Solargraph::Pin::Method.new(methpin.location, methpin.namespace, 'new', methpin.comments, :class, :public, methpin.parameters)
                   # @todo Smelly instance variable access.
                   pins.last.instance_variable_set(:@return_complex_types, ComplexType.parse(methpin.namespace))
-                  pins.push Solargraph::Pin::Method.new(methpin.location, methpin.namespace, methpin.name, methpin.docstring, methpin.scope, :private, methpin.parameters)
+                  pins.push Solargraph::Pin::Method.new(methpin.location, methpin.namespace, methpin.name, methpin.comments, methpin.scope, :private, methpin.parameters)
                 elsif visibility == :module_function
-                  pins.push Solargraph::Pin::Method.new(methpin.location, methpin.namespace, methpin.name, methpin.docstring, :class, :public, methpin.parameters)
-                  pins.push Solargraph::Pin::Method.new(methpin.location, methpin.namespace, methpin.name, methpin.docstring, :instance, :private, methpin.parameters)
+                  pins.push Solargraph::Pin::Method.new(methpin.location, methpin.namespace, methpin.name, methpin.comments, :class, :public, methpin.parameters)
+                  pins.push Solargraph::Pin::Method.new(methpin.location, methpin.namespace, methpin.name, methpin.comments, :instance, :private, methpin.parameters)
                 else
                   pins.push methpin
                 end
@@ -174,7 +174,7 @@ module Solargraph
                   ref = pins.select{|p| p.namespace == (fqn || '') and p.name == c.children[2].children[0].to_s}.first
                   unless ref.nil?
                     pins.delete ref
-                    pins.push Solargraph::Pin::Method.new(ref.location, ref.namespace, ref.name, ref.docstring, ref.scope, :private, ref.parameters)
+                    pins.push Solargraph::Pin::Method.new(ref.location, ref.namespace, ref.name, ref.comments, ref.scope, :private, ref.parameters)
                   end
                 else
                   process c, tree, :private, :class, fqn, stack
@@ -189,9 +189,9 @@ module Solargraph
                     pins.delete ref
                     # Might be either a namespace or constant
                     if ref.kind == Pin::CONSTANT
-                      pins.push ref.class.new(ref.location, ref.namespace, ref.name, ref.docstring, ref.signature, ref.return_type, ref.context, :private)
+                      pins.push ref.class.new(ref.location, ref.namespace, ref.name, ref.comments, ref.signature, ref.return_type, ref.context, :private)
                     else
-                      pins.push ref.class.new(ref.location, ref.namespace, ref.name, ref.docstring, ref.type, :private, (ref.superclass_reference.nil? ? nil : ref.superclass_reference.name))
+                      pins.push ref.class.new(ref.location, ref.namespace, ref.name, ref.comments, ref.type, :private, (ref.superclass_reference.nil? ? nil : ref.superclass_reference.name))
                     end
                   end
                 end
@@ -206,13 +206,13 @@ module Solargraph
                     ref = pins.select{|p| p.namespace == (fqn || '') and p.name == cn}.first
                     unless ref.nil?
                       pins.delete ref
-                      mm = Solargraph::Pin::Method.new(ref.location, ref.namespace, ref.name, ref.docstring, :class, :public, ref.parameters)
-                      cm = Solargraph::Pin::Method.new(ref.location, ref.namespace, ref.name, ref.docstring, :instance, :private, ref.parameters)
+                      mm = Solargraph::Pin::Method.new(ref.location, ref.namespace, ref.name, ref.comments, :class, :public, ref.parameters)
+                      cm = Solargraph::Pin::Method.new(ref.location, ref.namespace, ref.name, ref.comments, :instance, :private, ref.parameters)
                       pins.push mm, cm
                       pins.select{|pin| pin.kind == Pin::INSTANCE_VARIABLE and pin.context == ref}.each do |ivar|
                         pins.delete ivar
-                        pins.push Solargraph::Pin::InstanceVariable.new(ivar.location, ivar.namespace, ivar.name, ivar.docstring, ivar.signature, ivar.instance_variable_get(:@literal), mm)
-                        pins.push Solargraph::Pin::InstanceVariable.new(ivar.location, ivar.namespace, ivar.name, ivar.docstring, ivar.signature, ivar.instance_variable_get(:@literal), cm)
+                        pins.push Solargraph::Pin::InstanceVariable.new(ivar.location, ivar.namespace, ivar.name, ivar.comments, ivar.signature, ivar.instance_variable_get(:@literal), mm)
+                        pins.push Solargraph::Pin::InstanceVariable.new(ivar.location, ivar.namespace, ivar.name, ivar.comments, ivar.signature, ivar.instance_variable_get(:@literal), cm)
                       end
                     end
                   end
