@@ -82,6 +82,17 @@ module Solargraph
       end
     end
 
+    def core_pins
+      @core_pins ||= begin
+        result = []
+        load_yardoc CoreDocs.yardoc_file
+        YARD::Registry.each do |o|
+          result.push generate_pin(o)
+        end
+        result
+      end
+    end
+
     private
 
     # @return [YardMap::Cache]
@@ -170,17 +181,6 @@ module Solargraph
         end
       end
       pins.concat core_pins
-    end
-
-    def core_pins
-      @core_pins ||= begin
-        result = []
-        load_yardoc CoreDocs.yardoc_file
-        YARD::Registry.each do |o|
-          result.push generate_pin(o)
-        end
-        result
-      end
     end
 
     # @param spec [Gem::Specification]
