@@ -215,11 +215,9 @@ module Solargraph
           return nil if subtypes.nil?
           return subtypes[0]
         else
-          unless meth.docstring.nil?
-            yps = meth.docstring.tags(:yieldparam)
-            unless yps[pin.index].nil? or yps[pin.index].types.nil? or yps[pin.index].types.empty?
-              return yps[pin.index].types[0]
-            end
+          yps = meth.docstring.tags(:yieldparam)
+          unless yps[pin.index].nil? or yps[pin.index].types.nil? or yps[pin.index].types.empty?
+            return yps[pin.index].types[0]
           end
         end
         nil
@@ -230,7 +228,6 @@ module Solargraph
         matches = api_map.get_method_stack(pin.namespace, pin.context.name, scope: pin.scope)
         matches.each do |m|
           next unless pin.context.parameters == m.parameters
-          next if m.docstring.nil?
           tag = m.docstring.tags(:param).select{|t| t.name == pin.name}.first
           next if tag.nil? or tag.types.nil?
           return tag.types[0]

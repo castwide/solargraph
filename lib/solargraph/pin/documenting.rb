@@ -3,7 +3,7 @@ module Solargraph
     module Documenting
       # @return [String]
       def documentation
-        if @documentation.nil? and !docstring.nil?
+        if @documentation.nil?
           @documentation = ReverseMarkdown.convert(helper.html_markup_rdoc(docstring), github_flavored: true)
           @documentation.strip!
         end
@@ -16,7 +16,7 @@ module Solargraph
       #
       # @return [Boolean]
       def has_doc?
-        !docstring.nil? and !docstring.all.empty?
+        !docstring.all.empty?
       end
 
       def helper

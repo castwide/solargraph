@@ -24,7 +24,7 @@ module Solargraph
             else
               code_object_map[pin.path] ||= YARD::CodeObjects::ModuleObject.new(root_code_object, pin.path)
             end
-            code_object_map[pin.path].docstring = pin.docstring unless pin.docstring.nil?
+            code_object_map[pin.path].docstring = pin.docstring
             code_object_map[pin.path].files.push pin.location.filename
           end
           s.namespace_pins.each do |pin|
@@ -34,7 +34,7 @@ module Solargraph
           end
           s.method_pins.each do |pin|
             code_object_map[pin.path] ||= YARD::CodeObjects::MethodObject.new(code_object_at(pin.namespace), pin.name, pin.scope)
-            code_object_map[pin.path].docstring = pin.docstring unless pin.docstring.nil?
+            code_object_map[pin.path].docstring = pin.docstring
             code_object_map[pin.path].visibility = pin.visibility || :public
             code_object_map[pin.path].files.push pin.location.filename
             code_object_map[pin.path].parameters = pin.parameters.map do |p|

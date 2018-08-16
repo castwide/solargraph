@@ -52,10 +52,8 @@ module Solargraph
       private
 
       def generate_complex_types
-        unless docstring.nil?
-          tag = docstring.tag(:type)
-          return ComplexType.parse(*tag.types) unless tag.nil?
-        end
+        tag = docstring.tag(:type)
+        return ComplexType.parse(*tag.types) unless tag.nil?
         return ComplexType.parse(@literal) unless @literal.nil?
         []
       end

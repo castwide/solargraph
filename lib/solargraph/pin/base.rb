@@ -15,9 +15,6 @@ module Solargraph
       # @return [String]
       attr_reader :name
 
-      # @return [YARD::Docstring]
-      attr_reader :docstring
-
       # @return [String]
       attr_reader :comments
 
@@ -95,10 +92,10 @@ module Solargraph
         return false unless self.class == other.class
         namespace == other.namespace and
           name == other.name and
-          #compare_comments(other) and
-          #return_complex_types == other.return_complex_types
-          directives == other.directives #and
-          #return_complex_types == other.return_complex_types
+          (comments == other.comments or
+            ( ((maybe_directives? == false and other.maybe_directives? == false) or directives == other.directives) and
+            docstring.tags == other.docstring.tags )
+          )
       end
 
       # The first return type associated with the pin.
@@ -138,7 +135,7 @@ module Solargraph
       # @return [YARD::Docstring]
       def docstring
         parse_comments unless defined?(@docstring)
-        @docstring
+        @docstring ||= YARD::Docstring.parser.parse('').to_docstring
       end
 
       # @param [Array<YARD::Tags::Directive>]

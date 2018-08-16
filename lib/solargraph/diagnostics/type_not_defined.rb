@@ -47,16 +47,14 @@ module Solargraph
 
       def check_param_tags pin, api_map, source
         result = []
-        unless pin.docstring.nil?
-          pin.docstring.tags(:param).each do |par|
-            next if pin.parameter_names.include?(par.name)
-            result.push(
-              range: extract_first_line(pin, source),
-              severity: Diagnostics::Severities::WARNING,
-              source: 'Solargraph',
-              message: "Method `#{pin.name}` has mistagged param `#{par.name}`."
-            )
-          end
+        pin.docstring.tags(:param).each do |par|
+          next if pin.parameter_names.include?(par.name)
+          result.push(
+            range: extract_first_line(pin, source),
+            severity: Diagnostics::Severities::WARNING,
+            source: 'Solargraph',
+            message: "Method `#{pin.name}` has mistagged param `#{par.name}`."
+          )
         end
         result
       end
@@ -93,7 +91,6 @@ module Solargraph
       end
 
       def param_in_docstring? param, docstring
-        return false if docstring.nil?
         tags = docstring.tags(:param)
         tags.any?{|t| t.name == param}
       end

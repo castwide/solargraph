@@ -46,20 +46,18 @@ module Solargraph
       def documentation
         if @documentation.nil?
           @documentation ||= super || ''
-          unless docstring.nil?
-            param_tags = docstring.tags(:param)
-            unless param_tags.nil? or param_tags.empty?
-              @documentation += "\n\n"
-              @documentation += "Params:\n"
-              lines = []
-              param_tags.each do |p|
-                l = "* #{p.name}"
-                l += " [#{p.types.join(', ')}]" unless p.types.empty?
-                l += " #{p.text}"
-                lines.push l
-              end
-              @documentation += lines.join("\n")
+          param_tags = docstring.tags(:param)
+          unless param_tags.nil? or param_tags.empty?
+            @documentation += "\n\n"
+            @documentation += "Params:\n"
+            lines = []
+            param_tags.each do |p|
+              l = "* #{p.name}"
+              l += " [#{p.types.join(', ')}]" unless p.types.nil? or p.types.empty?
+              l += " #{p.text}"
+              lines.push l
             end
+            @documentation += lines.join("\n")
           end
         end
         @documentation
@@ -75,7 +73,6 @@ module Solargraph
       private
 
       def generate_complex_types
-        return [] if docstring.nil?
         tag = docstring.tag(:return)
         if tag.nil?
           ol = docstring.tag(:overload)
