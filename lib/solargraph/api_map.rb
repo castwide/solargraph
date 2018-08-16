@@ -383,7 +383,7 @@ module Solargraph
     # @return [Array<Solargraph::Pin::Base>]
     def define fragment
       return get_path_suggestions(fragment.namespace) if fragment.whole_signature == 'self'
-      return [] if fragment.string? or fragment.comment? or fragment.literal? or fragment.whole_signature == 'self'
+      return [] if fragment.string? or fragment.comment? or fragment.literal? or KEYWORDS.include?(fragment.whole_signature)
       if fragment.base_literal?
         probe.infer_signature_pins fragment.whole_signature, Pin::ProxyMethod.new(fragment.base_literal), fragment.locals
       else
