@@ -492,17 +492,17 @@ module Solargraph
                     @diagnostics_queue.push change['textDocument']['uri']
                     changed = true
                     next true
-                  elsif change['textDocument']['version'] == source.version + 1 #and change['contentChanges'].length == 0
-                    # HACK: This condition fixes the fact that formatting
-                    # increments the version by one regardless of the number
-                    # of changes
-                    STDERR.puts "Warning: change applied to #{uri_to_file(change['textDocument']['uri'])} is possibly out of sync"
-                    pending[change['textDocument']['uri']] -= 1
-                    updater = generate_updater(change)
-                    library.synchronize updater, pending[change['textDocument']['uri']] == 0
-                    @diagnostics_queue.push change['textDocument']['uri']
-                    changed = true
-                    next true
+                  # elsif change['textDocument']['version'] == source.version + 1 #and change['contentChanges'].length == 0
+                  #   # HACK: This condition fixes the fact that formatting
+                  #   # increments the version by one regardless of the number
+                  #   # of changes
+                  #   STDERR.puts "Warning: change applied to #{uri_to_file(change['textDocument']['uri'])} is possibly out of sync"
+                  #   pending[change['textDocument']['uri']] -= 1
+                  #   updater = generate_updater(change)
+                  #   library.synchronize updater, pending[change['textDocument']['uri']] == 0
+                  #   @diagnostics_queue.push change['textDocument']['uri']
+                  #   changed = true
+                  #   next true
                   elsif change['textDocument']['version'] <= source.version
                     # @todo Is deleting outdated changes correct behavior?
                     STDERR.puts "Warning: outdated change to #{change['textDocument']['uri']} was ignored"
