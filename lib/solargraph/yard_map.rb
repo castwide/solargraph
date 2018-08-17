@@ -125,6 +125,7 @@ module Solargraph
     def process_requires
       pins.clear
       unresolved_requires.clear
+      stdnames = {}
       required.each do |r|
         next if r.nil? or r.empty?
         next if !workspace.nil? and workspace.would_require?(r)
@@ -156,22 +157,14 @@ module Solargraph
           end
         rescue Gem::LoadError => e
           next if !workspace.nil? and workspace.would_require?(r)
-          stdnames = []
+          stdtmp = []
           @@stdlib_paths.each_pair do |path, objects|
-            stdnames.concat objects if path == r or path.start_with?("#{r}/")
+            stdtmp.concat objects if path == r or path.start_with?("#{r}/")
           end
-          @stdlib_namespaces.concat stdnames
-          if stdnames.empty?
+          if stdtmp.empty?
             unresolved_requires.push r
           else
-            yard = load_yardoc @@stdlib_yardoc
-            done = []
-            stdnames.each do |ns|
-              next if done.include?(ns)
-              done.push ns
-              result.push generate_pin(ns)
-              result.concat recurse_namespace_object(ns)
-            end
+            stdnames[r] = stdtmp
           end
         end
         result.delete_if(&:nil?)
@@ -180,7 +173,29 @@ module Solargraph
           pins.concat result
         end
       end
+      pins.concat process_stdlib(stdnames)
       pins.concat core_pins
+    end
+
+    def process_stdlib required_namespaces
+      pins = []
+      unless required_namespaces.empty?
+        yard = load_yardoc @@stdlib_yardoc
+        done = []
+        required_namespaces.each_pair do |r, objects|
+          result = []
+          objects.each do |ns|
+            next if done.include?(ns)
+            done.push ns
+            result.push generate_pin(ns)
+            result.concat recurse_namespace_object(ns)
+          end
+          result.delete_if(&:nil?)
+          cache.set_path_pins(r, result) unless result.empty?
+          pins.concat result
+        end
+      end
+      pins
     end
 
     # @param spec [Gem::Specification]
