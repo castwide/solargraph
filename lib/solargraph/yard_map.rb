@@ -185,8 +185,8 @@ module Solargraph
         required_namespaces.each_pair do |r, objects|
           result = []
           objects.each do |ns|
-            next if done.include?(ns)
-            done.push ns
+            next if done.include?(ns.path)
+            done.push ns.path
             result.push generate_pin(ns)
             result.concat recurse_namespace_object(ns)
           end
