@@ -1,5 +1,3 @@
-require 'thread'
-
 module Solargraph
   module LanguageServer
     module Message

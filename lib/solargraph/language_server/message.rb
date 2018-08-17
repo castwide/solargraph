@@ -1,6 +1,5 @@
 require 'solargraph'
 require 'uri'
-require 'thread'
 
 module Solargraph
   module LanguageServer
