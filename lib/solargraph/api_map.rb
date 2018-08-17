@@ -177,7 +177,7 @@ module Solargraph
     def get_constants namespace, context = ''
       namespace ||= ''
       cached = cache.get_constants(namespace, context)
-      return cached unless cached.nil?
+      return cached.clone unless cached.nil?
       skip = []
       result = []
       bases = context.split('::')
@@ -207,7 +207,7 @@ module Solargraph
       # @todo The return for self might work better elsewhere
       return qualify(context) if namespace == 'self'
       cached = cache.get_qualified_namespace(namespace, context)
-      return cached unless cached.nil?
+      return cached.clone unless cached.nil?
       result = inner_qualify(namespace, context, [])
       cache.set_qualified_namespace(namespace, context, result)
       result
@@ -262,7 +262,7 @@ module Solargraph
     # @return [Array<Solargraph::Pin::Base>]
     def get_methods fqns, scope: :instance, visibility: [:public], deep: true
       cached = cache.get_methods(fqns, scope, visibility, deep)
-      return cached unless cached.nil?
+      return cached.clone unless cached.nil?
       result = []
       skip = []
       if fqns == ''
@@ -295,7 +295,7 @@ module Solargraph
     # @return [Array<Solargraph::Pin::Base>]
     def get_method_stack fqns, name, scope: :instance
       cached = cache.get_method_stack(fqns, name, scope)
-      return cached unless cached.nil?
+      return cached.clone unless cached.nil?
       result = get_methods(fqns, scope: scope, visibility: [:private, :protected, :public]).select{|p| p.name == name}
       cache.set_method_stack(fqns, name, scope, result)
       result
@@ -526,8 +526,8 @@ module Solargraph
       map_source @virtual_source unless @virtual_source.nil?
       if yard_map.change(required)
         store.update_yard(yard_map.pins)
-        cache.clear
       end
+      cache.clear
     end
 
     # @param source [Solargraph::Source]
