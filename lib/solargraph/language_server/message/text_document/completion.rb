@@ -6,25 +6,16 @@ module Solargraph
       module TextDocument
         class Completion < Base
           def process
-            start = Time.now
-            processed = false
-            until processed
-              if host.changing?(params['textDocument']['uri'])
-                if Time.now - start > 1
-                  # set_error Solargraph::LanguageServer::ErrorCodes::INTERNAL_ERROR, 'Completion request timed out'
-                  set_result empty_result
-                  processed = true
-                end
-              else
-                inner_process
-                processed = true
-              end
-              sleep 0.1 unless processed
+            if host.changing?(params['textDocument']['uri'])
+              set_result empty_result(true)
+            else
+              inner_process
             end
           end
 
           private
 
+          # @return [void]
           def inner_process
             filename = uri_to_file(params['textDocument']['uri'])
             line = params['position']['line']
@@ -56,9 +47,11 @@ module Solargraph
             end
           end
 
-          def empty_result
+          # @param incomplete [Boolean]
+          # @return [Hash]
+          def empty_result incomplete = false
             {
-              isIncomplete: false,
+              isIncomplete: incomplete,
               items: []
             }
           end
