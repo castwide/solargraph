@@ -48,7 +48,7 @@ module Solargraph
           @documentation ||= super || ''
           param_tags = docstring.tags(:param)
           unless param_tags.nil? or param_tags.empty?
-            @documentation += "\n\n"
+            @documentation += "\n\n" unless @documentation.empty?
             @documentation += "Params:\n"
             lines = []
             param_tags.each do |p|
