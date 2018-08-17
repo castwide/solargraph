@@ -294,10 +294,10 @@ module Solargraph
     # @param scope [Symbol] :instance or :class
     # @return [Array<Solargraph::Pin::Base>]
     def get_method_stack fqns, name, scope: :instance
-      cached = cache.get_method_stack(fqns, name, scope)
-      return cached.clone unless cached.nil?
+      # cached = cache.get_method_stack(fqns, name, scope)
+      # return cached.clone unless cached.nil?
       result = get_methods(fqns, scope: scope, visibility: [:private, :protected, :public]).select{|p| p.name == name}
-      cache.set_method_stack(fqns, name, scope, result)
+      # cache.set_method_stack(fqns, name, scope, result)
       result
     end
 
