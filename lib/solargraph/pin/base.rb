@@ -89,12 +89,14 @@ module Solargraph
       # @param other [Solargraph::Pin::Base, Object]
       # @return [Boolean]
       def nearly? other
-        return false unless self.class == other.class
-        namespace == other.namespace and
+        # @todo The directives test needs to be a deep check similar to
+        #   compare_docstring_tags.
+        self.class == other.class and
+          namespace == other.namespace and
           name == other.name and
           (comments == other.comments or
-            ( ((maybe_directives? == false and other.maybe_directives? == false) or directives == other.directives) and
-            docstring.tags == other.docstring.tags )
+            ( ((maybe_directives? == false and other.maybe_directives? == false) or compare_directives(directives, other.directives)) and
+            compare_docstring_tags(docstring, other.docstring) )
           )
       end
 
@@ -188,6 +190,30 @@ module Solargraph
           @docstring = parse.to_docstring
           @directives = parse.directives
         end
+      end
+
+      def compare_docstring_tags d1, d2
+        return false if d1.tags.length != d2.tags.length
+        d1.tags.each_index do |i|
+          return false unless compare_tags(d1.tags[i], d2.tags[i])
+        end
+        true
+      end
+
+      def compare_directives d1, d2
+        return false if d1.length != d2.length
+        d1.each_index do |i|
+          return false unless compare_tags(d1[i].tag, d2[i].tag)
+        end
+        true
+      end
+
+      def compare_tags t1, t2
+        return true if t1.class == t2.class and
+          t1.tag_name == t2.tag_name and
+          t1.text == t2.text and
+          t1.name == t2.name and
+          t1.types == t2.types
       end
     end
   end

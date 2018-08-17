@@ -120,14 +120,8 @@ module Solargraph
       if force
         refresh_store_and_maps
       else
-        store.remove *(current_workspace_sources.reject{ |s| workspace.sources.include?(s) })
-        @sources = workspace.sources
-        @sources.push @virtual_source unless @virtual_source.nil?
-        store.update *(@sources.select{ |s| @stime.nil? or s.stime > @stime })
-        store.update_yard(yard_map.pins) if yard_map.change(required)
+        update_store_and_maps
       end
-      cache.clear
-      @stime = Time.new
       true
     end
 
@@ -519,6 +513,19 @@ module Solargraph
       @live_map = Solargraph::LiveMap.new(self)
       store.update_yard(yard_map.pins) if yard_map.change(required)
       cache.clear
+      @stime = Time.now
+    end
+
+    # @return [void]
+    def update_store_and_maps
+      @yard_stale = true
+      store.remove *(current_workspace_sources.reject{ |s| workspace.sources.include?(s) })
+      @sources = workspace.sources
+      @sources.push @virtual_source unless @virtual_source.nil?
+      store.update *(@sources.select{ |s| @stime.nil? or s.stime > @stime })
+      store.update_yard(yard_map.pins) if yard_map.change(required)
+      cache.clear
+      @stime = Time.now
     end
 
     # @return [void]
