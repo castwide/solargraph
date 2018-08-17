@@ -447,7 +447,7 @@ module Solargraph
           found.push k if k.downcase.include?(query.downcase)
         end
       end
-      # found.concat(yard_map.search(query)).uniq.sort
+      found
     end
 
     # Get YARD documentation for the specified path.
