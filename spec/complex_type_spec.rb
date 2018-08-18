@@ -79,11 +79,26 @@ describe Solargraph::ComplexType do
     end
   end
 
-  it "short-circuits types with {}" do
+  it "identifies subtypes with curly brackets" do
     types = Solargraph::ComplexType.parse('Array{String, Integer}')
     expect(types.length).to eq(1)
     expect(types.first.tag).to eq('Array{String, Integer}')
     expect(types.first.namespace).to eq('Array')
     expect(types.first.substring).to eq('{String, Integer}')
+  end
+
+  it "raises ComplexTypeError for unmatched brackets" do
+    expect {
+      Solargraph::ComplexType.parse('Array<String')
+    }.to raise_error(Solargraph::ComplexTypeError)
+    expect {
+      Solargraph::ComplexType.parse('Array{String')
+    }.to raise_error(Solargraph::ComplexTypeError)
+    expect {
+      Solargraph::ComplexType.parse('Array<String>>')
+    }.to raise_error(Solargraph::ComplexTypeError)
+    expect {
+      Solargraph::ComplexType.parse('Array{String}}')
+    }.to raise_error(Solargraph::ComplexTypeError)
   end
 end

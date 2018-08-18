@@ -8,6 +8,7 @@ module Solargraph
   class DiagnosticsError <        RuntimeError;  end
   class FileNotFoundError <       RuntimeError;  end
   class SourceNotAvailableError < StandardError; end
+  class ComplexTypeError        < StandardError; end
   class WorkspaceTooLargeError <  RuntimeError
     # @return [Integer]
     attr_reader :size

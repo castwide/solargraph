@@ -70,14 +70,14 @@ module Solargraph
             elsif char == '>'
               point_stack -= 1
               subtype_string += char if point_stack == 0
-              raise "Invalid close in type #{type_string}" if point_stack < 0
+              raise ComplexTypeError, "Invalid close in type #{type_string}" if point_stack < 0
               next
             elsif char == '{'
               curly_stack += 1
             elsif char == '}'
               curly_stack -= 1
               subtype_string += char if curly_stack == 0
-              raise "Invalid close in type #{type_string}" if curly_stack < 0
+              raise ComplexTypeError, "Invalid close in type #{type_string}" if curly_stack < 0
               next
             elsif char == ',' and point_stack == 0 and curly_stack == 0
               types.push ComplexType.new base.strip, subtype_string.strip
@@ -93,7 +93,7 @@ module Solargraph
           end
           base.strip!
           subtype_string.strip!
-          raise 'Unclosed subtype' if point_stack != 0 or curly_stack != 0
+          raise ComplexTypeError, 'Unclosed subtype' if point_stack != 0 or curly_stack != 0
           types.push ComplexType.new(base, subtype_string)
         end
         types
