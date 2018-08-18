@@ -78,4 +78,12 @@ describe Solargraph::ComplexType do
       expect(types.first.nil_type?).to be(true)
     end
   end
+
+  it "short-circuits types with {}" do
+    types = Solargraph::ComplexType.parse('Array{String, Integer}')
+    expect(types.length).to eq(1)
+    expect(types.first.tag).to eq('Array{String, Integer}')
+    expect(types.first.namespace).to eq('Array')
+    expect(types.first.substring).to eq('{String, Integer}')
+  end
 end
