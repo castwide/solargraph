@@ -64,4 +64,37 @@ describe Solargraph::Workspace do
       Solargraph::Workspace.new('.', config)
     }.not_to raise_error(Solargraph::WorkspaceTooLargeError)
   end
+
+  it "detects gemspecs in workspaces" do
+    gemspec_file = File.join(dir_path, 'test.gemspec')
+    File.write(gemspec_file, '')
+    expect(workspace.gemspec?).to be(true)
+    expect(workspace.gemspecs).to eq([gemspec_file])
+  end
+
+  it "generates default require path" do
+    expect(workspace.require_paths).to eq([File.join(dir_path, 'lib')])
+  end
+
+  it "generates require paths from gemspecs" do
+    gemspec_file = File.join(dir_path, 'test.gemspec')
+    File.write(gemspec_file, %(
+      Gem::Specification.new do |s|
+        s.files = []
+        s.name = 'Workspace test'
+        s.summary = 'A test of workspace gemspec processing'
+        s.version = '0.0.1'
+        s.require_paths = ['other_lib']
+      end
+    ))
+    expect(workspace.require_paths).to eq([File.join(dir_path, 'other_lib')])
+  end
+
+  it "detects locally required paths" do
+    required_file = File.join(dir_path, 'lib', 'test.rb')
+    Dir.mkdir(File.join(dir_path, 'lib'))
+    File.write(required_file, 'exit')
+    expect(workspace.would_require?('test')).to be(true)
+    expect(workspace.would_require?('not_there')).to be(false)
+  end
 end
