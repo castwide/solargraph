@@ -79,12 +79,29 @@ describe Solargraph::ComplexType do
     end
   end
 
-  it "identifies subtypes with curly brackets" do
+  it "identifies parametrized types" do
+    types = Solargraph::ComplexType.parse('Array<String>, Hash{String, Symbol}, Array(String, Integer)')
+    expect(types.all?(&:parameters?)).to be(true)
+  end
+
+  it "identifies list parameters" do
+    types = Solargraph::ComplexType.parse('Array<String, Symbol>')
+    expect(types.first.list_parameters?).to be(true)
+  end
+
+  it "identifies hash parameters" do
     types = Solargraph::ComplexType.parse('Array{String, Integer}')
     expect(types.length).to eq(1)
+    expect(types.first.hash_parameters?).to be(true)
     expect(types.first.tag).to eq('Array{String, Integer}')
     expect(types.first.namespace).to eq('Array')
     expect(types.first.substring).to eq('{String, Integer}')
+  end
+
+  it "identifies fixed parameters" do
+    types = Solargraph::ComplexType.parse('Array(String, Symbol)')
+    expect(types.first.fixed_parameters?).to be(true)
+    expect(types.first.subtypes.map(&:namespace)).to eq(['String', 'Symbol'])
   end
 
   it "raises ComplexTypeError for unmatched brackets" do
@@ -100,5 +117,22 @@ describe Solargraph::ComplexType do
     expect {
       Solargraph::ComplexType.parse('Array{String}}')
     }.to raise_error(Solargraph::ComplexTypeError)
+    expect {
+      Solargraph::ComplexType.parse('Array(String, Integer')
+    }.to raise_error(Solargraph::ComplexTypeError)
+    expect {
+      Solargraph::ComplexType.parse('Array(String, Integer))')
+    }.to raise_error(Solargraph::ComplexTypeError)
+  end
+
+  it "parses recursive subtypes" do
+    types = Solargraph::ComplexType.parse('Array<Array{String, Integer}>')
+    expect(types.length).to eq(1)
+    expect(types.first.namespace).to eq('Array')
+    expect(types.first.substring).to eq('<Array{String, Integer}>')
+    expect(types.first.subtypes.length).to eq(1)
+    expect(types.first.subtypes.first.namespace).to eq('Array')
+    expect(types.first.subtypes.first.substring).to eq('{String, Integer}')
+    expect(types.first.subtypes.first.subtypes.map(&:namespace)).to eq(['String', 'Integer'])
   end
 end
