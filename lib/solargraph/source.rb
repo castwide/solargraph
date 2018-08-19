@@ -343,6 +343,7 @@ module Solargraph
       @locals = new_locals
       @requires = new_requires
       @symbols = new_symbols
+      @all_symbols = nil # Reset for future queries
       @domains = []
       @path_macros = {}
       dirpins = []

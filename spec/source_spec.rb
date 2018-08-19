@@ -672,4 +672,22 @@ describe Solargraph::Source do
     expect(source.path_macros.length).to eq(1)
     # @todo More tests
   end
+
+  it "synchronizes symbols after changes" do
+    source = Solargraph::Source.new(%(
+      class Foo
+      end
+    ), 'test.rb')
+    expect(source.all_symbols.length).to eq(1)
+    updater = Solargraph::Source::Updater.new('test.rb', 1, [
+      Solargraph::Source::Change.new(nil, %(
+        class Foo
+          def bar
+          end
+        end
+      ))
+    ])
+    source.synchronize updater
+    expect(source.all_symbols.length).to eq(2)
+  end
 end
