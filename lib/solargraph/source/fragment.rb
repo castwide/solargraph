@@ -155,7 +155,7 @@ module Solargraph
       #
       # @return [String]
       def whole_word
-        @whole_word ||= word + remainder
+        @whole_word ||= word + remainder.to_s
       end
 
       # Get the whole signature at the current offset, including the final
