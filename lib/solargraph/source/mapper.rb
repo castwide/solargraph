@@ -50,8 +50,10 @@ module Solargraph
       # @param node [Parser::AST::Node]
       # @return [String]
       def code_for node
-        b = node.location.expression.begin.begin_pos
-        e = node.location.expression.end.end_pos
+        # b = node.location.expression.begin.begin_pos
+        # e = node.location.expression.end.end_pos
+        b = Source::Position.line_char_to_offset(@code, node.location.line - 1, node.location.column)
+        e = Source::Position.line_char_to_offset(@code, node.location.last_line - 1, node.location.last_column)
         frag = @code[b..e-1].to_s
         frag.strip.gsub(/,$/, '')
       end
