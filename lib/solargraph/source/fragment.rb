@@ -442,6 +442,7 @@ module Solargraph
         Solargraph::Source::Range.from_to(start_pos[0], start_pos[1], end_pos[0], end_pos[1])
       end
 
+      # @return [String]
       def remainder_at index
         cursor = index
         while cursor < @code.length
@@ -450,7 +451,7 @@ module Solargraph
           break unless char.match(/[a-z0-9_\?\!]/i)
           cursor += 1
         end
-        @code[index..cursor-1]
+        @code[index..cursor-1].to_s
       end
 
       def signature_position
