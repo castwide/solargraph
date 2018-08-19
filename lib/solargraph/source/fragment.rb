@@ -84,7 +84,7 @@ module Solargraph
       #
       # @return [String]
       def signature
-        @signature ||= signature_data[1]
+        @signature ||= signature_data[1].to_s
       end
 
       def valid?
@@ -128,7 +128,7 @@ module Solargraph
 
       # @return [String]
       def chain
-        @chain ||= signature.split('.')[1..-1].join('.')
+        @chain ||= ( signature.empty? ? '' : signature.split('.')[1..-1].join('.') )
       end
 
       # @return [String]
@@ -155,7 +155,7 @@ module Solargraph
       #
       # @return [String]
       def whole_word
-        @whole_word ||= word + remainder.to_s
+        @whole_word ||= word + remainder
       end
 
       # Get the whole signature at the current offset, including the final
@@ -393,7 +393,7 @@ module Solargraph
       # @param index [Integer]
       # @return [String]
       def word_at index
-        @code[beginning_of_word_at(index)..index - 1]
+        @code[beginning_of_word_at(index)..index - 1].to_s
       end
 
       def beginning_of_word_at index

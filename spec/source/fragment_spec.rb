@@ -204,4 +204,14 @@ describe Solargraph::Source::Fragment do
     fragment = source.fragment_at(2, 0)
     expect(fragment.comment?).to be(false)
   end
+
+  it "returns empty strings for empty fragment components" do
+    source = Solargraph::Source.new("a ")
+    fragment = source.fragment_at(0, 3)
+    expect(fragment.word).to be_empty
+    expect(fragment.remainder).to be_empty
+    expect(fragment.signature).to be_empty
+    expect(fragment.base).to be_empty
+    expect(fragment.chain).to be_empty
+  end
 end
