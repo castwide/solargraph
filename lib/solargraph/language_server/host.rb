@@ -492,7 +492,7 @@ module Solargraph
                     @diagnostics_queue.push change['textDocument']['uri']
                     changed = true
                     next true
-                  elsif change['textDocument']['version'] == source.version + 1 and pending[change['textDocument']['uri']] == 1
+                  elsif change['textDocument']['version'] == source.version + 1
                     # HACK: This condition fixes the fact that certain changes
                     # increment the version by one regardless of the number of
                     # changes
