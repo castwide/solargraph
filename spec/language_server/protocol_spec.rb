@@ -77,6 +77,7 @@ describe Protocol do
         'uri' => 'file:///file.rb',
         'text' => %(
           class Foo
+            # bar method
             def bar baz
             end
           end
@@ -101,11 +102,11 @@ describe Protocol do
         {
           'range' => {
             'start' => {
-              'line' => 6,
+              'line' => 7,
               'character' => 16
             },
             'end' => {
-              'line' => 6,
+              'line' => 7,
               'character' => 16
             }
           },
@@ -123,13 +124,22 @@ describe Protocol do
         'uri' => 'file:///file.rb'
       },
       'position' => {
-        'line' => 0,
-        'character' => 7
+        'line' => 8,
+        'character' => 14
       }
     }
     response = @protocol.response
     expect(response['error']).to be_nil
     expect(response['result']['items'].length > 0).to be(true)
+  end
+
+  it "handles completionItem/resolve" do
+    # Reuse the response from textDocument/completion
+    response = @protocol.response
+    item = response['result']['items'].select{|h| h['label'] == 'bar'}.first
+    @protocol.request 'completionItem/resolve', item
+    response = @protocol.response
+    expect(response['result']['documentation']).to include('bar method')
   end
 
   it "handles workspace/symbol" do
@@ -155,25 +165,25 @@ describe Protocol do
     expect(response['result']).not_to be_nil
   end
 
-  it "handles completionItem/resolve" do
-    @protocol.request 'textDocument/completion', {
-      'textDocument' => {
-        'uri' => 'file:///file.rb'
-      },
-      'position' => {
-        'line' => 6,
-        'character' => 12
-      }
-    }
-    response = @protocol.response
-    expect(response['error']).to be_nil
-    item = response['result']['items'].select{|item| item['label'] == 'String' and item['kind'] == Solargraph::LanguageServer::CompletionItemKinds::CLASS}.first
-    expect(item).not_to be_nil
-    @protocol.request 'completionItem/resolve', item
-    response = @protocol.response
-    expect(response['result']['documentation']).not_to be_nil
-    expect(response['result']['documentation']).not_to be_empty
-  end
+  # it "handles completionItem/resolve" do
+  #   @protocol.request 'textDocument/completion', {
+  #     'textDocument' => {
+  #       'uri' => 'file:///file.rb'
+  #     },
+  #     'position' => {
+  #       'line' => 6,
+  #       'character' => 12
+  #     }
+  #   }
+  #   response = @protocol.response
+  #   expect(response['error']).to be_nil
+  #   item = response['result']['items'].select{|item| item['label'] == 'String' and item['kind'] == Solargraph::LanguageServer::CompletionItemKinds::CLASS}.first
+  #   expect(item).not_to be_nil
+  #   @protocol.request 'completionItem/resolve', item
+  #   response = @protocol.response
+  #   expect(response['result']['documentation']).not_to be_nil
+  #   expect(response['result']['documentation']).not_to be_empty
+  # end
 
   it "handles textDocument/documentSymbol" do
     @protocol.request 'textDocument/documentSymbol', {
@@ -207,7 +217,7 @@ describe Protocol do
         'uri' => 'file:///file.rb'
       },
       'position' => {
-        'line' => 7,
+        'line' => 8,
         'character' => 18
       }
     }

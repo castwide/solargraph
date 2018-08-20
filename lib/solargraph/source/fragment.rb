@@ -377,16 +377,6 @@ module Solargraph
         false
       end
 
-      # True if the line and column are inside the specified range.
-      #
-      # @param location [Parser::Source::Range]
-      def compare_range line, column, location
-        return true if line == location.first_line and line == location.last_line and column >= location.column and column < location.last_column
-        return true if line > location.first_line and line < location.last_line
-        return true if line == location.last_line and column >= location.last_column and column < location.last_column
-        false
-      end
-
       # Select the word that directly precedes the specified index.
       # A word can only consist of letters, numbers, and underscores.
       #
