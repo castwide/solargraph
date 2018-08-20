@@ -50,11 +50,13 @@ module Solargraph
       # @param node [Parser::AST::Node]
       # @return [String]
       def code_for node
-        # b = node.location.expression.begin.begin_pos
-        # e = node.location.expression.end.end_pos
-        b = Source::Position.line_char_to_offset(@code, node.location.line - 1, node.location.column)
-        e = Source::Position.line_char_to_offset(@code, node.location.last_line - 1, node.location.last_column)
-        frag = @code[b..e-1].to_s
+        # @todo Using node locations on code with converted EOLs seems
+        #   slightly more efficient than calculating offsets.
+        b = node.location.expression.begin.begin_pos
+        e = node.location.expression.end.end_pos
+        # b = Source::Position.line_char_to_offset(@code, node.location.line - 1, node.location.column)
+        # e = Source::Position.line_char_to_offset(@code, node.location.last_line - 1, node.location.last_column)
+        frag = source_from_parser[b..e-1].to_s
         frag.strip.gsub(/,$/, '')
       end
 
@@ -407,6 +409,10 @@ module Solargraph
           end
         }
         args
+      end
+
+      def source_from_parser
+        @source_from_parser ||= @code.gsub(/\r\n/, "\n")
       end
     end
   end

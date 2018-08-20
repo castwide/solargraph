@@ -72,6 +72,7 @@ module Solargraph
 
       private
 
+      # @return [Array<ComplexType>]
       def generate_complex_types
         tag = docstring.tag(:return)
         if tag.nil?
@@ -79,7 +80,12 @@ module Solargraph
           tag = ol.tag(:return) unless ol.nil?
         end
         return [] if tag.nil?
-        ComplexType.parse *tag.types
+        begin
+          ComplexType.parse *tag.types
+        rescue Solargraph::ComplexTypeError => e
+          STDERR.puts e.message
+          []
+        end
       end
     end
   end

@@ -629,10 +629,12 @@ module Solargraph
       @path_macros ||= {}
     end
 
+    # @return [Array<Solargraph::Source>]
     def current_workspace_sources
       @sources - [@virtual_source]
     end
 
+    # @return [String]
     def inner_qualify name, root, skip
       return nil if name.nil?
       return nil if skip.include?(root)
