@@ -80,7 +80,7 @@ describe Solargraph::ComplexType do
   end
 
   it "identifies parametrized types" do
-    types = Solargraph::ComplexType.parse('Array<String>, Hash{String, Symbol}, Array(String, Integer)')
+    types = Solargraph::ComplexType.parse('Array<String>, Hash{String => Symbol}, Array(String, Integer)')
     expect(types.all?(&:parameters?)).to be(true)
   end
 
@@ -90,12 +90,14 @@ describe Solargraph::ComplexType do
   end
 
   it "identifies hash parameters" do
-    types = Solargraph::ComplexType.parse('Array{String, Integer}')
+    types = Solargraph::ComplexType.parse('Hash{String => Integer}')
     expect(types.length).to eq(1)
     expect(types.first.hash_parameters?).to be(true)
-    expect(types.first.tag).to eq('Array{String, Integer}')
-    expect(types.first.namespace).to eq('Array')
-    expect(types.first.substring).to eq('{String, Integer}')
+    expect(types.first.tag).to eq('Hash{String => Integer}')
+    expect(types.first.namespace).to eq('Hash')
+    expect(types.first.substring).to eq('{String => Integer}')
+    expect(types.first.key_types.map(&:name)).to eq(['String'])
+    expect(types.first.value_types.map(&:name)).to eq(['Integer'])
   end
 
   it "identifies fixed parameters" do
@@ -126,13 +128,14 @@ describe Solargraph::ComplexType do
   end
 
   it "parses recursive subtypes" do
-    types = Solargraph::ComplexType.parse('Array<Array{String, Integer}>')
+    types = Solargraph::ComplexType.parse('Array<Hash{String => Integer}>')
     expect(types.length).to eq(1)
     expect(types.first.namespace).to eq('Array')
-    expect(types.first.substring).to eq('<Array{String, Integer}>')
+    expect(types.first.substring).to eq('<Hash{String => Integer}>')
     expect(types.first.subtypes.length).to eq(1)
-    expect(types.first.subtypes.first.namespace).to eq('Array')
-    expect(types.first.subtypes.first.substring).to eq('{String, Integer}')
-    expect(types.first.subtypes.first.subtypes.map(&:namespace)).to eq(['String', 'Integer'])
+    expect(types.first.subtypes.first.namespace).to eq('Hash')
+    expect(types.first.subtypes.first.substring).to eq('{String => Integer}')
+    expect(types.first.subtypes.first.key_types.map(&:namespace)).to eq(['String'])
+    expect(types.first.subtypes.first.value_types.map(&:namespace)).to eq(['Integer'])
   end
 end
