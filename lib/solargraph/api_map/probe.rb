@@ -117,6 +117,8 @@ module Solargraph
       # Method name search is external by default
       # @param method_name [String]
       # @param context_pin [Solargraph::Pin::Base]
+      # @param internal [Boolean] Whether to include non-public methods
+      # @return [Array<Solargraph::Pin::Base>]
       def infer_method_name_pins method_name, context_pin, internal = false
         relname, scope = extract_namespace_and_scope(context_pin.return_type)
         namespace = api_map.qualify(relname, context_pin.namespace)
@@ -144,6 +146,8 @@ module Solargraph
 
       # Fully qualify the namespace in a type.
       #
+      # @param type [String]
+      # @param context [String]
       # @return [String]
       def qualify type, context
         rns, rsc = extract_namespace_and_scope(type)
@@ -155,7 +159,8 @@ module Solargraph
       # Extract a namespace and a scope from a pin. For now, the pin must
       # be either a namespace, a method, or a block.
       #
-      # @return [Array] The namespace (String) and scope (Symbol).
+      # @param pin [Solargraph::Pin::Base]
+      # @return [Array(Symbol, String)] The namespace and scope (:class or :instance).
       def extract_namespace_and_scope_from_pin pin
         return [pin.namespace, pin.scope] if pin.kind == Pin::METHOD
         return [pin.path, :class] if pin.kind == Pin::NAMESPACE
@@ -168,6 +173,7 @@ module Solargraph
       # is used to keep the probe from performing unnecessary constant and
       # method searches.
       #
+      # @param word [String]
       # @return [Boolean]
       def variable_name? word
         word.start_with?('@') or word.start_with?('$')
@@ -177,6 +183,8 @@ module Solargraph
       # classes from YARD and classes in the namespace that do not have an
       # `initialize` method.
       #
+      # @param new_pin [Solargraph::Pin::Base]
+      # @param context_pin [Solargraph::Pin::Base]
       # @return [Pin::Method]
       def virtual_new_pin new_pin, context_pin
         pin = Pin::Method.new(new_pin.location, context_pin.path, new_pin.name, '', :class, new_pin.visibility, new_pin.parameters)

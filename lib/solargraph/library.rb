@@ -145,6 +145,10 @@ module Solargraph
       api_map.signify(fragment)
     end
 
+    # @param filename [String]
+    # @param line [Integer]
+    # @param column [Integer]
+    # @return [Array<Solargraph::Source::Range>]
     def references_from filename, line, column
       source = read(filename)
       api_map.virtualize source

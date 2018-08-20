@@ -1,5 +1,7 @@
 module Solargraph
   module LanguageServer
+    # The ErrorCode constants for the language server protocol.
+    #
     module ErrorCodes
       PARSE_ERROR =            -32700
       INVALID_REQUEST =        -32600

@@ -24,15 +24,14 @@ module Solargraph
       @tag = name + substring
       @key_types = []
       @subtypes = []
-      if parameters?
-        subs = ComplexType.parse(substring[1..-2])
-        if hash_parameters?
-          raise ComplexTypeError, "Bad hash type" unless subs.length == 2 and subs[0].is_a?(Array) and subs[1].is_a?(Array)
-          @key_types.concat subs[0]
-          @subtypes.concat subs[1]
-        else
-          @subtypes.concat subs
-        end
+      return unless parameters?
+      subs = ComplexType.parse(substring[1..-2])
+      if hash_parameters?
+        raise ComplexTypeError, "Bad hash type" unless subs.length == 2 and subs[0].is_a?(Array) and subs[1].is_a?(Array)
+        @key_types.concat subs[0]
+        @subtypes.concat subs[1]
+      else
+        @subtypes.concat subs
       end
     end
 

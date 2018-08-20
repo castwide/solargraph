@@ -26,6 +26,8 @@ module Solargraph
     # @return [Array<String>]
     attr_reader :required
 
+    # @param required [Array<String>]
+    # @param workspace [Solargraph::Workspace, nil]
     def initialize(required: [], workspace: nil)
       @workspace = workspace
       # HACK: YardMap needs its own copy of this array
@@ -69,7 +71,7 @@ module Solargraph
       end
     end
 
-    # @param paths [Array<String>]
+    # @param new_requires [Array<String>]
     # @return [Boolean]
     def change new_requires
       if new_requires.uniq.sort == required.uniq.sort
@@ -82,6 +84,7 @@ module Solargraph
       end
     end
 
+    # @return [Array<Solargraph::Pin::Base>]
     def core_pins
       @@core_pins ||= begin
         result = []
@@ -100,6 +103,8 @@ module Solargraph
       @cache ||= YardMap::Cache.new
     end
 
+    # @param ns [YARD::CodeObjects::Namespace]
+    # @return [Array<Solargraph::Pin::Base>]
     def recurse_namespace_object ns
       result = []
       ns.children.each do |c|
@@ -109,6 +114,8 @@ module Solargraph
       result
     end
 
+    # @param code_object [YARD::CodeObjects::Base]
+    # @return [Solargraph::Pin::Base]
     def generate_pin code_object
       location = object_location(code_object)
       if code_object.is_a?(YARD::CodeObjects::NamespaceObject)
@@ -122,6 +129,7 @@ module Solargraph
       end
     end
 
+    # @return [void]
     def process_requires
       pins.clear
       unresolved_requires.clear
@@ -177,6 +185,8 @@ module Solargraph
       pins.concat core_pins
     end
 
+    # @param required_namespaces [Array<YARD::CodeObjects::Namespace>]
+    # @return [Array<Solargraph::Pin::Base>]
     def process_stdlib required_namespaces
       pins = []
       unless required_namespaces.empty?
@@ -199,6 +209,7 @@ module Solargraph
     end
 
     # @param spec [Gem::Specification]
+    # @return [void]
     def add_gem_dependencies spec
       (spec.dependencies - spec.development_dependencies).each do |dep|
         depspec = Gem::Specification.find_by_name(dep.name)

@@ -1,5 +1,8 @@
 module Solargraph
   module LanguageServer
+    # The Transport namespace contains concrete implementations of
+    # communication protocols for language servers.
+    #
     module Transport
       autoload :DataReader, 'solargraph/language_server/transport/data_reader'
       autoload :Socket,     'solargraph/language_server/transport/socket'

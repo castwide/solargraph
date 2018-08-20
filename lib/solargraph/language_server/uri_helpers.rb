@@ -1,5 +1,7 @@
 module Solargraph
   module LanguageServer
+    # Methods to handle conversions between file URIs and paths.
+    #
     module UriHelpers
       module_function
 

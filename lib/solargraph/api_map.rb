@@ -324,7 +324,7 @@ module Solargraph
         end
       else
         if fragment.base_literal?
-          pin = get_path_suggestions(fragment.base_literal).select{|pin| pin.kind == Pin::NAMESPACE}.first
+          pin = get_path_suggestions(fragment.base_literal).select{ |p| p.kind == Pin::NAMESPACE }.first
           unless pin.nil?
             if fragment.base.empty?
               result.concat get_methods(pin.path)
@@ -495,8 +495,8 @@ module Solargraph
       @probe ||= Probe.new(self)
     end
 
+    # @return [Array<String>]
     def unresolved_requires
-      # return [] if yard_map_changed?
       yard_map.unresolved_requires
     end
 

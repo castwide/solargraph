@@ -4,6 +4,7 @@ module Solargraph
   class ApiMap
     class Store
       # @param sources [Array<Solargraph::Source>]
+      # @param yard_pins [Array<Solargraph::Pin::Base>]
       def initialize sources, yard_pins
         inner_update *sources
         pins.concat yard_pins
@@ -15,6 +16,8 @@ module Solargraph
         @pins ||= []
       end
 
+      # @param *source [Array<Solargraph::Source>]
+      # @return[void]
       def remove *sources
         sources.each do |source|
           pins.delete_if { |pin| !pin.yard_pin? and pin.filename == source.filename }
@@ -23,17 +26,23 @@ module Solargraph
         index
       end
 
+      # @param *sources [Array<Solargraph::Source>]
+      # @return [void]
       def update *sources
         inner_update *sources
         index
       end
 
+      # @param yard_pins [Array<Solargraph::Pin::Base>]
+      # @return [void]
       def update_yard yard_pins
         pins.delete_if(&:yard_pin?)
         pins.concat yard_pins
         index
       end
 
+      # @param fqns [String]
+      # @param visibility [Array<Symbol>]
       # @return [Array<Solargraph::Pin::Base>]
       def get_constants fqns, visibility = [:public]
         namespace_pins(fqns).select { |pin|
@@ -41,12 +50,18 @@ module Solargraph
         }
       end
 
+      # @param fqns [String]
+      # @param scope [Symbol]
+      # @param visibility [Array<Symbol>]
+      # @return [Array<Solargraph::Pin::Base>]
       def get_methods fqns, scope: :instance, visibility: [:public]
         namespace_pins(fqns).select{ |pin|
           pin.kind == Pin::METHOD and (pin.scope == scope or fqns == '') and visibility.include?(pin.visibility)
         }
       end
 
+      # @param fqns [String]
+      # @param scope [Symbol]
       # @return [Array<Solargraph::Pin::Base>]
       def get_attrs fqns, scope
         namespace_pins(fqns).select{ |pin| pin.kind == Pin::ATTRIBUTE and pin.scope == scope }
@@ -120,6 +135,8 @@ module Solargraph
 
       private
 
+      # @param fqns [String]
+      # @return [Array<Solargraph::Pin::Namespace>]
       def fqns_pins fqns
         # @todo We probably want to ignore '' namespace here
         return [] if fqns.nil? #or fqns.empty?
@@ -134,18 +151,23 @@ module Solargraph
         namespace_pins(base).select{|pin| pin.name == name and pin.kind == Pin::NAMESPACE}
       end
 
+      # @return [Array<Solargraph::Pin::Symbol>]
       def symbols
         @symbols ||= []
       end
 
+      # @param name [String]
+      # @return [Array<Solargraph::Pin::Namespace>]
       def namespace_pins name
         namespace_map[name] || []
       end
 
+      # @return [Hash]
       def namespace_map
         @namespace_map ||= {}
       end
 
+      # @return [void]
       def index
         namespace_map.clear
         namespaces.clear
@@ -157,6 +179,8 @@ module Solargraph
         end
       end
 
+      # @param *sources [Array<Solargraph::Source>]
+      # @return [void]
       def inner_update *sources
         sources.each do |source|
           pins.delete_if { |pin| !pin.yard_pin? and pin.filename == source.filename }

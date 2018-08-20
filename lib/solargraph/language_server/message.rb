@@ -3,6 +3,9 @@ require 'uri'
 
 module Solargraph
   module LanguageServer
+    # The Message namespace contains classes that implement language server
+    # protocol methods.
+    #
     module Message
       autoload :Base,                 'solargraph/language_server/message/base'
       autoload :Initialize,           'solargraph/language_server/message/initialize'
@@ -18,6 +21,15 @@ module Solargraph
       autoload :Workspace,            'solargraph/language_server/message/workspace'
 
       class << self
+        # Register a method name and message for handling by the language
+        # server.
+        #
+        # @example
+        #   Message.register 'initialize', Solargraph::Message::Initialize
+        #
+        # @param path [String] The method name
+        # @param message_class [Class<Message::Base>] The message class
+        # @return [void]
         def register path, message_class
           method_map[path] = message_class
         end
@@ -36,6 +48,7 @@ module Solargraph
 
         private
 
+        # @return [Hash{String => Class<Message::Base>}]
         def method_map
           @method_map ||= {}
         end

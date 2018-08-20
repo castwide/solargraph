@@ -1,5 +1,7 @@
 module Solargraph
   module LanguageServer
+    # The CompletionItemKind constants for the language server protocol.
+    #
     module CompletionItemKinds
       TEXT = 1
       METHOD = 2

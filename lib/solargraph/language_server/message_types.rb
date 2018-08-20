@@ -1,5 +1,7 @@
 module Solargraph
   module LanguageServer
+    # The MessageType constants from the language server specification.
+    #
     module MessageTypes
       ERROR = 1
       WARNING = 2

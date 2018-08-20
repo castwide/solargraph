@@ -10,6 +10,8 @@ module Solargraph
       # @return [Solargraph::Source::Range]
       attr_reader :range
 
+      # @param pins [Array<Solargraph::Pin::Base>]
+      # @param range [Solargraph::Source::Range]
       def initialize pins, range
         @pins = pins
         @range = range

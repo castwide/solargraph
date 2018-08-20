@@ -352,6 +352,8 @@ module Solargraph
         pin
       end
 
+      # @param uri [String]
+      # @return [String]
       def read_text uri
         filename = uri_to_file(uri)
         text = nil
@@ -361,6 +363,10 @@ module Solargraph
         text
       end
 
+      # @param filename [String]
+      # @param line [Integer]
+      # @param column [Integer]
+      # @return [Solargraph::ApiMap::Completion]
       def completions_at filename, line, column
         result = nil
         @change_semaphore.synchronize do
@@ -369,6 +375,9 @@ module Solargraph
         result
       end
 
+      # @param filename [String]
+      # @param line [Integer]
+      # @param column [Integer]
       # @return [Array<Solargraph::Pin::Base>]
       def definitions_at filename, line, column
         result = []
@@ -378,6 +387,10 @@ module Solargraph
         result
       end
 
+      # @param filename [String]
+      # @param line [Integer]
+      # @param column [Integer]
+      # @return [Array<Solargraph::Pin::Base>]
       def signatures_at filename, line, column
         result = nil
         @change_semaphore.synchronize do
@@ -386,6 +399,10 @@ module Solargraph
         result
       end
 
+      # @param filename [String]
+      # @param line [Integer]
+      # @param column [Integer]
+      # @return [Array<Solargraph::Source::Range>]
       def references_from filename, line, column
         result = nil
         @change_semaphore.synchronize do
@@ -394,18 +411,24 @@ module Solargraph
         result
       end
 
+      # @param query [String]
+      # @return [Array<Solargraph::Pin::Base>]
       def query_symbols query
         result = nil
         @change_semaphore.synchronize { result = library.query_symbols(query) }
         result
       end
 
+      # @param query [String]
+      # @return [Array<String>]
       def search query
         result = nil
         @change_semaphore.synchronize { result = library.search(query) }
         result
       end
 
+      # @param query [String]
+      # @return [String]
       def document query
         result = nil
         @change_semaphore.synchronize { result = library.document(query) }
@@ -418,6 +441,10 @@ module Solargraph
         library.file_symbols(uri_to_file(uri))
       end
 
+      # Send a notification to the client.
+      #
+      # @param text [String]
+      # @param type [Integer] A MessageType constant
       def show_message text, type = LanguageServer::MessageTypes::INFO
         send_notification 'window/showMessage', {
           type: type,
@@ -425,6 +452,13 @@ module Solargraph
         }
       end
 
+      # Send a notification with optional responses.
+      #
+      # @param text [String]
+      # @param type [Integer] A MessageType constant
+      # @param actions [Array<String>] Response options for the client
+      # @param &block The block that processes the response
+      # @yieldparam [String] The action received from the client
       def show_message_request text, type, actions, &block
         send_request 'window/showMessageRequest', {
           type: type,
@@ -441,6 +475,7 @@ module Solargraph
         requests.keys
       end
 
+      # @return [Hash{String => Object}]
       def default_configuration
         {
           'completion' => true,
@@ -462,6 +497,8 @@ module Solargraph
         @library
       end
 
+      # @param file_uri [String]
+      # @return [Boolean]
       def unsafe_changing? file_uri
         @change_queue.any?{|change| change['textDocument']['uri'] == file_uri}
       end
