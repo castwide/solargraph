@@ -9,7 +9,7 @@ describe Solargraph::ApiMap::Probe do
     ))
     api_map.virtualize source
     type = api_map.probe.infer_signature_type('foo', source.pins.first, source.locals)
-    expect(type).to eq('Foo')
+    expect(type.tag).to eq('Foo')
   end
 
   it "infers nested namespace types from `new` methods" do
@@ -24,7 +24,7 @@ describe Solargraph::ApiMap::Probe do
     ))
     api_map.virtualize source
     type = api_map.probe.infer_signature_type('bar', source.pins.first, source.locals)
-    expect(type).to eq('Foo::Bar')
+    expect(type.tag).to eq('Foo::Bar')
   end
 
   it "returns empty arrays for unrecognized signatures" do
@@ -51,7 +51,7 @@ describe Solargraph::ApiMap::Probe do
     api_map.virtualize source
     mod = source.pins.select{|pin| pin.name == 'Foo'}.last
     type = api_map.probe.infer_signature_type('Bar', mod, [])
-    expect(type).to eq('Class<Foo::Bar>')
+    expect(type.tag).to eq('Class<Foo::Bar>')
   end
 
   it "infers pins in correct scope for instance variables" do

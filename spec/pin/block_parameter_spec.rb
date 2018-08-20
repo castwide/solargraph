@@ -13,7 +13,7 @@ describe Solargraph::Pin::BlockParameter do
     api_map.virtualize source
     fragment = source.fragment_at(6, 9)
     type = api_map.infer_type(fragment)
-    expect(type).to eq('Array')
+    expect(type.name).to eq('Array')
   end
 
   it "detects block parameter return types from core methods" do
@@ -25,7 +25,7 @@ describe Solargraph::Pin::BlockParameter do
     ), 'file.rb')
     fragment = source.fragment_at(2, 9)
     type = api_map.infer_type(fragment)
-    expect(type).to eq('String')
+    expect(type.name).to eq('String')
   end
 
   it "prioritizes param type tags" do
@@ -45,7 +45,7 @@ describe Solargraph::Pin::BlockParameter do
     api_map.virtualize source
     fragment = source.fragment_at(9, 9)
     type = api_map.infer_type(fragment)
-    expect(type).to eq('Set')
+    expect(type.name).to eq('Set')
   end
 
   it "is a kind of block_parameter/variable" do

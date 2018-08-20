@@ -134,6 +134,10 @@ module Solargraph
         @return_complex_types ||= []
       end
 
+      def return_complex_type
+        return_complex_types.first
+      end
+
       # @return [YARD::Docstring]
       def docstring
         parse_comments unless defined?(@docstring)

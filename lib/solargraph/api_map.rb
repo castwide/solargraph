@@ -331,8 +331,8 @@ module Solargraph
             else
               type = probe.infer_signature_type("#{pin.path}.new.#{fragment.base}", pin, fragment.locals)
               unless type.nil?
-                namespace, scope = extract_namespace_and_scope(type)
-                result.concat get_methods(namespace, scope: scope)
+                # namespace, scope = extract_namespace_and_scope(type)
+                result.concat get_methods(type.namespace, scope: type.scope)
               end
             end
           end
@@ -344,7 +344,7 @@ module Solargraph
             pin = pins.first
             if pin.variable? and pin.return_type.nil? and !pin.signature.nil?
               type = probe.infer_signature_type(pin.signature, pin.context, fragment.locals)
-              result.concat(get_methods(type)) unless type.nil?
+              result.concat(get_methods(type.name)) unless type.nil?
             elsif pin.return_complex_types.any? and pin.return_complex_types.first.duck_type?
               pin.return_complex_types.each do |t|
                 next unless t.duck_type?

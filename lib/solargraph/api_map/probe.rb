@@ -53,13 +53,13 @@ module Solargraph
       # @param signature [String]
       # @param context_pin [Pin::Base]
       # @param locals [Array<Pin::Base>]
-      # @return [String]
+      # @return [Solargraph::ComplexType]
       def infer_signature_type signature, context_pin, locals
         pins = infer_signature_pins(signature, context_pin, locals)
         pins.each do |pin|
-          return qualify(pin.return_type, pin.named_context) unless pin.return_type.nil?
+          return pin.return_complex_type unless pin.return_complex_type.nil?
           type = resolve_pin_type(pin, locals - [pin])
-          return qualify(type, pin.named_context) unless type.nil?
+          return type unless type.nil?
         end
         nil
       end
@@ -97,7 +97,7 @@ module Solargraph
           next unless p.return_type.nil?
           type = resolve_pin_type(p, locals)
           # @todo Smelly instance variable access
-          p.instance_variable_set(:@return_complex_types, ComplexType.parse(type)) unless type.nil?
+          p.instance_variable_set(:@return_complex_types, [type]) unless type.nil?
         end
         pins
       end
@@ -195,9 +195,9 @@ module Solargraph
 
       # @param pin [Solargraph::Pin::Base]
       # @param locals [Array<Solargraph::Pin::Base>]
-      # @return [String]
+      # @return [Solargraph::ComplexType]
       def resolve_pin_type pin, locals
-        return pin.return_type unless pin.return_type.nil?
+        return pin.return_complex_type unless pin.return_type.nil?
         return pin.namespace if pin.kind == Pin::METHOD and pin.name == 'new' and pin.scope == :class
         return resolve_block_parameter(pin, locals) if pin.kind == Pin::BLOCK_PARAMETER
         return resolve_method_parameter(pin) if pin.is_a?(Pin::MethodParameter)
@@ -205,8 +205,9 @@ module Solargraph
         nil
       end
 
+      # @return [Solargraph::ComplexType]
       def resolve_block_parameter pin, locals
-        return pin.return_type unless pin.return_type.nil?
+        return pin.return_complex_type unless pin.return_complex_type.nil?
         signature = pin.block.receiver
         # @todo Not sure if assuming the first pin is good here
         meth = infer_signature_pins(signature, pin.block, locals).first
@@ -217,42 +218,35 @@ module Solargraph
           # @todo Not sure if assuming the first pin is good here
           bmeth = infer_signature_pins(base, pin.block, locals).first
           return nil if bmeth.nil?
-          btype = bmeth.return_type
+          btype = bmeth.return_complex_type
           btype = infer_signature_type(bmeth.signature, pin.block, locals) if btype.nil? and bmeth.variable?
-          subtypes = get_subtypes(btype)
-          return nil if subtypes.nil?
-          return subtypes[0]
+          return btype.subtypes.first
         else
           yps = meth.docstring.tags(:yieldparam)
           unless yps[pin.index].nil? or yps[pin.index].types.nil? or yps[pin.index].types.empty?
-            return yps[pin.index].types[0]
+            return ComplexType.parse(yps[pin.index].types[0]).first
           end
         end
         nil
       end
 
+      # @return [Solargraph::ComplexType]
       def resolve_method_parameter pin
         matches = api_map.get_method_stack(pin.namespace, pin.context.name, scope: pin.scope)
         matches.each do |m|
           next unless pin.context.parameters == m.parameters
           tag = m.docstring.tags(:param).select{|t| t.name == pin.name}.first
           next if tag.nil? or tag.types.nil?
-          return tag.types[0]
+          return ComplexType.parse(tag.types[0]).first
         end
         nil
       end
 
+      # @return [Solargraph::ComplexType]
       def resolve_variable(pin, locals)
         return nil if pin.nil_assignment?
         # @todo Do we need the locals here?
         return infer_signature_type(pin.signature, pin.context, locals)
-      end
-
-      def get_subtypes type
-        return nil if type.nil?
-        match = type.match(/<([a-z0-9_:, ]*)>/i)
-        return [] if match.nil?
-        match[1].split(',').map(&:strip)
       end
     end
   end
