@@ -8,17 +8,19 @@ module Solargraph
       'then', 'true', 'undef', 'unless', 'until', 'when', 'while', 'yield'
     ].freeze
 
-    METHODS_RETURNING_SELF = %w{
+    METHODS_RETURNING_SELF = %w[
       Object#clone Object#dup Object#freeze Object#taint Object#untaint
-    }.freeze
+    ].freeze
 
-    METHODS_RETURNING_SUBTYPES = %w{
-      Array#[]
-    }.freeze
+    METHODS_RETURNING_SUBTYPES = %w[
+      Array#[] Array#first Array#last
+    ].freeze
 
-    METHODS_WITH_YIELDPARAM_SUBTYPES = %w{
-      Array#each Hash#each_pair Array#map
-    }.freeze
+    METHODS_WITH_YIELDPARAM_SUBTYPES = %w[
+      Array#each Array#map Array#any? Array#all?
+      Enumerable#each_entry Enumerable#map Enumerable#any? Enumerable#all?
+      Hash#each_pair
+    ].freeze
 
     CUSTOM_RETURN_TYPES = {
       'String#split' => 'Array<String>'

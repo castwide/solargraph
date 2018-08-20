@@ -219,8 +219,7 @@ module Solargraph
       @code = updater.write(original_code)
       @fixed = updater.write(original_code, true)
       @version = updater.version
-      return if @code == original_code
-      return unless reparse
+      return if @code == original_code or !reparse
       begin
         parse
         @fixed = @code
