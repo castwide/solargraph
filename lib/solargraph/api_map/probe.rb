@@ -120,12 +120,10 @@ module Solargraph
       # @param internal [Boolean] Whether to include non-public methods
       # @return [Array<Solargraph::Pin::Base>]
       def infer_method_name_pins method_name, context_pin, internal = false
-        relname, scope = extract_namespace_and_scope(context_pin.return_type)
-        namespace = api_map.qualify(relname, context_pin.namespace)
+        namespace = api_map.qualify(context_pin.return_namespace, context_pin.namespace)
         visibility = [:public]
         visibility.push :protected, :private if internal
-        # result = api_map.get_methods(namespace, scope: scope, visibility: visibility).select{|pin| pin.name == method_name}
-        result = api_map.get_method_stack(namespace, method_name, scope: scope).select{|pin| visibility.include?(pin.visibility)}
+        result = api_map.get_method_stack(namespace, method_name, scope: context_pin.return_scope).select{|pin| visibility.include?(pin.visibility)}
         # @todo This needs more rules. Probably need to update YardObject for it.
         return result if result.empty?
         return result unless method_name == 'new' and result.first.path == 'Class#new'
@@ -142,18 +140,6 @@ module Solargraph
         return true if pin.kind == Pin::METHOD and pin.namespace == namespace and pin.scope == scope
         # @todo Handle instance variables, class variables, etc. in various ways
         pin.namespace == namespace and pin.scope == scope
-      end
-
-      # Fully qualify the namespace in a type.
-      #
-      # @param type [String]
-      # @param context [String]
-      # @return [String]
-      def qualify type, context
-        rns, rsc = extract_namespace_and_scope(type)
-        res = api_map.qualify(rns, context)
-        return res if rsc == :instance
-        type.sub(/<#{rns}>/, "<#{res}>")
       end
 
       # Extract a namespace and a scope from a pin. For now, the pin must
