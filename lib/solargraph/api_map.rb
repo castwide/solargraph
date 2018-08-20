@@ -12,11 +12,9 @@ module Solargraph
     autoload :Completion,   'solargraph/api_map/completion'
     autoload :Probe,        'solargraph/api_map/probe'
     autoload :Store,        'solargraph/api_map/store'
-    autoload :TypeMethods,  'solargraph/api_map/type_methods'
 
     include Solargraph::ApiMap::SourceToYard
     include CoreFills
-    include TypeMethods
 
     # The workspace to analyze and process.
     #
@@ -261,8 +259,9 @@ module Solargraph
       skip = []
       if fqns == ''
         domains.each do |domain|
-          namespace, scope = extract_namespace_and_scope(domain)
-          result.concat inner_get_methods(namespace, scope, [:public], deep, skip)
+          # namespace, scope = extract_namespace_and_scope(domain)
+          type = ComplexType.parse(domain).first
+          result.concat inner_get_methods(type.name, type.scope, [:public], deep, skip)
         end
         result.concat inner_get_methods(fqns, :class, visibility, deep, skip)
         result.concat inner_get_methods(fqns, :instance, visibility, deep, skip)
@@ -288,6 +287,7 @@ module Solargraph
     # @param scope [Symbol] :instance or :class
     # @return [Array<Solargraph::Pin::Base>]
     def get_method_stack fqns, name, scope: :instance
+      # @todo Caches don't work on this query
       # cached = cache.get_method_stack(fqns, name, scope)
       # return cached.clone unless cached.nil?
       result = get_methods(fqns, scope: scope, visibility: [:private, :protected, :public]).select{|p| p.name == name}
@@ -331,7 +331,6 @@ module Solargraph
             else
               type = probe.infer_signature_type("#{pin.path}.new.#{fragment.base}", pin, fragment.locals)
               unless type.nil?
-                # namespace, scope = extract_namespace_and_scope(type)
                 result.concat get_methods(type.namespace, scope: type.scope)
               end
             end
@@ -354,11 +353,10 @@ module Solargraph
             end
             if result.empty?
               pins.each do |pin|
-                type = pin.return_type
-                unless type.nil? or type == 'void'
-                  docns, scope = extract_namespace_and_scope(type)
-                  namespace = qualify(docns, pin.namespace)
-                  result.concat get_methods(namespace, scope: scope)
+                type = pin.return_complex_type
+                unless type.nil? or type.name == 'void'
+                  namespace = qualify(type.name, pin.namespace)
+                  result.concat get_methods(namespace, scope: type.scope)
                   break
                 end
               end
@@ -423,7 +421,6 @@ module Solargraph
       return [] if path.nil?
       result = []
       result.concat store.get_path_pins(path)
-      # result.concat yard_map.objects(path)
       if result.empty?
         lp = live_map.get_path_pin(path)
         result.push lp unless lp.nil?
@@ -462,7 +459,6 @@ module Solargraph
       @yard_stale = false
       docs = []
       docs.push code_object_at(path) unless code_object_at(path).nil?
-      # docs.concat yard_map.document(path)
       docs
     end
 
@@ -569,14 +565,12 @@ module Solargraph
             fqim = qualify(im, fqns)
             result.concat inner_get_methods(fqim, scope, visibility, deep, skip) unless fqim.nil?
           end
-          # result.concat yard_map.get_instance_methods(fqns, visibility: visibility)
           result.concat inner_get_methods('Object', :instance, [:public], deep, skip) unless fqns == 'Object'
         else
           store.get_extends(fqns).each do |em|
             fqem = qualify(em, fqns)
             result.concat inner_get_methods(fqem, :instance, visibility, deep, skip) unless fqem.nil?
           end
-          # result.concat yard_map.get_methods(fqns, '', visibility: visibility)
           type = get_namespace_type(fqns)
           result.concat inner_get_methods('Class', :instance, fqns == '' ? [:public] : visibility, deep, skip) if type == :class
           result.concat inner_get_methods('Module', :instance, fqns == '' ? [:public] : visibility, deep, skip) #if type == :module
@@ -590,7 +584,6 @@ module Solargraph
       skip.push fqns
       result = []
       result.concat store.get_constants(fqns, visibility)
-      # result.concat yard_map.get_constants(fqns)
       store.get_includes(fqns).each do |is|
         fqis = qualify(is, fqns)
         result.concat inner_get_constants(fqis, [:public], skip) unless fqis.nil?

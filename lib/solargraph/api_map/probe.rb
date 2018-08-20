@@ -3,8 +3,6 @@ module Solargraph
     # A deep analysis provider for ApiMaps.
     #
     class Probe
-      include TypeMethods
-
       # @return [Solargraph::ApiMap]
       attr_reader :api_map
 
