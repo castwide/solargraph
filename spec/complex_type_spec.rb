@@ -127,6 +127,24 @@ describe Solargraph::ComplexType do
     }.to raise_error(Solargraph::ComplexTypeError)
   end
 
+  it "raises ComplexTypeError for hash parameters without key => value syntax" do
+    expect {
+      Solargraph::ComplexType.parse('Hash{Foo}')
+    }.to raise_error(Solargraph::ComplexTypeError)
+    expect {
+      Solargraph::ComplexType.parse('Hash{Foo, Bar}')
+    }.to raise_error(Solargraph::ComplexTypeError)
+  end
+
+  it "parses multiple key/value types in hash parameters" do
+    types = Solargraph::ComplexType.parse("Hash{String, Symbol => Integer, BigDecimal}")
+    expect(types.length).to eq(1)
+    type = types.first
+    expect(type.hash_parameters?).to eq(true)
+    expect(type.key_types.map(&:name)).to eq(['String', 'Symbol'])
+    expect(type.value_types.map(&:name)).to eq(['Integer', 'BigDecimal'])
+  end
+
   it "parses recursive subtypes" do
     types = Solargraph::ComplexType.parse('Array<Hash{String => Integer}>')
     expect(types.length).to eq(1)
