@@ -134,6 +134,7 @@ module Solargraph
         @return_complex_types ||= []
       end
 
+      # @return [ComplexType, nil]
       def return_complex_type
         return_complex_types.first
       end
