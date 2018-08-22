@@ -65,6 +65,7 @@ module Solargraph
         false
       end
 
+      # @return [Boolean]
       def yard_pin?
         false
       end
@@ -145,7 +146,7 @@ module Solargraph
         @docstring ||= YARD::Docstring.parser.parse('').to_docstring
       end
 
-      # @param [Array<YARD::Tags::Directive>]
+      # @return [Array<YARD::Tags::Directive>]
       def directives
         parse_comments unless defined?(@directives)
         @directives
@@ -197,6 +198,12 @@ module Solargraph
         end
       end
 
+      # True if two docstrings have the same tags, regardless of any other
+      # differences.
+      #
+      # @param d1 [YARD::Docstring]
+      # @param d2 [YARD::Docstring]
+      # @return [boolean]
       def compare_docstring_tags d1, d2
         return false if d1.tags.length != d2.tags.length
         d1.tags.each_index do |i|
@@ -205,6 +212,9 @@ module Solargraph
         true
       end
 
+      # @param d1 [Array<YARD::Tags::Directive>]
+      # @param d2 [Array<YARD::Tags::Directive>]
+      # @return [Boolean]
       def compare_directives d1, d2
         return false if d1.length != d2.length
         d1.each_index do |i|
@@ -213,8 +223,11 @@ module Solargraph
         true
       end
 
+      # @param t1 [YARD::Tags::Tag]
+      # @param t2 [YARD::Tags::Tag]
+      # @return [Boolean]
       def compare_tags t1, t2
-        return true if t1.class == t2.class and
+        t1.class == t2.class and
           t1.tag_name == t2.tag_name and
           t1.text == t2.text and
           t1.name == t2.name and
