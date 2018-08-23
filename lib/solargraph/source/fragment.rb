@@ -222,9 +222,13 @@ module Solargraph
         @named_path ||= @source.locate_named_path_pin(line, character)
       end
 
+      # Get an array of all the locals that are visible from the fragment's
+      # position. Locals can be local variables, method parameters, or block
+      # parameters. The array starts with the nearest local pin.
+      #
       # @return [Array<Solargraph::Pin::Base>]
       def locals
-        @locals ||= @source.locals.select{|pin| pin.visible_from?(block, position)}
+        @locals ||= @source.locals.select{|pin| pin.visible_from?(block, position)}.reverse
       end
 
       # True if the fragment is a signature that stems from a literal value.

@@ -1158,4 +1158,40 @@ describe Solargraph::ApiMap do
     names = cmp.pins.map(&:name)
     expect(names).to include('upcase')
   end
+
+  it "infers local variable definitions with reassignments" do
+    code = %(
+      str = '1,2,3'
+      str = str.split(',')
+    )
+    api_map = Solargraph::ApiMap.new
+    source = Solargraph::Source.new(code)
+    api_map.virtualize source
+    fragment = source.fragment_at(1, 7)
+    pins = api_map.define(fragment)
+    expect(pins.first.return_type).to eq('String')
+    fragment = source.fragment_at(2, 7)
+    pins = api_map.define(fragment)
+    expect(pins.first.return_type).to eq('Array')
+  end
+
+  it "infers instance variable definitions with reassignments" do
+    code = %(
+      @str = '1,2,3'
+      @str = @str.split(',')
+    )
+    api_map = Solargraph::ApiMap.new
+    source = Solargraph::Source.new(code)
+    api_map.virtualize source
+    fragment = source.fragment_at(1, 7)
+    pins = api_map.define(fragment)
+    expect(pins.first.return_type).to eq('String')
+    fragment = source.fragment_at(2, 7)
+    # @todo There might not be a good way to handle instance variable pins
+    #   with conflicting types, but at the very least, assignments that
+    #   reference themselves should not raise a SystemStackError.
+    expect {
+      pins = api_map.define(fragment)
+    }.not_to raise_error
+  end
 end
