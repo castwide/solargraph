@@ -83,6 +83,10 @@ module Solargraph
       end
 
       # Word search is ALWAYS internal
+      # @param word [String]
+      # @param context_pin [Solargraph::Pin::Base]
+      # @param locals [Array<Solargraph::Pin::Base>]
+      # @return [Array<Solargraph::Pin::Base>]
       def infer_word_pins word, context_pin, locals
         return [] if word.empty?
         return infer_self(context_pin) if word == 'self'
@@ -108,6 +112,9 @@ module Solargraph
         resolve_word_types(result, locals)
       end
 
+      # @param pins [Array<Solargraph::Pin::Base>]
+      # @param locals [Array<Solargraph::Pin::Base>]
+      # @return [Array<Solargraph::Pin::Base>]
       def resolve_word_types(pins, locals)
         pins.each do |p|
           next unless p.return_type.nil?
@@ -118,6 +125,8 @@ module Solargraph
         pins
       end
 
+      # @param context_pin [Solargraph::Pin::Base]
+      # @return [Array<Solargraph::Pin::Base>]
       def infer_self context_pin
         if context_pin.kind == Pin::METHOD
           if context_pin.scope == :instance
@@ -214,6 +223,8 @@ module Solargraph
         nil
       end
 
+      # @param pin [Solargraph::Pin::BlockParameter]
+      # @param locals [Array<Solargraph::Pin::Base>]
       # @return [Solargraph::ComplexType]
       def resolve_block_parameter pin, locals
         return pin.return_complex_type unless pin.return_complex_type.nil?
@@ -239,6 +250,7 @@ module Solargraph
         nil
       end
 
+      # @param pin [Solargraph::Pin::MethodParameter]
       # @return [Solargraph::ComplexType]
       def resolve_method_parameter pin
         matches = api_map.get_method_stack(pin.namespace, pin.context.name, scope: pin.scope)
@@ -251,11 +263,13 @@ module Solargraph
         nil
       end
 
+      # @param pin [Solargraph::Pin::BaseVariable]
+      # @param locals [Array<Solargraph::Pin::Base>]
       # @return [Solargraph::ComplexType]
       def resolve_variable(pin, locals)
         return nil if pin.nil_assignment?
         # @todo Do we need the locals here?
-        return infer_signature_type(pin.signature, pin.context, locals)
+        infer_signature_type(pin.signature, pin.context, locals)
       end
     end
   end
