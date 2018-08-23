@@ -75,4 +75,33 @@ describe Solargraph::ApiMap::Probe do
     expect(pins.length).to eq(1)
     expect(pins.first.return_type).to eq('Array')
   end
+
+  it "infers return types from signatures" do
+    api_map = Solargraph::ApiMap.new
+    source = Solargraph::Source.load_string('str = String.new.upcase')
+    api_map.virtualize source
+    pins = api_map.probe.infer_signature_pins('str', source.pins.first, source.locals)
+    expect(pins.length).to eq(1)
+    expect(pins.first.return_type).to eq('String')
+  end
+
+  it "infers self" do
+    api_map = Solargraph::ApiMap.new
+    source = Solargraph::Source.load_string('class Foo;end')
+    api_map.virtualize source
+    pins = api_map.probe.infer_signature_pins('self', api_map.get_path_suggestions('Foo').first, [])
+    expect(pins.length).to eq(1)
+    expect(pins.first.return_namespace).to eq('Foo')
+  end
+
+  it "infers types from parameters for methods returning subtypes" do
+    api_map = Solargraph::ApiMap.new
+    source = Solargraph::Source.load_string(%(
+      # @type [Array<Hash>]
+      things = array_of_hashes
+    ))
+    api_map.virtualize source
+    pins = api_map.probe.infer_signature_pins('things.first', source.pins.first, source.locals)
+    expect(pins.first.return_namespace).to eq('Hash')
+  end
 end
