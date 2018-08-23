@@ -9,6 +9,9 @@ module Solargraph
       # @return [Solargraph::Source::Location]
       attr_reader :location
 
+      # The namespace in which this pin is defined.
+      # The root namespace is an empty string.
+      #
       # @return [String]
       attr_reader :namespace
 

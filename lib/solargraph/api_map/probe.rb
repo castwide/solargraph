@@ -55,7 +55,7 @@ module Solargraph
       def infer_signature_type signature, context_pin, locals
         pins = infer_signature_pins(signature, context_pin, locals)
         pins.each do |pin|
-          return qualify(pin) unless pin.return_complex_type.nil?
+          return pin.return_complex_type.qualify(api_map, pin.namespace) unless pin.return_complex_type.nil?
           type = resolve_pin_type(pin, locals - [pin])
           return type unless type.nil?
         end
@@ -63,24 +63,6 @@ module Solargraph
       end
 
       private
-
-      # @param pin [Solargraph::Pin::Base]
-      # @return [Solargraph::ComplexType]
-      def qualify pin
-        complex_type = pin.return_complex_type
-        return ComplexType::VOID if complex_type.nil?
-        if complex_type.name == 'Class' or complex_type.name == 'Module'
-          return complex_type if complex_type.subtypes.empty?
-          name = api_map.qualify(complex_type.subtypes.first.name, pin.namespace)
-          return ComplexType::VOID if name.nil?
-          Solargraph::ComplexType.parse("#{complex_type.name}<#{name}>").first
-        else
-          name = api_map.qualify(pin.return_namespace, pin.namespace)
-          return nil if name.nil?
-          return pin.return_complex_type if pin.name == name
-          Solargraph::ComplexType.parse(name).first
-        end
-      end
 
       # Word search is ALWAYS internal
       # @param word [String]

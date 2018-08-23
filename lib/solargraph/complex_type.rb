@@ -93,6 +93,31 @@ module Solargraph
       tag == other.tag
     end
 
+    # Generate a ComplexType that fully qualifies this type's namespaces.
+    #
+    # @param api_map [ApiMap] The ApiMap that performs qualification
+    # @param context [String] The namespace from which to resolve names
+    # @return [ComplexType] The generated ComplexType
+    def qualify api_map, context = ''
+      fqns = api_map.qualify(name, context)
+      return VOID if fqns.nil?
+      ltypes = key_types.map do |t|
+        t.qualify api_map, context
+      end
+      rtypes = value_types.map do |t|
+        t.qualify api_map, context
+      end
+      if list_parameters?
+        Solargraph::ComplexType.parse("#{fqns}<#{rtypes.map(&:tag).join(', ')}>").first
+      elsif fixed_parameters?
+        Solargraph::ComplexType.parse("#{fqns}(#{rtypes.map(&:tag).join(', ')})").first
+      elsif hash_parameters?
+        Solargraph::ComplexType.parse("#{fqns}{#{ltypes.map(&:tag).join(', ')} => #{rtypes.map(&:tag).join(', ')}}").first
+      else
+        Solargraph::ComplexType.parse(fqns).first
+      end
+    end
+
     class << self
       # @param *strings [Array<String>] The type definitions to parse
       # @return [Array<ComplexType>]
