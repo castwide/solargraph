@@ -1,19 +1,15 @@
 module Solargraph
   module Pin
-    class Symbol
-      include Conversions
-
-      attr_reader :location
-
-      attr_reader :name
-
+    class Symbol < Base
+      # @param location [Solargraph::Source::Location]
+      # @param name [String]
       def initialize location, name
         @name = name
         @location = location
       end
 
-      def filename
-        location.filename
+      def namespace
+        ''
       end
 
       def kind
@@ -21,7 +17,7 @@ module Solargraph
       end
 
       def path
-        nil
+        ''
       end
 
       def identifier
@@ -32,8 +28,20 @@ module Solargraph
         Solargraph::LanguageServer::CompletionItemKinds::KEYWORD
       end
 
-      def return_type
-        'Symbol'
+      def comments
+        ''
+      end
+
+      def return_complex_types
+        @return_complex_types ||= Solargraph::ComplexType.parse('Symbol')
+      end
+
+      def directives
+        []
+      end
+
+      def deprecated?
+        false
       end
     end
   end
