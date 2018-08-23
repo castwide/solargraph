@@ -12,7 +12,8 @@ class Solargraph::LanguageServer::Message::Workspace::WorkspaceSymbol < Solargra
         location: {
           uri: uri,
           range: pin.location.range.to_hash
-        }
+        },
+        deprecated: pin.deprecated?
       }
     end
     set_result info

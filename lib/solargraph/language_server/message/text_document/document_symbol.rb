@@ -11,7 +11,8 @@ class Solargraph::LanguageServer::Message::TextDocument::DocumentSymbol < Solarg
         location: {
           uri: file_to_uri(pin.location.filename),
           range: pin.location.range.to_hash
-        }
+        },
+        deprecated: pin.deprecated?
       }
       result
     end

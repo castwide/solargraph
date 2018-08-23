@@ -15,9 +15,6 @@ module Solargraph
       # @return [String]
       attr_reader :name
 
-      # @return [String]
-      attr_reader :comments
-
       # @return [Integer]
       attr_reader :kind
 
@@ -32,7 +29,12 @@ module Solargraph
         @location = location
         @namespace = namespace
         @name = name
-        @comments = comments || ''
+        @comments = comments
+      end
+
+      # @return [String]
+      def comments
+        @comments ||= ''
       end
 
       # @return [String]
@@ -115,6 +117,7 @@ module Solargraph
       #
       # @return [String]
       def return_namespace
+        return_type
         return nil if return_complex_types.empty?
         @return_namespace ||= return_complex_types.first.namespace
       end
@@ -165,6 +168,11 @@ module Solargraph
         @maybe_directives ||= comments.include?('@!')
       end
 
+      # @return [Boolean]
+      def deprecated?
+        @deprecated ||= docstring.has_tag?('deprecated')
+      end
+
       # Try to merge data from another pin. Merges are only possible if the
       # pins are near matches (see the #nearly? method). The changes should
       # not have any side effects on the API surface.
@@ -179,6 +187,7 @@ module Solargraph
           @docstring = pin.docstring
           @return_complex_types = pin.return_complex_types
           @documentation = nil
+          @deprecated = nil
           reset_conversions
         end
         true
