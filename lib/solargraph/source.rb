@@ -122,11 +122,6 @@ module Solargraph
       pins.select{|pin| pin.kind == Pin::CLASS_VARIABLE}
     end
 
-    # @return [Array<Solargraph::Pin::Base>]
-    def locals
-      @locals
-    end
-
     # @return [Array<Solargraph::Pin::GlobalVariable>]
     def global_variable_pins
       pins.select{|pin| pin.kind == Pin::GLOBAL_VARIABLE}

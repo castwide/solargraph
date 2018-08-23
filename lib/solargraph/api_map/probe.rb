@@ -55,7 +55,7 @@ module Solargraph
       def infer_signature_type signature, context_pin, locals
         pins = infer_signature_pins(signature, context_pin, locals)
         pins.each do |pin|
-          return pin.return_complex_type unless pin.return_complex_type.nil?
+          return qualify(pin) unless pin.return_complex_type.nil?
           type = resolve_pin_type(pin, locals - [pin])
           return type unless type.nil?
         end
@@ -63,6 +63,23 @@ module Solargraph
       end
 
       private
+
+      # @param pin [Solargraph::Pin::Base]
+      # @return [Solargraph::ComplexType]
+      def qualify pin
+        complex_type = pin.return_complex_type
+        return ComplexType::VOID if complex_type.nil?
+        if complex_type.name == 'Class' or complex_type.name == 'Module'
+          return complex_type if complex_type.subtypes.empty?
+          name = api_map.qualify(complex_type.subtypes.first.name, pin.namespace)
+          return ComplexType::VOID if name.nil?
+          Solargraph::ComplexType.parse("#{complex_type.name}<#{name}>").first
+        else
+          name = api_map.qualify(pin.return_namespace, pin.namespace)
+          return pin.return_complex_type if pin.name == name
+          Solargraph::ComplexType.parse(name).first
+        end
+      end
 
       # Word search is ALWAYS internal
       def infer_word_pins word, context_pin, locals
@@ -124,9 +141,12 @@ module Solargraph
         result = api_map.get_method_stack(namespace, method_name, scope: context_pin.return_scope).select{|pin| visibility.include?(pin.visibility)}
         # @todo This needs more rules. Probably need to update YardObject for it.
         return result if result.empty?
-        return result unless method_name == 'new' and result.first.path == 'Class#new'
-        result.unshift virtual_new_pin(result.first, context_pin)
-        result
+        result.unshift virtual_new_pin(result.first, context_pin) if method_name == 'new' and result.first.path == 'Class#new'
+        result.map do |pin|
+          next pin unless CoreFills::METHODS_RETURNING_SUBTYPES.include?(pin.path)
+          next pin if context_pin.return_complex_type.subtypes.empty?
+          Solargraph::Pin::Method.new(pin.location, pin.namespace, pin.name, "@return [#{context_pin.return_complex_type.subtypes.first.tag}]", pin.scope, pin.visibility, pin.parameters)
+        end
       end
 
       # Word and context matching rules for ApiMap source pins.

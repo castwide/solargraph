@@ -278,6 +278,18 @@ module Solargraph
       result
     end
 
+    def get_complex_type_methods type, context = ''
+      result = []
+      unless type.nil? or type.name == 'void'
+        namespace = qualify(type.name, context)
+        result.concat get_methods(namespace, scope: type.scope)
+        if ['Class', 'Module'].include?(namespace) and !type.subtypes.empty?
+          result.concat get_complex_type_methods(type.subtypes.first.name, context)
+        end
+      end
+      result
+    end
+
     # Get a stack of method pins for a method name in a namespace. The order
     # of the pins corresponds to the ancestry chain, with highest precedence
     # first.
@@ -354,11 +366,8 @@ module Solargraph
             if result.empty?
               pins.each do |pin|
                 type = pin.return_complex_type
-                unless type.nil? or type.name == 'void'
-                  namespace = qualify(type.name, pin.namespace)
-                  result.concat get_methods(namespace, scope: type.scope)
-                  break
-                end
+                result.concat get_complex_type_methods(type, pin.namespace)
+                break unless result.empty?
               end
             end
           end
@@ -660,6 +669,7 @@ module Solargraph
     # @param [String] A fully qualified namespace
     # @return [Symbol] :class, :module, or nil
     def get_namespace_type fqns
+      return nil if fqns.nil?
       pin = store.get_path_pins(fqns).first
       return nil if pin.nil?
       pin.type

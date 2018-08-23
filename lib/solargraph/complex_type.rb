@@ -166,5 +166,7 @@ module Solargraph
         types
       end
     end
+
+    VOID = ComplexType.new('void')
   end
 end
