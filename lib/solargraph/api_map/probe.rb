@@ -143,9 +143,13 @@ module Solargraph
         return result if result.empty?
         result.unshift virtual_new_pin(result.first, context_pin) if method_name == 'new' and result.first.path == 'Class#new'
         result.map do |pin|
-          next pin unless CoreFills::METHODS_RETURNING_SUBTYPES.include?(pin.path)
-          next pin if context_pin.return_complex_type.subtypes.empty?
-          Solargraph::Pin::Method.new(pin.location, pin.namespace, pin.name, "@return [#{context_pin.return_complex_type.subtypes.first.tag}]", pin.scope, pin.visibility, pin.parameters)
+          if CoreFills::METHODS_RETURNING_SELF.include?(pin.path)
+            Solargraph::Pin::Method.new(pin.location, pin.namespace, pin.name, "@return [#{context_pin.return_complex_type.tag}]", pin.scope, pin.visibility, pin.parameters)
+          elsif CoreFills::METHODS_RETURNING_SUBTYPES.include?(pin.path) and !context_pin.return_complex_type.subtypes.empty?
+            Solargraph::Pin::Method.new(pin.location, pin.namespace, pin.name, "@return [#{context_pin.return_complex_type.subtypes.first.tag}]", pin.scope, pin.visibility, pin.parameters)
+          else
+            pin
+          end
         end
       end
 

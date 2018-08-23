@@ -9,6 +9,8 @@ module Solargraph
     ].freeze
 
     METHODS_RETURNING_SELF = %w[
+      Array#select Array#reject Array#keep_if Array#delete_if
+      Enumerable#select
       Object#clone Object#dup Object#freeze Object#taint Object#untaint
     ].freeze
 
@@ -19,7 +21,7 @@ module Solargraph
     METHODS_WITH_YIELDPARAM_SUBTYPES = %w[
       Array#each Array#map Array#any? Array#all?
       Enumerable#each_entry Enumerable#map Enumerable#any? Enumerable#all?
-      Hash#each_pair
+      Set#each
     ].freeze
 
     CUSTOM_RETURN_TYPES = {
