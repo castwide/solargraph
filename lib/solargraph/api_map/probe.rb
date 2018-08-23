@@ -76,6 +76,7 @@ module Solargraph
           Solargraph::ComplexType.parse("#{complex_type.name}<#{name}>").first
         else
           name = api_map.qualify(pin.return_namespace, pin.namespace)
+          return nil if name.nil?
           return pin.return_complex_type if pin.name == name
           Solargraph::ComplexType.parse(name).first
         end
@@ -184,7 +185,7 @@ module Solargraph
       # @param word [String]
       # @return [Boolean]
       def variable_name? word
-        word.start_with?('@') or word.start_with?('$')
+        word.start_with?('@', '$')
       end
 
       # Create a `new` pin to facilitate type inference. This is necessary for
