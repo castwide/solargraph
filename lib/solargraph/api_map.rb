@@ -139,7 +139,7 @@ module Solargraph
     #
     # @return [Array<Solargraph::Pin::Keyword>]
     def self.keywords
-      @keyword_suggestions ||= KEYWORDS.map{ |s|
+      @keywords ||= KEYWORDS.map{ |s|
         Pin::Keyword.new(s)
       }.freeze
     end
@@ -278,6 +278,9 @@ module Solargraph
       result
     end
 
+    # @param type [Solargraph::ComplexType]
+    # @param context [String]
+    # @return [Array<Solargraph::Pin::Base>]
     def get_complex_type_methods type, context = ''
       result = []
       unless type.nil? or type.name == 'void'
@@ -606,6 +609,7 @@ module Solargraph
     # installed gem with a name that starts with "solargraph-" is considered
     # an extension.
     #
+    # @return [void]
     def require_extensions
       Gem::Specification.all_names.select{|n| n.match(/^solargraph\-[a-z0-9_\-]*?\-ext\-[0-9\.]*$/)}.each do |n|
         STDERR.puts "Loading extension #{n}"
@@ -613,6 +617,9 @@ module Solargraph
       end
     end
 
+    # Sort an array of pins to put nil or undefined variables last.
+    #
+    # @param pins [Array<Solargraph::Pin::Base>]
     # @return [Array<Solargraph::Pin::Base>]
     def prefer_non_nil_variables pins
       result = []
@@ -667,7 +674,7 @@ module Solargraph
 
     # Get the namespace's type (Class or Module).
     #
-    # @param [String] A fully qualified namespace
+    # @param fqns [String] A fully qualified namespace
     # @return [Symbol] :class, :module, or nil
     def get_namespace_type fqns
       return nil if fqns.nil?
