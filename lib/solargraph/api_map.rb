@@ -284,7 +284,8 @@ module Solargraph
         namespace = qualify(type.name, context)
         result.concat get_methods(namespace, scope: type.scope)
         if ['Class', 'Module'].include?(namespace) and !type.subtypes.empty?
-          result.concat get_methods(type.subtypes.first.name, scope: :class)
+          subtype = qualify(type.subtypes.first.name, context)
+          result.concat get_methods(subtype, scope: :class)
         end
       end
       result
