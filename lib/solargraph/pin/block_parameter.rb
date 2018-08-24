@@ -36,7 +36,14 @@ module Solargraph
 
       def nearly? other
         return false unless super
-        index == other.index and block == other.block
+        block.nearly?(other.block)
+      end
+
+      def try_merge! other
+        return false unless super
+        @block = other.block
+        @presence = block.location.range
+        @return_complex_types = nil
       end
 
       # @return [Array<Solargraph::ComplexType>]
