@@ -1,7 +1,12 @@
 module Solargraph
   module Pin
     class Block < Base
+      # The signature of the method that receives this block.
+      #
+      # @return [String]
       attr_reader :receiver
+
+      # @return [Array<String>]
       attr_reader :parameters
 
       def initialize location, namespace, name, comments, receiver
@@ -15,6 +20,11 @@ module Solargraph
 
       def parameters
         @parameters ||= []
+      end
+
+      def nearly? other
+        return false unless super
+        receiver == other.receiver
       end
     end
   end
