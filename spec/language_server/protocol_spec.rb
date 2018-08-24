@@ -156,13 +156,28 @@ describe Protocol do
         'uri' => 'file:///file.rb'
       },
       'position' => {
-        'line' => 5,
+        'line' => 6,
         'character' => 17
       }
     }
     response = @protocol.response
     expect(response['error']).to be_nil
-    expect(response['result']).not_to be_nil
+    expect(response['result']).not_to be_empty
+  end
+
+  it "handles textDocument/definition on undefined symbols" do
+    @protocol.request 'textDocument/definition', {
+      'textDocument' => {
+        'uri' => 'file:///file.rb'
+      },
+      'position' => {
+        'line' => 5,
+        'character' => 11
+      }
+    }
+    response = @protocol.response
+    expect(response['error']).to be_nil
+    expect(response['result']).to be_empty
   end
 
   # it "handles completionItem/resolve" do
@@ -201,7 +216,7 @@ describe Protocol do
         'uri' => 'file:///file.rb'
       },
       'position' => {
-        'line' => 5,
+        'line' => 6,
         'character' => 17
       }
     }
