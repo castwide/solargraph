@@ -1172,7 +1172,7 @@ describe Solargraph::ApiMap do
     expect(pins.first.return_type).to eq('String')
     fragment = source.fragment_at(2, 7)
     pins = api_map.define(fragment)
-    expect(pins.first.return_type).to eq('Array')
+    expect(pins.first.return_type).to eq('Array<String>')
   end
 
   it "infers instance variable definitions with reassignments" do
