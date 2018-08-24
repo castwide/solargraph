@@ -24,7 +24,7 @@ module Solargraph
 
       def nearly? other
         return false unless super
-        receiver == other.receiver
+        receiver == other.receiver and parameters == other.parameters
       end
     end
   end

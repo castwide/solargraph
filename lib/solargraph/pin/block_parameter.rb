@@ -34,6 +34,11 @@ module Solargraph
         block.parameters.index(self)
       end
 
+      def nearly? other
+        return false unless super
+        index == other.index and block == other.block
+      end
+
       # @return [Array<Solargraph::ComplexType>]
       def return_complex_types
         if @return_complex_types.nil?
