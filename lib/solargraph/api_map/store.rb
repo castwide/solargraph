@@ -6,7 +6,7 @@ module Solargraph
       # @param sources [Array<Solargraph::Source>]
       # @param yard_pins [Array<Solargraph::Pin::Base>]
       def initialize sources, yard_pins
-        inner_update *sources
+        inner_update sources
         pins.concat yard_pins
         index
       end
@@ -16,8 +16,8 @@ module Solargraph
         @pins ||= []
       end
 
-      # @param *source [Array<Solargraph::Source>]
-      # @return[void]
+      # @param *sources [Array<Solargraph::Source>]
+      # @return [void]
       def remove *sources
         sources.each do |source|
           pins.delete_if { |pin| !pin.yard_pin? and pin.filename == source.filename }
@@ -29,7 +29,7 @@ module Solargraph
       # @param *sources [Array<Solargraph::Source>]
       # @return [void]
       def update *sources
-        inner_update *sources
+        inner_update sources
         index
       end
 
@@ -135,10 +135,12 @@ module Solargraph
         @namespaces ||= Set.new
       end
 
+      # @return [Array<Solargraph::Pin::Base>]
       def namespace_pins
         @namespace_pins ||= pins.select{|p| p.kind == Pin::NAMESPACE}
       end
 
+      # @return [Array<Solargraph::Pin::Base>]
       def method_pins
         @method_pins ||= pins.select{|p| p.kind == Pin::METHOD or p.kind == Pin::ATTRIBUTE}
       end
@@ -148,8 +150,7 @@ module Solargraph
       # @param fqns [String]
       # @return [Array<Solargraph::Pin::Namespace>]
       def fqns_pins fqns
-        # @todo We probably want to ignore '' namespace here
-        return [] if fqns.nil? #or fqns.empty?
+        return [] if fqns.nil?
         if fqns.include?('::')
           parts = fqns.split('::')
           name = parts.pop
@@ -191,9 +192,9 @@ module Solargraph
         @method_pins = nil
       end
 
-      # @param *sources [Array<Solargraph::Source>]
+      # @param sources [Array<Solargraph::Source>]
       # @return [void]
-      def inner_update *sources
+      def inner_update sources
         sources.each do |source|
           pins.delete_if { |pin| !pin.yard_pin? and pin.filename == source.filename }
           symbols.delete_if { |pin| pin.filename == source.filename }

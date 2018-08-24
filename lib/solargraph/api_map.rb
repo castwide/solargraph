@@ -259,7 +259,6 @@ module Solargraph
       skip = []
       if fqns == ''
         domains.each do |domain|
-          # namespace, scope = extract_namespace_and_scope(domain)
           type = ComplexType.parse(domain).first
           result.concat inner_get_methods(type.name, type.scope, [:public], deep, skip)
         end
@@ -278,6 +277,8 @@ module Solargraph
       result
     end
 
+    # Get an array of public methods for a complex type.
+    #
     # @param type [Solargraph::ComplexType]
     # @param context [String]
     # @return [Array<Solargraph::Pin::Base>]
@@ -297,6 +298,10 @@ module Solargraph
     # Get a stack of method pins for a method name in a namespace. The order
     # of the pins corresponds to the ancestry chain, with highest precedence
     # first.
+    #
+    # @example
+    #   api_map.get_method_stack('Subclass', 'method_name')
+    #     #=> [ <Subclass#method_name pin>, <Superclass#method_name pin> ]
     #
     # @param fqns [String]
     # @param name [String]
@@ -495,9 +500,7 @@ module Solargraph
     def locate_pin location
       @sources.each do |source|
         pin = source.locate_pin(location)
-        unless pin.nil?
-          return pin
-        end
+        return pin unless pin.nil?
       end
       nil
     end
@@ -561,6 +564,12 @@ module Solargraph
       @cache ||= Cache.new
     end
 
+    # @param fqns [String] A fully qualified namespace
+    # @param scope [Symbol] :class or :instance
+    # @param visibility [Array<Symbol>] :public, :protected, and/or :private
+    # @param deep [Boolean]
+    # @param skip [Array<String>]
+    # @return [Array<Pin::Base>]
     def inner_get_methods fqns, scope, visibility, deep, skip
       reqstr = "#{fqns}|#{scope}|#{visibility.sort}|#{deep}"
       return [] if skip.include?(reqstr)
@@ -595,6 +604,10 @@ module Solargraph
       result
     end
 
+    # @param fqns [String]
+    # @param visibility [Array<Symbol>]
+    # @param skip [Array<String>]
+    # @return [Array<Pin::Base>]
     def inner_get_constants fqns, visibility, skip
       return [] if skip.include?(fqns)
       skip.push fqns
@@ -647,6 +660,9 @@ module Solargraph
       @sources - [@virtual_source]
     end
 
+    # @param name [String]
+    # @param root [String]
+    # @param skip [Array<String>]
     # @return [String]
     def inner_qualify name, root, skip
       return nil if name.nil?
