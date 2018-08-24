@@ -12,12 +12,10 @@ module Solargraph::LanguageServer::Message::TextDocument
       col = params['position']['character']
       suggestions = host.definitions_at(filename, line, col)
       locations = suggestions.reject{|pin| pin.location.nil?}.map do |pin|
-        unless pin.location.nil?
-          {
-            uri: file_to_uri(pin.location.filename),
-            range: pin.location.range.to_hash
-          }
-        end
+        {
+          uri: file_to_uri(pin.location.filename),
+          range: pin.location.range.to_hash
+        }
       end
       set_result locations
     end
