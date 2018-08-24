@@ -156,4 +156,36 @@ describe Solargraph::ComplexType do
     expect(types.first.subtypes.first.key_types.map(&:namespace)).to eq(['String'])
     expect(types.first.subtypes.first.value_types.map(&:namespace)).to eq(['Integer'])
   end
+
+  let (:foo_bar_api_map) {
+    api_map = Solargraph::ApiMap.new
+    api_map.virtualize_string(%(
+      module Foo
+        class Bar
+          # @return [Bar]
+          def make_bar
+          end
+        end
+      end
+    ))
+    api_map
+  }
+
+  it "qualifies types with list parameters" do
+    original = Solargraph::ComplexType.parse('Class<Bar>').first
+    qualified = original.qualify(foo_bar_api_map, 'Foo')
+    expect(qualified.tag).to eq('Class<Foo::Bar>')
+  end
+
+  it "qualifies types with fixed parameters" do
+    original = Solargraph::ComplexType.parse('Array(String, Bar)').first
+    qualified = original.qualify(foo_bar_api_map, 'Foo')
+    expect(qualified.tag).to eq('Array(String, Foo::Bar)')
+  end
+
+  it "qualifies types with hash parameters" do
+    original = Solargraph::ComplexType.parse('Hash{String => Bar}').first
+    qualified = original.qualify(foo_bar_api_map, 'Foo')
+    expect(qualified.tag).to eq('Hash{String => Foo::Bar}')
+  end
 end

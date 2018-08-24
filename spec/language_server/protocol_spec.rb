@@ -180,26 +180,6 @@ describe Protocol do
     expect(response['result']).to be_empty
   end
 
-  # it "handles completionItem/resolve" do
-  #   @protocol.request 'textDocument/completion', {
-  #     'textDocument' => {
-  #       'uri' => 'file:///file.rb'
-  #     },
-  #     'position' => {
-  #       'line' => 6,
-  #       'character' => 12
-  #     }
-  #   }
-  #   response = @protocol.response
-  #   expect(response['error']).to be_nil
-  #   item = response['result']['items'].select{|item| item['label'] == 'String' and item['kind'] == Solargraph::LanguageServer::CompletionItemKinds::CLASS}.first
-  #   expect(item).not_to be_nil
-  #   @protocol.request 'completionItem/resolve', item
-  #   response = @protocol.response
-  #   expect(response['result']['documentation']).not_to be_nil
-  #   expect(response['result']['documentation']).not_to be_empty
-  # end
-
   it "handles textDocument/documentSymbol" do
     @protocol.request 'textDocument/documentSymbol', {
       'textDocument' => {
@@ -250,7 +230,7 @@ describe Protocol do
     expect(response['result']).not_to be_empty
   end
 
-  it "handles textDocument/references" do
+  it "handles textDocument/references for namespaces" do
     @protocol.request 'textDocument/references', {
       'textDocument' => {
         'uri' => 'file:///file.rb'
@@ -262,7 +242,22 @@ describe Protocol do
     }
     response = @protocol.response
     expect(response['error']).to be_nil
-    expect(response['result'].empty?).to be(false)
+    expect(response['result']).not_to be_empty
+  end
+
+  it "handles textDocument/references for methods" do
+    @protocol.request 'textDocument/references', {
+      'textDocument' => {
+        'uri' => 'file:///file.rb'
+      },
+      'position' => {
+        'line' => 8,
+        'character' => 15
+      }
+    }
+    response = @protocol.response
+    expect(response['error']).to be_nil
+    expect(response['result']).not_to be_empty
   end
 
   it "handles textDocument/rename" do

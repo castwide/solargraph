@@ -58,4 +58,9 @@ describe Solargraph::Pin::Method do
     expect(pin.completion_item_kind).to eq(Solargraph::LanguageServer::CompletionItemKinds::METHOD)
     expect(pin.symbol_kind).to eq(Solargraph::LanguageServer::SymbolKinds::METHOD)
   end
+
+  it "ignores malformed return tags" do
+    pin = Solargraph::Pin::Method.new(nil, 'Foo', 'bar', '@return [Array<String', :instance, :public, [])
+    expect(pin.return_complex_types).to be_empty
+  end
 end
