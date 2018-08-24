@@ -10,7 +10,7 @@ describe Solargraph::ApiMap::SourceToYard do
     ))
     object = Object.new
     object.extend Solargraph::ApiMap::SourceToYard
-    object.rake_yard [source]
+    object.rake_yard Solargraph::ApiMap::Store.new([source], [])
     expect(object.code_object_paths.length).to eq(3)
     expect(object.code_object_paths).to include('Foo')
     expect(object.code_object_paths).to include('Foo::Bar')
@@ -31,7 +31,7 @@ describe Solargraph::ApiMap::SourceToYard do
     ))
     object = Object.new
     object.extend Solargraph::ApiMap::SourceToYard
-    object.rake_yard [source]
+    object.rake_yard Solargraph::ApiMap::Store.new([source], [])
     class_object = object.code_object_at('Foo')
     expect(class_object.docstring).to eq('My foo class')
     instance_method_object = object.code_object_at('Foo#bar')
@@ -52,7 +52,7 @@ describe Solargraph::ApiMap::SourceToYard do
     ))
     object = Object.new
     object.extend Solargraph::ApiMap::SourceToYard
-    object.rake_yard [source]
+    object.rake_yard Solargraph::ApiMap::Store.new([source], [])
     module_object = object.code_object_at('Foo')
     class_object = object.code_object_at('Baz')
     expect(class_object.mixins).to include(module_object)
@@ -68,7 +68,7 @@ describe Solargraph::ApiMap::SourceToYard do
     ))
     object = Object.new
     object.extend Solargraph::ApiMap::SourceToYard
-    object.rake_yard [source]
+    object.rake_yard Solargraph::ApiMap::Store.new([source], [])
     expect(object.code_object_at('Foo#bar')).not_to be(nil)
     expect(object.code_object_at('Foo#bar=')).to be(nil)
     expect(object.code_object_at('Foo#baz')).to be(nil)
@@ -86,7 +86,7 @@ describe Solargraph::ApiMap::SourceToYard do
     ))
     object = Object.new
     object.extend Solargraph::ApiMap::SourceToYard
-    object.rake_yard [source]
+    object.rake_yard Solargraph::ApiMap::Store.new([source], [])
     method_object = object.code_object_at('Foo#bar')
     expect(method_object.parameters.length).to eq(2)
     expect(method_object.parameters[0]).to eq(['baz', nil])

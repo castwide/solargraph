@@ -452,7 +452,7 @@ module Solargraph
     # @param query [String] The text to match
     # @return [Array<String>]
     def search query
-      rake_yard(@sources) if @yard_stale
+      rake_yard(store) if @yard_stale
       @yard_stale = false
       found = []
       code_object_paths.each do |k|
@@ -471,7 +471,7 @@ module Solargraph
     # @param path [String] The path to find
     # @return [Array<YARD::CodeObject::Base>]
     def document path
-      rake_yard(@sources) if @yard_stale
+      rake_yard(store) if @yard_stale
       @yard_stale = false
       docs = []
       docs.push code_object_at(path) unless code_object_at(path).nil?

@@ -14,7 +14,7 @@ module Solargraph
       end
 
       # @param sources [Array<Solargraph::Source>] Sources for code objects
-      def rake_yard sources
+      def rake_yard store
         code_object_map.clear
         #sources.each do |s|
           store.namespace_pins.each do |pin|
