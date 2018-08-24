@@ -45,7 +45,7 @@ module Solargraph
       # @param visibility [Array<Symbol>]
       # @return [Array<Solargraph::Pin::Base>]
       def get_constants fqns, visibility = [:public]
-        namespace_pins(fqns).select { |pin|
+        namespace_children(fqns).select { |pin|
           !pin.name.empty? and (pin.kind == Pin::NAMESPACE or pin.kind == Pin::CONSTANT) and visibility.include?(pin.visibility)
         }
       end
@@ -55,7 +55,7 @@ module Solargraph
       # @param visibility [Array<Symbol>]
       # @return [Array<Solargraph::Pin::Base>]
       def get_methods fqns, scope: :instance, visibility: [:public]
-        namespace_pins(fqns).select{ |pin|
+        namespace_children(fqns).select{ |pin|
           pin.kind == Pin::METHOD and (pin.scope == scope or fqns == '') and visibility.include?(pin.visibility)
         }
       end
@@ -64,7 +64,7 @@ module Solargraph
       # @param scope [Symbol]
       # @return [Array<Solargraph::Pin::Base>]
       def get_attrs fqns, scope
-        namespace_pins(fqns).select{ |pin| pin.kind == Pin::ATTRIBUTE and pin.scope == scope }
+        namespace_children(fqns).select{ |pin| pin.kind == Pin::ATTRIBUTE and pin.scope == scope }
       end
 
       # @param fqns [String]
@@ -103,20 +103,20 @@ module Solargraph
         path ||= ''
         base = path.sub(/(#|\.|::)[a-z0-9_]*(\?|\!)?$/i, '')
         base = '' if base == path
-        namespace_pins(base).select{ |pin| pin.path == path }
+        namespace_children(base).select{ |pin| pin.path == path }
       end
 
       # @param fqns [String]
       # @param scope [Symbol] :class or :instance
       # @return [Array<Solargraph::Pin::Base>]
       def get_instance_variables(fqns, scope = :instance)
-        namespace_pins(fqns).select{|pin| pin.kind == Pin::INSTANCE_VARIABLE and pin.scope == scope}
+        namespace_children(fqns).select{|pin| pin.kind == Pin::INSTANCE_VARIABLE and pin.scope == scope}
       end
 
       # @param fqns [String]
       # @return [Array<Solargraph::Pin::Base>]
       def get_class_variables(fqns)
-        namespace_pins(fqns).select{|pin| pin.kind == Pin::CLASS_VARIABLE}
+        namespace_children(fqns).select{|pin| pin.kind == Pin::CLASS_VARIABLE}
       end
 
       # @return [Array<Solargraph::Pin::Base>]
@@ -135,6 +135,14 @@ module Solargraph
         @namespaces ||= Set.new
       end
 
+      def namespace_pins
+        @namespace_pins ||= pins.select{|p| p.kind == Pin::NAMESPACE}
+      end
+
+      def method_pins
+        @method_pins ||= pins.select{|p| p.kind == Pin::METHOD or p.kind == Pin::ATTRIBUTE}
+      end
+
       private
 
       # @param fqns [String]
@@ -150,7 +158,7 @@ module Solargraph
           base = ''
           name = fqns
         end
-        namespace_pins(base).select{|pin| pin.name == name and pin.kind == Pin::NAMESPACE}
+        namespace_children(base).select{|pin| pin.name == name and pin.kind == Pin::NAMESPACE}
       end
 
       # @return [Array<Solargraph::Pin::Symbol>]
@@ -160,7 +168,7 @@ module Solargraph
 
       # @param name [String]
       # @return [Array<Solargraph::Pin::Namespace>]
-      def namespace_pins name
+      def namespace_children name
         namespace_map[name] || []
       end
 
@@ -179,6 +187,8 @@ module Solargraph
           namespace_map[pin.namespace].push pin
           namespaces.add pin.path if pin.kind == Pin::NAMESPACE and !pin.path.empty?
         end
+        @namespace_pins = nil
+        @method_pins = nil
       end
 
       # @param *sources [Array<Solargraph::Source>]
