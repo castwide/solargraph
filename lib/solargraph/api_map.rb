@@ -366,6 +366,9 @@ module Solargraph
                 result.push Pin::DuckMethod.new(pin.location, t.tag[1..-1])
               end
               result.concat(get_methods('Object', scope: :instance))
+            elsif pin.kind == Pin::BLOCK_PARAMETER
+              type = probe.infer_signature_type(pin.name, pin.block, fragment.locals)
+              result.concat get_complex_type_methods(type, pin.namespace)
             end
             if result.empty?
               pins.each do |pin|
