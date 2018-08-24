@@ -65,13 +65,11 @@ module Solargraph
         @filename = filename
         @version = 0
         @domains = []
-        begin
-          parse
-        rescue Parser::SyntaxError, EncodingError
-          hard_fix_node
-        end
+        parse
+      rescue Parser::SyntaxError, EncodingError
+        hard_fix_node
       rescue Exception => e
-        raise RuntimeError, "Error parsing #{filename || '(source)'}: [#{e.class}] #{e.message}"
+        raise "Error parsing #{filename || '(source)'}: [#{e.class}] #{e.message}"
       end
     end
 
