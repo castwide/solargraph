@@ -3,14 +3,14 @@ module Solargraph
     class MethodParameter < LocalVariable
       def return_complex_types
         if @return_complex_types.nil?
-          @return_complex_types = []
+          @return_complex_types = ComplexType.new
           found = nil
           params = block.docstring.tags(:param)
           params.each do |p|
             next unless p.name == name
             found = p
           end
-          @return_complex_types.concat ComplexType.parse(*found.types) unless found.nil? or found.types.nil?
+          @return_complex_types = ComplexType.parse(*found.types) unless found.nil? or found.types.nil?
         end
         super
         @return_complex_types

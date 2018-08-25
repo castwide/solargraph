@@ -1,131 +1,29 @@
 module Solargraph
-  class ComplexType
-    # @return [String]
-    attr_reader :name
-
-    # @return [String]
-    attr_reader :substring
-
-    # @return [String]
-    attr_reader :tag
-
-    # @return [Array<ComplexType>]
-    attr_reader :subtypes
-
-    # Create a ComplexType with the specified name and an optional substring.
-    # The substring is parameter of a parameterized type, e.g., for the type
-    # `Array<String>`, the name is `Array` and the substring is `String`.
+  class ComplexType < Array
+    # @todo Figure out how to add the basic type methods here without actually
+    #   including the module. One possibility:
     #
-    # @param name [String] The name of the type
-    # @param substring [String] The substring of the type
-    def initialize name, substring = ''
-      @name = name
-      @substring = substring
-      @tag = name + substring
-      @key_types = []
-      @subtypes = []
-      return unless parameters?
-      subs = ComplexType.parse(substring[1..-2])
-      if hash_parameters?
-        raise ComplexTypeError, "Bad hash type" unless subs.length == 2 and subs[0].is_a?(Array) and subs[1].is_a?(Array)
-        @key_types.concat subs[0]
-        @subtypes.concat subs[1]
-      else
-        @subtypes.concat subs
-      end
+    # @!parse
+    #   include BasicTypeMethods
+
+    def initialize types = [ComplexType::UNDEFINED]
+      super()
+      concat types
     end
 
-    # @return [Boolean]
-    def duck_type?
-      @duck_type ||= name.start_with?('#')
+    def method_missing name, *args, &block
+      return first.send(name, *args, &block) if BasicTypeMethods.public_instance_methods.include?(name)
+      super
     end
 
-    # @return [Boolean]
-    def nil_type?
-      @nil_type ||= (name.downcase == 'nil')
-    end
-
-    # @return [Boolean]
-    def parameters?
-      !substring.empty?
-    end
-
-    def void?
-      name == 'void'
-    end
-
-    # @return [Boolean]
-    def list_parameters?
-      substring.start_with?('<')
-    end
-
-    # @return [Boolean]
-    def fixed_parameters?
-      substring.start_with?('(')
-    end
-
-    # @return [Boolean]
-    def hash_parameters?
-      substring.start_with?('{')
-    end
-
-    # @return [Array<ComplexType>]
-    def value_types
-      @subtypes
-    end
-
-    # @return [Array<ComplexType>]
-    def key_types
-      @key_types
-    end
-
-    # @return [String]
-    def namespace
-      @namespace ||= 'Object' if duck_type?
-      @namespace ||= 'NilClass' if nil_type?
-      @namespace ||= ((name == 'Class' or name == 'Module') and !subtypes.empty?) ? subtypes.first.name : name
-    end
-
-    # @return [Symbol] :class or :instance
-    def scope
-      @scope ||= :instance if duck_type? or nil_type?
-      @scope ||= ((name == 'Class' or name == 'Module') and !subtypes.empty?) ? :class : :instance
-    end
-
-    def == other
-      return false unless self.class == other.class
-      tag == other.tag
-    end
-
-    # Generate a ComplexType that fully qualifies this type's namespaces.
-    #
-    # @param api_map [ApiMap] The ApiMap that performs qualification
-    # @param context [String] The namespace from which to resolve names
-    # @return [ComplexType] The generated ComplexType
-    def qualify api_map, context = ''
-      fqns = api_map.qualify(name, context)
-      return VOID if fqns.nil?
-      ltypes = key_types.map do |t|
-        t.qualify api_map, context
-      end
-      rtypes = value_types.map do |t|
-        t.qualify api_map, context
-      end
-      if list_parameters?
-        Solargraph::ComplexType.parse("#{fqns}<#{rtypes.map(&:tag).join(', ')}>").first
-      elsif fixed_parameters?
-        Solargraph::ComplexType.parse("#{fqns}(#{rtypes.map(&:tag).join(', ')})").first
-      elsif hash_parameters?
-        Solargraph::ComplexType.parse("#{fqns}{#{ltypes.map(&:tag).join(', ')} => #{rtypes.map(&:tag).join(', ')}}").first
-      else
-        Solargraph::ComplexType.parse(fqns).first
-      end
+    def respond_to_missing?(name, include_private = false)
+      BasicTypeMethods.public_instance_methods.include?(name) || super
     end
 
     class << self
       # @param *strings [Array<String>] The type definitions to parse
-      # @return [Array<ComplexType>]
-      def parse *strings
+      # @return [ComplexType]
+      def parse *strings, raw: false
         types = []
         key_types = nil
         strings.each do |type_string|
@@ -144,7 +42,7 @@ module Solargraph
                 subtype_string += char
               elsif base.end_with?('=')
                 raise ComplexTypeError, "Invalid hash thing" unless key_types.nil?
-                types.push ComplexType.new(base[0..-2].strip)
+                types.push ComplexType.new([BasicType.new(base[0..-2].strip)])
                 key_types = types
                 types = []
                 base = ''
@@ -172,7 +70,7 @@ module Solargraph
               raise ComplexTypeError, "Invalid close in type #{type_string}" if paren_stack < 0
               next
             elsif char == ',' and point_stack == 0 and curly_stack == 0 and paren_stack == 0
-              types.push ComplexType.new base.strip, subtype_string.strip
+              types.push ComplexType.new([BasicType.new(base.strip, subtype_string.strip)])
               base = ''
               subtype_string = ''
               next
@@ -186,16 +84,18 @@ module Solargraph
           base.strip!
           subtype_string.strip!
           raise ComplexTypeError, "Unclosed subtype in #{type_string}" if point_stack != 0 or curly_stack != 0 or paren_stack != 0
-          types.push ComplexType.new(base, subtype_string)
+          types.push ComplexType.new([BasicType.new(base, subtype_string)])
         end
         unless key_types.nil?
+          raise ComplexTypeError, "Invalid use of key/value parameters" unless raw
           return key_types if types.empty?
           return [key_types, types]
         end
-        types
+        raw ? types : ComplexType.new(types)
       end
     end
 
-    VOID = ComplexType.new('void')
+    VOID = ComplexType.parse('void')
+    UNDEFINED = ComplexType.parse('undefined')
   end
 end

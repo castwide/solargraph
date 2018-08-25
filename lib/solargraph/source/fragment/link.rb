@@ -4,7 +4,7 @@ module Solargraph
       class Link
         attr_reader :word
 
-        def initialize word = '<void>'
+        def initialize word = '<undefined>'
           @word = word
         end
 
@@ -13,7 +13,7 @@ module Solargraph
         # @param locals [Array<Solargraph::Pin::Base>]
         # @return [ComplexType]
         def resolve api_map, context, locals
-          ComplexType::VOID
+          ComplexType::UNDEFINED
         end
       end
     end

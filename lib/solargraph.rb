@@ -24,21 +24,23 @@ module Solargraph
     end
   end
 
-  autoload :Shell,          'solargraph/shell'
-  autoload :Source,         'solargraph/source'
-  autoload :ApiMap,         'solargraph/api_map'
-  autoload :YardMap,        'solargraph/yard_map'
-  autoload :Pin,            'solargraph/pin'
-  autoload :LiveMap,        'solargraph/live_map'
-  autoload :ServerMethods,  'solargraph/server_methods'
-  autoload :Plugin,         'solargraph/plugin'
-  autoload :CoreFills,      'solargraph/core_fills'
-  autoload :LanguageServer, 'solargraph/language_server'
-  autoload :Workspace,      'solargraph/workspace'
-  autoload :Page,           'solargraph/page'
-  autoload :Library,        'solargraph/library'
-  autoload :Diagnostics,    'solargraph/diagnostics'
-  autoload :ComplexType,    'solargraph/complex_type'
+  autoload :Shell,            'solargraph/shell'
+  autoload :Source,           'solargraph/source'
+  autoload :ApiMap,           'solargraph/api_map'
+  autoload :YardMap,          'solargraph/yard_map'
+  autoload :Pin,              'solargraph/pin'
+  autoload :LiveMap,          'solargraph/live_map'
+  autoload :ServerMethods,    'solargraph/server_methods'
+  autoload :Plugin,           'solargraph/plugin'
+  autoload :CoreFills,        'solargraph/core_fills'
+  autoload :LanguageServer,   'solargraph/language_server'
+  autoload :Workspace,        'solargraph/workspace'
+  autoload :Page,             'solargraph/page'
+  autoload :Library,          'solargraph/library'
+  autoload :Diagnostics,      'solargraph/diagnostics'
+  autoload :BasicTypeMethods, 'solargraph/basic_type_methods'
+  autoload :BasicType,        'solargraph/basic_type'
+  autoload :ComplexType,      'solargraph/complex_type'
 
   YARDOC_PATH = File.join(File.realpath(File.dirname(__FILE__)), '..', 'yardoc')
   YARD_EXTENSION_FILE = File.join(File.realpath(File.dirname(__FILE__)), 'yard-solargraph.rb')

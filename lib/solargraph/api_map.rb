@@ -384,7 +384,14 @@ module Solargraph
           #   end
           # end
           type = fragment.infer_base_type(self)
-          result.concat get_complex_type_methods(type, fragment.namespace)
+          if type.duck_type?
+            type.select(&:duck_type?).each do |t|
+              result.push Pin::DuckMethod.new(nil, t.tag[1..-1])
+            end
+            result.concat(get_methods('Object', scope: :instance))
+          else
+            result.concat get_complex_type_methods(type, fragment.namespace)
+          end
         end
       end
       frag_start = fragment.word.to_s.downcase
@@ -394,7 +401,7 @@ module Solargraph
 
     # @param pin [Solargraph::Pin::Base]
     def infer_pin_type pin
-      return pin.return_complex_type unless pin.return_complex_type.nil?
+      return pin.return_complex_type unless pin.return_complex_type.undefined?
       if pin.variable?
         @sources.each do |s|
           next if s.filename != pin.filename
@@ -402,11 +409,11 @@ module Solargraph
           fragment = s.fragment_at(position.line, position.character)
           # type = fragment.infer_type(self)
           type = probe.infer_signature_type(pin.signature, pin.context, fragment.locals)
-          return type unless type.void?
+          return type unless type.undefined?
           break
         end
       end
-      ComplexType::VOID
+      ComplexType::UNDEFINED
     end
 
     # Get an array of pins that describe the symbol at the specified fragment.

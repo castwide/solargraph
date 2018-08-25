@@ -55,7 +55,7 @@ module Solargraph
         tag = docstring.tag(:type)
         return ComplexType.parse(*tag.types) unless tag.nil?
         return ComplexType.parse(@literal) unless @literal.nil?
-        []
+        ComplexType.new
       end
     end
   end

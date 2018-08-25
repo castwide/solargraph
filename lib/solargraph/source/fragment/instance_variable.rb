@@ -1,7 +1,7 @@
 module Solargraph
   class Source
     class Fragment
-      class Variable < Link
+      class InstanceVariable < Link
         def resolve api_map, context, locals
           # @todo How is this supposed to work?
           # ComplexType.parse('String').first

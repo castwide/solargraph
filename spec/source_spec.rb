@@ -97,11 +97,11 @@ describe Solargraph::Source do
     expect(source.global_variable_pins.first.name).to eq('$foo')
   end
 
-  it "returns nil for unknown variable types" do
+  it "returns undefined for unknown variable types" do
     source = Solargraph::Source.load_string(%(
       foo = bar
     ))
-    expect(source.locals.first.return_type).to eq(nil)
+    expect(source.locals.first.return_complex_type).to be_undefined
   end
 
   it "infers variable return types from @type tags" do

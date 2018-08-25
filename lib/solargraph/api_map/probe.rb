@@ -22,7 +22,7 @@ module Solargraph
         base, rest = signature.split('.', 2)
         return infer_word_pins(base, context_pin, locals) if rest.nil?
         pins = infer_word_pins(base, context_pin, locals).map do |pin|
-          next pin unless pin.return_type.nil?
+          next pin unless pin.return_complex_type.undefined?
           type = resolve_pin_type(pin, locals - [pin])
           Pin::ProxyMethod.new(type)
         end
@@ -55,11 +55,11 @@ module Solargraph
       def infer_signature_type signature, context_pin, locals
         pins = infer_signature_pins(signature, context_pin, locals)
         pins.each do |pin|
-          return pin.return_complex_type.qualify(api_map, pin.namespace) unless pin.return_complex_type.nil?
+          return pin.return_complex_type.qualify(api_map, pin.namespace) unless pin.return_complex_type.undefined?
           type = resolve_pin_type(pin, locals - [pin])
-          return type unless type.nil?
+          return type unless type.undefined?
         end
-        nil
+        ComplexType::UNDEFINED
       end
 
       private
@@ -99,10 +99,10 @@ module Solargraph
       # @return [Array<Solargraph::Pin::Base>]
       def resolve_word_types(pins, locals)
         pins.each do |p|
-          next unless p.return_type.nil?
+          next unless p.return_complex_type.undefined?
           type = resolve_pin_type(p, locals)
           # @todo Smelly instance variable access
-          p.instance_variable_set(:@return_complex_types, [type]) unless type.nil?
+          p.instance_variable_set(:@return_complex_types, type) unless type.undefined?
         end
         pins
       end
@@ -197,19 +197,19 @@ module Solargraph
       # @param locals [Array<Solargraph::Pin::Base>]
       # @return [Solargraph::ComplexType]
       def resolve_pin_type pin, locals
-        return pin.return_complex_type unless pin.return_type.nil?
-        return pin.namespace if pin.kind == Pin::METHOD and pin.name == 'new' and pin.scope == :class
+        return pin.return_complex_type unless pin.return_complex_type.undefined?
+        return ComplexType.parse(pin.namespace) if pin.kind == Pin::METHOD and pin.name == 'new' and pin.scope == :class
         return resolve_block_parameter(pin, locals) if pin.kind == Pin::BLOCK_PARAMETER
         return resolve_method_parameter(pin) if pin.is_a?(Pin::MethodParameter)
         return resolve_variable(pin, locals - [pin]) if pin.variable?
-        nil
+        ComplexType::UNDEFINED
       end
 
       # @param pin [Solargraph::Pin::BlockParameter]
       # @param locals [Array<Solargraph::Pin::Base>]
       # @return [Solargraph::ComplexType]
       def resolve_block_parameter pin, locals
-        return pin.return_complex_type unless pin.return_complex_type.nil?
+        return pin.return_complex_type unless pin.return_complex_type.undefined?
         signature = pin.block.receiver
         # @todo Not sure if assuming the first pin is good here
         meth = infer_signature_pins(signature, pin.block, locals).first
@@ -229,7 +229,7 @@ module Solargraph
             return ComplexType.parse(yps[pin.index].types[0]).first
           end
         end
-        nil
+        ComplexType::UNDEFINED
       end
 
       # @param pin [Solargraph::Pin::MethodParameter]
@@ -242,7 +242,7 @@ module Solargraph
           next if tag.nil? or tag.types.nil?
           return ComplexType.parse(tag.types[0]).first
         end
-        nil
+        ComplexType::UNDEFINED
       end
 
       # @param pin [Solargraph::Pin::BaseVariable]

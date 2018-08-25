@@ -61,6 +61,6 @@ describe Solargraph::Pin::Method do
 
   it "ignores malformed return tags" do
     pin = Solargraph::Pin::Method.new(nil, 'Foo', 'bar', '@return [Array<String', :instance, :public, [])
-    expect(pin.return_complex_types).to be_empty
+    expect(pin.return_complex_types).to be_undefined
   end
 end

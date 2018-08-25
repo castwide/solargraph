@@ -9,7 +9,7 @@ module Solargraph
         def resolve api_map, context, locals
           # @complex_type.qualify(api_map, context.namespace)
           ns = api_map.qualify(word, context.namespace)
-          return ComplexType::VOID if ns.nil?
+          return ComplexType::UNDEFINED if ns.nil?
           api_map.get_path_suggestions(ns).first.return_complex_type
         end
       end

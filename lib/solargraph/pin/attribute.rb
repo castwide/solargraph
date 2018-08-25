@@ -31,9 +31,9 @@ module Solargraph
 
       def return_complex_types
         if @return_complex_types.nil?
-          @return_complex_types = []
+          @return_complex_types = ComplexType.new
           tag = docstring.tag(:return)
-          @return_complex_types.concat ComplexType.parse(*tag.types) unless tag.nil?
+          @return_complex_types = ComplexType.parse(*tag.types) unless tag.nil?
         end
         @return_complex_types
       end

@@ -73,10 +73,10 @@ module Solargraph
       end
 
       def defined_return_type? pin, api_map
-        return true unless pin.return_type.nil?
+        return true unless pin.return_complex_type.undefined?
         matches = api_map.get_method_stack(pin.namespace, pin.name, scope: pin.scope)
         matches.shift
-        matches.any?{|m| !m.return_type.nil?}
+        matches.any?{|m| !m.return_complex_type.undefined?}
       end
 
       def defined_param_type? pin, param, api_map

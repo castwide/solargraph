@@ -10,6 +10,8 @@ module Solargraph
       autoload :Call, 'solargraph/source/fragment/call'
       autoload :Constant, 'solargraph/source/fragment/constant'
       autoload :Variable, 'solargraph/source/fragment/variable'
+      autoload :InstanceVariable, 'solargraph/source/fragment/instance_variable'
+      autoload :ClassVariable, 'solargraph/source/fragment/class_variable'
       autoload :Literal, 'solargraph/source/fragment/literal'
 
       include NodeMethods
@@ -170,12 +172,12 @@ module Solargraph
       def infer_type api_map, whole: true
         last = whole ? -1 : -2
         nspin = api_map.get_path_suggestions(namespace).first
-        return ComplexType::VOID if nspin.nil? # @todo This should never happen
+        return ComplexType::UNDEFINED if nspin.nil? # @todo This should never happen
         type = nspin.return_complex_type
-        return ComplexType::VOID if type.nil? # @todo Neither should this
+        return ComplexType::UNDEFINED if type.nil? # @todo Neither should this
         links[0..last].each do |link|
           type = link.resolve(api_map, type, locals)
-          return type if type.void?
+          return type if type.void? or type.undefined?
         end
         type
       end
@@ -540,6 +542,10 @@ module Solargraph
           result.push Constant.new(unpack_name(n))
         elsif n.type == :lvar
           result.push Call.new(n.children[0].to_s)
+        elsif n.type == :ivar
+          result.push InstanceVariable.new(n.children[0].to_s)
+        elsif n.type == :cvar
+          result.push ClassVariable.new(n.children[0].to_s)
         elsif [:ivar, :cvar, :gvar].include?(n.type)
           result.push Variable.new(n.children[0].to_s)
         else

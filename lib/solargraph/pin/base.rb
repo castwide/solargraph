@@ -111,7 +111,7 @@ module Solargraph
       #
       # @return [String]
       def return_type
-        return nil if return_complex_types.empty?
+        return nil if return_complex_types.void?
         return_complex_types.first.tag
       end
 
@@ -121,7 +121,7 @@ module Solargraph
       # @return [String]
       def return_namespace
         return_type
-        return nil if return_complex_types.empty?
+        return nil if return_complex_types.void?
         @return_namespace ||= return_complex_types.first.namespace
       end
 
@@ -130,7 +130,7 @@ module Solargraph
       #
       # @return [String]
       def return_scope
-        return nil if return_complex_types.empty?
+        return nil if return_complex_types.void?
         @return_scope ||= return_complex_types.first.scope
       end
 
@@ -138,12 +138,12 @@ module Solargraph
       #
       # @return [Array<ComplexType>]
       def return_complex_types
-        @return_complex_types ||= []
+        @return_complex_types ||= ComplexType.new
       end
 
       # @return [ComplexType, nil]
       def return_complex_type
-        return_complex_types.first
+        return_complex_types #.first
       end
 
       # @return [YARD::Docstring]
