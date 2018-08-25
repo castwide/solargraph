@@ -43,22 +43,22 @@ module Solargraph
         return false unless super
         @block = other.block
         @presence = block.location.range
-        @return_complex_types = nil
+        @return_complex_type = nil
       end
 
       # @return [Array<Solargraph::ComplexType>]
-      def return_complex_types
-        if @return_complex_types.nil?
-          @return_complex_types = ComplexType.new
+      def return_complex_type
+        if @return_complex_type.nil?
+          @return_complex_type = ComplexType.new
           found = nil
           params = block.docstring.tags(:param)
           params.each do |p|
             next unless p.name == name
             found = p
           end
-          @return_complex_types = ComplexType.parse(*found.types) unless found.nil? or found.types.nil?
+          @return_complex_type = ComplexType.parse(*found.types) unless found.nil? or found.types.nil?
         end
-        @return_complex_types
+        @return_complex_type
       end
     end
   end

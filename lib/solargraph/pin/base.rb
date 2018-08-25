@@ -111,8 +111,8 @@ module Solargraph
       #
       # @return [String]
       def return_type
-        return nil if return_complex_types.void?
-        return_complex_types.first.tag
+        return nil if return_complex_type.void?
+        return_complex_type.first.tag
       end
 
       # The namespace of the first return type.
@@ -121,8 +121,8 @@ module Solargraph
       # @return [String]
       def return_namespace
         return_type
-        return nil if return_complex_types.void?
-        @return_namespace ||= return_complex_types.first.namespace
+        return nil if return_complex_type.void?
+        @return_namespace ||= return_complex_type.first.namespace
       end
 
       # The scope of the first return type.
@@ -130,20 +130,21 @@ module Solargraph
       #
       # @return [String]
       def return_scope
-        return nil if return_complex_types.void?
-        @return_scope ||= return_complex_types.first.scope
+        return nil if return_complex_type.void?
+        @return_scope ||= return_complex_type.first.scope
       end
 
       # All of the pin's return types as an array of ComplexTypes.
       #
       # @return [Array<ComplexType>]
-      def return_complex_types
-        @return_complex_types ||= ComplexType.new
+      def return_complex_type
+        @return_complex_type ||= ComplexType.new
       end
 
-      # @return [ComplexType, nil]
-      def return_complex_type
-        return_complex_types #.first
+      # @deprecated Use #return_complex_type instead.
+      # @return [ComplexType]
+      def return_complex_types
+        return_complex_type
       end
 
       # @return [YARD::Docstring]
@@ -188,7 +189,7 @@ module Solargraph
         if comments != pin.comments
           @comments = pin.comments
           @docstring = pin.docstring
-          @return_complex_types = pin.return_complex_types
+          @return_complex_type = pin.return_complex_type
           @documentation = nil
           @deprecated = nil
           reset_conversions

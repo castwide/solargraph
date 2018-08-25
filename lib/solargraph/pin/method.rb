@@ -39,8 +39,8 @@ module Solargraph
         LanguageServer::SymbolKinds::METHOD
       end
 
-      def return_complex_types
-        @return_complex_types ||= generate_complex_types
+      def return_complex_type
+        @return_complex_type ||= generate_complex_type
       end
 
       def documentation
@@ -73,7 +73,7 @@ module Solargraph
       private
 
       # @return [Array<ComplexType>]
-      def generate_complex_types
+      def generate_complex_type
         tag = docstring.tag(:return)
         if tag.nil?
           ol = docstring.tag(:overload)

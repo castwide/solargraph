@@ -9,8 +9,8 @@ module Solargraph
           super(location, code_object.namespace.to_s, code_object.name.to_s, comments, code_object.scope, code_object.visibility, get_parameters(code_object))
         end
 
-        def return_complex_types
-          @return_complex_types ||= Solargraph::ComplexType.parse(Solargraph::CoreFills::CUSTOM_RETURN_TYPES[path]) if Solargraph::CoreFills::CUSTOM_RETURN_TYPES.has_key?(path)
+        def return_complex_type
+          @return_complex_type ||= Solargraph::ComplexType.parse(Solargraph::CoreFills::CUSTOM_RETURN_TYPES[path]) if Solargraph::CoreFills::CUSTOM_RETURN_TYPES.has_key?(path)
           super
         end
 

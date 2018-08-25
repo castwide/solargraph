@@ -51,8 +51,8 @@ module Solargraph
         @path ||= (namespace.empty? ? '' : "#{namespace}::") + name
       end
 
-      def return_complex_types
-        @return_complex_types ||= ComplexType.parse( (type == :class ? 'Class' : 'Module') + "<#{path}>" )
+      def return_complex_type
+        @return_complex_type ||= ComplexType.parse( (type == :class ? 'Class' : 'Module') + "<#{path}>" )
       end
     end
   end

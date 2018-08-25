@@ -29,13 +29,13 @@ module Solargraph
         @path ||= namespace + (scope == :instance ? '#' : '.') + name
       end
 
-      def return_complex_types
-        if @return_complex_types.nil?
-          @return_complex_types = ComplexType.new
+      def return_complex_type
+        if @return_complex_type.nil?
+          @return_complex_type = ComplexType.new
           tag = docstring.tag(:return)
-          @return_complex_types = ComplexType.parse(*tag.types) unless tag.nil?
+          @return_complex_type = ComplexType.parse(*tag.types) unless tag.nil?
         end
-        @return_complex_types
+        @return_complex_type
       end
 
       def visibility

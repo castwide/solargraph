@@ -24,6 +24,11 @@ module Solargraph
       # @param *strings [Array<String>] The type definitions to parse
       # @return [ComplexType]
       def parse *strings, raw: false
+        @cache ||= {}
+        unless raw
+          cached = @cache[strings]
+          return cached unless cached.nil?
+        end
         types = []
         key_types = nil
         strings.each do |type_string|
@@ -91,11 +96,14 @@ module Solargraph
           return key_types if types.empty?
           return [key_types, types]
         end
-        raw ? types : ComplexType.new(types)
+        result = raw ? types : ComplexType.new(types)
+        @cache[strings] = result unless raw
+        result
       end
     end
 
     VOID = ComplexType.parse('void')
     UNDEFINED = ComplexType.parse('undefined')
+    SYMBOL = ComplexType.parse('Symbol')
   end
 end

@@ -102,7 +102,7 @@ module Solargraph
           next unless p.return_complex_type.undefined?
           type = resolve_pin_type(p, locals)
           # @todo Smelly instance variable access
-          p.instance_variable_set(:@return_complex_types, type) unless type.undefined?
+          p.instance_variable_set(:@return_complex_type, type) unless type.undefined?
         end
         pins
       end
@@ -189,7 +189,7 @@ module Solargraph
       def virtual_new_pin new_pin, context_pin
         pin = Pin::Method.new(new_pin.location, context_pin.path, new_pin.name, '', :class, new_pin.visibility, new_pin.parameters)
         # @todo Smelly instance variable access.
-        pin.instance_variable_set(:@return_complex_types, ComplexType.parse(context_pin.path))
+        pin.instance_variable_set(:@return_complex_type, ComplexType.parse(context_pin.path))
         pin
       end
 

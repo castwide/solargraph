@@ -6,14 +6,14 @@ module Solargraph
     #
     class ProxyMethod < Base
       def initialize *return_types
-        @return_complex_types = ComplexType.parse(*return_types.reject(&:nil?))
+        @return_complex_type = ComplexType.parse(*return_types.reject(&:nil?))
       end
 
       # @return [String]
       def namespace
         # @namespace ||= ApiMap::TypeMethods.extract_namespace(return_type)
-        return nil if @return_complex_types.empty?
-        @namespace ||= @return_complex_types.first.namespace
+        return nil if @return_complex_type.undefined?
+        @namespace ||= @return_complex_type.first.namespace
       end
 
       # @return [Integer]

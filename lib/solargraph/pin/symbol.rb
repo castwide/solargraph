@@ -32,8 +32,8 @@ module Solargraph
         ''
       end
 
-      def return_complex_types
-        @return_complex_types ||= Solargraph::ComplexType.parse('Symbol')
+      def return_complex_type
+        @return_complex_type ||= Solargraph::ComplexType::SYMBOL
       end
 
       def directives
