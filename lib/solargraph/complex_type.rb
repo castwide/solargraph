@@ -50,6 +50,10 @@ module Solargraph
       !substring.empty?
     end
 
+    def void?
+      name == 'void'
+    end
+
     # @return [Boolean]
     def list_parameters?
       substring.start_with?('<')

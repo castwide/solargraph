@@ -359,35 +359,54 @@ module Solargraph
         elsif fragment.signature.include?('::') and !fragment.signature.include?('.')
           result.concat get_constants(fragment.base, fragment.namespace)
         else
-          pins = probe.infer_signature_pins(fragment.base, fragment.named_path, fragment.locals)
-          unless pins.empty?
-            pin = pins.first
-            if pin.variable? and pin.return_type.nil? and !pin.signature.nil?
-              type = probe.infer_signature_type(pin.signature, pin.context, fragment.locals)
-              result.concat(get_methods(type.name)) unless type.nil?
-            elsif pin.return_complex_types.any? and pin.return_complex_types.first.duck_type?
-              pin.return_complex_types.each do |t|
-                next unless t.duck_type?
-                result.push Pin::DuckMethod.new(pin.location, t.tag[1..-1])
-              end
-              result.concat(get_methods('Object', scope: :instance))
-            elsif pin.kind == Pin::BLOCK_PARAMETER
-              type = probe.infer_signature_type(pin.name, pin.block, fragment.locals)
-              result.concat get_complex_type_methods(type, pin.namespace)
-            end
-            if result.empty?
-              pins.each do |pin|
-                type = pin.return_complex_type
-                result.concat get_complex_type_methods(type, pin.namespace)
-                break unless result.empty?
-              end
-            end
-          end
+          # pins = probe.infer_signature_pins(fragment.base, fragment.named_path, fragment.locals)
+          # unless pins.empty?
+          #   pin = pins.first
+          #   if pin.variable? and pin.return_type.nil? and !pin.signature.nil?
+          #     type = probe.infer_signature_type(pin.signature, pin.context, fragment.locals)
+          #     result.concat(get_methods(type.name)) unless type.nil?
+          #   elsif pin.return_complex_types.any? and pin.return_complex_types.first.duck_type?
+          #     pin.return_complex_types.each do |t|
+          #       next unless t.duck_type?
+          #       result.push Pin::DuckMethod.new(pin.location, t.tag[1..-1])
+          #     end
+          #     result.concat(get_methods('Object', scope: :instance))
+          #   elsif pin.kind == Pin::BLOCK_PARAMETER
+          #     type = probe.infer_signature_type(pin.name, pin.block, fragment.locals)
+          #     result.concat get_complex_type_methods(type, pin.namespace)
+          #   end
+          #   if result.empty?
+          #     pins.each do |pin|
+          #       type = pin.return_complex_type
+          #       result.concat get_complex_type_methods(type, pin.namespace)
+          #       break unless result.empty?
+          #     end
+          #   end
+          # end
+          type = fragment.infer_base_type(self)
+          result.concat get_complex_type_methods(type, fragment.namespace)
         end
       end
       frag_start = fragment.word.to_s.downcase
       filtered = result.uniq(&:identifier).select{|s| s.name.downcase.start_with?(frag_start) and (s.kind != Pin::METHOD or s.name.match(/^[a-z0-9_]+(\!|\?|=)?$/i))}.sort_by.with_index{ |x, idx| [x.name, idx] }
       Completion.new(filtered, fragment.whole_word_range)
+    end
+
+    # @param pin [Solargraph::Pin::Base]
+    def infer_pin_type pin
+      return pin.return_complex_type unless pin.return_complex_type.nil?
+      if pin.variable?
+        @sources.each do |s|
+          next if s.filename != pin.filename
+          position = pin.location.range.start
+          fragment = s.fragment_at(position.line, position.character)
+          # type = fragment.infer_type(self)
+          type = probe.infer_signature_type(pin.signature, pin.context, fragment.locals)
+          return type unless type.void?
+          break
+        end
+      end
+      ComplexType::VOID
     end
 
     # Get an array of pins that describe the symbol at the specified fragment.

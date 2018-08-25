@@ -73,6 +73,17 @@ module Solargraph
       end
     end
 
+    # @param range [Solargraph::Source::Range]
+    def at range
+      from_to range.start.line, range.start.character, range.ending.line, range.ending.character
+    end
+
+    def from_to l1, c1, l2, c2
+      b = Solargraph::Source::Position.line_char_to_offset(@code, l1, c1)
+      e = Solargraph::Source::Position.line_char_to_offset(@code, l2, c2)
+      @code[b..e-1]
+    end
+
     def macro path
       @path_macros[path]
     end

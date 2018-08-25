@@ -6,6 +6,12 @@ module Solargraph
     # results for completion and definition queries.
     #
     class Fragment
+      autoload :Link, 'solargraph/source/fragment/link'
+      autoload :Call, 'solargraph/source/fragment/call'
+      autoload :Constant, 'solargraph/source/fragment/constant'
+      autoload :Variable, 'solargraph/source/fragment/variable'
+      autoload :Literal, 'solargraph/source/fragment/literal'
+
       include NodeMethods
 
       # The zero-based line number of the fragment's location.
@@ -85,6 +91,7 @@ module Solargraph
       # @return [String]
       def signature
         @signature ||= signature_data[1].to_s
+        # @signature ||= links.map(&:word).join('.')
       end
 
       def valid?
@@ -156,6 +163,27 @@ module Solargraph
       # @return [String]
       def whole_word
         @whole_word ||= word + remainder
+      end
+
+      # @param api_map [ApiMap]
+      # @return [ComplexType]
+      def infer_type api_map, whole: true
+        last = whole ? -1 : -2
+        nspin = api_map.get_path_suggestions(namespace).first
+        return ComplexType::VOID if nspin.nil? # @todo This should never happen
+        type = nspin.return_complex_type
+        return ComplexType::VOID if type.nil? # @todo Neither should this
+        links[0..last].each do |link|
+          type = link.resolve(api_map, type, locals)
+          return type if type.void?
+        end
+        type
+      end
+
+      # @param api_map [ApiMap]
+      # @return [ComplexType]
+      def infer_base_type api_map
+        infer_type api_map, whole: false
       end
 
       # Get the whole signature at the current offset, including the final
@@ -271,7 +299,19 @@ module Solargraph
         end
       end
 
+      def links
+        @links ||= generate_links(node)
+      end
+
       private
+
+      def node
+        @node ||= source.node_at(line, column)
+      end
+
+      def text
+        @text ||= source.from_to node.loc.line - 1, node.loc.column, node.loc.last_line - 1, node.loc.last_column
+      end
 
       # @return [Integer]
       def offset
@@ -475,6 +515,38 @@ module Solargraph
       # @return [String]
       def source_from_parser
         @source_from_parser ||= @source.code.gsub(/\r\n/, "\n")
+      end
+
+      def generate_links n
+        result = []
+        if n.type == :send
+          if n.children[0].is_a?(Parser::AST::Node)
+            result.concat generate_links(n.children[0])
+            args = []
+            n.children[2..-1].each do |c|
+              args.push Chain.new(source, c.loc.last_line - 1, c.loc.column)
+            end
+            result.push Call.new(n.children[1].to_s, args)
+          elsif n.children[0].nil?
+            args = []
+            n.children[2..-1].each do |c|
+              args.push Chain.new(source, c.loc.last_line - 1, c.loc.column)
+              result.push Call.new(n.children[1].to_s, args)
+            end
+          else
+            raise "No idea what to do with #{n}"
+          end
+        elsif n.type == :const
+          result.push Constant.new(unpack_name(n))
+        elsif n.type == :lvar
+          result.push Call.new(n.children[0].to_s)
+        elsif [:ivar, :cvar, :gvar].include?(n.type)
+          result.push Variable.new(n.children[0].to_s)
+        else
+          lit = infer_literal_node_type(n)
+          result.push (lit ? Fragment::Literal.new(lit) : Fragment::Link.new)
+        end
+        result
       end
     end
   end
