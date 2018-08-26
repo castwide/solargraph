@@ -6,14 +6,6 @@ module Solargraph
     # results for completion and definition queries.
     #
     class Fragment
-      autoload :Link, 'solargraph/source/fragment/link'
-      autoload :Call, 'solargraph/source/fragment/call'
-      autoload :Constant, 'solargraph/source/fragment/constant'
-      autoload :Variable, 'solargraph/source/fragment/variable'
-      autoload :InstanceVariable, 'solargraph/source/fragment/instance_variable'
-      autoload :ClassVariable, 'solargraph/source/fragment/class_variable'
-      autoload :Literal, 'solargraph/source/fragment/literal'
-
       include NodeMethods
 
       # The zero-based line number of the fragment's location.
@@ -92,9 +84,7 @@ module Solargraph
       #
       # @return [String]
       def signature
-        # @signature ||= signature_data[1].to_s
-        # @signature ||= links.map(&:word).join('.')
-        @signature ||= links[0..-2].map(&:word).join('.') + separator.strip + word
+        @signature ||= signature_data[1].to_s
       end
 
       def valid?
@@ -168,35 +158,12 @@ module Solargraph
         @whole_word ||= word + remainder
       end
 
-      # @param api_map [ApiMap]
-      # @return [ComplexType]
-      def infer_type api_map, whole: true
-        last = whole ? -1 : -2
-        nspin = api_map.get_path_suggestions(namespace).first
-        return ComplexType::UNDEFINED if nspin.nil? # @todo This should never happen
-        type = nspin.return_complex_type
-        return ComplexType::UNDEFINED if type.nil? # @todo Neither should this
-        links[0..last].each do |link|
-          pins = link.resolve_pins(api_map, type, locals)
-          pins.map(&:return_complex_type).each do |rct|
-            return rct unless rct.undefined?
-          end
-        end
-        ComplexType::UNDEFINED
-      end
-
-      # @param api_map [ApiMap]
-      # @return [ComplexType]
-      def infer_base_type api_map
-        infer_type api_map, whole: false
-      end
-
       # Get the whole signature at the current offset, including the final
       # word and its remainder.
       #
       # @return [String]
       def whole_signature
-        @whole_signature ||= links.map(&:word).join('.')
+        @whole_signature ||= signature + remainder
       end
 
       # Get the entire phrase up to the current offset. Given the text
@@ -261,7 +228,7 @@ module Solargraph
       #
       # @return [Array<Solargraph::Pin::Base>]
       def locals
-        @locals ||= prefer_non_nil_variables(@source.locals.select{|pin| pin.visible_from?(block, position)}.reverse)
+        @locals ||= @source.locals.select{|pin| pin.visible_from?(block, position)}.reverse
       end
 
       # True if the fragment is a signature that stems from a literal value.
@@ -304,41 +271,7 @@ module Solargraph
         end
       end
 
-      def links
-        @links ||= generate_links(source.node_at(base_position.line, base_position.column))
-      end
-
       private
-
-      def separator
-        @separator ||= begin
-          result = ''
-          if word.empty?
-            match = source.code[0..offset-1].match(/[\s]*?(\.{1}|::)[\s]*?$/)
-            result = match[0] if match
-          end
-          @base_offset = offset - result.length
-          @base_offset -= 1 # @todo Validate this
-          result
-        end
-      end
-
-      def base_offset
-        separator
-        @base_offset
-      end
-
-      def base_position
-        Position.from_offset(source.code, base_offset)
-      end
-
-      def node
-        @node ||= source.node_at(line, column)
-      end
-
-      def text
-        @text ||= source.from_to node.loc.line - 1, node.loc.column, node.loc.last_line - 1, node.loc.last_column
-      end
 
       # @return [Integer]
       def offset
@@ -542,61 +475,6 @@ module Solargraph
       # @return [String]
       def source_from_parser
         @source_from_parser ||= @source.code.gsub(/\r\n/, "\n")
-      end
-
-      def generate_links n
-        result = []
-        if n.type == :send
-          if n.children[0].is_a?(Parser::AST::Node)
-            result.concat generate_links(n.children[0])
-            args = []
-            n.children[2..-1].each do |c|
-              # @todo Handle link parameters
-              # args.push Chain.new(source, c.loc.last_line - 1, c.loc.column)
-            end
-            result.push Call.new(n.children[1].to_s, args)
-          elsif n.children[0].nil?
-            args = []
-            n.children[2..-1].each do |c|
-              # @todo Handle link parameters
-              # args.push Chain.new(source, c.loc.last_line - 1, c.loc.column)
-              result.push Call.new(n.children[1].to_s, args)
-            end
-          else
-            raise "No idea what to do with #{n}"
-          end
-        elsif n.type == :const
-          result.push Constant.new(unpack_name(n))
-        elsif n.type == :lvar
-          result.push Call.new(n.children[0].to_s)
-        elsif n.type == :ivar
-          result.push InstanceVariable.new(n.children[0].to_s)
-        elsif n.type == :cvar
-          result.push ClassVariable.new(n.children[0].to_s)
-        elsif [:ivar, :cvar, :gvar].include?(n.type)
-          result.push Variable.new(n.children[0].to_s)
-        else
-          lit = infer_literal_node_type(n)
-          result.push (lit ? Fragment::Literal.new(lit) : Fragment::Link.new)
-        end
-        result
-      end
-
-      # Sort an array of pins to put nil or undefined variables last.
-      #
-      # @param pins [Array<Solargraph::Pin::Base>]
-      # @return [Array<Solargraph::Pin::Base>]
-      def prefer_non_nil_variables pins
-        result = []
-        nil_pins = []
-        pins.each do |pin|
-          if pin.variable? and pin.nil_assignment?
-            nil_pins.push pin
-          else
-            result.push pin
-          end
-        end
-        result + nil_pins
       end
     end
   end
