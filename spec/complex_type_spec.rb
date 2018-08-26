@@ -193,4 +193,9 @@ describe Solargraph::ComplexType do
     type = Solargraph::ComplexType.parse('String', 'Array<String>')
     expect(type.to_s).to eq('String, Array<String>')
   end
+
+  it "returns the first type when multiple were parsed" do
+    type = Solargraph::ComplexType.parse('String, Array<String>')
+    expect(type.tag).to eq('String')
+  end
 end
