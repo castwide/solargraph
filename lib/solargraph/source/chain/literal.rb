@@ -1,6 +1,6 @@
 module Solargraph
   class Source
-    class Fragment
+    class Chain
       class Literal < Link
         def word
           @word ||= "<#{@type}>"

@@ -1,6 +1,6 @@
 module Solargraph
   class Source
-    class Fragment
+    class Chain
       class Constant < Link
         def initialize word
           @word = word

@@ -1,6 +1,6 @@
 module Solargraph
   class Source
-    class Fragment
+    class Chain
       class Call < Link
         # @return [String]
         attr_reader :word

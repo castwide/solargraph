@@ -13,6 +13,7 @@ module Solargraph
     autoload :Change,        'solargraph/source/change'
     autoload :Mapper,        'solargraph/source/mapper'
     autoload :NodeMethods,   'solargraph/source/node_methods'
+    autoload :Chain,         'solargraph/source/chain'
 
     # @return [String]
     attr_reader :code

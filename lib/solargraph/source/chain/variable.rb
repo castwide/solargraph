@@ -1,6 +1,6 @@
 module Solargraph
   class Source
-    class Fragment
+    class Chain
       class Variable < Link
         def resolve_pins api_map, context, locals
           # @todo How is this supposed to work?
