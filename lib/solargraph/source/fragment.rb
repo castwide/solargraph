@@ -177,10 +177,12 @@ module Solargraph
         type = nspin.return_complex_type
         return ComplexType::UNDEFINED if type.nil? # @todo Neither should this
         links[0..last].each do |link|
-          type = link.resolve(api_map, type, locals)
-          return type if type.void? or type.undefined?
+          pins = link.resolve_pins(api_map, type, locals)
+          pins.map(&:return_complex_type).each do |rct|
+            return rct unless rct.undefined?
+          end
         end
-        type
+        ComplexType::UNDEFINED
       end
 
       # @param api_map [ApiMap]
@@ -316,6 +318,7 @@ module Solargraph
             result = match[0] if match
           end
           @base_offset = offset - result.length
+          @base_offset -= 1 # @todo Validate this
           result
         end
       end
@@ -548,13 +551,15 @@ module Solargraph
             result.concat generate_links(n.children[0])
             args = []
             n.children[2..-1].each do |c|
-              args.push Chain.new(source, c.loc.last_line - 1, c.loc.column)
+              # @todo Handle link parameters
+              # args.push Chain.new(source, c.loc.last_line - 1, c.loc.column)
             end
             result.push Call.new(n.children[1].to_s, args)
           elsif n.children[0].nil?
             args = []
             n.children[2..-1].each do |c|
-              args.push Chain.new(source, c.loc.last_line - 1, c.loc.column)
+              # @todo Handle link parameters
+              # args.push Chain.new(source, c.loc.last_line - 1, c.loc.column)
               result.push Call.new(n.children[1].to_s, args)
             end
           else
