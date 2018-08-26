@@ -20,6 +20,10 @@ module Solargraph
       BasicTypeMethods.public_instance_methods.include?(name) || super
     end
 
+    def to_s
+      map(&:tag).join(', ')
+    end
+
     class << self
       # Parse type strings into a ComplexType.
       #

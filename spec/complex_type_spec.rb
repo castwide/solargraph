@@ -188,4 +188,9 @@ describe Solargraph::ComplexType do
     qualified = original.qualify(foo_bar_api_map, 'Foo')
     expect(qualified.tag).to eq('Hash{String => Foo::Bar}')
   end
+
+  it "returns string representations of the entire type array" do
+    type = Solargraph::ComplexType.parse('String', 'Array<String>')
+    expect(type.to_s).to eq('String, Array<String>')
+  end
 end
