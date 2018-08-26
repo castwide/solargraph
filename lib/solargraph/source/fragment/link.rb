@@ -11,9 +11,9 @@ module Solargraph
         # @param api_map [ApiMap]
         # @param context [ComplexType]
         # @param locals [Array<Solargraph::Pin::Base>]
-        # @return [ComplexType]
-        def resolve api_map, context, locals
-          ComplexType::UNDEFINED
+        # @return [Array<Solargraph::Pin::Base>]
+        def resolve_pins api_map, context, locals
+          []
         end
       end
     end

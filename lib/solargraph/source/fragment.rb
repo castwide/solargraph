@@ -92,8 +92,9 @@ module Solargraph
       #
       # @return [String]
       def signature
-        @signature ||= signature_data[1].to_s
+        # @signature ||= signature_data[1].to_s
         # @signature ||= links.map(&:word).join('.')
+        @signature ||= links[0..-2].map(&:word).join('.') + separator.strip + word
       end
 
       def valid?
@@ -193,7 +194,7 @@ module Solargraph
       #
       # @return [String]
       def whole_signature
-        @whole_signature ||= signature + remainder
+        @whole_signature ||= links.map(&:word).join('.')
       end
 
       # Get the entire phrase up to the current offset. Given the text
@@ -258,7 +259,7 @@ module Solargraph
       #
       # @return [Array<Solargraph::Pin::Base>]
       def locals
-        @locals ||= @source.locals.select{|pin| pin.visible_from?(block, position)}.reverse
+        @locals ||= prefer_non_nil_variables(@source.locals.select{|pin| pin.visible_from?(block, position)}.reverse)
       end
 
       # True if the fragment is a signature that stems from a literal value.
@@ -302,10 +303,31 @@ module Solargraph
       end
 
       def links
-        @links ||= generate_links(node)
+        @links ||= generate_links(source.node_at(base_position.line, base_position.column))
       end
 
       private
+
+      def separator
+        @separator ||= begin
+          result = ''
+          if word.empty?
+            match = source.code[0..offset-1].match(/[\s]*?(\.{1}|::)[\s]*?$/)
+            result = match[0] if match
+          end
+          @base_offset = offset - result.length
+          result
+        end
+      end
+
+      def base_offset
+        separator
+        @base_offset
+      end
+
+      def base_position
+        Position.from_offset(source.code, base_offset)
+      end
 
       def node
         @node ||= source.node_at(line, column)
@@ -553,6 +575,23 @@ module Solargraph
           result.push (lit ? Fragment::Literal.new(lit) : Fragment::Link.new)
         end
         result
+      end
+
+      # Sort an array of pins to put nil or undefined variables last.
+      #
+      # @param pins [Array<Solargraph::Pin::Base>]
+      # @return [Array<Solargraph::Pin::Base>]
+      def prefer_non_nil_variables pins
+        result = []
+        nil_pins = []
+        pins.each do |pin|
+          if pin.variable? and pin.nil_assignment?
+            nil_pins.push pin
+          else
+            result.push pin
+          end
+        end
+        result + nil_pins
       end
     end
   end

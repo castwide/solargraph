@@ -11,8 +11,9 @@ module Solargraph
           @complex_type = ComplexType.parse(type).first
         end
 
-        def resolve api_map, context, locals
-          @complex_type.qualify(api_map, '')
+        def resolve_pins api_map, context, locals
+          # @complex_type.qualify(api_map, '')
+          Pin::ProxyMethod.new(@type)
         end
       end
     end
