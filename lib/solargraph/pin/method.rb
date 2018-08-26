@@ -79,7 +79,7 @@ module Solargraph
           ol = docstring.tag(:overload)
           tag = ol.tag(:return) unless ol.nil?
         end
-        return ComplexType::UNDEFINED if tag.nil?
+        return ComplexType::UNDEFINED if tag.nil? or tag.types.nil? or tag.types.empty?
         begin
           ComplexType.parse *tag.types
         rescue Solargraph::ComplexTypeError => e
