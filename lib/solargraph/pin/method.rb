@@ -72,7 +72,7 @@ module Solargraph
 
       private
 
-      # @return [Array<ComplexType>]
+      # @return [ComplexType]
       def generate_complex_type
         tag = docstring.tag(:return)
         if tag.nil?

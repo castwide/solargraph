@@ -16,7 +16,7 @@ module Solargraph
       @key_types = []
       @subtypes = []
       return unless parameters?
-      subs = ComplexType.parse(substring[1..-2], raw: true)
+      subs = ComplexType.parse(substring[1..-2], partial: true)
       if hash_parameters?
         raise ComplexTypeError, "Bad hash type" unless !subs.is_a?(ComplexType) and subs.length == 2 and !subs[0].is_a?(ComplexType) and !subs[1].is_a?(ComplexType)
         @key_types.concat subs[0]

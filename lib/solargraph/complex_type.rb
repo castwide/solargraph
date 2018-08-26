@@ -12,7 +12,7 @@ module Solargraph
     end
 
     def method_missing name, *args, &block
-      return first.send(name, *args, &block) if BasicTypeMethods.public_instance_methods.include?(name)
+      return first.send(name, *args, &block) if respond_to_missing?(name)
       super
     end
 
@@ -21,11 +21,24 @@ module Solargraph
     end
 
     class << self
+      # Parse type strings into a ComplexType.
+      #
+      # @example
+      #   ComplexType.parse 'String', 'Foo', 'nil' #=> [String, Foo, nil]
+      #
+      # @note
+      #   The `partial` parameter is used to indicate that the method is
+      #   receiving a string that will be used inside another ComplexType.
+      #   It returns arrays of ComplexTypes instead of a single cohesive one.
+      #   Consumers should not need to use this parameter; it should only be
+      #   used internally.
+      #
       # @param *strings [Array<String>] The type definitions to parse
+      # @param partial [Boolean] True if the string is part of a another type
       # @return [ComplexType]
-      def parse *strings, raw: false
+      def parse *strings, partial: false
         @cache ||= {}
-        unless raw
+        unless partial
           cached = @cache[strings]
           return cached unless cached.nil?
         end
@@ -92,12 +105,12 @@ module Solargraph
           types.push ComplexType.new([BasicType.new(base, subtype_string)])
         end
         unless key_types.nil?
-          raise ComplexTypeError, "Invalid use of key/value parameters" unless raw
+          raise ComplexTypeError, "Invalid use of key/value parameters" unless partial
           return key_types if types.empty?
           return [key_types, types]
         end
-        result = raw ? types : ComplexType.new(types)
-        @cache[strings] = result unless raw
+        result = partial ? types : ComplexType.new(types)
+        @cache[strings] = result unless partial
         result
       end
     end
