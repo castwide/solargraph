@@ -24,7 +24,7 @@ module Solargraph
         pins = infer_word_pins(base, context_pin, locals).map do |pin|
           next pin unless pin.return_type.nil?
           type = resolve_pin_type(pin, locals - [pin])
-          Pin::ProxyMethod.new(type)
+          Pin::ProxyMethod.new(type.tag)
         end
         return [] if pins.empty?
         rest = rest.split('.')
