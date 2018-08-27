@@ -16,11 +16,11 @@ module Solargraph
         def resolve_pins api_map, context, locals
           return [self_pin(api_map, context)] if word == 'self'
           found = locals.select{|p| p.name == word}
-          return inferred_pins(found, api_map) unless found.empty?
+          return inferred_pins(found, api_map, context) unless found.empty?
           pins = api_map.get_method_stack(context.return_complex_type.namespace, word, scope: context.scope)
           return [] if pins.empty?
-          return [virtual_new_pin(pins.first, context)] if pins.first.path == 'Class#new'
-          pins
+          pins[0] = virtual_new_pin(pins.first, context) if pins.first.path == 'Class#new'
+          inferred_pins(pins, api_map, context)
         end
 
         private
@@ -45,9 +45,15 @@ module Solargraph
           context
         end
 
-        def inferred_pins pins, api_map
+        def inferred_pins pins, api_map, context_pin
           pins.uniq(&:location).map do |p|
-            next p if p.kind == Pin::METHOD or p.kind == Pin::NAMESPACE
+            if CoreFills::METHODS_RETURNING_SELF.include?(p.path)
+              next Solargraph::Pin::Method.new(p.location, p.namespace, p.name, "@return [#{context_pin.return_complex_type.tag}]", p.scope, p.visibility, p.parameters)
+            end
+            if CoreFills::METHODS_RETURNING_SUBTYPES.include?(p.path) and !context_pin.return_complex_type.subtypes.empty?
+              next Solargraph::Pin::Method.new(p.location, p.namespace, p.name, "@return [#{context_pin.return_complex_type.subtypes.first.tag}]", p.scope, p.visibility, p.parameters)
+            end
+            next p if p.kind == Pin::METHOD or p.kind == Pin::ATTRIBUTE or p.kind == Pin::NAMESPACE
             Pin::ProxyType.new(p.location, p.context, p.name, p.infer(api_map))
           end
         end
