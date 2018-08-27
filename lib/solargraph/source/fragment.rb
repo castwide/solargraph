@@ -497,7 +497,7 @@ module Solargraph
         @separator ||= begin
           result = ''
           # if word.empty?
-            match = source.code[0..offset-1].match(/[\s]*?(\.{1}|::)[\s]*?$/)
+            match = source.code[0..offset-1].match(/[\s]*(\.{1}|:{2})[\s]*\z/)
             result = match[0] if match
           # end
           result
