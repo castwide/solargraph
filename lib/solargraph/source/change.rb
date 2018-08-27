@@ -3,6 +3,8 @@ module Solargraph
     # A change to be applied to text.
     #
     class Change
+      include Source::Encoding
+
       # @return [Range]
       attr_reader :range
 
@@ -68,7 +70,7 @@ module Solargraph
       def commit text, insert
         start_offset = Position.to_offset(text, range.start)
         end_offset = Position.to_offset(text, range.ending)
-        (start_offset == 0 ? '' : text[0..start_offset-1].to_s) + insert.force_encoding('utf-8') + text[end_offset..-1].to_s
+        (start_offset == 0 ? '' : text[0..start_offset-1].to_s) + normalize(insert) + text[end_offset..-1].to_s
       end
     end
   end

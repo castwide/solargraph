@@ -14,6 +14,9 @@ module Solargraph
     autoload :Mapper,        'solargraph/source/mapper'
     autoload :NodeMethods,   'solargraph/source/node_methods'
     autoload :Chain,         'solargraph/source/chain'
+    autoload :Encoding,      'solargraph/source/encoding'
+
+    include Encoding
 
     # @return [String]
     attr_reader :code
@@ -61,13 +64,16 @@ module Solargraph
     # @param filename [String]
     def initialize code, filename = nil
       begin
-        @code = code
-        @fixed = code
+        @code = normalize(code)
+        @fixed = @code
         @filename = filename
         @version = 0
         @domains = []
         parse
-      rescue Parser::SyntaxError, EncodingError
+      rescue Parser::SyntaxError, EncodingError => e
+        # @todo Improve error handling
+        STDERR.puts "HARD FIX: #{e.class} #{e.message}"
+        STDERR.puts e.backtrace
         hard_fix_node
       rescue Exception => e
         raise "Error parsing #{filename || '(source)'}: [#{e.class}] #{e.message}"
@@ -333,8 +339,9 @@ module Solargraph
       parser.diagnostics.all_errors_are_fatal = true
       parser.diagnostics.ignore_warnings      = true
       buffer = Parser::Source::Buffer.new(filename, 1)
-      buffer.source = code.encode('UTF-8', 'binary', invalid: :replace, undef: :replace, replace: ' ')
+      buffer.source = code.encode('UTF-8', 'binary', invalid: :replace, undef: :replace, replace: '_')
       parser.parse_with_comments(buffer)
+      # Parser::CurrentRuby.parse_with_comments(code)
     end
 
     def process_parsed node, comments
@@ -409,8 +416,11 @@ module Solargraph
       # @param filename [String]
       # @return [Solargraph::Source]
       def load filename
-        code = File.read(filename)
+        file = File.open(filename, 'rb')
+        code = file.read
         Source.load_string(code, filename)
+      ensure
+        file.close
       end
 
       # @param code [String]
