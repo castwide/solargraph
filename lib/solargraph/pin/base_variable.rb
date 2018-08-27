@@ -1,15 +1,21 @@
 module Solargraph
   module Pin
     class BaseVariable < Base
+      include Solargraph::Source::NodeMethods
+
       attr_reader :signature
 
       attr_reader :context
 
-      def initialize location, namespace, name, comments, signature, literal, context
+      def initialize location, namespace, name, comments, assignment, literal, context
         super(location, namespace, name, comments)
-        @signature = signature
+        @assignment = assignment
         @literal = literal
         @context = context
+      end
+
+      def signature
+        @signature ||= resolve_node_signature(@assignment)
       end
 
       def scope
@@ -41,7 +47,7 @@ module Solargraph
         result = super
         return result if result.defined? or signature.nil?
         # @todo Instead of parsing a signature, start with an assignment node
-        chain = Source::Chain.load_string(signature)
+        chain = Source::Chain.new(@assignment)
         fragment = api_map.fragment_at(location)
         chain.infer_type_with(api_map, context, fragment.locals)
       end

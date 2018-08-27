@@ -20,8 +20,9 @@ module Solargraph
           api_map.get_method_stack(context.return_complex_type.namespace, word, scope: context.scope)
         end
 
+        private
+
         def instance_pin context
-          STDERR.puts "The instance created is #{context.return_complex_type.namespace}"
           Pin::ProxyType.new(nil, context.namespace, context.name, ComplexType.parse(context.return_complex_type.namespace))
         end
       end

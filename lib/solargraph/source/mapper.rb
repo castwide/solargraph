@@ -98,17 +98,17 @@ module Solargraph
                   ora = find_parent(stack, :or_asgn)
                   unless ora.nil?
                     u = c.updated(:ivasgn, c.children + ora.children[1..-1], nil)
-                    pins.push Solargraph::Pin::InstanceVariable.new(get_node_location(u), fqn || '', c.children[0].to_s, comments_for(u), resolve_node_signature(u.children[1]), infer_literal_node_type(u.children[1]), context)
+                    pins.push Solargraph::Pin::InstanceVariable.new(get_node_location(u), fqn || '', c.children[0].to_s, comments_for(u), u.children[1], infer_literal_node_type(u.children[1]), context)
                     if visibility == :module_function and context.kind == Pin::METHOD
                       other = pins.select{|pin| pin.path == "#{context.namespace}.#{context.name}"}.first
-                      pins.push Solargraph::Pin::InstanceVariable.new(get_node_location(u), fqn || '', c.children[0].to_s, comments_for(u), resolve_node_signature(u.children[1]), infer_literal_node_type(u.children[1]), other) unless other.nil?
+                      pins.push Solargraph::Pin::InstanceVariable.new(get_node_location(u), fqn || '', c.children[0].to_s, comments_for(u), u.children[1], infer_literal_node_type(u.children[1]), other) unless other.nil?
                     end
                   end
                 else
-                  pins.push Solargraph::Pin::InstanceVariable.new(get_node_location(c), fqn || '',c.children[0].to_s, comments_for(c), resolve_node_signature(c.children[1]), infer_literal_node_type(c.children[1]), context)
+                  pins.push Solargraph::Pin::InstanceVariable.new(get_node_location(c), fqn || '',c.children[0].to_s, comments_for(c), c.children[1], infer_literal_node_type(c.children[1]), context)
                   if visibility == :module_function and context.kind == Pin::METHOD
                     other = pins.select{|pin| pin.path == "#{context.namespace}.#{context.name}"}.first
-                    pins.push Solargraph::Pin::InstanceVariable.new(get_node_location(c), fqn || '',c.children[0].to_s, comments_for(c), resolve_node_signature(c.children[1]), infer_literal_node_type(c.children[1]), other)
+                    pins.push Solargraph::Pin::InstanceVariable.new(get_node_location(c), fqn || '',c.children[0].to_s, comments_for(c), c.children[1], infer_literal_node_type(c.children[1]), other)
                   end
                 end
               elsif c.type == :cvasgn
@@ -118,10 +118,10 @@ module Solargraph
                   ora = find_parent(stack, :or_asgn)
                   unless ora.nil?
                     u = c.updated(:cvasgn, c.children + ora.children[1..-1], nil)
-                    pins.push Solargraph::Pin::ClassVariable.new(get_node_location(u), fqn || '', c.children[0].to_s, comments_for(u), resolve_node_signature(u.children[1]), infer_literal_node_type(u.children[1]), context)
+                    pins.push Solargraph::Pin::ClassVariable.new(get_node_location(u), fqn || '', c.children[0].to_s, comments_for(u), u.children[1], infer_literal_node_type(u.children[1]), context)
                   end
                 else
-                  pins.push Solargraph::Pin::ClassVariable.new(get_node_location(c), fqn || '', c.children[0].to_s, comments_for(c), resolve_node_signature(c.children[1]), infer_literal_node_type(c.children[1]), context)
+                  pins.push Solargraph::Pin::ClassVariable.new(get_node_location(c), fqn || '', c.children[0].to_s, comments_for(c), c.children[1], infer_literal_node_type(c.children[1]), context)
                 end
               elsif c.type == :lvasgn
                 here = get_node_start_position(c)
@@ -132,19 +132,19 @@ module Solargraph
                   ora = find_parent(stack, :or_asgn)
                   unless ora.nil?
                     u = c.updated(:lvasgn, c.children + ora.children[1..-1], nil)
-                    @locals.push Solargraph::Pin::LocalVariable.new(get_node_location(u), fqn, u.children[0].to_s, comments_for(ora), resolve_node_signature(c.children[1]), infer_literal_node_type(c.children[1]), context, block, presence)
+                    @locals.push Solargraph::Pin::LocalVariable.new(get_node_location(u), fqn, u.children[0].to_s, comments_for(ora), c.children[1], infer_literal_node_type(c.children[1]), context, block, presence)
                   end
                 else
-                  @locals.push Solargraph::Pin::LocalVariable.new(get_node_location(c), fqn, c.children[0].to_s, comments_for(c), resolve_node_signature(c.children[1]), infer_literal_node_type(c.children[1]), context, block, presence)
+                  @locals.push Solargraph::Pin::LocalVariable.new(get_node_location(c), fqn, c.children[0].to_s, comments_for(c), c.children[1], infer_literal_node_type(c.children[1]), context, block, presence)
                 end
               elsif c.type == :gvasgn
-                pins.push Solargraph::Pin::GlobalVariable.new(get_node_location(c), fqn, c.children[0].to_s, comments_for(c), resolve_node_signature(c.children[1]), infer_literal_node_type(c.children[1]), @pins.first)
+                pins.push Solargraph::Pin::GlobalVariable.new(get_node_location(c), fqn, c.children[0].to_s, comments_for(c), c.children[1], infer_literal_node_type(c.children[1]), @pins.first)
               elsif c.type == :sym
                 @symbols.push Solargraph::Pin::Symbol.new(get_node_location(c), ":#{c.children[0]}")
               elsif c.type == :casgn
                 here = get_node_start_position(c)
                 block = get_block_pin(here)
-                pins.push Solargraph::Pin::Constant.new(get_node_location(c), fqn, c.children[1].to_s, comments_for(c), resolve_node_signature(c.children[2]), infer_literal_node_type(c.children[2]), block, :public)
+                pins.push Solargraph::Pin::Constant.new(get_node_location(c), fqn, c.children[1].to_s, comments_for(c), c.children[2], infer_literal_node_type(c.children[2]), block, :public)
               elsif c.type == :def
                 methpin = Solargraph::Pin::Method.new(get_node_location(c), fqn || '', c.children[(c.type == :def ? 0 : 1)].to_s, comments_for(c), scope, visibility, get_method_args(c))
                 if methpin.name == 'initialize' and methpin.scope == :instance
