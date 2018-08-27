@@ -26,7 +26,7 @@ describe Solargraph::Pin::BlockParameter do
     api_map.virtualize source
     fragment = source.fragment_at(2, 9)
     pins = api_map.define(fragment)
-    expect(pins.first.return_complex_type.namespace).to eq('Array')
+    expect(pins.first.return_complex_type.namespace).to eq('String')
   end
 
   it "prioritizes param type tags" do
