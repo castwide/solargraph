@@ -20,7 +20,6 @@ module Solargraph
     autoload :Documenting,      'solargraph/pin/documenting'
     autoload :Block,            'solargraph/pin/block'
     autoload :Localized,        'solargraph/pin/localized'
-    autoload :ProxyMethod,      'solargraph/pin/proxy_method'
     autoload :ProxyType,        'solargraph/pin/proxy_type'
     autoload :DuckMethod,       'solargraph/pin/duck_method'
     autoload :YardPin,          'solargraph/pin/yard_pin'
