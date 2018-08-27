@@ -421,11 +421,12 @@ module Solargraph
       return [] unless fragment.argument?
       return [] if fragment.recipient.whole_signature.nil? or fragment.recipient.whole_signature.empty?
       result = []
-      if fragment.recipient.base_literal?
-        result.concat probe.infer_signature_pins(fragment.recipient.whole_signature, Pin::ProxyMethod.new(fragment.recipient.base_literal), fragment.locals)
-      else
-        result.concat probe.infer_signature_pins(fragment.recipient.whole_signature, fragment.named_path, fragment.locals)
-      end
+      # if fragment.recipient.base_literal?
+      #   result.concat probe.infer_signature_pins(fragment.recipient.whole_signature, Pin::ProxyMethod.new(fragment.recipient.base_literal), fragment.locals)
+      # else
+      #   result.concat probe.infer_signature_pins(fragment.recipient.whole_signature, fragment.named_path, fragment.locals)
+      # end
+      result.concat fragment.recipient.define(self)
       result.select{ |pin| pin.kind == Pin::METHOD }
     end
 

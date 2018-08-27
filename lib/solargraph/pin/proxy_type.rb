@@ -14,6 +14,14 @@ module Solargraph
         return_complex_type.scope
       end
 
+      def path
+        @path ||= begin
+          result = namespace.to_s
+          result += '::' unless result.empty? or name.to_s.empty?
+          result += name.to_s
+        end
+      end
+
       # @param return_type [ComplexType]
       # @return [ProxyType]
       def self.anonymous return_type
