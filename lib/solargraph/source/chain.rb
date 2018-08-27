@@ -96,6 +96,7 @@ module Solargraph
       def generate_links n
         return [] if n.nil?
         return generate_links(n.children[0]) if n.type == :begin
+        # @todo This might not be right. It's weird either way.
         return generate_links(n.children[2] || n.children[0]) if n.type == :block
         result = []
         if n.type == :send

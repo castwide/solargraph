@@ -67,24 +67,15 @@ module Solargraph
 
       def infer api_map
         return return_complex_type unless return_complex_type.undefined?
-        signature = block.receiver
         chain = Source::Chain.new(filename, block.receiver)
         fragment = api_map.fragment_at(location)
         locals = fragment.locals - [self]
         meths = chain.define_with(api_map, block, fragment.locals)
-        # meths = api_map.get_method_stack(block.namespace, block.receiver)
         meths.each do |meth|
           if (Solargraph::CoreFills::METHODS_WITH_YIELDPARAM_SUBTYPES.include?(meth.path))
-            # base = signature.split('.')[0..-2].join('.')
-            # return ComplexType::UNDEFINED if base.nil? or base.empty?
-            # @todo Not sure if assuming the first pin is good here
-            # bmeth = infer_signature_pins(base, block, locals).first
             bmeth = chain.define_base_with(api_map, context, locals).first
             return ComplexType::UNDEFINED if bmeth.nil? or bmeth.return_complex_type.undefined?
-            # btype = bmeth.return_complex_type
-            # btype = infer_signature_type(bmeth.signature, block, locals) if btype.nil? and bmeth.variable?
-            # return btype.subtypes.first
-            return bmeth.infer(api_map)
+            return bmeth.return_complex_type.subtypes.first.qualify(api_map)
           else
             yps = meth.docstring.tags(:yieldparam)
             unless yps[index].nil? or yps[index].types.nil? or yps[index].types.empty?
