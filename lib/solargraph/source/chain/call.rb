@@ -17,7 +17,7 @@ module Solargraph
           return [instance_pin(context)] if word == 'new' and context.scope == :class
           found = locals.select{|p| p.name == word}
           return found unless found.empty?
-          api_map.get_method_stack(context.namespace, word, scope: context.scope)
+          api_map.get_method_stack(context.return_complex_type.namespace, word, scope: context.scope)
         end
 
         def instance_pin context

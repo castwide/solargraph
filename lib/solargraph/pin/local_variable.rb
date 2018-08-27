@@ -15,9 +15,13 @@ module Solargraph
 
       def infer api_map
         result = super
-        return result unless result.undefined?
+        return result if result.defined? or signature.nil?
         # @todo Get the return type from the assignment
-        ComplexType::UNDEFINED
+        # @todo Instead of parsing a signature, start with an assignment node
+        chain = Source::Chain.load_string(signature)
+        fragment = api_map.fragment_at(location)
+        chain.infer_type_with(api_map, context, fragment.locals)
+        # ComplexType::UNDEFINED
       end
 
       def try_merge! pin
