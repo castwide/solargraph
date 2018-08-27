@@ -25,7 +25,7 @@ module Solargraph
       # @param locals [Array<Pin::Base>]
       # @return [Array<Pin::Base>]
       def define_with api_map, context, locals
-        # @todo Resolve pins
+        inner_define_with links, api_map, context, locals
       end
 
       # @param api_map [ApiMap]
@@ -34,10 +34,51 @@ module Solargraph
       # @return [ComplexType]
       def infer_type_with api_map, context, locals
         # @todo Perform link inference
-        ComplexType::UNDEFINED
+        inner_infer_type_with(links, api_map, context, locals)
+      end
+
+      def infer_base_type_with api_map, context, locals
+        inner_infer_type_with(links[0..-2], api_map, context, locals)
       end
 
       private
+
+      def inner_infer_type_with array, api_map, context, locals
+        type = ComplexType::UNDEFINED
+        pins = inner_define_with(array, api_map, context, locals)
+        pins.each do |pin|
+          type = pin.infer(api_map)
+          break unless type.undefined?
+        end
+        type
+      end
+
+      def inner_define_with array, api_map, context, locals
+        return [] if array.empty?
+        head = true
+        type = ComplexType::UNDEFINED
+        # @param link [Chain::Link]
+        array[0..-2].each do |link|
+          pins = link.resolve_pins(api_map, context, head ? locals : [])
+          return [] if pins.empty?
+          pins.each do |pin|
+            # type = deeply_infer(pin, api_map, context, locals)
+            type = pin.infer(api_map)
+            break unless type.undefined?
+          end
+          return [] if type.undefined?
+          context = Pin::ProxyType.anonymous(type)
+        end
+        array.last.resolve_pins(api_map, context, head ? locals: [])
+      end
+
+      # @param pin [Pin::Base]
+      # @return [ComplexType]
+      # def deeply_infer pin, api_map, context, locals
+      #   return pin.return_complex_type unless pin.return_complex_type.undefined?
+      #   # @todo Deep inference
+      #   ComplexType::UNDEFINED
+      # end
 
       # @return [AST::Parser::Node]
       attr_reader :node

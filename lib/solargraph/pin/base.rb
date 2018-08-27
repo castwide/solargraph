@@ -177,6 +177,14 @@ module Solargraph
         @deprecated ||= docstring.has_tag?('deprecated')
       end
 
+      # @param api_map [ApiMap]
+      # @return [ComplexType]
+      def infer api_map
+        ns = api_map.qualify(return_complex_type.namespace, named_context)
+        return ComplexType.parse(ns) unless ns.nil?
+        ComplexType::UNDEFINED
+      end
+
       # Try to merge data from another pin. Merges are only possible if the
       # pins are near matches (see the #nearly? method). The changes should
       # not have any side effects on the API surface.

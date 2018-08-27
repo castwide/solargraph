@@ -24,6 +24,10 @@ module Solargraph
       map(&:tag).join(', ')
     end
 
+    def inspect
+      "ComplexType[#{to_s}]"
+    end
+
     class << self
       # Parse type strings into a ComplexType.
       #

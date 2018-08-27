@@ -283,14 +283,21 @@ module Solargraph
     # @param context [String]
     # @return [Array<Solargraph::Pin::Base>]
     def get_complex_type_methods type, context = ''
+      # @todo Handle duck types
       result = []
-      unless type.nil? or type.name == 'void'
-        namespace = qualify(type.name, context)
-        if ['Class', 'Module'].include?(namespace) and !type.subtypes.empty?
-          subtype = qualify(type.subtypes.first.name, context)
-          result.concat get_methods(subtype, scope: :class)
+      if type.duck_type?
+        type.select(&:duck_type?).each do |t|
+          result.push Pin::DuckMethod.new(pin.location, t.tag[1..-1])
         end
-        result.concat get_methods(namespace, scope: type.scope)
+      else
+        unless type.nil? or type.name == 'void'
+          namespace = qualify(type.name, context)
+          if ['Class', 'Module'].include?(namespace) and !type.subtypes.empty?
+            subtype = qualify(type.subtypes.first.name, context)
+            result.concat get_methods(subtype, scope: :class)
+          end
+          result.concat get_methods(namespace, scope: type.scope)
+        end
       end
       result
     end
@@ -386,14 +393,8 @@ module Solargraph
           end
           # @todo This is an alternate method that doesn't quite work.
           # type = fragment.infer_base_type(self)
-          # if type.duck_type?
-          #   type.select(&:duck_type?).each do |t|
-          #     result.push Pin::DuckMethod.new(nil, t.tag[1..-1])
-          #   end
-          #   result.concat(get_methods('Object', scope: :instance))
-          # else
-          #   result.concat get_complex_type_methods(type, fragment.namespace)
-          # end
+          # STDERR.puts "The type is #{type} btw"
+          # result.concat get_complex_type_methods(type, fragment.namespace)
         end
       end
       frag_start = fragment.word.to_s.downcase

@@ -14,10 +14,15 @@ module Solargraph
         end
 
         def resolve_pins api_map, context, locals
-          return ComplexType.parse(context.namespace).first if word == 'new' and context.scope == :class
+          return [instance_pin(context)] if word == 'new' and context.scope == :class
           found = locals.select{|p| p.name == word}
           return found unless found.empty?
           api_map.get_method_stack(context.namespace, word, scope: context.scope)
+        end
+
+        def instance_pin context
+          STDERR.puts "The instance created is #{context.return_complex_type.namespace}"
+          Pin::ProxyType.new(nil, context.namespace, context.name, ComplexType.parse(context.return_complex_type.namespace))
         end
       end
     end

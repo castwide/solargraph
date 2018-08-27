@@ -25,5 +25,9 @@ module Solargraph
         @subtypes.concat subs
       end
     end
+
+    def to_s
+      tag
+    end
   end
 end

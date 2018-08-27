@@ -13,6 +13,13 @@ module Solargraph
         Pin::LOCAL_VARIABLE
       end
 
+      def infer api_map
+        result = super
+        return result unless result.undefined?
+        # @todo Get the return type from the assignment
+        ComplexType::UNDEFINED
+      end
+
       def try_merge! pin
         return false unless super
         @presence = pin.presence

@@ -261,6 +261,12 @@ module Solargraph
         source.code[signature_data[0]..base_offset]
       end
 
+      # @param api_map [ApiMap]
+      # @return [ComplexType]
+      def infer_base_type api_map
+        chain.infer_base_type_with(api_map, named_path, locals)
+      end
+
       private
 
       # @return [Integer]
@@ -469,7 +475,10 @@ module Solargraph
 
       def generate_chain
         return generate_chain_from_node if source.parsed?
-        Source::Chain.load_string(phrase)
+        chain = Source::Chain.load_string(phrase)
+        # Add a "tail" to the chain to represent the unparsed section
+        chain.links.push(Chain::Link.new) unless separator.empty?
+        chain
       end
 
       def generate_chain_from_node
