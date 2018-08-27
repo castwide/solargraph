@@ -6,14 +6,14 @@ module Solargraph
           @word ||= "<#{@type}>"
         end
 
+        # @param type [String]
         def initialize type
           @type = type
           @complex_type = ComplexType.parse(type).first
         end
 
         def resolve_pins api_map, context, locals
-          # @complex_type.qualify(api_map, '')
-          Pin::ProxyMethod.new(@type)
+          Pin::ProxyType.anonymous(@complex_type)
         end
       end
     end
