@@ -10,7 +10,6 @@ module Solargraph
     autoload :Cache,        'solargraph/api_map/cache'
     autoload :SourceToYard, 'solargraph/api_map/source_to_yard'
     autoload :Completion,   'solargraph/api_map/completion'
-    autoload :Probe,        'solargraph/api_map/probe'
     autoload :Store,        'solargraph/api_map/store'
 
     include Solargraph::ApiMap::SourceToYard
@@ -366,24 +365,6 @@ module Solargraph
       Completion.new(filtered, fragment.whole_word_range)
     end
 
-    # @todo Deprecated. Use Pin::Base#infer instead.
-    # @param pin [Solargraph::Pin::Base]
-    # def infer_pin_type pin
-    #   return pin.return_complex_type unless pin.return_complex_type.undefined?
-    #   if pin.variable?
-    #     @sources.each do |s|
-    #       next if s.filename != pin.filename
-    #       position = pin.location.range.start
-    #       fragment = s.fragment_at(position.line, position.character)
-    #       # type = fragment.infer_type(self)
-    #       type = probe.infer_signature_type(pin.signature, pin.context, fragment.locals)
-    #       return type unless type.undefined?
-    #       break
-    #     end
-    #   end
-    #   ComplexType::UNDEFINED
-    # end
-
     # Get an array of pins that describe the symbol at the specified fragment.
     #
     # @param fragment [Solargraph::Source::Fragment]
@@ -392,11 +373,6 @@ module Solargraph
       return get_path_suggestions(fragment.namespace) if fragment.whole_signature == 'self'
       return [] if fragment.string? or fragment.comment? or fragment.literal? or KEYWORDS.include?(fragment.whole_signature)
       fragment.define(self)
-      # if fragment.base_literal?
-      #   probe.infer_signature_pins fragment.whole_signature, Pin::ProxyMethod.new(fragment.base_literal), fragment.locals
-      # else
-      #   probe.infer_signature_pins fragment.whole_signature, fragment.named_path, fragment.locals
-      # end
     end
 
     # Get an array of pins that describe the method being called by the
@@ -411,11 +387,6 @@ module Solargraph
       return [] unless fragment.argument?
       return [] if fragment.recipient.whole_signature.nil? or fragment.recipient.whole_signature.empty?
       result = []
-      # if fragment.recipient.base_literal?
-      #   result.concat probe.infer_signature_pins(fragment.recipient.whole_signature, Pin::ProxyMethod.new(fragment.recipient.base_literal), fragment.locals)
-      # else
-      #   result.concat probe.infer_signature_pins(fragment.recipient.whole_signature, fragment.named_path, fragment.locals)
-      # end
       result.concat fragment.recipient.define(self)
       result.select{ |pin| pin.kind == Pin::METHOD }
     end
@@ -489,11 +460,6 @@ module Solargraph
         return pin unless pin.nil?
       end
       nil
-    end
-
-    # @return [Probe]
-    def probe
-      @probe ||= Probe.new(self)
     end
 
     # @return [Array<String>]
