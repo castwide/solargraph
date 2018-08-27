@@ -17,7 +17,7 @@ module Solargraph
           return [self_pin(api_map, context)] if word == 'self'
           return [instance_pin(context)] if word == 'new' and context.scope == :class
           found = locals.select{|p| p.name == word}
-          return found unless found.empty?
+          return inferred_pins(found, api_map) unless found.empty?
           api_map.get_method_stack(context.return_complex_type.namespace, word, scope: context.scope)
         end
 
@@ -31,6 +31,10 @@ module Solargraph
           return Pin::ProxyType.anonymous(ComplexType.parse(context.namespace)) if context.scope == :instance
           # return api_map.get_path_suggestions(context.namespace)
           context
+        end
+
+        def inferred_pins pins, api_map
+          pins.uniq(&:location).map { |p| Pin::ProxyType.new(p.location, p.context, p.name, p.infer(api_map)) }
         end
       end
     end
