@@ -31,6 +31,10 @@ module Solargraph
       name == 'void'
     end
 
+    def defined?
+      !undefined?
+    end
+
     def undefined?
       name == 'undefined'
     end
@@ -84,6 +88,7 @@ module Solargraph
     # @param context [String] The namespace from which to resolve names
     # @return [ComplexType] The generated ComplexType
     def qualify api_map, context = ''
+      return ComplexType.parse(tag) if duck_type? or void? or undefined?
       fqns = api_map.qualify(name, context)
       return ComplexType::UNDEFINED if fqns.nil?
       ltypes = key_types.map do |t|

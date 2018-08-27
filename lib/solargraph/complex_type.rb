@@ -11,6 +11,13 @@ module Solargraph
       concat types
     end
 
+    def qualify api_map, context = ''
+      types = map do |t|
+        t.qualify api_map, context
+      end
+      ComplexType.new(types)
+    end
+
     def method_missing name, *args, &block
       return first.send(name, *args, &block) if respond_to_missing?(name)
       super
@@ -22,10 +29,6 @@ module Solargraph
 
     def to_s
       map(&:tag).join(', ')
-    end
-
-    def inspect
-      "ComplexType[#{to_s}]"
     end
 
     class << self
