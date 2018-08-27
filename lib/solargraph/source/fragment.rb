@@ -486,22 +486,29 @@ module Solargraph
       end
 
       def generate_chain_from_node
-        Chain.new(source.filename, source.node_at(line, column))
+        chain = Chain.new(source.filename, source.node_at(base_position.line, base_position.column))
+        # Add a "tail" to the chain to represent the unparsed section
+        chain.links.push(Chain::Link.new) unless separator.empty?
+        chain
       end
 
       def separator
         @separator ||= begin
           result = ''
-          if word.empty?
+          # if word.empty?
             match = source.code[0..offset-1].match(/[\s]*?(\.{1}|::)[\s]*?$/)
             result = match[0] if match
-          end
+          # end
           result
         end
       end
 
       def base_offset
         @base_offset ||= offset - (separator.length + 1)
+      end
+
+      def base_position
+        @base_position ||= Source::Position.from_offset(source.code, base_offset)
       end
     end
   end
