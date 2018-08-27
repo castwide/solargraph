@@ -261,6 +261,10 @@ module Solargraph
         source.code[signature_data[0]..base_offset]
       end
 
+      def define api_map
+        chain.define_with(api_map, named_path, locals)
+      end
+
       # @param api_map [ApiMap]
       # @return [ComplexType]
       def infer_base_type api_map

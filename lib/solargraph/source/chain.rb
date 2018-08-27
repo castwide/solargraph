@@ -7,6 +7,7 @@ module Solargraph
       autoload :ClassVariable, 'solargraph/source/chain/class_variable'
       autoload :Constant, 'solargraph/source/chain/constant'
       autoload :InstanceVariable, 'solargraph/source/chain/instance_variable'
+      autoload :GlobalVariable, 'solargraph/source/chain/global_variable'
       autoload :Literal, 'solargraph/source/chain/literal'
 
       include NodeMethods
@@ -60,6 +61,7 @@ module Solargraph
         # @param link [Chain::Link]
         array[0..-2].each do |link|
           pins = link.resolve_pins(api_map, context, head ? locals : [])
+          head = false
           return [] if pins.empty?
           pins.each do |pin|
             # type = deeply_infer(pin, api_map, context, locals)
@@ -107,16 +109,18 @@ module Solargraph
           else
             raise "No idea what to do with #{n}"
           end
+        elsif n.type == :self
+          result.push Call.new('self')
         elsif n.type == :const
           result.push Constant.new(unpack_name(n))
-        elsif n.type == :lvar
+        elsif [:lvar, :lvasgn].include?(n.type)
           result.push Call.new(n.children[0].to_s)
-        elsif n.type == :ivar
+        elsif [:ivar, :ivasgn].include?(n.type)
           result.push InstanceVariable.new(n.children[0].to_s)
-        elsif n.type == :cvar
+        elsif [:cvar, :cvasgn].include?(n.type)
           result.push ClassVariable.new(n.children[0].to_s)
-        elsif [:ivar, :cvar, :gvar].include?(n.type)
-          result.push Variable.new(n.children[0].to_s)
+        elsif [:gvar, :gvasgn].include?(n.type)
+          result.push GlobalVariable.new(n.children[0].to_s)
         else
           lit = infer_literal_node_type(n)
           result.push (lit ? Literal.new(lit) : Link.new)

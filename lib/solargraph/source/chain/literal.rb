@@ -13,7 +13,7 @@ module Solargraph
         end
 
         def resolve_pins api_map, context, locals
-          Pin::ProxyType.anonymous(@complex_type)
+          [Pin::ProxyType.anonymous(@complex_type)]
         end
       end
     end

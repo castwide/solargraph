@@ -49,7 +49,8 @@ module Solargraph
         # @todo Instead of parsing a signature, start with an assignment node
         chain = Source::Chain.new(@assignment)
         fragment = api_map.fragment_at(location)
-        chain.infer_type_with(api_map, context, fragment.locals)
+        locals = fragment.locals - [self]
+        chain.infer_type_with(api_map, context, locals)
       end
 
       def == other
