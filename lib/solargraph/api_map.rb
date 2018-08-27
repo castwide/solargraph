@@ -290,7 +290,7 @@ module Solargraph
     # @param context [String]
     # @return [Array<Solargraph::Pin::Base>]
     def get_complex_type_methods type, context = ''
-      # @todo Handle duck types
+      return [] if type.undefined?
       result = []
       if type.duck_type?
         type.select(&:duck_type?).each do |t|

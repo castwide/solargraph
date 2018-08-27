@@ -180,7 +180,7 @@ module Solargraph
       # @param api_map [ApiMap]
       # @return [ComplexType]
       def infer api_map
-        return_complex_type.qualify(api_map)
+        return_complex_type.qualify(api_map, namespace)
       end
 
       # Try to merge data from another pin. Merges are only possible if the
