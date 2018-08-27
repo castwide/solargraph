@@ -479,14 +479,14 @@ module Solargraph
 
       def generate_chain
         return generate_chain_from_node if source.parsed?
-        chain = Source::Chain.load_string(phrase)
+        chain = Source::Chain.load_string(source.filename, phrase)
         # Add a "tail" to the chain to represent the unparsed section
         chain.links.push(Chain::Link.new) unless separator.empty?
         chain
       end
 
       def generate_chain_from_node
-        Chain.new(source.node_at(line, column))
+        Chain.new(source.filename, source.node_at(line, column))
       end
 
       def separator

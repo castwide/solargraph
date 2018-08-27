@@ -47,7 +47,7 @@ module Solargraph
         result = super
         return result if result.defined? or signature.nil?
         # @todo Instead of parsing a signature, start with an assignment node
-        chain = Source::Chain.new(@assignment)
+        chain = Source::Chain.new(filename, @assignment)
         fragment = api_map.fragment_at(location)
         locals = fragment.locals - [self]
         chain.infer_type_with(api_map, context, locals)

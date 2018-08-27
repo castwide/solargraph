@@ -163,9 +163,10 @@ module Solargraph
           result.push mn_loc unless mn_loc.nil?
         end
         (workspace.sources + source_hash.values).uniq(&:filename).each do |source|
-          found = source.references(pin.name).select do |loc|
-            referenced = definitions_at(loc.filename, loc.range.ending.line, loc.range.ending.character).first
-            !referenced.nil? and referenced.path == pin.path
+          found = source.references(pin.name)
+          found.select do |loc|
+            referenced = definitions_at(loc.filename, loc.range.ending.line, loc.range.ending.character)
+            referenced.any?{|r| r.path == pin.path}
           end
           result.concat found.sort{|a, b| a.range.start.line <=> b.range.start.line}
         end

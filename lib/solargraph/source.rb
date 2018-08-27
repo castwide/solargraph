@@ -256,8 +256,8 @@ module Solargraph
     # @param location [Solargraph::Source::Location]
     # @return [Solargraph::Pin::Base]
     def locate_pin location
-      return nil unless location.start_with?("#{filename}:")
-      @all_pins.select{|pin| pin.location == location}.first
+      # return nil unless location.start_with?("#{filename}:")
+      pins.select{|pin| pin.location == location}
     end
 
     # @param line [Integer] A zero-based line number
@@ -288,7 +288,8 @@ module Solargraph
     def inner_node_references name, top
       result = []
       if top.kind_of?(AST::Node)
-        if (top.type == :const and top.children[1].to_s == name) or (top.type == :send and top.children[1].to_s == name)
+        if top.children.any?{|c| c.to_s == name}
+        # if top.children[0].to_s == name or (top.type == :const and top.children[1].to_s == name) or (top.type == :send and top.children[1].to_s == name)
           result.push top
         end
         top.children.each { |c| result.concat inner_node_references(name, c) }

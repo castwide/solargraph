@@ -9,6 +9,7 @@ module Solargraph
       autoload :InstanceVariable, 'solargraph/source/chain/instance_variable'
       autoload :GlobalVariable, 'solargraph/source/chain/global_variable'
       autoload :Literal, 'solargraph/source/chain/literal'
+      autoload :Definition, 'solargraph/source/chain/definition'
 
       include NodeMethods
 
@@ -16,7 +17,8 @@ module Solargraph
       attr_reader :links
 
       # @param node [Parser::AST::Node]
-      def initialize node = Parser::AST::Node.new('')
+      def initialize filename, node = Parser::AST::Node.new('')
+        @filename = filename
         @node = node
         @links = generate_links @node
       end
@@ -88,7 +90,7 @@ module Solargraph
       # @param n [AST::Node]
       # @return [Array<Chain::Link>]
       def generate_links n
-        return generate_links(n.children[0]) if n.type == :block
+        return generate_links(n.children[0]) if n.type == :block or n.type == :begin
         result = []
         if n.type == :send
           if n.children[0].is_a?(Parser::AST::Node)
@@ -121,6 +123,9 @@ module Solargraph
           result.push ClassVariable.new(n.children[0].to_s)
         elsif [:gvar, :gvasgn].include?(n.type)
           result.push GlobalVariable.new(n.children[0].to_s)
+        elsif [:class, :module, :def, :defs].include?(n.type)
+          location = Solargraph::Source::Location.new(@filename, Source::Range.from_to(n.loc.expression.line - 1, n.loc.expression.column, n.loc.expression.last_line - 1, n.loc.expression.last_column))
+          result.push Definition.new(location)
         else
           lit = infer_literal_node_type(n)
           result.push (lit ? Literal.new(lit) : Link.new)
@@ -131,11 +136,11 @@ module Solargraph
       class << self
         # @param code [String]
         # @return [Chain]
-        def load_string(code)
+        def load_string(filename, code)
           # @todo Parsing with Source might be heavier than necessary.
           #   We don't care about pins here, only the node.
           source = Source.load_string(code)
-          Chain.new(source.node)
+          Chain.new(filename, source.node)
         end
       end
     end

@@ -343,7 +343,7 @@ module Solargraph
       def locate_pin params
         pin = nil
         @change_semaphore.synchronize do
-          pin = library.locate_pin(params['data']['location']) unless params['data']['location'].nil?
+          pin = library.locate_pin(params['data']['location']).first unless params['data']['location'].nil?
           # @todo Improve pin location
           if pin.nil? or pin.path != params['data']['path']
             pin = library.path_pins(params['data']['path']).first
