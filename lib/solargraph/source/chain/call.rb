@@ -17,13 +17,20 @@ module Solargraph
           return [self_pin(api_map, context)] if word == 'self'
           found = locals.select{|p| p.name == word}
           return inferred_pins(found, api_map, context) unless found.empty?
-          pins = api_map.get_method_stack(context.return_complex_type.namespace, word, scope: context.scope)
+          pins = api_map.get_method_stack(namespace_from_context(context), word, scope: context.scope)
           return [] if pins.empty?
           pins[0] = virtual_new_pin(pins.first, context) if pins.first.path == 'Class#new'
           inferred_pins(pins, api_map, context)
         end
 
         private
+
+        # @param pin [Pin::Base]
+        # @return [String]
+        def namespace_from_context pin
+          return pin.namespace if pin.kind == Pin::ATTRIBUTE or pin.kind == Pin::METHOD
+          pin.return_complex_type.namespace
+        end
 
         # Create a `new` pin to facilitate type inference. This is necessary for
         # classes from YARD and classes in the namespace that do not have an
