@@ -358,50 +358,8 @@ module Solargraph
           result.concat get_constants(fragment.base, fragment.namespace)
         end
       else
-        if fragment.base_literal?
-          pin = get_path_suggestions(fragment.base_literal).select{ |p| p.kind == Pin::NAMESPACE }.first
-          unless pin.nil?
-            if fragment.base.empty?
-              result.concat get_methods(pin.path)
-            else
-              type = probe.infer_signature_type("#{pin.path}.new.#{fragment.base}", pin, fragment.locals)
-              unless type.nil?
-                result.concat get_methods(type.namespace, scope: type.scope)
-              end
-            end
-          end
-        elsif fragment.signature.include?('::') and !fragment.signature.include?('.')
-          result.concat get_constants(fragment.base, fragment.namespace)
-        else
-          # @todo This is the original method for resolving pins.
-          # pins = probe.infer_signature_pins(fragment.base, fragment.named_path, fragment.locals)
-          # unless pins.empty?
-          #   pin = pins.first
-          #   if pin.variable? and pin.return_complex_type.undefined? and !pin.signature.nil?
-          #     type = probe.infer_signature_type(pin.signature, pin.context, fragment.locals)
-          #     result.concat(get_methods(type.name)) unless type.nil?
-          #   elsif pin.return_complex_types.any? and pin.return_complex_types.first.duck_type?
-          #     pin.return_complex_types.each do |t|
-          #       next unless t.duck_type?
-          #       result.push Pin::DuckMethod.new(pin.location, t.tag[1..-1])
-          #     end
-          #     result.concat(get_methods('Object', scope: :instance))
-          #   elsif pin.kind == Pin::BLOCK_PARAMETER
-          #     type = probe.infer_signature_type(pin.name, pin.block, fragment.locals)
-          #     result.concat get_complex_type_methods(type, pin.namespace)
-          #   end
-          #   if result.empty?
-          #     pins.each do |pin|
-          #       type = pin.return_complex_type
-          #       result.concat get_complex_type_methods(type, pin.namespace)
-          #       break unless result.empty?
-          #     end
-          #   end
-          # end
-          # @todo This is an alternate method that doesn't quite work.
-          type = fragment.infer_base_type(self)
-          result.concat get_complex_type_methods(type, fragment.namespace)
-        end
+        type = fragment.infer_base_type(self)
+        result.concat get_complex_type_methods(type, fragment.namespace)
       end
       frag_start = fragment.word.to_s.downcase
       filtered = result.uniq(&:identifier).select{|s| s.name.downcase.start_with?(frag_start) and (s.kind != Pin::METHOD or s.name.match(/^[a-z0-9_]+(\!|\?|=)?$/i))}.sort_by.with_index{ |x, idx| [x.name, idx] }

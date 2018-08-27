@@ -17,10 +17,10 @@ module Solargraph
       attr_reader :links
 
       # @param node [Parser::AST::Node]
-      def initialize filename, node = Parser::AST::Node.new('')
+      def initialize filename, node
         @filename = filename
         @node = node
-        @links = generate_links @node
+        @links = generate_links(@node)
       end
 
       # @param api_map [ApiMap]
@@ -94,6 +94,7 @@ module Solargraph
       # @param n [AST::Node]
       # @return [Array<Chain::Link>]
       def generate_links n
+        return [] if n.nil?
         return generate_links(n.children[0]) if n.type == :block or n.type == :begin
         result = []
         if n.type == :send

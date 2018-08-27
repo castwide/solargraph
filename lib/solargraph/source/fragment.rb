@@ -217,7 +217,8 @@ module Solargraph
       #
       # @return [Boolean]
       def base_literal?
-        !base_literal.nil?
+        # !base_literal.nil?
+        chain.links.first.is_a?(Chain::Literal)
       end
 
       # The type of literal value at the root of the signature (or nil).
