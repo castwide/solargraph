@@ -91,15 +91,18 @@ module Solargraph
       # @return [AST::Parser::Node]
       attr_reader :node
 
-      # @param n [AST::Node]
+      # @param n [Parser::AST::Node]
       # @return [Array<Chain::Link>]
       def generate_links n
         return [] if n.nil?
         return generate_links(n.children[0]) if n.type == :begin
         # @todo This might not be right. It's weird either way.
-        return generate_links(n.children[2] || n.children[0]) if n.type == :block
+        # return generate_links(n.children[2] || n.children[0]) if n.type == :block
         result = []
-        if n.type == :send
+        if n.type == :block
+          # result.concat generate_links(n.children[2])
+          result.concat generate_links(n.children[0])
+        elsif n.type == :send
           if n.children[0].is_a?(Parser::AST::Node)
             result.concat generate_links(n.children[0])
             args = []

@@ -140,7 +140,7 @@ module Solargraph
 
       # All of the pin's return types as an array of ComplexTypes.
       #
-      # @return [Array<ComplexType>]
+      # @return [ComplexType]
       def return_complex_type
         @return_complex_type ||= ComplexType.new
       end

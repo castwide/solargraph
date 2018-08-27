@@ -84,7 +84,17 @@ module Solargraph
       #
       # @return [String]
       def signature
-        @signature ||= signature_data[1].to_s
+        # @signature ||= signature_data[1].to_s
+        @signature ||= begin
+          result = ''
+          result += chain.links[0..-2].map(&:word).join('.') unless chain.links.length < 2
+          if word.empty?
+            result += separator.strip
+          else
+            result += (result.empty? ? '' : '.') + word
+          end
+          result
+        end
       end
 
       def valid?
@@ -100,25 +110,26 @@ module Solargraph
       #
       # @return [String]
       def base
-        if @base.nil?
-          if signature.include?('.')
-            if signature.end_with?('.')
-              @base = signature[0..-2]
-            else
-              @base = signature.split('.')[0..-2].join('.')
-            end
-          elsif signature.include?('::')
-            if signature.end_with?('::')
-              @base = signature[0..-3]
-            else
-              @base = signature.split('::')[0..-2].join('::')
-            end
-          else
-            # @base = signature
-            @base = ''
-          end
-        end
-        @base
+        # if @base.nil?
+        #   if signature.include?('.')
+        #     if signature.end_with?('.')
+        #       @base = signature[0..-2]
+        #     else
+        #       @base = signature.split('.')[0..-2].join('.')
+        #     end
+        #   elsif signature.include?('::')
+        #     if signature.end_with?('::')
+        #       @base = signature[0..-3]
+        #     else
+        #       @base = signature.split('::')[0..-2].join('::')
+        #     end
+        #   else
+        #     # @base = signature
+        #     @base = ''
+        #   end
+        # end
+        # @base
+        @base ||= chain.links[0..-2].map(&:word).join('.')
       end
 
       # @return [String]
@@ -153,7 +164,7 @@ module Solargraph
       #
       # @return [String]
       def whole_signature
-        @whole_signature ||= signature + remainder
+        @whole_signature ||= chain.links.map(&:word).join('.')
       end
 
       # Get the word before the current offset. Given the text `foo.bar`, the
@@ -487,7 +498,9 @@ module Solargraph
       end
 
       def generate_chain_from_node
-        chain = Chain.new(source.filename, source.node_at(base_position.line, base_position.column))
+        here = source.node_at(base_position.line, base_position.column)
+        here = nil if [:class, :module, :def, :defs].include?(here.type) and here.loc.expression.line - 1 < base_position.line
+        chain = Chain.new(source.filename, here)
         # Add a "tail" to the chain to represent the unparsed section
         chain.links.push(Chain::Link.new) unless separator.empty?
         chain
@@ -497,7 +510,8 @@ module Solargraph
         @separator ||= begin
           result = ''
           # if word.empty?
-            match = source.code[0..offset-1].match(/[\s]*(\.{1}|:{2})[\s]*\z/)
+            adj = (column.zero? ? offset : offset - 1)
+            match = source.code[0..adj].match(/[\s]*(\.{1}|:{2})[\s]*\z/)
             result = match[0] if match
           # end
           result

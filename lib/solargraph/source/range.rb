@@ -27,6 +27,7 @@ module Solargraph
 
       # True if the specified position is inside the range.
       #
+      # @param position [Solargraph::Source::Position]
       # @return [Boolean]
       def contain? position
         return false if position.line < start.line

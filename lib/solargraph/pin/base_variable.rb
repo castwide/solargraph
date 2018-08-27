@@ -45,8 +45,7 @@ module Solargraph
 
       def infer api_map
         result = super
-        return result if result.defined? or signature.nil?
-        # @todo Instead of parsing a signature, start with an assignment node
+        return result if result.defined? or @assignment.nil?
         chain = Source::Chain.new(filename, @assignment)
         fragment = api_map.fragment_at(location)
         locals = fragment.locals - [self]

@@ -53,7 +53,7 @@ module Solargraph
         end
 
         def inferred_pins pins, api_map, context_pin
-          pins.uniq(&:location).map do |p|
+          result = pins.uniq(&:location).map do |p|
             if CoreFills::METHODS_RETURNING_SELF.include?(p.path)
               next Solargraph::Pin::Method.new(p.location, p.namespace, p.name, "@return [#{context_pin.return_complex_type.tag}]", p.scope, p.visibility, p.parameters)
             end
@@ -61,8 +61,11 @@ module Solargraph
               next Solargraph::Pin::Method.new(p.location, p.namespace, p.name, "@return [#{context_pin.return_complex_type.subtypes.first.tag}]", p.scope, p.visibility, p.parameters)
             end
             next p if p.kind == Pin::METHOD or p.kind == Pin::ATTRIBUTE or p.kind == Pin::NAMESPACE
-            Pin::ProxyType.new(p.location, p.context, p.name, p.infer(api_map))
+            type = p.infer(api_map)
+            next p if p.return_complex_type == type
+            Pin::ProxyType.new(p.location, nil, p.name, type)
           end
+          result
         end
       end
     end
