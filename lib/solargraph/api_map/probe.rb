@@ -214,13 +214,13 @@ module Solargraph
         signature = pin.block.receiver
         # @todo Not sure if assuming the first pin is good here
         meth = infer_signature_pins(signature, pin.block, locals).first
-        return nil if meth.nil?
+        return ComplexType::UNDEFINED if meth.nil?
         if (Solargraph::CoreFills::METHODS_WITH_YIELDPARAM_SUBTYPES.include?(meth.path))
           base = signature.split('.')[0..-2].join('.')
-          return nil if base.nil? or base.empty?
+          return ComplexType::UNDEFINED if base.nil? or base.empty?
           # @todo Not sure if assuming the first pin is good here
           bmeth = infer_signature_pins(base, pin.block, locals).first
-          return nil if bmeth.nil?
+          return ComplexType::UNDEFINED if bmeth.nil?
           btype = bmeth.return_complex_type
           btype = infer_signature_type(bmeth.signature, pin.block, locals) if btype.nil? and bmeth.variable?
           return btype.subtypes.first
@@ -250,7 +250,7 @@ module Solargraph
       # @param locals [Array<Solargraph::Pin::Base>]
       # @return [Solargraph::ComplexType]
       def resolve_variable(pin, locals)
-        return nil if pin.nil_assignment?
+        return ComplexType::UNDEFINED if pin.nil_assignment?
         # @todo Do we need the locals here?
         infer_signature_type(pin.signature, pin.context, locals)
       end
