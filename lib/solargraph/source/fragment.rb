@@ -126,19 +126,9 @@ module Solargraph
         @root ||= signature.split('.').first
       end
 
-      # @return [String]
+      # @return [Source::Chain]
       def chain
-        @chain ||= ( signature.empty? ? '' : signature.split('.')[1..-1].join('.') )
-      end
-
-      # @return [String]
-      def base_chain
-        @base_chain ||= signature.split('.')[1..-2].join('.')
-      end
-
-      # @return [String]
-      def whole_chain
-        @whole_chain ||= whole_signature.split('.')[1..-1].join('.')
+        @chain ||= generate_chain
       end
 
       # Get the remainder of the word after the current offset. Given the text
@@ -164,14 +154,6 @@ module Solargraph
       # @return [String]
       def whole_signature
         @whole_signature ||= signature + remainder
-      end
-
-      # Get the entire phrase up to the current offset. Given the text
-      # `foo[bar].baz()`, the phrase at offset 10 is `foo[bar].b`.
-      #
-      # @return [String]
-      def phrase
-        @phrase ||= @code[signature_data[0]..offset]
       end
 
       # Get the word before the current offset. Given the text `foo.bar`, the
@@ -269,6 +251,14 @@ module Solargraph
           pn = @source.node_at(line, column)
           @literal = infer_literal_node_type(pn)
         end
+      end
+
+      # Get the entire phrase up to the current offset. Given the text
+      # `foo[bar].baz()`, the phrase at offset 10 is `foo[bar].b`.
+      #
+      # @return [String]
+      def phrase
+        source.code[signature_data[0]..base_offset]
       end
 
       private
@@ -475,6 +465,30 @@ module Solargraph
       # @return [String]
       def source_from_parser
         @source_from_parser ||= @source.code.gsub(/\r\n/, "\n")
+      end
+
+      def generate_chain
+        return generate_chain_from_node if source.parsed?
+        Source::Chain.load_string(phrase)
+      end
+
+      def generate_chain_from_node
+        Chain.new(source.node_at(line, column))
+      end
+
+      def separator
+        @separator ||= begin
+          result = ''
+          if word.empty?
+            match = source.code[0..offset-1].match(/[\s]*?(\.{1}|::)[\s]*?$/)
+            result = match[0] if match
+          end
+          result
+        end
+      end
+
+      def base_offset
+        @base_offset ||= offset - (separator.length + 1)
       end
     end
   end

@@ -145,9 +145,10 @@ describe Solargraph::Source::Fragment do
   it "returns signature chains" do
     source = Solargraph::Source.new('Foo::Bar.method_call.deeper')
     fragment = source.fragment_at(0, 10)
-    expect(fragment.chain).to eq('m')
-    expect(fragment.base_chain).to eq('')
-    expect(fragment.whole_chain).to eq('method_call')
+    # @todo Fragment#chain is unused and in the process of changing
+    # expect(fragment.chain).to eq('m')
+    # expect(fragment.base_chain).to eq('')
+    # expect(fragment.whole_chain).to eq('method_call')
   end
 
   it "handles signatures ending with ." do
@@ -212,6 +213,7 @@ describe Solargraph::Source::Fragment do
     expect(fragment.remainder).to be_empty
     expect(fragment.signature).to be_empty
     expect(fragment.base).to be_empty
-    expect(fragment.chain).to be_empty
+    # @todo Fragment#chain is unused and in the process of changing
+    # expect(fragment.chain).to be_empty
   end
 end

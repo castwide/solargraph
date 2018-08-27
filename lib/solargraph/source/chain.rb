@@ -14,13 +14,36 @@ module Solargraph
       # @return [Array<Source::Chain::Link>]
       attr_reader :links
 
-      def initialize node
+      # @param node [Parser::AST::Node]
+      def initialize node = Parser::AST::Node.new('')
         @node = node
-        @links = generate_links node
+        @links = generate_links @node
+      end
+
+      # @param api_map [ApiMap]
+      # @param context [Pin::Base]
+      # @param locals [Array<Pin::Base>]
+      # @return [Array<Pin::Base>]
+      def define_with api_map, context, locals
+        # @todo Resolve pins
+      end
+
+      # @param api_map [ApiMap]
+      # @param context [Pin::Base]
+      # @param locals [Array<Pin::Base>]
+      # @return [ComplexType]
+      def infer_type_with api_map, context, locals
+        # @todo Perform link inference
+        ComplexType::UNDEFINED
       end
 
       private
 
+      # @return [AST::Parser::Node]
+      attr_reader :node
+
+      # @param n [AST::Node]
+      # @return [Array<Chain::Link>]
       def generate_links n
         return generate_links(n.children[0]) if n.type == :block
         result = []
@@ -55,9 +78,20 @@ module Solargraph
           result.push Variable.new(n.children[0].to_s)
         else
           lit = infer_literal_node_type(n)
-          result.push (lit ? Fragment::Literal.new(lit) : Fragment::Link.new)
+          result.push (lit ? Literal.new(lit) : Link.new)
         end
         result
+      end
+
+      class << self
+        # @param code [String]
+        # @return [Chain]
+        def load_string(code)
+          # @todo Parsing with Source might be heavier than necessary.
+          #   We don't care about pins here, only the node.
+          source = Source.load_string(code)
+          Chain.new(source.node)
+        end
       end
     end
   end
