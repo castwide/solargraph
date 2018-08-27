@@ -31,6 +31,10 @@ module Solargraph
         inner_define_with links, api_map, context, locals
       end
 
+      def define_base_with api_map, context, locals
+        inner_define_with links[0..-2], api_map, context, locals
+      end
+
       # @param api_map [ApiMap]
       # @param context [Pin::Base]
       # @param locals [Array<Pin::Base>]

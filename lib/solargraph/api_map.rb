@@ -408,22 +408,23 @@ module Solargraph
       Completion.new(filtered, fragment.whole_word_range)
     end
 
+    # @todo Deprecated. Use Pin::Base#infer instead.
     # @param pin [Solargraph::Pin::Base]
-    def infer_pin_type pin
-      return pin.return_complex_type unless pin.return_complex_type.undefined?
-      if pin.variable?
-        @sources.each do |s|
-          next if s.filename != pin.filename
-          position = pin.location.range.start
-          fragment = s.fragment_at(position.line, position.character)
-          # type = fragment.infer_type(self)
-          type = probe.infer_signature_type(pin.signature, pin.context, fragment.locals)
-          return type unless type.undefined?
-          break
-        end
-      end
-      ComplexType::UNDEFINED
-    end
+    # def infer_pin_type pin
+    #   return pin.return_complex_type unless pin.return_complex_type.undefined?
+    #   if pin.variable?
+    #     @sources.each do |s|
+    #       next if s.filename != pin.filename
+    #       position = pin.location.range.start
+    #       fragment = s.fragment_at(position.line, position.character)
+    #       # type = fragment.infer_type(self)
+    #       type = probe.infer_signature_type(pin.signature, pin.context, fragment.locals)
+    #       return type unless type.undefined?
+    #       break
+    #     end
+    #   end
+    #   ComplexType::UNDEFINED
+    # end
 
     # Get an array of pins that describe the symbol at the specified fragment.
     #
@@ -445,10 +446,10 @@ module Solargraph
     #
     # @param fragment [Solargraph::Source::Fragment]
     # @return [String]
-    def infer_type fragment
-      return nil if fragment.string? or fragment.comment?
-      probe.infer_signature_type fragment.whole_signature, fragment.named_path, fragment.locals
-    end
+    # def infer_type fragment
+    #   return nil if fragment.string? or fragment.comment?
+    #   probe.infer_signature_type fragment.whole_signature, fragment.named_path, fragment.locals
+    # end
 
     # Get an array of pins that describe the method being called by the
     # argument list where the fragment is located. This is useful for queries

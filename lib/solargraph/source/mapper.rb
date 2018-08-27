@@ -290,7 +290,7 @@ module Solargraph
                   end
                 end
               elsif c.type == :block
-                @pins.push Solargraph::Pin::Block.new(get_node_location(c), fqn || '', '', comments_for(c), resolve_node_signature(c.children[0]))
+                @pins.push Solargraph::Pin::Block.new(get_node_location(c), fqn || '', '', comments_for(c), c.children[0], scope)
               end
               process c, tree, visibility, scope, fqn, stack
             end

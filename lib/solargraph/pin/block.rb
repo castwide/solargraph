@@ -3,19 +3,26 @@ module Solargraph
     class Block < Base
       # The signature of the method that receives this block.
       #
-      # @return [String]
+      # @return [Parser::AST::Node]
       attr_reader :receiver
 
       # @return [Array<String>]
       attr_reader :parameters
 
-      def initialize location, namespace, name, comments, receiver
+      attr_reader :scope
+
+      def initialize location, namespace, name, comments, receiver, scope
         super(location, namespace, name, comments)
         @receiver = receiver
+        @scope = scope
       end
 
       def kind
         Pin::BLOCK
+      end
+
+      def return_complex_type
+        @return_complex_type ||= Solargraph::ComplexType.parse(namespace)
       end
 
       def parameters

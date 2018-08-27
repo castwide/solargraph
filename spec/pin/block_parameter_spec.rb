@@ -12,8 +12,8 @@ describe Solargraph::Pin::BlockParameter do
     ), 'file.rb')
     api_map.virtualize source
     fragment = source.fragment_at(6, 9)
-    type = api_map.infer_type(fragment)
-    expect(type.name).to eq('Array')
+    pins = api_map.define(fragment)
+    expect(pins.first.return_complex_type.namespace).to eq('Array')
   end
 
   it "detects block parameter return types from core methods" do
@@ -23,9 +23,10 @@ describe Solargraph::Pin::BlockParameter do
         str
       end
     ), 'file.rb')
+    api_map.virtualize source
     fragment = source.fragment_at(2, 9)
-    type = api_map.infer_type(fragment)
-    expect(type.name).to eq('String')
+    pins = api_map.define(fragment)
+    expect(pins.first.return_complex_type.namespace).to eq('Array')
   end
 
   it "prioritizes param type tags" do
@@ -44,8 +45,8 @@ describe Solargraph::Pin::BlockParameter do
     ), 'file.rb')
     api_map.virtualize source
     fragment = source.fragment_at(9, 9)
-    type = api_map.infer_type(fragment)
-    expect(type.name).to eq('Set')
+    pins = api_map.define(fragment)
+    expect(pins.first.return_complex_type.namespace).to eq('Set')
   end
 
   it "is a kind of block_parameter/variable" do
