@@ -118,6 +118,8 @@ module Solargraph
       # The namespace of the first return type.
       # Use return_complex_types for an array of all return types.
       #
+      # @deprecated Not in active internal use
+      #
       # @return [String]
       def return_namespace
         return_type
@@ -127,6 +129,8 @@ module Solargraph
 
       # The scope of the first return type.
       # Use return_complex_types for an array of all return types.
+      #
+      # @deprecated Not in active internal use
       #
       # @return [String]
       def return_scope
@@ -139,12 +143,6 @@ module Solargraph
       # @return [Array<ComplexType>]
       def return_complex_type
         @return_complex_type ||= ComplexType.new
-      end
-
-      # @deprecated Use #return_complex_type instead.
-      # @return [ComplexType]
-      def return_complex_types
-        return_complex_type
       end
 
       # @return [YARD::Docstring]
