@@ -190,6 +190,11 @@ module Solargraph
       _locate_pin line, character, Pin::NAMESPACE, Pin::METHOD
     end
 
+    # Locate the namespace pin at the specified line and character.
+    #
+    # @param line [line]
+    # @param character [character]
+    # @return [Pin::Namespace]
     def locate_namespace_pin line, character
       _locate_pin line, character, Pin::NAMESPACE
     end
@@ -222,7 +227,8 @@ module Solargraph
     # Get an array of nodes containing the specified index, starting with the
     # nearest node and ending with the root.
     #
-    # @param index [Integer]
+    # @param line [Integer]
+    # @param column [Integer]
     # @return [Array<AST::Node>]
     def tree_at(line, column)
       offset = Position.line_char_to_offset(@code, line, column)
@@ -349,7 +355,7 @@ module Solargraph
       parser = Parser::CurrentRuby.new(FlawedBuilder.new)
       parser.diagnostics.all_errors_are_fatal = true
       parser.diagnostics.ignore_warnings      = true
-      buffer = Parser::Source::Buffer.new(filename, 1)
+      buffer = Parser::Source::Buffer.new(filename, 0)
       buffer.source = code.encode('UTF-8', 'binary', invalid: :replace, undef: :replace, replace: '_')
       parser.parse_with_comments(buffer)
     end
@@ -443,7 +449,7 @@ module Solargraph
         parser = Parser::CurrentRuby.new(FlawedBuilder.new)
         parser.diagnostics.all_errors_are_fatal = true
         parser.diagnostics.ignore_warnings      = true
-        buffer = Parser::Source::Buffer.new(nil, 1)
+        buffer = Parser::Source::Buffer.new(nil, 0)
         buffer.source = code.encode('UTF-8', 'binary', invalid: :replace, undef: :replace, replace: '_')
         parser.parse(buffer)
       end

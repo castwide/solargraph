@@ -297,7 +297,7 @@ module Solargraph
         end
       else
         unless type.nil? or type.name == 'void'
-          namespace = qualify(type.name, context)
+          namespace = qualify(type.namespace, context)
           if ['Class', 'Module'].include?(namespace) and !type.subtypes.empty?
             subtype = qualify(type.subtypes.first.name, context)
             result.concat get_methods(subtype, scope: :class)
@@ -337,32 +337,31 @@ module Solargraph
     # @return [ApiMap::Completion]
     def complete fragment
       return Completion.new([], fragment.whole_word_range) if fragment.string? or fragment.comment?
-      result = []
-      if !fragment.signature.include?('.') and !fragment.base_literal?
+      if fragment.base.empty?
         if fragment.signature.start_with?('@@')
-          result.concat get_class_variable_pins(fragment.namespace)
+          return package_completions(fragment, get_class_variable_pins(fragment.namespace))
         elsif fragment.signature.start_with?('@')
-          result.concat get_instance_variable_pins(fragment.namespace, fragment.scope)
+          return package_completions(fragment, get_instance_variable_pins(fragment.namespace, fragment.scope))
         elsif fragment.signature.start_with?('$')
-          result.concat get_global_variable_pins
+          return package_completions(fragment, get_global_variable_pins)
         elsif fragment.signature.start_with?(':') and !fragment.signature.start_with?('::')
-          result.concat get_symbols
-        else
-          unless fragment.signature.include?('::')
-            result.concat prefer_non_nil_variables(fragment.locals)
-            result.concat get_methods(fragment.namespace, scope: fragment.scope, visibility: [:public, :private, :protected])
-            result.concat get_methods('Kernel')
-            result.concat ApiMap.keywords
-          end
-          result.concat get_constants(fragment.base, fragment.namespace)
+          return package_completions(fragment, get_symbols)
         end
-      else
+      end
+      result = []
+      if fragment.signature.include?('.')
         type = fragment.infer_base_type(self)
         result.concat get_complex_type_methods(type, fragment.namespace)
+      else        
+        unless fragment.signature.include?('::')
+          result.concat prefer_non_nil_variables(fragment.locals)
+          result.concat get_methods(fragment.namespace, scope: fragment.scope, visibility: [:public, :private, :protected])
+          result.concat get_methods('Kernel')
+          result.concat ApiMap.keywords
+        end
+        result.concat get_constants(fragment.base, fragment.namespace) 
       end
-      frag_start = fragment.word.to_s.downcase
-      filtered = result.uniq(&:identifier).select{|s| s.name.downcase.start_with?(frag_start) and (s.kind != Pin::METHOD or s.name.match(/^[a-z0-9_]+(\!|\?|=)?$/i))}.sort_by.with_index{ |x, idx| [x.name, idx] }
-      Completion.new(filtered, fragment.whole_word_range)
+      package_completions(fragment, result)
     end
 
     # Get an array of pins that describe the symbol at the specified fragment.
@@ -652,6 +651,15 @@ module Solargraph
       pin = store.get_path_pins(fqns).first
       return nil if pin.nil?
       pin.type
+    end
+
+    # @param fragment [Source::Fragment]
+    # @param result [Array<Pin::Base>]
+    # @return [Completion]
+    def package_completions fragment, result
+      frag_start = fragment.word.to_s.downcase
+      filtered = result.uniq(&:identifier).select{|s| s.name.downcase.start_with?(frag_start) and (s.kind != Pin::METHOD or s.name.match(/^[a-z0-9_]+(\!|\?|=)?$/i))}.sort_by.with_index{ |x, idx| [x.name, idx] }
+      Completion.new(filtered, fragment.whole_word_range)
     end
 
     # Get a YardMap associated with the current workspace.

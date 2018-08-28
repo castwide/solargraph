@@ -229,7 +229,7 @@ module Solargraph
       return nil if obj.file.nil? or obj.line.nil?
       @gem_paths.values.each do |path|
         file = File.join(path, obj.file)
-        return Solargraph::Source::Location.new(file, Solargraph::Source::Range.from_to(obj.line - 1, 0, obj.line - 1, 0)) if File.exist?(file)
+        return Solargraph::Source::Location.new(file, Solargraph::Source::Range.from_to(obj.line, 0, obj.line, 0)) if File.exist?(file)
       end
       nil
     end

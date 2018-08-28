@@ -333,8 +333,8 @@ module Solargraph
           st = Position.new(0, 0)
           en = Position.from_offset(@code, @code.length)
         else
-          st = Position.new(node.loc.line - 1, node.loc.column)
-          en = Position.new(node.loc.last_line - 1, node.loc.last_column)
+          st = Position.new(node.loc.line, node.loc.column)
+          en = Position.new(node.loc.last_line, node.loc.last_column)
         end
         range = Range.new(st, en)
         Location.new(filename, range)
@@ -371,7 +371,7 @@ module Solargraph
       # @param node [Parser::AST::Node]
       # @return [Solargraph::Pin::Namespace]
       def namespace_for(node)
-        position = Source::Position.new(node.loc.line - 1, node.loc.column)
+        position = Source::Position.new(node.loc.line, node.loc.column)
         @pins.select{|pin| pin.kind == Pin::NAMESPACE and pin.location.range.contain?(position)}.last
       end
 

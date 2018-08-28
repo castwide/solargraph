@@ -218,28 +218,6 @@ module Solargraph
         @locals ||= @source.locals.select{|pin| pin.visible_from?(block, position)}.reverse
       end
 
-      # True if the fragment is a signature that stems from a literal value.
-      #
-      # @return [Boolean]
-      def base_literal?
-        # !base_literal.nil?
-        chain.links.first.is_a?(Chain::Literal)
-      end
-
-      # The type of literal value at the root of the signature (or nil).
-      #
-      # @return [String]
-      def base_literal
-        if @base_literal.nil? and !@calculated_literal
-          @calculated_literal = true
-          if signature.start_with?('.')
-            pn = @source.node_at(line, column - 2)
-            @base_literal = infer_literal_node_type(pn) unless pn.nil?
-          end
-        end
-        @base_literal
-      end
-
       # True if the fragment is inside a literal value.
       #
       # @return [Boolean]
@@ -258,14 +236,6 @@ module Solargraph
           @literal = infer_literal_node_type(pn)
         end
       end
-
-      # Get the entire phrase up to the current offset. Given the text
-      # `foo[bar].baz()`, the phrase at offset 10 is `foo[bar].b`.
-      #
-      # @return [String]
-      # def phrase
-      #   source.code[signature_data[0]..base_offset]
-      # end
 
       def define api_map
         chain.define_with(api_map, named_path, locals)
@@ -327,57 +297,11 @@ module Solargraph
         false
       end
 
-      # Select the word that directly precedes the specified index.
-      # A word can only consist of letters, numbers, and underscores.
-      #
-      # @param index [Integer]
-      # @return [String]
-      def word_at index
-        @code[beginning_of_word_at(index)..index - 1].to_s
-      end
-
-      def beginning_of_word_at index
-        cursor = index - 1
-        # Words can end with ? or !
-        if @code[cursor, 1] == '!' or @code[cursor, 1] == '?'
-          cursor -= 1
-        end
-        while cursor > -1
-          char = @code[cursor, 1]
-          break if char.nil? or char.strip.empty?
-          break unless char.match(/[a-z0-9_]/i)
-          cursor -= 1
-        end
-        # Words can begin with @@, @, $, or :
-        if cursor > -1
-          if cursor > 0 and @code[cursor - 1, 2] == '@@'
-            cursor -= 2
-          elsif @code[cursor, 1] == '@' or @code[cursor, 1] == '$'
-            cursor -= 1
-          elsif @code[cursor, 1] == ':' and (cursor == 0 or @code[cursor - 1, 2] != '::')
-            cursor -= 1
-          end
-        end
-        cursor + 1
-      end
-
       # @return Solargraph::Source::Range
       def word_range_at first, last
         s = Position.from_offset(@source.code, first)
         e = Position.from_offset(@source.code, last)
         Solargraph::Source::Range.new(s, e)
-      end
-
-      # @return [String]
-      def remainder_at index
-        cursor = index
-        while cursor < @code.length
-          char = @code[cursor, 1]
-          break if char.nil? or char == ''
-          break unless char.match(/[a-z0-9_\?\!]/i)
-          cursor += 1
-        end
-        @code[index..cursor-1].to_s
       end
 
       def signature_position
