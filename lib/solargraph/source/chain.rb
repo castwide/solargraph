@@ -149,8 +149,8 @@ module Solargraph
         def load_string(filename, code)
           # @todo Parsing with Source might be heavier than necessary.
           #   We don't care about pins here, only the node.
-          source = Source.load_string(code)
-          Chain.new(filename, source.node)
+          node = Source.parse_node(code)
+          Chain.new(filename, node)
         end
       end
     end

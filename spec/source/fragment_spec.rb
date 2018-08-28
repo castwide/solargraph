@@ -83,6 +83,7 @@ describe Solargraph::Source::Fragment do
       foo(1).bar{|x|y}.baz()
     ')
     fragment = source.fragment_at(1, 24)
+    fragment.signature
     expect(fragment.signature).to eq('foo.bar.b')
     expect(fragment.whole_signature).to eq('foo.bar.baz')
     expect(fragment.base).to eq('foo.bar')
@@ -215,5 +216,13 @@ describe Solargraph::Source::Fragment do
     expect(fragment.base).to be_empty
     # @todo Fragment#chain is unused and in the process of changing
     # expect(fragment.chain).to be_empty
+  end
+
+  it "handles empty namespace separators" do
+    source = Solargraph::Source.new("Foo::_")
+    fragment = source.fragment_at(0, 5)
+    fragment.signature
+    expect(fragment.base).to eq('Foo')
+    expect(fragment.signature).to eq('Foo::')
   end
 end

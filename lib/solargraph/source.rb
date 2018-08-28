@@ -341,7 +341,6 @@ module Solargraph
       buffer = Parser::Source::Buffer.new(filename, 1)
       buffer.source = code.encode('UTF-8', 'binary', invalid: :replace, undef: :replace, replace: '_')
       parser.parse_with_comments(buffer)
-      # Parser::CurrentRuby.parse_with_comments(code)
     end
 
     def process_parsed node, comments
@@ -428,6 +427,15 @@ module Solargraph
       # @return [Solargraph::Source]
       def load_string code, filename = nil
         Source.new code, filename
+      end
+
+      def parse_node code
+        parser = Parser::CurrentRuby.new(FlawedBuilder.new)
+        parser.diagnostics.all_errors_are_fatal = true
+        parser.diagnostics.ignore_warnings      = true
+        buffer = Parser::Source::Buffer.new(nil, 1)
+        buffer.source = code.encode('UTF-8', 'binary', invalid: :replace, undef: :replace, replace: '_')
+        parser.parse(buffer)
       end
     end
   end
