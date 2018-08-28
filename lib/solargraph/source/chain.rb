@@ -1,26 +1,24 @@
 module Solargraph
   class Source
     class Chain
-      autoload :Link, 'solargraph/source/chain/link'
-      autoload :Call, 'solargraph/source/chain/call'
-      autoload :Variable, 'solargraph/source/chain/variable'
-      autoload :ClassVariable, 'solargraph/source/chain/class_variable'
-      autoload :Constant, 'solargraph/source/chain/constant'
+      autoload :Link,             'solargraph/source/chain/link'
+      autoload :Call,             'solargraph/source/chain/call'
+      autoload :Variable,         'solargraph/source/chain/variable'
+      autoload :ClassVariable,    'solargraph/source/chain/class_variable'
+      autoload :Constant,         'solargraph/source/chain/constant'
       autoload :InstanceVariable, 'solargraph/source/chain/instance_variable'
-      autoload :GlobalVariable, 'solargraph/source/chain/global_variable'
-      autoload :Literal, 'solargraph/source/chain/literal'
-      autoload :Definition, 'solargraph/source/chain/definition'
-
-      include NodeMethods
+      autoload :GlobalVariable,   'solargraph/source/chain/global_variable'
+      autoload :Literal,          'solargraph/source/chain/literal'
+      autoload :Definition,       'solargraph/source/chain/definition'
 
       # @return [Array<Source::Chain::Link>]
       attr_reader :links
 
-      # @param node [Parser::AST::Node]
-      def initialize filename, node
+      # @param filename [String]
+      # @param links [Array<Chain::Link>]
+      def initialize filename, links
         @filename = filename
-        @node = node
-        @links = generate_links(@node)
+        @links = links
       end
 
       # @param api_map [ApiMap]
@@ -78,80 +76,6 @@ module Solargraph
           context = Pin::ProxyType.anonymous(type)
         end
         array.last.resolve_pins(api_map, context, head ? locals: [])
-      end
-
-      # @param pin [Pin::Base]
-      # @return [ComplexType]
-      # def deeply_infer pin, api_map, context, locals
-      #   return pin.return_complex_type unless pin.return_complex_type.undefined?
-      #   # @todo Deep inference
-      #   ComplexType::UNDEFINED
-      # end
-
-      # @return [AST::Parser::Node]
-      attr_reader :node
-
-      # @param n [Parser::AST::Node]
-      # @return [Array<Chain::Link>]
-      def generate_links n
-        return [] if n.nil?
-        return generate_links(n.children[0]) if n.type == :begin
-        # @todo This might not be right. It's weird either way.
-        # return generate_links(n.children[2] || n.children[0]) if n.type == :block
-        result = []
-        if n.type == :block
-          # result.concat generate_links(n.children[2])
-          result.concat generate_links(n.children[0])
-        elsif n.type == :send
-          if n.children[0].is_a?(Parser::AST::Node)
-            result.concat generate_links(n.children[0])
-            args = []
-            n.children[2..-1].each do |c|
-              # @todo Handle link parameters
-              # args.push Chain.new(source, c.loc.last_line - 1, c.loc.column)
-            end
-            result.push Call.new(n.children[1].to_s, args)
-          elsif n.children[0].nil?
-            args = []
-            n.children[2..-1].each do |c|
-              # @todo Handle link parameters
-              # args.push Chain.new(source, c.loc.last_line - 1, c.loc.column)
-            end
-            result.push Call.new(n.children[1].to_s, args)
-          else
-            raise "No idea what to do with #{n}"
-          end
-        elsif n.type == :self
-          result.push Call.new('self')
-        elsif n.type == :const
-          result.push Constant.new(unpack_name(n))
-        elsif [:lvar, :lvasgn].include?(n.type)
-          result.push Call.new(n.children[0].to_s)
-        elsif [:ivar, :ivasgn].include?(n.type)
-          result.push InstanceVariable.new(n.children[0].to_s)
-        elsif [:cvar, :cvasgn].include?(n.type)
-          result.push ClassVariable.new(n.children[0].to_s)
-        elsif [:gvar, :gvasgn].include?(n.type)
-          result.push GlobalVariable.new(n.children[0].to_s)
-        elsif [:class, :module, :def, :defs].include?(n.type)
-          location = Solargraph::Source::Location.new(@filename, Source::Range.from_to(n.loc.expression.line - 1, n.loc.expression.column, n.loc.expression.last_line - 1, n.loc.expression.last_column))
-          result.push Definition.new(location)
-        else
-          lit = infer_literal_node_type(n)
-          result.push (lit ? Literal.new(lit) : Link.new)
-        end
-        result
-      end
-
-      class << self
-        # @param code [String]
-        # @return [Chain]
-        def load_string(filename, code)
-          node = Source.parse_node(code.sub(/\.$/, ''), filename)
-          chain = Chain.new(filename, node)
-          chain.links.push(Chain::Link.new) if code.end_with?('.')
-          chain
-        end
       end
     end
   end

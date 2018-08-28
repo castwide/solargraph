@@ -22,8 +22,13 @@ module Solargraph
       attr_reader :source
 
       class << self
+        # @param source [Source]
+        # @param line [Integer]
+        # @param column [Integer]
+        # @return [Source::Chain]
         def chain source, line, column
-          Chain.load_string(source.filename, CallChainer.new(source, line, column).whole_signature)
+          # Chain.load_string(source.filename, CallChainer.new(source, line, column).chain)
+          CallChainer.new(source, line, column).chain
         end
       end
 
@@ -36,6 +41,10 @@ module Solargraph
         @line = line
         @column = column
         @calculated_literal = false
+      end
+
+      # @return [Source::Chain]
+      def chain
       end
 
       # An alias for #column.

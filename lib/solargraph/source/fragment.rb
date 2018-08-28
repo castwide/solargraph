@@ -410,22 +410,13 @@ module Solargraph
       end
 
       def generate_chain
-        return generate_chain_from_node if source.parsed?
+        return NodeChainer.chain(source, line, column) if source.parsed?
         # base_node = source.node_at(base_position.line, base_position.column)
         # code = source.from_to(base_node.loc.expression.line - 1, base_node.loc.expression.column, base_position.line, base_position.column + 1)
         # chain = Source::Chain.load_string(source.filename, code)
         # Add a "tail" to the chain to represent the unparsed section
         # chain.links.push(Chain::Link.new) unless separator.empty?
         CallChainer.chain(source, line, column)
-      end
-
-      def generate_chain_from_node
-        here = source.node_at(base_position.line, base_position.column)
-        here = nil if [:class, :module, :def, :defs].include?(here.type) and here.loc.expression.line - 1 < base_position.line
-        chain = Chain.new(source.filename, here)
-        # Add a "tail" to the chain to represent the unparsed section
-        chain.links.push(Chain::Link.new) unless separator.empty?
-        chain
       end
 
       def separator
