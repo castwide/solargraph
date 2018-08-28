@@ -74,7 +74,7 @@ module Solargraph
         meths.each do |meth|
           if (Solargraph::CoreFills::METHODS_WITH_YIELDPARAM_SUBTYPES.include?(meth.path))
             bmeth = chain.define_base_with(api_map, context, locals).first
-            return ComplexType::UNDEFINED if bmeth.nil? or bmeth.return_complex_type.undefined?
+            return ComplexType::UNDEFINED if bmeth.nil? or bmeth.return_complex_type.undefined? or bmeth.return_complex_type.subtypes.empty?
             return bmeth.return_complex_type.subtypes.first.qualify(api_map)
           else
             yps = meth.docstring.tags(:yieldparam)
