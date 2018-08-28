@@ -9,12 +9,7 @@ module Solargraph
       # @return [String]
       def normalize string
         begin
-          # STDERR.puts "Banging it from #{string.encoding}"
-          # if string.encoding == ::Encoding::UTF_8
-          #   string.unicode_normalize
-          # else
-            string.force_encoding('UTF-8').unicode_normalize
-          # end
+          string.force_encoding('UTF-8')
         rescue ::Encoding::CompatibilityError, ::Encoding::UndefinedConversionError, ::Encoding::InvalidByteSequenceError => e
           # @todo Improve error handling
           STDERR.puts "Normalize error: #{e.message}"
