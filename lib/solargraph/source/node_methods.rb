@@ -79,11 +79,11 @@ module Solargraph
       end
 
       def get_node_start_position(node)
-        Position.new(node.loc.line - 1, node.loc.column)
+        Position.new(node.loc.line, node.loc.column)
       end
 
       def get_node_end_position(node)
-        Position.new(node.loc.last_line - 1, node.loc.last_column)
+        Position.new(node.loc.last_line, node.loc.last_column)
       end
 
       def drill_signature node, signature

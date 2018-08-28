@@ -349,7 +349,7 @@ module Solargraph
       parser = Parser::CurrentRuby.new(FlawedBuilder.new)
       parser.diagnostics.all_errors_are_fatal = true
       parser.diagnostics.ignore_warnings      = true
-      buffer = Parser::Source::Buffer.new(filename, 1)
+      buffer = Parser::Source::Buffer.new(filename, 0)
       buffer.source = code.encode('UTF-8', 'binary', invalid: :replace, undef: :replace, replace: '_')
       parser.parse_with_comments(buffer)
     end
@@ -443,7 +443,7 @@ module Solargraph
         parser = Parser::CurrentRuby.new(FlawedBuilder.new)
         parser.diagnostics.all_errors_are_fatal = true
         parser.diagnostics.ignore_warnings      = true
-        buffer = Parser::Source::Buffer.new(nil, 1)
+        buffer = Parser::Source::Buffer.new(nil, 0)
         buffer.source = code.encode('UTF-8', 'binary', invalid: :replace, undef: :replace, replace: '_')
         parser.parse(buffer)
       end
