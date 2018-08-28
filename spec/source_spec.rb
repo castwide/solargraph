@@ -690,4 +690,10 @@ describe Solargraph::Source do
     source.synchronize updater
     expect(source.all_symbols.length).to eq(2)
   end
+
+  it "loads files with Unicode characters" do
+    expect {
+      Solargraph::Source.load('spec/fixtures/unicode.rb')
+    }.not_to raise_error
+  end
 end
