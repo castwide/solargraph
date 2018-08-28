@@ -288,11 +288,12 @@ module Solargraph
         # @todo Figure out everything that needs to be done here
         start_of_word.concat text
         @column = new_column
+        @offset += (new_column - column)
         chain.links.last.word.concat text
+        @base_position = nil
         @signature = nil
         @word_range = nil
         @whole_word_range = nil
-        @offset = nil
         @base_position = nil
         true
       end
