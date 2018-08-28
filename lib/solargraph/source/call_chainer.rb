@@ -5,7 +5,7 @@ module Solargraph
     # location is inside a string or comment. ApiMaps use Fragments to provide
     # results for completion and definition queries.
     #
-    class Fragment
+    class CallChainer
       include NodeMethods
 
       # The zero-based line number of the fragment's location.
@@ -20,6 +20,12 @@ module Solargraph
 
       # @return [Solargraph::Source]
       attr_reader :source
+
+      class << self
+        def chain source, line, column
+          Chain.load_string(source.filename, CallChainer.new(source, line, column).whole_signature)
+        end
+      end
 
       # @param source [Solargraph::Source]
       # @param line [Integer]
@@ -84,30 +90,61 @@ module Solargraph
       #
       # @return [String]
       def signature
-        @signature ||= begin
-          result = base
-          if whole_signature == "#{base}.#{whole_word}"
-            result += ".#{start_of_word}"
-          else
-            result += start_of_word
-          end
-          result += separator.strip
-          result
-        end
+        @signature ||= signature_data[1].to_s
       end
 
+      def valid?
+        @source.parsed?
+      end
+
+      def broken?
+        !valid?
+      end
 
       # Get the signature before the current word. Given the signature
       # `String.new.split`, the base is `String.new`.
       #
       # @return [String]
       def base
-        chain.links[0..-2].map(&:word).join('.')
+        if @base.nil?
+          if signature.include?('.')
+            if signature.end_with?('.')
+              @base = signature[0..-2]
+            else
+              @base = signature.split('.')[0..-2].join('.')
+            end
+          elsif signature.include?('::')
+            if signature.end_with?('::')
+              @base = signature[0..-3]
+            else
+              @base = signature.split('::')[0..-2].join('::')
+            end
+          else
+            # @base = signature
+            @base = ''
+          end
+        end
+        @base
       end
 
-      # @return [Source::Chain]
+      # @return [String]
+      def root
+        @root ||= signature.split('.').first
+      end
+
+      # @return [String]
       def chain
-        @chain ||= generate_chain
+        @chain ||= ( signature.empty? ? '' : signature.split('.')[1..-1].join('.') )
+      end
+
+      # @return [String]
+      def base_chain
+        @base_chain ||= signature.split('.')[1..-2].join('.')
+      end
+
+      # @return [String]
+      def whole_chain
+        @whole_chain ||= whole_signature.split('.')[1..-1].join('.')
       end
 
       # Get the remainder of the word after the current offset. Given the text
@@ -115,8 +152,7 @@ module Solargraph
       #
       # @return [String]
       def remainder
-        # @remainder ||= remainder_at(offset)
-        end_of_word
+        @remainder ||= remainder_at(offset)
       end
 
       # Get the whole word at the current offset, including the remainder.
@@ -125,7 +161,7 @@ module Solargraph
       #
       # @return [String]
       def whole_word
-        word + remainder
+        @whole_word ||= word + remainder
       end
 
       # Get the whole signature at the current offset, including the final
@@ -133,40 +169,23 @@ module Solargraph
       #
       # @return [String]
       def whole_signature
-        chain.links.reject{|l| l.word == '<undefined>'}.map(&:word).join('.')
+        @whole_signature ||= signature + remainder
+      end
+
+      # Get the entire phrase up to the current offset. Given the text
+      # `foo[bar].baz()`, the phrase at offset 10 is `foo[bar].b`.
+      #
+      # @return [String]
+      def phrase
+        @phrase ||= @code[signature_data[0]..offset]
       end
 
       # Get the word before the current offset. Given the text `foo.bar`, the
       # word at offset 6 is `ba`.
       #
       # @return [String]
-      def start_of_word
-        # @word ||= word_at(offset)
-        @start_of_word ||= begin
-          match = @code[0..offset-1].to_s.match(start_word_pattern)
-          result = (match ? match[0] : '')
-          result = ":#{result}" if @code[0..offset-result.length].end_with?('::') and !@code[0..offset-result.length].end_with?('::')
-          result
-        end
-      end
-
       def word
-        start_of_word
-      end
-
-      def end_of_word
-        @end_of_word ||= begin
-          match = @code[offset..-1].to_s.match(end_word_pattern)
-          match ? match[0] : ''
-        end
-      end
-
-      def remainder
-        end_of_word
-      end
-
-      def whole_word
-        start_of_word + end_of_word
+        @word ||= word_at(offset)
       end
 
       # True if the current offset is inside a string.
@@ -188,7 +207,7 @@ module Solargraph
       #
       # @return [Range]
       def word_range
-        @word_range ||= word_range_at(offset - start_of_word.length, offset)
+        @word_range ||= word_range_at(offset, false)
       end
 
       # Get the range of the whole word at the current offset, including its
@@ -196,7 +215,7 @@ module Solargraph
       #
       # @return [Range]
       def whole_word_range
-        @whole_word_range ||= word_range_at(offset - start_of_word.length, offset + end_of_word.length)
+        @whole_word_range ||= word_range_at(offset, true)
       end
 
       # @return [Solargraph::Pin::Base]
@@ -222,8 +241,7 @@ module Solargraph
       #
       # @return [Boolean]
       def base_literal?
-        # !base_literal.nil?
-        chain.links.first.is_a?(Chain::Literal)
+        !base_literal.nil?
       end
 
       # The type of literal value at the root of the signature (or nil).
@@ -259,45 +277,6 @@ module Solargraph
         end
       end
 
-      # Get the entire phrase up to the current offset. Given the text
-      # `foo[bar].baz()`, the phrase at offset 10 is `foo[bar].b`.
-      #
-      # @return [String]
-      # def phrase
-      #   source.code[signature_data[0]..base_offset]
-      # end
-
-      def define api_map
-        chain.define_with(api_map, named_path, locals)
-      end
-
-      # @param api_map [ApiMap]
-      # @return [ComplexType]
-      def infer_base_type api_map
-        chain.infer_base_type_with(api_map, named_path, locals)
-      end
-
-      def try_merge! new_line, new_column
-        return false unless line == new_line and column < new_column and separator.empty?
-        # @todo Should link words ever be nil?
-        return false if chain.links.last.nil? or chain.links.last.word.nil? or chain.links.last.word == '<undefined>'
-        text = source.at(Range.from_to(line, column, new_line, new_column))
-        return true if column == new_column and text.empty?
-        return false unless text =~ /^[a-z0-9_]*$/i
-        # Update this fragment
-        # @todo Figure out everything that needs to be done here
-        start_of_word.concat text
-        @column = new_column
-        @offset += (new_column - column)
-        chain.links.last.word.concat text
-        @base_position = nil
-        @signature = nil
-        @word_range = nil
-        @whole_word_range = nil
-        @base_position = nil
-        true
-      end
-
       private
 
       # @return [Integer]
@@ -312,6 +291,87 @@ module Solargraph
       def get_position_at(offset)
         pos = Position.from_offset(@code, offset)
         [pos.line, pos.character]
+      end
+
+      def signature_data
+        @signature_data ||= get_signature_data_at(offset)
+      end
+
+      def get_signature_data_at index
+        brackets = 0
+        squares = 0
+        parens = 0
+        signature = ''
+        index -=1
+        in_whitespace = false
+        while index >= 0
+          pos = Position.from_offset(@code, index)
+          break if index > 0 and check_comment(pos.line, pos.character)
+          unless !in_whitespace and string?
+            break if brackets > 0 or parens > 0 or squares > 0
+            char = @code[index, 1]
+            break if char.nil? # @todo Is this the right way to handle this?
+            if brackets.zero? and parens.zero? and squares.zero? and [' ', "\r", "\n", "\t"].include?(char)
+              in_whitespace = true
+            else
+              if brackets.zero? and parens.zero? and squares.zero? and in_whitespace
+                unless char == '.' or @code[index+1..-1].strip.start_with?('.')
+                  old = @code[index+1..-1]
+                  nxt = @code[index+1..-1].lstrip
+                  index += (@code[index+1..-1].length - @code[index+1..-1].lstrip.length)
+                  break
+                end
+              end
+              if char == ')'
+                parens -=1
+              elsif char == ']'
+                squares -=1
+              elsif char == '}'
+                brackets -= 1
+              elsif char == '('
+                parens += 1
+              elsif char == '{'
+                brackets += 1
+              elsif char == '['
+                squares += 1
+                signature = ".[]#{signature}" if parens.zero? and brackets.zero? and squares.zero? and @code[index-2] != '%'
+              end
+              if brackets.zero? and parens.zero? and squares.zero?
+                break if ['"', "'", ',', ';', '%'].include?(char)
+                signature = char + signature if char.match(/[a-z0-9:\._@\$\?\!]/i) and @code[index - 1] != '%'
+                break if char == '$'
+                if char == '@'
+                  signature = "@#{signature}" if @code[index-1, 1] == '@'
+                  break
+                end
+              end
+              in_whitespace = false
+            end
+          end
+          index -= 1
+        end
+        # @todo Smelly exceptional case for integer literals
+        match = signature.match(/^[0-9]+/)
+        if match
+          index += match[0].length
+          signature = signature[match[0].length..-1].to_s
+          @base_literal = 'Integer'
+        # @todo Smelly exceptional case for array literals
+        elsif signature.start_with?('.[]')
+          index += 2
+          signature = signature[3..-1].to_s
+          @base_literal = 'Array'
+        elsif signature.start_with?('.')
+          pos = Position.from_offset(source.code, index)
+          node = source.node_at(pos.line, pos.character)
+          lit = infer_literal_node_type(node)
+          unless lit.nil?
+            signature = signature[1..-1].to_s
+            index += 1
+            @base_literal = lit
+          end
+        end
+        [index + 1, signature]
       end
 
       # Determine if the specified location is inside a comment.
@@ -362,10 +422,24 @@ module Solargraph
       end
 
       # @return Solargraph::Source::Range
-      def word_range_at first, last
-        s = Position.from_offset(@source.code, first)
-        e = Position.from_offset(@source.code, last)
-        Solargraph::Source::Range.new(s, e)
+      def word_range_at index, whole
+        cursor = beginning_of_word_at(index)
+        start_offset = cursor
+        start_offset -= 1 if (start_offset > 1 and @code[start_offset - 1] == ':') and (start_offset == 1 or @code[start_offset - 2] != ':')
+        cursor = index
+        if whole
+          while cursor < @code.length
+            char = @code[cursor, 1]
+            break if char.nil? or char == ''
+            break unless char.match(/[a-z0-9_\?\!]/i)
+            cursor += 1
+          end
+        end
+        end_offset = cursor
+        end_offset = start_offset if end_offset < start_offset
+        start_pos = get_position_at(start_offset)
+        end_pos = get_position_at(end_offset)
+        Solargraph::Source::Range.from_to(start_pos[0], start_pos[1], end_pos[0], end_pos[1])
       end
 
       # @return [String]
@@ -407,53 +481,6 @@ module Solargraph
       # @return [String]
       def source_from_parser
         @source_from_parser ||= @source.code.gsub(/\r\n/, "\n")
-      end
-
-      def generate_chain
-        return generate_chain_from_node if source.parsed?
-        # base_node = source.node_at(base_position.line, base_position.column)
-        # code = source.from_to(base_node.loc.expression.line - 1, base_node.loc.expression.column, base_position.line, base_position.column + 1)
-        # chain = Source::Chain.load_string(source.filename, code)
-        # Add a "tail" to the chain to represent the unparsed section
-        # chain.links.push(Chain::Link.new) unless separator.empty?
-        CallChainer.chain(source, line, column)
-      end
-
-      def generate_chain_from_node
-        here = source.node_at(base_position.line, base_position.column)
-        here = nil if [:class, :module, :def, :defs].include?(here.type) and here.loc.expression.line - 1 < base_position.line
-        chain = Chain.new(source.filename, here)
-        # Add a "tail" to the chain to represent the unparsed section
-        chain.links.push(Chain::Link.new) unless separator.empty?
-        chain
-      end
-
-      def separator
-        @separator ||= begin
-          result = ''
-          # if word.empty?
-            adj = (column.zero? ? offset : offset - 1)
-            match = source.code[0..adj].match(/[\s]*(\.{1}|:{2})[\s]*{1}\z/)
-            result = match[0] if match
-          # end
-          result
-        end
-      end
-
-      def base_offset
-        @base_offset ||= offset - (separator.length + (column.zero? ? 0 : 1))
-      end
-
-      def base_position
-        @base_position ||= Source::Position.from_offset(source.code, base_offset)
-      end
-
-      def start_word_pattern
-        /(@{1,2}|\$)?([a-z0-9_]|[^\u0000-\u007F])*\z/i
-      end
-
-      def end_word_pattern
-        /^([a-z0-9_]|[^\u0000-\u007F])*[\?\!]?/i
       end
     end
   end

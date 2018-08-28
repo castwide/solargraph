@@ -147,10 +147,10 @@ module Solargraph
         # @param code [String]
         # @return [Chain]
         def load_string(filename, code)
-          # @todo Parsing with Source might be heavier than necessary.
-          #   We don't care about pins here, only the node.
-          node = Source.parse_node(code, filename)
-          Chain.new(filename, node)
+          node = Source.parse_node(code.sub(/\.$/, ''), filename)
+          chain = Chain.new(filename, node)
+          chain.links.push(Chain::Link.new) if code.end_with?('.')
+          chain
         end
       end
     end
