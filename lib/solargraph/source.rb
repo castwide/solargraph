@@ -80,6 +80,16 @@ module Solargraph
       end
     end
 
+    def bookmark line, column
+      if @bookmark.nil?
+        # @type [Source::Fragment]
+        @bookmark = fragment_at(line, column)
+      else
+        @bookmark = fragment_at(line, column) unless @bookmark.try_merge!(line, column)
+      end
+      @bookmark
+    end
+
     # @param range [Solargraph::Source::Range]
     def at range
       from_to range.start.line, range.start.character, range.ending.line, range.ending.character
@@ -417,9 +427,8 @@ module Solargraph
       def load filename
         file = File.open(filename, 'rb')
         code = file.read
-        Source.load_string(code, filename)
-      ensure
         file.close
+        Source.load_string(code, filename)
       end
 
       # @param code [String]
@@ -429,7 +438,7 @@ module Solargraph
         Source.new code, filename
       end
 
-      def parse_node code
+      def parse_node code, filename
         parser = Parser::CurrentRuby.new(FlawedBuilder.new)
         parser.diagnostics.all_errors_are_fatal = true
         parser.diagnostics.ignore_warnings      = true
