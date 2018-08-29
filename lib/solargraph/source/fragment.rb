@@ -224,7 +224,7 @@ module Solargraph
       # @param api_map [ApiMap]
       # @return [Completion]
       def complete api_map
-        # return Completion.new([], whole_word_range) if string? or comment?
+        return Completion.new([], whole_word_range) if chain.literal?
         result = []
         type = infer_base_type(api_map)
         if chain.tail.constant?
@@ -252,6 +252,7 @@ module Solargraph
       end
 
       def define api_map
+        return [] if chain.literal?
         return api_map.get_path_suggestions(fragment.namespace) if whole_signature == 'self'
         return [] if string? or comment? or literal? or ApiMap::KEYWORDS.include?(whole_signature)
         chain.define_with(api_map, named_path, locals)

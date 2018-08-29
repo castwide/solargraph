@@ -39,6 +39,10 @@ module Solargraph
         @tail ||= links.last
       end
 
+      def literal?
+        tail.is_a?(Literal)
+      end
+
       # @param api_map [ApiMap]
       # @param context [Pin::Base]
       # @param locals [Array<Pin::Base>]

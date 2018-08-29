@@ -36,7 +36,7 @@ module Solargraph
         if @source.code[0..offset-1].end_with?(':') and !@source.code[0..offset-1].end_with?('::')
           links.push Chain::Link.new
         elsif @source.string_at?(line, column)
-          links.push Chain::Link.new
+          links.push Chain::Literal.new('String')
         else
           links.push Chain::Literal.new(base_literal) if base_literal?
           sig = whole_signature
