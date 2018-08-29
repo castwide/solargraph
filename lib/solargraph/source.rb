@@ -233,9 +233,10 @@ module Solargraph
     # @param column [Integer]
     # @return [Array<AST::Node>]
     def tree_at(line, column)
-      offset = Position.line_char_to_offset(@code, line, column)
+      # offset = Position.line_char_to_offset(@code, line, column)
+      position = Position.new(line, column)
       stack = []
-      inner_tree_at @node, offset, stack
+      inner_tree_at @node, position, stack
       stack
     end
 
@@ -321,15 +322,15 @@ module Solargraph
       result
     end
 
-    def inner_tree_at node, offset, stack
+    def inner_tree_at node, position, stack
       return if node.nil?
-      stack.unshift node
-      node.children.each do |c|
-        next unless c.is_a?(AST::Node)
-        next if c.loc.expression.nil?
-        if offset >= c.loc.expression.begin_pos and offset < c.loc.expression.end_pos
-          inner_tree_at(c, offset, stack)
-          break
+      here = Range.from_to(node.loc.expression.line, node.loc.expression.column, node.loc.expression.last_line, node.loc.expression.last_column)
+      if here.contain?(position)
+        stack.unshift node
+        node.children.each do |c|
+          next unless c.is_a?(AST::Node)
+          next if c.loc.expression.nil?
+          inner_tree_at(c, position, stack)
         end
       end
     end

@@ -35,21 +35,27 @@ module Solargraph
         # @todo Smelly colon handling
         if @source.code[0..offset-1].end_with?(':') and !@source.code[0..offset-1].end_with?('::')
           links.push Chain::Link.new
+        elsif @source.string_at?(line, column)
+          links.push Chain::Link.new
         else
           links.push Chain::Literal.new(base_literal) if base_literal?
           sig = whole_signature
-          sig = sig[1..-1] if sig.start_with?('.') and base_literal?
-          sig.split('.', -1).each do |word|
-            if word.include?('::')
-              # @todo Smelly way of handling constants
-              parts = (word.start_with?('::') ? word[2..-1] : word).split('::', -1)
-              last = parts.pop
-              links.push Chain::Constant.new(parts.join('::')) unless parts.empty?
-              links.push (last.nil? ? Chain::UNDEFINED_CONSTANT : Chain::Constant.new(last))
-            else
-              links.push word_to_link(word)
+          unless sig.empty?
+            sig = sig[1..-1] if sig.start_with?('.')
+            sig.split('.', -1).each do |word|
+              if word.include?('::')
+                # @todo Smelly way of handling constants
+                parts = (word.start_with?('::') ? word[2..-1] : word).split('::', -1)
+                last = parts.pop
+                links.push Chain::Constant.new(parts.join('::')) unless parts.empty?
+                links.push (last.nil? ? Chain::UNDEFINED_CONSTANT : Chain::Constant.new(last))
+              else
+                links.push word_to_link(word)
+              end
             end
           end
+          # Literal string hack
+          links.push Chain::UNDEFINED_CALL if base_literal? and @source.code[offset - 1] == '.' and links.length == 1
         end
         @chain ||= Chain.new(source.filename, links)
       end

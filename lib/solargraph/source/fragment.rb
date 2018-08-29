@@ -224,7 +224,7 @@ module Solargraph
       # @param api_map [ApiMap]
       # @return [Completion]
       def complete api_map
-        return Completion.new([], whole_word_range) if string? or comment?
+        # return Completion.new([], whole_word_range) if string? or comment?
         result = []
         type = infer_base_type(api_map)
         if chain.tail.constant?

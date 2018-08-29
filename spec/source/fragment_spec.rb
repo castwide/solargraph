@@ -215,6 +215,19 @@ describe Solargraph::Source::Fragment do
     expect(paths).to include('String#split')
   end
 
+  it "excludes Kernel from literal string methods" do
+    api_map = Solargraph::ApiMap.new
+    source = Solargraph::Source.load_string(%(
+      '' 
+    ))
+    source.code.sub!("' ", "'.")
+    api_map.virtualize source
+    fragment = source.fragment_at(1, 9)
+    cmp = fragment.complete(api_map)
+    expect(cmp.pins).not_to be_empty
+    expect(cmp.pins.select{|pin| pin.namespace == 'Kernel'}).to be_empty
+  end
+
   it "infers global variable types" do
     api_map = Solargraph::ApiMap.new
     source = Solargraph::Source.new(%(
