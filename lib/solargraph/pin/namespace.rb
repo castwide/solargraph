@@ -54,6 +54,11 @@ module Solargraph
       def return_complex_type
         @return_complex_type ||= ComplexType.parse( (type == :class ? 'Class' : 'Module') + "<#{path}>" )
       end
+
+      def infer api_map
+        # Assuming that namespace pins are always fully qualified
+        return_complex_type
+      end
     end
   end
 end
