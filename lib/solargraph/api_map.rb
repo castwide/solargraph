@@ -360,18 +360,14 @@ module Solargraph
       end
       result = []
       # @todo A lot of theses exceptions should go away thanks to the new chains
+      type = fragment.infer_base_type(self)
       if !fragment.chain.tail.constant?
-        type = fragment.infer_base_type(self)
-        if type.undefined?
-          result.concat get_constants(fragment.namespace, '')
-          result.concat prefer_non_nil_variables(fragment.locals)
-          result.concat get_methods(fragment.namespace, scope: fragment.scope, visibility: [:public, :private, :protected])
-          result.concat get_methods('Kernel')
-          result.concat ApiMap.keywords
-        else
-          result.concat get_constants(type.namespace, fragment.namespace)
-          result.concat get_complex_type_methods(type, fragment.namespace)
-        end
+        result.concat get_complex_type_methods(type, fragment.namespace)
+        result.concat get_constants(fragment.namespace, '')
+        result.concat prefer_non_nil_variables(fragment.locals)
+        result.concat get_methods(fragment.namespace, scope: fragment.scope, visibility: [:public, :private, :protected])
+        result.concat get_methods('Kernel')
+        result.concat ApiMap.keywords
       else
         # unless fragment.signature.include?('::')
         #   result.concat prefer_non_nil_variables(fragment.locals)
@@ -381,7 +377,6 @@ module Solargraph
         # end
         # result.concat get_constants(fragment.base, fragment.namespace) 
         # @todo This is a smelly version of the new way to collect constants
-        type = fragment.infer_base_type(self)
         if fragment.chain.tail.constant?
           # @todo If we infer the type above, we probably don't need the
           #   namespace from the fragment
