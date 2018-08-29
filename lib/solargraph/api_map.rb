@@ -338,40 +338,6 @@ module Solargraph
       result
     end
 
-    # Get a set of available completions for the specified fragment. The
-    # resulting Completion object contains an array of pins and the range of
-    # text to replace in the source.
-    #
-    # @todo Deprecate this method. Fragments should be responsible for completion instead.
-    #
-    # @param fragment [Solargraph::Source::Fragment]
-    # @return [ApiMap::Completion]
-    def complete fragment
-      fragment.complete(self)
-    end
-
-    # Get an array of pins that describe the symbol at the specified fragment.
-    #
-    # @todo Deprecate this method. Fragments are responsible for their own definitions.
-    #
-    # @param fragment [Solargraph::Source::Fragment]
-    # @return [Array<Solargraph::Pin::Base>]
-    def define fragment
-      fragment.define(self)
-    end
-
-    # Get an array of pins that describe the method being called by the
-    # argument list where the fragment is located. This is useful for queries
-    # that need to know what parameters the current method expects to receive.
-    #
-    # If the fragment is not inside an argument list, return an empty array.
-    #
-    # @param fragment [Solargraph::Source::Fragment]
-    # @return [Array<Solargraph::Pin::Base>]
-    def signify fragment
-      fragment.signify self
-    end
-
     # Get an array of all suggestions that match the specified path.
     #
     # @param path [String] The path to find

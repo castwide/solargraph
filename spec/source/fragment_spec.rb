@@ -620,7 +620,7 @@ describe Solargraph::Source::Fragment do
     ))
     api_map.virtualize source
     fragment = source.fragment_at(2, 27)
-    paths = api_map.signify(fragment).map(&:path)
+    paths = fragment.signify(api_map).map(&:path)
     expect(paths).to include('String#split')
   end
 
@@ -632,7 +632,7 @@ describe Solargraph::Source::Fragment do
     ))
     api_map.virtualize source
     fragment = source.fragment_at(2, 8)
-    pins = api_map.signify(fragment)
+    pins = fragment.signify(api_map)
     expect(pins).to be_empty
   end
 

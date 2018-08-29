@@ -12,7 +12,7 @@ describe Solargraph::Pin::BlockParameter do
     ), 'file.rb')
     api_map.virtualize source
     fragment = source.fragment_at(6, 9)
-    pins = api_map.define(fragment)
+    pins = fragment.define(api_map)
     expect(pins.first.return_complex_type.namespace).to eq('Array')
   end
 
@@ -25,7 +25,7 @@ describe Solargraph::Pin::BlockParameter do
     ), 'file.rb')
     api_map.virtualize source
     fragment = source.fragment_at(2, 9)
-    pins = api_map.define(fragment)
+    pins = fragment.define(api_map)
     expect(pins.first.return_complex_type.namespace).to eq('String')
   end
 
@@ -45,7 +45,7 @@ describe Solargraph::Pin::BlockParameter do
     ), 'file.rb')
     api_map.virtualize source
     fragment = source.fragment_at(9, 9)
-    pins = api_map.define(fragment)
+    pins = fragment.define(api_map)
     expect(pins.first.return_complex_type.namespace).to eq('Set')
   end
 

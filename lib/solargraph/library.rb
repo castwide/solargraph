@@ -114,7 +114,7 @@ module Solargraph
       source = read(filename)
       api_map.virtualize source
       fragment = source.bookmark(line, column)
-      api_map.complete(fragment)
+      fragment.complete(api_map)
     end
 
     # Get definition suggestions for the expression at the specified file and
@@ -128,7 +128,7 @@ module Solargraph
       source = read(filename)
       api_map.virtualize source
       fragment = source.bookmark(line, column)
-      api_map.define(fragment)
+      fragment.define(api_map)
     end
 
     # Get signature suggestions for the method at the specified file and
@@ -142,7 +142,7 @@ module Solargraph
       source = read(filename)
       api_map.virtualize source
       fragment = source.bookmark(line, column)
-      api_map.signify(fragment)
+      fragment.signify(api_map)
     end
 
     # @param filename [String]
@@ -153,7 +153,7 @@ module Solargraph
       source = read(filename)
       api_map.virtualize source
       fragment = source.bookmark(line, column)
-      pins = api_map.define(fragment)
+      pins = fragment.define(api_map)
       return [] if pins.empty?
       result = []
       # @param pin [Solargraph::Pin::Base]

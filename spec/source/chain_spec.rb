@@ -9,7 +9,7 @@ describe Solargraph::Source::Chain do
     ))
     api_map.virtualize source
     fragment = source.fragment_at(3, 9)
-    pin = api_map.define(fragment).first
+    pin = fragment.define(api_map).first
     expect(pin.return_complex_type.tag).to eq('Array<String>')
   end
 
@@ -21,7 +21,7 @@ describe Solargraph::Source::Chain do
     ))
     api_map.virtualize source
     fragment = source.fragment_at(3, 9)
-    pin = api_map.define(fragment).first
+    pin = fragment.define(api_map).first
     expect(pin.return_complex_type.tag).to eq('String')
   end
 
@@ -42,10 +42,10 @@ describe Solargraph::Source::Chain do
     ))
     api_map.virtualize source
     fragment = source.fragment_at(8, 19)
-    pin = api_map.define(fragment).first
+    pin = fragment.define(api_map).first
     expect(pin.path).to eq('Foo::Bar::Inside')
     fragment = source.fragment_at(10, 11)
-    pin = api_map.define(fragment).first
+    pin = fragment.define(api_map).first
     expect(pin.path).to eq('Foo::Bar::Inside')
   end
 end

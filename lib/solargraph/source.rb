@@ -80,6 +80,9 @@ module Solargraph
       end
     end
 
+    # @param line [Integer]
+    # @param column [Integer]
+    # @return [Fragment]
     def bookmark line, column
       if @bookmark.nil?
         # @type [Source::Fragment]

@@ -13,11 +13,11 @@ describe Solargraph::Pin::InstanceVariable do
     ), 'file.rb')
     api_map.virtualize source
     ifrag = source.fragment_at(4, 14)
-    ipin = api_map.complete(ifrag).pins.select{|pin| pin.name == '@bar'}.first
+    ipin = ifrag.complete(api_map).pins.select{|pin| pin.name == '@bar'}.first
     expect(ipin.return_type).to eq('String')
     expect(ipin.scope).to eq(:instance)
     cfrag = source.fragment_at(7, 12)
-    cpin = api_map.complete(cfrag).pins.select{|pin| pin.name == '@bar'}.first
+    cpin = cfrag.complete(api_map).pins.select{|pin| pin.name == '@bar'}.first
     expect(cpin.return_type).to eq('Array')
     expect(cpin.scope).to eq(:class)
   end
