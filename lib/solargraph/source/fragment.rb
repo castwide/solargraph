@@ -240,7 +240,38 @@ module Solargraph
         end
       end
 
+      def complete api_map
+        return Completion.new([], whole_word_range) if string? or comment?
+        result = []
+        type = infer_base_type(api_map)
+        if !chain.tail.constant?
+          result.concat api_map.get_complex_type_methods(type, namespace)
+          # @todo Smelly way to check the length of the signature
+          if chain.links.length < 3
+            if signature.start_with?('@@')
+              return package_completions(api_map.get_class_variable_pins(namespace))
+            elsif signature.start_with?('@')
+              return package_completions(api_map.get_instance_variable_pins(namespace, scope))
+            elsif signature.start_with?('$')
+              return package_completions(api_map.get_global_variable_pins)
+            elsif signature.start_with?(':') and !signature.start_with?('::')
+              return package_completions(api_map.get_symbols)
+            end
+            result.concat api_map.get_constants(namespace, '')
+            result.concat prefer_non_nil_variables(locals)
+            result.concat api_map.get_methods(namespace, scope: scope, visibility: [:public, :private, :protected])
+            result.concat api_map.get_methods('Kernel')
+            result.concat ApiMap.keywords
+          end
+        else
+          result.concat api_map.get_constants(type.namespace, namespace)
+        end
+        package_completions(result)
+      end
+
       def define api_map
+        return api_map.get_path_suggestions(fragment.namespace) if whole_signature == 'self'
+        return [] if string? or comment? or literal? or ApiMap::KEYWORDS.include?(whole_signature)
         chain.define_with(api_map, named_path, locals)
       end
 
@@ -358,20 +389,38 @@ module Solargraph
         end
       end
 
-      def base_offset
-        @base_offset ||= offset - (separator.length + (column.zero? ? 0 : 1))
-      end
-
-      def base_position
-        @base_position ||= Source::Position.from_offset(source.code, base_offset)
-      end
-
       def start_word_pattern
         /(@{1,2}|\$)?([a-z0-9_]|[^\u0000-\u007F])*\z/i
       end
 
       def end_word_pattern
         /^([a-z0-9_]|[^\u0000-\u007F])*[\?\!]?/i
+      end
+
+      # @param fragment [Source::Fragment]
+      # @param result [Array<Pin::Base>]
+      # @return [Completion]
+      def package_completions result
+        frag_start = word.to_s.downcase
+        filtered = result.uniq(&:identifier).select{|s| s.name.downcase.start_with?(frag_start) and (s.kind != Pin::METHOD or s.name.match(/^[a-z0-9_]+(\!|\?|=)?$/i))}.sort_by.with_index{ |x, idx| [x.name, idx] }
+        ApiMap::Completion.new(filtered, whole_word_range)
+      end
+
+      # Sort an array of pins to put nil or undefined variables last.
+      #
+      # @param pins [Array<Solargraph::Pin::Base>]
+      # @return [Array<Solargraph::Pin::Base>]
+      def prefer_non_nil_variables pins
+        result = []
+        nil_pins = []
+        pins.each do |pin|
+          if pin.variable? and pin.nil_assignment?
+            nil_pins.push pin
+          else
+            result.push pin
+          end
+        end
+        result + nil_pins
       end
     end
   end

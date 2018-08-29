@@ -133,13 +133,6 @@ describe Solargraph::ApiMap do
     expect(namespaces.map(&:to_s)).not_to include('Module1Class')
   end
 
-  # @todo Deprecating get_type_methods
-  # it "finds instance variables in scoped classes" do
-  #   # methods = @api_map.get_instance_methods('Module1Class', 'Module1')
-  #   methods = @api_map.get_type_methods('Module1Class', 'Module1')
-  #   expect(methods.map(&:to_s)).to include('module1class_method')
-  # end
-
   it "finds namespaces beneath the current scope" do
     expect(@api_map.namespace_exists?('Class1', 'Module1')).to be true
   end
@@ -152,11 +145,6 @@ describe Solargraph::ApiMap do
     expect(@api_map.namespace_exists?('Module1Class::Module1Class2', 'Module1')).to be true
     expect(@api_map.namespace_exists?('Module1Class::Module1Class2', 'Class1')).to be false
   end
-
-  # it "infers instance variable classes" do
-  #   cls = @api_map.infer_instance_variable('@bar', 'Class1', :instance)
-  #   expect(cls).to eq('String')
-  # end
 
   it "checks visibility of instance methods" do
     code = %(
@@ -372,25 +360,6 @@ describe Solargraph::ApiMap do
     expect(suggestions).to include('Foo::Bar2')
   end
 
-  # @todo This is invalid. Methods for returning pins should always return
-  #   all the pins they find.
-  # it "gets unique instance variable names" do
-  #   code = %(
-  #     class Foo
-  #       def bar
-  #         @bar = 'bar'
-  #       end
-  #       def baz
-  #         @bar = 'baz'
-  #       end
-  #     end
-  #   )
-  #   api_map = Solargraph::ApiMap.new
-  #   api_map.virtualize_string(code, 'file.rb')
-  #   suggestions = api_map.get_instance_variable_pins('Foo', :instance)
-  #   expect(suggestions.length).to eq(1)
-  # end
-
   it "accepts nil instance variable assignments without other options" do
     code = %(
       class Foo
@@ -404,29 +373,6 @@ describe Solargraph::ApiMap do
     suggestions = api_map.get_instance_variable_pins('Foo', :instance)
     expect(suggestions.length).to eq(1)
   end
-
-  # @todo This might need to change or go. Non-nil assignment means little
-  #   to the ApiMap when the variable doesn't have a type tag, because the
-  #   Probe is now responsible for inferring signatures.
-  # it "prefers non-nil instance variable assignments" do
-  #   code = %(
-  #     class Foo
-  #       def bar
-  #         @bar = nil
-  #       end
-  #       def baz
-  #         @bar = 'baz'
-  #       end
-  #     end
-  #   )
-  #   api_map = Solargraph::ApiMap.new
-  #   api_map.virtualize_string(code, 'file.rb')
-  #   pins = api_map.get_instance_variable_pins('Foo', :instance)
-  #   expect(suggestions.length).to eq(2)
-  #   type = api_map.probe.infer_signature_type('@bar', pins[0].context)
-  #   expect(type).to eq('String')
-  #   # expect(suggestions[0].return_type).to eq('String')
-  # end
 
   it "accepts nil instance variable assignments with @type tags" do
     code = %(
@@ -480,17 +426,6 @@ describe Solargraph::ApiMap do
     expect(docs[0].tag(:return).types[0]).to eq('Array')
   end
 
-  # @todo ApiMap tests shouldn't care about CodeMap
-  # it "updates required paths from virtual sources" do
-  #   api_map = Solargraph::ApiMap.new
-  #   code_map = Solargraph::CodeMap.new(code: %(
-  #     require 'parser'
-  #     P
-  #   ), api_map: api_map)
-  #   sugg = code_map.suggest_at(code_map.get_offset(2, 7)).map(&:to_s)
-  #   expect(sugg).to include('Parser')
-  # end
-
   it "detects constant visibility" do
     api_map = Solargraph::ApiMap.new
     api_map.virtualize_string(%(
@@ -517,27 +452,6 @@ describe Solargraph::ApiMap do
     expect(sugg).to include('PrivateClass')
   end
 
-  # @todo No longer valid. The pins don't need to pick up the return type from
-  #   the superclass. Instead, completion returns both pins and type inference
-  #   uses the first method that returns a type.
-  # it "derives method return types from superclasses" do
-  #   api_map = Solargraph::ApiMap.new
-  #   api_map.virtualize_string(%(
-  #     class Foo
-  #       # @return [String]
-  #       def ghost
-  #       end
-  #     end
-  #     class Bar < Foo
-  #       def ghost
-  #       end
-  #     end
-  #   ), 'file.rb')
-  #   sugg = api_map.get_path_suggestions('Bar#ghost')
-  #   expect(sugg.first).not_to be(nil)
-  #   expect(sugg.first.return_type).to eq('String')
-  # end
-
   it "includes extended modules in method suggestions" do
     api_map = Solargraph::ApiMap.new
     api_map.virtualize_string(%(
@@ -553,15 +467,6 @@ describe Solargraph::ApiMap do
     sugg = api_map.get_methods('Foobar', scope: :class).map(&:to_s)
     expect(sugg).to include('more_method')
   end
-
-  # @todo This spec may not apply anymore. Although CodeMap#suggest_at should
-  #   not return operators, the ApiMap needs them to identify signatures like
-  #   Array.[].
-  # it "does not return operators in method suggestions" do
-  #   api_map = Solargraph::ApiMap.new
-  #   sugg = api_map.get_instance_methods(Array).map(&:to_s)
-  #   expect(sugg).not_to include('[]')
-  # end
 
   it "rebuilds maps from file changes" do
     api_map = Solargraph::ApiMap.new
@@ -610,43 +515,6 @@ describe Solargraph::ApiMap do
     expect(sugg).to include('baz')
   end
 
-  # @todo Return types are not modified by resolution. Qualification of
-  #   namespaces is handled elsewhere.
-  # it "resolves fully qualified namespaces from @return tags" do
-  #   api_map = Solargraph::ApiMap.new
-  #   api_map.virtualize_string(%(
-  #     class Foobar
-  #       class Bazbar
-  #       end
-  #       # @return [Bazbar]
-  #       def get_bazbar;end
-  #     end
-  #   ), 'file.rb')
-  #   sugg = api_map.get_methods('Foobar').select{|s| s.name == 'get_bazbar'}.first
-  #   expect(sugg).not_to be(nil)
-  #   # sugg.resolve api_map
-  #   expect(sugg.return_type).to eq('Foobar::Bazbar')
-  # end
-
-  # @todo ApiMap#identify may be deprecated
-  # it "detects method parameter return types from @param tags" do
-  #   api_map = Solargraph::ApiMap.new
-  #   source = Solargraph::Source.load_string(%(
-  #     class Foo
-  #       # @param baz [Hash]
-  #       def bar baz
-  #         baz
-  #       end
-  #     end
-  #   ), 'file.rb')
-  #   api_map.virtualize source
-  #   fragment = source.fragment_at(4, 11)
-  #   pin = api_map.identify(fragment).first
-  #   expect(pin.variable?).to be(true)
-  #   expect(pin.name).to eq('baz')
-  #   expect(pin.return_type).to eq('Hash')
-  # end
-
   it "detects methods defined in the global namespace" do
     api_map = Solargraph::ApiMap.new
     source = Solargraph::Source.load_string(%(
@@ -657,42 +525,6 @@ describe Solargraph::ApiMap do
     meths = api_map.get_methods('').map(&:name)
     expect(meths).to include('global_method')
   end
-
-  # @todo ApiMap#identify may be deprecated
-  # it "detects block parameter return types from @yieldparam tags" do
-  #   api_map = Solargraph::ApiMap.new
-  #   source = Solargraph::Source.load_string(%(
-  #     # @yieldparam [File]
-  #     def iterate
-  #     end
-  #     iterate do |f|
-  #       f
-  #     end
-  #   ), 'file.rb')
-  #   api_map.virtualize source
-  #   fragment = source.fragment_at(5, 9)
-  #   pin = api_map.identify(fragment).first
-  #   expect(pin.variable?).to be(true)
-  #   expect(pin.name).to eq('f')
-  #   expect(pin.return_type).to eq('File')
-  # end
-
-  # @todo ApiMap#identify may be deprecated
-  # it "detects block parameter return types from core methods" do
-  #   api_map = Solargraph::ApiMap.new
-  #   source = Solargraph::Source.load_string(%(
-  #     x = String.new.split
-  #     x.each do |s|
-  #       s
-  #     end
-  #   ), 'file.rb')
-  #   api_map.virtualize source
-  #   fragment = source.fragment_at(3, 9)
-  #   pin = api_map.identify(fragment).first
-  #   expect(pin.variable?).to be(true)
-  #   expect(pin.name).to eq('s')
-  #   expect(pin.return_type).to eq('String')
-  # end
 
   it "suggests nested namespaces" do
     api_map = Solargraph::ApiMap.new

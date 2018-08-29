@@ -343,44 +343,21 @@ module Solargraph
     # resulting Completion object contains an array of pins and the range of
     # text to replace in the source.
     #
+    # @todo Deprecate this method. Fragments should be responsible for completion instead.
+    #
     # @param fragment [Solargraph::Source::Fragment]
     # @return [ApiMap::Completion]
     def complete fragment
-      return Completion.new([], fragment.whole_word_range) if fragment.string? or fragment.comment?
-      result = []
-      type = fragment.infer_base_type(self)
-      if !fragment.chain.tail.constant?
-        result.concat get_complex_type_methods(type, fragment.namespace)
-        # @todo Smelly way to check the length of the signature
-        if fragment.chain.links.length < 3
-          if fragment.signature.start_with?('@@')
-            return package_completions(fragment, get_class_variable_pins(fragment.namespace))
-          elsif fragment.signature.start_with?('@')
-            return package_completions(fragment, get_instance_variable_pins(fragment.namespace, fragment.scope))
-          elsif fragment.signature.start_with?('$')
-            return package_completions(fragment, get_global_variable_pins)
-          elsif fragment.signature.start_with?(':') and !fragment.signature.start_with?('::')
-            return package_completions(fragment, get_symbols)
-          end
-          result.concat get_constants(fragment.namespace, '')
-          result.concat prefer_non_nil_variables(fragment.locals)
-          result.concat get_methods(fragment.namespace, scope: fragment.scope, visibility: [:public, :private, :protected])
-          result.concat get_methods('Kernel')
-          result.concat ApiMap.keywords
-        end
-      else
-        result.concat get_constants(type.namespace, fragment.namespace)
-      end
-      package_completions(fragment, result)
+      fragment.complete(self)
     end
 
     # Get an array of pins that describe the symbol at the specified fragment.
     #
+    # @todo Deprecate this method. Fragments are responsible for their own definitions.
+    #
     # @param fragment [Solargraph::Source::Fragment]
     # @return [Array<Solargraph::Pin::Base>]
     def define fragment
-      return get_path_suggestions(fragment.namespace) if fragment.whole_signature == 'self'
-      return [] if fragment.string? or fragment.comment? or fragment.literal? or KEYWORDS.include?(fragment.whole_signature)
       fragment.define(self)
     end
 
@@ -594,23 +571,6 @@ module Solargraph
       end
     end
 
-    # Sort an array of pins to put nil or undefined variables last.
-    #
-    # @param pins [Array<Solargraph::Pin::Base>]
-    # @return [Array<Solargraph::Pin::Base>]
-    def prefer_non_nil_variables pins
-      result = []
-      nil_pins = []
-      pins.each do |pin|
-        if pin.variable? and pin.nil_assignment?
-          nil_pins.push pin
-        else
-          result.push pin
-        end
-      end
-      result + nil_pins
-    end
-
     # @return [Hash]
     def path_macros
       @path_macros ||= {}
@@ -663,20 +623,28 @@ module Solargraph
       pin.type
     end
 
-    # @param fragment [Source::Fragment]
-    # @param result [Array<Pin::Base>]
-    # @return [Completion]
-    def package_completions fragment, result
-      frag_start = fragment.word.to_s.downcase
-      filtered = result.uniq(&:identifier).select{|s| s.name.downcase.start_with?(frag_start) and (s.kind != Pin::METHOD or s.name.match(/^[a-z0-9_]+(\!|\?|=)?$/i))}.sort_by.with_index{ |x, idx| [x.name, idx] }
-      Completion.new(filtered, fragment.whole_word_range)
-    end
-
     # Get a YardMap associated with the current workspace.
     #
     # @return [Solargraph::YardMap]
     def yard_map
       @yard_map ||= Solargraph::YardMap.new(required: required, workspace: workspace)
+    end
+
+    # Sort an array of pins to put nil or undefined variables last.
+    #
+    # @param pins [Array<Solargraph::Pin::Base>]
+    # @return [Array<Solargraph::Pin::Base>]
+    def prefer_non_nil_variables pins
+      result = []
+      nil_pins = []
+      pins.each do |pin|
+        if pin.variable? and pin.nil_assignment?
+          nil_pins.push pin
+        else
+          result.push pin
+        end
+      end
+      result + nil_pins
     end
   end
 end
