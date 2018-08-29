@@ -14,11 +14,11 @@ module Solargraph
     autoload :Mapper,        'solargraph/source/mapper'
     autoload :NodeMethods,   'solargraph/source/node_methods'
     autoload :Chain,         'solargraph/source/chain'
-    autoload :Encoding,      'solargraph/source/encoding'
+    autoload :EncodingFixes, 'solargraph/source/encoding_fixes'
     autoload :CallChainer,   'solargraph/source/call_chainer'
     autoload :NodeChainer,   'solargraph/source/node_chainer'
 
-    include Encoding
+    include EncodingFixes
 
     # @return [String]
     attr_reader :code
@@ -73,9 +73,6 @@ module Solargraph
         @domains = []
         parse
       rescue Parser::SyntaxError, EncodingError => e
-        # @todo Improve error handling
-        STDERR.puts "HARD FIX: #{e.class} #{e.message}"
-        STDERR.puts e.backtrace
         hard_fix_node
       rescue Exception => e
         raise "Error parsing #{filename || '(source)'}: [#{e.class}] #{e.message}"

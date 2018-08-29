@@ -3,7 +3,7 @@ module Solargraph
     # A change to be applied to text.
     #
     class Change
-      include Source::Encoding
+      include EncodingFixes
 
       # @return [Range]
       attr_reader :range

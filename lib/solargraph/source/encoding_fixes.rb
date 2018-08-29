@@ -1,6 +1,6 @@
 module Solargraph
   class Source
-    module Encoding
+    module EncodingFixes
       module_function
 
       # Convert strings to normalized UTF-8.
