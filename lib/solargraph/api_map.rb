@@ -347,24 +347,21 @@ module Solargraph
     # @return [ApiMap::Completion]
     def complete fragment
       return Completion.new([], fragment.whole_word_range) if fragment.string? or fragment.comment?
-      if fragment.base.empty?
-        if fragment.signature.start_with?('@@')
-          return package_completions(fragment, get_class_variable_pins(fragment.namespace))
-        elsif fragment.signature.start_with?('@')
-          return package_completions(fragment, get_instance_variable_pins(fragment.namespace, fragment.scope))
-        elsif fragment.signature.start_with?('$')
-          return package_completions(fragment, get_global_variable_pins)
-        elsif fragment.signature.start_with?(':') and !fragment.signature.start_with?('::')
-          return package_completions(fragment, get_symbols)
-        end
-      end
       result = []
-      # @todo A lot of theses exceptions should go away thanks to the new chains
       type = fragment.infer_base_type(self)
       if !fragment.chain.tail.constant?
         result.concat get_complex_type_methods(type, fragment.namespace)
         # @todo Smelly way to check the length of the signature
         if fragment.chain.links.length < 3
+          if fragment.signature.start_with?('@@')
+            return package_completions(fragment, get_class_variable_pins(fragment.namespace))
+          elsif fragment.signature.start_with?('@')
+            return package_completions(fragment, get_instance_variable_pins(fragment.namespace, fragment.scope))
+          elsif fragment.signature.start_with?('$')
+            return package_completions(fragment, get_global_variable_pins)
+          elsif fragment.signature.start_with?(':') and !fragment.signature.start_with?('::')
+            return package_completions(fragment, get_symbols)
+          end
           result.concat get_constants(fragment.namespace, '')
           result.concat prefer_non_nil_variables(fragment.locals)
           result.concat get_methods(fragment.namespace, scope: fragment.scope, visibility: [:public, :private, :protected])
@@ -372,17 +369,7 @@ module Solargraph
           result.concat ApiMap.keywords
         end
       else
-        # unless fragment.signature.include?('::')
-        #   result.concat prefer_non_nil_variables(fragment.locals)
-        #   result.concat get_methods(fragment.namespace, scope: fragment.scope, visibility: [:public, :private, :protected])
-        #   result.concat get_methods('Kernel')
-        #   result.concat ApiMap.keywords
-        # end
-        # result.concat get_constants(fragment.base, fragment.namespace) 
-        # @todo This is a smelly version of the new way to collect constants
         if fragment.chain.tail.constant?
-          # @todo If we infer the type above, we probably don't need the
-          #   namespace from the fragment
           result.concat get_constants(type.namespace, fragment.namespace)
         else
           result.concat get_complex_type_methods(type, fragment.namespace)
