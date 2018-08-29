@@ -19,7 +19,8 @@ module Solargraph
         # # Add a "tail" to the chain to represent the unparsed section
         # chain.links.push(Chain::Link.new) unless separator.empty?
         # chain
-        links = generate_links(@node)
+        links = [Chain::Root.new]
+        links.concat generate_links(@node)
         Chain.new(@filename, links)
       end
 
@@ -63,7 +64,7 @@ module Solargraph
               # @todo Handle link parameters
               # args.push Chain.new(source, c.loc.last_line - 1, c.loc.column)
             end
-            result.push Call.new(n.children[1].to_s, args)
+            result.push Chain::Call.new(n.children[1].to_s, args)
           elsif n.children[0].nil?
             args = []
             n.children[2..-1].each do |c|
