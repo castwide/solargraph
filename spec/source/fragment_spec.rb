@@ -169,4 +169,19 @@ describe Solargraph::Source::Fragment do
     expect(fragment.remainder).to be_empty
     expect(fragment.base).to be_empty
   end
+
+  it "completes class methods" do
+    source = Solargraph::Source.new(%(
+      class Foo
+        def self.bar
+        end
+      end
+      Foo._
+    ))
+    api_map = Solargraph::ApiMap.new
+    api_map.virtualize source
+    fragment = source.fragment_at(5, 10)
+    cmp = fragment.complete(api_map)
+    expect(cmp.pins.map(&:path)).to include('Foo.bar')
+  end
 end
