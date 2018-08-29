@@ -24,4 +24,28 @@ describe Solargraph::Source::Chain do
     pin = api_map.define(fragment).first
     expect(pin.return_complex_type.tag).to eq('String')
   end
+
+  it "detects unqualified constant names" do
+    source = Solargraph::Source.load_string(%(
+      class Foo
+        class Bar
+          class Inside
+          end
+        end
+      end
+      class Foo
+        Bar::Inside
+        class Bar
+          Inside
+        end
+      end
+    ))
+    api_map.virtualize source
+    fragment = source.fragment_at(8, 19)
+    pin = api_map.define(fragment).first
+    expect(pin.path).to eq('Foo::Bar::Inside')
+    fragment = source.fragment_at(10, 11)
+    pin = api_map.define(fragment).first
+    expect(pin.path).to eq('Foo::Bar::Inside')
+  end
 end

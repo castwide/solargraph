@@ -18,7 +18,7 @@ module Solargraph
           found = locals.select{|p| p.name == word}
           return inferred_pins(found, api_map, context) unless found.empty?
           pins = api_map.get_method_stack(namespace_from_context(context), word, scope: context.scope)
-          ns = api_map.qualify(word, context.namespace)
+          ns = api_map.qualify(word, context.named_context)
           pins.concat api_map.get_path_suggestions(ns) unless ns.nil?
           return [] if pins.empty?
           pins[0] = virtual_new_pin(pins.first, context) if pins.first.path == 'Class#new'
