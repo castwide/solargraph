@@ -635,4 +635,50 @@ describe Solargraph::Source::Fragment do
     pins = api_map.signify(fragment)
     expect(pins).to be_empty
   end
+
+
+  it "scopes mixin methods" do
+    api_map = Solargraph::ApiMap.new
+    source = Solargraph::Source.new(%(
+      module Mixin
+        def mixin_method; end
+      end
+      class Container
+        include Mixin
+        m
+        def bar
+          m
+        end
+      end
+    ))
+    api_map.virtualize source
+    fragment = source.fragment_at(6, 9)
+    cmp = fragment.complete(api_map)
+    expect(cmp.pins.map(&:name)).not_to include('mixin_method')
+    fragment = source.fragment_at(8, 11)
+    cmp = fragment.complete(api_map)
+    expect(cmp.pins.map(&:name)).to include('mixin_method')
+  end
+
+  it "keeps mixins from parents out of scope" do
+    api_map = Solargraph::ApiMap.new
+    source = Solargraph::Source.new(%(
+      module Mixin
+        def mixin_method
+        end
+      end
+      class Container
+        include Mixin
+        def bar
+        end
+        class Child
+          m
+        end
+      end
+    ))
+    api_map.virtualize source
+    fragment = source.fragment_at(10, 11)
+    cmp = fragment.complete(api_map)
+    expect(cmp.pins.map(&:name)).not_to include('mixin_method')
+  end
 end

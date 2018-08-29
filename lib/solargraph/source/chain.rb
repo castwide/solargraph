@@ -77,8 +77,8 @@ module Solargraph
       end
 
       def inner_define_with array, api_map, context, locals
-        return [] if array.empty? #or array.first.undefined?
-        type = array.first.resolve_pins(api_map, context, [])
+        return [] if array.empty? or array.last.is_a?(Chain::Root)
+        type = ComplexType::UNDEFINED
         head = true
         # @param link [Chain::Link]
         array[1..-2].each do |link|
