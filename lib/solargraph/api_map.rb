@@ -369,16 +369,7 @@ module Solargraph
           result.concat ApiMap.keywords
         end
       else
-        if fragment.chain.tail.constant?
-          result.concat get_constants(type.namespace, fragment.namespace)
-        else
-          result.concat get_complex_type_methods(type, fragment.namespace)
-          if fragment.base.empty?
-            result.concat get_constants(type.namespace, fragment.namespace)
-            result.concat get_constants('')
-            result.concat ApiMap.keywords
-          end
-        end
+        result.concat get_constants(type.namespace, fragment.namespace)
       end
       package_completions(fragment, result)
     end
