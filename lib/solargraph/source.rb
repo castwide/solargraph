@@ -313,7 +313,6 @@ module Solargraph
       result = []
       if top.kind_of?(AST::Node)
         if top.children.any?{|c| c.to_s == name}
-        # if top.children[0].to_s == name or (top.type == :const and top.children[1].to_s == name) or (top.type == :send and top.children[1].to_s == name)
           result.push top
         end
         top.children.each { |c| result.concat inner_node_references(name, c) }
@@ -416,7 +415,6 @@ module Solargraph
           elsif d.tag.tag_name == 'method'
             gen_src = Source.new("def #{d.tag.name};end", filename)
             gen_pin = gen_src.pins.last # Method is last pin after root namespace
-            # next if ns.nil? or ns.empty? # @todo Add methods to global namespace?
             @pins.push Solargraph::Pin::Method.new(pin.location, pin.path, gen_pin.name, docstring.all, :instance, :public, [])
           elsif d.tag.tag_name == 'macro'
             @path_macros[pin.path] = d

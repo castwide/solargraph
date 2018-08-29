@@ -123,7 +123,6 @@ module Solargraph
       #
       # @return [String]
       def start_of_word
-        # @word ||= word_at(offset)
         @start_of_word ||= begin
           match = @code[0..offset-1].to_s.match(start_word_pattern)
           result = (match ? match[0] : '')
@@ -155,7 +154,6 @@ module Solargraph
       #
       # @return [Boolean]
       def string?
-        # @string ||= (node.type == :str or node.type == :dstr)
         @string ||= @source.string_at?(line, character)
       end
 
@@ -347,12 +345,6 @@ module Solargraph
       end
 
       def generate_chain
-        # return NodeChainer.chain(source, line, column) if source.parsed?
-        # base_node = source.node_at(base_position.line, base_position.column)
-        # code = source.from_to(base_node.loc.expression.line - 1, base_node.loc.expression.column, base_position.line, base_position.column + 1)
-        # chain = Source::Chain.load_string(source.filename, code)
-        # Add a "tail" to the chain to represent the unparsed section
-        # chain.links.push(Chain::Link.new) unless separator.empty?
         CallChainer.chain(source, line, column)
       end
 

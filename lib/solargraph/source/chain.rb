@@ -86,7 +86,6 @@ module Solargraph
           head = false
           return [] if pins.empty?
           pins.each do |pin|
-            # type = deeply_infer(pin, api_map, context, locals)
             type = pin.infer(api_map)
             break unless type.undefined?
           end
