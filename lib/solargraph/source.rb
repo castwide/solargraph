@@ -17,6 +17,7 @@ module Solargraph
     autoload :EncodingFixes, 'solargraph/source/encoding_fixes'
     autoload :CallChainer,   'solargraph/source/call_chainer'
     autoload :NodeChainer,   'solargraph/source/node_chainer'
+    autoload :Completion,    'solargraph/source/completion'
 
     include EncodingFixes
 

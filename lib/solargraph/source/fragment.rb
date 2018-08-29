@@ -217,6 +217,12 @@ module Solargraph
         end
       end
 
+      # Get a set of available completions for the specified fragment. The
+      # resulting Completion object contains an array of pins and the range of
+      # text to replace in the source.
+      #
+      # @param api_map [ApiMap]
+      # @return [Completion]
       def complete api_map
         return ApiMap::Completion.new([], whole_word_range) if string? or comment?
         result = []
@@ -273,6 +279,9 @@ module Solargraph
         chain.infer_base_type_with(api_map, named_path, locals)
       end
 
+      # @param new_line [Integer]
+      # @param new_column [Integer]
+      # @return [Boolean]
       def try_merge! new_line, new_column
         return false unless line == new_line and column < new_column and separator.empty?
         # @todo Should link words ever be nil?
@@ -389,7 +398,7 @@ module Solargraph
       def package_completions result
         frag_start = word.to_s.downcase
         filtered = result.uniq(&:identifier).select{|s| s.name.downcase.start_with?(frag_start) and (s.kind != Pin::METHOD or s.name.match(/^[a-z0-9_]+(\!|\?|=)?$/i))}.sort_by.with_index{ |x, idx| [x.name, idx] }
-        ApiMap::Completion.new(filtered, whole_word_range)
+        Completion.new(filtered, whole_word_range)
       end
 
       # Sort an array of pins to put nil or undefined variables last.

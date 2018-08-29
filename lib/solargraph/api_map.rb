@@ -9,7 +9,6 @@ module Solargraph
   class ApiMap
     autoload :Cache,        'solargraph/api_map/cache'
     autoload :SourceToYard, 'solargraph/api_map/source_to_yard'
-    autoload :Completion,   'solargraph/api_map/completion'
     autoload :Store,        'solargraph/api_map/store'
 
     include Solargraph::ApiMap::SourceToYard

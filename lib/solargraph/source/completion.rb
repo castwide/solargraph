@@ -1,5 +1,5 @@
 module Solargraph
-  class ApiMap
+  class Source
     # The result of a completion request containing the pins that describe
     # completion options and the range to be replaced.
     #

@@ -129,7 +129,7 @@ describe Solargraph::Library do
     ), 0
     library.checkout 'file.rb'
     completion = library.completions_at('file.rb', 2, 7)
-    expect(completion.class).to be(Solargraph::ApiMap::Completion)
+    expect(completion.class).to be(Solargraph::Source::Completion)
     expect(completion.pins.map(&:name)).to include('x')
   end
 
