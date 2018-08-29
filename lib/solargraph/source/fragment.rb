@@ -96,7 +96,7 @@ module Solargraph
         #   result += separator.strip
         #   result
         # end
-        @signature ||= chain.links[1..-1].join('.')
+        @signature ||= chain.links[1..-1].map(&:word).join('.')
       end
 
 

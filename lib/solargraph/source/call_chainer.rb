@@ -34,7 +34,9 @@ module Solargraph
         # @todo Experimenting with chains that always have a root link
         links = [Chain::Root.new]
         links.push Chain::Literal.new(base_literal) if base_literal?
-        whole_signature.split('.', -1).each do |word|
+        sig = whole_signature
+        sig = sig[1..-1] if sig.start_with?('.') and base_literal?
+        sig.split('.', -1).each do |word|
           if word.include?('::')
             # @todo Smelly way of handling constants
             parts = (word.start_with?('::') ? word[2..-1] : word).split('::')
