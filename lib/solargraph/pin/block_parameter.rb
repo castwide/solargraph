@@ -67,7 +67,7 @@ module Solargraph
 
       def infer api_map
         return return_complex_type unless return_complex_type.undefined?
-        chain = Source::Chain.new(filename, block.receiver)
+        chain = Source::NodeChainer.chain(location.filename, block.receiver)
         fragment = api_map.fragment_at(location)
         locals = fragment.locals - [self]
         meths = chain.define_with(api_map, block, fragment.locals)

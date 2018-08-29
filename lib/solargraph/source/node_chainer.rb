@@ -71,7 +71,7 @@ module Solargraph
               # @todo Handle link parameters
               # args.push Chain.new(source, c.loc.last_line - 1, c.loc.column)
             end
-            result.push Call.new(n.children[1].to_s, args)
+            result.push Chain::Call.new(n.children[1].to_s, args)
           else
             raise "No idea what to do with #{n}"
           end
