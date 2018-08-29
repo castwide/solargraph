@@ -363,11 +363,14 @@ module Solargraph
       type = fragment.infer_base_type(self)
       if !fragment.chain.tail.constant?
         result.concat get_complex_type_methods(type, fragment.namespace)
-        result.concat get_constants(fragment.namespace, '')
-        result.concat prefer_non_nil_variables(fragment.locals)
-        result.concat get_methods(fragment.namespace, scope: fragment.scope, visibility: [:public, :private, :protected])
-        result.concat get_methods('Kernel')
-        result.concat ApiMap.keywords
+        # @todo Smelly way to check the length of the signature
+        if fragment.chain.links.length < 3
+          result.concat get_constants(fragment.namespace, '')
+          result.concat prefer_non_nil_variables(fragment.locals)
+          result.concat get_methods(fragment.namespace, scope: fragment.scope, visibility: [:public, :private, :protected])
+          result.concat get_methods('Kernel')
+          result.concat ApiMap.keywords
+        end
       else
         # unless fragment.signature.include?('::')
         #   result.concat prefer_non_nil_variables(fragment.locals)
