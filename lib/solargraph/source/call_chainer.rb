@@ -98,41 +98,6 @@ module Solargraph
         @position ||= Position.new(line, column)
       end
 
-      # Get the fully qualified namespace at the current offset.
-      #
-      # @return [String]
-      def namespace
-        if @namespace.nil?
-          pin = @source.locate_namespace_pin(line, character)
-          @namespace = (pin.nil? ? '' : pin.path)
-        end
-        @namespace
-      end
-
-      # True if the fragment is inside a method argument.
-      #
-      # @return [Boolean]
-      def argument?
-        @argument ||= !signature_position.nil?
-      end
-
-      # @return [Fragment]
-      def recipient
-        return nil if signature_position.nil?
-        @recipient ||= @source.fragment_at(*signature_position)
-      end
-
-      # Get the scope at the current offset.
-      #
-      # @return [Symbol] :class or :instance
-      def scope
-        if @scope.nil?
-          @scope = :class
-          @scope = :instance if named_path.kind == Pin::METHOD and named_path.scope == :instance
-        end
-        @scope
-      end
-
       # Get the signature up to the current offset. Given the text `foo.bar`,
       # the signature at offset 5 is `foo.b`.
       #
@@ -140,40 +105,6 @@ module Solargraph
       def signature
         @signature ||= signature_data[1].to_s
       end
-
-      def valid?
-        @source.parsed?
-      end
-
-      def broken?
-        !valid?
-      end
-
-      # Get the signature before the current word. Given the signature
-      # `String.new.split`, the base is `String.new`.
-      #
-      # @return [String]
-      # def base
-      #   if @base.nil?
-      #     if signature.include?('.')
-      #       if signature.end_with?('.')
-      #         @base = signature[0..-2]
-      #       else
-      #         @base = signature.split('.')[0..-2].join('.')
-      #       end
-      #     elsif signature.include?('::')
-      #       if signature.end_with?('::')
-      #         @base = signature[0..-3]
-      #       else
-      #         @base = signature.split('::')[0..-2].join('::')
-      #       end
-      #     else
-      #       # @base = signature
-      #       @base = ''
-      #     end
-      #   end
-      #   @base
-      # end
 
       # Get the remainder of the word after the current offset. Given the text
       # `foobar` with an offset of 3, the remainder is `bar`.
@@ -198,14 +129,6 @@ module Solargraph
       # @return [String]
       def whole_signature
         @whole_signature ||= signature + remainder
-      end
-
-      # Get the entire phrase up to the current offset. Given the text
-      # `foo[bar].baz()`, the phrase at offset 10 is `foo[bar].b`.
-      #
-      # @return [String]
-      def phrase
-        @phrase ||= @code[signature_data[0]..offset]
       end
 
       # Get the word before the current offset. Given the text `foo.bar`, the
@@ -244,25 +167,6 @@ module Solargraph
       # @return [Range]
       def whole_word_range
         @whole_word_range ||= word_range_at(offset, true)
-      end
-
-      # @return [Solargraph::Pin::Base]
-      def block
-        @block ||= @source.locate_block_pin(line, character)
-      end
-
-      # @return [Solargraph::Pin::Base]
-      def named_path
-        @named_path ||= @source.locate_named_path_pin(line, character)
-      end
-
-      # Get an array of all the locals that are visible from the fragment's
-      # position. Locals can be local variables, method parameters, or block
-      # parameters. The array starts with the nearest local pin.
-      #
-      # @return [Array<Solargraph::Pin::Base>]
-      def locals
-        @locals ||= @source.locals.select{|pin| pin.visible_from?(block, position)}.reverse
       end
 
       # True if the fragment is a signature that stems from a literal value.
@@ -314,11 +218,6 @@ module Solargraph
 
       def get_offset line, column
         Position.line_char_to_offset(@code, line, column)
-      end
-
-      def get_position_at(offset)
-        pos = Position.from_offset(@code, offset)
-        [pos.line, pos.character]
       end
 
       def signature_data
@@ -415,40 +314,6 @@ module Solargraph
         false
       end
 
-      # Select the word that directly precedes the specified index.
-      # A word can only consist of letters, numbers, and underscores.
-      #
-      # @param index [Integer]
-      # @return [String]
-      def word_at index
-        @code[beginning_of_word_at(index)..index - 1].to_s
-      end
-
-      def beginning_of_word_at index
-        cursor = index - 1
-        # Words can end with ? or !
-        if @code[cursor, 1] == '!' or @code[cursor, 1] == '?'
-          cursor -= 1
-        end
-        while cursor > -1
-          char = @code[cursor, 1]
-          break if char.nil? or char.strip.empty?
-          break unless char.match(/[a-z0-9_]/i)
-          cursor -= 1
-        end
-        # Words can begin with @@, @, $, or :
-        if cursor > -1
-          if cursor > 0 and @code[cursor - 1, 2] == '@@'
-            cursor -= 2
-          elsif @code[cursor, 1] == '@' or @code[cursor, 1] == '$'
-            cursor -= 1
-          elsif @code[cursor, 1] == ':' and (cursor == 0 or @code[cursor - 1, 2] != '::')
-            cursor -= 1
-          end
-        end
-        cursor + 1
-      end
-
       # @return Solargraph::Source::Range
       def word_range_at index, whole
         cursor = beginning_of_word_at(index)
@@ -480,27 +345,6 @@ module Solargraph
           cursor += 1
         end
         @code[index..cursor-1].to_s
-      end
-
-      def signature_position
-        if @signature_position.nil?
-          open_parens = 0
-          cursor = offset - 1
-          while cursor >= 0
-            break if cursor < 0
-            if @code[cursor] == ')'
-              open_parens -= 1
-            elsif @code[cursor] == '('
-              open_parens += 1
-            end
-            break if open_parens == 1
-            cursor -= 1
-          end
-          if cursor >= 0
-            @signature_position = get_position_at(cursor)
-          end
-        end
-        @signature_position
       end
 
       # Range tests that depend on positions identified from parsed code, such
