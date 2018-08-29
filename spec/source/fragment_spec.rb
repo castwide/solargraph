@@ -78,28 +78,10 @@ describe Solargraph::Source::Fragment do
     expect(fragment.string?).to be(false)
   end
 
-  # @todo This shouldn't matter anymore. Fragments aren't responsible for
-  #   signatures.
-  # it "ignores parens and brackets in signatures" do
-  #   source = Solargraph::Source.load_string('
-  #     foo(1).bar{|x|y}.baz()
-  #   ')
-  #   fragment = source.fragment_at(1, 24)
-  #   fragment.signature
-  #   expect(fragment.signature).to eq('foo.bar.b')
-  #   expect(fragment.whole_signature).to eq('foo.bar.baz')
-  #   expect(fragment.base).to eq('foo.bar')
-  #   expect(fragment.word).to eq('b')
-  #   expect(fragment.whole_word).to eq('baz')
-  # end
-
   it "detects a recipient of an argument" do
     source = Solargraph::Source.load_string('abc.def(g)')
     fragment = source.fragment_at(0, 8)
     expect(fragment.argument?).to be(true)
-    # @todo This shouldn't matter anymore. Fragments aren't responsible for
-    #   signatures.
-    # expect(fragment.recipient.whole_signature).to eq('abc.def')
     recipient = source.fragment_at(0, 0)
     expect(recipient.argument?).to be(false)
   end
@@ -108,9 +90,6 @@ describe Solargraph::Source::Fragment do
     source = Solargraph::Source.load_string('abc.def(g, h)')
     fragment = source.fragment_at(0, 11)
     expect(fragment.argument?).to be(true)
-    # @todo This shouldn't matter anymore. Fragments aren't responsible for
-    #   signatures.
-    # expect(fragment.recipient.whole_signature).to eq('abc.def')
     recipient = source.fragment_at(0, 0)
     expect(recipient.argument?).to be(false)
   end
@@ -146,20 +125,7 @@ describe Solargraph::Source::Fragment do
   it "returns signature chains" do
     source = Solargraph::Source.new('Foo::Bar.method_call.deeper')
     fragment = source.fragment_at(0, 10)
-    # @todo Fragment#chain is unused and in the process of changing
-    # expect(fragment.chain).to eq('m')
-    # expect(fragment.base_chain).to eq('')
-    # expect(fragment.whole_chain).to eq('method_call')
   end
-
-  # @todo This shouldn't matter anymore. Fragments aren't responsible for
-  #   signatures.
-  # it "handles signatures ending with ." do
-  #   source = Solargraph::Source.new('Foo::Bar.method_call.')
-  #   fragment = source.fragment_at(0, 21)
-  #   expect(fragment.signature).to eq('Foo::Bar.method_call.')
-  #   expect(fragment.base).to eq('Foo::Bar.method_call')
-  # end
 
   it "includes local variables from a block's named context" do
     source = Solargraph::Source.new(%(
@@ -186,21 +152,6 @@ describe Solargraph::Source::Fragment do
     expect(fragment.locals).to be_empty
   end
 
-  # @todo This shouldn't matter anymore. Fragments aren't responsible for
-  #   signatures.
-  # it "includes ? and ! in signatures" do
-  #   source = Solargraph::Source.new(%(
-  #     foo.bar?(foo.baz?)
-  #   ))
-  #   recipient_fragment = source.fragment_at(1, 11)
-  #   expect(recipient_fragment.whole_word).to eq('bar?')
-  #   expect(recipient_fragment.whole_signature).to eq('foo.bar?')
-  #   argument_fragment = source.fragment_at(1, 20)
-  #   expect(argument_fragment.whole_word).to eq('baz?')
-  #   expect(argument_fragment.whole_signature).to eq('foo.baz?')
-  #   expect(argument_fragment.recipient.whole_signature).to eq('foo.bar?')
-  # end
-
   it "detects comments in code with CRLF line endings" do
     source = Solargraph::Source.new("# comment line 0\r\n# comment line 1\r\nputs 'code'")
     fragment = source.fragment_at(1, 0)
@@ -216,19 +167,6 @@ describe Solargraph::Source::Fragment do
     fragment = source.fragment_at(0, 3)
     expect(fragment.word).to be_empty
     expect(fragment.remainder).to be_empty
-    expect(fragment.signature).to be_empty
     expect(fragment.base).to be_empty
-    # @todo Fragment#chain is unused and in the process of changing
-    # expect(fragment.chain).to be_empty
   end
-
-  # @todo This shouldn't matter anymore. Fragments aren't responsible for
-  #   signatures.
-  # it "handles empty namespace separators" do
-  #   source = Solargraph::Source.new("Foo::_")
-  #   fragment = source.fragment_at(0, 5)
-  #   fragment.signature
-  #   expect(fragment.base).to eq('Foo')
-  #   expect(fragment.signature).to eq('Foo::')
-  # end
 end

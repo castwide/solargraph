@@ -79,27 +79,6 @@ module Solargraph
         @scope
       end
 
-      # Get the signature up to the current offset. Given the text `foo.bar`,
-      # the signature at offset 5 is `foo.b`.
-      #
-      # @todo This method might need to change significantly or go away.
-      #
-      # @return [String]
-      def signature
-        # @signature ||= begin
-        #   result = base
-        #   if whole_signature == "#{base}.#{whole_word}"
-        #     result += ".#{start_of_word}"
-        #   else
-        #     result += start_of_word
-        #   end
-        #   result += separator.strip
-        #   result
-        # end
-        @signature ||= chain.links[1..-1].map(&:word).join('.')
-      end
-
-
       # Get the signature before the current word. Given the signature
       # `String.new.split`, the base is `String.new`.
       #
@@ -248,13 +227,13 @@ module Solargraph
           result.concat api_map.get_complex_type_methods(type, namespace)
           # @todo Smelly way to check the length of the signature
           if chain.links.length < 3
-            if signature.start_with?('@@')
+            if word.start_with?('@@')
               return package_completions(api_map.get_class_variable_pins(namespace))
-            elsif signature.start_with?('@')
+            elsif word.start_with?('@')
               return package_completions(api_map.get_instance_variable_pins(namespace, scope))
-            elsif signature.start_with?('$')
+            elsif word.start_with?('$')
               return package_completions(api_map.get_global_variable_pins)
-            elsif signature.start_with?(':') and !signature.start_with?('::')
+            elsif word.start_with?(':') and !word.start_with?('::')
               return package_completions(api_map.get_symbols)
             end
             result.concat api_map.get_constants(namespace, '')
