@@ -15,7 +15,8 @@ module Solargraph
     autoload :NodeMethods,   'solargraph/source/node_methods'
     autoload :Chain,         'solargraph/source/chain'
     autoload :Encoding,      'solargraph/source/encoding'
-    autoload :CallChainer,  'solargraph/source/call_chainer'
+    autoload :CallChainer,   'solargraph/source/call_chainer'
+    autoload :NodeChainer,   'solargraph/source/node_chainer'
 
     include Encoding
 

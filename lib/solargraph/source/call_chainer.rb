@@ -8,26 +8,12 @@ module Solargraph
     class CallChainer
       include NodeMethods
 
-      # The zero-based line number of the fragment's location.
-      #
-      # @return [Integer]
-      attr_reader :line
-
-      # The zero-based column number of the fragment's location.
-      #
-      # @return [Integer]
-      attr_reader :column
-
-      # @return [Solargraph::Source]
-      attr_reader :source
-
       class << self
         # @param source [Source]
         # @param line [Integer]
         # @param column [Integer]
         # @return [Source::Chain]
         def chain source, line, column
-          # Chain.load_string(source.filename, CallChainer.new(source, line, column).chain)
           CallChainer.new(source, line, column).chain
         end
       end
@@ -45,7 +31,52 @@ module Solargraph
 
       # @return [Source::Chain]
       def chain
+        # @todo Experimenting with chains that always have a root link
+        links = [Chain::Root.new]
+        whole_signature.split('.', -1).each do |word|
+          if word.include?('::')
+            # @todo Smelly way of handling constants
+            parts = (word.start_with?('::') ? word[2..-1] : word).split('::')
+            last = parts.pop
+            links.push Chain::Constant.new(parts.join('::')) unless parts.empty?
+            links.push (last.nil? ? Chain::UNDEFINED_CONSTANT : Chain::Constant.new(last))
+          else
+            links.push word_to_link(word)
+          end
+        end
+        @chain ||= Chain.new(source.filename, links)
       end
+
+      # private
+
+      def word_to_link word
+        if word.start_with?('@@')
+          Chain::ClassVariable.new(word)
+        elsif word.start_with?('@')
+          Chain::InstanceVariable.new(word)
+        elsif word.start_with?('$')
+          Chain::GlobalVariable.new(word)
+        elsif word.end_with?(':')
+          Chain::Link.new
+        elsif word.empty?
+          Chain::UNDEFINED_CALL
+        else
+          Chain::Call.new(word)
+        end
+      end
+
+      # The zero-based line number of the fragment's location.
+      #
+      # @return [Integer]
+      attr_reader :line
+
+      # The zero-based column number of the fragment's location.
+      #
+      # @return [Integer]
+      attr_reader :column
+
+      # @return [Solargraph::Source]
+      attr_reader :source
 
       # An alias for #column.
       #
@@ -114,47 +145,27 @@ module Solargraph
       # `String.new.split`, the base is `String.new`.
       #
       # @return [String]
-      def base
-        if @base.nil?
-          if signature.include?('.')
-            if signature.end_with?('.')
-              @base = signature[0..-2]
-            else
-              @base = signature.split('.')[0..-2].join('.')
-            end
-          elsif signature.include?('::')
-            if signature.end_with?('::')
-              @base = signature[0..-3]
-            else
-              @base = signature.split('::')[0..-2].join('::')
-            end
-          else
-            # @base = signature
-            @base = ''
-          end
-        end
-        @base
-      end
-
-      # @return [String]
-      def root
-        @root ||= signature.split('.').first
-      end
-
-      # @return [String]
-      def chain
-        @chain ||= ( signature.empty? ? '' : signature.split('.')[1..-1].join('.') )
-      end
-
-      # @return [String]
-      def base_chain
-        @base_chain ||= signature.split('.')[1..-2].join('.')
-      end
-
-      # @return [String]
-      def whole_chain
-        @whole_chain ||= whole_signature.split('.')[1..-1].join('.')
-      end
+      # def base
+      #   if @base.nil?
+      #     if signature.include?('.')
+      #       if signature.end_with?('.')
+      #         @base = signature[0..-2]
+      #       else
+      #         @base = signature.split('.')[0..-2].join('.')
+      #       end
+      #     elsif signature.include?('::')
+      #       if signature.end_with?('::')
+      #         @base = signature[0..-3]
+      #       else
+      #         @base = signature.split('::')[0..-2].join('::')
+      #       end
+      #     else
+      #       # @base = signature
+      #       @base = ''
+      #     end
+      #   end
+      #   @base
+      # end
 
       # Get the remainder of the word after the current offset. Given the text
       # `foobar` with an offset of 3, the remainder is `bar`.

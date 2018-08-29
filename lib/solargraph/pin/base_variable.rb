@@ -43,10 +43,13 @@ module Solargraph
         true
       end
 
+      # @param api_map [ApiMap]
       def infer api_map
         result = super
         return result if result.defined? or @assignment.nil?
-        chain = Source::Chain.new(filename, @assignment)
+        # chain = Source::Chain.new(filename, @assignment)
+        # @todo Use NodeChainer
+        chain = Source::NodeChainer.chain(location.filename, @assignment)
         fragment = api_map.fragment_at(location)
         locals = fragment.locals - [self]
         chain.infer_type_with(api_map, context, locals)

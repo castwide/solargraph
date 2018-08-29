@@ -82,18 +82,21 @@ module Solargraph
       # Get the signature up to the current offset. Given the text `foo.bar`,
       # the signature at offset 5 is `foo.b`.
       #
+      # @todo This method might need to change significantly or go away.
+      #
       # @return [String]
       def signature
-        @signature ||= begin
-          result = base
-          if whole_signature == "#{base}.#{whole_word}"
-            result += ".#{start_of_word}"
-          else
-            result += start_of_word
-          end
-          result += separator.strip
-          result
-        end
+        # @signature ||= begin
+        #   result = base
+        #   if whole_signature == "#{base}.#{whole_word}"
+        #     result += ".#{start_of_word}"
+        #   else
+        #     result += start_of_word
+        #   end
+        #   result += separator.strip
+        #   result
+        # end
+        @signature ||= chain.links[1..-1].join('.')
       end
 
 
@@ -334,7 +337,7 @@ module Solargraph
       end
 
       def generate_chain
-        return NodeChainer.chain(source, line, column) if source.parsed?
+        # return NodeChainer.chain(source, line, column) if source.parsed?
         # base_node = source.node_at(base_position.line, base_position.column)
         # code = source.from_to(base_node.loc.expression.line - 1, base_node.loc.expression.column, base_position.line, base_position.column + 1)
         # chain = Source::Chain.load_string(source.filename, code)

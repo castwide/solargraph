@@ -1,20 +1,26 @@
 module Solargraph
   class Source
     class NodeChainer
-      def initialize source, line, column
-        @source = source
-        @line = line
-        @column = column
+      include NodeMethods
+
+      def initialize filename, node
+        @filename = filename
+        @node = node
+        # @source = source
+        # @line = line
+        # @column = column
       end
 
       # @return [Source::Chain]
       def chain
-        here = source.node_at(base_position.line, base_position.column)
-        here = nil if [:class, :module, :def, :defs].include?(here.type) and here.loc.expression.line - 1 < base_position.line
-        chain = Chain.new(source.filename, generate_links(here))
-        # Add a "tail" to the chain to represent the unparsed section
-        chain.links.push(Chain::Link.new) unless separator.empty?
-        chain
+        # here = source.node_at(base_position.line, base_position.column)
+        # here = nil if [:class, :module, :def, :defs].include?(here.type) and here.loc.expression.line - 1 < base_position.line
+        # chain = Chain.new(source.filename, generate_links(here))
+        # # Add a "tail" to the chain to represent the unparsed section
+        # chain.links.push(Chain::Link.new) unless separator.empty?
+        # chain
+        links = generate_links(@node)
+        Chain.new(@filename, links)
       end
 
       class << self
@@ -22,8 +28,8 @@ module Solargraph
         # @param line [Integer]
         # @param column [Integer]
         # @return [Source::Chain]
-        def chain source, line, column
-          NodeChainer.new(source, line, column).chain
+        def chain filename, node
+          NodeChainer.new(filename, node).chain
         end
 
         # @param code [String]
@@ -69,23 +75,23 @@ module Solargraph
             raise "No idea what to do with #{n}"
           end
         elsif n.type == :self
-          result.push Call.new('self')
+          result.push Chain::Call.new('self')
         elsif n.type == :const
-          result.push Constant.new(unpack_name(n))
+          result.push Chain::Constant.new(unpack_name(n))
         elsif [:lvar, :lvasgn].include?(n.type)
-          result.push Call.new(n.children[0].to_s)
+          result.push Chain::Call.new(n.children[0].to_s)
         elsif [:ivar, :ivasgn].include?(n.type)
-          result.push InstanceVariable.new(n.children[0].to_s)
+          result.push Chain::InstanceVariable.new(n.children[0].to_s)
         elsif [:cvar, :cvasgn].include?(n.type)
-          result.push ClassVariable.new(n.children[0].to_s)
+          result.push Chain::ClassVariable.new(n.children[0].to_s)
         elsif [:gvar, :gvasgn].include?(n.type)
-          result.push GlobalVariable.new(n.children[0].to_s)
+          result.push Chain::GlobalVariable.new(n.children[0].to_s)
         elsif [:class, :module, :def, :defs].include?(n.type)
           location = Solargraph::Source::Location.new(@filename, Source::Range.from_to(n.loc.expression.line - 1, n.loc.expression.column, n.loc.expression.last_line - 1, n.loc.expression.last_column))
-          result.push Definition.new(location)
+          result.push Chain::Definition.new(location)
         else
           lit = infer_literal_node_type(n)
-          result.push (lit ? Literal.new(lit) : Link.new)
+          result.push (lit ? Chain::Literal.new(lit) : Chain::Link.new)
         end
         result
       end

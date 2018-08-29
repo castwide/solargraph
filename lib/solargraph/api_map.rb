@@ -242,6 +242,14 @@ module Solargraph
       store.get_symbols
     end
 
+    # @todo Make this better
+    def get_source filename
+      @sources.each do |s|
+        return s if s.filename == filename
+      end
+      nil
+    end
+
     # @return [Array<Solargraph::Pin::GlobalVariable>]
     def get_global_variable_pins
       globals = []
@@ -302,7 +310,9 @@ module Solargraph
             subtype = qualify(type.subtypes.first.name, context)
             result.concat get_methods(subtype, scope: :class)
           end
-          result.concat get_methods(namespace, scope: type.scope)
+          visibility = [:public]
+          visibility.push :private, :protected if namespace == context
+          result.concat get_methods(namespace, scope: type.scope, visibility: visibility)
         end
       end
       result
@@ -349,17 +359,32 @@ module Solargraph
         end
       end
       result = []
-      if fragment.signature.include?('.')
+      # @todo A lot of theses exceptions should go away thanks to the new chains
+      if fragment.signature.include?('.') and !fragment.chain.tail.constant?
         type = fragment.infer_base_type(self)
         result.concat get_complex_type_methods(type, fragment.namespace)
-      else        
+      else
         unless fragment.signature.include?('::')
           result.concat prefer_non_nil_variables(fragment.locals)
           result.concat get_methods(fragment.namespace, scope: fragment.scope, visibility: [:public, :private, :protected])
           result.concat get_methods('Kernel')
           result.concat ApiMap.keywords
         end
-        result.concat get_constants(fragment.base, fragment.namespace) 
+        # result.concat get_constants(fragment.base, fragment.namespace) 
+        # @todo This is a smelly version of the new way to collect constants
+        type = fragment.infer_base_type(self)
+        if fragment.chain.tail.constant?
+          # @todo If we infer the type above, we probably don't need the
+          #   namespace from the fragment
+          result.concat get_constants(type.namespace, fragment.namespace)
+        else
+          result.concat get_complex_type_methods(type, fragment.namespace)
+          if fragment.base.empty?
+            result.concat get_constants(type.namespace, fragment.namespace)
+            result.concat get_constants('')
+            result.concat ApiMap.keywords
+          end
+        end
       end
       package_completions(fragment, result)
     end

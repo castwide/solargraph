@@ -1,3 +1,6 @@
+# HACK Fix autoload issue
+require 'solargraph/source/chain/link'
+
 module Solargraph
   class Source
     class Chain
@@ -6,10 +9,14 @@ module Solargraph
       autoload :Variable,         'solargraph/source/chain/variable'
       autoload :ClassVariable,    'solargraph/source/chain/class_variable'
       autoload :Constant,         'solargraph/source/chain/constant'
+      autoload :Root,             'solargraph/source/chain/root'
       autoload :InstanceVariable, 'solargraph/source/chain/instance_variable'
       autoload :GlobalVariable,   'solargraph/source/chain/global_variable'
       autoload :Literal,          'solargraph/source/chain/literal'
       autoload :Definition,       'solargraph/source/chain/definition'
+
+      UNDEFINED_CALL = Source::Chain::Call.new('<undefined>')
+      UNDEFINED_CONSTANT = Source::Chain::Constant.new('<undefined>')
 
       # @return [Array<Source::Chain::Link>]
       attr_reader :links
@@ -19,6 +26,17 @@ module Solargraph
       def initialize filename, links
         @filename = filename
         @links = links
+      end
+
+      # @return [Array<Source::Chain::Link>]
+      def base
+        # @todo It might make sense for the chain links to always have a root.
+        @base ||= links[0..-2]
+      end
+
+      # @return [Source::Chain::Link]
+      def tail
+        @tail ||= links.last
       end
 
       # @param api_map [ApiMap]
@@ -60,10 +78,10 @@ module Solargraph
 
       def inner_define_with array, api_map, context, locals
         return [] if array.empty?
+        type = array.first.resolve_pins(api_map, context, [])
         head = true
-        type = ComplexType::UNDEFINED
         # @param link [Chain::Link]
-        array[0..-2].each do |link|
+        array[1..-2].each do |link|
           pins = link.resolve_pins(api_map, context, head ? locals : [])
           head = false
           return [] if pins.empty?
