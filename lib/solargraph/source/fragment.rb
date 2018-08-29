@@ -221,7 +221,9 @@ module Solargraph
         return ApiMap::Completion.new([], whole_word_range) if string? or comment?
         result = []
         type = infer_base_type(api_map)
-        if !chain.tail.constant?
+        if chain.tail.constant?
+          result.concat api_map.get_constants(type.namespace, namespace)
+        else
           result.concat api_map.get_complex_type_methods(type, namespace)
           if chain.links.length == 1
             if word.start_with?('@@')
@@ -239,8 +241,6 @@ module Solargraph
             result.concat api_map.get_methods('Kernel')
             result.concat ApiMap.keywords
           end
-        else
-          result.concat api_map.get_constants(type.namespace, namespace)
         end
         package_completions(result)
       end
