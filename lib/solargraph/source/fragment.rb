@@ -285,7 +285,7 @@ module Solargraph
       def try_merge! new_line, new_column
         return false unless line == new_line and column < new_column and separator.empty?
         # @todo Should link words ever be nil?
-        return false if chain.links.last.nil? or chain.links.last.word.nil? or chain.links.last.word == '<undefined>'
+        return false if chain.links.last.nil? or !chain.links.last.is_a?(Chain::Call)
         text = source.at(Range.from_to(line, column, new_line, new_column))
         return true if column == new_column and text.empty?
         return false unless text =~ /^[a-z0-9_]*$/i
@@ -294,6 +294,7 @@ module Solargraph
         start_of_word.concat text
         @column = new_column
         @offset += (new_column - column)
+        chain.links.last.word.clear if chain.links.last.word == '<undefined>'
         chain.links.last.word.concat text
         @base_position = nil
         @signature = nil
