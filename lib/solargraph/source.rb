@@ -220,10 +220,15 @@ module Solargraph
     # @param column [Integer]
     # @return [Boolean]
     def string_at?(line, column)
-      node = node_at(line, column)
-      # @todo raise InvalidOffset or InvalidRange or something?
-      return false if node.nil?
-      node.type == :str or node.type == :dstr
+      # node = node_at(line, column)
+      # # @todo raise InvalidOffset or InvalidRange or something?
+      # return false if node.nil?
+      # node.type == :str or node.type == :dstr
+      pos = Source::Position.new(line, column)
+      @strings.each do |str|
+        return true if str.contain?(pos)
+      end
+      false
     end
 
     # Get an array of nodes containing the specified index, starting with the
@@ -367,7 +372,8 @@ module Solargraph
       synchronize_mapped *new_map_data
     end
 
-    def synchronize_mapped new_pins, new_locals, new_requires, new_symbols #, new_path_macros, new_domains
+    def synchronize_mapped new_pins, new_locals, new_requires, new_symbols, new_strings #, new_path_macros, new_domains
+      @strings = new_strings
       return if @requires == new_requires and @symbols == new_symbols and try_merge(new_pins, new_locals)
       @pins = new_pins
       @locals = new_locals

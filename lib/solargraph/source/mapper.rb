@@ -25,6 +25,7 @@ module Solargraph
         @requires = []
         @symbols = []
         @locals = []
+        @strings = []
 
         @used_comment_locs = []
 
@@ -37,7 +38,7 @@ module Solargraph
         @node_comments.reject{|k, v| @used_comment_locs.include?(k)}.each do |k, v|
           @pins.first.comments.concat v
         end
-        [@pins, @locals, @requires, @symbols]
+        [@pins, @locals, @requires, @symbols, @strings]
       end
 
       class << self
@@ -70,7 +71,13 @@ module Solargraph
         @pins ||= []
       end
 
+      # @param node [Parser::AST::Node]
       def process node, tree = [], visibility = :public, scope = :instance, fqn = '', stack = []
+        return unless node.is_a?(AST::Node)
+        if node.type == :str
+          @strings.push Source::Range.from_to(node.loc.expression.line, node.loc.expression.column, node.loc.expression.last_line, node.loc.expression.last_column)
+          return
+        end
         stack.push node
         if node.kind_of?(AST::Node)
           @node_stack.unshift node
