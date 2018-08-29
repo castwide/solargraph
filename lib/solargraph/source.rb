@@ -227,6 +227,7 @@ module Solargraph
       pos = Source::Position.new(line, column)
       @strings.each do |str|
         return true if str.contain?(pos)
+        break if str.start.line > pos.line
       end
       false
     end
