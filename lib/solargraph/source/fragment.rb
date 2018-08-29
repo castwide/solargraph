@@ -218,9 +218,11 @@ module Solargraph
       end
 
       def complete api_map
-        return Completion.new([], whole_word_range) if string? or comment?
+        return ApiMap::Completion.new([], whole_word_range) if string? or comment?
         result = []
+        return ApiMap::Completion.new([], whole_word_range) if chain.links.first.undefined?
         type = infer_base_type(api_map)
+        # return ApiMap::Completion.new([], whole_word_range) if type.undefined?
         if !chain.tail.constant?
           result.concat api_map.get_complex_type_methods(type, namespace)
           # @todo Smelly way to check the length of the signature

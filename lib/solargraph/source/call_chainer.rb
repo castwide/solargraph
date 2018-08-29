@@ -31,20 +31,25 @@ module Solargraph
 
       # @return [Source::Chain]
       def chain
-        # @todo Experimenting with chains that always have a root link
-        links = [Chain::Root.new]
-        links.push Chain::Literal.new(base_literal) if base_literal?
-        sig = whole_signature
-        sig = sig[1..-1] if sig.start_with?('.') and base_literal?
-        sig.split('.', -1).each do |word|
-          if word.include?('::')
-            # @todo Smelly way of handling constants
-            parts = (word.start_with?('::') ? word[2..-1] : word).split('::')
-            last = parts.pop
-            links.push Chain::Constant.new(parts.join('::')) unless parts.empty?
-            links.push (last.nil? ? Chain::UNDEFINED_CONSTANT : Chain::Constant.new(last))
-          else
-            links.push word_to_link(word)
+        links = []
+        # @todo Smelly colon handling
+        if @source.code[0..offset-1].end_with?(':') and !@source.code[0..offset-1].end_with?('::')
+          links.push Chain::Link.new
+        else
+          links.push Chain::Root.new
+          links.push Chain::Literal.new(base_literal) if base_literal?
+          sig = whole_signature
+          sig = sig[1..-1] if sig.start_with?('.') and base_literal?
+          sig.split('.', -1).each do |word|
+            if word.include?('::')
+              # @todo Smelly way of handling constants
+              parts = (word.start_with?('::') ? word[2..-1] : word).split('::', -1)
+              last = parts.pop
+              links.push Chain::Constant.new(parts.join('::')) unless parts.empty?
+              links.push (last.nil? ? Chain::UNDEFINED_CONSTANT : Chain::Constant.new(last))
+            else
+              links.push word_to_link(word)
+            end
           end
         end
         @chain ||= Chain.new(source.filename, links)

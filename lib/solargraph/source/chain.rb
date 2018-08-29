@@ -77,7 +77,7 @@ module Solargraph
       end
 
       def inner_define_with array, api_map, context, locals
-        return [] if array.empty?
+        return [] if array.empty? #or array.first.undefined?
         type = array.first.resolve_pins(api_map, context, [])
         head = true
         # @param link [Chain::Link]
