@@ -254,6 +254,22 @@ module Solargraph
         chain.define_with(api_map, named_path, locals)
       end
 
+      # Get an array of pins that describe the method being called by the
+      # argument list where the fragment is located. This is useful for queries
+      # that need to know what parameters the current method expects to receive.
+      #
+      # If the fragment is not inside an argument list, return an empty array.
+      #
+      # @param api_map [Solargraph::Source::Fragment]
+      # @return [Array<Solargraph::Pin::Base>]
+      def signify api_map
+        return [] unless argument?
+        return [] if recipient.whole_signature.nil? or recipient.whole_signature.empty?
+        result = []
+        result.concat recipient.define(api_map)
+        result.select{ |pin| pin.kind == Pin::METHOD }
+      end
+
       # @param api_map [ApiMap]
       # @return [ComplexType]
       def infer_base_type api_map

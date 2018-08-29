@@ -370,11 +370,7 @@ module Solargraph
     # @param fragment [Solargraph::Source::Fragment]
     # @return [Array<Solargraph::Pin::Base>]
     def signify fragment
-      return [] unless fragment.argument?
-      return [] if fragment.recipient.whole_signature.nil? or fragment.recipient.whole_signature.empty?
-      result = []
-      result.concat fragment.recipient.define(self)
-      result.select{ |pin| pin.kind == Pin::METHOD }
+      fragment.signify self
     end
 
     # Get an array of all suggestions that match the specified path.

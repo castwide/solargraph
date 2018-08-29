@@ -526,31 +526,6 @@ describe Solargraph::ApiMap do
     expect(meths).to include('global_method')
   end
 
-  it "signifies methods chained from literal arrays" do
-    api_map = Solargraph::ApiMap.new
-    # Preceding code can affect detection of literals
-    source = Solargraph::Source.load_string(%(
-      puts 'hello'
-      %w[1 2 3].join.split()
-    ))
-    api_map.virtualize source
-    fragment = source.fragment_at(2, 27)
-    paths = api_map.signify(fragment).map(&:path)
-    expect(paths).to include('String#split')
-  end
-
-  it "filters for methods in signify" do
-    api_map = Solargraph::ApiMap.new
-    source = Solargraph::Source.new(%(
-      x = 'string'
-      x()
-    ))
-    api_map.virtualize source
-    fragment = source.fragment_at(2, 8)
-    pins = api_map.signify(fragment)
-    expect(pins).to be_empty
-  end
-
   it "maps methods scoped with module_function" do
     api_map = Solargraph::ApiMap.new
     source = Solargraph::Source.new(%(
