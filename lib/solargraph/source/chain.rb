@@ -9,7 +9,6 @@ module Solargraph
       autoload :Variable,         'solargraph/source/chain/variable'
       autoload :ClassVariable,    'solargraph/source/chain/class_variable'
       autoload :Constant,         'solargraph/source/chain/constant'
-      autoload :Root,             'solargraph/source/chain/root'
       autoload :InstanceVariable, 'solargraph/source/chain/instance_variable'
       autoload :GlobalVariable,   'solargraph/source/chain/global_variable'
       autoload :Literal,          'solargraph/source/chain/literal'
@@ -26,6 +25,7 @@ module Solargraph
       def initialize filename, links
         @filename = filename
         @links = links
+        @links.push UNDEFINED_CALL if @links.empty?
       end
 
       # @return [Array<Source::Chain::Link>]
@@ -77,11 +77,11 @@ module Solargraph
       end
 
       def inner_define_with array, api_map, context, locals
-        return [] if array.empty? or array.last.is_a?(Chain::Root)
+        return [] if array.empty?
         type = ComplexType::UNDEFINED
         head = true
         # @param link [Chain::Link]
-        array[1..-2].each do |link|
+        array[0..-2].each do |link|
           pins = link.resolve_pins(api_map, context, head ? locals : [])
           head = false
           return [] if pins.empty?

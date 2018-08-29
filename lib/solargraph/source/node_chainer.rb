@@ -13,14 +13,7 @@ module Solargraph
 
       # @return [Source::Chain]
       def chain
-        # here = source.node_at(base_position.line, base_position.column)
-        # here = nil if [:class, :module, :def, :defs].include?(here.type) and here.loc.expression.line - 1 < base_position.line
-        # chain = Chain.new(source.filename, generate_links(here))
-        # # Add a "tail" to the chain to represent the unparsed section
-        # chain.links.push(Chain::Link.new) unless separator.empty?
-        # chain
-        links = [Chain::Root.new]
-        links.concat generate_links(@node)
+        links = generate_links(@node)
         Chain.new(@filename, links)
       end
 
