@@ -136,7 +136,7 @@ module Solargraph
       def open? uri
         result = nil
         @change_semaphore.synchronize do
-          result = library.open?(uri_to_file(uri))
+          result = unsafe_open?(uri)
         end
         result
       end
@@ -503,6 +503,10 @@ module Solargraph
         @change_queue.any?{|change| change['textDocument']['uri'] == file_uri}
       end
 
+      def unsafe_open? uri
+        library.open?(uri_to_file(uri))
+      end
+
       def requests
         @requests ||= {}
       end
@@ -546,9 +550,13 @@ module Solargraph
                     @diagnostics_queue.push change['textDocument']['uri']
                     next true
                   else
-                    # @todo Change is out of order. Save it for later
-                    STDERR.puts "Skipping out of order change to #{change['textDocument']['uri']}"
-                    next false
+                    if unsafe_open?(change['textDocument']['uri'])
+                      STDERR.puts "Skipping out of order change to #{change['textDocument']['uri']}"
+                      next false
+                    else
+                      STDERR.puts "Deleting out of order change to closed file #{change['textDocument']['uri']}"
+                      next true
+                    end
                   end
                 end
                 refreshable = changed and @change_queue.empty?
