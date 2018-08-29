@@ -236,7 +236,7 @@ module Solargraph
             elsif word.start_with?(':') and !word.start_with?('::')
               return package_completions(api_map.get_symbols)
             end
-            result.concat api_map.get_constants(namespace, '')
+            result.concat api_map.get_constants('', namespace)
             result.concat prefer_non_nil_variables(locals)
             result.concat api_map.get_methods(namespace, scope: scope, visibility: [:public, :private, :protected])
             result.concat api_map.get_methods('Kernel')
