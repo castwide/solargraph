@@ -82,19 +82,6 @@ module Solargraph
       end
     end
 
-    # @param line [Integer]
-    # @param column [Integer]
-    # @return [Fragment]
-    def bookmark line, column
-      if @bookmark.nil?
-        # @type [Source::Fragment]
-        @bookmark = fragment_at(line, column)
-      else
-        @bookmark = fragment_at(line, column) unless @bookmark.try_merge!(line, column)
-      end
-      @bookmark
-    end
-
     # @param range [Solargraph::Source::Range]
     def at range
       from_to range.start.line, range.start.character, range.ending.line, range.ending.character

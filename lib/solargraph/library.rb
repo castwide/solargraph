@@ -113,7 +113,7 @@ module Solargraph
     def completions_at filename, line, column
       source = read(filename)
       api_map.virtualize source
-      fragment = source.bookmark(line, column)
+      fragment = source.fragment_at(line, column)
       fragment.complete(api_map)
     end
 
@@ -127,7 +127,7 @@ module Solargraph
     def definitions_at filename, line, column
       source = read(filename)
       api_map.virtualize source
-      fragment = source.bookmark(line, column)
+      fragment = source.fragment_at(line, column)
       fragment.define(api_map)
     end
 
@@ -141,7 +141,7 @@ module Solargraph
     def signatures_at filename, line, column
       source = read(filename)
       api_map.virtualize source
-      fragment = source.bookmark(line, column)
+      fragment = source.fragment_at(line, column)
       fragment.signify(api_map)
     end
 
@@ -152,7 +152,7 @@ module Solargraph
     def references_from filename, line, column
       source = read(filename)
       api_map.virtualize source
-      fragment = source.bookmark(line, column)
+      fragment = source.fragment_at(line, column)
       pins = fragment.define(api_map)
       return [] if pins.empty?
       result = []
