@@ -48,4 +48,20 @@ describe Solargraph::Source::Chain do
     pin = fragment.define(api_map).first
     expect(pin.path).to eq('Foo::Bar::Inside')
   end
+
+  it "detects nested constants" do
+    source = Solargraph::Source.new(%(
+      module Foo
+        module Bar
+          module Baz
+          end
+        end
+      end
+      Foo::Bar::Baz
+    ))
+    api_map.virtualize source
+    fragment = source.fragment_at(7, 17)
+    pin = fragment.define(api_map).first
+    expect(pin.path).to eq('Foo::Bar::Baz')
+  end
 end

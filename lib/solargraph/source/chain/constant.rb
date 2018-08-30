@@ -8,7 +8,10 @@ module Solargraph
 
         # @param api_map [ApiMap]
         def resolve_pins api_map, context, locals
-          api_map.get_constants('', context.named_context).select{|p| p.name == word}
+          parts = word.split('::')
+          last = parts.pop
+          first = parts.join('::').to_s
+          api_map.get_constants(first, context.named_context).select{|p| p.name == last}
         end
       end
     end
