@@ -44,6 +44,7 @@ module Solargraph
           sig = whole_signature
           unless sig.empty?
             sig = sig[1..-1] if sig.start_with?('.')
+            head = true
             sig.split('.', -1).each do |word|
               if word.include?('::')
                 # @todo Smelly way of handling constants
@@ -52,8 +53,9 @@ module Solargraph
                 links.push Chain::Constant.new(parts.join('::')) unless parts.empty?
                 links.push (last.nil? ? Chain::UNDEFINED_CONSTANT : Chain::Constant.new(last))
               else
-                links.push word_to_link(word)
+                links.push word_to_link(word, head)
               end
+              head = false
             end
           end
           # Literal string hack
@@ -77,7 +79,7 @@ module Solargraph
       # @return [Solargraph::Source]
       attr_reader :source
 
-      def word_to_link word
+      def word_to_link word, head
         if word.start_with?('@@')
           Chain::ClassVariable.new(word)
         elsif word.start_with?('@')
@@ -88,6 +90,12 @@ module Solargraph
           Chain::Link.new
         elsif word.empty?
           Chain::UNDEFINED_CALL
+        elsif head and !@source.code[signature_data[0]..-1].start_with?(/[\s]*?#{word}[\s]*?\(/)
+          # The head needs to allow for ambiguous references to constants and
+          # methods. For example, `String` might be either. If the word is not
+          # followed by an open parenthesis, use Chain::Head for ambiguous
+          # results.
+          Chain::Head.new(word)
         else
           Chain::Call.new(word)
         end
