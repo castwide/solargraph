@@ -310,7 +310,7 @@ module Solargraph
             result.concat get_methods(subtype, scope: :class)
           end
           visibility = [:public]
-          if namespace == context
+          if namespace == context or super_and_sub?(namespace, context)
             visibility.push :protected
             visibility.push :private if internal
           end
@@ -607,6 +607,15 @@ module Solargraph
         end
       end
       result + nil_pins
+    end
+
+    def super_and_sub?(sup, sub)
+      cls = store.get_superclass(sub)
+      until cls.nil?
+        return true if cls == sup
+        cls = store.get_superclass(cls)
+      end
+      false
     end
   end
 end

@@ -704,4 +704,41 @@ describe Solargraph::Source::Fragment do
     fragment = source.fragment_at(1, 13)
     expect(fragment.complete(api_map).pins).to be_empty
   end
+
+  it "detects private and protected methods in subclasses" do
+    api_map = Solargraph::ApiMap.new
+    source = Solargraph::Source.new(%(
+      class Sup
+        private
+        def priv_method; end
+        protected
+        def prot_method; end
+      end
+      class Sub < Sup
+        def try
+          priv_method
+          self.priv_method
+          prot_method
+          self.prot_method
+          Sup.new.prot_method
+        end
+      end
+    ))
+    api_map.virtualize source
+    fragment = source.fragment_at(9, 20)
+    cmp = fragment.complete(api_map)
+    expect(cmp.pins.map(&:name)).to include('priv_method')
+    fragment = source.fragment_at(10, 20)
+    cmp = fragment.complete(api_map)
+    expect(cmp.pins.map(&:name)).not_to include('priv_method')
+    fragment = source.fragment_at(11, 20)
+    cmp = fragment.complete(api_map)
+    expect(cmp.pins.map(&:name)).to include('prot_method')
+    fragment = source.fragment_at(12, 20)
+    cmp = fragment.complete(api_map)
+    expect(cmp.pins.map(&:name)).to include('prot_method')
+    fragment = source.fragment_at(13, 20)
+    cmp = fragment.complete(api_map)
+    expect(cmp.pins.map(&:name)).to include('prot_method')
+  end
 end
