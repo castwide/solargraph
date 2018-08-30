@@ -480,9 +480,7 @@ module Solargraph
         sc = store.get_superclass(fqns)
         unless sc.nil?
           fqsc = qualify(sc, fqns)
-          sc_visi = [:public]
-          sc_visi.push :protected if visibility.include?(:protected)
-          result.concat inner_get_methods(fqsc, scope, sc_visi, true, skip) unless fqsc.nil?
+          result.concat inner_get_methods(fqsc, scope, visibility, true, skip) unless fqsc.nil?
         end
         if scope == :instance
           store.get_includes(fqns).each do |im|
