@@ -76,6 +76,8 @@ module Solargraph
       rescue Parser::SyntaxError, EncodingError => e
         hard_fix_node
       rescue Exception => e
+        STDERR.puts e.message
+        STDERR.puts e.backtrace
         raise "Error parsing #{filename || '(source)'}: [#{e.class}] #{e.message}"
       end
     end
@@ -232,6 +234,25 @@ module Solargraph
       false
     end
 
+    # True if the specified location is inside a comment.
+    #
+    # @param line [Integer]
+    # @param column [Integer]
+    # @return [Boolean]
+    def comment_at?(line, column)
+      # node = node_at(line, column)
+      # # @todo raise InvalidOffset or InvalidRange or something?
+      # return false if node.nil?
+      # node.type == :str or node.type == :dstr
+      pos = Source::Position.new(line, column)
+      @comment_ranges.each do |cmnt|
+        return false if cmnt.start.line == line and cmnt.start.column == column
+        return true if cmnt.contain?(pos)
+        break if cmnt.start.line > pos.line
+      end
+      false
+    end
+
     # Get an array of nodes containing the specified index, starting with the
     # nearest node and ending with the root.
     #
@@ -373,8 +394,9 @@ module Solargraph
       synchronize_mapped *new_map_data
     end
 
-    def synchronize_mapped new_pins, new_locals, new_requires, new_symbols, new_strings #, new_path_macros, new_domains
+    def synchronize_mapped new_pins, new_locals, new_requires, new_symbols, new_strings, new_comment_ranges #, new_path_macros, new_domains
       @strings = new_strings
+      @comment_ranges = new_comment_ranges
       return if @requires == new_requires and @symbols == new_symbols and try_merge(new_pins, new_locals)
       @pins = new_pins
       @locals = new_locals

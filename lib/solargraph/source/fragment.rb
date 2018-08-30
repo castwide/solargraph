@@ -161,7 +161,7 @@ module Solargraph
       #
       # @return [Boolean]
       def comment?
-        @comment ||= check_comment(line, column)
+        @comment ||= @source.comment_at?(line, column)
       end
 
       # Get the range of the word up to the current offset.
@@ -224,7 +224,7 @@ module Solargraph
       # @param api_map [ApiMap]
       # @return [Completion]
       def complete api_map
-        return Completion.new([], whole_word_range) if chain.literal?
+        return Completion.new([], whole_word_range) if chain.literal? or comment?
         result = []
         type = infer_base_type(api_map)
         if chain.tail.constant?
@@ -319,19 +319,6 @@ module Solargraph
       def get_position_at(offset)
         pos = Position.from_offset(@code, offset)
         [pos.line, pos.character]
-      end
-
-      # Determine if the specified location is inside a comment.
-      #
-      # @param lin [Integer]
-      # @param col [Integer]
-      # @return [Boolean]
-      def check_comment(lin, col)
-        index = Position.line_char_to_offset(source_from_parser, lin, col)
-        @source.comments.each do |c|
-          return true if index > c.location.expression.begin_pos and index <= c.location.expression.end_pos
-        end
-        false
       end
 
       # @return Solargraph::Source::Range

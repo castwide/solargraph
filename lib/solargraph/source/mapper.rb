@@ -20,6 +20,9 @@ module Solargraph
         @node = node
         @node_stack = []
         @directives = {}
+        @comment_ranges = comments.map do |c|
+          Source::Range.from_to(c.loc.expression.line, c.loc.expression.column, c.loc.expression.last_line, c.loc.expression.last_column)
+        end
         @node_comments = associate_comments(node, comments)
         @pins = []
         @requires = []
@@ -38,7 +41,8 @@ module Solargraph
         @node_comments.reject{|k, v| @used_comment_locs.include?(k)}.each do |k, v|
           @pins.first.comments.concat v
         end
-        [@pins, @locals, @requires, @symbols, @strings]
+
+        [@pins, @locals, @requires, @symbols, @strings, @comment_ranges]
       end
 
       class << self
