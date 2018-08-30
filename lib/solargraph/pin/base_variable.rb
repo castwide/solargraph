@@ -57,15 +57,19 @@ module Solargraph
 
       def == other
         return false unless super
-        signature == other.signature
+        assignment == other.assignment
       end
 
       def try_merge! pin
         return false unless super
-        @signature = pin.signature
+        @assignment = pin.assignment
         @return_complex_type = pin.return_complex_type
         true
       end
+
+      protected
+
+      attr_reader :assignment
 
       private
 

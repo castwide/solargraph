@@ -696,4 +696,18 @@ describe Solargraph::Source do
       Solargraph::Source.load('spec/fixtures/unicode.rb')
     }.not_to raise_error
   end
+
+  it "merges variable assignments on update" do
+    api_map = Solargraph::ApiMap.new
+    source = Solargraph::Source.new("string = String", 'test.rb')
+    api_map.virtualize source
+    type = source.locals.first.infer(api_map)
+    expect(type.tag).to eq('Class<String>')
+    updater = Solargraph::Source::Updater.new('test.rb', 1, [
+      Solargraph::Source::Change.new(nil, "string = String.new")
+    ])
+    source.synchronize(updater)
+    type = source.locals.first.infer(api_map)
+    expect(type.tag).to eq('String')
+  end
 end
