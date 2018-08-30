@@ -205,7 +205,7 @@ module Solargraph
         if chain.tail.constant?
           result.concat api_map.get_constants(type.namespace, namespace)
         else
-          result.concat api_map.get_complex_type_methods(type, namespace)
+          result.concat api_map.get_complex_type_methods(type, namespace, chain.links.length == 1)
           if chain.links.length == 1
             if word.start_with?('@@')
               return package_completions(api_map.get_class_variable_pins(namespace))

@@ -295,7 +295,7 @@ module Solargraph
     # @param type [Solargraph::ComplexType]
     # @param context [String]
     # @return [Array<Solargraph::Pin::Base>]
-    def get_complex_type_methods type, context = ''
+    def get_complex_type_methods type, context = '', internal = false
       return [] if type.undefined? or type.void?
       result = []
       if type.duck_type?
@@ -310,7 +310,10 @@ module Solargraph
             result.concat get_methods(subtype, scope: :class)
           end
           visibility = [:public]
-          visibility.push :private, :protected if namespace == context
+          if namespace == context
+            visibility.push :protected
+            visibility.push :private if internal
+          end
           result.concat get_methods(namespace, scope: type.scope, visibility: visibility)
         end
       end
