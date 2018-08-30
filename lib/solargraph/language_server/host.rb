@@ -565,6 +565,8 @@ module Solargraph
                 # Trying to get anything out of the error except its class
                 # hangs the thread for some reason
                 STDERR.puts "An error occurred in the change thread: #{e.class}"
+                STDERR.puts e.backtrace
+                @change_queue.clear
               end
             end
             sleep 0.01
