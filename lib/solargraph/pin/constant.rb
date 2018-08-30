@@ -3,8 +3,8 @@ module Solargraph
     class Constant < BaseVariable
       attr_reader :visibility
 
-      def initialize location, namespace, name, comments, signature, literal, context, visibility
-        super(location, namespace, name, comments, signature, literal, context)
+      def initialize location, namespace, name, comments, assignment, literal, context, visibility
+        super(location, namespace, name, comments, assignment, literal, context)
         @visibility = visibility
       end
 

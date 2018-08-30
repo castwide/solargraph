@@ -3,8 +3,6 @@ module Solargraph
     class BaseVariable < Base
       include Solargraph::Source::NodeMethods
 
-      attr_reader :signature
-
       attr_reader :context
 
       def initialize location, namespace, name, comments, assignment, literal, context

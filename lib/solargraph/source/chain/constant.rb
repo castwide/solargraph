@@ -6,10 +6,9 @@ module Solargraph
           @word = word
         end
 
+        # @param api_map [ApiMap]
         def resolve_pins api_map, context, locals
-          ns = api_map.qualify(word, context.named_context)
-          return [] if ns.nil?
-          api_map.get_path_suggestions(ns)
+          api_map.get_constants('', context.named_context).select{|p| p.name == word}
         end
       end
     end

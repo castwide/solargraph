@@ -594,4 +594,21 @@ describe Solargraph::ApiMap do
     meths = api_map.get_methods('Foo', scope: :class).map(&:name)
     expect(meths).to include('bar')
   end
+
+  it "infers constant types" do
+    api_map = Solargraph::ApiMap.new
+    source = Solargraph::Source.new(%(
+      module Foo
+        BAR = 'bar'
+      end
+      Foo::BAR._
+    ))
+    api_map.virtualize source
+    pin = api_map.get_path_suggestions('Foo::BAR').first
+    type = pin.infer(api_map)
+    expect(type.tag).to eq('String')
+    fragment = source.fragment_at(4, 15)
+    comp = fragment.complete(api_map)
+    expect(comp.pins.map(&:path)).to include('String#upcase')
+  end
 end
