@@ -146,19 +146,12 @@ module Solargraph
         @comment ||= @source.comment_at?(line, column)
       end
 
-      # Get the range of the word up to the current offset.
-      #
-      # @return [Range]
-      def word_range
-        @word_range ||= word_range_at(offset - start_of_word.length, offset)
-      end
-
       # Get the range of the whole word at the current offset, including its
       # remainder.
       #
       # @return [Range]
-      def whole_word_range
-        @whole_word_range ||= word_range_at(offset - start_of_word.length, offset + end_of_word.length)
+      def word_range
+        @word_range ||= word_range_at(offset - start_of_word.length, offset + end_of_word.length)
       end
 
       # @return [Solargraph::Pin::Base]
@@ -206,7 +199,7 @@ module Solargraph
       # @param api_map [ApiMap]
       # @return [Completion]
       def complete api_map
-        return Completion.new([], whole_word_range) if chain.literal? or comment?
+        return Completion.new([], word_range) if chain.literal? or comment?
         result = []
         type = infer_base_type(api_map)
         if chain.tail.constant?
@@ -325,7 +318,7 @@ module Solargraph
       def package_completions result
         frag_start = word.to_s.downcase
         filtered = result.uniq(&:identifier).select{|s| s.name.downcase.start_with?(frag_start) and (s.kind != Pin::METHOD or s.name.match(/^[a-z0-9_]+(\!|\?|=)?$/i))}.sort_by.with_index{ |x, idx| [x.name, idx] }
-        Completion.new(filtered, whole_word_range)
+        Completion.new(filtered, word_range)
       end
 
       # Sort an array of pins to put nil or undefined variables last.

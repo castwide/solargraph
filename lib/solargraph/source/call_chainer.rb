@@ -8,13 +8,15 @@ module Solargraph
     class CallChainer
       include NodeMethods
 
+      private_class_method :new
+
       class << self
         # @param source [Source]
         # @param line [Integer]
         # @param column [Integer]
         # @return [Source::Chain]
         def chain source, line, column
-          CallChainer.new(source, line, column).chain
+          new(source, line, column).chain
         end
       end
 
@@ -60,7 +62,20 @@ module Solargraph
         @chain ||= Chain.new(source.filename, links)
       end
 
-      # private
+      private
+
+      # The zero-based line number of the fragment's location.
+      #
+      # @return [Integer]
+      attr_reader :line
+
+      # The zero-based column number of the fragment's location.
+      #
+      # @return [Integer]
+      attr_reader :column
+
+      # @return [Solargraph::Source]
+      attr_reader :source
 
       def word_to_link word
         if word.start_with?('@@')
@@ -77,19 +92,6 @@ module Solargraph
           Chain::Call.new(word)
         end
       end
-
-      # The zero-based line number of the fragment's location.
-      #
-      # @return [Integer]
-      attr_reader :line
-
-      # The zero-based column number of the fragment's location.
-      #
-      # @return [Integer]
-      attr_reader :column
-
-      # @return [Solargraph::Source]
-      attr_reader :source
 
       # An alias for #column.
       #
@@ -155,8 +157,6 @@ module Solargraph
         end
         @base_literal
       end
-
-      private
 
       # @return [Integer]
       def offset
