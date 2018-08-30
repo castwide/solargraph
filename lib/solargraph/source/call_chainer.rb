@@ -91,7 +91,7 @@ module Solargraph
           Chain::Link.new
         elsif word.empty?
           Chain::UNDEFINED_CALL
-        elsif head and !@source.code[signature_data[0]..-1].start_with?(/[\s]*?#{word}[\s]*?\(/)
+        elsif head and !@source.code[signature_data[0]..-1].match(/^[\s]*?#{word}[\s]*?\(/)
           # The head needs to allow for ambiguous references to constants and
           # methods. For example, `String` might be either. If the word is not
           # followed by an open parenthesis, use Chain::Head for ambiguous
