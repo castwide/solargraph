@@ -694,4 +694,14 @@ describe Solargraph::Source::Fragment do
     cmp = fragment.complete(api_map)
     expect(cmp.pins.map(&:name)).not_to include('mixin_method')
   end
+
+  it "does not infer base types for signatures ending with a single colon" do
+    api_map = Solargraph::ApiMap.new
+    source = Solargraph::Source.load_string(%(
+      String_
+    ))
+    source.code.sub!('_', ':')
+    fragment = source.fragment_at(1, 13)
+    expect(fragment.complete(api_map).pins).to be_empty
+  end
 end

@@ -37,6 +37,7 @@ module Solargraph
         # @todo Smelly colon handling
         if @source.code[0..offset-1].end_with?(':') and !@source.code[0..offset-1].end_with?('::')
           links.push Chain::Link.new
+          links.push Chain::Link.new
         elsif @source.string_at?(line, column)
           links.push Chain::Literal.new('String')
         else
