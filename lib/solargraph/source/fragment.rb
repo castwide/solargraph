@@ -263,31 +263,6 @@ module Solargraph
         chain.infer_base_type_with(api_map, named_path, locals)
       end
 
-      # @param new_line [Integer]
-      # @param new_column [Integer]
-      # @return [Boolean]
-      def try_merge! new_line, new_column
-        return false unless line == new_line and column < new_column and separator.empty?
-        # @todo Should link words ever be nil?
-        return false if chain.links.last.nil? or !chain.links.last.is_a?(Chain::Call)
-        text = source.at(Range.from_to(line, column, new_line, new_column))
-        return true if column == new_column and text.empty?
-        return false unless text =~ /^[a-z0-9_]*$/i
-        # Update this fragment
-        # @todo Figure out everything that needs to be done here
-        start_of_word.concat text
-        @column = new_column
-        @offset += (new_column - column)
-        chain.links.last.word.clear if chain.links.last.word == '<undefined>'
-        chain.links.last.word.concat text
-        @base_position = nil
-        @signature = nil
-        @word_range = nil
-        @whole_word_range = nil
-        @base_position = nil
-        true
-      end
-
       private
 
       # @return [Integer]
@@ -334,18 +309,6 @@ module Solargraph
 
       def generate_chain
         CallChainer.chain(source, line, column)
-      end
-
-      def separator
-        @separator ||= begin
-          result = ''
-          # if word.empty?
-            adj = (column.zero? ? offset : offset - 1)
-            match = source.code[0..adj].match(/[\s]*(\.{1}|:{2})[\s]*{1}\z/)
-            result = match[0] if match
-          # end
-          result
-        end
       end
 
       def start_word_pattern
