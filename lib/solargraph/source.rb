@@ -240,14 +240,9 @@ module Solargraph
     # @param column [Integer]
     # @return [Boolean]
     def comment_at?(line, column)
-      # node = node_at(line, column)
-      # # @todo raise InvalidOffset or InvalidRange or something?
-      # return false if node.nil?
-      # node.type == :str or node.type == :dstr
       pos = Source::Position.new(line, column)
       @comment_ranges.each do |cmnt|
-        return false if cmnt.start.line == line and cmnt.start.column == column
-        return true if cmnt.contain?(pos)
+        return true if cmnt.include?(pos)
         break if cmnt.start.line > pos.line
       end
       false

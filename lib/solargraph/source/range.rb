@@ -36,6 +36,14 @@ module Solargraph
         true
       end
 
+      # True if the range contains the specified position and the position does not precede it.
+      #
+      # @param position [Source::Position]
+      # @return [Boolean]
+      def include? position
+        contain?(position) and !(position.line == start.line and position.character == start.character)
+      end
+
       # Create a range from a pair of lines and characters.
       #
       # @param l1 [Integer] Starting line

@@ -92,24 +92,6 @@ module Solargraph
         @chain ||= generate_chain
       end
 
-      # Get the remainder of the word after the current offset. Given the text
-      # `foobar` with an offset of 3, the remainder is `bar`.
-      #
-      # @return [String]
-      def remainder
-        # @remainder ||= remainder_at(offset)
-        end_of_word
-      end
-
-      # Get the whole word at the current offset, including the remainder.
-      # Given the text `foobar.baz`, the whole word at any offset from 0 to 6
-      # is `foobar`.
-      #
-      # @return [String]
-      def whole_word
-        word + remainder
-      end
-
       # Get the whole signature at the current offset, including the final
       # word and its remainder.
       #
@@ -253,8 +235,9 @@ module Solargraph
 
       def define api_map
         return [] if chain.literal?
-        return api_map.get_path_suggestions(fragment.namespace) if whole_signature == 'self'
-        return [] if string? or comment? or literal? or ApiMap::KEYWORDS.include?(whole_signature)
+        return [] if string? or comment? or literal?
+        # HACK: Checking for self first because it's also a keyword
+        return [] if ApiMap::KEYWORDS.include?(chain.links.first.word) and chain.links.first.word != 'self'
         chain.define_with(api_map, named_path, locals)
       end
 
@@ -347,14 +330,6 @@ module Solargraph
           end
         end
         @signature_position
-      end
-
-      # Range tests that depend on positions identified from parsed code, such
-      # as comment ranges, need to normalize EOLs to \n.
-      #
-      # @return [String]
-      def source_from_parser
-        @source_from_parser ||= @source.code.gsub(/\r\n/, "\n")
       end
 
       def generate_chain
