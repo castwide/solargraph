@@ -77,6 +77,10 @@ module Solargraph
       @scope ||= ((name == 'Class' or name == 'Module') and !subtypes.empty?) ? :class : :instance
     end
 
+    def context
+      @context ||= Context.new(namespace, scope)
+    end
+
     def == other
       return false unless self.class == other.class
       tag == other.tag
