@@ -19,6 +19,14 @@ describe Solargraph::Source::Chain do
     expect(chain.base).to be_undefined
   end
 
+  it "defines constants from core classes" do
+    api_map = Solargraph::ApiMap.new
+    chain = described_class.new([Solargraph::Source::Chain::Constant.new('String')])
+    pins = chain.define(api_map, Solargraph::Context::ROOT, [])
+    expect(pins.first.kind).to eq(Solargraph::Pin::NAMESPACE)
+    expect(pins.first.path).to eq('String')
+  end
+
   it "infers types from core classes" do
     api_map = Solargraph::ApiMap.new
     chain = described_class.new([Solargraph::Source::Chain::Constant.new('String')])
