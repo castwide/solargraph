@@ -78,7 +78,7 @@ module Solargraph
       #
       # @return [Chain]
       def chain
-        @chain ||= CallChainer.chain(source, position.line, position.column)
+        @chain ||= SourceChainer.chain(source, position.line, position.column)
       end
 
       # Get an array of all the locals that are visible from the fragment's
