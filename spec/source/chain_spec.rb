@@ -1,67 +1,37 @@
 describe Solargraph::Source::Chain do
-  let(:api_map) { Solargraph::ApiMap.new }
-
-  it "infers methods returning self from CoreFills" do
-    source = Solargraph::Source.load_string(%(
-      # @type [Array<String>]
-      x = []
-      x.select
-    ))
-    api_map.virtualize source
-    fragment = source.fragment_at(3, 9)
-    pin = fragment.define(api_map).first
-    expect(pin.return_complex_type.tag).to eq('Array<String>')
+  it "gets empty definitions for undefined links" do
+    chain = described_class.new([Solargraph::Source::Chain::Link.new])
+    expect(chain.define(nil, nil, nil)).to be_empty
   end
 
-  it "infers methods returning subtypes from CoreFills" do
-    source = Solargraph::Source.load_string(%(
-      # @type [Array<String>]
-      x = []
-      x.first
-    ))
-    api_map.virtualize source
-    fragment = source.fragment_at(3, 9)
-    pin = fragment.define(api_map).first
-    expect(pin.return_complex_type.tag).to eq('String')
+  it "infers undefined types for undefined links" do
+    chain = described_class.new([Solargraph::Source::Chain::Link.new])
+    expect(chain.infer(nil, nil, nil)).to be_undefined
   end
 
-  it "detects unqualified constant names" do
-    source = Solargraph::Source.load_string(%(
-      class Foo
-        class Bar
-          class Inside
-          end
-        end
-      end
-      class Foo
-        Bar::Inside
-        class Bar
-          Inside
-        end
-      end
-    ))
-    api_map.virtualize source
-    fragment = source.fragment_at(8, 19)
-    pin = fragment.define(api_map).first
-    expect(pin.path).to eq('Foo::Bar::Inside')
-    fragment = source.fragment_at(10, 11)
-    pin = fragment.define(api_map).first
-    expect(pin.path).to eq('Foo::Bar::Inside')
+  it "calls itself undefined if any of its links are undefined" do
+    chain = described_class.new([Solargraph::Source::Chain::Link.new])
+    expect(chain).to be_undefined
   end
 
-  it "detects nested constants" do
-    source = Solargraph::Source.new(%(
-      module Foo
-        module Bar
-          module Baz
-          end
-        end
-      end
-      Foo::Bar::Baz
-    ))
-    api_map.virtualize source
-    fragment = source.fragment_at(7, 17)
-    pin = fragment.define(api_map).first
-    expect(pin.path).to eq('Foo::Bar::Baz')
+  it "returns undefined bases for single links" do
+    chain = described_class.new([Solargraph::Source::Chain::Link.new])
+    expect(chain.base).to be_undefined
+  end
+
+  it "infers types from core classes" do
+    api_map = Solargraph::ApiMap.new
+    chain = described_class.new([Solargraph::Source::Chain::Constant.new('String')])
+    type = chain.infer(api_map, Solargraph::Context::ROOT, [])
+    expect(type.namespace).to eq('String')
+    expect(type.scope).to eq(:class)
+  end
+
+  it "infers types from core methods" do
+    api_map = Solargraph::ApiMap.new
+    chain = described_class.new([Solargraph::Source::Chain::Constant.new('String'), Solargraph::Source::Chain::Call.new('new')])
+    type = chain.infer(api_map, Solargraph::Context::ROOT, [])
+    expect(type.namespace).to eq('String')
+    expect(type.scope).to eq(:instance)
   end
 end

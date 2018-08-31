@@ -23,5 +23,8 @@ module Solargraph
       return false unless self.class == other.class
       namespace == other.namespace and scope == other.scope
     end
+
+    # @todo Is the root context's scope :class or :instance?
+    ROOT = Context.new('', :class)
   end
 end

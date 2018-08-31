@@ -20,7 +20,7 @@ module Solargraph
         # @param context [ComplexType]
         # @param locals [Array<Solargraph::Pin::Base>]
         # @return [Array<Solargraph::Pin::Base>]
-        def resolve_pins api_map, context, locals
+        def resolve api_map, context, locals
           []
         end
 

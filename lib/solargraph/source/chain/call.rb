@@ -13,10 +13,10 @@ module Solargraph
           @arguments = arguments
         end
 
-        def resolve_pins api_map, context, locals
+        def resolve api_map, context, locals
           found = locals.select{|p| p.name == word}
           return inferred_pins(found, api_map, context) unless found.empty?
-          pins = api_map.get_method_stack(namespace_from_context(context), word, scope: context.scope)
+          pins = api_map.get_method_stack(context.namespace, word, scope: context.scope)
           return [] if pins.empty?
           pins[0] = virtual_new_pin(pins.first, context) if pins.first.path == 'Class#new'
           inferred_pins(pins, api_map, context)
@@ -38,10 +38,10 @@ module Solargraph
         # @param new_pin [Solargraph::Pin::Base]
         # @param context_pin [Solargraph::Pin::Base]
         # @return [Pin::Method]
-        def virtual_new_pin new_pin, context_pin
-          pin = Pin::Method.new(new_pin.location, context_pin.path, new_pin.name, '', :class, new_pin.visibility, new_pin.parameters)
+        def virtual_new_pin new_pin, context
+          pin = Pin::Method.new(new_pin.location, context.namespace, new_pin.name, '', :class, new_pin.visibility, new_pin.parameters)
           # @todo Smelly instance variable access.
-          pin.instance_variable_set(:@return_complex_type, ComplexType.parse(context_pin.path))
+          pin.instance_variable_set(:@return_complex_type, ComplexType.parse(context.namespace))
           pin
         end
 

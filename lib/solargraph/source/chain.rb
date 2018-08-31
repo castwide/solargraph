@@ -21,73 +21,26 @@ module Solargraph
       # @return [Array<Source::Chain::Link>]
       attr_reader :links
 
-      # @param filename [String]
       # @param links [Array<Chain::Link>]
-      def initialize filename, links
-        @filename = filename
+      def initialize links
         @links = links
         @links.push UNDEFINED_CALL if @links.empty?
       end
 
-      # @return [Array<Source::Chain::Link>]
+      # @return [Chain]
       def base
-        # @todo It might make sense for the chain links to always have a root.
-        @base ||= links[0..-2]
-      end
-
-      # @return [Source::Chain::Link]
-      def tail
-        @tail ||= links.last
-      end
-
-      def literal?
-        tail.is_a?(Literal)
+        @base ||= Chain.new(links[0..-2])
       end
 
       # @param api_map [ApiMap]
-      # @param context [Pin::Base]
+      # @param context [Context]
       # @param locals [Array<Pin::Base>]
       # @return [Array<Pin::Base>]
-      def define_with api_map, context, locals
-        inner_define_with links, api_map, context, locals
-      end
-
-      def define_base_with api_map, context, locals
-        inner_define_with links[0..-2], api_map, context, locals
-      end
-
-      # @param api_map [ApiMap]
-      # @param context [Pin::Base]
-      # @param locals [Array<Pin::Base>]
-      # @return [ComplexType]
-      def infer_type_with api_map, context, locals
-        # @todo Perform link inference
-        inner_infer_type_with(links, api_map, context, locals)
-      end
-
-      def infer_base_type_with api_map, context, locals
-        inner_infer_type_with(links[0..-2], api_map, context, locals)
-      end
-
-      private
-
-      def inner_infer_type_with array, api_map, context, locals
-        type = ComplexType::UNDEFINED
-        pins = inner_define_with(array, api_map, context, locals)
-        pins.each do |pin|
-          type = pin.infer(api_map)
-          break unless type.undefined?
-        end
-        type
-      end
-
-      def inner_define_with array, api_map, context, locals
-        return [] if array.empty?
+      def define api_map, context, locals
         type = ComplexType::UNDEFINED
         head = true
-        # @param link [Chain::Link]
-        array[0..-2].each do |link|
-          pins = link.resolve_pins(api_map, context, head ? locals : [])
+        links[0..-2].each do |link|
+          pins = link.resolve(api_map, context, head ? locals : [])
           head = false
           return [] if pins.empty?
           pins.each do |pin|
@@ -95,9 +48,24 @@ module Solargraph
             break unless type.undefined?
           end
           return [] if type.undefined?
-          context = Pin::ProxyType.anonymous(type)
+          context = type.context
         end
-        array.last.resolve_pins(api_map, context, head ? locals: [])
+        links.last.resolve(api_map, context, head ? locals: [])
+      end
+
+      # @return [ComplexType]
+      def infer api_map, context, locals
+        type = ComplexType::UNDEFINED
+        pins = define(api_map, context, locals)
+        pins.each do |pin|
+          type = pin.infer(api_map)
+          break unless type.undefined?
+        end
+        type
+      end
+
+      def undefined?
+        links.any?(&:undefined?)
       end
     end
   end
