@@ -80,6 +80,14 @@ module Solargraph
         namespace
       end
 
+      def context
+        @context ||= Context.new(namespace, scope)
+      end
+
+      def scope
+        :class
+      end
+
       # Pin equality is determined using the #nearly? method and also
       # requiring both pins to have the same location.
       #

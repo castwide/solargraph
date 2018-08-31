@@ -34,6 +34,10 @@ module Solargraph
         path
       end
 
+      def context
+        @context ||= Context.new(path, scope)
+      end
+
       def scope
         :class
       end
