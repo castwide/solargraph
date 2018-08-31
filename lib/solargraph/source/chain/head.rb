@@ -5,7 +5,7 @@ module Solargraph
       # either a class (`String`) or a function (`Kernel#String`).
       #
       class Head < Call
-        def resolve_pins api_map, context, locals
+        def resolve api_map, context, locals
           return [self_pin(api_map, context)] if word == 'self'
           base = super
           return base if locals.map(&:name).include?(word)
