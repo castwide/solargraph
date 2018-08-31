@@ -105,7 +105,7 @@ module Solargraph
 
       # @return [Integer]
       def offset
-        @offset = Position.to_offset(source.code, position)
+        @offset ||= Position.to_offset(source.code, position)
       end
 
       def start_word_pattern
