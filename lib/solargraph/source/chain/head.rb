@@ -10,7 +10,7 @@ module Solargraph
           base = super
           return base if locals.map(&:name).include?(word)
           here = []
-          ns = api_map.qualify(word, context.named_context)
+          ns = api_map.qualify(word, context.namespace)
           here.concat api_map.get_path_suggestions(ns) unless ns.nil?
           here + base
         end
