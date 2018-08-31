@@ -420,15 +420,13 @@ module Solargraph
             t = (d.tag.types.nil? || d.tag.types.empty?) ? nil : d.tag.types.flatten.join('')
             if t.nil? or t.include?('r')
               # location, namespace, name, docstring, access
-              @pins.push Solargraph::Pin::Attribute.new(pin.location, pin.path, d.tag.name, docstring.all, :reader, :instance)
+              @pins.push Solargraph::Pin::Attribute.new(pin.location, pin.named_context, d.tag.name, docstring.all, :reader, :instance)
             end
             if t.nil? or t.include?('w')
-              @pins.push Solargraph::Pin::Attribute.new(pin.location, pin.path, "#{d.tag.name}=", docstring.all, :writer, :instance)
+              @pins.push Solargraph::Pin::Attribute.new(pin.location, pin.named_context, "#{d.tag.name}=", docstring.all, :writer, :instance)
             end
           elsif d.tag.tag_name == 'method'
-            gen_src = Source.new("def #{d.tag.name};end", filename)
-            gen_pin = gen_src.pins.last # Method is last pin after root namespace
-            @pins.push Solargraph::Pin::Method.new(pin.location, pin.path, gen_pin.name, docstring.all, :instance, :public, [])
+            @pins.push Solargraph::Pin::Method.new(pin.location, pin.named_context, d.tag.name, docstring.all, :instance, :public, [])
           elsif d.tag.tag_name == 'macro'
             @path_macros[pin.path] = d
           elsif d.tag.tag_name == 'domain'
