@@ -86,6 +86,12 @@ module Solargraph
         Position.new(line, character)
       end
 
+      def self.normalize object
+        return object if object.is_a?(Position)
+        return Position.new(object[0], object[1]) if object.is_a?(Array)
+        raise ArgumentError, "Unable to convert #{object.class} to Position"
+      end
+
       def == other
         return false unless other.is_a?(Position)
         line == other.line and character == other.character

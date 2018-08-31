@@ -111,10 +111,13 @@ module Solargraph
     # @param column [Integer] The zero-based column number
     # @return [ApiMap::Completion]
     def completions_at filename, line, column
+      position = Source::Position.new(line, column)
       source = read(filename)
-      api_map.virtualize source
-      fragment = source.fragment_at(line, column)
-      fragment.complete(api_map)
+      clip = api_map.clip(source, position)
+      clip.complete
+      # api_map.virtualize source
+      # fragment = source.fragment_at(line, column)
+      # fragment.complete(api_map)
     end
 
     # Get definition suggestions for the expression at the specified file and
@@ -125,10 +128,13 @@ module Solargraph
     # @param column [Integer] The zero-based column number
     # @return [Array<Solargraph::Pin::Base>]
     def definitions_at filename, line, column
+      position = Source::Position.new(line, column)
       source = read(filename)
-      api_map.virtualize source
-      fragment = source.fragment_at(line, column)
-      fragment.define(api_map)
+      clip = api_map.clip(source, position)
+      clip.define
+      # api_map.virtualize source
+      # fragment = source.fragment_at(line, column)
+      # fragment.define(api_map)
     end
 
     # Get signature suggestions for the method at the specified file and
@@ -139,10 +145,13 @@ module Solargraph
     # @param column [Integer] The zero-based column number
     # @return [Array<Solargraph::Pin::Base>]
     def signatures_at filename, line, column
+      position = Source::Position.new(line, column)
       source = read(filename)
-      api_map.virtualize source
-      fragment = source.fragment_at(line, column)
-      fragment.signify(api_map)
+      clip = api_map.clip(source, position)
+      clip.signify
+      # api_map.virtualize source
+      # fragment = source.fragment_at(line, column)
+      # fragment.signify(api_map)
     end
 
     # @param filename [String]
@@ -150,10 +159,10 @@ module Solargraph
     # @param column [Integer]
     # @return [Array<Solargraph::Source::Range>]
     def references_from filename, line, column
+      position = Source::Position.new(line, column)
       source = read(filename)
-      api_map.virtualize source
-      fragment = source.fragment_at(line, column)
-      pins = fragment.define(api_map)
+      clip = api_map.clip(source, position)
+      pins = clip.define
       return [] if pins.empty?
       result = []
       # @param pin [Solargraph::Pin::Base]

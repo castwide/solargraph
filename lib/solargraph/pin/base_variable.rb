@@ -50,7 +50,7 @@ module Solargraph
         chain = Source::NodeChainer.chain(location.filename, @assignment)
         fragment = api_map.fragment_at(location)
         locals = fragment.locals - [self]
-        chain.infer_type_with(api_map, context, locals)
+        chain.infer(api_map, context, locals)
       end
 
       def == other

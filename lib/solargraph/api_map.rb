@@ -417,6 +417,13 @@ module Solargraph
       yard_map.unresolved_requires
     end
 
+    # @param source [Source]
+    # @param position [Source::Position]
+    def clip source, position
+      virtualize source
+      Source::Clip.new(self, source.fragment_at(position.line, position.column))
+    end
+
     private
 
     # @return [ApiMap::Store]

@@ -62,7 +62,7 @@ module Solargraph
           # Literal string hack
           links.push Chain::UNDEFINED_CALL if base_literal? and @source.code[offset - 1] == '.' and links.length == 1
         end
-        @chain ||= Chain.new(source.filename, links)
+        @chain ||= Chain.new(links)
       end
 
       private

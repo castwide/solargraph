@@ -3,8 +3,7 @@ module Solargraph
     class NodeChainer
       include NodeMethods
 
-      def initialize filename, node
-        @filename = filename
+      def initialize node
         @node = node
         # @source = source
         # @line = line
@@ -14,7 +13,7 @@ module Solargraph
       # @return [Source::Chain]
       def chain
         links = generate_links(@node)
-        Chain.new(@filename, links)
+        Chain.new(links)
       end
 
       class << self
@@ -23,7 +22,7 @@ module Solargraph
         # @param column [Integer]
         # @return [Source::Chain]
         def chain filename, node
-          NodeChainer.new(filename, node).chain
+          NodeChainer.new(node).chain
         end
 
         # @param code [String]

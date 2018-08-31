@@ -18,6 +18,7 @@ module Solargraph
     autoload :CallChainer,   'solargraph/source/call_chainer'
     autoload :NodeChainer,   'solargraph/source/node_chainer'
     autoload :Completion,    'solargraph/source/completion'
+    autoload :Clip,          'solargraph/source/clip'
 
     include EncodingFixes
 
@@ -299,7 +300,7 @@ module Solargraph
     # @param column [Integer] A zero-based column number
     # @return [Solargraph::Source::Fragment]
     def fragment_at line, column
-      Fragment.new(self, line, column)
+      Fragment.new(self, [line, column])
     end
 
     # @return [Boolean]

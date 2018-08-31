@@ -484,7 +484,7 @@ describe Solargraph::Source do
     )
     source = Solargraph::Source.load_string(code, 'file.rb')
     fragment = source.fragment_at(4, 0)
-    expect(fragment.scope).to eq(:class)
+    expect(fragment.context.scope).to eq(:class)
   end
 
   it "forces initialize methods to be private" do

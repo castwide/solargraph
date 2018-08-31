@@ -32,6 +32,10 @@ module Solargraph
         @base ||= Chain.new(links[0..-2])
       end
 
+      def tail
+        links.last
+      end
+
       # @param api_map [ApiMap]
       # @param context [Context]
       # @param locals [Array<Pin::Base>]
