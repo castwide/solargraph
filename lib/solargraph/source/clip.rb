@@ -42,7 +42,9 @@ module Solargraph
       end
 
       def signify
-        []
+        return [] unless fragment.argument?
+        clip = Clip.new(api_map, fragment.recipient)
+        clip.define.select{|pin| pin.kind == Pin::METHOD}
       end
 
       private

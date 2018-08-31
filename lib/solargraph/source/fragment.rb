@@ -81,7 +81,6 @@ module Solargraph
         @chain ||= CallChainer.chain(source, position.line, position.column)
       end
 
-
       # Get an array of all the locals that are visible from the fragment's
       # position. Locals can be local variables, method parameters, or block
       # parameters. The array starts with the nearest local pin.
@@ -91,6 +90,15 @@ module Solargraph
         @locals ||= source.locals.select { |pin|
           pin.visible_from?(block, position)
         }.reverse
+      end
+
+      def argument?
+        @argument ||= !signature_position.nil?
+      end
+
+      def recipient
+        return nil unless argument?
+        @recipient ||= source.fragment_at(signature_position.line, signature_position.column)
       end
 
       private
@@ -111,6 +119,27 @@ module Solargraph
       # @return [Solargraph::Pin::Base]
       def block
         @block ||= @source.locate_block_pin(position.line, position.character)
+      end
+
+      def signature_position
+        if @signature_position.nil?
+          open_parens = 0
+          cursor = offset - 1
+          while cursor >= 0
+            break if cursor < 0
+            if source.code[cursor] == ')'
+              open_parens -= 1
+            elsif source.code[cursor] == '('
+              open_parens += 1
+            end
+            break if open_parens == 1
+            cursor -= 1
+          end
+          if cursor >= 0
+            @signature_position = Source::Position.from_offset(source.code, cursor)
+          end
+        end
+        @signature_position
       end
     end
   end

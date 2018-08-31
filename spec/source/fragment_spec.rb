@@ -81,4 +81,22 @@ describe Solargraph::Source::Fragment do
     expect(fragment.locals.length).to eq(1)
     expect(fragment.locals.first.name).to eq('lvar')
   end
+
+  it "finds recipients" do
+    fragment = described_class.new(@call_source, [0, 15])
+    expect(fragment.argument?).to be(true)
+    expect(fragment.recipient).to be_a(Solargraph::Source::Fragment)
+  end
+
+  it "detects a lack of recipients at a method call" do
+    fragment = described_class.new(@call_source, [0, 8])
+    expect(fragment.argument?).to be(false)
+    expect(fragment.recipient).to be_nil
+  end
+
+  it "detects lack of recipients at the root" do
+    fragment = described_class.new(@call_source, [0, 25])
+    expect(fragment.argument?).to be(false)
+    expect(fragment.recipient).to be_nil
+  end
 end
