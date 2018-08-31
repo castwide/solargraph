@@ -7,6 +7,7 @@ describe Solargraph::Source::Fragment do
           @bar
         end
         def self.baz
+          lvar = 'one'
           @baz
         end
       end
@@ -73,5 +74,11 @@ describe Solargraph::Source::Fragment do
   it "generates chains" do
     fragment = described_class.new(@call_source, [0, 12])
     expect(fragment.chain).to be_a(Solargraph::Source::Chain)
+  end
+
+  it "finds locals" do
+    fragment = described_class.new(@name_source, [7, 0])
+    expect(fragment.locals.length).to eq(1)
+    expect(fragment.locals.first.name).to eq('lvar')
   end
 end

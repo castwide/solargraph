@@ -81,6 +81,18 @@ module Solargraph
         @chain ||= CallChainer.chain(source, position.line, position.column)
       end
 
+
+      # Get an array of all the locals that are visible from the fragment's
+      # position. Locals can be local variables, method parameters, or block
+      # parameters. The array starts with the nearest local pin.
+      #
+      # @return [Array<Solargraph::Pin::Base>]
+      def locals
+        @locals ||= source.locals.select { |pin|
+          pin.visible_from?(block, position)
+        }.reverse
+      end
+
       private
 
       # @return [Integer]
@@ -94,6 +106,11 @@ module Solargraph
 
       def end_word_pattern
         /^([a-z0-9_]|[^\u0000-\u007F])*[\?\!]?/i
+      end
+
+      # @return [Solargraph::Pin::Base]
+      def block
+        @block ||= @source.locate_block_pin(position.line, position.character)
       end
     end
   end
