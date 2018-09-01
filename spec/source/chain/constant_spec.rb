@@ -1,6 +1,6 @@
 describe Solargraph::Source::Chain::Constant do
   it "resolves constants in the current context" do
-    context = Solargraph::Context::ROOT
+    context = Solargraph::ComplexType::ROOT
     foo_pin = Solargraph::Pin::Constant.new(nil, '', 'Foo', '', nil, nil, context, :public)
     api_map = double(Solargraph::ApiMap, :get_constants => [foo_pin])
     link = described_class.new('Foo')

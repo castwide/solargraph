@@ -30,6 +30,17 @@ module Solargraph
         @path ||= namespace + (scope == :instance ? '#' : '.') + name
       end
 
+      def context
+        @context ||= begin
+          if scope == :class
+            # @todo Determine whether the namespace is a class or a module
+            ComplexType.parse("Class<#{namespace}>")
+          else
+            ComplexType.parse(namespace)
+          end
+        end
+      end
+
       def completion_item_kind
         Solargraph::LanguageServer::CompletionItemKinds::METHOD
       end

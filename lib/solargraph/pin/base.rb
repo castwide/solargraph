@@ -80,8 +80,9 @@ module Solargraph
         namespace
       end
 
+      # @return [ComplexType]
       def context
-        @context ||= Context.new(namespace, scope)
+        @context ||= ComplexType.parse(namespace)
       end
 
       def scope

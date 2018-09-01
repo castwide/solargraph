@@ -35,7 +35,7 @@ module Solargraph
       end
 
       def context
-        @context ||= Context.new(path, scope)
+        @context ||= ComplexType.parse("#{type.to_s.capitalize}<#{path}>")
       end
 
       def scope

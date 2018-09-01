@@ -22,7 +22,7 @@ describe Solargraph::Source::Chain do
   it "defines constants from core classes" do
     api_map = Solargraph::ApiMap.new
     chain = described_class.new([Solargraph::Source::Chain::Constant.new('String')])
-    pins = chain.define(api_map, Solargraph::Context::ROOT, [])
+    pins = chain.define(api_map, Solargraph::ComplexType::ROOT, [])
     expect(pins.first.kind).to eq(Solargraph::Pin::NAMESPACE)
     expect(pins.first.path).to eq('String')
   end
@@ -30,7 +30,7 @@ describe Solargraph::Source::Chain do
   it "infers types from core classes" do
     api_map = Solargraph::ApiMap.new
     chain = described_class.new([Solargraph::Source::Chain::Constant.new('String')])
-    type = chain.infer(api_map, Solargraph::Context::ROOT, [])
+    type = chain.infer(api_map, Solargraph::ComplexType::ROOT, [])
     expect(type.namespace).to eq('String')
     expect(type.scope).to eq(:class)
   end
@@ -38,7 +38,7 @@ describe Solargraph::Source::Chain do
   it "infers types from core methods" do
     api_map = Solargraph::ApiMap.new
     chain = described_class.new([Solargraph::Source::Chain::Constant.new('String'), Solargraph::Source::Chain::Call.new('new')])
-    type = chain.infer(api_map, Solargraph::Context::ROOT, [])
+    type = chain.infer(api_map, Solargraph::ComplexType::ROOT, [])
     expect(type.namespace).to eq('String')
     expect(type.scope).to eq(:instance)
   end

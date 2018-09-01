@@ -53,7 +53,7 @@ module Solargraph
             break unless type.undefined?
           end
           return [] if type.undefined?
-          context = type.context
+          context = type
         end
         links.last.resolve(api_map, context, head ? locals: [])
       end
