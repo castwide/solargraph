@@ -95,11 +95,13 @@ module Solargraph
     end
 
     class << self
+      # @return [SourceMap]
       def load filename
         source = Solargraph::Source.load(filename)
         SourceMap.map(source)
       end
 
+      # @return [SourceMap]
       def load_string code, filename = nil
         source = Solargraph::Source.load_string(code, filename)
         SourceMap.map(source)

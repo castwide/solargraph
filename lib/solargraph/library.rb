@@ -17,7 +17,6 @@ module Solargraph
     # @param text [String]
     # @param version [Integer]
     def open filename, text, version
-      STDERR.puts "Opening #{filename}"
       source = Solargraph::Source.load_string(text, filename)
       source.version = version
       source_map_hash[filename] = SourceMap.map(source)
@@ -230,6 +229,7 @@ module Solargraph
     # @param filename [String]
     # @return [Array<Solargraph::Pin::Base>]
     def document_symbols filename
+      return [] unless source_map_hash.has_key?(filename)
       source_map_hash[filename].document_symbols
     end
 

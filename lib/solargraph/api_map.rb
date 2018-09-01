@@ -49,11 +49,14 @@ module Solargraph
       @index_mutex.synchronize {
         @source_map_hash.clear
         @cache.clear
+        reqs = []
         pins = []
         source_maps.each do |m|
           @source_map_hash[m.source.filename] = m
           pins.concat m.pins
+          reqs.concat m.requires.map(&:name)
         end
+        yard_map.change(reqs)
         new_store = Store.new(pins + yard_map.pins)
         @store = new_store
       }
@@ -78,20 +81,6 @@ module Solargraph
     # @return [Array<Solargraph::Pin::Base>]
     def pins
       store.pins
-    end
-
-    # An array of required paths in the workspace.
-    #
-    # @return [Array<String>]
-    def required
-      # result = []
-      # @sources.each do |s|
-      #   result.concat s.required.map(&:name)
-      # end
-      # result.concat workspace.config.required
-      # result.uniq
-      # @todo Make this work
-      store.required
     end
 
     # An array of suggestions based on Ruby keywords (`if`, `end`, etc.).
@@ -349,10 +338,7 @@ module Solargraph
     # @param location [Solargraph::Source::Location]
     # @return [Solargraph::Pin::Base]
     def locate_pin location
-      # @sources.each do |source|
-      #   pin = source.locate_pin(location)
-      #   return pin unless pin.nil?
-      # end
+      return nil if location.nil?
       source_map_hash[location.filename].locate_pin(location)
     end
 
