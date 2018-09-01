@@ -3,11 +3,14 @@ require 'set'
 module Solargraph
   class ApiMap
     class Store
+      attr_reader :pins
+
       # @param sources [Array<Solargraph::Source>]
       # @param yard_pins [Array<Solargraph::Pin::Base>]
-      def initialize sources, yard_pins
-        inner_update sources
-        pins.concat yard_pins
+      def initialize pins
+        # inner_update sources
+        # pins.concat yard_pins
+        @pins = pins
         index
       end
 
@@ -182,11 +185,13 @@ module Solargraph
       def index
         namespace_map.clear
         namespaces.clear
+        symbols.clear
         namespace_map[''] = []
         pins.each do |pin|
           namespace_map[pin.namespace] ||= []
           namespace_map[pin.namespace].push pin
           namespaces.add pin.path if pin.kind == Pin::NAMESPACE and !pin.path.empty?
+          symbols.push pin if pin.kind == Pin::SYMBOL
         end
         @namespace_pins = nil
         @method_pins = nil

@@ -16,15 +16,13 @@ module Solargraph
 
     attr_reader :requires
 
-    attr_reader :symbols
-
     def initialize source, pins, locals, requires, symbols, string_ranges, comment_ranges
       # [@source, @pins, @locals, @requires, @symbols, @string_ranges, @comment_ranges]
       @source = source
       @pins = pins
       @locals = locals
       @requires = requires
-      @symbols = symbols
+      @pins.concat symbols
       @string_ranges = string_ranges
       @comment_ranges = comment_ranges
     end
@@ -76,6 +74,18 @@ module Solargraph
 
     def locate_block_pin line, character
       _locate_pin line, character, Pin::NAMESPACE, Pin::METHOD, Pin::BLOCK
+    end
+
+    class << self
+      def load filename
+        source = Solargraph::Source.load(filename)
+        SourceMap.map(source)
+      end
+
+      def load_string code, filename = nil
+        source = Solargraph::Source.load_string(code, filename)
+        SourceMap.map(source)
+      end
     end
 
     private
