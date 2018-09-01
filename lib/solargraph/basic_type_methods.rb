@@ -77,13 +77,6 @@ module Solargraph
       @scope ||= ((name == 'Class' or name == 'Module') and !subtypes.empty?) ? :class : :instance
     end
 
-    # @todo Candidate for deprecation. Complex types already have all the
-    #   information a context needs, plus extra stuff that's needed in
-    #   Chain::Call.
-    # def context
-    #   @context ||= Context.new(namespace, scope)
-    # end
-
     def == other
       return false unless self.class == other.class
       tag == other.tag

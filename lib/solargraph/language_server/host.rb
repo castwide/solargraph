@@ -173,7 +173,6 @@ module Solargraph
             @change_queue.push params
             if params['textDocument']['version'] == source.version + params['contentChanges'].length
               updater = generate_updater(params)
-              # library.async_synchronize updater
               library.synchronize updater
               @change_queue.pop
               @diagnostics_queue.push params['textDocument']['uri']
@@ -449,8 +448,8 @@ module Solargraph
 
       # @param uri [String]
       # @return [Array<Solargraph::Pin::Base>]
-      def file_symbols uri
-        library.file_symbols(uri_to_file(uri))
+      def document_symbols uri
+        library.document_symbols(uri_to_file(uri))
       end
 
       # Send a notification to the client.
@@ -535,56 +534,16 @@ module Solargraph
                   pending[obj['textDocument']['uri']] ||= 0
                   pending[obj['textDocument']['uri']] += 1
                 end
-                have_changes = !@change_queue.empty?
                 @change_queue.delete_if do |change|
                   filename = uri_to_file(change['textDocument']['uri'])
                   source = library.checkout(filename)
-
                   pending[change['textDocument']['uri']] -= 1
                   updater = generate_updater(change)
-                  library.async_synchronize updater #, pending[change['textDocument']['uri']] == 0
+                  library.synchronize updater
                   @diagnostics_queue.push change['textDocument']['uri']
-                  next true
-
-                  #   if change['textDocument']['version'] == source.version + change['contentChanges'].length
-                #     pending[change['textDocument']['uri']] -= 1
-                #     updater = generate_updater(change)
-                #     library.synchronize updater, pending[change['textDocument']['uri']] == 0
-                #     @diagnostics_queue.push change['textDocument']['uri']
-                #     changed = true
-                #     next true
-                #   elsif change['textDocument']['version'] == source.version + 1
-                #     # HACK: This condition fixes the fact that certain changes
-                #     # increment the version by one regardless of the number of
-                #     # changes
-                #     STDERR.puts "Warning: change applied to #{uri_to_file(change['textDocument']['uri'])} is possibly out of sync"
-                #     pending[change['textDocument']['uri']] -= 1
-                #     updater = generate_updater(change)
-                #     library.synchronize updater, pending[change['textDocument']['uri']] == 0
-                #     @diagnostics_queue.push change['textDocument']['uri']
-                #     changed = true
-                #     next true
-                #   elsif change['textDocument']['version'] <= source.version
-                #     # @todo Is deleting outdated changes correct behavior?
-                #     STDERR.puts "Warning: outdated change to #{change['textDocument']['uri']} was ignored"
-                #     @diagnostics_queue.push change['textDocument']['uri']
-                #     next true
-                #   else
-                #     if unsafe_open?(change['textDocument']['uri'])
-                #       STDERR.puts "Skipping out of order change to #{change['textDocument']['uri']}"
-                #       next false
-                #     else
-                #       STDERR.puts "Deleting out of order change to closed file #{change['textDocument']['uri']}"
-                #       next true
-                #     end
-                #   end
+                  true
                 end
-                # refreshable = changed and @change_queue.empty?
-                # library.refresh if refreshable
-                library.refresh if have_changes
               rescue Exception => e
-                # Trying to get anything out of the error except its class
-                # hangs the thread for some reason
                 STDERR.puts "An error occurred in the change thread: #{e.class}"
                 STDERR.puts e.backtrace
                 @change_queue.clear

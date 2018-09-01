@@ -12,12 +12,6 @@ module Solargraph
     autoload :Store,        'solargraph/api_map/store'
 
     include Solargraph::ApiMap::SourceToYard
-    # include CoreFills # @todo CoreFills are used elsewhere
-
-    # The workspace to analyze and process.
-    #
-    # @return [Solargraph::Workspace]
-    # attr_reader :workspace
 
     # Get a LiveMap associated with the current workspace.
     #

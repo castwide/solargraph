@@ -7,7 +7,6 @@ module Solargraph
     # @param workspace [Solargraph::Workspace]
     def initialize workspace = Solargraph::Workspace.new(nil)
       @workspace = workspace
-      @update_mutex = Mutex.new
       index_workspace
     end
 
@@ -18,6 +17,7 @@ module Solargraph
     # @param text [String]
     # @param version [Integer]
     def open filename, text, version
+      STDERR.puts "Opening #{filename}"
       source = Solargraph::Source.load_string(text, filename)
       source.version = version
       source_map_hash[filename] = SourceMap.map(source)
@@ -119,9 +119,6 @@ module Solargraph
       map = source_map_hash[filename]
       clip = api_map.clip(map, position)
       clip.complete
-      # api_map.virtualize source
-      # fragment = source.fragment_at(line, column)
-      # fragment.complete(api_map)
     end
 
     # Get definition suggestions for the expression at the specified file and
@@ -133,13 +130,9 @@ module Solargraph
     # @return [Array<Solargraph::Pin::Base>]
     def definitions_at filename, line, column
       position = Position.new(line, column)
-      # source = read(filename)
       map = source_map_hash[filename]
       clip = api_map.clip(map, position)
       clip.define
-      # api_map.virtualize source
-      # fragment = source.fragment_at(line, column)
-      # fragment.define(api_map)
     end
 
     # Get signature suggestions for the method at the specified file and
@@ -154,9 +147,6 @@ module Solargraph
       source = source_map_hash[filename]
       clip = api_map.clip(source, position)
       clip.signify
-      # api_map.virtualize source
-      # fragment = source.fragment_at(line, column)
-      # fragment.signify(api_map)
     end
 
     # @param filename [String]
@@ -214,18 +204,7 @@ module Solargraph
     # @param filename [String]
     # @return [Source]
     def checkout filename
-      # if filename.nil?
-      #   api_map.virtualize nil
-      #   nil
-      # else
-      #   read filename
-      # end
       read filename
-    end
-
-    # @todo Candidate for deprecation
-    def refresh force = false
-      # api_map.refresh force
     end
 
     # @param query [String]
@@ -250,10 +229,8 @@ module Solargraph
 
     # @param filename [String]
     # @return [Array<Solargraph::Pin::Base>]
-    def file_symbols filename
-      []
-      # @todo Make this work
-      # read(filename).all_symbols
+    def document_symbols filename
+      source_map_hash[filename].document_symbols
     end
 
     # @param path [String]
@@ -264,23 +241,15 @@ module Solargraph
 
     # @param updater [Solargraph::Source::Updater]
     def synchronize updater
-      source = workspace.synchronize updater
-      source_map_hash[source.filename] = SourceMap.map(source)
-      api_map.catalog source_map_hash.values
-    end
-
-    def async_synchronize updater
-      source = workspace.synchronize updater
-      Thread.new do
-        new_source_map = SourceMap.map(source)
-        @update_mutex.synchronize {
-          old_source_map = @source_map_hash[source.filename]
-          unless old_source_map.try_merge!(new_source_map)
-            @source_map_hash[source.filename] = new_source_map
-            api_map.catalog @source_map_hash.values
-          end
-        }
+      if workspace.has_file?(updater.filename)
+        source = workspace.synchronize updater
+        source_map_hash[source.filename] = SourceMap.map(source)
+      else
+        # @todo This is spaghetti
+        source_map_hash[updater.filename].source.synchronize updater
+        source_map_hash[updater.filename] = SourceMap.map(source_map_hash[updater.filename].source)
       end
+      api_map.catalog source_map_hash.values
     end
 
     # Get the current text of a file in the library.
@@ -328,9 +297,7 @@ module Solargraph
 
     # @return [Hash<String, Solargraph::SourceMap>]
     def source_map_hash
-      @update_mutex.synchronize {
-        @source_map_hash ||= {}
-      }
+      @source_map_hash ||= {}
     end
 
     # @return [Solargraph::ApiMap]

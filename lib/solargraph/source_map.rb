@@ -55,6 +55,12 @@ module Solargraph
       false
     end
 
+    def document_symbols
+      @api_symbols ||= pins.select { |pin|
+        [Pin::ATTRIBUTE, Pin::CONSTANT, Pin::METHOD, Pin::NAMESPACE].include?(pin.kind) and !pin.path.empty?
+      }
+    end
+
     # @param position [Position]
     # @return [Solargraph::SourceMap::Fragment]
     def fragment_at position
