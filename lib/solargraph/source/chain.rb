@@ -32,10 +32,6 @@ module Solargraph
         @base ||= Chain.new(links[0..-2])
       end
 
-      def tail
-        links.last
-      end
-
       # @param api_map [ApiMap]
       # @param context [Context]
       # @param locals [Array<Pin::Base>]
@@ -79,6 +75,10 @@ module Solargraph
 
       def undefined?
         links.any?(&:undefined?)
+      end
+
+      def constant?
+        links.last.is_a?(Chain::Constant)
       end
     end
   end

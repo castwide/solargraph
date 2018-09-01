@@ -17,7 +17,7 @@ module Solargraph
         result = []
         # type = infer_base_type(api_map)
         type = fragment.chain.base.infer(api_map, fragment.context, fragment.locals)
-        if fragment.chain.tail.constant?
+        if fragment.chain.constant?
           result.concat api_map.get_constants(type.namespace, fragment.context.namespace)
         else
           result.concat api_map.get_complex_type_methods(type, fragment.context.namespace, fragment.chain.links.length == 1)

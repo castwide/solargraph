@@ -198,4 +198,9 @@ describe Solargraph::ComplexType do
     type = Solargraph::ComplexType.parse('String, Array<String>')
     expect(type.tag).to eq('String')
   end
+
+  it "raises NoMethodError for missing methods" do
+    type = Solargraph::ComplexType.parse('String')
+    expect { type.undefined_method }.to raise_error(NoMethodError)
+  end
 end

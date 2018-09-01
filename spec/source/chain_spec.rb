@@ -42,4 +42,22 @@ describe Solargraph::Source::Chain do
     expect(type.namespace).to eq('String')
     expect(type.scope).to eq(:instance)
   end
+
+  it "recognizes literals" do
+    chain = described_class.new([Solargraph::Source::Chain::Literal.new('String')])
+    expect(chain.literal?).to be(true)
+  end
+
+  it "recognizes constants" do
+    chain = described_class.new([Solargraph::Source::Chain::Constant.new('String')])
+    expect(chain.constant?).to be(true)
+  end
+
+  it "recognizes unfinished constants" do
+    chain = described_class.new([Solargraph::Source::Chain::Constant.new('String'), Solargraph::Source::Chain::Constant.new('<undefined>')])
+    expect(chain.constant?).to be(true)
+    expect(chain.base.constant?).to be(true)
+    expect(chain.undefined?).to be(true)
+    expect(chain.base.undefined?).to be(false)
+  end
 end
