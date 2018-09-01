@@ -51,13 +51,13 @@ module Solargraph
           context
         end
 
-        def inferred_pins pins, api_map, context_pin
+        def inferred_pins pins, api_map, context
           result = pins.uniq(&:location).map do |p|
             if CoreFills::METHODS_RETURNING_SELF.include?(p.path)
-              next Solargraph::Pin::Method.new(p.location, p.namespace, p.name, "@return [#{context_pin.return_complex_type.tag}]", p.scope, p.visibility, p.parameters)
+              next Solargraph::Pin::Method.new(p.location, p.namespace, p.name, "@return [#{context.tag}]", p.scope, p.visibility, p.parameters)
             end
-            if CoreFills::METHODS_RETURNING_SUBTYPES.include?(p.path) and !context_pin.return_complex_type.subtypes.empty?
-              next Solargraph::Pin::Method.new(p.location, p.namespace, p.name, "@return [#{context_pin.return_complex_type.subtypes.first.tag}]", p.scope, p.visibility, p.parameters)
+            if CoreFills::METHODS_RETURNING_SUBTYPES.include?(p.path) and !context.subtypes.empty?
+              next Solargraph::Pin::Method.new(p.location, p.namespace, p.name, "@return [#{context.subtypes.first.tag}]", p.scope, p.visibility, p.parameters)
             end
             next p if p.kind == Pin::METHOD or p.kind == Pin::ATTRIBUTE or p.kind == Pin::NAMESPACE
             type = p.infer(api_map)
