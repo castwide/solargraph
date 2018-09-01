@@ -65,6 +65,8 @@ module Solargraph
       }
     end
 
+    # @param filename [String]
+    # @param position [Position]
     def fragment_at filename, position
       raise "No: #{filename}" unless source_map_hash.has_key?(filename)
       source_map_hash[filename].fragment_at(position)

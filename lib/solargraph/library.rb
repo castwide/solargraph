@@ -275,10 +275,7 @@ module Solargraph
         new_source_map = SourceMap.map(source)
         @update_mutex.synchronize {
           old_source_map = @source_map_hash[source.filename]
-          if old_source_map.try_merge!(new_source_map)
-            STDERR.puts "..."
-          else
-            STDERR.puts "NO MERGE. Doing it the hard way."
+          unless old_source_map.try_merge!(new_source_map)
             @source_map_hash[source.filename] = new_source_map
             api_map.catalog @source_map_hash.values
           end
