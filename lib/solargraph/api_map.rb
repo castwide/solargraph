@@ -418,7 +418,7 @@ module Solargraph
     end
 
     # @param source [Source]
-    # @param position [Source::Position]
+    # @param position [Position]
     def clip source, position
       virtualize source
       Source::Clip.new(self, source.fragment_at(position.line, position.column))

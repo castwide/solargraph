@@ -1,5 +1,5 @@
 module Solargraph
-  class Source
+  class SourceMap
     class Clip
       # @param api_map [ApiMap]
       # @param fragment [Fragment]

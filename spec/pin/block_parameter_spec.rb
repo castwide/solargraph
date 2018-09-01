@@ -57,7 +57,8 @@ describe Solargraph::Pin::BlockParameter do
       foo.bar do |baz|
       end
     ))
-    block = source.pins.select{|p| p.kind == Solargraph::Pin::BLOCK}.first
+    map = Solargraph::SourceMap.map(source)
+    block = map.pins.select{|p| p.kind == Solargraph::Pin::BLOCK}.first
     param = block.parameters.first
     expect(param.kind).to eq(Solargraph::Pin::BLOCK_PARAMETER)
     expect(param.completion_item_kind).to eq(Solargraph::LanguageServer::CompletionItemKinds::VARIABLE)

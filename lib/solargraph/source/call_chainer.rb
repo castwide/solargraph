@@ -109,7 +109,7 @@ module Solargraph
         @column
       end
 
-      # @return [Source::Position]
+      # @return [Position]
       def position
         @position ||= Position.new(line, column)
       end

@@ -4,7 +4,6 @@ require 'time'
 module Solargraph
   class Source
     autoload :FlawedBuilder, 'solargraph/source/flawed_builder'
-    autoload :Fragment,      'solargraph/source/fragment'
     autoload :Position,      'solargraph/source/position'
     autoload :Range,         'solargraph/source/range'
     autoload :Location,      'solargraph/source/location'
@@ -12,13 +11,7 @@ module Solargraph
     autoload :Change,        'solargraph/source/change'
     autoload :Mapper,        'solargraph/source/mapper'
     autoload :NodeMethods,   'solargraph/source/node_methods'
-    autoload :Chain,         'solargraph/source/chain'
     autoload :EncodingFixes, 'solargraph/source/encoding_fixes'
-    autoload :SourceChainer, 'solargraph/source/source_chainer'
-    autoload :NodeChainer,   'solargraph/source/node_chainer'
-    autoload :Completion,    'solargraph/source/completion'
-    autoload :Clip,          'solargraph/source/clip'
-    autoload :Map,           'solargraph/source/map'
 
     include EncodingFixes
     include NodeMethods
@@ -28,6 +21,8 @@ module Solargraph
 
     # @return [Parser::AST::Node]
     attr_reader :node
+
+    attr_reader :comments
 
     # @return [String]
     attr_reader :filename
@@ -55,14 +50,14 @@ module Solargraph
       end
     end
 
-    # @param range [Solargraph::Source::Range]
+    # @param range [Solargraph::Range]
     def at range
       from_to range.start.line, range.start.character, range.ending.line, range.ending.character
     end
 
     def from_to l1, c1, l2, c2
-      b = Solargraph::Source::Position.line_char_to_offset(@code, l1, c1)
-      e = Solargraph::Source::Position.line_char_to_offset(@code, l2, c2)
+      b = Solargraph::Position.line_char_to_offset(@code, l1, c1)
+      e = Solargraph::Position.line_char_to_offset(@code, l2, c2)
       @code[b..e-1]
     end
 
@@ -115,13 +110,6 @@ module Solargraph
           end
         end
       end
-    end
-
-    # @param line [Integer] A zero-based line number
-    # @param column [Integer] A zero-based column number
-    # @return [Solargraph::Source::Fragment]
-    def fragment_at line, column
-      Fragment.new(self, [line, column])
     end
 
     # @return [Boolean]

@@ -1,4 +1,4 @@
-describe Solargraph::Source::Mapper do
+describe Solargraph::SourceMap::Mapper do
   it "creates `new` pins for `initialize` pins" do
     source = Solargraph::Source.new(%(
       class Foo
@@ -9,9 +9,10 @@ describe Solargraph::Source::Mapper do
         def initialize; end
       end
     ))
-    foo_pin = source.pins.select{|pin| pin.path == 'Foo.new'}.first
+    map = Solargraph::SourceMap.map(source)
+    foo_pin = map.pins.select{|pin| pin.path == 'Foo.new'}.first
     expect(foo_pin.return_type).to eq('Foo')
-    bar_pin = source.pins.select{|pin| pin.path == 'Foo::Bar.new'}.first
+    bar_pin = map.pins.select{|pin| pin.path == 'Foo::Bar.new'}.first
     expect(bar_pin.return_type).to eq('Foo::Bar')
   end
 
@@ -23,7 +24,8 @@ describe Solargraph::Source::Mapper do
         xyz(include Indirect)
       end
     ))
-    foo_pin = source.pins.select{|pin| pin.path == 'Foo'}.first
+    map = Solargraph::SourceMap.map(source)
+    foo_pin = map.pins.select{|pin| pin.path == 'Foo'}.first
     expect(foo_pin.include_references.map(&:name)).to include('Direct')
     expect(foo_pin.include_references.map(&:name)).not_to include('Indirect')
   end
@@ -36,7 +38,8 @@ describe Solargraph::Source::Mapper do
         xyz(extend Indirect)
       end
     ))
-    foo_pin = source.pins.select{|pin| pin.path == 'Foo'}.first
+    map = Solargraph::SourceMap.map(source)
+    foo_pin = map.pins.select{|pin| pin.path == 'Foo'}.first
     expect(foo_pin.extend_references.map(&:name)).to include('Direct')
     expect(foo_pin.extend_references.map(&:name)).not_to include('Indirect')
   end
@@ -50,9 +53,10 @@ describe Solargraph::Source::Mapper do
         end
       end
     ))
-    bar1 = source.pins.select{|pin| pin.name == 'bar1'}.first
+    map = Solargraph::SourceMap.map(source)
+    bar1 = map.pins.select{|pin| pin.name == 'bar1'}.first
     expect(bar1.scope).to eq(:instance)
-    bar2 = source.pins.select{|pin| pin.name == 'bar2'}.first
+    bar2 = map.pins.select{|pin| pin.name == 'bar2'}.first
     expect(bar2.scope).to eq(:class)
   end
 end

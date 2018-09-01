@@ -1,7 +1,8 @@
-describe Solargraph::Source::SourceChainer do
+describe Solargraph::SourceMap::SourceChainer do
   it "handles trailing colons that are not namespace separators" do
     source = Solargraph::Source.load_string('Foo:')
-    fragment = source.fragment_at(0, 4)
+    map = Solargraph::SourceMap.map(source)
+    fragment = map.fragment_at(Solargraph::Position.new(0, 4))
     expect(fragment.chain.links.first).to be_undefined
   end
 end

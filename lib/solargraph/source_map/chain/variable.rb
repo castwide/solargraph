@@ -1,7 +1,7 @@
 module Solargraph
-  class Source
+  class SourceMap
     class Chain
-      class InstanceVariable < Link
+      class Variable < Link
         def resolve api_map, context, locals
           api_map.get_instance_variable_pins(context.namespace, context.scope).select{|p| p.name == word}
         end

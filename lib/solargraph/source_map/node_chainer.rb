@@ -80,7 +80,7 @@ module Solargraph
         elsif [:gvar, :gvasgn].include?(n.type)
           result.push Chain::GlobalVariable.new(n.children[0].to_s)
         elsif [:class, :module, :def, :defs].include?(n.type)
-          location = Solargraph::Source::Location.new(@filename, Source::Range.from_to(n.loc.expression.line - 1, n.loc.expression.column, n.loc.expression.last_line - 1, n.loc.expression.last_column))
+          location = Solargraph::Source::Location.new(@filename, Range.from_to(n.loc.expression.line - 1, n.loc.expression.column, n.loc.expression.last_line - 1, n.loc.expression.last_column))
           result.push Chain::Definition.new(location)
         else
           lit = infer_literal_node_type(n)

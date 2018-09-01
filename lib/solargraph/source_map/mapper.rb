@@ -1,13 +1,12 @@
 module Solargraph
-  class Source
-    # The Mapper generates pins and other data for Sources.
+  class SourceMap
+    # The Mapper generates pins and other data for SourceMaps.
     #
-    # This class is used internally by the Source class on initialization,
-    # e.g., via Source.new or Source.load. Users should not normally need to
-    # call it directly.
+    # This class is used internally by the SourceMap class. Users should not
+    # normally need to call it directly.
     #
     class Mapper
-      include NodeMethods
+      include Source::NodeMethods
 
       private_class_method :new
 
@@ -21,7 +20,7 @@ module Solargraph
         @node_stack = []
         @directives = {}
         @comment_ranges = comments.map do |c|
-          Source::Range.from_to(c.loc.expression.line, c.loc.expression.column, c.loc.expression.last_line, c.loc.expression.last_column)
+          Range.from_to(c.loc.expression.line, c.loc.expression.column, c.loc.expression.last_line, c.loc.expression.last_column)
         end
         @node_comments = associate_comments(node, comments)
         @pins = []
@@ -46,9 +45,10 @@ module Solargraph
       end
 
       class << self
+        # @param source [Source]
         # @return [Array]
-        def map filename, code, node, comments
-          new.map filename, code, node, comments
+        def map source
+          new.map source.filename, source.code, source.node, source.comments
         end
       end
 
@@ -59,8 +59,8 @@ module Solargraph
         #   slightly more efficient than calculating offsets.
         b = node.location.expression.begin.begin_pos
         e = node.location.expression.end.end_pos
-        # b = Source::Position.line_char_to_offset(@code, node.location.line - 1, node.location.column)
-        # e = Source::Position.line_char_to_offset(@code, node.location.last_line - 1, node.location.last_column)
+        # b = Position.line_char_to_offset(@code, node.location.line - 1, node.location.column)
+        # e = Position.line_char_to_offset(@code, node.location.last_line - 1, node.location.last_column)
         frag = source_from_parser[b..e-1].to_s
         frag.strip.gsub(/,$/, '')
       end
@@ -79,7 +79,7 @@ module Solargraph
       def process node, tree = [], visibility = :public, scope = :instance, fqn = '', stack = []
         return unless node.is_a?(AST::Node)
         if node.type == :str
-          @strings.push Source::Range.from_to(node.loc.expression.line, node.loc.expression.column, node.loc.expression.last_line, node.loc.expression.last_column)
+          @strings.push Range.from_to(node.loc.expression.line, node.loc.expression.column, node.loc.expression.last_line, node.loc.expression.last_column)
           return
         end
         stack.push node
@@ -138,7 +138,7 @@ module Solargraph
                 here = get_node_start_position(c)
                 context = get_named_path_pin(here)
                 block = get_block_pin(here)
-                presence = Source::Range.new(here, block.location.range.ending)
+                presence = Range.new(here, block.location.range.ending)
                 if c.children[1].nil?
                   ora = find_parent(stack, :or_asgn)
                   unless ora.nil?
@@ -296,7 +296,7 @@ module Solargraph
                     here = get_node_start_position(u)
                     context = get_named_path_pin(here)
                     block = get_block_pin(here)
-                    presence = Source::Range.new(here, block.location.range.ending)
+                    presence = Range.new(here, block.location.range.ending)
                     @locals.push Solargraph::Pin::MethodParameter.new(get_node_location(u), fqn, u.children[0].to_s, comments_for(c), resolve_node_signature(u.children[1]), infer_literal_node_type(u.children[1]), context, block, presence)
                   end
                 end
@@ -348,7 +348,7 @@ module Solargraph
           en = Position.new(node.loc.last_line, node.loc.last_column)
         end
         range = Range.new(st, en)
-        Location.new(filename, range)
+        Source::Location.new(filename, range)
       end
 
       # @param node [Parser::AST::Node]
@@ -382,7 +382,7 @@ module Solargraph
       # @param node [Parser::AST::Node]
       # @return [Solargraph::Pin::Namespace]
       def namespace_for(node)
-        position = Source::Position.new(node.loc.line, node.loc.column)
+        position = Position.new(node.loc.line, node.loc.column)
         @pins.select{|pin| pin.kind == Pin::NAMESPACE and pin.location.range.contain?(position)}.last
       end
 

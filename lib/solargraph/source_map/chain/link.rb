@@ -1,5 +1,5 @@
 module Solargraph
-  class Source
+  class SourceMap
     class Chain
       class Link
         attr_reader :word

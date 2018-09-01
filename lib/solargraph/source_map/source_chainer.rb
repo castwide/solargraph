@@ -1,12 +1,12 @@
 module Solargraph
-  class Source
+  class SourceMap
     # Information about a location in a source, including the location's word
     # and signature, literal values at the base of signatures, and whether the
     # location is inside a string or comment. ApiMaps use Fragments to provide
     # results for completion and definition queries.
     #
     class SourceChainer
-      include NodeMethods
+      include Source::NodeMethods
 
       private_class_method :new
 
@@ -15,19 +15,21 @@ module Solargraph
         # @param line [Integer]
         # @param column [Integer]
         # @return [Source::Chain]
-        def chain source, line, column
-          new(source, line, column).chain
+        def chain source, position
+          new(source, position).chain
         end
       end
 
       # @param source [Solargraph::Source]
       # @param line [Integer]
       # @param column [Integer]
-      def initialize source, line, column
+      def initialize source, position
         @source = source
         # @source.code = source.code
-        @line = line
-        @column = column
+        @position = position
+        # @todo Get rid of line/column
+        @line = position.line
+        @column = position.column
         @calculated_literal = false
       end
 
@@ -38,7 +40,7 @@ module Solargraph
         if @source.code[0..offset-1].end_with?(':') and !@source.code[0..offset-1].end_with?('::')
           links.push Chain::Link.new
           links.push Chain::Link.new
-        elsif @source.string_at?(line, column)
+        elsif @source.string_at?(position)
           links.push Chain::Literal.new('String')
         else
           links.push Chain::Literal.new(base_literal) if base_literal?
@@ -66,6 +68,8 @@ module Solargraph
       end
 
       private
+
+      attr_reader :position
 
       # The zero-based line number of the fragment's location.
       #
@@ -109,7 +113,7 @@ module Solargraph
         @column
       end
 
-      # @return [Source::Position]
+      # @return [Position]
       def position
         @position ||= Position.new(line, column)
       end
@@ -143,7 +147,7 @@ module Solargraph
       # @return [Boolean]
       def string?
         # @string ||= (node.type == :str or node.type == :dstr)
-        @string ||= @source.string_at?(line, character)
+        @string ||= @source.string_at?(position)
       end
 
       # True if the fragment is a signature that stems from a literal value.
@@ -189,7 +193,7 @@ module Solargraph
         in_whitespace = false
         while index >= 0
           pos = Position.from_offset(@source.code, index)
-          break if index > 0 and @source.comment_at?(pos.line, pos.character)
+          break if index > 0 and @source.comment_at?(pos)
           unless !in_whitespace and string?
             break if brackets > 0 or parens > 0 or squares > 0
             char = @source.code[index, 1]

@@ -402,7 +402,7 @@ module Solargraph
       # @param filename [String]
       # @param line [Integer]
       # @param column [Integer]
-      # @return [Array<Solargraph::Source::Range>]
+      # @return [Array<Solargraph::Range>]
       def references_from filename, line, column
         result = nil
         @change_semaphore.synchronize do
@@ -523,44 +523,53 @@ module Solargraph
                   pending[obj['textDocument']['uri']] ||= 0
                   pending[obj['textDocument']['uri']] += 1
                 end
+                have_changes = !@change_queue.empty?
                 @change_queue.delete_if do |change|
                   filename = uri_to_file(change['textDocument']['uri'])
                   source = library.checkout(filename)
-                  if change['textDocument']['version'] == source.version + change['contentChanges'].length
-                    pending[change['textDocument']['uri']] -= 1
-                    updater = generate_updater(change)
-                    library.synchronize updater, pending[change['textDocument']['uri']] == 0
-                    @diagnostics_queue.push change['textDocument']['uri']
-                    changed = true
-                    next true
-                  elsif change['textDocument']['version'] == source.version + 1
-                    # HACK: This condition fixes the fact that certain changes
-                    # increment the version by one regardless of the number of
-                    # changes
-                    STDERR.puts "Warning: change applied to #{uri_to_file(change['textDocument']['uri'])} is possibly out of sync"
-                    pending[change['textDocument']['uri']] -= 1
-                    updater = generate_updater(change)
-                    library.synchronize updater, pending[change['textDocument']['uri']] == 0
-                    @diagnostics_queue.push change['textDocument']['uri']
-                    changed = true
-                    next true
-                  elsif change['textDocument']['version'] <= source.version
-                    # @todo Is deleting outdated changes correct behavior?
-                    STDERR.puts "Warning: outdated change to #{change['textDocument']['uri']} was ignored"
-                    @diagnostics_queue.push change['textDocument']['uri']
-                    next true
-                  else
-                    if unsafe_open?(change['textDocument']['uri'])
-                      STDERR.puts "Skipping out of order change to #{change['textDocument']['uri']}"
-                      next false
-                    else
-                      STDERR.puts "Deleting out of order change to closed file #{change['textDocument']['uri']}"
-                      next true
-                    end
-                  end
+
+                  pending[change['textDocument']['uri']] -= 1
+                  updater = generate_updater(change)
+                  library.synchronize updater, pending[change['textDocument']['uri']] == 0
+                  @diagnostics_queue.push change['textDocument']['uri']
+                  next true
+
+                  #   if change['textDocument']['version'] == source.version + change['contentChanges'].length
+                #     pending[change['textDocument']['uri']] -= 1
+                #     updater = generate_updater(change)
+                #     library.synchronize updater, pending[change['textDocument']['uri']] == 0
+                #     @diagnostics_queue.push change['textDocument']['uri']
+                #     changed = true
+                #     next true
+                #   elsif change['textDocument']['version'] == source.version + 1
+                #     # HACK: This condition fixes the fact that certain changes
+                #     # increment the version by one regardless of the number of
+                #     # changes
+                #     STDERR.puts "Warning: change applied to #{uri_to_file(change['textDocument']['uri'])} is possibly out of sync"
+                #     pending[change['textDocument']['uri']] -= 1
+                #     updater = generate_updater(change)
+                #     library.synchronize updater, pending[change['textDocument']['uri']] == 0
+                #     @diagnostics_queue.push change['textDocument']['uri']
+                #     changed = true
+                #     next true
+                #   elsif change['textDocument']['version'] <= source.version
+                #     # @todo Is deleting outdated changes correct behavior?
+                #     STDERR.puts "Warning: outdated change to #{change['textDocument']['uri']} was ignored"
+                #     @diagnostics_queue.push change['textDocument']['uri']
+                #     next true
+                #   else
+                #     if unsafe_open?(change['textDocument']['uri'])
+                #       STDERR.puts "Skipping out of order change to #{change['textDocument']['uri']}"
+                #       next false
+                #     else
+                #       STDERR.puts "Deleting out of order change to closed file #{change['textDocument']['uri']}"
+                #       next true
+                #     end
+                #   end
                 end
-                refreshable = changed and @change_queue.empty?
-                library.refresh if refreshable
+                # refreshable = changed and @change_queue.empty?
+                # library.refresh if refreshable
+                library.refresh if have_changes
               rescue Exception => e
                 # Trying to get anything out of the error except its class
                 # hangs the thread for some reason
@@ -631,7 +640,7 @@ module Solargraph
           changes.push Solargraph::Source::Change.new(
             (chng['range'].nil? ? 
               nil :
-              Solargraph::Source::Range.from_to(chng['range']['start']['line'], chng['range']['start']['character'], chng['range']['end']['line'], chng['range']['end']['character'])
+              Solargraph::Range.from_to(chng['range']['start']['line'], chng['range']['start']['character'], chng['range']['end']['line'], chng['range']['end']['character'])
             ),
             chng['text']
           )

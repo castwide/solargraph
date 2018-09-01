@@ -1,5 +1,5 @@
 module Solargraph
-  class Source
+  class SourceMap
     class Chain
       class Literal < Link
         def word

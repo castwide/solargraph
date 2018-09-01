@@ -95,11 +95,11 @@ module Solargraph
         tags.any?{|t| t.name == param}
       end
 
-      # @param position [Solargraph::Source::Position]
+      # @param position [Solargraph::Position]
       # @param source [Solargraph::Source]
       # @return [Integer]
       def last_character position, source
-        cursor = Source::Position.to_offset(source.code, position)
+        cursor = Position.to_offset(source.code, position)
         source.code.index(/[\r\n]/, cursor) || source.code.length
       end
     end

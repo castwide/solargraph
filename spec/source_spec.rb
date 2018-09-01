@@ -23,7 +23,7 @@ describe Solargraph::Source do
       end
     )
     source = described_class.new(code)
-    range = Solargraph::Source::Range.new(Solargraph::Source::Position.new(2, 8), Solargraph::Source::Position.new(2, 15))
+    range = Solargraph::Range.new(Solargraph::Position.new(2, 8), Solargraph::Position.new(2, 15))
     expect(source.at(range)).to eq('def bar')
   end
 
@@ -41,9 +41,9 @@ describe Solargraph::Source do
     source = described_class.new(code)
     updater = Solargraph::Source::Updater.new(
       nil, 0, [Solargraph::Source::Change.new(
-        Solargraph::Source::Range.new(
-          Solargraph::Source::Position.new(0, 9),
-          Solargraph::Source::Position.new(0, 9)
+        Solargraph::Range.new(
+          Solargraph::Position.new(0, 9),
+          Solargraph::Position.new(0, 9)
         ),
         'd'
       )]
@@ -75,9 +75,9 @@ describe Solargraph::Source do
     source = described_class.new(code)
     updater = Solargraph::Source::Updater.new(
       nil, 0, [Solargraph::Source::Change.new(
-        Solargraph::Source::Range.new(
-          Solargraph::Source::Position.new(3, 0),
-          Solargraph::Source::Position.new(3, 1)
+        Solargraph::Range.new(
+          Solargraph::Position.new(3, 0),
+          Solargraph::Position.new(3, 1)
         ),
         '@'
       )]

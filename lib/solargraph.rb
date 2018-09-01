@@ -24,8 +24,11 @@ module Solargraph
     end
   end
 
+  autoload :Position,         'solargraph/position'
+  autoload :Range,            'solargraph/range'
   autoload :Shell,            'solargraph/shell'
   autoload :Source,           'solargraph/source'
+  autoload :SourceMap,        'solargraph/source_map'
   autoload :ApiMap,           'solargraph/api_map'
   autoload :YardMap,          'solargraph/yard_map'
   autoload :Pin,              'solargraph/pin'
@@ -41,6 +44,9 @@ module Solargraph
   autoload :BasicTypeMethods, 'solargraph/basic_type_methods'
   autoload :BasicType,        'solargraph/basic_type'
   autoload :ComplexType,      'solargraph/complex_type'
+  autoload :HelperMethods,    'solargraph/helper_methods'
+
+  extend HelperMethods
 
   YARDOC_PATH = File.join(File.realpath(File.dirname(__FILE__)), '..', 'yardoc')
   YARD_EXTENSION_FILE = File.join(File.realpath(File.dirname(__FILE__)), 'yard-solargraph.rb')

@@ -1,22 +1,22 @@
 # HACK Fix autoload issue
-require 'solargraph/source/chain/link'
+require 'solargraph/source_map/chain/link'
 
 module Solargraph
-  class Source
+  class SourceMap
     class Chain
-      autoload :Link,             'solargraph/source/chain/link'
-      autoload :Call,             'solargraph/source/chain/call'
-      autoload :Variable,         'solargraph/source/chain/variable'
-      autoload :ClassVariable,    'solargraph/source/chain/class_variable'
-      autoload :Constant,         'solargraph/source/chain/constant'
-      autoload :InstanceVariable, 'solargraph/source/chain/instance_variable'
-      autoload :GlobalVariable,   'solargraph/source/chain/global_variable'
-      autoload :Literal,          'solargraph/source/chain/literal'
-      autoload :Definition,       'solargraph/source/chain/definition'
-      autoload :Head,             'solargraph/source/chain/head'
+      autoload :Link,             'solargraph/source_map/chain/link'
+      autoload :Call,             'solargraph/source_map/chain/call'
+      autoload :Variable,         'solargraph/source_map/chain/variable'
+      autoload :ClassVariable,    'solargraph/source_map/chain/class_variable'
+      autoload :Constant,         'solargraph/source_map/chain/constant'
+      autoload :InstanceVariable, 'solargraph/source_map/chain/instance_variable'
+      autoload :GlobalVariable,   'solargraph/source_map/chain/global_variable'
+      autoload :Literal,          'solargraph/source_map/chain/literal'
+      autoload :Definition,       'solargraph/source_map/chain/definition'
+      autoload :Head,             'solargraph/source_map/chain/head'
 
-      UNDEFINED_CALL = Source::Chain::Call.new('<undefined>')
-      UNDEFINED_CONSTANT = Source::Chain::Constant.new('<undefined>')
+      UNDEFINED_CALL = Chain::Call.new('<undefined>')
+      UNDEFINED_CONSTANT = Chain::Constant.new('<undefined>')
 
       # @return [Array<Source::Chain::Link>]
       attr_reader :links

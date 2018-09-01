@@ -1,4 +1,4 @@
-describe Solargraph::Source::Chain::Link do
+describe Solargraph::SourceMap::Chain::Link do
   it "is undefined by default" do
     link = described_class.new
     expect(link).to be_undefined

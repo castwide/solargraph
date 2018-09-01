@@ -111,7 +111,7 @@ module Solargraph
     # @param column [Integer] The zero-based column number
     # @return [ApiMap::Completion]
     def completions_at filename, line, column
-      position = Source::Position.new(line, column)
+      position = Position.new(line, column)
       source = read(filename)
       clip = api_map.clip(source, position)
       clip.complete
@@ -128,7 +128,7 @@ module Solargraph
     # @param column [Integer] The zero-based column number
     # @return [Array<Solargraph::Pin::Base>]
     def definitions_at filename, line, column
-      position = Source::Position.new(line, column)
+      position = Position.new(line, column)
       source = read(filename)
       clip = api_map.clip(source, position)
       clip.define
@@ -145,7 +145,7 @@ module Solargraph
     # @param column [Integer] The zero-based column number
     # @return [Array<Solargraph::Pin::Base>]
     def signatures_at filename, line, column
-      position = Source::Position.new(line, column)
+      position = Position.new(line, column)
       source = read(filename)
       clip = api_map.clip(source, position)
       clip.signify
@@ -157,9 +157,9 @@ module Solargraph
     # @param filename [String]
     # @param line [Integer]
     # @param column [Integer]
-    # @return [Array<Solargraph::Source::Range>]
+    # @return [Array<Solargraph::Range>]
     def references_from filename, line, column
-      position = Source::Position.new(line, column)
+      position = Position.new(line, column)
       source = read(filename)
       clip = api_map.clip(source, position)
       pins = clip.define
@@ -329,13 +329,13 @@ module Solargraph
 
     def get_symbol_name_location pin
       decsrc = read(pin.location.filename)
-      offset = Solargraph::Source::Position.to_offset(decsrc.code, pin.location.range.start)
+      offset = Solargraph::Position.to_offset(decsrc.code, pin.location.range.start)
       soff = decsrc.code.index(pin.name, offset)
       eoff = soff + pin.name.length
       Solargraph::Source::Location.new(
-        pin.location.filename, Solargraph::Source::Range.new(
-          Solargraph::Source::Position.from_offset(decsrc.code, soff),
-          Solargraph::Source::Position.from_offset(decsrc.code, eoff)
+        pin.location.filename, Solargraph::Range.new(
+          Solargraph::Position.from_offset(decsrc.code, soff),
+          Solargraph::Position.from_offset(decsrc.code, eoff)
         )
       )
     end
