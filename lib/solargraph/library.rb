@@ -151,7 +151,7 @@ module Solargraph
     # @return [Array<Solargraph::Pin::Base>]
     def signatures_at filename, line, column
       position = Position.new(line, column)
-      source = read(filename)
+      source = source_map_hash[filename]
       clip = api_map.clip(source, position)
       clip.signify
       # api_map.virtualize source
@@ -265,7 +265,6 @@ module Solargraph
     # @param updater [Solargraph::Source::Updater]
     def synchronize updater
       source = workspace.synchronize updater
-      puts "Sync update"
       source_map_hash[source.filename] = SourceMap.map(source)
       api_map.catalog source_map_hash.values
     end
@@ -273,12 +272,17 @@ module Solargraph
     def async_synchronize updater
       source = workspace.synchronize updater
       Thread.new do
-        puts "Async update"
         new_source_map = SourceMap.map(source)
         @update_mutex.synchronize {
-          @source_map_hash[source.filename] = new_source_map
+          old_source_map = @source_map_hash[source.filename]
+          if old_source_map.try_merge!(new_source_map)
+            STDERR.puts "..."
+          else
+            STDERR.puts "NO MERGE. Doing it the hard way."
+            @source_map_hash[source.filename] = new_source_map
+            api_map.catalog @source_map_hash.values
+          end
         }
-        api_map.catalog source_map_hash.values
       end
     end
 

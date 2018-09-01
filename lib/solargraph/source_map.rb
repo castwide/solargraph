@@ -76,6 +76,18 @@ module Solargraph
       _locate_pin line, character, Pin::NAMESPACE, Pin::METHOD, Pin::BLOCK
     end
 
+    def try_merge! other_map
+      return false if pins.length != other_map.pins.length or locals.length != other_map.locals.length
+      pins.each_index do |i|
+        return false unless pins[i].try_merge!(other_map.pins[i])
+      end
+      locals.each_index do |i|
+        return false unless  locals[i].try_merge!(other_map.locals[i])
+      end
+      @source = other_map.source
+      true
+    end
+
     class << self
       def load filename
         source = Solargraph::Source.load(filename)

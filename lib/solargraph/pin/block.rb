@@ -31,7 +31,9 @@ module Solargraph
 
       def nearly? other
         return false unless super
-        receiver == other.receiver and parameters == other.parameters
+        # @todo Trying to not to block merges too much
+        # receiver == other.receiver and parameters == other.parameters
+        true
       end
     end
   end

@@ -44,6 +44,7 @@ module Solargraph
         @block = other.block
         @presence = block.location.range
         @return_complex_type = nil
+        true
       end
 
       # @return [Array<Solargraph::ComplexType>]

@@ -37,7 +37,7 @@ module Solargraph
       def chain
         links = []
         # @todo Smelly colon handling
-        if @source_map.code[0..offset-1].end_with?(':') and !@source_map.code[0..offset-1].end_with?('::')
+        if @source_map.source.code[0..offset-1].end_with?(':') and !@source_map.source.code[0..offset-1].end_with?('::')
           links.push Chain::Link.new
           links.push Chain::Link.new
         elsif @source_map.string_at?(position)
@@ -62,7 +62,7 @@ module Solargraph
             end
           end
           # Literal string hack
-          links.push Chain::UNDEFINED_CALL if base_literal? and @source_map.code[offset - 1] == '.' and links.length == 1
+          links.push Chain::UNDEFINED_CALL if base_literal? and @source_map.source.code[offset - 1] == '.' and links.length == 1
         end
         @chain ||= Chain.new(links)
       end
@@ -95,7 +95,7 @@ module Solargraph
           Chain::Link.new
         elsif word.empty?
           Chain::UNDEFINED_CALL
-        elsif head and !@source_map.code[signature_data[0]..-1].match(/^[\s]*?#{word}[\s]*?\(/)
+        elsif head and !@source_map.source.code[signature_data[0]..-1].match(/^[\s]*?#{word}[\s]*?\(/)
           # The head needs to allow for ambiguous references to constants and
           # methods. For example, `String` might be either. If the word is not
           # followed by an open parenthesis, use Chain::Head for ambiguous
@@ -177,7 +177,7 @@ module Solargraph
       end
 
       def get_offset line, column
-        Position.line_char_to_offset(@source_map.code, line, column)
+        Position.line_char_to_offset(@source_map.source.code, line, column)
       end
 
       def signature_data
@@ -192,20 +192,20 @@ module Solargraph
         index -=1
         in_whitespace = false
         while index >= 0
-          pos = Position.from_offset(@source_map.code, index)
+          pos = Position.from_offset(@source_map.source.code, index)
           break if index > 0 and @source_map.comment_at?(pos)
           unless !in_whitespace and string?
             break if brackets > 0 or parens > 0 or squares > 0
-            char = @source_map.code[index, 1]
+            char = @source_map.source.code[index, 1]
             break if char.nil? # @todo Is this the right way to handle this?
             if brackets.zero? and parens.zero? and squares.zero? and [' ', "\r", "\n", "\t"].include?(char)
               in_whitespace = true
             else
               if brackets.zero? and parens.zero? and squares.zero? and in_whitespace
-                unless char == '.' or @source_map.code[index+1..-1].strip.start_with?('.')
-                  old = @source_map.code[index+1..-1]
-                  nxt = @source_map.code[index+1..-1].lstrip
-                  index += (@source_map.code[index+1..-1].length - @source_map.code[index+1..-1].lstrip.length)
+                unless char == '.' or @source_map.source.code[index+1..-1].strip.start_with?('.')
+                  old = @source_map.source.code[index+1..-1]
+                  nxt = @source_map.source.code[index+1..-1].lstrip
+                  index += (@source_map.source.code[index+1..-1].length - @source_map.source.code[index+1..-1].lstrip.length)
                   break
                 end
               end
@@ -249,7 +249,7 @@ module Solargraph
           signature = signature[3..-1].to_s
           @base_literal = 'Array'
         elsif signature.start_with?('.')
-          pos = Position.from_offset(source.code, index)
+          pos = Position.from_offset(@source_map.source.code, index)
           node = source.node_at(pos.line, pos.character)
           lit = infer_literal_node_type(node)
           unless lit.nil?
