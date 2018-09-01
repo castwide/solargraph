@@ -64,4 +64,8 @@ describe Solargraph::Pin::BlockParameter do
     expect(param.completion_item_kind).to eq(Solargraph::LanguageServer::CompletionItemKinds::VARIABLE)
     expect(param.symbol_kind).to eq(Solargraph::LanguageServer::SymbolKinds::VARIABLE)
   end
+
+  it "nearly matches" do
+    b1 = Solaraph::Pin::Block.new()
+  end
 end
