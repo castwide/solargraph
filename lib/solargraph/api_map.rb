@@ -329,7 +329,7 @@ module Solargraph
     # @return [Array<Pin::Base>]
     def query_symbols query
       result = []
-      @sources.each do |s|
+      source_map_hash.values.each do |s|
         result.concat s.query_symbols(query)
       end
       result

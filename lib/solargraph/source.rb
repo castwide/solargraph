@@ -117,6 +117,23 @@ module Solargraph
       @parsed
     end
 
+    # @param name [String]
+    # @return [Array<Source::Location>]
+    def references name
+      inner_node_references(name, node).map do |n|
+        offset = Position.to_offset(code, get_node_start_position(n))
+        soff = code.index(name, offset)
+        eoff = soff + name.length
+        Location.new(
+          filename,
+          Range.new(
+            Position.from_offset(code, soff),
+            Position.from_offset(code, eoff)
+          )
+        )
+      end
+    end
+
     private
 
     def inner_tree_at node, position, stack
@@ -137,14 +154,12 @@ module Solargraph
       node, comments = inner_parse(@fixed, filename)
       @node = node
       @comments = comments
-      process_parsed node, comments
       @parsed = true
     end
 
     def hard_fix_node
       @fixed = @code.gsub(/[^\s]/, '_')
       node, comments = inner_parse(@fixed, filename)
-      process_parsed node, comments
       @node = node
       @comments = comments
       @parsed = false
@@ -159,30 +174,15 @@ module Solargraph
       parser.parse_with_comments(buffer)
     end
 
-    # @todo This is going elsewhere
-    def process_parsed node, comments
-      # new_map_data = Mapper.map(filename, code, node, comments)
-      # synchronize_mapped *new_map_data
-    end
-
-    # @todo This is going elsewhere
-    def synchronize_mapped new_pins, new_locals, new_requires, new_symbols, new_strings, new_comment_ranges #, new_path_macros, new_domains
-      # @strings = new_strings
-      # @comment_ranges = new_comment_ranges
-      # return if @requires == new_requires and @symbols == new_symbols and try_merge(new_pins, new_locals)
-      # @pins = new_pins
-      # @locals = new_locals
-      # @requires = new_requires
-      # @symbols = new_symbols
-      # @all_symbols = nil # Reset for future queries
-      # @domains = []
-      # @path_macros = {}
-      # dirpins = []
-      # @pins.select(&:maybe_directives?).each do |pin|
-      #   dirpins.push pin unless pin.directives.empty?
-      # end
-      # process_directives dirpins
-      # @stime = Time.now
+    def inner_node_references name, top
+      result = []
+      if top.kind_of?(AST::Node)
+        if top.children.any?{|c| c.to_s == name}
+          result.push top
+        end
+        top.children.each { |c| result.concat inner_node_references(name, c) }
+      end
+      result
     end
 
     class << self

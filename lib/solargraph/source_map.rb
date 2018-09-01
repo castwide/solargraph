@@ -56,9 +56,13 @@ module Solargraph
     end
 
     def document_symbols
-      @api_symbols ||= pins.select { |pin|
+      @document_symbols ||= pins.select { |pin|
         [Pin::ATTRIBUTE, Pin::CONSTANT, Pin::METHOD, Pin::NAMESPACE].include?(pin.kind) and !pin.path.empty?
       }
+    end
+
+    def query_symbols query
+      document_symbols.select{|pin| pin.path.include?(query)}
     end
 
     # @param position [Position]
@@ -92,6 +96,10 @@ module Solargraph
       end
       @source = other_map.source
       true
+    end
+
+    def references name
+      source.references name
     end
 
     class << self
