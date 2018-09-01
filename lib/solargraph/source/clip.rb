@@ -13,7 +13,7 @@ module Solargraph
       end
 
       def complete
-        return Completion.new([], fragment.range) if fragment.literal?
+        return Completion.new([], fragment.range) if fragment.chain.literal?
         result = []
         # type = infer_base_type(api_map)
         type = fragment.chain.base.infer(api_map, fragment.context, fragment.locals)

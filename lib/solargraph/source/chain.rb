@@ -41,7 +41,7 @@ module Solargraph
       # @param locals [Array<Pin::Base>]
       # @return [Array<Pin::Base>]
       def define api_map, context, locals
-        return ComplexType::UNDEFINED if undefined?
+        return [] if undefined?
         type = ComplexType::UNDEFINED
         head = true
         links[0..-2].each do |link|
