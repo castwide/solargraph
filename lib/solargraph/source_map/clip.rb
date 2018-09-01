@@ -8,12 +8,14 @@ module Solargraph
         @fragment = fragment
       end
 
+      # @return [Array<Pin::Base>]
       def define
         fragment.chain.define(api_map, fragment.context, fragment.locals)
       end
 
+      # @return [Completion]
       def complete
-        return Completion.new([], fragment.range) if fragment.chain.literal?
+        return Completion.new([], fragment.range) if fragment.chain.literal? or fragment.comment?
         result = []
         # type = infer_base_type(api_map)
         type = fragment.chain.base.infer(api_map, fragment.context, fragment.locals)
@@ -41,6 +43,7 @@ module Solargraph
         package_completions(result)
       end
 
+      # @return [Array<Pin::Base>]
       def signify
         return [] unless fragment.argument?
         clip = Clip.new(api_map, fragment.recipient)
@@ -55,7 +58,7 @@ module Solargraph
       # @return [Fragment]
       attr_reader :fragment
 
-      # @param fragment [Source::Fragment]
+      # @param fragment [Fragment]
       # @param result [Array<Pin::Base>]
       # @return [Completion]
       def package_completions result
@@ -66,8 +69,8 @@ module Solargraph
 
       # Sort an array of pins to put nil or undefined variables last.
       #
-      # @param pins [Array<Solargraph::Pin::Base>]
-      # @return [Array<Solargraph::Pin::Base>]
+      # @param pins [Array<Pin::Base>]
+      # @return [Array<Pin::Base>]
       def prefer_non_nil_variables pins
         result = []
         nil_pins = []

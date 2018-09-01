@@ -94,6 +94,10 @@ module Solargraph
         @argument ||= !signature_position.nil?
       end
 
+      def comment?
+        @comment ||= source_map.comment_at?(position)
+      end
+
       def recipient
         return nil unless argument?
         @recipient ||= source_map.fragment_at(signature_position)
