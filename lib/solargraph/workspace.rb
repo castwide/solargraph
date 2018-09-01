@@ -84,14 +84,6 @@ module Solargraph
       source_hash[filename]
     end
 
-    # The time of the last workspace synchronization.
-    #
-    # @return [Time]
-    def stime
-      return @stime if source_hash.empty?
-      @stime = source_hash.values.sort{|a, b| a.stime <=> b.stime}.last.stime
-    end
-
     # The require paths associated with the workspace.
     #
     # @return [Array<String>]
@@ -147,7 +139,6 @@ module Solargraph
           source_hash[filename] = Solargraph::Source.load(filename)
         end
       end
-      @stime = Time.now
     end
 
     def generate_require_paths
