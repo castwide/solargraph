@@ -11,7 +11,7 @@ module Solargraph
           data: {
             path: path,
             return_type: return_type,
-            location: location,
+            location: (location ? location.to_hash : nil),
             deprecated: deprecated?
           }
         }

@@ -343,8 +343,19 @@ module Solargraph
       def locate_pin params
         pin = nil
         @change_semaphore.synchronize do
-          STDERR.puts params['date']
-          pin = library.locate_pin(params['data']['location']).first unless params['data']['location'].nil?
+          pin = nil
+          unless params['data']['location'].nil?
+            location = Source::Location.new(
+              params['data']['location']['filename'],
+              Range.from_to(
+                params['data']['location']['range']['start']['line'],
+                params['data']['location']['range']['start']['character'],
+                params['data']['location']['range']['end']['line'],
+                params['data']['location']['range']['end']['character']
+              )
+            )
+            pin = library.locate_pin(location)
+          end
           # @todo Improve pin location
           if pin.nil? or pin.path != params['data']['path']
             pin = library.path_pins(params['data']['path']).first

@@ -61,11 +61,11 @@ module Solargraph
       Fragment.new(self, position)
     end
 
-    # @param source [Source]
-    # @return [SourceMap]
-    def self.map source
-      result = SourceMap::Mapper.map(source)
-      new(source, *result)
+    # @param location [Solargraph::Source::Location]
+    # @return [Solargraph::Pin::Base]
+    def locate_pin location
+      # return nil unless location.start_with?("#{filename}:")
+      pins.select{|pin| pin.location == location}.first
     end
 
     def locate_named_path_pin line, character
@@ -85,6 +85,13 @@ module Solargraph
       def load_string code, filename = nil
         source = Solargraph::Source.load_string(code, filename)
         SourceMap.map(source)
+      end
+
+      # @param source [Source]
+      # @return [SourceMap]
+      def map source
+        result = SourceMap::Mapper.map(source)
+        new(source, *result)
       end
     end
 

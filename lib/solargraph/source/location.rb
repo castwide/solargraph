@@ -14,6 +14,13 @@ module Solargraph
         @range = range
       end
 
+      def to_hash
+        {
+          filename: filename,
+          range: range.to_hash
+        }
+      end
+
       def == other
         return false unless other.is_a?(Location)
         filename == other.filename and range == other.range
