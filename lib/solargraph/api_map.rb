@@ -338,7 +338,7 @@ module Solargraph
     # @param location [Solargraph::Source::Location]
     # @return [Solargraph::Pin::Base]
     def locate_pin location
-      return nil if location.nil?
+      return nil if location.nil? or !source_map_hash.has_key?(location.filename)
       source_map_hash[location.filename].locate_pin(location)
     end
 
