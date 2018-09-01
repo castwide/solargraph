@@ -41,6 +41,7 @@ module Solargraph
       # @param locals [Array<Pin::Base>]
       # @return [Array<Pin::Base>]
       def define api_map, context, locals
+        return ComplexType::UNDEFINED if undefined?
         type = ComplexType::UNDEFINED
         head = true
         links[0..-2].each do |link|
@@ -57,8 +58,12 @@ module Solargraph
         links.last.resolve(api_map, context, head ? locals: [])
       end
 
+      # @param api_map [ApiMap]
+      # @param api_map [Context]
+      # @param locals [Array<Pin::Base>]
       # @return [ComplexType]
       def infer api_map, context, locals
+        return ComplexType::UNDEFINED if undefined?
         type = ComplexType::UNDEFINED
         pins = define(api_map, context, locals)
         pins.each do |pin|
@@ -66,6 +71,10 @@ module Solargraph
           break unless type.undefined?
         end
         type
+      end
+
+      def literal?
+        links.last.is_a?(Chain::Literal)
       end
 
       def undefined?
