@@ -1,7 +1,7 @@
 module Solargraph
-  class Source
+  class SourceMap
     class NodeChainer
-      include NodeMethods
+      include Source::NodeMethods
 
       def initialize node
         @node = node

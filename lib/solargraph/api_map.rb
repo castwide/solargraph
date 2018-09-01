@@ -33,18 +33,41 @@ module Solargraph
       # @todo Extensions don't work yet
       # require_extensions
       @yard_map = yard_map
-      @store_mutex = Mutex.new
+      @source_map_hash = {}
+      @cache = Cache.new
+      @store = ApiMap::Store.new(yard_map.pins)
+      @index_mutex = Mutex.new
       index pins
     end
 
     # @param pins [Array<Pin::Base>]
     # @return [void]
     def index pins
-      @store_mutex.synchronize {
-        cache.clear
+      @index_mutex.synchronize {
+        @source_map_hash.clear
+        @cache.clear
         new_store = Store.new(pins + yard_map.pins)
         @store = new_store
       }
+    end
+
+    def catalog source_maps
+      @index_mutex.synchronize {
+        @source_map_hash.clear
+        @cache.clear
+        pins = []
+        source_maps.each do |m|
+          @source_map_hash[m.source.filename] = m
+          pins.concat m.pins
+        end
+        new_store = Store.new(pins + yard_map.pins)
+        @store = new_store
+      }
+    end
+
+    def fragment_at filename, position
+      raise "No: #{filename}" unless source_map_hash.has_key?(filename)
+      source_map_hash[filename].fragment_at(position)
     end
 
     # Create an ApiMap with a workspace in the specified directory.
@@ -79,7 +102,7 @@ module Solargraph
     #
     # @return [Array<Solargraph::Pin::Keyword>]
     def self.keywords
-      @keywords ||= KEYWORDS.map{ |s|
+      @keywords ||= CoreFills::KEYWORDS.map{ |s|
         Pin::Keyword.new(s)
       }.freeze
     end
@@ -330,11 +353,11 @@ module Solargraph
     # @param location [Solargraph::Source::Location]
     # @return [Solargraph::Pin::Base]
     def locate_pin location
-      @sources.each do |source|
-        pin = source.locate_pin(location)
-        return pin unless pin.nil?
-      end
-      nil
+      # @sources.each do |source|
+      #   pin = source.locate_pin(location)
+      #   return pin unless pin.nil?
+      # end
+      source_map_hash[location.filename].locate_pin(location)
     end
 
     # @return [Array<String>]
@@ -351,16 +374,24 @@ module Solargraph
 
     private
 
+    def source_map_hash
+      @index_mutex.synchronize {
+        @source_map_hash
+      }
+    end
+
     # @return [ApiMap::Store]
     def store
-      @store_mutex.synchronize {
-        @store ||= ApiMap::Store.new(yard_map.pins)
+      @index_mutex.synchronize {
+        @store
       }
     end
 
     # @return [Solargraph::ApiMap::Cache]
     def cache
-      @cache ||= Cache.new
+      @index_mutex.synchronize {
+        @cache
+      }
     end
 
     # @param fqns [String] A fully qualified namespace

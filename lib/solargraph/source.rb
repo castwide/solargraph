@@ -4,8 +4,8 @@ require 'time'
 module Solargraph
   class Source
     autoload :FlawedBuilder, 'solargraph/source/flawed_builder'
-    autoload :Position,      'solargraph/source/position'
-    autoload :Range,         'solargraph/source/range'
+    # autoload :Position,      'solargraph/source/position'
+    # autoload :Range,         'solargraph/source/range'
     autoload :Location,      'solargraph/source/location'
     autoload :Updater,       'solargraph/source/updater'
     autoload :Change,        'solargraph/source/change'

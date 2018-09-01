@@ -343,6 +343,7 @@ module Solargraph
       def locate_pin params
         pin = nil
         @change_semaphore.synchronize do
+          STDERR.puts params['date']
           pin = library.locate_pin(params['data']['location']).first unless params['data']['location'].nil?
           # @todo Improve pin location
           if pin.nil? or pin.path != params['data']['path']
@@ -530,7 +531,7 @@ module Solargraph
 
                   pending[change['textDocument']['uri']] -= 1
                   updater = generate_updater(change)
-                  library.synchronize updater, pending[change['textDocument']['uri']] == 0
+                  library.synchronize updater #, pending[change['textDocument']['uri']] == 0
                   @diagnostics_queue.push change['textDocument']['uri']
                   next true
 

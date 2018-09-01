@@ -47,8 +47,9 @@ module Solargraph
         return result if result.defined? or @assignment.nil?
         # chain = Source::Chain.new(filename, @assignment)
         # @todo Use NodeChainer
-        chain = Source::NodeChainer.chain(location.filename, @assignment)
-        fragment = api_map.fragment_at(location)
+        chain = SourceMap::NodeChainer.chain(location.filename, @assignment)
+        # @todo Is there another way besides the apimap?
+        fragment = api_map.fragment_at(location.filename, location.range.start)
         locals = fragment.locals - [self]
         chain.infer(api_map, context, locals)
       end

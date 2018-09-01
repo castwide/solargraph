@@ -40,7 +40,7 @@ module Solargraph
     def string_at? position
       string_ranges.each do |range|
         return true if range.contain?(position)
-        break if range.last.line > position.line
+        break if range.ending.line > position.line
       end
       false
     end
