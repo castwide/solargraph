@@ -297,8 +297,7 @@ module Solargraph
     # @param query [String] The text to match
     # @return [Array<String>]
     def search query
-      rake_yard(store) if @yard_stale
-      @yard_stale = false
+      rake_yard(store)
       found = []
       code_object_paths.each do |k|
         if found.empty? or (query.include?('.') or query.include?('#')) or !(k.include?('.') or k.include?('#'))
@@ -316,8 +315,7 @@ module Solargraph
     # @param path [String] The path to find
     # @return [Array<YARD::CodeObject::Base>]
     def document path
-      rake_yard(store) if @yard_stale
-      @yard_stale = false
+      rake_yard(store)
       docs = []
       docs.push code_object_at(path) unless code_object_at(path).nil?
       docs
@@ -335,7 +333,7 @@ module Solargraph
       result
     end
 
-    # @param location [Solargraph::Source::Location]
+    # @param location [Solargraph::Location]
     # @return [Solargraph::Pin::Base]
     def locate_pin location
       return nil if location.nil? or !source_map_hash.has_key?(location.filename)

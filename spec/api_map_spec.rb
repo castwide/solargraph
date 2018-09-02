@@ -243,4 +243,17 @@ describe Solargraph::ApiMap do
     clip = @api_map.clip(map, Solargraph::Position.new(4, 15))
     expect(clip).to be_a(Solargraph::SourceMap::Clip)
   end
+
+  it "search the Ruby core" do
+    @api_map.index []
+    results = @api_map.search('Array#len')
+    expect(results).to include('Array#length')
+  end
+
+  it "documents the Ruby core" do
+    @api_map.index []
+    docs = @api_map.document('Array')
+    expect(docs).not_to be_empty
+    expect(docs.map(&:path).uniq).to eq(['Array'])
+  end
 end
