@@ -17,7 +17,6 @@ module Solargraph
     attr_reader :requires
 
     def initialize source, pins, locals, requires, symbols, string_ranges, comment_ranges
-      # [@source, @pins, @locals, @requires, @symbols, @string_ranges, @comment_ranges]
       # HACK: Keep the library from changing this
       @source = source.clone
       @pins = pins
