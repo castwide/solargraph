@@ -9,6 +9,7 @@ describe Solargraph::Pin::Method do
     expect(pin.parameters.length).to eq(2)
     expect(pin.parameters[0]).to eq('bar')
     expect(pin.parameters[1]).to eq('baz = MyClass.new')
+    expect(pin.parameter_names).to eq(%w[bar baz])
   end
 
   it "tracks keyword parameters" do
@@ -21,6 +22,7 @@ describe Solargraph::Pin::Method do
     expect(pin.parameters.length).to eq(2)
     expect(pin.parameters[0]).to eq('bar:')
     expect(pin.parameters[1]).to eq('baz: MyClass.new')
+    expect(pin.parameter_names).to eq(%w[bar baz])
   end
 
   it "includes param tags in documentation" do
@@ -65,5 +67,11 @@ describe Solargraph::Pin::Method do
   it "ignores malformed return tags" do
     pin = Solargraph::Pin::Method.new(nil, 'Foo', 'bar', '@return [Array<String', :instance, :public, [])
     expect(pin.return_complex_type).to be_undefined
+  end
+
+  it "will not merge with changes in parameters" do
+    pin1 = Solargraph::Pin::Method.new(nil, 'Foo', 'bar', '', :instance, :public, ['one', 'two'])
+    pin2 = Solargraph::Pin::Method.new(nil, 'Foo', 'bar', '', :instance, :public, ['three'])
+    expect(pin1.nearly?(pin2)).to be(false)
   end
 end
