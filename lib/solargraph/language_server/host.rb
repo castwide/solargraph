@@ -23,6 +23,7 @@ module Solargraph
         @next_request_id = 0
         @dynamic_capabilities = Set.new
         @registered_capabilities = Set.new
+        @file_versions = {}
       end
 
       # Update the configuration options with the provided hash.
@@ -122,7 +123,9 @@ module Solargraph
       # @param version [Integer] A version number.
       def open uri, text, version
         @change_semaphore.synchronize do
-          library.open uri_to_file(uri), text, version
+          f = uri_to_file(uri)
+          @file_versions[f] = version
+          library.open uri_to_file(f), text, version
           @diagnostics_queue.push uri
         end
       end
@@ -167,10 +170,11 @@ module Solargraph
           updater = generate_updater(params)
           @change_queue.push updater
           source = library.checkout(updater.filename)
-          if updater.version == source.version + 1
+          if updater.version == @file_versions[updater.filename] + updater.changes.length
             library.synchronize! updater
+            @file_versions[updater.filename] = updater.version
             @change_queue.pop
-          elsif source.version == updater.version
+          elsif @file_versions[updater.filename] == updater.version and updater.changes.length == 0
             @change_queue.pop
           end
         end
@@ -529,11 +533,12 @@ module Solargraph
                 texts = {}
                 @change_queue.delete_if do |change|
                   source = library.checkout(change.filename)
-                  next true if change.version == source.version
-                  next false unless change.version == source.version + 1
+                  next true unless library.open?(change.filename)
+                  next true if change.version <= @file_versions[change.filename] and change.changes.length == 0
+                  next false unless change.version == @file_versions[change.filename] + change.changes.length
                   texts[change.filename] ||= [source.code, change.version]
                   texts[change.filename] = [change.write(texts[change.filename][0]), change.version]
-                  # library.synchronize! change, false
+                  @file_versions[change.filename] = change.version
                   @diagnostics_queue.push file_to_uri(change.filename)
                   changed = true
                   true
@@ -547,7 +552,7 @@ module Solargraph
                   library.synchronize! updater, false
                 end
               rescue Exception => e
-                STDERR.puts "An error occurred in the change thread: #{e.class}"
+                STDERR.puts "An error occurred in the change thread: #{e.class} #{e.message}"
                 STDERR.puts e.backtrace
                 @change_queue.clear
               end
