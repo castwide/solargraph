@@ -113,6 +113,7 @@ module Solargraph
     # @return [ApiMap::Completion]
     # @todo Take a Location instead of filename/line/column
     def completions_at filename, line, column
+      position = Position.new(line, column)
       api_map.clip(filename, position).complete
     end
 
