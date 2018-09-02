@@ -280,7 +280,6 @@ module Solargraph
       # @todo Only open files get diagnosed. Determine whether anything or
       #   everything in the workspace should get diagnosed, or if there should
       #   be an option to do so.
-      return [] # @todo Temporarily disabled
       return [] unless open?(filename)
       result = []
       source = read(filename)
