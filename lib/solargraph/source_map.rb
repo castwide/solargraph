@@ -39,7 +39,7 @@ module Solargraph
     # @return [Boolean]
     def string_at? position
       string_ranges.each do |range|
-        return true if range.contain?(position)
+        return true if range.include?(position)
         break if range.ending.line > position.line
       end
       false
