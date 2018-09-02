@@ -21,24 +21,17 @@ module Solargraph
     end
 
     # @return [Array<String>]
-    attr_reader :paths
-
-    # @return [Array<String>]
     attr_reader :required
 
     # @param required [Array<String>]
     # @param workspace [Solargraph::Workspace, nil]
-    def initialize(required: [], paths: [])
-      @paths = []
+    def initialize(required: [])
       # HACK: YardMap needs its own copy of this array
       @required = required.clone
       @gem_paths = {}
       @stdlib_namespaces = []
       process_requires
-      # yardocs.push CoreDocs.yardoc_file
       yardocs.uniq!
-      # yardocs.delete_if{ |y| y.start_with? workspace.directory } unless workspace.nil? or workspace.directory.nil?
-      yardocs.delete_if { |y| y.start_with?(*paths) }
     end
 
     # @return [Array<Solargraph::Pin::Base>]
@@ -74,13 +67,12 @@ module Solargraph
 
     # @param new_requires [Array<String>]
     # @return [Boolean]
-    def change new_requires, new_paths
-      if new_requires.uniq.sort == required.uniq.sort and new_paths.uniq.sort == paths.uniq.sort
+    def change new_requires
+      if new_requires.uniq.sort == required.uniq.sort
         false
       else
         required.clear
         required.concat new_requires
-        @paths = new_paths
         process_requires
         true
       end
@@ -138,7 +130,6 @@ module Solargraph
       stdnames = {}
       required.each do |r|
         next if r.nil? or r.empty?
-        next if paths.any?{|p| File.exist?("#{p}/#{r}.rb")}
         cached = cache.get_path_pins(r)
         unless cached.nil?
           pins.concat cached
@@ -166,7 +157,6 @@ module Solargraph
             end
           end
         rescue Gem::LoadError => e
-          next if paths.any?{|p| File.exist?("#{p}/#{r}.rb")}
           stdtmp = []
           @@stdlib_paths.each_pair do |path, objects|
             stdtmp.concat objects if path == r or path.start_with?("#{r}/")

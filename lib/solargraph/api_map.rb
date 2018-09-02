@@ -40,7 +40,7 @@ module Solargraph
       @index_mutex.synchronize {
         @source_map_hash.clear
         @cache.clear
-        yard_map.change([], [])
+        yard_map.change([])
         new_store = Store.new(pins + yard_map.pins)
         @store = new_store
       }
@@ -76,7 +76,8 @@ module Solargraph
           pins.concat map.pins
           reqs.concat map.requires.map(&:name)
         end
-        yard_map.change(reqs, workspace.require_paths)
+        reqs.delete_if { |r| workspace.would_require?(r) }
+        yard_map.change(reqs)
         unless (pins + yard_map.pins) == @store.pins
           new_store = Store.new(pins + yard_map.pins)
           @store = new_store
