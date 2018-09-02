@@ -10,7 +10,7 @@ module Solargraph
     attr_reader :directory
 
     # @param directory [String]
-    def initialize directory, config = nil
+    def initialize directory = nil, config = nil
       # @todo Convert to an absolute path?
       @directory = directory
       @directory = nil if @directory == ''

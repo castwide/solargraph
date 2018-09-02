@@ -45,7 +45,8 @@ module Solargraph
       }
     end
 
-    # Catalog a workspace and any additional sources that need to be mapped.
+    # Catalog a workspace. Additional sources that need to be mapped can be
+    # included in an optional array.
     #
     # @param workspace [Workspace]
     # @param others [Array<Source>]

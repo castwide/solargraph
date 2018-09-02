@@ -233,14 +233,14 @@ describe Solargraph::ApiMap do
   end
 
   it "generates clips" do
-    map = Solargraph::SourceMap.load_string(%(
+    source = Solargraph::Source.load_string(%(
       class Foo
         def bar; end
       end
       Foo.new.bar
-    ))
-    @api_map.index map.pins
-    clip = @api_map.clip(map, Solargraph::Position.new(4, 15))
+    ), 'my_file.rb')
+    @api_map.catalog Solargraph::Workspace.new, [source]
+    clip = @api_map.clip('my_file.rb', Solargraph::Position.new(4, 15))
     expect(clip).to be_a(Solargraph::SourceMap::Clip)
   end
 
