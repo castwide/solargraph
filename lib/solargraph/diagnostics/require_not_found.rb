@@ -7,7 +7,8 @@ module Solargraph
       def diagnose source, api_map
         result = []
         refs = {}
-        source.requires.each do |ref|
+        map = Solargraph::SourceMap.map(source)
+        map.requires.each do |ref|
           refs[ref.name] = ref
         end
         api_map.unresolved_requires.each do |r|

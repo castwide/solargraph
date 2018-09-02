@@ -6,7 +6,8 @@ module Solargraph
     class TypeNotDefined < Base
       def diagnose source, api_map
         result = []
-        source.pins.select{|p| p.kind == Pin::METHOD or p.kind == Pin::ATTRIBUTE}.each do |pin|
+        api_map.document_symbols(source.filename).each do |pin|
+          next unless pin.kind == Pin::METHOD
           result.concat check_return_type(pin, api_map, source)
           result.concat check_param_types(pin, api_map, source)
           result.concat check_param_tags(pin, api_map, source)
