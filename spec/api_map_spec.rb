@@ -244,7 +244,7 @@ describe Solargraph::ApiMap do
     expect(clip).to be_a(Solargraph::SourceMap::Clip)
   end
 
-  it "search the Ruby core" do
+  it "searches the Ruby core" do
     @api_map.index []
     results = @api_map.search('Array#len')
     expect(results).to include('Array#length')
@@ -255,5 +255,16 @@ describe Solargraph::ApiMap do
     docs = @api_map.document('Array')
     expect(docs).not_to be_empty
     expect(docs.map(&:path).uniq).to eq(['Array'])
+  end
+
+  it "catalogs changes" do
+    workspace = Solargraph::Workspace.new
+    s1 = Solargraph::Source.load_string('class Foo; end')
+    @api_map.catalog(workspace, [s1])
+    expect(@api_map.get_path_pins('Foo')).not_to be_empty
+    s2 = Solargraph::Source.load_string('class Bar; end')
+    @api_map.catalog(workspace, [s2])
+    expect(@api_map.get_path_pins('Foo')).to be_empty
+    expect(@api_map.get_path_pins('Bar')).not_to be_empty
   end
 end
