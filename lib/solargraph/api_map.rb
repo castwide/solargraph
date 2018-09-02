@@ -55,8 +55,9 @@ module Solargraph
     def catalog workspace, others = []
       all_sources = (workspace.sources + others).uniq
       @index_mutex.synchronize {
+        all_filenames = all_sources.map(&:filename)
         @source_map_hash.keep_if{|filename, map|
-          all_sources.include?(map.source)
+          all_filenames.include?(filename)
         }
         @cache.clear
         reqs = []
@@ -66,8 +67,8 @@ module Solargraph
             map = @source_map_hash[source.filename]
           else
             map = Solargraph::SourceMap.map(source)
-            if @source_map_hash.has_key?(source.filename)
-              @source_map_hash[source.filename] = map unless @source_map_hash[source.filename].try_merge!(map)
+            if @source_map_hash.has_key?(source.filename) and @source_map_hash[source.filename].try_merge!(map)
+              map = @source_map_hash[source.filename]
             else
               @source_map_hash[source.filename] = map
             end
