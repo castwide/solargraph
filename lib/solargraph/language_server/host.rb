@@ -169,14 +169,10 @@ module Solargraph
         @change_semaphore.synchronize do
           updater = generate_updater(params)
           @change_queue.push updater
-          source = library.checkout(updater.filename)
-          if updater.version == @file_versions[updater.filename] + updater.changes.length
-            library.synchronize! updater
-            @file_versions[updater.filename] = updater.version
-            @change_queue.pop
-          elsif @file_versions[updater.filename] == updater.version and updater.changes.length == 0
-            @change_queue.pop
-          end
+          next unless updater.version == @file_versions[updater.filename] + updater.changes.length
+          library.synchronize! updater
+          @file_versions[updater.filename] = updater.version
+          @change_queue.pop
         end
       end
 
@@ -532,10 +528,9 @@ module Solargraph
                 next if @change_queue.empty?
                 texts = {}
                 @change_queue.delete_if do |change|
-                  source = library.checkout(change.filename)
                   next true unless library.open?(change.filename)
-                  next true if change.version <= @file_versions[change.filename] and change.changes.length == 0
                   next false unless change.version == @file_versions[change.filename] + change.changes.length
+                  source = library.checkout(change.filename)
                   texts[change.filename] ||= [source.code, change.version]
                   texts[change.filename] = [change.write(texts[change.filename][0]), change.version]
                   @file_versions[change.filename] = change.version
