@@ -7,6 +7,7 @@ describe Solargraph::SourceMap::Fragment do
           @bar
         end
         def self.baz
+          # comment
           lvar = 'one'
           @baz
         end
@@ -77,7 +78,7 @@ describe Solargraph::SourceMap::Fragment do
   end
 
   it "finds locals" do
-    fragment = described_class.new(@name_source_map, [7, 0])
+    fragment = described_class.new(@name_source_map, [8, 0])
     expect(fragment.locals.length).to eq(1)
     expect(fragment.locals.first.name).to eq('lvar')
   end
@@ -86,6 +87,13 @@ describe Solargraph::SourceMap::Fragment do
     fragment = described_class.new(@call_source_map, [0, 15])
     expect(fragment.argument?).to be(true)
     expect(fragment.recipient).to be_a(Solargraph::SourceMap::Fragment)
+  end
+
+  it "finds comments" do
+    fragment = described_class.new(@name_source_map, [6, 11])
+    expect(fragment.comment?).to be(true)
+    fragment = described_class.new(@name_source_map, [7, 11])
+    expect(fragment.comment?).to be(false)
   end
 
   it "detects a lack of recipients at a method call" do
