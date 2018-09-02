@@ -92,7 +92,7 @@ module Solargraph
         return false unless pins[i].try_merge!(other_map.pins[i])
       end
       locals.each_index do |i|
-        return false unless  locals[i].try_merge!(other_map.locals[i])
+        return false unless locals[i].try_merge!(other_map.locals[i])
       end
       @source = other_map.source
       true
