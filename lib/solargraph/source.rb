@@ -4,9 +4,6 @@ require 'time'
 module Solargraph
   class Source
     autoload :FlawedBuilder, 'solargraph/source/flawed_builder'
-    # autoload :Position,      'solargraph/source/position'
-    # autoload :Range,         'solargraph/source/range'
-    autoload :Location,      'solargraph/source/location'
     autoload :Updater,       'solargraph/source/updater'
     autoload :Change,        'solargraph/source/change'
     autoload :Mapper,        'solargraph/source/mapper'
@@ -33,9 +30,9 @@ module Solargraph
 
     # @param code [String]
     # @param filename [String]
+    # @param version [Integer]
     def initialize code, filename = nil, version = 0
       @code = normalize(code)
-      @fixed = @code
       @filename = filename
       @version = version
       @domains = []
@@ -93,7 +90,6 @@ module Solargraph
     # @return [Source]
     def synchronize updater
       raise 'Invalid synchronization' unless updater.filename == filename
-      original_fixed = @fixed
       new_code = updater.write(@code)
       if new_code == @code
         @version = updater.version
@@ -132,11 +128,6 @@ module Solargraph
 
     private
 
-    def correct new_code, new_version
-      code = new_code
-      version = new_version
-    end
-
     def inner_tree_at node, position, stack
       return if node.nil?
       here = Range.from_to(node.loc.expression.line, node.loc.expression.column, node.loc.expression.last_line, node.loc.expression.last_column)
@@ -149,32 +140,6 @@ module Solargraph
         end
       end
     end
-
-    # @return [void]
-    # def parse
-    #   node, comments = inner_parse(@fixed, filename)
-    #   @node = node
-    #   @comments = comments
-    #   @parsed = true
-    # end
-
-    def hard_fix_node
-      @fixed = @code.gsub(/[^\s]/, '_')
-      node, comments = inner_parse(@fixed, filename)
-      @node = node
-      @comments = comments
-      @parsed = false
-    end
-
-    # @return [Array]
-    # def parse code, filename
-    #   parser = Parser::CurrentRuby.new(FlawedBuilder.new)
-    #   parser.diagnostics.all_errors_are_fatal = true
-    #   parser.diagnostics.ignore_warnings      = true
-    #   buffer = Parser::Source::Buffer.new(filename, 0)
-    #   buffer.source = code.encode('UTF-8', 'binary', invalid: :replace, undef: :replace, replace: '_')
-    #   parser.parse_with_comments(buffer)
-    # end
 
     def inner_node_references name, top
       result = []
@@ -189,15 +154,9 @@ module Solargraph
 
     protected
 
-    attr_reader :fixed
-
     attr_writer :version
 
     attr_writer :code
-
-    attr_writer :node
-
-    attr_writer :comments
 
     class << self
       # @param filename [String]
