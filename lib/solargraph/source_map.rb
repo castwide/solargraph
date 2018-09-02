@@ -18,7 +18,8 @@ module Solargraph
 
     def initialize source, pins, locals, requires, symbols, string_ranges, comment_ranges
       # [@source, @pins, @locals, @requires, @symbols, @string_ranges, @comment_ranges]
-      @source = source
+      # HACK: Keep the library from changing this
+      @source = source.clone
       @pins = pins
       @locals = locals
       @requires = requires
