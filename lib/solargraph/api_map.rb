@@ -62,11 +62,15 @@ module Solargraph
         pins = []
         all_sources.each do |source|
           # @todo Is this where we should attempt a map merge?
-          next if @source_map_hash.has_key?(source.filename) and @source_map_hash[source.filename].source == source
+          # next if @source_map_hash.has_key?(source.filename) and @source_map_hash[source.filename].source.code == source.code
           map = Solargraph::SourceMap.map(source)
+          if @source_map_hash.has_key?(source.filename)
+            @source_map_hash[source.filename] = map unless @source_map_hash[source.filename].try_merge!(map)
+          else
+            @source_map_hash[source.filename] = map
+          end
           pins.concat map.pins
           reqs.concat map.requires.map(&:name)
-          @source_map_hash[source.filename] = map
         end
         yard_map.change(reqs)
         new_store = Store.new(pins + yard_map.pins)

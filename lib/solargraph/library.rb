@@ -163,8 +163,7 @@ module Solargraph
       # position = Position.new(line, column)
       # map = source_hash[filename]
       # clip = api_map.clip(map, position)
-      location = Location.new(filename, line, column)
-      clip = api_map.clip(location)
+      clip = api_map.clip(filename, Position.new(line, column))
       pins = clip.define
       return [] if pins.empty?
       result = []
@@ -174,7 +173,7 @@ module Solargraph
           mn_loc = get_symbol_name_location(pin)
           result.push mn_loc unless mn_loc.nil?
         end
-        source_hash.values.each do |source|
+        (workspace.sources + open_file_hash.values).uniq.each do |source|
           found = source.references(pin.name)
           found.select do |loc|
             referenced = definitions_at(loc.filename, loc.range.ending.line, loc.range.ending.character)
@@ -211,9 +210,8 @@ module Solargraph
     #
     # @param filename [String]
     # @return [Source]
-    # @todo Candidate for deprecation
     def checkout filename
-      # read filename
+      read filename
     end
 
     # @param query [String]
@@ -262,7 +260,7 @@ module Solargraph
       else
         open_file_hash[updater.filename].synchronize updater
       end
-      api_map.catalog workspace
+      catalog_sources
     end
 
     # Get the current text of a file in the library.
