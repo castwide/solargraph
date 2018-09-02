@@ -45,16 +45,27 @@ module Solargraph
       }
     end
 
-    def catalog source_maps
+    # Catalog a workspace and any additional sources that need to be mapped.
+    #
+    # @param workspace [Workspace]
+    # @param others [Array<Source>]
+    # @return [void]
+    def catalog workspace, others = []
+      all_sources = (workspace.sources + others).uniq
       @index_mutex.synchronize {
-        @source_map_hash.clear
+        @source_map_hash.keep_if{|filename, map|
+          all_sources.include?(map.source)
+        }
         @cache.clear
         reqs = []
         pins = []
-        source_maps.each do |m|
-          @source_map_hash[m.source.filename] = m
-          pins.concat m.pins
-          reqs.concat m.requires.map(&:name)
+        all_sources.each do |source|
+          # @todo Is this where we should attempt a map merge?
+          next if @source_map_hash.has_key?(source.filename) and @source_map_hash[source.filename].source == source
+          map = Solargraph::SourceMap.map(source)
+          pins.concat map.pins
+          reqs.concat map.requires.map(&:name)
+          @source_map_hash[source.filename] = map
         end
         yard_map.change(reqs)
         new_store = Store.new(pins + yard_map.pins)
@@ -345,11 +356,12 @@ module Solargraph
       yard_map.unresolved_requires
     end
 
-    # @param source [SourceMap]
+    # @raise [FileNotFoundError] if the file was not cataloged in the ApiMap
+    # @param filename [String]
     # @param position [Position]
-    def clip source_map, position
-      # virtualize source
-      SourceMap::Clip.new(self, source_map.fragment_at(position))
+    def clip filename, position
+      raise FileNotFoundError, "ApiMap did not catalog #{filename}" unless source_map_hash.has_key?(filename)
+      SourceMap::Clip.new(self, source_map_hash[filename].fragment_at(position))
     end
 
     private
