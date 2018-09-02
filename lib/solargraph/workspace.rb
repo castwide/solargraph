@@ -117,9 +117,12 @@ module Solargraph
       @gemspecs ||= Dir[File.join(directory, '**/*.gemspec')]
     end
 
-    def synchronize updater
-      source_hash[updater.filename].synchronize updater
-      source_hash[updater.filename]
+    # Synchronize the workspace from the provided updater.
+    #
+    # @param [Source::Updater]
+    # @return [void]
+    def synchronize! updater
+      source_hash[updater.filename] = source_hash[updater.filename].synchronize(updater)
     end
 
     private

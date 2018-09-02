@@ -252,12 +252,19 @@ module Solargraph
       api_map.get_path_suggestions(path)
     end
 
+    # Synchronize the library from the provided updater.
+    #
+    # @raise [FileNotFoundError] if the updater's file is not available.
     # @param updater [Solargraph::Source::Updater]
-    def synchronize updater
+    # @return [void]
+    def synchronize! updater
       if workspace.has_file?(updater.filename)
-        source = workspace.synchronize(updater)
+        workspace.synchronize!(updater)
+        open_file_hash[updater.filename] = workspace.source(updater.filename) if open?(updater.filename)
+        STDERR.puts open_file_hash[updater.filename].code
       else
-        open_file_hash[updater.filename] = open_file_hash[updater.filename].synchronize updater
+        raise FileNotFoundError, "Unable to update #{updater.filename}" unless open?(updater.filename)
+        open_file_hash[updater.filename] = open_file_hash[updater.filename].synchronize(updater)
       end
       catalog_sources
     end

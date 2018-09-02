@@ -173,7 +173,7 @@ module Solargraph
             @change_queue.push params
             if params['textDocument']['version'] == source.version + params['contentChanges'].length
               updater = generate_updater(params)
-              library.synchronize updater
+              library.synchronize! updater
               @change_queue.pop
               @diagnostics_queue.push params['textDocument']['uri']
             end
@@ -539,7 +539,7 @@ module Solargraph
                   source = library.checkout(filename)
                   pending[change['textDocument']['uri']] -= 1
                   updater = generate_updater(change)
-                  library.synchronize updater
+                  library.synchronize! updater
                   @diagnostics_queue.push change['textDocument']['uri']
                   true
                 end

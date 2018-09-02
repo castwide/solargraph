@@ -95,13 +95,11 @@ module Solargraph
         @version = updater.version
         return self
       end
-      synced = Source.new(new_code, filename)
+      repaired = updater.write(@code, true)
+      synced = Source.new(repaired, filename)
+      synced.code = new_code
       synced.version = updater.version
-      return synced if synced.parsed?
-      broke = Source.new(updater.write(@code, true), filename)
-      broke.code = new_code
-      broke.version = updater.version
-      broke
+      synced
     end
 
     # @return [Boolean]
