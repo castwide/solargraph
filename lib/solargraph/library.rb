@@ -130,10 +130,6 @@ module Solargraph
     # @return [Array<Solargraph::Pin::Base>]
     # @todo Take filename/position instead of filename/line/column
     def definitions_at filename, line, column
-      # position = Position.new(line, column)
-      # map = source_hash[filename]
-      # clip = api_map.clip(map, position)
-      # clip.define
       api_map.clip(filename, Position.new(line, column)).define
     end
 
@@ -146,10 +142,6 @@ module Solargraph
     # @return [Array<Solargraph::Pin::Base>]
     # @todo Take filename/position instead of filename/line/column
     def signatures_at filename, line, column
-      # position = Position.new(line, column)
-      # source = source_hash[filename]
-      # clip = api_map.clip(source, position)
-      # clip.signify
       api_map.clip(filename, Position.new(line, column)).signify
     end
 
@@ -159,14 +151,10 @@ module Solargraph
     # @return [Array<Solargraph::Range>]
     # @todo Take a Location instead of filename/line/column
     def references_from filename, line, column
-      # position = Position.new(line, column)
-      # map = source_hash[filename]
-      # clip = api_map.clip(map, position)
       clip = api_map.clip(filename, Position.new(line, column))
       pins = clip.define
       return [] if pins.empty?
       result = []
-      # @param pin [Solargraph::Pin::Base]
       pins.uniq.each do |pin|
         if pin.kind != Solargraph::Pin::NAMESPACE and !pin.location.nil?
           mn_loc = get_symbol_name_location(pin)
@@ -269,7 +257,6 @@ module Solargraph
     end
 
     def refresh
-      STDERR.puts "Hard refresh"
       catalog_sources
     end
 
