@@ -252,11 +252,8 @@ module Solargraph
     def synchronize updater
       if workspace.has_file?(updater.filename)
         source = workspace.synchronize updater
-        source_hash[source.filename] = SourceMap.map(source)
       else
-        # @todo This is spaghetti
-        source_hash[updater.filename].synchronize updater
-        # source_hash[updater.filename] = SourceMap.map(source_hash[updater.filename].source)
+        open_file_hash[updater.filename].synchronize updater
       end
       api_map.catalog workspace
     end
