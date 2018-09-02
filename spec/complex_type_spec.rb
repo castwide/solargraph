@@ -159,7 +159,7 @@ describe Solargraph::ComplexType do
 
   let (:foo_bar_api_map) {
     api_map = Solargraph::ApiMap.new
-    api_map.virtualize_string(%(
+    source = Solargraph::Source.load_string(%(
       module Foo
         class Bar
           # @return [Bar]
@@ -168,6 +168,7 @@ describe Solargraph::ComplexType do
         end
       end
     ))
+    api_map.catalog Solargraph::Workspace.new, [source]
     api_map
   }
 
