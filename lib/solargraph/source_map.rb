@@ -71,7 +71,7 @@ module Solargraph
       Fragment.new(self, position)
     end
 
-    # @param location [Solargraph::Source::Location]
+    # @param location [Solargraph::Location]
     # @return [Solargraph::Pin::Base]
     def locate_pin location
       # return nil unless location.start_with?("#{filename}:")

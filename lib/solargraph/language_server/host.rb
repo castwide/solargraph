@@ -344,7 +344,7 @@ module Solargraph
         @change_semaphore.synchronize do
           pin = nil
           unless params['data']['location'].nil?
-            location = Source::Location.new(
+            location = Location.new(
               params['data']['location']['filename'],
               Range.from_to(
                 params['data']['location']['range']['start']['line'],

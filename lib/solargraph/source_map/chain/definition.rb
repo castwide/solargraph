@@ -2,7 +2,7 @@ module Solargraph
   class SourceMap
     class Chain
       class Definition < Link
-        # @param location [Solargraph::Source::Location]
+        # @param location [Solargraph::Location]
         def initialize location
           @location = location
         end

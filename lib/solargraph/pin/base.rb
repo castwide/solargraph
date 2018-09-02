@@ -6,7 +6,7 @@ module Solargraph
       include Conversions
       include Documenting
 
-      # @return [Solargraph::Source::Location]
+      # @return [Solargraph::Location]
       attr_reader :location
 
       # The namespace in which this pin is defined.
@@ -24,7 +24,7 @@ module Solargraph
       # @return [String]
       attr_reader :path
 
-      # @param location [Solargraph::Source::Location]
+      # @param location [Solargraph::Location]
       # @param namespace [String]
       # @param name [String]
       # @param comments [String]

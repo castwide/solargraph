@@ -337,7 +337,7 @@ module Solargraph
       offset = Solargraph::Position.to_offset(decsrc.code, pin.location.range.start)
       soff = decsrc.code.index(pin.name, offset)
       eoff = soff + pin.name.length
-      Solargraph::Source::Location.new(
+      Solargraph::Location.new(
         pin.location.filename, Solargraph::Range.new(
           Solargraph::Position.from_offset(decsrc.code, soff),
           Solargraph::Position.from_offset(decsrc.code, eoff)

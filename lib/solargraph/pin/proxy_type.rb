@@ -1,7 +1,7 @@
 module Solargraph
   module Pin
     class ProxyType < Base
-      # @param location [Solargraph::Source::Location]
+      # @param location [Solargraph::Location]
       # @param namespace [String]
       # @param name [String]
       # @param return_type [ComplexType]

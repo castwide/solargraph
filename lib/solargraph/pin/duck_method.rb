@@ -4,7 +4,7 @@ module Solargraph
     # use duck typing, e.g., `@param file [#read]`.
     #
     class DuckMethod < Pin::Method
-      # @param location [Solargraph::Source::Location]
+      # @param location [Solargraph::Location]
       # @param name [String]
       def initialize location, name
         super(location, 'Object', name, nil, :instance, :public, [])

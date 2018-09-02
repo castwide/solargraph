@@ -26,6 +26,7 @@ module Solargraph
 
   autoload :Position,         'solargraph/position'
   autoload :Range,            'solargraph/range'
+  autoload :Location,         'solargraph/location'
   autoload :Shell,            'solargraph/shell'
   autoload :Source,           'solargraph/source'
   autoload :SourceMap,        'solargraph/source_map'

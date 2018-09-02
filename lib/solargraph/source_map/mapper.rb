@@ -338,7 +338,7 @@ module Solargraph
       end
 
       # @param node [Parser::AST::Node]
-      # @return [Solargraph::Source::Location]
+      # @return [Solargraph::Location]
       def get_node_location(node)
         if node.nil?
           st = Position.new(0, 0)
@@ -348,7 +348,7 @@ module Solargraph
           en = Position.new(node.loc.last_line, node.loc.last_column)
         end
         range = Range.new(st, en)
-        Source::Location.new(filename, range)
+        Location.new(filename, range)
       end
 
       # @param node [Parser::AST::Node]

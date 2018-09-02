@@ -118,7 +118,7 @@ module Solargraph
     end
 
     # @param name [String]
-    # @return [Array<Source::Location>]
+    # @return [Array<Location>]
     def references name
       inner_node_references(name, node).map do |n|
         offset = Position.to_offset(code, get_node_start_position(n))

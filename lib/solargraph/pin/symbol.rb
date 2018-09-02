@@ -1,7 +1,7 @@
 module Solargraph
   module Pin
     class Symbol < Base
-      # @param location [Solargraph::Source::Location]
+      # @param location [Solargraph::Location]
       # @param name [String]
       def initialize location, name
         @name = name
