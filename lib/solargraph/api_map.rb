@@ -40,6 +40,7 @@ module Solargraph
       @index_mutex.synchronize {
         @source_map_hash.clear
         @cache.clear
+        yard_map.change([])
         new_store = Store.new(pins + yard_map.pins)
         @store = new_store
       }
@@ -61,20 +62,24 @@ module Solargraph
         reqs = []
         pins = []
         all_sources.each do |source|
-          # @todo Is this where we should attempt a map merge?
-          # next if @source_map_hash.has_key?(source.filename) and @source_map_hash[source.filename].source.code == source.code
-          map = Solargraph::SourceMap.map(source)
-          if @source_map_hash.has_key?(source.filename)
-            @source_map_hash[source.filename] = map unless @source_map_hash[source.filename].try_merge!(map)
+          if @source_map_hash.has_key?(source.filename) and @source_map_hash[source.filename].source.code == source.code
+            map = @source_map_hash[source.filename]
           else
-            @source_map_hash[source.filename] = map
+            map = Solargraph::SourceMap.map(source)
+            if @source_map_hash.has_key?(source.filename)
+              @source_map_hash[source.filename] = map unless @source_map_hash[source.filename].try_merge!(map)
+            else
+              @source_map_hash[source.filename] = map
+            end
           end
           pins.concat map.pins
           reqs.concat map.requires.map(&:name)
         end
         yard_map.change(reqs)
-        new_store = Store.new(pins + yard_map.pins)
-        @store = new_store
+        unless (pins + yard_map.pins) == @store.pins
+          new_store = Store.new(pins + yard_map.pins)
+          @store = new_store
+        end
       }
     end
 
