@@ -33,11 +33,11 @@ module Solargraph
 
     # @param code [String]
     # @param filename [String]
-    def initialize code, filename = nil
+    def initialize code, filename = nil, version = 0
       @code = normalize(code)
       @fixed = @code
       @filename = filename
-      @version = 0
+      @version = version
       @domains = []
       begin
         @node, @comments = Source.parse_with_comments(@code, filename)
@@ -212,8 +212,8 @@ module Solargraph
       # @param code [String]
       # @param filename [String]
       # @return [Solargraph::Source]
-      def load_string code, filename = nil
-        Source.new code, filename
+      def load_string code, filename = nil, version = 0
+        Source.new code, filename, version
       end
 
       def parse_with_comments code, filename = nil

@@ -300,10 +300,10 @@ module Solargraph
       return [] if path.nil?
       result = []
       result.concat store.get_path_pins(path)
-      if result.empty?
-        # lp = live_map.get_path_pin(path)
-        result.push lp unless lp.nil?
-      end
+      # if result.empty?
+      #   lp = live_map.get_path_pin(path)
+      #   result.push lp unless lp.nil?
+      # end
       result
     end
 

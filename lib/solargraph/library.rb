@@ -17,8 +17,7 @@ module Solargraph
     # @param text [String]
     # @param version [Integer]
     def open filename, text, version
-      source = Solargraph::Source.load_string(text, filename)
-      source.version = version
+      source = Solargraph::Source.load_string(text, filename, version)
       workspace.merge source
       open_file_hash[filename] = source
       catalog_sources
@@ -256,9 +255,9 @@ module Solargraph
     # @param updater [Solargraph::Source::Updater]
     def synchronize updater
       if workspace.has_file?(updater.filename)
-        source = workspace.synchronize updater
+        source = workspace.synchronize(updater)
       else
-        open_file_hash[updater.filename].synchronize updater
+        open_file_hash[updater.filename] = open_file_hash[updater.filename].synchronize updater
       end
       catalog_sources
     end
