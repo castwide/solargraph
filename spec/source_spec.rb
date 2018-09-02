@@ -48,9 +48,9 @@ describe Solargraph::Source do
         'd'
       )]
     )
-    source.synchronize updater
-    expect(source.code).to start_with('class Food;')
-    expect(source.node.children[0].children[1]).to eq(:Food)
+    changed = source.synchronize(updater)
+    expect(changed.code).to start_with('class Food;')
+    expect(changed.node.children[0].children[1]).to eq(:Food)
   end
 
   it "synchronizes from full updates" do
@@ -60,9 +60,9 @@ describe Solargraph::Source do
     updater = Solargraph::Source::Updater.new(nil, 0, [
       Solargraph::Source::Change.new(nil, code2)
     ])
-    source.synchronize(updater)
-    expect(source.code).to eq(code2)
-    expect(source.node.children[0].children[1]).to eq(:Bar)
+    changed = source.synchronize(updater)
+    expect(changed.code).to eq(code2)
+    expect(changed.node.children[0].children[1]).to eq(:Bar)
   end
 
   it "repairs broken incremental updates" do
@@ -82,8 +82,8 @@ describe Solargraph::Source do
         '@'
       )]
     )
-    source.synchronize updater
-    expect(source).to be_parsed
+    changed = source.synchronize(updater)
+    expect(changed).to be_parsed
   end
 
   it "flags irreparable updates" do
@@ -92,7 +92,7 @@ describe Solargraph::Source do
     updater = Solargraph::Source::Updater.new(nil, 0, [
       Solargraph::Source::Change.new(nil, 'end;end')
     ])
-    source.synchronize(updater)
-    expect(source).not_to be_parsed
+    changed = source.synchronize(updater)
+    expect(changed).not_to be_parsed
   end
 end

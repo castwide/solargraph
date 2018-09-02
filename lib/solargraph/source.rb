@@ -29,24 +29,28 @@ module Solargraph
 
     # @todo Deprecate?
     # @return [Integer]
-    attr_accessor :version
+    attr_reader :version
 
     # @param code [String]
     # @param filename [String]
     def initialize code, filename = nil
+      @code = normalize(code)
+      @fixed = @code
+      @filename = filename
+      @version = 0
+      @domains = []
       begin
-        @code = normalize(code)
-        @fixed = @code
-        @filename = filename
-        @version = 0
-        @domains = []
-        parse
+        @node, @comments = Source.parse_with_comments(@code, filename)
+        @parsed = true
       rescue Parser::SyntaxError, EncodingError => e
-        hard_fix_node
+        @node, @comments = Source.parse_with_comments(@code.gsub(/[^s]/, '_'), filename)
+        @parsed = false
       rescue Exception => e
         STDERR.puts e.message
         STDERR.puts e.backtrace
         raise "Error parsing #{filename || '(source)'}: [#{e.class}] #{e.message}"
+      ensure
+        @code.freeze
       end
     end
 
@@ -86,30 +90,22 @@ module Solargraph
 
     # @param updater [Source::Updater]
     # @param reparse [Boolean]
-    # @return [void]
+    # @return [Source]
     def synchronize updater
       raise 'Invalid synchronization' unless updater.filename == filename
-      original_code = @code
       original_fixed = @fixed
-      @code = updater.write(original_code)
-      @fixed = updater.write(original_code, true)
-      @version = updater.version
-      return if @code == original_code
-      begin
-        parse
-        @fixed = @code
-      rescue Parser::SyntaxError, EncodingError => e
-        @fixed = updater.repair(original_fixed)
-        if @fixed.strip.empty?
-          @parsed = false
-        else
-          begin
-            parse
-          rescue Parser::SyntaxError, EncodingError => e
-            hard_fix_node
-          end
-        end
+      new_code = updater.write(@code)
+      if new_code == @code
+        @version = updater.version
+        return self
       end
+      synced = Source.new(new_code, filename)
+      synced.version = updater.version
+      return synced if synced.parsed?
+      broke = Source.new(updater.write(@code, true), filename)
+      broke.code = new_code
+      broke.version = updater.version
+      broke
     end
 
     # @return [Boolean]
@@ -136,6 +132,11 @@ module Solargraph
 
     private
 
+    def correct new_code, new_version
+      code = new_code
+      version = new_version
+    end
+
     def inner_tree_at node, position, stack
       return if node.nil?
       here = Range.from_to(node.loc.expression.line, node.loc.expression.column, node.loc.expression.last_line, node.loc.expression.last_column)
@@ -150,12 +151,12 @@ module Solargraph
     end
 
     # @return [void]
-    def parse
-      node, comments = inner_parse(@fixed, filename)
-      @node = node
-      @comments = comments
-      @parsed = true
-    end
+    # def parse
+    #   node, comments = inner_parse(@fixed, filename)
+    #   @node = node
+    #   @comments = comments
+    #   @parsed = true
+    # end
 
     def hard_fix_node
       @fixed = @code.gsub(/[^\s]/, '_')
@@ -165,14 +166,15 @@ module Solargraph
       @parsed = false
     end
 
-    def inner_parse code, filename
-      parser = Parser::CurrentRuby.new(FlawedBuilder.new)
-      parser.diagnostics.all_errors_are_fatal = true
-      parser.diagnostics.ignore_warnings      = true
-      buffer = Parser::Source::Buffer.new(filename, 0)
-      buffer.source = code.encode('UTF-8', 'binary', invalid: :replace, undef: :replace, replace: '_')
-      parser.parse_with_comments(buffer)
-    end
+    # @return [Array]
+    # def parse code, filename
+    #   parser = Parser::CurrentRuby.new(FlawedBuilder.new)
+    #   parser.diagnostics.all_errors_are_fatal = true
+    #   parser.diagnostics.ignore_warnings      = true
+    #   buffer = Parser::Source::Buffer.new(filename, 0)
+    #   buffer.source = code.encode('UTF-8', 'binary', invalid: :replace, undef: :replace, replace: '_')
+    #   parser.parse_with_comments(buffer)
+    # end
 
     def inner_node_references name, top
       result = []
@@ -184,6 +186,18 @@ module Solargraph
       end
       result
     end
+
+    protected
+
+    attr_reader :fixed
+
+    attr_writer :version
+
+    attr_writer :code
+
+    attr_writer :node
+
+    attr_writer :comments
 
     class << self
       # @param filename [String]
@@ -202,14 +216,28 @@ module Solargraph
         Source.new code, filename
       end
 
-      # @todo Deprecate?
-      def parse_node code, filename
+      def parse_with_comments code, filename = nil
+        buffer = Parser::Source::Buffer.new(filename, 0)
+        buffer.source = code.encode('UTF-8', 'binary', invalid: :replace, undef: :replace, replace: '_')
+        parser.parse_with_comments(buffer)
+      end
+
+      def parse code, filename = nil
+        buffer = Parser::Source::Buffer.new(filename, 0)
+        buffer.source = code.encode('UTF-8', 'binary', invalid: :replace, undef: :replace, replace: '_')
+        parser.parse(buffer)
+      end
+
+      private
+
+      # @return [Parser::Base]
+      def parser
+        # @todo Consider setting an instance variable. We might not need to
+        #   recreate the parser every time we use it.
         parser = Parser::CurrentRuby.new(FlawedBuilder.new)
         parser.diagnostics.all_errors_are_fatal = true
         parser.diagnostics.ignore_warnings      = true
-        buffer = Parser::Source::Buffer.new(nil, 0)
-        buffer.source = code.encode('UTF-8', 'binary', invalid: :replace, undef: :replace, replace: '_')
-        parser.parse(buffer)
+        parser
       end
     end
   end
