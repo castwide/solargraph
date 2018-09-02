@@ -365,6 +365,11 @@ module Solargraph
       SourceMap::Clip.new(self, source_map_hash[filename].fragment_at(position))
     end
 
+    def document_symbols filename
+      return [] unless source_map_hash.has_key?(filename) # @todo Raise error?
+      source_map_hash[filename].document_symbols
+    end
+
     private
 
     def source_map_hash

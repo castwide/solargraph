@@ -146,6 +146,20 @@ describe Solargraph::Library do
     expect(paths).to include('Foo#bar')
   end
 
+  it "signifies method arguments" do
+    library = Solargraph::Library.new
+    library.open 'file.rb', %(
+      class Foo
+        def bar baz, key: ''
+        end
+      end
+      Foo.new.bar()
+    ), 0
+    pins = library.signatures_at('file.rb', 5, 18)
+    expect(pins.length).to eq(1)
+    expect(pins.first.path).to eq('Foo#bar')
+  end
+
   it "ignores invalid filenames in create_from_disk" do
     library = Solargraph::Library.new
     filename = 'not_a_real_file.rb'
@@ -183,5 +197,19 @@ describe Solargraph::Library do
     result = library.diagnose 'file.rb'
     expect(result).to be_a(Array)
     # @todo More tests
+  end
+
+  it "documents symbols" do
+    library = Solargraph::Library.new
+    library.open('file.rb', %(
+      class Foo
+        def bar
+        end
+      end
+    ), 0)
+    pins = library.document_symbols 'file.rb'
+    expect(pins.length).to eq(2)
+    expect(pins.map(&:path)).to include('Foo')
+    expect(pins.map(&:path)).to include('Foo#bar')
   end
 end

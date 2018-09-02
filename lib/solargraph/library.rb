@@ -211,8 +211,9 @@ module Solargraph
     #
     # @param filename [String]
     # @return [Source]
+    # @todo Candidate for deprecation
     def checkout filename
-      read filename
+      # read filename
     end
 
     # @param query [String]
@@ -235,11 +236,17 @@ module Solargraph
       api_map.query_symbols query
     end
 
+    # Get an array of document symbols.
+    #
+    # Document symbols are composed of namespace, method, and constant pins.
+    # The results of this query are appropriate for building the response to a
+    # textDocument/documentSymbol message in the language server protocol.
+    #
     # @param filename [String]
     # @return [Array<Solargraph::Pin::Base>]
     def document_symbols filename
-      return [] unless source_hash.has_key?(filename)
-      source_hash[filename].document_symbols
+      return [] unless open_file_hash.has_key?(filename)
+      api_map.document_symbols(filename)
     end
 
     # @param path [String]
