@@ -257,15 +257,19 @@ module Solargraph
     # @raise [FileNotFoundError] if the updater's file is not available.
     # @param updater [Solargraph::Source::Updater]
     # @return [void]
-    def synchronize! updater
+    def synchronize! updater, catalog = true
       if workspace.has_file?(updater.filename)
         workspace.synchronize!(updater)
         open_file_hash[updater.filename] = workspace.source(updater.filename) if open?(updater.filename)
-        STDERR.puts open_file_hash[updater.filename].code
       else
         raise FileNotFoundError, "Unable to update #{updater.filename}" unless open?(updater.filename)
         open_file_hash[updater.filename] = open_file_hash[updater.filename].synchronize(updater)
       end
+      catalog_sources if catalog
+    end
+
+    def refresh
+      STDERR.puts "Hard refresh"
       catalog_sources
     end
 

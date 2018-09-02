@@ -11,20 +11,18 @@ module Solargraph
       private_class_method :new
 
       class << self
-        # @param source [Source]
-        # @param line [Integer]
-        # @param column [Integer]
+        # @param source_map [SourceMap]
+        # @param position [Position]
         # @return [Source::Chain]
-        def chain source, position
-          new(source, position).chain
+        def chain source_map, position
+          new(source_map, position).chain
         end
       end
 
-      # @param source [Solargraph::Source]
-      # @param line [Integer]
-      # @param column [Integer]
-      def initialize source, position
-        @source_map = source
+      # @param source_map [SourceMap]
+      # @param position [Position]
+      def initialize source_map, position
+        @source_map = source_map
         # @source_map.code = source.code
         @position = position
         # @todo Get rid of line/column
@@ -250,7 +248,7 @@ module Solargraph
           @base_literal = 'Array'
         elsif signature.start_with?('.')
           pos = Position.from_offset(@source_map.source.code, index)
-          node = source.node_at(pos.line, pos.character)
+          node = @source_map.source.node_at(pos.line, pos.character)
           lit = infer_literal_node_type(node)
           unless lit.nil?
             signature = signature[1..-1].to_s

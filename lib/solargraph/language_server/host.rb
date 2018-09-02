@@ -23,8 +23,6 @@ module Solargraph
         @next_request_id = 0
         @dynamic_capabilities = Set.new
         @registered_capabilities = Set.new
-        start_change_thread
-        start_diagnostics_thread
       end
 
       # Update the configuration options with the provided hash.
@@ -166,17 +164,14 @@ module Solargraph
 
       def change params
         @change_semaphore.synchronize do
-          if unsafe_changing? params['textDocument']['uri']
-            @change_queue.push params
-          else
-            source = library.checkout(uri_to_file(params['textDocument']['uri']))
-            @change_queue.push params
-            if params['textDocument']['version'] == source.version + params['contentChanges'].length
-              updater = generate_updater(params)
-              library.synchronize! updater
-              @change_queue.pop
-              @diagnostics_queue.push params['textDocument']['uri']
-            end
+          updater = generate_updater(params)
+          @change_queue.push updater
+          source = library.checkout(updater.filename)
+          if updater.version == source.version + 1
+            library.synchronize! updater
+            @change_queue.pop
+          elsif source.version == updater.version
+            @change_queue.pop
           end
         end
       end
@@ -219,6 +214,8 @@ module Solargraph
             @library = Solargraph::Library.load(nil)
           end
         end
+        start_change_thread
+        start_diagnostics_thread
       end
 
       # Send a notification to the client.
@@ -511,7 +508,7 @@ module Solargraph
       # @param file_uri [String]
       # @return [Boolean]
       def unsafe_changing? file_uri
-        @change_queue.any?{|change| change['textDocument']['uri'] == file_uri}
+        @change_queue.any?{|change| change.version == uri_to_file(file_uri)}
       end
 
       def unsafe_open? uri
@@ -525,23 +522,29 @@ module Solargraph
       def start_change_thread
         Thread.new do
           until stopped?
+            changed = false
             @change_semaphore.synchronize do
               begin
-                changed = false
-                @change_queue.sort!{|a, b| a['textDocument']['version'] <=> b['textDocument']['version']}
-                pending = {}
-                @change_queue.each do |obj|
-                  pending[obj['textDocument']['uri']] ||= 0
-                  pending[obj['textDocument']['uri']] += 1
-                end
+                next if @change_queue.empty?
+                texts = {}
                 @change_queue.delete_if do |change|
-                  filename = uri_to_file(change['textDocument']['uri'])
-                  source = library.checkout(filename)
-                  pending[change['textDocument']['uri']] -= 1
-                  updater = generate_updater(change)
-                  library.synchronize! updater
-                  @diagnostics_queue.push change['textDocument']['uri']
+                  source = library.checkout(change.filename)
+                  next true if change.version == source.version
+                  next false unless change.version == source.version + 1
+                  texts[change.filename] ||= [source.code, change.version]
+                  texts[change.filename] = [change.write(texts[change.filename][0]), change.version]
+                  # library.synchronize! change, false
+                  @diagnostics_queue.push file_to_uri(change.filename)
+                  changed = true
                   true
+                end
+                texts.each do |filename, arr|
+                  updater = Solargraph::Source::Updater.new(
+                    filename,
+                    arr[1],
+                    [Solargraph::Source::Change.new(nil, arr[0])],
+                  )
+                  library.synchronize! updater, false
                 end
               rescue Exception => e
                 STDERR.puts "An error occurred in the change thread: #{e.class}"
@@ -550,6 +553,9 @@ module Solargraph
               end
             end
             sleep 0.01
+            @change_semaphore.synchronize do
+              library.refresh if changed and @change_queue.empty?
+            end
           end
         end
       end
