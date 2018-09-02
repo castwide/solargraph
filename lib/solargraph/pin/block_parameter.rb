@@ -42,7 +42,7 @@ module Solargraph
       def try_merge! other
         return false unless super
         @block = other.block
-        @presence = block.location.range
+        @presence = other.block.location.range
         @return_complex_type = nil
         true
       end
