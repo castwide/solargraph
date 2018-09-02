@@ -113,12 +113,7 @@ module Solargraph
     # @return [ApiMap::Completion]
     # @todo Take a Location instead of filename/line/column
     def completions_at filename, line, column
-      position = Position.new(line, column)
-      #source = read(filename)
-      # map = source_hash[filename]
-      # clip = api_map.clip(map, position)
-      # clip.complete
-      api_map.clip(filename, Position.new(line, column)).complete
+      api_map.clip(filename, position).complete
     end
 
     # Get definition suggestions for the expression at the specified file and

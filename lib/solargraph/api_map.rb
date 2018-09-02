@@ -371,6 +371,7 @@ module Solargraph
     # @raise [FileNotFoundError] if the file was not cataloged in the ApiMap
     # @param filename [String]
     # @param position [Position]
+    # @return [SourceMap::Clip]
     def clip filename, position
       raise FileNotFoundError, "ApiMap did not catalog #{filename}" unless source_map_hash.has_key?(filename)
       SourceMap::Clip.new(self, source_map_hash[filename].fragment_at(position))
