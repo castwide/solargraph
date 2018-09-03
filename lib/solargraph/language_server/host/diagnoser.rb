@@ -41,15 +41,15 @@ module Solargraph
                   current = queue.shift
                 end
                 next if current.nil?
-                results = library.diagnose(current)
-                send_notification "textDocument/publishDiagnostics", {
+                results = host.diagnose(current)
+                host.send_notification "textDocument/publishDiagnostics", {
                   uri: current,
                   diagnostics: results
                 }
               rescue DiagnosticsError => e
                 STDERR.puts "Error in diagnostics: #{e.message}"
                 options['diagnostics'] = false
-                send_notification 'window/showMessage', {
+                host.send_notification 'window/showMessage', {
                   type: LanguageServer::MessageTypes::ERROR,
                   message: "Error in diagnostics: #{e.message}"
                 }

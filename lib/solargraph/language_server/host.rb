@@ -124,6 +124,7 @@ module Solargraph
         @change_semaphore.synchronize do
           f = uri_to_file(uri)
           library.open uri_to_file(f), text, version
+          diagnoser.schedule uri
         end
       end
 
@@ -142,6 +143,7 @@ module Solargraph
         @change_semaphore.synchronize do
           library.close uri_to_file(uri)
           # @diagnostics_queue.push uri
+          diagnoser.schedule uri
         end
       end
 
@@ -158,11 +160,16 @@ module Solargraph
         end
       end
 
+      def diagnose uri
+        library.diagnose uri
+      end
+
       def change params
         updater = generate_updater(params)
         @change_semaphore.synchronize do
           library.synchronize updater
         end
+        diagnoser.schedule params['textDocument']['uri']
       end
 
       # Queue a message to be sent to the client.
@@ -203,7 +210,7 @@ module Solargraph
             @library = Solargraph::Library.load(nil)
           end
         end
-        # diagnoser.start
+        diagnoser.start
         cataloger.start
       end
 
