@@ -95,4 +95,25 @@ describe Solargraph::Source do
     changed = source.synchronize(updater)
     expect(changed).not_to be_parsed
   end
+
+  it "parses nodes" do
+    node = Solargraph::Source.parse('class Foo; end', 'test.rb')
+    expect(node).to be_a(Parser::AST::Node)
+  end
+
+  it "finds references" do
+    source = Solargraph::Source.load_string(%(
+      class Foo
+        def bar
+        end
+      end
+      Foo.new.bar
+    ))
+    foos = source.references('Foo')
+    foobacks = foos.map{|f| source.at(f.range)}
+    expect(foobacks).to eq(['Foo', 'Foo'])
+    bars = source.references('bar')
+    barbacks = bars.map{|b| source.at(b.range)}
+    expect(barbacks).to eq(['bar', 'bar'])
+  end
 end
