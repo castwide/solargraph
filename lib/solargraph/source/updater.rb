@@ -47,7 +47,7 @@ module Solargraph
       end
 
       # This is an insane hack to fix a discrepancy in version numbers and
-      # content changes.
+      # content changes. It's far from perfect.
       #
       # @return [Integer]
       def effective_changes
