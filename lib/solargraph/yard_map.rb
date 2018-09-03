@@ -20,24 +20,18 @@ module Solargraph
       @@stdlib_paths[path].push ns
     end
 
-    # @return [Solargraph::Workspace]
-    attr_reader :workspace
-
     # @return [Array<String>]
     attr_reader :required
 
     # @param required [Array<String>]
     # @param workspace [Solargraph::Workspace, nil]
-    def initialize(required: [], workspace: nil)
-      @workspace = workspace
+    def initialize(required: [])
       # HACK: YardMap needs its own copy of this array
       @required = required.clone
       @gem_paths = {}
       @stdlib_namespaces = []
       process_requires
-      # yardocs.push CoreDocs.yardoc_file
       yardocs.uniq!
-      yardocs.delete_if{ |y| y.start_with? workspace.directory } unless workspace.nil? or workspace.directory.nil?
     end
 
     # @return [Array<Solargraph::Pin::Base>]
@@ -136,7 +130,6 @@ module Solargraph
       stdnames = {}
       required.each do |r|
         next if r.nil? or r.empty?
-        next if !workspace.nil? and workspace.would_require?(r)
         cached = cache.get_path_pins(r)
         unless cached.nil?
           pins.concat cached
@@ -164,7 +157,6 @@ module Solargraph
             end
           end
         rescue Gem::LoadError => e
-          next if !workspace.nil? and workspace.would_require?(r)
           stdtmp = []
           @@stdlib_paths.each_pair do |path, objects|
             stdtmp.concat objects if path == r or path.start_with?("#{r}/")
@@ -224,12 +216,12 @@ module Solargraph
     end
 
     # @param obj [YARD::CodeObjects::Base]
-    # @return [Solargraph::Source::Location]
+    # @return [Solargraph::Location]
     def object_location obj
       return nil if obj.file.nil? or obj.line.nil?
       @gem_paths.values.each do |path|
         file = File.join(path, obj.file)
-        return Solargraph::Source::Location.new(file, Solargraph::Source::Range.from_to(obj.line, 0, obj.line, 0)) if File.exist?(file)
+        return Solargraph::Location.new(file, Solargraph::Range.from_to(obj.line, 0, obj.line, 0)) if File.exist?(file)
       end
       nil
     end

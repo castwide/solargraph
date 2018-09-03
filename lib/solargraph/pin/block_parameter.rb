@@ -42,8 +42,9 @@ module Solargraph
       def try_merge! other
         return false unless super
         @block = other.block
-        @presence = block.location.range
+        @presence = other.block.location.range
         @return_complex_type = nil
+        true
       end
 
       # @return [Array<Solargraph::ComplexType>]
@@ -65,15 +66,16 @@ module Solargraph
         block
       end
 
+      # @param api_map [ApiMap]
       def infer api_map
         return return_complex_type unless return_complex_type.undefined?
-        chain = Source::NodeChainer.chain(location.filename, block.receiver)
-        fragment = api_map.fragment_at(location)
+        chain = SourceMap::NodeChainer.chain(location.filename, block.receiver)
+        fragment = api_map.fragment_at(location.filename, location.range.start)
         locals = fragment.locals - [self]
-        meths = chain.define_with(api_map, block, fragment.locals)
+        meths = chain.define(api_map, block, fragment.locals)
         meths.each do |meth|
           if (Solargraph::CoreFills::METHODS_WITH_YIELDPARAM_SUBTYPES.include?(meth.path))
-            bmeth = chain.define_base_with(api_map, context, locals).first
+            bmeth = chain.base.define(api_map, context, locals).first
             return ComplexType::UNDEFINED if bmeth.nil? or bmeth.return_complex_type.undefined? or bmeth.return_complex_type.subtypes.empty?
             return bmeth.return_complex_type.subtypes.first.qualify(api_map)
           else

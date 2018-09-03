@@ -8,6 +8,9 @@ module Solargraph
     # safety for multi-threaded transports.
     #
     class Host
+      autoload :Diagnoser, 'solargraph/language_server/host/diagnoser'
+      autoload :Cataloger, 'solargraph/language_server/host/cataloger'
+
       include Solargraph::LanguageServer::UriHelpers
 
       def initialize
@@ -15,16 +18,12 @@ module Solargraph
         @cancel_semaphore = Mutex.new
         @buffer_semaphore = Mutex.new
         @register_semaphore = Mutex.new
-        @change_queue = []
-        @diagnostics_queue = []
         @cancel = []
         @buffer = ''
         @stopped = false
         @next_request_id = 0
         @dynamic_capabilities = Set.new
         @registered_capabilities = Set.new
-        start_change_thread
-        start_diagnostics_thread
       end
 
       # Update the configuration options with the provided hash.
@@ -109,12 +108,11 @@ module Solargraph
         @change_semaphore.synchronize do
           filename = uri_to_file(uri)
           library.delete filename
-          # Remove diagnostics for deleted files
-          send_notification "textDocument/publishDiagnostics", {
-            uri: uri,
-            diagnostics: []
-          }
         end
+        send_notification "textDocument/publishDiagnostics", {
+          uri: uri,
+          diagnostics: []
+        }
       end
 
       # Open the specified file in the library.
@@ -124,8 +122,9 @@ module Solargraph
       # @param version [Integer] A version number.
       def open uri, text, version
         @change_semaphore.synchronize do
-          library.open uri_to_file(uri), text, version
-          @diagnostics_queue.push uri
+          f = uri_to_file(uri)
+          library.open uri_to_file(f), text, version
+          diagnoser.schedule uri
         end
       end
 
@@ -134,11 +133,7 @@ module Solargraph
       # @param uri [String]
       # @return [Boolean]
       def open? uri
-        result = nil
-        @change_semaphore.synchronize do
-          result = unsafe_open?(uri)
-        end
-        result
+        unsafe_open?(uri)
       end
 
       # Close the file specified by the URI.
@@ -147,7 +142,8 @@ module Solargraph
       def close uri
         @change_semaphore.synchronize do
           library.close uri_to_file(uri)
-          @diagnostics_queue.push uri
+          # @diagnostics_queue.push uri
+          diagnoser.schedule uri
         end
       end
 
@@ -164,22 +160,16 @@ module Solargraph
         end
       end
 
+      def diagnose uri
+        library.diagnose uri
+      end
+
       def change params
+        updater = generate_updater(params)
         @change_semaphore.synchronize do
-          if unsafe_changing? params['textDocument']['uri']
-            @change_queue.push params
-          else
-            source = library.checkout(uri_to_file(params['textDocument']['uri']))
-            @change_queue.push params
-            if params['textDocument']['version'] == source.version + params['contentChanges'].length
-              updater = generate_updater(params)
-              library.synchronize updater
-              library.refresh
-              @change_queue.pop
-              @diagnostics_queue.push params['textDocument']['uri']
-            end
-          end
+          library.synchronize updater
         end
+        diagnoser.schedule params['textDocument']['uri']
       end
 
       # Queue a message to be sent to the client.
@@ -220,6 +210,8 @@ module Solargraph
             @library = Solargraph::Library.load(nil)
           end
         end
+        diagnoser.start
+        cataloger.start
       end
 
       # Send a notification to the client.
@@ -325,15 +317,13 @@ module Solargraph
       #
       # @return [Boolean]
       def changing? file_uri
-        result = false
-        @change_semaphore.synchronize do
-          result = unsafe_changing?(file_uri)
-        end
-        result
+        unsafe_changing?(file_uri)
       end
 
       def stop
         @stopped = true
+        cataloger.stop
+        diagnoser.stop
       end
 
       def stopped?
@@ -342,13 +332,25 @@ module Solargraph
 
       def locate_pin params
         pin = nil
-        @change_semaphore.synchronize do
-          pin = library.locate_pin(params['data']['location']).first unless params['data']['location'].nil?
+        # @change_semaphore.synchronize do
+          pin = nil
+          unless params['data']['location'].nil?
+            location = Location.new(
+              params['data']['location']['filename'],
+              Range.from_to(
+                params['data']['location']['range']['start']['line'],
+                params['data']['location']['range']['start']['character'],
+                params['data']['location']['range']['end']['line'],
+                params['data']['location']['range']['end']['character']
+              )
+            )
+            pin = library.locate_pin(location)
+          end
           # @todo Improve pin location
           if pin.nil? or pin.path != params['data']['path']
             pin = library.path_pins(params['data']['path']).first
           end
-        end
+        # end
         pin
       end
 
@@ -356,11 +358,7 @@ module Solargraph
       # @return [String]
       def read_text uri
         filename = uri_to_file(uri)
-        text = nil
-        @change_semaphore.synchronize do
-          text = library.read_text(filename)
-        end
-        text
+        library.read_text(filename)
       end
 
       # @param filename [String]
@@ -369,6 +367,9 @@ module Solargraph
       # @return [Solargraph::ApiMap::Completion]
       def completions_at filename, line, column
         result = nil
+        # @todo Unlike most other queries, this one might be better off behind
+        #   the change semaphore, since it often happens immediately after a
+        #   document change.
         @change_semaphore.synchronize do
           result = library.completions_at filename, line, column
         end
@@ -380,11 +381,7 @@ module Solargraph
       # @param column [Integer]
       # @return [Array<Solargraph::Pin::Base>]
       def definitions_at filename, line, column
-        result = []
-        @change_semaphore.synchronize do
-          result = library.definitions_at(filename, line, column)
-        end
-        result
+        library.definitions_at(filename, line, column)
       end
 
       # @param filename [String]
@@ -392,53 +389,39 @@ module Solargraph
       # @param column [Integer]
       # @return [Array<Solargraph::Pin::Base>]
       def signatures_at filename, line, column
-        result = nil
-        @change_semaphore.synchronize do
-          result = library.signatures_at(filename, line, column)
-        end
-        result
+        library.signatures_at(filename, line, column)
       end
 
       # @param filename [String]
       # @param line [Integer]
       # @param column [Integer]
-      # @return [Array<Solargraph::Source::Range>]
+      # @return [Array<Solargraph::Range>]
       def references_from filename, line, column
-        result = nil
-        @change_semaphore.synchronize do
-          result = library.references_from(filename, line, column)
-        end
-        result
+        result = library.references_from(filename, line, column)
       end
 
       # @param query [String]
       # @return [Array<Solargraph::Pin::Base>]
       def query_symbols query
-        result = nil
-        @change_semaphore.synchronize { result = library.query_symbols(query) }
-        result
+        library.query_symbols(query)
       end
 
       # @param query [String]
       # @return [Array<String>]
       def search query
-        result = nil
-        @change_semaphore.synchronize { result = library.search(query) }
-        result
+        library.search(query)
       end
 
       # @param query [String]
       # @return [String]
       def document query
-        result = nil
-        @change_semaphore.synchronize { result = library.document(query) }
-        result
+        library.document(query)
       end
 
       # @param uri [String]
       # @return [Array<Solargraph::Pin::Base>]
-      def file_symbols uri
-        library.file_symbols(uri_to_file(uri))
+      def document_symbols uri
+        library.document_symbols(uri_to_file(uri))
       end
 
       # Send a notification to the client.
@@ -490,6 +473,14 @@ module Solargraph
         }
       end
 
+      def libver
+        library.version
+      end
+
+      def catalog
+        library.catalog
+      end
+
       private
 
       # @return [Solargraph::Library]
@@ -497,10 +488,19 @@ module Solargraph
         @library
       end
 
+      def diagnoser
+        @diagnoser ||= Diagnoser.new(self)
+      end
+
+      def cataloger
+        @cataloger ||= Cataloger.new(self)
+      end
+
       # @param file_uri [String]
       # @return [Boolean]
       def unsafe_changing? file_uri
-        @change_queue.any?{|change| change['textDocument']['uri'] == file_uri}
+        file = uri_to_file(file_uri)
+        @change_queue.any?{|change| change.filename == file}
       end
 
       def unsafe_open? uri
@@ -509,115 +509,6 @@ module Solargraph
 
       def requests
         @requests ||= {}
-      end
-
-      def start_change_thread
-        Thread.new do
-          until stopped?
-            @change_semaphore.synchronize do
-              begin
-                changed = false
-                @change_queue.sort!{|a, b| a['textDocument']['version'] <=> b['textDocument']['version']}
-                pending = {}
-                @change_queue.each do |obj|
-                  pending[obj['textDocument']['uri']] ||= 0
-                  pending[obj['textDocument']['uri']] += 1
-                end
-                @change_queue.delete_if do |change|
-                  filename = uri_to_file(change['textDocument']['uri'])
-                  source = library.checkout(filename)
-                  if change['textDocument']['version'] == source.version + change['contentChanges'].length
-                    pending[change['textDocument']['uri']] -= 1
-                    updater = generate_updater(change)
-                    library.synchronize updater, pending[change['textDocument']['uri']] == 0
-                    @diagnostics_queue.push change['textDocument']['uri']
-                    changed = true
-                    next true
-                  elsif change['textDocument']['version'] == source.version + 1
-                    # HACK: This condition fixes the fact that certain changes
-                    # increment the version by one regardless of the number of
-                    # changes
-                    STDERR.puts "Warning: change applied to #{uri_to_file(change['textDocument']['uri'])} is possibly out of sync"
-                    pending[change['textDocument']['uri']] -= 1
-                    updater = generate_updater(change)
-                    library.synchronize updater, pending[change['textDocument']['uri']] == 0
-                    @diagnostics_queue.push change['textDocument']['uri']
-                    changed = true
-                    next true
-                  elsif change['textDocument']['version'] <= source.version
-                    # @todo Is deleting outdated changes correct behavior?
-                    STDERR.puts "Warning: outdated change to #{change['textDocument']['uri']} was ignored"
-                    @diagnostics_queue.push change['textDocument']['uri']
-                    next true
-                  else
-                    if unsafe_open?(change['textDocument']['uri'])
-                      STDERR.puts "Skipping out of order change to #{change['textDocument']['uri']}"
-                      next false
-                    else
-                      STDERR.puts "Deleting out of order change to closed file #{change['textDocument']['uri']}"
-                      next true
-                    end
-                  end
-                end
-                refreshable = changed and @change_queue.empty?
-                library.refresh if refreshable
-              rescue Exception => e
-                # Trying to get anything out of the error except its class
-                # hangs the thread for some reason
-                STDERR.puts "An error occurred in the change thread: #{e.class}"
-                STDERR.puts e.backtrace
-                @change_queue.clear
-              end
-            end
-            sleep 0.01
-          end
-        end
-      end
-
-      def start_diagnostics_thread
-        Thread.new do
-          until stopped?
-            sleep 0.1
-            if !options['diagnostics']
-              @change_semaphore.synchronize { @diagnostics_queue.clear }
-              next
-            end
-            begin
-              # Diagnosis is broken into two parts to reduce the number of
-              # times it runs while a document is changing
-              current = nil
-              already_changing = nil
-              @change_semaphore.synchronize do
-                current = @diagnostics_queue.shift
-                break if current.nil?
-                already_changing = unsafe_changing?(current)
-                @diagnostics_queue.delete current unless already_changing
-              end
-              next if current.nil? or already_changing
-              filename = uri_to_file(current)
-              results = library.diagnose(filename)
-              @change_semaphore.synchronize do
-                already_changing = (unsafe_changing?(current) or @diagnostics_queue.include?(current))
-                unless already_changing
-                  send_notification "textDocument/publishDiagnostics", {
-                    uri: current,
-                    diagnostics: results
-                  }
-                end
-              end
-            rescue DiagnosticsError => e
-              STDERR.puts "Error in diagnostics: #{e.message}"
-              options['diagnostics'] = false
-              send_notification 'window/showMessage', {
-                type: LanguageServer::MessageTypes::ERROR,
-                message: "Error in diagnostics: #{e.message}"
-              }
-            rescue Exception => e
-              STDERR.puts "#{e.message}"
-              STDERR.puts "#{e.backtrace}"
-            end
-          end
-        end
       end
 
       def normalize_separators path
@@ -631,7 +522,7 @@ module Solargraph
           changes.push Solargraph::Source::Change.new(
             (chng['range'].nil? ? 
               nil :
-              Solargraph::Source::Range.from_to(chng['range']['start']['line'], chng['range']['start']['character'], chng['range']['end']['line'], chng['range']['end']['character'])
+              Solargraph::Range.from_to(chng['range']['start']['line'], chng['range']['start']['character'], chng['range']['end']['line'], chng['range']['end']['character'])
             ),
             chng['text']
           )

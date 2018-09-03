@@ -6,7 +6,7 @@ module Solargraph
       include Conversions
       include Documenting
 
-      # @return [Solargraph::Source::Location]
+      # @return [Solargraph::Location]
       attr_reader :location
 
       # The namespace in which this pin is defined.
@@ -24,7 +24,7 @@ module Solargraph
       # @return [String]
       attr_reader :path
 
-      # @param location [Solargraph::Source::Location]
+      # @param location [Solargraph::Location]
       # @param namespace [String]
       # @param name [String]
       # @param comments [String]
@@ -75,9 +75,9 @@ module Solargraph
         false
       end
 
-      # @return [String]
-      def named_context
-        namespace
+      # @return [ComplexType]
+      def context
+        @context ||= ComplexType.parse(namespace)
       end
 
       # Pin equality is determined using the #nearly? method and also
@@ -85,7 +85,7 @@ module Solargraph
       #
       def == other
         return false unless nearly? other
-        location == other.location
+        comments == other.comments and location == other.location
       end
 
       # True if the specified pin is a near match to this one. A near match
@@ -106,36 +106,11 @@ module Solargraph
           )
       end
 
-      # The first return type associated with the pin.
-      # Use return_complex_types for an array of all return types.
+      # An alias for return_complex_type.
       #
-      # @return [String]
+      # @return [ComplexType]
       def return_type
-        return nil if return_complex_type.void?
-        return_complex_type.first.tag
-      end
-
-      # The namespace of the first return type.
-      # Use return_complex_types for an array of all return types.
-      #
-      # @deprecated Not in active internal use
-      #
-      # @return [String]
-      def return_namespace
-        return_type
-        return nil if return_complex_type.void?
-        @return_namespace ||= return_complex_type.first.namespace
-      end
-
-      # The scope of the first return type.
-      # Use return_complex_types for an array of all return types.
-      #
-      # @deprecated Not in active internal use
-      #
-      # @return [String]
-      def return_scope
-        return nil if return_complex_type.void?
-        @return_scope ||= return_complex_type.first.scope
+        return_complex_type
       end
 
       # All of the pin's return types as an array of ComplexTypes.

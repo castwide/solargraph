@@ -12,25 +12,102 @@ module Solargraph
     autoload :Store,        'solargraph/api_map/store'
 
     include Solargraph::ApiMap::SourceToYard
-    include CoreFills
-
-    # The workspace to analyze and process.
-    #
-    # @return [Solargraph::Workspace]
-    attr_reader :workspace
 
     # Get a LiveMap associated with the current workspace.
     #
     # @return [Solargraph::LiveMap]
     attr_reader :live_map
 
-    # @param workspace [Solargraph::Workspace]
-    def initialize workspace = Solargraph::Workspace.new(nil)
-      @workspace = workspace
-      require_extensions
-      @virtual_source = nil
-      @sources = workspace.sources
-      refresh_store_and_maps
+    # @return [YardMap]
+    attr_reader :yard_map
+
+    # @param pins [Array<Solargraph::Pin::Base>]
+    # def initialize workspace = Solargraph::Workspace.new(nil)
+    def initialize pins: [], yard_map: YardMap.new
+      # @todo Extensions don't work yet
+      # require_extensions
+      @yard_map = yard_map
+      @source_map_hash = {}
+      @cache = Cache.new
+      @store = ApiMap::Store.new(yard_map.pins)
+      @mutex = Mutex.new
+      index pins
+    end
+
+    # @param pins [Array<Pin::Base>]
+    # @return [void]
+    def index pins
+      @mutex.synchronize {
+        @source_map_hash.clear
+        @cache.clear
+        yard_map.change([])
+        new_store = Store.new(pins + yard_map.pins)
+        @store = new_store
+      }
+    end
+
+    # Catalog a workspace. Additional sources that need to be mapped can be
+    # included in an optional array.
+    #
+    # @param workspace [Workspace]
+    # @param others [Array<Source>]
+    # @return [void]
+    def catalog workspace, others = []
+      # @todo This can be more efficient. We don't need to remap sources that
+      #   are already here.
+      all_sources = (workspace.sources + others).uniq
+      new_map_hash = {}
+      pins = []
+      reqs = []
+      all_sources.each do |source|
+        if source_map_hash.has_key?(source.filename) and source_map_hash[source.filename].code == source.code
+          new_map_hash[source.filename] = source_map_hash[source.filename]
+        else
+          map = Solargraph::SourceMap.map(source)
+          new_map_hash[source.filename] = map
+          pins.concat map.pins
+          reqs.concat map.requires.map(&:name)
+        end
+      end
+      yard_map_changed = yard_map.change(reqs)
+      new_store = Store.new(pins + yard_map.pins)
+      @mutex.synchronize {
+        @cache.clear
+        @source_map_hash = new_map_hash
+        reqs.delete_if { |r| workspace.would_require?(r) }
+        @store = new_store
+      }
+    end
+
+    def replace source
+      @mutex.synchronize {
+        if @source_map_hash.has_key?(source.filename) and @source_map_hash[source.filename].source.code == source.code
+          return
+        else
+          # return unless source.parsed?
+          map = Solargraph::SourceMap.map(source)
+          return if @source_map_hash.has_key?(source.filename) and @source_map_hash[source.filename].try_merge!(map)
+          @source_map_hash[source.filename] = map
+        end
+        @cache.clear
+        @store.update map
+      }
+    end
+
+    # @param filename [String]
+    # @param position [Position]
+    def cursor_at filename, position
+      raise "File not found: #{filename}" unless source_map_hash.has_key?(filename)
+      source_map_hash[filename].cursor_at(position)
+    end
+
+    def clip_at filename, position
+      SourceMap::Clip.new(self, cursor_at(filename, position))
+    end
+
+    # @todo Candidate for deprecation. Fragments are replaced with cursors.
+    def fragment_at filename, position
+      clip_at filename, position
     end
 
     # Create an ApiMap with a workspace in the specified directory.
@@ -38,6 +115,7 @@ module Solargraph
     # @param directory [String]
     # @return [ApiMap]
     def self.load directory
+      # @todo How should this work?
       self.new(Solargraph::Workspace.new(directory))
     end
 
@@ -46,98 +124,11 @@ module Solargraph
       store.pins
     end
 
-    # @return [Array<String>]
-    def domains
-      @domains ||= []
-    end
-
-    # An array of required paths in the workspace.
-    #
-    # @return [Array<String>]
-    def required
-      result = []
-      @sources.each do |s|
-        result.concat s.required.map(&:name)
-      end
-      result.concat workspace.config.required
-      result.uniq
-    end
-
-    # Declare a virtual source that will be included in the map regardless of
-    # whether it's in the workspace.
-    #
-    # If the source is in the workspace, virtualizing it has no effect. Only
-    # one source can be virtualized at a time.
-    #
-    # @param source [Solargraph::Source]
-    # @return [Solargraph::Source]
-    def virtualize source
-      # @todo Confirm the correct way to handle caches
-      cache.clear if (source.nil? and !@virtual_source.nil?) or (!source.nil? and !@virtual_source.nil? and source.pins != @virtual_source.pins)
-      store.remove @virtual_source unless @virtual_source.nil?
-      domains.clear
-      domains.concat workspace.config.domains
-      domains.concat source.domains unless source.nil?
-      domains.uniq!
-      if workspace.has_source?(source)
-        @sources = workspace.sources
-        @virtual_source = nil
-      else
-        @virtual_source = source
-        @sources = workspace.sources
-        unless @virtual_source.nil?
-          @sources.push @virtual_source
-          process_virtual
-        end
-      end
-      source
-    end
-
-    # Create a Source from the code and filename, and virtualize the result.
-    # This method can be useful for directly testing the ApiMap. In practice,
-    # applications should use a Library to synchronize the ApiMap to a
-    # workspace.
-    #
-    # @param code [String]
-    # @param filename [String]
-    # @return [Solargraph::Source]
-    def virtualize_string code, filename = nil
-      source = Source.load_string(code, filename)
-      virtualize source
-    end
-
-    # Refresh the ApiMap. This method checks for pending changes before
-    # performing the refresh unless the `force` parameter is true.
-    #
-    # @param force [Boolean] Perform a refresh even if the map is not "stale."
-    # @return [Boolean] True if a refresh was performed.
-    def refresh force = false
-      return false unless force or changed?
-      if force
-        refresh_store_and_maps
-      else
-        update_store_and_maps
-      end
-      true
-    end
-
-    # True if a workspace file has been created, modified, or deleted since
-    # the last time the map was processed.
-    #
-    # @return [Boolean]
-    def changed?
-      return true if current_workspace_sources.length != workspace.sources.length
-      return true if @stime.nil?
-      return true if workspace.stime > @stime
-      return true if !@virtual_source.nil? and @virtual_source.stime > @stime
-      false
-    end
-
     # An array of suggestions based on Ruby keywords (`if`, `end`, etc.).
     #
     # @return [Array<Solargraph::Pin::Keyword>]
     def self.keywords
-      @keywords ||= KEYWORDS.map{ |s|
+      @keywords ||= CoreFills::KEYWORDS.map{ |s|
         Pin::Keyword.new(s)
       }.freeze
     end
@@ -203,13 +194,6 @@ module Solargraph
       result
     end
 
-    def fragment_at(location)
-      @sources.each do |source|
-        return source.fragment_at(location.range.start.line, location.range.start.column) if source.filename == location.filename
-      end
-      nil
-    end
-
     # @deprecated Use #qualify instead
     # @param namespace [String]
     # @param context [String]
@@ -241,21 +225,10 @@ module Solargraph
       store.get_symbols
     end
 
-    # @todo Make this better
-    def get_source filename
-      @sources.each do |s|
-        return s if s.filename == filename
-      end
-      nil
-    end
-
     # @return [Array<Solargraph::Pin::GlobalVariable>]
     def get_global_variable_pins
-      globals = []
-      @sources.each do |s|
-        globals.concat s.global_variable_pins
-      end
-      globals
+      # @todo Slow version
+      pins.select{|p| p.kind == Pin::GLOBAL_VARIABLE}
     end
 
     # Get an array of methods available in a particular context.
@@ -271,21 +244,22 @@ module Solargraph
       result = []
       skip = []
       if fqns == ''
-        domains.each do |domain|
-          type = ComplexType.parse(domain).first
-          result.concat inner_get_methods(type.name, type.scope, [:public], deep, skip)
-        end
+        # @todo Implement domains
+        # domains.each do |domain|
+        #   type = ComplexType.parse(domain).first
+        #   result.concat inner_get_methods(type.name, type.scope, [:public], deep, skip)
+        # end
         result.concat inner_get_methods(fqns, :class, visibility, deep, skip)
         result.concat inner_get_methods(fqns, :instance, visibility, deep, skip)
         result.concat inner_get_methods('Kernel', :instance, visibility, deep, skip)
       else
         result.concat inner_get_methods(fqns, scope, visibility, deep, skip)
       end
-      live = live_map.get_methods(fqns, '', scope.to_s, visibility.include?(:private))
-      unless live.empty?
-        exist = result.map(&:name)
-        result.concat live.reject{|p| exist.include?(p.name)}
-      end
+      # live = live_map.get_methods(fqns, '', scope.to_s, visibility.include?(:private))
+      # unless live.empty?
+      #   exist = result.map(&:name)
+      #   result.concat live.reject{|p| exist.include?(p.name)}
+      # end
       cache.set_methods(fqns, scope, visibility, deep, result)
       result
     end
@@ -305,10 +279,6 @@ module Solargraph
       else
         unless type.nil? or type.name == 'void'
           namespace = qualify(type.namespace, context)
-          if ['Class', 'Module'].include?(namespace) and !type.subtypes.empty?
-            subtype = qualify(type.subtypes.first.name, context)
-            result.concat get_methods(subtype, scope: :class)
-          end
           visibility = [:public]
           if namespace == context or super_and_sub?(namespace, context)
             visibility.push :protected
@@ -349,11 +319,15 @@ module Solargraph
       return [] if path.nil?
       result = []
       result.concat store.get_path_pins(path)
-      if result.empty?
-        lp = live_map.get_path_pin(path)
-        result.push lp unless lp.nil?
-      end
+      # if result.empty?
+      #   lp = live_map.get_path_pin(path)
+      #   result.push lp unless lp.nil?
+      # end
       result
+    end
+
+    def get_path_pins path
+      get_path_suggestions(path)
     end
 
     # Get a list of documented paths that match the query.
@@ -364,8 +338,7 @@ module Solargraph
     # @param query [String] The text to match
     # @return [Array<String>]
     def search query
-      rake_yard(store) if @yard_stale
-      @yard_stale = false
+      rake_yard(store)
       found = []
       code_object_paths.each do |k|
         if found.empty? or (query.include?('.') or query.include?('#')) or !(k.include?('.') or k.include?('#'))
@@ -383,8 +356,7 @@ module Solargraph
     # @param path [String] The path to find
     # @return [Array<YARD::CodeObject::Base>]
     def document path
-      rake_yard(store) if @yard_stale
-      @yard_stale = false
+      rake_yard(store)
       docs = []
       docs.push code_object_at(path) unless code_object_at(path).nil?
       docs
@@ -396,20 +368,17 @@ module Solargraph
     # @return [Array<Pin::Base>]
     def query_symbols query
       result = []
-      @sources.each do |s|
+      source_map_hash.values.each do |s|
         result.concat s.query_symbols(query)
       end
       result
     end
 
-    # @param location [Solargraph::Source::Location]
+    # @param location [Solargraph::Location]
     # @return [Solargraph::Pin::Base]
     def locate_pin location
-      @sources.each do |source|
-        pin = source.locate_pin(location)
-        return pin unless pin.nil?
-      end
-      nil
+      return nil if location.nil? or !source_map_hash.has_key?(location.filename)
+      source_map_hash[location.filename].locate_pin(location)
     end
 
     # @return [Array<String>]
@@ -417,53 +386,44 @@ module Solargraph
       yard_map.unresolved_requires
     end
 
+    # @raise [FileNotFoundError] if the cursor's file is not in the ApiMap
+    # @param cursor [Source::Cursor]
+    # @return [SourceMap::Clip]
+    def clip cursor
+      raise FileNotFoundError, "ApiMap did not catalog #{cursor.filename}" unless source_map_hash.has_key?(cursor.filename)
+      SourceMap::Clip.new(self, cursor)
+    end
+
+    def document_symbols filename
+      return [] unless source_map_hash.has_key?(filename) # @todo Raise error?
+      source_map_hash[filename].document_symbols
+    end
+
+    def source_map filename
+      raise FileNotFoundError, "Source map for `#{filename}` not found" unless source_map_hash.has_key?(filename)
+      source_map_hash[filename]
+    end
+
     private
+
+    def source_map_hash
+      @mutex.synchronize {
+        @source_map_hash
+      }
+    end
 
     # @return [ApiMap::Store]
     def store
-      @store ||= ApiMap::Store.new(@sources, yard_map.pins)
-    end
-
-    # @return [void]
-    def refresh_store_and_maps
-      @yard_stale = true
-      @live_map = Solargraph::LiveMap.new(self)
-      store.update_yard(yard_map.pins) if yard_map.change(required)
-      cache.clear
-      @stime = Time.now
-    end
-
-    # @return [void]
-    def update_store_and_maps
-      @yard_stale = true
-      store.remove *(current_workspace_sources.reject{ |s| workspace.sources.include?(s) })
-      @sources = workspace.sources
-      @sources.push @virtual_source unless @virtual_source.nil?
-      store.update *(@sources.select{ |s| @stime.nil? or s.stime > @stime })
-      store.update_yard(yard_map.pins) if yard_map.change(required)
-      cache.clear
-      @stime = Time.now
-    end
-
-    # @return [void]
-    def process_virtual
-      map_source @virtual_source unless @virtual_source.nil?
-      if yard_map.change(required)
-        store.update_yard(yard_map.pins)
-      end
-      cache.clear
-    end
-
-    # @param source [Solargraph::Source]
-    # @return [void]
-    def map_source source
-      store.update source
-      path_macros.merge! source.path_macros
+      @mutex.synchronize {
+        @store
+      }
     end
 
     # @return [Solargraph::ApiMap::Cache]
     def cache
-      @cache ||= Cache.new
+      @mutex.synchronize {
+        @cache
+      }
     end
 
     # @param fqns [String] A fully qualified namespace
@@ -517,7 +477,7 @@ module Solargraph
         fqis = qualify(is, fqns)
         result.concat inner_get_constants(fqis, [:public], skip) unless fqis.nil?
       end
-      result.concat live_map.get_constants(fqns)
+      # result.concat live_map.get_constants(fqns)
       result
     end
 
@@ -536,11 +496,6 @@ module Solargraph
     # @return [Hash]
     def path_macros
       @path_macros ||= {}
-    end
-
-    # @return [Array<Solargraph::Source>]
-    def current_workspace_sources
-      @sources - [@virtual_source]
     end
 
     # @param name [String]
@@ -571,7 +526,7 @@ module Solargraph
           return name if store.namespace_exists?(name)
         end
       end
-      live_map.get_fqns(name, root)
+      # live_map.get_fqns(name, root)
     end
 
     # Get the namespace's type (Class or Module).
@@ -583,13 +538,6 @@ module Solargraph
       pin = store.get_path_pins(fqns).first
       return nil if pin.nil?
       pin.type
-    end
-
-    # Get a YardMap associated with the current workspace.
-    #
-    # @return [Solargraph::YardMap]
-    def yard_map
-      @yard_map ||= Solargraph::YardMap.new(required: required, workspace: workspace)
     end
 
     # Sort an array of pins to put nil or undefined variables last.

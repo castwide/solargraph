@@ -129,5 +129,6 @@ module Solargraph
     VOID = ComplexType.parse('void')
     UNDEFINED = ComplexType.parse('undefined')
     SYMBOL = ComplexType.parse('Symbol')
+    ROOT = ComplexType.parse('Class<>')
   end
 end

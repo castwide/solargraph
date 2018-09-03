@@ -5,8 +5,9 @@ describe Solargraph::Pin::MethodParameter do
       def foo bar
       end
     ), 'file.rb')
-    expect(source.locals.length).to eq(1)
-    expect(source.locals.first.name).to eq('bar')
-    expect(source.locals.first.return_type).to eq('String')
+    map = Solargraph::SourceMap.map(source)
+    expect(map.locals.length).to eq(1)
+    expect(map.locals.first.name).to eq('bar')
+    expect(map.locals.first.return_type.tag).to eq('String')
   end
 end

@@ -9,7 +9,7 @@ describe Solargraph::Diagnostics::Rubocop do
     ), 'file.rb')
 
     @api_map = Solargraph::ApiMap.new
-    @api_map.virtualize @source
+    @api_map.catalog Solargraph::Workspace.new, [@source]
   end
 
   it "diagnoses input" do

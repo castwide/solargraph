@@ -2,7 +2,7 @@ class Solargraph::LanguageServer::Message::TextDocument::DocumentSymbol < Solarg
   include Solargraph::LanguageServer::UriHelpers
 
   def process
-    pins = host.file_symbols params['textDocument']['uri']
+    pins = host.document_symbols params['textDocument']['uri']
     info = pins.map do |pin|
       result = {
         name: pin.name,

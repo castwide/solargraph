@@ -20,7 +20,7 @@ module Solargraph
       # @return [Array<Hash>]
       def diagnose source, api_map
         begin
-          options, paths = generate_options(api_map.workspace, source.filename, source.code)
+          options, paths = generate_options(source.filename, source.code)
           runner = RuboCop::Runner.new(options, RuboCop::ConfigStore.new)
           result = redirect_stdout{ runner.run(paths) }
           make_array JSON.parse(result)
@@ -35,16 +35,31 @@ module Solargraph
       # @param filename [String]
       # @param code [String]
       # @return [Array]
-      def generate_options workspace, filename, code
+      # def generate_options workspace, filename, code
+      def generate_options filename, code
         args = ['-f', 'j']
-        unless workspace.nil? or workspace.directory.nil?
-          rc = File.join(workspace.directory, '.rubocop.yml')
-          args.push('-c', fix_drive_letter(rc)) if File.file?(rc)
-        end
+        rubocop_file = find_rubocop_file(filename)
+        args.push('-c', fix_drive_letter(rubocop_file)) unless rubocop_file.nil?
         args.push filename
         options, paths = RuboCop::Options.new.parse(args)
         options[:stdin] = code
         [options, paths]
+      end
+
+      def find_rubocop_file filename
+        rcfile = nil
+        dir = File.dirname(filename)
+        while rcfile.nil?
+          here = File.join(dir, '.rubocop.yml')
+          if File.exist?(here)
+            rcfile = here
+            break
+          else
+            break if File.dirname(dir) == dir
+            dir = File.dirname(dir)
+          end
+        end
+        rcfile
       end
 
       # @todo This is a smelly way to redirect output, but the RuboCop specs do the

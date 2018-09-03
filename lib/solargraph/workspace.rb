@@ -10,7 +10,7 @@ module Solargraph
     attr_reader :directory
 
     # @param directory [String]
-    def initialize directory, config = nil
+    def initialize directory = nil, config = nil
       # @todo Convert to an absolute path?
       @directory = directory
       @directory = nil if @directory == ''
@@ -84,14 +84,6 @@ module Solargraph
       source_hash[filename]
     end
 
-    # The time of the last workspace synchronization.
-    #
-    # @return [Time]
-    def stime
-      return @stime if source_hash.empty?
-      @stime = source_hash.values.sort{|a, b| a.stime <=> b.stime}.last.stime
-    end
-
     # The require paths associated with the workspace.
     #
     # @return [Array<String>]
@@ -125,6 +117,14 @@ module Solargraph
       @gemspecs ||= Dir[File.join(directory, '**/*.gemspec')]
     end
 
+    # Synchronize the workspace from the provided updater.
+    #
+    # @param [Source::Updater]
+    # @return [void]
+    def synchronize! updater
+      source_hash[updater.filename] = source_hash[updater.filename].synchronize(updater)
+    end
+
     private
 
     # @return [Hash<String, Solargraph::Source>]
@@ -142,7 +142,6 @@ module Solargraph
           source_hash[filename] = Solargraph::Source.load(filename)
         end
       end
-      @stime = Time.now
     end
 
     def generate_require_paths

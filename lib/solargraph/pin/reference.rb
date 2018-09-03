@@ -1,7 +1,7 @@
 module Solargraph
   module Pin
     class Reference
-      # @return [Source::Location]
+      # @return [Location]
       attr_reader :location
 
       # @return [String]
@@ -10,7 +10,7 @@ module Solargraph
       # @return [String]
       attr_reader :name
 
-      # @param location [Source::Location]
+      # @param location [Location]
       # @param namespace [String]
       # @param name [String]
       def initialize location, namespace, name

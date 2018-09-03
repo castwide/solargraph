@@ -16,10 +16,6 @@ module Solargraph
         @signature ||= resolve_node_signature(@assignment)
       end
 
-      def scope
-        @scope ||= (context.kind == Pin::METHOD and context.scope == :instance ? :instance : :class)
-      end
-
       def completion_item_kind
         Solargraph::LanguageServer::CompletionItemKinds::VARIABLE
       end
@@ -34,7 +30,7 @@ module Solargraph
       end
 
       def nil_assignment?
-        return_type == 'NilClass'
+        return_complex_type.nil?
       end
 
       def variable?
@@ -47,10 +43,11 @@ module Solargraph
         return result if result.defined? or @assignment.nil?
         # chain = Source::Chain.new(filename, @assignment)
         # @todo Use NodeChainer
-        chain = Source::NodeChainer.chain(location.filename, @assignment)
-        fragment = api_map.fragment_at(location)
+        chain = SourceMap::NodeChainer.chain(location.filename, @assignment)
+        # @todo Is there another way besides the apimap?
+        fragment = api_map.fragment_at(location.filename, location.range.start)
         locals = fragment.locals - [self]
-        chain.infer_type_with(api_map, context, locals)
+        chain.infer(api_map, context, locals)
       end
 
       def == other

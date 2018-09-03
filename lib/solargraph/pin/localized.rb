@@ -3,15 +3,15 @@ module Solargraph
     module Localized
       attr_reader :block
 
-      # @return [Source::Range]
+      # @return [Range]
       attr_reader :presence
 
       # @param other [Pin::Base] The caller's block
-      # @param position [Source::Position] The caller's position
+      # @param position [Position] The caller's position
       # @return [Boolean]
       def visible_from?(other, position)
         other.filename == filename and
-          (other == block or other.named_context == named_context) and
+          (other == block or other.context == context) and
           presence.contain?(position)
       end
     end

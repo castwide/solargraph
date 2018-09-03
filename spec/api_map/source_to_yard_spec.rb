@@ -1,6 +1,6 @@
 describe Solargraph::ApiMap::SourceToYard do
   it "rakes sources" do
-    source = Solargraph::Source.new(%(
+    source = Solargraph::SourceMap.load_string(%(
       module Foo
         class Bar
           def baz
@@ -10,7 +10,7 @@ describe Solargraph::ApiMap::SourceToYard do
     ))
     object = Object.new
     object.extend Solargraph::ApiMap::SourceToYard
-    object.rake_yard Solargraph::ApiMap::Store.new([source], [])
+    object.rake_yard Solargraph::ApiMap::Store.new(source.pins)
     expect(object.code_object_paths.length).to eq(3)
     expect(object.code_object_paths).to include('Foo')
     expect(object.code_object_paths).to include('Foo::Bar')
@@ -18,7 +18,7 @@ describe Solargraph::ApiMap::SourceToYard do
   end
 
   it "generates docstrings" do
-    source = Solargraph::Source.new(%(
+    source = Solargraph::SourceMap.load_string(%(
       # My foo class
       class Foo
         # @return [Hash]
@@ -31,7 +31,7 @@ describe Solargraph::ApiMap::SourceToYard do
     ))
     object = Object.new
     object.extend Solargraph::ApiMap::SourceToYard
-    object.rake_yard Solargraph::ApiMap::Store.new([source], [])
+    object.rake_yard Solargraph::ApiMap::Store.new(source.pins)
     class_object = object.code_object_at('Foo')
     expect(class_object.docstring).to eq('My foo class')
     instance_method_object = object.code_object_at('Foo#bar')
@@ -41,7 +41,7 @@ describe Solargraph::ApiMap::SourceToYard do
   end
 
   it "generates mixins" do
-    source = Solargraph::Source.new(%(
+    source = Solargraph::SourceMap.load_string(%(
       module Foo
         def bar
         end
@@ -52,14 +52,14 @@ describe Solargraph::ApiMap::SourceToYard do
     ))
     object = Object.new
     object.extend Solargraph::ApiMap::SourceToYard
-    object.rake_yard Solargraph::ApiMap::Store.new([source], [])
+    object.rake_yard Solargraph::ApiMap::Store.new(source.pins)
     module_object = object.code_object_at('Foo')
     class_object = object.code_object_at('Baz')
     expect(class_object.mixins).to include(module_object)
   end
 
   it "generates methods for attributes" do
-    source = Solargraph::Source.new(%(
+    source = Solargraph::SourceMap.load_string(%(
       class Foo
         attr_reader :bar
         attr_writer :baz
@@ -68,7 +68,7 @@ describe Solargraph::ApiMap::SourceToYard do
     ))
     object = Object.new
     object.extend Solargraph::ApiMap::SourceToYard
-    object.rake_yard Solargraph::ApiMap::Store.new([source], [])
+    object.rake_yard Solargraph::ApiMap::Store.new(source.pins)
     expect(object.code_object_at('Foo#bar')).not_to be(nil)
     expect(object.code_object_at('Foo#bar=')).to be(nil)
     expect(object.code_object_at('Foo#baz')).to be(nil)
@@ -78,7 +78,7 @@ describe Solargraph::ApiMap::SourceToYard do
   end
 
   it "generates method parameters" do
-    source = Solargraph::Source.new(%(
+    source = Solargraph::SourceMap.load_string(%(
       class Foo
         def bar baz, boo = 'boo'
         end
@@ -86,7 +86,7 @@ describe Solargraph::ApiMap::SourceToYard do
     ))
     object = Object.new
     object.extend Solargraph::ApiMap::SourceToYard
-    object.rake_yard Solargraph::ApiMap::Store.new([source], [])
+    object.rake_yard Solargraph::ApiMap::Store.new(source.pins)
     method_object = object.code_object_at('Foo#bar')
     expect(method_object.parameters.length).to eq(2)
     expect(method_object.parameters[0]).to eq(['baz', nil])

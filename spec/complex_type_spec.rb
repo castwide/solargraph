@@ -159,7 +159,7 @@ describe Solargraph::ComplexType do
 
   let (:foo_bar_api_map) {
     api_map = Solargraph::ApiMap.new
-    api_map.virtualize_string(%(
+    source = Solargraph::Source.load_string(%(
       module Foo
         class Bar
           # @return [Bar]
@@ -168,6 +168,7 @@ describe Solargraph::ComplexType do
         end
       end
     ))
+    api_map.catalog Solargraph::Workspace.new, [source]
     api_map
   }
 
@@ -197,5 +198,10 @@ describe Solargraph::ComplexType do
   it "returns the first type when multiple were parsed" do
     type = Solargraph::ComplexType.parse('String, Array<String>')
     expect(type.tag).to eq('String')
+  end
+
+  it "raises NoMethodError for missing methods" do
+    type = Solargraph::ComplexType.parse('String')
+    expect { type.undefined_method }.to raise_error(NoMethodError)
   end
 end

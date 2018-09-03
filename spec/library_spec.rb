@@ -129,7 +129,7 @@ describe Solargraph::Library do
     ), 0
     library.checkout 'file.rb'
     completion = library.completions_at('file.rb', 2, 7)
-    expect(completion.class).to be(Solargraph::Source::Completion)
+    expect(completion).to be_a(Solargraph::SourceMap::Completion)
     expect(completion.pins.map(&:name)).to include('x')
   end
 
@@ -144,6 +144,20 @@ describe Solargraph::Library do
     library.checkout 'file.rb'
     paths = library.definitions_at('file.rb', 2, 13).map(&:path)
     expect(paths).to include('Foo#bar')
+  end
+
+  it "signifies method arguments" do
+    library = Solargraph::Library.new
+    library.open 'file.rb', %(
+      class Foo
+        def bar baz, key: ''
+        end
+      end
+      Foo.new.bar()
+    ), 0
+    pins = library.signatures_at('file.rb', 5, 18)
+    expect(pins.length).to eq(1)
+    expect(pins.first.path).to eq('Foo#bar')
   end
 
   it "ignores invalid filenames in create_from_disk" do
@@ -183,5 +197,40 @@ describe Solargraph::Library do
     result = library.diagnose 'file.rb'
     expect(result).to be_a(Array)
     # @todo More tests
+  end
+
+  it "documents symbols" do
+    library = Solargraph::Library.new
+    library.open('file.rb', %(
+      class Foo
+        def bar
+        end
+      end
+    ), 0)
+    pins = library.document_symbols 'file.rb'
+    expect(pins.length).to eq(2)
+    expect(pins.map(&:path)).to include('Foo')
+    expect(pins.map(&:path)).to include('Foo#bar')
+  end
+
+  # @todo This might not be accurate anymore. Hosts update
+  #   the ApiMap asynchronously; they shouldn't be
+  #   updated automatically.
+  it "updates maps when files change" do
+  #   library = Solargraph::Library.new
+  #   library.open('test.rb', %(
+  #   ), 0)
+
+  #   updater = Solargraph::Source::Updater.new('test.rb', 1, 
+  #     [Solargraph::Source::Change.new(nil, %(
+  #   foo = 'foo'
+  #   foo._
+  #   )
+  #     )]
+  #   )
+  #   library.synchronize updater
+
+  #   pins = library.definitions_at('test.rb', 2, 4)
+  #   expect(pins.map(&:name)).to include('foo')
   end
 end

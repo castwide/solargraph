@@ -1,7 +1,7 @@
 module Solargraph
   module Pin
     class ProxyType < Base
-      # @param location [Solargraph::Source::Location]
+      # @param location [Solargraph::Location]
       # @param namespace [String]
       # @param name [String]
       # @param return_type [ComplexType]
@@ -10,20 +10,12 @@ module Solargraph
         @return_complex_type = return_type
       end
 
-      def scope
-        return_complex_type.scope
-      end
-
       def path
         @path ||= begin
           result = namespace.to_s
           result += '::' unless result.empty? or name.to_s.empty?
           result += name.to_s
         end
-      end
-
-      def named_context
-        path
       end
 
       # @param return_type [ComplexType]

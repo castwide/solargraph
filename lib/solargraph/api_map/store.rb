@@ -3,11 +3,14 @@ require 'set'
 module Solargraph
   class ApiMap
     class Store
+      attr_reader :pins
+
       # @param sources [Array<Solargraph::Source>]
       # @param yard_pins [Array<Solargraph::Pin::Base>]
-      def initialize sources, yard_pins
-        inner_update sources
-        pins.concat yard_pins
+      def initialize pins
+        # inner_update sources
+        # pins.concat yard_pins
+        @pins = pins
         index
       end
 
@@ -110,7 +113,7 @@ module Solargraph
       # @param scope [Symbol] :class or :instance
       # @return [Array<Solargraph::Pin::Base>]
       def get_instance_variables(fqns, scope = :instance)
-        namespace_children(fqns).select{|pin| pin.kind == Pin::INSTANCE_VARIABLE and pin.scope == scope}
+        namespace_children(fqns).select{|pin| pin.kind == Pin::INSTANCE_VARIABLE and pin.context.scope == scope}
       end
 
       # @param fqns [String]
@@ -182,11 +185,13 @@ module Solargraph
       def index
         namespace_map.clear
         namespaces.clear
+        symbols.clear
         namespace_map[''] = []
         pins.each do |pin|
           namespace_map[pin.namespace] ||= []
           namespace_map[pin.namespace].push pin
           namespaces.add pin.path if pin.kind == Pin::NAMESPACE and !pin.path.empty?
+          symbols.push pin if pin.kind == Pin::SYMBOL
         end
         @namespace_pins = nil
         @method_pins = nil
@@ -199,7 +204,8 @@ module Solargraph
           pins.delete_if { |pin| !pin.yard_pin? and pin.filename == source.filename }
           symbols.delete_if { |pin| pin.filename == source.filename }
           pins.concat source.pins
-          symbols.concat source.symbols
+          # @todo Fix symbols
+          # symbols.concat source.symbols
         end
       end
     end
