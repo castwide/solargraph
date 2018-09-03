@@ -209,7 +209,14 @@ module Solargraph
     # @param scope [Symbol] :instance or :class
     # @return [Array<Solargraph::Pin::InstanceVariable>]
     def get_instance_variable_pins(namespace, scope = :instance)
-      store.get_instance_variables(namespace, scope)
+      result = []
+      result.concat store.get_instance_variables(namespace, scope)
+      sc = store.get_superclass(namespace)
+      until sc.nil?
+        result.concat store.get_instance_variables(sc, scope)
+        sc = store.get_superclass(sc)
+      end
+      result
     end
 
     # Get an array of class variable pins for a namespace.
