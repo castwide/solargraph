@@ -104,21 +104,22 @@ module Solargraph
             if c.kind_of?(AST::Node)
               if c.type == :ivasgn
                 here = get_node_start_position(c)
-                context = get_named_path_pin(here)
+                named_path = get_named_path_pin(here)
                 if c.children[1].nil?
                   ora = find_parent(stack, :or_asgn)
                   unless ora.nil?
                     u = c.updated(:ivasgn, c.children + ora.children[1..-1], nil)
-                    pins.push Solargraph::Pin::InstanceVariable.new(get_node_location(u), fqn || '', c.children[0].to_s, comments_for(u), u.children[1], infer_literal_node_type(u.children[1]), context)
-                    if visibility == :module_function and context.kind == Pin::METHOD
-                      other = pins.select{|pin| pin.path == "#{context.namespace}.#{context.name}"}.first
-                      pins.push Solargraph::Pin::InstanceVariable.new(get_node_location(u), fqn || '', c.children[0].to_s, comments_for(u), u.children[1], infer_literal_node_type(u.children[1]), other) unless other.nil?
+                    pins.push Solargraph::Pin::InstanceVariable.new(get_node_location(u), fqn || '', c.children[0].to_s, comments_for(u), u.children[1], infer_literal_node_type(u.children[1]), named_path.context)
+                    if visibility == :module_function and named_path.kind == Pin::METHOD
+                      other = ComplexType.parse(named_path.context.namespace) # pins.select{|pin| pin.path == "#{context.namespace}.#{context.name}"}.first
+                      pins.push Solargraph::Pin::InstanceVariable.new(get_node_location(u), fqn || '', c.children[0].to_s, comments_for(u), u.children[1], infer_literal_node_type(u.children[1]), other) #unless other.nil?
                     end
                   end
                 else
-                  pins.push Solargraph::Pin::InstanceVariable.new(get_node_location(c), fqn || '',c.children[0].to_s, comments_for(c), c.children[1], infer_literal_node_type(c.children[1]), context)
+                  pins.push Solargraph::Pin::InstanceVariable.new(get_node_location(c), fqn || '',c.children[0].to_s, comments_for(c), c.children[1], infer_literal_node_type(c.children[1]), named_path.context)
                   if visibility == :module_function and context.kind == Pin::METHOD
-                    other = pins.select{|pin| pin.path == "#{context.namespace}.#{context.name}"}.first
+                    # other = pins.select{|pin| pin.path == "#{context.namespace}.#{context.name}"}.first
+                    other = ComplexType.parse(named_path.context.namespace) # pins.select{|pin| pin.path == "#{context.namespace}.#{context.name}"}.first
                     pins.push Solargraph::Pin::InstanceVariable.new(get_node_location(c), fqn || '',c.children[0].to_s, comments_for(c), c.children[1], infer_literal_node_type(c.children[1]), other)
                   end
                 end
@@ -327,6 +328,10 @@ module Solargraph
 
       def get_named_path_pin position
         @pins.select{|pin| [Pin::NAMESPACE, Pin::METHOD].include?(pin.kind) and pin.location.range.contain?(position)}.last
+      end
+
+      def get_namespace_pin position
+        @pins.select{|pin| pin.kind == Pin::NAMESPACE and pin.location.range.contain?(position)}.last
       end
 
       # @return [String]

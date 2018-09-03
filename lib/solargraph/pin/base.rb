@@ -85,10 +85,6 @@ module Solargraph
         @context ||= ComplexType.parse(namespace)
       end
 
-      def scope
-        :class
-      end
-
       # Pin equality is determined using the #nearly? method and also
       # requiring both pins to have the same location.
       #

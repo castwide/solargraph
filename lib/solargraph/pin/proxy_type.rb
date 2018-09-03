@@ -10,10 +10,6 @@ module Solargraph
         @return_complex_type = return_type
       end
 
-      def scope
-        return_complex_type.scope
-      end
-
       def path
         @path ||= begin
           result = namespace.to_s

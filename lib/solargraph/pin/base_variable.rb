@@ -16,10 +16,6 @@ module Solargraph
         @signature ||= resolve_node_signature(@assignment)
       end
 
-      def scope
-        @scope ||= (context.kind == Pin::METHOD and context.scope == :instance ? :instance : :class)
-      end
-
       def completion_item_kind
         Solargraph::LanguageServer::CompletionItemKinds::VARIABLE
       end

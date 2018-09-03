@@ -113,7 +113,7 @@ module Solargraph
       # @param scope [Symbol] :class or :instance
       # @return [Array<Solargraph::Pin::Base>]
       def get_instance_variables(fqns, scope = :instance)
-        namespace_children(fqns).select{|pin| pin.kind == Pin::INSTANCE_VARIABLE and pin.scope == scope}
+        namespace_children(fqns).select{|pin| pin.kind == Pin::INSTANCE_VARIABLE and pin.context.scope == scope}
       end
 
       # @param fqns [String]

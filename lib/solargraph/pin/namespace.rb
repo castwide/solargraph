@@ -38,10 +38,6 @@ module Solargraph
         @context ||= ComplexType.parse("#{type.to_s.capitalize}<#{path}>")
       end
 
-      def scope
-        :class
-      end
-
       def completion_item_kind
         (type == :class ? LanguageServer::CompletionItemKinds::CLASS : LanguageServer::CompletionItemKinds::MODULE)
       end
