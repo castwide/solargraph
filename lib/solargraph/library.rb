@@ -58,10 +58,11 @@ module Solargraph
     def create filename, text
       result = false
       mutex.synchronize do
-        unless workspace.would_merge?(filename)
+        if workspace.would_merge?(filename)
           source = Solargraph::Source.load_string(text, filename)
-          result = workspace.merge(source)
+          workspace.merge(source)
           increment_version if result
+          result = true
         end
       end
       result
