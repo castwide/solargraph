@@ -61,7 +61,7 @@ module Solargraph
         if workspace.would_merge?(filename)
           source = Solargraph::Source.load_string(text, filename)
           workspace.merge(source)
-          increment_version if result
+          increment_version
           result = true
         end
       end
@@ -79,10 +79,8 @@ module Solargraph
         next if File.directory?(filename) or !File.exist?(filename)
         next unless workspace.would_merge?(filename)
         source = Solargraph::Source.load_string(File.read(filename), filename)
-        workspace.merge(source)
-        # catalog_sources
+        increment_version if workspace.merge(source)
         result = true
-        increment_version
       end
       result
     end
@@ -95,12 +93,7 @@ module Solargraph
     def delete filename
       mutex.synchronize do
         open_file_hash.delete filename
-        # source = source_hash[filename]
-        # return if source.nil?
-        # source_hash.delete filename
-        # @todo How to remove from workspace?
-        # workspace.remove source
-        # catalog_sources
+        workspace.remove filename
         increment_version
       end
     end
@@ -112,7 +105,6 @@ module Solargraph
     def close filename
       mutex.synchronize do
         open_file_hash.delete filename
-        # catalog_sources
         increment_version
       end
     end
@@ -128,7 +120,6 @@ module Solargraph
         else
           open filename, File.read(filename), version
         end
-        # @todo Catalog the sources?
         increment_version
       end
     end
@@ -285,14 +276,9 @@ module Solargraph
           open_file_hash[updater.filename] = open_file_hash[updater.filename].synchronize(updater)
           # api_map.replace open_file_hash[updater.filename]
         end
-        # catalog_sources if catalog
         increment_version
       end
     end
-
-    # def refresh
-    #   catalog_sources
-    # end
 
     # Get the current text of a file in the library.
     #
@@ -365,7 +351,6 @@ module Solargraph
     # @return [Solargraph::Source]
     def read filename
       return open_file_hash[filename] if open_file_hash.has_key?(filename)
-      # @todo No idea if this is right.
       raise FileNotFoundError, "File not found: #{filename}" unless File.file?(filename)
       Solargraph::Source.load(filename)
     end

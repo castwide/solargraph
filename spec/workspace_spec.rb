@@ -44,7 +44,7 @@ describe Solargraph::Workspace do
 
     original = workspace.source(file_path)
     File.unlink file_path
-    workspace.remove original
+    workspace.remove original.filename
 
     expect(workspace.filenames).not_to include(file_path)
   end
