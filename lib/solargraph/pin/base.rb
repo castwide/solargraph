@@ -85,7 +85,7 @@ module Solargraph
       #
       def == other
         return false unless nearly? other
-        location == other.location
+        comments == other.comments and location == other.location
       end
 
       # True if the specified pin is a near match to this one. A near match

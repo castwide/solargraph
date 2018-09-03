@@ -35,9 +35,30 @@ describe Solargraph::Pin::Base do
 
   it "will not merge pins with directive changes" do
     pin1 = Solargraph::Pin::Base.new(zero_location, '', 'Foo', 'A Foo class')
-    merge_comment = '@!macro my_macro'
-    pin2 = Solargraph::Pin::Base.new(zero_location, '', 'Foo', merge_comment)
+    pin2 = Solargraph::Pin::Base.new(zero_location, '', 'Foo', '@!macro my_macro')
     expect(pin1.nearly?(pin2)).to be(false)
+    expect(pin1.try_merge!(pin2)).to be(false)
+  end
+
+  it "will not merge pins with different directives" do
+    pin1 = Solargraph::Pin::Base.new(zero_location, '', 'Foo', '@!macro my_macro')
+    pin2 = Solargraph::Pin::Base.new(zero_location, '', 'Foo', '@!macro other')
+    expect(pin1.nearly?(pin2)).to be(false)
+    expect(pin1.try_merge!(pin2)).to be(false)
+  end
+
+  it "sees tag differences as not near or equal" do
+    pin1 = Solargraph::Pin::Base.new(zero_location, '', 'Foo', '@return [Foo]')
+    pin2 = Solargraph::Pin::Base.new(zero_location, '', 'Foo', '@return [Bar]')
+    expect(pin1.nearly?(pin2)).to be(false)
+    expect(pin1 == pin2).to be(false)
+  end
+
+  it "sees comment differences as nearly but not equal" do
+    pin1 = Solargraph::Pin::Base.new(zero_location, '', 'Foo', 'A Foo class')
+    pin2 = Solargraph::Pin::Base.new(zero_location, '', 'Foo', 'A different Foo')
+    expect(pin1.nearly?(pin2)).to be(true)
+    expect(pin1 == pin2).to be(false)
   end
 
   it "recognizes deprecated tags" do
