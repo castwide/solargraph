@@ -9,6 +9,7 @@ module Solargraph
     autoload :Mapper,        'solargraph/source/mapper'
     autoload :NodeMethods,   'solargraph/source/node_methods'
     autoload :EncodingFixes, 'solargraph/source/encoding_fixes'
+    autoload :Cursor,        'solargraph/source/cursor'
 
     include EncodingFixes
     include NodeMethods
@@ -107,6 +108,26 @@ module Solargraph
       @parsed
     end
 
+    # @param position [Position]
+    # @return [Boolean]
+    def string_at? position
+      string_ranges.each do |range|
+        return true if range.include?(position)
+        break if range.ending.line > position.line
+      end
+      false
+    end
+
+    # @param position [Position]
+    # @return [Boolean]
+    def comment_at? position
+      comment_ranges.each do |range|
+        return true if range.include?(position)
+        break if range.ending.line > position.line
+      end
+      false
+    end
+
     # @param name [String]
     # @return [Array<Location>]
     def references name
@@ -125,6 +146,28 @@ module Solargraph
     end
 
     private
+
+    def string_ranges
+      @string_ranges ||= string_ranges_in(@node)
+    end
+
+    def comment_ranges
+      @comment_ranges || @comments.map do |cmnt|
+        Range.from_expr(cmnt.loc.expression)
+      end
+    end
+
+    def string_ranges_in n
+      result = []
+      if n.is_a?(Parser::AST::Node)
+        if n.type == :str
+          result.push Range.from_node(n)
+        else
+          n.children.each{ |c| result.concat string_ranges_in(c) }
+        end
+      end
+      result
+    end
 
     def inner_tree_at node, position, stack
       return if node.nil?

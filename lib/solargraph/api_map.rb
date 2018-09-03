@@ -53,41 +53,25 @@ module Solargraph
     # @param others [Array<Source>]
     # @return [void]
     def catalog workspace, others = []
+      # @todo This can be more efficient. We don't need to remap sources that
+      #   are already here.
       all_sources = (workspace.sources + others).uniq
+      new_map_hash = {}
+      pins = []
+      reqs = []
+      all_sources.each do |source|
+        map = Solargraph::SourceMap.map(source)
+        new_map_hash[source.filename] = map
+        pins.concat map.pins
+        reqs.concat map.requires.map(&:name)
+      end
+      yard_map_changed = yard_map.change(reqs)
+      new_store = Store.new(pins + yard_map.pins)
       @mutex.synchronize {
-        all_filenames = all_sources.map(&:filename)
-        @source_map_hash.keep_if{|filename, map|
-          all_filenames.include?(filename)
-        }
         @cache.clear
-        reqs = []
-        pins = []
-        workspace_changed = false
-        all_sources.each do |source|
-          if @source_map_hash.has_key?(source.filename) and @source_map_hash[source.filename].source.code == source.code
-            map = @source_map_hash[source.filename]
-          else
-            if source.parsed?
-              map = Solargraph::SourceMap.map(source)
-              if @source_map_hash.has_key?(source.filename) and @source_map_hash[source.filename].try_merge!(map)
-                map = @source_map_hash[source.filename]
-              else
-                @source_map_hash[source.filename] = map
-                workspace_changed = true
-              end
-            else
-              map = @source_map_hash[source.filename]
-            end
-          end
-          pins.concat map.pins
-          reqs.concat map.requires.map(&:name)
-        end
+        @source_map_hash = new_map_hash
         reqs.delete_if { |r| workspace.would_require?(r) }
-        yard_map_changed = yard_map.change(reqs)
-        if workspace_changed or yard_map_changed
-          new_store = Store.new(pins + yard_map.pins)
-          @store = new_store
-        end
+        @store = new_store
       }
     end
 
@@ -106,18 +90,20 @@ module Solargraph
       }
     end
 
-    def quick_sync source
-      @mutex.synchronize do
-        # @todo Smelly way to do this
-        @source_map_hash[source.filename].instance_variable_set(:@source, source)
-      end
-    end
-
     # @param filename [String]
     # @param position [Position]
-    def fragment_at filename, position
+    def cursor_at filename, position
       raise "File not found: #{filename}" unless source_map_hash.has_key?(filename)
-      source_map_hash[filename].fragment_at(position)
+      source_map_hash[filename].cursor_at(position)
+    end
+
+    def clip_at filename, position
+      SourceMap::Clip.new(self, cursor_at(filename, position))
+    end
+
+    # @todo Candidate for deprecation. Fragments are replaced with cursors.
+    def fragment_at filename, position
+      clip_at filename, position
     end
 
     # Create an ApiMap with a workspace in the specified directory.
@@ -396,18 +382,21 @@ module Solargraph
       yard_map.unresolved_requires
     end
 
-    # @raise [FileNotFoundError] if the file was not cataloged in the ApiMap
-    # @param filename [String]
-    # @param position [Position]
+    # @raise [FileNotFoundError] if the cursor's file is not in the ApiMap
+    # @param cursor [Source::Cursor]
     # @return [SourceMap::Clip]
-    def clip filename, position
-      raise FileNotFoundError, "ApiMap did not catalog #{filename}" unless source_map_hash.has_key?(filename)
-      SourceMap::Clip.new(self, source_map_hash[filename].fragment_at(position))
+    def clip cursor
+      raise FileNotFoundError, "ApiMap did not catalog #{cursor.filename}" unless source_map_hash.has_key?(cursor.filename)
+      SourceMap::Clip.new(self, cursor)
     end
 
     def document_symbols filename
       return [] unless source_map_hash.has_key?(filename) # @todo Raise error?
       source_map_hash[filename].document_symbols
+    end
+
+    def source_map filename
+      source_map_hash[filename]
     end
 
     private
@@ -545,14 +534,6 @@ module Solargraph
       return nil if pin.nil?
       pin.type
     end
-
-    # Get a YardMap associated with the current workspace.
-    #
-    # @return [Solargraph::YardMap]
-    # def yard_map
-    #   # @yard_map ||= Solargraph::YardMap.new(required: required, workspace: workspace)
-    #   @yard_map ||= Solargraph::YardMap.new
-    # end
 
     # Sort an array of pins to put nil or undefined variables last.
     #

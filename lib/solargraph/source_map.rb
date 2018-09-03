@@ -1,12 +1,12 @@
 module Solargraph
   class SourceMap
     autoload :Mapper,        'solargraph/source_map/mapper'
-    autoload :Fragment,      'solargraph/source_map/fragment'
     autoload :Chain,         'solargraph/source_map/chain'
     autoload :Clip,          'solargraph/source_map/clip'
     autoload :SourceChainer, 'solargraph/source_map/source_chainer'
     autoload :NodeChainer,   'solargraph/source_map/node_chainer'
     autoload :Completion,    'solargraph/source_map/completion'
+    autoload :NewFragment,   'solargraph/source_map/new_fragment'
 
     attr_reader :source
 
@@ -18,7 +18,7 @@ module Solargraph
 
     def initialize source, pins, locals, requires, symbols, string_ranges, comment_ranges
       # HACK: Keep the library from changing this
-      @source = source.clone
+      @source = source.dup
       @pins = pins
       @locals = locals
       @requires = requires
@@ -38,21 +38,13 @@ module Solargraph
     # @param position [Position]
     # @return [Boolean]
     def string_at? position
-      string_ranges.each do |range|
-        return true if range.include?(position)
-        break if range.ending.line > position.line
-      end
-      false
+      @source.string_at?(position)
     end
 
     # @param position [Position]
     # @return [Boolean]
     def comment_at? position
-      comment_ranges.each do |range|
-        return true if range.contain?(position)
-        break if range.ending.line > position.line
-      end
-      false
+      @source.comment_at?(position)
     end
 
     def document_symbols
@@ -67,8 +59,15 @@ module Solargraph
 
     # @param position [Position]
     # @return [Solargraph::SourceMap::Fragment]
+    def cursor_at position
+      Source::Cursor.new(source, position)
+    end
+
+    # @param position [Position]
+    # @return [Solargraph::SourceMap::Fragment]
+    # @todo Deprecate, probably
     def fragment_at position
-      Fragment.new(self, position)
+      Source::Cursor.new(source, position)
     end
 
     # @param location [Solargraph::Location]

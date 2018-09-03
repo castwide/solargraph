@@ -18,14 +18,12 @@ module Solargraph
         @cancel_semaphore = Mutex.new
         @buffer_semaphore = Mutex.new
         @register_semaphore = Mutex.new
-        # @change_queue = []
         @cancel = []
         @buffer = ''
         @stopped = false
         @next_request_id = 0
         @dynamic_capabilities = Set.new
         @registered_capabilities = Set.new
-        # @file_versions = {}
       end
 
       # Update the configuration options with the provided hash.
@@ -110,12 +108,11 @@ module Solargraph
         @change_semaphore.synchronize do
           filename = uri_to_file(uri)
           library.delete filename
-          # Remove diagnostics for deleted files
-          send_notification "textDocument/publishDiagnostics", {
-            uri: uri,
-            diagnostics: []
-          }
         end
+        send_notification "textDocument/publishDiagnostics", {
+          uri: uri,
+          diagnostics: []
+        }
       end
 
       # Open the specified file in the library.
@@ -126,9 +123,7 @@ module Solargraph
       def open uri, text, version
         @change_semaphore.synchronize do
           f = uri_to_file(uri)
-          # @file_versions[f] = version
           library.open uri_to_file(f), text, version
-          # @diagnostics_queue.push uri
         end
       end
 
@@ -137,11 +132,7 @@ module Solargraph
       # @param uri [String]
       # @return [Boolean]
       def open? uri
-        result = nil
-        # @change_semaphore.synchronize do
-          result = unsafe_open?(uri)
-        # end
-        result
+        unsafe_open?(uri)
       end
 
       # Close the file specified by the URI.
@@ -150,7 +141,7 @@ module Solargraph
       def close uri
         @change_semaphore.synchronize do
           library.close uri_to_file(uri)
-          @diagnostics_queue.push uri
+          # @diagnostics_queue.push uri
         end
       end
 
@@ -168,17 +159,9 @@ module Solargraph
       end
 
       def change params
+        updater = generate_updater(params)
         @change_semaphore.synchronize do
-          updater = generate_updater(params)
-          # @change_queue.push updater
-          # if updater.version == @file_versions[updater.filename] + updater.effective_changes
-            library.synchronize updater #, false
-            # @file_versions[updater.filename] = updater.version
-            # @change_queue.pop
-            # @diagnostics_queue.push file_to_uri(updater.filename)
-          # end
-          # source = library.checkout(updater.filename)
-          # STDERR.puts source.code.lines[-10..-1].join
+          library.synchronize updater
         end
       end
 
@@ -327,15 +310,13 @@ module Solargraph
       #
       # @return [Boolean]
       def changing? file_uri
-        result = false
-        # @change_semaphore.synchronize do
-          result = unsafe_changing?(file_uri)
-        # end
-        result
+        unsafe_changing?(file_uri)
       end
 
       def stop
         @stopped = true
+        cataloger.stop
+        diagnoser.stop
       end
 
       def stopped?
@@ -370,11 +351,7 @@ module Solargraph
       # @return [String]
       def read_text uri
         filename = uri_to_file(uri)
-        text = nil
-        # @change_semaphore.synchronize do
-          text = library.read_text(filename)
-        # end
-        text
+        library.read_text(filename)
       end
 
       # @param filename [String]
@@ -383,10 +360,13 @@ module Solargraph
       # @return [Solargraph::ApiMap::Completion]
       def completions_at filename, line, column
         result = nil
+        # @todo Unlike most other queries, this one might be better off behind
+        #   the change semaphore, since it often happens immediately after a
+        #   document change.
         @change_semaphore.synchronize do
           result = library.completions_at filename, line, column
         end
-        # result
+        result
       end
 
       # @param filename [String]
@@ -394,11 +374,7 @@ module Solargraph
       # @param column [Integer]
       # @return [Array<Solargraph::Pin::Base>]
       def definitions_at filename, line, column
-        result = []
-        # @change_semaphore.synchronize do
-          result = library.definitions_at(filename, line, column)
-        # end
-        result
+        library.definitions_at(filename, line, column)
       end
 
       # @param filename [String]
@@ -406,11 +382,7 @@ module Solargraph
       # @param column [Integer]
       # @return [Array<Solargraph::Pin::Base>]
       def signatures_at filename, line, column
-        result = nil
-        # @change_semaphore.synchronize do
-          result = library.signatures_at(filename, line, column)
-        # end
-        result
+        library.signatures_at(filename, line, column)
       end
 
       # @param filename [String]
@@ -418,38 +390,25 @@ module Solargraph
       # @param column [Integer]
       # @return [Array<Solargraph::Range>]
       def references_from filename, line, column
-        result = nil
-        # @change_semaphore.synchronize do
-          result = library.references_from(filename, line, column)
-        # end
-        result
+        result = library.references_from(filename, line, column)
       end
 
       # @param query [String]
       # @return [Array<Solargraph::Pin::Base>]
       def query_symbols query
-        result = nil
-        # @change_semaphore.synchronize { result = library.query_symbols(query) }
-        result = library.query_symbols(query)
-        result
+        library.query_symbols(query)
       end
 
       # @param query [String]
       # @return [Array<String>]
       def search query
-        result = nil
-        # @change_semaphore.synchronize { result = library.search(query) }
-        result = library.search(query)
-        result
+        library.search(query)
       end
 
       # @param query [String]
       # @return [String]
       def document query
-        result = nil
-        # @change_semaphore.synchronize { result = library.document(query) }
-        result = library.document(query)
-        result
+        library.document(query)
       end
 
       # @param uri [String]

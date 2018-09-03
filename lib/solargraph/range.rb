@@ -54,6 +54,14 @@ module Solargraph
       Range.new(Position.new(l1, c1), Position.new(l2, c2))
     end
 
+    def self.from_node node
+      from_expr(node.loc.expression)
+    end
+
+    def self.from_expr expr
+      from_to(expr.line, expr.column, expr.last_line, expr.last_column)
+    end
+
     def == other
       return false unless other.is_a?(Range)
       start == other.start and ending == other.ending

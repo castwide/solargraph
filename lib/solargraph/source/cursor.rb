@@ -70,11 +70,10 @@ module Solargraph
       end
 
       def chain
-        chain ||= begin
+        @chain ||= begin
           prev = SourceMap::NodeChainer.chain(source.filename, previous_node)
           if previous_node != current_node and !(previous_node_range.contain?(position))
-            STDERR.puts "Fuxin wit it"
-            here = (word.empty? ? SourceMap::Chain::UNDEFINED_CALL : SourceMap::Chain::Call.new(word))
+            here = SourceMap::Chain::Call.new(word)
             SourceMap::Chain.new(prev.links + [here])
           else
             prev
@@ -97,6 +96,10 @@ module Solargraph
       def recipient
         return nil unless argument?
         @recipient ||= Cursor.new(source, signature_position)
+      end
+
+      def node_position
+        previous_position
       end
 
       def previous_position

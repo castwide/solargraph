@@ -23,10 +23,9 @@ module Solargraph
           Thread.new do
             until stopped?
               sleep 0.01
-              next if host.libver > last_cataloged
-              last_cataloged = host.libver
+              next if host.libver <= @last_cataloged
+              @last_cataloged = host.libver
               host.catalog
-              STDERR.puts "Cataloged!"
             end
           end
         end
@@ -36,8 +35,6 @@ module Solargraph
         attr_reader :host
 
         attr_reader :mutex
-
-        attr_accessor :last_cataloged
       end
     end
   end

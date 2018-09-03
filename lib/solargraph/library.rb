@@ -26,6 +26,8 @@ module Solargraph
         workspace.merge source
         open_file_hash[filename] = source
         # catalog_sources
+        # @todo This might not be the best way to handle this
+        api_map.replace source
         increment_version
       end
     end
@@ -141,8 +143,8 @@ module Solargraph
     # @todo Take a Location instead of filename/line/column
     def completions_at filename, line, column
       position = Position.new(line, column)
-      # fragment = checkout(filename).fragment_at
-      api_map.clip(filename, position).complete
+      cursor = Source::Cursor.new(checkout(filename), position)
+      api_map.clip(cursor).complete
     end
 
     # Get definition suggestions for the expression at the specified file and
@@ -154,7 +156,9 @@ module Solargraph
     # @return [Array<Solargraph::Pin::Base>]
     # @todo Take filename/position instead of filename/line/column
     def definitions_at filename, line, column
-      api_map.clip(filename, Position.new(line, column)).define
+      position = Position.new(line, column)
+      cursor = Source::Cursor.new(checkout(filename), position)
+      api_map.clip(cursor).define
     end
 
     # Get signature suggestions for the method at the specified file and
@@ -166,7 +170,9 @@ module Solargraph
     # @return [Array<Solargraph::Pin::Base>]
     # @todo Take filename/position instead of filename/line/column
     def signatures_at filename, line, column
-      api_map.clip(filename, Position.new(line, column)).signify
+      position = Position.new(line, column)
+      cursor = Source::Cursor.new(checkout(filename), position)
+      api_map.clip(cursor).signify
     end
 
     # @param filename [String]
@@ -275,14 +281,13 @@ module Solargraph
           workspace.synchronize!(updater)
           open_file_hash[updater.filename] = workspace.source(updater.filename) if open?(updater.filename)
           # api_map.replace workspace.source(updater.filename)
-          api_map.quick_sync workspace.source(updater.filename)
         else
           raise FileNotFoundError, "Unable to update #{updater.filename}" unless open?(updater.filename)
           open_file_hash[updater.filename] = open_file_hash[updater.filename].synchronize(updater)
           # api_map.replace open_file_hash[updater.filename]
-          api_map.quick_sync workspace.source(updater.filename)
         end
         # catalog_sources if catalog
+        increment_version
       end
     end
 
