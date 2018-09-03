@@ -11,7 +11,7 @@ module Solargraph
       # @return [Boolean]
       def visible_from?(other, position)
         other.filename == filename and
-          (other == block or other.named_context == named_context) and
+          (other == block or other.context == context) and
           presence.contain?(position)
       end
     end

@@ -18,10 +18,6 @@ module Solargraph
         end
       end
 
-      def named_context
-        path
-      end
-
       # @param return_type [ComplexType]
       # @return [ProxyType]
       def self.anonymous return_type

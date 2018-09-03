@@ -30,10 +30,6 @@ module Solargraph
         Pin::NAMESPACE
       end
 
-      def named_context
-        path
-      end
-
       def context
         @context ||= ComplexType.parse("#{type.to_s.capitalize}<#{path}>")
       end

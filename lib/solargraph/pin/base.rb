@@ -75,11 +75,6 @@ module Solargraph
         false
       end
 
-      # @return [String]
-      def named_context
-        namespace
-      end
-
       # @return [ComplexType]
       def context
         @context ||= ComplexType.parse(namespace)
