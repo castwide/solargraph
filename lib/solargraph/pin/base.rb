@@ -115,29 +115,6 @@ module Solargraph
         return_complex_type.first.tag
       end
 
-      # The namespace of the first return type.
-      # Use return_complex_types for an array of all return types.
-      #
-      # @deprecated Not in active internal use
-      #
-      # @return [String]
-      def return_namespace
-        return_type
-        return nil if return_complex_type.void?
-        @return_namespace ||= return_complex_type.first.namespace
-      end
-
-      # The scope of the first return type.
-      # Use return_complex_types for an array of all return types.
-      #
-      # @deprecated Not in active internal use
-      #
-      # @return [String]
-      def return_scope
-        return nil if return_complex_type.void?
-        @return_scope ||= return_complex_type.first.scope
-      end
-
       # All of the pin's return types as an array of ComplexTypes.
       #
       # @return [ComplexType]
