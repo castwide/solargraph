@@ -36,7 +36,6 @@ module Solargraph
                 # Diagnosis is broken into two parts to reduce the number of
                 # times it runs while a document is changing
                 current = nil
-                already_changing = nil
                 mutex.synchronize do
                   current = queue.shift
                 end

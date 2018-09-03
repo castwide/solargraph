@@ -161,7 +161,7 @@ module Solargraph
       end
 
       def diagnose uri
-        library.diagnose uri
+        library.diagnose uri_to_file(uri)
       end
 
       def change params
