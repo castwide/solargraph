@@ -7,6 +7,7 @@ module Solargraph
       class Head < Call
         def resolve api_map, name_pin, locals
           return [self_pin(api_map, name_pin.context)] if word == 'self'
+          return super_pins(api_map, name_pin) if word == 'super'
           base = super
           return base if locals.map(&:name).include?(word)
           here = []
@@ -19,6 +20,13 @@ module Solargraph
 
         def self_pin(api_map, context)
           return Pin::ProxyType.anonymous(context)
+        end
+
+        # @param api_map [ApiMap]
+        # @param name_pin [Pin::Base]
+        def super_pins api_map, name_pin
+          pins = api_map.get_method_stack(name_pin.namespace, name_pin.name, scope: name_pin.scope)
+          pins.reject{|p| p.path == name_pin.path}
         end
       end
     end
