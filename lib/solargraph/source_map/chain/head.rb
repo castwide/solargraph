@@ -14,6 +14,12 @@ module Solargraph
           here.concat api_map.get_path_suggestions(ns) unless ns.nil?
           here + base
         end
+
+        private
+
+        def self_pin(api_map, context)
+          return Pin::ProxyType.anonymous(context)
+        end
       end
     end
   end
