@@ -60,10 +60,14 @@ module Solargraph
       pins = []
       reqs = []
       all_sources.each do |source|
-        map = Solargraph::SourceMap.map(source)
-        new_map_hash[source.filename] = map
-        pins.concat map.pins
-        reqs.concat map.requires.map(&:name)
+        if source_map_hash.has_key?(source.filename) and source_map_hash[source.filename].code == source.code
+          new_map_hash[source.filename] = source_map_hash[source.filename]
+        else
+          map = Solargraph::SourceMap.map(source)
+          new_map_hash[source.filename] = map
+          pins.concat map.pins
+          reqs.concat map.requires.map(&:name)
+        end
       end
       yard_map_changed = yard_map.change(reqs)
       new_store = Store.new(pins + yard_map.pins)
