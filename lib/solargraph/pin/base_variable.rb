@@ -30,7 +30,7 @@ module Solargraph
       end
 
       def nil_assignment?
-        return_type == 'NilClass'
+        return_complex_type.nil?
       end
 
       def variable?

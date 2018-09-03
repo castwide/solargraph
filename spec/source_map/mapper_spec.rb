@@ -11,9 +11,9 @@ describe Solargraph::SourceMap::Mapper do
     ))
     map = Solargraph::SourceMap.map(source)
     foo_pin = map.pins.select{|pin| pin.path == 'Foo.new'}.first
-    expect(foo_pin.return_type).to eq('Foo')
+    expect(foo_pin.return_type.tag).to eq('Foo')
     bar_pin = map.pins.select{|pin| pin.path == 'Foo::Bar.new'}.first
-    expect(bar_pin.return_type).to eq('Foo::Bar')
+    expect(bar_pin.return_type.tag).to eq('Foo::Bar')
   end
 
   it "ignores include calls that are not attached to the current namespace" do

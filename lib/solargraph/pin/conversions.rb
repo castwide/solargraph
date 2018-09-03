@@ -10,7 +10,7 @@ module Solargraph
           detail: detail,
           data: {
             path: path,
-            return_type: return_type,
+            return_type: return_type.tag,
             location: (location ? location.to_hash : nil),
             deprecated: deprecated?
           }
@@ -70,7 +70,7 @@ module Solargraph
 
       def generate_link
         return nil if return_complex_type.undefined?
-        this_path = path || return_type
+        this_path = path || return_type.tag
         return nil if this_path.nil?
         "[#{this_path.gsub('_', '\\\\_')}](solargraph:/document?query=#{URI.encode(this_path)})"
       end

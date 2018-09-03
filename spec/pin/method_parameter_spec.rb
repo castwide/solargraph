@@ -8,6 +8,6 @@ describe Solargraph::Pin::MethodParameter do
     map = Solargraph::SourceMap.map(source)
     expect(map.locals.length).to eq(1)
     expect(map.locals.first.name).to eq('bar')
-    expect(map.locals.first.return_type).to eq('String')
+    expect(map.locals.first.return_type.tag).to eq('String')
   end
 end

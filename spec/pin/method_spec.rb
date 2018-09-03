@@ -48,7 +48,7 @@ describe Solargraph::Pin::Method do
     # ))
     # pin = source.pins.select{|pin| pin.path == '#foo'}.first
     pin = Solargraph::Pin::Method.new(nil, nil, nil, '@return [Hash]', nil, nil, [])
-    expect(pin.return_type).to eq('Hash')
+    expect(pin.return_type.tag).to eq('Hash')
   end
 
   # @todo method_pins is only ever used in specs

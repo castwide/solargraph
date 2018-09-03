@@ -106,13 +106,11 @@ module Solargraph
           )
       end
 
-      # The first return type associated with the pin.
-      # Use return_complex_types for an array of all return types.
+      # An alias for return_complex_type.
       #
-      # @return [String]
+      # @return [ComplexType]
       def return_type
-        return nil if return_complex_type.void?
-        return_complex_type.first.tag
+        return_complex_type
       end
 
       # All of the pin's return types as an array of ComplexTypes.
