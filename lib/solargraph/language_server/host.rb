@@ -169,10 +169,11 @@ module Solargraph
         @change_semaphore.synchronize do
           updater = generate_updater(params)
           @change_queue.push updater
-          next unless updater.version == @file_versions[updater.filename] + updater.changes.length
-          library.synchronize! updater
-          @file_versions[updater.filename] = updater.version
-          @change_queue.pop
+          if updater.version == @file_versions[updater.filename] + updater.effective_changes
+            library.synchronize! updater
+            @file_versions[updater.filename] = updater.version
+            @change_queue.pop
+          end
         end
       end
 
@@ -508,7 +509,8 @@ module Solargraph
       # @param file_uri [String]
       # @return [Boolean]
       def unsafe_changing? file_uri
-        @change_queue.any?{|change| change.version == uri_to_file(file_uri)}
+        file = uri_to_file(file_uri)
+        @change_queue.any?{|change| change.filename == file}
       end
 
       def unsafe_open? uri
@@ -524,38 +526,31 @@ module Solargraph
           until stopped?
             changed = false
             @change_semaphore.synchronize do
-              begin
-                next if @change_queue.empty?
-                texts = {}
-                @change_queue.delete_if do |change|
-                  next true unless library.open?(change.filename)
-                  next false unless change.version == @file_versions[change.filename] + change.changes.length
-                  source = library.checkout(change.filename)
-                  texts[change.filename] ||= [source.code, change.version]
-                  texts[change.filename] = [change.write(texts[change.filename][0]), change.version]
-                  @file_versions[change.filename] = change.version
-                  @diagnostics_queue.push file_to_uri(change.filename)
-                  changed = true
-                  true
-                end
-                texts.each do |filename, arr|
-                  updater = Solargraph::Source::Updater.new(
-                    filename,
-                    arr[1],
-                    [Solargraph::Source::Change.new(nil, arr[0])],
-                  )
-                  library.synchronize! updater, false
-                end
-              rescue Exception => e
-                STDERR.puts "An error occurred in the change thread: #{e.class} #{e.message}"
-                STDERR.puts e.backtrace
-                @change_queue.clear
+              next if @change_queue.empty?
+              texts = {}
+              # @param updater [Source::Updater]
+              @change_queue.delete_if do |updater|
+                next true unless library.open?(updater.filename)
+                next false unless updater.version == @file_versions[updater.filename] + updater.effective_changes
+                source = library.checkout(updater.filename)
+                texts[updater.filename] ||= [source.code, updater.version]
+                texts[updater.filename] = [updater.write(texts[updater.filename][0]), updater.version]
+                @file_versions[updater.filename] = updater.version
+                @diagnostics_queue.push file_to_uri(updater.filename)
+                changed = true
+                true
               end
-            end
-            sleep 0.01
-            @change_semaphore.synchronize do
+              texts.each do |filename, arr|
+                updater = Solargraph::Source::Updater.new(
+                  filename,
+                  arr[1],
+                  [Solargraph::Source::Change.new(nil, arr[0])],
+                )
+                library.synchronize! updater, false
+              end
               library.refresh if changed and @change_queue.empty?
             end
+            sleep 0.01
           end
         end
       end
