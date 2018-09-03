@@ -36,5 +36,7 @@ module Solargraph
     SYMBOL = 10
     BLOCK = 11
     BLOCK_PARAMETER = 12
+
+    ROOT_PIN = Pin::Base.new(nil, '', '', '')
   end
 end

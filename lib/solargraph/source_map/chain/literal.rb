@@ -12,7 +12,7 @@ module Solargraph
           @complex_type = ComplexType.parse(type).first
         end
 
-        def resolve api_map, context, locals
+        def resolve api_map, name_pin, locals
           [Pin::ProxyType.anonymous(@complex_type)]
         end
       end

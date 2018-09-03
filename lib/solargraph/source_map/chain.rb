@@ -33,35 +33,36 @@ module Solargraph
       end
 
       # @param api_map [ApiMap]
-      # @param context [Context]
+      # @param name_pin [Pin::Base]
       # @param locals [Array<Pin::Base>]
       # @return [Array<Pin::Base>]
-      def define api_map, context, locals
+      def define api_map, name_pin, locals
         return [] if undefined?
         type = ComplexType::UNDEFINED
         head = true
         links[0..-2].each do |link|
-          pins = link.resolve(api_map, context, head ? locals : [])
+          pins = link.resolve(api_map, name_pin, head ? locals : [])
           head = false
           return [] if pins.empty?
+          type = ComplexType::UNDEFINED
           pins.each do |pin|
+            name_pin = pin
             type = pin.infer(api_map)
             break unless type.undefined?
           end
           return [] if type.undefined?
-          context = type
         end
-        links.last.resolve(api_map, context, head ? locals: [])
+        links.last.resolve(api_map, name_pin, head ? locals: [])
       end
 
       # @param api_map [ApiMap]
-      # @param api_map [Context]
+      # @param name_pin [Pin::Base]
       # @param locals [Array<Pin::Base>]
       # @return [ComplexType]
-      def infer api_map, context, locals
+      def infer api_map, name_pin, locals
         return ComplexType::UNDEFINED if undefined?
         type = ComplexType::UNDEFINED
-        pins = define(api_map, context, locals)
+        pins = define(api_map, name_pin, locals)
         pins.each do |pin|
           type = pin.infer(api_map)
           break unless type.undefined?
