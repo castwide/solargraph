@@ -62,6 +62,7 @@ module Solargraph
       all_sources.each do |source|
         if source_map_hash.has_key?(source.filename) and source_map_hash[source.filename].code == source.code
           new_map_hash[source.filename] = source_map_hash[source.filename]
+          pins.concat new_map_hash[source.filename].pins
         else
           map = Solargraph::SourceMap.map(source)
           new_map_hash[source.filename] = map
