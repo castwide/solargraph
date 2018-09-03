@@ -70,15 +70,16 @@ module Solargraph
       end
 
       def chain
-        @chain ||= begin
-          prev = SourceMap::NodeChainer.chain(source.filename, previous_node)
-          if previous_node != current_node and !(previous_node_range.contain?(position))
-            here = SourceMap::Chain::Call.new(word)
-            SourceMap::Chain.new(prev.links + [here])
-          else
-            prev
-          end
-        end
+        # @chain ||= begin
+        #   prev = SourceMap::NodeChainer.chain(source.filename, previous_node)
+        #   if previous_node != current_node and !(previous_node_range.contain?(position))
+        #     here = SourceMap::Chain::Call.new(word)
+        #     SourceMap::Chain.new(prev.links + [here])
+        #   else
+        #     prev
+        #   end
+        # end
+        @chain ||= SourceMap::SourceChainer.chain(source, position)
       end
 
       def argument?
@@ -104,11 +105,11 @@ module Solargraph
 
       def previous_position
         @previous_position ||= begin
-          match = source.code[0..offset-1].match(/(:|\.)[^s\t ]*$/)
+          match = source.code[0..offset-1].match(/(::|\.)[^s\t ]*$/)
           if match.nil?
             position
           else
-            col = position.column - match[0].length
+            col = position.column - match[0].length - 1
             col = 0 if col < 0
             Position.new(position.line, col)
           end

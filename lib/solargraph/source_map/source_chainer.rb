@@ -11,19 +11,20 @@ module Solargraph
       private_class_method :new
 
       class << self
-        # @param source_map [SourceMap]
+        # @param source [Source]
         # @param position [Position]
         # @return [Source::Chain]
-        def chain source_map, position
-          new(source_map, position).chain
+        def chain source, position
+          raise "Not a source" unless source.is_a?(Source)
+          new(source, position).chain
         end
       end
 
-      # @param source_map [SourceMap]
+      # @param source [Source]
       # @param position [Position]
-      def initialize source_map, position
-        @source_map = source_map
-        # @source_map.code = source.code
+      def initialize source, position
+        @source = source
+        # @source.code = source.code
         @position = position
         # @todo Get rid of line/column
         @line = position.line
@@ -35,10 +36,10 @@ module Solargraph
       def chain
         links = []
         # @todo Smelly colon handling
-        if @source_map.source.code[0..offset-1].end_with?(':') and !@source_map.source.code[0..offset-1].end_with?('::')
+        if @source.code[0..offset-1].end_with?(':') and !@source.code[0..offset-1].end_with?('::')
           links.push Chain::Link.new
           links.push Chain::Link.new
-        elsif @source_map.string_at?(position)
+        elsif @source.string_at?(position)
           links.push Chain::Literal.new('String')
         else
           links.push Chain::Literal.new(base_literal) if base_literal?
@@ -60,7 +61,7 @@ module Solargraph
             end
           end
           # Literal string hack
-          links.push Chain::UNDEFINED_CALL if base_literal? and @source_map.source.code[offset - 1] == '.' and links.length == 1
+          links.push Chain::UNDEFINED_CALL if base_literal? and @source.code[offset - 1] == '.' and links.length == 1
         end
         @chain ||= Chain.new(links)
       end
@@ -93,7 +94,7 @@ module Solargraph
           Chain::Link.new
         elsif word.empty?
           Chain::UNDEFINED_CALL
-        elsif head and !@source_map.source.code[signature_data[0]..-1].match(/^[\s]*?#{word}[\s]*?\(/)
+        elsif head and !@source.code[signature_data[0]..-1].match(/^[\s]*?#{word}[\s]*?\(/)
           # The head needs to allow for ambiguous references to constants and
           # methods. For example, `String` might be either. If the word is not
           # followed by an open parenthesis, use Chain::Head for ambiguous
@@ -145,7 +146,7 @@ module Solargraph
       # @return [Boolean]
       def string?
         # @string ||= (node.type == :str or node.type == :dstr)
-        @string ||= @source_map.string_at?(position)
+        @string ||= @source.string_at?(position)
       end
 
       # True if the fragment is a signature that stems from a literal value.
@@ -162,7 +163,7 @@ module Solargraph
         if @base_literal.nil? and !@calculated_literal
           @calculated_literal = true
           if signature.start_with?('.')
-            pn = @source_map.source.node_at(line, column - 2)
+            pn = @source.node_at(line, column - 2)
             @base_literal = infer_literal_node_type(pn) unless pn.nil?
           end
         end
@@ -175,7 +176,7 @@ module Solargraph
       end
 
       def get_offset line, column
-        Position.line_char_to_offset(@source_map.source.code, line, column)
+        Position.line_char_to_offset(@source.code, line, column)
       end
 
       def signature_data
@@ -190,20 +191,20 @@ module Solargraph
         index -=1
         in_whitespace = false
         while index >= 0
-          pos = Position.from_offset(@source_map.source.code, index)
-          break if index > 0 and @source_map.comment_at?(pos)
+          pos = Position.from_offset(@source.code, index)
+          break if index > 0 and @source.comment_at?(pos)
           unless !in_whitespace and string?
             break if brackets > 0 or parens > 0 or squares > 0
-            char = @source_map.source.code[index, 1]
+            char = @source.code[index, 1]
             break if char.nil? # @todo Is this the right way to handle this?
             if brackets.zero? and parens.zero? and squares.zero? and [' ', "\r", "\n", "\t"].include?(char)
               in_whitespace = true
             else
               if brackets.zero? and parens.zero? and squares.zero? and in_whitespace
-                unless char == '.' or @source_map.source.code[index+1..-1].strip.start_with?('.')
-                  old = @source_map.source.code[index+1..-1]
-                  nxt = @source_map.source.code[index+1..-1].lstrip
-                  index += (@source_map.source.code[index+1..-1].length - @source_map.source.code[index+1..-1].lstrip.length)
+                unless char == '.' or @source.code[index+1..-1].strip.start_with?('.')
+                  old = @source.code[index+1..-1]
+                  nxt = @source.code[index+1..-1].lstrip
+                  index += (@source.code[index+1..-1].length - @source.code[index+1..-1].lstrip.length)
                   break
                 end
               end
@@ -219,14 +220,14 @@ module Solargraph
                 brackets += 1
               elsif char == '['
                 squares += 1
-                signature = ".[]#{signature}" if parens.zero? and brackets.zero? and squares.zero? and @source_map.code[index-2] != '%'
+                signature = ".[]#{signature}" if parens.zero? and brackets.zero? and squares.zero? and @source.code[index-2] != '%'
               end
               if brackets.zero? and parens.zero? and squares.zero?
                 break if ['"', "'", ',', ';', '%'].include?(char)
-                signature = char + signature if char.match(/[a-z0-9:\._@\$\?\!]/i) and @source_map.code[index - 1] != '%'
+                signature = char + signature if char.match(/[a-z0-9:\._@\$\?\!]/i) and @source.code[index - 1] != '%'
                 break if char == '$'
                 if char == '@'
-                  signature = "@#{signature}" if @source_map.code[index-1, 1] == '@'
+                  signature = "@#{signature}" if @source.code[index-1, 1] == '@'
                   break
                 end
               end
@@ -247,8 +248,8 @@ module Solargraph
           signature = signature[3..-1].to_s
           @base_literal = 'Array'
         elsif signature.start_with?('.')
-          pos = Position.from_offset(@source_map.source.code, index)
-          node = @source_map.source.node_at(pos.line, pos.character)
+          pos = Position.from_offset(@source.code, index)
+          node = @source.node_at(pos.line, pos.character)
           lit = infer_literal_node_type(node)
           unless lit.nil?
             signature = signature[1..-1].to_s
@@ -262,13 +263,13 @@ module Solargraph
       # @return [String]
       def remainder_at index
         cursor = index
-        while cursor < @source_map.code.length
-          char = @source_map.code[cursor, 1]
+        while cursor < @source.code.length
+          char = @source.code[cursor, 1]
           break if char.nil? or char == ''
           break unless char.match(/[a-z0-9_\?\!]/i)
           cursor += 1
         end
-        @source_map.code[index..cursor-1].to_s
+        @source.code[index..cursor-1].to_s
       end
     end
   end

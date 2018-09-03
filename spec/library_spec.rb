@@ -225,7 +225,7 @@ describe Solargraph::Library do
     )
       )]
     )
-    library.synchronize! updater
+    library.synchronize updater
 
     pins = library.definitions_at('test.rb', 2, 4)
     expect(pins.map(&:name)).to include('foo')

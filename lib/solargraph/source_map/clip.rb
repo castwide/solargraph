@@ -5,7 +5,7 @@ module Solargraph
       # @param cursor [Source::Cursor]
       def initialize api_map, cursor
         # @todo Just some temporary stuff while I make sure this works
-        raise "Not a cursor" unless cursor.is_a?(Source::Cursor)
+        raise "Not a cursor: #{cursor.class}" unless cursor.is_a?(Source::Cursor)
         @api_map = api_map
         @cursor = cursor
       end
@@ -20,7 +20,7 @@ module Solargraph
         return Completion.new([], cursor.range) if cursor.chain.literal? or cursor.comment?
         result = []
         type = cursor.chain.base.infer(api_map, context, locals)
-        if cursor.chain.constant? and !cursor.chain.links.length == 1
+        if cursor.chain.constant?
           result.concat api_map.get_constants(type.namespace, context.namespace)
         else
           result.concat api_map.get_complex_type_methods(type, context.namespace, cursor.chain.links.length == 1)

@@ -240,7 +240,7 @@ describe Solargraph::ApiMap do
       Foo.new.bar
     ), 'my_file.rb')
     @api_map.catalog Solargraph::Workspace.new, [source]
-    clip = @api_map.clip('my_file.rb', Solargraph::Position.new(4, 15))
+    clip = @api_map.clip_at('my_file.rb', Solargraph::Position.new(4, 15))
     expect(clip).to be_a(Solargraph::SourceMap::Clip)
   end
 

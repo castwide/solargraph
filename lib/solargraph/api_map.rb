@@ -80,7 +80,7 @@ module Solargraph
         if @source_map_hash.has_key?(source.filename) and @source_map_hash[source.filename].source.code == source.code
           return
         else
-          return unless source.parsed?
+          # return unless source.parsed?
           map = Solargraph::SourceMap.map(source)
           return if @source_map_hash.has_key?(source.filename) and @source_map_hash[source.filename].try_merge!(map)
           @source_map_hash[source.filename] = map
@@ -396,6 +396,7 @@ module Solargraph
     end
 
     def source_map filename
+      raise FileNotFoundError, "Source map for `#{filename}` not found" unless source_map_hash.has_key?(filename)
       source_map_hash[filename]
     end
 

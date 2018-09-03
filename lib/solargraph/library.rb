@@ -60,10 +60,8 @@ module Solargraph
       mutex.synchronize do
         unless workspace.would_merge?(filename)
           source = Solargraph::Source.load_string(text, filename)
-          workspace.merge(source)
-          # catalog_sources
-          result = true
-          increment_version
+          result = workspace.merge(source)
+          increment_version if result
         end
       end
       result
