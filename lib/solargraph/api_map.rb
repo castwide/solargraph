@@ -30,14 +30,14 @@ module Solargraph
       @source_map_hash = {}
       @cache = Cache.new
       @store = ApiMap::Store.new(yard_map.pins)
-      @index_mutex = Mutex.new
+      @mutex = Mutex.new
       index pins
     end
 
     # @param pins [Array<Pin::Base>]
     # @return [void]
     def index pins
-      @index_mutex.synchronize {
+      @mutex.synchronize {
         @source_map_hash.clear
         @cache.clear
         yard_map.change([])
@@ -54,7 +54,7 @@ module Solargraph
     # @return [void]
     def catalog workspace, others = []
       all_sources = (workspace.sources + others).uniq
-      @index_mutex.synchronize {
+      @mutex.synchronize {
         all_filenames = all_sources.map(&:filename)
         @source_map_hash.keep_if{|filename, map|
           all_filenames.include?(filename)
@@ -92,7 +92,7 @@ module Solargraph
     end
 
     def replace source
-      @index_mutex.synchronize {
+      @mutex.synchronize {
         if @source_map_hash.has_key?(source.filename) and @source_map_hash[source.filename].source.code == source.code
           return
         else
@@ -104,6 +104,13 @@ module Solargraph
         @cache.clear
         @store.update map
       }
+    end
+
+    def quick_sync source
+      @mutex.synchronize do
+        # @todo Smelly way to do this
+        @source_map_hash[source.filename].instance_variable_set(:@source, source)
+      end
     end
 
     # @param filename [String]
@@ -406,21 +413,21 @@ module Solargraph
     private
 
     def source_map_hash
-      @index_mutex.synchronize {
+      @mutex.synchronize {
         @source_map_hash
       }
     end
 
     # @return [ApiMap::Store]
     def store
-      @index_mutex.synchronize {
+      @mutex.synchronize {
         @store
       }
     end
 
     # @return [Solargraph::ApiMap::Cache]
     def cache
-      @index_mutex.synchronize {
+      @mutex.synchronize {
         @cache
       }
     end

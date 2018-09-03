@@ -8,6 +8,9 @@ module Solargraph
     # safety for multi-threaded transports.
     #
     class Host
+      autoload :Diagnoser, 'solargraph/language_server/host/diagnoser'
+      autoload :Cataloger, 'solargraph/language_server/host/cataloger'
+
       include Solargraph::LanguageServer::UriHelpers
 
       def initialize
@@ -15,15 +18,14 @@ module Solargraph
         @cancel_semaphore = Mutex.new
         @buffer_semaphore = Mutex.new
         @register_semaphore = Mutex.new
-        @change_queue = []
-        @diagnostics_queue = []
+        # @change_queue = []
         @cancel = []
         @buffer = ''
         @stopped = false
         @next_request_id = 0
         @dynamic_capabilities = Set.new
         @registered_capabilities = Set.new
-        @file_versions = {}
+        # @file_versions = {}
       end
 
       # Update the configuration options with the provided hash.
@@ -124,9 +126,9 @@ module Solargraph
       def open uri, text, version
         @change_semaphore.synchronize do
           f = uri_to_file(uri)
-          @file_versions[f] = version
+          # @file_versions[f] = version
           library.open uri_to_file(f), text, version
-          @diagnostics_queue.push uri
+          # @diagnostics_queue.push uri
         end
       end
 
@@ -136,9 +138,9 @@ module Solargraph
       # @return [Boolean]
       def open? uri
         result = nil
-        @change_semaphore.synchronize do
+        # @change_semaphore.synchronize do
           result = unsafe_open?(uri)
-        end
+        # end
         result
       end
 
@@ -168,13 +170,15 @@ module Solargraph
       def change params
         @change_semaphore.synchronize do
           updater = generate_updater(params)
-          @change_queue.push updater
-          if updater.version == @file_versions[updater.filename] + updater.effective_changes
-            library.synchronize! updater
-            @file_versions[updater.filename] = updater.version
-            @change_queue.pop
-            @diagnostics_queue.push file_to_uri(updater.filename)
-          end
+          # @change_queue.push updater
+          # if updater.version == @file_versions[updater.filename] + updater.effective_changes
+            library.synchronize updater #, false
+            # @file_versions[updater.filename] = updater.version
+            # @change_queue.pop
+            # @diagnostics_queue.push file_to_uri(updater.filename)
+          # end
+          # source = library.checkout(updater.filename)
+          # STDERR.puts source.code.lines[-10..-1].join
         end
       end
 
@@ -216,8 +220,8 @@ module Solargraph
             @library = Solargraph::Library.load(nil)
           end
         end
-        start_change_thread
-        start_diagnostics_thread
+        # diagnoser.start
+        cataloger.start
       end
 
       # Send a notification to the client.
@@ -324,9 +328,9 @@ module Solargraph
       # @return [Boolean]
       def changing? file_uri
         result = false
-        @change_semaphore.synchronize do
+        # @change_semaphore.synchronize do
           result = unsafe_changing?(file_uri)
-        end
+        # end
         result
       end
 
@@ -340,7 +344,7 @@ module Solargraph
 
       def locate_pin params
         pin = nil
-        @change_semaphore.synchronize do
+        # @change_semaphore.synchronize do
           pin = nil
           unless params['data']['location'].nil?
             location = Location.new(
@@ -358,7 +362,7 @@ module Solargraph
           if pin.nil? or pin.path != params['data']['path']
             pin = library.path_pins(params['data']['path']).first
           end
-        end
+        # end
         pin
       end
 
@@ -367,9 +371,9 @@ module Solargraph
       def read_text uri
         filename = uri_to_file(uri)
         text = nil
-        @change_semaphore.synchronize do
+        # @change_semaphore.synchronize do
           text = library.read_text(filename)
-        end
+        # end
         text
       end
 
@@ -382,7 +386,7 @@ module Solargraph
         @change_semaphore.synchronize do
           result = library.completions_at filename, line, column
         end
-        result
+        # result
       end
 
       # @param filename [String]
@@ -391,9 +395,9 @@ module Solargraph
       # @return [Array<Solargraph::Pin::Base>]
       def definitions_at filename, line, column
         result = []
-        @change_semaphore.synchronize do
+        # @change_semaphore.synchronize do
           result = library.definitions_at(filename, line, column)
-        end
+        # end
         result
       end
 
@@ -403,9 +407,9 @@ module Solargraph
       # @return [Array<Solargraph::Pin::Base>]
       def signatures_at filename, line, column
         result = nil
-        @change_semaphore.synchronize do
+        # @change_semaphore.synchronize do
           result = library.signatures_at(filename, line, column)
-        end
+        # end
         result
       end
 
@@ -415,9 +419,9 @@ module Solargraph
       # @return [Array<Solargraph::Range>]
       def references_from filename, line, column
         result = nil
-        @change_semaphore.synchronize do
+        # @change_semaphore.synchronize do
           result = library.references_from(filename, line, column)
-        end
+        # end
         result
       end
 
@@ -425,7 +429,8 @@ module Solargraph
       # @return [Array<Solargraph::Pin::Base>]
       def query_symbols query
         result = nil
-        @change_semaphore.synchronize { result = library.query_symbols(query) }
+        # @change_semaphore.synchronize { result = library.query_symbols(query) }
+        result = library.query_symbols(query)
         result
       end
 
@@ -433,7 +438,8 @@ module Solargraph
       # @return [Array<String>]
       def search query
         result = nil
-        @change_semaphore.synchronize { result = library.search(query) }
+        # @change_semaphore.synchronize { result = library.search(query) }
+        result = library.search(query)
         result
       end
 
@@ -441,7 +447,8 @@ module Solargraph
       # @return [String]
       def document query
         result = nil
-        @change_semaphore.synchronize { result = library.document(query) }
+        # @change_semaphore.synchronize { result = library.document(query) }
+        result = library.document(query)
         result
       end
 
@@ -500,11 +507,27 @@ module Solargraph
         }
       end
 
+      def libver
+        library.version
+      end
+
+      def catalog
+        library.catalog
+      end
+
       private
 
       # @return [Solargraph::Library]
       def library
         @library
+      end
+
+      def diagnoser
+        @diagnoser ||= Diagnoser.new(self)
+      end
+
+      def cataloger
+        @cataloger ||= Cataloger.new(self)
       end
 
       # @param file_uri [String]
@@ -520,86 +543,6 @@ module Solargraph
 
       def requests
         @requests ||= {}
-      end
-
-      def start_change_thread
-        Thread.new do
-          until stopped?
-            changed = false
-            @change_semaphore.synchronize do
-              next if @change_queue.empty?
-              texts = {}
-              # @param updater [Source::Updater]
-              @change_queue.delete_if do |updater|
-                next true unless library.open?(updater.filename)
-                next false unless updater.version == @file_versions[updater.filename] + updater.effective_changes
-                source = library.checkout(updater.filename)
-                texts[updater.filename] ||= [source.code, updater.version]
-                texts[updater.filename] = [updater.write(texts[updater.filename][0]), updater.version]
-                @file_versions[updater.filename] = updater.version
-                @diagnostics_queue.push file_to_uri(updater.filename)
-                changed = true
-                true
-              end
-              texts.each do |filename, arr|
-                updater = Solargraph::Source::Updater.new(
-                  filename,
-                  arr[1],
-                  [Solargraph::Source::Change.new(nil, arr[0])],
-                )
-                library.synchronize! updater, false
-              end
-              library.refresh if changed and @change_queue.empty?
-            end
-            sleep 0.01
-          end
-        end
-      end
-
-      def start_diagnostics_thread
-        Thread.new do
-          until stopped?
-            sleep 0.1
-            if !options['diagnostics']
-              @change_semaphore.synchronize { @diagnostics_queue.clear }
-              next
-            end
-            begin
-              # Diagnosis is broken into two parts to reduce the number of
-              # times it runs while a document is changing
-              current = nil
-              already_changing = nil
-              @change_semaphore.synchronize do
-                current = @diagnostics_queue.shift
-                break if current.nil?
-                already_changing = unsafe_changing?(current)
-                @diagnostics_queue.delete current unless already_changing
-              end
-              next if current.nil? or already_changing
-              filename = uri_to_file(current)
-              results = library.diagnose(filename)
-              @change_semaphore.synchronize do
-                already_changing = (unsafe_changing?(current) or @diagnostics_queue.include?(current))
-                unless already_changing
-                  send_notification "textDocument/publishDiagnostics", {
-                    uri: current,
-                    diagnostics: results
-                  }
-                end
-              end
-            rescue DiagnosticsError => e
-              STDERR.puts "Error in diagnostics: #{e.message}"
-              options['diagnostics'] = false
-              send_notification 'window/showMessage', {
-                type: LanguageServer::MessageTypes::ERROR,
-                message: "Error in diagnostics: #{e.message}"
-              }
-            rescue Exception => e
-              STDERR.puts "#{e.message}"
-              STDERR.puts "#{e.backtrace}"
-            end
-          end
-        end
       end
 
       def normalize_separators path
