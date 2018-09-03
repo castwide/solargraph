@@ -62,26 +62,47 @@ module Solargraph
         @cache.clear
         reqs = []
         pins = []
+        workspace_changed = false
         all_sources.each do |source|
           if @source_map_hash.has_key?(source.filename) and @source_map_hash[source.filename].source.code == source.code
             map = @source_map_hash[source.filename]
           else
-            map = Solargraph::SourceMap.map(source)
-            if @source_map_hash.has_key?(source.filename) and @source_map_hash[source.filename].try_merge!(map)
-              map = @source_map_hash[source.filename]
+            if source.parsed?
+              map = Solargraph::SourceMap.map(source)
+              if @source_map_hash.has_key?(source.filename) and @source_map_hash[source.filename].try_merge!(map)
+                map = @source_map_hash[source.filename]
+              else
+                @source_map_hash[source.filename] = map
+                workspace_changed = true
+              end
             else
-              @source_map_hash[source.filename] = map
+              map = @source_map_hash[source.filename]
             end
           end
           pins.concat map.pins
           reqs.concat map.requires.map(&:name)
         end
         reqs.delete_if { |r| workspace.would_require?(r) }
-        yard_map.change(reqs)
-        unless (pins + yard_map.pins) == @store.pins
+        yard_map_changed = yard_map.change(reqs)
+        if workspace_changed or yard_map_changed
           new_store = Store.new(pins + yard_map.pins)
           @store = new_store
         end
+      }
+    end
+
+    def replace source
+      @index_mutex.synchronize {
+        if @source_map_hash.has_key?(source.filename) and @source_map_hash[source.filename].source.code == source.code
+          return
+        else
+          return if source.parsed?
+          map = Solargraph::SourceMap.map(source)
+          return if @source_map_hash.has_key?(source.filename) and @source_map_hash[source.filename].try_merge!(map)
+          @source_map_hash[source.filename] = map
+        end
+        @cache.clear
+        @store.update map
       }
     end
 

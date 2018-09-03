@@ -245,11 +245,13 @@ module Solargraph
       if workspace.has_file?(updater.filename)
         workspace.synchronize!(updater)
         open_file_hash[updater.filename] = workspace.source(updater.filename) if open?(updater.filename)
+        api_map.replace workspace.source(updater.filename)
       else
         raise FileNotFoundError, "Unable to update #{updater.filename}" unless open?(updater.filename)
         open_file_hash[updater.filename] = open_file_hash[updater.filename].synchronize(updater)
+        api_map.replace open_file_hash[updater.filename]
       end
-      catalog_sources if catalog
+      # catalog_sources if catalog
     end
 
     def refresh

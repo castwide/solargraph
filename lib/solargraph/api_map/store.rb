@@ -204,7 +204,8 @@ module Solargraph
           pins.delete_if { |pin| !pin.yard_pin? and pin.filename == source.filename }
           symbols.delete_if { |pin| pin.filename == source.filename }
           pins.concat source.pins
-          symbols.concat source.symbols
+          # @todo Fix symbols
+          # symbols.concat source.symbols
         end
       end
     end

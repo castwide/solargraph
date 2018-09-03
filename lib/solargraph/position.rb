@@ -27,6 +27,10 @@ module Solargraph
       }
     end
 
+    def inspect
+      "<Position #{line}, #{character}>"
+    end
+
     # Get a numeric offset for the specified text and position.
     #
     # @param text [String]
@@ -81,6 +85,7 @@ module Solargraph
         line += 1
       end
       character = 0 if character.nil? and offset == cursor
+      STDERR.puts text if character.nil?
       raise InvalidOffsetError if character.nil?
       Position.new(line, character)
     end
