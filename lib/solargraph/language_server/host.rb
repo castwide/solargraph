@@ -173,6 +173,7 @@ module Solargraph
             library.synchronize! updater
             @file_versions[updater.filename] = updater.version
             @change_queue.pop
+            @diagnostics_queue.push file_to_uri(updater.filename)
           end
         end
       end
