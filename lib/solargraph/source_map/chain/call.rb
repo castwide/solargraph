@@ -24,13 +24,6 @@ module Solargraph
 
         private
 
-        # @param pin [Pin::Base]
-        # @return [String]
-        def namespace_from_context pin
-          return pin.namespace if pin.kind == Pin::ATTRIBUTE or pin.kind == Pin::METHOD
-          pin.return_complex_type.namespace
-        end
-
         # Create a `new` pin to facilitate type inference. This is necessary for
         # classes from YARD and classes in the namespace that do not have an
         # `initialize` method.
@@ -43,12 +36,6 @@ module Solargraph
           # @todo Smelly instance variable access.
           pin.instance_variable_set(:@return_complex_type, ComplexType.parse(context.namespace))
           pin
-        end
-
-        def self_pin(api_map, context)
-          return Pin::ProxyType.anonymous(ComplexType.parse(context.namespace)) if context.scope == :instance
-          # return api_map.get_path_suggestions(context.namespace)
-          context
         end
 
         def inferred_pins pins, api_map, context
