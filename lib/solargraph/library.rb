@@ -181,7 +181,7 @@ module Solargraph
     # @return [Array<Solargraph::Range>]
     # @todo Take a Location instead of filename/line/column
     def references_from filename, line, column
-      clip = api_map.clip(filename, Position.new(line, column))
+      clip = api_map.clip_at(filename, Position.new(line, column))
       pins = clip.define
       return [] if pins.empty?
       result = []
