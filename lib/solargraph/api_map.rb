@@ -96,7 +96,7 @@ module Solargraph
         if @source_map_hash.has_key?(source.filename) and @source_map_hash[source.filename].source.code == source.code
           return
         else
-          return if source.parsed?
+          return unless source.parsed?
           map = Solargraph::SourceMap.map(source)
           return if @source_map_hash.has_key?(source.filename) and @source_map_hash[source.filename].try_merge!(map)
           @source_map_hash[source.filename] = map
