@@ -1,5 +1,5 @@
 module Solargraph
-  class SourceMap
+  class Source
     class Chain
       # Chain::Head is a link for ambiguous words, e.g.; `String` can refer to
       # either a class (`String`) or a function (`Kernel#String`).

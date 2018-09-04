@@ -10,6 +10,9 @@ module Solargraph
     autoload :NodeMethods,   'solargraph/source/node_methods'
     autoload :EncodingFixes, 'solargraph/source/encoding_fixes'
     autoload :Cursor,        'solargraph/source/cursor'
+    autoload :Chain,         'solargraph/source/chain'
+    autoload :SourceChainer, 'solargraph/source/source_chainer'
+    autoload :NodeChainer,   'solargraph/source/node_chainer'
 
     include EncodingFixes
     include NodeMethods

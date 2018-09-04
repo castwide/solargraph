@@ -1,5 +1,5 @@
 module Solargraph
-  class SourceMap
+  class Source
     class Chain
       class GlobalVariable < Link
         def resolve api_map, context, locals

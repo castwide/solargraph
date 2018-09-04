@@ -1,5 +1,5 @@
 module Solargraph
-  class SourceMap
+  class Source
     class Chain
       class Definition < Link
         # @param location [Solargraph::Location]

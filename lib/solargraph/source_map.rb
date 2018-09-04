@@ -1,10 +1,7 @@
 module Solargraph
   class SourceMap
     autoload :Mapper,        'solargraph/source_map/mapper'
-    autoload :Chain,         'solargraph/source_map/chain'
     autoload :Clip,          'solargraph/source_map/clip'
-    autoload :SourceChainer, 'solargraph/source_map/source_chainer'
-    autoload :NodeChainer,   'solargraph/source_map/node_chainer'
     autoload :Completion,    'solargraph/source_map/completion'
     autoload :NewFragment,   'solargraph/source_map/new_fragment'
 

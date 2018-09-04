@@ -1,5 +1,5 @@
 module Solargraph
-  class SourceMap
+  class Source
     class NodeChainer
       include Source::NodeMethods
 

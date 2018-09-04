@@ -1,5 +1,5 @@
 module Solargraph
-  class SourceMap
+  class Source
     # Information about a location in a source, including the location's word
     # and signature, literal values at the base of signatures, and whether the
     # location is inside a string or comment. ApiMaps use Fragments to provide

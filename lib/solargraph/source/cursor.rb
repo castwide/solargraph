@@ -71,15 +71,15 @@ module Solargraph
 
       def chain
         # @chain ||= begin
-        #   prev = SourceMap::NodeChainer.chain(source.filename, previous_node)
+        #   prev = Source::NodeChainer.chain(source.filename, previous_node)
         #   if previous_node != current_node and !(previous_node_range.contain?(position))
-        #     here = SourceMap::Chain::Call.new(word)
-        #     SourceMap::Chain.new(prev.links + [here])
+        #     here = Source::Chain::Call.new(word)
+        #     Source::Chain.new(prev.links + [here])
         #   else
         #     prev
         #   end
         # end
-        @chain ||= SourceMap::SourceChainer.chain(source, position)
+        @chain ||= Source::SourceChainer.chain(source, position)
       end
 
       def argument?

@@ -1,4 +1,4 @@
-describe Solargraph::SourceMap::Chain::Constant do
+describe Solargraph::Source::Chain::Constant do
   it "resolves constants in the current context" do
     context = Solargraph::ComplexType::ROOT
     foo_pin = Solargraph::Pin::Constant.new(nil, '', 'Foo', '', nil, nil, context, :public)
