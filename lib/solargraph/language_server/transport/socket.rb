@@ -16,12 +16,10 @@ module Solargraph
         end
 
         def process request
-          Thread.new do
-            message = @host.start(request)
-            message.send_response
-            tmp = @host.flush
-            send_data tmp unless tmp.empty?
-          end
+          message = @host.start(request)
+          message.send_response
+          tmp = @host.flush
+          send_data tmp unless tmp.empty?
         end
 
         # @param data [String]
