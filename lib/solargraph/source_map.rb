@@ -63,13 +63,6 @@ module Solargraph
       Source::Cursor.new(source, position)
     end
 
-    # @param position [Position]
-    # @return [Solargraph::SourceMap::Fragment]
-    # @todo Deprecate, probably
-    def fragment_at position
-      Source::Cursor.new(source, position)
-    end
-
     # @param location [Solargraph::Location]
     # @return [Solargraph::Pin::Base]
     def locate_pin location

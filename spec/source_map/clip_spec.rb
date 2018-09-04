@@ -46,8 +46,8 @@ describe Solargraph::SourceMap::Clip do
   it "completes core constants and methods" do
     source = Solargraph::Source.load_string('')
     api_map.replace source
-    fragment = source.fragment_at(Solargraph::Position.new(0, 6))
-    clip = described_class.new(api_map, fragment)
+    cursor = source.cursor_at(Solargraph::Position.new(0, 6))
+    clip = described_class.new(api_map, cursor)
     comp = clip.complete
     paths = comp.pins.map(&:path)
     expect(paths).to include('String')
@@ -57,8 +57,8 @@ describe Solargraph::SourceMap::Clip do
   it "defines core constants" do
     source = Solargraph::Source.load_string('String')
     api_map.replace source
-    fragment = source.fragment_at(Solargraph::Position.new(0, 0))
-    clip = described_class.new(api_map, fragment)
+    cursor = source.cursor_at(Solargraph::Position.new(0, 0))
+    clip = described_class.new(api_map, cursor)
     pins = clip.define
     expect(pins.map(&:path)).to include('String')
   end
@@ -66,8 +66,8 @@ describe Solargraph::SourceMap::Clip do
   it "signifies core methods" do
     source = Solargraph::Source.load_string('File.dirname()')
     api_map.replace source
-    fragment = source.fragment_at(Solargraph::Position.new(0, 13))
-    clip = described_class.new(api_map, fragment)
+    cursor = source.cursor_at(Solargraph::Position.new(0, 13))
+    clip = described_class.new(api_map, cursor)
     pins = clip.signify
     expect(pins.map(&:path)).to include('File.dirname')
   end

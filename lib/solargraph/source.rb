@@ -107,11 +107,6 @@ module Solargraph
       Cursor.new(self, position)
     end
 
-    # @todo Deprecate
-    def fragment_at position
-      cursor_at position
-    end
-
     # @return [Boolean]
     def parsed?
       @parsed

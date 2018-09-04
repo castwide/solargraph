@@ -106,11 +106,6 @@ module Solargraph
       SourceMap::Clip.new(self, cursor_at(filename, position))
     end
 
-    # @todo Candidate for deprecation. Fragments are replaced with cursors.
-    def fragment_at filename, position
-      clip_at filename, position
-    end
-
     # Create an ApiMap with a workspace in the specified directory.
     #
     # @param directory [String]
