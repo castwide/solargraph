@@ -3,6 +3,7 @@ require 'set'
 module Solargraph
   class ApiMap
     class Store
+      # @return [Array<Solargraph::Pin::Base>]
       attr_reader :pins
 
       # @param sources [Array<Solargraph::Source>]
@@ -12,11 +13,6 @@ module Solargraph
         # pins.concat yard_pins
         @pins = pins
         index
-      end
-
-      # @return [Array<Solargraph::Pin::Base>]
-      def pins
-        @pins ||= []
       end
 
       # @param *sources [Array<Solargraph::Source, Solargraph::SourceMap>]
