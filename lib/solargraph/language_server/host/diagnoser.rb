@@ -10,7 +10,7 @@ module Solargraph
         end
 
         def schedule filename
-          @mutex.synchronize { queue.push filename }
+          mutex.synchronize { queue.push filename }
         end
 
         def stop
@@ -39,7 +39,7 @@ module Solargraph
                 mutex.synchronize do
                   current = queue.shift
                 end
-                next if current.nil?
+                next if current.nil? or queue.include?(current)
                 results = host.diagnose(current)
                 host.send_notification "textDocument/publishDiagnostics", {
                   uri: current,

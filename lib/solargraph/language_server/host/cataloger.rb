@@ -22,7 +22,7 @@ module Solargraph
           @stopped = false
           Thread.new do
             until stopped?
-              sleep 0.01
+              sleep 0.1
               next if host.libver <= @last_cataloged
               @last_cataloged = host.libver
               host.catalog
