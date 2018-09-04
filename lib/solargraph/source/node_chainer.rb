@@ -26,10 +26,11 @@ module Solargraph
         end
 
         # @param code [String]
+        # @param filename [String, nil]
         # @return [Chain]
-        def load_string(filename, code)
-          node = Source.parse_node(code.sub(/\.$/, ''), filename)
-          chain = Chain.new(filename, node)
+        def load_string(code, filename = nil)
+          node = Source.parse(code.sub(/\.$/, ''), filename)
+          chain = NodeChainer.new(node).chain
           chain.links.push(Chain::Link.new) if code.end_with?('.')
           chain
         end
