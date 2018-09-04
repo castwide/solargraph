@@ -74,4 +74,9 @@ describe Solargraph::Pin::Method do
     pin2 = Solargraph::Pin::Method.new(nil, 'Foo', 'bar', '', :instance, :public, ['three'])
     expect(pin1.nearly?(pin2)).to be(false)
   end
+
+  it "adds param tags to documentation" do
+    pin = Solargraph::Pin::Method.new(nil, 'Foo', 'bar', '@param one [String]', :instance, :public, ['*args'])
+    expect(pin.documentation).to include('one', '[String]')
+  end
 end
