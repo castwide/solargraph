@@ -21,10 +21,6 @@ module Solargraph
         Pin::BLOCK
       end
 
-      def return_complex_type
-        @return_complex_type ||= Solargraph::ComplexType.parse(namespace)
-      end
-
       def parameters
         @parameters ||= []
       end

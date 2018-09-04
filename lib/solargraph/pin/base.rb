@@ -117,7 +117,7 @@ module Solargraph
       #
       # @return [ComplexType]
       def return_complex_type
-        @return_complex_type ||= ComplexType.new
+        @return_complex_type ||= ComplexType::UNDEFINED
       end
 
       # @return [YARD::Docstring]
