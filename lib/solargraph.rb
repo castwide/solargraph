@@ -42,8 +42,6 @@ module Solargraph
   autoload :Page,             'solargraph/page'
   autoload :Library,          'solargraph/library'
   autoload :Diagnostics,      'solargraph/diagnostics'
-  autoload :BasicTypeMethods, 'solargraph/basic_type_methods'
-  autoload :BasicType,        'solargraph/basic_type'
   autoload :ComplexType,      'solargraph/complex_type'
 
   YARDOC_PATH = File.join(File.realpath(File.dirname(__FILE__)), '..', 'yardoc')

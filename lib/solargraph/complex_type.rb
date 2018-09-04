@@ -4,8 +4,11 @@ module Solargraph
     #   including the module. One possibility:
     #
     # @!parse
-    #   include BasicTypeMethods
+    #   include TypeMethods
 
+    autoload :TypeMethods, 'solargraph/complex_type/type_methods'
+    autoload :UniqueType,  'solargraph/complex_type/unique_type'
+  
     def initialize types = [ComplexType::UNDEFINED]
       super()
       concat types
@@ -24,7 +27,7 @@ module Solargraph
     end
 
     def respond_to_missing?(name, include_private = false)
-      BasicTypeMethods.public_instance_methods.include?(name) || super
+      TypeMethods.public_instance_methods.include?(name) || super
     end
 
     def to_s
@@ -71,7 +74,7 @@ module Solargraph
                 subtype_string += char
               elsif base.end_with?('=')
                 raise ComplexTypeError, "Invalid hash thing" unless key_types.nil?
-                types.push ComplexType.new([BasicType.new(base[0..-2].strip)])
+                types.push ComplexType.new([UniqueType.new(base[0..-2].strip)])
                 key_types = types
                 types = []
                 base = ''
@@ -99,7 +102,7 @@ module Solargraph
               raise ComplexTypeError, "Invalid close in type #{type_string}" if paren_stack < 0
               next
             elsif char == ',' and point_stack == 0 and curly_stack == 0 and paren_stack == 0
-              types.push ComplexType.new([BasicType.new(base.strip, subtype_string.strip)])
+              types.push ComplexType.new([UniqueType.new(base.strip, subtype_string.strip)])
               base = ''
               subtype_string = ''
               next
@@ -113,7 +116,7 @@ module Solargraph
           base.strip!
           subtype_string.strip!
           raise ComplexTypeError, "Unclosed subtype in #{type_string}" if point_stack != 0 or curly_stack != 0 or paren_stack != 0
-          types.push ComplexType.new([BasicType.new(base, subtype_string)])
+          types.push ComplexType.new([UniqueType.new(base, subtype_string)])
         end
         unless key_types.nil?
           raise ComplexTypeError, "Invalid use of key/value parameters" unless partial
