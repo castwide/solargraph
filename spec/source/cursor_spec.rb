@@ -19,4 +19,18 @@ describe Solargraph::Source::Cursor do
     cursor = described_class.new(source, Solargraph::Position.new(2, 0))
     expect(cursor).not_to be_comment
   end
+
+  it "detects arguments" do
+    source = double(:Source, :code => 'a(1), b')
+    cur = described_class.new(source, Solargraph::Position.new(0,2))
+    expect(cur).to be_argument
+    cur = described_class.new(source, Solargraph::Position.new(0,3))
+    expect(cur).to be_argument
+    cur = described_class.new(source, Solargraph::Position.new(0,4))
+    expect(cur).not_to be_argument
+    cur = described_class.new(source, Solargraph::Position.new(0,5))
+    expect(cur).not_to be_argument
+    cur = described_class.new(source, Solargraph::Position.new(0,7))
+    expect(cur).not_to be_argument
+  end
 end

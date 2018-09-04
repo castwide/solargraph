@@ -70,15 +70,6 @@ module Solargraph
       end
 
       def chain
-        # @chain ||= begin
-        #   prev = Source::NodeChainer.chain(source.filename, previous_node)
-        #   if previous_node != current_node and !(previous_node_range.contain?(position))
-        #     here = Source::Chain::Call.new(word)
-        #     Source::Chain.new(prev.links + [here])
-        #   else
-        #     prev
-        #   end
-        # end
         @chain ||= Source::SourceChainer.chain(source, position)
       end
 
@@ -117,11 +108,6 @@ module Solargraph
       end
 
       private
-
-      def previous_node_range
-        exp = previous_node.loc.expression
-        Range.from_to(exp.line, exp.column, exp.last_line, exp.last_column)
-      end
 
       # @return [Integer]
       def offset
