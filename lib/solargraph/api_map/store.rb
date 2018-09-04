@@ -7,7 +7,7 @@ module Solargraph
 
       # @param sources [Array<Solargraph::Source>]
       # @param yard_pins [Array<Solargraph::Pin::Base>]
-      def initialize pins
+      def initialize pins = []
         # inner_update sources
         # pins.concat yard_pins
         @pins = pins
@@ -19,7 +19,7 @@ module Solargraph
         @pins ||= []
       end
 
-      # @param *sources [Array<Solargraph::Source>]
+      # @param *sources [Array<Solargraph::Source, Solargraph::SourceMap>]
       # @return [void]
       def remove *sources
         sources.each do |source|
