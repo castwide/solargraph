@@ -17,19 +17,18 @@ module Solargraph
       end
 
       class << self
-        # @param source [Source]
-        # @param line [Integer]
-        # @param column [Integer]
-        # @return [Source::Chain]
-        def chain filename, node
+        # @param node [Parser::AST::Node]
+        # @param filename [String]
+        # @return [Chain]
+        def chain node
           NodeChainer.new(node).chain
         end
 
         # @param code [String]
         # @param filename [String, nil]
         # @return [Chain]
-        def load_string(code, filename = nil)
-          node = Source.parse(code.sub(/\.$/, ''), filename)
+        def load_string(code)
+          node = Source.parse(code.sub(/\.$/, ''))
           chain = NodeChainer.new(node).chain
           chain.links.push(Chain::Link.new) if code.end_with?('.')
           chain
