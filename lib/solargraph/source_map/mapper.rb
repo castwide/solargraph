@@ -269,10 +269,10 @@ module Solargraph
               elsif c.type == :send and [:attr_reader, :attr_writer, :attr_accessor].include?(c.children[1])
                 c.children[2..-1].each do |a|
                   if c.children[1] == :attr_reader or c.children[1] == :attr_accessor
-                    pins.push Solargraph::Pin::Attribute.new(get_node_location(c), fqn || '', "#{a.children[0]}", comments_for(c), :reader, scope)
+                    pins.push Solargraph::Pin::Attribute.new(get_node_location(c), fqn || '', "#{a.children[0]}", comments_for(c), :reader, scope, visibility)
                   end
                   if c.children[1] == :attr_writer or c.children[1] == :attr_accessor
-                    pins.push Solargraph::Pin::Attribute.new(get_node_location(c), fqn || '', "#{a.children[0]}=", comments_for(c), :writer, scope)
+                    pins.push Solargraph::Pin::Attribute.new(get_node_location(c), fqn || '', "#{a.children[0]}=", comments_for(c), :writer, scope, visibility)
                   end
                 end
               elsif c.type == :sclass and c.children[0].type == :self

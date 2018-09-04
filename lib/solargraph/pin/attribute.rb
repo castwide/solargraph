@@ -7,10 +7,14 @@ module Solargraph
       # @return [Symbol] :class or :instance
       attr_reader :scope
 
-      def initialize location, namespace, name, comments, access, scope
+      # @return [Symbol] :public, :protected, or :private
+      attr_reader :visibility
+
+      def initialize location, namespace, name, comments, access, scope, visibility
         super(location, namespace, name, comments)
         @access = access
         @scope = scope
+        @visibility = visibility
       end
 
       def kind
@@ -31,16 +35,11 @@ module Solargraph
 
       def return_complex_type
         if @return_complex_type.nil?
-          @return_complex_type = ComplexType.new
+          @return_complex_type = ComplexType::UNDEFINED
           tag = docstring.tag(:return)
           @return_complex_type = ComplexType.parse(*tag.types) unless tag.nil?
         end
         @return_complex_type
-      end
-
-      def visibility
-        # @todo Check attribute visibility
-        :public
       end
 
       def parameters

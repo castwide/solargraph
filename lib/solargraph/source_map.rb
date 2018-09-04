@@ -7,6 +7,7 @@ module Solargraph
 
     attr_reader :source
 
+    # @return [Array<Pin::Base>]
     attr_reader :pins
 
     attr_reader :locals
@@ -58,6 +59,10 @@ module Solargraph
     # @return [Solargraph::SourceMap::Fragment]
     def cursor_at position
       Source::Cursor.new(source, position)
+    end
+
+    def first_pin path
+      pins.select { |p| p.path == path }.first
     end
 
     # @param location [Solargraph::Location]
