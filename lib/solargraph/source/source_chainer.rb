@@ -53,7 +53,7 @@ module Solargraph
                 parts = (word.start_with?('::') ? word[2..-1] : word).split('::', -1)
                 last = parts.pop
                 links.push Chain::Constant.new(parts.join('::')) unless parts.empty?
-                links.push (last.empty? ? Chain::UNDEFINED_CONSTANT : Chain::Constant.new(last))
+                links.push (last.nil? or last.empty? ? Chain::UNDEFINED_CONSTANT : Chain::Constant.new(last))
               else
                 links.push word_to_link(word, head)
               end
