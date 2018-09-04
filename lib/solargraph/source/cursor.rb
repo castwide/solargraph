@@ -21,6 +21,7 @@ module Solargraph
                     end
       end
 
+      # @return [String]
       def filename
         source.filename
       end
@@ -119,10 +120,16 @@ module Solargraph
         @offset ||= Position.to_offset(source.code, position)
       end
 
+      # A regular expression to find the start of a word from an offset.
+      #
+      # @return [Regexp]
       def start_word_pattern
         /(@{1,2}|\$)?([a-z0-9_]|[^\u0000-\u007F])*\z/i
       end
 
+      # A regular expression to find the end of a word from an offset.
+      #
+      # @return [Regexp]
       def end_word_pattern
         /^([a-z0-9_]|[^\u0000-\u007F])*[\?\!]?/i
       end

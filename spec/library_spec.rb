@@ -1,4 +1,5 @@
 require 'tmpdir'
+require 'yard'
 
 describe Solargraph::Library do
   it "raises an exception for unknown filenames" do
@@ -213,24 +214,67 @@ describe Solargraph::Library do
     expect(pins.map(&:path)).to include('Foo#bar')
   end
 
-  # @todo This might not be accurate anymore. Hosts update
-  #   the ApiMap asynchronously; they shouldn't be
-  #   updated automatically.
-  it "updates maps when files change" do
-  #   library = Solargraph::Library.new
-  #   library.open('test.rb', %(
-  #   ), 0)
+  it "collects references to a method symbol" do
+    library = Solargraph::Library.new
+    library.open('file1.rb', %(
+      class Foo
+        def bar
+        end
+      end
 
-  #   updater = Solargraph::Source::Updater.new('test.rb', 1, 
-  #     [Solargraph::Source::Change.new(nil, %(
-  #   foo = 'foo'
-  #   foo._
-  #   )
-  #     )]
-  #   )
-  #   library.synchronize updater
+      Foo.new.bar
+    ), 0)
+    library.open('file2.rb', %(
+      foo = Foo.new
+      foo.bar
+    ), 0)
+    pins = library.references_from('file2.rb', 2, 11)
+    expect(pins.length).to eq(3)
+  end
 
-  #   pins = library.definitions_at('test.rb', 2, 4)
-  #   expect(pins.map(&:name)).to include('foo')
+  it "searches the core for queries" do
+    library = Solargraph::Library.new
+    result = library.search('String')
+    expect(result).not_to be_empty
+  end
+
+  it "returns YARD documentation from the core" do
+    library = Solargraph::Library.new
+    result = library.document('String')
+    expect(result).not_to be_empty
+    expect(result.first).to be_a(YARD::CodeObjects::Base)
+  end
+
+  it "returns YARD documentation from sources" do
+    library = Solargraph::Library.new
+    library.open('test.rb', %(
+      class Foo
+        # My bar method
+        def bar; end
+      end
+    ), 0)
+    result = library.document('Foo#bar')
+    expect(result).not_to be_empty
+    expect(result.first).to be_a(YARD::CodeObjects::Base)
+  end
+
+  it "synchronizes sources from updaters" do
+    library = Solargraph::Library.new
+    library.open('test.rb', %(
+      class Foo
+      end
+    ), 1)
+    repl = %(
+      class Foo
+        def bar; end
+      end
+    )
+    updater = Solargraph::Source::Updater.new(
+      'test.rb',
+      2,
+      [Solargraph::Source::Change.new(nil, repl)]
+    )
+    library.synchronize updater
+    expect(library.checkout('test.rb').code).to eq(repl)
   end
 end

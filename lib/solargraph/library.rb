@@ -4,6 +4,7 @@ module Solargraph
   # A library handles coordination between a Workspace and an ApiMap.
   #
   class Library
+    # @return [Integer]
     attr_reader :version
 
     # @param workspace [Solargraph::Workspace]
@@ -20,6 +21,7 @@ module Solargraph
     # @param filename [String]
     # @param text [String]
     # @param version [Integer]
+    # @return [void]
     def open filename, text, version
       mutex.synchronize do
         source = Solargraph::Source.load_string(text, filename, version)
@@ -90,6 +92,7 @@ module Solargraph
     # workspace configuration determines that it should still exist.
     #
     # @param filename [String]
+    # @return [void]
     def delete filename
       mutex.synchronize do
         open_file_hash.delete filename
@@ -102,6 +105,7 @@ module Solargraph
     # checkout although it may still exist in the workspace.
     #
     # @param filename [String]
+    # @return [void]
     def close filename
       mutex.synchronize do
         open_file_hash.delete filename
@@ -111,6 +115,7 @@ module Solargraph
 
     # @param filename [String]
     # @param version [Integer]
+    # @return [void]
     def overwrite filename, version
       mutex.synchronize do
         source = source_hash[filename]
@@ -176,17 +181,15 @@ module Solargraph
       return [] if pins.empty?
       result = []
       pins.uniq.each do |pin|
-        if pin.kind != Solargraph::Pin::NAMESPACE and !pin.location.nil?
-          mn_loc = get_symbol_name_location(pin)
-          result.push mn_loc unless mn_loc.nil?
-        end
         (workspace.sources + open_file_hash.values).uniq.each do |source|
           found = source.references(pin.name)
           found.select do |loc|
             referenced = definitions_at(loc.filename, loc.range.ending.line, loc.range.ending.character)
             referenced.any?{|r| r.path == pin.path}
           end
-          result.concat found.sort{|a, b| a.range.start.line <=> b.range.start.line}
+          result.concat(found.sort{ |a, b|
+            a.range.start.line <=> b.range.start.line
+          })
         end
       end
       result
@@ -194,6 +197,7 @@ module Solargraph
 
     # Get the pin at the specified location or nil if the pin does not exist.
     #
+    # @param location [Location]
     # @return [Solargraph::Pin::Base]
     def locate_pin location
       api_map.locate_pin location
@@ -265,16 +269,14 @@ module Solargraph
     # @raise [FileNotFoundError] if the updater's file is not available.
     # @param updater [Solargraph::Source::Updater]
     # @return [void]
-    def synchronize updater #, catalog = true
+    def synchronize updater
       mutex.synchronize do
         if workspace.has_file?(updater.filename)
           workspace.synchronize!(updater)
           open_file_hash[updater.filename] = workspace.source(updater.filename) if open?(updater.filename)
-          # api_map.replace workspace.source(updater.filename)
         else
           raise FileNotFoundError, "Unable to update #{updater.filename}" unless open?(updater.filename)
           open_file_hash[updater.filename] = open_file_hash[updater.filename].synchronize(updater)
-          # api_map.replace open_file_hash[updater.filename]
         end
         increment_version
       end
@@ -308,6 +310,9 @@ module Solargraph
       result
     end
 
+    # Update the ApiMap from the library's workspace and open files.
+    #
+    # @return [void]
     def catalog
       api_map.catalog workspace, open_file_hash.values
     end
@@ -322,6 +327,7 @@ module Solargraph
 
     private
 
+    # @return [Mutex]
     attr_reader :mutex
 
     # @return [Solargraph::ApiMap]
@@ -355,19 +361,23 @@ module Solargraph
       Solargraph::Source.load(filename)
     end
 
+    # @param pin [Pin::Base]
+    # @return [Location]
     def get_symbol_name_location pin
       decsrc = read(pin.location.filename)
       offset = Solargraph::Position.to_offset(decsrc.code, pin.location.range.start)
       soff = decsrc.code.index(pin.name, offset)
       eoff = soff + pin.name.length
       Solargraph::Location.new(
-        pin.location.filename, Solargraph::Range.new(
+        pin.location.filename,
+        Solargraph::Range.new(
           Solargraph::Position.from_offset(decsrc.code, soff),
           Solargraph::Position.from_offset(decsrc.code, eoff)
         )
       )
     end
 
+    # @return [Integer]
     def increment_version
       @version += 1
     end
