@@ -12,6 +12,7 @@ module Solargraph
 
       # @return [Array<Pin::Base>]
       def define
+        return [] if cursor.chain.literal?
         cursor.chain.define(api_map, context, locals)
       end
 
@@ -74,7 +75,7 @@ module Solargraph
       # @return [ApiMap]
       attr_reader :api_map
 
-      # @return [cursor]
+      # @return [Source::Cursor]
       attr_reader :cursor
 
       def source_map

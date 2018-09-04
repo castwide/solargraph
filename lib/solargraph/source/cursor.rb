@@ -69,22 +69,27 @@ module Solargraph
         end
       end
 
+      # @return [Chain]
       def chain
         @chain ||= Source::SourceChainer.chain(source, position)
       end
 
+      # @return [Boolean]
       def argument?
         @argument ||= !signature_position.nil?
       end
 
+      # @return [Boolean]
       def comment?
         @comment ||= source.comment_at?(position)
       end
 
+      # @return [Boolean]
       def string?
         @string ||= source.string_at?(position)
       end
 
+      # @return [Cursor, nil]
       def recipient
         return nil unless argument?
         @recipient ||= Cursor.new(source, signature_position)
