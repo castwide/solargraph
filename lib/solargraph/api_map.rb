@@ -22,6 +22,7 @@ module Solargraph
     attr_reader :yard_map
 
     # @param pins [Array<Solargraph::Pin::Base>]
+    # @param yard_map [YardMap]
     # def initialize workspace = Solargraph::Workspace.new(nil)
     def initialize pins: [], yard_map: YardMap.new
       # @todo Extensions don't work yet
@@ -70,7 +71,7 @@ module Solargraph
           reqs.concat map.requires.map(&:name)
         end
       end
-      yard_map_changed = yard_map.change(reqs)
+      yard_map.change(reqs)
       new_store = Store.new(pins + yard_map.pins)
       @mutex.synchronize {
         @cache.clear
@@ -80,12 +81,17 @@ module Solargraph
       }
     end
 
+    # Replace a mapped source.
+    #
+    # This method will attempt to merge the source map to avoid reindexing the store.
+    #
+    # @param source [Source]
+    # @return [void]
     def replace source
       @mutex.synchronize {
         if @source_map_hash.has_key?(source.filename) and @source_map_hash[source.filename].source.code == source.code
           return
         else
-          # return unless source.parsed?
           map = Solargraph::SourceMap.map(source)
           return if @source_map_hash.has_key?(source.filename) and @source_map_hash[source.filename].try_merge!(map)
           @source_map_hash[source.filename] = map
@@ -97,11 +103,17 @@ module Solargraph
 
     # @param filename [String]
     # @param position [Position]
+    # @return [Source::Cursor]
     def cursor_at filename, position
       raise "File not found: #{filename}" unless source_map_hash.has_key?(filename)
       source_map_hash[filename].cursor_at(position)
     end
 
+    # Get a clip by filename and position.
+    #
+    # @param filename [String]
+    # @param position [Position]
+    # @return [Source::Clip]
     def clip_at filename, position
       SourceMap::Clip.new(self, cursor_at(filename, position))
     end
@@ -316,6 +328,8 @@ module Solargraph
 
     # Get an array of all suggestions that match the specified path.
     #
+    # @deprecated Use #get_path_pins instead.
+    #
     # @param path [String] The path to find
     # @return [Array<Solargraph::Pin::Base>]
     def get_path_suggestions path
@@ -329,6 +343,10 @@ module Solargraph
       result
     end
 
+    # Get an array of pins that match the specified path.
+    #
+    # @param path [String]
+    # @return [Array<Pin::Base>]
     def get_path_pins path
       get_path_suggestions(path)
     end
@@ -397,11 +415,19 @@ module Solargraph
       SourceMap::Clip.new(self, cursor)
     end
 
+    # Get an array of document symbols from a file.
+    #
+    # @param filename [String]
+    # @return [Array<Pin::Symbol>]
     def document_symbols filename
       return [] unless source_map_hash.has_key?(filename) # @todo Raise error?
       source_map_hash[filename].document_symbols
     end
 
+    # Get a source map by filename.
+    #
+    # @param filename [String]
+    # @return [SourceMap]
     def source_map filename
       raise FileNotFoundError, "Source map for `#{filename}` not found" unless source_map_hash.has_key?(filename)
       source_map_hash[filename]
@@ -409,6 +435,9 @@ module Solargraph
 
     private
 
+    # A hash of source maps with filename keys.
+    #
+    # @return [Hash{String => SourceMap}]
     def source_map_hash
       @mutex.synchronize {
         @source_map_hash
@@ -560,6 +589,11 @@ module Solargraph
       result + nil_pins
     end
 
+    # Check if a class is a superclass of another class.
+    #
+    # @param sup [String] The superclass
+    # @param sub [String] The subclass
+    # @return [Boolean]
     def super_and_sub?(sup, sub)
       cls = store.get_superclass(sub)
       until cls.nil?
