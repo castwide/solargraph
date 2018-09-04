@@ -446,10 +446,19 @@ module Solargraph
         }
       end
 
+      # The current library version.
+      #
+      # The Host::Catalog uses this number to determine whether it needs to
+      # catalog the library.
+      #
+      # @return [Integer]
       def libver
         library.version
       end
 
+      # Catalog the library.
+      #
+      # @return [void]
       def catalog
         library.catalog
       end
@@ -461,10 +470,12 @@ module Solargraph
         @library
       end
 
+      # @return [Diagnoser]
       def diagnoser
         @diagnoser ||= Diagnoser.new(self)
       end
 
+      # @return [Cataloger]
       def cataloger
         @cataloger ||= Cataloger.new(self)
       end

@@ -67,11 +67,6 @@ module Solargraph
     end
 
     # @return [Boolean]
-    def has_source? source
-      source_hash.has_value?(source)
-    end
-
-    # @return [Boolean]
     def has_file? filename
       source_hash.has_key?(filename)
     end

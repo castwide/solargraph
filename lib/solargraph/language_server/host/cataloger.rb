@@ -9,14 +9,23 @@ module Solargraph
           @stopped = true
         end
 
+        # Stop the catalog thread.
+        #
+        # @return [void]
         def stop
           @stopped = true
         end
 
+        # True if the cataloger is stopped.
+        #
+        # @return [Boolean]
         def stopped?
           @stopped
         end
 
+        # Start the catalog thread.
+        #
+        # @return [void]
         def start
           return unless stopped?
           @stopped = false
@@ -32,8 +41,10 @@ module Solargraph
 
         private
 
+        # @return [Host]
         attr_reader :host
 
+        # @return [Mutex]
         attr_reader :mutex
       end
     end

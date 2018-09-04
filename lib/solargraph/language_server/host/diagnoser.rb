@@ -9,18 +9,30 @@ module Solargraph
           @stopped = true
         end
 
-        def schedule filename
-          mutex.synchronize { queue.push filename }
+        # Schedule a file to be diagnosed.
+        #
+        # @param uri [String]
+        # @return [void]
+        def schedule uri
+          mutex.synchronize { queue.push uri }
         end
 
+        # Stop the diagnosis thread.
+        #
+        # @return [void]
         def stop
           @stopped = true
         end
 
+        # True is the diagnoser is stopped.
+        #
+        # @return [Boolean]
         def stopped?
           @stopped
         end
 
+        # Start the diagnosis thread.
+        #
         # @return [self]
         def start
           return unless @stopped
@@ -33,12 +45,8 @@ module Solargraph
                 next
               end
               begin
-                # Diagnosis is broken into two parts to reduce the number of
-                # times it runs while a document is changing
                 current = nil
-                mutex.synchronize do
-                  current = queue.shift
-                end
+                mutex.synchronize { current = queue.shift }
                 next if current.nil? or queue.include?(current)
                 results = host.diagnose(current)
                 host.send_notification "textDocument/publishDiagnostics", {
@@ -66,7 +74,7 @@ module Solargraph
         # @return [Mutex]
         attr_reader :mutex
 
-        # @return [Set]
+        # @return [Array]
         attr_reader :queue
       end
     end
