@@ -16,6 +16,10 @@ module Solargraph
           mutex.synchronize { pings.push nil }
         end
 
+        def synchronizing?
+          !pings.empty?
+        end
+
         # Stop the catalog thread.
         #
         # @return [void]

@@ -301,6 +301,10 @@ module Solargraph
         unsafe_changing?(file_uri)
       end
 
+      def synchronizing?
+        cataloger.synchronizing?
+      end
+
       def stop
         @stopped = true
         cataloger.stop
