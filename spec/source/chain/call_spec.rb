@@ -6,7 +6,7 @@ describe Solargraph::Source::Chain::Call do
       arr = []
       arr.first
     ))
-    api_map.catalog [source]
+    api_map.map source
     chain = Solargraph::Source::SourceChainer.chain(source, Solargraph::Position.new(3, 11))
     type = chain.infer(api_map, Solargraph::ComplexType::ROOT, api_map.source_map(nil).locals)
     expect(type.tag).to eq('String')
@@ -18,7 +18,7 @@ describe Solargraph::Source::Chain::Call do
       arr = []
       arr.clone
     ))
-    api_map.catalog [source]
+    api_map.map source
     chain = Solargraph::Source::SourceChainer.chain(source, Solargraph::Position.new(2, 11))
     type = chain.infer(api_map, Solargraph::ComplexType::ROOT, api_map.source_map(nil).locals)
     expect(type.tag).to eq('Array')

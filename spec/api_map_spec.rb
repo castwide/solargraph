@@ -239,7 +239,7 @@ describe Solargraph::ApiMap do
       end
       Foo.new.bar
     ), 'my_file.rb')
-    @api_map.catalog [source]
+    @api_map.map source
     clip = @api_map.clip_at('my_file.rb', Solargraph::Position.new(4, 15))
     expect(clip).to be_a(Solargraph::SourceMap::Clip)
   end
@@ -260,10 +260,10 @@ describe Solargraph::ApiMap do
   it "catalogs changes" do
     workspace = Solargraph::Workspace.new
     s1 = Solargraph::Source.load_string('class Foo; end')
-    @api_map.catalog(workspace.sources + [s1])
+    @api_map.catalog(Solargraph::Bundle.new(workspace.sources + [s1]))
     expect(@api_map.get_path_pins('Foo')).not_to be_empty
     s2 = Solargraph::Source.load_string('class Bar; end')
-    @api_map.catalog(workspace.sources + [s2])
+    @api_map.catalog(Solargraph::Bundle.new(workspace.sources + [s2]))
     expect(@api_map.get_path_pins('Foo')).to be_empty
     expect(@api_map.get_path_pins('Bar')).not_to be_empty
   end
@@ -276,7 +276,7 @@ describe Solargraph::ApiMap do
         attr_reader :private_attr
       end
     ))
-    @api_map.catalog [source]
+    @api_map.map source
     pins = @api_map.get_methods('Foo')
     paths = pins.map(&:path)
     expect(paths).to include('Foo#public_attr')

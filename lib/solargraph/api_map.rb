@@ -18,19 +18,16 @@ module Solargraph
     # @return [Solargraph::LiveMap]
     attr_reader :live_map
 
-    # @return [YardMap]
-    attr_reader :yard_map
+    attr_reader :unresolved_requires
 
     # @param pins [Array<Solargraph::Pin::Base>]
     # @param yard_map [YardMap]
     # def initialize workspace = Solargraph::Workspace.new(nil)
-    def initialize pins: [], yard_map: YardMap.new
+    def initialize pins: []
       # @todo Extensions don't work yet
       # require_extensions
-      @yard_map = yard_map
       @source_map_hash = {}
       @cache = Cache.new
-      @store = ApiMap::Store.new(yard_map.pins)
       @mutex = Mutex.new
       index pins
     end
@@ -41,26 +38,27 @@ module Solargraph
       @mutex.synchronize {
         @source_map_hash.clear
         @cache.clear
-        yard_map.change([])
-        new_store = Store.new(pins + yard_map.pins)
-        @store = new_store
+        @store = Store.new(pins + YardMap.new.pins)
+        @unresolved_requires = []
       }
+    end
+
+    def map source
+      catalog Bundle.new([source])
     end
 
     # Catalog a workspace. Additional sources that need to be mapped can be
     # included in an optional array.
     #
-    # @param workspace [Workspace]
-    # @param others [Array<Source>]
+    # @param bundle [Bundle]
     # @return [void]
-    # def catalog workspace, others = []
-    def catalog sources
+    def catalog bundle
       # @todo This can be more efficient. We don't need to remap sources that
       #   are already here.
       # all_sources = (workspace.sources + others).uniq
       new_map_hash = {}
       unmerged = false
-      sources.each do |source|
+      bundle.sources.each do |source|
         if source_map_hash.has_key?(source.filename)
           if source_map_hash[source.filename].code == source.code
             new_map_hash[source.filename] = source_map_hash[source.filename]
@@ -87,13 +85,25 @@ module Solargraph
         pins.concat map.pins
         reqs.concat map.requires.map(&:name)
       end
-      reqs.delete_if { |r| new_map_hash.keys.include?("#{r}.rb") }
-      yard_map.change(reqs)
-      new_store = Store.new(pins + yard_map.pins)
+      unless bundle.load_paths.empty?
+        reqs.delete_if do |r|
+          next false
+          bundle.load_paths.each do |l|
+            if new_map_hash.keys.include?(File.join(l, "#{r}.rb"))
+              true
+            else
+              false
+            end
+          end
+        end
+      end
+      bundle.yard_map.change(reqs)
+      new_store = Store.new(pins + bundle.yard_map.pins)
       @mutex.synchronize {
         @cache.clear
         @source_map_hash = new_map_hash
         @store = new_store
+        @unresolved_requires = bundle.yard_map.unresolved_requires
       }
     end
 
@@ -412,11 +422,6 @@ module Solargraph
     def locate_pin location
       return nil if location.nil? or !source_map_hash.has_key?(location.filename)
       source_map_hash[location.filename].locate_pin(location)
-    end
-
-    # @return [Array<String>]
-    def unresolved_requires
-      yard_map.unresolved_requires
     end
 
     # @raise [FileNotFoundError] if the cursor's file is not in the ApiMap

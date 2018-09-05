@@ -8,7 +8,7 @@ module Solargraph
     def initialize workspace = Solargraph::Workspace.new(nil)
       @mutex = Mutex.new
       @workspace = workspace
-      api_map.catalog workspace.sources
+      api_map.catalog bundle
       @synchronized = true
     end
 
@@ -320,7 +320,7 @@ module Solargraph
     #
     # @return [void]
     def catalog
-      api_map.catalog (workspace.sources + open_file_hash.values).uniq(&:filename)
+      api_map.catalog bundle
       @synchronized = true
     end
 
@@ -337,9 +337,23 @@ module Solargraph
     # @return [Mutex]
     attr_reader :mutex
 
-    # @return [Solargraph::ApiMap]
+    # @return [ApiMap]
     def api_map
       @api_map ||= Solargraph::ApiMap.new
+    end
+
+    # @return [YardMap]
+    def yard_map
+      @yard_map ||= Solargraph::YardMap.new
+    end
+
+    # @return [Bundle]
+    def bundle
+      Bundle.new(
+        (workspace.sources + open_file_hash.values).uniq(&:filename),
+        workspace.require_paths,
+        yard_map
+      )
     end
 
     # @return [Solargraph::Workspace]

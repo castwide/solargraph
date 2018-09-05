@@ -39,6 +39,19 @@ module Solargraph
       @pins ||= []
     end
 
+    # @param new_requires [Array<String>]
+    # @return [Boolean]
+    def change new_requires
+      if new_requires.uniq.sort == required.uniq.sort
+        false
+      else
+        required.clear
+        required.concat new_requires
+        process_requires
+        true
+      end
+    end
+
     # @return [Array<String>]
     def yardocs
       @yardocs ||= []
@@ -62,19 +75,6 @@ module Solargraph
         STDERR.puts "Error loading yardoc '#{y}' #{e.class} #{e.message}"
         yardocs.delete y
         nil
-      end
-    end
-
-    # @param new_requires [Array<String>]
-    # @return [Boolean]
-    def change new_requires
-      if new_requires.uniq.sort == required.uniq.sort
-        false
-      else
-        required.clear
-        required.concat new_requires
-        process_requires
-        true
       end
     end
 
