@@ -157,18 +157,6 @@ module Solargraph
         @namespace_pins = nil
         @method_pins = nil
       end
-
-      # @param sources [Array<Solargraph::Source>]
-      # @return [void]
-      def inner_update sources
-        sources.each do |source|
-          pins.delete_if { |pin| !pin.yard_pin? and pin.filename == source.filename }
-          symbols.delete_if { |pin| pin.filename == source.filename }
-          pins.concat source.pins
-          # @todo Fix symbols
-          # symbols.concat source.symbols
-        end
-      end
     end
   end
 end
