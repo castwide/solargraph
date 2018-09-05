@@ -4,15 +4,20 @@ module Solargraph
   # A library handles coordination between a Workspace and an ApiMap.
   #
   class Library
-    # @return [Integer]
-    attr_reader :version
-
     # @param workspace [Solargraph::Workspace]
     def initialize workspace = Solargraph::Workspace.new(nil)
       @mutex = Mutex.new
       @workspace = workspace
-      api_map.catalog workspace
-      @version = 1
+      api_map.catalog workspace.sources
+      @synchronized = true
+    end
+
+    # True if the ApiMap is up to date with the library's workspace and open
+    # files.
+    #
+    # @return [Boolean]
+    def synchronized?
+      @synchronized
     end
 
     # Open a file in the library. Opening a file will make it available for
@@ -27,10 +32,7 @@ module Solargraph
         source = Solargraph::Source.load_string(text, filename, version)
         workspace.merge source
         open_file_hash[filename] = source
-        # catalog_sources
-        # @todo This might not be the best way to handle this
-        api_map.replace source
-        increment_version
+        catalog unless api_map.try_merge!(source)
       end
     end
 
@@ -51,8 +53,8 @@ module Solargraph
       workspace.has_file?(filename)
     end
 
-    # Create a file source to be added to the workspace. The file is ignored
-    # if the workspace is not configured to include the file.
+    # Create a source to be added to the workspace. The file is ignored if the
+    # workspace is not configured to include the file.
     #
     # @param filename [String]
     # @param text [String] The contents of the file
@@ -60,12 +62,11 @@ module Solargraph
     def create filename, text
       result = false
       mutex.synchronize do
-        if workspace.would_merge?(filename)
-          source = Solargraph::Source.load_string(text, filename)
-          workspace.merge(source)
-          increment_version
-          result = true
-        end
+        next unless workspace.would_merge?(filename)
+        source = Solargraph::Source.load_string(text, filename)
+        workspace.merge(source)
+        catalog unless api_map.try_merge!(source)
+        result = true
       end
       result
     end
@@ -81,7 +82,8 @@ module Solargraph
         next if File.directory?(filename) or !File.exist?(filename)
         next unless workspace.would_merge?(filename)
         source = Solargraph::Source.load_string(File.read(filename), filename)
-        increment_version if workspace.merge(source)
+        workspace.merge(source)
+        catalog unless api_map.try_merge!(source)
         result = true
       end
       result
@@ -97,7 +99,7 @@ module Solargraph
       mutex.synchronize do
         open_file_hash.delete filename
         workspace.remove filename
-        increment_version
+        catalog
       end
     end
 
@@ -109,7 +111,7 @@ module Solargraph
     def close filename
       mutex.synchronize do
         open_file_hash.delete filename
-        increment_version
+        catalog
       end
     end
 
@@ -125,7 +127,7 @@ module Solargraph
         else
           open filename, File.read(filename), version
         end
-        increment_version
+        catalog
       end
     end
 
@@ -264,12 +266,16 @@ module Solargraph
       api_map.get_path_suggestions(path)
     end
 
-    # Synchronize the library from the provided updater.
+    # Update a source in the library from the provided updater.
+    #
+    # @note This method will not update the library's ApiMap. See
+    #   Library#ynchronized? and Library#catalog for more information.
+    #
     #
     # @raise [FileNotFoundError] if the updater's file is not available.
     # @param updater [Solargraph::Source::Updater]
     # @return [void]
-    def synchronize updater
+    def update updater
       mutex.synchronize do
         if workspace.has_file?(updater.filename)
           workspace.synchronize!(updater)
@@ -278,7 +284,7 @@ module Solargraph
           raise FileNotFoundError, "Unable to update #{updater.filename}" unless open?(updater.filename)
           open_file_hash[updater.filename] = open_file_hash[updater.filename].synchronize(updater)
         end
-        increment_version
+        @synchronized = false
       end
     end
 
@@ -314,7 +320,8 @@ module Solargraph
     #
     # @return [void]
     def catalog
-      api_map.catalog workspace, open_file_hash.values
+      api_map.catalog (workspace.sources + open_file_hash.values).uniq(&:filename)
+      @synchronized = true
     end
 
     # Create a library from a directory.
@@ -375,11 +382,6 @@ module Solargraph
           Solargraph::Position.from_offset(decsrc.code, eoff)
         )
       )
-    end
-
-    # @return [Integer]
-    def increment_version
-      @version += 1
     end
   end
 end

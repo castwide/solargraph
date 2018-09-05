@@ -3,7 +3,7 @@ describe Solargraph::SourceMap::Clip do
 
   it "completes constants" do
     source = Solargraph::Source.load_string('File::')
-    api_map.replace source
+    api_map.catalog [source]
     cursor = source.cursor_at(Solargraph::Position.new(0, 6))
     clip = described_class.new(api_map, cursor)
     comp = clip.complete
@@ -12,7 +12,7 @@ describe Solargraph::SourceMap::Clip do
 
   it "completes class variables" do
     source = Solargraph::Source.load_string('@@foo = 1; @@f', 'test.rb')
-    api_map.replace source
+    api_map.catalog [source]
     cursor = source.cursor_at(Solargraph::Position.new(0, 13))
     clip = described_class.new(api_map, cursor)
     comp = clip.complete
@@ -21,7 +21,7 @@ describe Solargraph::SourceMap::Clip do
 
   it "completes instance variables" do
     source = Solargraph::Source.load_string('@foo = 1; @f', 'test.rb')
-    api_map.replace source
+    api_map.catalog [source]
     clip = api_map.clip_at('test.rb', Solargraph::Position.new(0, 11))
     comp = clip.complete
     expect(comp.pins.map(&:name)).to include('@foo')
@@ -29,7 +29,7 @@ describe Solargraph::SourceMap::Clip do
 
   it "completes global variables" do
     source = Solargraph::Source.load_string('$foo = 1; $f', 'test.rb')
-    api_map.replace source
+    api_map.catalog [source]
     clip = api_map.clip_at('test.rb', Solargraph::Position.new(0, 11))
     comp = clip.complete
     expect(comp.pins.map(&:name)).to include('$foo')
@@ -37,7 +37,7 @@ describe Solargraph::SourceMap::Clip do
 
   it "completes symbols" do
     source = Solargraph::Source.load_string('$foo = :foo; :f', 'test.rb')
-    api_map.replace source
+    api_map.catalog [source]
     clip = api_map.clip_at('test.rb', Solargraph::Position.new(0, 15))
     comp = clip.complete
     expect(comp.pins.map(&:name)).to include(':foo')
@@ -45,7 +45,7 @@ describe Solargraph::SourceMap::Clip do
 
   it "completes core constants and methods" do
     source = Solargraph::Source.load_string('')
-    api_map.replace source
+    api_map.catalog [source]
     cursor = source.cursor_at(Solargraph::Position.new(0, 6))
     clip = described_class.new(api_map, cursor)
     comp = clip.complete
@@ -56,7 +56,7 @@ describe Solargraph::SourceMap::Clip do
 
   it "defines core constants" do
     source = Solargraph::Source.load_string('String')
-    api_map.replace source
+    api_map.catalog [source]
     cursor = source.cursor_at(Solargraph::Position.new(0, 0))
     clip = described_class.new(api_map, cursor)
     pins = clip.define
@@ -65,7 +65,7 @@ describe Solargraph::SourceMap::Clip do
 
   it "signifies core methods" do
     source = Solargraph::Source.load_string('File.dirname()')
-    api_map.replace source
+    api_map.catalog [source]
     cursor = source.cursor_at(Solargraph::Position.new(0, 13))
     clip = described_class.new(api_map, cursor)
     pins = clip.signify

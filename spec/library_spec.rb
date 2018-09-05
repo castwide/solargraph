@@ -128,7 +128,6 @@ describe Solargraph::Library do
       x = 1
       x
     ), 0
-    library.checkout 'file.rb'
     completion = library.completions_at('file.rb', 2, 7)
     expect(completion).to be_a(Solargraph::SourceMap::Completion)
     expect(completion.pins.map(&:name)).to include('x')
@@ -142,7 +141,6 @@ describe Solargraph::Library do
         end
       end
     ), 0
-    library.checkout 'file.rb'
     paths = library.definitions_at('file.rb', 2, 13).map(&:path)
     expect(paths).to include('Foo#bar')
   end
@@ -274,7 +272,7 @@ describe Solargraph::Library do
       2,
       [Solargraph::Source::Change.new(nil, repl)]
     )
-    library.synchronize updater
+    library.update updater
     expect(library.checkout('test.rb').code).to eq(repl)
   end
 end

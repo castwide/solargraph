@@ -150,7 +150,8 @@ module Solargraph
 
       def change params
         updater = generate_updater(params)
-        library.synchronize updater
+        library.update updater
+        cataloger.ping unless library.synchronized?
         diagnoser.schedule params['textDocument']['uri']
       end
 
@@ -444,16 +445,6 @@ module Solargraph
           'diagnostics' => false,
           'formatting' => false
         }
-      end
-
-      # The current library version.
-      #
-      # The Host::Catalog uses this number to determine whether it needs to
-      # catalog the library.
-      #
-      # @return [Integer]
-      def libver
-        library.version
       end
 
       # Catalog the library.

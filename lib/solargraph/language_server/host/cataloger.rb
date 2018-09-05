@@ -5,8 +5,12 @@ module Solargraph
         def initialize host
           @host = host
           @mutex = Mutex.new
-          @last_cataloged = 0
           @stopped = true
+          @pings = []
+        end
+
+        def ping
+          @pings.push nil
         end
 
         # Stop the catalog thread.
@@ -31,10 +35,11 @@ module Solargraph
           @stopped = false
           Thread.new do
             until stopped?
-              sleep 0.1
-              next if host.libver <= @last_cataloged
-              @last_cataloged = host.libver
+              sleep 1
+              next if @pings.empty?
+              STDERR.puts "Cataloging #{@pings.length} requests"
               host.catalog
+              @pings.clear
             end
           end
         end

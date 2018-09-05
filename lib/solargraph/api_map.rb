@@ -53,14 +53,15 @@ module Solargraph
     # @param workspace [Workspace]
     # @param others [Array<Source>]
     # @return [void]
-    def catalog workspace, others = []
+    # def catalog workspace, others = []
+    def catalog sources
       # @todo This can be more efficient. We don't need to remap sources that
       #   are already here.
-      all_sources = (workspace.sources + others).uniq
+      # all_sources = (workspace.sources + others).uniq
       new_map_hash = {}
       pins = []
       reqs = []
-      all_sources.each do |source|
+      sources.each do |source|
         if source_map_hash.has_key?(source.filename) and source_map_hash[source.filename].code == source.code
           new_map_hash[source.filename] = source_map_hash[source.filename]
           pins.concat new_map_hash[source.filename].pins
@@ -71,34 +72,29 @@ module Solargraph
           reqs.concat map.requires.map(&:name)
         end
       end
+      reqs.delete_if { |r| new_map_hash.keys.include?("#{r}.rb") }
       yard_map.change(reqs)
       new_store = Store.new(pins + yard_map.pins)
       @mutex.synchronize {
         @cache.clear
         @source_map_hash = new_map_hash
-        reqs.delete_if { |r| workspace.would_require?(r) }
         @store = new_store
       }
     end
 
-    # Replace a mapped source.
-    #
-    # This method will attempt to merge the source map to avoid reindexing the store.
+    # Try to merge a source into the maps.
     #
     # @param source [Source]
-    # @return [void]
-    def replace source
-      @mutex.synchronize {
-        if @source_map_hash.has_key?(source.filename) and @source_map_hash[source.filename].source.code == source.code
-          return
-        else
-          map = Solargraph::SourceMap.map(source)
-          return if @source_map_hash.has_key?(source.filename) and @source_map_hash[source.filename].try_merge!(map)
-          @source_map_hash[source.filename] = map
-        end
-        @cache.clear
-        @store.update map
-      }
+    # @return [Boolean]
+    def try_merge! source
+      return false unless source_map_hash.has_key?(source.filename)
+      map = Solargraph::SourceMap.map(source)
+      if source_map_hash[source.filename].try_merge!(map)
+        true
+      else
+        source_map_hash[source.filename] = map
+        false
+      end
     end
 
     # @param filename [String]

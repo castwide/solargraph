@@ -7,7 +7,7 @@ describe Solargraph::Diagnostics::TypeNotDefined do
       def foo
       end
     ))
-    api_map.catalog Solargraph::Workspace.new, [source]
+    api_map.catalog [source]
     result = Solargraph::Diagnostics::TypeNotDefined.new.diagnose(source, api_map)
     expect(result).to be_empty
   end
@@ -17,7 +17,7 @@ describe Solargraph::Diagnostics::TypeNotDefined do
       def foo
       end
     ))
-    api_map.catalog Solargraph::Workspace.new, [source]
+    api_map.catalog [source]
     result = Solargraph::Diagnostics::TypeNotDefined.new.diagnose(source, api_map)
     expect(result.length).to eq(1)
     expect(result[0][:message]).to include('`foo`')
@@ -30,7 +30,7 @@ describe Solargraph::Diagnostics::TypeNotDefined do
       def foo(bar)
       end
     ))
-    api_map.catalog Solargraph::Workspace.new, [source]
+    api_map.catalog [source]
     result = Solargraph::Diagnostics::TypeNotDefined.new.diagnose(source, api_map)
     expect(result).to be_empty
   end
@@ -41,7 +41,7 @@ describe Solargraph::Diagnostics::TypeNotDefined do
       def foo(bar)
       end
     ))
-    api_map.catalog Solargraph::Workspace.new, [source]
+    api_map.catalog [source]
     result = Solargraph::Diagnostics::TypeNotDefined.new.diagnose(source, api_map)
     expect(result.length).to eq(1)
     expect(result[0][:message]).to include('`bar`')
@@ -55,7 +55,7 @@ describe Solargraph::Diagnostics::TypeNotDefined do
       def foo(bar)
       end
     ))
-    api_map.catalog Solargraph::Workspace.new, [source]
+    api_map.catalog [source]
     result = Solargraph::Diagnostics::TypeNotDefined.new.diagnose(source, api_map)
     expect(result.length).to eq(1)
     expect(result[0][:message]).to include('`wrong`')
@@ -73,7 +73,7 @@ describe Solargraph::Diagnostics::TypeNotDefined do
         end
       end
     ))
-    api_map.catalog Solargraph::Workspace.new, [source]
+    api_map.catalog [source]
     result = Solargraph::Diagnostics::TypeNotDefined.new.diagnose(source, api_map)
     expect(result).to be_empty
   end
@@ -91,7 +91,7 @@ describe Solargraph::Diagnostics::TypeNotDefined do
         end
       end
     ))
-    api_map.catalog Solargraph::Workspace.new, [source]
+    api_map.catalog [source]
     result = Solargraph::Diagnostics::TypeNotDefined.new.diagnose(source, api_map)
     expect(result).to be_empty
   end
@@ -104,7 +104,7 @@ describe Solargraph::Diagnostics::TypeNotDefined do
       def foo(bar = 'bar', baz: 'baz')
       end
     ))
-    api_map.catalog Solargraph::Workspace.new, [source]
+    api_map.catalog [source]
     result = Solargraph::Diagnostics::TypeNotDefined.new.diagnose(source, api_map)
     expect(result).to be_empty
   end
