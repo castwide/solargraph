@@ -39,7 +39,8 @@ module Solargraph
           @stopped = false
           Thread.new do
             until stopped?
-              sleep 0.5
+              sleep 0.1
+              next if queue.empty?
               if !host.options['diagnostics']
                 mutex.synchronize { queue.clear }
                 next
@@ -47,12 +48,13 @@ module Solargraph
               begin
                 current = nil
                 mutex.synchronize { current = queue.shift }
-                next if current.nil? or queue.include?(current)
+                next if queue.include?(current)
                 results = host.diagnose(current)
                 host.send_notification "textDocument/publishDiagnostics", {
                   uri: current,
                   diagnostics: results
                 }
+                sleep 0.5
               rescue DiagnosticsError => e
                 STDERR.puts "Error in diagnostics: #{e.message}"
                 options['diagnostics'] = false
