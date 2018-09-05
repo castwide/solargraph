@@ -79,7 +79,7 @@ module Solargraph
       attr_reader :cursor
 
       def source_map
-        api_map.source_map(cursor.filename)
+        @source_map ||= api_map.source_map(cursor.filename)
       end
 
       # @return [Solargraph::Pin::Base]

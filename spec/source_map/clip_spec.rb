@@ -71,4 +71,43 @@ describe Solargraph::SourceMap::Clip do
     pins = clip.signify
     expect(pins.map(&:path)).to include('File.dirname')
   end
+
+  it "detects local variables" do
+    source = Solargraph::Source.load_string(%(
+      x = '123'
+      x
+    ))
+    api_map.catalog [source]
+    cursor = source.cursor_at(Solargraph::Position.new(2, 0))
+    clip = described_class.new(api_map, cursor)
+    expect(clip.locals.map(&:name)).to include('x')
+  end
+
+  it "detects local variables passed into blocks" do
+    source = Solargraph::Source.load_string(%(
+      x = '123'
+      y = x.split
+      y.each do |z|
+        z
+      end
+    ))
+    api_map.catalog [source]
+    cursor = source.cursor_at(Solargraph::Position.new(4, 0))
+    clip = described_class.new(api_map, cursor)
+    expect(clip.locals.map(&:name)).to include('x')
+  end
+
+  it "ignores local variables assigned after blocks" do
+    source = Solargraph::Source.load_string(%(
+      x = []
+      x.each do |y|
+        y
+      end
+      z = '123'
+    ))
+    api_map.catalog [source]
+    cursor = source.cursor_at(Solargraph::Position.new(3, 0))
+    clip = described_class.new(api_map, cursor)
+    expect(clip.locals.map(&:name)).not_to include('z')
+  end
 end
