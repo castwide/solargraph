@@ -15,31 +15,6 @@ module Solargraph
         index
       end
 
-      # @param *sources [Array<Solargraph::Source, Solargraph::SourceMap>]
-      # @return [void]
-      def remove *sources
-        sources.each do |source|
-          pins.delete_if { |pin| !pin.yard_pin? and pin.filename == source.filename }
-          symbols.delete_if { |pin| pin.filename == source.filename }
-        end
-        index
-      end
-
-      # @param *sources [Array<Solargraph::Source>]
-      # @return [void]
-      def update *sources
-        inner_update sources
-        index
-      end
-
-      # @param yard_pins [Array<Solargraph::Pin::Base>]
-      # @return [void]
-      def update_yard yard_pins
-        pins.delete_if(&:yard_pin?)
-        pins.concat yard_pins
-        index
-      end
-
       # @param fqns [String]
       # @param visibility [Array<Symbol>]
       # @return [Array<Solargraph::Pin::Base>]
