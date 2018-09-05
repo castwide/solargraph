@@ -37,7 +37,8 @@ module Solargraph
         # @todo Is the root namespace a class or a module? Assuming class for now.
         @pins.push Pin::Namespace.new(get_node_location(nil), '', '', nil, :class, :public, nil)
         process root
-        @node_comments.reject{|k, v| @used_comment_locs.include?(k)}.each do |k, v|
+        # @node_comments.reject{|k, v| @used_comment_locs.include?(k)}.each do |k, v|
+        @node_comments.each do |k, v|
           # @pins.first.comments.concat v
           if v.include?('@!')
             ns = namespace_at(Position.new(k.expression.line, k.expression.column))

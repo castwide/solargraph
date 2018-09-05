@@ -142,4 +142,28 @@ describe Solargraph::SourceMap::Mapper do
     pin = map.first_pin('Foo#bar=')
     expect(pin.return_type.tag).to eq('String')
   end
+
+  it "processes attribute directives attached to methods" do
+    map = Solargraph::SourceMap.load_string(%(
+      class Foo
+        # @!attribute [r] bar
+        #   @return [String]
+        def make_bar_attr
+        end
+      end
+    ))
+    pin = map.first_pin('Foo#bar')
+    expect(pin.return_type.tag).to eq('String')
+  end
+
+  it "processes attribute directives at class endings" do
+    map = Solargraph::SourceMap.load_string(%(
+      class Foo
+        # @!attribute [r] bar
+        #   @return [String]
+      end
+    ))
+    pin = map.first_pin('Foo#bar')
+    expect(pin.return_type.tag).to eq('String')
+  end
 end
