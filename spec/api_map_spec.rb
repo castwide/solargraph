@@ -267,4 +267,23 @@ describe Solargraph::ApiMap do
     expect(@api_map.get_path_pins('Foo')).to be_empty
     expect(@api_map.get_path_pins('Bar')).not_to be_empty
   end
+
+  it "checks attribute visibility" do
+    source = Solargraph::Source.load_string(%(
+      class Foo
+        attr_reader :public_attr
+        private
+        attr_reader :private_attr
+      end
+    ))
+    @api_map.catalog [source]
+    pins = @api_map.get_methods('Foo')
+    paths = pins.map(&:path)
+    expect(paths).to include('Foo#public_attr')
+    expect(paths).not_to include('Foo#private_attr')
+    pins = @api_map.get_methods('Foo', visibility: [:private])
+    paths = pins.map(&:path)
+    expect(paths).not_to include('Foo#public_attr')
+    expect(paths).to include('Foo#private_attr')
+  end
 end
