@@ -77,4 +77,69 @@ describe Solargraph::SourceMap::Mapper do
     expect(map.first_pin('Foo#protected_method').visibility).to eq(:protected)
     expect(map.first_pin('Foo#explicit_public_method').visibility).to eq(:public)
   end
+
+  it "processes method directives" do
+    map = Solargraph::SourceMap.load_string(%(
+      class Foo
+        # @!method bar(baz)
+        #   @return [String]
+        make_bar_attr
+      end
+    ))
+    pin = map.first_pin('Foo#bar')
+    expect(pin.parameter_names).to eq(['baz'])
+    expect(pin.return_type.tag).to eq('String')
+  end
+
+  it "processes attribute reader directives" do
+    map = Solargraph::SourceMap.load_string(%(
+      class Foo
+        # @!attribute [r] bar
+        #   @return [String]
+        make_bar_attr
+      end
+    ))
+    pin = map.first_pin('Foo#bar')
+    expect(pin.return_type.tag).to eq('String')
+  end
+
+  it "processes attribute writer directives" do
+    map = Solargraph::SourceMap.load_string(%(
+      class Foo
+        # @!attribute [w] bar
+        #   @return [String]
+        make_bar_attr
+      end
+    ))
+    pin = map.first_pin('Foo#bar=')
+    expect(pin.return_type.tag).to eq('String')
+  end
+
+  it "processes attribute accessor directives" do
+    map = Solargraph::SourceMap.load_string(%(
+      class Foo
+        # @!attribute [r,w] bar
+        #   @return [String]
+        make_bar_attr
+      end
+    ))
+    pin = map.first_pin('Foo#bar')
+    expect(pin.return_type.tag).to eq('String')
+    pin = map.first_pin('Foo#bar=')
+    expect(pin.return_type.tag).to eq('String')
+  end
+
+  it "processes default attribute directives" do
+    map = Solargraph::SourceMap.load_string(%(
+      class Foo
+        # @!attribute bar
+        #   @return [String]
+        make_bar_attr
+      end
+    ))
+    pin = map.first_pin('Foo#bar')
+    expect(pin.return_type.tag).to eq('String')
+    pin = map.first_pin('Foo#bar=')
+    expect(pin.return_type.tag).to eq('String')
+  end
 end

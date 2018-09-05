@@ -38,9 +38,13 @@ module Solargraph
         @pins.push Pin::Namespace.new(get_node_location(nil), '', '', nil, :class, :public, nil)
         process root
         @node_comments.reject{|k, v| @used_comment_locs.include?(k)}.each do |k, v|
-          @pins.first.comments.concat v
+          # @pins.first.comments.concat v
+          if v.include?('@!')
+            ns = namespace_at(Position.new(k.expression.line, k.expression.column))
+            loc = Location.new(filename, Range.from_to(k.expression.line, k.expression.column, k.expression.last_line, k.expression.last_column))
+            process_directive ns, loc, v
+          end
         end
-
         [@pins, @locals, @requires, @symbols, @strings, @comment_ranges]
       end
 
@@ -388,6 +392,10 @@ module Solargraph
       # @return [Solargraph::Pin::Namespace]
       def namespace_for(node)
         position = Position.new(node.loc.line, node.loc.column)
+        namespace_at(position)
+      end
+
+      def namespace_at(position)
         @pins.select{|pin| pin.kind == Pin::NAMESPACE and pin.location.range.contain?(position)}.last
       end
 
@@ -429,6 +437,37 @@ module Solargraph
 
       def source_from_parser
         @source_from_parser ||= @code.gsub(/\r\n/, "\n")
+      end
+
+      def process_directive namespace, location, comment
+        parse = YARD::Docstring.parser.parse(comment)
+        parse.directives.each do |d|
+          docstring = YARD::Docstring.parser.parse(d.tag.text).to_docstring
+          if d.tag.tag_name == 'attribute'
+            t = (d.tag.types.nil? || d.tag.types.empty?) ? nil : d.tag.types.flatten.join('')
+            if t.nil? or t.include?('r')
+              # location, namespace, name, docstring, access
+              pins.push Solargraph::Pin::Attribute.new(location, namespace.path, d.tag.name, docstring.all, :reader, :instance, :public)
+            end
+            if t.nil? or t.include?('w')
+              pins.push Solargraph::Pin::Attribute.new(location, namespace.path, "#{d.tag.name}=", docstring.all, :writer, :instance, :public)
+            end
+          elsif d.tag.tag_name == 'method'
+            gen_src = Solargraph::SourceMap.load_string("def #{d.tag.name};end")
+            gen_pin = gen_src.pins.last # Method is last pin after root namespace
+            @pins.push Solargraph::Pin::Method.new(location, namespace.path, gen_pin.name, docstring.all, :instance, :public, gen_pin.parameters)
+          elsif d.tag.tag_name == 'macro'
+            # @todo Handle various types of macros (attach, new, whatever)
+            # path = path_for(k.node)
+            here = get_node_start_position(k.node)
+            pin = @pins.select{|pin| [Pin::NAMESPACE, Pin::METHOD].include?(pin.kind) and pin.location.range.contain?(here)}.first
+            @path_macros[pin.path] = v
+          elsif d.tag.tag_name == 'domain'
+            @domains.push d.tag.text
+          else
+            # STDERR.puts "Nothing to do for directive: #{d}"
+          end
+        end
       end
     end
   end
