@@ -9,8 +9,11 @@ module Solargraph
           @pings = []
         end
 
+        # Notify the Cataloger that changes are pending.
+        #
+        # @return [void]
         def ping
-          @pings.push nil
+          mutex.synchronize { pings.push nil }
         end
 
         # Stop the catalog thread.
@@ -36,10 +39,11 @@ module Solargraph
           Thread.new do
             until stopped?
               sleep 0.1
-              next if @pings.empty?
-              STDERR.puts "Cataloging #{@pings.length} requests"
-              host.catalog
-              @pings.clear
+              next if pings.empty?
+              mutex.synchronize do
+                host.catalog
+                pings.clear
+              end
             end
           end
         end
@@ -51,6 +55,9 @@ module Solargraph
 
         # @return [Mutex]
         attr_reader :mutex
+
+        # @return [Array]
+        attr_reader :pings
       end
     end
   end
