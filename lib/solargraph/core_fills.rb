@@ -12,6 +12,7 @@ module Solargraph
       Array#select Array#reject Array#keep_if Array#delete_if
       Enumerable#select
       Object#clone Object#dup Object#freeze Object#taint Object#untaint
+      String#freeze
     ].freeze
 
     METHODS_RETURNING_SUBTYPES = %w[
