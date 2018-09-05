@@ -35,7 +35,7 @@ module Solargraph
           @stopped = false
           Thread.new do
             until stopped?
-              sleep 1
+              sleep 0.1
               next if @pings.empty?
               STDERR.puts "Cataloging #{@pings.length} requests"
               host.catalog

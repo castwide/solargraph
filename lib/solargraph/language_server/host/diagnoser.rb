@@ -39,7 +39,7 @@ module Solargraph
           @stopped = false
           Thread.new do
             until stopped?
-              sleep 0.1
+              sleep 0.5
               if !host.options['diagnostics']
                 mutex.synchronize { queue.clear }
                 next

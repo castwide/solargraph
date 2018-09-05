@@ -59,18 +59,33 @@ module Solargraph
       #   are already here.
       # all_sources = (workspace.sources + others).uniq
       new_map_hash = {}
-      pins = []
-      reqs = []
+      unmerged = false
       sources.each do |source|
-        if source_map_hash.has_key?(source.filename) and source_map_hash[source.filename].code == source.code
-          new_map_hash[source.filename] = source_map_hash[source.filename]
-          pins.concat new_map_hash[source.filename].pins
+        if source_map_hash.has_key?(source.filename)
+          if source_map_hash[source.filename].code == source.code
+            new_map_hash[source.filename] = source_map_hash[source.filename]
+          else
+            map = Solargraph::SourceMap.map(source)
+            if source_map_hash[source.filename].try_merge!(map)
+              new_map_hash[source.filename] = source_map_hash[source.filename]
+            else
+              new_map_hash[source.filename] = map
+              unmerged = true
+            end
+          end
         else
           map = Solargraph::SourceMap.map(source)
           new_map_hash[source.filename] = map
-          pins.concat map.pins
-          reqs.concat map.requires.map(&:name)
+          unmerged = true
         end
+      end
+      return unless unmerged
+      pins = []
+      reqs = []
+      # @param map [SourceMap]
+      new_map_hash.values.each do |map|
+        pins.concat map.pins
+        reqs.concat map.requires.map(&:name)
       end
       reqs.delete_if { |r| new_map_hash.keys.include?("#{r}.rb") }
       yard_map.change(reqs)
@@ -87,6 +102,7 @@ module Solargraph
     # @param source [Source]
     # @return [Boolean]
     def try_merge! source
+      return false # @todo Maybe we don't need this
       return false unless source_map_hash.has_key?(source.filename)
       map = Solargraph::SourceMap.map(source)
       if source_map_hash[source.filename].try_merge!(map)
