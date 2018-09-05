@@ -39,7 +39,7 @@ module Solargraph
         end
 
         def inferred_pins pins, api_map, context
-          result = pins.uniq(&:location).map do |p|
+          result = pins.map do |p|
             if CoreFills::METHODS_RETURNING_SELF.include?(p.path)
               next Solargraph::Pin::Method.new(p.location, p.namespace, p.name, "@return [#{context.tag}]", p.scope, p.visibility, p.parameters)
             end
