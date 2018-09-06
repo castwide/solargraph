@@ -21,7 +21,7 @@ module Solargraph
 
     # @return [Array<Solargraph::Pin::Base>]
     def get_methods(namespace, root = '', scope = 'instance', with_private = false)
-      fqns = api_map.find_fully_qualified_namespace(namespace, root)
+      fqns = api_map.qualify(namespace, root)
       params = {
         namespace: namespace, root: root, scope: scope, with_private: with_private
       }

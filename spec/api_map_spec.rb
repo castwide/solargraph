@@ -354,4 +354,68 @@ describe Solargraph::ApiMap do
     pins = api_map.get_constants('Foo', 'Foo')
     expect(pins.map(&:path)).to include('Foo::Bar')
   end
+
+  it "catalogs requires" do
+    api_map = Solargraph::ApiMap.new
+    source1 = Solargraph::Source.load_string(%(
+      class Foo; end
+    ), 'lib/foo.rb')
+    source2 = Solargraph::Source.load_string(%(
+      require 'foo'
+      require 'invalid'
+    ), 'app.rb')
+    bundle = Solargraph::Bundle.new([source1, source2], ['lib'])
+    api_map.catalog bundle
+    expect(api_map.unresolved_requires).to eq(['invalid'])
+  end
+
+  it "gets instance variables from superclasses" do
+    source = Solargraph::Source.load_string(%(
+      class Sup
+        def foo
+          @foo = 'foo'
+        end
+      end
+      class Sub < Sup; end
+    ))
+    api_map = Solargraph::ApiMap.new
+    api_map.map source
+    pins = api_map.get_instance_variable_pins('Sub')
+    expect(pins.map(&:name)).to include('@foo')
+  end
+
+  it "gets methods from extended modules" do
+    source = Solargraph::Source.load_string(%(
+      module Mixin
+        def bar; end
+      end
+      class Sup
+        extend Mixin
+      end
+    ))
+    api_map = Solargraph::ApiMap.new
+    api_map.map source
+    pins = api_map.get_methods('Sup', scope: :class)
+    expect(pins.map(&:path)).to include('Mixin#bar')
+  end
+
+  it "loads workspaces from directories" do
+    api_map = Solargraph::ApiMap.load('spec/fixtures/workspace')
+    expect(api_map.source_map('spec/fixtures/workspace/app.rb')).to be_a(Solargraph::SourceMap)
+  end
+
+  it "finds constants from included modules" do
+    source = Solargraph::Source.load_string(%(
+      module Mixin
+        FOO = 'foo'
+      end
+      class Container
+        include Mixin
+      end
+    ))
+    api_map = Solargraph::ApiMap.new
+    api_map.map source
+    pins = api_map.get_constants('Container')
+    expect(pins.map(&:path)).to include('Mixin::FOO')
+  end
 end

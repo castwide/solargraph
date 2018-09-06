@@ -229,14 +229,6 @@ module Solargraph
       result
     end
 
-    # @deprecated Use #qualify instead
-    # @param namespace [String]
-    # @param context [String]
-    # @return [String]
-    def find_fully_qualified_namespace namespace, context = ''
-      qualify namespace, context
-    end
-
     # Get an array of instance variable pins defined in specified namespace
     # and scope.
     #
@@ -246,10 +238,10 @@ module Solargraph
     def get_instance_variable_pins(namespace, scope = :instance)
       result = []
       result.concat store.get_instance_variables(namespace, scope)
-      sc = store.get_superclass(namespace)
+      sc = qualify(store.get_superclass(namespace), namespace)
       until sc.nil?
         result.concat store.get_instance_variables(sc, scope)
-        sc = store.get_superclass(sc)
+        sc = qualify(store.get_superclass(sc), sc)
       end
       result
     end
