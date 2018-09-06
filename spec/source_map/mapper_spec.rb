@@ -190,4 +190,12 @@ describe Solargraph::SourceMap::Mapper do
     pin = map.pins.last
     expect(pin.assignment.to_s).to eq('(array)')
   end
+
+  it "finds assignment nodes for global variables using nil guards" do
+    map = Solargraph::SourceMap.load_string(%(
+      $x ||= []
+    ))
+    pin = map.pins.last
+    expect(pin.assignment.to_s).to eq('(array)')
+  end
 end

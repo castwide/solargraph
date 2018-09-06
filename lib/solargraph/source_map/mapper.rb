@@ -155,7 +155,15 @@ module Solargraph
                   @locals.push Solargraph::Pin::LocalVariable.new(get_node_location(c), fqn, c.children[0].to_s, comments_for(c), c.children[1], infer_literal_node_type(c.children[1]), context, block, presence)
                 end
               elsif c.type == :gvasgn
-                pins.push Solargraph::Pin::GlobalVariable.new(get_node_location(c), fqn, c.children[0].to_s, comments_for(c), c.children[1], infer_literal_node_type(c.children[1]), @pins.first)
+                if c.children[1].nil?
+                  ora = find_parent(stack, :or_asgn)
+                  unless ora.nil?
+                    u = c.updated(:gvasgn, c.children + ora.children[1..-1], nil)
+                    pins.push Solargraph::Pin::GlobalVariable.new(get_node_location(c), fqn, u.children[0].to_s, comments_for(c), u.children[1], infer_literal_node_type(c.children[1]), @pins.first)
+                  end
+                else
+                  pins.push Solargraph::Pin::GlobalVariable.new(get_node_location(c), fqn, c.children[0].to_s, comments_for(c), c.children[1], infer_literal_node_type(c.children[1]), @pins.first)
+                end
               elsif c.type == :sym
                 @symbols.push Solargraph::Pin::Symbol.new(get_node_location(c), ":#{c.children[0]}")
               elsif c.type == :casgn
