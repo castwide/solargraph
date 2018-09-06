@@ -18,7 +18,7 @@ module Solargraph
           return inferred_pins(found, api_map, context) unless found.empty?
           pins = api_map.get_method_stack(context.namespace, word, scope: context.scope)
           return [] if pins.empty?
-          pins[0] = virtual_new_pin(pins.first, context) if pins.first.path == 'Class#new'
+          pins.unshift virtual_new_pin(pins.first, context) if external_constructor?(pins.first, context)
           inferred_pins(pins, api_map, context)
         end
 
@@ -52,6 +52,10 @@ module Solargraph
             Pin::ProxyType.new(p.location, nil, p.name, type)
           end
           result
+        end
+
+        def external_constructor? pin, context
+          pin.path == 'Class#new' || (pin.name == 'new' && pin.scope == :class && pin.context != context)
         end
       end
     end

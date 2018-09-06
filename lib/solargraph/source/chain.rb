@@ -55,7 +55,7 @@ module Solargraph
       end
 
       # @param api_map [ApiMap]
-      # @param api_map [Context]
+      # @param context [ComplexType]
       # @param locals [Array<Pin::Base>]
       # @return [ComplexType]
       def infer api_map, context, locals
