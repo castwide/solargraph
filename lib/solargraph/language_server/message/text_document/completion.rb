@@ -6,13 +6,6 @@ module Solargraph
       module TextDocument
         class Completion < Base
           def process
-            # sleep 0.01
-            # if host.changing?(params['textDocument']['uri'])
-            #   STDERR.puts "Fuckin host changing?"
-            #   set_result empty_result(true)
-            # else
-            #   inner_process
-            # end
             inner_process
           end
 
