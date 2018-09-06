@@ -60,4 +60,23 @@ describe Solargraph::Source::Chain do
     expect(chain.undefined?).to be(true)
     expect(chain.base.undefined?).to be(false)
   end
+
+  it "infers types from new subclass calls without a subclass initialize method" do
+    code = %(
+      class Sup
+        def initialize; end
+        def meth; end
+      end
+      class Sub < Sup
+        def meth; end
+      end
+    )
+    map = Solargraph::SourceMap.load_string(code)
+    api_map = Solargraph::ApiMap.new
+    api_map.index map.pins
+    sig = Solargraph::Source.load_string('Sub.new')
+    chain = Solargraph::Source::SourceChainer.chain(sig, Solargraph::Position.new(0, 5))
+    type = chain.infer(api_map, Solargraph::ComplexType::ROOT, [])
+    expect(type.name).to eq('Sub')
+  end
 end
