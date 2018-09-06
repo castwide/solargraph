@@ -3,7 +3,12 @@ require 'json'
 require 'fileutils'
 require 'rubygems/package'
 require 'zlib'
-require 'eventmachine'
+# HACK: Use the pure ruby implementation of EventMachine on Windows
+if RUBY_PLATFORM =~ /mingw/
+  require 'em/pure_ruby'
+else
+  require 'eventmachine'
+end
 
 module Solargraph
   class Shell < Thor
