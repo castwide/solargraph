@@ -87,14 +87,14 @@ module Solargraph
       end
       unless bundle.load_paths.empty?
         reqs.delete_if do |r|
-          next false
+          result = false
           bundle.load_paths.each do |l|
             if new_map_hash.keys.include?(File.join(l, "#{r}.rb"))
-              true
-            else
-              false
+              result = true
+              break
             end
           end
+          result
         end
       end
       bundle.yard_map.change(reqs)
@@ -146,7 +146,10 @@ module Solargraph
     # @return [ApiMap]
     def self.load directory
       # @todo How should this work?
-      self.new(Solargraph::Workspace.new(directory))
+      api_map = self.new #(Solargraph::Workspace.new(directory))
+      workspace = Solargraph::Workspace.new(directory)
+      api_map.catalog Bundle.new(workspace.sources)
+      api_map
     end
 
     # @return [Array<Solargraph::Pin::Base>]
@@ -220,6 +223,7 @@ module Solargraph
       cached = cache.get_qualified_namespace(namespace, context)
       return cached.clone unless cached.nil?
       result = inner_qualify(namespace, context, [])
+      result = result[2..-1] if !result.nil? && result.start_with?('::')
       cache.set_qualified_namespace(namespace, context, result)
       result
     end
@@ -489,7 +493,7 @@ module Solargraph
       if deep
         sc = store.get_superclass(fqns)
         unless sc.nil?
-          fqsc = qualify(sc, fqns)
+          fqsc = qualify(sc, fqns.split('::')[0..-2].join('::'))
           result.concat inner_get_methods(fqsc, scope, visibility, true, skip) unless fqsc.nil?
         end
         if scope == :instance
