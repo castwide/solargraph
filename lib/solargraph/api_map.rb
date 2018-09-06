@@ -214,11 +214,12 @@ module Solargraph
     # Get a fully qualified namespace name. This method will start the search
     # in the specified context until it finds a match for the name.
     #
-    # @param namespace [String] The namespace to match
+    # @param namespace [String, nil] The namespace to match
     # @param context [String] The context to search
     # @return [String]
     def qualify namespace, context = ''
       # @todo The return for self might work better elsewhere
+      return nil if namespace.nil?
       return qualify(context) if namespace == 'self'
       cached = cache.get_qualified_namespace(namespace, context)
       return cached.clone unless cached.nil?
@@ -614,10 +615,11 @@ module Solargraph
     # @param sub [String] The subclass
     # @return [Boolean]
     def super_and_sub?(sup, sub)
-      cls = store.get_superclass(sub)
+      fqsup = qualify(sup)
+      cls = qualify(store.get_superclass(sub), sub)
       until cls.nil?
-        return true if cls == sup
-        cls = store.get_superclass(cls)
+        return true if cls == fqsup
+        cls = qualify(store.get_superclass(cls), cls)
       end
       false
     end

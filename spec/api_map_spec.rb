@@ -307,4 +307,35 @@ describe Solargraph::ApiMap do
       expect(paths).to include('Foo::Sub#bar')
       expect(paths).to include('Sup#bar')
   end
+
+  it "finds protected methods for complex types" do
+    code = %(
+      class Sup
+        protected
+        def bar; end
+      end
+      class Sub < Sup; end
+      class Sub2 < Sub; end
+    )
+    api_map = Solargraph::ApiMap.new
+    source = Solargraph::Source.load_string(code)
+    api_map.map source
+    pins = api_map.get_complex_type_methods(Solargraph::ComplexType.parse('Sub'), 'Sub')
+    expect(pins.map(&:path)).to include('Sup#bar')
+    pins = api_map.get_complex_type_methods(Solargraph::ComplexType.parse('Sub'), 'Sub2')
+    expect(pins.map(&:path)).to include('Sup#bar')
+  end
+
+  it "ignores undefined superclasses when finding complex type methods" do
+    code = %(
+      class Sub < Sup; end
+      class Sub2 < Sub; end
+    )
+    api_map = Solargraph::ApiMap.new
+    source = Solargraph::Source.load_string(code)
+    api_map.map source
+    expect {
+      api_map.get_complex_type_methods(Solargraph::ComplexType.parse('Sub'), 'Sub2')
+    }.not_to raise_error
+  end
 end
