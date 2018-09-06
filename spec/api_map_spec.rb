@@ -286,4 +286,25 @@ describe Solargraph::ApiMap do
     expect(paths).not_to include('Foo#public_attr')
     expect(paths).to include('Foo#private_attr')
   end
+
+  it "resolves superclasses qualified with leading colons" do
+    code = %(
+      class Sup
+        def bar; end
+      end
+      module Foo
+        class Sup < ::Sup; end
+        class Sub < Sup
+          def bar; end
+        end
+      end
+      )
+      api_map = Solargraph::ApiMap.new
+      source = Solargraph::Source.load_string(code)
+      api_map.map source
+      pins = api_map.get_methods('Foo::Sub')
+      paths = pins.map(&:path)
+      expect(paths).to include('Foo::Sub#bar')
+      expect(paths).to include('Sup#bar')
+  end
 end
