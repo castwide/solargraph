@@ -135,7 +135,7 @@ module Solargraph
     #
     # @param filename [String]
     # @param position [Position]
-    # @return [Source::Clip]
+    # @return [SourceMap::Clip]
     def clip_at filename, position
       SourceMap::Clip.new(self, cursor_at(filename, position))
     end

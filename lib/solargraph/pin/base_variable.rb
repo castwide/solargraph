@@ -5,6 +5,8 @@ module Solargraph
 
       attr_reader :context
 
+      attr_reader :assignment
+
       def initialize location, namespace, name, comments, assignment, literal, context
         super(location, namespace, name, comments)
         @assignment = assignment
@@ -58,10 +60,6 @@ module Solargraph
         @return_complex_type = pin.return_complex_type
         true
       end
-
-      protected
-
-      attr_reader :assignment
 
       private
 

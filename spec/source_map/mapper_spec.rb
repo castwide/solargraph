@@ -166,4 +166,28 @@ describe Solargraph::SourceMap::Mapper do
     pin = map.first_pin('Foo#bar')
     expect(pin.return_type.tag).to eq('String')
   end
+
+  it "finds assignment nodes for local variables using nil guards" do
+    map = Solargraph::SourceMap.load_string(%(
+      x ||= []
+    ))
+    pin = map.locals.first
+    expect(pin.assignment.to_s).to eq('(array)')
+  end
+
+  it "finds assignment nodes for instance variables using nil guards" do
+    map = Solargraph::SourceMap.load_string(%(
+      @x ||= []
+    ))
+    pin = map.pins.last
+    expect(pin.assignment.to_s).to eq('(array)')
+  end
+
+  it "finds assignment nodes for class variables using nil guards" do
+    map = Solargraph::SourceMap.load_string(%(
+      @@x ||= []
+    ))
+    pin = map.pins.last
+    expect(pin.assignment.to_s).to eq('(array)')
+  end
 end

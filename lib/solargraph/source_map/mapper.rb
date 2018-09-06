@@ -149,7 +149,7 @@ module Solargraph
                   ora = find_parent(stack, :or_asgn)
                   unless ora.nil?
                     u = c.updated(:lvasgn, c.children + ora.children[1..-1], nil)
-                    @locals.push Solargraph::Pin::LocalVariable.new(get_node_location(u), fqn, u.children[0].to_s, comments_for(ora), c.children[1], infer_literal_node_type(c.children[1]), context, block, presence)
+                    @locals.push Solargraph::Pin::LocalVariable.new(get_node_location(u), fqn, u.children[0].to_s, comments_for(ora), u.children[1], infer_literal_node_type(c.children[1]), context, block, presence)
                   end
                 else
                   @locals.push Solargraph::Pin::LocalVariable.new(get_node_location(c), fqn, c.children[0].to_s, comments_for(c), c.children[1], infer_literal_node_type(c.children[1]), context, block, presence)
