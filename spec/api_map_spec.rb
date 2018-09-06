@@ -338,4 +338,20 @@ describe Solargraph::ApiMap do
       api_map.get_complex_type_methods(Solargraph::ComplexType.parse('Sub'), 'Sub2')
     }.not_to raise_error
   end
+
+  it "detects private constants according to context" do
+    code = %(
+      class Foo
+        class Bar; end
+        private_constant :Bar
+      end
+    )
+    api_map = Solargraph::ApiMap.new
+    source = Solargraph::Source.load_string(code)
+    api_map.map source
+    pins = api_map.get_constants('Foo', '')
+    expect(pins.map(&:path)).not_to include('Bar')
+    pins = api_map.get_constants('Foo', 'Foo')
+    expect(pins.map(&:path)).to include('Foo::Bar')
+  end
 end

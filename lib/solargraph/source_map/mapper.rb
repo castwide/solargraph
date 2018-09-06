@@ -116,16 +116,15 @@ module Solargraph
                     u = c.updated(:ivasgn, c.children + ora.children[1..-1], nil)
                     pins.push Solargraph::Pin::InstanceVariable.new(get_node_location(u), fqn || '', c.children[0].to_s, comments_for(u), u.children[1], infer_literal_node_type(u.children[1]), named_path.context)
                     if visibility == :module_function and named_path.kind == Pin::METHOD
-                      other = ComplexType.parse(named_path.context.namespace) # pins.select{|pin| pin.path == "#{context.namespace}.#{context.name}"}.first
+                      other = ComplexType.parse("Module<#{named_path.context.namespace}>")
                       pins.push Solargraph::Pin::InstanceVariable.new(get_node_location(u), fqn || '', c.children[0].to_s, comments_for(u), u.children[1], infer_literal_node_type(u.children[1]), other) #unless other.nil?
                     end
                   end
                 else
                   pins.push Solargraph::Pin::InstanceVariable.new(get_node_location(c), fqn || '',c.children[0].to_s, comments_for(c), c.children[1], infer_literal_node_type(c.children[1]), named_path.context)
-                  if visibility == :module_function and context.kind == Pin::METHOD
-                    # other = pins.select{|pin| pin.path == "#{context.namespace}.#{context.name}"}.first
-                    other = ComplexType.parse(named_path.context.namespace) # pins.select{|pin| pin.path == "#{context.namespace}.#{context.name}"}.first
-                    pins.push Solargraph::Pin::InstanceVariable.new(get_node_location(c), fqn || '',c.children[0].to_s, comments_for(c), c.children[1], infer_literal_node_type(c.children[1]), other)
+                  if visibility == :module_function and named_path.kind == Pin::METHOD
+                    other = ComplexType.parse("Module<#{named_path.context.namespace}>")
+                     pins.push Solargraph::Pin::InstanceVariable.new(get_node_location(c), fqn || '',c.children[0].to_s, comments_for(c), c.children[1], infer_literal_node_type(c.children[1]), other)
                   end
                 end
               elsif c.type == :cvasgn
@@ -238,7 +237,7 @@ module Solargraph
                       mm = Solargraph::Pin::Method.new(ref.location, ref.namespace, ref.name, ref.comments, :class, :public, ref.parameters)
                       cm = Solargraph::Pin::Method.new(ref.location, ref.namespace, ref.name, ref.comments, :instance, :private, ref.parameters)
                       pins.push mm, cm
-                      pins.select{|pin| pin.kind == Pin::INSTANCE_VARIABLE and pin.context == ref}.each do |ivar|
+                      pins.select{|pin| pin.kind == Pin::INSTANCE_VARIABLE and pin.context == ref.context}.each do |ivar|
                         pins.delete ivar
                         pins.push Solargraph::Pin::InstanceVariable.new(ivar.location, ivar.namespace, ivar.name, ivar.comments, ivar.signature, ivar.instance_variable_get(:@literal), mm)
                         pins.push Solargraph::Pin::InstanceVariable.new(ivar.location, ivar.namespace, ivar.name, ivar.comments, ivar.signature, ivar.instance_variable_get(:@literal), cm)
