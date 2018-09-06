@@ -116,8 +116,7 @@ module Solargraph
       # @param text [String] The contents of the file.
       # @param version [Integer] A version number.
       def open uri, text, version
-        f = uri_to_file(uri)
-        library.open uri_to_file(f), text, version
+        library.open uri_to_file(uri), text, version
         diagnoser.schedule uri
       end
 
