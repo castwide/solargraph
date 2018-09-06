@@ -81,7 +81,7 @@ module Solargraph
     end
 
     def try_merge! other_map
-      return false if pins.length != other_map.pins.length or locals.length != other_map.locals.length
+      return false if pins.length != other_map.pins.length || locals.length != other_map.locals.length
       pins.each_index do |i|
         return false unless pins[i].try_merge!(other_map.pins[i])
       end

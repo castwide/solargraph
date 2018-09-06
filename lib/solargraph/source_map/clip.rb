@@ -66,7 +66,7 @@ module Solargraph
       # @return [Array<Solargraph::Pin::Base>]
       def locals
         @locals ||= source_map.locals.select { |pin|
-          pin.visible_from?(block, cursor.node_position)
+          pin.visible_from?(block, Position.new(cursor.position.line, (cursor.position.column.zero? ? 0 : cursor.position.column - 1)))
         }.reverse
       end
 
@@ -78,6 +78,7 @@ module Solargraph
       # @return [Source::Cursor]
       attr_reader :cursor
 
+      # @return [SourceMap]
       def source_map
         @source_map ||= api_map.source_map(cursor.filename)
       end
