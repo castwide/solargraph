@@ -45,7 +45,7 @@ module Solargraph
         @node, @comments = Source.parse_with_comments(@code, filename)
         @parsed = true
       rescue Parser::SyntaxError, EncodingError => e
-        @node, @comments = Source.parse_with_comments(@code.gsub(/[^s]/, '_'), filename)
+        @node, @comments = Source.parse_with_comments(@code.gsub(/[^s]/, ' '), filename)
         @parsed = false
       rescue Exception => e
         STDERR.puts e.message
@@ -95,18 +95,20 @@ module Solargraph
     # @return [Source]
     def synchronize updater
       raise 'Invalid synchronization' unless updater.filename == filename
-      new_code = updater.write(@code)
-      if new_code == @code
+      real_code = updater.write(@code)
+      incr_code = updater.write(@code, true)
+      if real_code == @code
         @version = updater.version
         return self
       end
-      synced = Source.new(new_code, filename)
+      synced = Source.new(incr_code, filename)
       if synced.parsed?
-        synced.repaired = new_code
+        synced.code = real_code
       else
         new_repair = updater.repair(@repaired)
         synced = Source.new(new_repair, filename)
-        synced.code = new_code
+        synced.parsed = false
+        synced.code = real_code
       end
       synced.version = updater.version
       synced
@@ -213,6 +215,8 @@ module Solargraph
     attr_writer :code
 
     attr_accessor :repaired
+
+    attr_writer :parsed
 
     class << self
       # @param filename [String]
