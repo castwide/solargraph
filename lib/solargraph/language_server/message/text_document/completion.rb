@@ -22,16 +22,18 @@ module Solargraph
                 return set_result(empty_result) if host.cancel?(id)
               end
               items = []
-              idx = 0
+              last_context = nil
+              idx = -1
               completion.pins.each do |pin|
+                idx += 1 if last_context != pin.context
                 items.push pin.completion_item.merge({
                   textEdit: {
                     range: completion.range.to_hash,
                     newText: pin.name.sub(/=$/, ' = ')
                   },
-                  sortText: "#{pin.name}#{idx.to_s.rjust(4, '0')}"
+                  sortText: "#{idx.to_s.rjust(4, '0')}#{pin.name}"
                 })
-                idx += 1
+                last_context = pin.context
               end
               set_result(
                 isIncomplete: false,
