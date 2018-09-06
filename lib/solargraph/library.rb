@@ -136,7 +136,7 @@ module Solargraph
     # @param filename [String] The file to analyze
     # @param line [Integer] The zero-based line number
     # @param column [Integer] The zero-based column number
-    # @return [ApiMap::Completion]
+    # @return [SourceMap::Completion]
     # @todo Take a Location instead of filename/line/column
     def completions_at filename, line, column
       position = Position.new(line, column)
