@@ -37,6 +37,7 @@ module Solargraph
     # @param version [Integer]
     def initialize code, filename = nil, version = 0
       @code = normalize(code)
+      @repaired = code
       @filename = filename
       @version = version
       @domains = []
@@ -99,9 +100,14 @@ module Solargraph
         @version = updater.version
         return self
       end
-      repaired = updater.write(@code, true)
-      synced = Source.new(repaired, filename)
-      synced.code = new_code
+      synced = Source.new(new_code, filename)
+      if synced.parsed?
+        synced.repaired = new_code
+      else
+        new_repair = updater.repair(@repaired)
+        synced = Source.new(new_repair, filename)
+        synced.code = new_code
+      end
       synced.version = updater.version
       synced
     end
@@ -205,6 +211,8 @@ module Solargraph
     attr_writer :version
 
     attr_writer :code
+
+    attr_accessor :repaired
 
     class << self
       # @param filename [String]
