@@ -110,4 +110,19 @@ describe Solargraph::SourceMap::Clip do
     clip = described_class.new(api_map, cursor)
     expect(clip.locals.map(&:name)).not_to include('z')
   end
+
+  it "puts local variables first in completion results" do
+    source = Solargraph::Source.load_string(%(
+      def p2
+      end
+      p1 = []
+      p
+    ))
+    api_map.map source
+    cursor = source.cursor_at(Solargraph::Position.new(4, 7))
+    clip = described_class.new(api_map, cursor)
+    pins = clip.complete.pins
+    expect(pins.first).to be_a(Solargraph::Pin::LocalVariable)
+    expect(pins.first.name).to eq('p1')
+  end
 end

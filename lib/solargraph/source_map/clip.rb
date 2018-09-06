@@ -35,8 +35,8 @@ module Solargraph
             elsif cursor.word.start_with?(':') and !cursor.word.start_with?('::')
               return package_completions(api_map.get_symbols)
             end
-            result.concat api_map.get_constants('', context.namespace)
             result.concat prefer_non_nil_variables(locals)
+            result.concat api_map.get_constants('', context.namespace)
             result.concat api_map.get_methods(context.namespace, scope: context.scope, visibility: [:public, :private, :protected])
             result.concat api_map.get_methods('Kernel')
             result.concat ApiMap.keywords
