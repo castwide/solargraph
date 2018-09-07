@@ -18,6 +18,7 @@ module Solargraph
     # @return [Solargraph::LiveMap]
     attr_reader :live_map
 
+    # @return [Array<String>]
     attr_reader :unresolved_requires
 
     # @param pins [Array<Solargraph::Pin::Base>]
@@ -33,7 +34,7 @@ module Solargraph
     end
 
     # @param pins [Array<Pin::Base>]
-    # @return [void]
+    # @return [self]
     def index pins
       @mutex.synchronize {
         @source_map_hash.clear
@@ -41,17 +42,21 @@ module Solargraph
         @store = Store.new(pins + YardMap.new.pins)
         @unresolved_requires = []
       }
+      self
     end
 
+    # @param source [Source]
+    # @return [self]
     def map source
       catalog Bundle.new([source])
+      self
     end
 
     # Catalog a workspace. Additional sources that need to be mapped can be
     # included in an optional array.
     #
     # @param bundle [Bundle]
-    # @return [void]
+    # @return [self]
     def catalog bundle
       # @todo This can be more efficient. We don't need to remap sources that
       #   are already here.
@@ -77,7 +82,7 @@ module Solargraph
           unmerged = true
         end
       end
-      return unless unmerged
+      return self unless unmerged
       pins = []
       reqs = []
       # @param map [SourceMap]
@@ -105,6 +110,7 @@ module Solargraph
         @store = new_store
         @unresolved_requires = bundle.yard_map.unresolved_requires
       }
+      self
     end
 
     # Try to merge a source into the maps.
@@ -304,17 +310,17 @@ module Solargraph
     # @param context [String]
     # @return [Array<Solargraph::Pin::Base>]
     def get_complex_type_methods type, context = '', internal = false
-      return [] if type.undefined? or type.void?
+      return [] if type.undefined? || type.void?
       result = []
       if type.duck_type?
         type.select(&:duck_type?).each do |t|
           result.push Pin::DuckMethod.new(nil, t.tag[1..-1])
         end
       else
-        unless type.nil? or type.name == 'void'
+        unless type.nil? || type.name == 'void'
           namespace = qualify(type.namespace, context)
           visibility = [:public]
-          if namespace == context or super_and_sub?(namespace, context)
+          if namespace == context || super_and_sub?(namespace, context)
             visibility.push :protected
             visibility.push :private if internal
           end
@@ -380,7 +386,7 @@ module Solargraph
       rake_yard(store)
       found = []
       code_object_paths.each do |k|
-        if found.empty? or (query.include?('.') or query.include?('#')) or !(k.include?('.') or k.include?('#'))
+        if found.empty? || (query.include?('.') || query.include?('#')) || !(k.include?('.') || k.include?('#'))
           found.push k if k.downcase.include?(query.downcase)
         end
       end
@@ -416,7 +422,7 @@ module Solargraph
     # @param location [Solargraph::Location]
     # @return [Solargraph::Pin::Base]
     def locate_pin location
-      return nil if location.nil? or !source_map_hash.has_key?(location.filename)
+      return nil if location.nil? || !source_map_hash.has_key?(location.filename)
       source_map_hash[location.filename].locate_pin(location)
     end
 
@@ -592,7 +598,7 @@ module Solargraph
       result = []
       nil_pins = []
       pins.each do |pin|
-        if pin.variable? and pin.nil_assignment?
+        if pin.variable? && pin.nil_assignment?
           nil_pins.push pin
         else
           result.push pin
