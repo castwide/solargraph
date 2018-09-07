@@ -32,7 +32,7 @@ module Solargraph
         source = Solargraph::Source.load_string(text, filename, version)
         workspace.merge source
         open_file_hash[filename] = source
-        catalog unless api_map.try_merge!(source)
+        catalog #unless api_map.try_merge!(source)
       end
     end
 
@@ -65,7 +65,7 @@ module Solargraph
         next unless workspace.would_merge?(filename)
         source = Solargraph::Source.load_string(text, filename)
         workspace.merge(source)
-        catalog unless api_map.try_merge!(source)
+        catalog #unless api_map.try_merge!(source)
         result = true
       end
       result
@@ -83,7 +83,7 @@ module Solargraph
         next unless workspace.would_merge?(filename)
         source = Solargraph::Source.load_string(File.read(filename), filename)
         workspace.merge(source)
-        catalog unless api_map.try_merge!(source)
+        catalog #unless api_map.try_merge!(source)
         result = true
       end
       result
