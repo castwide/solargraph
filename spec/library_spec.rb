@@ -91,20 +91,17 @@ describe Solargraph::Library do
     }.to raise_error(Solargraph::FileNotFoundError)
   end
 
-  it "keeps a closed file available if it exists on disk" do
-    Dir.mktmpdir do |dir|
-      library = Solargraph::Library.new
-      file = File.join(dir, 'file.rb')
-      File.write file, 'a = b'
-      library.open file, 'a = b', 0
-      expect {
-        library.checkout file
-      }.not_to raise_error
-      library.close file
-      expect {
-        library.checkout file
-      }.not_to raise_error(Solargraph::FileNotFoundError)
-    end
+  it "keeps a closed file available if it exists in the workspace" do
+    library = Solargraph::Library.load('spec/fixtures/workspace')
+    file = 'spec/fixtures/workspace/app.rb'
+    library.open file, File.read(file), 0
+    expect {
+      library.checkout file
+    }.not_to raise_error
+    library.close file
+    expect {
+      library.checkout file
+    }.not_to raise_error(Solargraph::FileNotFoundError)
   end
 
   it "keeps a closed file in the workspace" do
@@ -274,5 +271,15 @@ describe Solargraph::Library do
     )
     library.update updater
     expect(library.checkout('test.rb').code).to eq(repl)
+  end
+
+  it "synchronizes workspaces from updaters" do
+    library = Solargraph::Library.load('spec/fixtures/workspace')
+    updater = Solargraph::Source::Updater.new('spec/fixtures/workspace/app.rb', 1, [
+      Solargraph::Source::Change.new(nil, 'updated_from_updater')
+    ])
+    library.update updater
+    source = library.checkout('spec/fixtures/workspace/app.rb')
+    expect(source.code).to eq('updated_from_updater')
   end
 end

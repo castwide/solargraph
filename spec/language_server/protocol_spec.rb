@@ -332,6 +332,13 @@ describe Protocol do
   end
 
   it "handles textDocument/formatting" do
+    @protocol.request 'textDocument/didOpen', {
+      'textDocument' => {
+        'uri' => Solargraph::LanguageServer::UriHelpers.file_to_uri(File.realpath('spec/fixtures/formattable.rb')),
+        'text' => File.read('spec/fixtures/formattable.rb'),
+        'version' => 1
+      }
+    }
     @protocol.request 'textDocument/formatting', {
       'textDocument' => {
         'uri' => Solargraph::LanguageServer::UriHelpers.file_to_uri(File.realpath('spec/fixtures/formattable.rb'))

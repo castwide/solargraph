@@ -378,24 +378,8 @@ module Solargraph
     # @return [Solargraph::Source]
     def read filename
       return open_file_hash[filename] if open_file_hash.has_key?(filename)
-      raise FileNotFoundError, "File not found: #{filename}" unless File.file?(filename)
-      Solargraph::Source.load(filename)
-    end
-
-    # @param pin [Pin::Base]
-    # @return [Location]
-    def get_symbol_name_location pin
-      decsrc = read(pin.location.filename)
-      offset = Solargraph::Position.to_offset(decsrc.code, pin.location.range.start)
-      soff = decsrc.code.index(pin.name, offset)
-      eoff = soff + pin.name.length
-      Solargraph::Location.new(
-        pin.location.filename,
-        Solargraph::Range.new(
-          Solargraph::Position.from_offset(decsrc.code, soff),
-          Solargraph::Position.from_offset(decsrc.code, eoff)
-        )
-      )
+      raise FileNotFoundError, "File not found: #{filename}" unless workspace.has_file?(filename)
+      workspace.source(filename)
     end
   end
 end
