@@ -134,14 +134,6 @@ module Solargraph
         /^([a-z0-9_]|[^\u0000-\u007F])*[\?\!]?/i
       end
 
-      def current_node
-        @current_node ||= source.node_at(position.line, position.column)
-      end
-
-      def previous_node
-        @previous_node ||= source.node_at(previous_position.line, previous_position.column)
-      end
-
       def signature_position
         if @signature_position.nil?
           open_parens = 0
