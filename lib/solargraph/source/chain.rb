@@ -40,19 +40,20 @@ module Solargraph
         return [] if undefined?
         type = ComplexType::UNDEFINED
         head = true
+        working_pin = name_pin
         links[0..-2].each do |link|
-          pins = link.resolve(api_map, name_pin, head ? locals : [])
+          pins = link.resolve(api_map, working_pin, head ? locals : [])
           head = false
           return [] if pins.empty?
           type = ComplexType::UNDEFINED
           pins.each do |pin|
-            name_pin = pin
             type = pin.infer(api_map)
             break unless type.undefined?
           end
           return [] if type.undefined?
+          working_pin = Pin::ProxyType.anonymous(type)
         end
-        links.last.resolve(api_map, name_pin, head ? locals: [])
+        links.last.resolve(api_map, working_pin, head ? locals: [])
       end
 
       # @param api_map [ApiMap]
