@@ -52,6 +52,10 @@ module Solargraph
         clip.define.select{|pin| pin.kind == Pin::METHOD}
       end
 
+      def infer
+        cursor.chain.infer(api_map, context, locals)
+      end
+
       # The context at the current position.
       #
       # @return [Context]
