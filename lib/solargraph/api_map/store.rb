@@ -109,6 +109,16 @@ module Solargraph
         @method_pins ||= pins.select{|p| p.kind == Pin::METHOD or p.kind == Pin::ATTRIBUTE}
       end
 
+      # @param fqns [String]
+      # @return [Array<String>]
+      def domains(fqns)
+        result = []
+        fqns_pins(fqns).each do |nspin|
+          result.concat nspin.domains
+        end
+        result
+      end
+
       private
 
       # @param fqns [String]
