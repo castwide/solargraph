@@ -53,4 +53,19 @@ describe Solargraph::Pin::BlockParameter do
     expect(param.completion_item_kind).to eq(Solargraph::LanguageServer::CompletionItemKinds::VARIABLE)
     expect(param.symbol_kind).to eq(Solargraph::LanguageServer::SymbolKinds::VARIABLE)
   end
+
+  it "detects near equivalents" do
+    map1 = Solargraph::SourceMap.load_string(%(
+      strings.each do |foo|
+      end
+    ))
+    pin1 = map1.locals.select{|p| p.name == 'foo'}.first
+    map2 = Solargraph::SourceMap.load_string(%(
+      # A minor comment change
+      strings.each do |foo|
+      end
+      ))
+    pin2 = map2.locals.select{|p| p.name == 'foo'}.first
+    expect(pin1.nearly?(pin2)).to be(true)
+  end
 end
