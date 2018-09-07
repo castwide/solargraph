@@ -313,7 +313,10 @@ module Solargraph
                   end
                 end
               elsif c.type == :block
-                @pins.push Solargraph::Pin::Block.new(get_node_location(c), fqn || '', '', comments_for(c), c.children[0], scope)
+                here = get_node_start_position(c)
+                named_path = get_named_path_pin(here)
+                cur_scope = named_path ? named_path.context.scope : :class
+                @pins.push Solargraph::Pin::Block.new(get_node_location(c), fqn || '', '', comments_for(c), c.children[0], cur_scope)
               end
               process c, tree, visibility, scope, fqn, stack
             end

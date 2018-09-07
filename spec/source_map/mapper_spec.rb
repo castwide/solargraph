@@ -533,4 +533,45 @@ describe Solargraph::SourceMap::Mapper do
     pin = map.first_pin('#foo')
     expect(pin).to be_a(Solargraph::Pin::Method)
   end
+
+  it "maps root blocks to class scope" do
+    smap = Solargraph::SourceMap.load_string(%(
+      @a = some_array
+      @a.each do |b|
+        b
+      end
+    ), 'test.rb')
+    pin = smap.pins.select{|p| p.is_a?(Solargraph::Pin::Block)}.first
+    expect(pin.scope).to eq(:class)
+  end
+
+  it "maps class method blocks to class scope" do
+    smap = Solargraph::SourceMap.load_string(%(
+      class Foo
+        def self.bar
+          @a = some_array
+          @a.each do |b|
+            b
+          end
+        end
+      end
+    ))
+    pin = smap.pins.select{|p| p.is_a?(Solargraph::Pin::Block)}.first
+    expect(pin.scope).to eq(:class)
+  end
+
+  it "maps instance method blocks to instance scope" do
+    smap = Solargraph::SourceMap.load_string(%(
+      class Foo
+        def bar
+          @a = some_array
+          @a.each do |b|
+            b
+          end
+        end
+      end
+    ))
+    pin = smap.pins.select{|p| p.is_a?(Solargraph::Pin::Block)}.first
+    expect(pin.scope).to eq(:instance)
+  end
 end
