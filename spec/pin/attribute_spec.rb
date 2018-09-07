@@ -35,4 +35,9 @@ describe Solargraph::Pin::Attribute do
     cpin = Solargraph::Pin::Attribute.new(nil, 'Foo', 'bar', '', :reader, :class, :public)
     expect(cpin.path).to eq('Foo.bar')
   end
+
+  it "handles invalid return type tags" do
+    pin = Solargraph::Pin::Attribute.new(nil, 'Foo', 'bar', '@return [Array<]', :reader, :instance, :public)
+    expect(pin.return_complex_type).to be_undefined
+  end
 end
