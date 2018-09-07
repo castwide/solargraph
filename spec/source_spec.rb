@@ -116,4 +116,24 @@ describe Solargraph::Source do
     barbacks = bars.map{|b| source.at(b.range)}
     expect(barbacks).to eq(['bar', 'bar'])
   end
+
+  it "allows escape sequences incompatible with UTF-8" do
+    source = Solargraph::Source.new('
+      x = " Un bUen café \x92"
+      puts x
+    ')
+    expect(source.parsed?).to be(true)
+  end
+
+  it "fixes invalid byte sequences in UTF-8 encoding" do
+    expect {
+      Solargraph::Source.load('spec/fixtures/invalid_byte.rb')
+    }.not_to raise_error
+  end
+
+  it "loads files with Unicode characters" do
+    expect {
+      Solargraph::Source.load('spec/fixtures/unicode.rb')
+    }.not_to raise_error
+  end
 end

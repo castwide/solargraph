@@ -92,6 +92,8 @@ module Solargraph
       true
     end
 
+    # @param name [String]
+    # @return [Array<Location>]
     def references name
       source.references name
     end

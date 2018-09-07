@@ -484,6 +484,14 @@ describe Solargraph::SourceMap::Mapper do
     expect(map.requires.map(&:name)).to include('set')
   end
 
+  it "ignores dynamic require calls" do
+    map = Solargraph::SourceMap.load_string(%(
+      path = 'solargraph'
+      require path
+    ))
+    expect(map.requires.length).to eq(0)
+  end
+
   it "maps block parameters" do
     map = Solargraph::SourceMap.load_string(%(
       x.each do |y|
@@ -491,5 +499,38 @@ describe Solargraph::SourceMap::Mapper do
     ))
     pin = map.locals.select{|p| p.name == 'y'}.first
     expect(pin).to be_a(Solargraph::Pin::BlockParameter)
+  end
+
+  it "forces initialize methods to be private" do
+    map = Solargraph::SourceMap.load_string('
+      class Foo
+        def initialize name
+        end
+      end
+    ')
+    pin = map.first_pin('Foo#initialize')
+    expect(pin.visibility).to be(:private)
+  end
+
+  it "creates Class.new methods for Class#initialize" do
+    map = Solargraph::SourceMap.load_string('
+      class Foo
+        def initialize name
+        end
+      end
+    ')
+    pin = map.first_pin('Foo.new')
+    expect(pin).to be_a(Solargraph::Pin::Method)
+    expect(pin.return_type.tag).to eq('Foo')
+  end
+
+  it "maps top-level methods" do
+    map = Solargraph::SourceMap.load_string(%(
+      def foo(bar, baz)
+      end
+    ))
+    # @todo Are these paths okay?
+    pin = map.first_pin('#foo')
+    expect(pin).to be_a(Solargraph::Pin::Method)
   end
 end
