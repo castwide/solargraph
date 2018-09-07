@@ -17,6 +17,7 @@ module Solargraph
         @filename = filename
         @code = code
         @node = node
+        @comments = comments
         @node_stack = []
         @directives = {}
         @comment_ranges = comments.map do |c|
@@ -29,23 +30,21 @@ module Solargraph
         @locals = []
         @strings = []
 
-        @used_comment_locs = []
-
         # HACK make sure the first node gets processed
         root = AST::Node.new(:source, [filename])
         root = root.append node
         # @todo Is the root namespace a class or a module? Assuming class for now.
         @pins.push Pin::Namespace.new(get_node_location(nil), '', '', nil, :class, :public, nil)
         process root
-        # @node_comments.reject{|k, v| @used_comment_locs.include?(k)}.each do |k, v|
-        @node_comments.each do |k, v|
-          # @pins.first.comments.concat v
-          if v.include?('@!')
-            ns = namespace_at(Position.new(k.expression.line, k.expression.column))
-            loc = Location.new(filename, Range.from_to(k.expression.line, k.expression.column, k.expression.last_line, k.expression.last_column))
-            process_directive ns, loc, v
-          end
-        end
+        # @node_comments.each do |k, v|
+        #   # @pins.first.comments.concat v
+        #   if v.include?('@!')
+        #     ns = namespace_at(Position.new(k.expression.line, k.expression.column))
+        #     loc = Location.new(filename, Range.from_to(k.expression.line, k.expression.column, k.expression.last_line, k.expression.last_column))
+        #     process_directive ns, loc, v
+        #   end
+        # end
+        process_comment_directives
         [@pins, @locals, @requires, @symbols, @strings, @comment_ranges]
       end
 
@@ -350,7 +349,6 @@ module Solargraph
       def comments_for node
         result = @node_comments[node.loc]
         return nil if result.nil?
-        @used_comment_locs.push node.loc
         result
       end
 
@@ -447,35 +445,85 @@ module Solargraph
         @source_from_parser ||= @code.gsub(/\r\n/, "\n")
       end
 
-      def process_directive namespace, location, comment
-        parse = YARD::Docstring.parser.parse(comment)
-        parse.directives.each do |d|
-          docstring = YARD::Docstring.parser.parse(d.tag.text).to_docstring
-          if d.tag.tag_name == 'attribute'
-            t = (d.tag.types.nil? || d.tag.types.empty?) ? nil : d.tag.types.flatten.join('')
-            if t.nil? or t.include?('r')
-              # location, namespace, name, docstring, access
-              pins.push Solargraph::Pin::Attribute.new(location, namespace.path, d.tag.name, docstring.all, :reader, :instance, :public)
-            end
-            if t.nil? or t.include?('w')
-              pins.push Solargraph::Pin::Attribute.new(location, namespace.path, "#{d.tag.name}=", docstring.all, :writer, :instance, :public)
-            end
-          elsif d.tag.tag_name == 'method'
-            gen_src = Solargraph::SourceMap.load_string("def #{d.tag.name};end")
-            gen_pin = gen_src.pins.last # Method is last pin after root namespace
-            @pins.push Solargraph::Pin::Method.new(location, namespace.path, gen_pin.name, docstring.all, :instance, :public, gen_pin.parameters)
-          elsif d.tag.tag_name == 'macro'
-            # @todo Handle various types of macros (attach, new, whatever)
-            # path = path_for(k.node)
-            here = get_node_start_position(k.node)
-            pin = @pins.select{|pin| [Pin::NAMESPACE, Pin::METHOD].include?(pin.kind) and pin.location.range.contain?(here)}.first
-            @path_macros[pin.path] = v
-          # elsif d.tag.tag_name == 'domain'
-          #   @domains.push d.tag.text
-          else
-            # STDERR.puts "Nothing to do for directive: #{d}"
-            namespace.directives.push d
+      def process_comment position, comment
+        cmnt = remove_inline_comment_hashes(comment)
+        return unless cmnt =~ /(@\!method|@\!attribute|@\!domain|@\!macro)/
+        parse = YARD::Docstring.parser.parse(cmnt)
+        parse.directives.each { |d| process_directive(position, d) }
+      end
+
+      # @param position [Position]
+      # @param directive [YARD::Tags::Directive]
+      def process_directive position, directive
+        docstring = YARD::Docstring.parser.parse(directive.tag.text).to_docstring
+        location = Location.new(@filename, Range.new(position, position))
+        case directive.tag.tag_name
+        when 'method'
+          namespace = namespace_at(position)
+          gen_src = Solargraph::SourceMap.load_string("def #{directive.tag.name};end")
+          gen_pin = gen_src.pins.last # Method is last pin after root namespace
+          @pins.push Solargraph::Pin::Method.new(location, namespace.path, gen_pin.name, docstring.all, :instance, :public, gen_pin.parameters)
+        when 'attribute'
+          namespace = namespace_at(position)
+          t = (directive.tag.types.nil? || directive.tag.types.empty?) ? nil : directive.tag.types.flatten.join('')
+          if t.nil? or t.include?('r')
+            # location, namespace, name, docstring, access
+            pins.push Solargraph::Pin::Attribute.new(location, namespace.path, directive.tag.name, docstring.all, :reader, :instance, :public)
           end
+          if t.nil? or t.include?('w')
+            pins.push Solargraph::Pin::Attribute.new(location, namespace.path, "#{directive.tag.name}=", docstring.all, :writer, :instance, :public)
+          end
+        when 'domain'
+          namespace = namespace_at(position)
+          namespace.domains.push directive.tag.text
+        when 'macro'
+          # @todo Handle macros
+          path_pin = get_named_path_pin(position)
+          path_pin.macros.push directive
+        end
+      end
+
+      def remove_inline_comment_hashes comment
+        ctxt = ''
+        num = nil
+        started = false
+        comment.lines.each { |l|
+          # Trim the comment and minimum leading whitespace
+          p = l.gsub(/^#/, '')
+          if num.nil? and !p.strip.empty?
+            num = p.index(/[^ ]/)
+            started = true
+          elsif started and !p.strip.empty?
+            cur = p.index(/[^ ]/)
+            num = cur if cur < num
+          end
+          ctxt += "#{p[num..-1]}\n" if started
+        }
+        ctxt
+      end
+
+      def process_comment_directives
+        current = []
+        last_line = nil
+        @comments.each do |cmnt|
+          if cmnt.inline?
+            if last_line.nil? || cmnt.loc.expression.line == last_line + 1
+              if cmnt.loc.expression.column.zero? || @code.lines[cmnt.loc.expression.line][0..cmnt.loc.expression.column-1].strip.empty?
+                current.push cmnt.text
+              else
+                # @todo Connected to a line of code. Handle separately
+              end
+            else
+              process_comment Position.new(cmnt.loc.expression.line, cmnt.loc.expression.column), current.join("\n")
+              current.clear
+            end
+          else
+            # @todo Handle block comments
+          end
+          last_line = cmnt.loc.expression.line
+        end
+        unless current.empty?
+          process_comment Position.new(@comments.last.loc.expression.line, @comments.last.loc.expression.column), current.join("\n")
         end
       end
     end

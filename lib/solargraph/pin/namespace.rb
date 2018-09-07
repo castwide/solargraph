@@ -56,13 +56,7 @@ module Solargraph
       end
 
       def domains
-        @domains ||= begin
-          result = []
-          directives.each do |d|
-            result.push d.tag.text if d.tag.tag_name == 'domain'
-          end
-          result
-        end
+        @domains ||= []
       end
 
       def infer api_map

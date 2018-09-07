@@ -132,6 +132,11 @@ module Solargraph
         @directives
       end
 
+      # @return [Array<YARD::Tags::MacroDirective>]
+      def macros
+        @macros ||= []
+      end
+
       # Perform a quick check to see if this pin possibly includes YARD
       # directives. This method does not require parsing the comments.
       #
