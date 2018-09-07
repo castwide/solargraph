@@ -39,6 +39,19 @@ module Solargraph
       @pins ||= []
     end
 
+    # @param new_requires [Array<String>]
+    # @return [Boolean]
+    def change new_requires
+      if new_requires.uniq.sort == required.uniq.sort
+        false
+      else
+        required.clear
+        required.concat new_requires
+        process_requires
+        true
+      end
+    end
+
     # @return [Array<String>]
     def yardocs
       @yardocs ||= []
@@ -65,19 +78,6 @@ module Solargraph
       end
     end
 
-    # @param new_requires [Array<String>]
-    # @return [Boolean]
-    def change new_requires
-      if new_requires.uniq.sort == required.uniq.sort
-        false
-      else
-        required.clear
-        required.concat new_requires
-        process_requires
-        true
-      end
-    end
-
     # @return [Array<Solargraph::Pin::Base>]
     def core_pins
       @@core_pins ||= begin
@@ -88,6 +88,12 @@ module Solargraph
         end
         result
       end
+    end
+
+    # @param path [String]
+    # @return [Pin::Base]
+    def path_pin path
+      pins.select{ |p| p.path == path }.first
     end
 
     private

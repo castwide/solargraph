@@ -9,18 +9,30 @@ module Solargraph
           @stopped = true
         end
 
-        def schedule filename
-          @mutex.synchronize { queue.push filename }
+        # Schedule a file to be diagnosed.
+        #
+        # @param uri [String]
+        # @return [void]
+        def schedule uri
+          mutex.synchronize { queue.push uri }
         end
 
+        # Stop the diagnosis thread.
+        #
+        # @return [void]
         def stop
           @stopped = true
         end
 
+        # True is the diagnoser is stopped.
+        #
+        # @return [Boolean]
         def stopped?
           @stopped
         end
 
+        # Start the diagnosis thread.
+        #
         # @return [self]
         def start
           return unless @stopped
@@ -28,24 +40,21 @@ module Solargraph
           Thread.new do
             until stopped?
               sleep 0.1
+              next if queue.empty? || host.synchronizing?
               if !host.options['diagnostics']
                 mutex.synchronize { queue.clear }
                 next
               end
               begin
-                # Diagnosis is broken into two parts to reduce the number of
-                # times it runs while a document is changing
                 current = nil
-                already_changing = nil
-                mutex.synchronize do
-                  current = queue.shift
-                end
-                next if current.nil?
+                mutex.synchronize { current = queue.shift }
+                next if queue.include?(current)
                 results = host.diagnose(current)
                 host.send_notification "textDocument/publishDiagnostics", {
                   uri: current,
                   diagnostics: results
                 }
+                sleep 0.5
               rescue DiagnosticsError => e
                 STDERR.puts "Error in diagnostics: #{e.message}"
                 options['diagnostics'] = false
@@ -67,7 +76,7 @@ module Solargraph
         # @return [Mutex]
         attr_reader :mutex
 
-        # @return [Set]
+        # @return [Array]
         attr_reader :queue
       end
     end

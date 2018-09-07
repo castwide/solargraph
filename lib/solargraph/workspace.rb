@@ -48,12 +48,11 @@ module Solargraph
     # Remove a source from the workspace. The source will not be removed if
     # its file exists and the workspace is configured to include it.
     #
-    # @param source [Solargraph::Source]
+    # @param filename [String]
     # @return [Boolean] True if the source was removed from the workspace
-    def remove source
-      return false if config(true).calculated.include?(source.filename)
-      # @todo This method PROBABLY doesn't care if the file is actually here
-      source_hash.delete source.filename
+    def remove filename
+      return false if config(true).calculated.include?(filename)
+      source_hash.delete filename
       true
     end
 
@@ -65,11 +64,6 @@ module Solargraph
     # @return [Array<Solargraph::Source>]
     def sources
       source_hash.values
-    end
-
-    # @return [Boolean]
-    def has_source? source
-      source_hash.has_value?(source)
     end
 
     # @return [Boolean]

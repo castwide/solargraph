@@ -15,7 +15,7 @@ module Solargraph
           node.children.each { |n|
             if n.kind_of?(AST::Node)
               if n.type == :cbase
-                parts = pack_name(n)
+                parts = [''] + pack_name(n)
               else
                 parts += pack_name(n)
               end

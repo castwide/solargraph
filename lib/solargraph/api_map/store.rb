@@ -3,44 +3,12 @@ require 'set'
 module Solargraph
   class ApiMap
     class Store
+      # @return [Array<Solargraph::Pin::Base>]
       attr_reader :pins
 
-      # @param sources [Array<Solargraph::Source>]
-      # @param yard_pins [Array<Solargraph::Pin::Base>]
-      def initialize pins
-        # inner_update sources
-        # pins.concat yard_pins
+      # @param pins [Array<Solargraph::Source>]
+      def initialize pins = []
         @pins = pins
-        index
-      end
-
-      # @return [Array<Solargraph::Pin::Base>]
-      def pins
-        @pins ||= []
-      end
-
-      # @param *sources [Array<Solargraph::Source>]
-      # @return [void]
-      def remove *sources
-        sources.each do |source|
-          pins.delete_if { |pin| !pin.yard_pin? and pin.filename == source.filename }
-          symbols.delete_if { |pin| pin.filename == source.filename }
-        end
-        index
-      end
-
-      # @param *sources [Array<Solargraph::Source>]
-      # @return [void]
-      def update *sources
-        inner_update sources
-        index
-      end
-
-      # @param yard_pins [Array<Solargraph::Pin::Base>]
-      # @return [void]
-      def update_yard yard_pins
-        pins.delete_if(&:yard_pin?)
-        pins.concat yard_pins
         index
       end
 
@@ -59,15 +27,8 @@ module Solargraph
       # @return [Array<Solargraph::Pin::Base>]
       def get_methods fqns, scope: :instance, visibility: [:public]
         namespace_children(fqns).select{ |pin|
-          pin.kind == Pin::METHOD and (pin.scope == scope or fqns == '') and visibility.include?(pin.visibility)
+          [Pin::METHOD, Pin::ATTRIBUTE].include?(pin.kind) and (pin.scope == scope or fqns == '') and visibility.include?(pin.visibility)
         }
-      end
-
-      # @param fqns [String]
-      # @param scope [Symbol]
-      # @return [Array<Solargraph::Pin::Base>]
-      def get_attrs fqns, scope
-        namespace_children(fqns).select{ |pin| pin.kind == Pin::ATTRIBUTE and pin.scope == scope }
       end
 
       # @param fqns [String]
@@ -148,6 +109,16 @@ module Solargraph
         @method_pins ||= pins.select{|p| p.kind == Pin::METHOD or p.kind == Pin::ATTRIBUTE}
       end
 
+      # @param fqns [String]
+      # @return [Array<String>]
+      def domains(fqns)
+        result = []
+        fqns_pins(fqns).each do |nspin|
+          result.concat nspin.domains
+        end
+        result
+      end
+
       private
 
       # @param fqns [String]
@@ -195,18 +166,6 @@ module Solargraph
         end
         @namespace_pins = nil
         @method_pins = nil
-      end
-
-      # @param sources [Array<Solargraph::Source>]
-      # @return [void]
-      def inner_update sources
-        sources.each do |source|
-          pins.delete_if { |pin| !pin.yard_pin? and pin.filename == source.filename }
-          symbols.delete_if { |pin| pin.filename == source.filename }
-          pins.concat source.pins
-          # @todo Fix symbols
-          # symbols.concat source.symbols
-        end
       end
     end
   end

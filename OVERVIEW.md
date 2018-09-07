@@ -8,15 +8,19 @@ The Solargraph library consists of two major groups of components: the data prov
 
 **Workspace** (`Solargraph::Workspace`): A collection of Sources that comprise a project. Workspaces have configurations that define which files to include in maps and other project-related options. Users can configure the Workspace through a .solargraph.yml file in a project's root directory.
 
-**Source** (`Solargraph::Source`): Data about a single Ruby file. Sources parse Ruby code into an AST and generate a collection of Pins.
+**Source** (`Solargraph::Source`): Data about a single Ruby file. Sources parse Ruby code into an AST and handle incremental updates.
 
-**Pins** (`Solargraph::Pin`): Information about a class, a module, a method, a variable, etc. Pins for different types of components extend `Pin::Base`. Most ApiMap queries return results as an array of Pins.
+**SourceMap** (`Solargraph::SourceMap`): A Source with generated pins for use in ApiMaps.
 
-**Fragment** (`Solargraph::Source::Fragment`): Information about a specific location in a Source. ApiMaps use fragments to gather contextual program data, such as local variables that are visible from the fragment's location or methods that are available within the location's scope.
+**Pins** (`Solargraph::Pin`): Information about classes, modules, methods, variables, etc. Pins for different types of components extend `Pin::Base`. Most ApiMap queries return results as an array of Pins.
+
+**Cursor** (`Solargraph::Source::Cursor`): Information about a specific location in a Source.
+
+**Clip** (`Solargraph::SourceMap::Clip`): A Cursor bundled with an ApiMap to provide definitions, completions, and other information.
 
 **YardMap** (`Solargraph::YardMap`): A collection of YARD documents. ApiMaps use YardMaps to gather data from external gems and the Ruby core.
 
-**Library** (`Solargraph::Library`): The component that synchronizes a Workspace with its associated ApiMap. Libraries help ensure that the ApiMap gets updated when a file in the Workspace changes.
+**Library** (`Solargraph::Library`): The component that synchronizes a Workspace with an ApiMap. Libraries help ensure that the ApiMap gets updated when a file in the Workspace changes.
 
 ## Language Servers
 

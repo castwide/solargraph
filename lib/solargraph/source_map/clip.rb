@@ -12,6 +12,7 @@ module Solargraph
 
       # @return [Array<Pin::Base>]
       def define
+        return [] if cursor.chain.literal?
         cursor.chain.define(api_map, context_pin, locals)
       end
 
@@ -34,8 +35,8 @@ module Solargraph
             elsif cursor.word.start_with?(':') and !cursor.word.start_with?('::')
               return package_completions(api_map.get_symbols)
             end
-            result.concat api_map.get_constants('', context_pin.context.namespace)
             result.concat prefer_non_nil_variables(locals)
+            result.concat api_map.get_constants('', context_pin.context.namespace)
             result.concat api_map.get_methods(context_pin.context.namespace, scope: context_pin.context.scope, visibility: [:public, :private, :protected])
             result.concat api_map.get_methods('Kernel')
             result.concat ApiMap.keywords
@@ -49,6 +50,10 @@ module Solargraph
         return [] unless cursor.argument?
         clip = Clip.new(api_map, cursor.recipient)
         clip.define.select{|pin| pin.kind == Pin::METHOD}
+      end
+
+      def infer
+        cursor.chain.infer(api_map, context_pin, locals)
       end
 
       # The context at the current position.
@@ -65,7 +70,7 @@ module Solargraph
       # @return [Array<Solargraph::Pin::Base>]
       def locals
         @locals ||= source_map.locals.select { |pin|
-          pin.visible_from?(block, cursor.node_position)
+          pin.visible_from?(block, Position.new(cursor.position.line, (cursor.position.column.zero? ? 0 : cursor.position.column - 1)))
         }.reverse
       end
 
@@ -74,11 +79,12 @@ module Solargraph
       # @return [ApiMap]
       attr_reader :api_map
 
-      # @return [cursor]
+      # @return [Source::Cursor]
       attr_reader :cursor
 
+      # @return [SourceMap]
       def source_map
-        api_map.source_map(cursor.filename)
+        @source_map ||= api_map.source_map(cursor.filename)
       end
 
       # @return [Solargraph::Pin::Base]
@@ -91,7 +97,7 @@ module Solargraph
       # @return [Completion]
       def package_completions result
         frag_start = cursor.start_of_word.to_s.downcase
-        filtered = result.uniq(&:identifier).select{|s| s.name.downcase.start_with?(frag_start) and (s.kind != Pin::METHOD or s.name.match(/^[a-z0-9_]+(\!|\?|=)?$/i))}.sort_by.with_index{ |x, idx| [x.name, idx] }
+        filtered = result.uniq(&:identifier).select{|s| s.name.downcase.start_with?(frag_start) and (s.kind != Pin::METHOD or s.name.match(/^[a-z0-9_]+(\!|\?|=)?$/i))}
         Completion.new(filtered, cursor.range)
       end
 

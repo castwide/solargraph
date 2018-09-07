@@ -19,4 +19,63 @@ describe Solargraph::Source::Cursor do
     cursor = described_class.new(source, Solargraph::Position.new(2, 0))
     expect(cursor).not_to be_comment
   end
+
+  it "detects arguments" do
+    source = double(:Source, :code => 'a(1), b')
+    cur = described_class.new(source, Solargraph::Position.new(0,2))
+    expect(cur).to be_argument
+    cur = described_class.new(source, Solargraph::Position.new(0,3))
+    expect(cur).to be_argument
+    cur = described_class.new(source, Solargraph::Position.new(0,4))
+    expect(cur).not_to be_argument
+    cur = described_class.new(source, Solargraph::Position.new(0,5))
+    expect(cur).not_to be_argument
+    cur = described_class.new(source, Solargraph::Position.new(0,7))
+    expect(cur).not_to be_argument
+  end
+
+  it "detects class variables" do
+    source = double(:Source, :code => '@@foo')
+    cur = described_class.new(source, Solargraph::Position.new(0, 2))
+    expect(cur.word).to eq('@@foo')
+  end
+
+  it "detects instance variables" do
+    source = double(:Source, :code => '@foo')
+    cur = described_class.new(source, Solargraph::Position.new(0, 1))
+    expect(cur.word).to eq('@foo')
+  end
+
+  it "detects global variables" do
+    source = double(:Source, :code => '@foo')
+    cur = described_class.new(source, Solargraph::Position.new(0, 1))
+    expect(cur.word).to eq('@foo')
+  end
+
+  it "generates word ranges" do
+    source = Solargraph::Source.load_string(%(
+      foo = bar
+    ))
+    cur = described_class.new(source, Solargraph::Position.new(1, 15))
+    expect(source.at(cur.range)).to eq('bar')
+  end
+
+  it "detects recipients" do
+    source = double(:Source, :code => 'a(1), b')
+    cur = described_class.new(source, Solargraph::Position.new(0, 2))
+    expect(cur.recipient.word).to eq('a')
+  end
+
+  it "generates chains" do
+    source = Solargraph::Source.load_string('foo.bar(1,2).baz{}')
+    cur = described_class.new(source, Solargraph::Position.new(0, 18))
+    expect(cur.chain).to be_a(Solargraph::Source::Chain)
+    expect(cur.chain.links.map(&:word)).to eq(['foo', 'bar', 'baz'])
+  end
+
+  it "detects constant words" do
+    source = double(:Source, :code => 'Foo::Bar')
+    cur = described_class.new(source, Solargraph::Position.new(0, 5))
+    expect(cur.word).to eq('Bar')
+  end
 end

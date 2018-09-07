@@ -77,7 +77,7 @@ module Solargraph
 
       # @return [ComplexType]
       def context
-        @context ||= ComplexType.parse(namespace)
+        @context ||= ComplexType.parse(namespace || '')
       end
 
       # Pin equality is determined using the #nearly? method and also
@@ -117,7 +117,7 @@ module Solargraph
       #
       # @return [ComplexType]
       def return_complex_type
-        @return_complex_type ||= ComplexType.new
+        @return_complex_type ||= ComplexType::UNDEFINED
       end
 
       # @return [YARD::Docstring]
@@ -130,6 +130,11 @@ module Solargraph
       def directives
         parse_comments unless defined?(@directives)
         @directives
+      end
+
+      # @return [Array<YARD::Tags::MacroDirective>]
+      def macros
+        @macros ||= []
       end
 
       # Perform a quick check to see if this pin possibly includes YARD

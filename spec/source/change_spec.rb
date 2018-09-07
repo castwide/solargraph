@@ -26,7 +26,14 @@ describe Solargraph::Source::Change do
     expect(updated).to eq('var    ')
   end
 
-  it "overwrites for nil ranges" do
+  it "repairs nil ranges" do
+    text = 'original'
+    change = Solargraph::Source::Change.new(nil, '...')
+    updated = change.repair(text)
+    expect(updated).to eq('   ')
+  end
+
+  it "overwrites nil ranges" do
     text = 'foo'
     new_text = 'bar'
     change = Solargraph::Source::Change.new(nil, new_text)

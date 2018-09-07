@@ -7,10 +7,14 @@ module Solargraph
       # @return [Symbol] :class or :instance
       attr_reader :scope
 
-      def initialize location, namespace, name, comments, access, scope
+      # @return [Symbol] :public, :protected, or :private
+      attr_reader :visibility
+
+      def initialize location, namespace, name, comments, access, scope, visibility
         super(location, namespace, name, comments)
         @access = access
         @scope = scope
+        @visibility = visibility
       end
 
       def kind
@@ -30,17 +34,7 @@ module Solargraph
       end
 
       def return_complex_type
-        if @return_complex_type.nil?
-          @return_complex_type = ComplexType.new
-          tag = docstring.tag(:return)
-          @return_complex_type = ComplexType.parse(*tag.types) unless tag.nil?
-        end
-        @return_complex_type
-      end
-
-      def visibility
-        # @todo Check attribute visibility
-        :public
+        @return_complex_type ||= generate_complex_type
       end
 
       def parameters
@@ -51,6 +45,26 @@ module Solargraph
 
       def parameter_names
         []
+      end
+
+      private
+
+      # @todo DRY this method. It also exists in Pin::Method.
+      #
+      # @return [ComplexType]
+      def generate_complex_type
+        tag = docstring.tag(:return)
+        if tag.nil?
+          ol = docstring.tag(:overload)
+          tag = ol.tag(:return) unless ol.nil?
+        end
+        return ComplexType::UNDEFINED if tag.nil? or tag.types.nil? or tag.types.empty?
+        begin
+          ComplexType.parse *tag.types
+        rescue Solargraph::ComplexTypeError => e
+          STDERR.puts e.message
+          ComplexType::UNDEFINED
+        end
       end
     end
   end

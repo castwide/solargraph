@@ -7,7 +7,7 @@ module Solargraph
       def diagnose source, api_map
         result = []
         api_map.document_symbols(source.filename).each do |pin|
-          next unless pin.kind == Pin::METHOD
+          next unless pin.kind == Pin::METHOD or pin.kind == Pin::ATTRIBUTE
           result.concat check_return_type(pin, api_map, source)
           result.concat check_param_types(pin, api_map, source)
           result.concat check_param_tags(pin, api_map, source)

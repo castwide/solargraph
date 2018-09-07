@@ -5,6 +5,8 @@ module Solargraph
 
       attr_reader :context
 
+      attr_reader :assignment
+
       def initialize location, namespace, name, comments, assignment, literal, context
         super(location, namespace, name, comments)
         @assignment = assignment
@@ -41,12 +43,9 @@ module Solargraph
       def infer api_map
         result = super
         return result if result.defined? or @assignment.nil?
-        # chain = Source::Chain.new(filename, @assignment)
-        # @todo Use NodeChainer
-        chain = SourceMap::NodeChainer.chain(location.filename, @assignment)
-        # @todo Is there another way besides the apimap?
-        fragment = api_map.fragment_at(location.filename, location.range.start)
-        locals = fragment.locals - [self]
+        chain = Source::NodeChainer.chain(@assignment)
+        clip = api_map.clip_at(location.filename, location.range.start)
+        locals = clip.locals - [self]
         chain.infer(api_map, context, locals)
       end
 
@@ -61,10 +60,6 @@ module Solargraph
         @return_complex_type = pin.return_complex_type
         true
       end
-
-      protected
-
-      attr_reader :assignment
 
       private
 

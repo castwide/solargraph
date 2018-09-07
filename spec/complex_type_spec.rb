@@ -168,7 +168,7 @@ describe Solargraph::ComplexType do
         end
       end
     ))
-    api_map.catalog Solargraph::Workspace.new, [source]
+    api_map.map source
     api_map
   }
 

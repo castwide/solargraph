@@ -17,6 +17,7 @@ module Solargraph
         @filename = filename
         @code = code
         @node = node
+        @comments = comments
         @node_stack = []
         @directives = {}
         @comment_ranges = comments.map do |c|
@@ -29,18 +30,21 @@ module Solargraph
         @locals = []
         @strings = []
 
-        @used_comment_locs = []
-
         # HACK make sure the first node gets processed
         root = AST::Node.new(:source, [filename])
         root = root.append node
         # @todo Is the root namespace a class or a module? Assuming class for now.
         @pins.push Pin::Namespace.new(get_node_location(nil), '', '', nil, :class, :public, nil)
         process root
-        @node_comments.reject{|k, v| @used_comment_locs.include?(k)}.each do |k, v|
-          @pins.first.comments.concat v
-        end
-
+        # @node_comments.each do |k, v|
+        #   # @pins.first.comments.concat v
+        #   if v.include?('@!')
+        #     ns = namespace_at(Position.new(k.expression.line, k.expression.column))
+        #     loc = Location.new(filename, Range.from_to(k.expression.line, k.expression.column, k.expression.last_line, k.expression.last_column))
+        #     process_directive ns, loc, v
+        #   end
+        # end
+        process_comment_directives
         [@pins, @locals, @requires, @symbols, @strings, @comment_ranges]
       end
 
@@ -111,16 +115,15 @@ module Solargraph
                     u = c.updated(:ivasgn, c.children + ora.children[1..-1], nil)
                     pins.push Solargraph::Pin::InstanceVariable.new(get_node_location(u), fqn || '', c.children[0].to_s, comments_for(u), u.children[1], infer_literal_node_type(u.children[1]), named_path.context)
                     if visibility == :module_function and named_path.kind == Pin::METHOD
-                      other = ComplexType.parse(named_path.context.namespace) # pins.select{|pin| pin.path == "#{context.namespace}.#{context.name}"}.first
+                      other = ComplexType.parse("Module<#{named_path.context.namespace}>")
                       pins.push Solargraph::Pin::InstanceVariable.new(get_node_location(u), fqn || '', c.children[0].to_s, comments_for(u), u.children[1], infer_literal_node_type(u.children[1]), other) #unless other.nil?
                     end
                   end
                 else
                   pins.push Solargraph::Pin::InstanceVariable.new(get_node_location(c), fqn || '',c.children[0].to_s, comments_for(c), c.children[1], infer_literal_node_type(c.children[1]), named_path.context)
-                  if visibility == :module_function and context.kind == Pin::METHOD
-                    # other = pins.select{|pin| pin.path == "#{context.namespace}.#{context.name}"}.first
-                    other = ComplexType.parse(named_path.context.namespace) # pins.select{|pin| pin.path == "#{context.namespace}.#{context.name}"}.first
-                    pins.push Solargraph::Pin::InstanceVariable.new(get_node_location(c), fqn || '',c.children[0].to_s, comments_for(c), c.children[1], infer_literal_node_type(c.children[1]), other)
+                  if visibility == :module_function and named_path.kind == Pin::METHOD
+                    other = ComplexType.parse("Module<#{named_path.context.namespace}>")
+                     pins.push Solargraph::Pin::InstanceVariable.new(get_node_location(c), fqn || '',c.children[0].to_s, comments_for(c), c.children[1], infer_literal_node_type(c.children[1]), other)
                   end
                 end
               elsif c.type == :cvasgn
@@ -144,13 +147,21 @@ module Solargraph
                   ora = find_parent(stack, :or_asgn)
                   unless ora.nil?
                     u = c.updated(:lvasgn, c.children + ora.children[1..-1], nil)
-                    @locals.push Solargraph::Pin::LocalVariable.new(get_node_location(u), fqn, u.children[0].to_s, comments_for(ora), c.children[1], infer_literal_node_type(c.children[1]), context, block, presence)
+                    @locals.push Solargraph::Pin::LocalVariable.new(get_node_location(u), fqn, u.children[0].to_s, comments_for(ora), u.children[1], infer_literal_node_type(c.children[1]), context, block, presence)
                   end
                 else
                   @locals.push Solargraph::Pin::LocalVariable.new(get_node_location(c), fqn, c.children[0].to_s, comments_for(c), c.children[1], infer_literal_node_type(c.children[1]), context, block, presence)
                 end
               elsif c.type == :gvasgn
-                pins.push Solargraph::Pin::GlobalVariable.new(get_node_location(c), fqn, c.children[0].to_s, comments_for(c), c.children[1], infer_literal_node_type(c.children[1]), @pins.first)
+                if c.children[1].nil?
+                  ora = find_parent(stack, :or_asgn)
+                  unless ora.nil?
+                    u = c.updated(:gvasgn, c.children + ora.children[1..-1], nil)
+                    pins.push Solargraph::Pin::GlobalVariable.new(get_node_location(c), fqn, u.children[0].to_s, comments_for(c), u.children[1], infer_literal_node_type(c.children[1]), @pins.first)
+                  end
+                else
+                  pins.push Solargraph::Pin::GlobalVariable.new(get_node_location(c), fqn, c.children[0].to_s, comments_for(c), c.children[1], infer_literal_node_type(c.children[1]), @pins.first)
+                end
               elsif c.type == :sym
                 @symbols.push Solargraph::Pin::Symbol.new(get_node_location(c), ":#{c.children[0]}")
               elsif c.type == :casgn
@@ -225,7 +236,7 @@ module Solargraph
                       mm = Solargraph::Pin::Method.new(ref.location, ref.namespace, ref.name, ref.comments, :class, :public, ref.parameters)
                       cm = Solargraph::Pin::Method.new(ref.location, ref.namespace, ref.name, ref.comments, :instance, :private, ref.parameters)
                       pins.push mm, cm
-                      pins.select{|pin| pin.kind == Pin::INSTANCE_VARIABLE and pin.context == ref}.each do |ivar|
+                      pins.select{|pin| pin.kind == Pin::INSTANCE_VARIABLE and pin.context == ref.context}.each do |ivar|
                         pins.delete ivar
                         pins.push Solargraph::Pin::InstanceVariable.new(ivar.location, ivar.namespace, ivar.name, ivar.comments, ivar.signature, ivar.instance_variable_get(:@literal), mm)
                         pins.push Solargraph::Pin::InstanceVariable.new(ivar.location, ivar.namespace, ivar.name, ivar.comments, ivar.signature, ivar.instance_variable_get(:@literal), cm)
@@ -269,10 +280,10 @@ module Solargraph
               elsif c.type == :send and [:attr_reader, :attr_writer, :attr_accessor].include?(c.children[1])
                 c.children[2..-1].each do |a|
                   if c.children[1] == :attr_reader or c.children[1] == :attr_accessor
-                    pins.push Solargraph::Pin::Attribute.new(get_node_location(c), fqn || '', "#{a.children[0]}", comments_for(c), :reader, scope)
+                    pins.push Solargraph::Pin::Attribute.new(get_node_location(c), fqn || '', "#{a.children[0]}", comments_for(c), :reader, scope, visibility)
                   end
                   if c.children[1] == :attr_writer or c.children[1] == :attr_accessor
-                    pins.push Solargraph::Pin::Attribute.new(get_node_location(c), fqn || '', "#{a.children[0]}=", comments_for(c), :writer, scope)
+                    pins.push Solargraph::Pin::Attribute.new(get_node_location(c), fqn || '', "#{a.children[0]}=", comments_for(c), :writer, scope, visibility)
                   end
                 end
               elsif c.type == :sclass and c.children[0].type == :self
@@ -338,7 +349,6 @@ module Solargraph
       def comments_for node
         result = @node_comments[node.loc]
         return nil if result.nil?
-        @used_comment_locs.push node.loc
         result
       end
 
@@ -388,6 +398,10 @@ module Solargraph
       # @return [Solargraph::Pin::Namespace]
       def namespace_for(node)
         position = Position.new(node.loc.line, node.loc.column)
+        namespace_at(position)
+      end
+
+      def namespace_at(position)
         @pins.select{|pin| pin.kind == Pin::NAMESPACE and pin.location.range.contain?(position)}.last
       end
 
@@ -429,6 +443,88 @@ module Solargraph
 
       def source_from_parser
         @source_from_parser ||= @code.gsub(/\r\n/, "\n")
+      end
+
+      def process_comment position, comment
+        cmnt = remove_inline_comment_hashes(comment)
+        return unless cmnt =~ /(@\!method|@\!attribute|@\!domain|@\!macro)/
+        parse = YARD::Docstring.parser.parse(cmnt)
+        parse.directives.each { |d| process_directive(position, d) }
+      end
+
+      # @param position [Position]
+      # @param directive [YARD::Tags::Directive]
+      def process_directive position, directive
+        docstring = YARD::Docstring.parser.parse(directive.tag.text).to_docstring
+        location = Location.new(@filename, Range.new(position, position))
+        case directive.tag.tag_name
+        when 'method'
+          namespace = namespace_at(position)
+          gen_src = Solargraph::SourceMap.load_string("def #{directive.tag.name};end")
+          gen_pin = gen_src.pins.last # Method is last pin after root namespace
+          @pins.push Solargraph::Pin::Method.new(location, namespace.path, gen_pin.name, docstring.all, :instance, :public, gen_pin.parameters)
+        when 'attribute'
+          namespace = namespace_at(position)
+          t = (directive.tag.types.nil? || directive.tag.types.empty?) ? nil : directive.tag.types.flatten.join('')
+          if t.nil? or t.include?('r')
+            # location, namespace, name, docstring, access
+            pins.push Solargraph::Pin::Attribute.new(location, namespace.path, directive.tag.name, docstring.all, :reader, :instance, :public)
+          end
+          if t.nil? or t.include?('w')
+            pins.push Solargraph::Pin::Attribute.new(location, namespace.path, "#{directive.tag.name}=", docstring.all, :writer, :instance, :public)
+          end
+        when 'domain'
+          namespace = namespace_at(position)
+          namespace.domains.push directive.tag.text
+        when 'macro'
+          # @todo Handle macros
+          path_pin = get_named_path_pin(position)
+          path_pin.macros.push directive
+        end
+      end
+
+      def remove_inline_comment_hashes comment
+        ctxt = ''
+        num = nil
+        started = false
+        comment.lines.each { |l|
+          # Trim the comment and minimum leading whitespace
+          p = l.gsub(/^#/, '')
+          if num.nil? and !p.strip.empty?
+            num = p.index(/[^ ]/)
+            started = true
+          elsif started and !p.strip.empty?
+            cur = p.index(/[^ ]/)
+            num = cur if cur < num
+          end
+          ctxt += "#{p[num..-1]}\n" if started
+        }
+        ctxt
+      end
+
+      def process_comment_directives
+        current = []
+        last_line = nil
+        @comments.each do |cmnt|
+          if cmnt.inline?
+            if last_line.nil? || cmnt.loc.expression.line == last_line + 1
+              if cmnt.loc.expression.column.zero? || @code.lines[cmnt.loc.expression.line][0..cmnt.loc.expression.column-1].strip.empty?
+                current.push cmnt.text
+              else
+                # @todo Connected to a line of code. Handle separately
+              end
+            else
+              process_comment Position.new(cmnt.loc.expression.line, cmnt.loc.expression.column), current.join("\n")
+              current.clear
+            end
+          else
+            # @todo Handle block comments
+          end
+          last_line = cmnt.loc.expression.line
+        end
+        unless current.empty?
+          process_comment Position.new(@comments.last.loc.expression.line, @comments.last.loc.expression.column), current.join("\n")
+        end
       end
     end
   end

@@ -38,12 +38,6 @@ module Solargraph
             break
           end
           commit text, "#{new_text[0..-2]} "
-        elsif nullable and !range.nil? and new_text.empty?
-          offset = Position.to_offset(text, range.start)
-          if offset > 0 and text[offset - 1] == '.'
-            text = text[0..offset - 1] + ' ' + text[offset..-1]
-          end
-          commit text, new_text
         elsif range.nil?
           new_text
         else

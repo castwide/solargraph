@@ -10,6 +10,9 @@ module Solargraph
     autoload :NodeMethods,   'solargraph/source/node_methods'
     autoload :EncodingFixes, 'solargraph/source/encoding_fixes'
     autoload :Cursor,        'solargraph/source/cursor'
+    autoload :Chain,         'solargraph/source/chain'
+    autoload :SourceChainer, 'solargraph/source/source_chainer'
+    autoload :NodeChainer,   'solargraph/source/node_chainer'
 
     include EncodingFixes
     include NodeMethods
@@ -34,6 +37,7 @@ module Solargraph
     # @param version [Integer]
     def initialize code, filename = nil, version = 0
       @code = normalize(code)
+      @repaired = code
       @filename = filename
       @version = version
       @domains = []
@@ -41,7 +45,7 @@ module Solargraph
         @node, @comments = Source.parse_with_comments(@code, filename)
         @parsed = true
       rescue Parser::SyntaxError, EncodingError => e
-        @node, @comments = Source.parse_with_comments(@code.gsub(/[^s]/, '_'), filename)
+        @node, @comments = Source.parse_with_comments(@code.gsub(/[^s]/, ' '), filename)
         @parsed = false
       rescue Exception => e
         STDERR.puts e.message
@@ -91,25 +95,27 @@ module Solargraph
     # @return [Source]
     def synchronize updater
       raise 'Invalid synchronization' unless updater.filename == filename
-      new_code = updater.write(@code)
-      if new_code == @code
+      real_code = updater.write(@code)
+      incr_code = updater.write(@code, true)
+      if real_code == @code
         @version = updater.version
         return self
       end
-      repaired = updater.write(@code, true)
-      synced = Source.new(repaired, filename)
-      synced.code = new_code
+      synced = Source.new(incr_code, filename)
+      if synced.parsed?
+        synced.code = real_code
+      else
+        new_repair = updater.repair(@repaired)
+        synced = Source.new(new_repair, filename)
+        synced.parsed = false
+        synced.code = real_code
+      end
       synced.version = updater.version
       synced
     end
 
     def cursor_at position
       Cursor.new(self, position)
-    end
-
-    # @todo Deprecate
-    def fragment_at position
-      cursor_at position
     end
 
     # @return [Boolean]
@@ -207,6 +213,10 @@ module Solargraph
     attr_writer :version
 
     attr_writer :code
+
+    attr_accessor :repaired
+
+    attr_writer :parsed
 
     class << self
       # @param filename [String]

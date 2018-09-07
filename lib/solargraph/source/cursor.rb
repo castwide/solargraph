@@ -21,6 +21,7 @@ module Solargraph
                     end
       end
 
+      # @return [String]
       def filename
         source.filename
       end
@@ -69,31 +70,27 @@ module Solargraph
         end
       end
 
+      # @return [Chain]
       def chain
-        # @chain ||= begin
-        #   prev = SourceMap::NodeChainer.chain(source.filename, previous_node)
-        #   if previous_node != current_node and !(previous_node_range.contain?(position))
-        #     here = SourceMap::Chain::Call.new(word)
-        #     SourceMap::Chain.new(prev.links + [here])
-        #   else
-        #     prev
-        #   end
-        # end
-        @chain ||= SourceMap::SourceChainer.chain(source, position)
+        @chain ||= Source::SourceChainer.chain(source, position)
       end
 
+      # @return [Boolean]
       def argument?
         @argument ||= !signature_position.nil?
       end
 
+      # @return [Boolean]
       def comment?
         @comment ||= source.comment_at?(position)
       end
 
+      # @return [Boolean]
       def string?
         @string ||= source.string_at?(position)
       end
 
+      # @return [Cursor, nil]
       def recipient
         return nil unless argument?
         @recipient ||= Cursor.new(source, signature_position)
@@ -118,30 +115,23 @@ module Solargraph
 
       private
 
-      def previous_node_range
-        exp = previous_node.loc.expression
-        Range.from_to(exp.line, exp.column, exp.last_line, exp.last_column)
-      end
-
       # @return [Integer]
       def offset
         @offset ||= Position.to_offset(source.code, position)
       end
 
+      # A regular expression to find the start of a word from an offset.
+      #
+      # @return [Regexp]
       def start_word_pattern
         /(@{1,2}|\$)?([a-z0-9_]|[^\u0000-\u007F])*\z/i
       end
 
+      # A regular expression to find the end of a word from an offset.
+      #
+      # @return [Regexp]
       def end_word_pattern
         /^([a-z0-9_]|[^\u0000-\u007F])*[\?\!]?/i
-      end
-
-      def current_node
-        @current_node ||= source.node_at(position.line, position.column)
-      end
-
-      def previous_node
-        @previous_node ||= source.node_at(previous_position.line, previous_position.column)
       end
 
       def signature_position

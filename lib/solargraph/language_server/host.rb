@@ -14,7 +14,6 @@ module Solargraph
       include Solargraph::LanguageServer::UriHelpers
 
       def initialize
-        @change_semaphore = Mutex.new
         @cancel_semaphore = Mutex.new
         @buffer_semaphore = Mutex.new
         @register_semaphore = Mutex.new
@@ -96,19 +95,15 @@ module Solargraph
       # @param uri [String] The file uri.
       def create uri
         filename = uri_to_file(uri)
-        @change_semaphore.synchronize do
-          library.create_from_disk filename
-        end
+        library.create_from_disk filename
       end
 
       # Delete the specified file from the library.
       #
       # @param uri [String] The file uri.
       def delete uri
-        @change_semaphore.synchronize do
-          filename = uri_to_file(uri)
-          library.delete filename
-        end
+        filename = uri_to_file(uri)
+        library.delete filename
         send_notification "textDocument/publishDiagnostics", {
           uri: uri,
           diagnostics: []
@@ -121,11 +116,8 @@ module Solargraph
       # @param text [String] The contents of the file.
       # @param version [Integer] A version number.
       def open uri, text, version
-        @change_semaphore.synchronize do
-          f = uri_to_file(uri)
-          library.open uri_to_file(f), text, version
-          diagnoser.schedule uri
-        end
+        library.open uri_to_file(uri), text, version
+        diagnoser.schedule uri
       end
 
       # True if the specified file is currently open in the library.
@@ -140,35 +132,25 @@ module Solargraph
       #
       # @param uri [String]
       def close uri
-        @change_semaphore.synchronize do
-          library.close uri_to_file(uri)
-          # @diagnostics_queue.push uri
-          diagnoser.schedule uri
-        end
+        library.close uri_to_file(uri)
+        diagnoser.schedule uri
       end
 
       def save params
-        @change_semaphore.synchronize do
-          uri = params['textDocument']['uri']
-          filename = uri_to_file(uri)
-          version = params['textDocument']['version']
-          @change_queue.delete_if do |change|
-            return true if change['textDocument']['uri'] == uri and change['textDocument']['version'] <= version
-            false
-          end
-          library.overwrite filename, version
-        end
+        uri = params['textDocument']['uri']
+        filename = uri_to_file(uri)
+        version = params['textDocument']['version']
+        library.overwrite filename, version
       end
 
       def diagnose uri
-        library.diagnose uri
+        library.diagnose uri_to_file(uri)
       end
 
       def change params
         updater = generate_updater(params)
-        @change_semaphore.synchronize do
-          library.synchronize updater
-        end
+        library.update updater
+        cataloger.ping unless library.synchronized?
         diagnoser.schedule params['textDocument']['uri']
       end
 
@@ -199,16 +181,14 @@ module Solargraph
       def prepare directory
         path = nil
         path = normalize_separators(directory) unless directory.nil?
-        @change_semaphore.synchronize do
-          begin
-            @library = Solargraph::Library.load(path)
-          rescue WorkspaceTooLargeError => e
-            send_notification 'window/showMessage', {
-              'type' => Solargraph::LanguageServer::MessageTypes::WARNING,
-              'message' => "The workspace is too large to index (#{e.size} files, max #{e.max})"
-            }
-            @library = Solargraph::Library.load(nil)
-          end
+        begin
+          @library = Solargraph::Library.load(path)
+        rescue WorkspaceTooLargeError => e
+          send_notification 'window/showMessage', {
+            'type' => Solargraph::LanguageServer::MessageTypes::WARNING,
+            'message' => "The workspace is too large to index (#{e.size} files, max #{e.max})"
+          }
+          @library = Solargraph::Library.load(nil)
         end
         diagnoser.start
         cataloger.start
@@ -320,6 +300,10 @@ module Solargraph
         unsafe_changing?(file_uri)
       end
 
+      def synchronizing?
+        cataloger.synchronizing?
+      end
+
       def stop
         @stopped = true
         cataloger.stop
@@ -332,25 +316,23 @@ module Solargraph
 
       def locate_pin params
         pin = nil
-        # @change_semaphore.synchronize do
-          pin = nil
-          unless params['data']['location'].nil?
-            location = Location.new(
-              params['data']['location']['filename'],
-              Range.from_to(
-                params['data']['location']['range']['start']['line'],
-                params['data']['location']['range']['start']['character'],
-                params['data']['location']['range']['end']['line'],
-                params['data']['location']['range']['end']['character']
-              )
+        pin = nil
+        unless params['data']['location'].nil?
+          location = Location.new(
+            params['data']['location']['filename'],
+            Range.from_to(
+              params['data']['location']['range']['start']['line'],
+              params['data']['location']['range']['start']['character'],
+              params['data']['location']['range']['end']['line'],
+              params['data']['location']['range']['end']['character']
             )
-            pin = library.locate_pin(location)
-          end
-          # @todo Improve pin location
-          if pin.nil? or pin.path != params['data']['path']
-            pin = library.path_pins(params['data']['path']).first
-          end
-        # end
+          )
+          pin = library.locate_pin(location)
+        end
+        # @todo Improve pin location
+        if pin.nil? or pin.path != params['data']['path']
+          pin = library.path_pins(params['data']['path']).first
+        end
         pin
       end
 
@@ -367,12 +349,7 @@ module Solargraph
       # @return [Solargraph::ApiMap::Completion]
       def completions_at filename, line, column
         result = nil
-        # @todo Unlike most other queries, this one might be better off behind
-        #   the change semaphore, since it often happens immediately after a
-        #   document change.
-        @change_semaphore.synchronize do
-          result = library.completions_at filename, line, column
-        end
+        result = library.completions_at filename, line, column
         result
       end
 
@@ -473,10 +450,9 @@ module Solargraph
         }
       end
 
-      def libver
-        library.version
-      end
-
+      # Catalog the library.
+      #
+      # @return [void]
       def catalog
         library.catalog
       end
@@ -488,10 +464,12 @@ module Solargraph
         @library
       end
 
+      # @return [Diagnoser]
       def diagnoser
         @diagnoser ||= Diagnoser.new(self)
       end
 
+      # @return [Cataloger]
       def cataloger
         @cataloger ||= Cataloger.new(self)
       end
@@ -500,7 +478,6 @@ module Solargraph
       # @return [Boolean]
       def unsafe_changing? file_uri
         file = uri_to_file(file_uri)
-        @change_queue.any?{|change| change.filename == file}
       end
 
       def unsafe_open? uri

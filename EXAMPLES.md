@@ -16,15 +16,14 @@ pins = api_map.get_methods('String') # Get public instance methods of the String
 ```Ruby
 api_map = Solargraph::ApiMap.new
 source = Solargraph::Source.load_string('class MyClass; end', 'my_class.rb')
-api_map.virtualize source # Add the source to the map
+api_map.map source # Add the source to the map
 pins = api_map.get_constants('') # The constants in the global namespace will include `MyClass`
 ```
 
 ## Adding a Workspace to an ApiMap
 
 ```Ruby
-workspace = Solargraph::Workspace.new('/path/to/project')
-api_map = Solargraph::ApiMap.new(workspace)
+api_map = Solargraph::ApiMap.load('/path/to/workspace')
 pins = api_map.get_constants('') # Results will include constants defined in the project's code
 ```
 
@@ -34,16 +33,17 @@ pins = api_map.get_constants('') # Results will include constants defined in the
 api_map = Solargraph::ApiMap.new
 source = Solargraph::Source.load_string("var = 'a string'; puts var", 'example.rb')
 api_map.virtualize source
-fragment = source.fragment_at(0, 23)
-pins = api_map.define(fragment) # `var` is recognized as a local variable containing a String
+clip = api_map.clip_at('example.rb', Solargraph::Position.new(0, 23))
+pins = clip.define # `var` is recognized as a local variable containing a String
 ```
 
 ## Querying Completion Suggestions
 ```Ruby
 api_map = Solargraph::ApiMap.new
 source = Solargraph::Source.load_string("String.", 'example.rb')
-fragment = source.fragment_at(0, 7)
-completion = api_map.complete(fragment) # Suggestions will include String class methods
+api_map.map source
+clip = api_map.clip_at('example.rb', Solargraph::Position.new(0, 7))
+completion = clip.complete # Suggestions will include String class methods
 ```
 
 ## Adding a Message to the Language Server Protocol

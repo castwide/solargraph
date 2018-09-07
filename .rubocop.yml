@@ -2,5 +2,3 @@ Layout/EndOfLine:
   EnforcedStyle: lf
 Style/MethodDefParentheses:
   Enabled: false
-Style/AndOr:
-  Enabled: false

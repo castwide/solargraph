@@ -9,6 +9,10 @@ module Solargraph
         @name
       end
 
+      def kind
+        Solargraph::Pin::KEYWORD
+      end
+
       def completion_item_kind
         Solargraph::LanguageServer::CompletionItemKinds::KEYWORD
       end

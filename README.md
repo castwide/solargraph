@@ -53,7 +53,7 @@ The gem includes an executable that provides access to the library's features. F
 ### Language Server Protocol
 
 The language server protocol is the recommended way for integrating Solargraph into editors and IDEs. Clients can connect using either stdio or TCP.
-See [LANUAGE_SERVER.md](LANGUAGE_SERVER.md) for more information.
+See [LANGUAGE_SERVER.md](LANGUAGE_SERVER.md) for more information.
 
 ### Standalone Suggest
 

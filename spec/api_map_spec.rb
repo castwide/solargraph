@@ -239,7 +239,7 @@ describe Solargraph::ApiMap do
       end
       Foo.new.bar
     ), 'my_file.rb')
-    @api_map.catalog Solargraph::Workspace.new, [source]
+    @api_map.map source
     clip = @api_map.clip_at('my_file.rb', Solargraph::Position.new(4, 15))
     expect(clip).to be_a(Solargraph::SourceMap::Clip)
   end
@@ -260,11 +260,162 @@ describe Solargraph::ApiMap do
   it "catalogs changes" do
     workspace = Solargraph::Workspace.new
     s1 = Solargraph::Source.load_string('class Foo; end')
-    @api_map.catalog(workspace, [s1])
+    @api_map.catalog(Solargraph::Bundle.new(workspace.sources + [s1]))
     expect(@api_map.get_path_pins('Foo')).not_to be_empty
     s2 = Solargraph::Source.load_string('class Bar; end')
-    @api_map.catalog(workspace, [s2])
+    @api_map.catalog(Solargraph::Bundle.new(workspace.sources + [s2]))
     expect(@api_map.get_path_pins('Foo')).to be_empty
     expect(@api_map.get_path_pins('Bar')).not_to be_empty
+  end
+
+  it "checks attribute visibility" do
+    source = Solargraph::Source.load_string(%(
+      class Foo
+        attr_reader :public_attr
+        private
+        attr_reader :private_attr
+      end
+    ))
+    @api_map.map source
+    pins = @api_map.get_methods('Foo')
+    paths = pins.map(&:path)
+    expect(paths).to include('Foo#public_attr')
+    expect(paths).not_to include('Foo#private_attr')
+    pins = @api_map.get_methods('Foo', visibility: [:private])
+    paths = pins.map(&:path)
+    expect(paths).not_to include('Foo#public_attr')
+    expect(paths).to include('Foo#private_attr')
+  end
+
+  it "resolves superclasses qualified with leading colons" do
+    code = %(
+      class Sup
+        def bar; end
+      end
+      module Foo
+        class Sup < ::Sup; end
+        class Sub < Sup
+          def bar; end
+        end
+      end
+      )
+      api_map = Solargraph::ApiMap.new
+      source = Solargraph::Source.load_string(code)
+      api_map.map source
+      pins = api_map.get_methods('Foo::Sub')
+      paths = pins.map(&:path)
+      expect(paths).to include('Foo::Sub#bar')
+      expect(paths).to include('Sup#bar')
+  end
+
+  it "finds protected methods for complex types" do
+    code = %(
+      class Sup
+        protected
+        def bar; end
+      end
+      class Sub < Sup; end
+      class Sub2 < Sub; end
+    )
+    api_map = Solargraph::ApiMap.new
+    source = Solargraph::Source.load_string(code)
+    api_map.map source
+    pins = api_map.get_complex_type_methods(Solargraph::ComplexType.parse('Sub'), 'Sub')
+    expect(pins.map(&:path)).to include('Sup#bar')
+    pins = api_map.get_complex_type_methods(Solargraph::ComplexType.parse('Sub'), 'Sub2')
+    expect(pins.map(&:path)).to include('Sup#bar')
+  end
+
+  it "ignores undefined superclasses when finding complex type methods" do
+    code = %(
+      class Sub < Sup; end
+      class Sub2 < Sub; end
+    )
+    api_map = Solargraph::ApiMap.new
+    source = Solargraph::Source.load_string(code)
+    api_map.map source
+    expect {
+      api_map.get_complex_type_methods(Solargraph::ComplexType.parse('Sub'), 'Sub2')
+    }.not_to raise_error
+  end
+
+  it "detects private constants according to context" do
+    code = %(
+      class Foo
+        class Bar; end
+        private_constant :Bar
+      end
+    )
+    api_map = Solargraph::ApiMap.new
+    source = Solargraph::Source.load_string(code)
+    api_map.map source
+    pins = api_map.get_constants('Foo', '')
+    expect(pins.map(&:path)).not_to include('Bar')
+    pins = api_map.get_constants('Foo', 'Foo')
+    expect(pins.map(&:path)).to include('Foo::Bar')
+  end
+
+  it "catalogs requires" do
+    api_map = Solargraph::ApiMap.new
+    source1 = Solargraph::Source.load_string(%(
+      class Foo; end
+    ), 'lib/foo.rb')
+    source2 = Solargraph::Source.load_string(%(
+      require 'foo'
+      require 'invalid'
+    ), 'app.rb')
+    bundle = Solargraph::Bundle.new([source1, source2], ['lib'])
+    api_map.catalog bundle
+    expect(api_map.unresolved_requires).to eq(['invalid'])
+  end
+
+  it "gets instance variables from superclasses" do
+    source = Solargraph::Source.load_string(%(
+      class Sup
+        def foo
+          @foo = 'foo'
+        end
+      end
+      class Sub < Sup; end
+    ))
+    api_map = Solargraph::ApiMap.new
+    api_map.map source
+    pins = api_map.get_instance_variable_pins('Sub')
+    expect(pins.map(&:name)).to include('@foo')
+  end
+
+  it "gets methods from extended modules" do
+    source = Solargraph::Source.load_string(%(
+      module Mixin
+        def bar; end
+      end
+      class Sup
+        extend Mixin
+      end
+    ))
+    api_map = Solargraph::ApiMap.new
+    api_map.map source
+    pins = api_map.get_methods('Sup', scope: :class)
+    expect(pins.map(&:path)).to include('Mixin#bar')
+  end
+
+  it "loads workspaces from directories" do
+    api_map = Solargraph::ApiMap.load('spec/fixtures/workspace')
+    expect(api_map.source_map('spec/fixtures/workspace/app.rb')).to be_a(Solargraph::SourceMap)
+  end
+
+  it "finds constants from included modules" do
+    source = Solargraph::Source.load_string(%(
+      module Mixin
+        FOO = 'foo'
+      end
+      class Container
+        include Mixin
+      end
+    ))
+    api_map = Solargraph::ApiMap.new
+    api_map.map source
+    pins = api_map.get_constants('Container')
+    expect(pins.map(&:path)).to include('Mixin::FOO')
   end
 end

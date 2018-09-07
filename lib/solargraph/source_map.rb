@@ -1,15 +1,13 @@
 module Solargraph
   class SourceMap
     autoload :Mapper,        'solargraph/source_map/mapper'
-    autoload :Chain,         'solargraph/source_map/chain'
     autoload :Clip,          'solargraph/source_map/clip'
-    autoload :SourceChainer, 'solargraph/source_map/source_chainer'
-    autoload :NodeChainer,   'solargraph/source_map/node_chainer'
     autoload :Completion,    'solargraph/source_map/completion'
     autoload :NewFragment,   'solargraph/source_map/new_fragment'
 
     attr_reader :source
 
+    # @return [Array<Pin::Base>]
     attr_reader :pins
 
     attr_reader :locals
@@ -63,11 +61,8 @@ module Solargraph
       Source::Cursor.new(source, position)
     end
 
-    # @param position [Position]
-    # @return [Solargraph::SourceMap::Fragment]
-    # @todo Deprecate, probably
-    def fragment_at position
-      Source::Cursor.new(source, position)
+    def first_pin path
+      pins.select { |p| p.path == path }.first
     end
 
     # @param location [Solargraph::Location]
@@ -86,7 +81,7 @@ module Solargraph
     end
 
     def try_merge! other_map
-      return false if pins.length != other_map.pins.length or locals.length != other_map.locals.length
+      return false if pins.length != other_map.pins.length || locals.length != other_map.locals.length
       pins.each_index do |i|
         return false unless pins[i].try_merge!(other_map.pins[i])
       end
@@ -97,6 +92,8 @@ module Solargraph
       true
     end
 
+    # @param name [String]
+    # @return [Array<Location>]
     def references name
       source.references name
     end
