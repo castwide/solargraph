@@ -542,7 +542,7 @@ describe Solargraph::SourceMap::Mapper do
       end
     ), 'test.rb')
     pin = smap.pins.select{|p| p.is_a?(Solargraph::Pin::Block)}.first
-    expect(pin.scope).to eq(:class)
+    expect(pin.context.scope).to eq(:class)
   end
 
   it "maps class method blocks to class scope" do
@@ -557,7 +557,7 @@ describe Solargraph::SourceMap::Mapper do
       end
     ))
     pin = smap.pins.select{|p| p.is_a?(Solargraph::Pin::Block)}.first
-    expect(pin.scope).to eq(:class)
+    expect(pin.context.scope).to eq(:class)
   end
 
   it "maps instance method blocks to instance scope" do
@@ -572,6 +572,6 @@ describe Solargraph::SourceMap::Mapper do
       end
     ))
     pin = smap.pins.select{|p| p.is_a?(Solargraph::Pin::Block)}.first
-    expect(pin.scope).to eq(:instance)
+    expect(pin.context.scope).to eq(:instance)
   end
 end
