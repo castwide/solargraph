@@ -55,6 +55,16 @@ module Solargraph
         @return_complex_type ||= ComplexType.parse( (type == :class ? 'Class' : 'Module') + "<#{path}>" )
       end
 
+      def domains
+        @domains ||= begin
+          result = []
+          directives.each do |d|
+            result.push d.tag.text if d.tag.tag_name == 'domain'
+          end
+          result
+        end
+      end
+
       def infer api_map
         # Assuming that namespace pins are always fully qualified
         return_complex_type

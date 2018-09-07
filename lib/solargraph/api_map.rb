@@ -510,6 +510,10 @@ module Solargraph
           result.concat inner_get_methods('Class', :instance, fqns == '' ? [:public] : visibility, deep, skip) if type == :class
           result.concat inner_get_methods('Module', :instance, fqns == '' ? [:public] : visibility, deep, skip) #if type == :module
         end
+        store.domains(fqns).each do |d|
+          dt = ComplexType.parse(d)
+          result.concat inner_get_methods(dt.namespace, dt.scope, [:public], deep, skip)
+        end
       end
       result
     end

@@ -470,10 +470,11 @@ module Solargraph
             here = get_node_start_position(k.node)
             pin = @pins.select{|pin| [Pin::NAMESPACE, Pin::METHOD].include?(pin.kind) and pin.location.range.contain?(here)}.first
             @path_macros[pin.path] = v
-          elsif d.tag.tag_name == 'domain'
-            @domains.push d.tag.text
+          # elsif d.tag.tag_name == 'domain'
+          #   @domains.push d.tag.text
           else
             # STDERR.puts "Nothing to do for directive: #{d}"
+            namespace.directives.push d
           end
         end
       end
