@@ -477,8 +477,8 @@ module Solargraph
           namespace = namespace_at(position)
           namespace.domains.push directive.tag.text
         when 'macro'
-          # @todo Handle macros
-          path_pin = get_named_path_pin(position)
+          nxt_pos = Position.new(position.line + 1, @code.lines[position.line + 1].length)
+          path_pin = get_named_path_pin(nxt_pos)
           path_pin.macros.push directive
         end
       end
@@ -509,13 +509,14 @@ module Solargraph
           if cmnt.inline?
             if last_line.nil? || cmnt.loc.expression.line == last_line + 1
               if cmnt.loc.expression.column.zero? || @code.lines[cmnt.loc.expression.line][0..cmnt.loc.expression.column-1].strip.empty?
-                current.push cmnt.text
+                current.push cmnt
               else
                 # @todo Connected to a line of code. Handle separately
               end
             else
-              process_comment Position.new(cmnt.loc.expression.line, cmnt.loc.expression.column), current.join("\n")
+              process_comment Position.new(current.last.loc.expression.line, current.last.loc.expression.column), current.map(&:text).join("\n")
               current.clear
+              current.push cmnt
             end
           else
             # @todo Handle block comments
@@ -523,7 +524,7 @@ module Solargraph
           last_line = cmnt.loc.expression.line
         end
         unless current.empty?
-          process_comment Position.new(@comments.last.loc.expression.line, @comments.last.loc.expression.column), current.join("\n")
+          process_comment Position.new(current.last.loc.expression.line, current.last.loc.expression.column), current.map(&:text).join("\n")
         end
       end
     end
