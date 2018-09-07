@@ -90,6 +90,12 @@ module Solargraph
       end
     end
 
+    # @param path [String]
+    # @return [Pin::Base]
+    def path_pin path
+      pins.select{ |p| p.path == path }.first
+    end
+
     private
 
     # @return [YardMap::Cache]
