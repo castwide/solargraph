@@ -509,10 +509,10 @@ module Solargraph
             fqem = qualify(em, fqns)
             result.concat inner_get_methods(fqem, :instance, visibility, deep, skip, true) unless fqem.nil?
           end
-          unless no_core
+          unless no_core || fqns.empty?
             type = get_namespace_type(fqns)
-            result.concat inner_get_methods('Class', :instance, fqns == '' ? [:public] : visibility, deep, skip, no_core) if type == :class
-            result.concat inner_get_methods('Module', :instance, fqns == '' ? [:public] : visibility, deep, skip, no_core)
+            result.concat inner_get_methods('Class', :instance, visibility, deep, skip, no_core) if type == :class
+            result.concat inner_get_methods('Module', :instance,visibility, deep, skip, no_core)
           end
         end
         store.domains(fqns).each do |d|
