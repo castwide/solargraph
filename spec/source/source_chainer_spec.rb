@@ -67,4 +67,22 @@ describe Solargraph::Source::SourceChainer do
     expect(cursor.chain.links.map(&:word)).to eq(['foo', 'bar', '<undefined>'])
     expect(cursor.chain).to be_undefined
   end
+
+  it "chains signatures with square brackets" do
+    map = Solargraph::SourceMap.load_string('foo[0].bar')
+    cursor = map.cursor_at(Solargraph::Position.new(0, 8))
+    expect(cursor.chain.links.map(&:word)).to eq(['foo', '[]', 'bar'])
+  end
+
+  it "chains signatures with curly brackets" do
+    map = Solargraph::SourceMap.load_string('foo{|x| x == y}.bar')
+    cursor = map.cursor_at(Solargraph::Position.new(0, 16))
+    expect(cursor.chain.links.map(&:word)).to eq(['foo', 'bar'])
+  end
+
+  it "chains signatures with parentheses" do
+    map = Solargraph::SourceMap.load_string('foo(x, y).bar')
+    cursor = map.cursor_at(Solargraph::Position.new(0, 10))
+    expect(cursor.chain.links.map(&:word)).to eq(['foo', 'bar'])
+  end
 end
