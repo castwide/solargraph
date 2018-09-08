@@ -86,4 +86,21 @@ describe Solargraph::Pin::BlockParameter do
     type = pin.infer(api_map)
     expect(type.namespace).to eq('Foo::Bar')
   end
+
+  it "merges near equivalents" do
+    loc = Solargraph::Location.new('test.rb', Solargraph::Range.from_to(0, 0, 0, 0))
+    block = Solargraph::Pin::Block.new(loc, 'Foo', '', '', nil, nil)
+    pin1 = Solargraph::Pin::BlockParameter.new(nil, 'Foo', 'bar', '', block)
+    pin2 = Solargraph::Pin::BlockParameter.new(nil, 'Foo', 'bar', 'a comment', block)
+    expect(pin1.try_merge!(pin2)).to be(true)
+  end
+
+  it "does not merge block parameters from different blocks" do
+    loc = Solargraph::Location.new('test.rb', Solargraph::Range.from_to(0, 0, 0, 0))
+    block1 = Solargraph::Pin::Block.new(loc, 'Foo', '', '', nil, nil)
+    block2 = Solargraph::Pin::Block.new(loc, 'Bar', '', '', nil, nil)
+    pin1 = Solargraph::Pin::BlockParameter.new(nil, 'Foo', 'bar', '', block1)
+    pin2 = Solargraph::Pin::BlockParameter.new(nil, 'Foo', 'bar', 'a comment', block2)
+    expect(pin1.try_merge!(pin2)).to be(false)
+  end
 end
