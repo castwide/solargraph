@@ -70,7 +70,7 @@ module Solargraph
 
       def generate_link
         this_path = path || return_type.tag
-        return this_path if return_complex_type.undefined?
+        return this_path if comments.empty?
         return nil if this_path.nil?
         "[#{this_path.gsub('_', '\\\\_')}](solargraph:/document?query=#{URI.encode(this_path)})"
       end

@@ -217,7 +217,7 @@ module Solargraph
       (spec.dependencies - spec.development_dependencies).each do |dep|
         begin
           depspec = Gem::Specification.find_by_name(dep.name)
-          @gem_paths[spec.name] = depspec.full_gem_path unless depspec.nil?
+          @gem_paths[depspec.name] = depspec.full_gem_path unless depspec.nil?
           gy = YARD::Registry.yardoc_file_for_gem(dep.name)
           if gy.nil?
             unresolved_requires.push dep.name
