@@ -486,7 +486,7 @@ module Solargraph
     # @param no_core [Boolean] Skip core classes if true
     # @return [Array<Pin::Base>]
     def inner_get_methods fqns, scope, visibility, deep, skip, no_core = false
-      return [] if no_core && fqns =~ /^(Object|BasicObject|Class|Module)$/
+      return [] if no_core && fqns =~ /^(Object|BasicObject|Class|Module|Kernel)$/
       reqstr = "#{fqns}|#{scope}|#{visibility.sort}|#{deep}"
       return [] if skip.include?(reqstr)
       skip.push reqstr
