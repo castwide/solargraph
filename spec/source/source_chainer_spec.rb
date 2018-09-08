@@ -15,6 +15,15 @@ describe Solargraph::Source::SourceChainer do
     expect(cursor.chain.links.first.word).to eq('<String>')
   end
 
+  it "recognizes literal integers" do
+    map = Solargraph::SourceMap.load_string("100")
+    cursor = map.cursor_at(Solargraph::Position.new(0, 0))
+    expect(cursor.chain).not_to be_a(Solargraph::Source::Chain::Literal)
+    cursor = map.cursor_at(Solargraph::Position.new(0, 1))
+    expect(cursor.chain.links.first).to be_a(Solargraph::Source::Chain::Literal)
+    expect(cursor.chain.links.first.word).to eq('<Integer>')
+  end
+
   it "recognizes class variables" do
     map = Solargraph::SourceMap.load_string('@@foo')
     cursor = map.cursor_at(Solargraph::Position.new(0, 0))
