@@ -47,7 +47,7 @@ module Solargraph
     # @param source [Source]
     # @return [self]
     def map source
-      catalog Bundle.new([source])
+      catalog Bundle.new(sources: [source])
       self
     end
 
@@ -89,6 +89,7 @@ module Solargraph
         pins.concat map.pins
         reqs.concat map.requires.map(&:name)
       end
+      reqs.concat bundle.required
       unless bundle.load_paths.empty?
         reqs.delete_if do |r|
           result = false
@@ -153,7 +154,7 @@ module Solargraph
       # @todo How should this work?
       api_map = self.new #(Solargraph::Workspace.new(directory))
       workspace = Solargraph::Workspace.new(directory)
-      api_map.catalog Bundle.new(workspace.sources)
+      api_map.catalog Bundle.new(sources: workspace.sources)
       api_map
     end
 

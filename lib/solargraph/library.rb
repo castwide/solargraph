@@ -350,9 +350,10 @@ module Solargraph
     # @return [Bundle]
     def bundle
       Bundle.new(
-        (workspace.sources + open_file_hash.values).uniq(&:filename),
-        workspace.require_paths,
-        yard_map
+        sources: (workspace.sources + open_file_hash.values).uniq(&:filename),
+        required: workspace.config.required,
+        load_paths: workspace.require_paths,
+        yard_map: yard_map
       )
     end
 
