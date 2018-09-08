@@ -97,7 +97,7 @@ module Solargraph
       # @return [Completion]
       def package_completions result
         frag_start = cursor.start_of_word.to_s.downcase
-        filtered = result.uniq(&:identifier).select{|s| s.name.downcase.start_with?(frag_start) and (s.kind != Pin::METHOD or s.name.match(/^[a-z0-9_]+(\!|\?|=)?$/i))}
+        filtered = result.uniq(&:name).select{|s| s.name.downcase.start_with?(frag_start) and (s.kind != Pin::METHOD or s.name.match(/^[a-z0-9_]+(\!|\?|=)?$/i))}
         Completion.new(filtered, cursor.range)
       end
 
