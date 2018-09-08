@@ -152,7 +152,6 @@ module Solargraph
           spec = Gem::Specification.find_by_path(r) || Gem::Specification.find_by_name(r.split('/').first)
           ver = spec.version.to_s
           ver = ">= 0" if ver.empty?
-          result.concat add_gem_dependencies spec
           yd = YARD::Registry.yardoc_file_for_gem(spec.name, ver)
           @gem_paths[spec.name] = spec.full_gem_path
           if yd.nil?
@@ -160,10 +159,9 @@ module Solargraph
           else
             unless yardocs.include?(yd)
               yardocs.unshift yd
-              load_yardoc yd
-              YARD::Registry.each do |o|
-                result.concat generate_pins(o)
-              end
+              result.concat process_yardoc yd
+              # @todo Testing performance
+              # result.concat add_gem_dependencies spec
             end
           end
         rescue Gem::LoadError => e
@@ -224,17 +222,32 @@ module Solargraph
           else
             unless yardocs.include?(gy)
               yardocs.unshift gy
-              load_yardoc gy
-              YARD::Registry.each do |o|
-                result.concat generate_pins(o)
-              end
-              result.concat add_gem_dependencies(depspec)
+              result.concat process_yardoc gy
+              # @todo Trying only one level of dependencies
+              # result.concat add_gem_dependencies(depspec)
             end
           end
         rescue Gem::LoadError
           # This error probably indicates a bug in an installed gem
           STDERR.puts "Warning: failed to resolve #{dep.name} gem dependency for #{spec.name}"
         end
+      end
+      result
+    end
+
+    def process_yardoc y
+      return [] if y.nil?
+      size = Dir.glob(File.join(y, '**', '*'))
+        .map{ |f| File.size(f) }
+        .inject(:+)
+      if !size.nil? && size > 20_000_000
+        STDERR.puts "Warning: yardoc at #{y} is too large to process (#{size} bytes)"
+        return []
+      end
+      result = []
+      load_yardoc y
+      YARD::Registry.each do |o|
+        result.concat generate_pins(o)
       end
       result
     end
