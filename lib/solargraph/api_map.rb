@@ -483,8 +483,10 @@ module Solargraph
     # @param visibility [Array<Symbol>] :public, :protected, and/or :private
     # @param deep [Boolean]
     # @param skip [Array<String>]
+    # @param no_core [Boolean] Skip core classes if true
     # @return [Array<Pin::Base>]
     def inner_get_methods fqns, scope, visibility, deep, skip, no_core = false
+      return [] if no_core && fqns =~ /^(Object|BasicObject|Class|Module)$/
       reqstr = "#{fqns}|#{scope}|#{visibility.sort}|#{deep}"
       return [] if skip.include?(reqstr)
       skip.push reqstr
@@ -494,14 +496,14 @@ module Solargraph
         sc = store.get_superclass(fqns)
         unless sc.nil?
           fqsc = qualify(sc, fqns.split('::')[0..-2].join('::'))
-          result.concat inner_get_methods(fqsc, scope, visibility, true, skip) unless fqsc.nil?
+          result.concat inner_get_methods(fqsc, scope, visibility, true, skip, true) unless fqsc.nil?
         end
         if scope == :instance
           store.get_includes(fqns).reverse.each do |im|
             fqim = qualify(im, fqns)
             result.concat inner_get_methods(fqim, scope, visibility, deep, skip, true) unless fqim.nil?
           end
-          result.concat inner_get_methods('Object', :instance, [:public], deep, skip, true) unless fqns == 'Object' || no_core
+          result.concat inner_get_methods('Object', :instance, [:public], deep, skip, no_core)
         else
           store.get_extends(fqns).reverse.each do |em|
             fqem = qualify(em, fqns)
@@ -509,8 +511,8 @@ module Solargraph
           end
           unless no_core
             type = get_namespace_type(fqns)
-            result.concat inner_get_methods('Class', :instance, fqns == '' ? [:public] : visibility, deep, skip) if type == :class
-            result.concat inner_get_methods('Module', :instance, fqns == '' ? [:public] : visibility, deep, skip) #if type == :module
+            result.concat inner_get_methods('Class', :instance, fqns == '' ? [:public] : visibility, deep, skip, no_core) if type == :class
+            result.concat inner_get_methods('Module', :instance, fqns == '' ? [:public] : visibility, deep, skip, no_core)
           end
         end
         store.domains(fqns).each do |d|
