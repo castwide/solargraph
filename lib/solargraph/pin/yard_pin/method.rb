@@ -4,9 +4,9 @@ module Solargraph
       class Method < Pin::Method
         include YardMixin
 
-        def initialize code_object, location
+        def initialize code_object, location, name = nil, scope = nil, visibility = nil
           comments = (code_object.docstring ? code_object.docstring.all : nil)
-          super(location, code_object.namespace.to_s, code_object.name.to_s, comments, code_object.scope, code_object.visibility, get_parameters(code_object))
+          super(location, code_object.namespace.to_s, name || code_object.name.to_s, comments, scope || code_object.scope, visibility || code_object.visibility, get_parameters(code_object))
         end
 
         def return_complex_type

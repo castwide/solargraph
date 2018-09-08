@@ -84,7 +84,7 @@ module Solargraph
         result = []
         load_yardoc CoreDocs.yardoc_file
         YARD::Registry.each do |o|
-          result.push generate_pin(o)
+          result.concat generate_pins(o)
         end
         result
       end
@@ -108,7 +108,7 @@ module Solargraph
     def recurse_namespace_object ns
       result = []
       ns.children.each do |c|
-        result.push generate_pin(c)
+        result.concat generate_pins(c)
         result.concat recurse_namespace_object(c) if c.respond_to?(:children)
       end
       result
@@ -116,17 +116,23 @@ module Solargraph
 
     # @param code_object [YARD::CodeObjects::Base]
     # @return [Solargraph::Pin::Base]
-    def generate_pin code_object
+    def generate_pins code_object
+      result = []
       location = object_location(code_object)
       if code_object.is_a?(YARD::CodeObjects::NamespaceObject)
-        Solargraph::Pin::YardPin::Namespace.new(code_object, location)
+        result.push Solargraph::Pin::YardPin::Namespace.new(code_object, location)
       elsif code_object.is_a?(YARD::CodeObjects::MethodObject)
-        Solargraph::Pin::YardPin::Method.new(code_object, location)
+        if code_object.name == :initialize && code_object.scope == :instance
+          # @todo Check the visibility of <Class>.new
+          result.push Solargraph::Pin::YardPin::Method.new(code_object, location, 'new', :class, :public)
+          result.push Solargraph::Pin::YardPin::Method.new(code_object, location, 'initialize', :instance, :private)
+        else
+          result.push Solargraph::Pin::YardPin::Method.new(code_object, location)
+        end
       elsif code_object.is_a?(YARD::CodeObjects::ConstantObject)
-        Solargraph::Pin::YardPin::Constant.new(code_object, location)
-      else
-        nil
+        result.push Solargraph::Pin::YardPin::Constant.new(code_object, location)
       end
+      result
     end
 
     # @return [void]
@@ -146,8 +152,7 @@ module Solargraph
           spec = Gem::Specification.find_by_path(r) || Gem::Specification.find_by_name(r.split('/').first)
           ver = spec.version.to_s
           ver = ">= 0" if ver.empty?
-          # @todo Ignoring dependencies for now
-          # add_gem_dependencies spec
+          result.concat add_gem_dependencies spec
           yd = YARD::Registry.yardoc_file_for_gem(spec.name, ver)
           @gem_paths[spec.name] = spec.full_gem_path
           if yd.nil?
@@ -155,17 +160,16 @@ module Solargraph
           else
             unless yardocs.include?(yd)
               yardocs.unshift yd
-              # @todo Generate the pins
               load_yardoc yd
               YARD::Registry.each do |o|
-                result.push generate_pin(o)
+                result.concat generate_pins(o)
               end
             end
           end
         rescue Gem::LoadError => e
           stdtmp = []
           @@stdlib_paths.each_pair do |path, objects|
-            stdtmp.concat objects if path == r or path.start_with?("#{r}/")
+            stdtmp.concat objects if path == r || path.start_with?("#{r}/")
           end
           if stdtmp.empty?
             unresolved_requires.push r
@@ -195,7 +199,7 @@ module Solargraph
           objects.each do |ns|
             next if done.include?(ns.path)
             done.push ns.path
-            result.push generate_pin(ns)
+            result.concat generate_pins(ns)
             result.concat recurse_namespace_object(ns)
           end
           result.delete_if(&:nil?)
@@ -209,16 +213,30 @@ module Solargraph
     # @param spec [Gem::Specification]
     # @return [void]
     def add_gem_dependencies spec
+      result = []
       (spec.dependencies - spec.development_dependencies).each do |dep|
-        depspec = Gem::Specification.find_by_name(dep.name)
-        @gem_paths[spec.name] = depspec.full_gem_path unless depspec.nil?
-        gy = YARD::Registry.yardoc_file_for_gem(dep.name)
-        if gy.nil?
-          unresolved_requires.push dep.name
-        else
-          yardocs.unshift gy unless yardocs.include?(gy)
+        begin
+          depspec = Gem::Specification.find_by_name(dep.name)
+          @gem_paths[spec.name] = depspec.full_gem_path unless depspec.nil?
+          gy = YARD::Registry.yardoc_file_for_gem(dep.name)
+          if gy.nil?
+            unresolved_requires.push dep.name
+          else
+            unless yardocs.include?(gy)
+              yardocs.unshift gy
+              load_yardoc gy
+              YARD::Registry.each do |o|
+                result.concat generate_pins(o)
+              end
+              result.concat add_gem_dependencies(depspec)
+            end
+          end
+        rescue Gem::LoadError
+          # This error probably indicates a bug in an installed gem
+          STDERR.puts "Warning: failed to resolve #{dep.name} gem dependency for #{spec.name}"
         end
       end
+      result
     end
 
     # @param obj [YARD::CodeObjects::Base]
