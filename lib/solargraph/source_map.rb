@@ -1,4 +1,6 @@
 module Solargraph
+  # An index of pins and other ApiMap-related data for a Source.
+  #
   class SourceMap
     autoload :Mapper,        'solargraph/source_map/mapper'
     autoload :Clip,          'solargraph/source_map/clip'
@@ -14,15 +16,13 @@ module Solargraph
 
     attr_reader :requires
 
-    def initialize source, pins, locals, requires, symbols, string_ranges, comment_ranges
+    def initialize source, pins, locals, requires, symbols
       # HACK: Keep the library from changing this
       @source = source.dup
       @pins = pins
       @locals = locals
       @requires = requires
       @pins.concat symbols
-      @string_ranges = string_ranges
-      @comment_ranges = comment_ranges
     end
 
     def filename
@@ -80,8 +80,9 @@ module Solargraph
       _locate_pin line, character, Pin::NAMESPACE, Pin::METHOD, Pin::BLOCK
     end
 
+    # @param other_map [SourceMap]
     def try_merge! other_map
-      return false if pins.length != other_map.pins.length || locals.length != other_map.locals.length
+      return false if pins.length != other_map.pins.length || locals.length != other_map.locals.length || requires.map(&:name).uniq.sort != other_map.requires.map(&:name).uniq.sort
       pins.each_index do |i|
         return false unless pins[i].try_merge!(other_map.pins[i])
       end
@@ -120,12 +121,6 @@ module Solargraph
     end
 
     private
-
-    # @return [Array<Range>]
-    attr_reader :string_ranges
-
-    # @return [Array<Range>]
-    attr_reader :comment_ranges
 
     def _locate_pin line, character, *kinds
       position = Position.new(line, character)

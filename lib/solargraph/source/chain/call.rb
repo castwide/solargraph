@@ -13,13 +13,13 @@ module Solargraph
           @arguments = arguments
         end
 
-        def resolve api_map, context, locals
+        def resolve api_map, name_pin, locals
           found = locals.select{|p| p.name == word}
-          return inferred_pins(found, api_map, context) unless found.empty?
-          pins = api_map.get_method_stack(context.namespace, word, scope: context.scope)
+          return inferred_pins(found, api_map, name_pin.context) unless found.empty?
+          pins = api_map.get_method_stack(name_pin.context.namespace, word, scope: name_pin.context.scope)
           return [] if pins.empty?
-          pins.unshift virtual_new_pin(pins.first, context) if external_constructor?(pins.first, context)
-          inferred_pins(pins, api_map, context)
+          pins.unshift virtual_new_pin(pins.first, name_pin.context) if external_constructor?(pins.first, name_pin.context)
+          inferred_pins(pins, api_map, name_pin.context)
         end
 
         private
@@ -29,13 +29,14 @@ module Solargraph
         # `initialize` method.
         #
         # @param new_pin [Solargraph::Pin::Base]
-        # @param context_pin [Solargraph::Pin::Base]
+        # @param context [Solargraph::ComplexType]
         # @return [Pin::Method]
         def virtual_new_pin new_pin, context
-          pin = Pin::Method.new(new_pin.location, context.namespace, new_pin.name, '', :class, new_pin.visibility, new_pin.parameters)
+          # pin = Pin::Method.new(new_pin.location, context.namespace, new_pin.name, '', :class, new_pin.visibility, new_pin.parameters)
           # @todo Smelly instance variable access.
-          pin.instance_variable_set(:@return_complex_type, ComplexType.parse(context.namespace))
-          pin
+          # pin.instance_variable_set(:@return_complex_type, ComplexType.parse(context.namespace))
+          # pin
+          Pin::ProxyType.anonymous(ComplexType.parse(context.namespace))
         end
 
         def inferred_pins pins, api_map, context

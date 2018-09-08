@@ -9,12 +9,10 @@ module Solargraph
       # @return [Array<String>]
       attr_reader :parameters
 
-      attr_reader :scope
-
-      def initialize location, namespace, name, comments, receiver, scope
+      def initialize location, namespace, name, comments, receiver, context
         super(location, namespace, name, comments)
         @receiver = receiver
-        @scope = scope
+        @context = context
       end
 
       def kind

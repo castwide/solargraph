@@ -1,6 +1,5 @@
 require 'rubygems'
 require 'set'
-require 'time'
 
 module Solargraph
   # An aggregate provider for information about workspaces, sources, gems, and
@@ -48,7 +47,7 @@ module Solargraph
     # @param source [Source]
     # @return [self]
     def map source
-      catalog Bundle.new([source])
+      catalog Bundle.new(sources: [source])
       self
     end
 
@@ -90,6 +89,7 @@ module Solargraph
         pins.concat map.pins
         reqs.concat map.requires.map(&:name)
       end
+      reqs.concat bundle.required
       unless bundle.load_paths.empty?
         reqs.delete_if do |r|
           result = false
@@ -154,7 +154,7 @@ module Solargraph
       # @todo How should this work?
       api_map = self.new #(Solargraph::Workspace.new(directory))
       workspace = Solargraph::Workspace.new(directory)
-      api_map.catalog Bundle.new(workspace.sources)
+      api_map.catalog Bundle.new(sources: workspace.sources)
       api_map
     end
 
@@ -343,10 +343,11 @@ module Solargraph
     # @param scope [Symbol] :instance or :class
     # @return [Array<Solargraph::Pin::Base>]
     def get_method_stack fqns, name, scope: :instance
-      cached = cache.get_method_stack(fqns, name, scope)
-      return cached unless cached.nil?
+      # @todo This cache is still causing problems.
+      # cached = cache.get_method_stack(fqns, name, scope)
+      # return cached unless cached.nil?
       result = get_methods(fqns, scope: scope, visibility: [:private, :protected, :public]).select{|p| p.name == name}
-      cache.set_method_stack(fqns, name, scope, result)
+      # cache.set_method_stack(fqns, name, scope, result)
       result
     end
 
@@ -482,8 +483,10 @@ module Solargraph
     # @param visibility [Array<Symbol>] :public, :protected, and/or :private
     # @param deep [Boolean]
     # @param skip [Array<String>]
+    # @param no_core [Boolean] Skip core classes if true
     # @return [Array<Pin::Base>]
-    def inner_get_methods fqns, scope, visibility, deep, skip
+    def inner_get_methods fqns, scope, visibility, deep, skip, no_core = false
+      return [] if no_core && fqns =~ /^(Object|BasicObject|Class|Module|Kernel)$/
       reqstr = "#{fqns}|#{scope}|#{visibility.sort}|#{deep}"
       return [] if skip.include?(reqstr)
       skip.push reqstr
@@ -493,22 +496,24 @@ module Solargraph
         sc = store.get_superclass(fqns)
         unless sc.nil?
           fqsc = qualify(sc, fqns.split('::')[0..-2].join('::'))
-          result.concat inner_get_methods(fqsc, scope, visibility, true, skip) unless fqsc.nil?
+          result.concat inner_get_methods(fqsc, scope, visibility, true, skip, true) unless fqsc.nil?
         end
         if scope == :instance
-          store.get_includes(fqns).each do |im|
+          store.get_includes(fqns).reverse.each do |im|
             fqim = qualify(im, fqns)
-            result.concat inner_get_methods(fqim, scope, visibility, deep, skip) unless fqim.nil?
+            result.concat inner_get_methods(fqim, scope, visibility, deep, skip, true) unless fqim.nil?
           end
-          result.concat inner_get_methods('Object', :instance, [:public], deep, skip) unless fqns == 'Object'
+          result.concat inner_get_methods('Object', :instance, [:public], deep, skip, no_core)
         else
-          store.get_extends(fqns).each do |em|
+          store.get_extends(fqns).reverse.each do |em|
             fqem = qualify(em, fqns)
-            result.concat inner_get_methods(fqem, :instance, visibility, deep, skip) unless fqem.nil?
+            result.concat inner_get_methods(fqem, :instance, visibility, deep, skip, true) unless fqem.nil?
           end
-          type = get_namespace_type(fqns)
-          result.concat inner_get_methods('Class', :instance, fqns == '' ? [:public] : visibility, deep, skip) if type == :class
-          result.concat inner_get_methods('Module', :instance, fqns == '' ? [:public] : visibility, deep, skip) #if type == :module
+          unless no_core || fqns.empty?
+            type = get_namespace_type(fqns)
+            result.concat inner_get_methods('Class', :instance, visibility, deep, skip, no_core) if type == :class
+            result.concat inner_get_methods('Module', :instance,visibility, deep, skip, no_core)
+          end
         end
         store.domains(fqns).each do |d|
           dt = ComplexType.parse(d)

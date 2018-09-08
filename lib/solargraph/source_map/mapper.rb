@@ -45,7 +45,7 @@ module Solargraph
         #   end
         # end
         process_comment_directives
-        [@pins, @locals, @requires, @symbols, @strings, @comment_ranges]
+        [@pins, @locals, @requires, @symbols]
       end
 
       class << self
@@ -82,10 +82,7 @@ module Solargraph
       # @param node [Parser::AST::Node]
       def process node, tree = [], visibility = :public, scope = :instance, fqn = '', stack = []
         return unless node.is_a?(AST::Node)
-        if node.type == :str
-          @strings.push Range.from_to(node.loc.expression.line, node.loc.expression.column, node.loc.expression.last_line, node.loc.expression.last_column)
-          return
-        end
+        return if node.type == :str
         stack.push node
         if node.kind_of?(AST::Node)
           @node_stack.unshift node
@@ -313,7 +310,9 @@ module Solargraph
                   end
                 end
               elsif c.type == :block
-                @pins.push Solargraph::Pin::Block.new(get_node_location(c), fqn || '', '', comments_for(c), c.children[0], scope)
+                here = get_node_start_position(c)
+                named_path = get_named_path_pin(here)
+                @pins.push Solargraph::Pin::Block.new(get_node_location(c), fqn || '', '', comments_for(c), c.children[0], named_path.context)
               end
               process c, tree, visibility, scope, fqn, stack
             end

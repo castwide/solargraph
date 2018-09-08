@@ -32,7 +32,7 @@ module Solargraph
         source = Solargraph::Source.load_string(text, filename, version)
         workspace.merge source
         open_file_hash[filename] = source
-        catalog unless api_map.try_merge!(source)
+        catalog #unless api_map.try_merge!(source)
       end
     end
 
@@ -65,7 +65,7 @@ module Solargraph
         next unless workspace.would_merge?(filename)
         source = Solargraph::Source.load_string(text, filename)
         workspace.merge(source)
-        catalog unless api_map.try_merge!(source)
+        catalog #unless api_map.try_merge!(source)
         result = true
       end
       result
@@ -83,7 +83,7 @@ module Solargraph
         next unless workspace.would_merge?(filename)
         source = Solargraph::Source.load_string(File.read(filename), filename)
         workspace.merge(source)
-        catalog unless api_map.try_merge!(source)
+        catalog #unless api_map.try_merge!(source)
         result = true
       end
       result
@@ -350,9 +350,10 @@ module Solargraph
     # @return [Bundle]
     def bundle
       Bundle.new(
-        (workspace.sources + open_file_hash.values).uniq(&:filename),
-        workspace.require_paths,
-        yard_map
+        sources: (workspace.sources + open_file_hash.values).uniq(&:filename),
+        required: workspace.config.required,
+        load_paths: workspace.require_paths,
+        yard_map: yard_map
       )
     end
 
@@ -378,24 +379,8 @@ module Solargraph
     # @return [Solargraph::Source]
     def read filename
       return open_file_hash[filename] if open_file_hash.has_key?(filename)
-      raise FileNotFoundError, "File not found: #{filename}" unless File.file?(filename)
-      Solargraph::Source.load(filename)
-    end
-
-    # @param pin [Pin::Base]
-    # @return [Location]
-    def get_symbol_name_location pin
-      decsrc = read(pin.location.filename)
-      offset = Solargraph::Position.to_offset(decsrc.code, pin.location.range.start)
-      soff = decsrc.code.index(pin.name, offset)
-      eoff = soff + pin.name.length
-      Solargraph::Location.new(
-        pin.location.filename,
-        Solargraph::Range.new(
-          Solargraph::Position.from_offset(decsrc.code, soff),
-          Solargraph::Position.from_offset(decsrc.code, eoff)
-        )
-      )
+      raise FileNotFoundError, "File not found: #{filename}" unless workspace.has_file?(filename)
+      workspace.source(filename)
     end
   end
 end

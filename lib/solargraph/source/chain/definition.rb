@@ -7,7 +7,7 @@ module Solargraph
           @location = location
         end
 
-        def resolve api_map, context, locals
+        def resolve api_map, name_pin, locals
           api_map.locate_pin(@location)
         end
       end

@@ -68,4 +68,39 @@ describe Solargraph::Pin::BlockParameter do
     pin2 = map2.locals.select{|p| p.name == 'foo'}.first
     expect(pin1.nearly?(pin2)).to be(true)
   end
+
+  it "infers fully qualified namespaces" do
+    source = Solargraph::Source.load_string(%(
+      class Foo
+        class Bar
+          # @return [Array<Bar>]
+          def baz; end
+        end
+      end
+      Foo::Bar.new.baz.each do |par|
+      end
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new
+    api_map.map source
+    pin = api_map.source_map('test.rb').locals.select{|p| p.name == 'par'}.first
+    type = pin.infer(api_map)
+    expect(type.namespace).to eq('Foo::Bar')
+  end
+
+  it "merges near equivalents" do
+    loc = Solargraph::Location.new('test.rb', Solargraph::Range.from_to(0, 0, 0, 0))
+    block = Solargraph::Pin::Block.new(loc, 'Foo', '', '', nil, nil)
+    pin1 = Solargraph::Pin::BlockParameter.new(nil, 'Foo', 'bar', '', block)
+    pin2 = Solargraph::Pin::BlockParameter.new(nil, 'Foo', 'bar', 'a comment', block)
+    expect(pin1.try_merge!(pin2)).to be(true)
+  end
+
+  it "does not merge block parameters from different blocks" do
+    loc = Solargraph::Location.new('test.rb', Solargraph::Range.from_to(0, 0, 0, 0))
+    block1 = Solargraph::Pin::Block.new(loc, 'Foo', '', '', nil, nil)
+    block2 = Solargraph::Pin::Block.new(loc, 'Bar', '', '', nil, nil)
+    pin1 = Solargraph::Pin::BlockParameter.new(nil, 'Foo', 'bar', '', block1)
+    pin2 = Solargraph::Pin::BlockParameter.new(nil, 'Foo', 'bar', 'a comment', block2)
+    expect(pin1.try_merge!(pin2)).to be(false)
+  end
 end

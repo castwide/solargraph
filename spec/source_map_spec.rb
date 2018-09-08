@@ -19,4 +19,37 @@ describe Solargraph::SourceMap do
     pin = map.locate_block_pin(3, 0)
     expect(pin.kind).to eq(Solargraph::Pin::BLOCK)
   end
+
+  it "merges comment changes" do
+    map1 = Solargraph::SourceMap.load_string(%(
+      class Foo
+        def bar; end
+      end
+    ))
+    map2 = Solargraph::SourceMap.load_string(%(
+      class Foo
+        # My bar method
+        def bar; end
+      end
+    ))
+    expect(map1.try_merge!(map2)).to be(true)
+  end
+
+  it "merges require equivalents" do
+    map1 = Solargraph::SourceMap.load_string("require 'foo'")
+    map2 = Solargraph::SourceMap.load_string("require 'foo' # Insignificant comment")
+    expect(map1.try_merge!(map2)).to be(true)
+  end
+
+  it "does not merge require changes" do
+    map1 = Solargraph::SourceMap.load_string("require 'foo'")
+    map2 = Solargraph::SourceMap.load_string("require 'bar'")
+    expect(map1.try_merge!(map2)).to be(false)
+  end
+
+  it "merges reordered requires" do
+    map1 = Solargraph::SourceMap.load_string("require 'foo'; require 'bar'")
+    map2 = Solargraph::SourceMap.load_string("require 'bar'; require 'foo'")
+    expect(map1.try_merge!(map2)).to be(true)
+  end
 end

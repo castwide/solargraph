@@ -13,31 +13,31 @@ module Solargraph
       # @return [Array<Pin::Base>]
       def define
         return [] if cursor.chain.literal?
-        cursor.chain.define(api_map, context, locals)
+        cursor.chain.define(api_map, context_pin, locals)
       end
 
       # @return [Completion]
       def complete
         return Completion.new([], cursor.range) if cursor.chain.literal? or cursor.comment?
         result = []
-        type = cursor.chain.base.infer(api_map, context, locals)
+        type = cursor.chain.base.infer(api_map, context_pin, locals)
         if cursor.chain.constant?
-          result.concat api_map.get_constants(type.namespace, context.namespace)
+          result.concat api_map.get_constants(type.namespace, context_pin.context.namespace)
         else
-          result.concat api_map.get_complex_type_methods(type, context.namespace, cursor.chain.links.length == 1)
+          result.concat api_map.get_complex_type_methods(type, context_pin.context.namespace, cursor.chain.links.length == 1)
           if cursor.chain.links.length == 1
             if cursor.word.start_with?('@@')
-              return package_completions(api_map.get_class_variable_pins(context.namespace))
+              return package_completions(api_map.get_class_variable_pins(context_pin.context.namespace))
             elsif cursor.word.start_with?('@')
-              return package_completions(api_map.get_instance_variable_pins(context.namespace, context.scope))
+              return package_completions(api_map.get_instance_variable_pins(context_pin.context.namespace, context_pin.context.scope))
             elsif cursor.word.start_with?('$')
               return package_completions(api_map.get_global_variable_pins)
             elsif cursor.word.start_with?(':') and !cursor.word.start_with?('::')
               return package_completions(api_map.get_symbols)
             end
             result.concat prefer_non_nil_variables(locals)
-            result.concat api_map.get_constants('', context.namespace)
-            result.concat api_map.get_methods(context.namespace, scope: context.scope, visibility: [:public, :private, :protected])
+            result.concat api_map.get_constants('', context_pin.context.namespace)
+            result.concat api_map.get_methods(context_pin.context.namespace, scope: context_pin.context.scope, visibility: [:public, :private, :protected])
             result.concat api_map.get_methods('Kernel')
             result.concat ApiMap.keywords
           end
@@ -53,14 +53,14 @@ module Solargraph
       end
 
       def infer
-        cursor.chain.infer(api_map, context, locals)
+        cursor.chain.infer(api_map, context_pin, locals)
       end
 
       # The context at the current position.
       #
-      # @return [Context]
-      def context
-        @context ||= source_map.locate_named_path_pin(cursor.node_position.line, cursor.node_position.character).context
+      # @return [Pin::Base]
+      def context_pin
+        @context ||= source_map.locate_named_path_pin(cursor.node_position.line, cursor.node_position.character)
       end
 
       # Get an array of all the locals that are visible from the cursors's
@@ -97,7 +97,7 @@ module Solargraph
       # @return [Completion]
       def package_completions result
         frag_start = cursor.start_of_word.to_s.downcase
-        filtered = result.uniq(&:identifier).select{|s| s.name.downcase.start_with?(frag_start) and (s.kind != Pin::METHOD or s.name.match(/^[a-z0-9_]+(\!|\?|=)?$/i))}
+        filtered = result.uniq(&:name).select{|s| s.name.downcase.start_with?(frag_start) and (s.kind != Pin::METHOD or s.name.match(/^[a-z0-9_]+(\!|\?|=)?$/i))}
         Completion.new(filtered, cursor.range)
       end
 

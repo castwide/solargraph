@@ -15,6 +15,15 @@ describe Solargraph::Source::SourceChainer do
     expect(cursor.chain.links.first.word).to eq('<String>')
   end
 
+  it "recognizes literal integers" do
+    map = Solargraph::SourceMap.load_string("100")
+    cursor = map.cursor_at(Solargraph::Position.new(0, 0))
+    expect(cursor.chain).not_to be_a(Solargraph::Source::Chain::Literal)
+    cursor = map.cursor_at(Solargraph::Position.new(0, 1))
+    expect(cursor.chain.links.first).to be_a(Solargraph::Source::Chain::Literal)
+    expect(cursor.chain.links.first.word).to eq('<Integer>')
+  end
+
   it "recognizes class variables" do
     map = Solargraph::SourceMap.load_string('@@foo')
     cursor = map.cursor_at(Solargraph::Position.new(0, 0))
@@ -57,5 +66,23 @@ describe Solargraph::Source::SourceChainer do
     expect(cursor.chain.links.last).to be_a(Solargraph::Source::Chain::Call)
     expect(cursor.chain.links.map(&:word)).to eq(['foo', 'bar', '<undefined>'])
     expect(cursor.chain).to be_undefined
+  end
+
+  it "chains signatures with square brackets" do
+    map = Solargraph::SourceMap.load_string('foo[0].bar')
+    cursor = map.cursor_at(Solargraph::Position.new(0, 8))
+    expect(cursor.chain.links.map(&:word)).to eq(['foo', '[]', 'bar'])
+  end
+
+  it "chains signatures with curly brackets" do
+    map = Solargraph::SourceMap.load_string('foo{|x| x == y}.bar')
+    cursor = map.cursor_at(Solargraph::Position.new(0, 16))
+    expect(cursor.chain.links.map(&:word)).to eq(['foo', 'bar'])
+  end
+
+  it "chains signatures with parentheses" do
+    map = Solargraph::SourceMap.load_string('foo(x, y).bar')
+    cursor = map.cursor_at(Solargraph::Position.new(0, 10))
+    expect(cursor.chain.links.map(&:word)).to eq(['foo', 'bar'])
   end
 end
