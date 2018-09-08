@@ -53,15 +53,13 @@ module Solargraph
             result.concat generate_links(n.children[0])
             args = []
             n.children[2..-1].each do |c|
-              # @todo Handle link parameters
-              # args.push Chain.new(source, c.loc.last_line - 1, c.loc.column)
+              args.push NodeChainer.chain(c)
             end
             result.push Chain::Call.new(n.children[1].to_s, args)
           elsif n.children[0].nil?
             args = []
             n.children[2..-1].each do |c|
-              # @todo Handle link parameters
-              # args.push Chain.new(source, c.loc.last_line - 1, c.loc.column)
+              args.push NodeChainer.chain(c)
             end
             result.push Chain::Call.new(n.children[1].to_s, args)
           else
