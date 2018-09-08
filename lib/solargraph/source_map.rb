@@ -80,8 +80,9 @@ module Solargraph
       _locate_pin line, character, Pin::NAMESPACE, Pin::METHOD, Pin::BLOCK
     end
 
+    # @param other_map [SourceMap]
     def try_merge! other_map
-      return false if pins.length != other_map.pins.length || locals.length != other_map.locals.length
+      return false if pins.length != other_map.pins.length || locals.length != other_map.locals.length || requires = other_map.requires
       pins.each_index do |i|
         return false unless pins[i].try_merge!(other_map.pins[i])
       end
