@@ -1,6 +1,5 @@
 require 'rubygems'
 require 'set'
-require 'time'
 
 module Solargraph
   # An aggregate provider for information about workspaces, sources, gems, and
