@@ -46,4 +46,10 @@ describe Solargraph::SourceMap do
     map2 = Solargraph::SourceMap.load_string("require 'bar'")
     expect(map1.try_merge!(map2)).to be(false)
   end
+
+  it "merges reordered requires" do
+    map1 = Solargraph::SourceMap.load_string("require 'foo'; require 'bar'")
+    map2 = Solargraph::SourceMap.load_string("require 'bar'; require 'foo'")
+    expect(map1.try_merge!(map2)).to be(true)
+  end
 end
