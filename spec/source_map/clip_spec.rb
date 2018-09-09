@@ -129,4 +129,15 @@ describe Solargraph::SourceMap::Clip do
     expect(pins.first).to be_a(Solargraph::Pin::LocalVariable)
     expect(pins.first.name).to eq('p1')
   end
+
+  it "completes constants only for leading double colons" do
+    source = Solargraph::Source.load_string(%(
+      ::_
+    ))
+    api_map.map source
+    cursor = source.cursor_at(Solargraph::Position.new(1, 8))
+    clip = described_class.new(api_map, cursor)
+    pins = clip.complete.pins
+    expect(pins.all?{|p| [Solargraph::Pin::NAMESPACE, Solargraph::Pin::CONSTANT].include?(p.kind) }).to be(true)
+  end
 end
