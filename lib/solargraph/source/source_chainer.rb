@@ -34,7 +34,6 @@ module Solargraph
 
       # @return [Source::Chain]
       def chain
-        STDERR.puts "Whole phrase: #{source.code[signature_data[0]..offset-1]}"
         # links = []
         # # @todo Smelly colon handling
         # if @source.code[0..offset-1].end_with?(':') and !@source.code[0..offset-1].end_with?('::')
@@ -68,7 +67,11 @@ module Solargraph
         # @chain ||= Chain.new(links)
         # return Chain.new([Chain::UNDEFINED_CALL]) unless source.parsed?
         return Chain.new([Chain::UNDEFINED_CALL]) if phrase.end_with?(':') && !phrase.end_with?('::')
-        node = (source.repaired? || !source.parsed?) ? Source.parse(fixed_phrase) : source.node_at(position.line, position.column)
+        begin
+          node = (source.repaired? || !source.parsed?) ? Source.parse(fixed_phrase) : source.node_at(position.line, position.column)
+        rescue Parser::SyntaxError
+          return Chain.new([Chain::UNDEFINED_CALL])
+        end
         chain = NodeChainer.chain(node, source.filename)
         if source.repaired? || !source.parsed?
           if end_of_phrase.strip == '.'

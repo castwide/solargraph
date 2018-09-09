@@ -13,7 +13,10 @@ module Solargraph
       # @return [Array<Pin::Base>]
       def define
         return [] if cursor.chain.literal?
-        cursor.chain.define(api_map, context_pin, locals)
+        result = cursor.chain.define(api_map, context_pin, locals)
+        # HACK: Definitions of definitions should only be used if the cursor is at the top of the definition
+        result.pop if cursor.chain.links.last.is_a?(Source::Chain::Definition) && result.last.location.range.start.line != cursor.position.line
+        result
       end
 
       # @return [Completion]
