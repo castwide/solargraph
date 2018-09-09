@@ -48,10 +48,18 @@ module Solargraph
         [@pins, @locals, @requires, @symbols]
       end
 
+      def unmap filename, code
+        s = Position.new(0, 0)
+        e = Position.from_offset(code, code.length)
+        location = Location.new(filename, Range.new(s, e))
+        [[Pin::Namespace.new(location, '', '', '', :class, :public, nil)], [], [], []]
+      end
+
       class << self
         # @param source [Source]
         # @return [Array]
         def map source
+          return new.unmap(source.filename, source.code) unless source.parsed?
           new.map source.filename, source.code, source.node, source.comments
         end
       end
