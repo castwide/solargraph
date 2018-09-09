@@ -3,11 +3,12 @@ module Solargraph
   # and providing the results to language server clients.
   #
   module Diagnostics
-    autoload :Base, 'solargraph/diagnostics/base'
-    autoload :Severities, 'solargraph/diagnostics/severities'
-    autoload :Rubocop, 'solargraph/diagnostics/rubocop'
+    autoload :Base,            'solargraph/diagnostics/base'
+    autoload :Severities,      'solargraph/diagnostics/severities'
+    autoload :Rubocop,         'solargraph/diagnostics/rubocop'
     autoload :RequireNotFound, 'solargraph/diagnostics/require_not_found'
-    autoload :TypeNotDefined, 'solargraph/diagnostics/type_not_defined'
+    autoload :TypeNotDefined,  'solargraph/diagnostics/type_not_defined'
+    autoload :UpdateErrors,    'solargraph/diagnostics/update_errors'
 
     class << self
       # Add a reporter with a name to identify it in .solargraph.yml files.
