@@ -43,7 +43,7 @@ module Solargraph
       def infer api_map
         result = super
         return result if result.defined? or @assignment.nil?
-        chain = Source::NodeChainer.chain(@assignment)
+        chain = Source::NodeChainer.chain(@assignment, filename)
         clip = api_map.clip_at(location.filename, location.range.start)
         locals = clip.locals - [self]
         chain.infer(api_map, ProxyType.anonymous(context), locals)

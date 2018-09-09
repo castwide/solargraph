@@ -512,7 +512,7 @@ module Solargraph
               else
                 # @todo Connected to a line of code. Handle separately
               end
-            else
+            elsif !current.empty?
               process_comment Position.new(current.last.loc.expression.line, current.last.loc.expression.column), current.map(&:text).join("\n")
               current.clear
               current.push cmnt

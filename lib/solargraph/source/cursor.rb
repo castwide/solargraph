@@ -72,7 +72,18 @@ module Solargraph
 
       # @return [Chain]
       def chain
-        @chain ||= Source::SourceChainer.chain(source, position)
+        # @chain ||= begin
+        #   result = Source::NodeChainer.chain(source.node_at(node_position.line, node_position.column))
+        #   if position != node_position
+        #     if in_constant?
+        #       result.links.push (word.empty? ? Chain::UNDEFINED_CONSTANT : Chain::Constant.new(word))
+        #     else
+        #       result.links.push (word.empty? ? Chain::UNDEFINED_CALL : Chain::Call.new(word))
+        #     end
+        #   end
+        #   result
+        # end
+        @chain ||= SourceChainer.chain(source, position)
       end
 
       # @return [Boolean]
@@ -97,7 +108,18 @@ module Solargraph
       end
 
       def node_position
-        previous_position
+        @node_position ||= begin
+          if start_of_word.empty?
+            match = source.code[0, offset].match(/[\s]*(\.|:+)[\s]*$/)
+            if match
+              Position.from_offset(source.code, offset - match[0].length)
+            else
+              position
+            end
+          else
+            position
+          end
+        end
       end
 
       def previous_position
@@ -114,6 +136,10 @@ module Solargraph
       end
 
       private
+
+      def in_constant?
+        @in_constant ||= (source.code[0..offset-(start_of_word.length)-1] =~ /:{2}$/)
+      end
 
       # @return [Integer]
       def offset

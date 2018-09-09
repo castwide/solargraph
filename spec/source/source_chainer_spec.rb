@@ -61,7 +61,12 @@ describe Solargraph::Source::SourceChainer do
   end
 
   it "recognizes unfinished calls" do
-    map = Solargraph::SourceMap.load_string('foo.bar.')
+    orig = Solargraph::Source.load_string('foo.bar')
+    updater = Solargraph::Source::Updater.new(nil, 1, [
+      Solargraph::Source::Change.new(Solargraph::Range.from_to(0, 7, 0, 7), '.')
+    ])
+    source = orig.synchronize(updater)
+    map = Solargraph::SourceMap.map(source)
     cursor = map.cursor_at(Solargraph::Position.new(0, 8))
     expect(cursor.chain.links.last).to be_a(Solargraph::Source::Chain::Call)
     expect(cursor.chain.links.map(&:word)).to eq(['foo', 'bar', '<undefined>'])

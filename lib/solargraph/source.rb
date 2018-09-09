@@ -123,6 +123,10 @@ module Solargraph
       @parsed
     end
 
+    def repaired?
+      @is_repaired ||= (@code != @repaired)
+    end
+
     # @param position [Position]
     # @return [Boolean]
     def string_at? position

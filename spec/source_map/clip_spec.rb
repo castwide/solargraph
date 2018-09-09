@@ -2,7 +2,11 @@ describe Solargraph::SourceMap::Clip do
   let(:api_map) { Solargraph::ApiMap.new }
 
   it "completes constants" do
-    source = Solargraph::Source.load_string('File::')
+    orig = Solargraph::Source.load_string('File')
+    updater = Solargraph::Source::Updater.new(nil, 1, [
+      Solargraph::Source::Change.new(Solargraph::Range.from_to(0, 4, 0, 4), '::')
+    ])
+    source = orig.synchronize(updater)
     api_map.map source
     cursor = source.cursor_at(Solargraph::Position.new(0, 6))
     clip = described_class.new(api_map, cursor)

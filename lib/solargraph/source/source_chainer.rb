@@ -34,36 +34,50 @@ module Solargraph
 
       # @return [Source::Chain]
       def chain
-        links = []
-        # @todo Smelly colon handling
-        if @source.code[0..offset-1].end_with?(':') and !@source.code[0..offset-1].end_with?('::')
-          links.push Chain::Link.new
-          links.push Chain::Link.new
-        elsif @source.string_at?(position)
-          links.push Chain::Literal.new('String')
-        else
-          links.push Chain::Literal.new(base_literal) if base_literal?
-          sig = whole_signature
-          unless sig.empty?
-            sig = sig[1..-1] if sig.start_with?('.')
-            head = true
-            sig.split('.', -1).each do |word|
-              if word.include?('::')
-                # @todo Smelly way of handling constants
-                parts = (word.start_with?('::') ? word[2..-1] : word).split('::', -1)
-                last = parts.pop
-                links.push Chain::Constant.new(parts.join('::')) unless parts.empty?
-                links.push (last.nil? or last.empty? ? Chain::UNDEFINED_CONSTANT : Chain::Constant.new(last))
-              else
-                links.push word_to_link(word, head)
-              end
-              head = false
-            end
+        STDERR.puts "Whole phrase: #{source.code[signature_data[0]..offset-1]}"
+        # links = []
+        # # @todo Smelly colon handling
+        # if @source.code[0..offset-1].end_with?(':') and !@source.code[0..offset-1].end_with?('::')
+        #   # @todo Figure out if this is right.
+        #   links.push Chain::Link.new
+        #   links.push Chain::Link.new
+        # elsif @source.string_at?(position)
+        #   links.push Chain::Literal.new('String')
+        # else
+        #   links.push Chain::Literal.new(base_literal) if base_literal?
+        #   sig = whole_signature
+        #   unless sig.empty?
+        #     sig = sig[1..-1] if sig.start_with?('.')
+        #     head = true
+        #     sig.split('.', -1).each do |word|
+        #       if word.include?('::')
+        #         # @todo Smelly way of handling constants
+        #         parts = (word.start_with?('::') ? word[2..-1] : word).split('::', -1)
+        #         last = parts.pop
+        #         links.push Chain::Constant.new(parts.join('::')) unless parts.empty?
+        #         links.push (last.nil? or last.empty? ? Chain::UNDEFINED_CONSTANT : Chain::Constant.new(last))
+        #       else
+        #         links.push word_to_link(word, head)
+        #       end
+        #       head = false
+        #     end
+        #   end
+        #   # Literal string hack
+        #   links.push Chain::UNDEFINED_CALL if base_literal? and @source.code[offset - 1] == '.' and links.length == 1
+        # end
+        # @chain ||= Chain.new(links)
+        # return Chain.new([Chain::UNDEFINED_CALL]) unless source.parsed?
+        return Chain.new([Chain::UNDEFINED_CALL]) if phrase.end_with?(':') && !phrase.end_with?('::')
+        node = (source.repaired? || !source.parsed?) ? Source.parse(fixed_phrase) : source.node_at(position.line, position.column)
+        chain = NodeChainer.chain(node, source.filename)
+        if source.repaired? || !source.parsed?
+          if end_of_phrase.strip == '.'
+            chain.links.push Chain::UNDEFINED_CALL
+          elsif end_of_phrase.strip == '::'
+            chain.links.push Chain::UNDEFINED_CONSTANT
           end
-          # Literal string hack
-          links.push Chain::UNDEFINED_CALL if base_literal? and @source.code[offset - 1] == '.' and links.length == 1
         end
-        @chain ||= Chain.new(links)
+        chain
       end
 
       private
@@ -83,6 +97,25 @@ module Solargraph
       # @return [Solargraph::Source]
       attr_reader :source
 
+      def phrase
+        @phrase ||= source.code[signature_data[0]..offset-1]
+      end
+
+      def fixed_phrase
+        @fixed_phrase ||= phrase[0..-(end_of_phrase.length+1)]
+      end
+
+      def end_of_phrase
+        @end_of_phrase ||= begin
+          match = phrase.match(/[\s]*(\.{1}|:{1,2})?[\s]*$/)
+          if match
+            match[0]
+          else
+            ''
+          end
+        end
+      end
+
       def word_to_link word, head
         if word.start_with?('@@')
           Chain::ClassVariable.new(word)
@@ -99,8 +132,10 @@ module Solargraph
           # methods. For example, `String` might be either. If the word is not
           # followed by an open parenthesis, use Chain::Head for ambiguous
           # results.
+          # @todo Arguments
           Chain::Head.new(word)
         else
+          # @todo Arguments
           Chain::Call.new(word)
         end
       end

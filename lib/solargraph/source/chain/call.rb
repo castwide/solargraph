@@ -44,10 +44,14 @@ module Solargraph
             if CoreFills::METHODS_RETURNING_SELF.include?(p.path)
               next Solargraph::Pin::Method.new(p.location, p.namespace, p.name, "@return [#{context.tag}]", p.scope, p.visibility, p.parameters)
             end
-            if CoreFills::METHODS_RETURNING_SUBTYPES.include?(p.path) and !context.subtypes.empty?
+            if CoreFills::METHODS_RETURNING_SUBTYPES.include?(p.path) && !context.subtypes.empty?
               next Solargraph::Pin::Method.new(p.location, p.namespace, p.name, "@return [#{context.subtypes.first.tag}]", p.scope, p.visibility, p.parameters)
             end
-            next p if p.kind == Pin::METHOD or p.kind == Pin::ATTRIBUTE or p.kind == Pin::NAMESPACE
+            if p.kind == Pin::METHOD && !p.macros.empty?
+              result = process_macro(p, api_map, context)
+              next result unless result.return_type.undefined?
+            end
+            next p if p.kind == Pin::METHOD || p.kind == Pin::ATTRIBUTE || p.kind == Pin::NAMESPACE
             type = p.infer(api_map)
             next p if p.return_complex_type == type
             Pin::ProxyType.new(p.location, nil, p.name, type)
@@ -57,6 +61,18 @@ module Solargraph
 
         def external_constructor? pin, context
           pin.path == 'Class#new' || (pin.name == 'new' && pin.scope == :class && pin.context != context)
+        end
+
+        # @param pin [Pin::Method]
+        # @param api_map [ApiMap]
+        # @param context [ComplexType]
+        def process_macro pin, api_map, context
+          # @todo Process the macro
+          pin.macros.each do |macro|
+            STDERR.puts "I should process #{macro.tag.text}"
+            STDERR.puts "Arguments: #{arguments.inspect}"
+          end
+          return Pin::ProxyType.new(nil, nil, nil, ComplexType::UNDEFINED)
         end
       end
     end

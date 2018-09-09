@@ -3,8 +3,9 @@ module Solargraph
     class NodeChainer
       include Source::NodeMethods
 
-      def initialize node
+      def initialize node, filename = nil
         @node = node
+        @filename = filename
         # @source = source
         # @line = line
         # @column = column
@@ -20,8 +21,8 @@ module Solargraph
         # @param node [Parser::AST::Node]
         # @param filename [String]
         # @return [Chain]
-        def chain node
-          NodeChainer.new(node).chain
+        def chain node, filename = nil
+          NodeChainer.new(node, filename).chain
         end
 
         # @param code [String]
@@ -68,7 +69,12 @@ module Solargraph
         elsif n.type == :self
           result.push Chain::Call.new('self')
         elsif n.type == :const
-          result.push Chain::Constant.new(unpack_name(n))
+          # result.push Chain::Constant.new(unpack_name(n))
+          const = unpack_name(n)
+          parts = const.split('::')
+          last = parts.pop
+          result.push Chain::Constant.new(parts.join('::')) unless parts.empty?
+          result.push Chain::Constant.new(last)
         elsif [:lvar, :lvasgn].include?(n.type)
           result.push Chain::Call.new(n.children[0].to_s)
         elsif [:ivar, :ivasgn].include?(n.type)
@@ -78,7 +84,7 @@ module Solargraph
         elsif [:gvar, :gvasgn].include?(n.type)
           result.push Chain::GlobalVariable.new(n.children[0].to_s)
         elsif [:class, :module, :def, :defs].include?(n.type)
-          location = Solargraph::Location.new(@filename, Range.from_to(n.loc.expression.line - 1, n.loc.expression.column, n.loc.expression.last_line - 1, n.loc.expression.last_column))
+          location = Solargraph::Location.new(@filename, Range.from_to(n.loc.expression.line, n.loc.expression.column, n.loc.expression.last_line, n.loc.expression.last_column))
           result.push Chain::Definition.new(location)
         else
           lit = infer_literal_node_type(n)
