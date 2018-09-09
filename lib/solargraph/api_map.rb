@@ -229,8 +229,13 @@ module Solargraph
       return qualify(context) if namespace == 'self'
       cached = cache.get_qualified_namespace(namespace, context)
       return cached.clone unless cached.nil?
-      result = inner_qualify(namespace, context, [])
-      result = result[2..-1] if !result.nil? && result.start_with?('::')
+      # result = inner_qualify(namespace, context, [])
+      # result = result[2..-1] if !result.nil? && result.start_with?('::')
+      if namespace.start_with?('::')
+        result = inner_qualify(namespace[2..-1], '', [])
+      else
+        result = inner_qualify(namespace, context, [])
+      end
       cache.set_qualified_namespace(namespace, context, result)
       result
     end
