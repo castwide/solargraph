@@ -574,4 +574,17 @@ describe Solargraph::SourceMap::Mapper do
     pin = smap.pins.select{|p| p.is_a?(Solargraph::Pin::Block)}.first
     expect(pin.context.scope).to eq(:instance)
   end
+
+  it "maps rebased namespaces without leading colons" do
+    smap = Solargraph::SourceMap.load_string(%(
+      class Foo
+        class ::Bar
+          def baz; end
+        end
+      end
+    ))
+    expect(smap.first_pin('Foo::Bar')).to be_nil
+    expect(smap.first_pin('Bar')).to be_a(Solargraph::Pin::Namespace)
+    expect(smap.first_pin('Bar#baz')).to be_a(Solargraph::Pin::Method)
+  end
 end
