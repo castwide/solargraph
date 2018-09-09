@@ -49,7 +49,8 @@ module Solargraph
                 current = nil
                 mutex.synchronize { current = queue.shift }
                 next if queue.include?(current)
-                results = host.diagnose(current)
+                results = []
+                results.concat host.diagnose(current) if host.open?(current)
                 host.send_notification "textDocument/publishDiagnostics", {
                   uri: current,
                   diagnostics: results
