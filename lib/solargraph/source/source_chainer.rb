@@ -36,7 +36,7 @@ module Solargraph
       def chain
         return Chain.new([Chain::Literal.new('Symbol')]) if phrase.start_with?(':') && !phrase.start_with?('::')
         begin
-          if source.repaired?
+          if source.repaired? && source.parsed?
             node = source.node_at(fixed_position.line, fixed_position.column)
           elsif source.parsed?
             node = source.node_at(position.line, position.column)
