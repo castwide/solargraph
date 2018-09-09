@@ -14,8 +14,7 @@ module Solargraph
       def define
         return [] if cursor.chain.literal?
         result = cursor.chain.define(api_map, context_pin, locals)
-        # HACK: Definitions of definitions should only be used if the cursor is at the top of the definition
-        result.pop if cursor.chain.links.last.is_a?(Source::Chain::Definition) && result.last.location.range.start.line != cursor.position.line
+        result.concat(source_map.pins.select{ |p| p.location.range.start.line == cursor.position.line }) if result.empty?
         result
       end
 
