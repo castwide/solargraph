@@ -313,7 +313,6 @@ module Solargraph
         raise DiagnosticsError, "Diagnostics reporter #{name} does not exist" if reporter.nil?
         result.concat reporter.new.diagnose(source, api_map)
       end
-      result.concat Diagnostics::UpdateErrors.new.diagnose(source, api_map)
       result
     end
 

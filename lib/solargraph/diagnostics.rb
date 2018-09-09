@@ -45,5 +45,6 @@ module Solargraph
     register 'rubocop', Rubocop
     register 'require_not_found', RequireNotFound
     register 'type_not_defined', TypeNotDefined
+    register 'update_errors', UpdateErrors
   end
 end
