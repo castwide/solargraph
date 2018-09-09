@@ -229,7 +229,7 @@ module Solargraph
       result = []
       lines = []
       ranges.sort{|a, b| a.start.line <=> b.start.line}.each do |rng|
-        next if lines.include?(rng.start.line)
+        next if rng.nil? || lines.include?(rng.start.line)
         fcol = code.lines[rng.start.line].index(/[^\s]/) || 0
         ecol = code.lines[rng.start.line].length
         result.push Range.from_to(rng.start.line, fcol, rng.start.line, ecol)
