@@ -67,7 +67,9 @@ module Solargraph
             raise "No idea what to do with #{n}"
           end
         elsif n.type == :self
-          result.push Chain::Call.new('self')
+          result.push Chain::Head.new('self')
+        elsif n.type == :zsuper
+          result.push Chain::Head.new('super')
         elsif n.type == :const
           # result.push Chain::Constant.new(unpack_name(n))
           const = unpack_name(n)
