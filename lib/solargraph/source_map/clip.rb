@@ -21,11 +21,11 @@ module Solargraph
 
       # @return [Completion]
       def complete
-        return package_completions(api_map.get_symbols) if cursor.chain.literal? and cursor.chain.links.last.word == '<Symbol>'
-        return Completion.new([], cursor.range) if cursor.chain.literal? or cursor.comment?
+        return package_completions(api_map.get_symbols) if cursor.chain.literal? && cursor.chain.links.last.word == '<Symbol>'
+        return Completion.new([], cursor.range) if cursor.chain.literal? || cursor.comment?
         result = []
         type = cursor.chain.base.infer(api_map, context_pin, locals)
-        if cursor.chain.constant?
+        if cursor.chain.constant? || cursor.start_of_constant?
           result.concat api_map.get_constants(type.undefined? ? '' : type.namespace, context_pin.context.namespace)
         else
           result.concat api_map.get_complex_type_methods(type, context_pin.context.namespace, cursor.chain.links.length == 1)

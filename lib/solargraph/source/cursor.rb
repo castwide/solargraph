@@ -59,6 +59,10 @@ module Solargraph
         end
       end
 
+      def start_of_constant?
+        source.code[offset-2, 2] == '::'
+      end
+
       # The range of the word at the current position.
       #
       # @return [Range]
