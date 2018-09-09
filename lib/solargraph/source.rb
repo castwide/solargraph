@@ -1,7 +1,8 @@
 require 'parser/current'
-require 'time'
 
 module Solargraph
+  # A Ruby file that has been parsed into an AST.
+  #
   class Source
     autoload :FlawedBuilder, 'solargraph/source/flawed_builder'
     autoload :Updater,       'solargraph/source/updater'
@@ -177,10 +178,12 @@ module Solargraph
 
     private
 
+    # @return [Array<Range>]
     def string_ranges
       @string_ranges ||= string_ranges_in(@node)
     end
 
+    # @return [Array<Range>]
     def comment_ranges
       @comment_ranges || @comments.map do |cmnt|
         Range.from_expr(cmnt.loc.expression)
@@ -230,22 +233,27 @@ module Solargraph
       lines = []
       ranges.sort{|a, b| a.start.line <=> b.start.line}.each do |rng|
         next if rng.nil? || lines.include?(rng.start.line)
+        lines.push rng.start.line
+        next if comment_at?(rng.start)
         fcol = code.lines[rng.start.line].index(/[^\s]/) || 0
         ecol = code.lines[rng.start.line].length
         result.push Range.from_to(rng.start.line, fcol, rng.start.line, ecol)
-        lines.push rng.start.line
       end
       result
     end
 
     protected
 
+    # @return [Integer]
     attr_writer :version
 
+    # @return [String]
     attr_writer :code
 
+    # @return [String]
     attr_accessor :repaired
 
+    # @return [Boolean]
     attr_writer :parsed
 
     class << self
