@@ -21,6 +21,7 @@ module Solargraph
 
       # @return [Completion]
       def complete
+        return package_completions(api_map.get_symbols) if cursor.chain.literal? and cursor.chain.links.last.word == '<Symbol>'
         return Completion.new([], cursor.range) if cursor.chain.literal? or cursor.comment?
         result = []
         type = cursor.chain.base.infer(api_map, context_pin, locals)
@@ -36,6 +37,7 @@ module Solargraph
             elsif cursor.word.start_with?('$')
               return package_completions(api_map.get_global_variable_pins)
             elsif cursor.word.start_with?(':') and !cursor.word.start_with?('::')
+              # Extra case to handle bare colons that weren't chained as literals
               return package_completions(api_map.get_symbols)
             end
             result.concat prefer_non_nil_variables(locals)
