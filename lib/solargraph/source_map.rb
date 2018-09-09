@@ -5,15 +5,17 @@ module Solargraph
     autoload :Mapper,        'solargraph/source_map/mapper'
     autoload :Clip,          'solargraph/source_map/clip'
     autoload :Completion,    'solargraph/source_map/completion'
-    autoload :NewFragment,   'solargraph/source_map/new_fragment'
 
+    # @return [Source]
     attr_reader :source
 
     # @return [Array<Pin::Base>]
     attr_reader :pins
 
+    # @return [Array<Pin::Base>]
     attr_reader :locals
 
+    # @return [Array<Pin::Reference>]
     attr_reader :requires
 
     def initialize source, pins, locals, requires, symbols
