@@ -26,7 +26,7 @@ module Solargraph
         result = []
         type = cursor.chain.base.infer(api_map, context_pin, locals)
         if cursor.chain.constant?
-          result.concat api_map.get_constants(type.namespace, context_pin.context.namespace)
+          result.concat api_map.get_constants(type.undefined? ? '' : type.namespace, context_pin.context.namespace)
         else
           result.concat api_map.get_complex_type_methods(type, context_pin.context.namespace, cursor.chain.links.length == 1)
           if cursor.chain.links.length == 1
