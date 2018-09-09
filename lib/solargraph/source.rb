@@ -234,7 +234,7 @@ module Solargraph
       ranges.sort{|a, b| a.start.line <=> b.start.line}.each do |rng|
         next if rng.nil? || lines.include?(rng.start.line)
         lines.push rng.start.line
-        next if comment_at?(rng.start)
+        next if comment_at?(rng.start) || rng.start.line >= code.lines.length
         fcol = code.lines[rng.start.line].index(/[^\s]/) || 0
         ecol = code.lines[rng.start.line].length
         result.push Range.from_to(rng.start.line, fcol, rng.start.line, ecol)
