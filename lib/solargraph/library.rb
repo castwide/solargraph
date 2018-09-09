@@ -365,6 +365,7 @@ module Solargraph
     # A collection of files that are currently open in the library. Open
     # files do not need to be in the workspace.
     #
+    # @return [Hash{String => Source}]
     def open_file_hash
       @open_file_hash ||= {}
     end
