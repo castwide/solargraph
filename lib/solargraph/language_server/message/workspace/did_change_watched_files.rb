@@ -22,7 +22,6 @@ module Solargraph::LanguageServer::Message::Workspace
         elsif change['type'] == DELETED
           host.delete change['uri']
         else
-          # @todo Handle error
           set_error Solargraph::LanguageServer::ErrorCodes::INVALID_PARAMS, "Unknown change type ##{change['type']} for #{uri_to_file(change['uri'])}"
         end
       end
