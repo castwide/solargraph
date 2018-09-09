@@ -15,11 +15,11 @@ module Solargraph
 
         def resolve api_map, name_pin, locals
           found = locals.select{|p| p.name == word}
-          return inferred_pins(found, api_map, name_pin.context) unless found.empty?
+          return inferred_pins(found, api_map, name_pin.context, locals) unless found.empty?
           pins = api_map.get_method_stack(name_pin.context.namespace, word, scope: name_pin.context.scope)
           return [] if pins.empty?
           pins.unshift virtual_new_pin(pins.first, name_pin.context) if external_constructor?(pins.first, name_pin.context)
-          inferred_pins(pins, api_map, name_pin.context)
+          inferred_pins(pins, api_map, name_pin.context, locals)
         end
 
         private
@@ -39,7 +39,7 @@ module Solargraph
           Pin::ProxyType.anonymous(ComplexType.parse(context.namespace))
         end
 
-        def inferred_pins pins, api_map, context
+        def inferred_pins pins, api_map, context, locals
           result = pins.map do |p|
             if CoreFills::METHODS_RETURNING_SELF.include?(p.path)
               next Solargraph::Pin::Method.new(p.location, p.namespace, p.name, "@return [#{context.tag}]", p.scope, p.visibility, p.parameters)
@@ -48,7 +48,7 @@ module Solargraph
               next Solargraph::Pin::Method.new(p.location, p.namespace, p.name, "@return [#{context.subtypes.first.tag}]", p.scope, p.visibility, p.parameters)
             end
             if p.kind == Pin::METHOD && !p.macros.empty?
-              result = process_macro(p, api_map, context)
+              result = process_macro(p, api_map, context, locals)
               next result unless result.return_type.undefined?
             end
             next p if p.kind == Pin::METHOD || p.kind == Pin::ATTRIBUTE || p.kind == Pin::NAMESPACE
@@ -66,11 +66,20 @@ module Solargraph
         # @param pin [Pin::Method]
         # @param api_map [ApiMap]
         # @param context [ComplexType]
-        def process_macro pin, api_map, context
-          # @todo Process the macro
+        def process_macro pin, api_map, context, locals
           pin.macros.each do |macro|
-            STDERR.puts "I should process #{macro.tag.text}"
-            STDERR.puts "Arguments: #{arguments.inspect}"
+            vals = arguments.map{ |c| Pin::ProxyType.anonymous(c.infer(api_map, pin, locals)) }
+            txt = macro.tag.text.clone
+            i = 1
+            vals.each do |v|
+              txt.gsub!(/\$#{i}/, v.context.namespace)
+              i += 1
+            end
+            docstring = YARD::Docstring.parser.parse(txt).to_docstring
+            tag = docstring.tag(:return)
+            unless tag.nil? || tag.types.nil?
+              return Pin::ProxyType.anonymous(ComplexType.parse(*tag.types))
+            end
           end
           return Pin::ProxyType.new(nil, nil, nil, ComplexType::UNDEFINED)
         end
