@@ -7,6 +7,7 @@ module Solargraph
         end
 
         def resolve api_map, name_pin, locals
+          return [Pin::ROOT_PIN] if word.empty?
           parts = word.split('::')
           last = parts.pop
           first = parts.join('::').to_s

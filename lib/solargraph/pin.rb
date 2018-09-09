@@ -37,6 +37,6 @@ module Solargraph
     BLOCK = 11
     BLOCK_PARAMETER = 12
 
-    ROOT_PIN = Pin::Base.new(nil, '', '', '')
+    ROOT_PIN = Pin::Namespace.new(nil, '', '', '', :class, :public, nil)
   end
 end
