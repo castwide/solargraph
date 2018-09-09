@@ -104,9 +104,15 @@ module Solargraph
       synced = Source.new(incr_code, filename)
       if synced.parsed?
         synced.code = real_code
+        if synced.repaired?
+          synced.error_ranges.concat error_ranges
+          synced.error_ranges.concat updater.changes.map(&:range) 
+        end
       else
         new_repair = updater.repair(@repaired)
         synced = Source.new(new_repair, filename)
+        synced.error_ranges.concat error_ranges
+        synced.error_ranges.concat updater.changes.map(&:range)
         synced.parsed = false
         synced.code = real_code
       end
@@ -162,6 +168,11 @@ module Solargraph
           )
         )
       end
+    end
+
+    # @return [Array<Range>]
+    def error_ranges
+      @error_ranges ||= []
     end
 
     private
