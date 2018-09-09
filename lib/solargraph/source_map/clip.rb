@@ -36,9 +36,6 @@ module Solargraph
               return package_completions(api_map.get_instance_variable_pins(context_pin.context.namespace, context_pin.context.scope))
             elsif cursor.word.start_with?('$')
               return package_completions(api_map.get_global_variable_pins)
-            elsif cursor.word.start_with?(':') and !cursor.word.start_with?('::')
-              # Extra case to handle bare colons that weren't chained as literals
-              return package_completions(api_map.get_symbols)
             end
             result.concat prefer_non_nil_variables(locals)
             result.concat api_map.get_constants('', context_pin.context.namespace)

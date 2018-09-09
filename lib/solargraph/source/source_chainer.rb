@@ -34,12 +34,13 @@ module Solargraph
 
       # @return [Source::Chain]
       def chain
-        return Chain.new([Chain::UNDEFINED_CALL]) if phrase.end_with?(':') && !phrase.end_with?('::')
+        return Chain.new([Chain::Literal.new('Symbol')]) if phrase.start_with?(':') && !phrase.start_with?('::')
         begin
           node = (source.repaired? || !source.parsed?) ? Source.parse(fixed_phrase) : source.node_at(position.line, position.column)
         rescue Parser::SyntaxError
           return Chain.new([Chain::UNDEFINED_CALL])
         end
+        return Chain.new([Chain::UNDEFINED_CALL]) if node.nil? || (node.type == :sym && !phrase.start_with?(':'))
         chain = NodeChainer.chain(node, source.filename)
         if source.repaired? || !source.parsed?
           if end_of_phrase.strip == '.'
@@ -47,6 +48,9 @@ module Solargraph
           elsif end_of_phrase.strip == '::'
             chain.links.push Chain::UNDEFINED_CONSTANT
           end
+        elsif end_of_phrase.strip == '::'
+          chain.links.pop
+          chain.links.push Chain::UNDEFINED_CONSTANT
         end
         chain
       end
@@ -78,7 +82,7 @@ module Solargraph
 
       def end_of_phrase
         @end_of_phrase ||= begin
-          match = phrase.match(/[\s]*(\.{1}|:{1,2})?[\s]*$/)
+          match = phrase.match(/[\s]*(\.{1}|::)[\s]*$/)
           if match
             match[0]
           else
@@ -167,6 +171,8 @@ module Solargraph
                   signature = "@#{signature}" if @source.code[index-1, 1] == '@'
                   break
                 end
+              elsif parens == 1 || brackets == 1 || squares == 1
+                break
               end
               in_whitespace = false
             end
@@ -174,26 +180,26 @@ module Solargraph
           index -= 1
         end
         # @todo Smelly exceptional case for integer literals
-        match = signature.match(/^[0-9]+/)
-        if match
-          index += match[0].length
-          signature = signature[match[0].length..-1].to_s
-          @base_literal = 'Integer'
-        # @todo Smelly exceptional case for array literals
-        elsif signature.start_with?('.[]')
-          index += 2
-          signature = signature[3..-1].to_s
-          @base_literal = 'Array'
-        elsif signature.start_with?('.')
-          pos = Position.from_offset(@source.code, index)
-          node = @source.node_at(pos.line, pos.character)
-          lit = infer_literal_node_type(node)
-          unless lit.nil?
-            signature = signature[1..-1].to_s
-            index += 1
-            @base_literal = lit
-          end
-        end
+        # match = signature.match(/^[0-9]+/)
+        # if match
+        #   index += match[0].length
+        #   signature = signature[match[0].length..-1].to_s
+        #   @base_literal = 'Integer'
+        # # @todo Smelly exceptional case for array literals
+        # elsif signature.start_with?('.[]')
+        #   index += 2
+        #   signature = signature[3..-1].to_s
+        #   @base_literal = 'Array'
+        # elsif signature.start_with?('.')
+        #   pos = Position.from_offset(@source.code, index)
+        #   node = @source.node_at(pos.line, pos.character)
+        #   lit = infer_literal_node_type(node)
+        #   unless lit.nil?
+        #     signature = signature[1..-1].to_s
+        #     index += 1
+        #     @base_literal = lit
+        #   end
+        # end
         [index + 1, signature]
       end
     end
