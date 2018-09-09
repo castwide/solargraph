@@ -113,22 +113,6 @@ module Solargraph
       self
     end
 
-    # Try to merge a source into the maps.
-    #
-    # @param source [Source]
-    # @return [Boolean]
-    def try_merge! source
-      return false # @todo Maybe we don't need this
-      return false unless source_map_hash.has_key?(source.filename)
-      map = Solargraph::SourceMap.map(source)
-      if source_map_hash[source.filename].try_merge!(map)
-        true
-      else
-        source_map_hash[source.filename] = map
-        false
-      end
-    end
-
     # @param filename [String]
     # @param position [Position]
     # @return [Source::Cursor]
