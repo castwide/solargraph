@@ -105,14 +105,12 @@ module Solargraph
       if synced.parsed?
         synced.code = real_code
         if synced.repaired?
-          synced.error_ranges.concat error_ranges
-          synced.error_ranges.concat updater.changes.map(&:range) 
+          synced.error_ranges.concat combine_errors(error_ranges + updater.changes.map(&:range))
         end
       else
         new_repair = updater.repair(@repaired)
         synced = Source.new(new_repair, filename)
-        synced.error_ranges.concat error_ranges
-        synced.error_ranges.concat updater.changes.map(&:range)
+        synced.error_ranges.concat combine_errors(error_ranges + updater.changes.map(&:range))
         synced.parsed = false
         synced.code = real_code
       end
@@ -219,6 +217,21 @@ module Solargraph
           result.push top
         end
         top.children.each { |c| result.concat inner_node_references(name, c) }
+      end
+      result
+    end
+
+    # @param ranges [Array<Range>]
+    # @return [Array<Range>]
+    def combine_errors ranges
+      result = []
+      lines = []
+      ranges.sort{|a, b| a.start.line <=> b.start.line}.each do |rng|
+        next if lines.include?(rng.start.line)
+        fcol = code.lines[rng.start.line].index(/[^\s]/) || 0
+        ecol = code.lines[rng.start.line].length
+        result.push Range.from_to(rng.start.line, fcol, rng.start.line, ecol)
+        lines.push rng.start.line
       end
       result
     end
