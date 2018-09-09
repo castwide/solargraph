@@ -34,38 +34,6 @@ module Solargraph
 
       # @return [Source::Chain]
       def chain
-        # links = []
-        # # @todo Smelly colon handling
-        # if @source.code[0..offset-1].end_with?(':') and !@source.code[0..offset-1].end_with?('::')
-        #   # @todo Figure out if this is right.
-        #   links.push Chain::Link.new
-        #   links.push Chain::Link.new
-        # elsif @source.string_at?(position)
-        #   links.push Chain::Literal.new('String')
-        # else
-        #   links.push Chain::Literal.new(base_literal) if base_literal?
-        #   sig = whole_signature
-        #   unless sig.empty?
-        #     sig = sig[1..-1] if sig.start_with?('.')
-        #     head = true
-        #     sig.split('.', -1).each do |word|
-        #       if word.include?('::')
-        #         # @todo Smelly way of handling constants
-        #         parts = (word.start_with?('::') ? word[2..-1] : word).split('::', -1)
-        #         last = parts.pop
-        #         links.push Chain::Constant.new(parts.join('::')) unless parts.empty?
-        #         links.push (last.nil? or last.empty? ? Chain::UNDEFINED_CONSTANT : Chain::Constant.new(last))
-        #       else
-        #         links.push word_to_link(word, head)
-        #       end
-        #       head = false
-        #     end
-        #   end
-        #   # Literal string hack
-        #   links.push Chain::UNDEFINED_CALL if base_literal? and @source.code[offset - 1] == '.' and links.length == 1
-        # end
-        # @chain ||= Chain.new(links)
-        # return Chain.new([Chain::UNDEFINED_CALL]) unless source.parsed?
         return Chain.new([Chain::UNDEFINED_CALL]) if phrase.end_with?(':') && !phrase.end_with?('::')
         begin
           node = (source.repaired? || !source.parsed?) ? Source.parse(fixed_phrase) : source.node_at(position.line, position.column)
@@ -119,30 +87,6 @@ module Solargraph
         end
       end
 
-      def word_to_link word, head
-        if word.start_with?('@@')
-          Chain::ClassVariable.new(word)
-        elsif word.start_with?('@')
-          Chain::InstanceVariable.new(word)
-        elsif word.start_with?('$')
-          Chain::GlobalVariable.new(word)
-        elsif word.end_with?(':')
-          Chain::Link.new
-        elsif word.empty?
-          Chain::UNDEFINED_CALL
-        elsif head and !@source.code[signature_data[0]..-1].match(/^[\s]*?#{word}[\s]*?\(/)
-          # The head needs to allow for ambiguous references to constants and
-          # methods. For example, `String` might be either. If the word is not
-          # followed by an open parenthesis, use Chain::Head for ambiguous
-          # results.
-          # @todo Arguments
-          Chain::Head.new(word)
-        else
-          # @todo Arguments
-          Chain::Call.new(word)
-        end
-      end
-
       # An alias for #column.
       #
       # @return [Integer]
@@ -155,57 +99,12 @@ module Solargraph
         @position ||= Position.new(line, column)
       end
 
-      # Get the signature up to the current offset. Given the text `foo.bar`,
-      # the signature at offset 5 is `foo.b`.
-      #
-      # @return [String]
-      def signature
-        @signature ||= signature_data[1].to_s
-      end
-
-      # Get the remainder of the word after the current offset. Given the text
-      # `foobar` with an offset of 3, the remainder is `bar`.
-      #
-      # @return [String]
-      def remainder
-        @remainder ||= remainder_at(offset)
-      end
-
-      # Get the whole signature at the current offset, including the final
-      # word and its remainder.
-      #
-      # @return [String]
-      def whole_signature
-        @whole_signature ||= signature + remainder
-      end
-
       # True if the current offset is inside a string.
       #
       # @return [Boolean]
       def string?
         # @string ||= (node.type == :str or node.type == :dstr)
         @string ||= @source.string_at?(position)
-      end
-
-      # True if the fragment is a signature that stems from a literal value.
-      #
-      # @return [Boolean]
-      def base_literal?
-        !base_literal.nil?
-      end
-
-      # The type of literal value at the root of the signature (or nil).
-      #
-      # @return [String]
-      def base_literal
-        if @base_literal.nil? and !@calculated_literal
-          @calculated_literal = true
-          if signature.start_with?('.')
-            pn = @source.node_at(line, column - 2)
-            @base_literal = infer_literal_node_type(pn) unless pn.nil?
-          end
-        end
-        @base_literal
       end
 
       # @return [Integer]
@@ -296,18 +195,6 @@ module Solargraph
           end
         end
         [index + 1, signature]
-      end
-
-      # @return [String]
-      def remainder_at index
-        cursor = index
-        while cursor < @source.code.length
-          char = @source.code[cursor, 1]
-          break if char.nil? or char == ''
-          break unless char.match(/[a-z0-9_\?\!]/i)
-          cursor += 1
-        end
-        @source.code[index..cursor-1].to_s
       end
     end
   end
