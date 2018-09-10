@@ -480,7 +480,7 @@ module Solargraph
       return [] if skip.include?(reqstr)
       skip.push reqstr
       result = []
-      result.concat store.get_methods(fqns, scope: scope, visibility: visibility)
+      result.concat store.get_methods(fqns, scope: scope, visibility: visibility).sort{ |a, b| a.name <=> b.name }
       if deep
         sc = store.get_superclass(fqns)
         unless sc.nil?
