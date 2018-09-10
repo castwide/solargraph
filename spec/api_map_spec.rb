@@ -418,4 +418,19 @@ describe Solargraph::ApiMap do
     pins = api_map.get_constants('Container')
     expect(pins.map(&:path)).to include('Mixin::FOO')
   end
+
+  it "sorts constants by name" do
+    source = Solargraph::Source.load_string(%(
+      module Foo
+        AAB = 'aaa'
+        class AAA; end
+      end
+    ))
+    api_map = Solargraph::ApiMap.new
+    api_map.map source
+    pins = api_map.get_constants('Foo', '')
+    expect(pins.length).to eq(2)
+    expect(pins[0].name).to eq('AAA')
+    expect(pins[1].name).to eq('AAB')
+  end
 end

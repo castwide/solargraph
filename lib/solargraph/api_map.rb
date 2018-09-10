@@ -520,7 +520,7 @@ module Solargraph
       return [] if skip.include?(fqns)
       skip.push fqns
       result = []
-      result.concat store.get_constants(fqns, visibility)
+      result.concat store.get_constants(fqns, visibility).sort{ |a, b| a.name <=> b.name }
       store.get_includes(fqns).each do |is|
         fqis = qualify(is, fqns)
         result.concat inner_get_constants(fqis, [:public], skip) unless fqis.nil?
