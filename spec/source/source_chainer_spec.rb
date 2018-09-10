@@ -90,4 +90,22 @@ describe Solargraph::Source::SourceChainer do
     cursor = map.cursor_at(Solargraph::Position.new(0, 10))
     expect(cursor.chain.links.map(&:word)).to eq(['foo', 'bar'])
   end
+
+  it "chains from repaired sources with literal strings" do
+    orig = Solargraph::Source.load_string("''")
+    updater = Solargraph::Source::Updater.new(
+      nil,
+      2,
+      [
+        Solargraph::Source::Change.new(
+          Solargraph::Range.from_to(0, 2, 0, 2),
+          '.'
+        )
+      ]
+    )
+    source = orig.synchronize(updater)
+    chain = Solargraph::Source::SourceChainer.chain(source, Solargraph::Position.new(0, 3))
+    expect(chain.links.first).to be_a(Solargraph::Source::Chain::Literal)
+    expect(chain.links.length).to eq(2)
+  end
 end
