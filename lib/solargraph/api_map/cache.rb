@@ -74,11 +74,11 @@ module Solargraph
 
       # @return [Boolean]
       def empty?
-        @signature_types.empty? and
-          @assignment_node_types.empty? and
-          @methods.empty? and
-          @method_stacks.empty? and
-          @constants.empty? amd
+        @signature_types.empty? &&
+          @assignment_node_types.empty? &&
+          @methods.empty? &&
+          @method_stacks.empty? &&
+          @constants.empty? &&
           @qualified_namespaces.empty?
       end
     end
