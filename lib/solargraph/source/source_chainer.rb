@@ -39,7 +39,10 @@ module Solargraph
           if !source.repaired? && source.parsed?
             node = source.node_at(position.line, position.column)
           else
-            node = Source.parse(fixed_phrase)
+            node = source.node_at(fixed_position.line, fixed_position.column)
+            if infer_literal_node_type(node).nil?
+              node = Source.parse(fixed_phrase)
+            end
           end
         rescue Parser::SyntaxError
           return Chain.new([Chain::UNDEFINED_CALL])
