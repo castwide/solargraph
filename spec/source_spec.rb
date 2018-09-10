@@ -84,6 +84,7 @@ describe Solargraph::Source do
     )
     changed = source.synchronize(updater)
     expect(changed).to be_parsed
+    expect(changed).to be_repaired
   end
 
   it "flags irreparable updates" do
@@ -93,7 +94,8 @@ describe Solargraph::Source do
       Solargraph::Source::Change.new(nil, 'end;end')
     ])
     changed = source.synchronize(updater)
-    expect(changed).not_to be_parsed
+    expect(changed).to be_parsed
+    expect(changed).to be_repaired
   end
 
   it "parses nodes" do
