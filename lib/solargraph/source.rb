@@ -97,24 +97,19 @@ module Solargraph
     def synchronize updater
       raise 'Invalid synchronization' unless updater.filename == filename
       real_code = updater.write(@code)
-      incr_code = updater.write(@code, true)
       if real_code == @code
         @version = updater.version
         return self
       end
-      synced = Source.new(incr_code, filename)
+      synced = Source.new(real_code, filename)
       if synced.parsed?
-        synced.code = real_code
-        if synced.repaired?
-          synced.error_ranges.concat combine_errors(error_ranges + updater.changes.map(&:range))
-        end
-      else
-        new_repair = updater.repair(@repaired)
-        synced = Source.new(new_repair, filename)
-        synced.error_ranges.concat combine_errors(error_ranges + updater.changes.map(&:range))
-        synced.parsed = false
-        synced.code = real_code
+        synced.version = updater.version
+        return synced
       end
+      incr_code = updater.repair(@repaired)
+      synced = Source.new(incr_code, filename)
+      synced.error_ranges.concat combine_errors(error_ranges + updater.changes.map(&:range))
+      synced.code = real_code
       synced.version = updater.version
       synced
     end
