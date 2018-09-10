@@ -52,4 +52,31 @@ describe Solargraph::SourceMap do
     map2 = Solargraph::SourceMap.load_string("require 'bar'; require 'foo'")
     expect(map1.try_merge!(map2)).to be(true)
   end
+
+  it "merges repaired changes" do
+    source1 = Solargraph::Source.load_string(%(
+      list.each do |item|
+       i
+      end
+    ))
+    updater = Solargraph::Source::Updater.new(
+      nil,
+      2,
+      [
+        Solargraph::Source::Change.new(
+          Solargraph::Range.from_to(2, 8, 2, 8),
+          'f '
+        )
+      ]
+    )
+    source2 = source1.synchronize(updater)
+    map1 = Solargraph::SourceMap.map(source1)
+    pos1 = Solargraph::Position.new(2, 8)
+    pin1 = map1.pins.select{|p| p.location.range.contain?(pos1)}.first
+    map2 = Solargraph::SourceMap.map(source2)
+    expect(map1.try_merge!(map2)).to be(true)
+    pos2 = Solargraph::Position.new(2, 10)
+    pin2 = map1.pins.select{|p| p.location.range.contain?(pos2)}.first
+    expect(pin1).to eq(pin2)
+  end
 end
