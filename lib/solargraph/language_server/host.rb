@@ -461,7 +461,7 @@ module Solargraph
 
       # @return [Solargraph::Library]
       def library
-        @library
+        @library ||= Solargraph::Library.new
       end
 
       # @return [Diagnoser]
