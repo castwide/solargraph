@@ -21,7 +21,6 @@ module Solargraph
     attr_reader :unresolved_requires
 
     # @param pins [Array<Solargraph::Pin::Base>]
-    # @param yard_map [YardMap]
     # def initialize workspace = Solargraph::Workspace.new(nil)
     def initialize pins: []
       # @todo Extensions don't work yet
@@ -297,6 +296,7 @@ module Solargraph
     #
     # @param type [Solargraph::ComplexType]
     # @param context [String]
+    # @param internal [Boolean] True to include private methods
     # @return [Array<Solargraph::Pin::Base>]
     def get_complex_type_methods type, context = '', internal = false
       return [] if type.undefined? || type.void?
