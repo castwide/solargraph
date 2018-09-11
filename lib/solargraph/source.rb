@@ -108,7 +108,7 @@ module Solargraph
       end
       incr_code = updater.repair(@repaired)
       synced = Source.new(incr_code, filename)
-      synced.error_ranges.concat combine_errors(error_ranges + updater.changes.map(&:range))
+      synced.error_ranges.concat (error_ranges + updater.changes.map(&:range))
       synced.code = real_code
       synced.version = updater.version
       synced
@@ -217,22 +217,6 @@ module Solargraph
           result.push top
         end
         top.children.each { |c| result.concat inner_node_references(name, c) }
-      end
-      result
-    end
-
-    # @param ranges [Array<Range>]
-    # @return [Array<Range>]
-    def combine_errors ranges
-      result = []
-      lines = []
-      ranges.sort{|a, b| a.start.line <=> b.start.line}.each do |rng|
-        next if rng.nil? || lines.include?(rng.start.line)
-        lines.push rng.start.line
-        next if comment_at?(rng.start) || rng.start.line >= code.lines.length
-        fcol = code.lines[rng.start.line].index(/[^\s]/) || 0
-        ecol = code.lines[rng.start.line].length
-        result.push Range.from_to(rng.start.line, fcol, rng.start.line, ecol)
       end
       result
     end
