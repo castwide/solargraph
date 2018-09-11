@@ -36,6 +36,10 @@ module Solargraph
     SYMBOL = 10
     BLOCK = 11
     BLOCK_PARAMETER = 12
+    REQUIRE_REFERENCE = 13
+    SUPERCLASS_REFERENCE = 14
+    INCLUDE_REFERENCE = 15
+    EXTEND_REFERENCE = 16
 
     ROOT_PIN = Pin::Namespace.new(nil, '', '', '', :class, :public, nil)
   end
