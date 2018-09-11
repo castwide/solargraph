@@ -9,11 +9,14 @@ module Solargraph
     autoload :TypeMethods, 'solargraph/complex_type/type_methods'
     autoload :UniqueType,  'solargraph/complex_type/unique_type'
   
+    # @param types [Array<ComplexType>]
     def initialize types = [ComplexType::UNDEFINED]
       super()
       concat types
     end
 
+    # @param api_map [ApiMap]
+    # @param context [String]
     def qualify api_map, context = ''
       types = map do |t|
         t.qualify api_map, context
