@@ -49,7 +49,7 @@ describe Solargraph::Source::SourceChainer do
     map = Solargraph::SourceMap.load_string('Foo::Bar')
     cursor = map.cursor_at(Solargraph::Position.new(0, 6))
     expect(cursor.chain).to be_constant
-    expect(cursor.chain.links.map(&:word)).to eq(['Foo', 'Bar'])
+    expect(cursor.chain.links.map(&:word)).to eq(['Foo::Bar'])
   end
 
   it "recognizes unfinished constants" do

@@ -8,14 +8,19 @@ module Solargraph
 
         def resolve api_map, name_pin, locals
           return [Pin::ROOT_PIN] if word.empty?
-          parts = word.split('::')
-          last = parts.pop
-          if parts.first == ''
-            context = parts[1..-1].join('::')
+          if word.start_with?('::')
+            context = ''
+            bottom = word[2..-1]
           else
-            context = (name_pin.context.namespace.split('::') + parts).join('::')
+            context = name_pin.context.namespace
+            bottom = word
           end
-          api_map.get_constants(context).select{|p| p.name == last}
+          if bottom.include?('::')
+            ns = bottom.split('::')[0..-2].join('::')
+          else
+            ns = ''
+          end
+          api_map.get_constants(ns, context).select{|p| p.path.end_with?(bottom)}
         end
       end
     end

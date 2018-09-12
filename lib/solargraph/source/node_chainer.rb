@@ -73,10 +73,11 @@ module Solargraph
         elsif n.type == :const
           # result.push Chain::Constant.new(unpack_name(n))
           const = unpack_name(n)
-          parts = const.split('::')
-          last = parts.pop
-          result.push Chain::Constant.new(parts.join('::')) unless parts.empty?
-          result.push Chain::Constant.new(last)
+          # parts = const.split('::')
+          # last = parts.pop
+          # result.push Chain::Constant.new(parts.join('::')) unless parts.empty?
+          # result.push Chain::Constant.new(last)
+          result.push Chain::Constant.new(const)
         elsif [:lvar, :lvasgn].include?(n.type)
           result.push Chain::Call.new(n.children[0].to_s)
         elsif [:ivar, :ivasgn].include?(n.type)
