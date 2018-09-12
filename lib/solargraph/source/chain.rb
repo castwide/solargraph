@@ -12,7 +12,6 @@ module Solargraph
       autoload :InstanceVariable, 'solargraph/source/chain/instance_variable'
       autoload :GlobalVariable,   'solargraph/source/chain/global_variable'
       autoload :Literal,          'solargraph/source/chain/literal'
-      autoload :Definition,       'solargraph/source/chain/definition'
       autoload :Head,             'solargraph/source/chain/head'
 
       UNDEFINED_CALL = Chain::Call.new('<undefined>')
