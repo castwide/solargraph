@@ -79,4 +79,33 @@ describe Solargraph::Source::Chain do
     type = chain.infer(api_map, Solargraph::Pin::ROOT_PIN, [])
     expect(type.name).to eq('Sub')
   end
+
+  it "follows constant chains" do
+    source = Solargraph::Source.load_string(%(
+      module Mixin; end
+      module Container
+        class Foo; end
+      end
+      Container::Foo::Mixin
+    ))
+    api_map = Solargraph::ApiMap.new
+    api_map.map source
+    chain = Solargraph::Source::SourceChainer.chain(source, Solargraph::Position.new(5, 23))
+    pins = chain.define(api_map, Solargraph::Pin::ROOT_PIN, [])
+    expect(pins).to be_empty
+  end
+
+  it "rebases inner constants chains" do
+    source = Solargraph::Source.load_string(%(
+      class Foo
+        class Bar; end
+        ::Foo::Bar
+      end
+    ))
+    api_map = Solargraph::ApiMap.new
+    api_map.map source
+    chain = Solargraph::Source::SourceChainer.chain(source, Solargraph::Position.new(3, 16))
+    pins = chain.define(api_map, Solargraph::Pin::ProxyType.new(nil, '', 'Foo', Solargraph::ComplexType.parse('Class<Foo>')), [])
+    expect(pins.first.path).to eq('Foo::Bar')
+  end
 end

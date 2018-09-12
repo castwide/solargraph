@@ -10,8 +10,12 @@ module Solargraph
           return [Pin::ROOT_PIN] if word.empty?
           parts = word.split('::')
           last = parts.pop
-          first = parts.join('::').to_s
-          api_map.get_constants(first, name_pin.context.namespace).select{|p| p.name == last}
+          if parts.first == ''
+            context = parts[1..-1].join('::')
+          else
+            context = (name_pin.context.namespace.split('::') + parts).join('::')
+          end
+          api_map.get_constants(context).select{|p| p.name == last}
         end
       end
     end

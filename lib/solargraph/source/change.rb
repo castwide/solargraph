@@ -55,7 +55,13 @@ module Solargraph
         if range.nil?
           fixed
         else
-          commit text, fixed
+          result = commit text, fixed
+          off = Position.to_offset(text, range.start)
+          match = result[0..off].match(/[\.:]+\z/)
+          if match
+            result = result[0..off].sub(/#{match[0]}\z/, ' ' * match[0].length) + result[off..-1]
+          end
+          result
         end
       end
 
