@@ -1,6 +1,6 @@
 module Solargraph
   module Pin
-    module Reference
+    class Reference
       class Superclass < Reference
         def kind
           Pin::SUPERCLASS_REFERENCE

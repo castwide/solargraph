@@ -1,6 +1,6 @@
 module Solargraph
   module Pin
-    module Reference
+    class Reference
       class Require < Reference
         def initialize location, name
           super(location, '', name)

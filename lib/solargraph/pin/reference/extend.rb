@@ -1,6 +1,6 @@
 module Solargraph
   module Pin
-    module Reference
+    class Reference
       class Extend < Reference
         def kind
           Pin::EXTEND_REFERENCE

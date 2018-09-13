@@ -1,6 +1,6 @@
 module Solargraph
   module Pin
-    module Reference
+    class Reference
       class Include < Reference
         def kind
           Pin::INCLUDE_REFERENCE

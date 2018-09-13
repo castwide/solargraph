@@ -41,6 +41,6 @@ module Solargraph
     INCLUDE_REFERENCE = 15
     EXTEND_REFERENCE = 16
 
-    ROOT_PIN = Pin::Namespace.new(nil, '', '', '', :class, :public, nil)
+    ROOT_PIN = Pin::Namespace.new(nil, '', '', '', :class, :public)
   end
 end

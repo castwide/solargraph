@@ -34,7 +34,7 @@ module Solargraph
         root = AST::Node.new(:source, [filename])
         root = root.append node
         # @todo Is the root namespace a class or a module? Assuming class for now.
-        @pins.push Pin::Namespace.new(get_node_location(nil), '', '', nil, :class, :public, nil)
+        @pins.push Pin::Namespace.new(get_node_location(nil), '', '', nil, :class, :public)
         process root
         process_comment_directives
         [@pins, @locals, @requires, @symbols]
@@ -44,7 +44,7 @@ module Solargraph
         s = Position.new(0, 0)
         e = Position.from_offset(code, code.length)
         location = Location.new(filename, Range.new(s, e))
-        [[Pin::Namespace.new(location, '', '', '', :class, :public, nil)], [], [], []]
+        [[Pin::Namespace.new(location, '', '', '', :class, :public)], [], [], []]
       end
 
       class << self
@@ -99,7 +99,8 @@ module Solargraph
             if node.type == :class and !node.children[1].nil?
               sc = unpack_name(node.children[1])
             end
-            pins.push Solargraph::Pin::Namespace.new(get_node_location(node), tree[0..-2].join('::') || '', pack_name(node.children[0]).last.to_s, comments_for(node), node.type, visibility, sc)
+            pins.push Solargraph::Pin::Namespace.new(get_node_location(node), tree[0..-2].join('::') || '', pack_name(node.children[0]).last.to_s, comments_for(node), node.type, visibility)
+            pins.push Pin::Reference::Superclass.new(pins.last.location, pins.last.path, sc) unless sc.nil?
           end
           file = filename
           node.children.each do |c|
@@ -216,7 +217,8 @@ module Solargraph
                     if ref.kind == Pin::CONSTANT
                       pins.push ref.class.new(ref.location, ref.namespace, ref.name, ref.comments, ref.signature, ref.return_type, ref.context, :private)
                     else
-                      pins.push ref.class.new(ref.location, ref.namespace, ref.name, ref.comments, ref.type, :private, (ref.superclass_reference.nil? ? nil : ref.superclass_reference.name))
+                      # pins.push ref.class.new(ref.location, ref.namespace, ref.name, ref.comments, ref.type, :private, (ref.superclass_reference.nil? ? nil : ref.superclass_reference.name))
+                      pins.push ref.class.new(ref.location, ref.namespace, ref.name, ref.comments, ref.type, :private)
                     end
                   end
                 end
@@ -253,8 +255,9 @@ module Solargraph
                     c.children[2..-1].each do |i|
                       nspin = @pins.select{|pin| pin.kind == Pin::NAMESPACE and pin.path == fqn}.last
                       unless nspin.nil?
-                        iref = Pin::Reference.new(get_node_location(c), nspin.path, unpack_name(i))
-                        nspin.include_references.push(iref)
+                        # iref = Pin::Reference.new(get_node_location(c), nspin.path, unpack_name(i))
+                        # nspin.include_references.push(iref)
+                        pins.push Pin::Reference::Include.new(get_node_location(c), nspin.path, unpack_name(i))
                       end
                     end
                   end
@@ -267,11 +270,14 @@ module Solargraph
                     unless nspin.nil?
                       ref = nil
                       if i.type == :self
-                        ref = Pin::Reference.new(get_node_location(c), nspin.path, nspin.path)
+                        # ref = Pin::Reference.new(get_node_location(c), nspin.path, nspin.path)
+                        ref = Pin::Reference::Extend.new(get_node_location(c), nspin.path, nspin.path)
                       elsif i.type == :const
-                        ref = Pin::Reference.new(get_node_location(c), nspin.path, unpack_name(i))
+                        # ref = Pin::Reference.new(get_node_location(c), nspin.path, unpack_name(i))
+                        ref = Pin::Reference::Extend.new(get_node_location(c), nspin.path, unpack_name(i))
                       end
-                      nspin.extend_references.push(ref) unless ref.nil?
+                      # nspin.extend_references.push(ref) unless ref.nil?
+                      pins.push ref unless ref.nil?
                     end
                   end
                 end
@@ -289,7 +295,8 @@ module Solargraph
                 next
               elsif c.type == :send and c.children[1] == :require
                 if c.children[2].kind_of?(AST::Node) and c.children[2].type == :str
-                  @requires.push Solargraph::Pin::Reference.new(get_node_location(c), fqn, c.children[2].children[0].to_s)
+                  # @requires.push Solargraph::Pin::Reference.new(get_node_location(c), fqn, c.children[2].children[0].to_s)
+                  pins.push Pin::Reference::Require.new(get_node_location(c), c.children[2].children[0].to_s)
                 end
               elsif c.type == :args
                 if @node_stack.first.type == :block
