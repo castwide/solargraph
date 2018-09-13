@@ -25,9 +25,13 @@ describe Solargraph::SourceMap::Mapper do
       end
     ))
     map = Solargraph::SourceMap.map(source)
-    foo_pin = map.pins.select{|pin| pin.path == 'Foo'}.first
-    expect(foo_pin.include_references.map(&:name)).to include('Direct')
-    expect(foo_pin.include_references.map(&:name)).not_to include('Indirect')
+    # foo_pin = map.pins.select{|pin| pin.path == 'Foo'}.first
+    # expect(foo_pin.include_references.map(&:name)).to include('Direct')
+    # expect(foo_pin.include_references.map(&:name)).not_to include('Indirect')
+    pins = map.pins.select{|pin| pin.is_a?(Solargraph::Pin::Reference::Include) && pin.namespace == 'Foo'}
+    names = pins.map(&:name)
+    expect(names).to include('Direct')
+    expect(names).not_to include('Indirect')
   end
 
   it "ignores extend calls that are not attached to the current namespace" do
@@ -40,8 +44,12 @@ describe Solargraph::SourceMap::Mapper do
     ))
     map = Solargraph::SourceMap.map(source)
     foo_pin = map.pins.select{|pin| pin.path == 'Foo'}.first
-    expect(foo_pin.extend_references.map(&:name)).to include('Direct')
-    expect(foo_pin.extend_references.map(&:name)).not_to include('Indirect')
+    # expect(foo_pin.extend_references.map(&:name)).to include('Direct')
+    # expect(foo_pin.extend_references.map(&:name)).not_to include('Indirect')
+    pins = map.pins.select{|pin| pin.is_a?(Solargraph::Pin::Reference::Extend) && pin.namespace == 'Foo'}
+    names = pins.map(&:name)
+    expect(names).to include('Direct')
+    expect(names).not_to include('Indirect')
   end
 
   it "sets scopes for attributes" do
@@ -253,8 +261,11 @@ describe Solargraph::SourceMap::Mapper do
     map = Solargraph::SourceMap.load_string(%(
       class Sub < Sup; end
     ))
-    pin = map.first_pin('Sub')
-    expect(pin.superclass_reference.name).to eq('Sup')
+    # pin = map.first_pin('Sub')
+    # expect(pin.superclass_reference.name).to eq('Sup')
+    pin = map.pins.select{|p| p.is_a?(Solargraph::Pin::Reference::Superclass)}.first
+    expect(pin.namespace).to eq('Sub')
+    expect(pin.name).to eq('Sup')
   end
 
   it "modifies scope and visibility for module functions" do
@@ -474,14 +485,19 @@ describe Solargraph::SourceMap::Mapper do
       end
     ))
     pin = map.first_pin('Foo')
-    expect(pin.extend_references.map(&:name)).to include('Foo')
+    # expect(pin.extend_references.map(&:name)).to include('Foo')
+    pin = map.pins.select{|p| p.is_a?(Solargraph::Pin::Reference::Extend)}.first
+    expect(pin.namespace).to eq('Foo')
+    expect(pin.name).to eq('Foo')
   end
 
   it "maps require calls" do
     map = Solargraph::SourceMap.load_string(%(
       require 'set'
     ))
-    expect(map.requires.map(&:name)).to include('set')
+    # expect(map.requires.map(&:name)).to include('set')
+    pin = map.pins.select{|p| p.is_a?(Solargraph::Pin::Reference::Require)}.first
+    expect(pin.name).to eq('set')
   end
 
   it "ignores dynamic require calls" do

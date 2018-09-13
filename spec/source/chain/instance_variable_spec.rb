@@ -11,7 +11,7 @@ describe Solargraph::Source::Chain::InstanceVariable do
     expect(pins.length).to eq(1)
     expect(pins.first.name).to eq('@foo')
     expect(pins.first.context.scope).to eq(:instance)
-    pins = link.resolve(api_map, Solargraph::Pin::Namespace.new('', '', 'Foo', '', :class, :public, nil), [])
+    pins = link.resolve(api_map, Solargraph::Pin::Namespace.new('', '', 'Foo', '', :class, :public), [])
     expect(pins.length).to eq(1)
     expect(pins.first.name).to eq('@foo')
     expect(pins.first.context.scope).to eq(:class)
