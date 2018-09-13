@@ -15,13 +15,11 @@ module Solargraph
     # @return [Array<Pin::Base>]
     attr_reader :locals
 
-    def initialize source, pins, locals, requires, symbols
+    def initialize source, pins, locals
       # HACK: Keep the library from changing this
       @source = source.dup
       @pins = pins
       @locals = locals
-      # @requires = requires
-      @pins.concat symbols
     end
 
     def filename

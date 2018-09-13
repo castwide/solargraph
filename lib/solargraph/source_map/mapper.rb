@@ -25,8 +25,6 @@ module Solargraph
         end
         @node_comments = associate_comments(node, comments)
         @pins = []
-        @requires = []
-        @symbols = []
         @locals = []
         @strings = []
 
@@ -37,14 +35,14 @@ module Solargraph
         @pins.push Pin::Namespace.new(get_node_location(nil), '', '', nil, :class, :public)
         process root
         process_comment_directives
-        [@pins, @locals, @requires, @symbols]
+        [@pins, @locals]
       end
 
       def unmap filename, code
         s = Position.new(0, 0)
         e = Position.from_offset(code, code.length)
         location = Location.new(filename, Range.new(s, e))
-        [[Pin::Namespace.new(location, '', '', '', :class, :public)], [], [], []]
+        [[Pin::Namespace.new(location, '', '', '', :class, :public)], []]
       end
 
       class << self
@@ -162,7 +160,7 @@ module Solargraph
                   pins.push Solargraph::Pin::GlobalVariable.new(get_node_location(c), fqn, c.children[0].to_s, comments_for(c), c.children[1], infer_literal_node_type(c.children[1]), @pins.first)
                 end
               elsif c.type == :sym
-                @symbols.push Solargraph::Pin::Symbol.new(get_node_location(c), ":#{c.children[0]}")
+                pins.push Solargraph::Pin::Symbol.new(get_node_location(c), ":#{c.children[0]}")
               elsif c.type == :casgn
                 here = get_node_start_position(c)
                 block = get_block_pin(here)
