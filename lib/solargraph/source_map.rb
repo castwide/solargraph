@@ -15,15 +15,12 @@ module Solargraph
     # @return [Array<Pin::Base>]
     attr_reader :locals
 
-    # @return [Array<Pin::Reference>]
-    attr_reader :requires
-
     def initialize source, pins, locals, requires, symbols
       # HACK: Keep the library from changing this
       @source = source.dup
       @pins = pins
       @locals = locals
-      @requires = requires
+      # @requires = requires
       @pins.concat symbols
     end
 
@@ -33,6 +30,10 @@ module Solargraph
 
     def code
       source.code
+    end
+
+    def requires
+      @requires ||= pins.select{|p| p.kind == Pin::REQUIRE_REFERENCE}
     end
 
     # @param position [Position]
