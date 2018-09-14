@@ -44,7 +44,7 @@ module Solargraph
         if @detail.nil?
           @detail = ''
           @detail += "(#{parameters.join(', ')}) " unless kind != Pin::METHOD or parameters.empty?
-          @detail += "=> #{return_complex_type.tag}" unless return_complex_type.undefined?
+          @detail += "=> #{return_complex_type}" unless return_complex_type.undefined?
           @detail.strip!
         end
         return nil if @detail.empty?
