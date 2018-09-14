@@ -57,13 +57,6 @@ module Solargraph
         cursor.chain.infer(api_map, context_pin, locals)
       end
 
-      # The context at the current position.
-      #
-      # @return [Pin::Base]
-      def context_pin
-        @context ||= source_map.locate_named_path_pin(cursor.node_position.line, cursor.node_position.character)
-      end
-
       # Get an array of all the locals that are visible from the cursors's
       # position. Locals can be local variables, method parameters, or block
       # parameters. The array starts with the nearest local pin.
@@ -91,6 +84,13 @@ module Solargraph
       # @return [Solargraph::Pin::Base]
       def block
         @block ||= source_map.locate_block_pin(cursor.node_position.line, cursor.node_position.character)
+      end
+
+      # The context at the current position.
+      #
+      # @return [Pin::Base]
+      def context_pin
+        @context ||= source_map.locate_named_path_pin(cursor.node_position.line, cursor.node_position.character)
       end
 
       # @param cursor [cursor]
