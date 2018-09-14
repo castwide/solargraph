@@ -140,8 +140,10 @@ module Solargraph
       pins.clear
       unresolved_requires.clear
       stdnames = {}
+      done = []
       required.each do |r|
-        next if r.nil? or r.empty?
+        next if r.nil? || r.empty? || done.include?(r)
+        done.push r
         cached = cache.get_path_pins(r)
         unless cached.nil?
           pins.concat cached
