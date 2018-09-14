@@ -61,7 +61,7 @@ module Solargraph
         end
 
         def external_constructor? pin, context
-          pin.path == 'Class#new' || (pin.name == 'new' && pin.scope == :class && pin.context != context)
+          pin.path == 'Class#new' || (pin.name == 'new' && pin.scope == :class && pin.return_type != context)
         end
 
         # @param pin [Pin::Method]

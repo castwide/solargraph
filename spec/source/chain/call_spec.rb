@@ -23,4 +23,18 @@ describe Solargraph::Source::Chain::Call do
     type = chain.infer(api_map, Solargraph::Pin::ROOT_PIN, api_map.source_map(nil).locals)
     expect(type.tag).to eq('Array')
   end
+
+  it "adds virtual constructors for <Class>.new calls with conflicting return types" do
+    api_map = Solargraph::ApiMap.new
+    source = Solargraph::Source.load_string(%(
+      class Foo
+        def self.new; end
+      end
+      Foo.new
+    ))
+    api_map.map source
+    chain = Solargraph::Source::SourceChainer.chain(source, Solargraph::Position.new(4, 11))
+    type = chain.infer(api_map, Solargraph::Pin::ROOT_PIN, api_map.source_map(nil).locals)
+    expect(type.tag).to eq('Foo')
+  end
 end
