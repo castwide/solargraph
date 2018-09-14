@@ -603,4 +603,54 @@ describe Solargraph::SourceMap::Mapper do
     expect(smap.first_pin('Bar')).to be_a(Solargraph::Pin::Namespace)
     expect(smap.first_pin('Bar#baz')).to be_a(Solargraph::Pin::Method)
   end
+
+  it "maps contexts of constants" do
+    var = 'BAR'
+    smap = Solargraph::SourceMap.load_string("#{var} = nil")
+    pin = smap.pins.select{|p| p.name == var}.first
+    expect(pin.context).to be_a(Solargraph::ComplexType)
+    smap = Solargraph::SourceMap.load_string("#{var} ||= nil")
+    pin = smap.pins.select{|p| p.name == var}.first
+    expect(pin.context).to be_a(Solargraph::ComplexType)
+  end
+
+  it "maps contexts of instance variables" do
+    var = '@bar'
+    smap = Solargraph::SourceMap.load_string("#{var} = nil")
+    pin = smap.pins.select{|p| p.name == var}.first
+    expect(pin.context).to be_a(Solargraph::ComplexType)
+    smap = Solargraph::SourceMap.load_string("#{var} ||= nil")
+    pin = smap.pins.select{|p| p.name == var}.first
+    expect(pin.context).to be_a(Solargraph::ComplexType)
+  end
+
+  it "maps contexts of class variables" do
+    var = '@@bar'
+    smap = Solargraph::SourceMap.load_string("#{var} = nil")
+    pin = smap.pins.select{|p| p.name == var}.first
+    expect(pin.context).to be_a(Solargraph::ComplexType)
+    smap = Solargraph::SourceMap.load_string("#{var} ||= nil")
+    pin = smap.pins.select{|p| p.name == var}.first
+    expect(pin.context).to be_a(Solargraph::ComplexType)
+  end
+
+  it "maps contexts of global variables" do
+    var = '$bar'
+    smap = Solargraph::SourceMap.load_string("#{var} = nil")
+    pin = smap.pins.select{|p| p.name == var}.first
+    expect(pin.context).to be_a(Solargraph::ComplexType)
+    smap = Solargraph::SourceMap.load_string("#{var} ||= nil")
+    pin = smap.pins.select{|p| p.name == var}.first
+    expect(pin.context).to be_a(Solargraph::ComplexType)
+  end
+
+  it "maps contexts of local variables" do
+    var = 'bar'
+    smap = Solargraph::SourceMap.load_string("#{var} = nil")
+    pin = smap.locals.select{|p| p.name == var}.first
+    expect(pin.context).to be_a(Solargraph::ComplexType)
+    smap = Solargraph::SourceMap.load_string("#{var} ||= nil")
+    pin = smap.locals.select{|p| p.name == var}.first
+    expect(pin.context).to be_a(Solargraph::ComplexType)
+  end
 end
