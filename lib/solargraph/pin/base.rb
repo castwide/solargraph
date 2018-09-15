@@ -70,11 +70,6 @@ module Solargraph
         false
       end
 
-      # @return [Boolean]
-      def yard_pin?
-        false
-      end
-
       # @return [ComplexType]
       def context
         @context ||= ComplexType.parse(namespace || '')
