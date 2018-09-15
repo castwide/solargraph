@@ -89,6 +89,13 @@ module Solargraph
       Position.new(line, character)
     end
 
+    # A helper method for generating positions from arrays of integers. The
+    # original parameter is returned if it is already a position.
+    #
+    # @raise [ArgumentError] if the object cannot be converted to a position.
+    #
+    # @param object [Position, Array(Integer, Integer)]
+    # @return [Position]
     def self.normalize object
       return object if object.is_a?(Position)
       return Position.new(object[0], object[1]) if object.is_a?(Array)
