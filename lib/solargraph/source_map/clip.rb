@@ -1,11 +1,12 @@
 module Solargraph
   class SourceMap
+    # A static analysis tool for obtaining definitions, completions,
+    # signatures, and type inferences from a cursor.
+    #
     class Clip
       # @param api_map [ApiMap]
       # @param cursor [Source::Cursor]
       def initialize api_map, cursor
-        # @todo Just some temporary stuff while I make sure this works
-        raise "Not a cursor: #{cursor.class}" unless cursor.is_a?(Source::Cursor)
         @api_map = api_map
         @cursor = cursor
       end
@@ -36,7 +37,7 @@ module Solargraph
             elsif cursor.word.start_with?('$')
               return package_completions(api_map.get_global_variable_pins)
             end
-            result.concat prefer_non_nil_variables(locals)
+            result.concat locals
             result.concat api_map.get_constants('', context_pin.context.namespace)
             result.concat api_map.get_methods(context_pin.context.namespace, scope: context_pin.context.scope, visibility: [:public, :private, :protected])
             result.concat api_map.get_methods('Kernel')
@@ -53,6 +54,7 @@ module Solargraph
         clip.define.select{|pin| pin.kind == Pin::METHOD}
       end
 
+      # @return [ComplexType]
       def infer
         cursor.chain.infer(api_map, context_pin, locals)
       end
@@ -90,33 +92,18 @@ module Solargraph
       #
       # @return [Pin::Base]
       def context_pin
-        @context ||= source_map.locate_named_path_pin(cursor.node_position.line, cursor.node_position.character)
+        @context_pin ||= source_map.locate_named_path_pin(cursor.node_position.line, cursor.node_position.character)
       end
 
-      # @param cursor [cursor]
       # @param result [Array<Pin::Base>]
       # @return [Completion]
       def package_completions result
         frag_start = cursor.start_of_word.to_s.downcase
-        filtered = result.uniq(&:name).select{|s| s.name.downcase.start_with?(frag_start) and (s.kind != Pin::METHOD or s.name.match(/^[a-z0-9_]+(\!|\?|=)?$/i))}
+        filtered = result.uniq(&:name).select { |s|
+          s.name.downcase.start_with?(frag_start) &&
+            (s.kind != Pin::METHOD || s.name.match(/^[a-z0-9_]+(\!|\?|=)?$/i))
+        }
         Completion.new(filtered, cursor.range)
-      end
-
-      # Sort an array of pins to put nil or undefined variables last.
-      #
-      # @param pins [Array<Pin::Base>]
-      # @return [Array<Pin::Base>]
-      def prefer_non_nil_variables pins
-        result = []
-        nil_pins = []
-        pins.each do |pin|
-          if pin.variable? and pin.nil_assignment?
-            nil_pins.push pin
-          else
-            result.push pin
-          end
-        end
-        result + nil_pins
       end
     end
   end
