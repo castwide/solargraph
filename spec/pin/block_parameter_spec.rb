@@ -103,4 +103,15 @@ describe Solargraph::Pin::BlockParameter do
     pin2 = Solargraph::Pin::BlockParameter.new(nil, 'Foo', 'bar', 'a comment', block2)
     expect(pin1.try_merge!(pin2)).to be(false)
   end
+
+  it "infers undefined types by default" do
+    source = Solargraph::Source.load_string(%(
+      func do |foo|
+      end
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new
+    api_map.map source
+    pin = api_map.source_map('test.rb').locals.select{|p| p.is_a?(Solargraph::Pin::BlockParameter)}.first
+    expect(pin.infer(api_map)).to be_undefined
+  end
 end
