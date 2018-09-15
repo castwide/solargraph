@@ -97,4 +97,9 @@ describe Solargraph::Workspace do
     expect(workspace.would_require?('test')).to be(true)
     expect(workspace.would_require?('not_there')).to be(false)
   end
+
+  it "uses configured require paths" do
+    workspace = Solargraph::Workspace.new('spec/fixtures/workspace')
+    expect(workspace.require_paths).to eq(['spec/fixtures/workspace/lib', 'spec/fixtures/workspace/ext'])
+  end
 end

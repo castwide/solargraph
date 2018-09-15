@@ -2,6 +2,8 @@ require 'yaml'
 
 module Solargraph
   class Workspace
+    # Configuration data for a workspace.
+    #
     class Config
       # The maximum number of files that can be added to a workspace.
       # The workspace's .solargraph.yml can override this value.
@@ -21,10 +23,9 @@ module Solargraph
         unless @workspace.nil?
           sfile = File.join(@workspace, '.solargraph.yml')
           if File.file?(sfile)
-            @raw_data = YAML.load(File.read(sfile))
-            conf = YAML.load(File.read(sfile))
-            include_globs = conf['include'] || include_globs
-            exclude_globs = conf['exclude'] || []
+            @raw_data = YAML.safe_load(File.read(sfile))
+            include_globs = @raw_data['include'] || include_globs
+            exclude_globs = @raw_data['exclude'] || []
           end
         end
         @raw_data ||= {}
@@ -34,6 +35,7 @@ module Solargraph
         @raw_data['domains'] ||= []
         @raw_data['reporters'] ||= %w[rubocop require_not_found]
         @raw_data['plugins'] ||= []
+        @raw_data['require_paths'] ||= []
         @raw_data['max_files'] ||= MAX_FILES
         included
         excluded
@@ -78,6 +80,9 @@ module Solargraph
         raw_data['require']
       end
 
+      # An array of load paths for required paths.
+      #
+      # @return [Array<String>]
       def require_paths
         raw_data['require_paths'] || []
       end
@@ -146,7 +151,7 @@ module Solargraph
       # @param glob [String]
       # @return [Boolean]
       def glob_is_directory? glob
-        File.directory?(glob) or File.directory?(glob_to_directory(glob))
+        File.directory?(glob) || File.directory?(glob_to_directory(glob))
       end
 
       # Translate a glob to a base directory if applicable

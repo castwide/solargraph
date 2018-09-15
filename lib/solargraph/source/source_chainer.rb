@@ -78,18 +78,22 @@ module Solargraph
       # @return [Solargraph::Source]
       attr_reader :source
 
+      # @return [String]
       def phrase
         @phrase ||= source.code[signature_data[0]..offset-1]
       end
 
+      # @return [String]
       def fixed_phrase
         @fixed_phrase ||= phrase[0..-(end_of_phrase.length+1)]
       end
 
+      # @return [Position]
       def fixed_position
         @fixed_position ||= Position.from_offset(source.code, offset - end_of_phrase.length)
       end
 
+      # @return [String]
       def end_of_phrase
         @end_of_phrase ||= begin
           match = phrase.match(/[\s]*(\.{1}|::)[\s]*$/)
@@ -121,6 +125,9 @@ module Solargraph
         @offset ||= get_offset(line, column)
       end
 
+      # @param line [Integer]
+      # @param column [Integer]
+      # @return [Integer]
       def get_offset line, column
         Position.line_char_to_offset(@source.code, line, column)
       end
