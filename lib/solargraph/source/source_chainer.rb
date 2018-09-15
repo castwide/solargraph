@@ -62,6 +62,7 @@ module Solargraph
 
       private
 
+      # @return [Position]
       attr_reader :position
 
       # The zero-based line number of the fragment's location.
@@ -105,11 +106,6 @@ module Solargraph
       # @return [Integer]
       def character
         @column
-      end
-
-      # @return [Position]
-      def position
-        @position ||= Position.new(line, column)
       end
 
       # True if the current offset is inside a string.
