@@ -175,10 +175,12 @@ module Solargraph
     # @param filename [String]
     # @param line [Integer]
     # @param column [Integer]
+    # @param strip [Boolean] Strip special characters from variable names
     # @return [Array<Solargraph::Range>]
     # @todo Take a Location instead of filename/line/column
-    def references_from filename, line, column
-      clip = api_map.clip_at(filename, Position.new(line, column))
+    def references_from filename, line, column, strip: false
+      cursor = api_map.cursor_at(filename, Position.new(line, column))
+      clip = api_map.clip(cursor)
       pins = clip.define
       return [] if pins.empty?
       result = []
@@ -188,6 +190,12 @@ module Solargraph
           found.select! do |loc|
             referenced = definitions_at(loc.filename, loc.range.ending.line, loc.range.ending.character)
             referenced.any?{|r| r == pin}
+          end
+          # HACK for language clients that exclude special characters from the start of variable names
+          if strip && match = cursor.word.match(/^[^a-z0-9_]+/)
+            found.map! do |loc|
+              Solargraph::Location.new(loc.filename, Solargraph::Range.from_to(loc.range.start.line, loc.range.start.column + match[0].length, loc.range.ending.line, loc.range.ending.column))
+            end
           end
           result.concat(found.sort{ |a, b|
             a.range.start.line <=> b.range.start.line

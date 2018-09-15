@@ -372,9 +372,10 @@ module Solargraph
       # @param filename [String]
       # @param line [Integer]
       # @param column [Integer]
+      # @param strip [Boolean] Strip special characters from variable names
       # @return [Array<Solargraph::Range>]
-      def references_from filename, line, column
-        result = library.references_from(filename, line, column)
+      def references_from filename, line, column, strip: true
+        result = library.references_from(filename, line, column, strip: strip)
       end
 
       # @param query [String]
