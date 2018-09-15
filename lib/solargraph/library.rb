@@ -185,9 +185,9 @@ module Solargraph
       pins.uniq.each do |pin|
         (workspace.sources + open_file_hash.values).uniq.each do |source|
           found = source.references(pin.name)
-          found.select do |loc|
+          found.select! do |loc|
             referenced = definitions_at(loc.filename, loc.range.ending.line, loc.range.ending.character)
-            referenced.any?{|r| r.path == pin.path}
+            referenced.any?{|r| r == pin}
           end
           result.concat(found.sort{ |a, b|
             a.range.start.line <=> b.range.start.line
