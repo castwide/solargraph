@@ -56,9 +56,6 @@ module Solargraph
           elsif end_of_phrase.strip == '::'
             chain.links.push Chain::UNDEFINED_CONSTANT
           end
-        elsif end_of_phrase.strip == '::'
-          chain.links.pop
-          chain.links.push Chain::UNDEFINED_CONSTANT
         end
         chain
       end

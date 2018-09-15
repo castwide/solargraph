@@ -108,4 +108,13 @@ describe Solargraph::Source::SourceChainer do
     expect(chain.links.first).to be_a(Solargraph::Source::Chain::Literal)
     expect(chain.links.length).to eq(2)
   end
+
+  it "chains incomplete constants" do
+    source = Solargraph::Source.load_string("Foo::")
+    chain = Solargraph::Source::SourceChainer.chain(source, Solargraph::Position.new(0, 5))
+    expect(chain.links.length).to eq(2)
+    expect(chain.links.first).to be_a(Solargraph::Source::Chain::Constant)
+    expect(chain.links.last).to be_a(Solargraph::Source::Chain::Constant)
+    expect(chain.links.last).to be_undefined
+  end
 end
