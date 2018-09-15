@@ -186,7 +186,7 @@ module Solargraph
         rescue WorkspaceTooLargeError => e
           send_notification 'window/showMessage', {
             'type' => Solargraph::LanguageServer::MessageTypes::WARNING,
-            'message' => "The workspace is too large to index (#{e.size} files, max #{e.max})"
+            'message' => e.message
           }
           @library = Solargraph::Library.load(nil)
         end
