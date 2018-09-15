@@ -60,11 +60,6 @@ module Solargraph
         name.to_s
       end
 
-      # @return [String]
-      def identifier
-        @identifier ||= "#{path}|#{name}"
-      end
-
       # @return [Boolean]
       def variable?
         false
