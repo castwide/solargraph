@@ -1,8 +1,10 @@
 module Solargraph
   module Pin
     class Namespace < Pin::Base
+      # @return [Symbol] :public or :private
       attr_reader :visibility
 
+      # @return [Symbol] :class or :module
       attr_reader :type
 
       def initialize location, namespace, name, comments, type, visibility
@@ -10,16 +12,6 @@ module Solargraph
         @type = type
         @visibility = visibility
       end
-
-      # @return [Array<Pin::Reference>]
-      # def include_references
-      #   @include_references ||= []
-      # end
-
-      # @return [Array<String>]
-      # def extend_references
-      #   @extend_references ||= []
-      # end
 
       def kind
         Pin::NAMESPACE
