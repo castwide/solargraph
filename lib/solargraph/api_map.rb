@@ -46,7 +46,7 @@ module Solargraph
     # @param source [Source]
     # @return [self]
     def map source
-      catalog Bundle.new(sources: [source])
+      catalog Bundle.new(opened: [source])
       self
     end
 
@@ -56,9 +56,6 @@ module Solargraph
     # @param bundle [Bundle]
     # @return [self]
     def catalog bundle
-      # @todo This can be more efficient. We don't need to remap sources that
-      #   are already here.
-      # all_sources = (workspace.sources + others).uniq
       new_map_hash = {}
       unmerged = false
       bundle.sources.each do |source|
@@ -88,11 +85,11 @@ module Solargraph
         pins.concat map.pins
         reqs.concat map.requires.map(&:name)
       end
-      reqs.concat bundle.required
-      unless bundle.load_paths.empty?
+      reqs.concat bundle.workspace.config.required
+      unless bundle.workspace.config.require_paths.empty?
         reqs.delete_if do |r|
           result = false
-          bundle.load_paths.each do |l|
+          bundle.workspace.config.require_paths.each do |l|
             if new_map_hash.keys.include?(File.join(l, "#{r}.rb"))
               result = true
               break
@@ -101,13 +98,13 @@ module Solargraph
           result
         end
       end
-      bundle.yard_map.change(reqs)
-      new_store = Store.new(pins + bundle.yard_map.pins)
+      yard_map.change(reqs)
+      new_store = Store.new(pins + yard_map.pins)
       @mutex.synchronize {
         @cache.clear
         @source_map_hash = new_map_hash
         @store = new_store
-        @unresolved_requires = bundle.yard_map.unresolved_requires
+        @unresolved_requires = yard_map.unresolved_requires
       }
       self
     end
@@ -137,7 +134,7 @@ module Solargraph
       # @todo How should this work?
       api_map = self.new #(Solargraph::Workspace.new(directory))
       workspace = Solargraph::Workspace.new(directory)
-      api_map.catalog Bundle.new(sources: workspace.sources)
+      api_map.catalog Bundle.new(workspace: workspace)
       api_map
     end
 
@@ -443,6 +440,10 @@ module Solargraph
     end
 
     private
+
+    def yard_map
+      @yard_map ||= YardMap.new
+    end
 
     # A hash of source maps with filename keys.
     #

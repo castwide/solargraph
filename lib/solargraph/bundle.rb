@@ -1,22 +1,21 @@
 module Solargraph
   class Bundle
+    # @return [Workspace]
+    attr_reader :workspace
+
     # @return [Array<Source>]
-    attr_reader :sources
+    attr_reader :opened
 
-    # @return [Array<String>]
-    attr_reader :required
+    # @param workspace [Workspace]
+    # @param opened [Array<Source>]
+    def initialize workspace: Workspace.new, opened: []
+      @workspace = workspace
+      @opened = opened
+    end
 
-    # @return [Array<String>]
-    attr_reader :load_paths
-
-    # @return [YardMap]
-    attr_reader :yard_map
-
-    def initialize sources: [], required: [], load_paths: [], yard_map: YardMap.new
-      @sources = sources
-      @required = required
-      @load_paths = load_paths
-      @yard_map = yard_map
+    # @return [Array<Source>]
+    def sources
+      @sources ||= (opened + workspace.sources).uniq(&:filename)
     end
   end
 end

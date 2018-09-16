@@ -32,7 +32,7 @@ module Solargraph
     # @param source [Solargraph::Source]
     # @return [Boolean] True if the source was added to the workspace
     def merge source
-      return false unless config(true).calculated.include?(source.filename)
+      return false unless config.calculated.include?(source.filename)
       source_hash[source.filename] = source
       true
     end
