@@ -5,7 +5,7 @@ module Solargraph
   #
   class Library
     # @param workspace [Solargraph::Workspace]
-    def initialize workspace = Solargraph::Workspace.new(nil)
+    def initialize workspace = Solargraph::Workspace.new
       @mutex = Mutex.new
       @workspace = workspace
       api_map.catalog bundle
@@ -336,7 +336,7 @@ module Solargraph
     #
     # @param directory [String] The path to be used for the workspace
     # @return [Solargraph::Library]
-    def self.load directory
+    def self.load directory = ''
       Solargraph::Library.new(Solargraph::Workspace.new(directory))
     end
 

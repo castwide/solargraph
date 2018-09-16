@@ -10,19 +10,15 @@ module Solargraph
     attr_reader :directory
 
     # @param directory [String]
-    def initialize directory = nil, config = nil
-      # @todo Convert to an absolute path?
+    def initialize directory = '', config = nil
       @directory = directory
-      @directory = nil if @directory == ''
       @config = config
       load_sources
     end
 
-    # @param reload [Boolean] Force a reload of the config file
     # @return [Solargraph::Workspace::Config]
-    def config reload = false
-      @config = Solargraph::Workspace::Config.new(directory) if @config.nil? or reload
-      @config
+    def config
+      @config ||= Solargraph::Workspace::Config.new(directory)
     end
 
     # Merge the source. A merge will update the existing source for the file
@@ -32,7 +28,12 @@ module Solargraph
     # @param source [Solargraph::Source]
     # @return [Boolean] True if the source was added to the workspace
     def merge source
-      return false unless config.calculated.include?(source.filename)
+      unless source_hash.has_key?(source.filename)
+        # Reload the config to determine if a new source should be included
+        @config = Solargraph::Workspace::Config.new(directory)
+        load_sources
+        return false unless config.calculated.include?(source.filename)
+      end
       source_hash[source.filename] = source
       true
     end
@@ -42,7 +43,7 @@ module Solargraph
     # @param filename [String]
     # @return [Boolean]
     def would_merge? filename
-      Solargraph::Workspace::Config.new(directory).calculated.include?(filename)
+      config.calculated.include?(filename)
     end
 
     # Remove a source from the workspace. The source will not be removed if
@@ -51,7 +52,7 @@ module Solargraph
     # @param filename [String]
     # @return [Boolean] True if the source was removed from the workspace
     def remove filename
-      return false if config(true).calculated.include?(filename)
+      return false if config.calculated.include?(filename)
       source_hash.delete filename
       true
     end
@@ -107,7 +108,7 @@ module Solargraph
     #
     # @return [Array<String>]
     def gemspecs
-      return [] if directory.nil?
+      return [] if directory.empty?
       @gemspecs ||= Dir[File.join(directory, '**/*.gemspec')]
     end
 
@@ -128,7 +129,7 @@ module Solargraph
 
     def load_sources
       source_hash.clear
-      unless directory.nil?
+      unless directory.empty?
         size = config.calculated.length
         raise WorkspaceTooLargeError, "The workspace is too large to index (#{size} files, #{config.max_files} max)" if config.max_files > 0 and size > config.max_files
         config.calculated.each do |filename|
@@ -138,7 +139,7 @@ module Solargraph
     end
 
     def generate_require_paths
-      return [] if directory.nil?
+      return [] if directory.empty?
       return configured_require_paths unless gemspec?
       result = []
       gemspecs.each do |file|

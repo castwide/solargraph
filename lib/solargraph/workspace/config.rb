@@ -10,18 +10,18 @@ module Solargraph
       MAX_FILES = 5000
 
       # @return [String]
-      attr_reader :workspace
+      attr_reader :directory
 
       # @return [Hash]
       attr_reader :raw_data
 
       # @param workspace [String]
-      def initialize workspace = nil
-        @workspace = workspace
+      def initialize directory = ''
+        @directory = directory
         include_globs = ['**/*.rb']
         exclude_globs = ['spec/**/*', 'test/**/*', 'vendor/**/*', '.bundle/**/*']
-        unless @workspace.nil?
-          sfile = File.join(@workspace, '.solargraph.yml')
+        unless @directory.empty?
+          sfile = File.join(@directory, '.solargraph.yml')
           if File.file?(sfile)
             @raw_data = YAML.safe_load(File.read(sfile))
             include_globs = @raw_data['include'] || include_globs
@@ -45,7 +45,7 @@ module Solargraph
       #
       # @return [Array<String>]
       def included
-        return [] if workspace.nil?
+        return [] if directory.empty?
         @included ||= process_globs(@raw_data['include'])
       end
 
@@ -53,7 +53,7 @@ module Solargraph
       #
       # @return [Array<String>]
       def excluded
-        return [] if workspace.nil?
+        return [] if directory.empty?
         @excluded ||= process_exclusions(@raw_data['exclude'])
       end
 
@@ -117,7 +117,7 @@ module Solargraph
       def process_globs globs
         result = []
         globs.each do |glob|
-          result.concat Dir[File.join workspace, glob].map{ |f| f.gsub(/\\/, '/') }
+          result.concat Dir[File.join directory, glob].map{ |f| f.gsub(/\\/, '/') }
         end
         result
       end
@@ -130,7 +130,7 @@ module Solargraph
       def process_exclusions globs
         remainder = globs.select do |glob|
           if glob_is_directory?(glob)
-            exdir = File.join(workspace, glob_to_directory(glob))
+            exdir = File.join(directory, glob_to_directory(glob))
             included.delete_if { |file| file.start_with?(exdir) }
             false
           else

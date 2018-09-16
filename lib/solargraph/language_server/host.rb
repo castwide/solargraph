@@ -179,7 +179,7 @@ module Solargraph
       #
       # @param directory [String]
       def prepare directory
-        path = nil
+        path = ''
         path = normalize_separators(directory) unless directory.nil?
         begin
           @library = Solargraph::Library.load(path)
@@ -188,7 +188,7 @@ module Solargraph
             'type' => Solargraph::LanguageServer::MessageTypes::WARNING,
             'message' => e.message
           }
-          @library = Solargraph::Library.load(nil)
+          @library = Solargraph::Library.load
         end
         diagnoser.start
         cataloger.start
