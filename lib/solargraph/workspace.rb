@@ -31,7 +31,6 @@ module Solargraph
       unless source_hash.has_key?(source.filename)
         # Reload the config to determine if a new source should be included
         @config = Solargraph::Workspace::Config.new(directory)
-        load_sources
         return false unless config.calculated.include?(source.filename)
       end
       source_hash[source.filename] = source
