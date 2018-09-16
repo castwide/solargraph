@@ -43,6 +43,8 @@ module Solargraph
     # @param filename [String]
     # @return [Boolean]
     def would_merge? filename
+      return true if source_hash.include?(filename)
+      @config = Solargraph::Workspace::Config.new(directory)
       config.calculated.include?(filename)
     end
 
@@ -52,7 +54,7 @@ module Solargraph
     # @param filename [String]
     # @return [Boolean] True if the source was removed from the workspace
     def remove filename
-      return false if config.calculated.include?(filename)
+      return false unless source_hash.has_key?(filename)
       source_hash.delete filename
       true
     end
@@ -139,8 +141,7 @@ module Solargraph
     end
 
     def generate_require_paths
-      return [] if directory.empty?
-      return configured_require_paths unless gemspec?
+      return configured_require_paths if directory.empty? || !gemspec?
       result = []
       gemspecs.each do |file|
         spec = Gem::Specification.load(file)
@@ -153,6 +154,7 @@ module Solargraph
     end
 
     def configured_require_paths
+      return ['lib'] if directory.empty?
       return [File.join(directory, 'lib')] if config.require_paths.empty?
       config.require_paths.map{|p| File.join(directory, p)}
     end

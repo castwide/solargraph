@@ -86,10 +86,10 @@ module Solargraph
         reqs.concat map.requires.map(&:name)
       end
       reqs.concat bundle.workspace.config.required
-      unless bundle.workspace.config.require_paths.empty?
+      unless bundle.workspace.require_paths.empty?
         reqs.delete_if do |r|
           result = false
-          bundle.workspace.config.require_paths.each do |l|
+          bundle.workspace.require_paths.each do |l|
             if new_map_hash.keys.include?(File.join(l, "#{r}.rb"))
               result = true
               break
