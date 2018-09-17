@@ -121,6 +121,15 @@ module Solargraph
       location = object_location(code_object)
       if code_object.is_a?(YARD::CodeObjects::NamespaceObject)
         result.push Solargraph::Pin::YardPin::Namespace.new(code_object, location)
+        if code_object.is_a?(YARD::CodeObjects::ClassObject) and !code_object.superclass.nil?
+          result.push Solargraph::Pin::Reference::Superclass.new(location, code_object.path, code_object.superclass.path)
+        end
+        code_object.class_mixins.each do |m|
+          result.push Solargraph::Pin::Reference::Extend.new(location, code_object.path, m.path)
+        end
+        code_object.instance_mixins.each do |m|
+          result.push Solargraph::Pin::Reference::Include.new(location, code_object.path, m.path)
+        end
       elsif code_object.is_a?(YARD::CodeObjects::MethodObject)
         if code_object.name == :initialize && code_object.scope == :instance
           # @todo Check the visibility of <Class>.new
