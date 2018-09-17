@@ -164,6 +164,13 @@ describe Solargraph::ApiMap do
     expect(pins.map(&:name)).to include('bar')
   end
 
+  it "adds Object instance methods to duck types" do
+    api_map = Solargraph::ApiMap.new
+    type = Solargraph::ComplexType.parse('#foo')
+    pins = api_map.get_complex_type_methods(type)
+    expect(pins.any?{|p| p.namespace == 'Object'}).to be(true)
+  end
+
   it "finds methods for parametrized class types" do
     @api_map.index []
     type = Solargraph::ComplexType.parse('Class<String>')
