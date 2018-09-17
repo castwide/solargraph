@@ -302,6 +302,7 @@ module Solargraph
         type.select(&:duck_type?).each do |t|
           result.push Pin::DuckMethod.new(nil, t.tag[1..-1])
         end
+        result.concat get_methods('Object')
       else
         unless type.nil? || type.name == 'void'
           namespace = qualify(type.namespace, context)

@@ -7,7 +7,7 @@ module Solargraph
       # @param location [Solargraph::Location]
       # @param name [String]
       def initialize location, name
-        super(location, 'Object', name, nil, :instance, :public, [])
+        super(location, '', name, nil, :instance, :public, [])
       end
     end
   end
