@@ -52,4 +52,31 @@ describe Solargraph::YardMap do
     pins = yard_map.pins.select{|p| p.path == 'Parser::AST::Node#location'}
     expect(pins.length).to eq(1)
   end
+
+  it "adds superclass references" do
+    # Asssuming the yard gem exists because it's a Solargraph dependency
+    yard_map = Solargraph::YardMap.new(required: ['yard'])
+    api_map = Solargraph::ApiMap.new
+    api_map.index yard_map.pins
+    pins = api_map.get_methods('YARD::CodeObjects::ModuleObject')
+    expect(pins.map(&:path)).to include('YARD::CodeObjects::NamespaceObject#instance_mixins')
+  end
+
+  it "adds include references" do
+    # Asssuming the yard gem exists because it's a Solargraph dependency
+    yard_map = Solargraph::YardMap.new(required: ['yard'])
+    api_map = Solargraph::ApiMap.new
+    api_map.index yard_map.pins
+    pins = api_map.get_constants('YARD::Parser::Ruby::Legacy::StatementList')
+    expect(pins.map(&:path)).to include('YARD::Parser::Ruby::Legacy::RubyToken::Token')
+  end
+
+  it "adds extend references" do
+    # Asssuming the yard gem exists because it's a Solargraph dependency
+    yard_map = Solargraph::YardMap.new(required: ['yard'])
+    api_map = Solargraph::ApiMap.new
+    api_map.index yard_map.pins
+    pins = api_map.get_methods('YARD::Registry', scope: :class)
+    expect(pins.map(&:path)).to include('Enumerable#entries')
+  end
 end
