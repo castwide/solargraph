@@ -63,12 +63,12 @@ describe Solargraph::YardMap do
   end
 
   it "adds include references" do
-    # Asssuming the yard gem exists because it's a Solargraph dependency
-    yard_map = Solargraph::YardMap.new(required: ['yard'])
+    # Asssuming the ast gem exists because it's a Solargraph dependency
+    yard_map = Solargraph::YardMap.new(required: ['ast'])
     api_map = Solargraph::ApiMap.new
     api_map.index yard_map.pins
-    pins = api_map.get_constants('YARD::Parser::Ruby::Legacy::StatementList')
-    expect(pins.map(&:path)).to include('YARD::Parser::Ruby::Legacy::RubyToken::Token')
+    pins = api_map.get_methods('AST::Processor')
+    expect(pins.map(&:path)).to include('AST::Processor::Mixin#process')
   end
 
   it "adds extend references" do
