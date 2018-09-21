@@ -289,7 +289,7 @@ module Solargraph
                   end
                 end
               elsif c.type == :alias
-                pin = pins.select{|p| p.name == c.children[1].children[0].to_s && p.namespace == fqn}.first
+                pin = pins.select{|p| p.name == c.children[1].children[0].to_s && p.namespace == fqn && p.scope == scope}.first
                 unless pin.nil?
                   if pin.is_a?(Solargraph::Pin::Method)
                     pins.push Solargraph::Pin::Method.new(get_node_location(c), pin.namespace, c.children[0].children[0].to_s, comments_for(c) || pin.comments, pin.scope, pin.visibility, pin.parameters)

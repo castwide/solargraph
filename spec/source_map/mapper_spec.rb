@@ -654,7 +654,7 @@ describe Solargraph::SourceMap::Mapper do
     expect(pin.context).to be_a(Solargraph::ComplexType)
   end
 
-  it "maps attribute aliases" do
+  it "maps method aliases" do
     smap = Solargraph::SourceMap.load_string(%(
       class Foo
         def bar; end
@@ -674,5 +674,18 @@ describe Solargraph::SourceMap::Mapper do
     ))
     pin = smap.pins.select{|p| p.path == 'Foo#baz'}.first
     expect(pin).to be_a(Solargraph::Pin::Attribute)
+  end
+
+  it "maps class method aliases" do
+    smap = Solargraph::SourceMap.load_string(%(
+      class Foo
+        class << self
+          def bar; end
+          alias baz bar
+        end
+      end
+    ))
+    pin = smap.pins.select{|p| p.path == 'Foo.baz'}.first
+    expect(pin).to be_a(Solargraph::Pin::Method)
   end
 end
