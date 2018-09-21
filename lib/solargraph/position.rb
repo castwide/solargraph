@@ -1,5 +1,6 @@
 module Solargraph
-
+  # The zero-based line and column numbers of a position in a string.
+  #
   class Position
     # @return [Integer]
     attr_reader :line
@@ -7,13 +8,13 @@ module Solargraph
     # @return [Integer]
     attr_reader :character
 
+    alias column character
+
+    # @param line [Integer]
+    # @param character [Integer]
     def initialize line, character
       @line = line
       @character = character
-    end
-
-    def column
-      character
     end
 
     # Get a hash of the position. This representation is suitable for use in
