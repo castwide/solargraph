@@ -279,7 +279,7 @@ module Solargraph
                     end
                   end
                 end
-              elsif c.type == :send and [:attr_reader, :attr_writer, :attr_accessor].include?(c.children[1])
+              elsif c.type == :send && [:attr_reader, :attr_writer, :attr_accessor].include?(c.children[1])
                 c.children[2..-1].each do |a|
                   if c.children[1] == :attr_reader or c.children[1] == :attr_accessor
                     pins.push Solargraph::Pin::Attribute.new(get_node_location(c), fqn || '', "#{a.children[0]}", comments_for(c), :reader, scope, visibility)
@@ -288,10 +288,19 @@ module Solargraph
                     pins.push Solargraph::Pin::Attribute.new(get_node_location(c), fqn || '', "#{a.children[0]}=", comments_for(c), :writer, scope, visibility)
                   end
                 end
-              elsif c.type == :sclass and c.children[0].type == :self
+              elsif c.type == :alias
+                pin = pins.select{|p| p.name == c.children[1].children[0].to_s && p.namespace == fqn && p.scope == scope}.first
+                unless pin.nil?
+                  if pin.is_a?(Solargraph::Pin::Method)
+                    pins.push Solargraph::Pin::Method.new(get_node_location(c), pin.namespace, c.children[0].children[0].to_s, comments_for(c) || pin.comments, pin.scope, pin.visibility, pin.parameters)
+                  elsif pin.is_a?(Solargraph::Pin::Attribute)
+                    pins.push Solargraph::Pin::Attribute.new(get_node_location(c), pin.namespace, c.children[0].children[0].to_s, comments_for(c) || pin.comments, pin.access, pin.scope, pin.visibility)
+                  end
+                end
+              elsif c.type == :sclass && c.children[0].type == :self
                 process c, tree, :public, :class, fqn || '', stack
                 next
-              elsif c.type == :send and c.children[1] == :require
+              elsif c.type == :send && c.children[1] == :require
                 if c.children[2].kind_of?(AST::Node) and c.children[2].type == :str
                   # @requires.push Solargraph::Pin::Reference.new(get_node_location(c), fqn, c.children[2].children[0].to_s)
                   pins.push Pin::Reference::Require.new(get_node_location(c), c.children[2].children[0].to_s)
