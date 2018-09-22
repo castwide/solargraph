@@ -122,7 +122,15 @@ module Solargraph
       if code_object.is_a?(YARD::CodeObjects::NamespaceObject)
         result.push Solargraph::Pin::YardPin::Namespace.new(code_object, location)
         if code_object.is_a?(YARD::CodeObjects::ClassObject) and !code_object.superclass.nil?
-          result.push Solargraph::Pin::Reference::Superclass.new(location, code_object.path, code_object.superclass.path)
+          # @todo This method of superclass detection is a bit of a hack. If
+          #   the superclass is a Proxy, it is assumed to be undefined in its
+          #   yardoc and converted to a fully qualified namespace.
+          if code_object.superclass.is_a?(YARD::CodeObjects::Proxy)
+            superclass = "::#{code_object.superclass}"
+          else
+            superclass = code_object.superclass.to_s
+          end
+          result.push Solargraph::Pin::Reference::Superclass.new(location, code_object.path, superclass)
         end
         code_object.class_mixins.each do |m|
           result.push Solargraph::Pin::Reference::Extend.new(location, code_object.path, m.path)
