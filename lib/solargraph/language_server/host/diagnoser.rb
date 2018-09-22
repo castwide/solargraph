@@ -45,25 +45,11 @@ module Solargraph
                 mutex.synchronize { queue.clear }
                 next
               end
-              begin
-                current = nil
-                mutex.synchronize { current = queue.shift }
-                next if queue.include?(current)
-                results = []
-                results.concat host.diagnose(current) if host.open?(current)
-                host.send_notification "textDocument/publishDiagnostics", {
-                  uri: current,
-                  diagnostics: results
-                }
-                sleep 0.5
-              rescue DiagnosticsError => e
-                STDERR.puts "Error in diagnostics: #{e.message}"
-                options['diagnostics'] = false
-                host.send_notification 'window/showMessage', {
-                  type: LanguageServer::MessageTypes::ERROR,
-                  message: "Error in diagnostics: #{e.message}"
-                }
-              end
+              current = nil
+              mutex.synchronize { current = queue.shift }
+              next if queue.include?(current)
+              host.diagnose current
+              sleep 0.5
             end
           end
           self

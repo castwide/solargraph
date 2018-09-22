@@ -143,8 +143,22 @@ module Solargraph
         library.overwrite filename, version
       end
 
+      # @param uri [String]
       def diagnose uri
-        library.diagnose uri_to_file(uri)
+        begin
+          results = library.diagnose uri_to_file(uri)
+          send_notification "textDocument/publishDiagnostics", {
+            uri: uri,
+            diagnostics: results
+          }
+        rescue DiagnosticsError => e
+          STDERR.puts "Error in diagnostics: #{e.message}"
+          options['diagnostics'] = false
+          send_notification 'window/showMessage', {
+            type: LanguageServer::MessageTypes::ERROR,
+            message: "Error in diagnostics: #{e.message}"
+          }
+        end
       end
 
       def change params
