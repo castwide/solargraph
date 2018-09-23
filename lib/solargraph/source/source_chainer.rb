@@ -42,7 +42,7 @@ module Solargraph
             node = source.node_at(position.line, position.column)
           else
             node = nil
-            node = source.node_at(fixed_position.line, fixed_position.column) unless source.error_ranges.any?{|r| r.include?(fixed_position)}
+            node = source.node_at(fixed_position.line, fixed_position.column) unless source.error_ranges.any?{|r| r.nil? || r.include?(fixed_position)}
             node = Source.parse(fixed_phrase) if node.nil?
           end
         rescue Parser::SyntaxError

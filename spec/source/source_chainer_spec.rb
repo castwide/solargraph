@@ -117,4 +117,15 @@ describe Solargraph::Source::SourceChainer do
     expect(chain.links.last).to be_a(Solargraph::Source::Chain::Constant)
     expect(chain.links.last).to be_undefined
   end
+
+  it "works when source error ranges contain a nil range" do
+    orig = Solargraph::Source.load_string("msg = 'msg'\nmsg", 'test.rb')
+    updater = Solargraph::Source::Updater.new('test.rb', 1, [
+      Solargraph::Source::Change.new(nil, "msg = 'msg'\nmsg.")
+    ])
+    source = orig.synchronize(updater)
+    expect {
+      Solargraph::Source::SourceChainer.chain(source, Solargraph::Position.new(1, 4))
+    }.not_to raise_error
+  end
 end
