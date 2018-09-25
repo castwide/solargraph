@@ -440,4 +440,17 @@ describe Solargraph::ApiMap do
     expect(pins[0].name).to eq('AAA')
     expect(pins[1].name).to eq('AAB')
   end
+
+  it "returns one pin for root methods" do
+    source = Solargraph::Source.load_string(%(
+      def sum1(a, b)
+      end
+      sum1()
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new
+    api_map.map source
+    pins = api_map.get_method_stack('', 'sum1')
+    expect(pins.length).to eq(1)
+    expect(pins.map(&:name)).to include('sum1')
+  end
 end

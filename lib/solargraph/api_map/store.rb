@@ -27,7 +27,7 @@ module Solargraph
       # @return [Array<Solargraph::Pin::Base>]
       def get_methods fqns, scope: :instance, visibility: [:public]
         namespace_children(fqns).select{ |pin|
-          [Pin::METHOD, Pin::ATTRIBUTE].include?(pin.kind) and (pin.scope == scope or fqns == '') and visibility.include?(pin.visibility)
+          [Pin::METHOD, Pin::ATTRIBUTE].include?(pin.kind) && pin.scope == scope && visibility.include?(pin.visibility)
         }
       end
 
