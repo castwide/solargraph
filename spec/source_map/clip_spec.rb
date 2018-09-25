@@ -143,6 +143,18 @@ describe Solargraph::SourceMap::Clip do
 
   it "completes partially completed constants" do
     source = Solargraph::Source.load_string(%(
+      class Foo; end
+      F
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new
+    api_map.map source
+    clip = api_map.clip_at('test.rb', Solargraph::Position.new(2, 7))
+    pins = clip.complete.pins
+    expect(pins.map(&:path)).to include('Foo')
+  end
+
+  it "completes partially completed inner constants" do
+    source = Solargraph::Source.load_string(%(
       class Foo
         class Bar; end
       end
