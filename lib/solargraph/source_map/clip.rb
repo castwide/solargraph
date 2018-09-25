@@ -24,10 +24,20 @@ module Solargraph
         return package_completions(api_map.get_symbols) if cursor.chain.literal? && cursor.chain.links.last.word == '<Symbol>'
         return Completion.new([], cursor.range) if cursor.chain.literal? || cursor.comment?
         result = []
-        type = cursor.chain.base.infer(api_map, context_pin, locals)
         if cursor.chain.constant? || cursor.start_of_constant?
+          if cursor.chain.undefined?
+            type = cursor.chain.base.infer(api_map, context_pin, locals)
+          else
+            full = cursor.chain.links.last.word
+            if full.include?('::')
+              type = ComplexType.parse(full.split('::')[0..-2].join('::'))
+            else
+              type = ComplexType::UNDEFINED
+            end
+          end
           result.concat api_map.get_constants(type.undefined? ? '' : type.namespace, cursor.start_of_constant? ? '' : context_pin.context.namespace)
         else
+          type = cursor.chain.base.infer(api_map, context_pin, locals)
           result.concat api_map.get_complex_type_methods(type, context_pin.context.namespace, cursor.chain.links.length == 1)
           if cursor.chain.links.length == 1
             if cursor.word.start_with?('@@')

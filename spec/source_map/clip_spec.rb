@@ -140,4 +140,19 @@ describe Solargraph::SourceMap::Clip do
     pins = clip.complete.pins
     expect(pins.all?{|p| [Solargraph::Pin::NAMESPACE, Solargraph::Pin::CONSTANT].include?(p.kind) }).to be(true)
   end
+
+  it "completes partially completed constants" do
+    source = Solargraph::Source.load_string(%(
+      class Foo
+        class Bar; end
+      end
+      Foo::B
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new
+    api_map.map source
+    clip = api_map.clip_at('test.rb', Solargraph::Position.new(4, 12))
+    pins = clip.complete.pins
+    expect(pins.length).to eq(1)
+    expect(pins.map(&:path)).to include('Foo::Bar')
+  end
 end
