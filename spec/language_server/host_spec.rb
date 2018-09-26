@@ -80,6 +80,19 @@ describe Solargraph::LanguageServer::Host do
     end
   end
 
+  it "handles DiagnosticsErrors" do
+    host = Solargraph::LanguageServer::Host.new
+    library = double(:Library)
+    allow(library).to receive(:diagnose).and_raise(Solargraph::DiagnosticsError)
+    # @todo Smelly instance variable access
+    host.instance_variable_set(:@library, library)
+    expect {
+      host.diagnose 'file:///test.rb'
+    }.not_to raise_error
+    result = host.flush
+    expect(result).to include('Error in diagnostics')
+  end
+
   it "stops" do
     host = Solargraph::LanguageServer::Host.new
     host.stop

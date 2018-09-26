@@ -2,10 +2,6 @@ module Solargraph
   module Pin
     module YardPin
       module YardMixin
-        def yard_pin?
-          true
-        end
-
         private
 
         def comments_from code_object

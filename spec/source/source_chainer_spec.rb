@@ -49,7 +49,7 @@ describe Solargraph::Source::SourceChainer do
     map = Solargraph::SourceMap.load_string('Foo::Bar')
     cursor = map.cursor_at(Solargraph::Position.new(0, 6))
     expect(cursor.chain).to be_constant
-    expect(cursor.chain.links.map(&:word)).to eq(['Foo', 'Bar'])
+    expect(cursor.chain.links.map(&:word)).to eq(['Foo::Bar'])
   end
 
   it "recognizes unfinished constants" do
@@ -89,5 +89,43 @@ describe Solargraph::Source::SourceChainer do
     map = Solargraph::SourceMap.load_string('foo(x, y).bar')
     cursor = map.cursor_at(Solargraph::Position.new(0, 10))
     expect(cursor.chain.links.map(&:word)).to eq(['foo', 'bar'])
+  end
+
+  it "chains from repaired sources with literal strings" do
+    orig = Solargraph::Source.load_string("''")
+    updater = Solargraph::Source::Updater.new(
+      nil,
+      2,
+      [
+        Solargraph::Source::Change.new(
+          Solargraph::Range.from_to(0, 2, 0, 2),
+          '.'
+        )
+      ]
+    )
+    source = orig.synchronize(updater)
+    chain = Solargraph::Source::SourceChainer.chain(source, Solargraph::Position.new(0, 3))
+    expect(chain.links.first).to be_a(Solargraph::Source::Chain::Literal)
+    expect(chain.links.length).to eq(2)
+  end
+
+  it "chains incomplete constants" do
+    source = Solargraph::Source.load_string("Foo::")
+    chain = Solargraph::Source::SourceChainer.chain(source, Solargraph::Position.new(0, 5))
+    expect(chain.links.length).to eq(2)
+    expect(chain.links.first).to be_a(Solargraph::Source::Chain::Constant)
+    expect(chain.links.last).to be_a(Solargraph::Source::Chain::Constant)
+    expect(chain.links.last).to be_undefined
+  end
+
+  it "works when source error ranges contain a nil range" do
+    orig = Solargraph::Source.load_string("msg = 'msg'\nmsg", 'test.rb')
+    updater = Solargraph::Source::Updater.new('test.rb', 1, [
+      Solargraph::Source::Change.new(nil, "msg = 'msg'\nmsg.")
+    ])
+    source = orig.synchronize(updater)
+    expect {
+      Solargraph::Source::SourceChainer.chain(source, Solargraph::Position.new(1, 4))
+    }.not_to raise_error
   end
 end

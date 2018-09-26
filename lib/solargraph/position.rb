@@ -1,5 +1,6 @@
 module Solargraph
-
+  # The zero-based line and column numbers of a position in a string.
+  #
   class Position
     # @return [Integer]
     attr_reader :line
@@ -7,13 +8,13 @@ module Solargraph
     # @return [Integer]
     attr_reader :character
 
+    alias column character
+
+    # @param line [Integer]
+    # @param character [Integer]
     def initialize line, character
       @line = line
       @character = character
-    end
-
-    def column
-      character
     end
 
     # Get a hash of the position. This representation is suitable for use in
@@ -89,6 +90,13 @@ module Solargraph
       Position.new(line, character)
     end
 
+    # A helper method for generating positions from arrays of integers. The
+    # original parameter is returned if it is already a position.
+    #
+    # @raise [ArgumentError] if the object cannot be converted to a position.
+    #
+    # @param object [Position, Array(Integer, Integer)]
+    # @return [Position]
     def self.normalize object
       return object if object.is_a?(Position)
       return Position.new(object[0], object[1]) if object.is_a?(Array)

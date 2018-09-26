@@ -97,24 +97,19 @@ module Solargraph
     def synchronize updater
       raise 'Invalid synchronization' unless updater.filename == filename
       real_code = updater.write(@code)
-      incr_code = updater.write(@code, true)
       if real_code == @code
         @version = updater.version
         return self
       end
-      synced = Source.new(incr_code, filename)
+      synced = Source.new(real_code, filename)
       if synced.parsed?
-        synced.code = real_code
-        if synced.repaired?
-          synced.error_ranges.concat combine_errors(error_ranges + updater.changes.map(&:range))
-        end
-      else
-        new_repair = updater.repair(@repaired)
-        synced = Source.new(new_repair, filename)
-        synced.error_ranges.concat combine_errors(error_ranges + updater.changes.map(&:range))
-        synced.parsed = false
-        synced.code = real_code
+        synced.version = updater.version
+        return synced
       end
+      incr_code = updater.repair(@repaired)
+      synced = Source.new(incr_code, filename)
+      synced.error_ranges.concat (error_ranges + updater.changes.map(&:range))
+      synced.code = real_code
       synced.version = updater.version
       synced
     end
@@ -222,22 +217,6 @@ module Solargraph
           result.push top
         end
         top.children.each { |c| result.concat inner_node_references(name, c) }
-      end
-      result
-    end
-
-    # @param ranges [Array<Range>]
-    # @return [Array<Range>]
-    def combine_errors ranges
-      result = []
-      lines = []
-      ranges.sort{|a, b| a.start.line <=> b.start.line}.each do |rng|
-        next if rng.nil? || lines.include?(rng.start.line)
-        lines.push rng.start.line
-        next if comment_at?(rng.start) || rng.start.line >= code.lines.length
-        fcol = code.lines[rng.start.line].index(/[^\s]/) || 0
-        ecol = code.lines[rng.start.line].length
-        result.push Range.from_to(rng.start.line, fcol, rng.start.line, ecol)
       end
       result
     end

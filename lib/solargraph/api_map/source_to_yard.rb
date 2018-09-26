@@ -28,8 +28,9 @@ module Solargraph
             code_object_map[pin.path].files.push pin.location.filename unless pin.location.nil?
           end
           store.namespace_pins.each do |pin|
-            pin.include_references.each do |ref|
-              code_object_map[pin.path].instance_mixins.push code_object_map[ref.name] unless code_object_map[ref.name].nil? or code_object_map[pin.path].nil?
+            # pin.include_references.each do |ref|
+            store.get_includes(pin.path).each do |ref|
+              code_object_map[pin.path].instance_mixins.push code_object_map[ref] unless code_object_map[ref].nil? or code_object_map[pin.path].nil?
             end
           end
           store.method_pins.each do |pin|

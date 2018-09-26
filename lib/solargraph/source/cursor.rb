@@ -14,11 +14,7 @@ module Solargraph
       # @param position [Position, Array(Integer, Integer)]
       def initialize source, position
         @source = source
-        @position = if position.is_a?(Array)
-                      Position.new(position[0], position[1])
-                    else
-                      position
-                    end
+        @position = Position.normalize(position)
       end
 
       # @return [String]

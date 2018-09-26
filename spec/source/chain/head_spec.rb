@@ -5,7 +5,7 @@ describe Solargraph::Source::Chain::Head do
     ipin = head.resolve(nil, npin, []).first
     expect(ipin.return_type.namespace).to eq('Foo')
     expect(ipin.return_type.scope).to eq(:instance)
-    cpin = Solargraph::Pin::Namespace.new(nil, '', 'Foo', '', :class, :public, nil)
+    cpin = Solargraph::Pin::Namespace.new(nil, '', 'Foo', '', :class, :public)
     ipin = head.resolve(nil, cpin, []).first
     expect(ipin.return_type.namespace).to eq('Foo')
     expect(ipin.return_type.scope).to eq(:class)
@@ -13,9 +13,10 @@ describe Solargraph::Source::Chain::Head do
 
   it "resolves super" do
     head = Solargraph::Source::Chain::Head.new('super')
-    npin = Solargraph::Pin::Namespace.new(nil, '', 'Substring', '', :class, :public, 'String')
+    npin = Solargraph::Pin::Namespace.new(nil, '', 'Substring', '', :class, :public)
+    scpin = Solargraph::Pin::Reference::Superclass.new(nil, 'Substring', 'String')
     mpin = Solargraph::Pin::Method.new(nil, 'Substring', 'upcase', '', :instance, :public, [])
-    api_map = Solargraph::ApiMap.new(pins: [npin, mpin])
+    api_map = Solargraph::ApiMap.new(pins: [npin, scpin, mpin])
     spin = head.resolve(api_map, mpin, []).first
     expect(spin.path).to eq('String#upcase')
   end

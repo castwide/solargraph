@@ -3,26 +3,16 @@ require 'solargraph/version'
 require 'rubygems/package'
 require 'yard-solargraph'
 
+# The top-level namespace for the Solargraph code mapping, documentation,
+# static analysis, and language server libraries.
+#
 module Solargraph
   class InvalidOffsetError <      RangeError;    end
   class DiagnosticsError <        RuntimeError;  end
   class FileNotFoundError <       RuntimeError;  end
   class SourceNotAvailableError < StandardError; end
   class ComplexTypeError        < StandardError; end
-  class WorkspaceTooLargeError <  RuntimeError
-    # @return [Integer]
-    attr_reader :size
-
-    # @return [Integer]
-    attr_reader :max
-
-    # @param size [Integer] The number of files included in the workspace
-    # @param max [Integer] The maximum number of files allowed
-    def initialize size, max
-      @size = size
-      @max = max
-    end
-  end
+  class WorkspaceTooLargeError <  RuntimeError;  end
 
   autoload :Position,         'solargraph/position'
   autoload :Range,            'solargraph/range'
@@ -45,9 +35,10 @@ module Solargraph
   autoload :ComplexType,      'solargraph/complex_type'
   autoload :Bundle,           'solargraph/bundle'
 
-  YARDOC_PATH = File.join(File.realpath(File.dirname(__FILE__)), '..', 'yardoc')
-  YARD_EXTENSION_FILE = File.join(File.realpath(File.dirname(__FILE__)), 'yard-solargraph.rb')
-  VIEWS_PATH = File.join(File.realpath(File.dirname(__FILE__)), 'solargraph', 'views')
+  dir = File.dirname(__FILE__)
+  YARDOC_PATH = File.realpath(File.join(dir, '..', 'yardoc'))
+  YARD_EXTENSION_FILE = File.join(dir, 'yard-solargraph.rb')
+  VIEWS_PATH = File.join(dir, 'solargraph', 'views')
 end
 
 Solargraph::YardMap::CoreDocs.require_minimum

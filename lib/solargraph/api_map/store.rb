@@ -27,37 +27,27 @@ module Solargraph
       # @return [Array<Solargraph::Pin::Base>]
       def get_methods fqns, scope: :instance, visibility: [:public]
         namespace_children(fqns).select{ |pin|
-          [Pin::METHOD, Pin::ATTRIBUTE].include?(pin.kind) and (pin.scope == scope or fqns == '') and visibility.include?(pin.visibility)
+          [Pin::METHOD, Pin::ATTRIBUTE].include?(pin.kind) && pin.scope == scope && visibility.include?(pin.visibility)
         }
       end
 
       # @param fqns [String]
       # @return [String]
       def get_superclass fqns
-        fqns_pins(fqns).each do |pin|
-          return pin.superclass_reference.name unless pin.superclass_reference.nil?
-        end
+        return superclass_references[fqns].first if superclass_references.has_key?(fqns)
         nil
       end
 
       # @param fqns [String]
       # @return [Array<String>]
       def get_includes fqns
-        result = []
-        fqns_pins(fqns).each do |pin|
-          result.concat pin.include_references.map(&:name)
-        end
-        result
+        include_references[fqns] || []
       end
 
       # @param fqns [String]
       # @return [Array<String>]
       def get_extends fqns
-        result = []
-        fqns_pins(fqns).each do |pin|
-          result.concat pin.extend_references.map(&:name)
-        end
-        result
+        extend_references[fqns] || []
       end
 
       # @param path [String]
@@ -141,6 +131,18 @@ module Solargraph
         @symbols ||= []
       end
 
+      def superclass_references
+        @superclass_references ||= {}
+      end
+
+      def include_references
+        @include_references ||= {}
+      end
+
+      def extend_references
+        @extend_references ||= {}
+      end
+
       # @param name [String]
       # @return [Array<Solargraph::Pin::Namespace>]
       def namespace_children name
@@ -163,6 +165,16 @@ module Solargraph
           namespace_map[pin.namespace].push pin
           namespaces.add pin.path if pin.kind == Pin::NAMESPACE and !pin.path.empty?
           symbols.push pin if pin.kind == Pin::SYMBOL
+          if pin.kind == Pin::INCLUDE_REFERENCE
+            include_references[pin.namespace] ||= []
+            include_references[pin.namespace].push pin.name
+          elsif pin.kind == Pin::EXTEND_REFERENCE
+            extend_references[pin.namespace] ||= []
+            extend_references[pin.namespace].push pin.name
+          elsif pin.kind == Pin::SUPERCLASS_REFERENCE
+            superclass_references[pin.namespace] ||= []
+            superclass_references[pin.namespace].push pin.name
+          end
         end
         @namespace_pins = nil
         @method_pins = nil

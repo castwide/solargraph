@@ -2,13 +2,20 @@ describe Solargraph::Source::NodeChainer do
   it "recognizes self keywords" do
     chain = Solargraph::Source::NodeChainer.load_string('self.foo')
     expect(chain.links.first.word).to eq('self')
+    expect(chain.links.first).to be_a(Solargraph::Source::Chain::Head)
+  end
+
+  it "recognizes super keywords" do
+    chain = Solargraph::Source::NodeChainer.load_string('super.foo')
+    expect(chain.links.first.word).to eq('super')
+    expect(chain.links.first).to be_a(Solargraph::Source::Chain::Head)
   end
 
   it "recognizes constants" do
     chain = Solargraph::Source::NodeChainer.load_string('Foo::Bar')
-    expect(chain.links.length).to eq(2)
+    expect(chain.links.length).to eq(1)
     expect(chain.links.first).to be_a(Solargraph::Source::Chain::Constant)
-    expect(chain.links.map(&:word)).to eq(['Foo', 'Bar'])
+    expect(chain.links.map(&:word)).to eq(['Foo::Bar'])
   end
 
   it "splits method calls with arguments and blocks" do

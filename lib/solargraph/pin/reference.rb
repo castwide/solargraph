@@ -1,35 +1,22 @@
 module Solargraph
   module Pin
-    class Reference
-      # @return [Location]
-      attr_reader :location
+    class Reference < Base
+      autoload :Require,    'solargraph/pin/reference/require'
+      autoload :Superclass, 'solargraph/pin/reference/superclass'
+      autoload :Include,    'solargraph/pin/reference/include'
+      autoload :Extend,     'solargraph/pin/reference/extend'
 
-      # @return [String]
-      attr_reader :namespace
-
-      # @return [String]
-      attr_reader :name
-
-      # @param location [Location]
-      # @param namespace [String]
-      # @param name [String]
       def initialize location, namespace, name
-        @location = location
-        @namespace = namespace
-        @name = name
+        super(location, namespace, name, '')
       end
 
-      # @return [String]
-      def filename
-        location.filename
-      end
-
-      def == other
-        return false unless self.class == other.class
-        location == other.location and
-          namespace = other.namespace and
-          name == other.name
-      end
+      # @todo Should Reference.new be protected?
+      # class << self
+      #   protected
+      #   def new *args
+      #     super
+      #   end
+      # end
     end
   end
 end

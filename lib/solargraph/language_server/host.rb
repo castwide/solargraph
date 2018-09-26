@@ -143,8 +143,22 @@ module Solargraph
         library.overwrite filename, version
       end
 
+      # @param uri [String]
       def diagnose uri
-        library.diagnose uri_to_file(uri)
+        begin
+          results = library.diagnose uri_to_file(uri)
+          send_notification "textDocument/publishDiagnostics", {
+            uri: uri,
+            diagnostics: results
+          }
+        rescue DiagnosticsError => e
+          STDERR.puts "Error in diagnostics: #{e.message}"
+          options['diagnostics'] = false
+          send_notification 'window/showMessage', {
+            type: LanguageServer::MessageTypes::ERROR,
+            message: "Error in diagnostics: #{e.message}"
+          }
+        end
       end
 
       def change params
@@ -186,7 +200,7 @@ module Solargraph
         rescue WorkspaceTooLargeError => e
           send_notification 'window/showMessage', {
             'type' => Solargraph::LanguageServer::MessageTypes::WARNING,
-            'message' => "The workspace is too large to index (#{e.size} files, max #{e.max})"
+            'message' => e.message
           }
           @library = Solargraph::Library.load(nil)
         end
@@ -372,9 +386,10 @@ module Solargraph
       # @param filename [String]
       # @param line [Integer]
       # @param column [Integer]
+      # @param strip [Boolean] Strip special characters from variable names
       # @return [Array<Solargraph::Range>]
-      def references_from filename, line, column
-        result = library.references_from(filename, line, column)
+      def references_from filename, line, column, strip: true
+        result = library.references_from(filename, line, column, strip: strip)
       end
 
       # @param query [String]

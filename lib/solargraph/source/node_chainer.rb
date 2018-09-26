@@ -73,10 +73,11 @@ module Solargraph
         elsif n.type == :const
           # result.push Chain::Constant.new(unpack_name(n))
           const = unpack_name(n)
-          parts = const.split('::')
-          last = parts.pop
-          result.push Chain::Constant.new(parts.join('::')) unless parts.empty?
-          result.push Chain::Constant.new(last)
+          # parts = const.split('::')
+          # last = parts.pop
+          # result.push Chain::Constant.new(parts.join('::')) unless parts.empty?
+          # result.push Chain::Constant.new(last)
+          result.push Chain::Constant.new(const)
         elsif [:lvar, :lvasgn].include?(n.type)
           result.push Chain::Call.new(n.children[0].to_s)
         elsif [:ivar, :ivasgn].include?(n.type)
@@ -86,8 +87,6 @@ module Solargraph
         elsif [:gvar, :gvasgn].include?(n.type)
           result.push Chain::GlobalVariable.new(n.children[0].to_s)
         elsif [:class, :module, :def, :defs].include?(n.type)
-          # location = Solargraph::Location.new(@filename, Range.from_to(n.loc.expression.line, n.loc.expression.column, n.loc.expression.last_line, n.loc.expression.last_column))
-          # result.push Chain::Definition.new(location)
           # @todo Undefined or what?
           result.push Chain::UNDEFINED_CALL
         else

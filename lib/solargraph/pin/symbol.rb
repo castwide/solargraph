@@ -20,10 +20,6 @@ module Solargraph
         ''
       end
 
-      def identifier
-        name
-      end
-
       def completion_item_kind
         Solargraph::LanguageServer::CompletionItemKinds::KEYWORD
       end

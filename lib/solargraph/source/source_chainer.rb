@@ -35,13 +35,15 @@ module Solargraph
       # @return [Source::Chain]
       def chain
         return Chain.new([Chain::Literal.new('Symbol')]) if phrase.start_with?(':') && !phrase.start_with?('::')
+        # return Chain.new([Chain::UNDEFINED_CALL]) unless infer_literal_node_type(source.node_at(position.line, position.column)).nil?
         begin
-          if source.repaired? && source.parsed?
-            node = source.node_at(fixed_position.line, fixed_position.column)
-          elsif source.parsed?
+          return Chain.new([]) if phrase.end_with?('..')
+          if !source.repaired? && source.parsed?
             node = source.node_at(position.line, position.column)
           else
-            node = Source.parse(fixed_phrase)
+            node = nil
+            node = source.node_at(fixed_position.line, fixed_position.column) unless source.error_ranges.any?{|r| r.nil? || r.include?(fixed_position)}
+            node = Source.parse(fixed_phrase) if node.nil?
           end
         rescue Parser::SyntaxError
           return Chain.new([Chain::UNDEFINED_CALL])
@@ -54,15 +56,13 @@ module Solargraph
           elsif end_of_phrase.strip == '::'
             chain.links.push Chain::UNDEFINED_CONSTANT
           end
-        elsif end_of_phrase.strip == '::'
-          chain.links.pop
-          chain.links.push Chain::UNDEFINED_CONSTANT
         end
         chain
       end
 
       private
 
+      # @return [Position]
       attr_reader :position
 
       # The zero-based line number of the fragment's location.
@@ -78,18 +78,22 @@ module Solargraph
       # @return [Solargraph::Source]
       attr_reader :source
 
+      # @return [String]
       def phrase
         @phrase ||= source.code[signature_data[0]..offset-1]
       end
 
+      # @return [String]
       def fixed_phrase
         @fixed_phrase ||= phrase[0..-(end_of_phrase.length+1)]
       end
 
+      # @return [Position]
       def fixed_position
         @fixed_position ||= Position.from_offset(source.code, offset - end_of_phrase.length)
       end
 
+      # @return [String]
       def end_of_phrase
         @end_of_phrase ||= begin
           match = phrase.match(/[\s]*(\.{1}|::)[\s]*$/)
@@ -108,11 +112,6 @@ module Solargraph
         @column
       end
 
-      # @return [Position]
-      def position
-        @position ||= Position.new(line, column)
-      end
-
       # True if the current offset is inside a string.
       #
       # @return [Boolean]
@@ -126,6 +125,9 @@ module Solargraph
         @offset ||= get_offset(line, column)
       end
 
+      # @param line [Integer]
+      # @param column [Integer]
+      # @return [Integer]
       def get_offset line, column
         Position.line_char_to_offset(@source.code, line, column)
       end

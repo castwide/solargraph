@@ -35,8 +35,7 @@ Solargraph uses RuboCop for linting and formatting.
 
 ## Diagnostics Reporters
 
-A .solargraph.yml file can be used to select which diagnostics reporters Solargraph should use. The currently supported reporters are
-`rubocop` and `require_not_found`. Example:
+A .solargraph.yml file can be used to select which diagnostics reporters Solargraph should use. Example:
 
 ```
 reporters:
@@ -48,3 +47,5 @@ reporters:
 
 `require_not_found` highlights `require` calls where Solargraph could not resolve a required path. Note that this error does not
 necessarily mean that the path is incorrect; only that Solargraph was unable to recognize it.
+
+Run `solargraph reporters` for a list of available reporters.

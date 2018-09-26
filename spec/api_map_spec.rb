@@ -164,6 +164,13 @@ describe Solargraph::ApiMap do
     expect(pins.map(&:name)).to include('bar')
   end
 
+  it "adds Object instance methods to duck types" do
+    api_map = Solargraph::ApiMap.new
+    type = Solargraph::ComplexType.parse('#foo')
+    pins = api_map.get_complex_type_methods(type)
+    expect(pins.any?{|p| p.namespace == 'Object'}).to be(true)
+  end
+
   it "finds methods for parametrized class types" do
     @api_map.index []
     type = Solargraph::ComplexType.parse('Class<String>')
@@ -432,5 +439,18 @@ describe Solargraph::ApiMap do
     expect(pins.length).to eq(2)
     expect(pins[0].name).to eq('AAA')
     expect(pins[1].name).to eq('AAB')
+  end
+
+  it "returns one pin for root methods" do
+    source = Solargraph::Source.load_string(%(
+      def sum1(a, b)
+      end
+      sum1()
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new
+    api_map.map source
+    pins = api_map.get_method_stack('', 'sum1')
+    expect(pins.length).to eq(1)
+    expect(pins.map(&:name)).to include('sum1')
   end
 end

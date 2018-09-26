@@ -1,7 +1,7 @@
 module Solargraph::LanguageServer::Message::TextDocument
   class Rename < Base
     def process
-      locs = host.references_from(uri_to_file(params['textDocument']['uri']), params['position']['line'], params['position']['character'])
+      locs = host.references_from(uri_to_file(params['textDocument']['uri']), params['position']['line'], params['position']['character'], strip: true)
       changes = {}
       locs.each do |loc|
         uri = file_to_uri(loc.filename)
