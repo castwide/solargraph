@@ -5,8 +5,9 @@ require 'fileutils'
 
 module Solargraph
   class YardMap
+    # Tools for managing core documentation.
+    #
     module CoreDocs
-      
       SOURCE = 'https://solargraph.org/download'
 
       class << self
