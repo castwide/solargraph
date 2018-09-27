@@ -167,4 +167,20 @@ describe Solargraph::SourceMap::Clip do
     expect(pins.length).to eq(1)
     expect(pins.map(&:path)).to include('Foo::Bar')
   end
+
+  it "completes unstarted inner constants" do
+    source = Solargraph::Source.load_string(%(
+      class Foo
+        class Bar; end
+      end
+      Foo::
+      puts
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new
+    api_map.map source
+    cursor = api_map.clip_at('test.rb', Solargraph::Position.new(4, 11))
+    pins = cursor.complete.pins
+    expect(pins.length).to eq(1)
+    expect(pins.map(&:path)).to include('Foo::Bar')
+  end
 end

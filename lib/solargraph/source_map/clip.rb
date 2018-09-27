@@ -28,9 +28,11 @@ module Solargraph
           if cursor.chain.undefined?
             type = cursor.chain.base.infer(api_map, context_pin, locals)
           else
-            full = cursor.chain.links.last.word
+            full = cursor.chain.links.first.word
             if full.include?('::')
               type = ComplexType.parse(full.split('::')[0..-2].join('::'))
+            elsif cursor.chain.links.length > 1
+              type = ComplexType.parse(full)
             else
               type = ComplexType::UNDEFINED
             end
