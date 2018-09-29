@@ -136,13 +136,6 @@ module Solargraph
         diagnoser.schedule uri
       end
 
-      def save params
-        uri = params['textDocument']['uri']
-        filename = uri_to_file(uri)
-        version = params['textDocument']['version']
-        library.overwrite filename, version
-      end
-
       # @param uri [String]
       def diagnose uri
         begin
