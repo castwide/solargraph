@@ -1,11 +1,14 @@
 module Solargraph
   class ComplexType
+    # An individual type signature. A complex type can consist of multiple
+    # unique types.
+    #
     class UniqueType
       include TypeMethods
 
-      # Create a BasicType with the specified name and an optional substring.
-      # The substring is the parameter section of a parametrized type, e.g., for
-      # the type `Array<String>`, the name is `Array` and the substring is
+      # Create a UniqueType with the specified name and an optional substring.
+      # The substring is the parameter section of a parametrized type, e.g.,
+      # for the type `Array<String>`, the name is `Array` and the substring is
       # `<String>`.
       #
       # @param name [String] The name of the type

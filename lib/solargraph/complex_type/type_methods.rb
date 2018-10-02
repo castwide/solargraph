@@ -1,5 +1,7 @@
 module Solargraph
   class ComplexType
+    # Methods for accessing type data.
+    #
     module TypeMethods
       # @return [String]
       attr_reader :name
@@ -69,13 +71,13 @@ module Solargraph
       def namespace
         @namespace ||= 'Object' if duck_type?
         @namespace ||= 'NilClass' if nil_type?
-        @namespace ||= ((name == 'Class' or name == 'Module') and !subtypes.empty?) ? subtypes.first.name : name
+        @namespace ||= (name == 'Class' || name == 'Module') && !subtypes.empty? ? subtypes.first.name : name
       end
 
       # @return [Symbol] :class or :instance
       def scope
-        @scope ||= :instance if duck_type? or nil_type?
-        @scope ||= ((name == 'Class' or name == 'Module') and !subtypes.empty?) ? :class : :instance
+        @scope ||= :instance if duck_type? || nil_type?
+        @scope ||= (name == 'Class' || name == 'Module') && !subtypes.empty? ? :class : :instance
       end
 
       def == other
