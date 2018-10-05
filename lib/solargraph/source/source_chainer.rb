@@ -24,11 +24,7 @@ module Solargraph
       # @param position [Position]
       def initialize source, position
         @source = source
-        # @source.code = source.code
         @position = position
-        # @todo Get rid of line/column
-        @line = position.line
-        @column = position.column
         @calculated_literal = false
       end
 
@@ -65,16 +61,6 @@ module Solargraph
       # @return [Position]
       attr_reader :position
 
-      # The zero-based line number of the fragment's location.
-      #
-      # @return [Integer]
-      attr_reader :line
-
-      # The zero-based column number of the fragment's location.
-      #
-      # @return [Integer]
-      attr_reader :column
-
       # @return [Solargraph::Source]
       attr_reader :source
 
@@ -105,13 +91,6 @@ module Solargraph
         end
       end
 
-      # An alias for #column.
-      #
-      # @return [Integer]
-      def character
-        @column
-      end
-
       # True if the current offset is inside a string.
       #
       # @return [Boolean]
@@ -122,7 +101,7 @@ module Solargraph
 
       # @return [Integer]
       def offset
-        @offset ||= get_offset(line, column)
+        @offset ||= get_offset(position.line, position.column)
       end
 
       # @param line [Integer]

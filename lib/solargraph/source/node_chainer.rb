@@ -1,14 +1,15 @@
 module Solargraph
   class Source
+    # A factory for generating chains from nodes.
+    #
     class NodeChainer
       include Source::NodeMethods
 
+      # @param node [Parser::AST::Node]
+      # @param filename [String]
       def initialize node, filename = nil
         @node = node
         @filename = filename
-        # @source = source
-        # @line = line
-        # @column = column
       end
 
       # @return [Source::Chain]
@@ -26,7 +27,6 @@ module Solargraph
         end
 
         # @param code [String]
-        # @param filename [String, nil]
         # @return [Chain]
         def load_string(code)
           node = Source.parse(code.sub(/\.$/, ''))
@@ -47,7 +47,6 @@ module Solargraph
         # return generate_links(n.children[2] || n.children[0]) if n.type == :block
         result = []
         if n.type == :block
-          # result.concat generate_links(n.children[2])
           result.concat generate_links(n.children[0])
         elsif n.type == :send
           if n.children[0].is_a?(Parser::AST::Node)
@@ -71,12 +70,7 @@ module Solargraph
         elsif n.type == :zsuper
           result.push Chain::Head.new('super')
         elsif n.type == :const
-          # result.push Chain::Constant.new(unpack_name(n))
           const = unpack_name(n)
-          # parts = const.split('::')
-          # last = parts.pop
-          # result.push Chain::Constant.new(parts.join('::')) unless parts.empty?
-          # result.push Chain::Constant.new(last)
           result.push Chain::Constant.new(const)
         elsif [:lvar, :lvasgn].include?(n.type)
           result.push Chain::Call.new(n.children[0].to_s)
