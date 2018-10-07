@@ -688,4 +688,16 @@ describe Solargraph::SourceMap::Mapper do
     pin = smap.pins.select{|p| p.path == 'Foo.baz'}.first
     expect(pin).to be_a(Solargraph::Pin::Method)
   end
+
+  it "maps method macros" do
+    smap = Solargraph::SourceMap.load_string(%(
+      class Foo
+        # @!macro
+        #   @return [$1]
+        def make klass; end
+      end
+    ))
+    pin = smap.pins.select{|p| p.path == 'Foo#make'}.first
+    expect(pin.macros).not_to be_empty
+  end
 end

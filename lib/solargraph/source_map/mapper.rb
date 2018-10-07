@@ -23,7 +23,7 @@ module Solargraph
         @comment_ranges = comments.map do |c|
           Range.from_to(c.loc.expression.line, c.loc.expression.column, c.loc.expression.last_line, c.loc.expression.last_column)
         end
-        @node_comments = associate_comments(node, comments)
+        # @node_comments = associate_comments(node, comments)
         @pins = []
         @locals = []
         @strings = []
@@ -359,11 +359,12 @@ module Solargraph
         @pins.select{|pin| pin.kind == Pin::NAMESPACE and pin.location.range.contain?(position)}.last
       end
 
+      # @param node [Parser::AST::Node]
       # @return [String]
       def comments_for node
-        result = @node_comments[node.loc]
-        return nil if result.nil?
-        result
+        # @node_comments[node.loc]
+        arr = associated_comments[node.loc]
+        arr ? stringify_comment_array(arr) : nil
       end
 
       # @param node [Parser::AST::Node]
@@ -380,32 +381,66 @@ module Solargraph
         Location.new(filename, range)
       end
 
+      def associated_comments
+        @associated_comments ||= Parser::Source::Comment.associate_locations(@node, @comments)
+      end
+
+      def unassociated_comments
+        @unassociated_comments ||= begin
+          assoc = associated_comments.values.flatten
+          unnasoc = []
+          @comments.each do |cmnt|
+            unnasoc.push cmnt unless assoc.include?(cmnt)
+          end
+          unnasoc
+        end
+      end
+
       # @param node [Parser::AST::Node]
       # @param comments [Array]
       # @return [Hash]
-      def associate_comments node, comments
-        return nil if comments.nil?
-        comment_hash = Parser::Source::Comment.associate_locations(node, comments)
-        result_hash = {}
-        comment_hash.each_pair { |k, v|
-          ctxt = ''
-          num = nil
-          started = false
-          v.each { |l|
-            # Trim the comment and minimum leading whitespace
-            p = l.text.gsub(/^#/, '')
-            if num.nil? and !p.strip.empty?
-              num = p.index(/[^ ]/)
-              started = true
-            elsif started and !p.strip.empty?
-              cur = p.index(/[^ ]/)
-              num = cur if cur < num
-            end
-            ctxt += "#{p[num..-1]}\n" if started
-          }
-          result_hash[k] = ctxt
+      # def associate_comments node, comments
+      #   return nil if comments.nil?
+      #   comment_hash = Parser::Source::Comment.associate_locations(node, comments)
+      #   result_hash = {}
+      #   comment_hash.each_pair { |k, v|
+      #     ctxt = ''
+      #     num = nil
+      #     started = false
+      #     v.each { |l|
+      #       # Trim the comment and minimum leading whitespace
+      #       p = l.text.gsub(/^#/, '')
+      #       if num.nil? and !p.strip.empty?
+      #         num = p.index(/[^ ]/)
+      #         started = true
+      #       elsif started and !p.strip.empty?
+      #         cur = p.index(/[^ ]/)
+      #         num = cur if cur < num
+      #       end
+      #       ctxt += "#{p[num..-1]}\n" if started
+      #     }
+      #     result_hash[k] = ctxt
+      #   }
+      #   result_hash
+      # end
+
+      def stringify_comment_array comments
+        ctxt = ''
+        num = nil
+        # started = false
+        comments.each { |l|
+          # Trim the comment and minimum leading whitespace
+          p = l.text.gsub(/^#/, '')
+          if num.nil? and !p.strip.empty?
+            num = p.index(/[^ ]/)
+            started = true
+          elsif started and !p.strip.empty?
+            cur = p.index(/[^ ]/)
+            num = cur if cur < num
+          end
+          ctxt += "#{p[num..-1]}\n" # if started
         }
-        result_hash
+        ctxt
       end
 
       # @param node [Parser::AST::Node]
