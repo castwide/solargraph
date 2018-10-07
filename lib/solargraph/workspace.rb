@@ -143,7 +143,11 @@ module Solargraph
       return configured_require_paths if directory.empty? || !gemspec?
       result = []
       gemspecs.each do |file|
-        spec = Gem::Specification.load(file)
+        # @todo Evaluating gemspec files violates the goal of not running
+        #   workspace code, but this is how Gem::Specification.load does it
+        #   anyway.
+        spec = eval(File.read(file), binding, file)
+        next unless Gem::Specification === spec
         base = File.dirname(file)
         result.concat spec.require_paths.map{ |path| File.join(base, path) } unless spec.nil?
       end
