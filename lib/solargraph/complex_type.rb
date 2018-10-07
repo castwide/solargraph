@@ -1,4 +1,6 @@
 module Solargraph
+  # A container for type data based on YARD type tags.
+  #
   class ComplexType < Array
     # @todo Figure out how to add the basic type methods here without actually
     #   including the module. One possibility:
@@ -8,7 +10,7 @@ module Solargraph
 
     autoload :TypeMethods, 'solargraph/complex_type/type_methods'
     autoload :UniqueType,  'solargraph/complex_type/unique_type'
-  
+
     # @param types [Array<ComplexType>]
     def initialize types = [ComplexType::UNDEFINED]
       super()
@@ -17,6 +19,7 @@ module Solargraph
 
     # @param api_map [ApiMap]
     # @param context [String]
+    # @return [ComplexType]
     def qualify api_map, context = ''
       types = map do |t|
         t.qualify api_map, context
@@ -95,7 +98,6 @@ module Solargraph
               curly_stack -= 1
               subtype_string += char
               raise ComplexTypeError, "Invalid close in type #{type_string}" if curly_stack < 0
-              # types.push ComplexType.parse(subtype_string[1..-2]) if curly_stack == 0
               next
             elsif char == '('
               paren_stack += 1

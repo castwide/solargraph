@@ -138,4 +138,12 @@ describe Solargraph::Source do
       Solargraph::Source.load('spec/fixtures/unicode.rb')
     }.not_to raise_error
   end
+
+  it "updates itself when code does not change" do
+    original = Solargraph::Source.load_string('x = y', 'test.rb')
+    updater = Solargraph::Source::Updater.new('test.rb', 1, [])
+    updated = original.synchronize(updater)
+    expect(original).to be(updated)
+    expect(updated.version).to eq(1)
+  end
 end

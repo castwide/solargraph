@@ -115,22 +115,6 @@ module Solargraph
       end
     end
 
-    # @param filename [String]
-    # @param version [Integer]
-    # @return [void]
-    def overwrite filename, version
-      mutex.synchronize do
-        source = source_hash[filename]
-        return if source.nil?
-        if source.version > version
-          STDERR.puts "Save out of sync for #{filename} (current #{source.version}, overwrite #{version})" if source.version > version
-        else
-          open filename, File.read(filename), version
-        end
-        catalog
-      end
-    end
-
     # Get completion suggestions at the specified file and location.
     #
     # @param filename [String] The file to analyze
