@@ -396,38 +396,10 @@ module Solargraph
         end
       end
 
-      # @param node [Parser::AST::Node]
-      # @param comments [Array]
-      # @return [Hash]
-      # def associate_comments node, comments
-      #   return nil if comments.nil?
-      #   comment_hash = Parser::Source::Comment.associate_locations(node, comments)
-      #   result_hash = {}
-      #   comment_hash.each_pair { |k, v|
-      #     ctxt = ''
-      #     num = nil
-      #     started = false
-      #     v.each { |l|
-      #       # Trim the comment and minimum leading whitespace
-      #       p = l.text.gsub(/^#/, '')
-      #       if num.nil? and !p.strip.empty?
-      #         num = p.index(/[^ ]/)
-      #         started = true
-      #       elsif started and !p.strip.empty?
-      #         cur = p.index(/[^ ]/)
-      #         num = cur if cur < num
-      #       end
-      #       ctxt += "#{p[num..-1]}\n" if started
-      #     }
-      #     result_hash[k] = ctxt
-      #   }
-      #   result_hash
-      # end
-
       def stringify_comment_array comments
         ctxt = ''
         num = nil
-        # started = false
+        started = false
         comments.each { |l|
           # Trim the comment and minimum leading whitespace
           p = l.text.gsub(/^#/, '')
@@ -438,7 +410,7 @@ module Solargraph
             cur = p.index(/[^ ]/)
             num = cur if cur < num
           end
-          ctxt += "#{p[num..-1]}\n" # if started
+          ctxt += "#{p[num..-1]}\n" if started
         }
         ctxt
       end
@@ -526,6 +498,9 @@ module Solargraph
           namespace = namespace_at(position)
           namespace.domains.push directive.tag.text
         when 'macro'
+          # @todo There might not be anything to do for macros here. They
+          #   should have already been associated to methods. (I don't know of
+          #   a use case for macros that doesn't involve methods.)
           nxt_pos = Position.new(position.line + 1, @code.lines[position.line + 1].length)
           path_pin = get_named_path_pin(nxt_pos)
           path_pin.macros.push directive

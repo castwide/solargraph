@@ -124,7 +124,7 @@ module Solargraph
 
       # @return [Array<YARD::Tags::MacroDirective>]
       def macros
-        @macros ||= []
+        @macros ||= collect_macros
       end
 
       # Perform a quick check to see if this pin possibly includes YARD
@@ -219,6 +219,13 @@ module Solargraph
           t1.text == t2.text and
           t1.name == t2.name and
           t1.types == t2.types
+      end
+
+      # @return [Array<YARD::Tags::Handlers::Directive>]
+      def collect_macros
+        return [] unless maybe_directives?
+        parse = YARD::Docstring.parser.parse(comments)
+        parse.directives.select{ |d| d.tag.tag_name == 'macro' }
       end
     end
   end
