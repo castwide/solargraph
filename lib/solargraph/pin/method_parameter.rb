@@ -9,11 +9,22 @@ module Solargraph
           params.each do |p|
             next unless p.name == name
             found = p
+            break
+          end
+          if found.nil?
+            found = params[index] if params[index] && (params[index].name.nil? || params[index].name.empty?)
           end
           @return_complex_type = ComplexType.parse(*found.types) unless found.nil? or found.types.nil?
         end
         super
         @return_complex_type
+      end
+
+      # The parameter's zero-based location in the block's signature.
+      #
+      # @return [Integer]
+      def index
+        block.parameter_names.index(name)
       end
 
       def try_merge! pin

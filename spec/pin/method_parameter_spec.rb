@@ -10,4 +10,23 @@ describe Solargraph::Pin::MethodParameter do
     expect(map.locals.first.name).to eq('bar')
     expect(map.locals.first.return_type.tag).to eq('String')
   end
+
+  it "tracks its index" do
+    smap = Solargraph::SourceMap.load_string(%(
+      def foo bar
+      end
+    ))
+    pin = smap.locals.select{|p| p.name == 'bar'}.first
+    expect(pin.index).to eq(0)
+  end
+
+  it "detects unnamed @param tag types" do
+    smap = Solargraph::SourceMap.load_string(%(
+      # @param [String]
+      def foo bar
+      end
+    ))
+    pin = smap.locals.select{|p| p.name == 'bar'}.first
+    expect(pin.return_complex_type.tag).to eq('String')
+  end
 end
