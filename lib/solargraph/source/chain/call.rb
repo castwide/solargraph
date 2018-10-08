@@ -47,11 +47,10 @@ module Solargraph
             if CoreFills::METHODS_RETURNING_SUBTYPES.include?(p.path) && !context.subtypes.empty?
               next Solargraph::Pin::Method.new(p.location, p.namespace, p.name, "@return [#{context.subtypes.first.tag}]", p.scope, p.visibility, p.parameters)
             end
-            # @todo Temporarily disabled macros
-            # if p.kind == Pin::METHOD && !p.macros.empty?
-            #   result = process_macro(p, api_map, context, locals)
-            #   next result unless result.return_type.undefined?
-            # end
+            if p.kind == Pin::METHOD && !p.macros.empty?
+              result = process_macro(p, api_map, context, locals)
+              next result unless result.return_type.undefined?
+            end
             next p if p.kind == Pin::METHOD || p.kind == Pin::ATTRIBUTE || p.kind == Pin::NAMESPACE
             type = p.infer(api_map)
             next p if p.return_complex_type == type

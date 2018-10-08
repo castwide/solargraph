@@ -37,4 +37,20 @@ describe Solargraph::Source::Chain::Call do
     type = chain.infer(api_map, Solargraph::Pin::ROOT_PIN, api_map.source_map(nil).locals)
     expect(type.tag).to eq('Foo')
   end
+
+  it "infers types from macros" do
+    source = Solargraph::Source.load_string(%(
+      class Foo
+        # @!macro
+        #   @return [$1]
+        def self.bar; end
+      end
+      Foo.bar(String)
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new
+    api_map.map(source)
+    chain = Solargraph::Source::SourceChainer.chain(source, Solargraph::Position.new(6, 10))
+    type = chain.infer(api_map, Solargraph::Pin::ROOT_PIN, [])
+    expect(type.tag).to eq('String')
+  end
 end
