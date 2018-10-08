@@ -5,11 +5,12 @@ module Solargraph
   module LanguageServer
     module Message
       module CompletionItem
+        # completionItem/resolve message handler
+        #
         class Resolve < Base
           def process
             pin = host.locate_pin params
             if pin.nil?
-              # set_error(Solargraph::LanguageServer::ErrorCodes::INVALID_REQUEST, "Completion item could not be resolved")
               set_result params
             else
               set_result(
