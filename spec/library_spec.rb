@@ -101,7 +101,7 @@ describe Solargraph::Library do
     library.close file
     expect {
       library.checkout file
-    }.not_to raise_error(Solargraph::FileNotFoundError)
+    }.not_to raise_error
   end
 
   it "keeps a closed file in the workspace" do
