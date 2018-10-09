@@ -58,11 +58,13 @@ describe Solargraph::Workspace do
   end
 
   it "allows for unlimited files in config" do
-    config = double(:config, calculated: Array.new(Solargraph::Workspace::Config::MAX_FILES + 1), max_files: 0)
-    # @todo Creating the workspace raises a TypeError because the filenames are nil
+    gemspec_file = File.join(dir_path, 'test.gemspec')
+    File.write(gemspec_file, '')
+    calculated = Array.new(Solargraph::Workspace::Config::MAX_FILES + 1) { gemspec_file }
+    config = double(:config, calculated: calculated, max_files: 0)
     expect {
       Solargraph::Workspace.new('.', config)
-    }.not_to raise_error(Solargraph::WorkspaceTooLargeError)
+    }.not_to raise_error
   end
 
   it "detects gemspecs in workspaces" do
