@@ -19,23 +19,19 @@ module Solargraph
       # @param api_map [Solargraph::ApiMap]
       # @return [Array<Hash>]
       def diagnose source, api_map
-        begin
-          options, paths = generate_options(source.filename, source.code)
-          runner = RuboCop::Runner.new(options, RuboCop::ConfigStore.new)
-          result = redirect_stdout{ runner.run(paths) }
-          make_array JSON.parse(result)
-        rescue JSON::ParserError
-          raise DiagnosticsError, 'RuboCop returned invalid data'
-        end
+        options, paths = generate_options(source.filename, source.code)
+        runner = RuboCop::Runner.new(options, RuboCop::ConfigStore.new)
+        result = redirect_stdout{ runner.run(paths) }
+        make_array JSON.parse(result)
+      rescue JSON::ParserError
+        raise DiagnosticsError, 'RuboCop returned invalid data'
       end
 
       private
 
-      # @param workspace [Solargraph::Workspace]
       # @param filename [String]
       # @param code [String]
       # @return [Array]
-      # def generate_options workspace, filename, code
       def generate_options filename, code
         args = ['-f', 'j']
         rubocop_file = find_rubocop_file(filename)
@@ -46,20 +42,16 @@ module Solargraph
         [options, paths]
       end
 
+      # @param filename [String]
+      # @return [String, nil]
       def find_rubocop_file filename
-        rcfile = nil
         dir = File.dirname(filename)
-        while rcfile.nil?
+        until File.dirname(dir) == dir
           here = File.join(dir, '.rubocop.yml')
-          if File.exist?(here)
-            rcfile = here
-            break
-          else
-            break if File.dirname(dir) == dir
-            dir = File.dirname(dir)
-          end
+          return here if File.exist?(here)
+          dir = File.dirname(dir)
         end
-        rcfile
+        nil
       end
 
       # @todo This is a smelly way to redirect output, but the RuboCop specs do the

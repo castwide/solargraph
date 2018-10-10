@@ -1,4 +1,6 @@
 module Solargraph
+  # The namespace for pins used in maps.
+  #
   module Pin
     autoload :Helper,           'solargraph/pin/helper'
     autoload :Conversions,      'solargraph/pin/conversions'

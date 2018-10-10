@@ -15,6 +15,7 @@ module Solargraph
       #
       # @param name [String] The name
       # @param klass [Class<Solargraph::Diagnostics::Base>] The class implementation
+      # @return [void]
       def register name, klass
         reporter_hash[name] = klass
       end

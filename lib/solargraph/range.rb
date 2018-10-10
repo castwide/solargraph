@@ -31,9 +31,9 @@ module Solargraph
     # @param position [Solargraph::Position]
     # @return [Boolean]
     def contain? position
-      return false if position.line < start.line or position.line > ending.line
-      return false if position.line == start.line and position.character < start.character
-      return false if position.line == ending.line and position.character > ending.character
+      return false if position.line < start.line || position.line > ending.line
+      return false if position.line == start.line && position.character < start.character
+      return false if position.line == ending.line && position.character > ending.character
       true
     end
 
@@ -42,7 +42,7 @@ module Solargraph
     # @param position [Position]
     # @return [Boolean]
     def include? position
-      contain?(position) and !(position.line == start.line and position.character == start.character)
+      contain?(position) && !(position.line == start.line && position.character == start.character)
     end
 
     # Create a range from a pair of lines and characters.
@@ -75,7 +75,7 @@ module Solargraph
 
     def == other
       return false unless other.is_a?(Range)
-      start == other.start and ending == other.ending
+      start == other.start && ending == other.ending
     end
   end
 end

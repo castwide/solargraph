@@ -2,6 +2,8 @@ require 'reverse_markdown'
 
 module Solargraph
   module Pin
+    # The base class for map pins.
+    #
     class Base
       include Conversions
       include Documenting
@@ -214,10 +216,10 @@ module Solargraph
       # @param t2 [YARD::Tags::Tag]
       # @return [Boolean]
       def compare_tags t1, t2
-        t1.class == t2.class and
-          t1.tag_name == t2.tag_name and
-          t1.text == t2.text and
-          t1.name == t2.name and
+        t1.class == t2.class &&
+          t1.tag_name == t2.tag_name &&
+          t1.text == t2.text &&
+          t1.name == t2.name &&
           t1.types == t2.types
       end
     end
