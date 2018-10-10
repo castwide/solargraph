@@ -24,7 +24,6 @@ module Solargraph
     attr_reader :required
 
     # @param required [Array<String>]
-    # @param workspace [Solargraph::Workspace, nil]
     def initialize(required: [])
       # HACK: YardMap needs its own copy of this array
       @required = required.clone
@@ -65,17 +64,15 @@ module Solargraph
     # @param y [String]
     # @return [YARD::Registry]
     def load_yardoc y
-      begin
-        if y.kind_of?(Array)
-          YARD::Registry.load y, true
-        else
-          YARD::Registry.load! y
-        end
-      rescue Exception => e
-        STDERR.puts "Error loading yardoc '#{y}' #{e.class} #{e.message}"
-        yardocs.delete y
-        nil
+      if y.kind_of?(Array)
+        YARD::Registry.load y, true
+      else
+        YARD::Registry.load! y
       end
+    rescue Exception => e
+      STDERR.puts "Error loading yardoc '#{y}' #{e.class} #{e.message}"
+      yardocs.delete y
+      nil
     end
 
     # @return [Array<Solargraph::Pin::Base>]
@@ -254,6 +251,8 @@ module Solargraph
       result
     end
 
+    # @param y [String, nil]
+    # @return [Array<Pin::Base>]
     def process_yardoc y
       return [] if y.nil?
       size = Dir.glob(File.join(y, '**', '*'))
