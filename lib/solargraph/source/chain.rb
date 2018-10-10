@@ -1,8 +1,11 @@
-# HACK Fix autoload issue
+# HACK: Fix autoload issue
 require 'solargraph/source/chain/link'
 
 module Solargraph
   class Source
+    # A chain of constants, variables, and method calls for inferring types of
+    # values.
+    #
     class Chain
       autoload :Link,             'solargraph/source/chain/link'
       autoload :Call,             'solargraph/source/chain/call'
@@ -37,22 +40,16 @@ module Solargraph
       # @return [Array<Pin::Base>]
       def define api_map, name_pin, locals
         return [] if undefined?
-        type = ComplexType::UNDEFINED
-        head = true
         working_pin = name_pin
         links[0..-2].each do |link|
-          pins = link.resolve(api_map, working_pin, head ? locals : [])
-          head = false
-          return [] if pins.empty?
-          type = ComplexType::UNDEFINED
-          pins.each do |pin|
-            type = pin.infer(api_map)
-            break unless type.undefined?
-          end
+          pins = link.resolve(api_map, working_pin, locals)
+          # Locals are only used when resolving the first link
+          locals = []
+          type = infer_first_defined(pins, api_map)
           return [] if type.undefined?
           working_pin = Pin::ProxyType.anonymous(type)
         end
-        links.last.resolve(api_map, working_pin, head ? locals: [])
+        links.last.resolve(api_map, working_pin, locals)
       end
 
       # @param api_map [ApiMap]
@@ -70,16 +67,33 @@ module Solargraph
         type
       end
 
+      # @return [Boolean]
       def literal?
         links.last.is_a?(Chain::Literal)
       end
 
+      # @return [Boolean]
       def undefined?
         links.any?(&:undefined?)
       end
 
+      # @return [Boolean]
       def constant?
         links.last.is_a?(Chain::Constant)
+      end
+
+      private
+
+      # @param pins [Array<Pin::Base>]
+      # @param api_map [ApiMap]
+      # @return [ComplexType]
+      def infer_first_defined pins, api_map
+        type = ComplexType::UNDEFINED
+        pins.each do |pin|
+          type = pin.infer(api_map)
+          break unless type.undefined?
+        end
+        type
       end
     end
   end
