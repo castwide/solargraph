@@ -1,4 +1,6 @@
 module Solargraph
+  # A section of text identified by its filename and range.
+  #
   class Location
     # @return [String]
     attr_reader :filename
@@ -13,6 +15,7 @@ module Solargraph
       @range = range
     end
 
+    # @return [Hash]
     def to_hash
       {
         filename: filename,

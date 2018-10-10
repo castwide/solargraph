@@ -1,4 +1,6 @@
 module Solargraph
+  # A pair of positions that compose a section of text.
+  #
   class Range
     # @return [Position]
     attr_reader :start
@@ -54,10 +56,19 @@ module Solargraph
       Range.new(Position.new(l1, c1), Position.new(l2, c2))
     end
 
+    # Get a range from a node.
+    #
+    # @param node [Parser::AST::Node]
+    # @return [Range]
     def self.from_node node
       from_expr(node.loc.expression)
     end
 
+    # Get a range from a Parser range, usually found in
+    # Parser::AST::Node#location#expression.
+    #
+    # @param expr [Parser::Source::Range]
+    # @return [Range]
     def self.from_expr expr
       from_to(expr.line, expr.column, expr.last_line, expr.last_column)
     end
