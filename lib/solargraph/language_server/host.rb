@@ -558,6 +558,9 @@ module Solargraph
           },
           'workspace/symbol' => {
             workspaceSymbolProvider: true
+          },
+          'textDocument/formatting' => {
+            formattingProvider: true
           }
         }
       end
