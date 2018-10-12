@@ -297,6 +297,15 @@ module Solargraph
                     pins.push Solargraph::Pin::Attribute.new(get_node_location(c), pin.namespace, c.children[0].children[0].to_s, comments_for(c) || pin.comments, pin.access, pin.scope, pin.visibility)
                   end
                 end
+              elsif c.type == :send && c.children[1] == :alias_method && c.children[2] && c.children[2] && c.children[2].type == :sym && c.children[3] && c.children[3].type == :sym
+                pin = pins.select{|p| p.name == c.children[3].children[0].to_s && p.namespace == fqn && p.scope == scope}.first
+                unless pin.nil?
+                  if pin.is_a?(Solargraph::Pin::Method)
+                    pins.push Solargraph::Pin::Method.new(get_node_location(c), pin.namespace, c.children[2].children[0].to_s, comments_for(c) || pin.comments, pin.scope, pin.visibility, pin.parameters)
+                  elsif pin.is_a?(Solargraph::Pin::Attribute)
+                    pins.push Solargraph::Pin::Attribute.new(get_node_location(c), pin.namespace, c.children[2].children[0].to_s, comments_for(c) || pin.comments, pin.access, pin.scope, pin.visibility)
+                  end
+                end
               elsif c.type == :sclass && c.children[0].type == :self
                 process c, tree, :public, :class, fqn || '', stack
                 next

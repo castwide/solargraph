@@ -688,4 +688,17 @@ describe Solargraph::SourceMap::Mapper do
     pin = smap.pins.select{|p| p.path == 'Foo.baz'}.first
     expect(pin).to be_a(Solargraph::Pin::Method)
   end
+
+  it "maps aliases from alias_method" do
+    smap = Solargraph::SourceMap.load_string(%(
+      class Foo
+        class << self
+          def bar; end
+          alias_method :baz, :bar
+        end
+      end
+    ))
+    pin = smap.pins.select{|p| p.path == 'Foo.baz'}.first
+    expect(pin).to be_a(Solargraph::Pin::Method)
+  end
 end
