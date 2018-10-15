@@ -4,7 +4,7 @@ module Solargraph
     # either a file in the workspace or a gem.
     #
     class RequireNotFound < Base
-      def diagnose source, api_map
+      def diagnose source, api_map, config = {}
         result = []
         refs = {}
         map = Solargraph::SourceMap.map(source)

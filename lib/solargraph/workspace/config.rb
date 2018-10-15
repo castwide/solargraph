@@ -94,11 +94,11 @@ module Solargraph
         raw_data['plugins']
       end
 
-      # An array of reporters to use for diagnostics.
+      # A reporter config collection to use for diagnostics.
       #
-      # @return [Array<String>]
+      # @return [ReporterConfigs]
       def reporters
-        raw_data['reporters']
+        ReporterConfigs.new(raw_data['reporters'])
       end
 
       # The maximum number of files to parse from the workspace.

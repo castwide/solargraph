@@ -5,6 +5,7 @@ module Solargraph
   #
   class Workspace
     autoload :Config, 'solargraph/workspace/config'
+    autoload :ReporterConfigs, 'solargraph/workspace/reporter_configs'
 
     # @return [String]
     attr_reader :directory

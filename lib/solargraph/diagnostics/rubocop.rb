@@ -17,9 +17,10 @@ module Solargraph
 
       # @param source [Solargraph::Source]
       # @param api_map [Solargraph::ApiMap]
+      # @param config [Hash]
       # @return [Array<Hash>]
-      def diagnose source, api_map
-        options, paths = generate_options(source.filename, source.code)
+      def diagnose source, api_map, config = {}
+        options, paths = generate_options(source.filename, source.code, config)
         runner = RuboCop::Runner.new(options, RuboCop::ConfigStore.new)
         result = redirect_stdout{ runner.run(paths) }
         make_array JSON.parse(result)
@@ -31,12 +32,14 @@ module Solargraph
 
       # @param filename [String]
       # @param code [String]
+      # @param config [Hash]
       # @return [Array]
-      def generate_options filename, code
+      def generate_options filename, code, config
         args = ['-f', 'j']
         rubocop_file = find_rubocop_file(filename)
         args.push('-c', fix_drive_letter(rubocop_file)) unless rubocop_file.nil?
-        args.push filename
+        args.push(filename)
+        args.push(*str_to_args(config['arguments'])) if config.key?('arguments')
         options, paths = RuboCop::Options.new.parse(args)
         options[:stdin] = code
         [options, paths]
@@ -63,6 +66,12 @@ module Solargraph
         yield if block_given?
         $stdout = STDOUT
         redir.string
+      end
+
+      # @param arguments [String]
+      # @return [Array<String>]
+      def str_to_args(arguments)
+        arguments.split.map(&:strip)
       end
 
       # @param resp [Hash]

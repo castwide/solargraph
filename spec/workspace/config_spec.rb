@@ -46,7 +46,22 @@ describe Solargraph::Workspace::Config do
 
   it "includes base reporters by default" do
     config = Solargraph::Workspace::Config.new(dir_path)
-    expect(config.reporters).to include('rubocop')
-    expect(config.reporters).to include('require_not_found')
+    expect(config.reporters.to_a).to include(['rubocop', {}])
+    expect(config.reporters.to_a).to include(['require_not_found', {}])
+  end
+
+  it "can include rubocop reporter options" do
+    file = File.join(dir_path, '.solargraph.yml')
+    solargraph_config = <<-HEREDOC
+---
+reporters:
+- rubocop:
+    arguments: --force-exclusions
+- require_not_found
+- type_not_defined
+HEREDOC
+    File.write(file, solargraph_config)
+    config = Solargraph::Workspace::Config.new(dir_path)
+    expect(config.reporters.to_a).to include(['rubocop', { 'arguments' => '--force-exclusions' }])
   end
 end
