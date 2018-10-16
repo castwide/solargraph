@@ -24,7 +24,7 @@ module Solargraph
         # @param name_pin [Pin::Base]
         # @return [Array<Pin::Base>]
         def super_pins api_map, name_pin
-          pins = api_map.get_method_stack(name_pin.namespace, name_pin.name, scope: name_pin.scope)
+          pins = api_map.get_method_stack(name_pin.namespace, name_pin.name, scope: name_pin.context.scope)
           pins.reject{|p| p.path == name_pin.path}
         end
       end
