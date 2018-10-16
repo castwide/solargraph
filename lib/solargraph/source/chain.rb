@@ -17,6 +17,8 @@ module Solargraph
       autoload :Literal,          'solargraph/source/chain/literal'
       autoload :Head,             'solargraph/source/chain/head'
 
+      @@inference_stack = []
+
       UNDEFINED_CALL = Chain::Call.new('<undefined>')
       UNDEFINED_CONSTANT = Chain::Constant.new('<undefined>')
 
@@ -58,12 +60,15 @@ module Solargraph
       # @return [ComplexType]
       def infer api_map, name_pin, locals
         return ComplexType::UNDEFINED if undefined?
+        return ComplexType::UNDEFINED if @@inference_stack.include?(active_signature(name_pin))
+        @@inference_stack.push active_signature(name_pin)
         type = ComplexType::UNDEFINED
         pins = define(api_map, name_pin, locals)
         pins.each do |pin|
           type = pin.infer(api_map)
           break unless type.undefined?
         end
+        @@inference_stack.pop
         type
       end
 
@@ -83,6 +88,10 @@ module Solargraph
       end
 
       private
+
+      def active_signature(pin)
+        "#{pin.namespace}|#{links.map(&:word).join('.')}"
+      end
 
       # @param pins [Array<Pin::Base>]
       # @param api_map [ApiMap]
