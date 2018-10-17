@@ -126,4 +126,17 @@ describe Solargraph::Source::Chain do
     pins = chain.define(api_map, Solargraph::Pin::ProxyType.anonymous(Solargraph::ComplexType.parse('Class<Foo::Other>')), [])
     expect(pins.first.path).to eq('Foo::Bar::Baz')
   end
+
+  it "avoids recursive variable assignments" do
+    source = Solargraph::Source.load_string(%(
+      @foo = @bar
+      @bar = @foo.quz
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new
+    api_map.map source
+    chain = Solargraph::Source::SourceChainer.chain(source, Solargraph::Position.new(2, 18))
+    expect {
+      chain.define(api_map, Solargraph::Pin::ROOT_PIN, [])
+    }.not_to raise_error
+  end
 end
