@@ -31,7 +31,7 @@ AllCops:
 CONTENTS
 )
     rubocop = Solargraph::Diagnostics::Rubocop.new
-    result = rubocop.diagnose(@source, @api_map, { 'arguments' => '--force-exclusion --lint' })
+    result = rubocop.diagnose(@source, @api_map, { 'arguments' => ['--force-exclusion', '--lint'] })
     expect(result).to be_a(Array)
     expect(result).to be_empty
   end
@@ -45,11 +45,11 @@ AllCops:
 CONTENTS
 )
     rubocop = Solargraph::Diagnostics::Rubocop.new
-    result = rubocop.diagnose(@source, @api_map, { 'arguments' => '--force-exclusion' })
+    result = rubocop.diagnose(@source, @api_map, { 'arguments' => ['--force-exclusion'] })
     expect(result).to be_a(Array)
     expect(result.count).to eq(6)
 
-    result = rubocop.diagnose(@source, @api_map, { 'arguments' => '--force-exclusion --lint' })
+    result = rubocop.diagnose(@source, @api_map, { 'arguments' => ['--force-exclusion', '--lint'] })
     expect(result.count).to eq(1)
   end
 end

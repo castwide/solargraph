@@ -56,12 +56,15 @@ describe Solargraph::Workspace::Config do
 ---
 reporters:
 - rubocop:
-    arguments: --force-exclusions
+    arguments:
+    - --force-exclusion
+    - --lint
 - require_not_found
 - type_not_defined
 HEREDOC
     File.write(file, solargraph_config)
     config = Solargraph::Workspace::Config.new(dir_path)
-    expect(config.reporters.to_a).to include(['rubocop', { 'arguments' => '--force-exclusions' }])
+    expected = ['rubocop', { 'arguments' => ['--force-exclusion', '--lint'] }]
+    expect(config.reporters.to_a).to include(expected)
   end
 end

@@ -39,7 +39,7 @@ module Solargraph
         rubocop_file = find_rubocop_file(filename)
         args.push('-c', fix_drive_letter(rubocop_file)) unless rubocop_file.nil?
         args.push(filename)
-        args.push(*str_to_args(config['arguments'])) if config.key?('arguments')
+        args.concat(config['arguments']) if config.key?('arguments')
         options, paths = RuboCop::Options.new.parse(args)
         options[:stdin] = code
         [options, paths]
@@ -66,12 +66,6 @@ module Solargraph
         yield if block_given?
         $stdout = STDOUT
         redir.string
-      end
-
-      # @param arguments [String]
-      # @return [Array<String>]
-      def str_to_args(arguments)
-        arguments.split.map(&:strip)
       end
 
       # @param resp [Hash]
