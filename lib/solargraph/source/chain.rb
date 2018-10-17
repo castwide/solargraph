@@ -17,6 +17,8 @@ module Solargraph
       autoload :Literal,          'solargraph/source/chain/literal'
       autoload :Head,             'solargraph/source/chain/head'
 
+      # Chain#infer uses the inference stack to avoid recursing into itself.
+      # See Chain#active_signature for more information.
       @@inference_stack = []
 
       UNDEFINED_CALL = Chain::Call.new('<undefined>')
@@ -59,8 +61,7 @@ module Solargraph
       # @param locals [Array<Pin::Base>]
       # @return [ComplexType]
       def infer api_map, name_pin, locals
-        return ComplexType::UNDEFINED if undefined?
-        return ComplexType::UNDEFINED if @@inference_stack.include?(active_signature(name_pin))
+        return ComplexType::UNDEFINED if undefined? || @@inference_stack.include?(active_signature(name_pin))
         @@inference_stack.push active_signature(name_pin)
         type = ComplexType::UNDEFINED
         pins = define(api_map, name_pin, locals)
@@ -89,6 +90,13 @@ module Solargraph
 
       private
 
+      # Get a signature for this chain that includes the current context
+      # where it's being analyzed. Chain#infer uses this value to detect
+      # recursive inference into the same chain, e.g., when two variables
+      # reference each other in their assignments.
+      #
+      # @param pin [Pin::Base] The named pin context
+      # @return [String]
       def active_signature(pin)
         "#{pin.namespace}|#{links.map(&:word).join('.')}"
       end
