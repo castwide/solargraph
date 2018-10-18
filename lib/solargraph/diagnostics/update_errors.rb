@@ -1,7 +1,7 @@
 module Solargraph
   module Diagnostics
     class UpdateErrors < Base
-      def diagnose source, api_map
+      def diagnose source, api_map, config = {}
         result = []
         combine_ranges(source.code, source.error_ranges).each do |range|
           result.push(

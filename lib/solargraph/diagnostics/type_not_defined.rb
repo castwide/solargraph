@@ -4,7 +4,7 @@ module Solargraph
     # parameters, and invalid param tags.
     #
     class TypeNotDefined < Base
-      def diagnose source, api_map
+      def diagnose source, api_map, config = {}
         result = []
         api_map.document_symbols(source.filename).each do |pin|
           next unless pin.kind == Pin::METHOD or pin.kind == Pin::ATTRIBUTE

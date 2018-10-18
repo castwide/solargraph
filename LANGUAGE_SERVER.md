@@ -49,3 +49,21 @@ reporters:
 necessarily mean that the path is incorrect; only that Solargraph was unable to recognize it.
 
 Run `solargraph reporters` for a list of available reporters.
+
+### RuboCop Configuration
+
+Additional arguments can be passed to RuboCop commands by using a slightly
+different configuration. For example, the following will ignore reporting diagnostics
+on files that your RuboCop configuration excludes and only perform linting rules:
+
+```
+reporters:
+- rubocop:
+    arguments:
+    - --force-exclusion
+    - --lint
+- require_not_found
+```
+
+The json formatter and a path to the closest configuration file discovered are
+passed automatically by Solargraph and should not be added as additional arguments.

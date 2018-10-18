@@ -298,10 +298,10 @@ module Solargraph
       return [] unless open?(filename)
       result = []
       source = read(filename)
-      workspace.config.reporters.each do |name|
+      workspace.config.reporters.each do |name, config|
         reporter = Diagnostics.reporter(name)
         raise DiagnosticsError, "Diagnostics reporter #{name} does not exist" if reporter.nil?
-        result.concat reporter.new.diagnose(source, api_map)
+        result.concat reporter.new.diagnose(source, api_map, config)
       end
       result
     end

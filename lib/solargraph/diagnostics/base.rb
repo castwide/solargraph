@@ -11,8 +11,9 @@ module Solargraph
       #
       # @param source [Solargraph::Source]
       # @param api_map [Solargraph::ApiMap]
+      # @param config [Hash]
       # @return [Array<Hash>]
-      def diagnose source, api_map
+      def diagnose source, api_map, config = {}
         []
       end
     end
