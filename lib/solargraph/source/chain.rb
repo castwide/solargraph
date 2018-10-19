@@ -98,7 +98,7 @@ module Solargraph
       # @param pin [Pin::Base] The named pin context
       # @return [String]
       def active_signature(pin)
-        "#{pin.namespace}|#{links.map(&:word).join('.')}"
+        "#{pin.path}|#{links.map(&:word).join('.')}"
       end
 
       # @param pins [Array<Pin::Base>]
