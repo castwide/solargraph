@@ -687,6 +687,7 @@ describe Solargraph::SourceMap::Mapper do
     ))
     pin = smap.pins.select{|p| p.path == 'Foo.baz'}.first
     expect(pin).to be_a(Solargraph::Pin::Method)
+    expect(pin.location.range.start.line).to eq(4)
   end
 
   it "maps aliases from alias_method" do
@@ -700,5 +701,30 @@ describe Solargraph::SourceMap::Mapper do
     ))
     pin = smap.pins.select{|p| p.path == 'Foo.baz'}.first
     expect(pin).to be_a(Solargraph::Pin::Method)
+    expect(pin.location.range.start.line).to eq(4)
+  end
+
+  it "maps aliases with unknown bases" do
+    smap = Solargraph::SourceMap.load_string(%(
+      class Foo
+        alias bar baz
+      end
+    ))
+    pin = smap.pins.select{|p| p.path == 'Foo#bar'}.first
+    expect(pin).to be_a(Solargraph::Pin::MethodAlias)
+  end
+
+  it "maps aliases to superclass methods" do
+    smap = Solargraph::SourceMap.load_string(%(
+      class Sup
+        # My foo method
+        def foo; end
+      end
+      class Sub < Sup
+        alias bar foo
+      end
+    ))
+    pin = smap.pins.select{|p| p.path == 'Sub#bar'}.first
+    expect(pin).to be_a(Solargraph::Pin::MethodAlias)
   end
 end
