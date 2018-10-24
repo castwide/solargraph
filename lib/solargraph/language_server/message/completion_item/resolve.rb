@@ -1,6 +1,3 @@
-require 'reverse_markdown'
-require 'uri'
-
 module Solargraph
   module LanguageServer
     module Message
@@ -13,10 +10,15 @@ module Solargraph
             if pin.nil?
               set_result params
             else
+              STDERR.puts "Pin is #{pin.class}"
+              STDERR.puts "Resolved: #{pin.resolve_completion_item}"
               set_result(
                 params.merge(pin.resolve_completion_item)
               )
             end
+          rescue Exception => e
+            STDERR.puts "Exception: #{e.message}"
+            STDERR.puts e.backtrace
           end
         end
       end

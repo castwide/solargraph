@@ -3,6 +3,7 @@ require 'tilt'
 require 'kramdown'
 require 'htmlentities'
 require 'coderay'
+require 'reverse_markdown'
 
 module Solargraph
   class Page
