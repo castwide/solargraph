@@ -25,10 +25,16 @@ module Solargraph
       # @param text [String]
       # @return [String]
       def normalize_indentation text
-        lines = text.lines.map do |line|
-          (line =~ /^   [^\s]/ ? line[1..-1] : line).gsub(/^  /, "\t")
-        end
-        lines.join
+        text.lines.map { |l| remove_odd_spaces(l).gsub(/^  /, "\t") }.join
+      end
+
+      # @param line [String]
+      # @return [String]
+      def remove_odd_spaces line
+        return line unless line.start_with?(' ')
+        spaces = line.match(/^ +/)[0].length
+        return line unless spaces.odd?
+        line[1..-1]
       end
     end
   end
