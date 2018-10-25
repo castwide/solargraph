@@ -4,7 +4,12 @@ require 'kramdown'
 
 module Solargraph
   module Pin
+    # A module to add the Pin::Base#documentation method.
+    #
     module Documenting
+      # A custom ReverseMarkdown converter to fix extra spaces in code blocks
+      # generated with Kramdown.
+      #
       class AdjustedPre < ReverseMarkdown::Converters::Pre
         def convert(node, state = {})
           orig = super

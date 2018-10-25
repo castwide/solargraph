@@ -19,11 +19,8 @@ module Solargraph
       end
 
       def htmlify text
-        helper = Solargraph::Pin::Helper.new
-        html = helper.html_markup_rdoc(text)
-        conv = ReverseMarkdown.convert(html, github_flavored: true)
         Kramdown::Document.new(
-          conv,
+          text.to_s.lines.map{|l| l.gsub(/^  /, "\t")}.join,
           input: 'GFM',
           entity_output: :symbolic,
           syntax_highlighter_opts: {
