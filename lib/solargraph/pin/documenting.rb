@@ -7,34 +7,28 @@ module Solargraph
     # A module to add the Pin::Base#documentation method.
     #
     module Documenting
-      # A custom ReverseMarkdown converter to fix extra spaces in code blocks
-      # generated with Kramdown.
-      #
-      class AdjustedPre < ReverseMarkdown::Converters::Pre
-        def convert(node, state = {})
-          orig = super
-          content = orig.lines[0..2].join
-          orig.lines[3..-2].each do |line|
-            content += line[1..-1]
-          end
-          content += orig.lines.last
-          content
-        end
-      end
-      private_constant :AdjustedPre
-      ReverseMarkdown::Converters.register :pre, AdjustedPre.new
-
       # @return [String]
       def documentation
         @documentation ||= begin
           html = Kramdown::Document.new(
-            docstring.to_s.lines.map{|l| l.gsub(/^  /, "\t")}.join,
+            normalize_indentation(docstring.to_s),
             input: 'GFM',
             entity_output: :symbolic,
             syntax_highlighter: nil
           ).to_html
           ReverseMarkdown.convert(html, github_flavored: true)
         end
+      end
+
+      private
+
+      # @param text [String]
+      # @return [String]
+      def normalize_indentation text
+        lines = text.lines.map do |line|
+          (line =~ /^   [^\s]/ ? line[1..-1] : line).gsub(/^  /, "\t")
+        end
+        lines.join
       end
     end
   end

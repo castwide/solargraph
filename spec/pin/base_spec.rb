@@ -65,4 +65,25 @@ describe Solargraph::Pin::Base do
     pin = Solargraph::Pin::Base.new(zero_location, '', 'Foo', '@deprecated Use Bar instead.')
     expect(pin).to be_deprecated
   end
+
+  it "turns indented docstring blocks into code blocks" do
+    pin = Solargraph::Pin::Base.new(nil, '', 'Foo', %(
+Example:
+
+  def meth
+    foo = Foo.new
+    foo.bar
+  end
+
+Hmm.
+      ).strip)
+    expect(pin.documentation).to include(%(
+```
+def meth
+  foo = Foo.new
+  foo.bar
+end
+```
+    ).strip)
+  end
 end
