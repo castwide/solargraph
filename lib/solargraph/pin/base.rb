@@ -1,5 +1,3 @@
-require 'reverse_markdown'
-
 module Solargraph
   module Pin
     # The base class for map pins.

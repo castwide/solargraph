@@ -92,6 +92,22 @@ describe Solargraph::Workspace do
     expect(workspace.require_paths).to eq([File.join(dir_path, 'other_lib')])
   end
 
+  it "rescues errors in gemspecs" do
+    gemspec_file = File.join(dir_path, 'test.gemspec')
+    File.write(gemspec_file, %(
+      raise 'Error'
+    ))
+    expect(workspace.require_paths).to eq([File.join(dir_path, 'lib')])
+  end
+
+  it "rescues syntax errors in gemspecs" do
+    gemspec_file = File.join(dir_path, 'test.gemspec')
+    File.write(gemspec_file, %(
+      123.
+    ))
+    expect(workspace.require_paths).to eq([File.join(dir_path, 'lib')])
+  end
+
   it "detects locally required paths" do
     required_file = File.join(dir_path, 'lib', 'test.rb')
     Dir.mkdir(File.join(dir_path, 'lib'))

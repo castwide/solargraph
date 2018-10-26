@@ -1,6 +1,3 @@
-require 'reverse_markdown'
-require 'uri'
-
 module Solargraph
   module LanguageServer
     module Message
