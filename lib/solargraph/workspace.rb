@@ -139,20 +139,28 @@ module Solargraph
       end
     end
 
+    # Generate require paths from gemspecs if they exist or assume the default
+    # lib directory.
+    #
+    # @return [Array<String>]
     def generate_require_paths
       return configured_require_paths if directory.empty? || !gemspec?
       result = []
       gemspecs.each do |file|
+        base = File.dirname(file)
         # @todo Evaluating gemspec files violates the goal of not running
         #   workspace code, but this is how Gem::Specification.load does it
         #   anyway.
         begin
            spec = eval(File.read(file), binding, file)
            next unless Gem::Specification === spec
-           base = File.dirname(file)
            result.concat spec.require_paths.map{ |path| File.join(base, path) } unless spec.nil?
-        rescue
+        rescue Exception => e
            # Don't die if we have an error during eval-ing a gem spec.
+           # Concat the default lib directory instead.
+           # @todo Should the client be informed of the error through
+           #   diagnostics or some other mechanism?
+           result.push File.join(base, 'lib')
         end
       end
       result.concat config.require_paths
@@ -160,6 +168,9 @@ module Solargraph
       result
     end
 
+    # Get additional require paths defined in the configuration.
+    #
+    # @return [Array<String>]
     def configured_require_paths
       return ['lib'] if directory.empty?
       return [File.join(directory, 'lib')] if config.require_paths.empty?
