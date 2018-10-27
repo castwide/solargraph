@@ -86,4 +86,9 @@ end
 ```
     ).strip)
   end
+
+  it "does not link documentation for undefined return types" do
+    pin = Solargraph::Pin::Base.new(nil, '', 'Foo', '@return [undefined]')
+    expect(pin.link_documentation).to be_nil
+  end
 end
