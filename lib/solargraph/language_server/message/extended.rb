@@ -7,11 +7,12 @@ module Solargraph
       # ignore them, as per the LSP specification.
       #
       module Extended
-        autoload :Document, 'solargraph/language_server/message/extended/document'
-        autoload :Search, 'solargraph/language_server/message/extended/search'
+        autoload :Document,        'solargraph/language_server/message/extended/document'
+        autoload :Search,          'solargraph/language_server/message/extended/search'
         autoload :CheckGemVersion, 'solargraph/language_server/message/extended/check_gem_version'
-        autoload :DocumentGems, 'solargraph/language_server/message/extended/document_gems'
-        autoload :DownloadCore, 'solargraph/language_server/message/extended/download_core'
+        autoload :DocumentGems,    'solargraph/language_server/message/extended/document_gems'
+        autoload :DownloadCore,    'solargraph/language_server/message/extended/download_core'
+        autoload :Environment,     'solargraph/language_server/message/extended/environment'
       end
     end
   end

@@ -264,8 +264,6 @@ module Solargraph
         parser.parse(buffer)
       end
 
-      private
-
       # @return [Parser::Base]
       def parser
         # @todo Consider setting an instance variable. We might not need to
