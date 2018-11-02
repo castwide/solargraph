@@ -14,6 +14,13 @@ module Solargraph
             o, s = Open3.capture2(cmd)
             if s != 0
               host.show_message "An error occurred while building gem documentation.", LanguageServer::MessageTypes::ERROR
+              set_result({
+                status: 'err'
+              })
+            else
+              set_result({
+                status: 'ok'
+              })
             end
           end
         end
