@@ -701,4 +701,15 @@ describe Solargraph::SourceMap::Mapper do
     pin = smap.pins.select{|p| p.path == 'Foo.baz'}.first
     expect(pin).to be_a(Solargraph::Pin::Method)
   end
+
+  it "uses nodes for method parameter assignments" do
+    smap = Solargraph::SourceMap.load_string(%(
+      class Foo
+        def bar(baz = quz)
+        end
+      end
+    ))
+    pin = smap.locals.select{|p| p.name == 'baz'}.first
+    expect(pin.assignment).to be_a(Parser::AST::Node)
+  end
 end
