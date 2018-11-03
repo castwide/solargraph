@@ -21,7 +21,7 @@ Gem::Specification.new do |s|
   s.add_runtime_dependency 'eventmachine', '~> 1.2', '>= 1.2.5'
   s.add_runtime_dependency 'htmlentities', '~> 4.3', '>= 4.3.4'
   s.add_runtime_dependency 'kramdown', '~> 1.16'
-  s.add_runtime_dependency 'parser', '~> 2.4'
+  s.add_runtime_dependency 'parser', '~> 2.3'
   s.add_runtime_dependency 'reverse_markdown', '~> 1.0', '>= 1.0.5'
   s.add_runtime_dependency 'rubocop', '~> 0.52'
   s.add_runtime_dependency 'thor', '~> 0.19', '>= 0.19.4'
