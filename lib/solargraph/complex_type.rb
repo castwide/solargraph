@@ -76,7 +76,7 @@ module Solargraph
             elsif char == '<'
               point_stack += 1
             elsif char == '>'
-              if subtype_string.end_with?('=') and curly_stack > 0
+              if subtype_string.end_with?('=') && curly_stack > 0
                 subtype_string += char
               elsif base.end_with?('=')
                 raise ComplexTypeError, "Invalid hash thing" unless key_types.nil?
@@ -106,13 +106,13 @@ module Solargraph
               subtype_string += char if paren_stack == 0
               raise ComplexTypeError, "Invalid close in type #{type_string}" if paren_stack < 0
               next
-            elsif char == ',' and point_stack == 0 and curly_stack == 0 and paren_stack == 0
+            elsif char == ',' && point_stack == 0 && curly_stack == 0 && paren_stack == 0
               types.push ComplexType.new([UniqueType.new(base.strip, subtype_string.strip)])
               base = ''
               subtype_string = ''
               next
             end
-            if point_stack == 0 and curly_stack == 0 and paren_stack == 0
+            if point_stack == 0 && curly_stack == 0 && paren_stack == 0
               base += char 
             else
               subtype_string += char
@@ -120,7 +120,7 @@ module Solargraph
           end
           base.strip!
           subtype_string.strip!
-          raise ComplexTypeError, "Unclosed subtype in #{type_string}" if point_stack != 0 or curly_stack != 0 or paren_stack != 0
+          raise ComplexTypeError, "Unclosed subtype in #{type_string}" if point_stack != 0 || curly_stack != 0 || paren_stack != 0
           types.push ComplexType.new([UniqueType.new(base, subtype_string)])
         end
         unless key_types.nil?

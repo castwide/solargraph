@@ -1,7 +1,5 @@
-require 'set'
-
 module Solargraph
-  # A library handles coordination between a Workspace and an ApiMap.
+  # A Library handles coordination between a Workspace and an ApiMap.
   #
   class Library
     # @param workspace [Solargraph::Workspace]

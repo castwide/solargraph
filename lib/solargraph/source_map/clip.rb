@@ -13,7 +13,7 @@ module Solargraph
 
       # @return [Array<Pin::Base>]
       def define
-        return [] if cursor.chain.literal?
+        return [] if cursor.comment? || cursor.chain.literal?
         result = cursor.chain.define(api_map, context_pin, locals)
         result.concat(source_map.pins.select{ |p| p.location.range.start.line == cursor.position.line }) if result.empty?
         result

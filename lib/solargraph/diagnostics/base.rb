@@ -1,5 +1,7 @@
 module Solargraph
   module Diagnostics
+    # The base class for diagnostics reporters.
+    #
     class Base
       # Perform a diagnosis on a Source within the context of an ApiMap.
       # The result is an array of hash objects that conform to the LSP's

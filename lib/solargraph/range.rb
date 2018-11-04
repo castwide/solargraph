@@ -1,4 +1,6 @@
 module Solargraph
+  # A pair of positions that compose a section of text.
+  #
   class Range
     # @return [Position]
     attr_reader :start
@@ -29,9 +31,9 @@ module Solargraph
     # @param position [Solargraph::Position]
     # @return [Boolean]
     def contain? position
-      return false if position.line < start.line or position.line > ending.line
-      return false if position.line == start.line and position.character < start.character
-      return false if position.line == ending.line and position.character > ending.character
+      return false if position.line < start.line || position.line > ending.line
+      return false if position.line == start.line && position.character < start.character
+      return false if position.line == ending.line && position.character > ending.character
       true
     end
 
@@ -40,7 +42,7 @@ module Solargraph
     # @param position [Position]
     # @return [Boolean]
     def include? position
-      contain?(position) and !(position.line == start.line and position.character == start.character)
+      contain?(position) && !(position.line == start.line && position.character == start.character)
     end
 
     # Create a range from a pair of lines and characters.
@@ -54,17 +56,26 @@ module Solargraph
       Range.new(Position.new(l1, c1), Position.new(l2, c2))
     end
 
+    # Get a range from a node.
+    #
+    # @param node [Parser::AST::Node]
+    # @return [Range]
     def self.from_node node
       from_expr(node.loc.expression)
     end
 
+    # Get a range from a Parser range, usually found in
+    # Parser::AST::Node#location#expression.
+    #
+    # @param expr [Parser::Source::Range]
+    # @return [Range]
     def self.from_expr expr
       from_to(expr.line, expr.column, expr.last_line, expr.last_column)
     end
 
     def == other
       return false unless other.is_a?(Range)
-      start == other.start and ending == other.ending
+      start == other.start && ending == other.ending
     end
   end
 end
