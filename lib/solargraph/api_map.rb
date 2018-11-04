@@ -50,6 +50,10 @@ module Solargraph
       self
     end
 
+    def named_macro name
+      store.named_macros[name]
+    end
+
     # Catalog a workspace. Additional sources that need to be mapped can be
     # included in an optional array.
     #

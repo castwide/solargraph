@@ -485,6 +485,7 @@ module Solargraph
       # @param position [Position]
       # @param directive [YARD::Tags::Directive]
       def process_directive position, directive
+        return # @todo Where should this stuff happen, dagnabbit?
         docstring = YARD::Docstring.parser.parse(directive.tag.text).to_docstring
         location = Location.new(@filename, Range.new(position, position))
         case directive.tag.tag_name
