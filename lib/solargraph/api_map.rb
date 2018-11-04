@@ -330,12 +330,13 @@ module Solargraph
     # @param scope [Symbol] :instance or :class
     # @return [Array<Solargraph::Pin::Base>]
     def get_method_stack fqns, name, scope: :instance
-      # @todo This cache is still causing problems.
-      cached = cache.get_method_stack(fqns, name, scope)
-      return cached unless cached.nil?
+      # @todo This cache is still causing problems, but only when using
+      #   Solargraph on Solargraph itself.
+      # cached = cache.get_method_stack(fqns, name, scope)
+      # return cached unless cached.nil?
       result = get_methods(fqns, scope: scope, visibility: [:private, :protected, :public]).select{|p| p.name == name}
-      cache.set_method_stack(fqns, name, scope, result)
-      result
+      # cache.set_method_stack(fqns, name, scope, result)
+      # result
     end
 
     # Get an array of all suggestions that match the specified path.
