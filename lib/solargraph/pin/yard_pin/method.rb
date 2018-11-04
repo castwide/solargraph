@@ -6,7 +6,7 @@ module Solargraph
 
         def initialize code_object, location, name = nil, scope = nil, visibility = nil
           comments = (code_object.docstring ? code_object.docstring.all : nil)
-          super(location, code_object.namespace.to_s, name || code_object.name.to_s, comments, scope || code_object.scope, visibility || code_object.visibility, get_parameters(code_object))
+          super(location, code_object.namespace.to_s, name || code_object.name.to_s, comments, scope || code_object.scope, visibility || code_object.visibility, get_parameters(code_object), nil)
         end
 
         def return_complex_type
@@ -28,7 +28,7 @@ module Solargraph
             args.push p
           end
           args
-        end  
+        end
       end
     end
   end

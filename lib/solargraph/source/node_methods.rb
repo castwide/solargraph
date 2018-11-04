@@ -106,6 +106,85 @@ module Solargraph
         end
         signature
       end
+
+      def returns_from node
+        DeepInference.get_return_nodes(node)
+      end
+
+      module DeepInference
+        class << self
+          CONDITIONAL = [:if, :unless]
+          REDUCEABLE = [:begin, :kwbegin]
+          SKIPPABLE = [:def, :defs, :class, :sclass, :module]
+
+          def get_return_nodes node
+            result = []
+            if REDUCEABLE.include?(node.type)
+              result.concat get_return_nodes_from_children(node)
+            elsif CONDITIONAL.include?(node.type)
+              result.concat reduce_to_value_nodes(node.children[1..-1])
+            else
+              result.push node
+            end
+            result
+          end
+
+          private
+
+          def get_return_nodes_from_children parent
+            result = []
+            nodes = parent.children.select{|n| n.is_a?(AST::Node)}
+            nodes[0..-2].each do |node|
+              next if SKIPPABLE.include?(node.type)
+              if node.type == :return
+                result.concat reduce_to_value_nodes([node.children[0]])
+                # @todo Maybe return the result here because the rest of the code is
+                #   unreachable
+                return result
+              else
+                result.concat get_return_nodes_only(node)
+              end
+            end
+            result.concat reduce_to_value_nodes([nodes.last]) unless nodes.last.nil?
+            result
+          end
+
+          def get_return_nodes_only parent
+            result = []
+            nodes = parent.children.select{|n| n.is_a?(AST::Node)}
+            nodes.each do |node|
+              next if SKIPPABLE.include?(node.type)
+              if node.type == :return
+                result.concat reduce_to_value_nodes([node.children[0]])
+                # @todo Maybe return the result here because the rest of the code is
+                #   unreachable
+              else
+                result.concat get_return_nodes_only(node)
+              end
+            end
+            result
+          end
+
+          def reduce_to_value_nodes nodes
+            result = []
+            nodes.each do |node|
+              if REDUCEABLE.include?(node.type)
+                result.concat get_return_nodes_from_children(node)
+                # node.children.each do |child|
+                #   result.concat reduce_to_value_nodes(child)
+                # end
+              elsif CONDITIONAL.include?(node.type)
+                result.concat reduce_to_value_nodes(node.children[1..-1])
+              elsif node.type == :return
+                result.concat get_return_nodes(node.children[0])
+              else
+                result.push node
+              end
+            end
+            result
+          end
+        end
+      end      
     end
   end
 end

@@ -1,6 +1,8 @@
 module Solargraph
   module Pin
     class Method < Base
+      include Source::NodeMethods
+
       # @return [Symbol] :instance or :class
       attr_reader :scope
 
@@ -10,11 +12,15 @@ module Solargraph
       # @return [Array<String>]
       attr_reader :parameters
 
-      def initialize location, namespace, name, comments, scope, visibility, args
+      # @return [Parser::AST::Node]
+      attr_reader :node
+
+      def initialize location, namespace, name, comments, scope, visibility, args, node = nil
         super(location, namespace, name, comments)
         @scope = scope
         @visibility = visibility
         @parameters = args
+        @node = node
       end
 
       # @return [Array<String>]
@@ -81,6 +87,12 @@ module Solargraph
           visibility == other.visibility
       end
 
+      def infer api_map
+        decl = super
+        return decl unless decl.undefined?
+        infer_from_return_nodes(api_map)
+      end
+
       private
 
       # @return [ComplexType]
@@ -97,6 +109,21 @@ module Solargraph
           STDERR.puts e.message
           ComplexType::UNDEFINED
         end
+      end
+
+      # @param api_map [ApiMap]
+      def infer_from_return_nodes api_map
+        return ComplexType::UNDEFINED if node.nil? || node.children[2].nil?
+        result = []
+        nodes = returns_from(node.children[2])
+        nodes.each do |n|
+          chain = Source::NodeChainer.chain(n)
+          clip = api_map.clip_at(location.filename, Solargraph::Position.new(n.loc.expression.line, n.loc.expression.column))
+          type = clip.infer
+          result.push type unless type.undefined?
+        end
+        return ComplexType::UNDEFINED if result.empty?
+        ComplexType.parse(*result.map(&:tag))
       end
     end
   end
