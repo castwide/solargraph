@@ -197,4 +197,21 @@ describe Solargraph::SourceMap::Clip do
     clip = api_map.clip_at('test.rb', Solargraph::Position.new(3, 10))
     expect(clip.define).to be_empty
   end
+
+  it "infers types from named macros" do
+    source = Solargraph::Source.load_string(%(
+      # @!macro firstarg
+      #   @return [$1]
+      class Foo
+        # @macro firstarg
+        def bar klass
+        end
+      end
+      Foo.new.bar(String)
+    ), 'test.rb')
+    map = Solargraph::ApiMap.new
+    map.map source
+    clip = map.clip_at('test.rb', Solargraph::Position.new(8, 14))
+    expect(clip.infer.tag).to eq('String')
+  end
 end
