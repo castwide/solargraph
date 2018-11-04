@@ -132,6 +132,7 @@ module Solargraph
       def see_reference api_map
         docstring.ref_tags.each do |ref|
           next unless ref.tag_name == 'return' && ref.owner
+          # @todo Resolve the reference
           pins = api_map.get_path_pins(ref.owner.to_s)
           pins.each do |pin|
             type = pin.infer(api_map)
