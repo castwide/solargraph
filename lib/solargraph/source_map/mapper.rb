@@ -485,7 +485,6 @@ module Solargraph
       # @param position [Position]
       # @param directive [YARD::Tags::Directive]
       def process_directive position, directive
-        return # @todo Where should this stuff happen, dagnabbit?
         docstring = YARD::Docstring.parser.parse(directive.tag.text).to_docstring
         location = Location.new(@filename, Range.new(position, position))
         case directive.tag.tag_name
@@ -507,13 +506,6 @@ module Solargraph
         when 'domain'
           namespace = namespace_at(position)
           namespace.domains.push directive.tag.text
-        when 'macro'
-          # @todo There might not be anything to do for macros here. They
-          #   should have already been associated to methods. (I don't know of
-          #   a use case for macros that doesn't involve methods.)
-          nxt_pos = Position.new(position.line + 1, @code.lines[position.line + 1].length)
-          path_pin = get_named_path_pin(nxt_pos)
-          path_pin.macros.push directive
         end
       end
 
