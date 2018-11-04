@@ -90,6 +90,8 @@ module Solargraph
       def infer api_map
         decl = super
         return decl unless decl.undefined?
+        type = see_reference(api_map)
+        return type unless type.nil?
         infer_from_return_nodes(api_map)
       end
 
@@ -124,6 +126,19 @@ module Solargraph
         end
         return ComplexType::UNDEFINED if result.empty?
         ComplexType.parse(*result.map(&:tag))
+      end
+
+      # @param [ApiMap]
+      def see_reference api_map
+        docstring.ref_tags.each do |ref|
+          next unless ref.tag_name == 'return' && ref.owner
+          pins = api_map.get_path_pins(ref.owner.to_s)
+          pins.each do |pin|
+            type = pin.infer(api_map)
+            return type unless type.undefined?
+          end
+        end
+        nil
       end
     end
   end
