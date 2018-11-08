@@ -132,8 +132,6 @@ module Solargraph
       def see_reference api_map
         docstring.ref_tags.each do |ref|
           next unless ref.tag_name == 'return' && ref.owner
-          # @todo Resolve the reference
-          puts ref.owner.inspect
           parts = ref.owner.to_s.split(/[\.#]/)
           if parts.first.empty?
             path = "#{namespace}#{ref.owner.to_s}"
