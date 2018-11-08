@@ -60,6 +60,8 @@ module Solargraph
           return 'Float'
         elsif node.type == :sym
           return 'Symbol'
+        elsif node.type == :regexp
+          return 'Regexp'
         # @todo Maybe ignore nils
         # elsif node.type == :nil
         #   return 'NilClass'

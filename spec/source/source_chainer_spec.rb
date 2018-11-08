@@ -24,6 +24,13 @@ describe Solargraph::Source::SourceChainer do
     expect(cursor.chain.links.first.word).to eq('<Integer>')
   end
 
+  it "recognizes literal regexps" do
+    map = Solargraph::SourceMap.load_string("/[a-z]/")
+    cursor = map.cursor_at(Solargraph::Position.new(0, 0))
+    expect(cursor.chain.links.first).to be_a(Solargraph::Source::Chain::Literal)
+    expect(cursor.chain.links.first.word).to eq('<Regexp>')
+  end
+
   it "recognizes class variables" do
     map = Solargraph::SourceMap.load_string('@@foo')
     cursor = map.cursor_at(Solargraph::Position.new(0, 0))
