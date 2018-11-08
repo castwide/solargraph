@@ -295,4 +295,16 @@ describe Solargraph::SourceMap::Clip do
     type = clip.infer
     expect(type.tag).to eq('Hash')
   end
+
+  it "infers undefined for empty methods" do
+    source = Solargraph::Source.load_string(%(
+      def foo; end
+      foo
+    ), 'test.rb')
+    map = Solargraph::ApiMap.new
+    map.map source
+    clip = map.clip_at('test.rb', Solargraph::Position.new(2, 6))
+    type = clip.infer
+    expect(type).to be_undefined
+  end
 end
