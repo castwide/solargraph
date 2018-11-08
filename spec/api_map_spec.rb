@@ -475,4 +475,19 @@ describe Solargraph::ApiMap do
     expect(pin).not_to be_nil
     expect(pin.return_type.tag).to eq('String')
   end
+
+  it "finds extended module methods" do
+    source = Solargraph::Source.load_string(%(
+      module MyModule
+        def foo; end
+      end
+      module MyClass
+        extend MyModule
+      end
+      ), 'test.rb')
+    api_map = Solargraph::ApiMap.new
+    api_map.map source
+    pins = api_map.get_methods('MyClass', scope: :class)
+    expect(pins.map(&:path)).to include('MyModule#foo')
+  end
 end
