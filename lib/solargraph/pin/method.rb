@@ -120,7 +120,7 @@ module Solargraph
         nodes = returns_from(node.children[2])
         nodes.each do |n|
           chain = Source::NodeChainer.chain(n)
-          clip = api_map.clip_at(location.filename, Solargraph::Position.new(n.loc.expression.line, n.loc.expression.column))
+          clip = api_map.clip_at(location.filename, Solargraph::Position.new(n.loc.expression.last_line, n.loc.expression.last_column))
           type = clip.infer
           result.push type unless type.undefined?
         end

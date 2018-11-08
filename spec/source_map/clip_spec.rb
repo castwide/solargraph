@@ -214,4 +214,85 @@ describe Solargraph::SourceMap::Clip do
     clip = map.clip_at('test.rb', Solargraph::Position.new(8, 14))
     expect(clip.infer.tag).to eq('String')
   end
+
+  it "infers method types from return nodes" do
+    source = Solargraph::Source.load_string(%(
+      def foo
+        String.new(from_object)
+      end
+      foo
+    ), 'test.rb')
+    map = Solargraph::ApiMap.new
+    map.map source
+    clip = map.clip_at('test.rb', Solargraph::Position.new(4, 6))
+    type = clip.infer
+    expect(type.tag).to eq('String')
+  end
+
+  it "infers multiple method types from return nodes" do
+    source = Solargraph::Source.load_string(%(
+      def foo
+        if x
+          'one'
+        else
+          1
+        end
+      end
+      foo
+    ), 'test.rb')
+    map = Solargraph::ApiMap.new
+    map.map source
+    clip = map.clip_at('test.rb', Solargraph::Position.new(8, 6))
+    type = clip.infer
+    expect(type.to_s).to eq('String, Integer')
+  end
+
+  it "infers return types from method calls" do
+    source = Solargraph::Source.load_string(%(
+      # @return [Hash]
+      def foo(arg); end
+      def bar
+        foo(1000)
+      end
+      foo
+    ), 'test.rb')
+    map = Solargraph::ApiMap.new
+    map.map source
+    clip = map.clip_at('test.rb', Solargraph::Position.new(6, 6))
+    type = clip.infer
+    expect(type.tag).to eq('Hash')
+  end
+
+  it "infers return types from local variables" do
+    source = Solargraph::Source.load_string(%(
+      def foo
+        x = 1
+        y = 'one'
+        x
+      end
+      foo
+    ), 'test.rb')
+    map = Solargraph::ApiMap.new
+    map.map source
+    clip = map.clip_at('test.rb', Solargraph::Position.new(6, 6))
+    type = clip.infer
+    expect(type.tag).to eq('Integer')
+  end
+
+  it "infers return types from instance variables" do
+    source = Solargraph::Source.load_string(%(
+      def foo
+        @foo ||= {}
+      end
+      def bar
+        @foo
+      end
+      foo
+    ), 'test.rb')
+    map = Solargraph::ApiMap.new
+    map.map source
+    clip = map.clip_at('test.rb', Solargraph::Position.new(7, 6))
+    type = clip.infer
+    expect(type.tag).to eq('Hash')
+  end
 end
