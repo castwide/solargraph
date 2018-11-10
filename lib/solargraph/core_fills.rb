@@ -20,13 +20,14 @@ module Solargraph
     ].freeze
 
     METHODS_WITH_YIELDPARAM_SUBTYPES = %w[
-      Array#each Array#map Array#any? Array#all?
+      Array#each Array#map Array#any? Array#all? Array#index
       Enumerable#each_entry Enumerable#map Enumerable#any? Enumerable#all?
       Set#each
     ].freeze
 
     CUSTOM_RETURN_TYPES = {
-      'String#split' => 'Array<String>'
+      'String#split' => 'Array<String>',
+      'String#lines' => 'Array<String>'
     }.freeze
   end
 end
