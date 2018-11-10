@@ -14,9 +14,9 @@ module Solargraph
               fetcher = Gem::SpecFetcher.new
               tuple = fetcher.search_for_dependency(Gem::Dependency.new('solargraph')).flatten.first
               if tuple.nil?
-                msg = "An error occurred checking the Solargraph gem version."
+                msg = 'An error occurred checking the Solargraph gem version.'
                 STDERR.puts msg
-                host.show_message(msg, MessageTypes::ERROR) if params['verbose']
+                host.show_message(msg, MessageTypes::ERROR)
               else
                 available = Gem::Version.new(tuple.version)
                 current = Gem::Version.new(Solargraph::VERSION)
@@ -24,10 +24,11 @@ module Solargraph
                   host.show_message_request "Solagraph gem version #{available} is available.",
                                             LanguageServer::MessageTypes::INFO,
                                             ['Update now'] do |result|
-                                              break unless result == 'Update now'
+                                              next unless result == 'Update now'
                                               o, s = Open3.capture2("gem update solargraph")
                                               if s == 0
                                                 host.show_message 'Successfully updated the Solargraph gem.', LanguageServer::MessageTypes::INFO
+                                                host.send_notification '$/solargraph/restart'
                                               else
                                                 host.show_message 'An error occurred while updating the gem.', LanguageServer::MessageTypes::ERROR
                                               end
