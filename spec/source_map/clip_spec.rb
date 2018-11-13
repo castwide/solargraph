@@ -307,4 +307,18 @@ describe Solargraph::SourceMap::Clip do
     type = clip.infer
     expect(type).to be_undefined
   end
+
+  it "handles missing type annotations in @type tags" do
+    source = Solargraph::Source.load_string(%(
+      # Note the type is `String` instead of `[String]`
+      # @type String
+      x = foo_bar
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new
+    api_map.map source
+    clip = api_map.clip_at('test.rb', Solargraph::Position.new(3, 7))
+    expect {
+      expect(clip.infer).to be_undefined
+    }.not_to raise_error
+  end
 end
