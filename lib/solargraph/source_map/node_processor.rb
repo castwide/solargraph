@@ -32,31 +32,32 @@ module Solargraph
         end
       end
 
-      register :source, SourceNode
-      register :def, DefNode
-      register :defs, DefsNode
-      register :send, SendNode
+      # register :source, SourceNode
+      # register :def, DefNode
+      # register :defs, DefsNode
+      # register :send, SendNode
       register :class, ClassNode
-      register :sclass, SclassNode
-      register :module, ModuleNode
-      register :ivasgn, IvasgnNode
-      register :cvasgn, CvasgnNode
-      register :lvasgn, LvasgnNode
-      register :gvasgn, GvasgnNode
-      register :casgn, CasgnNode
-      register :alias, AliasNode
-      register :args, ArgsNode
-      register :block, BlockNode
+      # register :sclass, SclassNode
+      # register :module, ModuleNode
+      # register :ivasgn, IvasgnNode
+      # register :cvasgn, CvasgnNode
+      # register :lvasgn, LvasgnNode
+      # register :gvasgn, GvasgnNode
+      # register :casgn, CasgnNode
+      # register :alias, AliasNode
+      # register :args, ArgsNode
+      # register :block, BlockNode
 
       module_function
 
       # @param node [Parser::AST::Node]
       # @param context [Context]
       # @return [Array<Pin::Base>]
-      def process node, context = Context::ROOT
+      def process node, context = Context::ROOT, pins = []
         return [] unless @@processors.key?(node.type)
-        processor = @@processors[node.type].new(node, context)
+        processor = @@processors[node.type].new(node, context, pins)
         processor.process
+        processor.pins
       end
     end
   end

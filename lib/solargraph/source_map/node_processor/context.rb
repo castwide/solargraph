@@ -6,6 +6,7 @@ module Solargraph
         attr_reader :namespace
         attr_reader :scope
         attr_reader :visibility
+        attr_reader :filename
 
         def initialize namespace, scope, visibility
           @stack = []
@@ -29,7 +30,7 @@ module Solargraph
 
         attr_writer :stack
 
-        ROOT = Context.new([], '', :class, :public)
+        ROOT = Context.new('', :class, :public)
       end
     end
   end
