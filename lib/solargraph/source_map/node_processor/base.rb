@@ -2,6 +2,8 @@ module Solargraph
   class SourceMap
     module NodeProcessor
       class Base
+        include Solargraph::Source::NodeMethods
+
         # @return [Parser::AST::Node]
         attr_reader :node
 
