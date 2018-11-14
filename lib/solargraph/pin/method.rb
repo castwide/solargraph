@@ -95,6 +95,12 @@ module Solargraph
         infer_from_return_nodes(api_map)
       end
 
+      def try_merge! pin
+        return false unless super
+        @node = pin.node
+        true
+      end
+
       private
 
       # @return [ComplexType]
