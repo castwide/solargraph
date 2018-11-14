@@ -121,7 +121,9 @@ module Solargraph
 
       # @param api_map [ApiMap]
       def infer_from_return_nodes api_map
-        return ComplexType::UNDEFINED if node.nil? || node.children[2].nil?
+        return ComplexType::UNDEFINED if node.nil?
+        return ComplexType::UNDEFINED if node.type == :def && node.children[2].nil?
+        return ComplexType::UNDEFINED if node.type == :defs && node.children[3].nil?
         result = []
         nodes = node.type == :def ? returns_from(node.children[2]) : returns_from(node.children[3])
         nodes.each do |n|
