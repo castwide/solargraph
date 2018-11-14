@@ -117,8 +117,9 @@ module Solargraph
       def infer_from_return_nodes api_map
         return ComplexType::UNDEFINED if node.nil? || node.children[2].nil?
         result = []
-        nodes = returns_from(node.children[2])
+        nodes = node.type == :def ? returns_from(node.children[2]) : returns_from(node.children[3])
         nodes.each do |n|
+          next if n.loc.nil?
           chain = Source::NodeChainer.chain(n)
           clip = api_map.clip_at(location.filename, Solargraph::Position.new(n.loc.expression.last_line, n.loc.expression.last_column))
           type = clip.infer
