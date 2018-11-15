@@ -39,7 +39,7 @@ module Solargraph
             next unless child.is_a?(Parser::AST::Node)
             result.concat NodeProcessor.process(child, subcontext)
           end
-          result
+          pins.concat result
         end
 
         # @param node [Parser::AST::Node]

@@ -6,7 +6,8 @@ module Solargraph
     module NodeProcessor
       autoload :Context,    'solargraph/source_map/node_processor/context'
       autoload :Base,       'solargraph/source_map/node_processor/base'
-      autoload :SourceNode, 'solargraph/source_map/node_processor/source_node'
+      # autoload :SourceNode, 'solargraph/source_map/node_processor/source_node'
+      autoload :BeginNode, 'solargraph/source_map/node_processor/begin_node'
       autoload :DefNode,    'solargraph/source_map/node_processor/def_node'
       autoload :DefsNode,   'solargraph/source_map/node_processor/defs_node'
       autoload :SendNode,   'solargraph/source_map/node_processor/send_node'
@@ -32,7 +33,8 @@ module Solargraph
         end
       end
 
-      # register :source, SourceNode
+      register :source, BeginNode
+      register :begin, BeginNode
       # register :def, DefNode
       # register :defs, DefsNode
       # register :send, SendNode
@@ -53,9 +55,9 @@ module Solargraph
       # @param node [Parser::AST::Node]
       # @param context [Context]
       # @return [Array<Pin::Base>]
-      def process node, context = Context::ROOT, pins = []
+      def process node, pointer = Pointer.new(nil, '')
         return [] unless @@processors.key?(node.type)
-        processor = @@processors[node.type].new(node, context, pins)
+        processor = @@processors[node.type].new(node, pointer, [])
         processor.process
         processor.pins
       end
