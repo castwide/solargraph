@@ -37,7 +37,7 @@ module Solargraph
       register :source, BeginNode
       register :begin, BeginNode
       register :def, DefNode
-      # register :defs, DefsNode
+      register :defs, DefsNode
       # register :send, SendNode
       register :class, ClassNode
       # register :sclass, SclassNode
