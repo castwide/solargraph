@@ -46,7 +46,7 @@ module Solargraph
       register :cvasgn, CvasgnNode
       register :lvasgn, LvasgnNode
       register :gvasgn, GvasgnNode
-      # register :casgn, CasgnNode
+      register :casgn, CasgnNode
       # register :alias, AliasNode
       register :args, ArgsNode
       register :block, BlockNode
