@@ -6,7 +6,6 @@ module Solargraph
     module NodeProcessor
       autoload :Context,    'solargraph/source_map/node_processor/context'
       autoload :Base,       'solargraph/source_map/node_processor/base'
-      # autoload :SourceNode, 'solargraph/source_map/node_processor/source_node'
       autoload :BeginNode, 'solargraph/source_map/node_processor/begin_node'
       autoload :DefNode,    'solargraph/source_map/node_processor/def_node'
       autoload :DefsNode,   'solargraph/source_map/node_processor/defs_node'
@@ -38,7 +37,7 @@ module Solargraph
       register :begin, BeginNode
       register :def, DefNode
       register :defs, DefsNode
-      # register :send, SendNode
+      register :send, SendNode
       register :class, ClassNode
       register :sclass, SclassNode
       # @todo Smelly names
