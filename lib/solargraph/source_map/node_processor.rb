@@ -43,7 +43,7 @@ module Solargraph
       # register :sclass, SclassNode
       # register :module, ModuleNode
       register :ivasgn, IvasgnNode
-      # register :cvasgn, CvasgnNode
+      register :cvasgn, CvasgnNode
       # register :lvasgn, LvasgnNode
       # register :gvasgn, GvasgnNode
       # register :casgn, CasgnNode
