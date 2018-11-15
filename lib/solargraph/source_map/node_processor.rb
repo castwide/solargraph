@@ -22,6 +22,7 @@ module Solargraph
       autoload :AliasNode,  'solargraph/source_map/node_processor/alias_node'
       autoload :ArgsNode,   'solargraph/source_map/node_processor/args_node'
       autoload :BlockNode,  'solargraph/source_map/node_processor/block_node'
+      autoload :OrasgnNode, 'solargraph/source_map/node_processor/orasgn_node'
 
       class << self
         @@processors ||= {}
@@ -35,13 +36,13 @@ module Solargraph
 
       register :source, BeginNode
       register :begin, BeginNode
-      # register :def, DefNode
+      register :def, DefNode
       # register :defs, DefsNode
       # register :send, SendNode
       register :class, ClassNode
       # register :sclass, SclassNode
       # register :module, ModuleNode
-      # register :ivasgn, IvasgnNode
+      register :ivasgn, IvasgnNode
       # register :cvasgn, CvasgnNode
       # register :lvasgn, LvasgnNode
       # register :gvasgn, GvasgnNode
@@ -49,15 +50,18 @@ module Solargraph
       # register :alias, AliasNode
       # register :args, ArgsNode
       # register :block, BlockNode
+      register :or_asgn, OrasgnNode
 
       module_function
 
       # @param node [Parser::AST::Node]
-      # @param context [Context]
+      # @param region [Region]
+      # @param pins [Array<Pin::Base>]
+      # @param stack [Array<Parser::AST::Node]
       # @return [Array<Pin::Base>]
-      def process node, pointer = Region.new(nil, '')
+      def process node, region = Region.new(nil, '', :instance, :public, []), pins = [], stack = []
         return [] unless @@processors.key?(node.type)
-        processor = @@processors[node.type].new(node, pointer, [])
+        processor = @@processors[node.type].new(node, region, pins, stack)
         processor.process
         processor.pins
       end

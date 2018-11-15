@@ -18,9 +18,7 @@ module Solargraph
           end
           pins.push Solargraph::Pin::Namespace.new(get_node_location(node), tree[0..-2].join('::') || '', pack_name(node.children[0]).last.to_s, comments_for(node), node.type, visibility)
           pins.push Pin::Reference::Superclass.new(pins.last.location, pins.last.path, sc) unless sc.nil?
-          # sub = context.update(node: node, namespace: fqn, scope: :instance, visibility: :public)
-          sub = Region.new(region.filename, fqn)
-          process_children(sub)
+          process_children Region.new(filename: region.filename, namespace: fqn, scope: :instance, visibility: :public, comments: region.comments)
         end
       end
     end

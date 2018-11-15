@@ -13,18 +13,20 @@ module Solargraph
         # @return [Array<Pin::Base>]
         attr_reader :pins
 
+        attr_reader :stack
+
         # @param node [Parser::AST::Node]
         # @param context [Context]
-        def initialize node, region, pins
+        def initialize node, region, pins, stack
           @node = node
           @region = region
           @pins = pins
+          @stack = stack
         end
 
         protected
 
-        # Subclasses should override this method to return the generated pins
-        # and resulting context.
+        # Subclasses should override this method to generate new pins.
         #
         # @return [Array<Pin::Base>]
         def process
@@ -34,12 +36,10 @@ module Solargraph
         private
 
         def process_children subregion = region
-          result = []
           node.children.each do |child|
             next unless child.is_a?(Parser::AST::Node)
-            result.concat NodeProcessor.process(child, subregion)
+            NodeProcessor.process(child, subregion, pins, stack + [node])
           end
-          pins.concat result
         end
 
         # @param node [Parser::AST::Node]
@@ -58,6 +58,10 @@ module Solargraph
 
         def comments_for(node)
           ''
+        end
+
+        def named_path_pin position
+          pins.select{|pin| [Pin::NAMESPACE, Pin::METHOD].include?(pin.kind) and pin.location.range.contain?(position)}.last
         end
       end
     end
