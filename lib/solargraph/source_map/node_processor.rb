@@ -40,7 +40,7 @@ module Solargraph
       register :defs, DefsNode
       # register :send, SendNode
       register :class, ClassNode
-      # register :sclass, SclassNode
+      register :sclass, SclassNode
       # register :module, ModuleNode
       register :ivasgn, IvasgnNode
       register :cvasgn, CvasgnNode

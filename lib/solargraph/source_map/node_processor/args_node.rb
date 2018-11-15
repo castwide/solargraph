@@ -3,6 +3,7 @@ module Solargraph
     module NodeProcessor
       class ArgsNode < Base
         def process
+          return if node.children.empty?
           here = get_node_start_position(node)
           context = named_path_pin(here)
           block = block_pin(here)
