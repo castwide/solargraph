@@ -18,23 +18,10 @@ module Solargraph
             elsif node.children[1] == :require 
               process_require
             elsif node.children[1] == :private_constant
-              if node.children[2] && (node.children[2].type == :sym || node.children[2].type == :str)
-                # @todo What to do about references?
-                cn = node.children[2].children[0].to_s
-                ref = pins.select{|p| p.namespace == region.namespace and p.name == cn}.first
-                unless ref.nil?
-                  pins.delete ref
-                  # Might be either a namespace or constant
-                  if ref.kind == Pin::CONSTANT
-                    pins.push ref.class.new(ref.location, ref.namespace, ref.name, ref.comments, ref.signature, ref.return_type, ref.context, :private)
-                  else
-                    # pins.push ref.class.new(ref.location, ref.namespace, ref.name, ref.comments, ref.type, :private, (ref.superclass_reference.nil? ? nil : ref.superclass_reference.name))
-                    pins.push ref.class.new(ref.location, ref.namespace, ref.name, ref.comments, ref.type, :private)
-                  end
-                end
-              end
+              process_private_constant
             end
           end
+          process_children
         end
 
         private
@@ -105,6 +92,24 @@ module Solargraph
             end
           elsif node.children[2].type == :def
             NodeProcessor.process node.children[2], region.update(visibility: :module_function), pins
+          end
+        end
+
+        def process_private_constant
+          if node.children[2] && (node.children[2].type == :sym || node.children[2].type == :str)
+            # @todo What to do about references?
+            cn = node.children[2].children[0].to_s
+            ref = pins.select{|p| p.namespace == region.namespace and p.name == cn}.first
+            unless ref.nil?
+              pins.delete ref
+              # Might be either a namespace or constant
+              if ref.kind == Pin::CONSTANT
+                pins.push ref.class.new(ref.location, ref.namespace, ref.name, ref.comments, ref.signature, ref.return_type, ref.context, :private)
+              else
+                # pins.push ref.class.new(ref.location, ref.namespace, ref.name, ref.comments, ref.type, :private, (ref.superclass_reference.nil? ? nil : ref.superclass_reference.name))
+                pins.push ref.class.new(ref.location, ref.namespace, ref.name, ref.comments, ref.type, :private)
+              end
+            end
           end
         end
       end

@@ -10,6 +10,7 @@ module Solargraph
             other = ComplexType.parse("Module<#{named_path.context.namespace}>")
             pins.push Solargraph::Pin::InstanceVariable.new(get_node_location(c), region.namespace,node.children[0].to_s, comments_for(node), node.children[1], infer_literal_node_type(node.children[1]), other)
           end
+          process_children
         end
       end
     end

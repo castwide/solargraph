@@ -21,6 +21,7 @@ module Solargraph
       autoload :ArgsNode,   'solargraph/source_map/node_processor/args_node'
       autoload :BlockNode,  'solargraph/source_map/node_processor/block_node'
       autoload :OrasgnNode, 'solargraph/source_map/node_processor/orasgn_node'
+      autoload :SymNode,    'solargraph/source_map/node_processor/sym_node'
 
       class << self
         @@processors ||= {}
@@ -50,6 +51,7 @@ module Solargraph
       register :args, ArgsNode
       register :block, BlockNode
       register :or_asgn, OrasgnNode
+      register :sym, SymNode
 
       module_function
 
