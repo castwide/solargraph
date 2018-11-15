@@ -4,7 +4,6 @@ module Solargraph
     # parser nodes.
     #
     module NodeProcessor
-      autoload :Context,    'solargraph/source_map/node_processor/context'
       autoload :Base,       'solargraph/source_map/node_processor/base'
       autoload :BeginNode, 'solargraph/source_map/node_processor/begin_node'
       autoload :DefNode,    'solargraph/source_map/node_processor/def_node'
