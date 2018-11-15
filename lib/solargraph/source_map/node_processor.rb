@@ -44,12 +44,12 @@ module Solargraph
       # register :module, ModuleNode
       register :ivasgn, IvasgnNode
       register :cvasgn, CvasgnNode
-      # register :lvasgn, LvasgnNode
-      # register :gvasgn, GvasgnNode
+      register :lvasgn, LvasgnNode
+      register :gvasgn, GvasgnNode
       # register :casgn, CasgnNode
       # register :alias, AliasNode
       # register :args, ArgsNode
-      # register :block, BlockNode
+      register :block, BlockNode
       register :or_asgn, OrasgnNode
 
       module_function
