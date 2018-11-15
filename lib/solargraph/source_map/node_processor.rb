@@ -55,7 +55,7 @@ module Solargraph
       # @param node [Parser::AST::Node]
       # @param context [Context]
       # @return [Array<Pin::Base>]
-      def process node, pointer = Pointer.new(nil, '')
+      def process node, pointer = Region.new(nil, '')
         return [] unless @@processors.key?(node.type)
         processor = @@processors[node.type].new(node, pointer, [])
         processor.process

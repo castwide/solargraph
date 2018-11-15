@@ -7,17 +7,17 @@ module Solargraph
         # @return [Parser::AST::Node]
         attr_reader :node
 
-        # @return [Context]
-        attr_reader :context
+        # @return [Region]
+        attr_reader :region
 
         # @return [Array<Pin::Base>]
         attr_reader :pins
 
         # @param node [Parser::AST::Node]
         # @param context [Context]
-        def initialize node, context, pins
+        def initialize node, region, pins
           @node = node
-          @context = context
+          @region = region
           @pins = pins
         end
 
@@ -33,11 +33,11 @@ module Solargraph
 
         private
 
-        def process_children subcontext = context
+        def process_children subregion = region
           result = []
           node.children.each do |child|
             next unless child.is_a?(Parser::AST::Node)
-            result.concat NodeProcessor.process(child, subcontext)
+            result.concat NodeProcessor.process(child, subregion)
           end
           pins.concat result
         end
@@ -53,7 +53,7 @@ module Solargraph
             en = Position.new(node.loc.last_line, node.loc.last_column)
           end
           range = Range.new(st, en)
-          Location.new(context.filename, range)
+          Location.new(region.filename, range)
         end
 
         def comments_for(node)
