@@ -56,11 +56,10 @@ module Solargraph
       # @param node [Parser::AST::Node]
       # @param region [Region]
       # @param pins [Array<Pin::Base>]
-      # @param stack [Array<Parser::AST::Node]
       # @return [Array<Pin::Base>]
-      def process node, region = Region.new(nil, '', :instance, :public, []), pins = [], stack = []
+      def process node, region = Region.new(nil, '', :instance, :public, []), pins = []
         return [] unless @@processors.key?(node.type)
-        processor = @@processors[node.type].new(node, region, pins, stack)
+        processor = @@processors[node.type].new(node, region, pins)
         processor.process
         processor.pins
       end

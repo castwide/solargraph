@@ -13,15 +13,13 @@ module Solargraph
         # @return [Array<Pin::Base>]
         attr_reader :pins
 
-        attr_reader :stack
-
         # @param node [Parser::AST::Node]
-        # @param context [Context]
-        def initialize node, region, pins, stack
+        # @param region [Region]
+        # @param pins [Array<Pin::Base>]
+        def initialize node, region, pins
           @node = node
           @region = region
           @pins = pins
-          @stack = stack
         end
 
         protected
@@ -38,7 +36,7 @@ module Solargraph
         def process_children subregion = region
           node.children.each do |child|
             next unless child.is_a?(Parser::AST::Node)
-            NodeProcessor.process(child, subregion, pins, stack + [node])
+            NodeProcessor.process(child, subregion, pins)
           end
         end
 
