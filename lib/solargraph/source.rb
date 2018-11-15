@@ -171,7 +171,57 @@ module Solargraph
       @error_ranges ||= []
     end
 
+    def code_for(node)
+      # @todo Using node locations on code with converted EOLs seems
+      #   slightly more efficient than calculating offsets.
+      # b = node.location.expression.begin.begin_pos
+      # e = node.location.expression.end.end_pos
+      b = Position.line_char_to_offset(@code, node.location.line, node.location.column)
+      e = Position.line_char_to_offset(@code, node.location.last_line, node.location.last_column)
+      frag = code[b..e-1].to_s
+      frag.strip.gsub(/,$/, '')
+    end
+
+    # @param node [Parser::AST::Node]
+    # @return [String]
+    def comments_for node
+      arr = associated_comments[node.loc.line]
+      arr ? stringify_comment_array(arr) : nil
+    end
+
     private
+
+    def associated_comments
+      @associated_comments ||= begin
+        result = {}
+        Parser::Source::Comment.associate_locations(node, comments).each_pair do |loc, all|
+          block = all.select{ |l| l.document? || code.lines[l.loc.line].strip.start_with?('#')}
+          next if block.empty?
+          result[loc.line] ||= []
+          result[loc.line].concat block
+        end
+        result
+      end
+    end
+
+    def stringify_comment_array comments
+      ctxt = ''
+      num = nil
+      started = false
+      comments.each { |l|
+        # Trim the comment and minimum leading whitespace
+        p = l.text.gsub(/^#/, '')
+        if num.nil? and !p.strip.empty?
+          num = p.index(/[^ ]/)
+          started = true
+        elsif started and !p.strip.empty?
+          cur = p.index(/[^ ]/)
+          num = cur if cur < num
+        end
+        ctxt += "#{p[num..-1]}\n" if started
+      }
+      ctxt
+    end
 
     # @return [Array<Range>]
     def string_ranges
