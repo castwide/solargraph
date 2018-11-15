@@ -13,6 +13,7 @@ module Solargraph
               pins.push Solargraph::Pin::Attribute.new(get_node_location(node), pin.namespace, node.children[0].children[0].to_s, comments_for(node) || pin.comments, pin.access, pin.scope, pin.visibility)
             end
           end
+          process_children
         end
       end
     end

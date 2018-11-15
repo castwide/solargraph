@@ -189,6 +189,13 @@ module Solargraph
       arr ? stringify_comment_array(arr) : nil
     end
 
+    def location
+      st = Position.new(0, 0)
+      en = Position.from_offset(code, code.length)
+      range = Range.new(st, en)
+      Location.new(filename, range)
+    end
+
     private
 
     def associated_comments

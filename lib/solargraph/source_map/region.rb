@@ -2,9 +2,6 @@ module Solargraph
   class SourceMap
     class Region
       # @return [String]
-      attr_reader :filename
-
-      # @return [String]
       attr_reader :namespace
 
       # @return [Symbol]
@@ -25,6 +22,10 @@ module Solargraph
         @namespace = namespace
         @scope = scope
         @visibility = visibility
+      end
+
+      def filename
+        source.filename
       end
 
       # Generate a new Region with the provided attribute changes.

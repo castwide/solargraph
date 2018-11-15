@@ -60,7 +60,8 @@ module Solargraph
       # @param pins [Array<Pin::Base>]
       # @return [Array<Pin::Base>]
       def process node, region = Region.new(nil, '', :instance, :public, []), pins = []
-        return [] unless @@processors.key?(node.type)
+        pins.push Pin::Namespace.new(region.source.location, '', '', nil, :class, :public) if pins.empty?
+        return pins unless node.is_a?(Parser::AST::Node) && @@processors.key?(node.type)
         processor = @@processors[node.type].new(node, region, pins)
         processor.process
         processor.pins

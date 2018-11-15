@@ -19,6 +19,11 @@ module Solargraph
               process_require
             elsif node.children[1] == :private_constant
               process_private_constant
+            elsif node.children[1] == :alias_method && node.children[2] && node.children[2] && node.children[2].type == :sym && node.children[3] && node.children[3].type == :sym
+              process_alias_method
+            elsif node.children[1] == :private_class_method && node.children[2].kind_of?(AST::Node)
+              # Processing a private class can potentially handle children on its own
+              return if process_private_class_method
             end
           end
           process_children
@@ -76,7 +81,7 @@ module Solargraph
           elsif node.children[2].type == :sym || node.children[2].type == :str
             # @todo What to do about references?
             node.children[2..-1].each do |x|
-              cn = node.children[0].to_s
+              cn = x.children[0].to_s
               ref = pins.select{|p| p.namespace == region.namespace and p.name == cn}.first
               unless ref.nil?
                 pins.delete ref
@@ -110,6 +115,33 @@ module Solargraph
                 pins.push ref.class.new(ref.location, ref.namespace, ref.name, ref.comments, ref.type, :private)
               end
             end
+          end
+        end
+
+        def process_alias_method
+          pin = pins.select{|p| p.name == node.children[3].children[0].to_s && p.namespace == region.namespace && p.scope == region.scope}.first
+          if pin.nil?
+            pins.push Solargraph::Pin::MethodAlias.new(get_node_location(node), region.namespace, node.children[2].children[0].to_s, region.scope, node.children[3].children[0].to_s)
+          else
+            if pin.is_a?(Solargraph::Pin::Method)
+              pins.push Solargraph::Pin::Method.new(get_node_location(node), pin.namespace, node.children[2].children[0].to_s, comments_for(node) || pin.comments, pin.scope, pin.visibility, pin.parameters, pin.node)
+            elsif pin.is_a?(Solargraph::Pin::Attribute)
+              pins.push Solargraph::Pin::Attribute.new(get_node_location(node), pin.namespace, node.children[2].children[0].to_s, comments_for(node) || pin.comments, pin.access, pin.scope, pin.visibility)
+            end
+          end
+        end
+
+        def process_private_class_method
+          if node.children[2].type == :sym || node.children[2].type == :str
+            ref = pins.select{|p| p.namespace == region.namespace and p.name == node.children[2].children[0].to_s}.first
+            unless ref.nil?
+              pins.delete ref
+              pins.push Solargraph::Pin::Method.new(ref.location, ref.namespace, ref.name, ref.comments, ref.scope, :private, ref.parameters, ref.node)
+            end
+            false
+          else
+            process_children region.update(scope: :class, visibility: :private)
+            true
           end
         end
       end

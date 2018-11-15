@@ -18,11 +18,14 @@ module Solargraph
         # @filename = filename
         @code = source.code
         # @node = node
-        # @comments = comments
+        @comments = source.comments
         # @node_stack = []
         # @directives = {}
-        root_pin = Pin::Namespace.new(get_node_location(nil), '', '', nil, :class, :public)
-        return [Solargraph::SourceMap::NodeProcessor.process(source.node, Solargraph::SourceMap::Region.new(source: source), [root_pin]), []]
+        # root_pin = Pin::Namespace.new(get_node_location(nil), '', '', nil, :class, :public)
+        @pins = Solargraph::SourceMap::NodeProcessor.process(source.node, Solargraph::SourceMap::Region.new(source: source), [])
+        process_comment_directives
+        locals = @pins.select{|p| [Pin::LocalVariable, Pin::MethodParameter, Pin::BlockParameter].include?(p.class)}
+        return [@pins - locals, locals]
         @comment_ranges = comments.map do |c|
           Range.from_to(c.loc.expression.line, c.loc.expression.column, c.loc.expression.last_line, c.loc.expression.last_column)
         end
