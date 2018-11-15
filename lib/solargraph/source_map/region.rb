@@ -13,33 +13,40 @@ module Solargraph
       # @return [Symbol]
       attr_reader :visibility
 
-      attr_reader :stack
+      # @return [Solargraph::Source]
+      attr_reader :source
 
-      attr_reader :comments
-
-      # @param filename [String, nil]
+      # @param source [Source]
       # @param namespace [String]
       # @param scope [Symbol]
       # @param visibility [Symbol]
-      # @param comments [Array]
-      def initialize filename: nil, namespace: '', scope: :instance, visibility: :public, comments: []
-        @filename = filename
+      def initialize source: Solargraph::Source.load_string(''), namespace: '', scope: :instance, visibility: :public
+        @source = source
         @namespace = namespace
         @scope = scope
         @visibility = visibility
-        @comments = comments
       end
 
       # Generate a new Region with the provided attribute changes.
       #
-      def update filename: nil, namespace: nil, scope: nil, visibility: nil, comments: nil
+      # @return [Region]
+      def update namespace: nil, scope: nil, visibility: nil
         Region.new(
-          filename: filename || self.filename,
+          source: source,
           namespace: namespace || self.namespace,
           scope: scope || self.scope,
-          visibility: visibility || self.visibility,
-          comments: comments || self.comments
+          visibility: visibility || self.visibility
         )
+      end
+
+      def filename
+        source.filename
+      end
+
+      # @param node [Parser::AST::Node]
+      # @return [String]
+      def code_for node
+        source.code_for(node)
       end
     end
   end

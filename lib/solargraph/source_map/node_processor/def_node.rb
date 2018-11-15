@@ -37,11 +37,11 @@ module Solargraph
             elsif c.type == :restarg
               args.push "*#{c.children[0]}"
             elsif c.type == :optarg
-              args.push "#{c.children[0]} = #{code_for(c.children[1])}"
+              args.push "#{c.children[0]} = #{region.code_for(c.children[1])}"
             elsif c.type == :kwarg
               args.push "#{c.children[0]}:"
             elsif c.type == :kwoptarg
-              args.push "#{c.children[0]}: #{code_for(c.children[1])}"
+              args.push "#{c.children[0]}: #{region.code_for(c.children[1])}"
             elsif c.type == :blockarg
               args.push "&#{c.children[0]}"
             end

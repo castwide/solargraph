@@ -13,13 +13,16 @@ module Solargraph
       # Generate the data.
       #
       # @return [Array]
-      def map filename, code, node, comments
-        @filename = filename
-        @code = code
-        @node = node
-        @comments = comments
-        @node_stack = []
-        @directives = {}
+      # def map filename, code, node, comments
+      def map source
+        # @filename = filename
+        @code = source.code
+        # @node = node
+        # @comments = comments
+        # @node_stack = []
+        # @directives = {}
+        root_pin = Pin::Namespace.new(get_node_location(nil), '', '', nil, :class, :public)
+        return [Solargraph::SourceMap::NodeProcessor.process(source.node, Solargraph::SourceMap::Region.new(source: source), [root_pin]), []]
         @comment_ranges = comments.map do |c|
           Range.from_to(c.loc.expression.line, c.loc.expression.column, c.loc.expression.last_line, c.loc.expression.last_column)
         end
@@ -50,7 +53,8 @@ module Solargraph
         # @return [Array]
         def map source
           return new.unmap(source.filename, source.code) unless source.parsed?
-          new.map source.filename, source.code, source.node, source.comments
+          # new.map source.filename, source.code, source.node, source.comments
+          new.map source
         end
       end
 

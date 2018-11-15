@@ -55,7 +55,7 @@ module Solargraph
         end
 
         def comments_for(node)
-          ''
+          region.source.comments_for(node)
         end
 
         def named_path_pin position
