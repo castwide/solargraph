@@ -41,7 +41,8 @@ module Solargraph
       # register :send, SendNode
       register :class, ClassNode
       register :sclass, SclassNode
-      # register :module, ModuleNode
+      # @todo Smelly names
+      register :module, ClassNode
       register :ivasgn, IvasgnNode
       register :cvasgn, CvasgnNode
       register :lvasgn, LvasgnNode
