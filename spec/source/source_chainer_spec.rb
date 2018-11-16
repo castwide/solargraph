@@ -135,4 +135,18 @@ describe Solargraph::Source::SourceChainer do
       Solargraph::Source::SourceChainer.chain(source, Solargraph::Position.new(1, 4))
     }.not_to raise_error
   end
+
+  it "stops phrases at opening brackets" do
+    source = Solargraph::Source.load_string(%(
+      (aa1, 2, 3)
+      [bb2, 2, 3]
+      {cc3, 2, 3}
+    ))
+    chain = Solargraph::Source::SourceChainer.chain(source, Solargraph::Position.new(1, 10))
+    expect(chain.links.first.word).to eq('aa1')
+    chain = Solargraph::Source::SourceChainer.chain(source, Solargraph::Position.new(2, 10))
+    expect(chain.links.first.word).to eq('bb2')
+    chain = Solargraph::Source::SourceChainer.chain(source, Solargraph::Position.new(3, 10))
+    expect(chain.links.first.word).to eq('cc3')
+  end
 end
