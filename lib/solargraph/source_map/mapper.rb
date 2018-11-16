@@ -62,7 +62,7 @@ module Solargraph
 
       def process_comment position, comment
         cmnt = remove_inline_comment_hashes(comment)
-        return unless cmnt =~ /(@\!method|@\!attribute|@\!domain|@\!macro)/
+        return unless cmnt =~ /(@\!method|@\!attribute|@\!domain|@\!macro|@\!parse)/
         parse = YARD::Docstring.parser.parse(cmnt)
         parse.directives.each { |d| process_directive(position, d) }
       end
@@ -81,13 +81,15 @@ module Solargraph
         when 'attribute'
           namespace = namespace_at(position)
           t = (directive.tag.types.nil? || directive.tag.types.empty?) ? nil : directive.tag.types.flatten.join('')
-          if t.nil? or t.include?('r')
+          if t.nil? || t.include?('r')
             # location, namespace, name, docstring, access
             pins.push Solargraph::Pin::Attribute.new(location, namespace.path, directive.tag.name, docstring.all, :reader, :instance, :public)
           end
-          if t.nil? or t.include?('w')
+          if t.nil? || t.include?('w')
             pins.push Solargraph::Pin::Attribute.new(location, namespace.path, "#{directive.tag.name}=", docstring.all, :writer, :instance, :public)
           end
+        when 'parse'
+          # @todo Parse and map directive.tag.text
         when 'domain'
           namespace = namespace_at(position)
           namespace.domains.push directive.tag.text
