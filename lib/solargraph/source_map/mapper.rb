@@ -15,7 +15,7 @@ module Solargraph
       # @return [Array]
       # def map filename, code, node, comments
       def map source
-        # @filename = filename
+        @filename = source.filename
         @code = source.code
         # @node = node
         @comments = source.comments

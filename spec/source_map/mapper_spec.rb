@@ -699,9 +699,21 @@ describe Solargraph::SourceMap::Mapper do
         #   @return [$1]
         def make klass; end
       end
-    ))
+    ), 'test.rb')
     pin = smap.pins.select{|p| p.path == 'Foo#make'}.first
     expect(pin.macros).not_to be_empty
+  end
+
+  it "maps method directives" do
+    smap = Solargraph::SourceMap.load_string(%(
+      class Foo
+        # @!method bar(baz)
+        #   @return [String]
+      end
+    ), 'test.rb')
+    pin = smap.pins.select{|p| p.path == 'Foo#bar'}.first
+    expect(pin.return_type.tag).to eq('String')
+    expect(pin.location.filename).to eq('test.rb')
   end
 
   it "maps aliases from alias_method" do
