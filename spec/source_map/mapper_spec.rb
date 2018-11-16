@@ -26,9 +26,6 @@ describe Solargraph::SourceMap::Mapper do
       end
     ))
     map = Solargraph::SourceMap.map(source)
-    # foo_pin = map.pins.select{|pin| pin.path == 'Foo'}.first
-    # expect(foo_pin.include_references.map(&:name)).to include('Direct')
-    # expect(foo_pin.include_references.map(&:name)).not_to include('Indirect')
     pins = map.pins.select{|pin| pin.is_a?(Solargraph::Pin::Reference::Include) && pin.namespace == 'Foo'}
     names = pins.map(&:name)
     expect(names).to include('Direct')

@@ -41,27 +41,8 @@ describe Solargraph::Pin::Method do
   end
 
   it "detects return types from tags" do
-    # source = Solargraph::Source.new(%(
-    #   # @return [Hash]
-    #   def foo bar:, baz: MyClass.new
-    #   end
-    # ))
-    # pin = source.pins.select{|pin| pin.path == '#foo'}.first
     pin = Solargraph::Pin::Method.new(nil, nil, nil, '@return [Hash]', nil, nil, [])
     expect(pin.return_type.tag).to eq('Hash')
-  end
-
-  # @todo method_pins is only ever used in specs
-  it "is a kind of method" do
-    pin = Solargraph::Pin::Method.new(nil, nil, nil, nil, nil, nil, nil)
-    expect(pin.kind).to eq(Solargraph::Pin::METHOD)
-    # source = Solargraph::Source.new(%(
-    #   def foo; end
-    # ))
-    # pin = source.method_pins.first
-    # expect(pin.kind).to eq(Solargraph::Pin::METHOD)
-    # expect(pin.completion_item_kind).to eq(Solargraph::LanguageServer::CompletionItemKinds::METHOD)
-    # expect(pin.symbol_kind).to eq(Solargraph::LanguageServer::SymbolKinds::METHOD)
   end
 
   it "ignores malformed return tags" do

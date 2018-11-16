@@ -50,26 +50,4 @@ describe Solargraph::Source::NodeMethods do
     ast = Parser::CurrentRuby.parse('foo = bar; foo.bar(1).baz(2)')
     expect(Solargraph::Source::NodeMethods.resolve_node_signature(ast.children[1])).to eq('foo.bar.baz')
   end
-
-  # @todo The following type inferences are the reponsibility of the ApiMap.
-  
-  #it "infers class instantiation" do
-  #  ast = Parser::CurrentRuby.parse("x = Object.new")
-  #  expect(Solargraph::Source::NodeMethods.infer_literal_node_type(ast.children[1])).to eq 'Object'
-  #end
-
-  #it "infers constants" do
-  #  ast = Parser::CurrentRuby.parse("x = Class")
-  #  expect(Solargraph::Source::NodeMethods.infer_literal_node_type(ast.children[1])).to eq 'Class'
-  #end
-
-  #it "infers constants with root" do
-  #  ast = Parser::CurrentRuby.parse("x = ::String")
-  #  expect(Solargraph::Source::NodeMethods.infer_literal_node_type(ast.children[1])).to eq 'String'
-  #end
-
-  #it "infers namespaced constants" do
-  #  ast = Parser::CurrentRuby.parse("x = Foo::Bar")
-  #  expect(Solargraph::Source::NodeMethods.infer_literal_node_type(ast.children[1])).to eq 'Foo::Bar'
-  #end
 end
