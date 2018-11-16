@@ -24,12 +24,16 @@ module Solargraph
         @visibility = visibility
       end
 
+      # @return [String]
       def filename
         source.filename
       end
 
       # Generate a new Region with the provided attribute changes.
       #
+      # @param namespace [String, nil]
+      # @param scope [Symbol, nil]
+      # @param visibility [Symbol, nil]
       # @return [Region]
       def update namespace: nil, scope: nil, visibility: nil
         Region.new(
