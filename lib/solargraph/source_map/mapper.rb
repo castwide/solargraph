@@ -13,15 +13,10 @@ module Solargraph
       # Generate the data.
       #
       # @return [Array]
-      # def map filename, code, node, comments
       def map source
         @filename = source.filename
         @code = source.code
-        # @node = node
         @comments = source.comments
-        # @node_stack = []
-        # @directives = {}
-        # root_pin = Pin::Namespace.new(get_node_location(nil), '', '', nil, :class, :public)
         @pins = Solargraph::SourceMap::NodeProcessor.process(source.node, Solargraph::SourceMap::Region.new(source: source), [])
         process_comment_directives
         locals = @pins.select{|p| [Pin::LocalVariable, Pin::MethodParameter, Pin::BlockParameter].include?(p.class)}
@@ -40,7 +35,6 @@ module Solargraph
         # @return [Array]
         def map source
           return new.unmap(source.filename, source.code) unless source.parsed?
-          # new.map source.filename, source.code, source.node, source.comments
           new.map source
         end
       end
@@ -64,13 +58,6 @@ module Solargraph
 
       def namespace_at(position)
         @pins.select{|pin| pin.kind == Pin::NAMESPACE and pin.location.range.contain?(position)}.last
-      end
-
-      def find_parent(stack, *types)
-        stack.reverse.each { |p|
-          return p if types.include?(p.type)
-        }
-        nil
       end
 
       def process_comment position, comment
