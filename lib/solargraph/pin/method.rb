@@ -95,6 +95,12 @@ module Solargraph
         infer_from_return_nodes(api_map)
       end
 
+      def try_merge! pin
+        return false unless super
+        @node = pin.node
+        true
+      end
+
       private
 
       # @return [ComplexType]
@@ -115,11 +121,13 @@ module Solargraph
 
       # @param api_map [ApiMap]
       def infer_from_return_nodes api_map
-        return ComplexType::UNDEFINED if node.nil? || node.children[2].nil?
+        return ComplexType::UNDEFINED if node.nil? ||
+          (node.type == :def && node.children[2].nil?) ||
+          (node.type == :defs && node.children[3].nil?)
         result = []
-        nodes = returns_from(node.children[2])
+        nodes = node.type == :def ? returns_from(node.children[2]) : returns_from(node.children[3])
         nodes.each do |n|
-          chain = Source::NodeChainer.chain(n)
+          next if n.loc.nil?
           clip = api_map.clip_at(location.filename, Solargraph::Position.new(n.loc.expression.last_line, n.loc.expression.last_column))
           type = clip.infer
           result.push type unless type.undefined?

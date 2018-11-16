@@ -296,6 +296,22 @@ describe Solargraph::SourceMap::Clip do
     expect(type.tag).to eq('Hash')
   end
 
+  it "infers implicit return types from singleton methods" do
+    source = Solargraph::Source.load_string(%(
+      class Foo
+        def self.bar
+          @bar = 'bar'
+        end
+      end
+      Foo.bar
+    ), 'test.rb')
+    map = Solargraph::ApiMap.new
+    map.map source
+    clip = map.clip_at('test.rb', Solargraph::Position.new(6, 10))
+    type = clip.infer
+    expect(type.tag).to eq('String')
+  end
+
   it "infers undefined for empty methods" do
     source = Solargraph::Source.load_string(%(
       def foo; end
