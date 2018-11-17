@@ -337,4 +337,26 @@ describe Solargraph::SourceMap::Clip do
       expect(clip.infer).to be_undefined
     }.not_to raise_error
   end
+
+  it "completes unfinished constant chains with trailing nodes" do
+    # The variable assignment at the end of the constant reference gets parsed
+    # as part of the constant chain, e.g., `Foo::Bar::baz`
+    orig = Solargraph::Source.load_string(%(
+      module Foo
+        module Bar
+          module Baz; end
+        end
+      end
+      Foo::Bar
+      baz = 'baz'
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new
+    updater = Solargraph::Source::Updater.new('test.rb', 1, [
+      Solargraph::Source::Change.new(Solargraph::Range.from_to(6, 14, 6, 14), '::')
+    ])
+    source = orig.synchronize(updater)
+    api_map.map source
+    clip = api_map.clip_at('test.rb', Solargraph::Position.new(6, 16))
+    expect(clip.complete.pins.map(&:path)).to eq(['Foo::Bar::Baz'])
+  end
 end
