@@ -1,5 +1,8 @@
 module Solargraph
   class SourceMap
+    # Data used by the NodeProcessor library to track context at various
+    # locations in a source.
+    #
     class Region
       # @return [String]
       attr_reader :namespace
@@ -17,7 +20,8 @@ module Solargraph
       # @param namespace [String]
       # @param scope [Symbol]
       # @param visibility [Symbol]
-      def initialize source: Solargraph::Source.load_string(''), namespace: '', scope: :instance, visibility: :public
+      def initialize source: Solargraph::Source.load_string(''), namespace: '',
+                     scope: :instance, visibility: :public
         @source = source
         @namespace = namespace
         @scope = scope
@@ -42,10 +46,6 @@ module Solargraph
           scope: scope || self.scope,
           visibility: visibility || self.visibility
         )
-      end
-
-      def filename
-        source.filename
       end
 
       # @param node [Parser::AST::Node]
