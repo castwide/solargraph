@@ -33,7 +33,13 @@ module Solargraph
           EventMachine.add_periodic_timer 0.1 do
             tmp = @host.flush
             send_data tmp unless tmp.empty?
-            EventMachine.stop if @host.stopped?
+            if @host.stopped?
+              if @host.options['transport'] == 'external'
+                @host = Solargraph::LanguageServer::Host.new
+              else
+                EventMachine.stop
+              end
+            end
           end
         end
       end
