@@ -824,4 +824,15 @@ describe Solargraph::SourceMap::Mapper do
     var_pin = smap.pins.select{|p| p.name == '@y'}.first
     expect(var_pin).not_to be_nil
   end
+
+  it "maps classes with long namespaces" do
+    smap = Solargraph::SourceMap.load_string(%(
+      class Foo::Bar
+      end
+    ), 'test.rb')
+    pin = smap.pins.select{|p| p.path == 'Foo::Bar'}.first
+    expect(pin).not_to be_nil
+    expect(pin.namespace).to eq('Foo')
+    expect(pin.name).to eq('Bar')
+  end
 end
