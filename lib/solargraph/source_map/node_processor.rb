@@ -5,7 +5,7 @@ module Solargraph
     #
     module NodeProcessor
       autoload :Base,       'solargraph/source_map/node_processor/base'
-      autoload :BeginNode, 'solargraph/source_map/node_processor/begin_node'
+      autoload :BeginNode,  'solargraph/source_map/node_processor/begin_node'
       autoload :DefNode,    'solargraph/source_map/node_processor/def_node'
       autoload :DefsNode,   'solargraph/source_map/node_processor/defs_node'
       autoload :SendNode,   'solargraph/source_map/node_processor/send_node'
@@ -35,6 +35,10 @@ module Solargraph
 
       register :source, BeginNode
       register :begin, BeginNode
+      register :kwbegin, BeginNode
+      # # @todo Is this the best way to handle rescue nodes?
+      register :rescue, BeginNode
+      register :resbody, BeginNode
       register :def, DefNode
       register :defs, DefsNode
       register :send, SendNode
