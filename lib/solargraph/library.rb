@@ -174,7 +174,7 @@ module Solargraph
             referenced.any?{|r| r == pin}
           end
           # HACK for language clients that exclude special characters from the start of variable names
-          if strip && match = cursor.word.match(/^[^a-z0-9_]+/)
+          if strip && match = cursor.word.match(/^[^a-z0-9_]+/i)
             found.map! do |loc|
               Solargraph::Location.new(loc.filename, Solargraph::Range.from_to(loc.range.start.line, loc.range.start.column + match[0].length, loc.range.ending.line, loc.range.ending.column))
             end
