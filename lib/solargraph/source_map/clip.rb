@@ -40,10 +40,7 @@ module Solargraph
           result.concat api_map.get_constants(type.undefined? ? '' : type.namespace, cursor.start_of_constant? ? '' : context_pin.context.namespace)
         else
           type = cursor.chain.base.infer(api_map, context_pin, locals)
-          # @todo The inferred type should be an absolute namespace, so we
-          #   don't need to specify a context here. See
-          #   ApiMap#get_complex_type_methods regarding possible refactoring.
-          result.concat api_map.get_complex_type_methods(type, '', cursor.chain.links.length == 1)
+          result.concat api_map.get_complex_type_methods(type, context_pin.context.namespace, cursor.chain.links.length == 1)
           if cursor.chain.links.length == 1
             if cursor.word.start_with?('@@')
               return package_completions(api_map.get_class_variable_pins(context_pin.context.namespace))

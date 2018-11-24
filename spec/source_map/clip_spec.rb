@@ -394,4 +394,37 @@ describe Solargraph::SourceMap::Clip do
     expect(clip2b.complete.pins.map(&:path)).not_to include('Other::Foo#other_method')
     expect(clip2b.complete.pins.map(&:path)).to include('Foo#root_method')
   end
+
+  it "completes methods based on visibility and context" do
+    source = Solargraph::Source.load_string(%(
+      class Foo
+        protected
+        def prot_method; end
+        private
+        def priv_method; end
+        def bar
+          _
+        end
+        Foo.new._
+      end
+      Foo.new._
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new
+    api_map.map source
+
+    clip1 = api_map.clip_at('test.rb', Solargraph::Position.new(7, 10))
+    paths1 = clip1.complete.pins.map(&:path)
+    expect(paths1).to include('Foo#prot_method')
+    expect(paths1).to include('Foo#priv_method')
+
+    clip2 = api_map.clip_at('test.rb', Solargraph::Position.new(9, 16))
+    paths2 = clip2.complete.pins.map(&:path)
+    expect(paths2).to include('Foo#prot_method')
+    expect(paths2).not_to include('Foo#priv_method')
+
+    clip3 = api_map.clip_at('test.rb', Solargraph::Position.new(11, 14))
+    paths3 = clip3.complete.pins.map(&:path)
+    expect(paths3).not_to include('Foo#prot_method')
+    expect(paths3).not_to include('Foo#priv_method')
+  end
 end

@@ -303,9 +303,6 @@ module Solargraph
 
     # Get an array of public methods for a complex type.
     #
-    # @todo It might be reasonable to assume that the type argument is fully
-    #   qualified, which would eliminate the need for a context argument.
-    #
     # @param type [Solargraph::ComplexType]
     # @param context [String]
     # @param internal [Boolean] True to include private methods
@@ -320,7 +317,13 @@ module Solargraph
         result.concat get_methods('Object')
       else
         unless type.nil? || type.name == 'void'
-          namespace = qualify(type.namespace, context)
+          # @todo This method does not qualify the complex type's namespace
+          #   because it can cause namespace conflicts, e.g., `Foo` vs.
+          #   `Other::Foo`. It still takes a context argument because it
+          #   uses context to determine whether protected and private methods
+          #   are visible.
+          # namespace = qualify(type.namespace, context)
+          namespace = type.namespace
           visibility = [:public]
           if namespace == context || super_and_sub?(namespace, context)
             visibility.push :protected
