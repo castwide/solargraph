@@ -359,4 +359,39 @@ describe Solargraph::SourceMap::Clip do
     clip = api_map.clip_at('test.rb', Solargraph::Position.new(6, 16))
     expect(clip.complete.pins.map(&:path)).to eq(['Foo::Bar::Baz'])
   end
+
+  it "resolves conflicts between namespaces names" do
+    source = Solargraph::Source.load_string(%(
+      class Foo
+        def root_method; end
+      end
+      module Other
+        class Foo
+          def other_method; end
+        end
+      end
+      module Other
+        # @type [Foo]
+        foo1 = make_foo
+        foo1._
+        # @type [::Foo]
+        foo2 = make_foo
+        foo2._
+      end
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new
+    api_map.map source
+
+    clip1a = api_map.clip_at('test.rb', Solargraph::Position.new(12, 9))
+    expect(clip1a.infer.to_s).to eq('Other::Foo')
+    clip1b = api_map.clip_at('test.rb', Solargraph::Position.new(12, 13))
+    expect(clip1b.complete.pins.map(&:path)).to include('Other::Foo#other_method')
+    expect(clip1b.complete.pins.map(&:path)).not_to include('Foo#root_method')
+
+    clip2a = api_map.clip_at('test.rb', Solargraph::Position.new(15, 9))
+    expect(clip2a.infer.to_s).to eq('Foo')
+    clip2b = api_map.clip_at('test.rb', Solargraph::Position.new(15, 13))
+    expect(clip2b.complete.pins.map(&:path)).not_to include('Other::Foo#other_method')
+    expect(clip2b.complete.pins.map(&:path)).to include('Foo#root_method')
+  end
 end

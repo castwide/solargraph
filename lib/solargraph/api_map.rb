@@ -303,6 +303,9 @@ module Solargraph
 
     # Get an array of public methods for a complex type.
     #
+    # @todo It might be reasonable to assume that the type argument is fully
+    #   qualified, which would eliminate the need for a context argument.
+    #
     # @param type [Solargraph::ComplexType]
     # @param context [String]
     # @param internal [Boolean] True to include private methods
