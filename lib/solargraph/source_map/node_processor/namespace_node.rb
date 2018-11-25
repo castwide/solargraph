@@ -1,7 +1,7 @@
 module Solargraph
   class SourceMap
     module NodeProcessor
-      class ClassNode < Base
+      class NamespaceNode < Base
         def process
           visibility = :public
           if node.children[0].kind_of?(AST::Node) and node.children[0].children[0].kind_of?(AST::Node) and node.children[0].children[0].type == :cbase
@@ -9,7 +9,7 @@ module Solargraph
             tree.shift if tree.first.empty?
           else
             tree = region.namespace.empty? ? [] : [region.namespace]
-            tree.push pack_name(node.children[0])
+            tree.concat pack_name(node.children[0])
           end
           fqn = tree.join('::')
           sc = nil

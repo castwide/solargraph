@@ -1,4 +1,7 @@
 module Solargraph
+  # An aggregation of a workspace and additional sources to be cataloged in an
+  # ApiMap.
+  #
   class Bundle
     # @return [Workspace]
     attr_reader :workspace

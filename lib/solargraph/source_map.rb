@@ -17,6 +17,9 @@ module Solargraph
     # @return [Array<Pin::Base>]
     attr_reader :locals
 
+    # @param source [Source]
+    # @param pins [Array<Pin::Base>]
+    # @param locals [Array<Pin::Base>]
     def initialize source, pins, locals
       # HACK: Keep the library from changing this
       @source = source.dup
@@ -24,14 +27,17 @@ module Solargraph
       @locals = locals
     end
 
+    # @return [String]
     def filename
       source.filename
     end
 
+    # @return [String]
     def code
       source.code
     end
 
+    # @return [Array<Pin::Reference::Require>]
     def requires
       @requires ||= pins.select{|p| p.kind == Pin::REQUIRE_REFERENCE}
     end
@@ -48,12 +54,15 @@ module Solargraph
       @source.comment_at?(position)
     end
 
+    # @return [Array<Pin::Base>]
     def document_symbols
       @document_symbols ||= pins.select { |pin|
         [Pin::ATTRIBUTE, Pin::CONSTANT, Pin::METHOD, Pin::NAMESPACE].include?(pin.kind) and !pin.path.empty?
       }
     end
 
+    # @param query [String]
+    # @return [Array<Pin::Base>]
     def query_symbols query
       document_symbols.select{|pin| pin.path.include?(query)}
     end
@@ -84,6 +93,7 @@ module Solargraph
     end
 
     # @param other_map [SourceMap]
+    # @return Boolean
     def try_merge! other_map
       return false if pins.length != other_map.pins.length || locals.length != other_map.locals.length || requires.map(&:name).uniq.sort != other_map.requires.map(&:name).uniq.sort
       pins.each_index do |i|
@@ -103,12 +113,15 @@ module Solargraph
     end
 
     class << self
+      # @param filename [String]
       # @return [SourceMap]
       def load filename
         source = Solargraph::Source.load(filename)
         SourceMap.map(source)
       end
 
+      # @param code [String]
+      # @param filename [String, nil]
       # @return [SourceMap]
       def load_string code, filename = nil
         source = Solargraph::Source.load_string(code, filename)

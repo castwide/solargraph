@@ -782,4 +782,57 @@ describe Solargraph::SourceMap::Mapper do
     pin = smap.pins.select{|p| p.is_a?(Solargraph::Pin::MethodAlias)}.first
     expect(pin).not_to be_nil
   end
+
+  it "maps explicit begin nodes" do
+    smap = Solargraph::SourceMap.load_string(%(
+      def foo
+        begin
+          @x = make_x
+        end
+      end
+    ))
+    pin = smap.pins.select{|p| p.name == '@x'}.first
+    expect(pin).not_to be_nil
+  end
+
+  it "maps rescue nodes" do
+    smap = Solargraph::SourceMap.load_string(%(
+      def foo
+        @x = make_x
+      rescue => err
+        @y = y
+      end
+    ))
+    err_pin = smap.locals{|p| p.name == 'err'}.first
+    expect(err_pin).not_to be_nil
+    var_pin = smap.pins.select{|p| p.name == '@y'}.first
+    expect(var_pin).not_to be_nil
+  end
+
+  it "maps begin/rescue nodes" do
+    smap = Solargraph::SourceMap.load_string(%(
+      def foo
+        begin
+          @x = make_x
+        rescue => err
+          @y = y
+        end
+      end
+    ))
+    err_pin = smap.locals{|p| p.name == 'err'}.first
+    expect(err_pin).not_to be_nil
+    var_pin = smap.pins.select{|p| p.name == '@y'}.first
+    expect(var_pin).not_to be_nil
+  end
+
+  it "maps classes with long namespaces" do
+    smap = Solargraph::SourceMap.load_string(%(
+      class Foo::Bar
+      end
+    ), 'test.rb')
+    pin = smap.pins.select{|p| p.path == 'Foo::Bar'}.first
+    expect(pin).not_to be_nil
+    expect(pin.namespace).to eq('Foo')
+    expect(pin.name).to eq('Bar')
+  end
 end

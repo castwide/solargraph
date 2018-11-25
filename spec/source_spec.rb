@@ -11,7 +11,9 @@ describe Solargraph::Source do
     code = 'class Foo; def bar; x.'
     source = described_class.new(code)
     expect(source.code).to eq(code)
-    expect(source.node).to be_a(Parser::AST::Node)
+    # @todo Unparsed code is resulting in nil nodes, maybe temporarily.
+    #   See Solargraph::Source#initialize
+    # expect(source.node).to be_a(Parser::AST::Node)
     expect(source).not_to be_parsed
   end
 
@@ -145,5 +147,15 @@ describe Solargraph::Source do
     updated = original.synchronize(updater)
     expect(original).to be(updated)
     expect(updated.version).to eq(1)
+  end
+
+  it "handles unparseable code" do
+    source = Solargraph::Source.load_string(%(
+      100.times do |num|
+    ))
+    # @todo Unparseable code results in a nil node for now, but that could
+    #   change. See Solargraph::Source#initialize
+    expect(source.node).to be_nil
+    expect(source.parsed?).to be(false)
   end
 end
