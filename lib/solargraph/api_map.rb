@@ -21,7 +21,6 @@ module Solargraph
     attr_reader :unresolved_requires
 
     # @param pins [Array<Solargraph::Pin::Base>]
-    # def initialize workspace = Solargraph::Workspace.new(nil)
     def initialize pins: []
       # @todo Extensions don't work yet
       # require_extensions
@@ -47,6 +46,8 @@ module Solargraph
       self
     end
 
+    # Map a single source.
+    #
     # @param source [Source]
     # @return [self]
     def map source
@@ -58,8 +59,7 @@ module Solargraph
       store.named_macros[name]
     end
 
-    # Catalog a workspace. Additional sources that need to be mapped can be
-    # included in an optional array.
+    # Catalog a bundle.
     #
     # @param bundle [Bundle]
     # @return [self]
@@ -155,7 +155,7 @@ module Solargraph
       store.pins
     end
 
-    # An array of suggestions based on Ruby keywords (`if`, `end`, etc.).
+    # An array of pins based on Ruby keywords (`if`, `end`, etc.).
     #
     # @return [Array<Solargraph::Pin::Keyword>]
     def self.keywords
