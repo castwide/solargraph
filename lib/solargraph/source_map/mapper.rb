@@ -14,6 +14,7 @@ module Solargraph
       #
       # @return [Array]
       def map source
+        @source = source
         @filename = source.filename
         @code = source.code
         @comments = source.comments
@@ -90,6 +91,10 @@ module Solargraph
           end
         when 'parse'
           # @todo Parse and map directive.tag.text
+          ns = namespace_at(position)
+          region = Region.new(source: @source, namespace: ns.path)
+          node = Solargraph::Source.parse(directive.tag.text, @filename, position.line)
+          NodeProcessor.process(node, region, @pins)
         when 'domain'
           namespace = namespace_at(position)
           namespace.domains.push directive.tag.text
