@@ -176,8 +176,7 @@ module Solargraph
             unless yardocs.include?(yd)
               yardocs.unshift yd
               result.concat process_yardoc yd
-              # @todo Testing performance
-              # result.concat add_gem_dependencies spec
+              result.concat add_gem_dependencies spec
             end
           end
         rescue Gem::LoadError => e
