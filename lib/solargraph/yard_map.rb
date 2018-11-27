@@ -23,10 +23,14 @@ module Solargraph
     # @return [Array<String>]
     attr_reader :required
 
+    attr_writer :with_dependencies
+
     # @param required [Array<String>]
-    def initialize(required: [])
+    # @param skip_dependencies [Boolean]
+    def initialize(required: [], with_dependencies: true)
       # HACK: YardMap needs its own copy of this array
       @required = required.clone
+      @with_dependencies = with_dependencies
       @gem_paths = {}
       @stdlib_namespaces = []
       process_requires
@@ -36,6 +40,11 @@ module Solargraph
     # @return [Array<Solargraph::Pin::Base>]
     def pins
       @pins ||= []
+    end
+
+    def with_dependencies?
+      @with_dependencies ||= true unless @with_dependencies == false
+      @with_dependencies
     end
 
     # @param new_requires [Array<String>]
@@ -176,7 +185,7 @@ module Solargraph
             unless yardocs.include?(yd)
               yardocs.unshift yd
               result.concat process_yardoc yd
-              result.concat add_gem_dependencies spec
+              result.concat add_gem_dependencies(spec) if with_dependencies?
             end
           end
         rescue Gem::LoadError => e
@@ -230,17 +239,16 @@ module Solargraph
       (spec.dependencies - spec.development_dependencies).each do |dep|
         begin
           depspec = Gem::Specification.find_by_name(dep.name)
-          @gem_paths[depspec.name] = depspec.full_gem_path unless depspec.nil?
+          next if depspec.nil? || @gem_paths.key?(depspec.name)
+          @gem_paths[depspec.name] = depspec.full_gem_path
           gy = YARD::Registry.yardoc_file_for_gem(dep.name)
           if gy.nil?
             unresolved_requires.push dep.name
           else
-            unless yardocs.include?(gy)
-              yardocs.unshift gy
-              result.concat process_yardoc gy
-              # @todo Trying only one level of dependencies
-              # result.concat add_gem_dependencies(depspec)
-            end
+            next if yardocs.include?(gy)
+            yardocs.unshift gy
+            result.concat process_yardoc gy
+            result.concat add_gem_dependencies(depspec)
           end
         rescue Gem::LoadError
           # This error probably indicates a bug in an installed gem
