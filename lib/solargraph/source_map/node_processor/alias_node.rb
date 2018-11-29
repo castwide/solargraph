@@ -3,7 +3,7 @@ module Solargraph
     module NodeProcessor
       class AliasNode < Base
         def process
-          pin = pins.select{|p| p.name == node.children[1].children[0].to_s && p.namespace == region.namespace && p.scope == region.scope}.first
+          pin = pins.select{|p| [Solargraph::Pin::Method, Solargraph::Pin::Attribute].include?(p.class) && p.name == node.children[1].children[0].to_s && p.namespace == region.namespace && p.scope == region.scope}.first
           if pin.nil?
             pins.push Solargraph::Pin::MethodAlias.new(get_node_location(node), region.namespace, node.children[0].children[0].to_s, region.scope, node.children[1].children[0].to_s)
           else

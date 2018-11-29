@@ -835,4 +835,16 @@ describe Solargraph::SourceMap::Mapper do
     expect(pin.namespace).to eq('Foo')
     expect(pin.name).to eq('Bar')
   end
+
+  it "ignores aliases that do not map to methods or attributes" do
+    expect {
+      smap = Solargraph::SourceMap.load_string(%(
+        class Foo
+          xyz = String
+          alias foo xyz
+          alias_method :foo, :xyz
+        end
+      ), 'test.rb')
+    }.not_to raise_error
+  end
 end
