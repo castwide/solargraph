@@ -70,6 +70,18 @@ The Solargraph gem ships with documentation for Ruby 2.2.2. As of gem version 0.
     $ solargraph download-core   # Install the best match for your Ruby version
     $ solargraph clear-cores     # Clear the documentation cache
 
+## Solargraph and Bundler
+
+If you're using the Solargraph language server with a project that uses Bundler, the most comprehensive way to use your bundled gems is to bundle Solargraph.
+
+In the Gemfile:
+
+    gem 'solargraph', group: :development
+
+Run `bundle install` and use `bundle exec yard gems` to generate the documentation. This process documents cached or vendored gems, or even gems that are installed from a local path.
+
+In order to access the gems in your project, you'll need to start the language server with Bundler. In VS Code, there's a `solargraph.useBundler` option. Other clients will vary, but the command you probably want to run is `bundle exec solargraph socket` or `bundle exec solargraph stdio`.
+
 ## Runtime Suggestions (EXPERIMENTAL)
 
 As of gem version 0.15.0, Solargraph includes experimental support for plugins.

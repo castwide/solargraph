@@ -82,7 +82,7 @@ module Solargraph
             # @todo What to do about references?
             node.children[2..-1].each do |x|
               cn = x.children[0].to_s
-              ref = pins.select{|p| p.namespace == region.namespace and p.name == cn}.first
+              ref = pins.select{|p| [Solargraph::Pin::Method, Solargraph::Pin::Attribute].include?(p.class) && p.namespace == region.namespace && p.name == cn}.first
               unless ref.nil?
                 pins.delete ref
                 mm = Solargraph::Pin::Method.new(ref.location, ref.namespace, ref.name, ref.comments, :class, :public, ref.parameters, ref.node)
@@ -104,7 +104,7 @@ module Solargraph
           if node.children[2] && (node.children[2].type == :sym || node.children[2].type == :str)
             # @todo What to do about references?
             cn = node.children[2].children[0].to_s
-            ref = pins.select{|p| p.namespace == region.namespace and p.name == cn}.first
+            ref = pins.select{|p| [Solargraph::Pin::Namespace, Solargraph::Pin::Constant].include?(p.class) && p.namespace == region.namespace && p.name == cn}.first
             unless ref.nil?
               pins.delete ref
               # Might be either a namespace or constant
@@ -119,7 +119,7 @@ module Solargraph
         end
 
         def process_alias_method
-          pin = pins.select{|p| p.name == node.children[3].children[0].to_s && p.namespace == region.namespace && p.scope == region.scope}.first
+          pin = pins.select{|p| [Solargraph::Pin::Method, Solargraph::Pin::Attribute].include?(p.class) && p.name == node.children[3].children[0].to_s && p.namespace == region.namespace && p.scope == region.scope}.first
           if pin.nil?
             pins.push Solargraph::Pin::MethodAlias.new(get_node_location(node), region.namespace, node.children[2].children[0].to_s, region.scope, node.children[3].children[0].to_s)
           else
@@ -133,7 +133,7 @@ module Solargraph
 
         def process_private_class_method
           if node.children[2].type == :sym || node.children[2].type == :str
-            ref = pins.select{|p| p.namespace == region.namespace and p.name == node.children[2].children[0].to_s}.first
+            ref = pins.select{|p| [Solargraph::Pin::Method, Solargraph::Pin::Attribute].include?(p.class) && p.namespace == region.namespace && p.name == node.children[2].children[0].to_s}.first
             unless ref.nil?
               pins.delete ref
               pins.push Solargraph::Pin::Method.new(ref.location, ref.namespace, ref.name, ref.comments, ref.scope, :private, ref.parameters, ref.node)

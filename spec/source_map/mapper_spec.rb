@@ -835,4 +835,49 @@ describe Solargraph::SourceMap::Mapper do
     expect(pin.namespace).to eq('Foo')
     expect(pin.name).to eq('Bar')
   end
+
+  it "ignores aliases that do not map to methods or attributes" do
+    expect {
+      smap = Solargraph::SourceMap.load_string(%(
+        class Foo
+          xyz = String
+          alias foo xyz
+          alias_method :foo, :xyz
+        end
+      ), 'test.rb')
+    }.not_to raise_error
+  end
+
+  it "ignores private_class_methods that do not map to methods or attributes" do
+    expect {
+      smap = Solargraph::SourceMap.load_string(%(
+        class Foo
+          var = some_method
+          private_class_method :var
+        end
+      ), 'test.rb')
+    }.not_to raise_error
+  end
+
+  it "ignores private_constants that do not map to namespaces or constants" do
+    expect {
+      smap = Solargraph::SourceMap.load_string(%(
+        class Foo
+          var = some_method
+          private_constant :var
+        end
+      ), 'test.rb')
+    }.not_to raise_error
+  end
+
+  it "ignores module_functions that do not map to methods or attributes" do
+    expect {
+      smap = Solargraph::SourceMap.load_string(%(
+        class Foo
+          var = some_method
+          module_function :var
+        end
+      ), 'test.rb')
+    }.not_to raise_error
+  end
 end
