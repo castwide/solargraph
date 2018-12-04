@@ -1,5 +1,6 @@
 require 'thread'
 require 'set'
+require 'logger'
 
 module Solargraph
   module LanguageServer
@@ -12,6 +13,11 @@ module Solargraph
       autoload :Cataloger, 'solargraph/language_server/host/cataloger'
 
       include Solargraph::LanguageServer::UriHelpers
+
+      LOG_LEVELS = {
+        'info' => Logger::INFO,
+        'debug' => Logger::DEBUG
+      }
 
       def initialize
         @cancel_semaphore = Mutex.new
@@ -30,12 +36,18 @@ module Solargraph
       # @param update [Hash]
       def configure update
         return if update.nil?
+        logger.level = update['logLevel'] || Logger::INFO
         options.merge! update
       end
 
       # @return [Hash]
       def options
         @options ||= default_configuration
+      end
+
+      # @return [Logger]
+      def logger
+        @logger ||= Logger.new(STDERR, level: Logger::INFO)
       end
 
       # Cancel the method with the specified ID.
@@ -70,6 +82,7 @@ module Solargraph
       # @return [Solargraph::LanguageServer::Message::Base] The message handler.
       def start request
         if request['method']
+          logger.debug "Server received #{request['method']}"
           message = Message.select(request['method']).new(self, request)
           begin
             message.process
@@ -138,6 +151,7 @@ module Solargraph
 
       # @param uri [String]
       def diagnose uri
+        logger.debug "Diagnosing #{uri}"
         begin
           results = library.diagnose uri_to_file(uri)
           send_notification "textDocument/publishDiagnostics", {
@@ -214,6 +228,7 @@ module Solargraph
         json = response.to_json
         envelope = "Content-Length: #{json.bytesize}\r\n\r\n#{json}"
         queue envelope
+        logger.debug "Server sent #{method}"
       end
 
       # Send a request to the client and execute the provided block to process
@@ -236,6 +251,7 @@ module Solargraph
         envelope = "Content-Length: #{json.bytesize}\r\n\r\n#{json}"
         queue envelope
         @next_request_id += 1
+        logger.debug "Server sent #{method}"
       end
 
       # Register the methods as capabilities with the client.
@@ -244,6 +260,7 @@ module Solargraph
       #
       # @param methods [Array<String>] The methods to register
       def register_capabilities methods
+        logger.debug "Registering capabilities: #{methods}"
         @register_semaphore.synchronize do
           send_request 'client/registerCapability', {
             registrations: methods.select{|m| can_register?(m) and !registered?(m)}.map { |m|
@@ -264,6 +281,7 @@ module Solargraph
       #
       # @param methods [Array<String>] The methods to unregister
       def unregister_capabilities methods
+        logger.debug "Unregistering capabilities: #{methods}"
         @register_semaphore.synchronize do
           send_request 'client/unregisterCapability', {
             unregisterations: methods.select{|m| registered?(m)}.map{ |m|
