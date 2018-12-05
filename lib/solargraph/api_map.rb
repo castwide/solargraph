@@ -39,10 +39,7 @@ module Solargraph
         @store = Store.new(pins + YardMap.new.pins)
         @unresolved_requires = []
       }
-      resolved = resolve_method_aliases
-      unless resolved.nil?
-        @mutex.synchronize { @store = Store.new(resolved) }
-      end
+      resolve_method_aliases
       self
     end
 
@@ -115,10 +112,7 @@ module Solargraph
         @store = new_store
         @unresolved_requires = yard_map.unresolved_requires
       }
-      resolved = resolve_method_aliases
-      unless resolved.nil?
-        @mutex.synchronize { @store = Store.new(resolved) }
-      end
+      resolve_method_aliases
       self
     end
 
@@ -642,7 +636,7 @@ module Solargraph
       false
     end
 
-    # @return [Array<Pin::Base>, nil]
+    # @return [void]
     def resolve_method_aliases
       aliased = false
       result = pins.map do |pin|
@@ -653,7 +647,7 @@ module Solargraph
         Pin::Method.new(pin.location, pin.namespace, pin.name, origin.comments, origin.scope, origin.visibility, origin.parameters)
       end
       return nil unless aliased
-      result
+      @mutex.synchronize { @store = Store.new(result) }
     end
   end
 end
