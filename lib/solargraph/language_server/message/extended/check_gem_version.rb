@@ -28,7 +28,7 @@ module Solargraph
                                               o, s = Open3.capture2("gem update solargraph")
                                               if s == 0
                                                 host.show_message 'Successfully updated the Solargraph gem.', LanguageServer::MessageTypes::INFO
-                                                host.send_notification '$/solargraph/restart'
+                                                host.send_notification '$/solargraph/restart', {}
                                               else
                                                 host.show_message 'An error occurred while updating the gem.', LanguageServer::MessageTypes::ERROR
                                               end
