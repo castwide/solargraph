@@ -65,7 +65,8 @@ module Solargraph
     # @return [self]
     def catalog bundle
       new_map_hash = {}
-      unmerged = false
+      # Bundle always needs to be merged if it adds or removes sources
+      merged = (bundle.sources.length == source_map_hash.values.length)
       bundle.sources.each do |source|
         if source_map_hash.has_key?(source.filename)
           if source_map_hash[source.filename].code == source.code
@@ -76,16 +77,16 @@ module Solargraph
               new_map_hash[source.filename] = source_map_hash[source.filename]
             else
               new_map_hash[source.filename] = map
-              unmerged = true
+              merged = false
             end
           end
         else
           map = Solargraph::SourceMap.map(source)
           new_map_hash[source.filename] = map
-          unmerged = true
+          merged = false
         end
       end
-      return self unless unmerged
+      return self if merged
       pins = []
       reqs = []
       # @param map [SourceMap]
