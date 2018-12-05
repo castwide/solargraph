@@ -21,7 +21,7 @@ module Solargraph
                 available = Gem::Version.new(tuple.version)
                 current = Gem::Version.new(Solargraph::VERSION)
                 if available > current
-                  host.show_message_request "Solargraph gem version #{available} is available.",
+                  host.show_message_request "Solargraph gem version #{available} is available. (Current version: #{current})",
                                             LanguageServer::MessageTypes::INFO,
                                             ['Update now'] do |result|
                                               next unless result == 'Update now'
