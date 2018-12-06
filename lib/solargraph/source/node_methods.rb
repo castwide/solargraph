@@ -172,22 +172,18 @@ module Solargraph
           def reduce_to_value_nodes nodes
             result = []
             nodes.each do |node|
-              if node.nil?
-                result.push nil
+              next unless node.is_a?(Parser::AST::Node)
+              if REDUCEABLE.include?(node.type)
+                result.concat get_return_nodes_from_children(node)
+                # node.children.each do |child|
+                #   result.concat reduce_to_value_nodes(child)
+                # end
+              elsif CONDITIONAL.include?(node.type)
+                result.concat reduce_to_value_nodes(node.children[1..-1])
+              elsif node.type == :return
+                result.concat get_return_nodes(node.children[0])
               else
-                next unless node.is_a?(Parser::AST::Node)
-                if REDUCEABLE.include?(node.type)
-                  result.concat get_return_nodes_from_children(node)
-                  # node.children.each do |child|
-                  #   result.concat reduce_to_value_nodes(child)
-                  # end
-                elsif CONDITIONAL.include?(node.type)
-                  result.concat reduce_to_value_nodes(node.children[1..-1])
-                elsif node.type == :return
-                  result.concat get_return_nodes(node.children[0])
-                else
-                  result.push node
-                end
+                result.push node
               end
             end
             result
