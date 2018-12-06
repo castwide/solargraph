@@ -109,6 +109,22 @@ module Solargraph
         signature
       end
 
+      # Find all the nodes within the provided node that potentially return a
+      # value.
+      #
+      # The node parameter typically represents a method's logic, e.g., the
+      # second child (after the :args node) of a :def node. A simple one-line
+      # method would typically return itself, while a node with conditions
+      # would return the resulting node from each conditional branch. Nodes
+      # that follow a :return node are assumed to be unreachable. Implicit nil
+      # values are ignored.
+      #
+      # @todo Maybe this method should include implicit nil values in results.
+      #   For example, a bare `return` would return a :nil node instead of an
+      #   empty array.
+      #
+      # @param node [AST::Node]
+      # @return [Array<AST::Node>]
       def returns_from node
         DeepInference.get_return_nodes(node)
       end
