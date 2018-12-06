@@ -50,4 +50,45 @@ describe Solargraph::Source::NodeMethods do
     ast = Parser::CurrentRuby.parse('foo = bar; foo.bar(1).baz(2)')
     expect(Solargraph::Source::NodeMethods.resolve_node_signature(ast.children[1])).to eq('foo.bar.baz')
   end
+
+  it "handles return nodes with implicit nil values" do
+    node = Solargraph::Source.parse(%(
+      return if true
+    ))
+    expect {
+      Solargraph::Source::NodeMethods.returns_from(node)
+    }.not_to raise_error
+  end
+
+  it "handles return nodes with implicit nil values" do
+    node = Solargraph::Source.parse(%(
+      return bla if true
+    ))
+    expect {
+      Solargraph::Source::NodeMethods.returns_from(node)
+    }.not_to raise_error
+  end
+
+  it "handles return nodes in reduceable (begin) nodes" do
+    node = Solargraph::Source.parse(%(
+      begin
+        return if true
+      end
+    ))
+    expect {
+      Solargraph::Source::NodeMethods.returns_from(node)
+    }.not_to raise_error
+  end
+
+  it "handles return nodes after other nodes" do
+    node = Solargraph::Source.parse(%(
+      begin
+        x = 1
+        return if true
+      end
+    ))
+    expect {
+      Solargraph::Source::NodeMethods.returns_from(node)
+    }.not_to raise_error
+  end
 end

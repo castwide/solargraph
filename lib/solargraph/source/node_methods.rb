@@ -120,6 +120,7 @@ module Solargraph
           SKIPPABLE = [:def, :defs, :class, :sclass, :module]
 
           def get_return_nodes node
+            return [] unless node.is_a?(Parser::AST::Node)
             result = []
             if REDUCEABLE.include?(node.type)
               result.concat get_return_nodes_from_children(node)
@@ -140,8 +141,8 @@ module Solargraph
               next if SKIPPABLE.include?(node.type)
               if node.type == :return
                 result.concat reduce_to_value_nodes([node.children[0]])
-                # @todo Maybe return the result here because the rest of the code is
-                #   unreachable
+                # Return the result here because the rest of the code is
+                # unreachable
                 return result
               else
                 result.concat get_return_nodes_only(node)
@@ -158,8 +159,9 @@ module Solargraph
               next if SKIPPABLE.include?(node.type)
               if node.type == :return
                 result.concat reduce_to_value_nodes([node.children[0]])
-                # @todo Maybe return the result here because the rest of the code is
-                #   unreachable
+                # Return the result here because the rest of the code is
+                # unreachable
+                return result
               else
                 result.concat get_return_nodes_only(node)
               end
@@ -170,23 +172,28 @@ module Solargraph
           def reduce_to_value_nodes nodes
             result = []
             nodes.each do |node|
-              if REDUCEABLE.include?(node.type)
-                result.concat get_return_nodes_from_children(node)
-                # node.children.each do |child|
-                #   result.concat reduce_to_value_nodes(child)
-                # end
-              elsif CONDITIONAL.include?(node.type)
-                result.concat reduce_to_value_nodes(node.children[1..-1])
-              elsif node.type == :return
-                result.concat get_return_nodes(node.children[0])
+              if node.nil?
+                result.push nil
               else
-                result.push node
+                next unless node.is_a?(Parser::AST::Node)
+                if REDUCEABLE.include?(node.type)
+                  result.concat get_return_nodes_from_children(node)
+                  # node.children.each do |child|
+                  #   result.concat reduce_to_value_nodes(child)
+                  # end
+                elsif CONDITIONAL.include?(node.type)
+                  result.concat reduce_to_value_nodes(node.children[1..-1])
+                elsif node.type == :return
+                  result.concat get_return_nodes(node.children[0])
+                else
+                  result.push node
+                end
               end
             end
             result
           end
         end
-      end      
+      end
     end
   end
 end
