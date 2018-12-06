@@ -55,18 +55,18 @@ describe Solargraph::Source::NodeMethods do
     node = Solargraph::Source.parse(%(
       return if true
     ))
-    expect {
-      Solargraph::Source::NodeMethods.returns_from(node)
-    }.not_to raise_error
+    rets = Solargraph::Source::NodeMethods.returns_from(node)
+    # @todo Should there be two returns, the second being nil?
+    expect(rets.length).to eq(0)
   end
 
   it "handles return nodes with implicit nil values" do
     node = Solargraph::Source.parse(%(
       return bla if true
     ))
-    expect {
-      Solargraph::Source::NodeMethods.returns_from(node)
-    }.not_to raise_error
+    rets = Solargraph::Source::NodeMethods.returns_from(node)
+    # @todo Should there be two returns, the second being nil?
+    expect(rets.length).to eq(1)
   end
 
   it "handles return nodes in reduceable (begin) nodes" do
@@ -75,9 +75,9 @@ describe Solargraph::Source::NodeMethods do
         return if true
       end
     ))
-    expect {
-      Solargraph::Source::NodeMethods.returns_from(node)
-    }.not_to raise_error
+    rets = Solargraph::Source::NodeMethods.returns_from(node)
+    # @todo Should there be two nil returns?
+    expect(rets.length).to eq(0)
   end
 
   it "handles return nodes after other nodes" do
@@ -85,9 +85,8 @@ describe Solargraph::Source::NodeMethods do
       x = 1
       return x
     ))
-    expect {
-      Solargraph::Source::NodeMethods.returns_from(node)
-    }.not_to raise_error
+    rets = Solargraph::Source::NodeMethods.returns_from(node)
+    expect(rets.length).to eq(1)
   end
 
   it "handles return nodes with unreachable code" do
@@ -96,9 +95,8 @@ describe Solargraph::Source::NodeMethods do
       return x
       y
     ))
-    expect {
-      Solargraph::Source::NodeMethods.returns_from(node)
-    }.not_to raise_error
+    rets = Solargraph::Source::NodeMethods.returns_from(node)
+    expect(rets.length).to eq(1)
   end
 
   it "handles conditional returns with following code" do
@@ -107,9 +105,8 @@ describe Solargraph::Source::NodeMethods do
       return x if foo
       y
     ))
-    expect {
-      Solargraph::Source::NodeMethods.returns_from(node)
-    }.not_to raise_error
+    rets = Solargraph::Source::NodeMethods.returns_from(node)
+    expect(rets.length).to eq(2)
   end
 
   it "handles return nodes with reduceable code" do
@@ -119,8 +116,7 @@ describe Solargraph::Source::NodeMethods do
         y
       end
     ))
-    expect {
-      Solargraph::Source::NodeMethods.returns_from(node)
-    }.not_to raise_error
+    rets = Solargraph::Source::NodeMethods.returns_from(node)
+    expect(rets.length).to eq(1)
   end
 end
