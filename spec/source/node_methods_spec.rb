@@ -82,9 +82,41 @@ describe Solargraph::Source::NodeMethods do
 
   it "handles return nodes after other nodes" do
     node = Solargraph::Source.parse(%(
-      begin
-        x = 1
-        return if true
+      x = 1
+      return x
+    ))
+    expect {
+      Solargraph::Source::NodeMethods.returns_from(node)
+    }.not_to raise_error
+  end
+
+  it "handles return nodes with unreachable code" do
+    node = Solargraph::Source.parse(%(
+      x = 1
+      return x
+      y
+    ))
+    expect {
+      Solargraph::Source::NodeMethods.returns_from(node)
+    }.not_to raise_error
+  end
+
+  it "handles conditional returns with following code" do
+    node = Solargraph::Source.parse(%(
+      x = 1
+      return x if foo
+      y
+    ))
+    expect {
+      Solargraph::Source::NodeMethods.returns_from(node)
+    }.not_to raise_error
+  end
+
+  it "handles return nodes with reduceable code" do
+    node = Solargraph::Source.parse(%(
+      return begin
+        x if foo
+        y
       end
     ))
     expect {

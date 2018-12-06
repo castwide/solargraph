@@ -126,6 +126,8 @@ module Solargraph
               result.concat get_return_nodes_from_children(node)
             elsif CONDITIONAL.include?(node.type)
               result.concat reduce_to_value_nodes(node.children[1..-1])
+            elsif node.type == :return
+              result.concat reduce_to_value_nodes([node.children[0]])
             else
               result.push node
             end
@@ -175,9 +177,6 @@ module Solargraph
               next unless node.is_a?(Parser::AST::Node)
               if REDUCEABLE.include?(node.type)
                 result.concat get_return_nodes_from_children(node)
-                # node.children.each do |child|
-                #   result.concat reduce_to_value_nodes(child)
-                # end
               elsif CONDITIONAL.include?(node.type)
                 result.concat reduce_to_value_nodes(node.children[1..-1])
               elsif node.type == :return
