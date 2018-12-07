@@ -22,7 +22,7 @@ module Solargraph
           end
           result = api_map.get_constants(ns, context)
           last_name = bottom.split('::').last
-          result.select{ |p| p.path.split('::').last == last_name }
+          result.select{ |p| p.name == last_name }
         end
       end
     end
