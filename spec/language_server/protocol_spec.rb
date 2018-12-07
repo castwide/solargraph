@@ -276,6 +276,17 @@ describe Protocol do
     expect(response['result']['changes']['file:///file.rb']).to be_a(Array)
   end
 
+  it "handles textDocument/foldingRange" do
+    @protocol.request 'textDocument/foldingRange', {
+      'textDocument' => {
+        'uri' => 'file:///file.rb'
+      }
+    }
+    response = @protocol.response
+    expect(response['error']).to be_nil
+    expect(response['result'].length).not_to be_zero
+  end
+
   it "handles textDocument/didClose" do
     @protocol.request 'textDocument/didClose', {
       'textDocument' => {
