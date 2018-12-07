@@ -453,7 +453,8 @@ module Solargraph
           'references' => true,
           'autoformat' => false,
           'diagnostics' => false,
-          'formatting' => false
+          'formatting' => false,
+          'folding' => true
         }
       end
 
