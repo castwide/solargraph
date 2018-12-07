@@ -6,13 +6,12 @@ module Solargraph
       module TextDocument
         class FoldingRange < Base
           def process
-            STDERR.puts "Asking for folding ranges"
             result = host.folding_ranges(params['textDocument']['uri']).map do |range|
               {
                 startLine: range.start.line,
-                startCharacter: range.start.character,
-                endLine: range.ending.line,
-                endCharacter: range.ending.character,
+                startCharacter: 0,
+                endLine: range.ending.line - 1,
+                endCharacter: 0,
                 kind: 'region'
               }
             end

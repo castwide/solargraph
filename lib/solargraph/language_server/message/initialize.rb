@@ -3,7 +3,6 @@ module Solargraph
     module Message
       class Initialize < Base
         def process
-          STDERR.puts params
           host.configure params['initializationOptions']
           if params['rootUri']
             host.prepare UriHelpers.uri_to_file(params['rootUri'])
