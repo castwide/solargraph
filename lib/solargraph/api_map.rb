@@ -117,9 +117,10 @@ module Solargraph
     end
 
     # @param filename [String]
-    # @param position [Position]
+    # @param position [Position, Array(Integer, Integer)]
     # @return [Source::Cursor]
     def cursor_at filename, position
+      position = Position.normalize(position)
       raise "File not found: #{filename}" unless source_map_hash.has_key?(filename)
       source_map_hash[filename].cursor_at(position)
     end
@@ -127,9 +128,10 @@ module Solargraph
     # Get a clip by filename and position.
     #
     # @param filename [String]
-    # @param position [Position]
+    # @param position [Position, Array(Integer, Integer)]
     # @return [SourceMap::Clip]
     def clip_at filename, position
+      position = Position.normalize(position)
       SourceMap::Clip.new(self, cursor_at(filename, position))
     end
 
