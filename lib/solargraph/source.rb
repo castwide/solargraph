@@ -202,7 +202,7 @@ module Solargraph
     end
 
     FOLDING_NODE_TYPES = %i[
-      class sclass module def defs if str dstr array while unless kwbegin
+      class sclass module def defs if str dstr array while unless kwbegin hash
     ].freeze
 
     # Get an array of ranges that can be folded, e.g., the range of a class
