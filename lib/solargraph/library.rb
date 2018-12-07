@@ -332,11 +332,6 @@ module Solargraph
       @api_map ||= Solargraph::ApiMap.new
     end
 
-    # @return [YardMap]
-    def yard_map
-      @yard_map ||= Solargraph::YardMap.new
-    end
-
     # @return [Bundle]
     def bundle
       Bundle.new(
