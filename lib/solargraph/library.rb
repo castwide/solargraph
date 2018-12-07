@@ -314,6 +314,10 @@ module Solargraph
       @synchronized = true
     end
 
+    def folding_ranges filename
+      read(filename).folding_ranges
+    end
+
     # Create a library from a directory.
     #
     # @param directory [String] The path to be used for the workspace

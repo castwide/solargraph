@@ -201,7 +201,30 @@ module Solargraph
       Location.new(filename, range)
     end
 
+    FOLDING_NODE_TYPES = [:class, :sclass, :module, :def, :defs, :if]
+
+    # @return [Array<Range>]
+    def folding_ranges
+      # @todo Instance variable
+      inner_folding_ranges node
+    end
+
     private
+
+    # @param top [Parser::AST::Node]
+    # @return [Array<Range>]
+    def inner_folding_ranges top
+      result = []
+      if FOLDING_NODE_TYPES.include?(top.type)
+        range = Range.from_node(top)
+        result.push range unless range.start.line == range.ending.line
+      end
+      top.children.each do |child|
+        next unless child.is_a?(Parser::AST::Node)
+        result.concat inner_folding_ranges(child)
+      end
+      result
+    end
 
     def associated_comments
       @associated_comments ||= begin
