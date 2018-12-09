@@ -72,7 +72,7 @@ module Solargraph
       end
 
       def typify api_map
-        STDERR.puts "WARNING: Pin #infer methods are deprecated. Use #typify or #probe instead."
+        # @todo Does anything need to be eliminated because it's more accurately a probe?
         type = super
         return type unless type.undefined?
         chain = Source::NodeChainer.chain(block.receiver, filename)
