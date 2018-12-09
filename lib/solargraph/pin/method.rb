@@ -87,6 +87,18 @@ module Solargraph
           visibility == other.visibility
       end
 
+      def typify api_map
+        decl = super
+        return decl unless decl.undefined?
+        type = see_reference(api_map)
+        return type unless type.nil?
+        ComplexType::UNDEFINED
+      end
+
+      def probe api_map
+        infer_from_return_nodes(api_map)
+      end
+
       def infer api_map
         decl = super
         return decl unless decl.undefined?

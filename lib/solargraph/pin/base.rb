@@ -147,6 +147,16 @@ module Solargraph
 
       # @param api_map [ApiMap]
       # @return [ComplexType]
+      def typify api_map
+        return_complex_type.qualify(api_map, namespace)
+      end
+
+      def probe api_map
+        typify api_map
+      end
+
+      # @param api_map [ApiMap]
+      # @return [ComplexType]
       def infer api_map
         return_complex_type.qualify(api_map, namespace)
       end
