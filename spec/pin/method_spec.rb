@@ -76,7 +76,7 @@ describe Solargraph::Pin::Method do
     api_map = Solargraph::ApiMap.new
     api_map.map source
     pin = api_map.get_path_pins('Foo2#baz').first
-    type = pin.infer(api_map)
+    type = pin.typify(api_map)
     expect(type.tag).to eq('Hash')
   end
 
@@ -97,7 +97,7 @@ describe Solargraph::Pin::Method do
     api_map = Solargraph::ApiMap.new
     api_map.map source
     pin = api_map.get_path_pins('Container::Foo2#baz').first
-    type = pin.infer(api_map)
+    type = pin.typify(api_map)
     expect(type.tag).to eq('Hash')
   end
 
@@ -113,7 +113,7 @@ describe Solargraph::Pin::Method do
     api_map = Solargraph::ApiMap.new
     api_map.map source
     pin = api_map.get_path_pins('Foo#baz').first
-    type = pin.infer(api_map)
+    type = pin.typify(api_map)
     expect(type.tag).to eq('Hash')
   end
 end
