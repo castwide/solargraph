@@ -57,6 +57,7 @@ module Solargraph
             next p if p.kind == Pin::METHOD || p.kind == Pin::ATTRIBUTE || p.kind == Pin::NAMESPACE
             # type = p.infer(api_map)
             type = p.typify(api_map)
+            type = p.probe(api_map) if type.undefined?
             next p if p.return_complex_type == type
             Pin::ProxyType.new(p.location, nil, p.name, type)
           end
