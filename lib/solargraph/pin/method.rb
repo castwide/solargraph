@@ -143,7 +143,8 @@ module Solargraph
         nodes.each do |n|
           next if n.loc.nil?
           clip = api_map.clip_at(location.filename, Solargraph::Position.new(n.loc.expression.last_line, n.loc.expression.last_column))
-          type = clip.infer
+          chain = Solargraph::Source::NodeChainer.chain(n, location.filename)
+          type = chain.infer(api_map, self, clip.locals)
           result.push type unless type.undefined?
         end
         return ComplexType::UNDEFINED if result.empty?
