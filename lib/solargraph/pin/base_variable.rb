@@ -49,6 +49,7 @@ module Solargraph
 
       # @param api_map [ApiMap]
       def infer api_map
+        STDERR.puts "WARNING: Pin #infer methods are deprecated. Use #typify or #probe instead."
         result = super
         return result if result.defined? or @assignment.nil?
         chain = Source::NodeChainer.chain(@assignment, filename)

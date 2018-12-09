@@ -71,8 +71,32 @@ module Solargraph
         block
       end
 
+      def typify api_map
+        STDERR.puts "WARNING: Pin #infer methods are deprecated. Use #typify or #probe instead."
+        type = super
+        return type unless type.undefined?
+        chain = Source::NodeChainer.chain(block.receiver, filename)
+        clip = api_map.clip_at(location.filename, location.range.start)
+        locals = clip.locals - [self]
+        meths = chain.define(api_map, block, locals)
+        meths.each do |meth|
+          if (Solargraph::CoreFills::METHODS_WITH_YIELDPARAM_SUBTYPES.include?(meth.path))
+            bmeth = chain.base.define(api_map, context, locals).first
+            return ComplexType::UNDEFINED if bmeth.nil? or bmeth.return_complex_type.undefined? or bmeth.return_complex_type.subtypes.empty?
+            return bmeth.return_complex_type.subtypes.first.qualify(api_map, bmeth.context.namespace)
+          else
+            yps = meth.docstring.tags(:yieldparam)
+            unless yps[index].nil? or yps[index].types.nil? or yps[index].types.empty?
+              return ComplexType.parse(yps[index].types[0]).first
+            end
+          end
+        end
+        ComplexType::UNDEFINED
+      end
+
       # @param api_map [ApiMap]
       def infer api_map
+        STDERR.puts "WARNING: Pin #infer methods are deprecated. Use #typify or #probe instead."
         return return_complex_type unless return_complex_type.undefined?
         chain = Source::NodeChainer.chain(block.receiver, filename)
         clip = api_map.clip_at(location.filename, location.range.start)

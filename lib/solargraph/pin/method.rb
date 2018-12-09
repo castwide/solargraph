@@ -162,7 +162,7 @@ module Solargraph
           end
           pins = api_map.get_path_pins(path)
           pins.each do |pin|
-            type = pin.infer(api_map)
+            type = pin.typify(api_map)
             return type unless type.undefined?
           end
         end
