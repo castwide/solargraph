@@ -94,7 +94,7 @@ module Solargraph
         ComplexType::UNDEFINED
       end
 
-      # @param api_map [ApiMap]
+      # @deprecated Use #typify and/or #probe instead
       def infer api_map
         STDERR.puts "WARNING: Pin #infer methods are deprecated. Use #typify or #probe instead."
         return return_complex_type unless return_complex_type.undefined?

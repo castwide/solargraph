@@ -47,7 +47,7 @@ module Solargraph
         chain.infer(api_map, ProxyType.anonymous(context), locals)
       end
 
-      # @param api_map [ApiMap]
+      # @deprecated Use #typify and/or #probe instead
       def infer api_map
         STDERR.puts "WARNING: Pin #infer methods are deprecated. Use #typify or #probe instead."
         result = super

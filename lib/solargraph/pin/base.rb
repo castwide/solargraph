@@ -155,6 +155,7 @@ module Solargraph
         typify api_map
       end
 
+      # @deprecated Use #typify and/or #probe instead
       # @param api_map [ApiMap]
       # @return [ComplexType]
       def infer api_map
