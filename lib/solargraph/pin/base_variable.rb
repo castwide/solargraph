@@ -47,17 +47,6 @@ module Solargraph
         chain.infer(api_map, ProxyType.anonymous(context), locals)
       end
 
-      # @deprecated Use #typify and/or #probe instead
-      def infer api_map
-        STDERR.puts "WARNING: Pin #infer methods are deprecated. Use #typify or #probe instead."
-        result = super
-        return result if result.defined? or @assignment.nil?
-        chain = Source::NodeChainer.chain(@assignment, filename)
-        clip = api_map.clip_at(location.filename, location.range.start)
-        locals = clip.locals - [self]
-        chain.infer(api_map, ProxyType.anonymous(context), locals)
-      end
-
       def == other
         return false unless super
         assignment == other.assignment

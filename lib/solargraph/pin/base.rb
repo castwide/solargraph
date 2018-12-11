@@ -156,11 +156,11 @@ module Solargraph
       end
 
       # @deprecated Use #typify and/or #probe instead
-      # @param api_map [ApiMap]
-      # @return [ComplexType]
       def infer api_map
         STDERR.puts "WARNING: Pin #infer methods are deprecated. Use #typify or #probe instead."
-        return_complex_type.qualify(api_map, namespace)
+        type = typify(api_map)
+        return type unless type.undefined?
+        probe api_map
       end
 
       # Try to merge data from another pin. Merges are only possible if the
