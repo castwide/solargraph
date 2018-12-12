@@ -21,14 +21,14 @@ module Solargraph
                 available = Gem::Version.new(tuple.version)
                 current = Gem::Version.new(Solargraph::VERSION)
                 if available > current
-                  host.show_message_request "Solagraph gem version #{available} is available.",
+                  host.show_message_request "Solargraph gem version #{available} is available.",
                                             LanguageServer::MessageTypes::INFO,
                                             ['Update now'] do |result|
                                               next unless result == 'Update now'
                                               o, s = Open3.capture2("gem update solargraph")
                                               if s == 0
                                                 host.show_message 'Successfully updated the Solargraph gem.', LanguageServer::MessageTypes::INFO
-                                                host.send_notification '$/solargraph/restart'
+                                                host.send_notification '$/solargraph/restart', {}
                                               else
                                                 host.show_message 'An error occurred while updating the gem.', LanguageServer::MessageTypes::ERROR
                                               end

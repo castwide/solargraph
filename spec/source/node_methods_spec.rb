@@ -50,4 +50,73 @@ describe Solargraph::Source::NodeMethods do
     ast = Parser::CurrentRuby.parse('foo = bar; foo.bar(1).baz(2)')
     expect(Solargraph::Source::NodeMethods.resolve_node_signature(ast.children[1])).to eq('foo.bar.baz')
   end
+
+  it "handles return nodes with implicit nil values" do
+    node = Solargraph::Source.parse(%(
+      return if true
+    ))
+    rets = Solargraph::Source::NodeMethods.returns_from(node)
+    # @todo Should there be two returns, the second being nil?
+    expect(rets.length).to eq(0)
+  end
+
+  it "handles return nodes with implicit nil values" do
+    node = Solargraph::Source.parse(%(
+      return bla if true
+    ))
+    rets = Solargraph::Source::NodeMethods.returns_from(node)
+    # @todo Should there be two returns, the second being nil?
+    expect(rets.length).to eq(1)
+  end
+
+  it "handles return nodes in reduceable (begin) nodes" do
+    node = Solargraph::Source.parse(%(
+      begin
+        return if true
+      end
+    ))
+    rets = Solargraph::Source::NodeMethods.returns_from(node)
+    # @todo Should there be two nil returns?
+    expect(rets.length).to eq(0)
+  end
+
+  it "handles return nodes after other nodes" do
+    node = Solargraph::Source.parse(%(
+      x = 1
+      return x
+    ))
+    rets = Solargraph::Source::NodeMethods.returns_from(node)
+    expect(rets.length).to eq(1)
+  end
+
+  it "handles return nodes with unreachable code" do
+    node = Solargraph::Source.parse(%(
+      x = 1
+      return x
+      y
+    ))
+    rets = Solargraph::Source::NodeMethods.returns_from(node)
+    expect(rets.length).to eq(1)
+  end
+
+  it "handles conditional returns with following code" do
+    node = Solargraph::Source.parse(%(
+      x = 1
+      return x if foo
+      y
+    ))
+    rets = Solargraph::Source::NodeMethods.returns_from(node)
+    expect(rets.length).to eq(2)
+  end
+
+  it "handles return nodes with reduceable code" do
+    node = Solargraph::Source.parse(%(
+      return begin
+        x if foo
+        y
+      end
+    ))
+    rets = Solargraph::Source::NodeMethods.returns_from(node)
+    expect(rets.length).to eq(1)
+  end
 end

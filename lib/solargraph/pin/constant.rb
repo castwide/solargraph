@@ -22,6 +22,7 @@ module Solargraph
       end
 
       def path
+        return name if namespace.empty?
         "#{namespace}::#{name}"
       end
     end
