@@ -151,11 +151,15 @@ module Solargraph
         return_complex_type.qualify(api_map, namespace)
       end
 
+      # @param api_map [ApiMap]
+      # @return [ComplexType]
       def probe api_map
         typify api_map
       end
 
       # @deprecated Use #typify and/or #probe instead
+      # @param api_map [ApiMap]
+      # @return [ComplexType]
       def infer api_map
         STDERR.puts "WARNING: Pin #infer methods are deprecated. Use #typify or #probe instead."
         type = typify(api_map)
