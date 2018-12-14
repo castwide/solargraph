@@ -28,9 +28,10 @@ module Solargraph
 
     # True if the specified position is inside the range.
     #
-    # @param position [Solargraph::Position]
+    # @param position [Position, Array(Integer, Integer)]
     # @return [Boolean]
     def contain? position
+      position = Position.normalize(position)
       return false if position.line < start.line || position.line > ending.line
       return false if position.line == start.line && position.character < start.character
       return false if position.line == ending.line && position.character > ending.character
@@ -39,9 +40,10 @@ module Solargraph
 
     # True if the range contains the specified position and the position does not precede it.
     #
-    # @param position [Position]
+    # @param position [Position, Array(Integer, Integer)]
     # @return [Boolean]
     def include? position
+      position = Position.normalize(position)
       contain?(position) && !(position.line == start.line && position.character == start.character)
     end
 

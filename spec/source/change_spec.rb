@@ -58,4 +58,22 @@ describe Solargraph::Source::Change do
     updated = change.write(text, true)
     expect(updated).to eq('bar  ')
   end
+
+  it "repairs preceding periods" do
+    text = 'bar.'
+    new_text = ' '
+    range = Solargraph::Range.from_to(0, 4, 0, 4)
+    change = Solargraph::Source::Change.new(range, new_text)
+    updated = change.repair(text)
+    expect(updated).to eq('bar  ')
+  end
+
+  it "repairs preceding colons" do
+    text = 'bar:'
+    new_text = 'x'
+    range = Solargraph::Range.from_to(0, 4, 0, 4)
+    change = Solargraph::Source::Change.new(range, new_text)
+    updated = change.repair(text)
+    expect(updated).to eq('bar  ')
+  end
 end

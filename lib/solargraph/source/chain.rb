@@ -66,9 +66,10 @@ module Solargraph
         type = ComplexType::UNDEFINED
         pins = define(api_map, name_pin, locals)
         pins.each do |pin|
-          type = pin.infer(api_map)
+          type = pin.typify(api_map)
           break unless type.undefined?
         end
+        type = pins.first.probe(api_map) unless type.defined? || pins.empty?
         @@inference_stack.pop
         type
       end
@@ -107,9 +108,11 @@ module Solargraph
       def infer_first_defined pins, api_map
         type = ComplexType::UNDEFINED
         pins.each do |pin|
-          type = pin.infer(api_map)
+          # type = pin.infer(api_map)
+          type = pin.typify(api_map)
           break unless type.undefined?
         end
+        type = pins.first.probe(api_map) unless type.defined? || pins.empty?
         type
       end
     end

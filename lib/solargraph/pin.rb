@@ -4,6 +4,7 @@ module Solargraph
   module Pin
     autoload :Conversions,      'solargraph/pin/conversions'
     autoload :Base,             'solargraph/pin/base'
+    autoload :BaseMethod,       'solargraph/pin/base_method'
     autoload :Method,           'solargraph/pin/method'
     autoload :MethodAlias,      'solargraph/pin/method_alias'
     autoload :Attribute,        'solargraph/pin/attribute'

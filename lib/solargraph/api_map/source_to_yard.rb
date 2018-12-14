@@ -4,58 +4,61 @@ module Solargraph
 
       # Get the YARD CodeObject at the specified path.
       #
+      # @param path [String]
       # @return [YARD::CodeObjects::Base]
       def code_object_at path
         code_object_map[path]
       end
 
+      # @return [Array<String>]
       def code_object_paths
         code_object_map.keys
       end
 
-      # @param sources [Array<Solargraph::Source>] Sources for code objects
+      # @param store [Array<Store>] ApiMap pin store
+      # @return [void]
       def rake_yard store
         code_object_map.clear
-        #sources.each do |s|
-          store.namespace_pins.each do |pin|
-            next if pin.path.nil? or pin.path.empty?
-            if pin.type == :class
-              code_object_map[pin.path] ||= YARD::CodeObjects::ClassObject.new(root_code_object, pin.path)
-            else
-              code_object_map[pin.path] ||= YARD::CodeObjects::ModuleObject.new(root_code_object, pin.path)
-            end
-            code_object_map[pin.path].docstring = pin.docstring
-            code_object_map[pin.path].files.push pin.location.filename unless pin.location.nil?
+        store.namespace_pins.each do |pin|
+          next if pin.path.nil? or pin.path.empty?
+          if pin.type == :class
+            code_object_map[pin.path] ||= YARD::CodeObjects::ClassObject.new(root_code_object, pin.path)
+          else
+            code_object_map[pin.path] ||= YARD::CodeObjects::ModuleObject.new(root_code_object, pin.path)
           end
-          store.namespace_pins.each do |pin|
-            # pin.include_references.each do |ref|
-            store.get_includes(pin.path).each do |ref|
-              code_object_map[pin.path].instance_mixins.push code_object_map[ref] unless code_object_map[ref].nil? or code_object_map[pin.path].nil?
-            end
+          code_object_map[pin.path].docstring = pin.docstring
+          code_object_map[pin.path].files.push pin.location.filename unless pin.location.nil?
+        end
+        store.namespace_pins.each do |pin|
+          # pin.include_references.each do |ref|
+          store.get_includes(pin.path).each do |ref|
+            code_object_map[pin.path].instance_mixins.push code_object_map[ref] unless code_object_map[ref].nil? or code_object_map[pin.path].nil?
           end
-          store.method_pins.each do |pin|
-            code_object_map[pin.path] ||= YARD::CodeObjects::MethodObject.new(code_object_at(pin.namespace), pin.name, pin.scope)
-            code_object_map[pin.path].docstring = pin.docstring
-            code_object_map[pin.path].visibility = pin.visibility || :public
-            code_object_map[pin.path].files.push pin.location.filename unless pin.location.nil?
-            code_object_map[pin.path].parameters = pin.parameters.map do |p|
-              n = p.match(/^[a-z0-9_]*:?/i)[0]
-              v = nil
-              if p.length > n.length
-                v = p[n.length..-1].gsub(/^ = /, '')
-              end
-              [n, v]
+        end
+        store.method_pins.each do |pin|
+          code_object_map[pin.path] ||= YARD::CodeObjects::MethodObject.new(code_object_at(pin.namespace), pin.name, pin.scope)
+          code_object_map[pin.path].docstring = pin.docstring
+          code_object_map[pin.path].visibility = pin.visibility || :public
+          code_object_map[pin.path].files.push pin.location.filename unless pin.location.nil?
+          code_object_map[pin.path].parameters = pin.parameters.map do |p|
+            n = p.match(/^[a-z0-9_]*:?/i)[0]
+            v = nil
+            if p.length > n.length
+              v = p[n.length..-1].gsub(/^ = /, '')
             end
+            [n, v]
           end
-        #end
+        end
       end
 
       private
 
+      # @return [Hash]
       def code_object_map
         @code_object_map ||= {}
       end
 
+      # @return [YARD::CodeObjects::RootObject]
       def root_code_object
         @root_code_object ||= YARD::CodeObjects::RootObject.new(nil, 'root')
       end

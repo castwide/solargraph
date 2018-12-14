@@ -83,7 +83,7 @@ describe Solargraph::Pin::BlockParameter do
     api_map = Solargraph::ApiMap.new
     api_map.map source
     pin = api_map.source_map('test.rb').locals.select{|p| p.name == 'par'}.first
-    type = pin.infer(api_map)
+    type = pin.typify(api_map)
     expect(type.namespace).to eq('Foo::Bar')
   end
 
@@ -112,6 +112,8 @@ describe Solargraph::Pin::BlockParameter do
     api_map = Solargraph::ApiMap.new
     api_map.map source
     pin = api_map.source_map('test.rb').locals.select{|p| p.is_a?(Solargraph::Pin::BlockParameter)}.first
-    expect(pin.infer(api_map)).to be_undefined
+    # expect(pin.infer(api_map)).to be_undefined
+    expect(pin.typify(api_map)).to be_undefined
+    expect(pin.probe(api_map)).to be_undefined
   end
 end

@@ -80,6 +80,8 @@ module Solargraph
           result.push Chain::ClassVariable.new(n.children[0].to_s)
         elsif [:gvar, :gvasgn].include?(n.type)
           result.push Chain::GlobalVariable.new(n.children[0].to_s)
+        elsif n.type == :or_asgn
+          result.concat generate_links n.children[1]
         elsif [:class, :module, :def, :defs].include?(n.type)
           # @todo Undefined or what?
           result.push Chain::UNDEFINED_CALL

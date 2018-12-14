@@ -109,6 +109,7 @@ module Solargraph
         result
       end
 
+      # @return [Hash]
       def named_macros
         @named_macros ||= begin
           result = {}
@@ -157,7 +158,7 @@ module Solargraph
       end
 
       # @param name [String]
-      # @return [Array<Solargraph::Pin::Namespace>]
+      # @return [Array<Solargraph::Pin::Base>]
       def namespace_children name
         namespace_map[name] || []
       end
