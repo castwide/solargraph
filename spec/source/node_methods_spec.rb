@@ -119,4 +119,20 @@ describe Solargraph::Source::NodeMethods do
     rets = Solargraph::Source::NodeMethods.returns_from(node)
     expect(rets.length).to eq(1)
   end
+
+  it "handles 'and' nodes" do
+    node = Solargraph::Source.parse('1 && "2"')
+    rets = Solargraph::Source::NodeMethods.returns_from(node)
+    expect(rets.length).to eq(2)
+    expect(rets[0].type).to eq(:int)
+    expect(rets[1].type).to eq(:str)
+  end
+
+  it "handles 'or' nodes" do
+    node = Solargraph::Source.parse('1 || "2"')
+    rets = Solargraph::Source::NodeMethods.returns_from(node)
+    expect(rets.length).to eq(2)
+    expect(rets[0].type).to eq(:int)
+    expect(rets[1].type).to eq(:str)
+  end
 end
