@@ -210,6 +210,8 @@ module Solargraph
                 result.concat reduce_to_value_nodes(node.children[1..-1])
               elsif node.type == :return
                 result.concat get_return_nodes(node.children[0])
+              elsif node.type == :and || node.type == :or
+                result.concat reduce_to_value_nodes(node.children)
               else
                 result.push node
               end
