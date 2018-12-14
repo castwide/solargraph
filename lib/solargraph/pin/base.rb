@@ -85,14 +85,12 @@ module Solargraph
       # @param other [Solargraph::Pin::Base, Object]
       # @return [Boolean]
       def nearly? other
-        # @todo The directives test needs to be a deep check similar to
-        #   compare_docstring_tags.
-        self.class == other.class and
-          namespace == other.namespace and
-          name == other.name and
-          (comments == other.comments or
-            ( ((maybe_directives? == false and other.maybe_directives? == false) or compare_directives(directives, other.directives)) and
-            compare_docstring_tags(docstring, other.docstring) )
+        self.class == other.class &&
+          namespace == other.namespace &&
+          name == other.name &&
+          (comments == other.comments ||
+            (((maybe_directives? == false && other.maybe_directives? == false) || compare_directives(directives, other.directives)) &&
+            compare_docstring_tags(docstring, other.docstring))
           )
       end
 
@@ -184,14 +182,13 @@ module Solargraph
       def try_merge! pin
         return false unless nearly?(pin)
         @location = pin.location
-        if comments != pin.comments
-          @comments = pin.comments
-          @docstring = pin.docstring
-          @return_complex_type = pin.return_complex_type
-          @documentation = nil
-          @deprecated = nil
-          reset_conversions
-        end
+        return true if comments == pin.comments
+        @comments = pin.comments
+        @docstring = pin.docstring
+        @return_complex_type = pin.return_complex_type
+        @documentation = nil
+        @deprecated = nil
+        reset_conversions
         true
       end
 

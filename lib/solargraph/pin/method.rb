@@ -45,7 +45,6 @@ module Solargraph
         Solargraph::LanguageServer::CompletionItemKinds::METHOD
       end
 
-      # @return [Integer]
       def symbol_kind
         LanguageServer::SymbolKinds::METHOD
       end
@@ -91,7 +90,7 @@ module Solargraph
 
       # @deprecated Use #typify and/or #probe instead
       def infer api_map
-        STDERR.puts "WARNING: Pin #infer methods are deprecated. Use #typify or #probe instead."
+        STDERR.puts 'WARNING: Pin #infer methods are deprecated. Use #typify or #probe instead.'
         decl = super
         return decl unless decl.undefined?
         type = see_reference(api_map)
@@ -107,17 +106,24 @@ module Solargraph
 
       private
 
+      # @return [Parser::AST:Node, nil]
+      def method_body_node
+        return nil if node.nil?
+        return node.children[2] if node.type == :def
+        return node.children[3] if node.type == :defs
+        nil
+      end
+
       # @param api_map [ApiMap]
       # @return [ComplexType]
       def infer_from_return_nodes api_map
-        return ComplexType::UNDEFINED if node.nil? ||
-          (node.type == :def && node.children[2].nil?) ||
-          (node.type == :defs && node.children[3].nil?)
         result = []
-        nodes = node.type == :def ? returns_from(node.children[2]) : returns_from(node.children[3])
-        nodes.each do |n|
+        returns_from(method_body_node).each do |n|
           next if n.loc.nil?
-          clip = api_map.clip_at(location.filename, Solargraph::Position.new(n.loc.expression.last_line, n.loc.expression.last_column))
+          clip = api_map.clip_at(
+            location.filename,
+            [n.loc.expression.last_line, n.loc.expression.last_column]
+          )
           chain = Solargraph::Source::NodeChainer.chain(n, location.filename)
           type = chain.infer(api_map, self, clip.locals)
           result.push type unless type.undefined?
