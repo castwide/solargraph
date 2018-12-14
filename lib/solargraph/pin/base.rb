@@ -145,12 +145,20 @@ module Solargraph
         @deprecated ||= docstring.has_tag?('deprecated')
       end
 
+      # Get a fully qualified type from the pin's return type.
+      #
+      # The relative type is determined from YARD documentation (@return,
+      # @param, @type, etc.) and its namespaces are fully qualified using the
+      # provided ApiMap.
+      #
       # @param api_map [ApiMap]
       # @return [ComplexType]
       def typify api_map
         return_complex_type.qualify(api_map, namespace)
       end
 
+      # Infer the pin's return type via static code analysis.
+      #
       # @param api_map [ApiMap]
       # @return [ComplexType]
       def probe api_map
