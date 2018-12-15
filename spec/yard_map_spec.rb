@@ -79,4 +79,20 @@ describe Solargraph::YardMap do
     pins = api_map.get_methods('YARD::Registry', scope: :class)
     expect(pins.map(&:path)).to include('Enumerable#entries')
   end
+
+  it "includes gem dependencies based on attribute" do
+    # Assuming the parser gem exists because it's a Solargraph dependency
+    yard_map = Solargraph::YardMap.new(required: ['parser'])
+    expect(yard_map.with_dependencies?).to eq(true)
+    expect(yard_map.pins.map(&:path)).to include('Parser')
+    expect(yard_map.pins.map(&:path)).to include('AST')
+  end
+
+  it "excludes gem dependencies based on attribute" do
+    # Assuming the parser gem exists because it's a Solargraph dependency
+    yard_map = Solargraph::YardMap.new(required: ['parser'], with_dependencies: false)
+    expect(yard_map.with_dependencies?).to eq(false)
+    expect(yard_map.pins.map(&:path)).to include('Parser')
+    expect(yard_map.pins.map(&:path)).not_to include('AST')
+  end
 end

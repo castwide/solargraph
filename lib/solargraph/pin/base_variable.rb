@@ -39,10 +39,8 @@ module Solargraph
         true
       end
 
-      # @param api_map [ApiMap]
-      def infer api_map
-        result = super
-        return result if result.defined? or @assignment.nil?
+      def probe api_map
+        return ComplexType::UNDEFINED if @assignment.nil?
         chain = Source::NodeChainer.chain(@assignment, filename)
         clip = api_map.clip_at(location.filename, location.range.start)
         locals = clip.locals - [self]
@@ -65,7 +63,7 @@ module Solargraph
 
       def generate_complex_type
         tag = docstring.tag(:type)
-        return ComplexType.parse(*tag.types) unless tag.nil?
+        return ComplexType.parse(*tag.types) unless tag.nil? || tag.types.nil? || tag.types.empty?
         return ComplexType.parse(@literal) unless @literal.nil?
         ComplexType.new
       end

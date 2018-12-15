@@ -41,27 +41,8 @@ describe Solargraph::Pin::Method do
   end
 
   it "detects return types from tags" do
-    # source = Solargraph::Source.new(%(
-    #   # @return [Hash]
-    #   def foo bar:, baz: MyClass.new
-    #   end
-    # ))
-    # pin = source.pins.select{|pin| pin.path == '#foo'}.first
     pin = Solargraph::Pin::Method.new(nil, nil, nil, '@return [Hash]', nil, nil, [])
     expect(pin.return_type.tag).to eq('Hash')
-  end
-
-  # @todo method_pins is only ever used in specs
-  it "is a kind of method" do
-    pin = Solargraph::Pin::Method.new(nil, nil, nil, nil, nil, nil, nil)
-    expect(pin.kind).to eq(Solargraph::Pin::METHOD)
-    # source = Solargraph::Source.new(%(
-    #   def foo; end
-    # ))
-    # pin = source.method_pins.first
-    # expect(pin.kind).to eq(Solargraph::Pin::METHOD)
-    # expect(pin.completion_item_kind).to eq(Solargraph::LanguageServer::CompletionItemKinds::METHOD)
-    # expect(pin.symbol_kind).to eq(Solargraph::LanguageServer::SymbolKinds::METHOD)
   end
 
   it "ignores malformed return tags" do
@@ -78,5 +59,61 @@ describe Solargraph::Pin::Method do
   it "adds param tags to documentation" do
     pin = Solargraph::Pin::Method.new(nil, 'Foo', 'bar', '@param one [String]', :instance, :public, ['*args'])
     expect(pin.documentation).to include('one', '[String]')
+  end
+
+  it "infers return types from reference tags" do
+    source = Solargraph::Source.load_string(%(
+      class Foo1
+        # @return [Hash]
+        def bar; end
+      end
+
+      class Foo2
+        # @return (see Foo1#bar)
+        def baz; end
+      end
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new
+    api_map.map source
+    pin = api_map.get_path_pins('Foo2#baz').first
+    type = pin.typify(api_map)
+    expect(type.tag).to eq('Hash')
+  end
+
+  it "infers return types from relative reference tags" do
+    source = Solargraph::Source.load_string(%(
+      module Container
+        class Foo1
+          # @return [Hash]
+          def bar; end
+        end
+
+        class Foo2
+          # @return (see Foo1#bar)
+          def baz; end
+        end
+      end
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new
+    api_map.map source
+    pin = api_map.get_path_pins('Container::Foo2#baz').first
+    type = pin.typify(api_map)
+    expect(type.tag).to eq('Hash')
+  end
+
+  it "infers return types from method reference tags" do
+    source = Solargraph::Source.load_string(%(
+      class Foo
+        # @return [Hash]
+        def bar; end
+        # @return (see #bar)
+        def baz; end
+      end
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new
+    api_map.map source
+    pin = api_map.get_path_pins('Foo#baz').first
+    type = pin.typify(api_map)
+    expect(type.tag).to eq('Hash')
   end
 end

@@ -28,6 +28,7 @@ module Solargraph
     end
 
     def method_missing name, *args, &block
+      return if first.nil?
       return first.send(name, *args, &block) if respond_to_missing?(name)
       super
     end

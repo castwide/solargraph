@@ -41,7 +41,7 @@ module Solargraph
       # @param n [Parser::AST::Node]
       # @return [Array<Chain::Link>]
       def generate_links n
-        return [] if n.nil?
+        return [] unless n.is_a?(Parser::AST::Node)
         return generate_links(n.children[0]) if n.type == :begin
         # @todo This might not be right. It's weird either way.
         # return generate_links(n.children[2] || n.children[0]) if n.type == :block
@@ -80,6 +80,8 @@ module Solargraph
           result.push Chain::ClassVariable.new(n.children[0].to_s)
         elsif [:gvar, :gvasgn].include?(n.type)
           result.push Chain::GlobalVariable.new(n.children[0].to_s)
+        elsif n.type == :or_asgn
+          result.concat generate_links n.children[1]
         elsif [:class, :module, :def, :defs].include?(n.type)
           # @todo Undefined or what?
           result.push Chain::UNDEFINED_CALL

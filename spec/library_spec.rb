@@ -210,7 +210,8 @@ describe Solargraph::Library do
   end
 
   it "collects references to a method symbol" do
-    library = Solargraph::Library.new
+    workspace = Solargraph::Workspace.new('*')
+    library = Solargraph::Library.new(workspace)
     library.open('file1.rb', %(
       class Foo
         def bar
@@ -230,6 +231,32 @@ describe Solargraph::Library do
     locs = library.references_from('file2.rb', 2, 11)
     expect(locs.length).to eq(3)
     expect(locs.select{|l| l.filename == 'file2.rb' && l.range.start.line == 6}).to be_empty
+  end
+
+  it "collects stripped references to constant symbols" do
+    workspace = Solargraph::Workspace.new('*')
+    library = Solargraph::Library.new(workspace)
+    library.open('file1.rb', %(
+      class Foo
+        def bar
+        end
+      end
+      Foo.new.bar
+    ), 0)
+    library.open('file2.rb', %(
+      class Other
+        foo = Foo.new
+        foo.bar
+      end
+    ), 0)
+    locs = library.references_from('file1.rb', 1, 12, strip: true)
+    expect(locs.length).to eq(3)
+    locs.each do |l|
+      code = library.read_text(l.filename)
+      o1 = Solargraph::Position.to_offset(code, l.range.start)
+      o2 = Solargraph::Position.to_offset(code, l.range.ending)
+      expect(code[o1..o2-1]).to eq('Foo')
+    end
   end
 
   it "searches the core for queries" do

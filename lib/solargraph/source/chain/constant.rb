@@ -20,7 +20,9 @@ module Solargraph
           else
             ns = ''
           end
-          api_map.get_constants(ns, context).select{|p| p.path.end_with?(bottom)}
+          result = api_map.get_constants(ns, context)
+          last_name = bottom.split('::').last
+          result.select{ |p| p.name == last_name }
         end
       end
     end

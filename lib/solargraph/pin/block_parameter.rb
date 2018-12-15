@@ -56,9 +56,14 @@ module Solargraph
           params.each do |p|
             next unless p.name == name
             found = p
+            break
+          end
+          if found.nil? and !index.nil?
+            found = params[index] if params[index] && (params[index].name.nil? || params[index].name.empty?)
           end
           @return_complex_type = ComplexType.parse(*found.types) unless found.nil? or found.types.nil?
         end
+        super
         @return_complex_type
       end
 
@@ -66,9 +71,10 @@ module Solargraph
         block
       end
 
-      # @param api_map [ApiMap]
-      def infer api_map
-        return return_complex_type unless return_complex_type.undefined?
+      def typify api_map
+        # @todo Does anything need to be eliminated because it's more accurately a probe?
+        type = super
+        return type unless type.undefined?
         chain = Source::NodeChainer.chain(block.receiver, filename)
         clip = api_map.clip_at(location.filename, location.range.start)
         locals = clip.locals - [self]

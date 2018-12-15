@@ -28,7 +28,7 @@ module Solargraph
     # @param source [Solargraph::Source]
     # @return [Boolean] True if the source was added to the workspace
     def merge source
-      unless source_hash.has_key?(source.filename)
+      unless directory == '*' || source_hash.has_key?(source.filename)
         # Reload the config to determine if a new source should be included
         @config = Solargraph::Workspace::Config.new(directory)
         return false unless config.calculated.include?(source.filename)
@@ -42,7 +42,7 @@ module Solargraph
     # @param filename [String]
     # @return [Boolean]
     def would_merge? filename
-      return true if source_hash.include?(filename)
+      return true if directory == '*' || source_hash.include?(filename)
       @config = Solargraph::Workspace::Config.new(directory)
       config.calculated.include?(filename)
     end
@@ -130,7 +130,7 @@ module Solargraph
 
     def load_sources
       source_hash.clear
-      unless directory.empty?
+      unless directory.empty? || directory == '*'
         size = config.calculated.length
         raise WorkspaceTooLargeError, "The workspace is too large to index (#{size} files, #{config.max_files} max)" if config.max_files > 0 and size > config.max_files
         config.calculated.each do |filename|

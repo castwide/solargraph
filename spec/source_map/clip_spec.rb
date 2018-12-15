@@ -197,4 +197,234 @@ describe Solargraph::SourceMap::Clip do
     clip = api_map.clip_at('test.rb', Solargraph::Position.new(3, 10))
     expect(clip.define).to be_empty
   end
+
+  it "infers types from named macros" do
+    source = Solargraph::Source.load_string(%(
+      # @!macro firstarg
+      #   @return [$1]
+      class Foo
+        # @macro firstarg
+        def bar klass
+        end
+      end
+      Foo.new.bar(String)
+    ), 'test.rb')
+    map = Solargraph::ApiMap.new
+    map.map source
+    clip = map.clip_at('test.rb', Solargraph::Position.new(8, 14))
+    expect(clip.infer.tag).to eq('String')
+  end
+
+  it "infers method types from return nodes" do
+    source = Solargraph::Source.load_string(%(
+      def foo
+        String.new(from_object)
+      end
+      foo
+    ), 'test.rb')
+    map = Solargraph::ApiMap.new
+    map.map source
+    clip = map.clip_at('test.rb', Solargraph::Position.new(4, 6))
+    type = clip.infer
+    expect(type.tag).to eq('String')
+  end
+
+  it "infers multiple method types from return nodes" do
+    source = Solargraph::Source.load_string(%(
+      def foo
+        if x
+          'one'
+        else
+          1
+        end
+      end
+      foo
+    ), 'test.rb')
+    map = Solargraph::ApiMap.new
+    map.map source
+    clip = map.clip_at('test.rb', Solargraph::Position.new(8, 6))
+    type = clip.infer
+    expect(type.to_s).to eq('String, Integer')
+  end
+
+  it "infers return types from method calls" do
+    source = Solargraph::Source.load_string(%(
+      # @return [Hash]
+      def foo(arg); end
+      def bar
+        foo(1000)
+      end
+      foo
+    ), 'test.rb')
+    map = Solargraph::ApiMap.new
+    map.map source
+    clip = map.clip_at('test.rb', Solargraph::Position.new(6, 6))
+    type = clip.infer
+    expect(type.tag).to eq('Hash')
+  end
+
+  it "infers return types from local variables" do
+    source = Solargraph::Source.load_string(%(
+      def foo
+        x = 1
+        y = 'one'
+        x
+      end
+      foo
+    ), 'test.rb')
+    map = Solargraph::ApiMap.new
+    map.map source
+    clip = map.clip_at('test.rb', Solargraph::Position.new(6, 6))
+    type = clip.infer
+    expect(type.tag).to eq('Integer')
+  end
+
+  it "infers return types from instance variables" do
+    source = Solargraph::Source.load_string(%(
+      def foo
+        @foo ||= {}
+      end
+      def bar
+        @foo
+      end
+      foo
+    ), 'test.rb')
+    map = Solargraph::ApiMap.new
+    map.map source
+    clip = map.clip_at('test.rb', Solargraph::Position.new(7, 6))
+    type = clip.infer
+    expect(type.tag).to eq('Hash')
+  end
+
+  it "infers implicit return types from singleton methods" do
+    source = Solargraph::Source.load_string(%(
+      class Foo
+        def self.bar
+          @bar = 'bar'
+        end
+      end
+      Foo.bar
+    ), 'test.rb')
+    map = Solargraph::ApiMap.new
+    map.map source
+    clip = map.clip_at('test.rb', Solargraph::Position.new(6, 10))
+    type = clip.infer
+    expect(type.tag).to eq('String')
+  end
+
+  it "infers undefined for empty methods" do
+    source = Solargraph::Source.load_string(%(
+      def foo; end
+      foo
+    ), 'test.rb')
+    map = Solargraph::ApiMap.new
+    map.map source
+    clip = map.clip_at('test.rb', Solargraph::Position.new(2, 6))
+    type = clip.infer
+    expect(type).to be_undefined
+  end
+
+  it "handles missing type annotations in @type tags" do
+    source = Solargraph::Source.load_string(%(
+      # Note the type is `String` instead of `[String]`
+      # @type String
+      x = foo_bar
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new
+    api_map.map source
+    clip = api_map.clip_at('test.rb', Solargraph::Position.new(3, 7))
+    expect {
+      expect(clip.infer).to be_undefined
+    }.not_to raise_error
+  end
+
+  it "completes unfinished constant chains with trailing nodes" do
+    # The variable assignment at the end of the constant reference gets parsed
+    # as part of the constant chain, e.g., `Foo::Bar::baz`
+    orig = Solargraph::Source.load_string(%(
+      module Foo
+        module Bar
+          module Baz; end
+        end
+      end
+      Foo::Bar
+      baz = 'baz'
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new
+    updater = Solargraph::Source::Updater.new('test.rb', 1, [
+      Solargraph::Source::Change.new(Solargraph::Range.from_to(6, 14, 6, 14), '::')
+    ])
+    source = orig.synchronize(updater)
+    api_map.map source
+    clip = api_map.clip_at('test.rb', Solargraph::Position.new(6, 16))
+    expect(clip.complete.pins.map(&:path)).to eq(['Foo::Bar::Baz'])
+  end
+
+  it "resolves conflicts between namespaces names" do
+    source = Solargraph::Source.load_string(%(
+      class Foo
+        def root_method; end
+      end
+      module Other
+        class Foo
+          def other_method; end
+        end
+      end
+      module Other
+        # @type [Foo]
+        foo1 = make_foo
+        foo1._
+        # @type [::Foo]
+        foo2 = make_foo
+        foo2._
+      end
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new
+    api_map.map source
+
+    clip1a = api_map.clip_at('test.rb', Solargraph::Position.new(12, 9))
+    expect(clip1a.infer.to_s).to eq('Other::Foo')
+    clip1b = api_map.clip_at('test.rb', Solargraph::Position.new(12, 13))
+    expect(clip1b.complete.pins.map(&:path)).to include('Other::Foo#other_method')
+    expect(clip1b.complete.pins.map(&:path)).not_to include('Foo#root_method')
+
+    clip2a = api_map.clip_at('test.rb', Solargraph::Position.new(15, 9))
+    expect(clip2a.infer.to_s).to eq('Foo')
+    clip2b = api_map.clip_at('test.rb', Solargraph::Position.new(15, 13))
+    expect(clip2b.complete.pins.map(&:path)).not_to include('Other::Foo#other_method')
+    expect(clip2b.complete.pins.map(&:path)).to include('Foo#root_method')
+  end
+
+  it "completes methods based on visibility and context" do
+    source = Solargraph::Source.load_string(%(
+      class Foo
+        protected
+        def prot_method; end
+        private
+        def priv_method; end
+        def bar
+          _
+        end
+        Foo.new._
+      end
+      Foo.new._
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new
+    api_map.map source
+
+    clip1 = api_map.clip_at('test.rb', Solargraph::Position.new(7, 10))
+    paths1 = clip1.complete.pins.map(&:path)
+    expect(paths1).to include('Foo#prot_method')
+    expect(paths1).to include('Foo#priv_method')
+
+    clip2 = api_map.clip_at('test.rb', Solargraph::Position.new(9, 16))
+    paths2 = clip2.complete.pins.map(&:path)
+    expect(paths2).to include('Foo#prot_method')
+    expect(paths2).not_to include('Foo#priv_method')
+
+    clip3 = api_map.clip_at('test.rb', Solargraph::Position.new(11, 14))
+    paths3 = clip3.complete.pins.map(&:path)
+    expect(paths3).not_to include('Foo#prot_method')
+    expect(paths3).not_to include('Foo#priv_method')
+  end
 end

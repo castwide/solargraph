@@ -46,8 +46,7 @@ module Solargraph
         @domains ||= []
       end
 
-      def infer api_map
-        # Assuming that namespace pins are always fully qualified
+      def typify api_map
         return_complex_type
       end
     end

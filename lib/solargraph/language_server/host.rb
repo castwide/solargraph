@@ -323,7 +323,6 @@ module Solargraph
 
       def locate_pin params
         pin = nil
-        pin = nil
         unless params['data']['location'].nil?
           location = Location.new(
             params['data']['location']['filename'],

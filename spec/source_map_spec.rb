@@ -47,14 +47,6 @@ describe Solargraph::SourceMap do
     expect(map1.try_merge!(map2)).to be(false)
   end
 
-  # @todo This test might not be legitimate anymore. Since requires references
-  #   are now proper pins, changing the order invalidates the merge.
-  it "merges reordered requires" do
-    # map1 = Solargraph::SourceMap.load_string("require 'foo'; require 'bar'")
-    # map2 = Solargraph::SourceMap.load_string("require 'bar'; require 'foo'")
-    # expect(map1.try_merge!(map2)).to be(true)
-  end
-
   it "merges repaired changes" do
     source1 = Solargraph::Source.load_string(%(
       list.each do |item|

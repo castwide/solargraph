@@ -2,9 +2,11 @@ module Solargraph
   # An index of pins and other ApiMap-related data for a Source.
   #
   class SourceMap
+    autoload :NodeProcessor, 'solargraph/source_map/node_processor'
     autoload :Mapper,        'solargraph/source_map/mapper'
     autoload :Clip,          'solargraph/source_map/clip'
     autoload :Completion,    'solargraph/source_map/completion'
+    autoload :Region,        'solargraph/source_map/region'
 
     # @return [Source]
     attr_reader :source
@@ -15,6 +17,9 @@ module Solargraph
     # @return [Array<Pin::Base>]
     attr_reader :locals
 
+    # @param source [Source]
+    # @param pins [Array<Pin::Base>]
+    # @param locals [Array<Pin::Base>]
     def initialize source, pins, locals
       # HACK: Keep the library from changing this
       @source = source.dup
@@ -22,36 +27,44 @@ module Solargraph
       @locals = locals
     end
 
+    # @return [String]
     def filename
       source.filename
     end
 
+    # @return [String]
     def code
       source.code
     end
 
+    # @return [Array<Pin::Reference::Require>]
     def requires
       @requires ||= pins.select{|p| p.kind == Pin::REQUIRE_REFERENCE}
     end
 
-    # @param position [Position]
+    # @param position [Position, Array(Integer, Integer)]
     # @return [Boolean]
     def string_at? position
+      position = Position.normalize(position)
       @source.string_at?(position)
     end
 
-    # @param position [Position]
+    # @param position [Position, Array(Integer, Integer)]
     # @return [Boolean]
     def comment_at? position
+      position = Position.normalize(position)
       @source.comment_at?(position)
     end
 
+    # @return [Array<Pin::Base>]
     def document_symbols
       @document_symbols ||= pins.select { |pin|
         [Pin::ATTRIBUTE, Pin::CONSTANT, Pin::METHOD, Pin::NAMESPACE].include?(pin.kind) and !pin.path.empty?
       }
     end
 
+    # @param query [String]
+    # @return [Array<Pin::Base>]
     def query_symbols query
       document_symbols.select{|pin| pin.path.include?(query)}
     end
@@ -62,6 +75,8 @@ module Solargraph
       Source::Cursor.new(source, position)
     end
 
+    # @param path [String]
+    # @return [Pin::Base]
     def first_pin path
       pins.select { |p| p.path == path }.first
     end
@@ -82,6 +97,7 @@ module Solargraph
     end
 
     # @param other_map [SourceMap]
+    # @return [Boolean]
     def try_merge! other_map
       return false if pins.length != other_map.pins.length || locals.length != other_map.locals.length || requires.map(&:name).uniq.sort != other_map.requires.map(&:name).uniq.sort
       pins.each_index do |i|
@@ -101,12 +117,15 @@ module Solargraph
     end
 
     class << self
+      # @param filename [String]
       # @return [SourceMap]
       def load filename
         source = Solargraph::Source.load(filename)
         SourceMap.map(source)
       end
 
+      # @param code [String]
+      # @param filename [String, nil]
       # @return [SourceMap]
       def load_string code, filename = nil
         source = Solargraph::Source.load_string(code, filename)
@@ -123,6 +142,10 @@ module Solargraph
 
     private
 
+    # @param line [Integer]
+    # @param character [Integer]
+    # @param *kinds [Array<Symbol>]
+    # @return [Pin::Base]
     def _locate_pin line, character, *kinds
       position = Position.new(line, character)
       found = nil

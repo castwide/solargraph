@@ -455,4 +455,39 @@ describe Solargraph::ApiMap do
     expect(pins.length).to eq(1)
     expect(pins.map(&:name)).to include('sum1')
   end
+
+  it "detects method aliases with origins in other sources" do
+    source1 = Solargraph::Source.load_string(%(
+      class Sup
+        # @return [String]
+        def foo; end
+      end
+    ), 'source1.rb')
+    source2 = Solargraph::Source.load_string(%(
+      class Sub < Sup
+        alias bar foo
+      end
+    ), 'source2.rb')
+    api_map = Solargraph::ApiMap.new
+    bundle = Solargraph::Bundle.new(opened: [source1, source2])
+    api_map.catalog bundle
+    pin = api_map.get_path_pins('Sub#bar').first
+    expect(pin).not_to be_nil
+    expect(pin.return_type.tag).to eq('String')
+  end
+
+  it "finds extended module methods" do
+    source = Solargraph::Source.load_string(%(
+      module MyModule
+        def foo; end
+      end
+      module MyClass
+        extend MyModule
+      end
+      ), 'test.rb')
+    api_map = Solargraph::ApiMap.new
+    api_map.map source
+    pins = api_map.get_methods('MyClass', scope: :class)
+    expect(pins.map(&:path)).to include('MyModule#foo')
+  end
 end

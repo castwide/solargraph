@@ -24,6 +24,7 @@ module Solargraph
     # @return [Parser::AST::Node]
     attr_reader :node
 
+    # @return [Array<Parser::Source::Comment>]
     attr_reader :comments
 
     # @return [String]
@@ -46,7 +47,12 @@ module Solargraph
         @node, @comments = Source.parse_with_comments(@code, filename)
         @parsed = true
       rescue Parser::SyntaxError, EncodingError => e
-        @node, @comments = Source.parse_with_comments(@code.gsub(/[^s]/, ' '), filename)
+        # @todo 100% whitespace results in a nil node, so there's no reason to parse it.
+        #   We still need to determine whether the resulting node should be nil or a dummy
+        #   node with a location that encompasses the range.
+        # @node, @comments = Source.parse_with_comments(@code.gsub(/[^\s]/, ' '), filename)
+        @node = nil
+        @comments = []
         @parsed = false
       rescue Exception => e
         STDERR.puts e.message
@@ -171,7 +177,74 @@ module Solargraph
       @error_ranges ||= []
     end
 
+    def code_for(node)
+      # @todo Using node locations on code with converted EOLs seems
+      #   slightly more efficient than calculating offsets.
+      # b = node.location.expression.begin.begin_pos
+      # e = node.location.expression.end.end_pos
+      b = Position.line_char_to_offset(@code, node.location.line, node.location.column)
+      e = Position.line_char_to_offset(@code, node.location.last_line, node.location.last_column)
+      frag = code[b..e-1].to_s
+      frag.strip.gsub(/,$/, '')
+    end
+
+    # @param node [Parser::AST::Node]
+    # @return [String]
+    def comments_for node
+      arr = associated_comments[node.loc.line]
+      arr ? stringify_comment_array(arr) : nil
+    end
+
+    # A location representing the file in its entirety.
+    #
+    # @return [Location]
+    def location
+      st = Position.new(0, 0)
+      en = Position.from_offset(code, code.length)
+      range = Range.new(st, en)
+      Location.new(filename, range)
+    end
+
     private
+
+    # Get a hash of comments grouped by the line numbers of the associated code.
+    #
+    # @return [Hash{Integer => Array<Parser::Source::Comment>}]
+    def associated_comments
+      @associated_comments ||= begin
+        result = {}
+        Parser::Source::Comment.associate_locations(node, comments).each_pair do |loc, all|
+          block = all.select{ |l| l.document? || code.lines[l.loc.line].strip.start_with?('#')}
+          next if block.empty?
+          result[loc.line] ||= []
+          result[loc.line].concat block
+        end
+        result
+      end
+    end
+
+    # Get a string representation of an array of comments.
+    #
+    # @param comments [Array<Parser::Source::Comment>]
+    # @return [String]
+    def stringify_comment_array comments
+      ctxt = ''
+      num = nil
+      started = false
+      comments.each { |l|
+        # Trim the comment and minimum leading whitespace
+        p = l.text.gsub(/^#/, '')
+        if num.nil? and !p.strip.empty?
+          num = p.index(/[^ ]/)
+          started = true
+        elsif started and !p.strip.empty?
+          cur = p.index(/[^ ]/)
+          num = cur if cur < num
+        end
+        ctxt += "#{p[num..-1]}\n" if started
+      }
+      ctxt
+    end
 
     # @return [Array<Range>]
     def string_ranges
@@ -247,17 +320,24 @@ module Solargraph
 
       # @param code [String]
       # @param filename [String]
+      # @param version [Integer]
       # @return [Solargraph::Source]
       def load_string code, filename = nil, version = 0
         Source.new code, filename, version
       end
 
+      # @param code [String]
+      # @param filename [String]
+      # @return [Array(Parser::AST::Node, Array<Parser::Source::Comment>)]
       def parse_with_comments code, filename = nil
         buffer = Parser::Source::Buffer.new(filename, 0)
         buffer.source = code.encode('UTF-8', 'binary', invalid: :replace, undef: :replace, replace: '_')
         parser.parse_with_comments(buffer)
       end
 
+      # @param code [String]
+      # @param filename [String]
+      # @return [Parser::AST::Node]
       def parse code, filename = nil
         buffer = Parser::Source::Buffer.new(filename, 0)
         buffer.source = code.encode('UTF-8', 'binary', invalid: :replace, undef: :replace, replace: '_')

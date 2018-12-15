@@ -24,6 +24,13 @@ describe Solargraph::Source::SourceChainer do
     expect(cursor.chain.links.first.word).to eq('<Integer>')
   end
 
+  it "recognizes literal regexps" do
+    map = Solargraph::SourceMap.load_string("/[a-z]/")
+    cursor = map.cursor_at(Solargraph::Position.new(0, 0))
+    expect(cursor.chain.links.first).to be_a(Solargraph::Source::Chain::Literal)
+    expect(cursor.chain.links.first.word).to eq('<Regexp>')
+  end
+
   it "recognizes class variables" do
     map = Solargraph::SourceMap.load_string('@@foo')
     cursor = map.cursor_at(Solargraph::Position.new(0, 0))
@@ -127,5 +134,19 @@ describe Solargraph::Source::SourceChainer do
     expect {
       Solargraph::Source::SourceChainer.chain(source, Solargraph::Position.new(1, 4))
     }.not_to raise_error
+  end
+
+  it "stops phrases at opening brackets" do
+    source = Solargraph::Source.load_string(%(
+      (aa1, 2, 3)
+      [bb2, 2, 3]
+      {cc3, 2, 3}
+    ))
+    chain = Solargraph::Source::SourceChainer.chain(source, Solargraph::Position.new(1, 10))
+    expect(chain.links.first.word).to eq('aa1')
+    chain = Solargraph::Source::SourceChainer.chain(source, Solargraph::Position.new(2, 10))
+    expect(chain.links.first.word).to eq('bb2')
+    chain = Solargraph::Source::SourceChainer.chain(source, Solargraph::Position.new(3, 10))
+    expect(chain.links.first.word).to eq('cc3')
   end
 end

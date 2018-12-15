@@ -2,7 +2,6 @@ require 'ostruct'
 require 'tilt'
 require 'kramdown'
 require 'htmlentities'
-require 'coderay'
 require 'reverse_markdown'
 
 module Solargraph
@@ -25,7 +24,7 @@ module Solargraph
           entity_output: :symbolic,
           syntax_highlighter_opts: {
             block: {
-              line_numbers: false,
+              line_numbers: false
             },
             default_lang: :ruby
           },

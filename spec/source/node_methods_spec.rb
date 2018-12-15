@@ -51,25 +51,104 @@ describe Solargraph::Source::NodeMethods do
     expect(Solargraph::Source::NodeMethods.resolve_node_signature(ast.children[1])).to eq('foo.bar.baz')
   end
 
-  # @todo The following type inferences are the reponsibility of the ApiMap.
-  
-  #it "infers class instantiation" do
-  #  ast = Parser::CurrentRuby.parse("x = Object.new")
-  #  expect(Solargraph::Source::NodeMethods.infer_literal_node_type(ast.children[1])).to eq 'Object'
-  #end
+  it "handles return nodes with implicit nil values" do
+    node = Solargraph::Source.parse(%(
+      return if true
+    ))
+    rets = Solargraph::Source::NodeMethods.returns_from(node)
+    # @todo Should there be two returns, the second being nil?
+    expect(rets.length).to eq(0)
+  end
 
-  #it "infers constants" do
-  #  ast = Parser::CurrentRuby.parse("x = Class")
-  #  expect(Solargraph::Source::NodeMethods.infer_literal_node_type(ast.children[1])).to eq 'Class'
-  #end
+  it "handles return nodes with implicit nil values" do
+    node = Solargraph::Source.parse(%(
+      return bla if true
+    ))
+    rets = Solargraph::Source::NodeMethods.returns_from(node)
+    # @todo Should there be two returns, the second being nil?
+    expect(rets.length).to eq(1)
+  end
 
-  #it "infers constants with root" do
-  #  ast = Parser::CurrentRuby.parse("x = ::String")
-  #  expect(Solargraph::Source::NodeMethods.infer_literal_node_type(ast.children[1])).to eq 'String'
-  #end
+  it "handles return nodes in reduceable (begin) nodes" do
+    node = Solargraph::Source.parse(%(
+      begin
+        return if true
+      end
+    ))
+    rets = Solargraph::Source::NodeMethods.returns_from(node)
+    # @todo Should there be two nil returns?
+    expect(rets.length).to eq(0)
+  end
 
-  #it "infers namespaced constants" do
-  #  ast = Parser::CurrentRuby.parse("x = Foo::Bar")
-  #  expect(Solargraph::Source::NodeMethods.infer_literal_node_type(ast.children[1])).to eq 'Foo::Bar'
-  #end
+  it "handles return nodes after other nodes" do
+    node = Solargraph::Source.parse(%(
+      x = 1
+      return x
+    ))
+    rets = Solargraph::Source::NodeMethods.returns_from(node)
+    expect(rets.length).to eq(1)
+  end
+
+  it "handles return nodes with unreachable code" do
+    node = Solargraph::Source.parse(%(
+      x = 1
+      return x
+      y
+    ))
+    rets = Solargraph::Source::NodeMethods.returns_from(node)
+    expect(rets.length).to eq(1)
+  end
+
+  it "handles conditional returns with following code" do
+    node = Solargraph::Source.parse(%(
+      x = 1
+      return x if foo
+      y
+    ))
+    rets = Solargraph::Source::NodeMethods.returns_from(node)
+    expect(rets.length).to eq(2)
+  end
+
+  it "handles return nodes with reduceable code" do
+    node = Solargraph::Source.parse(%(
+      return begin
+        x if foo
+        y
+      end
+    ))
+    rets = Solargraph::Source::NodeMethods.returns_from(node)
+    expect(rets.length).to eq(1)
+  end
+
+  it "handles top 'and' nodes" do
+    node = Solargraph::Source.parse('1 && "2"')
+    rets = Solargraph::Source::NodeMethods.returns_from(node)
+    expect(rets.length).to eq(2)
+    expect(rets[0].type).to eq(:int)
+    expect(rets[1].type).to eq(:str)
+  end
+
+  it "handles top 'or' nodes" do
+    node = Solargraph::Source.parse('1 || "2"')
+    rets = Solargraph::Source::NodeMethods.returns_from(node)
+    expect(rets.length).to eq(2)
+    expect(rets[0].type).to eq(:int)
+    expect(rets[1].type).to eq(:str)
+  end
+
+  it "handles nested 'and' nodes" do
+    node = Solargraph::Source.parse('return 1 && "2"')
+    rets = Solargraph::Source::NodeMethods.returns_from(node)
+    expect(rets.length).to eq(2)
+    expect(rets[0].type).to eq(:int)
+    expect(rets[1].type).to eq(:str)
+  end
+
+  it "handles nested 'or' nodes" do
+    node = Solargraph::Source.parse('return 1 || "2"')
+    rets = Solargraph::Source::NodeMethods.returns_from(node)
+    expect(rets.length).to eq(2)
+    expect(rets[0].type).to eq(:int)
+    expect(rets[1].type).to eq(:str)
+  end
 end

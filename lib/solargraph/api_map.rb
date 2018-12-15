@@ -21,7 +21,6 @@ module Solargraph
     attr_reader :unresolved_requires
 
     # @param pins [Array<Solargraph::Pin::Base>]
-    # def initialize workspace = Solargraph::Workspace.new(nil)
     def initialize pins: []
       # @todo Extensions don't work yet
       # require_extensions
@@ -40,9 +39,12 @@ module Solargraph
         @store = Store.new(pins + YardMap.new.pins)
         @unresolved_requires = []
       }
+      resolve_method_aliases
       self
     end
 
+    # Map a single source.
+    #
     # @param source [Source]
     # @return [self]
     def map source
@@ -50,14 +52,18 @@ module Solargraph
       self
     end
 
-    # Catalog a workspace. Additional sources that need to be mapped can be
-    # included in an optional array.
+    def named_macro name
+      store.named_macros[name]
+    end
+
+    # Catalog a bundle.
     #
     # @param bundle [Bundle]
     # @return [self]
     def catalog bundle
       new_map_hash = {}
-      unmerged = false
+      # Bundle always needs to be merged if it adds or removes sources
+      merged = (bundle.sources.length == source_map_hash.values.length)
       bundle.sources.each do |source|
         if source_map_hash.has_key?(source.filename)
           if source_map_hash[source.filename].code == source.code
@@ -68,16 +74,16 @@ module Solargraph
               new_map_hash[source.filename] = source_map_hash[source.filename]
             else
               new_map_hash[source.filename] = map
-              unmerged = true
+              merged = false
             end
           end
         else
           map = Solargraph::SourceMap.map(source)
           new_map_hash[source.filename] = map
-          unmerged = true
+          merged = false
         end
       end
-      return self unless unmerged
+      return self if merged
       pins = []
       reqs = []
       # @param map [SourceMap]
@@ -106,13 +112,15 @@ module Solargraph
         @store = new_store
         @unresolved_requires = yard_map.unresolved_requires
       }
+      resolve_method_aliases
       self
     end
 
     # @param filename [String]
-    # @param position [Position]
+    # @param position [Position, Array(Integer, Integer)]
     # @return [Source::Cursor]
     def cursor_at filename, position
+      position = Position.normalize(position)
       raise "File not found: #{filename}" unless source_map_hash.has_key?(filename)
       source_map_hash[filename].cursor_at(position)
     end
@@ -120,9 +128,10 @@ module Solargraph
     # Get a clip by filename and position.
     #
     # @param filename [String]
-    # @param position [Position]
+    # @param position [Position, Array(Integer, Integer)]
     # @return [SourceMap::Clip]
     def clip_at filename, position
+      position = Position.normalize(position)
       SourceMap::Clip.new(self, cursor_at(filename, position))
     end
 
@@ -143,7 +152,7 @@ module Solargraph
       store.pins
     end
 
-    # An array of suggestions based on Ruby keywords (`if`, `end`, etc.).
+    # An array of pins based on Ruby keywords (`if`, `end`, etc.).
     #
     # @return [Array<Solargraph::Pin::Keyword>]
     def self.keywords
@@ -305,7 +314,13 @@ module Solargraph
         result.concat get_methods('Object')
       else
         unless type.nil? || type.name == 'void'
-          namespace = qualify(type.namespace, context)
+          # @todo This method does not qualify the complex type's namespace
+          #   because it can cause namespace conflicts, e.g., `Foo` vs.
+          #   `Other::Foo`. It still takes a context argument because it
+          #   uses context to determine whether protected and private methods
+          #   are visible.
+          # namespace = qualify(type.namespace, context)
+          namespace = type.namespace
           visibility = [:public]
           if namespace == context || super_and_sub?(namespace, context)
             visibility.push :protected
@@ -330,12 +345,13 @@ module Solargraph
     # @param scope [Symbol] :instance or :class
     # @return [Array<Solargraph::Pin::Base>]
     def get_method_stack fqns, name, scope: :instance
-      # @todo This cache is still causing problems.
-      cached = cache.get_method_stack(fqns, name, scope)
-      return cached unless cached.nil?
+      # @todo This cache is still causing problems, but only when using
+      #   Solargraph on Solargraph itself.
+      # cached = cache.get_method_stack(fqns, name, scope)
+      # return cached unless cached.nil?
       result = get_methods(fqns, scope: scope, visibility: [:private, :protected, :public]).select{|p| p.name == name}
-      cache.set_method_stack(fqns, name, scope, result)
-      result
+      # cache.set_method_stack(fqns, name, scope, result)
+      # result
     end
 
     # Get an array of all suggestions that match the specified path.
@@ -620,6 +636,20 @@ module Solargraph
         cls = qualify(store.get_superclass(cls), cls)
       end
       false
+    end
+
+    # @return [void]
+    def resolve_method_aliases
+      aliased = false
+      result = pins.map do |pin|
+        next pin unless pin.is_a?(Pin::MethodAlias)
+        origin = get_method_stack(pin.namespace, pin.original, scope: pin.scope).select{|pin| pin.class == Pin::Method}.first
+        next pin if origin.nil?
+        aliased = true
+        Pin::Method.new(pin.location, pin.namespace, pin.name, origin.comments, origin.scope, origin.visibility, origin.parameters)
+      end
+      return nil unless aliased
+      @mutex.synchronize { @store = Store.new(result) }
     end
   end
 end

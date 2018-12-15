@@ -1,20 +1,20 @@
 module Solargraph
   module Pin
-    class Method < Base
-      # @return [Symbol] :instance or :class
-      attr_reader :scope
-
-      # @return [Symbol] :public, :private, or :protected
-      attr_reader :visibility
+    class Method < BaseMethod
+      include Source::NodeMethods
 
       # @return [Array<String>]
       attr_reader :parameters
 
-      def initialize location, namespace, name, comments, scope, visibility, args
+      # @return [Parser::AST::Node]
+      attr_reader :node
+
+      def initialize location, namespace, name, comments, scope, visibility, args, node = nil
         super(location, namespace, name, comments)
         @scope = scope
         @visibility = visibility
         @parameters = args
+        @node = node
       end
 
       # @return [Array<String>]
@@ -45,13 +45,8 @@ module Solargraph
         Solargraph::LanguageServer::CompletionItemKinds::METHOD
       end
 
-      # @return [Integer]
       def symbol_kind
         LanguageServer::SymbolKinds::METHOD
-      end
-
-      def return_complex_type
-        @return_complex_type ||= generate_complex_type
       end
 
       def documentation
@@ -81,22 +76,60 @@ module Solargraph
           visibility == other.visibility
       end
 
+      def typify api_map
+        decl = super
+        return decl unless decl.undefined?
+        type = see_reference(api_map)
+        return type unless type.nil?
+        ComplexType::UNDEFINED
+      end
+
+      def probe api_map
+        infer_from_return_nodes(api_map)
+      end
+
+      # @deprecated Use #typify and/or #probe instead
+      def infer api_map
+        STDERR.puts 'WARNING: Pin #infer methods are deprecated. Use #typify or #probe instead.'
+        decl = super
+        return decl unless decl.undefined?
+        type = see_reference(api_map)
+        return type unless type.nil?
+        infer_from_return_nodes(api_map)
+      end
+
+      def try_merge! pin
+        return false unless super
+        @node = pin.node
+        true
+      end
+
       private
 
+      # @return [Parser::AST:Node, nil]
+      def method_body_node
+        return nil if node.nil?
+        return node.children[2] if node.type == :def
+        return node.children[3] if node.type == :defs
+        nil
+      end
+
+      # @param api_map [ApiMap]
       # @return [ComplexType]
-      def generate_complex_type
-        tag = docstring.tag(:return)
-        if tag.nil?
-          ol = docstring.tag(:overload)
-          tag = ol.tag(:return) unless ol.nil?
+      def infer_from_return_nodes api_map
+        result = []
+        returns_from(method_body_node).each do |n|
+          next if n.loc.nil?
+          clip = api_map.clip_at(
+            location.filename,
+            [n.loc.expression.last_line, n.loc.expression.last_column]
+          )
+          chain = Solargraph::Source::NodeChainer.chain(n, location.filename)
+          type = chain.infer(api_map, self, clip.locals)
+          result.push type unless type.undefined?
         end
-        return ComplexType::UNDEFINED if tag.nil? or tag.types.nil? or tag.types.empty?
-        begin
-          ComplexType.parse *tag.types
-        rescue Solargraph::ComplexTypeError => e
-          STDERR.puts e.message
-          ComplexType::UNDEFINED
-        end
+        return ComplexType::UNDEFINED if result.empty?
+        ComplexType.parse(*result.map(&:tag))
       end
     end
   end

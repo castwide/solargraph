@@ -85,14 +85,12 @@ module Solargraph
       # @param other [Solargraph::Pin::Base, Object]
       # @return [Boolean]
       def nearly? other
-        # @todo The directives test needs to be a deep check similar to
-        #   compare_docstring_tags.
-        self.class == other.class and
-          namespace == other.namespace and
-          name == other.name and
-          (comments == other.comments or
-            ( ((maybe_directives? == false and other.maybe_directives? == false) or compare_directives(directives, other.directives)) and
-            compare_docstring_tags(docstring, other.docstring) )
+        self.class == other.class &&
+          namespace == other.namespace &&
+          name == other.name &&
+          (comments == other.comments ||
+            (((maybe_directives? == false && other.maybe_directives? == false) || compare_directives(directives, other.directives)) &&
+            compare_docstring_tags(docstring, other.docstring))
           )
       end
 
@@ -124,7 +122,7 @@ module Solargraph
 
       # @return [Array<YARD::Tags::MacroDirective>]
       def macros
-        @macros ||= []
+        @macros ||= collect_macros
       end
 
       # Perform a quick check to see if this pin possibly includes YARD
@@ -145,10 +143,34 @@ module Solargraph
         @deprecated ||= docstring.has_tag?('deprecated')
       end
 
+      # Get a fully qualified type from the pin's return type.
+      #
+      # The relative type is determined from YARD documentation (@return,
+      # @param, @type, etc.) and its namespaces are fully qualified using the
+      # provided ApiMap.
+      #
+      # @param api_map [ApiMap]
+      # @return [ComplexType]
+      def typify api_map
+        return_complex_type.qualify(api_map, namespace)
+      end
+
+      # Infer the pin's return type via static code analysis.
+      #
+      # @param api_map [ApiMap]
+      # @return [ComplexType]
+      def probe api_map
+        typify api_map
+      end
+
+      # @deprecated Use #typify and/or #probe instead
       # @param api_map [ApiMap]
       # @return [ComplexType]
       def infer api_map
-        return_complex_type.qualify(api_map, namespace)
+        STDERR.puts "WARNING: Pin #infer methods are deprecated. Use #typify or #probe instead."
+        type = typify(api_map)
+        return type unless type.undefined?
+        probe api_map
       end
 
       # Try to merge data from another pin. Merges are only possible if the
@@ -160,14 +182,13 @@ module Solargraph
       def try_merge! pin
         return false unless nearly?(pin)
         @location = pin.location
-        if comments != pin.comments
-          @comments = pin.comments
-          @docstring = pin.docstring
-          @return_complex_type = pin.return_complex_type
-          @documentation = nil
-          @deprecated = nil
-          reset_conversions
-        end
+        return true if comments == pin.comments
+        @comments = pin.comments
+        @docstring = pin.docstring
+        @return_complex_type = pin.return_complex_type
+        @documentation = nil
+        @deprecated = nil
+        reset_conversions
         true
       end
 
@@ -219,6 +240,13 @@ module Solargraph
           t1.text == t2.text &&
           t1.name == t2.name &&
           t1.types == t2.types
+      end
+
+      # @return [Array<YARD::Tags::Handlers::Directive>]
+      def collect_macros
+        return [] unless maybe_directives?
+        parse = YARD::Docstring.parser.parse(comments)
+        parse.directives.select{ |d| d.tag.tag_name == 'macro' }
       end
     end
   end

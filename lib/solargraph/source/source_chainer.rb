@@ -31,7 +31,6 @@ module Solargraph
       # @return [Source::Chain]
       def chain
         return Chain.new([Chain::Literal.new('Symbol')]) if phrase.start_with?(':') && !phrase.start_with?('::')
-        # return Chain.new([Chain::UNDEFINED_CALL]) unless infer_literal_node_type(source.node_at(position.line, position.column)).nil?
         begin
           return Chain.new([]) if phrase.end_with?('..')
           if !source.repaired? && source.parsed?
@@ -170,27 +169,6 @@ module Solargraph
           end
           index -= 1
         end
-        # @todo Smelly exceptional case for integer literals
-        # match = signature.match(/^[0-9]+/)
-        # if match
-        #   index += match[0].length
-        #   signature = signature[match[0].length..-1].to_s
-        #   @base_literal = 'Integer'
-        # # @todo Smelly exceptional case for array literals
-        # elsif signature.start_with?('.[]')
-        #   index += 2
-        #   signature = signature[3..-1].to_s
-        #   @base_literal = 'Array'
-        # elsif signature.start_with?('.')
-        #   pos = Position.from_offset(@source.code, index)
-        #   node = @source.node_at(pos.line, pos.character)
-        #   lit = infer_literal_node_type(node)
-        #   unless lit.nil?
-        #     signature = signature[1..-1].to_s
-        #     index += 1
-        #     @base_literal = lit
-        #   end
-        # end
         [index + 1, signature]
       end
     end

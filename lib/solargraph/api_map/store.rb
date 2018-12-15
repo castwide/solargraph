@@ -109,6 +109,20 @@ module Solargraph
         result
       end
 
+      # @return [Hash]
+      def named_macros
+        @named_macros ||= begin
+          result = {}
+          pins.each do |pin|
+            pin.macros.select{|m| m.tag.tag_name == 'macro'}.each do |macro|
+              next if macro.tag.name.nil? || macro.tag.name.empty?
+              result[macro.tag.name] = macro
+            end
+          end
+          result
+        end
+      end
+
       private
 
       # @param fqns [String]
@@ -144,7 +158,7 @@ module Solargraph
       end
 
       # @param name [String]
-      # @return [Array<Solargraph::Pin::Namespace>]
+      # @return [Array<Solargraph::Pin::Base>]
       def namespace_children name
         namespace_map[name] || []
       end

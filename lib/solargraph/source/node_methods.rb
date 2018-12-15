@@ -3,11 +3,13 @@ module Solargraph
     module NodeMethods
       module_function
 
+      # @param node [Parser::AST::Node]
       # @return [String]
       def unpack_name(node)
         pack_name(node).join("::")
       end
 
+      # @param node [Parser::AST::Node]
       # @return [Array<String>]
       def pack_name(node)
         parts = []
@@ -27,6 +29,7 @@ module Solargraph
         parts
       end
 
+      # @param node [Parser::AST::Node]
       # @return [String]
       def const_from node
         if node.kind_of?(AST::Node) and node.type == :const
@@ -45,6 +48,7 @@ module Solargraph
         end
       end
 
+      # @param node [Parser::AST::Node]
       # @return [String]
       def infer_literal_node_type node
         return nil unless node.kind_of?(AST::Node)
@@ -60,6 +64,8 @@ module Solargraph
           return 'Float'
         elsif node.type == :sym
           return 'Symbol'
+        elsif node.type == :regexp
+          return 'Regexp'
         # @todo Maybe ignore nils
         # elsif node.type == :nil
         #   return 'NilClass'
@@ -71,6 +77,7 @@ module Solargraph
       # The result should be a string in the form of a method path, e.g.,
       # String.new or variable.method.
       #
+      # @param node [Parser::AST::Node]
       # @return [String]
       def resolve_node_signature node
         result = drill_signature node, ''
@@ -78,10 +85,14 @@ module Solargraph
         result
       end
 
+      # @param node [Parser::AST::Node]
+      # @return [Position]
       def get_node_start_position(node)
         Position.new(node.loc.line, node.loc.column)
       end
 
+      # @param node [Parser::AST::Node]
+      # @return [Position]
       def get_node_end_position(node)
         Position.new(node.loc.last_line, node.loc.last_column)
       end
@@ -105,6 +116,109 @@ module Solargraph
           signature += node.children[1].to_s
         end
         signature
+      end
+
+      # Find all the nodes within the provided node that potentially return a
+      # value.
+      #
+      # The node parameter typically represents a method's logic, e.g., the
+      # second child (after the :args node) of a :def node. A simple one-line
+      # method would typically return itself, while a node with conditions
+      # would return the resulting node from each conditional branch. Nodes
+      # that follow a :return node are assumed to be unreachable. Implicit nil
+      # values are ignored.
+      #
+      # @todo Maybe this method should include implicit nil values in results.
+      #   For example, a bare `return` would return a :nil node instead of an
+      #   empty array.
+      #
+      # @param node [AST::Node]
+      # @return [Array<AST::Node>]
+      def returns_from node
+        DeepInference.get_return_nodes(node)
+      end
+
+      module DeepInference
+        class << self
+          CONDITIONAL = [:if, :unless]
+          REDUCEABLE = [:begin, :kwbegin]
+          SKIPPABLE = [:def, :defs, :class, :sclass, :module]
+
+          # @param node [Parser::AST::Node]
+          # @return [Array<Parser::AST::Node>]
+          def get_return_nodes node
+            return [] unless node.is_a?(Parser::AST::Node)
+            result = []
+            if REDUCEABLE.include?(node.type)
+              result.concat get_return_nodes_from_children(node)
+            elsif CONDITIONAL.include?(node.type)
+              result.concat reduce_to_value_nodes(node.children[1..-1])
+            elsif node.type == :and || node.type == :or
+              result.concat reduce_to_value_nodes(node.children)
+            elsif node.type == :return
+              result.concat reduce_to_value_nodes([node.children[0]])
+            else
+              result.push node
+            end
+            result
+          end
+
+          private
+
+          def get_return_nodes_from_children parent
+            result = []
+            nodes = parent.children.select{|n| n.is_a?(AST::Node)}
+            nodes[0..-2].each do |node|
+              next if SKIPPABLE.include?(node.type)
+              if node.type == :return
+                result.concat reduce_to_value_nodes([node.children[0]])
+                # Return the result here because the rest of the code is
+                # unreachable
+                return result
+              else
+                result.concat get_return_nodes_only(node)
+              end
+            end
+            result.concat reduce_to_value_nodes([nodes.last]) unless nodes.last.nil?
+            result
+          end
+
+          def get_return_nodes_only parent
+            result = []
+            nodes = parent.children.select{|n| n.is_a?(AST::Node)}
+            nodes.each do |node|
+              next if SKIPPABLE.include?(node.type)
+              if node.type == :return
+                result.concat reduce_to_value_nodes([node.children[0]])
+                # Return the result here because the rest of the code is
+                # unreachable
+                return result
+              else
+                result.concat get_return_nodes_only(node)
+              end
+            end
+            result
+          end
+
+          def reduce_to_value_nodes nodes
+            result = []
+            nodes.each do |node|
+              next unless node.is_a?(Parser::AST::Node)
+              if REDUCEABLE.include?(node.type)
+                result.concat get_return_nodes_from_children(node)
+              elsif CONDITIONAL.include?(node.type)
+                result.concat reduce_to_value_nodes(node.children[1..-1])
+              elsif node.type == :return
+                result.concat get_return_nodes(node.children[0])
+              elsif node.type == :and || node.type == :or
+                result.concat reduce_to_value_nodes(node.children)
+              else
+                result.push node
+              end
+            end
+            result
+          end
+        end
       end
     end
   end
