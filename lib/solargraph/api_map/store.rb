@@ -53,11 +53,8 @@ module Solargraph
       # @param path [String]
       # @return [Array<Solargraph::Pin::Base>]
       def get_path_pins path
-        # return [] if path.nil? # @todo Should be '' instead?
-        path ||= ''
-        base = path.sub(/(#|\.|::)[a-z0-9_]*(\?|\!)?$/i, '')
-        base = '' if base == path
-        namespace_children(base).select{ |pin| pin.path == path }
+        return [] if path.nil? # @todo Should be '' instead?
+        pins.select { |pin| pin.path == path }
       end
 
       # @param fqns [String]

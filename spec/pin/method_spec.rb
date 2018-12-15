@@ -116,4 +116,11 @@ describe Solargraph::Pin::Method do
     type = pin.typify(api_map)
     expect(type.tag).to eq('Hash')
   end
+
+  it "typifies Booleans" do
+    pin = Solargraph::Pin::Method.new(nil, '', 'foo', '@return [Boolean]', :instance, :public, [])
+    api_map = Solargraph::ApiMap.new
+    type = pin.typify(api_map)
+    expect(type.tag).to eq('Boolean')
+  end
 end
