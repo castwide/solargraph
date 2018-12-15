@@ -5,8 +5,6 @@ module Solargraph
     # @return [Solargraph::Workspace]
     attr_reader :workspace
 
-    attr_writer :single_checkout
-
     # @param workspace [Solargraph::Workspace]
     def initialize workspace = Solargraph::Workspace.new
       @workspace = workspace
@@ -20,11 +18,6 @@ module Solargraph
     # @return [Boolean]
     def synchronized?
       @synchronized
-    end
-
-    def single_checkout?
-      @single_checkout = true if @single_checkout.nil?
-      @single_checkout
     end
 
     # Open a file in the library. Opening a file will make it available for
@@ -341,11 +334,6 @@ module Solargraph
       @mutex ||= Mutex.new
     end
 
-    def checked_out_files
-      return open_file_hash.values unless single_checkout?
-      @current ? [@current] : []
-    end
-
     # @return [ApiMap]
     def api_map
       @api_map ||= Solargraph::ApiMap.new
@@ -355,7 +343,7 @@ module Solargraph
     def bundle
       Bundle.new(
         workspace: workspace,
-        opened: checked_out_files
+        opened: @current ? [@current] : []
       )
     end
 
