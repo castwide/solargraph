@@ -5,6 +5,8 @@ module Solargraph
     # @return [Solargraph::Workspace]
     attr_reader :workspace
 
+    attr_writer :single_checkout
+
     # @param workspace [Solargraph::Workspace]
     def initialize workspace = Solargraph::Workspace.new
       @workspace = workspace
@@ -20,6 +22,11 @@ module Solargraph
       @synchronized
     end
 
+    def single_checkout?
+      @single_checkout = true if @single_checkout.nil?
+      @single_checkout
+    end
+
     # Open a file in the library. Opening a file will make it available for
     # checkout and merge it into the workspace if applicable.
     #
@@ -32,6 +39,7 @@ module Solargraph
         source = Solargraph::Source.load_string(text, filename, version)
         workspace.merge source
         open_file_hash[filename] = source
+        checkout filename
         catalog
       end
     end
@@ -216,7 +224,9 @@ module Solargraph
     # @param filename [String]
     # @return [Source]
     def checkout filename
-      read filename
+      @current = read(filename)
+      catalog
+      @current
     end
 
     # @param query [String]
@@ -331,6 +341,11 @@ module Solargraph
       @mutex ||= Mutex.new
     end
 
+    def checked_out_files
+      return open_file_hash.values unless single_checkout?
+      @current ? [@current] : []
+    end
+
     # @return [ApiMap]
     def api_map
       @api_map ||= Solargraph::ApiMap.new
@@ -340,7 +355,7 @@ module Solargraph
     def bundle
       Bundle.new(
         workspace: workspace,
-        opened: open_file_hash.values
+        opened: checked_out_files
       )
     end
 

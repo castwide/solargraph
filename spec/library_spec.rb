@@ -211,6 +211,7 @@ describe Solargraph::Library do
 
   it "collects references to a method symbol" do
     library = Solargraph::Library.new
+    library.single_checkout = false
     library.open('file1.rb', %(
       class Foo
         def bar
@@ -234,6 +235,7 @@ describe Solargraph::Library do
 
   it "collects stripped references to constant symbols" do
     library = Solargraph::Library.new
+    library.single_checkout = false
     library.open('file1.rb', %(
       class Foo
         def bar
