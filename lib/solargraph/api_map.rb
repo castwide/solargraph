@@ -511,6 +511,7 @@ module Solargraph
             result.concat inner_get_methods(fqim, scope, visibility, deep, skip, true) unless fqim.nil?
           end
           result.concat inner_get_methods('Object', :instance, [:public], deep, skip, no_core)
+          result.concat inner_get_methods('BasicObject', :instance, [:public], deep, skip, no_core)
         else
           store.get_extends(fqns).reverse.each do |em|
             fqem = qualify(em, fqns)
