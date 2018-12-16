@@ -9,44 +9,76 @@ module Solargraph
         # is true, notify the client when the gem is up to date.
         #
         class CheckGemVersion < Base
-          def process
-            begin
-              fetcher = Gem::SpecFetcher.new
-              tuple = fetcher.search_for_dependency(Gem::Dependency.new('solargraph')).flatten.first
-              if tuple.nil?
-                msg = 'An error occurred checking the Solargraph gem version.'
-                STDERR.puts msg
-                host.show_message(msg, MessageTypes::ERROR)
-              else
-                available = Gem::Version.new(tuple.version)
-                current = Gem::Version.new(Solargraph::VERSION)
-                if available > current
-                  host.show_message_request "Solargraph gem version #{available} is available. (Current version: #{current})",
-                                            LanguageServer::MessageTypes::INFO,
-                                            ['Update now'] do |result|
-                                              next unless result == 'Update now'
-                                              o, s = Open3.capture2("gem update solargraph")
-                                              if s == 0
-                                                host.show_message 'Successfully updated the Solargraph gem.', LanguageServer::MessageTypes::INFO
-                                                host.send_notification '$/solargraph/restart', {}
-                                              else
-                                                host.show_message 'An error occurred while updating the gem.', LanguageServer::MessageTypes::ERROR
-                                              end
-                                            end
-                elsif params['verbose']
-                  host.show_message "The Solargraph gem is up to date (version #{Solargraph::VERSION})."
-                end
-                set_result({
-                  installed: current,
-                  available: available
-                })
-              end
-            rescue Errno::EADDRNOTAVAIL => e
-              msg = "Unable to connect to gem source: #{e.message}"
-              STDERR.puts msg
-              host.show_message(msg, MessageTypes::ERROR) if params['verbose']
-            end
+          GEM_ZERO = Gem::Version.new('0.0.0')
+
+          def initialize host, request, current: Gem::Version.new(Solargraph::VERSION), available: nil
+            super(host, request)
+            @current = current
+            @available = available
           end
+
+          def process
+            if available > GEM_ZERO
+              if available > current
+                host.show_message_request "Solargraph gem version #{available} is available. (Current version: #{current})",
+                                          LanguageServer::MessageTypes::INFO,
+                                          ['Update now'] do |result|
+                                            next unless result == 'Update now'
+                                            o, s = Open3.capture2("gem update solargraph")
+                                            if s == 0
+                                              host.show_message 'Successfully updated the Solargraph gem.', LanguageServer::MessageTypes::INFO
+                                              host.send_notification '$/solargraph/restart', {}
+                                            else
+                                              host.show_message 'An error occurred while updating the gem.', LanguageServer::MessageTypes::ERROR
+                                            end
+                                          end
+              elsif params['verbose']
+                host.show_message "The Solargraph gem is up to date (version #{Solargraph::VERSION})."
+              end
+            elsif fetched?
+              STDERR.puts error
+              host.show_message(error, MessageTypes::ERROR) if params['verbose']
+            end
+            set_result({
+              installed: current,
+              available: available
+            })
+          end
+
+          private
+
+          # @return [Gem::Version]
+          attr_reader :current
+
+          # @return [Gem::Version]
+          def available
+            if !@available && !@fetched
+              @fetched = true
+              begin
+                @available ||= begin
+                  fetcher = Gem::SpecFetcher.new
+                  tuple = fetcher.search_for_dependency(Gem::Dependency.new('solargraph')).flatten.first
+                  if tuple.nil?
+                    @error = 'An error occurred fetching the gem data'
+                    GEM_ZERO
+                  else
+                    tuple.version
+                  end
+                end
+              rescue Errno::EADDRNOTAVAIL => e
+                @error = "Unable to connect to gem source: #{e.message}"
+                GEM_ZERO
+              end
+            end
+            @available
+          end
+
+          def fetched?
+            @fetched ||= false
+          end
+
+          # @return [String, nil]
+          attr_reader :error
         end
       end
     end
