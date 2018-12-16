@@ -521,12 +521,13 @@ module Solargraph
       # @param uri [String]
       # @return [Library]
       def library_for uri
+        return libraries.first if libraries.length == 1
         filename = uri_to_file(uri)
         libraries.each do |lib|
           return lib if lib.contain?(filename)
         end
-        # @todo Default library?
-        libraries.first
+        logger.warn "Using generic library for #{uri}"
+        generic_library
       end
 
       # @return [Diagnoser]
@@ -621,6 +622,10 @@ module Solargraph
             formattingProvider: true
           }
         }
+      end
+
+      def generic_library
+        @generic_library ||= Library.new
       end
     end
   end
