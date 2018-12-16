@@ -112,8 +112,9 @@ module Solargraph
       def create uri
         library = library_for(uri)
         filename = uri_to_file(uri)
-        library.create_from_disk filename
+        result = library.create_from_disk(filename)
         diagnoser.schedule uri if open?(uri)
+        result
       end
 
       # Delete the specified file from the library.
