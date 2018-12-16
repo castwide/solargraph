@@ -93,8 +93,12 @@ module Solargraph
           # @todo Parse and map directive.tag.text
           ns = namespace_at(position)
           region = Region.new(source: @source, namespace: ns.path)
-          node = Solargraph::Source.parse(directive.tag.text, @filename, position.line)
-          NodeProcessor.process(node, region, @pins)
+          begin
+            node = Solargraph::Source.parse(directive.tag.text, @filename, position.line)
+            NodeProcessor.process(node, region, @pins)
+          rescue Parser::SyntaxError => e
+            # @todo Handle parser errors in !parse directives
+          end
         when 'domain'
           namespace = namespace_at(position)
           namespace.domains.push directive.tag.text
