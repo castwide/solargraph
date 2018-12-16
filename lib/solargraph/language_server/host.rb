@@ -113,6 +113,7 @@ module Solargraph
         library = library_for(uri)
         filename = uri_to_file(uri)
         library.create_from_disk filename
+        diagnoser.schedule uri if open?(uri)
       end
 
       # Delete the specified file from the library.
