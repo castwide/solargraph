@@ -3,30 +3,43 @@
     <title>Solargraph Environment</title>
   </head>
   <h1>
-    Solargraph Environment
+    Solargraph Environment Info
   </h1>
+  <h2>
+    System
+  </h2>
   <ul>
     <li>
       Platform: <%= RUBY_PLATFORM %>
     </li>
     <li>
+      Shell: <%= ENV['SHELL'] %>
+    </li>
+    <li>
       Ruby Version: <%= RUBY_VERSION %>
+    </li>
+  </ul>
+  <h2>
+    Solargraph
+  </h2>
+  <ul>
+    <li>
+      Solargraph Version: <%= Solargraph::VERSION %>
     </li>
     <li>
       Core Documentation Version: <%= Solargraph::YardMap::CoreDocs.best_match %>
     </li>
     <li>
-      Parser Version: <%= Solargraph::Source.parser.version %>
-    </li>
-    <li>
-      Solargraph Version: <%= Solargraph::VERSION %>
-    </li>
-    <li>
-      Shell: <%= ENV['SHELL'] %>
+      Parser Target Version: <%= Solargraph::Source.parser.version %>
     </li>
     <li>
       Using Bundler: <%= ENV.key?('BUNDLE_GEMFILE') %>
     </li>
+  </ul>
+  <h2>
+    Project
+  </h2>
+  <ul>
     <li>
       Config: <%= config %>
     </li>
