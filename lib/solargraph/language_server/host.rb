@@ -19,7 +19,7 @@ module Solargraph
         'debug' => Logger::DEBUG
       }
 
-      DEFAULT_LOG_LEVEL = Logger::INFO
+      DEFAULT_LOG_LEVEL = Logger::WARN
 
       def initialize
         @cancel_semaphore = Mutex.new
