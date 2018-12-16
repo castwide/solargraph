@@ -5,9 +5,13 @@ module Solargraph
     # @return [Solargraph::Workspace]
     attr_reader :workspace
 
+    # @return [String, nil]
+    attr_reader :name
+
     # @param workspace [Solargraph::Workspace]
-    def initialize workspace = Solargraph::Workspace.new
+    def initialize workspace = Solargraph::Workspace.new, name = nil
       @workspace = workspace
+      @name = name
       api_map.catalog bundle
       @synchronized = true
     end
@@ -323,8 +327,8 @@ module Solargraph
     #
     # @param directory [String] The path to be used for the workspace
     # @return [Solargraph::Library]
-    def self.load directory = ''
-      Solargraph::Library.new(Solargraph::Workspace.new(directory))
+    def self.load directory = '', name = nil
+      Solargraph::Library.new(Solargraph::Workspace.new(directory), name)
     end
 
     private

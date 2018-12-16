@@ -19,6 +19,8 @@ module Solargraph
         'debug' => Logger::DEBUG
       }
 
+      DEFAULT_LOG_LEVEL = Logger::INFO
+
       def initialize
         @cancel_semaphore = Mutex.new
         @buffer_semaphore = Mutex.new
@@ -36,7 +38,7 @@ module Solargraph
       # @param update [Hash]
       def configure update
         return if update.nil?
-        logger.level = update['logLevel'] || Logger::DEBUG # @todo Should be INFO
+        logger.level = update['logLevel'] || DEFAULT_LOG_LEVEL
         options.merge! update
       end
 
@@ -47,7 +49,7 @@ module Solargraph
 
       # @return [Logger]
       def logger
-        @logger ||= Logger.new(STDERR, level: Logger::DEBUG) # @todo Should be INFO
+        @logger ||= Logger.new(STDERR, level: DEFAULT_LOG_LEVEL)
       end
 
       # Cancel the method with the specified ID.
@@ -108,6 +110,7 @@ module Solargraph
       #
       # @param uri [String] The file uri.
       def create uri
+        library = library_for(uri)
         filename = uri_to_file(uri)
         library.create_from_disk filename
       end
@@ -116,6 +119,7 @@ module Solargraph
       #
       # @param uri [String] The file uri.
       def delete uri
+        library = library_for(uri)
         filename = uri_to_file(uri)
         library.delete filename
         send_notification "textDocument/publishDiagnostics", {
@@ -130,6 +134,7 @@ module Solargraph
       # @param text [String] The contents of the file.
       # @param version [Integer] A version number.
       def open uri, text, version
+        library = library_for(uri)
         library.open uri_to_file(uri), text, version
         diagnoser.schedule uri
       end
@@ -146,12 +151,14 @@ module Solargraph
       #
       # @param uri [String]
       def close uri
+        library = library_for(uri)
         library.close uri_to_file(uri)
         diagnoser.schedule uri
       end
 
       # @param uri [String]
       def diagnose uri
+        library = library_for(uri)
         logger.debug "Diagnosing #{uri}"
         begin
           results = library.diagnose uri_to_file(uri)
@@ -170,9 +177,10 @@ module Solargraph
       end
 
       def change params
+        library = library_for(params['textDocument']['uri'])
         updater = generate_updater(params)
         library.update updater
-        cataloger.ping unless library.synchronized?
+        cataloger.ping(library) unless library.synchronized?
         diagnoser.schedule params['textDocument']['uri']
       end
 
@@ -200,20 +208,28 @@ module Solargraph
       # Prepare a library for the specified directory.
       #
       # @param directory [String]
-      def prepare directory
+      # @param name [String]
+      def prepare directory, name = nil
         path = ''
         path = normalize_separators(directory) unless directory.nil?
         begin
-          @library = Solargraph::Library.load(path)
+          lib = Solargraph::Library.load(path, name)
         rescue WorkspaceTooLargeError => e
           send_notification 'window/showMessage', {
             'type' => Solargraph::LanguageServer::MessageTypes::WARNING,
             'message' => e.message
           }
-          @library = Solargraph::Library.load
+          lib = Solargraph::Library.new('', name)
         end
+        libraries.push lib
         diagnoser.start
         cataloger.start
+      end
+
+      def prepare_folders array
+        array.each do |folder|
+          prepare uri_to_file(folder['uri']), folder['name']
+        end
       end
 
       # Send a notification to the client.
@@ -343,6 +359,7 @@ module Solargraph
       def locate_pin params
         pin = nil
         unless params['data']['location'].nil?
+          library = library_for(file_to_uri(params['data']['location']['filename']))
           location = Location.new(
             params['data']['location']['filename'],
             Range.from_to(
@@ -355,15 +372,16 @@ module Solargraph
           pin = library.locate_pin(location)
         end
         # @todo Improve pin location
-        if pin.nil? or pin.path != params['data']['path']
-          pin = library.path_pins(params['data']['path']).first
-        end
+        # if pin.nil? or pin.path != params['data']['path']
+        #   pin = library.path_pins(params['data']['path']).first
+        # end
         pin
       end
 
       # @param uri [String]
       # @return [String]
       def read_text uri
+        library = library_for(uri)
         filename = uri_to_file(uri)
         library.read_text(filename)
       end
@@ -373,9 +391,8 @@ module Solargraph
       # @param column [Integer]
       # @return [Solargraph::ApiMap::Completion]
       def completions_at filename, line, column
-        result = nil
-        result = library.completions_at filename, line, column
-        result
+        library = library_for(file_to_uri(filename))
+        library.completions_at filename, line, column
       end
 
       # @param filename [String]
@@ -383,6 +400,7 @@ module Solargraph
       # @param column [Integer]
       # @return [Array<Solargraph::Pin::Base>]
       def definitions_at filename, line, column
+        library = library_for(file_to_uri(filename))
         library.definitions_at(filename, line, column)
       end
 
@@ -391,6 +409,7 @@ module Solargraph
       # @param column [Integer]
       # @return [Array<Solargraph::Pin::Base>]
       def signatures_at filename, line, column
+        library = library_for(file_to_uri(filename))
         library.signatures_at(filename, line, column)
       end
 
@@ -400,30 +419,38 @@ module Solargraph
       # @param strip [Boolean] Strip special characters from variable names
       # @return [Array<Solargraph::Range>]
       def references_from filename, line, column, strip: true
+        library = library_for(file_to_uri(filename))
         result = library.references_from(filename, line, column, strip: strip)
       end
 
       # @param query [String]
       # @return [Array<Solargraph::Pin::Base>]
       def query_symbols query
-        library.query_symbols(query)
+        result = []
+        libraries.each { |lib| result.concat lib.query_symbols(query) }
+        result
       end
 
       # @param query [String]
       # @return [Array<String>]
       def search query
-        library.search(query)
+        result = []
+        libraries.each { |lib| result.concat lib.search(query) }
+        result
       end
 
       # @param query [String]
       # @return [String]
       def document query
-        library.document(query)
+        result = []
+        libraries.each { |lib| result.concat lib.document(query) }
+        result
       end
 
       # @param uri [String]
       # @return [Array<Solargraph::Pin::Base>]
       def document_symbols uri
+        library = library_for(uri)
         library.document_symbols(uri_to_file(uri))
       end
 
@@ -480,15 +507,26 @@ module Solargraph
       # Catalog the library.
       #
       # @return [void]
-      def catalog
-        library.catalog
+      def catalog lib
+        lib.catalog
       end
 
       private
 
-      # @return [Solargraph::Library]
-      def library
-        @library ||= Solargraph::Library.new
+      # @return [Array<Library>]
+      def libraries
+        @libraries ||= []
+      end
+
+      # @param uri [String]
+      # @return [Library]
+      def library_for uri
+        filename = uri_to_file(uri)
+        libraries.each do |lib|
+          return lib if lib.contain?(filename)
+        end
+        # @todo Default library?
+        libraries.first
       end
 
       # @return [Diagnoser]
@@ -508,6 +546,7 @@ module Solargraph
       end
 
       def unsafe_open? uri
+        library = library_for(uri)
         library.open?(uri_to_file(uri))
       end
 

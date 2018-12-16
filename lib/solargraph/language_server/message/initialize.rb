@@ -6,7 +6,7 @@ module Solargraph
           host.configure params['initializationOptions']
           if support_workspace_folders?
             # @todo Prepare multiple folders
-            host.prepare params['workspaceFolders'].first['uri']
+            host.prepare_folders params['workspaceFolders']
           elsif params['rootUri']
             host.prepare UriHelpers.uri_to_file(params['rootUri'])
           else

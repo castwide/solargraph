@@ -6,7 +6,7 @@ describe Solargraph::LanguageServer::Host do
     Dir.mktmpdir do |dir|
       host.prepare (dir)
       # @todo Change this test or get rid of it. The library is private now.
-      expect(host.send(:library)).not_to be(nil)
+      expect(host.send(:libraries).first).not_to be(nil)
     end
   end
 
@@ -84,8 +84,9 @@ describe Solargraph::LanguageServer::Host do
     host = Solargraph::LanguageServer::Host.new
     library = double(:Library)
     allow(library).to receive(:diagnose).and_raise(Solargraph::DiagnosticsError)
+    allow(library).to receive(:contain?).and_return(true)
     # @todo Smelly instance variable access
-    host.instance_variable_set(:@library, library)
+    host.instance_variable_set(:@libraries, [library])
     expect {
       host.diagnose 'file:///test.rb'
     }.not_to raise_error
