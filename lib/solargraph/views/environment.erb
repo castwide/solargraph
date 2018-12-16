@@ -12,5 +12,20 @@
     <li>
       Ruby Version: <%= RUBY_VERSION %>
     </li>
+    <li>
+      Core Documentation Version: <%= Solargraph::YardMap::CoreDocs.best_match %>
+    </li>
+    <li>
+      Parser Version: <%= Solargraph::Source.parser.version %>
+    </li>
+    <li>
+      Solargraph Version: <%= Solargraph::VERSION %>
+    </li>
+    <li>
+      Shell: <%= ENV['SHELL'] %>
+    </li>
+    <li>
+      Using Bundler: <%= ENV.key?('BUNDLE_GEMFILE') %>
+    </li>
   </ul>
 </html>
