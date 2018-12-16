@@ -2,9 +2,11 @@ module Solargraph
   # A Library handles coordination between a Workspace and an ApiMap.
   #
   class Library
+    # @return [Solargraph::Workspace]
+    attr_reader :workspace
+
     # @param workspace [Solargraph::Workspace]
     def initialize workspace = Solargraph::Workspace.new
-      @mutex = Mutex.new
       @workspace = workspace
       api_map.catalog bundle
       @synchronized = true
@@ -30,7 +32,8 @@ module Solargraph
         source = Solargraph::Source.load_string(text, filename, version)
         workspace.merge source
         open_file_hash[filename] = source
-        catalog #unless api_map.try_merge!(source)
+        checkout filename
+        catalog
       end
     end
 
@@ -63,7 +66,7 @@ module Solargraph
         next unless workspace.would_merge?(filename)
         source = Solargraph::Source.load_string(text, filename)
         workspace.merge(source)
-        catalog #unless api_map.try_merge!(source)
+        catalog
         result = true
       end
       result
@@ -81,7 +84,7 @@ module Solargraph
         next unless workspace.would_merge?(filename)
         source = Solargraph::Source.load_string(File.read(filename), filename)
         workspace.merge(source)
-        catalog #unless api_map.try_merge!(source)
+        catalog
         result = true
       end
       result
@@ -179,9 +182,9 @@ module Solargraph
               Solargraph::Location.new(loc.filename, Solargraph::Range.from_to(loc.range.start.line, loc.range.start.column + match[0].length, loc.range.ending.line, loc.range.ending.column))
             end
           end
-          result.concat(found.sort{ |a, b|
+          result.concat(found.sort do |a, b|
             a.range.start.line <=> b.range.start.line
-          })
+          end)
         end
       end
       result
@@ -214,7 +217,9 @@ module Solargraph
     # @param filename [String]
     # @return [Source]
     def checkout filename
-      read filename
+      @current = read(filename)
+      catalog
+      @current
     end
 
     # @param query [String]
@@ -246,7 +251,7 @@ module Solargraph
     # @param filename [String]
     # @return [Array<Solargraph::Pin::Base>]
     def document_symbols filename
-      return [] unless open_file_hash.has_key?(filename)
+      return [] unless open_file_hash.key?(filename)
       api_map.document_symbols(filename)
     end
 
@@ -325,7 +330,9 @@ module Solargraph
     private
 
     # @return [Mutex]
-    attr_reader :mutex
+    def mutex
+      @mutex ||= Mutex.new
+    end
 
     # @return [ApiMap]
     def api_map
@@ -336,13 +343,8 @@ module Solargraph
     def bundle
       Bundle.new(
         workspace: workspace,
-        opened: open_file_hash.values
+        opened: @current ? [@current] : []
       )
-    end
-
-    # @return [Solargraph::Workspace]
-    def workspace
-      @workspace
     end
 
     # A collection of files that are currently open in the library. Open
@@ -362,7 +364,7 @@ module Solargraph
     # @param filename [String]
     # @return [Solargraph::Source]
     def read filename
-      return open_file_hash[filename] if open_file_hash.has_key?(filename)
+      return open_file_hash[filename] if open_file_hash.key?(filename)
       raise FileNotFoundError, "File not found: #{filename}" unless workspace.has_file?(filename)
       workspace.source(filename)
     end

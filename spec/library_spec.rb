@@ -210,7 +210,8 @@ describe Solargraph::Library do
   end
 
   it "collects references to a method symbol" do
-    library = Solargraph::Library.new
+    workspace = Solargraph::Workspace.new('*')
+    library = Solargraph::Library.new(workspace)
     library.open('file1.rb', %(
       class Foo
         def bar
@@ -233,7 +234,8 @@ describe Solargraph::Library do
   end
 
   it "collects stripped references to constant symbols" do
-    library = Solargraph::Library.new
+    workspace = Solargraph::Workspace.new('*')
+    library = Solargraph::Library.new(workspace)
     library.open('file1.rb', %(
       class Foo
         def bar

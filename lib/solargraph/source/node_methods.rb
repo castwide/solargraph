@@ -3,11 +3,13 @@ module Solargraph
     module NodeMethods
       module_function
 
+      # @param node [Parser::AST::Node]
       # @return [String]
       def unpack_name(node)
         pack_name(node).join("::")
       end
 
+      # @param node [Parser::AST::Node]
       # @return [Array<String>]
       def pack_name(node)
         parts = []
@@ -27,6 +29,7 @@ module Solargraph
         parts
       end
 
+      # @param node [Parser::AST::Node]
       # @return [String]
       def const_from node
         if node.kind_of?(AST::Node) and node.type == :const
@@ -45,6 +48,7 @@ module Solargraph
         end
       end
 
+      # @param node [Parser::AST::Node]
       # @return [String]
       def infer_literal_node_type node
         return nil unless node.kind_of?(AST::Node)
@@ -73,6 +77,7 @@ module Solargraph
       # The result should be a string in the form of a method path, e.g.,
       # String.new or variable.method.
       #
+      # @param node [Parser::AST::Node]
       # @return [String]
       def resolve_node_signature node
         result = drill_signature node, ''
@@ -80,10 +85,14 @@ module Solargraph
         result
       end
 
+      # @param node [Parser::AST::Node]
+      # @return [Position]
       def get_node_start_position(node)
         Position.new(node.loc.line, node.loc.column)
       end
 
+      # @param node [Parser::AST::Node]
+      # @return [Position]
       def get_node_end_position(node)
         Position.new(node.loc.last_line, node.loc.last_column)
       end
@@ -135,6 +144,8 @@ module Solargraph
           REDUCEABLE = [:begin, :kwbegin]
           SKIPPABLE = [:def, :defs, :class, :sclass, :module]
 
+          # @param node [Parser::AST::Node]
+          # @return [Array<Parser::AST::Node>]
           def get_return_nodes node
             return [] unless node.is_a?(Parser::AST::Node)
             result = []
@@ -142,6 +153,8 @@ module Solargraph
               result.concat get_return_nodes_from_children(node)
             elsif CONDITIONAL.include?(node.type)
               result.concat reduce_to_value_nodes(node.children[1..-1])
+            elsif node.type == :and || node.type == :or
+              result.concat reduce_to_value_nodes(node.children)
             elsif node.type == :return
               result.concat reduce_to_value_nodes([node.children[0]])
             else
@@ -197,6 +210,8 @@ module Solargraph
                 result.concat reduce_to_value_nodes(node.children[1..-1])
               elsif node.type == :return
                 result.concat get_return_nodes(node.children[0])
+              elsif node.type == :and || node.type == :or
+                result.concat reduce_to_value_nodes(node.children)
               else
                 result.push node
               end

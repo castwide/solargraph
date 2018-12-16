@@ -6,9 +6,6 @@ module Solargraph
       # @return [Parser::AST::Node]
       attr_reader :receiver
 
-      # @return [Array<String>]
-      attr_reader :parameters
-
       def initialize location, namespace, name, comments, receiver, context
         super(location, namespace, name, comments)
         @receiver = receiver
@@ -19,6 +16,7 @@ module Solargraph
         Pin::BLOCK
       end
 
+      # @return [Array<String>]
       def parameters
         @parameters ||= []
       end

@@ -93,7 +93,11 @@ module Solargraph
       def qualify api_map, context = ''
         return ComplexType.parse(tag) if duck_type? or void? or undefined?
         fqns = api_map.qualify(name, context)
-        return ComplexType::UNDEFINED if fqns.nil?
+        # return ComplexType::UNDEFINED if fqns.nil?
+        if fqns.nil?
+          return ComplexType.parse('Boolean') if tag == 'Boolean'
+          return ComplexType::UNDEFINED
+        end
         ltypes = key_types.map do |t|
           t.qualify api_map, context
         end
