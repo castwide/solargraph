@@ -36,7 +36,7 @@ module Solargraph
       # @param update [Hash]
       def configure update
         return if update.nil?
-        logger.level = update['logLevel'] || Logger::INFO
+        logger.level = update['logLevel'] || Logger::DEBUG # @todo Should be INFO
         options.merge! update
       end
 
@@ -47,7 +47,7 @@ module Solargraph
 
       # @return [Logger]
       def logger
-        @logger ||= Logger.new(STDERR, level: Logger::INFO)
+        @logger ||= Logger.new(STDERR, level: Logger::DEBUG) # @todo Should be INFO
       end
 
       # Cancel the method with the specified ID.
@@ -82,7 +82,8 @@ module Solargraph
       # @return [Solargraph::LanguageServer::Message::Base] The message handler.
       def start request
         if request['method']
-          logger.debug "Server received #{request['method']}"
+          logger.info "Server received #{request['method']}"
+          logger.debug request
           message = Message.select(request['method']).new(self, request)
           begin
             message.process
@@ -471,7 +472,8 @@ module Solargraph
           'references' => true,
           'autoformat' => false,
           'diagnostics' => false,
-          'formatting' => false
+          'formatting' => false,
+          'logLevel' => 'debug' # @todo Put this back on 'warning' for production
         }
       end
 

@@ -4,7 +4,10 @@ module Solargraph
       class Initialize < Base
         def process
           host.configure params['initializationOptions']
-          if params['rootUri']
+          if support_workspace_folders?
+            # @todo Prepare multiple folders
+            host.prepare params['workspaceFolders'].first['uri']
+          elsif params['rootUri']
             host.prepare UriHelpers.uri_to_file(params['rootUri'])
           else
             host.prepare params['rootPath']
@@ -34,6 +37,12 @@ module Solargraph
         end
 
         private
+
+        def support_workspace_folders?
+          params['capabilities'] &&
+            params['capabilities']['workspace'] &&
+            params['capabilities']['workspace']['workspaceFolders']
+        end
 
         def static_completion
           {
@@ -103,11 +112,13 @@ module Solargraph
           }
         end
 
+        # @param section [String]
+        # @param capability [String]
         # @return [Boolean]
         def dynamic_registration_for? section, capability
-          result = (params['capabilities'] and
-            params['capabilities'][section] and
-            params['capabilities'][section][capability] and
+          result = (params['capabilities'] &&
+            params['capabilities'][section] &&
+            params['capabilities'][section][capability] &&
             params['capabilities'][section][capability]['dynamicRegistration'])
           host.allow_registration("#{section}/#{capability}") if result
           result
