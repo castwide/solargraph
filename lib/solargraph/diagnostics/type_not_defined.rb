@@ -18,7 +18,7 @@ module Solargraph
       private
 
       def check_return_type pin, api_map, source
-        return [] if (pin.name == 'initialize' and pin.scope == :instance) or (pin.name == 'new' and pin.scope == :class)
+        return [] if (pin.name == 'initialize' && pin.scope == :instance) || (pin.name == 'new' && pin.scope == :class)
         result = []
         unless defined_return_type?(pin, api_map)
           result.push(

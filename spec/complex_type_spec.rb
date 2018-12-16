@@ -204,4 +204,11 @@ describe Solargraph::ComplexType do
     type = Solargraph::ComplexType.parse('String')
     expect { type.undefined_method }.to raise_error(NoMethodError)
   end
+
+  it "typifies Booleans" do
+    api_map = double(Solargraph::ApiMap, qualify: nil)
+    type = Solargraph::ComplexType.parse('Boolean')
+    qualified = type.qualify(api_map)
+    expect(qualified.tag).to eq('Boolean')
+  end
 end

@@ -139,4 +139,17 @@ describe Solargraph::Source::Chain do
       chain.define(api_map, Solargraph::Pin::ROOT_PIN, [])
     }.not_to raise_error
   end
+
+  it "matches constants on complete symbols" do
+    source = Solargraph::Source.load_string(%(
+      class Correct; end
+      class NotCorrect; end
+      Correct
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new
+    api_map.map source
+    chain = Solargraph::Source::SourceChainer.chain(source, Solargraph::Position.new(3, 6))
+    result = chain.define(api_map, Solargraph::Pin::ROOT_PIN, [])
+    expect(result.map(&:path)).to eq(['Correct'])
+  end
 end

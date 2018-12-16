@@ -39,10 +39,7 @@ module Solargraph
         @store = Store.new(pins + YardMap.new.pins)
         @unresolved_requires = []
       }
-      resolved = resolve_method_aliases
-      unless resolved.nil?
-        @mutex.synchronize { @store = Store.new(resolved) }
-      end
+      resolve_method_aliases
       self
     end
 
@@ -65,7 +62,8 @@ module Solargraph
     # @return [self]
     def catalog bundle
       new_map_hash = {}
-      unmerged = false
+      # Bundle always needs to be merged if it adds or removes sources
+      merged = (bundle.sources.length == source_map_hash.values.length)
       bundle.sources.each do |source|
         if source_map_hash.has_key?(source.filename)
           if source_map_hash[source.filename].code == source.code
@@ -76,16 +74,16 @@ module Solargraph
               new_map_hash[source.filename] = source_map_hash[source.filename]
             else
               new_map_hash[source.filename] = map
-              unmerged = true
+              merged = false
             end
           end
         else
           map = Solargraph::SourceMap.map(source)
           new_map_hash[source.filename] = map
-          unmerged = true
+          merged = false
         end
       end
-      return self unless unmerged
+      return self if merged
       pins = []
       reqs = []
       # @param map [SourceMap]
@@ -114,17 +112,15 @@ module Solargraph
         @store = new_store
         @unresolved_requires = yard_map.unresolved_requires
       }
-      resolved = resolve_method_aliases
-      unless resolved.nil?
-        @mutex.synchronize { @store = Store.new(resolved) }
-      end
+      resolve_method_aliases
       self
     end
 
     # @param filename [String]
-    # @param position [Position]
+    # @param position [Position, Array(Integer, Integer)]
     # @return [Source::Cursor]
     def cursor_at filename, position
+      position = Position.normalize(position)
       raise "File not found: #{filename}" unless source_map_hash.has_key?(filename)
       source_map_hash[filename].cursor_at(position)
     end
@@ -132,9 +128,10 @@ module Solargraph
     # Get a clip by filename and position.
     #
     # @param filename [String]
-    # @param position [Position]
+    # @param position [Position, Array(Integer, Integer)]
     # @return [SourceMap::Clip]
     def clip_at filename, position
+      position = Position.normalize(position)
       SourceMap::Clip.new(self, cursor_at(filename, position))
     end
 
@@ -521,6 +518,7 @@ module Solargraph
             result.concat inner_get_methods(fqim, scope, visibility, deep, skip, true) unless fqim.nil?
           end
           result.concat inner_get_methods('Object', :instance, [:public], deep, skip, no_core)
+          result.concat inner_get_methods('BasicObject', :instance, [:public], deep, skip, no_core)
         else
           store.get_extends(fqns).reverse.each do |em|
             fqem = qualify(em, fqns)
@@ -648,7 +646,7 @@ module Solargraph
       false
     end
 
-    # @return [Array<Pin::Base>, nil]
+    # @return [void]
     def resolve_method_aliases
       aliased = false
       result = pins.map do |pin|
@@ -659,7 +657,7 @@ module Solargraph
         Pin::Method.new(pin.location, pin.namespace, pin.name, origin.comments, origin.scope, origin.visibility, origin.parameters)
       end
       return nil unless aliased
-      result
+      @mutex.synchronize { @store = Store.new(result) }
     end
   end
 end

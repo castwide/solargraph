@@ -24,6 +24,7 @@ module Solargraph
     # @return [Parser::AST::Node]
     attr_reader :node
 
+    # @return [Array<Parser::Source::Comment>]
     attr_reader :comments
 
     # @return [String]
@@ -194,6 +195,9 @@ module Solargraph
       arr ? stringify_comment_array(arr) : nil
     end
 
+    # A location representing the file in its entirety.
+    #
+    # @return [Location]
     def location
       st = Position.new(0, 0)
       en = Position.from_offset(code, code.length)
@@ -203,6 +207,9 @@ module Solargraph
 
     private
 
+    # Get a hash of comments grouped by the line numbers of the associated code.
+    #
+    # @return [Hash{Integer => Array<Parser::Source::Comment>}]
     def associated_comments
       @associated_comments ||= begin
         result = {}
@@ -216,6 +223,10 @@ module Solargraph
       end
     end
 
+    # Get a string representation of an array of comments.
+    #
+    # @param comments [Array<Parser::Source::Comment>]
+    # @return [String]
     def stringify_comment_array comments
       ctxt = ''
       num = nil
@@ -309,17 +320,24 @@ module Solargraph
 
       # @param code [String]
       # @param filename [String]
+      # @param version [Integer]
       # @return [Solargraph::Source]
       def load_string code, filename = nil, version = 0
         Source.new code, filename, version
       end
 
+      # @param code [String]
+      # @param filename [String]
+      # @return [Array(Parser::AST::Node, Array<Parser::Source::Comment>)]
       def parse_with_comments code, filename = nil
         buffer = Parser::Source::Buffer.new(filename, 0)
         buffer.source = code.encode('UTF-8', 'binary', invalid: :replace, undef: :replace, replace: '_')
         parser.parse_with_comments(buffer)
       end
 
+      # @param code [String]
+      # @param filename [String]
+      # @return [Parser::AST::Node]
       def parse code, filename = nil, line = 0
         buffer = Parser::Source::Buffer.new(filename, line)
         buffer.source = code.encode('UTF-8', 'binary', invalid: :replace, undef: :replace, replace: '_')

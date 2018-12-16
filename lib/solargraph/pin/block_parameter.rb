@@ -71,9 +71,10 @@ module Solargraph
         block
       end
 
-      # @param api_map [ApiMap]
-      def infer api_map
-        return return_complex_type unless return_complex_type.undefined?
+      def typify api_map
+        # @todo Does anything need to be eliminated because it's more accurately a probe?
+        type = super
+        return type unless type.undefined?
         chain = Source::NodeChainer.chain(block.receiver, filename)
         clip = api_map.clip_at(location.filename, location.range.start)
         locals = clip.locals - [self]

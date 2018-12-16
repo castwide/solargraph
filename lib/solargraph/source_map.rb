@@ -42,15 +42,17 @@ module Solargraph
       @requires ||= pins.select{|p| p.kind == Pin::REQUIRE_REFERENCE}
     end
 
-    # @param position [Position]
+    # @param position [Position, Array(Integer, Integer)]
     # @return [Boolean]
     def string_at? position
+      position = Position.normalize(position)
       @source.string_at?(position)
     end
 
-    # @param position [Position]
+    # @param position [Position, Array(Integer, Integer)]
     # @return [Boolean]
     def comment_at? position
+      position = Position.normalize(position)
       @source.comment_at?(position)
     end
 
@@ -73,6 +75,8 @@ module Solargraph
       Source::Cursor.new(source, position)
     end
 
+    # @param path [String]
+    # @return [Pin::Base]
     def first_pin path
       pins.select { |p| p.path == path }.first
     end
@@ -93,7 +97,7 @@ module Solargraph
     end
 
     # @param other_map [SourceMap]
-    # @return Boolean
+    # @return [Boolean]
     def try_merge! other_map
       return false if pins.length != other_map.pins.length || locals.length != other_map.locals.length || requires.map(&:name).uniq.sort != other_map.requires.map(&:name).uniq.sort
       pins.each_index do |i|
@@ -138,6 +142,10 @@ module Solargraph
 
     private
 
+    # @param line [Integer]
+    # @param character [Integer]
+    # @param *kinds [Array<Symbol>]
+    # @return [Pin::Base]
     def _locate_pin line, character, *kinds
       position = Position.new(line, character)
       found = nil
