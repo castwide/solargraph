@@ -413,6 +413,14 @@ describe Protocol do
     expect(response['error']).not_to be_nil
   end
 
+  it "handles $/cancelRequest" do
+    expect {
+      @protocol.request '$/cancelRequest', {
+        'id' => 0
+      }
+    }.not_to raise_error
+  end
+
   it "handles shutdown" do
     @protocol.request 'shutdown', {}
     response = @protocol.response
