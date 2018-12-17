@@ -160,8 +160,8 @@ module Solargraph
 
       # @param uri [String]
       def diagnose uri
+        logger.info "Diagnosing #{uri}"
         library = library_for(uri)
-        logger.debug "Diagnosing #{uri}"
         begin
           results = library.diagnose uri_to_file(uri)
           send_notification "textDocument/publishDiagnostics", {
