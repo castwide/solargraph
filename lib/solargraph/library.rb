@@ -84,10 +84,12 @@ module Solargraph
     def create_from_disk filename
       result = false
       mutex.synchronize do
-        next if File.directory?(filename) or !File.exist?(filename)
-        next unless workspace.would_merge?(filename)
+        next if File.directory?(filename) || !File.exist?(filename)
+        next unless contain?(filename) || open?(filename) || workspace.would_merge?(filename)
         source = Solargraph::Source.load_string(File.read(filename), filename)
         workspace.merge(source)
+        open_file_hash[filename] = source if open_file_hash.key?(filename)
+        @current = source if @current && @current.filename == source.filename
         catalog
         result = true
       end
@@ -283,6 +285,7 @@ module Solargraph
           raise FileNotFoundError, "Unable to update #{updater.filename}" unless open?(updater.filename)
           open_file_hash[updater.filename] = open_file_hash[updater.filename].synchronize(updater)
         end
+        @current = open_file_hash[updater.filename] if @current && @current.filename == updater.filename
         @synchronized = false
       end
     end
