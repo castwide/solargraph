@@ -233,7 +233,7 @@ module Solargraph
         logger.info "Removing library for #{directory}"
         # @param lib [Library]
         libraries.delete_if do |lib|
-          return false if lib.workspace.directory != directory
+          next false if lib.workspace.directory != directory
           lib.open_sources.each do |src|
             orphan_library.open(src.filename, src.code, src.version)
           end
@@ -245,6 +245,10 @@ module Solargraph
         array.each do |folder|
           remove uri_to_file(folder['uri'])
         end
+      end
+
+      def folders
+        libraries.map { |lib| lib.workspace.directory }
       end
 
       # Send a notification to the client.
@@ -543,6 +547,10 @@ module Solargraph
         # Find a library with an explicit reference to the file
         libraries.each do |lib|
           return lib if lib.contain?(filename) || lib.open?(filename)
+        end
+        # Find a library with a workspace that contains the file
+        libraries.each do |lib|
+          return lib if filename.start_with?(lib.workspace.directory)
         end
         return orphan_library if orphan_library.open?(filename)
         raise "No library for #{uri}"
