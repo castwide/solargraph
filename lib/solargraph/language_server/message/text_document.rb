@@ -17,6 +17,7 @@ module Solargraph
         autoload :Formatting,       'solargraph/language_server/message/text_document/formatting'
         autoload :References,       'solargraph/language_server/message/text_document/references'
         autoload :Rename,           'solargraph/language_server/message/text_document/rename'
+        autoload :FoldingRange,     'solargraph/language_server/message/text_document/folding_range'
       end
     end
   end

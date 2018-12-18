@@ -205,7 +205,40 @@ module Solargraph
       Location.new(filename, range)
     end
 
+    FOLDING_NODE_TYPES = %i[
+      class sclass module def defs if str dstr array while unless kwbegin hash
+    ].freeze
+
+    # Get an array of ranges that can be folded, e.g., the range of a class
+    # definition or an if condition.
+    #
+    # See FOLDING_NODE_TYPES for the list of node types that can be folded.
+    #
+    # @return [Array<Range>]
+    def folding_ranges
+      # @todo Instance variable
+      result = []
+      inner_folding_ranges node, result
+      result
+    end
+
     private
+
+    # @param top [Parser::AST::Node]
+    # @param result [Array<Range>]
+    # @return [void]
+    def inner_folding_ranges top, result = []
+      return unless top.is_a?(Parser::AST::Node)
+      if FOLDING_NODE_TYPES.include?(top.type)
+        range = Range.from_node(top)
+        if result.empty? || range.start.line > result.last.start.line
+          result.push range unless range.ending.line - range.start.line < 2
+        end
+      end
+      top.children.each do |child|
+        inner_folding_ranges(child, result)
+      end
+    end
 
     # Get a hash of comments grouped by the line numbers of the associated code.
     #

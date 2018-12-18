@@ -453,7 +453,8 @@ module Solargraph
           'references' => true,
           'autoformat' => false,
           'diagnostics' => false,
-          'formatting' => false
+          'formatting' => false,
+          'folding' => true
         }
       end
 
@@ -462,6 +463,11 @@ module Solargraph
       # @return [void]
       def catalog
         library.catalog
+      end
+
+      def folding_ranges uri
+        file = uri_to_file(uri)
+        library.folding_ranges(file)
       end
 
       private
@@ -560,6 +566,9 @@ module Solargraph
           },
           'textDocument/formatting' => {
             formattingProvider: true
+          },
+          'textDocument/foldingRange' => {
+            foldingRangeProvider: true
           }
         }
       end
