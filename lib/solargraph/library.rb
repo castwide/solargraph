@@ -2,6 +2,8 @@ module Solargraph
   # A Library handles coordination between a Workspace and an ApiMap.
   #
   class Library
+    include Logging
+
     # @return [Solargraph::Workspace]
     attr_reader :workspace
 
@@ -322,6 +324,7 @@ module Solargraph
     #
     # @return [void]
     def catalog
+      logger.info "Cataloging #{workspace.directory.empty? ? 'generic workspace' : workspace.directory}"
       api_map.catalog bundle
       @synchronized = true
     end

@@ -31,8 +31,8 @@ module Solargraph
       # @param update [Hash]
       def configure update
         return if update.nil?
-        logger.level = update['logLevel'] || DEFAULT_LOG_LEVEL
         options.merge! update
+        logger.level = options['logLevel'] || DEFAULT_LOG_LEVEL
       end
 
       # @return [Hash]
@@ -235,7 +235,8 @@ module Solargraph
         json = response.to_json
         envelope = "Content-Length: #{json.bytesize}\r\n\r\n#{json}"
         queue envelope
-        logger.debug "Server sent #{method}"
+        logger.info "Server sent #{method}"
+        logger.debug params
       end
 
       # Send a request to the client and execute the provided block to process
@@ -258,7 +259,8 @@ module Solargraph
         envelope = "Content-Length: #{json.bytesize}\r\n\r\n#{json}"
         queue envelope
         @next_request_id += 1
-        logger.debug "Server sent #{method}"
+        logger.info "Server sent #{method}"
+        logger.debug params
       end
 
       # Register the methods as capabilities with the client.
@@ -490,7 +492,7 @@ module Solargraph
           'autoformat' => false,
           'diagnostics' => false,
           'formatting' => false,
-          'logLevel' => 'debug' # @todo Put this back on 'warning' for production
+          'logLevel' => 'info' # @todo Put this back on 'warning' for production
         }
       end
 

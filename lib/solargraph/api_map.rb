@@ -11,7 +11,6 @@ module Solargraph
     autoload :Store,        'solargraph/api_map/store'
 
     include Solargraph::ApiMap::SourceToYard
-    include Logging
 
     # Get a LiveMap associated with the current workspace.
     #
