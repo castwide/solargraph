@@ -2,12 +2,18 @@ module Solargraph
   # A Library handles coordination between a Workspace and an ApiMap.
   #
   class Library
+    include Logging
+
     # @return [Solargraph::Workspace]
     attr_reader :workspace
 
+    # @return [String, nil]
+    attr_reader :name
+
     # @param workspace [Solargraph::Workspace]
-    def initialize workspace = Solargraph::Workspace.new
+    def initialize workspace = Solargraph::Workspace.new, name = nil
       @workspace = workspace
+      @name = name
       api_map.catalog bundle
       @synchronized = true
     end
@@ -30,6 +36,16 @@ module Solargraph
     def open filename, text, version
       mutex.synchronize do
         source = Solargraph::Source.load_string(text, filename, version)
+        workspace.merge source
+        open_file_hash[filename] = source
+        checkout filename
+        catalog
+      end
+    end
+
+    def open_from_disk filename
+      mutex.synchronize do
+        source = Solargraph::Source.load(filename)
         workspace.merge source
         open_file_hash[filename] = source
         checkout filename
@@ -318,6 +334,7 @@ module Solargraph
     #
     # @return [void]
     def catalog
+      logger.info "Cataloging #{workspace.directory.empty? ? 'generic workspace' : workspace.directory}"
       api_map.catalog bundle
       @synchronized = true
     end
@@ -326,12 +343,17 @@ module Solargraph
       read(filename).folding_ranges
     end
 
+    # @return [Array<Source>]
+    def open_sources
+      open_file_hash.values
+    end
+
     # Create a library from a directory.
     #
     # @param directory [String] The path to be used for the workspace
     # @return [Solargraph::Library]
-    def self.load directory = ''
-      Solargraph::Library.new(Solargraph::Workspace.new(directory))
+    def self.load directory = '', name = nil
+      Solargraph::Library.new(Solargraph::Workspace.new(directory), name)
     end
 
     private

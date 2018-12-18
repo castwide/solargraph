@@ -12,8 +12,8 @@ module Solargraph
         # Notify the Cataloger that changes are pending.
         #
         # @return [void]
-        def ping
-          mutex.synchronize { pings.push nil }
+        def ping lib
+          mutex.synchronize { pings.push lib }
         end
 
         def synchronizing?
@@ -45,8 +45,9 @@ module Solargraph
               sleep 0.1
               next if pings.empty?
               mutex.synchronize do
-                host.catalog
-                pings.clear
+                lib = pings.shift
+                host.catalog lib
+                # pings.delete lib
               end
             end
           end
