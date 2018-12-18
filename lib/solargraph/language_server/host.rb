@@ -32,7 +32,7 @@ module Solargraph
       def configure update
         return if update.nil?
         options.merge! update
-        logger.level = options['logLevel'] || DEFAULT_LOG_LEVEL
+        logger.level = LOG_LEVELS[options['logLevel']] || DEFAULT_LOG_LEVEL
       end
 
       # @return [Hash]

@@ -4,6 +4,12 @@ module Solargraph
   module Logging
     DEFAULT_LOG_LEVEL = Logger::WARN
 
+    LOG_LEVELS = {
+      'warn' => Logger::WARN,
+      'info' => Logger::INFO,
+      'debug' => Logger::DEBUG
+    }
+
     @@logger = Logger.new(STDERR, level: DEFAULT_LOG_LEVEL)
     @@logger.formatter = proc do |severity, datetime, progname, msg|
       "[#{severity}] #{msg}\n"
