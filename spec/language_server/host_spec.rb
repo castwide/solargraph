@@ -94,6 +94,24 @@ describe Solargraph::LanguageServer::Host do
     expect(result).to include('Error in diagnostics')
   end
 
+  it "opens multiple folders" do
+    host = Solargraph::LanguageServer::Host.new
+    app1_folder = File.absolute_path('spec/fixtures/workspace_folders/folder1').gsub(/\\/, '/')
+    app2_folder = File.absolute_path('spec/fixtures/workspace_folders/folder2').gsub(/\\/, '/')
+    host.prepare(app1_folder)
+    host.prepare(app2_folder)
+    file1_uri = Solargraph::LanguageServer::UriHelpers.file_to_uri("#{app1_folder}/app.rb")
+    file2_uri = Solargraph::LanguageServer::UriHelpers.file_to_uri("#{app2_folder}/app.rb")
+    host.open_from_disk file1_uri
+    host.open_from_disk file2_uri
+    app1_map = host.document_symbols(file1_uri).map(&:path)
+    expect(app1_map).to include('Folder1App')
+    expect(app1_map).not_to include('Folder2App')
+    app2_map = host.document_symbols(file2_uri).map(&:path)
+    expect(app2_map).to include('Folder2App')
+    expect(app2_map).not_to include('Folder1App')
+  end
+
   it "stops" do
     host = Solargraph::LanguageServer::Host.new
     host.stop

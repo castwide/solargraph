@@ -129,6 +129,12 @@ module Solargraph
         diagnoser.schedule uri
       end
 
+      def open_from_disk uri
+        library = library_for(uri)
+        library.open_from_disk uri_to_file(uri)
+        diagnoser.schedule uri
+      end
+
       # True if the specified file is currently open in the library.
       #
       # @param uri [String]
@@ -225,7 +231,14 @@ module Solargraph
 
       def remove directory
         logger.info "Removing library for #{directory}"
-        libraries.delete_if { |lib| lib.workspace.directory == directory }
+        # @param lib [Library]
+        libraries.delete_if do |lib|
+          return false if lib.workspace.directory != directory
+          lib.open_sources.each do |src|
+            orphan_library.open(src.filename, src.code, src.version)
+          end
+          true
+        end
       end
 
       def remove_folders array
@@ -527,16 +540,17 @@ module Solargraph
       def library_for uri
         return libraries.first if libraries.length == 1
         filename = uri_to_file(uri)
-        # Libraries with explicit references to the file take precedence
+        # Find a library with an explicit reference to the file
         libraries.each do |lib|
-          return lib if lib.contain?(filename) || lib.open?(filename) || filename.start_with?(lib.workspace.directory)
+          return lib if lib.contain?(filename) || lib.open?(filename)
         end
-        # Libraries using directories in the file's path are next
-        libraries.each do |lib|
-          return lib if filename.start_with?(lib.workspace.directory)
-        end
-        # @todo No library available. Now what?
-        nil
+        return orphan_library if orphan_library.open?(filename)
+        raise "No library for #{uri}"
+      end
+
+      # @return [Library]
+      def orphan_library
+        @orphan_library ||= Solargraph::Library.new
       end
 
       # @return [Diagnoser]

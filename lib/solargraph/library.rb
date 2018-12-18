@@ -43,6 +43,16 @@ module Solargraph
       end
     end
 
+    def open_from_disk filename
+      mutex.synchronize do
+        source = Solargraph::Source.load(filename)
+        workspace.merge source
+        open_file_hash[filename] = source
+        checkout filename
+        catalog
+      end
+    end
+
     # True if the specified file is currently open.
     #
     # @param filename [String]
@@ -327,6 +337,11 @@ module Solargraph
       logger.info "Cataloging #{workspace.directory.empty? ? 'generic workspace' : workspace.directory}"
       api_map.catalog bundle
       @synchronized = true
+    end
+
+    # @return [Array<Source>]
+    def open_sources
+      open_file_hash.values
     end
 
     # Create a library from a directory.
