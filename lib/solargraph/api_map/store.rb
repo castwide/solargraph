@@ -3,6 +3,8 @@ require 'set'
 module Solargraph
   class ApiMap
     class Store
+      include Logging
+
       # @return [Array<Solargraph::Pin::Base>]
       attr_reader :pins
 
@@ -167,6 +169,7 @@ module Solargraph
 
       # @return [void]
       def index
+        logger.debug 'Indexing ApiMap store'
         namespace_map.clear
         namespaces.clear
         symbols.clear

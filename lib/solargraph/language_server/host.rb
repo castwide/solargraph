@@ -1,6 +1,5 @@
 require 'thread'
 require 'set'
-require 'logger'
 
 module Solargraph
   module LanguageServer
@@ -13,13 +12,7 @@ module Solargraph
       autoload :Cataloger, 'solargraph/language_server/host/cataloger'
 
       include Solargraph::LanguageServer::UriHelpers
-
-      LOG_LEVELS = {
-        'info' => Logger::INFO,
-        'debug' => Logger::DEBUG
-      }
-
-      DEFAULT_LOG_LEVEL = Logger::WARN
+      include Logging
 
       def initialize
         @cancel_semaphore = Mutex.new
@@ -45,11 +38,6 @@ module Solargraph
       # @return [Hash]
       def options
         @options ||= default_configuration
-      end
-
-      # @return [Logger]
-      def logger
-        @logger ||= Logger.new(STDERR, level: DEFAULT_LOG_LEVEL)
       end
 
       # Cancel the method with the specified ID.
