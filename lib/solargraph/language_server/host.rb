@@ -356,13 +356,6 @@ module Solargraph
         @registered_capabilities.include?(method)
       end
 
-      # True if the specified file is in the process of changing.
-      #
-      # @return [Boolean]
-      def changing? file_uri
-        unsafe_changing?(file_uri)
-      end
-
       def synchronizing?
         cataloger.synchronizing?
       end
@@ -522,7 +515,7 @@ module Solargraph
           'diagnostics' => false,
           'formatting' => false,
           'folding' => true,
-          'logLevel' => 'debug' # @todo Put this back on 'warning' for production
+          'logLevel' => 'warn'
         }
       end
 
@@ -576,12 +569,6 @@ module Solargraph
       # @return [Cataloger]
       def cataloger
         @cataloger ||= Cataloger.new(self)
-      end
-
-      # @param file_uri [String]
-      # @return [Boolean]
-      def unsafe_changing? file_uri
-        file = uri_to_file(file_uri)
       end
 
       def unsafe_open? uri
