@@ -298,13 +298,27 @@ module Solargraph
       result
     end
 
-    # Get an array of public methods for a complex type.
+    # Get an array of method pins for a complex type.
     #
-    # @param type [Solargraph::ComplexType]
-    # @param context [String]
+    # The type's namespace and the context should be fully qualified. If the
+    # context matches the namespace type or is a subclass of the type,
+    # protected methods are included in the results. If protected methods are
+    # included and internal is true, private methods are also included.
+    #
+    # @example
+    #   api_map = Solargraph::ApiMap.new
+    #   type = Solargraph::ComplexType.parse('String')
+    #   api_map.get_complex_type_methods(type)
+    #
+    # @param type [Solargraph::ComplexType] The complex type of the namespace
+    # @param context [String] The context from which the type is referenced
     # @param internal [Boolean] True to include private methods
     # @return [Array<Solargraph::Pin::Base>]
     def get_complex_type_methods type, context = '', internal = false
+      # This method does not qualify the complex type's namespace because
+      # it can cause conflicts between similar names, e.g., `Foo` vs.
+      # `Other::Foo`. It still takes a context argument to determine whether
+      # protected and private methods are visible.
       return [] if type.undefined? || type.void?
       result = []
       if type.duck_type?
@@ -314,19 +328,12 @@ module Solargraph
         result.concat get_methods('Object')
       else
         unless type.nil? || type.name == 'void'
-          # @todo This method does not qualify the complex type's namespace
-          #   because it can cause namespace conflicts, e.g., `Foo` vs.
-          #   `Other::Foo`. It still takes a context argument because it
-          #   uses context to determine whether protected and private methods
-          #   are visible.
-          # namespace = qualify(type.namespace, context)
-          namespace = type.namespace
           visibility = [:public]
-          if namespace == context || super_and_sub?(namespace, context)
+          if type.namespace == context || super_and_sub?(type.namespace, context)
             visibility.push :protected
             visibility.push :private if internal
           end
-          result.concat get_methods(namespace, scope: type.scope, visibility: visibility)
+          result.concat get_methods(type.namespace, scope: type.scope, visibility: visibility)
         end
       end
       result

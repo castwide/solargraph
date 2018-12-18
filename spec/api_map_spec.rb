@@ -331,7 +331,11 @@ describe Solargraph::ApiMap do
     api_map.map source
     pins = api_map.get_complex_type_methods(Solargraph::ComplexType.parse('Sub'), 'Sub')
     expect(pins.map(&:path)).to include('Sup#bar')
-    pins = api_map.get_complex_type_methods(Solargraph::ComplexType.parse('Sub'), 'Sub2')
+    pins = api_map.get_complex_type_methods(Solargraph::ComplexType.parse('Sub2'), 'Sub2')
+    expect(pins.map(&:path)).to include('Sup#bar')
+    pins = api_map.get_complex_type_methods(Solargraph::ComplexType.parse('Sup'), 'Sub')
+    expect(pins.map(&:path)).to include('Sup#bar')
+    pins = api_map.get_complex_type_methods(Solargraph::ComplexType.parse('Sup'), 'Sub2')
     expect(pins.map(&:path)).to include('Sup#bar')
   end
 

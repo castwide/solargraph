@@ -394,8 +394,8 @@ module Solargraph
       # @param code [String]
       # @param filename [String]
       # @return [Parser::AST::Node]
-      def parse code, filename = nil
-        buffer = Parser::Source::Buffer.new(filename, 0)
+      def parse code, filename = nil, line = 0
+        buffer = Parser::Source::Buffer.new(filename, line)
         buffer.source = code.encode('UTF-8', 'binary', invalid: :replace, undef: :replace, replace: '_')
         parser.parse(buffer)
       end
