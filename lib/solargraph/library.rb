@@ -58,8 +58,8 @@ module Solargraph
       workspace.has_file?(filename)
     end
 
-    # Create a source to be added to the workspace. The file is ignored if the
-    # workspace is not configured to include the file.
+    # Create a source to be added to the workspace. The file is ignored if it is
+    # neither open in the library nor included in the workspace.
     #
     # @param filename [String]
     # @param text [String] The contents of the file
@@ -67,7 +67,7 @@ module Solargraph
     def create filename, text
       result = false
       mutex.synchronize do
-        next unless workspace.would_merge?(filename)
+        next unless contain?(filename) || open?(filename) || workspace.would_merge?(filename)
         source = Solargraph::Source.load_string(text, filename)
         workspace.merge(source)
         catalog
@@ -76,8 +76,8 @@ module Solargraph
       result
     end
 
-    # Create a file source from a file on disk. The file is ignored if the
-    # workspace is not configured to include the file.
+    # Create a file source from a file on disk. The file is ignored if it is
+    # neither open in the library nor included in the workspace.
     #
     # @param filename [String]
     # @return [Boolean] True if the file was added to the workspace.
