@@ -200,6 +200,7 @@ module Solargraph
       # @param directory [String]
       # @param name [String]
       def prepare directory, name = nil
+        logger.info "Preparing library for #{directory}"
         path = ''
         path = normalize_separators(directory) unless directory.nil?
         begin
@@ -219,6 +220,17 @@ module Solargraph
       def prepare_folders array
         array.each do |folder|
           prepare uri_to_file(folder['uri']), folder['name']
+        end
+      end
+
+      def remove directory
+        logger.info "Removing library for #{directory}"
+        libraries.delete_if { |lib| lib.workspace.directory == directory }
+      end
+
+      def remove_folders array
+        array.each do |folder|
+          remove uri_to_file(folder['uri'])
         end
       end
 
@@ -492,7 +504,7 @@ module Solargraph
           'autoformat' => false,
           'diagnostics' => false,
           'formatting' => false,
-          'logLevel' => 'info' # @todo Put this back on 'warning' for production
+          'logLevel' => 'debug' # @todo Put this back on 'warning' for production
         }
       end
 
@@ -515,11 +527,16 @@ module Solargraph
       def library_for uri
         return libraries.first if libraries.length == 1
         filename = uri_to_file(uri)
+        # Libraries with explicit references to the file take precedence
         libraries.each do |lib|
-          return lib if lib.contain?(filename)
+          return lib if lib.contain?(filename) || lib.open?(filename) || filename.start_with?(lib.workspace.directory)
         end
-        logger.warn "Using generic library for #{uri}"
-        generic_library
+        # Libraries using directories in the file's path are next
+        libraries.each do |lib|
+          return lib if filename.start_with?(lib.workspace.directory)
+        end
+        # @todo No library available. Now what?
+        nil
       end
 
       # @return [Diagnoser]
@@ -614,10 +631,6 @@ module Solargraph
             formattingProvider: true
           }
         }
-      end
-
-      def generic_library
-        @generic_library ||= Library.new
       end
     end
   end
