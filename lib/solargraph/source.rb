@@ -216,10 +216,12 @@ module Solargraph
     #
     # @return [Array<Range>]
     def folding_ranges
-      # @todo Instance variable
-      result = []
-      inner_folding_ranges node, result
-      result
+      @folding_ranges ||= begin
+        result = []
+        inner_folding_ranges node, result
+        result.concat comment_block_ranges
+        result
+      end
     end
 
     private
@@ -286,9 +288,30 @@ module Solargraph
 
     # @return [Array<Range>]
     def comment_ranges
-      @comment_ranges || @comments.map do |cmnt|
+      @comment_ranges ||= @comments.map do |cmnt|
         Range.from_expr(cmnt.loc.expression)
       end
+    end
+
+    def comment_block_ranges
+      result = []
+      grouped = []
+      # @param cmnt [Parser::Source::Comment]
+      @comments.each do |cmnt|
+        if cmnt.document?
+          result.push Range.from_expr(cmnt.loc.expression)
+        elsif code.lines[cmnt.loc.expression.line].strip.start_with?('#')
+          if grouped.empty? || cmnt.loc.expression.line == grouped.last.loc.expression.line + 1
+            grouped.push cmnt
+          else
+            result.push Range.from_to(grouped.first.loc.expression.line, 0, grouped.last.loc.expression.line, 0) unless grouped.empty?
+            grouped = [cmnt]
+          end
+        else
+          result.push Range.from_to(grouped.first.loc.expression.line, 0, grouped.last.loc.expression.line, 0) unless grouped.empty?
+        end
+      end
+      result
     end
 
     def string_ranges_in n
