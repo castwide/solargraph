@@ -30,6 +30,7 @@ module Solargraph
           result[:capabilities].merge! static_rename unless dynamic_registration_for?('textDocument', 'rename')
           result[:capabilities].merge! static_references unless dynamic_registration_for?('textDocument', 'references')
           result[:capabilities].merge! static_workspace_symbols unless dynamic_registration_for?('workspace', 'symbol')
+          result[:capabilities].merge! static_folding_range unless dynamic_registration_for?('textDocument', 'foldingRange')
           set_result result
         end
 
@@ -100,6 +101,18 @@ module Solargraph
         def static_references
           {
             referencesProvider: true
+          }
+        end
+
+        def static_references
+          {
+            referencesProvider: true
+          }
+        end
+
+        def static_folding_range
+          {
+            foldingRangeProvider: true
           }
         end
 
