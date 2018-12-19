@@ -2,7 +2,8 @@ require 'ostruct'
 require 'tilt'
 require 'kramdown'
 require 'htmlentities'
-require 'reverse_markdown'
+require 'coderay'
+require 'cgi'
 
 module Solargraph
   class Page
@@ -39,20 +40,30 @@ module Solargraph
 
     def initialize directory = VIEWS_PATH
       directory = VIEWS_PATH if directory.nil? or !File.directory?(directory)
+      directories = [directory]
+      directories.push VIEWS_PATH if directory != VIEWS_PATH
       @render_method = proc { |template, layout: false, locals: {}|
         binder = Binder.new(locals, @render_method)
         if layout
-          Tilt::ERBTemplate.new(File.join(directory, 'layout.erb')).render(binder) do
-            Tilt::ERBTemplate.new(File.join(directory, "#{template}.erb")).render(binder)
+          Tilt::ERBTemplate.new(Page.select_template(directories, template)).render(binder) do
+            Tilt::ERBTemplate.new(Page.select_template(directories, template)).render(binder)
           end
         else
-          Tilt::ERBTemplate.new(File.join(directory, "#{template}.erb")).render(binder)
+          Tilt::ERBTemplate.new(Page.select_template(directories, template)).render(binder)
         end
       }
     end
 
     def render template, layout: true, locals: {}
       @render_method.call(template, layout: layout, locals: locals)
+    end
+
+    def self.select_template directories, name
+      directories.each do |dir|
+        path = File.join(dir, "#{name}.erb")
+        return path if File.file?(path)
+      end
+      raise FileNotFoundError, "Template not found: #{name}"
     end
   end
 end

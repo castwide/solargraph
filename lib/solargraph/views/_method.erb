@@ -8,6 +8,9 @@
     Overview:
 </h2>
 <%= htmlify object.docstring %>
+<p class="document-section">
+    <big><strong>Visibility:</strong></big> <%= object.visibility %>
+</p>
 <% unless object.tags(:param).empty? %>
     <h2>
         Parameters:
