@@ -211,4 +211,11 @@ describe Solargraph::ComplexType do
     qualified = type.qualify(api_map)
     expect(qualified.tag).to eq('Boolean')
   end
+
+  it "returns undefined for unqualified types" do
+    api_map = double(Solargraph::ApiMap, qualify: nil)
+    type = Solargraph::ComplexType.parse('UndefinedClass')
+    qualified = type.qualify(api_map)
+    expect(qualified).to be_undefined
+  end
 end
