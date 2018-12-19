@@ -2,7 +2,6 @@ require 'ostruct'
 require 'tilt'
 require 'kramdown'
 require 'htmlentities'
-require 'coderay'
 require 'cgi'
 
 module Solargraph

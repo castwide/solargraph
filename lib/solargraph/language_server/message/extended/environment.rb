@@ -1,5 +1,3 @@
-require 'open3'
-
 module Solargraph
   module LanguageServer
     module Message
