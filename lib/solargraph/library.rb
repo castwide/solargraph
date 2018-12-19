@@ -2,12 +2,18 @@ module Solargraph
   # A Library handles coordination between a Workspace and an ApiMap.
   #
   class Library
+    include Logging
+
     # @return [Solargraph::Workspace]
     attr_reader :workspace
 
+    # @return [String, nil]
+    attr_reader :name
+
     # @param workspace [Solargraph::Workspace]
-    def initialize workspace = Solargraph::Workspace.new
+    def initialize workspace = Solargraph::Workspace.new, name = nil
       @workspace = workspace
+      @name = name
       api_map.catalog bundle
       @synchronized = true
     end
@@ -37,6 +43,16 @@ module Solargraph
       end
     end
 
+    def open_from_disk filename
+      mutex.synchronize do
+        source = Solargraph::Source.load(filename)
+        workspace.merge source
+        open_file_hash[filename] = source
+        checkout filename
+        catalog
+      end
+    end
+
     # True if the specified file is currently open.
     #
     # @param filename [String]
@@ -54,8 +70,8 @@ module Solargraph
       workspace.has_file?(filename)
     end
 
-    # Create a source to be added to the workspace. The file is ignored if the
-    # workspace is not configured to include the file.
+    # Create a source to be added to the workspace. The file is ignored if it is
+    # neither open in the library nor included in the workspace.
     #
     # @param filename [String]
     # @param text [String] The contents of the file
@@ -63,7 +79,7 @@ module Solargraph
     def create filename, text
       result = false
       mutex.synchronize do
-        next unless workspace.would_merge?(filename)
+        next unless contain?(filename) || open?(filename) || workspace.would_merge?(filename)
         source = Solargraph::Source.load_string(text, filename)
         workspace.merge(source)
         catalog
@@ -72,18 +88,20 @@ module Solargraph
       result
     end
 
-    # Create a file source from a file on disk. The file is ignored if the
-    # workspace is not configured to include the file.
+    # Create a file source from a file on disk. The file is ignored if it is
+    # neither open in the library nor included in the workspace.
     #
     # @param filename [String]
     # @return [Boolean] True if the file was added to the workspace.
     def create_from_disk filename
       result = false
       mutex.synchronize do
-        next if File.directory?(filename) or !File.exist?(filename)
-        next unless workspace.would_merge?(filename)
+        next if File.directory?(filename) || !File.exist?(filename)
+        next unless contain?(filename) || open?(filename) || workspace.would_merge?(filename)
         source = Solargraph::Source.load_string(File.read(filename), filename)
         workspace.merge(source)
+        open_file_hash[filename] = source if open_file_hash.key?(filename)
+        @current = source if @current && @current.filename == source.filename
         catalog
         result = true
       end
@@ -279,6 +297,7 @@ module Solargraph
           raise FileNotFoundError, "Unable to update #{updater.filename}" unless open?(updater.filename)
           open_file_hash[updater.filename] = open_file_hash[updater.filename].synchronize(updater)
         end
+        @current = open_file_hash[updater.filename] if @current && @current.filename == updater.filename
         @synchronized = false
       end
     end
@@ -315,16 +334,26 @@ module Solargraph
     #
     # @return [void]
     def catalog
+      logger.info "Cataloging #{workspace.directory.empty? ? 'generic workspace' : workspace.directory}"
       api_map.catalog bundle
       @synchronized = true
+    end
+
+    def folding_ranges filename
+      read(filename).folding_ranges
+    end
+
+    # @return [Array<Source>]
+    def open_sources
+      open_file_hash.values
     end
 
     # Create a library from a directory.
     #
     # @param directory [String] The path to be used for the workspace
     # @return [Solargraph::Library]
-    def self.load directory = ''
-      Solargraph::Library.new(Solargraph::Workspace.new(directory))
+    def self.load directory = '', name = nil
+      Solargraph::Library.new(Solargraph::Workspace.new(directory), name)
     end
 
     private

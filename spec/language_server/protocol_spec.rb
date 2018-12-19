@@ -276,6 +276,17 @@ describe Protocol do
     expect(response['result']['changes']['file:///file.rb']).to be_a(Array)
   end
 
+  it "handles textDocument/foldingRange" do
+    @protocol.request 'textDocument/foldingRange', {
+      'textDocument' => {
+        'uri' => 'file:///file.rb'
+      }
+    }
+    response = @protocol.response
+    expect(response['error']).to be_nil
+    expect(response['result'].length).not_to be_zero
+  end
+
   it "handles textDocument/didClose" do
     @protocol.request 'textDocument/didClose', {
       'textDocument' => {
@@ -411,6 +422,48 @@ describe Protocol do
     }
     response = @protocol.response
     expect(response['error']).not_to be_nil
+  end
+
+  it "adds folders to the workspace" do
+    dir = File.absolute_path('spec/fixtures/workspace_folders/folder1')
+    uri = Solargraph::LanguageServer::UriHelpers.file_to_uri(dir)
+    @protocol.request 'workspace/didChangeWorkspaceFolders', {
+      'event' => {
+        'added' => [
+          {
+            'uri' => uri,
+            'name' => 'folder1'
+          }
+        ],
+        'removed' => []
+      }
+    }
+    expect(@protocol.host.folders).to include(dir)
+  end
+
+  it "removes folders from the workspace" do
+    dir = File.absolute_path('spec/fixtures/workspace_folders/folder1')
+    uri = Solargraph::LanguageServer::UriHelpers.file_to_uri(dir)
+    @protocol.request 'workspace/didChangeWorkspaceFolders', {
+      'event' => {
+        'added' => [],
+        'removed' => [
+          {
+            'uri' => uri,
+            'name' => 'folder1'
+          }
+        ]
+      }
+    }
+    expect(@protocol.host.folders).not_to include(dir)
+  end
+
+  it "handles $/cancelRequest" do
+    expect {
+      @protocol.request '$/cancelRequest', {
+        'id' => 0
+      }
+    }.not_to raise_error
   end
 
   it "handles shutdown" do

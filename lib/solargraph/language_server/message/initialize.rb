@@ -4,7 +4,10 @@ module Solargraph
       class Initialize < Base
         def process
           host.configure params['initializationOptions']
-          if params['rootUri']
+          if support_workspace_folders?
+            # @todo Prepare multiple folders
+            host.prepare_folders params['workspaceFolders']
+          elsif params['rootUri']
             host.prepare UriHelpers.uri_to_file(params['rootUri'])
           else
             host.prepare params['rootPath']
@@ -30,10 +33,17 @@ module Solargraph
           result[:capabilities].merge! static_rename unless dynamic_registration_for?('textDocument', 'rename')
           result[:capabilities].merge! static_references unless dynamic_registration_for?('textDocument', 'references')
           result[:capabilities].merge! static_workspace_symbols unless dynamic_registration_for?('workspace', 'symbol')
+          result[:capabilities].merge! static_folding_range unless dynamic_registration_for?('textDocument', 'foldingRange')
           set_result result
         end
 
         private
+
+        def support_workspace_folders?
+          params['capabilities'] &&
+            params['capabilities']['workspace'] &&
+            params['capabilities']['workspace']['workspaceFolders']
+        end
 
         def static_completion
           {
@@ -103,11 +113,25 @@ module Solargraph
           }
         end
 
+        def static_references
+          {
+            referencesProvider: true
+          }
+        end
+
+        def static_folding_range
+          {
+            foldingRangeProvider: true
+          }
+        end
+
+        # @param section [String]
+        # @param capability [String]
         # @return [Boolean]
         def dynamic_registration_for? section, capability
-          result = (params['capabilities'] and
-            params['capabilities'][section] and
-            params['capabilities'][section][capability] and
+          result = (params['capabilities'] &&
+            params['capabilities'][section] &&
+            params['capabilities'][section][capability] &&
             params['capabilities'][section][capability]['dynamicRegistration'])
           host.allow_registration("#{section}/#{capability}") if result
           result

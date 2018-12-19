@@ -76,14 +76,6 @@ module Solargraph
           visibility == other.visibility
       end
 
-      def typify api_map
-        decl = super
-        return decl unless decl.undefined?
-        type = see_reference(api_map)
-        return type unless type.nil?
-        ComplexType::UNDEFINED
-      end
-
       def probe api_map
         infer_from_return_nodes(api_map)
       end
@@ -91,11 +83,9 @@ module Solargraph
       # @deprecated Use #typify and/or #probe instead
       def infer api_map
         STDERR.puts 'WARNING: Pin #infer methods are deprecated. Use #typify or #probe instead.'
-        decl = super
-        return decl unless decl.undefined?
-        type = see_reference(api_map)
-        return type unless type.nil?
-        infer_from_return_nodes(api_map)
+        type = typify(api_map)
+        return type unless type.undefined?
+        probe api_map
       end
 
       def try_merge! pin

@@ -12,6 +12,7 @@ module Solargraph
       autoload :Cataloger, 'solargraph/language_server/host/cataloger'
 
       include Solargraph::LanguageServer::UriHelpers
+      include Logging
 
       def initialize
         @cancel_semaphore = Mutex.new
@@ -31,6 +32,7 @@ module Solargraph
       def configure update
         return if update.nil?
         options.merge! update
+        logger.level = LOG_LEVELS[options['logLevel']] || DEFAULT_LOG_LEVEL
       end
 
       # @return [Hash]
@@ -70,6 +72,8 @@ module Solargraph
       # @return [Solargraph::LanguageServer::Message::Base] The message handler.
       def start request
         if request['method']
+          logger.info "Server received #{request['method']}"
+          logger.debug request
           message = Message.select(request['method']).new(self, request)
           begin
             message.process
@@ -94,14 +98,18 @@ module Solargraph
       #
       # @param uri [String] The file uri.
       def create uri
+        library = library_for(uri)
         filename = uri_to_file(uri)
-        library.create_from_disk filename
+        result = library.create_from_disk(filename)
+        diagnoser.schedule uri if open?(uri)
+        result
       end
 
       # Delete the specified file from the library.
       #
       # @param uri [String] The file uri.
       def delete uri
+        library = library_for(uri)
         filename = uri_to_file(uri)
         library.delete filename
         send_notification "textDocument/publishDiagnostics", {
@@ -116,7 +124,14 @@ module Solargraph
       # @param text [String] The contents of the file.
       # @param version [Integer] A version number.
       def open uri, text, version
+        library = library_for(uri)
         library.open uri_to_file(uri), text, version
+        diagnoser.schedule uri
+      end
+
+      def open_from_disk uri
+        library = library_for(uri)
+        library.open_from_disk uri_to_file(uri)
         diagnoser.schedule uri
       end
 
@@ -132,12 +147,15 @@ module Solargraph
       #
       # @param uri [String]
       def close uri
+        library = library_for(uri)
         library.close uri_to_file(uri)
         diagnoser.schedule uri
       end
 
       # @param uri [String]
       def diagnose uri
+        logger.info "Diagnosing #{uri}"
+        library = library_for(uri)
         begin
           results = library.diagnose uri_to_file(uri)
           send_notification "textDocument/publishDiagnostics", {
@@ -155,9 +173,10 @@ module Solargraph
       end
 
       def change params
+        library = library_for(params['textDocument']['uri'])
         updater = generate_updater(params)
         library.update updater
-        cataloger.ping unless library.synchronized?
+        cataloger.ping(library) unless library.synchronized?
         diagnoser.schedule params['textDocument']['uri']
       end
 
@@ -185,20 +204,51 @@ module Solargraph
       # Prepare a library for the specified directory.
       #
       # @param directory [String]
-      def prepare directory
+      # @param name [String]
+      def prepare directory, name = nil
+        logger.info "Preparing library for #{directory}"
         path = ''
         path = normalize_separators(directory) unless directory.nil?
         begin
-          @library = Solargraph::Library.load(path)
+          lib = Solargraph::Library.load(path, name)
         rescue WorkspaceTooLargeError => e
           send_notification 'window/showMessage', {
             'type' => Solargraph::LanguageServer::MessageTypes::WARNING,
             'message' => e.message
           }
-          @library = Solargraph::Library.load
+          lib = Solargraph::Library.new('', name)
         end
+        libraries.push lib
         diagnoser.start
         cataloger.start
+      end
+
+      def prepare_folders array
+        array.each do |folder|
+          prepare uri_to_file(folder['uri']), folder['name']
+        end
+      end
+
+      def remove directory
+        logger.info "Removing library for #{directory}"
+        # @param lib [Library]
+        libraries.delete_if do |lib|
+          next false if lib.workspace.directory != directory
+          lib.open_sources.each do |src|
+            orphan_library.open(src.filename, src.code, src.version)
+          end
+          true
+        end
+      end
+
+      def remove_folders array
+        array.each do |folder|
+          remove uri_to_file(folder['uri'])
+        end
+      end
+
+      def folders
+        libraries.map { |lib| lib.workspace.directory }
       end
 
       # Send a notification to the client.
@@ -214,6 +264,8 @@ module Solargraph
         json = response.to_json
         envelope = "Content-Length: #{json.bytesize}\r\n\r\n#{json}"
         queue envelope
+        logger.info "Server sent #{method}"
+        logger.debug params
       end
 
       # Send a request to the client and execute the provided block to process
@@ -236,6 +288,8 @@ module Solargraph
         envelope = "Content-Length: #{json.bytesize}\r\n\r\n#{json}"
         queue envelope
         @next_request_id += 1
+        logger.info "Server sent #{method}"
+        logger.debug params
       end
 
       # Register the methods as capabilities with the client.
@@ -244,6 +298,7 @@ module Solargraph
       #
       # @param methods [Array<String>] The methods to register
       def register_capabilities methods
+        logger.debug "Registering capabilities: #{methods}"
         @register_semaphore.synchronize do
           send_request 'client/registerCapability', {
             registrations: methods.select{|m| can_register?(m) and !registered?(m)}.map { |m|
@@ -264,6 +319,7 @@ module Solargraph
       #
       # @param methods [Array<String>] The methods to unregister
       def unregister_capabilities methods
+        logger.debug "Unregistering capabilities: #{methods}"
         @register_semaphore.synchronize do
           send_request 'client/unregisterCapability', {
             unregisterations: methods.select{|m| registered?(m)}.map{ |m|
@@ -300,13 +356,6 @@ module Solargraph
         @registered_capabilities.include?(method)
       end
 
-      # True if the specified file is in the process of changing.
-      #
-      # @return [Boolean]
-      def changing? file_uri
-        unsafe_changing?(file_uri)
-      end
-
       def synchronizing?
         cataloger.synchronizing?
       end
@@ -324,6 +373,7 @@ module Solargraph
       def locate_pin params
         pin = nil
         unless params['data']['location'].nil?
+          library = library_for(file_to_uri(params['data']['location']['filename']))
           location = Location.new(
             params['data']['location']['filename'],
             Range.from_to(
@@ -336,15 +386,16 @@ module Solargraph
           pin = library.locate_pin(location)
         end
         # @todo Improve pin location
-        if pin.nil? or pin.path != params['data']['path']
-          pin = library.path_pins(params['data']['path']).first
-        end
+        # if pin.nil? or pin.path != params['data']['path']
+        #   pin = library.path_pins(params['data']['path']).first
+        # end
         pin
       end
 
       # @param uri [String]
       # @return [String]
       def read_text uri
+        library = library_for(uri)
         filename = uri_to_file(uri)
         library.read_text(filename)
       end
@@ -354,9 +405,8 @@ module Solargraph
       # @param column [Integer]
       # @return [Solargraph::ApiMap::Completion]
       def completions_at filename, line, column
-        result = nil
-        result = library.completions_at filename, line, column
-        result
+        library = library_for(file_to_uri(filename))
+        library.completions_at filename, line, column
       end
 
       # @param filename [String]
@@ -364,6 +414,7 @@ module Solargraph
       # @param column [Integer]
       # @return [Array<Solargraph::Pin::Base>]
       def definitions_at filename, line, column
+        library = library_for(file_to_uri(filename))
         library.definitions_at(filename, line, column)
       end
 
@@ -372,6 +423,7 @@ module Solargraph
       # @param column [Integer]
       # @return [Array<Solargraph::Pin::Base>]
       def signatures_at filename, line, column
+        library = library_for(file_to_uri(filename))
         library.signatures_at(filename, line, column)
       end
 
@@ -381,30 +433,38 @@ module Solargraph
       # @param strip [Boolean] Strip special characters from variable names
       # @return [Array<Solargraph::Range>]
       def references_from filename, line, column, strip: true
+        library = library_for(file_to_uri(filename))
         result = library.references_from(filename, line, column, strip: strip)
       end
 
       # @param query [String]
       # @return [Array<Solargraph::Pin::Base>]
       def query_symbols query
-        library.query_symbols(query)
+        result = []
+        libraries.each { |lib| result.concat lib.query_symbols(query) }
+        result
       end
 
       # @param query [String]
       # @return [Array<String>]
       def search query
-        library.search(query)
+        result = []
+        libraries.each { |lib| result.concat lib.search(query) }
+        result
       end
 
       # @param query [String]
       # @return [String]
       def document query
-        library.document(query)
+        result = []
+        libraries.each { |lib| result.concat lib.document(query) }
+        result
       end
 
       # @param uri [String]
       # @return [Array<Solargraph::Pin::Base>]
       def document_symbols uri
+        library = library_for(uri)
         library.document_symbols(uri_to_file(uri))
       end
 
@@ -453,22 +513,52 @@ module Solargraph
           'references' => true,
           'autoformat' => false,
           'diagnostics' => false,
-          'formatting' => false
+          'formatting' => false,
+          'folding' => true,
+          'logLevel' => 'warn'
         }
       end
 
       # Catalog the library.
       #
       # @return [void]
-      def catalog
-        library.catalog
+      def catalog lib
+        lib.catalog
+      end
+
+      def folding_ranges uri
+        library = library_for(uri)
+        file = uri_to_file(uri)
+        library.folding_ranges(file)
       end
 
       private
 
-      # @return [Solargraph::Library]
-      def library
-        @library ||= Solargraph::Library.new
+      # @return [Array<Library>]
+      def libraries
+        @libraries ||= []
+      end
+
+      # @param uri [String]
+      # @return [Library]
+      def library_for uri
+        return libraries.first if libraries.length == 1
+        filename = uri_to_file(uri)
+        # Find a library with an explicit reference to the file
+        libraries.each do |lib|
+          return lib if lib.contain?(filename) || lib.open?(filename)
+        end
+        # Find a library with a workspace that contains the file
+        libraries.each do |lib|
+          return lib if filename.start_with?(lib.workspace.directory)
+        end
+        return orphan_library if orphan_library.open?(filename)
+        raise "No library for #{uri}"
+      end
+
+      # @return [Library]
+      def orphan_library
+        @orphan_library ||= Solargraph::Library.new
       end
 
       # @return [Diagnoser]
@@ -481,13 +571,8 @@ module Solargraph
         @cataloger ||= Cataloger.new(self)
       end
 
-      # @param file_uri [String]
-      # @return [Boolean]
-      def unsafe_changing? file_uri
-        file = uri_to_file(file_uri)
-      end
-
       def unsafe_open? uri
+        library = library_for(uri)
         library.open?(uri_to_file(uri))
       end
 
@@ -560,6 +645,9 @@ module Solargraph
           },
           'textDocument/formatting' => {
             formattingProvider: true
+          },
+          'textDocument/foldingRange' => {
+            foldingRangeProvider: true
           }
         }
       end

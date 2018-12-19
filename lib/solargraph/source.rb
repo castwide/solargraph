@@ -205,7 +205,42 @@ module Solargraph
       Location.new(filename, range)
     end
 
+    FOLDING_NODE_TYPES = %i[
+      class sclass module def defs if str dstr array while unless kwbegin hash
+    ].freeze
+
+    # Get an array of ranges that can be folded, e.g., the range of a class
+    # definition or an if condition.
+    #
+    # See FOLDING_NODE_TYPES for the list of node types that can be folded.
+    #
+    # @return [Array<Range>]
+    def folding_ranges
+      @folding_ranges ||= begin
+        result = []
+        inner_folding_ranges node, result
+        result.concat comment_block_ranges
+        result
+      end
+    end
+
     private
+
+    # @param top [Parser::AST::Node]
+    # @param result [Array<Range>]
+    # @return [void]
+    def inner_folding_ranges top, result = []
+      return unless top.is_a?(Parser::AST::Node)
+      if FOLDING_NODE_TYPES.include?(top.type)
+        range = Range.from_node(top)
+        if result.empty? || range.start.line > result.last.start.line
+          result.push range unless range.ending.line - range.start.line < 2
+        end
+      end
+      top.children.each do |child|
+        inner_folding_ranges(child, result)
+      end
+    end
 
     # Get a hash of comments grouped by the line numbers of the associated code.
     #
@@ -253,9 +288,30 @@ module Solargraph
 
     # @return [Array<Range>]
     def comment_ranges
-      @comment_ranges || @comments.map do |cmnt|
+      @comment_ranges ||= @comments.map do |cmnt|
         Range.from_expr(cmnt.loc.expression)
       end
+    end
+
+    def comment_block_ranges
+      result = []
+      grouped = []
+      # @param cmnt [Parser::Source::Comment]
+      @comments.each do |cmnt|
+        if cmnt.document?
+          result.push Range.from_expr(cmnt.loc.expression)
+        elsif code.lines[cmnt.loc.expression.line].strip.start_with?('#')
+          if grouped.empty? || cmnt.loc.expression.line == grouped.last.loc.expression.line + 1
+            grouped.push cmnt
+          else
+            result.push Range.from_to(grouped.first.loc.expression.line, 0, grouped.last.loc.expression.line, 0) unless grouped.empty?
+            grouped = [cmnt]
+          end
+        else
+          result.push Range.from_to(grouped.first.loc.expression.line, 0, grouped.last.loc.expression.line, 0) unless grouped.empty?
+        end
+      end
+      result
     end
 
     def string_ranges_in n
@@ -338,8 +394,8 @@ module Solargraph
       # @param code [String]
       # @param filename [String]
       # @return [Parser::AST::Node]
-      def parse code, filename = nil
-        buffer = Parser::Source::Buffer.new(filename, 0)
+      def parse code, filename = nil, line = 0
+        buffer = Parser::Source::Buffer.new(filename, line)
         buffer.source = code.encode('UTF-8', 'binary', invalid: :replace, undef: :replace, replace: '_')
         parser.parse(buffer)
       end

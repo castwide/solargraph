@@ -34,6 +34,7 @@ module Solargraph
   autoload :Diagnostics,      'solargraph/diagnostics'
   autoload :ComplexType,      'solargraph/complex_type'
   autoload :Bundle,           'solargraph/bundle'
+  autoload :Logging,          'solargraph/logging'
 
   dir = File.dirname(__FILE__)
   YARDOC_PATH = File.realpath(File.join(dir, '..', 'yardoc'))

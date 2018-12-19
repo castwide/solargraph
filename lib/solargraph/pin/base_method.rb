@@ -1,5 +1,7 @@
 module Solargraph
   module Pin
+    # The base class for method and attribute pins.
+    #
     class BaseMethod < Base
       # @return [Symbol] :instance or :class
       attr_reader :scope
@@ -9,6 +11,14 @@ module Solargraph
 
       def return_complex_type
         @return_complex_type ||= generate_complex_type
+      end
+
+      def typify api_map
+        decl = super
+        return decl unless decl.undefined?
+        type = see_reference(api_map)
+        return type unless type.nil?
+        ComplexType::UNDEFINED
       end
 
       private

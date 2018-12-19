@@ -14,6 +14,7 @@ module Solargraph
       #
       # @return [Array]
       def map source
+        @source = source
         @filename = source.filename
         @code = source.code
         @comments = source.comments
@@ -62,7 +63,7 @@ module Solargraph
 
       def process_comment position, comment
         cmnt = remove_inline_comment_hashes(comment)
-        return unless cmnt =~ /(@\!method|@\!attribute|@\!domain|@\!macro)/
+        return unless cmnt =~ /(@\!method|@\!attribute|@\!domain|@\!macro|@\!parse)/
         parse = YARD::Docstring.parser.parse(cmnt)
         parse.directives.each { |d| process_directive(position, d) }
       end
@@ -81,12 +82,22 @@ module Solargraph
         when 'attribute'
           namespace = namespace_at(position)
           t = (directive.tag.types.nil? || directive.tag.types.empty?) ? nil : directive.tag.types.flatten.join('')
-          if t.nil? or t.include?('r')
+          if t.nil? || t.include?('r')
             # location, namespace, name, docstring, access
             pins.push Solargraph::Pin::Attribute.new(location, namespace.path, directive.tag.name, docstring.all, :reader, :instance, :public)
           end
-          if t.nil? or t.include?('w')
+          if t.nil? || t.include?('w')
             pins.push Solargraph::Pin::Attribute.new(location, namespace.path, "#{directive.tag.name}=", docstring.all, :writer, :instance, :public)
+          end
+        when 'parse'
+          # @todo Parse and map directive.tag.text
+          ns = namespace_at(position)
+          region = Region.new(source: @source, namespace: ns.path)
+          begin
+            node = Solargraph::Source.parse(directive.tag.text, @filename, position.line)
+            NodeProcessor.process(node, region, @pins)
+          rescue Parser::SyntaxError => e
+            # @todo Handle parser errors in !parse directives
           end
         when 'domain'
           namespace = namespace_at(position)
