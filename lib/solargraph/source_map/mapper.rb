@@ -40,11 +40,6 @@ module Solargraph
         end
       end
 
-      # @return [String]
-      def filename
-        @filename
-      end
-
       # @return [Array<Solargraph::Pin::Base>]
       def pins
         @pins ||= []

@@ -117,4 +117,17 @@ describe Solargraph::LanguageServer::Host do
     host.stop
     expect(host.stopped?).to be(true)
   end
+
+  it "retains orphaned sources" do
+    dir = File.absolute_path('spec/fixtures/workspace')
+    file = File.join(dir, 'lib', 'thing.rb')
+    file_uri = Solargraph::LanguageServer::UriHelpers.uri_to_file(file)
+    host = Solargraph::LanguageServer::Host.new
+    host.prepare(dir)
+    host.open(file_uri, File.read(file), 1)
+    host.remove(dir)
+    expect{
+      host.document_symbols(file_uri)
+    }.not_to raise_error
+  end
 end

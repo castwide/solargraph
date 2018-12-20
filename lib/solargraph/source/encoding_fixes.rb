@@ -9,7 +9,7 @@ module Solargraph
       # @return [String]
       def normalize string
         begin
-          string.clone.force_encoding('UTF-8')
+          string.dup.force_encoding('UTF-8')
         rescue ::Encoding::CompatibilityError, ::Encoding::UndefinedConversionError, ::Encoding::InvalidByteSequenceError => e
           # @todo Improve error handling
           STDERR.puts "Normalize error: #{e.message}"
