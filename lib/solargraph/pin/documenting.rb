@@ -16,7 +16,7 @@ module Solargraph
             entity_output: :symbolic,
             syntax_highlighter: nil
           ).to_html
-          ReverseMarkdown.convert(html, github_flavored: true)
+          ReverseMarkdown.convert(html, github_flavored: true).lines.map(&:rstrip).join("\n")
         end
       end
 
