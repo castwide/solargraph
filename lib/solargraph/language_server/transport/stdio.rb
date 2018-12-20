@@ -28,7 +28,7 @@ module Solargraph
         private
 
         def start_timers
-          Backport.start_interval 0.1 do
+          Backport.prepare_interval 0.1 do
             tmp = @host.flush
             write tmp unless tmp.empty?
             if @host.stopped?
