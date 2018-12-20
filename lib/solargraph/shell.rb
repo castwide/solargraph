@@ -30,9 +30,9 @@ module Solargraph
         Signal.trap("TERM") do
           Backport.stop
         end
-        Backport.start_tcp_server host: options[:host], port: port, adapter: Solargraph::LanguageServer::Transport::BackportTcp
+        Backport.start_tcp_server host: options[:host], port: port, adapter: Solargraph::LanguageServer::Transport::Socket
         STDERR.puts "Solargraph is listening PORT=#{port} PID=#{Process.pid}"
-    end
+      end
     end
 
     desc 'stdio', 'Run a Solargraph stdio server'
