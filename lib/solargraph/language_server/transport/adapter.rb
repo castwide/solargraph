@@ -1,9 +1,9 @@
 module Solargraph
   module LanguageServer
     module Transport
-      # A module for running language servers over TCP in Backport.
+      # A common module for running language servers in Backport.
       #
-      module Socket
+      module Adapter
         def opening
           @host = Solargraph::LanguageServer::Host.new
           @data_reader = Solargraph::LanguageServer::Transport::DataReader.new
