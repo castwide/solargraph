@@ -1,60 +1,43 @@
-require 'thread'
-
 module Solargraph
   module LanguageServer
     module Transport
-      class Stdio
-        def initialize
-          # binmode is necessary to avoid EOL conversions
-          STDOUT.binmode
+      # A module for running language servers over STDIO in Backport.
+      #
+      module Stdio
+        def opening
           @host = Solargraph::LanguageServer::Host.new
           @data_reader = Solargraph::LanguageServer::Transport::DataReader.new
           @data_reader.set_message_handler do |message|
             process message
           end
-        end
-
-        def run
-          start_reader
           start_timers
-        end
-
-        def self.run
-          std = Stdio.new
-          std.run
-          std
-        end
-
-        private
-
-        def start_reader
-          Thread.new do
-            until @host.stopped?
-              char = STDIN.sysread(1)
-              break if char.nil?
-              @data_reader.receive char
-              STDIN.flush
-            end
-          end
-        end
-
-        def send_data message
-          STDOUT.write message
-          STDOUT.flush
         end
 
         def process request
           message = @host.start(request)
           message.send_response
           tmp = @host.flush
-          send_data tmp unless tmp.empty?
+          write tmp unless tmp.empty?
         end
 
+        # @param data [String]
+        def sending data
+          @data_reader.receive data
+        end
+
+        private
+
         def start_timers
-          EventMachine.add_periodic_timer 0.1 do
+          Backport.start_interval 0.1 do
             tmp = @host.flush
-            send_data tmp unless tmp.empty?
-            EventMachine.stop if @host.stopped?
+            write tmp unless tmp.empty?
+            if @host.stopped?
+              if @host.options['transport'] == 'external'
+                @host = Solargraph::LanguageServer::Host.new
+              else
+                Backport.stop
+              end
+            end
           end
         end
       end

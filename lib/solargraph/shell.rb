@@ -44,8 +44,7 @@ module Solargraph
         Signal.trap("TERM") do
           Backport.stop
         end
-        # Solargraph::LanguageServer::Transport::Stdio.run
-        Backport.start_stdio_server Solargraph::LanguageServer::Transport::BackportStd
+        Backport.start_stdio_server adapter: Solargraph::LanguageServer::Transport::Stdio
         STDERR.puts "Solargraph is listening on stdio PID=#{Process.pid}"
       end
     end
