@@ -880,4 +880,25 @@ describe Solargraph::SourceMap::Mapper do
       ), 'test.rb')
     }.not_to raise_error
   end
+
+  it "handles parse directives" do
+    smap = Solargraph::SourceMap.load_string(%(
+      class Foo
+        # @!parse
+        #   class Bar; end
+      end
+    ))
+    expect(smap.pins.map(&:path)).to include('Foo::Bar')
+  end
+
+  it "ignores syntax errors in parse directives" do
+    expect {
+      Solargraph::SourceMap.load_string(%(
+        class Foo
+          # @!parse
+          #   def
+        end
+      ))
+      }.not_to raise_error
+  end
 end

@@ -466,6 +466,12 @@ describe Protocol do
     }.not_to raise_error
   end
 
+  it "handles $/solargraph/environment" do
+    @protocol.request '$/solargraph/environment', {}
+    response = @protocol.response
+    expect(response['result']['content']).not_to be_nil
+  end
+
   it "handles shutdown" do
     @protocol.request 'shutdown', {}
     response = @protocol.response
