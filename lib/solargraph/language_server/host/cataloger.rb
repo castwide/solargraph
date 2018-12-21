@@ -46,8 +46,8 @@ module Solargraph
               next if pings.empty?
               mutex.synchronize do
                 lib = pings.shift
+                next if pings.include?(lib)
                 host.catalog lib
-                # pings.delete lib
               end
             end
           end
