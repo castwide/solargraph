@@ -178,15 +178,15 @@ module Solargraph
           ver = spec.version.to_s
           ver = ">= 0" if ver.empty?
           yd = YARD::Registry.yardoc_file_for_gem(spec.name, ver)
+          # YARD detects gems for certain libraries that do not have a yardoc
+          # but exist in the stdlib. `fileutils` is an example. Treat those
+          # cases as errors and check the stdlib yardoc.
+          raise Gem::LoadError if yd.nil?
           @gem_paths[spec.name] = spec.full_gem_path
-          if yd.nil?
-            unresolved_requires.push r
-          else
-            unless yardocs.include?(yd)
-              yardocs.unshift yd
-              result.concat process_yardoc yd
-              result.concat add_gem_dependencies(spec) if with_dependencies?
-            end
+          unless yardocs.include?(yd)
+            yardocs.unshift yd
+            result.concat process_yardoc yd
+            result.concat add_gem_dependencies(spec) if with_dependencies?
           end
         rescue Gem::LoadError => e
           stdtmp = []
