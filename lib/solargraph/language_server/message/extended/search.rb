@@ -6,7 +6,7 @@ module Solargraph
           def process
             results = host.search(params['query'])
             page = Solargraph::Page.new(host.options['viewsPath'])
-            content = page.render('search', locals: {query: params['query'], results: results})
+            content = page.render('search', layout: true, locals: {query: params['query'], results: results})
             set_result(
               content: content
             )

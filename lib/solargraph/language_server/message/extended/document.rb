@@ -6,7 +6,7 @@ module Solargraph
           def process
             objects = host.document(params['query'])
             page = Solargraph::Page.new(host.options['viewsPath'])
-            content = page.render('document', locals: {objects: objects})
+            content = page.render('document', layout: true, locals: {objects: objects})
             set_result(
               content: content
             )

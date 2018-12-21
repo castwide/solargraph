@@ -44,7 +44,7 @@ module Solargraph
       @render_method = proc { |template, layout: false, locals: {}|
         binder = Binder.new(locals, @render_method)
         if layout
-          Tilt::ERBTemplate.new(Page.select_template(directories, template)).render(binder) do
+          Tilt::ERBTemplate.new(Page.select_template(directories, 'layout')).render(binder) do
             Tilt::ERBTemplate.new(Page.select_template(directories, template)).render(binder)
           end
         else

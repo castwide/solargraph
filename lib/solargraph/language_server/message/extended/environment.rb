@@ -8,7 +8,7 @@ module Solargraph
         class Environment < Base
           def process
             page = Solargraph::Page.new(host.options['viewsPath'])
-            content = page.render('environment', layout: false, locals: { config: host.options, folders: host.folders })
+            content = page.render('environment', layout: true, locals: { config: host.options, folders: host.folders })
             set_result(
               content: content
             )
