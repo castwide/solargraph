@@ -1,12 +1,10 @@
-require 'thread'
-
 module Solargraph
   module LanguageServer
     module Transport
-      # A module for running language servers in EventMachine.
+      # A common module for running language servers in Backport.
       #
-      module Socket
-        def post_init
+      module Adapter
+        def opening
           @host = Solargraph::LanguageServer::Host.new
           @data_reader = Solargraph::LanguageServer::Transport::DataReader.new
           @data_reader.set_message_handler do |message|
@@ -19,25 +17,25 @@ module Solargraph
           message = @host.start(request)
           message.send_response
           tmp = @host.flush
-          send_data tmp unless tmp.empty?
+          write tmp unless tmp.empty?
         end
 
         # @param data [String]
-        def receive_data data
+        def sending data
           @data_reader.receive data
         end
 
         private
 
         def start_timers
-          EventMachine.add_periodic_timer 0.1 do
+          Backport.prepare_interval 0.1 do
             tmp = @host.flush
-            send_data tmp unless tmp.empty?
+            write tmp unless tmp.empty?
             if @host.stopped?
               if @host.options['transport'] == 'external'
                 @host = Solargraph::LanguageServer::Host.new
               else
-                EventMachine.stop
+                Backport.stop
               end
             end
           end

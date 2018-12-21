@@ -17,7 +17,7 @@ Gem::Specification.new do |s|
 
   s.required_ruby_version = '>= 2.1'
 
-  s.add_runtime_dependency 'eventmachine', '~> 1.2', '>= 1.2.5'
+  s.add_runtime_dependency 'backport', '~> 0.2'
   s.add_runtime_dependency 'htmlentities', '~> 4.3', '>= 4.3.4'
   s.add_runtime_dependency 'kramdown', '~> 1.16'
   s.add_runtime_dependency 'parser', '~> 2.3'

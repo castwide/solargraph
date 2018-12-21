@@ -4,9 +4,8 @@ module Solargraph
     # communication protocols for language servers.
     #
     module Transport
+      autoload :Adapter,    'solargraph/language_server/transport/adapter'
       autoload :DataReader, 'solargraph/language_server/transport/data_reader'
-      autoload :Socket,     'solargraph/language_server/transport/socket'
-      autoload :Stdio,      'solargraph/language_server/transport/stdio'
     end
   end
 end
