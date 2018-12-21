@@ -3,7 +3,6 @@ require 'json'
 require 'fileutils'
 require 'rubygems/package'
 require 'zlib'
-# require 'eventmachine'
 require 'backport'
 
 module Solargraph
