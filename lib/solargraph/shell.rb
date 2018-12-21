@@ -3,7 +3,7 @@ require 'json'
 require 'fileutils'
 require 'rubygems/package'
 require 'zlib'
-require 'eventmachine'
+require 'backport'
 
 module Solargraph
   class Shell < Thor
@@ -22,29 +22,28 @@ module Solargraph
     def socket
       port = options[:port]
       port = available_port if port.zero?
-      EventMachine.run do
+      Backport.run do
         Signal.trap("INT") do
-          EventMachine.stop
+          Backport.stop
         end
         Signal.trap("TERM") do
-          EventMachine.stop
+          Backport.stop
         end
-        EventMachine.start_server options[:host], port, Solargraph::LanguageServer::Transport::Socket
-        # Emitted for the benefit of clients that start the process on port 0
+        Backport.prepare_tcp_server host: options[:host], port: port, adapter: Solargraph::LanguageServer::Transport::Adapter
         STDERR.puts "Solargraph is listening PORT=#{port} PID=#{Process.pid}"
       end
     end
 
     desc 'stdio', 'Run a Solargraph stdio server'
     def stdio
-      EventMachine.run do
+      Backport.run do
         Signal.trap("INT") do
-          EventMachine.stop
+          Backport.stop
         end
         Signal.trap("TERM") do
-          EventMachine.stop
+          Backport.stop
         end
-        Solargraph::LanguageServer::Transport::Stdio.run
+        Backport.prepare_stdio_server adapter: Solargraph::LanguageServer::Transport::Adapter
         STDERR.puts "Solargraph is listening on stdio PID=#{Process.pid}"
       end
     end
