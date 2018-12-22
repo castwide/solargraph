@@ -1,5 +1,6 @@
 require 'rubygems'
 require 'set'
+require 'pathname'
 
 module Solargraph
   # An aggregate provider for information about workspaces, sources, gems, and
@@ -96,7 +97,8 @@ module Solargraph
         reqs.delete_if do |r|
           result = false
           bundle.workspace.require_paths.each do |l|
-            if new_map_hash.keys.include?(File.join(l, "#{r}.rb"))
+            pn = Pathname.new(bundle.workspace.directory).join(l, "#{r}.rb")
+            if new_map_hash.keys.include?(pn.to_s)
               result = true
               break
             end
