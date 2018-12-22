@@ -1,4 +1,5 @@
 require 'open3'
+require 'shellwords'
 
 module Solargraph
   module LanguageServer
