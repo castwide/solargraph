@@ -39,7 +39,6 @@ module Solargraph
         workspace.merge source
         open_file_hash[filename] = source
         checkout filename
-        catalog
       end
     end
 
@@ -49,7 +48,6 @@ module Solargraph
         workspace.merge source
         open_file_hash[filename] = source
         checkout filename
-        catalog
       end
     end
 
@@ -235,9 +233,9 @@ module Solargraph
     # @param filename [String]
     # @return [Source]
     def checkout filename
-      check = read(filename)
-      catalog unless @current == check
-      @current = check
+      @current = read(filename)
+      catalog
+      @current
     end
 
     # @param query [String]
