@@ -176,7 +176,9 @@ module Solargraph
         library = library_for(params['textDocument']['uri'])
         updater = generate_updater(params)
         library.update updater
-        cataloger.ping(library) unless library.synchronized?
+        # @todo Since Library#checkout already catalogs, this cataloging
+        #   might not be necessary.
+        # cataloger.ping(library) unless library.synchronized?
         diagnoser.schedule params['textDocument']['uri']
       end
 
