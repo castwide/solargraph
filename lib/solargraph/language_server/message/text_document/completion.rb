@@ -33,6 +33,7 @@ module Solargraph
                   },
                   sortText: "#{idx.to_s.rjust(4, '0')}#{pin.name}"
                 })
+                items.last[:data][:uri] = params['textDocument']['uri']
                 last_context = pin.context
               end
               set_result(

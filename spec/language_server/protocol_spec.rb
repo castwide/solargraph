@@ -84,6 +84,7 @@ describe Protocol do
           foo = Foo.new
           String
           foo.bar()
+          File.abs
         ),
         'version' => 0
       }
@@ -140,6 +141,24 @@ describe Protocol do
     @protocol.request 'completionItem/resolve', item
     response = @protocol.response
     expect(response['result']['documentation']).to include('bar method')
+  end
+
+  it "documents YARD pins" do
+    @protocol.request 'textDocument/completion', {
+      'textDocument' => {
+        'uri' => 'file:///file.rb'
+      },
+      'position' => {
+        'line' => 9,
+        'character' => 18
+      }
+    }
+    response = @protocol.response
+    item = response['result']['items'].select{|i| i['data']['path'] == 'File.absolute_path'}.first
+    expect(item).not_to be_nil
+    @protocol.request 'completionItem/resolve', item
+    response = @protocol.response
+    expect(response['result']['documentation']).not_to be_empty
   end
 
   it "handles workspace/symbol" do

@@ -371,9 +371,10 @@ module Solargraph
       end
 
       def locate_pin params
+        return nil unless params['data'] && params['data']['uri']
+        library = library_for(params['data']['uri'])
         pin = nil
         unless params['data']['location'].nil?
-          library = library_for(file_to_uri(params['data']['location']['filename']))
           location = Location.new(
             params['data']['location']['filename'],
             Range.from_to(
@@ -385,10 +386,9 @@ module Solargraph
           )
           pin = library.locate_pin(location)
         end
-        # @todo Improve pin location
-        # if pin.nil? or pin.path != params['data']['path']
-        #   pin = library.path_pins(params['data']['path']).first
-        # end
+        if pin.nil? && params['data']['path']
+          pin = library.path_pins(params['data']['path']).first
+        end
         pin
       end
 
