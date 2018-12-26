@@ -235,9 +235,9 @@ module Solargraph
     # @param filename [String]
     # @return [Source]
     def checkout filename
-      @current = read(filename)
-      catalog
-      @current
+      check = read(filename)
+      catalog unless @current == check
+      @current = check
     end
 
     # @param query [String]
