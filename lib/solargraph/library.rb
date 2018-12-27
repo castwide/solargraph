@@ -16,6 +16,7 @@ module Solargraph
       @name = name
       api_map.catalog bundle
       @synchronized = true
+      @catalog_mutex = Mutex.new
     end
 
     # True if the ApiMap is up to date with the library's workspace and open
@@ -35,6 +36,7 @@ module Solargraph
     # @return [void]
     def open filename, text, version
       mutex.synchronize do
+        @synchronized = false
         source = Solargraph::Source.load_string(text, filename, version)
         workspace.merge source
         open_file_hash[filename] = source
@@ -44,6 +46,7 @@ module Solargraph
 
     def open_from_disk filename
       mutex.synchronize do
+        @synchronized = false
         source = Solargraph::Source.load(filename)
         workspace.merge source
         open_file_hash[filename] = source
@@ -78,6 +81,7 @@ module Solargraph
       result = false
       mutex.synchronize do
         next unless contain?(filename) || open?(filename) || workspace.would_merge?(filename)
+        @synchronized = false
         source = Solargraph::Source.load_string(text, filename)
         workspace.merge(source)
         catalog
@@ -96,6 +100,7 @@ module Solargraph
       mutex.synchronize do
         next if File.directory?(filename) || !File.exist?(filename)
         next unless contain?(filename) || open?(filename) || workspace.would_merge?(filename)
+        @synchronized = false
         source = Solargraph::Source.load_string(File.read(filename), filename)
         workspace.merge(source)
         open_file_hash[filename] = source if open_file_hash.key?(filename)
@@ -114,6 +119,7 @@ module Solargraph
     # @return [void]
     def delete filename
       mutex.synchronize do
+        @synchronized = false
         open_file_hash.delete filename
         workspace.remove filename
         catalog
@@ -127,6 +133,7 @@ module Solargraph
     # @return [void]
     def close filename
       mutex.synchronize do
+        @synchronized = false
         open_file_hash.delete filename
         catalog
       end
@@ -180,6 +187,7 @@ module Solargraph
     # @return [Array<Solargraph::Range>]
     # @todo Take a Location instead of filename/line/column
     def references_from filename, line, column, strip: false
+      checkout filename
       cursor = api_map.cursor_at(filename, Position.new(line, column))
       clip = api_map.clip(cursor)
       pins = clip.define
@@ -233,7 +241,9 @@ module Solargraph
     # @param filename [String]
     # @return [Source]
     def checkout filename
-      @current = read(filename)
+      checked = read(filename)
+      @synchronized = (checked.filename == @current.filename) if synchronized?
+      @current = checked
       catalog
       @current
     end
@@ -241,12 +251,14 @@ module Solargraph
     # @param query [String]
     # @return [Array<YARD::CodeObject::Base>]
     def document query
+      catalog
       api_map.document query
     end
 
     # @param query [String]
     # @return [Array<String>]
     def search query
+      catalog
       api_map.search query
     end
 
@@ -255,6 +267,7 @@ module Solargraph
     # @param query [String]
     # @return [Array<Pin::Base>]
     def query_symbols query
+      catalog
       api_map.query_symbols query
     end
 
@@ -267,6 +280,7 @@ module Solargraph
     # @param filename [String]
     # @return [Array<Solargraph::Pin::Base>]
     def document_symbols filename
+      checkout filename
       return [] unless open_file_hash.key?(filename)
       api_map.document_symbols(filename)
     end
@@ -274,13 +288,14 @@ module Solargraph
     # @param path [String]
     # @return [Array<Solargraph::Pin::Base>]
     def path_pins path
+      catalog
       api_map.get_path_suggestions(path)
     end
 
     # Update a source in the library from the provided updater.
     #
     # @note This method will not update the library's ApiMap. See
-    #   Library#ynchronized? and Library#catalog for more information.
+    #   Library#synchronized? and Library#catalog for more information.
     #
     #
     # @raise [FileNotFoundError] if the updater's file is not available.
@@ -332,9 +347,12 @@ module Solargraph
     #
     # @return [void]
     def catalog
-      logger.info "Cataloging #{workspace.directory.empty? ? 'generic workspace' : workspace.directory}"
-      api_map.catalog bundle
-      @synchronized = true
+      @catalog_mutex.synchronize do
+        break if synchronized?
+        logger.info "Cataloging #{workspace.directory.empty? ? 'generic workspace' : workspace.directory}"
+        api_map.catalog bundle
+        @synchronized = true
+      end
     end
 
     def folding_ranges filename

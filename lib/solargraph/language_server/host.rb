@@ -178,7 +178,7 @@ module Solargraph
         library.update updater
         # @todo Since Library#checkout already catalogs, this cataloging
         #   might not be necessary.
-        # cataloger.ping(library) unless library.synchronized?
+        cataloger.ping(library) unless library.synchronized?
         diagnoser.schedule params['textDocument']['uri']
       end
 
