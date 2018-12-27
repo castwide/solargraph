@@ -6,17 +6,25 @@ module Solargraph
         #
         class Resolve < Base
           def process
-            # @todo This method might need to read multiple pins, e.g., when a
-            #   namespace has multiple pins, the first one returned might not
-            #   have documentation.
-            pin = host.locate_pin params
-            if pin.nil?
+            pins = host.locate_pins(params)
+            if pins.empty?
               set_result params
             else
-              set_result(
-                params.merge(pin.resolve_completion_item)
-              )
+              set_result merge(pins)
             end
+          end
+
+          private
+
+          # @param pins [Array<Pin::Base>]
+          # @return [Hash]
+          def merge pins
+            docs = pins
+                   .reject { |pin| pin.documentation.empty? }
+                   .map { |pin| pin.resolve_completion_item[:documentation] }
+            params
+              .merge(pins.first.resolve_completion_item)
+              .merge(documentation: docs.join("\n\n"))
           end
         end
       end
