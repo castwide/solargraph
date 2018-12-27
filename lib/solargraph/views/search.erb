@@ -4,8 +4,7 @@
     <ul class="doc-list">
     <% results.each do |result| %>
         <li>
-            <%# esc = URI.escape("\"solargraph:/document?query=#{result}\"").gsub('%23', URI.escape('%23')) %>
-            <a href="solargraph:/document?query=<%= URI.escape(result) %>"><%= result %></a>
+            <a href="solargraph:/document?query=<%= CGI.escape(result) %>"><%= result %></a>
         </li>
     <% end %>
     </ul>

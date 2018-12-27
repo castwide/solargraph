@@ -344,6 +344,8 @@ module Solargraph
         end
       end
 
+      # True if the specified LSP method can be dynamically registered.
+      #
       # @param method [String]
       # @return [Boolean]
       def can_register? method
@@ -372,6 +374,8 @@ module Solargraph
         @stopped
       end
 
+      # @param params [Hash] A hash representation of a completion item
+      # @return [Pin::Base, nil]
       def locate_pin params
         return nil unless params['data'] && params['data']['uri']
         library = library_for(params['data']['uri'])
