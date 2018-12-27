@@ -374,28 +374,42 @@ module Solargraph
         @stopped
       end
 
+      # Locate a pin based on the location of a completion item, or nil if the
+      # library does not have a source at that location.
+      #
       # @param params [Hash] A hash representation of a completion item
       # @return [Pin::Base, nil]
       def locate_pin params
-        return nil unless params['data'] && params['data']['uri']
+        return nil unless params['data'] && params['data']['uri'] && params['data']['location']
         library = library_for(params['data']['uri'])
-        pin = nil
-        unless params['data']['location'].nil?
-          location = Location.new(
-            params['data']['location']['filename'],
-            Range.from_to(
-              params['data']['location']['range']['start']['line'],
-              params['data']['location']['range']['start']['character'],
-              params['data']['location']['range']['end']['line'],
-              params['data']['location']['range']['end']['character']
-            )
+        location = Location.new(
+          params['data']['location']['filename'],
+          Range.from_to(
+            params['data']['location']['range']['start']['line'],
+            params['data']['location']['range']['start']['character'],
+            params['data']['location']['range']['end']['line'],
+            params['data']['location']['range']['end']['character']
           )
-          pin = library.locate_pin(location)
+        )
+        library.locate_pin(location)
+      end
+
+      # Locate multiple pins that match a completion item. The first match is
+      # based on the corresponding location in a library source if available
+      # (see #locate_pin). Subsequent matches are based on path.
+      #
+      # @param params [Hash] A hash representation of a completion item
+      # @return [Array<Pin::Base>]
+      def locate_pins params
+        return [] unless params['data'] && params['data']['uri']
+        exact = locate_pin(params)
+        library = library_for(params['data']['uri'])
+        result = []
+        unless params['data']['path'].nil?
+          result.concat library.path_pins(params['data']['path']).reject{|pin| pin == exact}
         end
-        if pin.nil? && params['data']['path']
-          pin = library.path_pins(params['data']['path']).first
-        end
-        pin
+        result.unshift exact unless exact.nil?
+        result
       end
 
       # @param uri [String]
