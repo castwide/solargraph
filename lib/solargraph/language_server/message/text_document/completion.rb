@@ -1,5 +1,3 @@
-require 'time'
-
 module Solargraph
   module LanguageServer
     module Message
