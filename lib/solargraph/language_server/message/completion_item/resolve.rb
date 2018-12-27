@@ -7,11 +7,7 @@ module Solargraph
         class Resolve < Base
           def process
             pins = host.locate_pins(params)
-            if pins.empty?
-              set_result params
-            else
-              set_result merge(pins)
-            end
+            set_result merge(pins)
           end
 
           private
@@ -19,6 +15,7 @@ module Solargraph
           # @param pins [Array<Pin::Base>]
           # @return [Hash]
           def merge pins
+            return params if pins.empty?
             docs = pins
                    .reject { |pin| pin.documentation.empty? }
                    .map { |pin| pin.resolve_completion_item[:documentation] }
