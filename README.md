@@ -92,22 +92,3 @@ This feature is currently disabled by default. If you'd like to try it, you can 
 
     plugins:
     - runtime
-
-## Known Issues
-
-### EventMachine error with Ruby 2.4+ on Windows
-
-There's a known issue with EventMachine that causes Solargraph to fail with the following message:
-
-```
-Unable to load the EventMachine C extension; To use the pure-ruby reactor, require 'em/pure_ruby'
-```
-
-This is due to a problem compiling the native EventMachine extension on Windows. The workaround is to install the pure Ruby version:
-
-```
-$ gem uninstall eventmachine
-$ gem install eventmachine --platform ruby -- --use-system-libraries
-```
-
-More information: https://github.com/eventmachine/eventmachine/issues/820#issuecomment-368267506
