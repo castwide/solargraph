@@ -10,6 +10,7 @@ module Solargraph
     class Host
       autoload :Diagnoser, 'solargraph/language_server/host/diagnoser'
       autoload :Cataloger, 'solargraph/language_server/host/cataloger'
+      autoload :Sources,   'solargraph/language_server/host/sources'
 
       include Solargraph::LanguageServer::UriHelpers
       include Logging
@@ -575,6 +576,11 @@ module Solargraph
       # @return [Array<Library>]
       def libraries
         @libraries ||= []
+      end
+
+      # @return [Sources]
+      def sources
+        @sources ||= Sources.new
       end
 
       # @param uri [String]
