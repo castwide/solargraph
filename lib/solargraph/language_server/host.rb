@@ -127,6 +127,12 @@ module Solargraph
       def open uri, text, version
         library = library_for(uri)
         library.open uri_to_file(uri), text, version
+        # @todo Deprecate the above
+        src = sources.open(uri, text, version)
+        # @todo Merge the source with applicable libraries
+        libraries.each do |lib|
+          lib.merge src
+        end
         diagnoser.schedule uri
       end
 
@@ -141,7 +147,8 @@ module Solargraph
       # @param uri [String]
       # @return [Boolean]
       def open? uri
-        unsafe_open?(uri)
+        # unsafe_open?(uri)
+        sources.include? uri
       end
 
       # Close the file specified by the URI.
@@ -151,6 +158,8 @@ module Solargraph
       def close uri
         library = library_for(uri)
         library.close uri_to_file(uri)
+        # @todo Deprecate the above
+        sources.close uri
         diagnoser.schedule uri
       end
 

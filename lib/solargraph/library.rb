@@ -372,6 +372,17 @@ module Solargraph
       Solargraph::Library.new(Solargraph::Workspace.new(directory), name)
     end
 
+    def merge source
+      # STDERR.puts "TODO: Merge the source!"
+      mutex.synchronize do
+        @synchronized = false
+        workspace.merge source
+        # TODO: Is the below really necessary? hmm...
+        open_file_hash[source.filename] = source
+        checkout source.filename
+      end
+    end
+
     private
 
     # @return [Mutex]
