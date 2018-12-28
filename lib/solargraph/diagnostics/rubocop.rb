@@ -23,8 +23,8 @@ module Solargraph
         runner = RuboCop::Runner.new(options, RuboCop::ConfigStore.new)
         result = redirect_stdout{ runner.run(paths) }
         make_array JSON.parse(result)
-      rescue RuboCop::ValidationError => e
-        raise DiagnosticsError, "Error validating RuboCop configuration: #{e.message}"
+      rescue RuboCop::ValidationError, RuboCop::ConfigNotFoundError => e
+        raise DiagnosticsError, "Error in RuboCop configuration: #{e.message}"
       rescue JSON::ParserError
         raise DiagnosticsError, 'RuboCop returned invalid data'
       end
