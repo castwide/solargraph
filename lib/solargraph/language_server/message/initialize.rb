@@ -113,12 +113,6 @@ module Solargraph
           }
         end
 
-        def static_references
-          {
-            referencesProvider: true
-          }
-        end
-
         def static_folding_range
           {
             foldingRangeProvider: true
