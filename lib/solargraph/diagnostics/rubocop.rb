@@ -16,13 +16,15 @@ module Solargraph
       }
 
       # @param source [Solargraph::Source]
-      # @param api_map [Solargraph::ApiMap]
+      # @param _api_map [Solargraph::ApiMap]
       # @return [Array<Hash>]
-      def diagnose source, api_map
+      def diagnose source, _api_map
         options, paths = generate_options(source.filename, source.code)
         runner = RuboCop::Runner.new(options, RuboCop::ConfigStore.new)
         result = redirect_stdout{ runner.run(paths) }
         make_array JSON.parse(result)
+      rescue RuboCop::ValidationError => e
+        raise DiagnosticsError, "Error validating RuboCop configuration: #{e.message}"
       rescue JSON::ParserError
         raise DiagnosticsError, 'RuboCop returned invalid data'
       end
@@ -71,33 +73,48 @@ module Solargraph
         diagnostics = []
         resp['files'].each do |file|
           file['offenses'].each do |off|
-            if off['location']['start_line'] != off['location']['last_line']
-              last_line = off['location']['start_line']
-              last_column = 0
-            else
-              last_line = off['location']['last_line'] - 1
-              last_column = off['location']['last_column']
-            end
-            diag = {
-              range: {
-                start: {
-                  line: off['location']['start_line'] - 1,
-                  character: off['location']['start_column'] - 1
-                },
-                end: {
-                  line: last_line,
-                  character: last_column
-                }
-              },
-              # 1 = Error, 2 = Warning, 3 = Information, 4 = Hint
-              severity: SEVERITIES[off['severity']],
-              source: off['cop_name'],
-              message: off['message'].gsub(/^#{off['cop_name']}\:/, '')
-            }
-            diagnostics.push diag
+            diagnostics.push offense_to_diagnostic(off)
           end
         end
         diagnostics
+      end
+
+      # Convert a RuboCop offense to an LSP diagnostic
+      #
+      # @param off [Hash] Offense received from Rubocop
+      # @return [Hash] LSP diagnostic
+      def offense_to_diagnostic off
+        {
+          range: offense_range(off).to_hash,
+          # 1 = Error, 2 = Warning, 3 = Information, 4 = Hint
+          severity: SEVERITIES[off['severity']],
+          source: off['cop_name'],
+          message: off['message'].gsub(/^#{off['cop_name']}\:/, '')
+        }
+      end
+
+      # @param off [Hash]
+      # @return [Range]
+      def offense_range off
+        Range.new(offense_start_position(off), offense_ending_position(off))
+      end
+
+      # @param off [Hash]
+      # @return [Position]
+      def offense_start_position off
+        Position.new(off['location']['start_line'] - 1, off['location']['start_column'] - 1)
+      end
+
+      # @param off [Hash]
+      # @return [Position]
+      def offense_ending_position off
+        if off['location']['start_line'] != off['location']['last_line']
+          Position.new(off['location']['start_line'], 0)
+        else
+          Position.new(
+            off['location']['start_line'] - 1, off['location']['last_column']
+          )
+        end
       end
 
       # RuboCop internally uses capitalized drive letters for Windows paths,
