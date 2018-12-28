@@ -153,6 +153,7 @@ module Solargraph
       end
 
       # @param uri [String]
+      # @return [void]
       def diagnose uri
         logger.info "Diagnosing #{uri}"
         library = library_for(uri)
@@ -163,7 +164,7 @@ module Solargraph
             diagnostics: results
           }
         rescue DiagnosticsError => e
-          STDERR.puts "Error in diagnostics: #{e.message}"
+          logger.warn "Error in diagnostics: #{e.message}"
           options['diagnostics'] = false
           send_notification 'window/showMessage', {
             type: LanguageServer::MessageTypes::ERROR,
