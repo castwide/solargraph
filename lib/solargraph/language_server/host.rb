@@ -146,6 +146,7 @@ module Solargraph
       # Close the file specified by the URI.
       #
       # @param uri [String]
+      # @return [void]
       def close uri
         library = library_for(uri)
         library.close uri_to_file(uri)
@@ -153,6 +154,7 @@ module Solargraph
       end
 
       # @param uri [String]
+      # @return [void]
       def diagnose uri
         logger.info "Diagnosing #{uri}"
         library = library_for(uri)
@@ -172,13 +174,16 @@ module Solargraph
         end
       end
 
+      # Update a document from the parameters of a textDocument/didChange
+      # method.
+      #
+      # @param params [Hash]
+      # @return [void]
       def change params
         library = library_for(params['textDocument']['uri'])
         updater = generate_updater(params)
         library.update updater
-        # @todo Since Library#checkout already catalogs, this cataloging
-        #   might not be necessary.
-        cataloger.ping(library) unless library.synchronized?
+        cataloger.ping(library)
         diagnoser.schedule params['textDocument']['uri']
       end
 
@@ -206,8 +211,12 @@ module Solargraph
       # Prepare a library for the specified directory.
       #
       # @param directory [String]
-      # @param name [String]
+      # @param name [String, nil]
+      # @return [void]
       def prepare directory, name = nil
+        # No need to create a library without a directory. The orphan library
+        # will handle it.
+        return if directory.nil?
         logger.info "Preparing library for #{directory}"
         path = ''
         path = normalize_separators(directory) unless directory.nil?
@@ -225,12 +234,21 @@ module Solargraph
         cataloger.start
       end
 
+      # Prepare multiple folders.
+      #
+      # @param array [Array<Hash{String => String}>]
+      # @return [void]
       def prepare_folders array
+        return if array.nil?
         array.each do |folder|
           prepare uri_to_file(folder['uri']), folder['name']
         end
       end
 
+      # Remove a directory.
+      #
+      # @param directory [String]
+      # @return [void]
       def remove directory
         logger.info "Removing library for #{directory}"
         # @param lib [Library]
@@ -454,15 +472,15 @@ module Solargraph
       # @return [Array<Solargraph::Range>]
       def references_from filename, line, column, strip: true
         library = library_for(file_to_uri(filename))
-        result = library.references_from(filename, line, column, strip: strip)
+        library.references_from(filename, line, column, strip: strip)
       end
 
       # @param query [String]
       # @return [Array<Solargraph::Pin::Base>]
       def query_symbols query
         result = []
-        libraries.each { |lib| result.concat lib.query_symbols(query) }
-        result
+        (libraries + [orphan_library]).each { |lib| result.concat lib.query_symbols(query) }
+        result.uniq
       end
 
       # @param query [String]
@@ -572,8 +590,8 @@ module Solargraph
         libraries.each do |lib|
           return lib if filename.start_with?(lib.workspace.directory)
         end
-        return orphan_library if orphan_library.open?(filename)
-        raise "No library for #{uri}"
+        return orphan_library #if orphan_library.open?(filename)
+        # raise "No library for #{uri}"
       end
 
       # @return [Library]
