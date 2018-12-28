@@ -5,7 +5,6 @@ module Solargraph
         def process
           host.configure params['initializationOptions']
           if support_workspace_folders?
-            # @todo Prepare multiple folders
             host.prepare_folders params['workspaceFolders']
           elsif params['rootUri']
             host.prepare UriHelpers.uri_to_file(params['rootUri'])
@@ -42,7 +41,8 @@ module Solargraph
         def support_workspace_folders?
           params['capabilities'] &&
             params['capabilities']['workspace'] &&
-            params['capabilities']['workspace']['workspaceFolders']
+            params['capabilities']['workspace']['workspaceFolders'] &&
+            params['workspaceFolders']
         end
 
         def static_completion
