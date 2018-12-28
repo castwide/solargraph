@@ -98,10 +98,16 @@ module Solargraph
       # workspace; see Solargraph::Library#create_from_disk.
       #
       # @param uri [String] The file uri.
+      # @return [Boolean] True if a library accepted the file.
       def create uri
-        library = library_for(uri)
+        # library = library_for(uri)
+        # filename = uri_to_file(uri)
+        # result = library.create_from_disk(filename)
         filename = uri_to_file(uri)
-        result = library.create_from_disk(filename)
+        result = false
+        libraries.each do |lib|
+          result = true if lib.create_from_disk filename
+        end
         diagnoser.schedule uri if open?(uri)
         result
       end
@@ -110,9 +116,14 @@ module Solargraph
       #
       # @param uri [String] The file uri.
       def delete uri
-        library = library_for(uri)
+        # library = library_for(uri)
+        # filename = uri_to_file(uri)
+        # library.delete filename
+        sources.close uri
         filename = uri_to_file(uri)
-        library.delete filename
+        libraries.each do |lib|
+          lib.delete filename
+        end
         send_notification "textDocument/publishDiagnostics", {
           uri: uri,
           diagnostics: []
@@ -125,8 +136,8 @@ module Solargraph
       # @param text [String] The contents of the file.
       # @param version [Integer] A version number.
       def open uri, text, version
-        library = library_for(uri)
-        library.open uri_to_file(uri), text, version
+        # library = library_for(uri)
+        # library.open uri_to_file(uri), text, version
         # @todo Deprecate the above
         src = sources.open(uri, text, version)
         # @todo Merge the source with applicable libraries
@@ -190,11 +201,16 @@ module Solargraph
       # @param params [Hash]
       # @return [void]
       def change params
-        library = library_for(params['textDocument']['uri'])
+        # library = library_for(params['textDocument']['uri'])
+        # updater = generate_updater(params)
+        # library.update updater
+        # cataloger.ping(library)
+        # diagnoser.schedule params['textDocument']['uri']
         updater = generate_updater(params)
-        library.update updater
-        cataloger.ping(library)
-        diagnoser.schedule params['textDocument']['uri']
+        src = sources.update(params['textDocument']['uri'], updater)
+        libraries.each do |lib|
+          lib.merge src
+        end
       end
 
       # Queue a message to be sent to the client.
@@ -264,9 +280,10 @@ module Solargraph
         # @param lib [Library]
         libraries.delete_if do |lib|
           next false if lib.workspace.directory != directory
-          lib.open_sources.each do |src|
-            orphan_library.open(src.filename, src.code, src.version)
-          end
+          # @todo Since we're using Sources, this might not be necessary
+          # lib.open_sources.each do |src|
+          #   orphan_library.open(src.filename, src.code, src.version)
+          # end
           true
         end
       end
@@ -592,21 +609,31 @@ module Solargraph
         @sources ||= Sources.new
       end
 
-      # @param uri [String]
-      # @return [Library]
       def library_for uri
-        return libraries.first if libraries.length == 1
+        explicit_library_for(uri) ||
+          implicit_library_for(uri) ||
+          generic_library_for(uri)
+      end
+
+      def explicit_library_for uri
         filename = uri_to_file(uri)
-        # Find a library with an explicit reference to the file
         libraries.each do |lib|
           return lib if lib.contain?(filename) || lib.open?(filename)
         end
-        # Find a library with a workspace that contains the file
+        nil
+      end
+
+      def implicit_library_for uri
+        filename = uri_to_file(uri)
         libraries.each do |lib|
           return lib if filename.start_with?(lib.workspace.directory)
         end
-        return orphan_library #if orphan_library.open?(filename)
-        # raise "No library for #{uri}"
+        nil
+      end
+
+      def generic_library_for uri
+        orphan_library.merge sources.find(uri)
+        orphan_library
       end
 
       # @return [Library]
@@ -622,11 +649,6 @@ module Solargraph
       # @return [Cataloger]
       def cataloger
         @cataloger ||= Cataloger.new(self)
-      end
-
-      def unsafe_open? uri
-        library = library_for(uri)
-        library.open?(uri_to_file(uri))
       end
 
       def requests

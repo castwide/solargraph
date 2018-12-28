@@ -30,11 +30,15 @@ module Solargraph
     # Open a file in the library. Opening a file will make it available for
     # checkout and merge it into the workspace if applicable.
     #
+    # @deprecated The library should not be responsible for this. Instead, it
+    #   should accept a source and determine whether or not to merge it.
+    #
     # @param filename [String]
     # @param text [String]
     # @param version [Integer]
     # @return [void]
     def open filename, text, version
+      STDERR.puts "WARNING: Library#open is deprecated"
       mutex.synchronize do
         @synchronized = false
         source = Solargraph::Source.load_string(text, filename, version)
@@ -297,11 +301,14 @@ module Solargraph
     # @note This method will not update the library's ApiMap. See
     #   Library#synchronized? and Library#catalog for more information.
     #
+    # @deprecated The library should not be responsible for this. Instead, it
+    #   should accept a source and determine whether or not to merge it.
     #
     # @raise [FileNotFoundError] if the updater's file is not available.
     # @param updater [Solargraph::Source::Updater]
     # @return [void]
     def update updater
+      STDERR.puts "WARNING: Library#update is deprecated"
       mutex.synchronize do
         if workspace.has_file?(updater.filename)
           workspace.synchronize!(updater)
