@@ -11,6 +11,7 @@ module Solargraph
     attr_reader :name
 
     # @param workspace [Solargraph::Workspace]
+    # @param name [String, nil]
     def initialize workspace = Solargraph::Workspace.new, name = nil
       @workspace = workspace
       @name = name
@@ -44,11 +45,23 @@ module Solargraph
       attach source
     end
 
+    # Open a file from disk and try to merge it into the workspace.
+    #
+    # @param filename [String]
+    # @return [Boolean] True if the file was merged into the source.
     def open_from_disk filename
       source = Solargraph::Source.load(filename)
       merge source
     end
 
+    # Attach a source to the library.
+    #
+    # The attached source does not need to be a part of the workspace. The
+    # library will include it in the ApiMap while it's attached. Only one
+    # source can be attached to the library at a time.
+    #
+    # @param source [Source]
+    # @return [void]
     def attach source
       mutex.synchronize do
         @synchronized = (@current == source) if synchronized?
@@ -56,13 +69,14 @@ module Solargraph
       end
     end
 
-    # True if the specified file is currently open.
+    # True if the specified file is currently attached.
     #
     # @param filename [String]
     # @return [Boolean]
-    def open? filename
+    def attached? filename
       !@current.nil? && @current.filename == filename
     end
+    alias open? attached?
 
     # True if the specified file is included in the workspace (but not
     # necessarily open).
@@ -104,8 +118,6 @@ module Solargraph
         @synchronized = false
         source = Solargraph::Source.load_string(File.read(filename), filename)
         workspace.merge(source)
-        @current = source if @current && @current.filename == source.filename
-        catalog
         result = true
       end
       result
@@ -122,7 +134,7 @@ module Solargraph
         @synchronized = false
         @current = nil if @current && @current.filename == filename
         workspace.remove filename
-        catalog
+        # catalog
       end
     end
 
@@ -200,7 +212,7 @@ module Solargraph
             referenced = definitions_at(loc.filename, loc.range.ending.line, loc.range.ending.character)
             referenced.any?{|r| r == pin}
           end
-          # HACK for language clients that exclude special characters from the start of variable names
+          # HACK: for language clients that exclude special characters from the start of variable names
           if strip && match = cursor.word.match(/^[^a-z0-9_]+/i)
             found.map! do |loc|
               Solargraph::Location.new(loc.filename, Solargraph::Range.from_to(loc.range.start.line, loc.range.start.column + match[0].length, loc.range.ending.line, loc.range.ending.column))
@@ -333,9 +345,6 @@ module Solargraph
       #   everything in the workspace should get diagnosed, or if there should
       #   be an option to do so.
       #
-      # @todo Since libraries are no longer responsible for tracking open
-      #   files, this might not belong here at all. It probably belongs in
-      #   LanguageServer::Host.
       return [] unless open?(filename)
       result = []
       source = read(filename)
@@ -359,6 +368,10 @@ module Solargraph
       end
     end
 
+    # Get an array of foldable ranges for the specified file.
+    #
+    # @param filename [String]
+    # @return [Array<Range>]
     def folding_ranges filename
       read(filename).folding_ranges
     end
@@ -367,24 +380,31 @@ module Solargraph
     #
     # @return [Array<Source>]
     def open_sources
-      STDERR.puts "WARNING: Library#open_sources is deprecated"
+      STDERR.puts 'WARNING: Library#open_sources is deprecated'
       @current ? [@current] : []
     end
 
     # Create a library from a directory.
     #
     # @param directory [String] The path to be used for the workspace
+    # @param name [String, nil]
     # @return [Solargraph::Library]
     def self.load directory = '', name = nil
       Solargraph::Library.new(Solargraph::Workspace.new(directory), name)
     end
 
+    # Try to merge a source into the library's workspace. If the workspace is
+    # not configured to include the source, it gets ignored.
+    #
+    # @param source [Source]
+    # @return [Boolean] True if the source was merged into the workspace.
     def merge source
-      # STDERR.puts "TODO: Merge the source!"
+      result = nil
       mutex.synchronize do
-        @synchronized = false
-        workspace.merge source
+        result = workspace.merge(source)
+        @synchronized = result if synchronized?
       end
+      result
     end
 
     private

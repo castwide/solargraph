@@ -344,6 +344,7 @@ module Solargraph
       # that were not flagged for dynamic registration by the client.
       #
       # @param methods [Array<String>] The methods to register
+      # @return [void]
       def register_capabilities methods
         logger.debug "Registering capabilities: #{methods}"
         @register_semaphore.synchronize do
@@ -365,6 +366,7 @@ module Solargraph
       # that were not flagged for dynamic registration by the client.
       #
       # @param methods [Array<String>] The methods to unregister
+      # @return [void]
       def unregister_capabilities methods
         logger.debug "Unregistering capabilities: #{methods}"
         @register_semaphore.synchronize do
@@ -383,6 +385,7 @@ module Solargraph
       # Flag a method as available for dynamic registration.
       #
       # @param method [String] The method name, e.g., 'textDocument/completion'
+      # @return [void]
       def allow_registration method
         @register_semaphore.synchronize do
           @dynamic_capabilities.add method
@@ -409,6 +412,7 @@ module Solargraph
         cataloger.synchronizing?
       end
 
+      # @return [void]
       def stop
         @stopped = true
         cataloger.stop
@@ -537,6 +541,7 @@ module Solargraph
       #
       # @param text [String]
       # @param type [Integer] A MessageType constant
+      # @return [void]
       def show_message text, type = LanguageServer::MessageTypes::INFO
         send_notification 'window/showMessage', {
           type: type,
@@ -551,6 +556,7 @@ module Solargraph
       # @param actions [Array<String>] Response options for the client
       # @param &block The block that processes the response
       # @yieldparam [String] The action received from the client
+      # @return [void]
       def show_message_request text, type, actions, &block
         send_request 'window/showMessageRequest', {
           type: type,
@@ -591,6 +597,8 @@ module Solargraph
         lib.catalog
       end
 
+      # @param uri [String]
+      # @return [Array<Range>]
       def folding_ranges uri
         library = library_for(uri)
         file = uri_to_file(uri)
@@ -609,12 +617,16 @@ module Solargraph
         @sources ||= Sources.new
       end
 
+      # @param uri [String]
+      # @return [Library]
       def library_for uri
         explicit_library_for(uri) ||
           implicit_library_for(uri) ||
           generic_library_for(uri)
       end
 
+      # @param uri [String]
+      # @return [Library, nil]
       def explicit_library_for uri
         filename = uri_to_file(uri)
         libraries.each do |lib|
@@ -626,6 +638,8 @@ module Solargraph
         nil
       end
 
+      # @param uri [String]
+      # @return [Library, nil]
       def implicit_library_for uri
         filename = uri_to_file(uri)
         libraries.each do |lib|
@@ -638,8 +652,9 @@ module Solargraph
         nil
       end
 
+      # @param uri [String]
+      # @return [Library]
       def generic_library_for uri
-        # orphan_library.merge sources.find(uri)
         orphan_library.attach sources.find(uri)
         orphan_library
       end
