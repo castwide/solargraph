@@ -94,8 +94,8 @@ module Solargraph
       end
 
       # Respond to a notification that a file was created in the workspace.
-      # The library will determine whether the file should be added to the
-      # workspace; see Solargraph::Library#create_from_disk.
+      # The libraries will determine whether the file should be merged; see
+      # Solargraph::Library#create_from_disk.
       #
       # @param uri [String] The file uri.
       # @return [Boolean] True if a library accepted the file.
@@ -618,7 +618,10 @@ module Solargraph
       def explicit_library_for uri
         filename = uri_to_file(uri)
         libraries.each do |lib|
-          return lib if lib.contain?(filename) || lib.open?(filename)
+          if lib.contain?(filename) #|| lib.open?(filename)
+            lib.attach nil
+            return lib
+          end
         end
         nil
       end
@@ -626,7 +629,11 @@ module Solargraph
       def implicit_library_for uri
         filename = uri_to_file(uri)
         libraries.each do |lib|
-          return lib if filename.start_with?(lib.workspace.directory)
+          # return lib if filename.start_with?(lib.workspace.directory)
+          if lib.open?(filename) || filename.start_with?(lib.workspace.directory)
+            lib.attach sources.find(uri)
+            return lib
+          end
         end
         nil
       end

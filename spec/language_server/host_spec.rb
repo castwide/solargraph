@@ -85,6 +85,7 @@ describe Solargraph::LanguageServer::Host do
     library = double(:Library)
     allow(library).to receive(:diagnose).and_raise(Solargraph::DiagnosticsError)
     allow(library).to receive(:contain?).and_return(true)
+    allow(library).to receive(:attach)
     # @todo Smelly instance variable access
     host.instance_variable_set(:@libraries, [library])
     expect {

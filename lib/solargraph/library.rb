@@ -39,30 +39,19 @@ module Solargraph
     # @return [void]
     def open filename, text, version
       STDERR.puts "WARNING: Library#open is deprecated"
-      mutex.synchronize do
-        @synchronized = false
-        source = Solargraph::Source.load_string(text, filename, version)
-        workspace.merge source
-        open_file_hash[filename] = source
-        checkout filename
-      end
+      source = Solargraph::Source.load_string(text, filename, version)
+      merge source
+      attach source
     end
 
     def open_from_disk filename
-      mutex.synchronize do
-        @synchronized = false
-        source = Solargraph::Source.load(filename)
-        workspace.merge source
-        open_file_hash[filename] = source
-        checkout filename
-      end
+      source = Solargraph::Source.load(filename)
+      merge source
     end
 
     def attach source
       mutex.synchronize do
-        @synchronized = (@current == source)
-        # @todo open_file_hash might not be necessary anymore
-        open_file_hash[source.filename] = source
+        @synchronized = (@current == source) if synchronized?
         @current = source
       end
     end
@@ -72,7 +61,7 @@ module Solargraph
     # @param filename [String]
     # @return [Boolean]
     def open? filename
-      open_file_hash.has_key? filename
+      !@current.nil? && @current.filename == filename
     end
 
     # True if the specified file is included in the workspace (but not
@@ -97,7 +86,6 @@ module Solargraph
         @synchronized = false
         source = Solargraph::Source.load_string(text, filename)
         workspace.merge(source)
-        catalog
         result = true
       end
       result
@@ -116,7 +104,6 @@ module Solargraph
         @synchronized = false
         source = Solargraph::Source.load_string(File.read(filename), filename)
         workspace.merge(source)
-        open_file_hash[filename] = source if open_file_hash.key?(filename)
         @current = source if @current && @current.filename == source.filename
         catalog
         result = true
@@ -133,7 +120,7 @@ module Solargraph
     def delete filename
       mutex.synchronize do
         @synchronized = false
-        open_file_hash.delete filename
+        @current = nil if @current && @current.filename == filename
         workspace.remove filename
         catalog
       end
@@ -147,7 +134,7 @@ module Solargraph
     def close filename
       mutex.synchronize do
         @synchronized = false
-        open_file_hash.delete filename
+        @current = nil if @current && @current.filename == filename
         catalog
       end
     end
@@ -207,7 +194,7 @@ module Solargraph
       return [] if pins.empty?
       result = []
       pins.uniq.each do |pin|
-        (workspace.sources + open_file_hash.values).uniq.each do |source|
+        (workspace.sources + (@current ? [@current] : [])).uniq.each do |source|
           found = source.references(pin.name)
           found.select! do |loc|
             referenced = definitions_at(loc.filename, loc.range.ending.line, loc.range.ending.character)
@@ -255,7 +242,7 @@ module Solargraph
     # @return [Source]
     def checkout filename
       checked = read(filename)
-      @synchronized = (checked.filename == @current.filename) if synchronized?
+      @synchronized = (checked == @current) if synchronized?
       @current = checked
       catalog
       @current
@@ -294,7 +281,6 @@ module Solargraph
     # @return [Array<Solargraph::Pin::Base>]
     def document_symbols filename
       checkout filename
-      return [] unless open_file_hash.key?(filename)
       api_map.document_symbols(filename)
     end
 
@@ -321,12 +307,10 @@ module Solargraph
       mutex.synchronize do
         if workspace.has_file?(updater.filename)
           workspace.synchronize!(updater)
-          open_file_hash[updater.filename] = workspace.source(updater.filename) if open?(updater.filename)
-        else
-          raise FileNotFoundError, "Unable to update #{updater.filename}" unless open?(updater.filename)
-          open_file_hash[updater.filename] = open_file_hash[updater.filename].synchronize(updater)
+          @current = workspace.source(updater.filename) if @current && @current.filename == updater.filename
+        elsif @current && @current.filename == updater.filename
+          @current = @current.synchronize(updater)
         end
-        @current = open_file_hash[updater.filename] if @current && @current.filename == updater.filename
         @synchronized = false
       end
     end
@@ -348,6 +332,10 @@ module Solargraph
       # @todo Only open files get diagnosed. Determine whether anything or
       #   everything in the workspace should get diagnosed, or if there should
       #   be an option to do so.
+      #
+      # @todo Since libraries are no longer responsible for tracking open
+      #   files, this might not belong here at all. It probably belongs in
+      #   LanguageServer::Host.
       return [] unless open?(filename)
       result = []
       source = read(filename)
@@ -375,9 +363,12 @@ module Solargraph
       read(filename).folding_ranges
     end
 
+    # @deprecated Libraries are no longer responsible for tracking open files.
+    #
     # @return [Array<Source>]
     def open_sources
-      open_file_hash.values
+      STDERR.puts "WARNING: Library#open_sources is deprecated"
+      @current ? [@current] : []
     end
 
     # Create a library from a directory.
@@ -393,9 +384,6 @@ module Solargraph
       mutex.synchronize do
         @synchronized = false
         workspace.merge source
-        # TODO: Is the below really necessary? hmm...
-        open_file_hash[source.filename] = source
-        checkout source.filename
       end
     end
 
@@ -419,14 +407,6 @@ module Solargraph
       )
     end
 
-    # A collection of files that are currently open in the library. Open
-    # files do not need to be in the workspace.
-    #
-    # @return [Hash{String => Source}]
-    def open_file_hash
-      @open_file_hash ||= {}
-    end
-
     # Get the source for an open file or create a new source if the file
     # exists on disk. Sources created from disk are not added to the open
     # workspace files, i.e., the version on disk remains the authoritative
@@ -436,7 +416,7 @@ module Solargraph
     # @param filename [String]
     # @return [Solargraph::Source]
     def read filename
-      return open_file_hash[filename] if open_file_hash.key?(filename)
+      return @current if @current && @current.filename == filename
       raise FileNotFoundError, "File not found: #{filename}" unless workspace.has_file?(filename)
       workspace.source(filename)
     end
