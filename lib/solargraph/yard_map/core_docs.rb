@@ -12,7 +12,7 @@ module Solargraph
 
       class << self
         def cache_dir
-          @cache_dir ||= File.join(Dir.home, '.solargraph', 'cache')
+          @cache_dir ||= ENV["SOLARGRAPH_CACHE"] || File.join(Dir.home, '.solargraph', 'cache')
         end
 
         # Ensure installation of minimum documentation.
