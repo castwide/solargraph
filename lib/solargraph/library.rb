@@ -39,7 +39,7 @@ module Solargraph
     # @param version [Integer]
     # @return [void]
     def open filename, text, version
-      STDERR.puts "WARNING: Library#open is deprecated"
+      logger.warn "Library#open is deprecated"
       source = Solargraph::Source.load_string(text, filename, version)
       merge source
       attach source
@@ -315,7 +315,7 @@ module Solargraph
     # @param updater [Solargraph::Source::Updater]
     # @return [void]
     def update updater
-      STDERR.puts "WARNING: Library#update is deprecated"
+      logger.warn 'Library#update is deprecated'
       mutex.synchronize do
         if workspace.has_file?(updater.filename)
           workspace.synchronize!(updater)
@@ -380,7 +380,7 @@ module Solargraph
     #
     # @return [Array<Source>]
     def open_sources
-      STDERR.puts 'WARNING: Library#open_sources is deprecated'
+      logger.warn 'Library#open_sources is deprecated'
       @current ? [@current] : []
     end
 
