@@ -3,7 +3,6 @@ module Solargraph
     class Cache
       def initialize
         @methods = {}
-        @method_stacks = {}
         @constants = {}
         @qualified_namespaces = {}
       end
@@ -14,14 +13,6 @@ module Solargraph
 
       def set_methods fqns, scope, visibility, deep, value
         @methods[[fqns, scope, visibility.sort, deep]] = value
-      end
-
-      def get_method_stack fqns, name, scope
-        @method_stacks[[fqns, name, scope]]
-      end
-
-      def set_method_stack fqns, name, scope, value
-        @method_stacks[[fqns, name, scope]] = value
       end
 
       def get_constants namespace, context
@@ -43,7 +34,6 @@ module Solargraph
       # @return [void]
       def clear
         @methods.clear
-        @method_stacks.clear
         @constants.clear
         @qualified_namespaces.clear
       end
@@ -51,7 +41,6 @@ module Solargraph
       # @return [Boolean]
       def empty?
         @methods.empty? &&
-          @method_stacks.empty? &&
           @constants.empty? &&
           @qualified_namespaces.empty?
       end
