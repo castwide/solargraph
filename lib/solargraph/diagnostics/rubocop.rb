@@ -6,6 +6,8 @@ module Solargraph
     # This reporter provides linting through RuboCop.
     #
     class Rubocop < Base
+      include RubocopHelpers
+
       # Conversion of RuboCop severity names to LSP constants
       SEVERITIES = {
         'refactor' => Severities::HINT,
@@ -31,33 +33,8 @@ module Solargraph
 
       private
 
-      # @param filename [String]
-      # @param code [String]
-      # @return [Array]
-      def generate_options filename, code
-        args = ['-f', 'j']
-        rubocop_file = find_rubocop_file(filename)
-        args.push('-c', fix_drive_letter(rubocop_file)) unless rubocop_file.nil?
-        args.push filename
-        options, paths = RuboCop::Options.new.parse(args)
-        options[:stdin] = code
-        [options, paths]
-      end
-
-      # @param filename [String]
-      # @return [String, nil]
-      def find_rubocop_file filename
-        dir = File.dirname(filename)
-        until File.dirname(dir) == dir
-          here = File.join(dir, '.rubocop.yml')
-          return here if File.exist?(here)
-          dir = File.dirname(dir)
-        end
-        nil
-      end
-
-      # @todo This is a smelly way to redirect output, but the RuboCop specs do the
-      #   same thing.
+      # @todo This is a smelly way to redirect output, but the RuboCop specs do
+      #   the same thing.
       # @return [String]
       def redirect_stdout
         redir = StringIO.new
@@ -115,16 +92,6 @@ module Solargraph
             off['location']['start_line'] - 1, off['location']['last_column']
           )
         end
-      end
-
-      # RuboCop internally uses capitalized drive letters for Windows paths,
-      # so we need to convert the paths provided to the command.
-      #
-      # @param path [String]
-      # @return [String]
-      def fix_drive_letter path
-        return path unless path.match(/^[a-z]:/)
-        path[0].upcase + path[1..-1]
       end
     end
   end
