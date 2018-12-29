@@ -632,7 +632,8 @@ module Solargraph
       end
 
       def generic_library_for uri
-        orphan_library.merge sources.find(uri)
+        # orphan_library.merge sources.find(uri)
+        orphan_library.attach sources.find(uri)
         orphan_library
       end
 

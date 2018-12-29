@@ -58,6 +58,15 @@ module Solargraph
       end
     end
 
+    def attach source
+      mutex.synchronize do
+        @synchronized = (@current == source)
+        # @todo open_file_hash might not be necessary anymore
+        open_file_hash[source.filename] = source
+        @current = source
+      end
+    end
+
     # True if the specified file is currently open.
     #
     # @param filename [String]
