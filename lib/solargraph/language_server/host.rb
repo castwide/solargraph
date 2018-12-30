@@ -240,7 +240,7 @@ module Solargraph
       # @param name [String, nil]
       # @return [void]
       def prepare directory, name = nil
-        # No need to create a library without a directory. The orphan library
+        # No need to create a library without a directory. The generic library
         # will handle it.
         return if directory.nil?
         logger.info "Preparing library for #{directory}"
@@ -282,7 +282,7 @@ module Solargraph
           next false if lib.workspace.directory != directory
           # @todo Since we're using Sources, this might not be necessary
           # lib.open_sources.each do |src|
-          #   orphan_library.open(src.filename, src.code, src.version)
+          #   generic_library.open(src.filename, src.code, src.version)
           # end
           true
         end
@@ -510,7 +510,7 @@ module Solargraph
       # @return [Array<Solargraph::Pin::Base>]
       def query_symbols query
         result = []
-        (libraries + [orphan_library]).each { |lib| result.concat lib.query_symbols(query) }
+        (libraries + [generic_library]).each { |lib| result.concat lib.query_symbols(query) }
         result.uniq
       end
 
@@ -655,13 +655,13 @@ module Solargraph
       # @param uri [String]
       # @return [Library]
       def generic_library_for uri
-        orphan_library.attach sources.find(uri)
-        orphan_library
+        generic_library.attach sources.find(uri)
+        generic_library
       end
 
       # @return [Library]
-      def orphan_library
-        @orphan_library ||= Solargraph::Library.new
+      def generic_library
+        @generic_library ||= Solargraph::Library.new
       end
 
       # @return [Diagnoser]
