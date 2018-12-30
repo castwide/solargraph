@@ -11,6 +11,7 @@ module Solargraph
     attr_reader :name
 
     # @param workspace [Solargraph::Workspace]
+    # @param name [String, nil]
     def initialize workspace = Solargraph::Workspace.new, name = nil
       @workspace = workspace
       @name = name
@@ -30,37 +31,52 @@ module Solargraph
     # Open a file in the library. Opening a file will make it available for
     # checkout and merge it into the workspace if applicable.
     #
+    # @deprecated The library should not be responsible for this. Instead, it
+    #   should accept a source and determine whether or not to merge it.
+    #
     # @param filename [String]
     # @param text [String]
     # @param version [Integer]
     # @return [void]
     def open filename, text, version
-      mutex.synchronize do
-        @synchronized = false
-        source = Solargraph::Source.load_string(text, filename, version)
-        workspace.merge source
-        open_file_hash[filename] = source
-        checkout filename
-      end
+      logger.warn "Library#open is deprecated"
+      source = Solargraph::Source.load_string(text, filename, version)
+      merge source
+      attach source
     end
 
+    # Open a file from disk and try to merge it into the workspace.
+    #
+    # @param filename [String]
+    # @return [Boolean] True if the file was merged into the source.
     def open_from_disk filename
+      source = Solargraph::Source.load(filename)
+      merge source
+    end
+
+    # Attach a source to the library.
+    #
+    # The attached source does not need to be a part of the workspace. The
+    # library will include it in the ApiMap while it's attached. Only one
+    # source can be attached to the library at a time.
+    #
+    # @param source [Source]
+    # @return [void]
+    def attach source
       mutex.synchronize do
-        @synchronized = false
-        source = Solargraph::Source.load(filename)
-        workspace.merge source
-        open_file_hash[filename] = source
-        checkout filename
+        @synchronized = (@current == source) if synchronized?
+        @current = source
       end
     end
 
-    # True if the specified file is currently open.
+    # True if the specified file is currently attached.
     #
     # @param filename [String]
     # @return [Boolean]
-    def open? filename
-      open_file_hash.has_key? filename
+    def attached? filename
+      !@current.nil? && @current.filename == filename
     end
+    alias open? attached?
 
     # True if the specified file is included in the workspace (but not
     # necessarily open).
@@ -84,7 +100,6 @@ module Solargraph
         @synchronized = false
         source = Solargraph::Source.load_string(text, filename)
         workspace.merge(source)
-        catalog
         result = true
       end
       result
@@ -103,9 +118,6 @@ module Solargraph
         @synchronized = false
         source = Solargraph::Source.load_string(File.read(filename), filename)
         workspace.merge(source)
-        open_file_hash[filename] = source if open_file_hash.key?(filename)
-        @current = source if @current && @current.filename == source.filename
-        catalog
         result = true
       end
       result
@@ -120,9 +132,9 @@ module Solargraph
     def delete filename
       mutex.synchronize do
         @synchronized = false
-        open_file_hash.delete filename
+        @current = nil if @current && @current.filename == filename
         workspace.remove filename
-        catalog
+        # catalog
       end
     end
 
@@ -134,7 +146,7 @@ module Solargraph
     def close filename
       mutex.synchronize do
         @synchronized = false
-        open_file_hash.delete filename
+        @current = nil if @current && @current.filename == filename
         catalog
       end
     end
@@ -194,13 +206,13 @@ module Solargraph
       return [] if pins.empty?
       result = []
       pins.uniq.each do |pin|
-        (workspace.sources + open_file_hash.values).uniq.each do |source|
+        (workspace.sources + (@current ? [@current] : [])).uniq.each do |source|
           found = source.references(pin.name)
           found.select! do |loc|
             referenced = definitions_at(loc.filename, loc.range.ending.line, loc.range.ending.character)
             referenced.any?{|r| r == pin}
           end
-          # HACK for language clients that exclude special characters from the start of variable names
+          # HACK: for language clients that exclude special characters from the start of variable names
           if strip && match = cursor.word.match(/^[^a-z0-9_]+/i)
             found.map! do |loc|
               Solargraph::Location.new(loc.filename, Solargraph::Range.from_to(loc.range.start.line, loc.range.start.column + match[0].length, loc.range.ending.line, loc.range.ending.column))
@@ -242,7 +254,7 @@ module Solargraph
     # @return [Source]
     def checkout filename
       checked = read(filename)
-      @synchronized = (checked.filename == @current.filename) if synchronized?
+      @synchronized = (checked == @current) if synchronized?
       @current = checked
       catalog
       @current
@@ -281,7 +293,6 @@ module Solargraph
     # @return [Array<Solargraph::Pin::Base>]
     def document_symbols filename
       checkout filename
-      return [] unless open_file_hash.key?(filename)
       api_map.document_symbols(filename)
     end
 
@@ -297,20 +308,21 @@ module Solargraph
     # @note This method will not update the library's ApiMap. See
     #   Library#synchronized? and Library#catalog for more information.
     #
+    # @deprecated The library should not be responsible for this. Instead, it
+    #   should accept a source and determine whether or not to merge it.
     #
     # @raise [FileNotFoundError] if the updater's file is not available.
     # @param updater [Solargraph::Source::Updater]
     # @return [void]
     def update updater
+      logger.warn 'Library#update is deprecated'
       mutex.synchronize do
         if workspace.has_file?(updater.filename)
           workspace.synchronize!(updater)
-          open_file_hash[updater.filename] = workspace.source(updater.filename) if open?(updater.filename)
-        else
-          raise FileNotFoundError, "Unable to update #{updater.filename}" unless open?(updater.filename)
-          open_file_hash[updater.filename] = open_file_hash[updater.filename].synchronize(updater)
+          @current = workspace.source(updater.filename) if @current && @current.filename == updater.filename
+        elsif @current && @current.filename == updater.filename
+          @current = @current.synchronize(updater)
         end
-        @current = open_file_hash[updater.filename] if @current && @current.filename == updater.filename
         @synchronized = false
       end
     end
@@ -332,6 +344,7 @@ module Solargraph
       # @todo Only open files get diagnosed. Determine whether anything or
       #   everything in the workspace should get diagnosed, or if there should
       #   be an option to do so.
+      #
       return [] unless open?(filename)
       result = []
       source = read(filename)
@@ -355,21 +368,43 @@ module Solargraph
       end
     end
 
+    # Get an array of foldable ranges for the specified file.
+    #
+    # @param filename [String]
+    # @return [Array<Range>]
     def folding_ranges filename
       read(filename).folding_ranges
     end
 
+    # @deprecated Libraries are no longer responsible for tracking open files.
+    #
     # @return [Array<Source>]
     def open_sources
-      open_file_hash.values
+      logger.warn 'Library#open_sources is deprecated'
+      @current ? [@current] : []
     end
 
     # Create a library from a directory.
     #
     # @param directory [String] The path to be used for the workspace
+    # @param name [String, nil]
     # @return [Solargraph::Library]
     def self.load directory = '', name = nil
       Solargraph::Library.new(Solargraph::Workspace.new(directory), name)
+    end
+
+    # Try to merge a source into the library's workspace. If the workspace is
+    # not configured to include the source, it gets ignored.
+    #
+    # @param source [Source]
+    # @return [Boolean] True if the source was merged into the workspace.
+    def merge source
+      result = nil
+      mutex.synchronize do
+        result = workspace.merge(source)
+        @synchronized = result if synchronized?
+      end
+      result
     end
 
     private
@@ -392,14 +427,6 @@ module Solargraph
       )
     end
 
-    # A collection of files that are currently open in the library. Open
-    # files do not need to be in the workspace.
-    #
-    # @return [Hash{String => Source}]
-    def open_file_hash
-      @open_file_hash ||= {}
-    end
-
     # Get the source for an open file or create a new source if the file
     # exists on disk. Sources created from disk are not added to the open
     # workspace files, i.e., the version on disk remains the authoritative
@@ -409,7 +436,7 @@ module Solargraph
     # @param filename [String]
     # @return [Solargraph::Source]
     def read filename
-      return open_file_hash[filename] if open_file_hash.key?(filename)
+      return @current if @current && @current.filename == filename
       raise FileNotFoundError, "File not found: #{filename}" unless workspace.has_file?(filename)
       workspace.source(filename)
     end
