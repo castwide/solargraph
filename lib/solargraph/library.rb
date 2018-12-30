@@ -346,6 +346,7 @@ module Solargraph
       #   be an option to do so.
       #
       return [] unless open?(filename)
+      catalog
       result = []
       source = read(filename)
       workspace.config.reporters.each do |name|

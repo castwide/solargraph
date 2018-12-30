@@ -200,6 +200,7 @@ module Solargraph
         libraries.each do |lib|
           lib.merge src
         end
+        diagnoser.schedule params['textDocument']['uri']
       end
 
       # Queue a message to be sent to the client.
