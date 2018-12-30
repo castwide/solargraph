@@ -86,8 +86,10 @@ describe Solargraph::LanguageServer::Host do
     allow(library).to receive(:diagnose).and_raise(Solargraph::DiagnosticsError)
     allow(library).to receive(:contain?).and_return(true)
     allow(library).to receive(:attach)
+    allow(library).to receive(:merge)
     # @todo Smelly instance variable access
     host.instance_variable_set(:@libraries, [library])
+    host.open('file:///test.rb', '', 0)
     expect {
       host.diagnose 'file:///test.rb'
     }.not_to raise_error

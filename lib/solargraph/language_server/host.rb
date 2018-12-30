@@ -608,7 +608,7 @@ module Solargraph
         filename = uri_to_file(uri)
         libraries.each do |lib|
           if lib.contain?(filename) #|| lib.open?(filename)
-            lib.attach nil
+            lib.attach sources.find(uri) if sources.include?(uri)
             return lib
           end
         end
