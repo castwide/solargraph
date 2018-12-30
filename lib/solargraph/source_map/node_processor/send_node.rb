@@ -5,8 +5,20 @@ module Solargraph
         def process
           if node.children[0].nil?
             if [:private, :public, :protected].include?(node.children[1])
-              # @todo Smelly instance variable access
-              region.instance_variable_set(:@visibility, node.children[1])
+              if (node.children.length > 2)
+                node.children[2..-1].each do |child|
+                  next unless child.is_a?(AST::Node) && (child.type == :sym || child.type == :str)
+                  name = child.children[0].to_s
+                  matches = pins.select{ |pin| [Pin::METHOD, Pin::ATTRIBUTE].include?(pin.kind) && pin.name == name && pin.namespace == region.namespace && pin.context.scope == region.scope }
+                  matches.each do |pin|
+                    # @todo Smelly instance variable access
+                    pin.instance_variable_set(:@visibility, node.children[1])
+                  end
+                end
+              else
+                # @todo Smelly instance variable access
+                region.instance_variable_set(:@visibility, node.children[1])
+              end
             elsif node.children[1] == :module_function
               process_module_function
             elsif [:attr_reader, :attr_writer, :attr_accessor].include?(node.children[1])

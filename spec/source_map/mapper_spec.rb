@@ -901,4 +901,25 @@ describe Solargraph::SourceMap::Mapper do
       ))
       }.not_to raise_error
   end
+
+  it "sets visibility for symbol parameters" do
+    smap = Solargraph::SourceMap.load_string(%(
+      class Foo
+        def pub; end
+        def bar; end
+        private :bar
+        def baz; end
+        def pro; end
+        protected 'pro'
+      end
+    ))
+    pub = smap.pins.select{|pin| pin.path == 'Foo#pub'}.first
+    expect(pub.visibility).to eq(:public)
+    bar = smap.pins.select{|pin| pin.path == 'Foo#bar'}.first
+    expect(bar.visibility).to eq(:private)
+    baz = smap.pins.select{|pin| pin.path == 'Foo#baz'}.first
+    expect(baz.visibility).to eq(:public)
+    pro = smap.pins.select{|pin| pin.path == 'Foo#pro'}.first
+    expect(pro.visibility).to eq(:protected)
+  end
 end
