@@ -10,6 +10,7 @@ module Solargraph
     class Host
       autoload :Diagnoser, 'solargraph/language_server/host/diagnoser'
       autoload :Cataloger, 'solargraph/language_server/host/cataloger'
+      autoload :Sources,   'solargraph/language_server/host/sources'
 
       include Solargraph::LanguageServer::UriHelpers
       include Logging
@@ -93,14 +94,17 @@ module Solargraph
       end
 
       # Respond to a notification that a file was created in the workspace.
-      # The library will determine whether the file should be added to the
-      # workspace; see Solargraph::Library#create_from_disk.
+      # The libraries will determine whether the file should be merged; see
+      # Solargraph::Library#create_from_disk.
       #
       # @param uri [String] The file uri.
+      # @return [Boolean] True if a library accepted the file.
       def create uri
-        library = library_for(uri)
         filename = uri_to_file(uri)
-        result = library.create_from_disk(filename)
+        result = false
+        libraries.each do |lib|
+          result = true if lib.create_from_disk filename
+        end
         diagnoser.schedule uri if open?(uri)
         result
       end
@@ -109,9 +113,11 @@ module Solargraph
       #
       # @param uri [String] The file uri.
       def delete uri
-        library = library_for(uri)
+        sources.close uri
         filename = uri_to_file(uri)
-        library.delete filename
+        libraries.each do |lib|
+          lib.delete filename
+        end
         send_notification "textDocument/publishDiagnostics", {
           uri: uri,
           diagnostics: []
@@ -124,8 +130,10 @@ module Solargraph
       # @param text [String] The contents of the file.
       # @param version [Integer] A version number.
       def open uri, text, version
-        library = library_for(uri)
-        library.open uri_to_file(uri), text, version
+        src = sources.open(uri, text, version)
+        libraries.each do |lib|
+          lib.merge src
+        end
         diagnoser.schedule uri
       end
 
@@ -140,19 +148,20 @@ module Solargraph
       # @param uri [String]
       # @return [Boolean]
       def open? uri
-        unsafe_open?(uri)
+        sources.include? uri
       end
 
       # Close the file specified by the URI.
       #
       # @param uri [String]
+      # @return [void]
       def close uri
-        library = library_for(uri)
-        library.close uri_to_file(uri)
+        sources.close uri
         diagnoser.schedule uri
       end
 
       # @param uri [String]
+      # @return [void]
       def diagnose uri
         logger.info "Diagnosing #{uri}"
         library = library_for(uri)
@@ -163,7 +172,7 @@ module Solargraph
             diagnostics: results
           }
         rescue DiagnosticsError => e
-          STDERR.puts "Error in diagnostics: #{e.message}"
+          logger.warn "Error in diagnostics: #{e.message}"
           options['diagnostics'] = false
           send_notification 'window/showMessage', {
             type: LanguageServer::MessageTypes::ERROR,
@@ -172,14 +181,17 @@ module Solargraph
         end
       end
 
+      # Update a document from the parameters of a textDocument/didChange
+      # method.
+      #
+      # @param params [Hash]
+      # @return [void]
       def change params
-        library = library_for(params['textDocument']['uri'])
         updater = generate_updater(params)
-        library.update updater
-        # @todo Since Library#checkout already catalogs, this cataloging
-        #   might not be necessary.
-        cataloger.ping(library) unless library.synchronized?
-        diagnoser.schedule params['textDocument']['uri']
+        src = sources.update(params['textDocument']['uri'], updater)
+        libraries.each do |lib|
+          lib.merge src
+        end
       end
 
       # Queue a message to be sent to the client.
@@ -206,8 +218,12 @@ module Solargraph
       # Prepare a library for the specified directory.
       #
       # @param directory [String]
-      # @param name [String]
+      # @param name [String, nil]
+      # @return [void]
       def prepare directory, name = nil
+        # No need to create a library without a directory. The generic library
+        # will handle it.
+        return if directory.nil?
         logger.info "Preparing library for #{directory}"
         path = ''
         path = normalize_separators(directory) unless directory.nil?
@@ -225,20 +241,26 @@ module Solargraph
         cataloger.start
       end
 
+      # Prepare multiple folders.
+      #
+      # @param array [Array<Hash{String => String}>]
+      # @return [void]
       def prepare_folders array
+        return if array.nil?
         array.each do |folder|
           prepare uri_to_file(folder['uri']), folder['name']
         end
       end
 
+      # Remove a directory.
+      #
+      # @param directory [String]
+      # @return [void]
       def remove directory
         logger.info "Removing library for #{directory}"
         # @param lib [Library]
         libraries.delete_if do |lib|
           next false if lib.workspace.directory != directory
-          lib.open_sources.each do |src|
-            orphan_library.open(src.filename, src.code, src.version)
-          end
           true
         end
       end
@@ -299,6 +321,7 @@ module Solargraph
       # that were not flagged for dynamic registration by the client.
       #
       # @param methods [Array<String>] The methods to register
+      # @return [void]
       def register_capabilities methods
         logger.debug "Registering capabilities: #{methods}"
         @register_semaphore.synchronize do
@@ -320,6 +343,7 @@ module Solargraph
       # that were not flagged for dynamic registration by the client.
       #
       # @param methods [Array<String>] The methods to unregister
+      # @return [void]
       def unregister_capabilities methods
         logger.debug "Unregistering capabilities: #{methods}"
         @register_semaphore.synchronize do
@@ -338,6 +362,7 @@ module Solargraph
       # Flag a method as available for dynamic registration.
       #
       # @param method [String] The method name, e.g., 'textDocument/completion'
+      # @return [void]
       def allow_registration method
         @register_semaphore.synchronize do
           @dynamic_capabilities.add method
@@ -364,6 +389,7 @@ module Solargraph
         cataloger.synchronizing?
       end
 
+      # @return [void]
       def stop
         @stopped = true
         cataloger.stop
@@ -454,15 +480,15 @@ module Solargraph
       # @return [Array<Solargraph::Range>]
       def references_from filename, line, column, strip: true
         library = library_for(file_to_uri(filename))
-        result = library.references_from(filename, line, column, strip: strip)
+        library.references_from(filename, line, column, strip: strip)
       end
 
       # @param query [String]
       # @return [Array<Solargraph::Pin::Base>]
       def query_symbols query
         result = []
-        libraries.each { |lib| result.concat lib.query_symbols(query) }
-        result
+        (libraries + [generic_library]).each { |lib| result.concat lib.query_symbols(query) }
+        result.uniq
       end
 
       # @param query [String]
@@ -492,6 +518,7 @@ module Solargraph
       #
       # @param text [String]
       # @param type [Integer] A MessageType constant
+      # @return [void]
       def show_message text, type = LanguageServer::MessageTypes::INFO
         send_notification 'window/showMessage', {
           type: type,
@@ -506,6 +533,7 @@ module Solargraph
       # @param actions [Array<String>] Response options for the client
       # @param &block The block that processes the response
       # @yieldparam [String] The action received from the client
+      # @return [void]
       def show_message_request text, type, actions, &block
         send_request 'window/showMessageRequest', {
           type: type,
@@ -546,6 +574,8 @@ module Solargraph
         lib.catalog
       end
 
+      # @param uri [String]
+      # @return [Array<Range>]
       def folding_ranges uri
         library = library_for(uri)
         file = uri_to_file(uri)
@@ -559,26 +589,56 @@ module Solargraph
         @libraries ||= []
       end
 
+      # @return [Sources]
+      def sources
+        @sources ||= Sources.new
+      end
+
       # @param uri [String]
       # @return [Library]
       def library_for uri
-        return libraries.first if libraries.length == 1
+        explicit_library_for(uri) ||
+          implicit_library_for(uri) ||
+          generic_library_for(uri)
+      end
+
+      # @param uri [String]
+      # @return [Library, nil]
+      def explicit_library_for uri
         filename = uri_to_file(uri)
-        # Find a library with an explicit reference to the file
         libraries.each do |lib|
-          return lib if lib.contain?(filename) || lib.open?(filename)
+          if lib.contain?(filename) #|| lib.open?(filename)
+            lib.attach nil
+            return lib
+          end
         end
-        # Find a library with a workspace that contains the file
+        nil
+      end
+
+      # @param uri [String]
+      # @return [Library, nil]
+      def implicit_library_for uri
+        filename = uri_to_file(uri)
         libraries.each do |lib|
-          return lib if filename.start_with?(lib.workspace.directory)
+          # return lib if filename.start_with?(lib.workspace.directory)
+          if lib.open?(filename) || filename.start_with?(lib.workspace.directory)
+            lib.attach sources.find(uri)
+            return lib
+          end
         end
-        return orphan_library if orphan_library.open?(filename)
-        raise "No library for #{uri}"
+        nil
+      end
+
+      # @param uri [String]
+      # @return [Library]
+      def generic_library_for uri
+        generic_library.attach sources.find(uri)
+        generic_library
       end
 
       # @return [Library]
-      def orphan_library
-        @orphan_library ||= Solargraph::Library.new
+      def generic_library
+        @generic_library ||= Solargraph::Library.new
       end
 
       # @return [Diagnoser]
@@ -589,11 +649,6 @@ module Solargraph
       # @return [Cataloger]
       def cataloger
         @cataloger ||= Cataloger.new(self)
-      end
-
-      def unsafe_open? uri
-        library = library_for(uri)
-        library.open?(uri_to_file(uri))
       end
 
       def requests

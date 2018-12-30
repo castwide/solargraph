@@ -85,6 +85,7 @@ describe Solargraph::LanguageServer::Host do
     library = double(:Library)
     allow(library).to receive(:diagnose).and_raise(Solargraph::DiagnosticsError)
     allow(library).to receive(:contain?).and_return(true)
+    allow(library).to receive(:attach)
     # @todo Smelly instance variable access
     host.instance_variable_set(:@libraries, [library])
     expect {
@@ -129,5 +130,28 @@ describe Solargraph::LanguageServer::Host do
     expect{
       host.document_symbols(file_uri)
     }.not_to raise_error
+  end
+
+  describe "Host variations" do
+    before :each do
+      @host = Solargraph::LanguageServer::Host.new
+    end
+
+    after :each do
+      @host.stop
+    end
+
+    it "creates a library for a file without a workspace" do
+      @host.open('file:///file.rb', 'class Foo; end', 1)
+      symbols = @host.document_symbols('file:///file.rb')
+      expect(symbols).not_to be_empty
+    end
+
+    it "opens a file outside of prepared libraries" do
+      @host.prepare(File.absolute_path(File.join('spec', 'fixtures', 'workspace')))
+      @host.open('file:///file.rb', 'class Foo; end', 1)
+      symbols = @host.document_symbols('file:///file.rb')
+      expect(symbols).not_to be_empty
+    end
   end
 end
