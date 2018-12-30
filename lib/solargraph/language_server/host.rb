@@ -156,6 +156,7 @@ module Solargraph
       # @param uri [String]
       # @return [void]
       def close uri
+        logger.info "Closing #{uri}"
         sources.close uri
         diagnoser.schedule uri
       end
@@ -163,20 +164,27 @@ module Solargraph
       # @param uri [String]
       # @return [void]
       def diagnose uri
-        logger.info "Diagnosing #{uri}"
-        library = library_for(uri)
-        begin
-          results = library.diagnose uri_to_file(uri)
-          send_notification "textDocument/publishDiagnostics", {
+        if sources.include?(uri)
+          logger.info "Diagnosing #{uri}"
+          library = library_for(uri)
+          begin
+            results = library.diagnose uri_to_file(uri)
+            send_notification "textDocument/publishDiagnostics", {
+              uri: uri,
+              diagnostics: results
+            }
+          rescue DiagnosticsError => e
+            logger.warn "Error in diagnostics: #{e.message}"
+            options['diagnostics'] = false
+            send_notification 'window/showMessage', {
+              type: LanguageServer::MessageTypes::ERROR,
+              message: "Error in diagnostics: #{e.message}"
+            }
+          end
+        else
+          send_notification 'textDocument/publishDiagnostics', {
             uri: uri,
-            diagnostics: results
-          }
-        rescue DiagnosticsError => e
-          logger.warn "Error in diagnostics: #{e.message}"
-          options['diagnostics'] = false
-          send_notification 'window/showMessage', {
-            type: LanguageServer::MessageTypes::ERROR,
-            message: "Error in diagnostics: #{e.message}"
+            diagnostics: []
           }
         end
       end
