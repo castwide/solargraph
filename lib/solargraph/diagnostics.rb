@@ -6,6 +6,7 @@ module Solargraph
     autoload :Base,            'solargraph/diagnostics/base'
     autoload :Severities,      'solargraph/diagnostics/severities'
     autoload :Rubocop,         'solargraph/diagnostics/rubocop'
+    autoload :RubocopHelpers,  'solargraph/diagnostics/rubocop_helpers'
     autoload :RequireNotFound, 'solargraph/diagnostics/require_not_found'
     autoload :TypeNotDefined,  'solargraph/diagnostics/type_not_defined'
     autoload :UpdateErrors,    'solargraph/diagnostics/update_errors'

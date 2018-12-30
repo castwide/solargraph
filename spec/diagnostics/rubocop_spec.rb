@@ -17,4 +17,13 @@ describe Solargraph::Diagnostics::Rubocop do
     result = rubocop.diagnose(@source, @api_map)
     expect(result).to be_a(Array)
   end
+
+  it "handles validation errors" do
+    file = File.realpath(File.join('spec', 'fixtures', 'rubocop-validation-error', 'app.rb'))
+    source = Solargraph::Source.load(file)
+    rubocop = Solargraph::Diagnostics::Rubocop.new
+    expect {
+      rubocop.diagnose(source, nil)
+    }.to raise_error(Solargraph::DiagnosticsError)
+  end
 end
