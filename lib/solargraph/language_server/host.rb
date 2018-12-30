@@ -100,9 +100,6 @@ module Solargraph
       # @param uri [String] The file uri.
       # @return [Boolean] True if a library accepted the file.
       def create uri
-        # library = library_for(uri)
-        # filename = uri_to_file(uri)
-        # result = library.create_from_disk(filename)
         filename = uri_to_file(uri)
         result = false
         libraries.each do |lib|
@@ -116,9 +113,6 @@ module Solargraph
       #
       # @param uri [String] The file uri.
       def delete uri
-        # library = library_for(uri)
-        # filename = uri_to_file(uri)
-        # library.delete filename
         sources.close uri
         filename = uri_to_file(uri)
         libraries.each do |lib|
@@ -136,11 +130,7 @@ module Solargraph
       # @param text [String] The contents of the file.
       # @param version [Integer] A version number.
       def open uri, text, version
-        # library = library_for(uri)
-        # library.open uri_to_file(uri), text, version
-        # @todo Deprecate the above
         src = sources.open(uri, text, version)
-        # @todo Merge the source with applicable libraries
         libraries.each do |lib|
           lib.merge src
         end
@@ -158,7 +148,6 @@ module Solargraph
       # @param uri [String]
       # @return [Boolean]
       def open? uri
-        # unsafe_open?(uri)
         sources.include? uri
       end
 
@@ -167,9 +156,6 @@ module Solargraph
       # @param uri [String]
       # @return [void]
       def close uri
-        library = library_for(uri)
-        library.close uri_to_file(uri)
-        # @todo Deprecate the above
         sources.close uri
         diagnoser.schedule uri
       end
@@ -201,11 +187,6 @@ module Solargraph
       # @param params [Hash]
       # @return [void]
       def change params
-        # library = library_for(params['textDocument']['uri'])
-        # updater = generate_updater(params)
-        # library.update updater
-        # cataloger.ping(library)
-        # diagnoser.schedule params['textDocument']['uri']
         updater = generate_updater(params)
         src = sources.update(params['textDocument']['uri'], updater)
         libraries.each do |lib|
@@ -280,10 +261,6 @@ module Solargraph
         # @param lib [Library]
         libraries.delete_if do |lib|
           next false if lib.workspace.directory != directory
-          # @todo Since we're using Sources, this might not be necessary
-          # lib.open_sources.each do |src|
-          #   generic_library.open(src.filename, src.code, src.version)
-          # end
           true
         end
       end
