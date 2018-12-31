@@ -108,7 +108,7 @@ module Solargraph
         #
         # @param ver [String] The version number (best match is default)
         # @return [String] The path to the yardoc
-        def yard_stdlib_file(ver = best_match)
+        def yardoc_stdlib_file(ver = best_match)
           raise ArgumentError, "Invalid core yardoc version #{ver}" unless valid?(ver)
           File.join(cache_dir, ver, 'yardoc-stdlib')
         end

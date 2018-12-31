@@ -10,7 +10,7 @@ module Solargraph
     autoload :CoreGen,  'solargraph/yard_map/core_gen'
 
     CoreDocs.require_minimum
-    @@stdlib_yardoc = CoreDocs.yard_stdlib_file
+    @@stdlib_yardoc = CoreDocs.yardoc_stdlib_file
     @@stdlib_paths = {}
     YARD::Registry.load! @@stdlib_yardoc
     YARD::Registry.all(:class, :module).each do |ns|
