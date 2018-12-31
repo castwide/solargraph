@@ -1,5 +1,6 @@
 require 'fileutils'
 require 'tmpdir'
+require 'pathname'
 
 module Solargraph
   class YardMap
@@ -9,9 +10,9 @@ module Solargraph
           FileUtils.mkdir_p dest_dir
           Dir.chdir(ruby_dir) do
             `yardoc -b #{File.join(dest_dir, 'yardoc')} -n *.c`
-            raise 'An error occurred generating the core yardoc.' unless $?.zero?
+            raise 'An error occurred generating the core yardoc.' unless $?.success?
             `yardoc -b #{File.join(dest_dir, 'yardoc-stdlib')} -n lib ext`
-            raise 'An error occurred generating the stdlib yardoc.' unless $?.zero?
+            raise 'An error occurred generating the stdlib yardoc.' unless $?.success?
           end
         end
 
@@ -19,11 +20,12 @@ module Solargraph
           Dir.mktmpdir do |tmp|
             zip_name += '.tar.gz' unless zip_name.end_with?('.tar.gz')
             base_name = zip_name[0..-8]
+			path_name = Pathname.new(Dir.pwd).join(base_name).to_s
             generate_core ruby_dir, tmp
-            `tar -cf #{base_name}.tar #{tmp}/*`
-            raise 'An error occurred generating the documentation tar.' unless $?.zero?
-            `gzip #{base_name}.tar`
-            raise 'An error occurred generating the documentation gzip.' unless $?.zero?
+            `cd #{tmp} && tar -cf #{path_name}.tar *`
+            raise 'An error occurred generating the documentation tar.' unless $?.success?
+            `gzip #{path_name}.tar`
+            raise 'An error occurred generating the documentation gzip.' unless $?.success?
           end
         end
       end
