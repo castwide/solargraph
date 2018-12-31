@@ -158,4 +158,24 @@ describe Solargraph::Source do
     expect(source.node).to be_nil
     expect(source.parsed?).to be(false)
   end
+
+  it "finds foldable ranges" do
+    source = Solargraph::Source.load_string(%(
+=begin
+Range 1
+=end
+def range_2
+  x = y
+  puts z
+end
+# Range 3.1
+# Range 3.2
+# Range 3.3
+a = b
+# Range 4.1
+# Range 4.2
+    ))
+    source.folding_ranges
+    expect(source.folding_ranges.length).to eq(3)
+  end
 end

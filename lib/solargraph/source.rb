@@ -219,7 +219,7 @@ module Solargraph
       @folding_ranges ||= begin
         result = []
         inner_folding_ranges node, result
-        result.concat comment_block_ranges
+        result.concat foldable_comment_block_ranges
         result
       end
     end
@@ -293,7 +293,11 @@ module Solargraph
       end
     end
 
-    def comment_block_ranges
+    # Get an array of foldable comment block ranges. Blocks are excluded if
+    # they are less than 3 lines long.
+    #
+    # @return [Array<Range>]
+    def foldable_comment_block_ranges
       result = []
       grouped = []
       # @param cmnt [Parser::Source::Comment]
@@ -308,9 +312,13 @@ module Solargraph
             grouped = [cmnt]
           end
         else
-          result.push Range.from_to(grouped.first.loc.expression.line, 0, grouped.last.loc.expression.line, 0) unless grouped.empty?
+          unless grouped.length < 3
+            result.push Range.from_to(grouped.first.loc.expression.line, 0, grouped.last.loc.expression.line, 0)
+            grouped.clear
+          end
         end
       end
+      result.push Range.from_to(grouped.first.loc.expression.line, 0, grouped.last.loc.expression.line, 0) unless grouped.length < 3
       result
     end
 
