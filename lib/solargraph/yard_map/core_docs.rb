@@ -8,7 +8,10 @@ module Solargraph
     # Tools for managing core documentation.
     #
     module CoreDocs
+      # The URL for downloading core documentation
       SOURCE = 'https://solargraph.org/download'
+
+      # The default core documentation version
       DEFAULT = '2.2.2'
 
       class << self

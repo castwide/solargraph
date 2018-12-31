@@ -3,12 +3,14 @@ require 'tmpdir'
 
 describe Solargraph::YardMap::CoreDocs do
   before :all do
+    # Override the cache for testing
     @tmp_dir = Dir.mktmpdir
     @orig_env = ENV['SOLARGRAPH_CACHE']
     ENV['SOLARGRAPH_CACHE'] = @tmp_dir
   end
 
   after :all do
+    # Delete the temp cache and reset
     FileUtils.rm_rf @tmp_dir, secure: true
     ENV['SOLARGRAPH_CACHE'] = @orig_env
   end
