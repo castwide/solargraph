@@ -4,6 +4,8 @@ module Solargraph
       # A common module for running language servers in Backport.
       #
       module Adapter
+        @@timer_is_running = false
+
         def opening
           @host = Solargraph::LanguageServer::Host.new
           @data_reader = Solargraph::LanguageServer::Transport::DataReader.new
@@ -13,13 +15,6 @@ module Solargraph
           start_timers
         end
 
-        def process request
-          message = @host.start(request)
-          message.send_response
-          tmp = @host.flush
-          write tmp unless tmp.empty?
-        end
-
         # @param data [String]
         def sending data
           @data_reader.receive data
@@ -27,16 +22,27 @@ module Solargraph
 
         private
 
+        # @param request [String]
+        # @return [void]
+        def process request
+          message = @host.start(request)
+          message.send_response
+          tmp = @host.flush
+          write tmp unless tmp.empty?
+        end
+
+        # @return [void]
         def start_timers
+          return if @@timer_is_running
+          @@timer_is_running = true
           Backport.prepare_interval 0.1 do
             tmp = @host.flush
             write tmp unless tmp.empty?
-            if @host.stopped?
-              if @host.options['transport'] == 'external'
-                @host = Solargraph::LanguageServer::Host.new
-              else
-                Backport.stop
-              end
+            next unless @host.stopped?
+            if @host.options['transport'] == 'external'
+              @host = Solargraph::LanguageServer::Host.new
+            else
+              Backport.stop
             end
           end
         end
