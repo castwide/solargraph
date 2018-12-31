@@ -53,7 +53,7 @@ module Solargraph
     # @param filename [String]
     # @return [Boolean] True if the source was removed from the workspace
     def remove filename
-      return false unless source_hash.has_key?(filename)
+      return false unless source_hash.key?(filename)
       source_hash.delete filename
       true
     end

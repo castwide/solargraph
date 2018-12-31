@@ -116,7 +116,8 @@ module Solargraph
         sources.close uri
         filename = uri_to_file(uri)
         libraries.each do |lib|
-          lib.delete filename
+          # lib.delete filename
+          lib.detach filename
         end
         send_notification "textDocument/publishDiagnostics", {
           uri: uri,
