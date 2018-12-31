@@ -16,6 +16,8 @@ module Solargraph
           @libraries ||= []
         end
 
+        # Find the best libary match for the given URI.
+        #
         # @param uri [String]
         # @return [Library]
         def library_for uri
@@ -24,12 +26,20 @@ module Solargraph
             generic_library_for(uri)
         end
 
+        # Find an explicit library match for the given URI. An explicit match
+        # means the libary already contains the file.
+        #
+        # If a matching library is found, the source corresponding to the URI
+        # gets attached to it.
+        #
+        # @raise [FileNotFoundError] if the source could not be attached.
+        #
         # @param uri [String]
         # @return [Library, nil]
         def explicit_library_for uri
           filename = UriHelpers.uri_to_file(uri)
           libraries.each do |lib|
-            if lib.contain?(filename) #|| lib.open?(filename)
+            if lib.contain?(filename)
               lib.attach sources.find(uri) if sources.include?(uri)
               return lib
             end
@@ -37,13 +47,22 @@ module Solargraph
           nil
         end
 
+        # Find an implicit library match for the given URI. An implicit match
+        # means the libary either has the file already attached (open) or it's
+        # a child of the library's workspace directory.
+        #
+        # If a matching library is found, the source corresponding to the URI
+        # gets attached to it.
+        #
+        # @raise [FileNotFoundError] if the source could not be attached.
+        #
         # @param uri [String]
         # @return [Library, nil]
         def implicit_library_for uri
           filename = UriHelpers.uri_to_file(uri)
           libraries.each do |lib|
-            # return lib if filename.start_with?(lib.workspace.directory)
-            if lib.open?(filename) || filename.start_with?(lib.workspace.directory)
+            return lib if lib.open?(filename)
+            if filename.start_with?(lib.workspace.directory)
               lib.attach sources.find(uri)
               return lib
             end
@@ -51,6 +70,11 @@ module Solargraph
           nil
         end
 
+        # Get a generic library for the given URI and attach the corresponding
+        # source.
+        #
+        # @raise [FileNotFoundError] if the source could not be attached.
+        #
         # @param uri [String]
         # @return [Library]
         def generic_library_for uri
