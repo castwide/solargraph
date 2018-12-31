@@ -16,7 +16,9 @@ module Solargraph
         #
         # @return [String]
         def cache_dir
-          @cache_dir ||= ENV["SOLARGRAPH_CACHE"] || File.join(Dir.home, '.solargraph', 'cache')
+          # The directory is not stored in a variable so it can be overridden
+          # in specs.
+          ENV['SOLARGRAPH_CACHE'] || File.join(Dir.home, '.solargraph', 'cache')
         end
 
         # Ensure installation of minimum documentation.
