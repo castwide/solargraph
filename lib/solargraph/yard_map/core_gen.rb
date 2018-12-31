@@ -16,7 +16,7 @@ module Solargraph
         def generate_core ruby_dir, dest_dir
           FileUtils.mkdir_p dest_dir
           Dir.chdir(ruby_dir) do
-            `yardoc -b #{File.join(dest_dir, 'yardoc')} -n *.c`
+            `yardoc --plugin coregen -b #{File.join(dest_dir, 'yardoc')} -n *.c`
             raise 'An error occurred generating the core yardoc.' unless $?.success?
             `yardoc -b #{File.join(dest_dir, 'yardoc-stdlib')} -n lib ext`
             raise 'An error occurred generating the stdlib yardoc.' unless $?.success?
