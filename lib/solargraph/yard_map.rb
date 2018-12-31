@@ -7,6 +7,7 @@ module Solargraph
   class YardMap
     autoload :Cache,    'solargraph/yard_map/cache'
     autoload :CoreDocs, 'solargraph/yard_map/core_docs'
+    autoload :CoreGen,  'solargraph/yard_map/core_gen'
 
     CoreDocs.require_minimum
     @@stdlib_yardoc = CoreDocs.yard_stdlib_file
