@@ -20,6 +20,11 @@ module Solargraph
       @catalog_mutex = Mutex.new
     end
 
+    def inspect
+      # Let's not deal with insane data dumps in spec failures
+      to_s
+    end
+
     # True if the ApiMap is up to date with the library's workspace and open
     # files.
     #
