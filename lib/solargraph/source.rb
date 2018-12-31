@@ -308,14 +308,14 @@ module Solargraph
           if grouped.empty? || cmnt.loc.expression.line == grouped.last.loc.expression.line + 1
             grouped.push cmnt
           else
-            result.push Range.from_to(grouped.first.loc.expression.line, 0, grouped.last.loc.expression.line, 0) unless grouped.empty?
+            result.push Range.from_to(grouped.first.loc.expression.line, 0, grouped.last.loc.expression.line, 0) unless grouped.length < 3
             grouped = [cmnt]
           end
         else
           unless grouped.length < 3
             result.push Range.from_to(grouped.first.loc.expression.line, 0, grouped.last.loc.expression.line, 0)
-            grouped.clear
           end
+          grouped.clear
         end
       end
       result.push Range.from_to(grouped.first.loc.expression.line, 0, grouped.last.loc.expression.line, 0) unless grouped.length < 3
