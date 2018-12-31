@@ -9,24 +9,31 @@ module Solargraph
     #
     module CoreDocs
       SOURCE = 'https://solargraph.org/download'
+      DEFAULT = '2.2.2'
 
       class << self
+        # The directory where core documentation is installed.
+        #
+        # @return [String]
         def cache_dir
           @cache_dir ||= File.join(Dir.home, '.solargraph', 'cache')
         end
 
         # Ensure installation of minimum documentation.
         #
+        # @return [void]
         def require_minimum
           return unless best_match.nil?
           FileUtils.mkdir_p cache_dir
-          version_dir = File.join(cache_dir, '2.2.2')
-          unless File.exist?(version_dir)
-            FileUtils.cp File.join(Solargraph::YARDOC_PATH, '2.2.2.tar.gz'), cache_dir
-            install_archive File.join(cache_dir, '2.2.2.tar.gz')
-          end
+          FileUtils.cp File.join(Solargraph::YARDOC_PATH, "#{DEFAULT}.tar.gz"), cache_dir
+          install_archive File.join(cache_dir, "#{DEFAULT}.tar.gz")
         end
 
+        # True if core documentation is installed for the specified version
+        # number.
+        #
+        # @param ver [String] The version number to check
+        # @return [Boolean]
         def valid?(ver)
           dir = File.join(cache_dir, ver)
           return false unless File.directory?(dir)
@@ -35,6 +42,10 @@ module Solargraph
           true
         end
 
+        # Get a list of version numbers for currently installed core
+        # documentation.
+        #
+        # @return [Array<String>] The installed version numbers
         def versions
           dirs = Dir[File.join(cache_dir, '*')].map{|d| File.basename(d)}
           dirs.keep_if{|d| valid?(d)}
@@ -42,22 +53,35 @@ module Solargraph
           dirs
         end
 
+        # Get the version number of the installed core documentation that is
+        # the closest match for the current Ruby version.
+        #
+        # @return [String] The closest match
         def best_match
-          available = versions
-          available.each do |v|
-            return v if Gem::Version.new(v) <= Gem::Version.new(RUBY_VERSION)
+          avail = versions
+          cur = Gem::Version.new(RUBY_VERSION)
+          avail.each do |v|
+            return v if Gem::Version.new(v) <= cur
           end
-          return available.last
+          avail.last
         end
 
+        # Get a list of core documentation versions that are available for
+        # download.
+        #
+        # @return [Array<String>] The version numbers
         def available
           uri = URI.parse("#{SOURCE}/versions.json")
           response = Net::HTTP.get_response(uri)
           obj = JSON.parse(response.body)
-          raise SourceNotAvailableError.new("Error connecting to #{SOURCE}") unless obj['status'] == 'ok'
+          raise SourceNotAvailableError, "Error connecting to #{SOURCE}" unless obj['status'] == 'ok'
           obj['cores']
         end
 
+        # Get the version number of core documentation available for download
+        # that is the closest match for the current Ruby version.
+        #
+        # @return [String] The version number of the best match
         def best_download
           rv = Gem::Version.new(RUBY_VERSION)
           available.each do |ver|
@@ -66,16 +90,28 @@ module Solargraph
           obj['cores'].last
         end
 
+        # Get the path to a yardoc file for Ruby core documentation.
+        #
+        # @param ver [String] The version number (best match is default)
+        # @return [String] The path to the yardoc
         def yardoc_file(ver = best_match)
-          raise ArgumentError.new("Invalid core yardoc version #{ver}") unless valid?(ver)
+          raise ArgumentError, "Invalid core yardoc version #{ver}" unless valid?(ver)
           File.join(cache_dir, ver, 'yardoc')
         end
 
+        # Get the path to a yardoc file for Ruby stdlib documentation.
+        #
+        # @param ver [String] The version number (best match is default)
+        # @return [String] The path to the yardoc
         def yard_stdlib_file(ver = best_match)
-          raise ArgumentError.new("Invalid core yardoc version #{ver}") unless valid?(ver)
+          raise ArgumentError, "Invalid core yardoc version #{ver}" unless valid?(ver)
           File.join(cache_dir, ver, 'yardoc-stdlib')
         end
 
+        # Download the specified version of core documentation.
+        #
+        # @param version [String]
+        # @return [void]
         def download version
           FileUtils.mkdir_p cache_dir
           uri = URI.parse("#{SOURCE}/#{version}.tar.gz")
@@ -85,6 +121,9 @@ module Solargraph
           install_archive zipfile
         end
 
+        # Reset the core documentation cache to the minimum requirement.
+        #
+        # @return [void]
         def clear
           FileUtils.rm_rf cache_dir, secure: true
           require_minimum
@@ -92,6 +131,10 @@ module Solargraph
 
         private
 
+        # Extract the specified archive to the core cache directory.
+        #
+        # @param filename [String]
+        # @return [void]
         def install_archive filename
           tar_extract = Gem::Package::TarReader.new(Zlib::GzipReader.open(filename))
           tar_extract.rewind
