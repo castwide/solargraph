@@ -27,7 +27,7 @@ module Solargraph
         end
 
         # Find an explicit library match for the given URI. An explicit match
-        # means the libary already contains the file.
+        # means the libary's workspace includes the file.
         #
         # If a matching library is found, the source corresponding to the URI
         # gets attached to it.
@@ -48,8 +48,8 @@ module Solargraph
         end
 
         # Find an implicit library match for the given URI. An implicit match
-        # means the libary either has the file already attached (open) or it's
-        # a child of the library's workspace directory.
+        # means the file is located inside the library's workspace directory,
+        # regardless of whether the workspace is configured to include it.
         #
         # If a matching library is found, the source corresponding to the URI
         # gets attached to it.
@@ -61,7 +61,9 @@ module Solargraph
         def implicit_library_for uri
           filename = UriHelpers.uri_to_file(uri)
           libraries.each do |lib|
-            return lib if lib.open?(filename)
+            # @todo We probably shouldn't depend on attachments to select
+            #   a library.
+            # return lib if lib.open?(filename)
             if filename.start_with?(lib.workspace.directory)
               lib.attach sources.find(uri)
               return lib
