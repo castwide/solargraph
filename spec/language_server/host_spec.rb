@@ -20,7 +20,7 @@ describe Solargraph::LanguageServer::Host do
       done_somethings += 1 if response == 'Do something'
     end
     expect(host.pending_requests.length).to eq(1)
-    host.start({
+    host.receive({
       'id' => host.pending_requests.first,
       'result' => 'Do something'
     })

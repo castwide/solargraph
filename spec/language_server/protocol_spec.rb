@@ -23,7 +23,7 @@ class Protocol
       'params' => params
     }
     @message_id += 1
-    message = @host.start msg
+    message = @host.receive msg
     message.send_response
     @data_reader.receive @host.flush
   end

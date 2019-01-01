@@ -73,7 +73,7 @@ module Solargraph
       #
       # @param request [Hash] The contents of the message.
       # @return [Solargraph::LanguageServer::Message::Base] The message handler.
-      def start request
+      def receive request
         if request['method']
           logger.info "Server received #{request['method']}"
           logger.debug request

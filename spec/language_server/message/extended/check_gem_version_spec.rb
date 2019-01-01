@@ -38,7 +38,7 @@ describe Solargraph::LanguageServer::Message::Extended::CheckGemVersion do
         "id" => response['id'],
         "result" => response['params']['actions'].first
       }
-      host.start action
+      host.receive action
     }.not_to raise_error
   end
 end
