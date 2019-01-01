@@ -1,7 +1,10 @@
 module Solargraph
   module LanguageServer
     class Host
+      # An asynchronous diagnosis reporter.
+      #
       class Diagnoser
+        # @param host [Host]
         def initialize host
           @host = host
           @mutex = Mutex.new
@@ -39,20 +42,26 @@ module Solargraph
           @stopped = false
           Thread.new do
             until stopped?
+              tick
               sleep 0.1
-              next if queue.empty? || host.synchronizing?
-              if !host.options['diagnostics']
-                mutex.synchronize { queue.clear }
-                next
-              end
-              current = nil
-              mutex.synchronize { current = queue.shift }
-              next if queue.include?(current)
-              host.diagnose current
-              sleep 0.5
             end
           end
           self
+        end
+
+        # Perform diagnoses.
+        #
+        # @return [void]
+        def tick
+          return if queue.empty? || host.synchronizing?
+          if !host.options['diagnostics']
+            mutex.synchronize { queue.clear }
+            return
+          end
+          current = nil
+          mutex.synchronize { current = queue.shift }
+          return if queue.include?(current)
+          host.diagnose current
         end
 
         private
