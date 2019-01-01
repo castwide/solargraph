@@ -591,13 +591,6 @@ module Solargraph
         }
       end
 
-      # Catalog the library.
-      #
-      # @return [void]
-      def catalog lib
-        lib.catalog
-      end
-
       # @param uri [String]
       # @return [Array<Range>]
       def folding_ranges uri

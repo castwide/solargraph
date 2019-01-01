@@ -59,8 +59,7 @@ module Solargraph
           return if pings.empty?
           mutex.synchronize do
             lib = pings.shift
-            break if pings.include?(lib)
-            host.catalog lib
+            lib.catalog unless pings.include?(lib)
           end
         end
 
