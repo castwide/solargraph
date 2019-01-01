@@ -92,8 +92,8 @@ module Solargraph
           begin
             message.process
           rescue Exception => e
-            STDERR.puts e.message
-            STDERR.puts e.backtrace
+            logger.warn "Error processing request: [#{e.class}] #{e.message}"
+            logger.debug e.backtrace
             message.set_error Solargraph::LanguageServer::ErrorCodes::INTERNAL_ERROR, "[#{e.class}] #{e.message}"
           end
           message
@@ -102,7 +102,8 @@ module Solargraph
           requests[request['id']].process(request['result'])
           requests.delete request['id']
         else
-          STDERR.puts "Invalid message received."
+          logger.warn "Invalid message received."
+          logger.debug request
         end
       end
 
@@ -255,17 +256,13 @@ module Solargraph
         path = normalize_separators(directory) unless directory.nil?
         begin
           lib = Solargraph::Library.load(path, name)
+          libraries.push lib
         rescue WorkspaceTooLargeError => e
           send_notification 'window/showMessage', {
             'type' => Solargraph::LanguageServer::MessageTypes::WARNING,
             'message' => e.message
           }
-          lib = Solargraph::Library.new('', name)
         end
-        libraries.push lib
-        # @todo Asynchronous processes are optional. Use Host#start to run them.
-        # diagnoser.start
-        # cataloger.start
       end
 
       # Prepare multiple folders.

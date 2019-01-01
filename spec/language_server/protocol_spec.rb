@@ -28,11 +28,19 @@ class Protocol
     message.send_response
     @data_reader.receive @host.flush
   end
+
+  def stop
+    @host.stop
+  end
 end
 
 describe Protocol do
   before :all do
     @protocol = Protocol.new(Solargraph::LanguageServer::Host.new)
+  end
+
+  after :all do
+    @protocol.stop
   end
 
   it "handles initialize" do

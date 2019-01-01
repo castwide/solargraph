@@ -172,6 +172,40 @@ describe Solargraph::LanguageServer::Host do
     host.change params
   end
 
+  it "responds with empty diagnostics for unopened files" do
+    host = Solargraph::LanguageServer::Host.new
+    host.diagnose 'file:///file.rb'
+    response = host.flush
+    # @todo Quick and dirty hack to get the data
+    json = JSON.parse(response.lines.last)
+    expect(json['method']).to eq('textDocument/publishDiagnostics')
+    expect(json['params']['diagnostics']).to be_empty
+  end
+
+  it "rescues runtime errors from messages" do
+    host = Solargraph::LanguageServer::Host.new
+    message_class = Class.new(Solargraph::LanguageServer::Message::Base) do
+      def process
+        raise RuntimeError, 'Always raise an error from this message'
+      end
+    end
+    Solargraph::LanguageServer::Message.register('raiseRuntimeError', message_class)
+    expect {
+      host.receive({
+        'id' => 1,
+        'method' => 'raiseRuntimeError',
+        'params' => {}
+      })
+    }.not_to raise_error
+  end
+
+  it "ignores invalid messages" do
+    host = Solargraph::LanguageServer::Host.new
+    expect {
+      host.receive({ 'bad' => 'message' })
+    }.not_to raise_error
+  end
+
   describe "Workspace variations" do
     before :each do
       @host = Solargraph::LanguageServer::Host.new
