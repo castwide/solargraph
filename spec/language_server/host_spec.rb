@@ -134,7 +134,43 @@ describe Solargraph::LanguageServer::Host do
     }.not_to raise_error
   end
 
-  describe "Host variations" do
+  it "pings the cataloger for library changes" do
+    host = Solargraph::LanguageServer::Host.new
+    dir = File.absolute_path('spec/fixtures/workspace')
+    file = File.join(dir, 'app.rb')
+    file_uri = Solargraph::LanguageServer::UriHelpers.uri_to_file(file)
+    host.prepare dir
+    host.open file_uri, File.read(file), 0
+    host.stop
+    params = {
+      'textDocument' => {
+        'uri' => file_uri,
+        'version' => 1
+      },
+      'contentChanges' => [
+        {
+          'range' => {
+            'start' => {
+              'line' => 2,
+              'character' => 0
+            },
+            'end' => {
+              'line' => 2,
+              'character' => 0
+            }
+          },
+          'text' => ';'
+        }
+      ]
+    }
+    cataloger = double()
+    # @todo Smelly instance variable access
+    host.instance_variable_set(:@cataloger, cataloger)
+    expect(cataloger).to receive(:ping)
+    host.change params
+  end
+
+  describe "Workspace variations" do
     before :each do
       @host = Solargraph::LanguageServer::Host.new
     end

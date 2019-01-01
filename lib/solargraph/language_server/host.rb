@@ -202,6 +202,7 @@ module Solargraph
         src = sources.update(params['textDocument']['uri'], updater)
         libraries.each do |lib|
           lib.merge src
+          cataloger.ping(lib) if lib.contain?(src.filename) || lib.open?(src.filename)
         end
         diagnoser.schedule params['textDocument']['uri']
       end
