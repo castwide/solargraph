@@ -8,6 +8,7 @@ class Protocol
 
   def initialize host
     @host = host
+    @host.start
     @data_reader = Solargraph::LanguageServer::Transport::DataReader.new
     @data_reader.set_message_handler do |message|
       @response = message

@@ -23,10 +23,20 @@ module Solargraph
         @register_semaphore = Mutex.new
         @cancel = []
         @buffer = ''
-        @stopped = false
+        @stopped = true
         @next_request_id = 0
         @dynamic_capabilities = Set.new
         @registered_capabilities = Set.new
+      end
+
+      # Start asynchronous process handling.
+      #
+      # @return [void]
+      def start
+        return unless stopped?
+        @stopped = false
+        diagnoser.start
+        cataloger.start
       end
 
       # Update the configuration options with the provided hash.
@@ -64,6 +74,7 @@ module Solargraph
       # Delete the specified ID from the list of cancelled IDs if it exists.
       #
       # @param id [Integer]
+      # @return [void]
       def clear id
         @cancel_semaphore.synchronize { @cancel.delete id }
       end
@@ -114,6 +125,7 @@ module Solargraph
       # Delete the specified file from the library.
       #
       # @param uri [String] The file uri.
+      # @return [void]
       def delete uri
         sources.close uri
         filename = uri_to_file(uri)
@@ -132,6 +144,7 @@ module Solargraph
       # @param uri [String] The file uri.
       # @param text [String] The contents of the file.
       # @param version [Integer] A version number.
+      # @return [void]
       def open uri, text, version
         src = sources.open(uri, text, version)
         libraries.each do |lib|
@@ -250,8 +263,9 @@ module Solargraph
           lib = Solargraph::Library.new('', name)
         end
         libraries.push lib
-        diagnoser.start
-        cataloger.start
+        # @todo Asynchronous processes are optional. Use Host#start to run them.
+        # diagnoser.start
+        # cataloger.start
       end
 
       # Prepare multiple folders.

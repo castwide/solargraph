@@ -64,6 +64,7 @@ describe Solargraph::LanguageServer::Host do
       host.configure({ 'diagnostics' => true })
       file = File.join(dir, 'test.rb')
       File.write(file, "foo = 'foo'")
+      host.start
       host.prepare dir
       uri = Solargraph::LanguageServer::UriHelpers.file_to_uri(file)
       host.open(file, File.read(file), 1)
@@ -71,12 +72,13 @@ describe Solargraph::LanguageServer::Host do
       times = 0
       # @todo Weak timeout for waiting until the diagnostics thread
       #   sends a notification
-      while buffer.empty? and times < 10
+      while buffer.empty? && times < 10
         sleep 1
         times += 1
         buffer = host.flush
       end
       expect(buffer).to include('textDocument/publishDiagnostics')
+      host.stop
     end
   end
 

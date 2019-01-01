@@ -8,6 +8,7 @@ module Solargraph
 
         def opening
           @host = Solargraph::LanguageServer::Host.new
+          @host.start
           @data_reader = Solargraph::LanguageServer::Transport::DataReader.new
           @data_reader.set_message_handler do |message|
             process message
