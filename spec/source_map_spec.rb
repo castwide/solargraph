@@ -9,6 +9,17 @@ describe Solargraph::SourceMap do
     expect(pin.path).to eq('Foo#bar')
   end
 
+  it "queries symbols using fuzzy matching" do
+    map = Solargraph::SourceMap.load_string(%(
+      class FooBar
+        def baz_qux; end
+      end
+    ))
+    expect(map.query_symbols("foo")).to eq(map.document_symbols)
+    expect(map.query_symbols("foobar")).to eq(map.document_symbols)
+    expect(map.query_symbols("bazqux")).to eq(map.document_symbols.select{ |pin_namespace| pin_namespace.name == "baz_qux" })
+  end
+
   it "locates block pins" do
     map = Solargraph::SourceMap.load_string(%(
       class Foo
