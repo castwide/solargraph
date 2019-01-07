@@ -1,7 +1,16 @@
 require 'yard'
 
+module Solargraph
+  # A placeholder for the @!domain directive. It doesn't need to do anything
+  # for yardocs. It's only used for Solargraph API maps.
+  class DomainDirective < YARD::Tags::Directive
+    def call; end
+  end
+end
+
 # Define a @type tag for documenting variables
 YARD::Tags::Library.define_tag("Type", :type, :with_types_and_name)
 # Define a @yieldself tag for documenting block contexts
 YARD::Tags::Library.define_tag("Yieldself", :yieldself, :with_types)
-YARD::Tags::Library.define_directive("domain", YARD::Tags::MacroDirective)
+# Define a @!domain directive for documenting DSLs
+YARD::Tags::Library.define_directive("domain", :with_types, Solargraph::DomainDirective)

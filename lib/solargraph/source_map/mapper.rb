@@ -96,7 +96,7 @@ module Solargraph
           end
         when 'domain'
           namespace = namespace_at(position)
-          namespace.domains.push directive.tag.text
+          namespace.domains.concat directive.tag.types unless directive.tag.types.nil?
         end
       end
 
