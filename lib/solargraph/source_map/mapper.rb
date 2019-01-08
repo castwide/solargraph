@@ -72,7 +72,8 @@ module Solargraph
         when 'method'
           namespace = namespace_at(position)
           gen_src = Solargraph::SourceMap.load_string("def #{directive.tag.name};end")
-          gen_pin = gen_src.pins.last # Method is last pin after root namespace
+          gen_pin = gen_src.pins.select{ |p| p.kind == Pin::METHOD }.first
+          return if gen_pin.nil?
           @pins.push Solargraph::Pin::Method.new(location, namespace.path, gen_pin.name, docstring.all, :instance, :public, gen_pin.parameters, nil)
         when 'attribute'
           namespace = namespace_at(position)
