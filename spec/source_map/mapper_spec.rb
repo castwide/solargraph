@@ -922,4 +922,14 @@ describe Solargraph::SourceMap::Mapper do
     pro = smap.pins.select{|pin| pin.path == 'Foo#pro'}.first
     expect(pro.visibility).to eq(:protected)
   end
+
+  it "ignores errors in method directives" do
+    expect {
+      Solargraph::SourceMap.load_string(%[
+        class Foo
+          # @!method bar(
+        end
+      ])
+    }.not_to raise_error
+  end
 end
