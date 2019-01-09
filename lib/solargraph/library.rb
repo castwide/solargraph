@@ -334,11 +334,13 @@ module Solargraph
     #
     # @return [void]
     def catalog
-      @catalog_mutex.synchronize do
-        break if synchronized?
-        logger.info "Cataloging #{workspace.directory.empty? ? 'generic workspace' : workspace.directory}"
-        api_map.catalog bundle
-        @synchronized = true
+      Thread.new do
+        @catalog_mutex.synchronize do
+          break if synchronized?
+          logger.info "Cataloging #{workspace.directory.empty? ? 'generic workspace' : workspace.directory}"
+          api_map.catalog bundle
+          @synchronized = true
+        end
       end
     end
 
