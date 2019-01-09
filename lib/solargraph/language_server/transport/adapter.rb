@@ -13,6 +13,11 @@ module Solargraph
           start_timers
         end
 
+        def closing
+          @host.stop
+          Backport.stop unless @host.options['transport'] == 'external'
+        end
+
         def process request
           message = @host.start(request)
           message.send_response
@@ -28,17 +33,17 @@ module Solargraph
         private
 
         def start_timers
-          Backport.prepare_interval 0.1 do
-            tmp = @host.flush
-            write tmp unless tmp.empty?
-            if @host.stopped?
-              if @host.options['transport'] == 'external'
-                @host = Solargraph::LanguageServer::Host.new
-              else
-                Backport.stop
-              end
-            end
-          end
+          # Backport.prepare_interval 0.1 do
+          #   tmp = @host.flush
+          #   write tmp unless tmp.empty?
+          #   if @host.stopped?
+          #     if @host.options['transport'] == 'external'
+          #       @host = Solargraph::LanguageServer::Host.new
+          #     else
+          #       Backport.stop
+          #     end
+          #   end
+          # end
         end
       end
     end
