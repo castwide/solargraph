@@ -13,7 +13,18 @@ module Solargraph
           @data_reader.set_message_handler do |message|
             process message
           end
-          start_timers
+        end
+
+        def closing
+          @host.stop
+          Backport.stop unless @host.options['transport'] == 'external'
+        end
+
+        def process request
+          message = @host.start(request)
+          message.send_response
+          tmp = @host.flush
+          write tmp unless tmp.empty?
         end
 
         # @param data [String]
@@ -30,22 +41,6 @@ module Solargraph
           message.send_response
           tmp = @host.flush
           write tmp unless tmp.empty?
-        end
-
-        # @return [void]
-        def start_timers
-          return if @@timer_is_running
-          @@timer_is_running = true
-          Backport.prepare_interval 0.1 do
-            tmp = @host.flush
-            write tmp unless tmp.empty?
-            next unless @host.stopped?
-            if @host.options['transport'] == 'external'
-              @host = Solargraph::LanguageServer::Host.new
-            else
-              Backport.stop
-            end
-          end
         end
       end
     end
