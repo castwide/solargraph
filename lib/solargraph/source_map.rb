@@ -87,7 +87,7 @@ module Solargraph
     # @return [Solargraph::Pin::Base]
     def locate_pin location
       # return nil unless location.start_with?("#{filename}:")
-      pins.select{|pin| pin.location == location}.first
+      pins.select { |pin| pin.location == location }.first
     end
 
     def locate_named_path_pin line, character
@@ -159,8 +159,8 @@ module Solargraph
       found || pins.first
     end
 
-    # @param s1 [String]
-    # @param s2 [String]
+    # @param str1 [String]
+    # @param str2 [String]
     # @return [Boolean]
     def fuzzy_string_match str1, str2
       JaroWinkler.distance(str1, str2) > 0.6
