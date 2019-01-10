@@ -4,13 +4,6 @@ module Solargraph
       module TextDocument
         class Completion < Base
           def process
-            inner_process
-          end
-
-          private
-
-          # @return [void]
-          def inner_process
             filename = uri_to_file(params['textDocument']['uri'])
             line = params['position']['line']
             col = params['position']['character']
