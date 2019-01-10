@@ -8,6 +8,7 @@ module Solargraph
 
         def opening
           @host = Solargraph::LanguageServer::Host.new
+          @host.add_observer self, :update
           @host.start
           @data_reader = Solargraph::LanguageServer::Transport::DataReader.new
           @data_reader.set_message_handler do |message|
@@ -23,6 +24,11 @@ module Solargraph
         # @param data [String]
         def sending data
           @data_reader.receive data
+        end
+
+        def update subject
+          tmp = @host.flush
+          write tmp unless tmp.empty?
         end
 
         private
