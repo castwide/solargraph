@@ -85,7 +85,7 @@ module Solargraph
         cursor += line_length
         line += 1
       end
-      character = 0 if character.nil? and offset == cursor
+      character = 0 if character.nil? and (cursor - offset).between?(0, 1)
       raise InvalidOffsetError if character.nil?
       Position.new(line, character)
     end
