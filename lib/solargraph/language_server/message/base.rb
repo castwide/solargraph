@@ -58,18 +58,22 @@ module Solargraph
 
         # @return [void]
         def send_response
-          unless id.nil? or host.cancel?(id)
-            response = {
-              jsonrpc: "2.0",
-              id: id,
-            }
-            response[:result] = result unless result.nil?
-            response[:error] = error unless error.nil?
-            response[:result] = nil if result.nil? and error.nil?
-            json = response.to_json
-            envelope = "Content-Length: #{json.bytesize}\r\n\r\n#{json}"
-            host.queue envelope
+          return if id.nil?
+          if host.cancel?(id)
+            Solargraph::Logging.logger.info "Cancelled response to #{method}"
+            return
           end
+          Solargraph::Logging.logger.info "Sending response to #{method}"
+          response = {
+            jsonrpc: "2.0",
+            id: id,
+          }
+          response[:result] = result unless result.nil?
+          response[:error] = error unless error.nil?
+          response[:result] = nil if result.nil? and error.nil?
+          json = response.to_json
+          envelope = "Content-Length: #{json.bytesize}\r\n\r\n#{json}"
+          host.queue envelope
           host.clear id
         end
       end
