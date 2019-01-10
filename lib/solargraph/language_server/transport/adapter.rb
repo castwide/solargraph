@@ -20,13 +20,6 @@ module Solargraph
           Backport.stop unless @host.options['transport'] == 'external'
         end
 
-        def process request
-          message = @host.start(request)
-          message.send_response
-          tmp = @host.flush
-          write tmp unless tmp.empty?
-        end
-
         # @param data [String]
         def sending data
           @data_reader.receive data
