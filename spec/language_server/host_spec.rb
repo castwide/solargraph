@@ -89,6 +89,7 @@ describe Solargraph::LanguageServer::Host do
     allow(library).to receive(:contain?).and_return(true)
     allow(library).to receive(:attach)
     allow(library).to receive(:merge)
+    allow(library).to receive(:catalog)
     # @todo Smelly instance variable access
     host.instance_variable_set(:@libraries, [library])
     host.open('file:///test.rb', '', 0)
