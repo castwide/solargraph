@@ -31,6 +31,7 @@ module Solargraph
         # @return [void]
         def process request
           message = @host.receive(request)
+          Solargraph::Logging.logger.info "Sending response to #{request['method']}"
           message.send_response
           tmp = @host.flush
           write tmp unless tmp.empty?

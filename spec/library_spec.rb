@@ -234,6 +234,7 @@ describe Solargraph::Library do
       Other.new.bar
     ), 'file2.rb', 0)
     library.merge src2
+    library.catalog
     locs = library.references_from('file2.rb', 2, 11)
     expect(locs.length).to eq(3)
     expect(locs.select{|l| l.filename == 'file2.rb' && l.range.start.line == 6}).to be_empty
@@ -257,6 +258,7 @@ describe Solargraph::Library do
       end
     ), 'file2.rb', 0)
     library.merge src2
+    library.catalog
     locs = library.references_from('file1.rb', 1, 12, strip: true)
     expect(locs.length).to eq(3)
     locs.each do |l|

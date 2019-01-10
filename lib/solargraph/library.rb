@@ -253,7 +253,10 @@ module Solargraph
       checked = read(filename)
       @synchronized = (checked == @current) if synchronized?
       @current = checked
-      catalog
+      # Cataloging is necessary to avoid FileNotFoundErrors when the file is
+      # not in the workspace. Otherwise it should be safe to defer
+      # synchronization.
+      catalog unless workspace.has_file?(filename)
       @current
     end
 
@@ -334,13 +337,12 @@ module Solargraph
     #
     # @return [void]
     def catalog
-      Thread.new do
-        @catalog_mutex.synchronize do
-          break if synchronized?
-          logger.info "Cataloging #{workspace.directory.empty? ? 'generic workspace' : workspace.directory}"
-          api_map.catalog bundle
-          @synchronized = true
-        end
+      @catalog_mutex.synchronize do
+        break if synchronized?
+        logger.info "Cataloging #{workspace.directory.empty? ? 'generic workspace' : workspace.directory}"
+        api_map.catalog bundle
+        @synchronized = true
+        logger.info "Catalog complete"
       end
     end
 
@@ -370,7 +372,7 @@ module Solargraph
       result = nil
       mutex.synchronize do
         result = workspace.merge(source)
-        @synchronized = result if synchronized?
+        @synchronized = !result if synchronized?
       end
       result
     end
