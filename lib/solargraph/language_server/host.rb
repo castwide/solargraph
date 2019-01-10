@@ -14,7 +14,7 @@ module Solargraph
       autoload :Sources,   'solargraph/language_server/host/sources'
       autoload :Dispatch,  'solargraph/language_server/host/dispatch'
 
-      include Solargraph::LanguageServer::UriHelpers
+      include UriHelpers
       include Logging
       include Dispatch
       include Observable

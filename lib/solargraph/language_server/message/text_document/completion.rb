@@ -39,7 +39,7 @@ module Solargraph
                 items: items
               )
             rescue InvalidOffsetError => e
-              STDERR.puts "Skipping invalid offset: #{filename}, line #{line}, character #{col}"
+              Logging.logger.info "Completion ignored invalid offset: #{filename}, line #{line}, character #{col}"
               set_result empty_result
             end
           end

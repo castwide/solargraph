@@ -27,6 +27,9 @@ module Solargraph::LanguageServer::Message::TextDocument
           value: contents.join("\n\n")
         }
       )
+    rescue InvalidOffsetError
+      Logging.logger.info "Hover ignored invalid offset: #{filename}, line #{line}, character #{col}"
+      set_result nil
     end
   end
 end
