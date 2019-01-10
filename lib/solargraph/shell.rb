@@ -48,34 +48,6 @@ module Solargraph
       end
     end
 
-    desc 'suggest', 'Get code suggestions for the provided input'
-    long_desc <<-LONGDESC
-      Analyze a Ruby file and output a list of code suggestions in JSON format.
-    LONGDESC
-    option :line, type: :numeric, aliases: :l, desc: 'Zero-based line number', required: true
-    option :column, type: :numeric, aliases: [:c, :col], desc: 'Zero-based column number', required: true
-    option :filename, type: :string, aliases: :f, desc: 'File name', required: false
-    def suggest(*filenames)
-      STDERR.puts "WARNING: The `solargraph suggest` command is a candidate for deprecation. It will either change drastically or not exist in a future version."
-      # HACK: The ARGV array needs to be manipulated for ARGF.read to work
-      ARGV.clear
-      ARGV.concat filenames
-      text = ARGF.read
-      filename = options[:filename] || filenames[0]
-      begin
-        code_map = CodeMap.new(code: text, filename: filename)
-        offset = code_map.get_offset(options[:line], options[:column])
-        sugg = code_map.suggest_at(offset, filtered: true)
-        result = { "status" => "ok", "suggestions" => sugg }.to_json
-        STDOUT.puts result
-      rescue Exception => e
-        STDERR.puts e
-        STDERR.puts e.backtrace.join("\n")
-        result = { "status" => "err", "message" => e.message + "\n" + e.backtrace.join("\n") }.to_json
-        STDOUT.puts result
-      end
-    end
-
     desc 'config [DIRECTORY]', 'Create or overwrite a default configuration file'
     option :extensions, type: :boolean, aliases: :e, desc: 'Add installed extensions', default: true
     def config(directory = '.')
