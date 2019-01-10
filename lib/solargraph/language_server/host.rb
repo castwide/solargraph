@@ -93,7 +93,7 @@ module Solargraph
             message.process
           rescue Exception => e
             logger.warn "Error processing request: [#{e.class}] #{e.message}"
-            logger.debug e.backtrace
+            logger.warn e.backtrace
             message.set_error Solargraph::LanguageServer::ErrorCodes::INTERNAL_ERROR, "[#{e.class}] #{e.message}"
           end
           message
@@ -184,6 +184,7 @@ module Solargraph
         if sources.include?(uri)
           logger.info "Diagnosing #{uri}"
           library = library_for(uri)
+          library.catalog
           begin
             results = library.diagnose uri_to_file(uri)
             send_notification "textDocument/publishDiagnostics", {
