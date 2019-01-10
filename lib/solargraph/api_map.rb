@@ -65,25 +65,35 @@ module Solargraph
       new_map_hash = {}
       # Bundle always needs to be merged if it adds or removes sources
       merged = (bundle.sources.length == source_map_hash.values.length)
+      threads = []
       bundle.sources.each do |source|
-        if source_map_hash.has_key?(source.filename)
-          if source_map_hash[source.filename].code == source.code
-            new_map_hash[source.filename] = source_map_hash[source.filename]
-          else
-            map = Solargraph::SourceMap.map(source)
-            if source_map_hash[source.filename].try_merge!(map)
+        # @todo A thread safety issue is possible here. The `new_map_hash` and
+        #   `merged` variables can be accessed by multiple threads. In the
+        #   majority of cases, it should be okay, because each thread should
+        #   operate on a unique `new_map_hash` tuple, and `merged` is just a
+        #   boolean. But if weird things start to happen, this process might
+        #   need a closer look.
+        threads << Thread.new do
+          if source_map_hash.has_key?(source.filename)
+            if source_map_hash[source.filename].code == source.code
               new_map_hash[source.filename] = source_map_hash[source.filename]
             else
-              new_map_hash[source.filename] = map
-              merged = false
+              map = Solargraph::SourceMap.map(source)
+              if source_map_hash[source.filename].try_merge!(map)
+                new_map_hash[source.filename] = source_map_hash[source.filename]
+              else
+                new_map_hash[source.filename] = map
+                merged = false
+              end
             end
+          else
+            map = Solargraph::SourceMap.map(source)
+            new_map_hash[source.filename] = map
+            merged = false
           end
-        else
-          map = Solargraph::SourceMap.map(source)
-          new_map_hash[source.filename] = map
-          merged = false
         end
       end
+      threads.each(&:join)
       return self if merged
       pins = []
       reqs = []
