@@ -86,13 +86,15 @@ module Solargraph
         # Get the version number of core documentation available for download
         # that is the closest match for the current Ruby version.
         #
+        # @param current [String] The version to compare
         # @return [String] The version number of the best match
-        def best_download
-          rv = Gem::Version.new(RUBY_VERSION)
-          available.each do |ver|
+        def best_download current = RUBY_VERSION
+          rv = Gem::Version.new(current)
+          found = available
+          found.each do |ver|
             return ver if Gem::Version.new(ver) <= rv
           end
-          obj['cores'].last
+          found.last
         end
 
         # Get the path to a yardoc file for Ruby core documentation.

@@ -37,6 +37,11 @@ describe Solargraph::YardMap::CoreDocs do
     expect(available).to include(best_match)
   end
 
+  it "finds the best download for future versions" do
+    best_match = Solargraph::YardMap::CoreDocs.best_download('99.99.99')
+    expect(best_match).not_to be_nil
+  end
+
   it "downloads the best match" do
     best_match = Solargraph::YardMap::CoreDocs.best_download
     Solargraph::YardMap::CoreDocs.download best_match
