@@ -11,7 +11,7 @@ module Solargraph
     autoload :SourceToYard, 'solargraph/api_map/source_to_yard'
     autoload :Store,        'solargraph/api_map/store'
 
-    include Solargraph::ApiMap::SourceToYard
+    include SourceToYard
 
     # Get a LiveMap associated with the current workspace.
     #
@@ -67,12 +67,6 @@ module Solargraph
       merged = (bundle.sources.length == source_map_hash.values.length)
       threads = []
       bundle.sources.each do |source|
-        # @todo A thread safety issue is possible here. The `new_map_hash` and
-        #   `merged` variables can be accessed by multiple threads. In the
-        #   majority of cases, it should be okay, because each thread should
-        #   operate on a unique `new_map_hash` tuple, and `merged` is just a
-        #   boolean. But if weird things start to happen, this process might
-        #   need a closer look.
         threads << Thread.new do
           if source_map_hash.has_key?(source.filename)
             if source_map_hash[source.filename].code == source.code
@@ -152,8 +146,7 @@ module Solargraph
     # @param directory [String]
     # @return [ApiMap]
     def self.load directory
-      # @todo How should this work?
-      api_map = self.new #(Solargraph::Workspace.new(directory))
+      api_map = self.new
       workspace = Solargraph::Workspace.new(directory)
       api_map.catalog Bundle.new(workspace: workspace)
       api_map
@@ -230,8 +223,6 @@ module Solargraph
       return qualify(context) if namespace == 'self'
       cached = cache.get_qualified_namespace(namespace, context)
       return cached.clone unless cached.nil?
-      # result = inner_qualify(namespace, context, [])
-      # result = result[2..-1] if !result.nil? && result.start_with?('::')
       if namespace.start_with?('::')
         result = inner_qualify(namespace[2..-1], '', [])
       else
@@ -479,23 +470,17 @@ module Solargraph
     #
     # @return [Hash{String => SourceMap}]
     def source_map_hash
-      @mutex.synchronize {
-        @source_map_hash
-      }
+      @mutex.synchronize { @source_map_hash }
     end
 
     # @return [ApiMap::Store]
     def store
-      @mutex.synchronize {
-        @store
-      }
+      @mutex.synchronize { @store }
     end
 
     # @return [Solargraph::ApiMap::Cache]
     def cache
-      @mutex.synchronize {
-        @cache
-      }
+      @mutex.synchronize { @cache }
     end
 
     # @param fqns [String] A fully qualified namespace
@@ -595,7 +580,6 @@ module Solargraph
       else
         if (root == '')
           return name if store.namespace_exists?(name)
-          # @todo What to do about the @namespace_includes stuff above?
         else
           roots = root.to_s.split('::')
           while roots.length > 0
