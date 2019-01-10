@@ -494,4 +494,26 @@ describe Solargraph::ApiMap do
     pins = api_map.get_methods('MyClass', scope: :class)
     expect(pins.map(&:path)).to include('MyModule#foo')
   end
+
+  it "merges source maps" do
+    source1 = Solargraph::Source.load_string(%(
+      class Foo
+        def bar
+        end
+      end
+    ))
+    source2 = Solargraph::Source.load_string(%(
+      class Foo
+        def bar
+          puts 'hello'
+        end
+      end
+    ))
+    api_map = Solargraph::ApiMap.new
+    api_map.map source1
+    first = api_map.source_map(nil)
+    api_map.map source2
+    second = api_map.source_map(nil)
+    expect(first).to eq(second)
+  end
 end
