@@ -420,9 +420,12 @@ module Solargraph
 
       # @return [void]
       def stop
+        return if @stopped
         @stopped = true
         cataloger.stop
         diagnoser.stop
+        changed
+        notify_observers self
       end
 
       def stopped?
