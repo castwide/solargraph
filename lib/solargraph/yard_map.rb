@@ -80,7 +80,7 @@ module Solargraph
         YARD::Registry.load! y
       end
     rescue Exception => e
-      STDERR.puts "Error loading yardoc '#{y}' #{e.class} #{e.message}"
+      Solargraph::Logging.logger.warn "Error loading yardoc '#{y}' #{e.class} #{e.message}"
       yardocs.delete y
       nil
     end
@@ -253,7 +253,7 @@ module Solargraph
           end
         rescue Gem::LoadError
           # This error probably indicates a bug in an installed gem
-          STDERR.puts "Warning: failed to resolve #{dep.name} gem dependency for #{spec.name}"
+          Solargraph::Logging.logger.warn "Failed to resolve #{dep.name} gem dependency for #{spec.name}"
         end
       end
       result
@@ -267,7 +267,7 @@ module Solargraph
         .map{ |f| File.size(f) }
         .inject(:+)
       if !size.nil? && size > 20_000_000
-        STDERR.puts "Warning: yardoc at #{y} is too large to process (#{size} bytes)"
+        Solargraph::Logging.logger.warn "Yardoc at #{y} is too large to process (#{size} bytes)"
         return []
       end
       result = []

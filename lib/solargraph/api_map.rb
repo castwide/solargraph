@@ -549,7 +549,7 @@ module Solargraph
     # @return [void]
     def require_extensions
       Gem::Specification.all_names.select{|n| n.match(/^solargraph\-[a-z0-9_\-]*?\-ext\-[0-9\.]*$/)}.each do |n|
-        STDERR.puts "Loading extension #{n}"
+        Solargraph::Logging.logger.info "Loading extension #{n}"
         require n.match(/^(solargraph\-[a-z0-9_\-]*?\-ext)\-[0-9\.]*$/)[1]
       end
     end
