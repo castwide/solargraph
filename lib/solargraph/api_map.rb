@@ -40,7 +40,7 @@ module Solargraph
         @store = Store.new(pins + YardMap.new.pins)
         @unresolved_requires = []
       }
-      resolve_method_aliases
+      # resolve_method_aliases
       self
     end
 
@@ -118,7 +118,7 @@ module Solargraph
         @store = new_store
         @unresolved_requires = yard_map.unresolved_requires
       }
-      resolve_method_aliases
+      # resolve_method_aliases
       self
     end
 
@@ -297,8 +297,9 @@ module Solargraph
       #   exist = result.map(&:name)
       #   result.concat live.reject{|p| exist.include?(p.name)}
       # end
-      cache.set_methods(fqns, scope, visibility, deep, result)
-      result
+      resolved = resolve_method_aliases(result)
+      cache.set_methods(fqns, scope, visibility, deep, resolved)
+      resolved
     end
 
     # Get an array of method pins for a complex type.
@@ -372,7 +373,7 @@ module Solargraph
       #   lp = live_map.get_path_pin(path)
       #   result.push lp unless lp.nil?
       # end
-      result
+      resolve_method_aliases(result)
     end
 
     # Get an array of pins that match the specified path.
@@ -637,17 +638,13 @@ module Solargraph
     end
 
     # @return [void]
-    def resolve_method_aliases
-      aliased = false
-      result = pins.map do |pin|
-        next pin unless pin.is_a?(Pin::MethodAlias)
-        origin = get_method_stack(pin.namespace, pin.original, scope: pin.scope).select{|pin| pin.class == Pin::Method}.first
+    def resolve_method_aliases pins
+      pins.map do |pin|
+        next pin unless pin.kind == Pin::METHOD_ALIAS
+        origin = get_method_stack(pin.namespace, pin.original, scope: pin.scope).select{|pin| pin.is_a?(Pin::BaseMethod)}.first
         next pin if origin.nil?
-        aliased = true
         Pin::Method.new(pin.location, pin.namespace, pin.name, origin.comments, origin.scope, origin.visibility, origin.parameters)
       end
-      return nil unless aliased
-      @mutex.synchronize { @store = Store.new(result) }
     end
   end
 end
