@@ -438,6 +438,7 @@ module Solargraph
       # @param params [Hash] A hash representation of a completion item
       # @return [Pin::Base, nil]
       def locate_pin params
+        return nil # @todo Testing
         return nil unless params['data'] && params['data']['uri'] && params['data']['location']
         library = library_for(params['data']['uri'])
         location = Location.new(
@@ -602,9 +603,10 @@ module Solargraph
       # @param uri [String]
       # @return [Array<Range>]
       def folding_ranges uri
-        library = library_for(uri)
-        file = uri_to_file(uri)
-        library.folding_ranges(file)
+        # library = library_for(uri)
+        # file = uri_to_file(uri)
+        # library.folding_ranges(file)
+        sources.find(uri).folding_ranges
       end
 
       private

@@ -14,6 +14,7 @@ module Solargraph
           @data_reader.set_message_handler do |message|
             process message
           end
+          start_timer
         end
 
         def closing
@@ -26,12 +27,12 @@ module Solargraph
         end
 
         def update subject
-          if @host.stopped?
-            shutdown
-          else
-            tmp = @host.flush
-            write tmp unless tmp.empty?
-          end
+          # if @host.stopped?
+          #   shutdown
+          # else
+          #   tmp = @host.flush
+          #   write tmp unless tmp.empty?
+          # end
         end
 
         private
@@ -43,6 +44,17 @@ module Solargraph
           message.send_response
           tmp = @host.flush
           write tmp unless tmp.empty?
+        end
+
+        def start_timer
+          Backport.prepare_interval 0.1 do |server|
+            if @host.stopped?
+              server.stop
+            else
+              tmp = @host.flush
+              write tmp unless tmp.empty?
+            end
+          end
         end
 
         def shutdown
