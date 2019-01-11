@@ -40,6 +40,13 @@ module Solargraph
   YARDOC_PATH = File.realpath(File.join(dir, '..', 'yardoc'))
   YARD_EXTENSION_FILE = File.join(dir, 'yard-solargraph.rb')
   VIEWS_PATH = File.join(dir, 'solargraph', 'views')
+
+  # A convenience method for Solargraph::Logging.logger.
+  #
+  # @return [Logger]
+  def self.logger
+    Solargraph::Logging.logger
+  end
 end
 
 Solargraph::YardMap::CoreDocs.require_minimum
