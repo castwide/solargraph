@@ -342,7 +342,7 @@ module Solargraph
         logger.info "Cataloging #{workspace.directory.empty? ? 'generic workspace' : workspace.directory}"
         api_map.catalog bundle
         @synchronized = true
-        logger.info "Catalog complete"
+        logger.info "Catalog complete (#{api_map.pins.length} pins)"
       end
     end
 
