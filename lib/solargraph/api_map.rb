@@ -637,7 +637,8 @@ module Solargraph
       false
     end
 
-    # @return [void]
+    # @param pins [Array<Pin::Base>]
+    # @return [Array<Pin::Base>]
     def resolve_method_aliases pins
       pins.map do |pin|
         next pin unless pin.kind == Pin::METHOD_ALIAS
