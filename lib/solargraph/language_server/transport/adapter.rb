@@ -18,7 +18,6 @@ module Solargraph
 
         def closing
           @host.stop
-          Backport.stop unless @host.options['transport'] == 'external'
         end
 
         # @param data [String]
@@ -27,8 +26,12 @@ module Solargraph
         end
 
         def update subject
-          tmp = @host.flush
-          write tmp unless tmp.empty?
+          if @host.stopped?
+            shutdown
+          else
+            tmp = @host.flush
+            write tmp unless tmp.empty?
+          end
         end
 
         private
@@ -40,6 +43,10 @@ module Solargraph
           message.send_response
           tmp = @host.flush
           write tmp unless tmp.empty?
+        end
+
+        def shutdown
+          Backport.stop unless @host.options['transport'] == 'external'
         end
       end
     end

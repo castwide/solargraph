@@ -34,7 +34,7 @@ module Solargraph
         begin
           ComplexType.parse *tag.types
         rescue Solargraph::ComplexTypeError => e
-          STDERR.puts e.message
+          Solargraph::Logging.logger.warn e.message
           ComplexType::UNDEFINED
         end
       end

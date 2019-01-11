@@ -203,7 +203,7 @@ module Solargraph
       return [] if pins.empty?
       result = []
       pins.uniq.each do |pin|
-        (workspace.sources + (@current ? [@current] : [])).uniq.each do |source|
+        (workspace.sources + (@current ? [@current] : [])).uniq(&:filename).each do |source|
           found = source.references(pin.name)
           found.select! do |loc|
             referenced = definitions_at(loc.filename, loc.range.ending.line, loc.range.ending.character)
@@ -220,7 +220,7 @@ module Solargraph
           end)
         end
       end
-      result
+      result.uniq
     end
 
     # Get the pin at the specified location or nil if the pin does not exist.
@@ -342,7 +342,7 @@ module Solargraph
         logger.info "Cataloging #{workspace.directory.empty? ? 'generic workspace' : workspace.directory}"
         api_map.catalog bundle
         @synchronized = true
-        logger.info "Catalog complete"
+        logger.info "Catalog complete (#{api_map.pins.length} pins)"
       end
     end
 

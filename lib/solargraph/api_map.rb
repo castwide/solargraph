@@ -65,29 +65,25 @@ module Solargraph
       new_map_hash = {}
       # Bundle always needs to be merged if it adds or removes sources
       merged = (bundle.sources.length == source_map_hash.values.length)
-      threads = []
       bundle.sources.each do |source|
-        threads << Thread.new do
-          if source_map_hash.has_key?(source.filename)
-            if source_map_hash[source.filename].code == source.code
-              new_map_hash[source.filename] = source_map_hash[source.filename]
-            else
-              map = Solargraph::SourceMap.map(source)
-              if source_map_hash[source.filename].try_merge!(map)
-                new_map_hash[source.filename] = source_map_hash[source.filename]
-              else
-                new_map_hash[source.filename] = map
-                merged = false
-              end
-            end
+        if source_map_hash.has_key?(source.filename)
+          if source_map_hash[source.filename].code == source.code
+            new_map_hash[source.filename] = source_map_hash[source.filename]
           else
             map = Solargraph::SourceMap.map(source)
-            new_map_hash[source.filename] = map
-            merged = false
+            if source_map_hash[source.filename].try_merge!(map)
+              new_map_hash[source.filename] = source_map_hash[source.filename]
+            else
+              new_map_hash[source.filename] = map
+              merged = false
+            end
           end
+        else
+          map = Solargraph::SourceMap.map(source)
+          new_map_hash[source.filename] = map
+          merged = false
         end
       end
-      threads.each(&:join)
       return self if merged
       pins = []
       reqs = []
@@ -554,7 +550,7 @@ module Solargraph
     # @return [void]
     def require_extensions
       Gem::Specification.all_names.select{|n| n.match(/^solargraph\-[a-z0-9_\-]*?\-ext\-[0-9\.]*$/)}.each do |n|
-        STDERR.puts "Loading extension #{n}"
+        Solargraph::Logging.logger.info "Loading extension #{n}"
         require n.match(/^(solargraph\-[a-z0-9_\-]*?\-ext)\-[0-9\.]*$/)[1]
       end
     end

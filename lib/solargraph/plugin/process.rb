@@ -48,7 +48,7 @@ module Solargraph
             require p
             @required.push p
           rescue Exception => e
-            STDERR.puts "Failed to require #{p}: #{e.message}"
+            Solargraph::Logging.logger.info "Failed to require #{p}: #{e.message}"
             errors.push "Failed to require #{p}: #{e.class} #{e.message}"
           end
         end

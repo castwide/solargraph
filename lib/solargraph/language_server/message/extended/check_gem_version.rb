@@ -36,7 +36,7 @@ module Solargraph
                 host.show_message "The Solargraph gem is up to date (version #{Solargraph::VERSION})."
               end
             elsif fetched?
-              STDERR.puts error
+              Solargraph::Logging.logger.warn error
               host.show_message(error, MessageTypes::ERROR) if params['verbose']
             end
             set_result({

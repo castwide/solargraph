@@ -12,7 +12,7 @@ module Solargraph
           string.dup.force_encoding('UTF-8')
         rescue ::Encoding::CompatibilityError, ::Encoding::UndefinedConversionError, ::Encoding::InvalidByteSequenceError => e
           # @todo Improve error handling
-          STDERR.puts "Normalize error: #{e.message}"
+          Solargraph::Logging.logger.warn "Normalize error: #{e.message}"
           string
         end
       end
