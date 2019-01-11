@@ -1,39 +1,44 @@
+require 'benchmark'
+
 module Solargraph
   module LanguageServer
     module Message
       class Initialize < Base
         def process
-          host.configure params['initializationOptions']
-          if support_workspace_folders?
-            host.prepare_folders params['workspaceFolders']
-          elsif params['rootUri']
-            host.prepare UriHelpers.uri_to_file(params['rootUri'])
-          else
-            host.prepare params['rootPath']
-          end
-          result = {
-            capabilities: {
-              textDocumentSync: 2, # @todo What should this be?
-              workspace: {
-                workspaceFolders: {
-                  supported: true,
-                  changeNotifications: true
+          bm = Benchmark.measure {
+            host.configure params['initializationOptions']
+            if support_workspace_folders?
+              host.prepare_folders params['workspaceFolders']
+            elsif params['rootUri']
+              host.prepare UriHelpers.uri_to_file(params['rootUri'])
+            else
+              host.prepare params['rootPath']
+            end
+            result = {
+              capabilities: {
+                textDocumentSync: 2, # @todo What should this be?
+                workspace: {
+                  workspaceFolders: {
+                    supported: true,
+                    changeNotifications: true
+                  }
                 }
               }
             }
+            result[:capabilities].merge! static_completion unless dynamic_registration_for?('textDocument', 'completion')
+            result[:capabilities].merge! static_signature_help unless dynamic_registration_for?('textDocument', 'signatureHelp')
+            # result[:capabilities].merge! static_on_type_formatting unless dynamic_registration_for?('textDocument', 'onTypeFormatting')
+            result[:capabilities].merge! static_hover unless dynamic_registration_for?('textDocument', 'hover')
+            result[:capabilities].merge! static_document_formatting unless dynamic_registration_for?('textDocument', 'formatting')
+            result[:capabilities].merge! static_document_symbols unless dynamic_registration_for?('textDocument', 'documentSymbol')
+            result[:capabilities].merge! static_definitions unless dynamic_registration_for?('textDocument', 'definition')
+            result[:capabilities].merge! static_rename unless dynamic_registration_for?('textDocument', 'rename')
+            result[:capabilities].merge! static_references unless dynamic_registration_for?('textDocument', 'references')
+            result[:capabilities].merge! static_workspace_symbols unless dynamic_registration_for?('workspace', 'symbol')
+            result[:capabilities].merge! static_folding_range unless dynamic_registration_for?('textDocument', 'foldingRange')
+            set_result result
           }
-          result[:capabilities].merge! static_completion unless dynamic_registration_for?('textDocument', 'completion')
-          result[:capabilities].merge! static_signature_help unless dynamic_registration_for?('textDocument', 'signatureHelp')
-          # result[:capabilities].merge! static_on_type_formatting unless dynamic_registration_for?('textDocument', 'onTypeFormatting')
-          result[:capabilities].merge! static_hover unless dynamic_registration_for?('textDocument', 'hover')
-          result[:capabilities].merge! static_document_formatting unless dynamic_registration_for?('textDocument', 'formatting')
-          result[:capabilities].merge! static_document_symbols unless dynamic_registration_for?('textDocument', 'documentSymbol')
-          result[:capabilities].merge! static_definitions unless dynamic_registration_for?('textDocument', 'definition')
-          result[:capabilities].merge! static_rename unless dynamic_registration_for?('textDocument', 'rename')
-          result[:capabilities].merge! static_references unless dynamic_registration_for?('textDocument', 'references')
-          result[:capabilities].merge! static_workspace_symbols unless dynamic_registration_for?('workspace', 'symbol')
-          result[:capabilities].merge! static_folding_range unless dynamic_registration_for?('textDocument', 'foldingRange')
-          set_result result
+          Solargraph.logger.unknown "Solargraph initialized (#{bm.real} seconds)"
         end
 
         private
