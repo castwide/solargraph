@@ -45,7 +45,7 @@ module Solargraph
         end
         return Chain.new([Chain::UNDEFINED_CALL]) if node.nil? || (node.type == :sym && !phrase.start_with?(':'))
         chain = NodeChainer.chain(node, source.filename)
-        if source.repaired? || !source.parsed?
+        if source.repaired? || !source.parsed? || !source.synchronized?
           if end_of_phrase.strip == '.'
             chain.links.push Chain::UNDEFINED_CALL
           elsif end_of_phrase.strip == '::'
