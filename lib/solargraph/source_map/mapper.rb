@@ -57,8 +57,8 @@ module Solargraph
       end
 
       def process_comment position, comment
+        return unless comment =~ /(@\!method|@\!attribute|@\!domain|@\!macro|@\!parse)/
         cmnt = remove_inline_comment_hashes(comment)
-        return unless cmnt =~ /(@\!method|@\!attribute|@\!domain|@\!macro|@\!parse)/
         parse = YARD::Docstring.parser.parse(cmnt)
         parse.directives.each { |d| process_directive(position, d) }
       end
@@ -121,6 +121,7 @@ module Solargraph
       end
 
       def process_comment_directives
+        return unless @code =~ /(@\!method|@\!attribute|@\!domain|@\!macro|@\!parse)/
         current = []
         last_line = nil
         @comments.each do |cmnt|
