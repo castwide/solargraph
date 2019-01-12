@@ -66,9 +66,12 @@ module Solargraph
       # Bundle always needs to be merged if it adds or removes sources
       merged = (bundle.sources.length == source_map_hash.values.length)
       bundle.sources.each do |source|
-        if source_map_hash.has_key?(source.filename)
-          if source_map_hash[source.filename].code == source.code
+        if source_map_hash.key?(source.filename)
+          if source_map_hash[source.filename].code == source.code && source_map_hash[source.filename].source.synchronized? && source.synchronized?
             new_map_hash[source.filename] = source_map_hash[source.filename]
+          elsif !source.synchronized?
+            new_map_hash[source.filename] = source_map_hash[source.filename]
+            new_map_hash[source.filename].instance_variable_set(:@source, source)
           else
             map = Solargraph::SourceMap.map(source)
             if source_map_hash[source.filename].try_merge!(map)

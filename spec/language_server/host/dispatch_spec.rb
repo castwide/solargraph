@@ -1,6 +1,8 @@
 describe Solargraph::LanguageServer::Host::Dispatch do
   before :all do
-    @dispatch = Solargraph::LanguageServer::Host::Dispatch
+    # @dispatch = Solargraph::LanguageServer::Host::Dispatch
+    @dispatch = Object.new
+    @dispatch.extend Solargraph::LanguageServer::Host::Dispatch
   end
 
   after :each do

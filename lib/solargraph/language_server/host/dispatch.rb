@@ -4,16 +4,27 @@ module Solargraph
       # Methods for associating sources with libraries via URIs.
       #
       module Dispatch
-        module_function
-
         # @return [Sources]
         def sources
-          @sources ||= Sources.new
+          @sources ||= begin
+            src = Sources.new
+            src.add_observer self, :update_libraries
+            src
+          end
         end
 
         # @return [Array<Library>]
         def libraries
           @libraries ||= []
+        end
+
+        def update_libraries src
+          # @todo This module should not call cataloger and diagnoser
+          libraries.each do |lib|
+            lib.merge src
+            cataloger.ping(lib) if lib.contain?(src.filename) || lib.open?(src.filename)
+          end
+          diagnoser.schedule file_to_uri(src.filename)
         end
 
         # Find the best libary match for the given URI.

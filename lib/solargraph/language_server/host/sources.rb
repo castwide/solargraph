@@ -1,9 +1,12 @@
+require 'observer'
+
 module Solargraph
   module LanguageServer
     class Host
       # A Host class for managing sources.
       #
       class Sources
+        include Observable
         include UriHelpers
 
         def initialize
@@ -18,17 +21,24 @@ module Solargraph
           return unless @stopped
           @stopped = false
           Thread.new do
-            break if stopped?
-            return
-            sleep 0.01
+            until stopped?
+              tick
+              sleep 0.01
+            end
           end
         end
 
         def tick
           return if queue.empty?
-          cur = queue.shift
-          uri = file_to_uri(cur.filename)
-          mutex.synchronize { open_source_hash[uri] = src.other_synchronize }
+          uri = mutex.synchronize { queue.shift }
+          unless queue.include?(uri)
+            mutex.synchronize do
+              nxt = open_source_hash[uri].other_synchronize
+              open_source_hash[uri] = nxt
+            end
+          end
+          changed
+          notify_observers open_source_hash[uri]
         end
 
         def stop
@@ -57,7 +67,9 @@ module Solargraph
         def update uri, updater
           src = find(uri)
           # open_source_hash[uri] = src.synchronize(updater)
-          open_source_hash[uri] = src.combine(updater)
+          mutex.synchronize { open_source_hash[uri] = src.synchronize(updater) }
+          changed
+          notify_observers open_source_hash[uri]
         end
 
         # @param uri [String]
@@ -66,9 +78,7 @@ module Solargraph
         def async_update uri, updater
           src = find(uri)
           mutex.synchronize { open_source_hash[uri] = src.combine(updater) }
-          Thread.new do
-            mutex.synchronize { update uri, updater }
-          end
+          mutex.synchronize {queue.push uri}
         end
 
         # Find the source with the given URI.

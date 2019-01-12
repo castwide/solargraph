@@ -37,6 +37,7 @@ module Solargraph
         @stopped = false
         diagnoser.start
         cataloger.start
+        sources.start
       end
 
       # Update the configuration options with the provided hash.
@@ -214,14 +215,7 @@ module Solargraph
       # @return [void]
       def change params
         updater = generate_updater(params)
-        # src = sources.update(params['textDocument']['uri'], updater)
-        src = sources.update(params['textDocument']['uri'], updater)
-        # libraries.each do |lib|
-        #   lib.merge src
-        #   cataloger.ping(lib) if lib.contain?(src.filename) || lib.open?(src.filename)
-        # end
-        # diagnoser.schedule params['textDocument']['uri']
-        merge_into_libraries src
+        sources.async_update params['textDocument']['uri'], updater
       end
 
       # Queue a message to be sent to the client.
@@ -422,6 +416,7 @@ module Solargraph
         @stopped = true
         cataloger.stop
         diagnoser.stop
+        sources.stop
       end
 
       def stopped?
@@ -603,14 +598,6 @@ module Solargraph
         # file = uri_to_file(uri)
         # library.folding_ranges(file)
         sources.find(uri).folding_ranges
-      end
-
-      def merge_into_libraries src
-        libraries.each do |lib|
-          lib.merge src
-          cataloger.ping(lib) if lib.contain?(src.filename) || lib.open?(src.filename)
-        end
-        diagnoser.schedule file_to_uri(src.filename)
       end
 
       private

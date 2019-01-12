@@ -103,9 +103,12 @@ module Solargraph
       src.filename = filename
       src.code = real_code
       src.version = updater.version
+      src.parsed = parsed?
       src.repaired = updater.repair(@repaired)
       src.synchronized = false
       src.node = @node
+      src.comments = @comments
+      STDERR.puts "***** #{src.code.lines.last}"
       src
     end
 
@@ -113,13 +116,14 @@ module Solargraph
       return self if synchronized?
       synced = Source.new(@code, filename)
       if synced.parsed?
-        synced.version = updater.version
+        synced.version = version
         return synced
       end
       synced = Source.new(@repaired, filename)
-      synced.error_ranges.concat (error_ranges + updater.changes.map(&:range))
-      synced.code = real_code
-      synced.version = updater.version
+      # synced.error_ranges.concat (error_ranges + updater.changes.map(&:range))
+      synced.code = @code
+      synced.synchronized = true
+      synced.version = version
       synced
     end
 
@@ -248,6 +252,11 @@ module Solargraph
         result.concat foldable_comment_block_ranges
         result
       end
+    end
+
+    def synchronized?
+      @synchronized = true if @synchronized.nil?
+      @synchronized
     end
 
     private
@@ -384,11 +393,6 @@ module Solargraph
       result
     end
 
-    def synchronized?
-      @synchronized = true if @synchronized.nil?
-      @synchronized
-    end
-
     protected
 
     # @return [String]
@@ -409,6 +413,10 @@ module Solargraph
     # @return [Boolean]
     attr_writer :parsed
 
+    # @return [Array<Parser::Source::Comment>]
+    attr_writer :comments
+
+    # @return [Boolean]
     attr_writer :synchronized
 
     class << self
