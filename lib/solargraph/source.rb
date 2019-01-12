@@ -108,7 +108,6 @@ module Solargraph
       src.synchronized = false
       src.node = @node
       src.comments = @comments
-      STDERR.puts "***** #{src.code.lines.last}"
       src
     end
 

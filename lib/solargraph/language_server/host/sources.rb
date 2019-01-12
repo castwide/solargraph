@@ -23,7 +23,7 @@ module Solargraph
           Thread.new do
             until stopped?
               tick
-              sleep 0.01
+              sleep 0.1
             end
           end
         end
@@ -35,10 +35,10 @@ module Solargraph
             mutex.synchronize do
               nxt = open_source_hash[uri].other_synchronize
               open_source_hash[uri] = nxt
+              changed
+              notify_observers open_source_hash[uri]
             end
           end
-          changed
-          notify_observers open_source_hash[uri]
         end
 
         def stop
@@ -79,6 +79,8 @@ module Solargraph
           src = find(uri)
           mutex.synchronize { open_source_hash[uri] = src.combine(updater) }
           mutex.synchronize {queue.push uri}
+          changed
+          notify_observers open_source_hash[uri]
         end
 
         # Find the source with the given URI.
