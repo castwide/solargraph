@@ -19,6 +19,9 @@ module Solargraph
     include NodeMethods
 
     # @return [String]
+    attr_reader :filename
+
+    # @return [String]
     attr_reader :code
 
     # @return [Parser::AST::Node]
@@ -26,9 +29,6 @@ module Solargraph
 
     # @return [Array<Parser::Source::Comment>]
     attr_reader :comments
-
-    # @return [String]
-    attr_reader :filename
 
     # @todo Deprecate?
     # @return [Integer]
@@ -95,6 +95,32 @@ module Solargraph
       stack = []
       inner_tree_at @node, position, stack
       stack
+    end
+
+    def combine updater
+      real_code = updater.write(@code)
+      src = Source.allocate
+      src.filename = filename
+      src.code = real_code
+      src.version = updater.version
+      src.repaired = updater.repair(@repaired)
+      src.synchronized = false
+      src.node = @node
+      src
+    end
+
+    def other_synchronize
+      return self if synchronized?
+      synced = Source.new(@code, filename)
+      if synced.parsed?
+        synced.version = updater.version
+        return synced
+      end
+      synced = Source.new(@repaired, filename)
+      synced.error_ranges.concat (error_ranges + updater.changes.map(&:range))
+      synced.code = real_code
+      synced.version = updater.version
+      synced
     end
 
     # @param updater [Source::Updater]
@@ -358,7 +384,15 @@ module Solargraph
       result
     end
 
+    def synchronized?
+      @synchronized = true if @synchronized.nil?
+      @synchronized
+    end
+
     protected
+
+    # @return [String]
+    attr_writer :filename
 
     # @return [Integer]
     attr_writer :version
@@ -366,11 +400,16 @@ module Solargraph
     # @return [String]
     attr_writer :code
 
+    # @return [Parser::AST::Node]
+    attr_writer :node
+
     # @return [String]
     attr_accessor :repaired
 
     # @return [Boolean]
     attr_writer :parsed
+
+    attr_writer :synchronized
 
     class << self
       # @param filename [String]

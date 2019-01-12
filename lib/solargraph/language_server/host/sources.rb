@@ -6,6 +6,35 @@ module Solargraph
       class Sources
         include UriHelpers
 
+        def initialize
+          @stopped = true
+        end
+
+        def stopped?
+          @stopped
+        end
+
+        def start
+          return unless @stopped
+          @stopped = false
+          Thread.new do
+            break if stopped?
+            return
+            sleep 0.01
+          end
+        end
+
+        def tick
+          return if queue.empty?
+          cur = queue.shift
+          uri = file_to_uri(cur.filename)
+          mutex.synchronize { open_source_hash[uri] = src.other_synchronize }
+        end
+
+        def stop
+          @stopped = true
+        end
+
         # Open a source.
         #
         # @param uri [String]
@@ -27,7 +56,19 @@ module Solargraph
         # @return [Source]
         def update uri, updater
           src = find(uri)
-          open_source_hash[uri] = src.synchronize(updater)
+          # open_source_hash[uri] = src.synchronize(updater)
+          open_source_hash[uri] = src.combine(updater)
+        end
+
+        # @param uri [String]
+        # @param updater [Source::Updater]
+        # @return [Thread]
+        def async_update uri, updater
+          src = find(uri)
+          mutex.synchronize { open_source_hash[uri] = src.combine(updater) }
+          Thread.new do
+            mutex.synchronize { update uri, updater }
+          end
         end
 
         # Find the source with the given URI.
@@ -65,6 +106,15 @@ module Solargraph
         # @return [Array<Source>]
         def open_source_hash
           @open_source_hash ||= {}
+        end
+
+        # @return [Mutex]
+        def mutex
+          @mutex ||= Mutex.new
+        end
+
+        def queue
+          @queue ||= []
         end
       end
     end
