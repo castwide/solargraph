@@ -1,4 +1,3 @@
-require 'observer'
 require 'thread'
 require 'set'
 
@@ -17,7 +16,6 @@ module Solargraph
       include UriHelpers
       include Logging
       include Dispatch
-      include Observable
 
       def initialize
         @cancel_semaphore = Mutex.new
@@ -231,8 +229,6 @@ module Solargraph
         @buffer_semaphore.synchronize do
           @buffer += message
         end
-        changed
-        notify_observers(self)
       end
 
       # Clear the message buffer and return the most recent data.
@@ -424,8 +420,6 @@ module Solargraph
         @stopped = true
         cataloger.stop
         diagnoser.stop
-        changed
-        notify_observers self
       end
 
       def stopped?

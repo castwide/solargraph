@@ -8,7 +8,6 @@ module Solargraph
 
         def opening
           @host = Solargraph::LanguageServer::Host.new
-          @host.add_observer self, :update
           @host.start
           @data_reader = Solargraph::LanguageServer::Transport::DataReader.new
           @data_reader.set_message_handler do |message|
@@ -26,15 +25,6 @@ module Solargraph
           @data_reader.receive data
         end
 
-        def update subject
-          # if @host.stopped?
-          #   shutdown
-          # else
-          #   tmp = @host.flush
-          #   write tmp unless tmp.empty?
-          # end
-        end
-
         private
 
         # @param request [String]
@@ -50,6 +40,7 @@ module Solargraph
           Backport.prepare_interval 0.1 do |server|
             if @host.stopped?
               server.stop
+              shutdown
             else
               tmp = @host.flush
               write tmp unless tmp.empty?
