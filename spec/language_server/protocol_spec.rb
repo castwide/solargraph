@@ -179,6 +179,7 @@ describe Protocol do
   end
 
   it "handles textDocument/definition" do
+    sleep 0.5 # HACK: Give the Host::Sources thread time to work
     @protocol.request 'textDocument/definition', {
       'textDocument' => {
         'uri' => 'file:///file.rb'

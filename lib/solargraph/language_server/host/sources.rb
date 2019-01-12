@@ -23,7 +23,7 @@ module Solargraph
           Thread.new do
             until stopped?
               tick
-              sleep 0.1
+              sleep 0.25
             end
           end
         end
