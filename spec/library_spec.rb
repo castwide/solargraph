@@ -316,4 +316,20 @@ describe Solargraph::Library do
     library.attach src.synchronize(updater)
     expect(library.checkout('test.rb').code).to eq(repl)
   end
+
+  it "finds unique references" do
+    library = Solargraph::Library.new(Solargraph::Workspace.new('*'))
+    src1 = Solargraph::Source.load_string(%(
+      class Foo
+      end
+    ), 'src1.rb', 1)
+    library.merge src1
+    src2 = Solargraph::Source.load_string(%(
+      foo = Foo.new
+    ), 'src2.rb', 1)
+    library.merge src2
+    library.catalog
+    refs = library.references_from('src2.rb', 1, 12)
+    expect(refs.length).to eq(2)
+  end
 end
