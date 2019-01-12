@@ -33,12 +33,16 @@ module Solargraph
         return Chain.new([Chain::Literal.new('Symbol')]) if phrase.start_with?(':') && !phrase.start_with?('::')
         begin
           return Chain.new([]) if phrase.end_with?('..')
-          if !source.repaired? && source.parsed?
-            node = source.node_at(position.line, position.column)
+          if source.synchronized?
+            if !source.repaired? && source.parsed?
+              node = source.node_at(position.line, position.column)
+            else
+              node = nil
+              node = source.node_at(fixed_position.line, fixed_position.column) unless source.error_ranges.any?{|r| r.nil? || r.include?(fixed_position)}
+              node = Source.parse(fixed_phrase) if node.nil?
+            end
           else
-            node = nil
-            node = source.node_at(fixed_position.line, fixed_position.column) unless source.error_ranges.any?{|r| r.nil? || r.include?(fixed_position)}
-            node = Source.parse(fixed_phrase) if node.nil?
+            node = Source.parse(fixed_phrase)
           end
         rescue Parser::SyntaxError
           return Chain.new([Chain::UNDEFINED_CALL])
