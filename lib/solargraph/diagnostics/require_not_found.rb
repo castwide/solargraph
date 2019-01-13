@@ -5,9 +5,10 @@ module Solargraph
     #
     class RequireNotFound < Base
       def diagnose source, api_map
+        return [] unless source.parsed? && source.synchronized?
         result = []
         refs = {}
-        map = Solargraph::SourceMap.map(source)
+        map = api_map.source_map(source.filename)
         map.requires.each do |ref|
           refs[ref.name] = ref
         end
