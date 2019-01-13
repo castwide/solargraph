@@ -236,8 +236,10 @@ module Solargraph
     # @param node [Parser::AST::Node]
     # @return [String]
     def comments_for node
-      arr = associated_comments[node.loc.line]
-      arr ? stringify_comment_array(arr) : nil
+      stringified_comments[node.loc.line] ||= begin
+        arr = associated_comments[node.loc.line]
+        arr ? stringify_comment_array(arr) : nil
+      end
     end
 
     # A location representing the file in its entirety.
@@ -299,7 +301,7 @@ module Solargraph
       @associated_comments ||= begin
         result = {}
         Parser::Source::Comment.associate_locations(node, comments).each_pair do |loc, all|
-          block = all.select{ |l| l.document? || code.lines[l.loc.line].strip.start_with?('#')}
+          block = all #.select{ |l| l.document? || code.lines[l.loc.line].strip.start_with?('#')}
           next if block.empty?
           result[loc.line] ||= []
           result[loc.line].concat block
@@ -316,6 +318,7 @@ module Solargraph
       ctxt = ''
       num = nil
       started = false
+      last_line = nil
       comments.each { |l|
         # Trim the comment and minimum leading whitespace
         p = l.text.gsub(/^#/, '')
@@ -326,9 +329,16 @@ module Solargraph
           cur = p.index(/[^ ]/)
           num = cur if cur < num
         end
+        # Include blank lines between comments
+        ctxt += ("\n" * (l.loc.first_line - last_line - 1)) unless last_line.nil?
         ctxt += "#{p[num..-1]}\n" if started
+        last_line = l.loc.last_line
       }
       ctxt
+    end
+
+    def stringified_comments
+      @stringified_comments ||= {}
     end
 
     # @return [Array<Range>]

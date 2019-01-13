@@ -12,6 +12,7 @@ module Solargraph
 
       # Generate the data.
       #
+      # @param source [Source]
       # @return [Array]
       def map source
         @source = source
@@ -108,10 +109,10 @@ module Solargraph
         comment.lines.each { |l|
           # Trim the comment and minimum leading whitespace
           p = l.gsub(/^#/, '')
-          if num.nil? and !p.strip.empty?
+          if num.nil? && !p.strip.empty?
             num = p.index(/[^ ]/)
             started = true
-          elsif started and !p.strip.empty?
+          elsif started && !p.strip.empty?
             cur = p.index(/[^ ]/)
             num = cur if cur < num
           end
