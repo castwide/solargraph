@@ -71,6 +71,7 @@ module Solargraph
             new_map_hash[source.filename] = source_map_hash[source.filename]
           elsif !source.synchronized?
             new_map_hash[source.filename] = source_map_hash[source.filename]
+            # @todo Smelly instance variable access
             new_map_hash[source.filename].instance_variable_set(:@source, source)
           else
             map = Solargraph::SourceMap.map(source)

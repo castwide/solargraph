@@ -17,6 +17,7 @@ module Solargraph
           @stopped
         end
 
+        # @return [void]
         def start
           return unless @stopped
           @stopped = false
@@ -28,19 +29,20 @@ module Solargraph
           end
         end
 
+        # @return [void]
         def tick
           return if queue.empty?
           uri = mutex.synchronize { queue.shift }
-          unless queue.include?(uri)
-            mutex.synchronize do
-              nxt = open_source_hash[uri].finish_synchronize
-              open_source_hash[uri] = nxt
-              changed
-              notify_observers open_source_hash[uri]
-            end
+          return if queue.include?(uri)
+          mutex.synchronize do
+            nxt = open_source_hash[uri].finish_synchronize
+            open_source_hash[uri] = nxt
+            changed
+            notify_observers open_source_hash[uri]
           end
         end
 
+        # @return [void]
         def stop
           @stopped = true
         end
@@ -125,6 +127,9 @@ module Solargraph
           @mutex ||= Mutex.new
         end
 
+        # An array of source URIs that are waiting to finish synchronizing.
+        #
+        # @return [Array<String>]
         def queue
           @queue ||= []
         end
