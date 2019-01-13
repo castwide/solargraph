@@ -20,29 +20,17 @@ module Solargraph
       @catalog_mutex = Mutex.new
     end
 
+    def inspect
+      # Let's not deal with insane data dumps in spec failures
+      to_s
+    end
+
     # True if the ApiMap is up to date with the library's workspace and open
     # files.
     #
     # @return [Boolean]
     def synchronized?
       @synchronized
-    end
-
-    # Open a file in the library. Opening a file will make it available for
-    # checkout and merge it into the workspace if applicable.
-    #
-    # @deprecated The library should not be responsible for this. Instead, it
-    #   should accept a source and determine whether or not to merge it.
-    #
-    # @param filename [String]
-    # @param text [String]
-    # @param version [Integer]
-    # @return [void]
-    def open filename, text, version
-      logger.warn "Library#open is deprecated"
-      source = Solargraph::Source.load_string(text, filename, version)
-      merge source
-      attach source
     end
 
     # Open a file from disk and try to merge it into the workspace.
@@ -60,7 +48,7 @@ module Solargraph
     # library will include it in the ApiMap while it's attached. Only one
     # source can be attached to the library at a time.
     #
-    # @param source [Source]
+    # @param source [Source, nil]
     # @return [void]
     def attach source
       mutex.synchronize do
@@ -77,6 +65,16 @@ module Solargraph
       !@current.nil? && @current.filename == filename
     end
     alias open? attached?
+
+    # Detach the specified file if it is currently attached to the library.
+    #
+    # @param filename [String]
+    # @return [Boolean] True if the specified file was detached
+    def detach filename
+      return false if @current.nil? || @current.filename != filename
+      attach nil
+      true
+    end
 
     # True if the specified file is included in the workspace (but not
     # necessarily open).
@@ -130,11 +128,10 @@ module Solargraph
     # @param filename [String]
     # @return [void]
     def delete filename
+      detach filename
       mutex.synchronize do
-        @synchronized = false
-        @current = nil if @current && @current.filename == filename
-        workspace.remove filename
-        # catalog
+        result = workspace.remove(filename)
+        @synchronized = !result if synchronized?
       end
     end
 
@@ -206,7 +203,7 @@ module Solargraph
       return [] if pins.empty?
       result = []
       pins.uniq.each do |pin|
-        (workspace.sources + (@current ? [@current] : [])).uniq.each do |source|
+        (workspace.sources + (@current ? [@current] : [])).uniq(&:filename).each do |source|
           found = source.references(pin.name)
           found.select! do |loc|
             referenced = definitions_at(loc.filename, loc.range.ending.line, loc.range.ending.character)
@@ -223,7 +220,7 @@ module Solargraph
           end)
         end
       end
-      result
+      result.uniq
     end
 
     # Get the pin at the specified location or nil if the pin does not exist.
@@ -256,7 +253,10 @@ module Solargraph
       checked = read(filename)
       @synchronized = (checked == @current) if synchronized?
       @current = checked
-      catalog
+      # Cataloging is necessary to avoid FileNotFoundErrors when the file is
+      # not in the workspace. Otherwise it should be safe to defer
+      # synchronization.
+      catalog unless workspace.has_file?(filename)
       @current
     end
 
@@ -303,30 +303,6 @@ module Solargraph
       api_map.get_path_suggestions(path)
     end
 
-    # Update a source in the library from the provided updater.
-    #
-    # @note This method will not update the library's ApiMap. See
-    #   Library#synchronized? and Library#catalog for more information.
-    #
-    # @deprecated The library should not be responsible for this. Instead, it
-    #   should accept a source and determine whether or not to merge it.
-    #
-    # @raise [FileNotFoundError] if the updater's file is not available.
-    # @param updater [Solargraph::Source::Updater]
-    # @return [void]
-    def update updater
-      logger.warn 'Library#update is deprecated'
-      mutex.synchronize do
-        if workspace.has_file?(updater.filename)
-          workspace.synchronize!(updater)
-          @current = workspace.source(updater.filename) if @current && @current.filename == updater.filename
-        elsif @current && @current.filename == updater.filename
-          @current = @current.synchronize(updater)
-        end
-        @synchronized = false
-      end
-    end
-
     # Get the current text of a file in the library.
     #
     # @param filename [String]
@@ -366,23 +342,19 @@ module Solargraph
         logger.info "Cataloging #{workspace.directory.empty? ? 'generic workspace' : workspace.directory}"
         api_map.catalog bundle
         @synchronized = true
+        logger.info "Catalog complete (#{api_map.pins.length} pins)"
       end
     end
 
     # Get an array of foldable ranges for the specified file.
     #
+    # @deprecated The library should not need to handle folding ranges. The
+    #   source itself has all the information it needs.
+    #
     # @param filename [String]
     # @return [Array<Range>]
     def folding_ranges filename
       read(filename).folding_ranges
-    end
-
-    # @deprecated Libraries are no longer responsible for tracking open files.
-    #
-    # @return [Array<Source>]
-    def open_sources
-      logger.warn 'Library#open_sources is deprecated'
-      @current ? [@current] : []
     end
 
     # Create a library from a directory.
@@ -403,7 +375,7 @@ module Solargraph
       result = nil
       mutex.synchronize do
         result = workspace.merge(source)
-        @synchronized = result if synchronized?
+        @synchronized = !result if synchronized?
       end
       result
     end

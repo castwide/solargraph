@@ -158,4 +158,50 @@ describe Solargraph::Source do
     expect(source.node).to be_nil
     expect(source.parsed?).to be(false)
   end
+
+  it "finds foldable ranges" do
+    # Of the 7 possible ranges, 2 are too short to be foldable
+    source = Solargraph::Source.load_string(%(
+=begin
+Range 1
+=end
+def range_2
+  x = y
+  puts z
+end
+# Range 3.1
+# Range 3.2
+# Range 3.3
+a = b
+# Range 4.1 (too short)
+# Range 4.2
+c = b
+# Range 5.1 (too short)
+d = c # inline
+# Range 6.1
+# Range 6.2
+# Range 6.3
+e = d # inline
+# Range 7.1
+# Range 7.2
+# Range 7.3
+    ))
+    expect(source.folding_ranges.length).to eq(5)
+  end
+
+  it "returns unsynchronized sources for started synchronizations" do
+    source1 = Solargraph::Source.load_string('x = 1', 'test.rb')
+    source2 = source1.start_synchronize Solargraph::Source::Updater.new(
+      'test.rb',
+      2,
+      [
+        Solargraph::Source::Change.new(
+          Solargraph::Range.from_to(0, 5, 0, 5),
+          '2'
+        )
+      ]
+    )
+    expect(source2.code).to eq('x = 12')
+    expect(source2).not_to be_synchronized
+  end
 end

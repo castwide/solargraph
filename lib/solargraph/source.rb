@@ -19,6 +19,9 @@ module Solargraph
     include NodeMethods
 
     # @return [String]
+    attr_reader :filename
+
+    # @return [String]
     attr_reader :code
 
     # @return [Parser::AST::Node]
@@ -26,9 +29,6 @@ module Solargraph
 
     # @return [Array<Parser::Source::Comment>]
     attr_reader :comments
-
-    # @return [String]
-    attr_reader :filename
 
     # @todo Deprecate?
     # @return [Integer]
@@ -64,10 +64,16 @@ module Solargraph
     end
 
     # @param range [Solargraph::Range]
+    # @return [String]
     def at range
       from_to range.start.line, range.start.character, range.ending.line, range.ending.character
     end
 
+    # @param l1 [Integer]
+    # @param c1 [Integer]
+    # @param l2 [Integer]
+    # @param c2 [Integer]
+    # @return [String]
     def from_to l1, c1, l2, c2
       b = Solargraph::Position.line_char_to_offset(@code, l1, c1)
       e = Solargraph::Position.line_char_to_offset(@code, l2, c2)
@@ -97,8 +103,53 @@ module Solargraph
       stack
     end
 
+    # Start synchronizing the source. This method updates the code without
+    # parsing a new AST. The resulting Source object will be marked not
+    # synchronized (#synchronized? == false).
+    #
     # @param updater [Source::Updater]
-    # @param reparse [Boolean]
+    # @return [Source]
+    def start_synchronize updater
+      raise 'Invalid synchronization' unless updater.filename == filename
+      real_code = updater.write(@code)
+      src = Source.allocate
+      src.filename = filename
+      src.code = real_code
+      src.version = updater.version
+      src.parsed = parsed?
+      src.repaired = updater.repair(@repaired)
+      src.synchronized = false
+      src.node = @node
+      src.comments = @comments
+      src.error_ranges = error_ranges
+      src.last_updater = updater
+      src
+    end
+
+    # Finish synchronizing a source that was updated via #start_synchronize.
+    # This method returns self if the source is already synchronized. Otherwise
+    # it parses the AST and returns a new synchronized Source.
+    #
+    # @return [Source]
+    def finish_synchronize
+      return self if synchronized?
+      synced = Source.new(@code, filename)
+      if synced.parsed?
+        synced.version = version
+        return synced
+      end
+      synced = Source.new(@repaired, filename)
+      synced.error_ranges.concat (error_ranges + last_updater.changes.map(&:range))
+      synced.code = @code
+      synced.synchronized = true
+      synced.version = version
+      synced
+    end
+
+    # Synchronize the Source with an update. This method applies changes to the
+    # code, parses the new code's AST, and returns the resulting Source object.
+    #
+    # @param updater [Source::Updater]
     # @return [Source]
     def synchronize updater
       raise 'Invalid synchronization' unless updater.filename == filename
@@ -177,11 +228,9 @@ module Solargraph
       @error_ranges ||= []
     end
 
+    # @param node [Parser::AST::Node]
+    # @return [String]
     def code_for(node)
-      # @todo Using node locations on code with converted EOLs seems
-      #   slightly more efficient than calculating offsets.
-      # b = node.location.expression.begin.begin_pos
-      # e = node.location.expression.end.end_pos
       b = Position.line_char_to_offset(@code, node.location.line, node.location.column)
       e = Position.line_char_to_offset(@code, node.location.last_line, node.location.last_column)
       frag = code[b..e-1].to_s
@@ -191,8 +240,10 @@ module Solargraph
     # @param node [Parser::AST::Node]
     # @return [String]
     def comments_for node
-      arr = associated_comments[node.loc.line]
-      arr ? stringify_comment_array(arr) : nil
+      stringified_comments[node.loc.line] ||= begin
+        arr = associated_comments[node.loc.line]
+        arr ? stringify_comment_array(arr) : nil
+      end
     end
 
     # A location representing the file in its entirety.
@@ -219,9 +270,14 @@ module Solargraph
       @folding_ranges ||= begin
         result = []
         inner_folding_ranges node, result
-        result.concat comment_block_ranges
+        result.concat foldable_comment_block_ranges
         result
       end
+    end
+
+    def synchronized?
+      @synchronized = true if @synchronized.nil?
+      @synchronized
     end
 
     private
@@ -249,7 +305,7 @@ module Solargraph
       @associated_comments ||= begin
         result = {}
         Parser::Source::Comment.associate_locations(node, comments).each_pair do |loc, all|
-          block = all.select{ |l| l.document? || code.lines[l.loc.line].strip.start_with?('#')}
+          block = all #.select{ |l| l.document? || code.lines[l.loc.line].strip.start_with?('#')}
           next if block.empty?
           result[loc.line] ||= []
           result[loc.line].concat block
@@ -266,6 +322,7 @@ module Solargraph
       ctxt = ''
       num = nil
       started = false
+      last_line = nil
       comments.each { |l|
         # Trim the comment and minimum leading whitespace
         p = l.text.gsub(/^#/, '')
@@ -276,9 +333,19 @@ module Solargraph
           cur = p.index(/[^ ]/)
           num = cur if cur < num
         end
+        # Include blank lines between comments
+        ctxt += ("\n" * (l.loc.first_line - last_line - 1)) unless last_line.nil?
         ctxt += "#{p[num..-1]}\n" if started
+        last_line = l.loc.last_line
       }
       ctxt
+    end
+
+    # A hash of line numbers and their associated comments.
+    #
+    # @return [Hash{Integer => Array<String>}]
+    def stringified_comments
+      @stringified_comments ||= {}
     end
 
     # @return [Array<Range>]
@@ -293,7 +360,12 @@ module Solargraph
       end
     end
 
-    def comment_block_ranges
+    # Get an array of foldable comment block ranges. Blocks are excluded if
+    # they are less than 3 lines long.
+    #
+    # @return [Array<Range>]
+    def foldable_comment_block_ranges
+      return [] unless synchronized?
       result = []
       grouped = []
       # @param cmnt [Parser::Source::Comment]
@@ -304,13 +376,17 @@ module Solargraph
           if grouped.empty? || cmnt.loc.expression.line == grouped.last.loc.expression.line + 1
             grouped.push cmnt
           else
-            result.push Range.from_to(grouped.first.loc.expression.line, 0, grouped.last.loc.expression.line, 0) unless grouped.empty?
+            result.push Range.from_to(grouped.first.loc.expression.line, 0, grouped.last.loc.expression.line, 0) unless grouped.length < 3
             grouped = [cmnt]
           end
         else
-          result.push Range.from_to(grouped.first.loc.expression.line, 0, grouped.last.loc.expression.line, 0) unless grouped.empty?
+          unless grouped.length < 3
+            result.push Range.from_to(grouped.first.loc.expression.line, 0, grouped.last.loc.expression.line, 0)
+          end
+          grouped.clear
         end
       end
+      result.push Range.from_to(grouped.first.loc.expression.line, 0, grouped.last.loc.expression.line, 0) unless grouped.length < 3
       result
     end
 
@@ -339,12 +415,13 @@ module Solargraph
       end
     end
 
+    # @param name [String]
+    # @param top [AST::Node]
+    # @return [Array<AST::Node>]
     def inner_node_references name, top
       result = []
-      if top.kind_of?(AST::Node)
-        if top.children.any?{|c| c.to_s == name}
-          result.push top
-        end
+      if top.is_a?(AST::Node)
+        result.push top if top.children.any? { |c| c.to_s == name }
         top.children.each { |c| result.concat inner_node_references(name, c) }
       end
       result
@@ -352,17 +429,35 @@ module Solargraph
 
     protected
 
+    # @return [String]
+    attr_writer :filename
+
     # @return [Integer]
     attr_writer :version
 
     # @return [String]
     attr_writer :code
 
+    # @return [Parser::AST::Node]
+    attr_writer :node
+
+    # @return [Array<Range>]
+    attr_writer :error_ranges
+
     # @return [String]
     attr_accessor :repaired
 
     # @return [Boolean]
     attr_writer :parsed
+
+    # @return [Array<Parser::Source::Comment>]
+    attr_writer :comments
+
+    # @return [Boolean]
+    attr_writer :synchronized
+
+    # @return [Source::Updater]
+    attr_accessor :last_updater
 
     class << self
       # @param filename [String]
@@ -392,7 +487,8 @@ module Solargraph
       end
 
       # @param code [String]
-      # @param filename [String]
+      # @param filename [String, nil]
+      # @param line [Integer]
       # @return [Parser::AST::Node]
       def parse code, filename = nil, line = 0
         buffer = Parser::Source::Buffer.new(filename, line)

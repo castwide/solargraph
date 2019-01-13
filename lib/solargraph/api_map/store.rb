@@ -26,8 +26,9 @@ module Solargraph
       # @param visibility [Array<Symbol>]
       # @return [Array<Solargraph::Pin::Base>]
       def get_methods fqns, scope: :instance, visibility: [:public]
+        kinds = [Pin::METHOD, Pin::ATTRIBUTE]
         namespace_children(fqns).select{ |pin|
-          [Pin::METHOD, Pin::ATTRIBUTE].include?(pin.kind) && pin.scope == scope && visibility.include?(pin.visibility)
+          kinds.include?(pin.kind) && pin.scope == scope && visibility.include?(pin.visibility)
         }
       end
 
@@ -118,6 +119,11 @@ module Solargraph
           end
           result
         end
+      end
+
+      def inspect
+        # Avoid insane dumps in specs
+        to_s
       end
 
       private

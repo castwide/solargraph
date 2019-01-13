@@ -1,3 +1,5 @@
+require 'jaro_winkler'
+
 module Solargraph
   # An index of pins and other ApiMap-related data for a Source.
   #
@@ -66,7 +68,7 @@ module Solargraph
     # @param query [String]
     # @return [Array<Pin::Base>]
     def query_symbols query
-      document_symbols.select{|pin| pin.path.include?(query)}
+      document_symbols.select{ |pin| fuzzy_string_match(pin.path, query) || fuzzy_string_match(pin.name, query) }
     end
 
     # @param position [Position]
@@ -85,7 +87,7 @@ module Solargraph
     # @return [Solargraph::Pin::Base]
     def locate_pin location
       # return nil unless location.start_with?("#{filename}:")
-      pins.select{|pin| pin.location == location}.first
+      pins.select { |pin| pin.location == location }.first
     end
 
     def locate_named_path_pin line, character
@@ -155,6 +157,13 @@ module Solargraph
       end
       # @todo Assuming the root pin is always valid
       found || pins.first
+    end
+
+    # @param str1 [String]
+    # @param str2 [String]
+    # @return [Boolean]
+    def fuzzy_string_match str1, str2
+      JaroWinkler.distance(str1, str2) > 0.6
     end
   end
 end

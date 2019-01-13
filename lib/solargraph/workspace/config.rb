@@ -15,7 +15,7 @@ module Solargraph
       # @return [Hash]
       attr_reader :raw_data
 
-      # @param workspace [String]
+      # @param directory [String]
       def initialize directory = ''
         @directory = directory
         include_globs = ['**/*.rb']

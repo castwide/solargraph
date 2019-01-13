@@ -43,6 +43,7 @@ module Solargraph
     SUPERCLASS_REFERENCE = 14
     INCLUDE_REFERENCE = 15
     EXTEND_REFERENCE = 16
+    METHOD_ALIAS = 17
 
     ROOT_PIN = Pin::Namespace.new(nil, '', '', '', :class, :public)
   end

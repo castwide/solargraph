@@ -7,9 +7,10 @@ module Solargraph
   class YardMap
     autoload :Cache,    'solargraph/yard_map/cache'
     autoload :CoreDocs, 'solargraph/yard_map/core_docs'
+    autoload :CoreGen,  'solargraph/yard_map/core_gen'
 
     CoreDocs.require_minimum
-    @@stdlib_yardoc = CoreDocs.yard_stdlib_file
+    @@stdlib_yardoc = CoreDocs.yardoc_stdlib_file
     @@stdlib_paths = {}
     YARD::Registry.load! @@stdlib_yardoc
     YARD::Registry.all(:class, :module).each do |ns|
@@ -26,7 +27,7 @@ module Solargraph
     attr_writer :with_dependencies
 
     # @param required [Array<String>]
-    # @param skip_dependencies [Boolean]
+    # @param with_dependencies [Boolean]
     def initialize(required: [], with_dependencies: true)
       # HACK: YardMap needs its own copy of this array
       @required = required.clone
@@ -79,7 +80,7 @@ module Solargraph
         YARD::Registry.load! y
       end
     rescue Exception => e
-      STDERR.puts "Error loading yardoc '#{y}' #{e.class} #{e.message}"
+      Solargraph::Logging.logger.warn "Error loading yardoc '#{y}' #{e.class} #{e.message}"
       yardocs.delete y
       nil
     end
@@ -252,7 +253,7 @@ module Solargraph
           end
         rescue Gem::LoadError
           # This error probably indicates a bug in an installed gem
-          STDERR.puts "Warning: failed to resolve #{dep.name} gem dependency for #{spec.name}"
+          Solargraph::Logging.logger.warn "Failed to resolve #{dep.name} gem dependency for #{spec.name}"
         end
       end
       result
@@ -266,7 +267,7 @@ module Solargraph
         .map{ |f| File.size(f) }
         .inject(:+)
       if !size.nil? && size > 20_000_000
-        STDERR.puts "Warning: yardoc at #{y} is too large to process (#{size} bytes)"
+        Solargraph::Logging.logger.warn "Yardoc at #{y} is too large to process (#{size} bytes)"
         return []
       end
       result = []

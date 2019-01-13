@@ -43,20 +43,20 @@ describe Solargraph::Library do
     end
   end
 
-  it "opens a file" do
+  it "opens an attached file" do
     library = Solargraph::Library.new
-    library.open('file.rb', 'a = b', 0)
-    source = nil
+    library.attach Solargraph::Source.load_string('a = b', 'file.rb')
+    expect(library.open?('file.rb')).to be(true)
     expect {
       source = library.checkout('file.rb')
     }.not_to raise_error
-    expect(source.filename).to eq('file.rb')
   end
 
-  it "deletes an open file" do
+  it "closes a detached file" do
     library = Solargraph::Library.new
-    library.open('file.rb', 'a = b', 0)
-    library.delete 'file.rb'
+    library.attach(Solargraph::Source.load_string('a = b', 'file.rb', 0))
+    library.detach 'file.rb'
+    expect(library.open?('file.rb')).to be(false)
     expect {
       library.checkout 'file.rb'
     }.to raise_error(Solargraph::FileNotFoundError)
@@ -67,7 +67,7 @@ describe Solargraph::Library do
       file = File.join(dir, 'file.rb')
       File.write(file, 'a = b')
       library = Solargraph::Library.load(dir)
-      library.open file, File.read(file), 0
+      library.attach Solargraph::Source.load(file)
       expect {
         library.checkout file
       }.not_to raise_error
@@ -81,7 +81,7 @@ describe Solargraph::Library do
 
   it "makes a closed file unavailable if it doesn't exist on disk" do
     library = Solargraph::Library.new
-    library.open 'file.rb', 'a = b', 0
+    library.attach Solargraph::Source.load_string('a = b', 'file.rb', 0)
     expect {
       library.checkout 'file.rb'
     }.not_to raise_error
@@ -94,7 +94,7 @@ describe Solargraph::Library do
   it "keeps a closed file available if it exists in the workspace" do
     library = Solargraph::Library.load('spec/fixtures/workspace')
     file = 'spec/fixtures/workspace/app.rb'
-    library.open file, File.read(file), 0
+    library.attach Solargraph::Source.load(file)
     expect {
       library.checkout file
     }.not_to raise_error
@@ -109,7 +109,7 @@ describe Solargraph::Library do
       file = File.join(dir, 'file.rb')
       File.write file, 'a = b'
       library = Solargraph::Library.load(dir)
-      library.open file, File.read(file), 0
+      library.attach Solargraph::Source.load(file)
       expect {
         library.checkout file
       }.not_to raise_error
@@ -121,10 +121,10 @@ describe Solargraph::Library do
 
   it "returns a Completion" do
     library = Solargraph::Library.new
-    library.open 'file.rb', %(
+    library.attach Solargraph::Source.load_string(%(
       x = 1
       x
-    ), 0
+    ), 'file.rb', 0)
     completion = library.completions_at('file.rb', 2, 7)
     expect(completion).to be_a(Solargraph::SourceMap::Completion)
     expect(completion.pins.map(&:name)).to include('x')
@@ -132,25 +132,27 @@ describe Solargraph::Library do
 
   it "gets definitions from a file" do
     library = Solargraph::Library.new
-    library.open 'file.rb', %(
+    src = Solargraph::Source.load_string %(
       class Foo
         def bar
         end
       end
-    ), 0
+    ), 'file.rb', 0
+    library.attach src
     paths = library.definitions_at('file.rb', 2, 13).map(&:path)
     expect(paths).to include('Foo#bar')
   end
 
   it "signifies method arguments" do
     library = Solargraph::Library.new
-    library.open 'file.rb', %(
+    src = Solargraph::Source.load_string %(
       class Foo
         def bar baz, key: ''
         end
       end
       Foo.new.bar()
-    ), 0
+    ), 'file.rb', 0
+    library.attach src
     pins = library.signatures_at('file.rb', 5, 18)
     expect(pins.length).to eq(1)
     expect(pins.first.path).to eq('Foo#bar')
@@ -187,9 +189,10 @@ describe Solargraph::Library do
 
   it "diagnoses files" do
     library = Solargraph::Library.new
-    library.open('file.rb', %(
+    src = Solargraph::Source.load_string(%(
       puts 'hello'
-    ), 0)
+    ), 'file.rb', 0)
+    library.attach src
     result = library.diagnose 'file.rb'
     expect(result).to be_a(Array)
     # @todo More tests
@@ -197,12 +200,13 @@ describe Solargraph::Library do
 
   it "documents symbols" do
     library = Solargraph::Library.new
-    library.open('file.rb', %(
+    src = Solargraph::Source.load_string(%(
       class Foo
         def bar
         end
       end
-    ), 0)
+    ), 'file.rb', 0)
+    library.attach src
     pins = library.document_symbols 'file.rb'
     expect(pins.length).to eq(2)
     expect(pins.map(&:path)).to include('Foo')
@@ -212,22 +216,25 @@ describe Solargraph::Library do
   it "collects references to a method symbol" do
     workspace = Solargraph::Workspace.new('*')
     library = Solargraph::Library.new(workspace)
-    library.open('file1.rb', %(
+    src1 = Solargraph::Source.load_string(%(
       class Foo
         def bar
         end
       end
 
       Foo.new.bar
-    ), 0)
-    library.open('file2.rb', %(
+    ), 'file1.rb', 0)
+    library.merge src1
+    src2 = Solargraph::Source.load_string(%(
       foo = Foo.new
       foo.bar
       class Other
         def bar; end
       end
       Other.new.bar
-    ), 0)
+    ), 'file2.rb', 0)
+    library.merge src2
+    library.catalog
     locs = library.references_from('file2.rb', 2, 11)
     expect(locs.length).to eq(3)
     expect(locs.select{|l| l.filename == 'file2.rb' && l.range.start.line == 6}).to be_empty
@@ -236,19 +243,22 @@ describe Solargraph::Library do
   it "collects stripped references to constant symbols" do
     workspace = Solargraph::Workspace.new('*')
     library = Solargraph::Library.new(workspace)
-    library.open('file1.rb', %(
+    src1 = Solargraph::Source.load_string(%(
       class Foo
         def bar
         end
       end
       Foo.new.bar
-    ), 0)
-    library.open('file2.rb', %(
+    ), 'file1.rb', 0)
+    library.merge src1
+    src2 = Solargraph::Source.load_string(%(
       class Other
         foo = Foo.new
         foo.bar
       end
-    ), 0)
+    ), 'file2.rb', 0)
+    library.merge src2
+    library.catalog
     locs = library.references_from('file1.rb', 1, 12, strip: true)
     expect(locs.length).to eq(3)
     locs.each do |l|
@@ -274,12 +284,13 @@ describe Solargraph::Library do
 
   it "returns YARD documentation from sources" do
     library = Solargraph::Library.new
-    library.open('test.rb', %(
+    src = Solargraph::Source.load_string(%(
       class Foo
         # My bar method
         def bar; end
       end
-    ), 0)
+    ), 'test.rb', 0)
+    library.attach src
     result = library.document('Foo#bar')
     expect(result).not_to be_empty
     expect(result.first).to be_a(YARD::CodeObjects::Base)
@@ -287,10 +298,11 @@ describe Solargraph::Library do
 
   it "synchronizes sources from updaters" do
     library = Solargraph::Library.new
-    library.open('test.rb', %(
+    src = Solargraph::Source.load_string(%(
       class Foo
       end
-    ), 1)
+    ), 'test.rb', 1)
+    library.attach src
     repl = %(
       class Foo
         def bar; end
@@ -301,17 +313,23 @@ describe Solargraph::Library do
       2,
       [Solargraph::Source::Change.new(nil, repl)]
     )
-    library.update updater
+    library.attach src.synchronize(updater)
     expect(library.checkout('test.rb').code).to eq(repl)
   end
 
-  it "synchronizes workspaces from updaters" do
-    library = Solargraph::Library.load('spec/fixtures/workspace')
-    updater = Solargraph::Source::Updater.new('spec/fixtures/workspace/app.rb', 1, [
-      Solargraph::Source::Change.new(nil, 'updated_from_updater')
-    ])
-    library.update updater
-    source = library.checkout('spec/fixtures/workspace/app.rb')
-    expect(source.code).to eq('updated_from_updater')
+  it "finds unique references" do
+    library = Solargraph::Library.new(Solargraph::Workspace.new('*'))
+    src1 = Solargraph::Source.load_string(%(
+      class Foo
+      end
+    ), 'src1.rb', 1)
+    library.merge src1
+    src2 = Solargraph::Source.load_string(%(
+      foo = Foo.new
+    ), 'src2.rb', 1)
+    library.merge src2
+    library.catalog
+    refs = library.references_from('src2.rb', 1, 12)
+    expect(refs.length).to eq(2)
   end
 end

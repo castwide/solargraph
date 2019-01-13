@@ -8,6 +8,7 @@ class Protocol
 
   def initialize host
     @host = host
+    @host.start
     @data_reader = Solargraph::LanguageServer::Transport::DataReader.new
     @data_reader.set_message_handler do |message|
       @response = message
@@ -23,15 +24,23 @@ class Protocol
       'params' => params
     }
     @message_id += 1
-    message = @host.start msg
+    message = @host.receive msg
     message.send_response
     @data_reader.receive @host.flush
+  end
+
+  def stop
+    @host.stop
   end
 end
 
 describe Protocol do
   before :all do
     @protocol = Protocol.new(Solargraph::LanguageServer::Host.new)
+  end
+
+  after :all do
+    @protocol.stop
   end
 
   it "handles initialize" do
@@ -170,6 +179,7 @@ describe Protocol do
   end
 
   it "handles textDocument/definition" do
+    sleep 0.5 # HACK: Give the Host::Sources thread time to work
     @protocol.request 'textDocument/definition', {
       'textDocument' => {
         'uri' => 'file:///file.rb'

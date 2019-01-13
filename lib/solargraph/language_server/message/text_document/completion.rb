@@ -4,13 +4,6 @@ module Solargraph
       module TextDocument
         class Completion < Base
           def process
-            inner_process
-          end
-
-          private
-
-          # @return [void]
-          def inner_process
             filename = uri_to_file(params['textDocument']['uri'])
             line = params['position']['line']
             col = params['position']['character']
@@ -39,7 +32,7 @@ module Solargraph
                 items: items
               )
             rescue InvalidOffsetError => e
-              STDERR.puts "Skipping invalid offset: #{filename}, line #{line}, character #{col}"
+              Logging.logger.info "Completion ignored invalid offset: #{filename}, line #{line}, character #{col}"
               set_result empty_result
             end
           end

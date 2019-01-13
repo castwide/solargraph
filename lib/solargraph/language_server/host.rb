@@ -11,9 +11,11 @@ module Solargraph
       autoload :Diagnoser, 'solargraph/language_server/host/diagnoser'
       autoload :Cataloger, 'solargraph/language_server/host/cataloger'
       autoload :Sources,   'solargraph/language_server/host/sources'
+      autoload :Dispatch,  'solargraph/language_server/host/dispatch'
 
-      include Solargraph::LanguageServer::UriHelpers
+      include UriHelpers
       include Logging
+      include Dispatch
 
       def initialize
         @cancel_semaphore = Mutex.new
@@ -21,10 +23,21 @@ module Solargraph
         @register_semaphore = Mutex.new
         @cancel = []
         @buffer = ''
-        @stopped = false
+        @stopped = true
         @next_request_id = 0
         @dynamic_capabilities = Set.new
         @registered_capabilities = Set.new
+      end
+
+      # Start asynchronous process handling.
+      #
+      # @return [void]
+      def start
+        return unless stopped?
+        @stopped = false
+        diagnoser.start
+        cataloger.start
+        sources.start
       end
 
       # Update the configuration options with the provided hash.
@@ -62,6 +75,7 @@ module Solargraph
       # Delete the specified ID from the list of cancelled IDs if it exists.
       #
       # @param id [Integer]
+      # @return [void]
       def clear id
         @cancel_semaphore.synchronize { @cancel.delete id }
       end
@@ -71,7 +85,7 @@ module Solargraph
       #
       # @param request [Hash] The contents of the message.
       # @return [Solargraph::LanguageServer::Message::Base] The message handler.
-      def start request
+      def receive request
         if request['method']
           logger.info "Server received #{request['method']}"
           logger.debug request
@@ -79,8 +93,8 @@ module Solargraph
           begin
             message.process
           rescue Exception => e
-            STDERR.puts e.message
-            STDERR.puts e.backtrace
+            logger.warn "Error processing request: [#{e.class}] #{e.message}"
+            logger.warn e.backtrace
             message.set_error Solargraph::LanguageServer::ErrorCodes::INTERNAL_ERROR, "[#{e.class}] #{e.message}"
           end
           message
@@ -89,7 +103,8 @@ module Solargraph
           requests[request['id']].process(request['result'])
           requests.delete request['id']
         else
-          STDERR.puts "Invalid message received."
+          logger.warn "Invalid message received."
+          logger.debug request
         end
       end
 
@@ -112,11 +127,13 @@ module Solargraph
       # Delete the specified file from the library.
       #
       # @param uri [String] The file uri.
+      # @return [void]
       def delete uri
         sources.close uri
         filename = uri_to_file(uri)
         libraries.each do |lib|
-          lib.delete filename
+          # lib.delete filename
+          lib.detach filename
         end
         send_notification "textDocument/publishDiagnostics", {
           uri: uri,
@@ -129,6 +146,7 @@ module Solargraph
       # @param uri [String] The file uri.
       # @param text [String] The contents of the file.
       # @param version [Integer] A version number.
+      # @return [void]
       def open uri, text, version
         src = sources.open(uri, text, version)
         libraries.each do |lib|
@@ -167,6 +185,7 @@ module Solargraph
         if sources.include?(uri)
           logger.info "Diagnosing #{uri}"
           library = library_for(uri)
+          library.catalog
           begin
             results = library.diagnose uri_to_file(uri)
             send_notification "textDocument/publishDiagnostics", {
@@ -196,11 +215,7 @@ module Solargraph
       # @return [void]
       def change params
         updater = generate_updater(params)
-        src = sources.update(params['textDocument']['uri'], updater)
-        libraries.each do |lib|
-          lib.merge src
-        end
-        diagnoser.schedule params['textDocument']['uri']
+        sources.async_update params['textDocument']['uri'], updater
       end
 
       # Queue a message to be sent to the client.
@@ -238,16 +253,13 @@ module Solargraph
         path = normalize_separators(directory) unless directory.nil?
         begin
           lib = Solargraph::Library.load(path, name)
+          libraries.push lib
         rescue WorkspaceTooLargeError => e
           send_notification 'window/showMessage', {
             'type' => Solargraph::LanguageServer::MessageTypes::WARNING,
             'message' => e.message
           }
-          lib = Solargraph::Library.new('', name)
         end
-        libraries.push lib
-        diagnoser.start
-        cataloger.start
       end
 
       # Prepare multiple folders.
@@ -400,9 +412,11 @@ module Solargraph
 
       # @return [void]
       def stop
+        return if @stopped
         @stopped = true
         cataloger.stop
         diagnoser.stop
+        sources.stop
       end
 
       def stopped?
@@ -576,79 +590,16 @@ module Solargraph
         }
       end
 
-      # Catalog the library.
-      #
-      # @return [void]
-      def catalog lib
-        lib.catalog
-      end
-
       # @param uri [String]
       # @return [Array<Range>]
       def folding_ranges uri
-        library = library_for(uri)
-        file = uri_to_file(uri)
-        library.folding_ranges(file)
+        # library = library_for(uri)
+        # file = uri_to_file(uri)
+        # library.folding_ranges(file)
+        sources.find(uri).folding_ranges
       end
 
       private
-
-      # @return [Array<Library>]
-      def libraries
-        @libraries ||= []
-      end
-
-      # @return [Sources]
-      def sources
-        @sources ||= Sources.new
-      end
-
-      # @param uri [String]
-      # @return [Library]
-      def library_for uri
-        explicit_library_for(uri) ||
-          implicit_library_for(uri) ||
-          generic_library_for(uri)
-      end
-
-      # @param uri [String]
-      # @return [Library, nil]
-      def explicit_library_for uri
-        filename = uri_to_file(uri)
-        libraries.each do |lib|
-          if lib.contain?(filename) #|| lib.open?(filename)
-            lib.attach sources.find(uri) if sources.include?(uri)
-            return lib
-          end
-        end
-        nil
-      end
-
-      # @param uri [String]
-      # @return [Library, nil]
-      def implicit_library_for uri
-        filename = uri_to_file(uri)
-        libraries.each do |lib|
-          # return lib if filename.start_with?(lib.workspace.directory)
-          if lib.open?(filename) || filename.start_with?(lib.workspace.directory)
-            lib.attach sources.find(uri)
-            return lib
-          end
-        end
-        nil
-      end
-
-      # @param uri [String]
-      # @return [Library]
-      def generic_library_for uri
-        generic_library.attach sources.find(uri)
-        generic_library
-      end
-
-      # @return [Library]
-      def generic_library
-        @generic_library ||= Solargraph::Library.new
-      end
 
       # @return [Diagnoser]
       def diagnoser

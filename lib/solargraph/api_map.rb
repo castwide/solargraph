@@ -11,7 +11,7 @@ module Solargraph
     autoload :SourceToYard, 'solargraph/api_map/source_to_yard'
     autoload :Store,        'solargraph/api_map/store'
 
-    include Solargraph::ApiMap::SourceToYard
+    include SourceToYard
 
     # Get a LiveMap associated with the current workspace.
     #
@@ -40,7 +40,7 @@ module Solargraph
         @store = Store.new(pins + YardMap.new.pins)
         @unresolved_requires = []
       }
-      resolve_method_aliases
+      # resolve_method_aliases
       self
     end
 
@@ -66,9 +66,13 @@ module Solargraph
       # Bundle always needs to be merged if it adds or removes sources
       merged = (bundle.sources.length == source_map_hash.values.length)
       bundle.sources.each do |source|
-        if source_map_hash.has_key?(source.filename)
-          if source_map_hash[source.filename].code == source.code
+        if source_map_hash.key?(source.filename)
+          if source_map_hash[source.filename].code == source.code && source_map_hash[source.filename].source.synchronized? && source.synchronized?
             new_map_hash[source.filename] = source_map_hash[source.filename]
+          elsif !source.synchronized?
+            new_map_hash[source.filename] = source_map_hash[source.filename]
+            # @todo Smelly instance variable access
+            new_map_hash[source.filename].instance_variable_set(:@source, source)
           else
             map = Solargraph::SourceMap.map(source)
             if source_map_hash[source.filename].try_merge!(map)
@@ -114,7 +118,7 @@ module Solargraph
         @store = new_store
         @unresolved_requires = yard_map.unresolved_requires
       }
-      resolve_method_aliases
+      # resolve_method_aliases
       self
     end
 
@@ -142,8 +146,7 @@ module Solargraph
     # @param directory [String]
     # @return [ApiMap]
     def self.load directory
-      # @todo How should this work?
-      api_map = self.new #(Solargraph::Workspace.new(directory))
+      api_map = self.new
       workspace = Solargraph::Workspace.new(directory)
       api_map.catalog Bundle.new(workspace: workspace)
       api_map
@@ -220,13 +223,11 @@ module Solargraph
       return qualify(context) if namespace == 'self'
       cached = cache.get_qualified_namespace(namespace, context)
       return cached.clone unless cached.nil?
-      # result = inner_qualify(namespace, context, [])
-      # result = result[2..-1] if !result.nil? && result.start_with?('::')
-      if namespace.start_with?('::')
-        result = inner_qualify(namespace[2..-1], '', [])
-      else
-        result = inner_qualify(namespace, context, [])
-      end
+      result = if namespace.start_with?('::')
+                 inner_qualify(namespace[2..-1], '', [])
+               else
+                 inner_qualify(namespace, context, [])
+               end
       cache.set_qualified_namespace(namespace, context, result)
       result
     end
@@ -296,8 +297,9 @@ module Solargraph
       #   exist = result.map(&:name)
       #   result.concat live.reject{|p| exist.include?(p.name)}
       # end
-      cache.set_methods(fqns, scope, visibility, deep, result)
-      result
+      resolved = resolve_method_aliases(result)
+      cache.set_methods(fqns, scope, visibility, deep, resolved)
+      resolved
     end
 
     # Get an array of method pins for a complex type.
@@ -371,7 +373,7 @@ module Solargraph
       #   lp = live_map.get_path_pin(path)
       #   result.push lp unless lp.nil?
       # end
-      result
+      resolve_method_aliases(result)
     end
 
     # Get an array of pins that match the specified path.
@@ -461,6 +463,7 @@ module Solargraph
 
     private
 
+    # @return [YardMap]
     def yard_map
       @yard_map ||= YardMap.new
     end
@@ -469,23 +472,17 @@ module Solargraph
     #
     # @return [Hash{String => SourceMap}]
     def source_map_hash
-      @mutex.synchronize {
-        @source_map_hash
-      }
+      @mutex.synchronize { @source_map_hash }
     end
 
     # @return [ApiMap::Store]
     def store
-      @mutex.synchronize {
-        @store
-      }
+      @mutex.synchronize { @store }
     end
 
     # @return [Solargraph::ApiMap::Cache]
     def cache
-      @mutex.synchronize {
-        @cache
-      }
+      @mutex.synchronize { @cache }
     end
 
     # @param fqns [String] A fully qualified namespace
@@ -558,7 +555,7 @@ module Solargraph
     # @return [void]
     def require_extensions
       Gem::Specification.all_names.select{|n| n.match(/^solargraph\-[a-z0-9_\-]*?\-ext\-[0-9\.]*$/)}.each do |n|
-        STDERR.puts "Loading extension #{n}"
+        Solargraph::Logging.logger.info "Loading extension #{n}"
         require n.match(/^(solargraph\-[a-z0-9_\-]*?\-ext)\-[0-9\.]*$/)[1]
       end
     end
@@ -583,9 +580,8 @@ module Solargraph
           return inner_qualify(root, '', skip)
         end
       else
-        if (root == '')
+        if root == ''
           return name if store.namespace_exists?(name)
-          # @todo What to do about the @namespace_includes stuff above?
         else
           roots = root.to_s.split('::')
           while roots.length > 0
@@ -642,18 +638,15 @@ module Solargraph
       false
     end
 
-    # @return [void]
-    def resolve_method_aliases
-      aliased = false
-      result = pins.map do |pin|
-        next pin unless pin.is_a?(Pin::MethodAlias)
-        origin = get_method_stack(pin.namespace, pin.original, scope: pin.scope).select{|pin| pin.class == Pin::Method}.first
+    # @param pins [Array<Pin::Base>]
+    # @return [Array<Pin::Base>]
+    def resolve_method_aliases pins
+      pins.map do |pin|
+        next pin unless pin.kind == Pin::METHOD_ALIAS
+        origin = get_method_stack(pin.namespace, pin.original, scope: pin.scope).select{|pin| pin.is_a?(Pin::BaseMethod)}.first
         next pin if origin.nil?
-        aliased = true
         Pin::Method.new(pin.location, pin.namespace, pin.name, origin.comments, origin.scope, origin.visibility, origin.parameters)
       end
-      return nil unless aliased
-      @mutex.synchronize { @store = Store.new(result) }
     end
   end
 end

@@ -89,7 +89,7 @@ module Solargraph
         changed ||= p.refresh
       end
       if changed
-        STDERR.puts "Resetting LiveMap cache"
+        Solargraph::Logging.logger.debug "Resetting LiveMap cache"
         cache.clear
         get_constants('')
         get_methods('', '', 'class')

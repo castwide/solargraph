@@ -12,6 +12,7 @@ module Solargraph
 
       # Generate the data.
       #
+      # @param source [Source]
       # @return [Array]
       def map source
         @source = source
@@ -57,8 +58,8 @@ module Solargraph
       end
 
       def process_comment position, comment
+        return unless comment =~ /(@\!method|@\!attribute|@\!domain|@\!macro|@\!parse)/
         cmnt = remove_inline_comment_hashes(comment)
-        return unless cmnt =~ /(@\!method|@\!attribute|@\!domain|@\!macro|@\!parse)/
         parse = YARD::Docstring.parser.parse(cmnt)
         parse.directives.each { |d| process_directive(position, d) }
       end
@@ -97,7 +98,7 @@ module Solargraph
           end
         when 'domain'
           namespace = namespace_at(position)
-          namespace.domains.push directive.tag.text
+          namespace.domains.concat directive.tag.types unless directive.tag.types.nil?
         end
       end
 
@@ -108,10 +109,10 @@ module Solargraph
         comment.lines.each { |l|
           # Trim the comment and minimum leading whitespace
           p = l.gsub(/^#/, '')
-          if num.nil? and !p.strip.empty?
+          if num.nil? && !p.strip.empty?
             num = p.index(/[^ ]/)
             started = true
-          elsif started and !p.strip.empty?
+          elsif started && !p.strip.empty?
             cur = p.index(/[^ ]/)
             num = cur if cur < num
           end
@@ -121,6 +122,7 @@ module Solargraph
       end
 
       def process_comment_directives
+        return unless @code =~ /(@\!method|@\!attribute|@\!domain|@\!macro|@\!parse)/
         current = []
         last_line = nil
         @comments.each do |cmnt|

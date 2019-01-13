@@ -15,7 +15,7 @@ module Solargraph
       def define
         return [] if cursor.comment? || cursor.chain.literal?
         result = cursor.chain.define(api_map, context_pin, locals)
-        result.concat(source_map.pins.select{ |p| p.location.range.start.line == cursor.position.line }) if result.empty?
+        result.concat((source_map.pins + source_map.locals).select{ |p| p.name == cursor.word && p.location.range.contain?(cursor.position) }) if result.empty?
         result
       end
 

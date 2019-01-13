@@ -20,7 +20,7 @@ describe Solargraph::LanguageServer::Host do
       done_somethings += 1 if response == 'Do something'
     end
     expect(host.pending_requests.length).to eq(1)
-    host.start({
+    host.receive({
       'id' => host.pending_requests.first,
       'result' => 'Do something'
     })
@@ -64,6 +64,7 @@ describe Solargraph::LanguageServer::Host do
       host.configure({ 'diagnostics' => true })
       file = File.join(dir, 'test.rb')
       File.write(file, "foo = 'foo'")
+      host.start
       host.prepare dir
       uri = Solargraph::LanguageServer::UriHelpers.file_to_uri(file)
       host.open(file, File.read(file), 1)
@@ -71,12 +72,13 @@ describe Solargraph::LanguageServer::Host do
       times = 0
       # @todo Weak timeout for waiting until the diagnostics thread
       #   sends a notification
-      while buffer.empty? and times < 10
+      while buffer.empty? && times < 10
         sleep 1
         times += 1
         buffer = host.flush
       end
       expect(buffer).to include('textDocument/publishDiagnostics')
+      host.stop
     end
   end
 
@@ -87,6 +89,7 @@ describe Solargraph::LanguageServer::Host do
     allow(library).to receive(:contain?).and_return(true)
     allow(library).to receive(:attach)
     allow(library).to receive(:merge)
+    allow(library).to receive(:catalog)
     # @todo Smelly instance variable access
     host.instance_variable_set(:@libraries, [library])
     host.open('file:///test.rb', '', 0)
@@ -134,7 +137,77 @@ describe Solargraph::LanguageServer::Host do
     }.not_to raise_error
   end
 
-  describe "Host variations" do
+  it "pings the cataloger for library changes" do
+    host = Solargraph::LanguageServer::Host.new
+    dir = File.absolute_path('spec/fixtures/workspace')
+    file = File.join(dir, 'app.rb')
+    file_uri = Solargraph::LanguageServer::UriHelpers.uri_to_file(file)
+    host.prepare dir
+    host.open file_uri, File.read(file), 0
+    host.stop
+    params = {
+      'textDocument' => {
+        'uri' => file_uri,
+        'version' => 1
+      },
+      'contentChanges' => [
+        {
+          'range' => {
+            'start' => {
+              'line' => 2,
+              'character' => 0
+            },
+            'end' => {
+              'line' => 2,
+              'character' => 0
+            }
+          },
+          'text' => ';'
+        }
+      ]
+    }
+    cataloger = double()
+    # @todo Smelly instance variable access
+    host.instance_variable_set(:@cataloger, cataloger)
+    expect(cataloger).to receive(:ping)
+    host.change params
+  end
+
+  it "responds with empty diagnostics for unopened files" do
+    host = Solargraph::LanguageServer::Host.new
+    host.diagnose 'file:///file.rb'
+    response = host.flush
+    # @todo Quick and dirty hack to get the data
+    json = JSON.parse(response.lines.last)
+    expect(json['method']).to eq('textDocument/publishDiagnostics')
+    expect(json['params']['diagnostics']).to be_empty
+  end
+
+  it "rescues runtime errors from messages" do
+    host = Solargraph::LanguageServer::Host.new
+    message_class = Class.new(Solargraph::LanguageServer::Message::Base) do
+      def process
+        raise RuntimeError, 'Always raise an error from this message'
+      end
+    end
+    Solargraph::LanguageServer::Message.register('raiseRuntimeError', message_class)
+    expect {
+      host.receive({
+        'id' => 1,
+        'method' => 'raiseRuntimeError',
+        'params' => {}
+      })
+    }.not_to raise_error
+  end
+
+  it "ignores invalid messages" do
+    host = Solargraph::LanguageServer::Host.new
+    expect {
+      host.receive({ 'bad' => 'message' })
+    }.not_to raise_error
+  end
+
+  describe "Workspace variations" do
     before :each do
       @host = Solargraph::LanguageServer::Host.new
     end

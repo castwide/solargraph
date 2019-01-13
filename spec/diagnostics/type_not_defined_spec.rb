@@ -87,7 +87,7 @@ describe Solargraph::Diagnostics::TypeNotDefined do
         end
       end
       class Second < First
-        def foo
+        def foo bar
         end
       end
     ))

@@ -10,6 +10,7 @@ module Solargraph
     attr_reader :directory
 
     # @param directory [String]
+    # @param config [Config, nil]
     def initialize directory = '', config = nil
       @directory = directory
       @config = config
@@ -28,7 +29,7 @@ module Solargraph
     # @param source [Solargraph::Source]
     # @return [Boolean] True if the source was added to the workspace
     def merge source
-      unless directory == '*' || source_hash.has_key?(source.filename)
+      unless directory == '*' || source_hash.key?(source.filename)
         # Reload the config to determine if a new source should be included
         @config = Solargraph::Workspace::Config.new(directory)
         return false unless config.calculated.include?(source.filename)
@@ -53,7 +54,7 @@ module Solargraph
     # @param filename [String]
     # @return [Boolean] True if the source was removed from the workspace
     def remove filename
-      return false unless source_hash.has_key?(filename)
+      return false unless source_hash.key?(filename)
       source_hash.delete filename
       true
     end
@@ -68,13 +69,15 @@ module Solargraph
       source_hash.values
     end
 
+    # @param filename [String]
     # @return [Boolean]
     def has_file? filename
-      source_hash.has_key?(filename)
+      source_hash.key?(filename)
     end
 
     # Get a source by its filename.
     #
+    # @param filename [String]
     # @return [Solargraph::Source]
     def source filename
       source_hash[filename]
@@ -109,13 +112,13 @@ module Solargraph
     #
     # @return [Array<String>]
     def gemspecs
-      return [] if directory.empty?
+      return [] if directory.empty? || directory == '*'
       @gemspecs ||= Dir[File.join(directory, '**/*.gemspec')]
     end
 
     # Synchronize the workspace from the provided updater.
     #
-    # @param [Source::Updater]
+    # @param updater [Source::Updater]
     # @return [void]
     def synchronize! updater
       source_hash[updater.filename] = source_hash[updater.filename].synchronize(updater)
@@ -128,6 +131,7 @@ module Solargraph
       @source_hash ||= {}
     end
 
+    # @return [void]
     def load_sources
       source_hash.clear
       unless directory.empty? || directory == '*'
@@ -144,7 +148,7 @@ module Solargraph
     #
     # @return [Array<String>]
     def generate_require_paths
-      return configured_require_paths if directory.empty? || !gemspec?
+      return configured_require_paths unless gemspec?
       result = []
       gemspecs.each do |file|
         base = File.dirname(file)
@@ -152,15 +156,14 @@ module Solargraph
         #   workspace code, but this is how Gem::Specification.load does it
         #   anyway.
         begin
-           spec = eval(File.read(file), binding, file)
-           next unless Gem::Specification === spec
-           result.concat spec.require_paths.map{ |path| File.join(base, path) } unless spec.nil?
+          spec = eval(File.read(file), binding, file)
+          next unless Gem::Specification === spec
+          result.concat(spec.require_paths.map { |path| File.join(base, path) })
         rescue Exception => e
-           # Don't die if we have an error during eval-ing a gem spec.
-           # Concat the default lib directory instead.
-           # @todo Should the client be informed of the error through
-           #   diagnostics or some other mechanism?
-           result.push File.join(base, 'lib')
+          # Don't die if we have an error during eval-ing a gem spec.
+          # Concat the default lib directory instead.
+          Solargraph.logger.warn "Error reading #{file}: [#{e.class}] #{e.message}"
+          result.push File.join(base, 'lib')
         end
       end
       result.concat config.require_paths
