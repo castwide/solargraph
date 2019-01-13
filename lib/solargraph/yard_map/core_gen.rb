@@ -22,7 +22,7 @@ module Solargraph
             `yardoc -b #{File.join(path_name, 'yardoc-stdlib')} -n lib ext`
             raise 'An error occurred generating the stdlib yardoc.' unless $?.success?
           end
-        endgene
+        end
 
         # Generate a gzip of documentation from the specified Ruby source directory.
         #
