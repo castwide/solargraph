@@ -24,7 +24,7 @@ module Solargraph
           Thread.new do
             until stopped?
               tick
-              sleep 0.25
+              sleep 0.25 if queue.empty?
             end
           end
         end
@@ -68,7 +68,6 @@ module Solargraph
         # @return [Source]
         def update uri, updater
           src = find(uri)
-          # open_source_hash[uri] = src.synchronize(updater)
           mutex.synchronize { open_source_hash[uri] = src.synchronize(updater) }
           changed
           notify_observers open_source_hash[uri]
@@ -80,7 +79,7 @@ module Solargraph
         def async_update uri, updater
           src = find(uri)
           mutex.synchronize { open_source_hash[uri] = src.start_synchronize(updater) }
-          mutex.synchronize {queue.push uri}
+          mutex.synchronize { queue.push uri }
           changed
           notify_observers open_source_hash[uri]
         end

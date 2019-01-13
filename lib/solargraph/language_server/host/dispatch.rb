@@ -18,6 +18,11 @@ module Solargraph
           @libraries ||= []
         end
 
+        # The Sources observer callback that merges a source into the host's
+        # libraries when it gets updated.
+        #
+        # @param src [Source]
+        # @return [void]
         def update_libraries src
           # @todo This module should not call cataloger and diagnoser
           libraries.each do |lib|
