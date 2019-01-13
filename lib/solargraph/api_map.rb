@@ -223,11 +223,11 @@ module Solargraph
       return qualify(context) if namespace == 'self'
       cached = cache.get_qualified_namespace(namespace, context)
       return cached.clone unless cached.nil?
-      if namespace.start_with?('::')
-        result = inner_qualify(namespace[2..-1], '', [])
-      else
-        result = inner_qualify(namespace, context, [])
-      end
+      result = if namespace.start_with?('::')
+                 inner_qualify(namespace[2..-1], '', [])
+               else
+                 inner_qualify(namespace, context, [])
+               end
       cache.set_qualified_namespace(namespace, context, result)
       result
     end
@@ -463,6 +463,7 @@ module Solargraph
 
     private
 
+    # @return [YardMap]
     def yard_map
       @yard_map ||= YardMap.new
     end
@@ -579,7 +580,7 @@ module Solargraph
           return inner_qualify(root, '', skip)
         end
       else
-        if (root == '')
+        if root == ''
           return name if store.namespace_exists?(name)
         else
           roots = root.to_s.split('::')

@@ -44,7 +44,6 @@ module Solargraph
       column = position.character
       text.lines.each do |l|
         line_length = l.length
-        char_length = l.chomp.length
         if feed == line
           result += column
           break

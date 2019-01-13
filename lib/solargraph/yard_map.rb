@@ -27,7 +27,7 @@ module Solargraph
     attr_writer :with_dependencies
 
     # @param required [Array<String>]
-    # @param skip_dependencies [Boolean]
+    # @param with_dependencies [Boolean]
     def initialize(required: [], with_dependencies: true)
       # HACK: YardMap needs its own copy of this array
       @required = required.clone

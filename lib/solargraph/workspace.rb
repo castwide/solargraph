@@ -162,8 +162,7 @@ module Solargraph
         rescue Exception => e
           # Don't die if we have an error during eval-ing a gem spec.
           # Concat the default lib directory instead.
-          # @todo Should the client be informed of the error through
-          #   diagnostics or some other mechanism?
+          Solargraph.logger.warn "Error reading #{file}: [#{e.class}] #{e.message}"
           result.push File.join(base, 'lib')
         end
       end

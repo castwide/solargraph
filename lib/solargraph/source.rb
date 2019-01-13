@@ -64,10 +64,16 @@ module Solargraph
     end
 
     # @param range [Solargraph::Range]
+    # @return [String]
     def at range
       from_to range.start.line, range.start.character, range.ending.line, range.ending.character
     end
 
+    # @param l1 [Integer]
+    # @param c1 [Integer]
+    # @param l2 [Integer]
+    # @param c2 [Integer]
+    # @return [String]
     def from_to l1, c1, l2, c2
       b = Solargraph::Position.line_char_to_offset(@code, l1, c1)
       e = Solargraph::Position.line_char_to_offset(@code, l2, c2)
@@ -222,11 +228,9 @@ module Solargraph
       @error_ranges ||= []
     end
 
+    # @param node [Parser::AST::Node]
+    # @return [String]
     def code_for(node)
-      # @todo Using node locations on code with converted EOLs seems
-      #   slightly more efficient than calculating offsets.
-      # b = node.location.expression.begin.begin_pos
-      # e = node.location.expression.end.end_pos
       b = Position.line_char_to_offset(@code, node.location.line, node.location.column)
       e = Position.line_char_to_offset(@code, node.location.last_line, node.location.last_column)
       frag = code[b..e-1].to_s
@@ -337,6 +341,9 @@ module Solargraph
       ctxt
     end
 
+    # A hash of line numbers and their associated comments.
+    #
+    # @return [Hash{Integer => Array<String>}]
     def stringified_comments
       @stringified_comments ||= {}
     end
@@ -407,12 +414,13 @@ module Solargraph
       end
     end
 
+    # @param name [String]
+    # @param top [AST::Node]
+    # @return [Array<AST::Node>]
     def inner_node_references name, top
       result = []
-      if top.kind_of?(AST::Node)
-        if top.children.any?{|c| c.to_s == name}
-          result.push top
-        end
+      if top.is_a?(AST::Node)
+        result.push top if top.children.any? { |c| c.to_s == name }
         top.children.each { |c| result.concat inner_node_references(name, c) }
       end
       result
@@ -478,7 +486,8 @@ module Solargraph
       end
 
       # @param code [String]
-      # @param filename [String]
+      # @param filename [String, nil]
+      # @param line [Integer]
       # @return [Parser::AST::Node]
       def parse code, filename = nil, line = 0
         buffer = Parser::Source::Buffer.new(filename, line)
