@@ -97,7 +97,14 @@ module Solargraph
       stack
     end
 
-    def combine updater
+    # Start synchronizing the source. This method updates the code without
+    # parsing a new AST. The resulting Source object will be marked not
+    # synchronized (#synchronized? == false).
+    #
+    # @param updater [Source::Updater]
+    # @return [Source]
+    def start_synchronize updater
+      raise 'Invalid synchronization' unless updater.filename == filename
       real_code = updater.write(@code)
       src = Source.allocate
       src.filename = filename
@@ -108,10 +115,17 @@ module Solargraph
       src.synchronized = false
       src.node = @node
       src.comments = @comments
+      src.error_ranges = error_ranges
+      src.last_updater = updater
       src
     end
 
-    def other_synchronize
+    # Finish synchronizing a source that was updated via #start_synchronize.
+    # This method returns self if the source is already synchronized. Otherwise
+    # it parses the AST and returns a new synchronized Source.
+    #
+    # @return [Source]
+    def finish_synchronize
       return self if synchronized?
       synced = Source.new(@code, filename)
       if synced.parsed?
@@ -119,15 +133,17 @@ module Solargraph
         return synced
       end
       synced = Source.new(@repaired, filename)
-      # synced.error_ranges.concat (error_ranges + updater.changes.map(&:range))
+      synced.error_ranges.concat (error_ranges + last_updater.changes.map(&:range))
       synced.code = @code
       synced.synchronized = true
       synced.version = version
       synced
     end
 
+    # Synchronize the Source with an update. This method applies changes to the
+    # code, parses the new code's AST, and returns the resulting Source object.
+    #
     # @param updater [Source::Updater]
-    # @param reparse [Boolean]
     # @return [Source]
     def synchronize updater
       raise 'Invalid synchronization' unless updater.filename == filename
@@ -406,6 +422,9 @@ module Solargraph
     # @return [Parser::AST::Node]
     attr_writer :node
 
+    # @return [Array<Range>]
+    attr_writer :error_ranges
+
     # @return [String]
     attr_accessor :repaired
 
@@ -417,6 +436,9 @@ module Solargraph
 
     # @return [Boolean]
     attr_writer :synchronized
+
+    # @return [Source::Updater]
+    attr_accessor :last_updater
 
     class << self
       # @param filename [String]

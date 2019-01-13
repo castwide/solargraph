@@ -33,7 +33,7 @@ module Solargraph
           uri = mutex.synchronize { queue.shift }
           unless queue.include?(uri)
             mutex.synchronize do
-              nxt = open_source_hash[uri].other_synchronize
+              nxt = open_source_hash[uri].finish_synchronize
               open_source_hash[uri] = nxt
               changed
               notify_observers open_source_hash[uri]
@@ -77,7 +77,7 @@ module Solargraph
         # @return [Thread]
         def async_update uri, updater
           src = find(uri)
-          mutex.synchronize { open_source_hash[uri] = src.combine(updater) }
+          mutex.synchronize { open_source_hash[uri] = src.start_synchronize(updater) }
           mutex.synchronize {queue.push uri}
           changed
           notify_observers open_source_hash[uri]

@@ -429,7 +429,6 @@ module Solargraph
       # @param params [Hash] A hash representation of a completion item
       # @return [Pin::Base, nil]
       def locate_pin params
-        return nil # @todo Testing
         return nil unless params['data'] && params['data']['uri'] && params['data']['location']
         library = library_for(params['data']['uri'])
         location = Location.new(
