@@ -121,6 +121,11 @@ module Solargraph
         end
       end
 
+      def inspect
+        # Avoid insane dumps in specs
+        to_s
+      end
+
       private
 
       # @param fqns [String]

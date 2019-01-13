@@ -516,4 +516,40 @@ describe Solargraph::ApiMap do
     second = api_map.source_map(nil)
     expect(first).to eq(second)
   end
+
+  it "catalogs unsynchronized sources without rebuilding" do
+    # @todo This spec determines whether the ApiMap merged without rebuilding
+    #   by inspecting the internal #store attribute. See if there's a better
+    #   way.
+    source1 = Solargraph::Source.load_string(%(
+      class Foo
+        def bar; end
+      end
+      f
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new
+    api_map.map source1
+    store1 = api_map.send(:store)
+    # This update should require a rebuild after it's synchronized because it
+    # adds a local variable pin to the source map
+    source2 = source1.start_synchronize Solargraph::Source::Updater.new(
+      'test.rb',
+      2,
+      [
+        Solargraph::Source::Change.new(
+          Solargraph::Range.from_to(4, 7, 4, 7),
+          'oo = Foo.new'
+        )
+      ]
+    )
+    api_map.map source2
+    store2 = api_map.send(:store)
+    # The unsynchronized source does not rebuild the store
+    expect(store1).to be(store2)
+    source3 = source2.finish_synchronize
+    api_map.map source3
+    store3 = api_map.send(:store)
+    # The synchronized source rebuilds the store
+    expect(store3).not_to be(store2)
+  end
 end
