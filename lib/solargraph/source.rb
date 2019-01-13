@@ -365,6 +365,7 @@ module Solargraph
     #
     # @return [Array<Range>]
     def foldable_comment_block_ranges
+      return [] unless synchronized?
       result = []
       grouped = []
       # @param cmnt [Parser::Source::Comment]
