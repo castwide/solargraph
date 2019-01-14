@@ -45,7 +45,7 @@ module Solargraph
       #
       # @return [Array<String>]
       def included
-        return [] if directory.empty?
+        return [] if directory.empty? || directory == '*'
         @included ||= process_globs(@raw_data['include'])
       end
 
@@ -53,7 +53,7 @@ module Solargraph
       #
       # @return [Array<String>]
       def excluded
-        return [] if directory.empty?
+        return [] if directory.empty? || directory == '*'
         @excluded ||= process_exclusions(@raw_data['exclude'])
       end
 
@@ -61,6 +61,7 @@ module Solargraph
       #
       # @return [Array<String>]
       def calculated
+        Solargraph.logger.info "Indexing workspace files in #{directory}" unless @calculated || directory.empty? || directory == '*'
         @calculated ||= included - excluded
       end
 
