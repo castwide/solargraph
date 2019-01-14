@@ -15,7 +15,7 @@ module Solargraph
         # @param position [Position]
         # @return [Source::Chain]
         def chain source, position
-          raise "Not a source" unless source.is_a?(Source)
+          # raise "Not a source" unless source.is_a?(Source)
           new(source, position).chain
         end
       end
@@ -162,7 +162,11 @@ module Solargraph
                 signature = char + signature if char.match(/[a-z0-9:\._@\$\?\!]/i) and @source.code[index - 1] != '%'
                 break if char == '$'
                 if char == '@'
-                  signature = "@#{signature}" if @source.code[index-1, 1] == '@'
+                  index -= 1
+                  if @source.code[index, 1] == '@'
+                    index -= 1
+                    signature = "@#{signature}"
+                  end
                   break
                 end
               elsif parens == 1 || brackets == 1 || squares == 1

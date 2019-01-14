@@ -149,4 +149,34 @@ describe Solargraph::Source::SourceChainer do
     chain = Solargraph::Source::SourceChainer.chain(source, Solargraph::Position.new(3, 10))
     expect(chain.links.first.word).to eq('cc3')
   end
+
+  it "chains instance variables from unsynchronized sources" do
+    source = double(Solargraph::Source,
+      :synchronized? => false,
+      :code => '@foo.',
+      :filename => 'test.rb',
+      :string_at? => false,
+      :comment_at? => false,
+      :repaired? => false,
+      :parsed? => true
+    )
+    chain = Solargraph::Source::SourceChainer.chain(source, Solargraph::Position.new(0, 5))
+    expect(chain.links.first.word).to eq('@foo')
+    expect(chain.links.last.word).to eq('<undefined>')
+  end
+
+  it "chains class variables from unsynchronized sources" do
+    source = double(Solargraph::Source,
+      :synchronized? => false,
+      :code => '@@foo.',
+      :filename => 'test.rb',
+      :string_at? => false,
+      :comment_at? => false,
+      :repaired? => false,
+      :parsed? => true
+    )
+    chain = Solargraph::Source::SourceChainer.chain(source, Solargraph::Position.new(0, 6))
+    expect(chain.links.first.word).to eq('@@foo')
+    expect(chain.links.last.word).to eq('<undefined>')
+  end
 end
