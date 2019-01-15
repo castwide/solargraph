@@ -1,6 +1,8 @@
 require 'fileutils'
 require 'tmpdir'
 require 'pathname'
+require 'rubygems/package'
+require 'shellwords'
 
 module Solargraph
   class YardMap
@@ -17,10 +19,12 @@ module Solargraph
           path_name = Pathname.new(Dir.pwd).join(dest_dir).to_s
           FileUtils.mkdir_p path_name
           Dir.chdir(ruby_dir) do
-            `yardoc --plugin coregen -b #{File.join(path_name, 'yardoc')} -n *.c`
+            `yardoc --plugin coregen -b "#{File.join(path_name, 'yardoc')}" -n *.c`
             raise 'An error occurred generating the core yardoc.' unless $?.success?
-            `yardoc -b #{File.join(path_name, 'yardoc-stdlib')} -n lib ext`
+            # YARD::CLI::Yardoc.run('--plugin', 'coregen', '-b', "#{File.join(path_name, 'yardoc')}", '-n', File.join(ruby_dir, '*.c'))
+            `yardoc -b "#{File.join(path_name, 'yardoc-stdlib')}" -n lib ext`
             raise 'An error occurred generating the stdlib yardoc.' unless $?.success?
+            # YARD::CLI::Yardoc.run('-b', "#{File.join(path_name, 'yardoc-stdlib')}", '-n', File.join(ruby_dir, 'lib', '**', '*.rb'), File.join(ruby_dir, 'ext', '**', '*.c'), File.join(ruby_dir, 'ext', '**', '*.rb'))
           end
         end
 
@@ -43,11 +47,27 @@ module Solargraph
             end
             path_name = Pathname.new(tmp).join(base_name).to_s
             generate_docs ruby_dir, path_name
-            `cd #{tmp} && tar -cf #{base_name}.tar *`
-            raise 'An error occurred generating the documentation tar.' unless $?.success?
-            `gzip #{path_name}.tar`
-            raise 'An error occurred generating the documentation gzip.' unless $?.success?
-            FileUtils.cp "#{path_name}.tar.gz", Pathname.new(dest_dir).join("#{base_name}.tar.gz").to_s
+            gzip path_name, Pathname.new(dest_dir).join("#{base_name}.tar.gz").to_s
+          end
+        end
+
+        private
+
+        # @param dir [String] The directory to compress
+        # @param dst [String] The destination file
+        def gzip dir, dst
+          File.open(dst, 'wb') do |file|
+            Zlib::GzipWriter.wrap(file) do |gzip|
+              Gem::Package::TarWriter.new(gzip) do |tar|
+                Dir["#{dir}/**/*"].each do |filename|
+                  next if File.directory?(filename)
+                  relname = File.join(File.basename(dir), filename[dir.length+1..-1])
+                  tar.add_file_simple(relname, 0o644, File.size(filename)) do |io|
+                    io.write File.read_binary(filename)
+                  end
+                end
+              end
+            end
           end
         end
       end
