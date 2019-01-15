@@ -183,4 +183,24 @@ describe Solargraph::Source::SourceChainer do
     expect(chain.links.first.word).to eq('@@foo')
     expect(chain.links.last.word).to eq('<undefined>')
   end
+
+  it "detects literals from chains in unsynchronized sources" do
+    source1 = Solargraph::Source.load_string(%(
+      ''
+    ))
+    source2 = source1.start_synchronize(Solargraph::Source::Updater.new(
+      nil,
+      2,
+      [
+        Solargraph::Source::Change.new(
+          Solargraph::Range.from_to(1, 8, 1, 8),
+          '.'
+        )
+      ]
+    ))
+    chain = Solargraph::Source::SourceChainer.chain(source2, Solargraph::Position.new(1, 9))
+    expect(chain.links.first).to be_a(Solargraph::Source::Chain::Literal)
+    expect(chain.links.first.word).to eq('<String>')
+    expect(chain.links.last.word).to eq('<undefined>')
+  end
 end
