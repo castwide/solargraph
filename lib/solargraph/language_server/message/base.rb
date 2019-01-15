@@ -73,6 +73,7 @@ module Solargraph
           response[:result] = nil if result.nil? and error.nil?
           json = response.to_json
           envelope = "Content-Length: #{json.bytesize}\r\n\r\n#{json}"
+          Solargraph.logger.debug envelope
           host.queue envelope
           host.clear id
         end
