@@ -24,21 +24,30 @@ module Solargraph
           end
         end
 
-        # Generate a gzip of documentation from the specified Ruby source directory.
+        # Generate a gzip of documentation from the specified Ruby source
+        # directory.
+        #
+        # This method is designed to generate the directory architecture that
+        # YardMap core docs expect.
         #
         # @param ruby_dir [String] The Ruby source directory
-        # @param gzip_name [String] The gzip file name
+        # @param ver_name [String, nil] The version name
+        # @param dest_dir [String] The destination directory
         # @return [void]
-        def generate_gzip ruby_dir, gzip_name
+        def generate_gzip ruby_dir, ver_name = nil, dest_dir = Dir.pwd
           Dir.mktmpdir do |tmp|
-            gzip_name += '.tar.gz' unless gzip_name.end_with?('.tar.gz')
-            base_name = gzip_name[0..-8]
-            path_name = Pathname.new(Dir.pwd).join(base_name).to_s
-            generate_docs ruby_dir, tmp
-            `cd #{tmp} && tar -cf #{path_name}.tar *`
+            base_name = ver_name || begin
+              match = ruby_dir.match(/\d+\.\d+\.\d+$/)
+              raise "Unable to determine version name from #{ruby_dir}" if match.nil?
+              match[0]
+            end
+            path_name = Pathname.new(tmp).join(base_name).to_s
+            generate_docs ruby_dir, path_name
+            `cd #{tmp} && tar -cf #{base_name}.tar *`
             raise 'An error occurred generating the documentation tar.' unless $?.success?
             `gzip #{path_name}.tar`
             raise 'An error occurred generating the documentation gzip.' unless $?.success?
+            FileUtils.cp "#{path_name}.tar.gz", Pathname.new(dest_dir).join("#{base_name}.tar.gz").to_s
           end
         end
       end
