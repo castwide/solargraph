@@ -534,7 +534,10 @@ module Solargraph
       # @return [Array<Solargraph::Pin::Base>]
       def document_symbols uri
         library = library_for(uri)
-        library.document_symbols(uri_to_file(uri))
+        # At this level, document symbols should be unique; e.g., a
+        # module_function method should return the location for Module.method
+        # or Module#method, but not both.
+        library.document_symbols(uri_to_file(uri)).uniq(&:location)
       end
 
       # Send a notification to the client.
