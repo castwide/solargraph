@@ -204,4 +204,17 @@ e = d # inline
     expect(source2.code).to eq('x = 12')
     expect(source2).not_to be_synchronized
   end
+
+  it "handles comment arrays that overlap lines" do
+    # Fixes negative argument error (castwide/solargraph#141)
+    source = Solargraph::Source.load_string(%(
+=begin
+=end
+y = 1 #foo
+    ))
+    node = source.node_at(3, 0)
+    expect {
+      source.comments_for(node)
+    }.not_to raise_error
+  end
 end

@@ -334,9 +334,9 @@ module Solargraph
           num = cur if cur < num
         end
         # Include blank lines between comments
-        ctxt += ("\n" * (l.loc.first_line - last_line - 1)) unless last_line.nil?
+        ctxt += ("\n" * (l.loc.first_line - last_line - 1)) unless last_line.nil? || l.loc.first_line - last_line <= 0
         ctxt += "#{p[num..-1]}\n" if started
-        last_line = l.loc.last_line
+        last_line = l.loc.last_line if last_line.nil? || l.loc.last_line > last_line
       }
       ctxt
     end
