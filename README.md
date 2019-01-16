@@ -55,14 +55,6 @@ The gem includes an executable that provides access to the library's features. F
 The language server protocol is the recommended way for integrating Solargraph into editors and IDEs. Clients can connect using either stdio or TCP.
 See [LANGUAGE_SERVER.md](LANGUAGE_SERVER.md) for more information.
 
-### Standalone Suggest
-
-The suggest subcommand provides an interface to request suggestions without the need for a server. When executed, it accepts the parameters for a suggestion request, returns the suggestions in JSON format, and exits.
-
-**Warning:** The suggest subcommand is a candidate for deprecation. It will either change drastically or not exist in a future version.
-
-## Updating the Core Documentation
-
 The Solargraph gem ships with documentation for Ruby 2.2.2. As of gem version 0.15.0, there's an option to download additional documentation for other Ruby versions from the command line.
 
     $ solargraph list-cores      # List the installed documentation versions
