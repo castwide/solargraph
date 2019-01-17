@@ -389,6 +389,7 @@ describe Solargraph::SourceMap::Clip do
     expect(clip1b.complete.pins.map(&:path)).not_to include('Foo#root_method')
 
     clip2a = api_map.clip_at('test.rb', Solargraph::Position.new(15, 9))
+    expect(clip2a.infer.qualified?).to be(true)
     expect(clip2a.infer.to_s).to eq('Foo')
     clip2b = api_map.clip_at('test.rb', Solargraph::Position.new(15, 13))
     expect(clip2b.complete.pins.map(&:path)).not_to include('Other::Foo#other_method')

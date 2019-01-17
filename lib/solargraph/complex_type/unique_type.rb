@@ -14,9 +14,15 @@ module Solargraph
       # @param name [String] The name of the type
       # @param substring [String] The substring of the type
       def initialize name, substring = ''
-        @name = name
+        if name.start_with?('::')
+          @name = name[2..-1]
+          @qualified = true
+        else
+          @name = name
+          @qualified = false
+        end
         @substring = substring
-        @tag = name + substring
+        @tag = @name + substring
         @key_types = []
         @subtypes = []
         return unless parameters?
