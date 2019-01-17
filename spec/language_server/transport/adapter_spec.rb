@@ -42,8 +42,10 @@ describe Solargraph::LanguageServer::Transport::Adapter do
   it "processes sent data" do
     tester = AdapterTester.new
     tester.opening
+    message = '{"jsonrpc": "2.0", "id": 1, "method": "initialize", "params": {}}'
     expect {
-      tester.sending "Content-length: 2\r\n\r\n{}"
+      tester.sending "Content-Length: #{message.length}\r\n\r\n#{message}"
     }.not_to raise_error
+    tester.closing
   end
 end

@@ -52,7 +52,7 @@ module Solargraph
             msg = JSON.parse(@buffer)
             @message_handler.call msg unless @message_handler.nil?
           rescue JSON::ParserError => e
-            Solargraph::Logging.logger.info "Failed to parse request: #{e.message}"
+            Solargraph::Logging.logger.warn "Failed to parse request: #{e.message}"
             Solargraph::Logging.logger.debug "Buffer: #{@buffer}"
           ensure
             @buffer.clear
