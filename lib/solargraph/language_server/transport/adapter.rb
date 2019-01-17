@@ -1,3 +1,5 @@
+require 'backport'
+
 module Solargraph
   module LanguageServer
     module Transport
