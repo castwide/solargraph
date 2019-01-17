@@ -129,7 +129,7 @@ module Solargraph
       # @param uri [String] The file uri.
       # @return [void]
       def delete uri
-        sources.close uri
+        # sources.close uri # @todo It's possible for a deleted file to be open in an editor
         filename = uri_to_file(uri)
         libraries.each do |lib|
           # lib.delete filename
