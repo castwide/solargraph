@@ -207,7 +207,9 @@ module Solargraph
           found = source.references(pin.name)
           found.select! do |loc|
             referenced = definitions_at(loc.filename, loc.range.ending.line, loc.range.ending.character)
-            referenced.any?{|r| r == pin}
+            # HACK: The additional location comparison is necessary because
+            # Clip#define can return proxies for parameter pins
+            referenced.any?{|r| r == pin || r.location == pin.location}
           end
           # HACK: for language clients that exclude special characters from the start of variable names
           if strip && match = cursor.word.match(/^[^a-z0-9_]+/i)

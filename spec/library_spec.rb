@@ -332,4 +332,34 @@ describe Solargraph::Library do
     refs = library.references_from('src2.rb', 1, 12)
     expect(refs.length).to eq(2)
   end
+
+  it "includes method parameters in references" do
+    library = Solargraph::Library.new(Solargraph::Workspace.new('*'))
+    source = Solargraph::Source.load_string(%(
+      class Foo
+        def bar(baz)
+          baz.upcase
+        end
+      end
+    ), 'test.rb', 1)
+    library.attach source
+    from_def = library.references_from('test.rb', 2, 16)
+    expect(from_def.length).to eq(2)
+    from_ref = library.references_from('test.rb', 3, 10)
+    expect(from_ref.length).to eq(2)
+  end
+
+  it "includes block parameters in references" do
+    library = Solargraph::Library.new(Solargraph::Workspace.new('*'))
+    source = Solargraph::Source.load_string(%(
+      100.times do |foo|
+        puts foo
+      end
+    ), 'test.rb', 1)
+    library.attach source
+    from_def = library.references_from('test.rb', 1, 20)
+    expect(from_def.length).to eq(2)
+    from_ref = library.references_from('test.rb', 2, 13)
+    expect(from_ref.length).to eq(2)
+  end
 end
