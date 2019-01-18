@@ -93,7 +93,7 @@ GitHub Issues are the best place to ask questions, report problems, and suggest 
 
 ### Development
 
-Code contributions are always appreciated. Feel free to fork the repo and submit pull requests. Check for open issues that could use help. Open new issues to discuss changes that have a major impact on the API or require large time commitments.
+Code contributions are always appreciated. Feel free to fork the repo and submit pull requests. Check for open issues that could use help. Start new issues to discuss changes that have a major impact on the API or require large time commitments.
 
 ### Sponsorship and Donation
 
