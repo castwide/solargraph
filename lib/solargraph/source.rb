@@ -200,7 +200,8 @@ module Solargraph
     # @return [Boolean]
     def comment_at? position
       comment_ranges.each do |range|
-        return true if range.include?(position)
+        return true if range.include?(position) ||
+          (range.ending.line == position.line && range.ending.column < position.column)
         break if range.ending.line > position.line
       end
       false
