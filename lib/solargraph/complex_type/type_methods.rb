@@ -95,13 +95,14 @@ module Solargraph
       # @param context [String] The namespace from which to resolve names
       # @return [ComplexType] The generated ComplexType
       def qualify api_map, context = ''
-        return ComplexType.new([self]) if qualified? || duck_type? || void? || undefined?
-        fqns = api_map.qualify(name, context)
-        # return ComplexType::UNDEFINED if fqns.nil?
+        return ComplexType.new([self]) if duck_type? || void? || undefined?
+        recon = (qualified? ? '' : context)
+        fqns = api_map.qualify(name, recon)
         if fqns.nil?
           return ComplexType.parse('Boolean') if tag == 'Boolean'
           return ComplexType::UNDEFINED
         end
+        fqns = "::#{fqns}" # Ensure the complex type is marked qualified
         ltypes = key_types.map do |t|
           t.qualify api_map, context
         end
