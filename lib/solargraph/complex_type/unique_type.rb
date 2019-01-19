@@ -16,10 +16,10 @@ module Solargraph
       def initialize name, substring = ''
         if name.start_with?('::')
           @name = name[2..-1]
-          @qualified = true
+          @rooted = true
         else
           @name = name
-          @qualified = false
+          @rooted = false
         end
         @substring = substring
         @tag = @name + substring
