@@ -1,11 +1,11 @@
+require 'backport'
+
 module Solargraph
   module LanguageServer
     module Transport
       # A common module for running language servers in Backport.
       #
       module Adapter
-        @@timer_is_running = false
-
         def opening
           @host = Solargraph::LanguageServer::Host.new
           @host.start
