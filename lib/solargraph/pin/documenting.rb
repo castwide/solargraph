@@ -1,6 +1,7 @@
 require 'rdoc'
 require 'reverse_markdown'
 require 'kramdown'
+require 'kramdown-parser-gfm'
 
 module Solargraph
   module Pin
