@@ -281,6 +281,22 @@ module Solargraph
       @synchronized
     end
 
+    # Get a hash of comments grouped by the line numbers of the associated code.
+    #
+    # @return [Hash{Integer => Array<Parser::Source::Comment>}]
+    def associated_comments
+      @associated_comments ||= begin
+        result = {}
+        Parser::Source::Comment.associate_locations(node, comments).each_pair do |loc, all|
+          block = all #.select{ |l| l.document? || code.lines[l.loc.line].strip.start_with?('#')}
+          next if block.empty?
+          result[loc.line] ||= []
+          result[loc.line].concat block
+        end
+        result
+      end
+    end
+
     private
 
     # @param top [Parser::AST::Node]
@@ -296,22 +312,6 @@ module Solargraph
       end
       top.children.each do |child|
         inner_folding_ranges(child, result)
-      end
-    end
-
-    # Get a hash of comments grouped by the line numbers of the associated code.
-    #
-    # @return [Hash{Integer => Array<Parser::Source::Comment>}]
-    def associated_comments
-      @associated_comments ||= begin
-        result = {}
-        Parser::Source::Comment.associate_locations(node, comments).each_pair do |loc, all|
-          block = all #.select{ |l| l.document? || code.lines[l.loc.line].strip.start_with?('#')}
-          next if block.empty?
-          result[loc.line] ||= []
-          result[loc.line].concat block
-        end
-        result
       end
     end
 
