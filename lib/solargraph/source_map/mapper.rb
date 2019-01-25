@@ -10,6 +10,8 @@ module Solargraph
 
       private_class_method :new
 
+      MACRO_REGEXP = /(@\!method|@\!attribute|@\!domain|@\!macro|@\!parse)/.freeze
+
       # Generate the data.
       #
       # @param source [Source]
@@ -58,7 +60,7 @@ module Solargraph
       end
 
       def process_comment position, comment
-        return unless comment =~ /(@\!method|@\!attribute|@\!domain|@\!macro|@\!parse)/
+        return unless comment =~ MACRO_REGEXP
         cmnt = remove_inline_comment_hashes(comment)
         parse = YARD::Docstring.parser.parse(cmnt)
         parse.directives.each { |d| process_directive(position, d) }
@@ -123,12 +125,11 @@ module Solargraph
 
       # @return [void]
       def process_comment_directives
-        return unless @code =~ /(@\!method|@\!attribute|@\!domain|@\!macro|@\!parse)/
-        current = []
-        last_line = nil
+        return unless @code =~ MACRO_REGEXP
         @source.associated_comments.each do |line, comments|
           pos = Position.new(line, @code.lines[line].chomp.length)
-          process_comment(pos, comments.map(&:text).join("\n"))
+          txt = comments.map(&:text).join("\n")
+          process_comment(pos, txt)
         end
       end
     end
