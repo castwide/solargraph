@@ -10,6 +10,8 @@ module Solargraph
 
       private_class_method :new
 
+      MACRO_REGEXP = /(@\!method|@\!attribute|@\!domain|@\!macro|@\!parse)/.freeze
+
       # Generate the data.
       #
       # @param source [Source]
@@ -58,7 +60,7 @@ module Solargraph
       end
 
       def process_comment position, comment
-        return unless comment =~ /(@\!method|@\!attribute|@\!domain|@\!macro|@\!parse)/
+        return unless comment =~ MACRO_REGEXP
         cmnt = remove_inline_comment_hashes(comment)
         parse = YARD::Docstring.parser.parse(cmnt)
         parse.directives.each { |d| process_directive(position, d) }
@@ -121,30 +123,13 @@ module Solargraph
         ctxt
       end
 
+      # @return [void]
       def process_comment_directives
-        return unless @code =~ /(@\!method|@\!attribute|@\!domain|@\!macro|@\!parse)/
-        current = []
-        last_line = nil
-        @comments.each do |cmnt|
-          if cmnt.inline?
-            if last_line.nil? || cmnt.loc.expression.line == last_line + 1
-              if cmnt.loc.expression.column.zero? || @code.lines[cmnt.loc.expression.line][0..cmnt.loc.expression.column-1].strip.empty?
-                current.push cmnt
-              else
-                # @todo Connected to a line of code. Handle separately
-              end
-            elsif !current.empty?
-              process_comment Position.new(current.last.loc.expression.line, current.last.loc.expression.column), current.map(&:text).join("\n")
-              current.clear
-              current.push cmnt
-            end
-          else
-            # @todo Handle block comments
-          end
-          last_line = cmnt.loc.expression.line
-        end
-        unless current.empty?
-          process_comment Position.new(current.last.loc.expression.line, current.last.loc.expression.column), current.map(&:text).join("\n")
+        return unless @code =~ MACRO_REGEXP
+        @source.associated_comments.each do |line, comments|
+          pos = Position.new(line, @code.lines[line].chomp.length)
+          txt = comments.map(&:text).join("\n")
+          process_comment(pos, txt)
         end
       end
     end

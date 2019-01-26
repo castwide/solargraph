@@ -429,10 +429,10 @@ module Solargraph
     end
 
     # @param location [Solargraph::Location]
-    # @return [Solargraph::Pin::Base]
-    def locate_pin location
-      return nil if location.nil? || !source_map_hash.has_key?(location.filename)
-      source_map_hash[location.filename].locate_pin(location)
+    # @return [Array<Solargraph::Pin::Base>]
+    def locate_pins location
+      return [] if location.nil? || !source_map_hash.has_key?(location.filename)
+      source_map_hash[location.filename].locate_pins(location)
     end
 
     # @raise [FileNotFoundError] if the cursor's file is not in the ApiMap
