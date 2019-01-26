@@ -114,11 +114,18 @@ module Solargraph
         chain = Solargraph::Source::NodeChainer.chain(block.receiver, source_map.source.filename)
         receiver_pin = chain.define(api_map, context_pin, locals).first
         return [] if receiver_pin.nil?
+        result = []
         ys = receiver_pin.docstring.tag(:yieldself)
-        return [] if ys.nil? || ys.types.empty?
-        ysct = ComplexType.parse(*ys.types).qualify(api_map, receiver_pin.context.namespace)
-        # @todo Since this is @yieldself, should it include private and protected methods?
-        api_map.get_complex_type_methods(ysct)
+        unless ys.nil? || ys.types.empty?
+          ysct = ComplexType.parse(*ys.types).qualify(api_map, receiver_pin.context.namespace)
+          result.concat api_map.get_complex_type_methods(ysct, ysct.namespace, true)
+        end
+        ys = receiver_pin.docstring.tag(:yieldpublic)
+        unless ys.nil? || ys.types.empty?
+          ysct = ComplexType.parse(*ys.types).qualify(api_map, receiver_pin.context.namespace)
+          result.concat api_map.get_complex_type_methods(ysct, '', false)
+        end
+        result
       end
 
       # @param result [Array<Pin::Base>]
