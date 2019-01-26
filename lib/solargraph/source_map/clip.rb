@@ -54,6 +54,7 @@ module Solargraph
             result.concat api_map.get_methods(context_pin.context.namespace, scope: context_pin.context.scope, visibility: [:public, :private, :protected])
             result.concat api_map.get_methods('Kernel')
             result.concat ApiMap.keywords
+            result.concat yielded_self_pins
           end
         end
         package_completions(result)
@@ -105,6 +106,19 @@ module Solargraph
       # @return [Pin::Base]
       def context_pin
         @context_pin ||= source_map.locate_named_path_pin(cursor.node_position.line, cursor.node_position.character)
+      end
+
+      # @return [Array<Pin::Base>]
+      def yielded_self_pins
+        return [] unless block.is_a?(Pin::Block) && block.receiver
+        chain = Solargraph::Source::NodeChainer.chain(block.receiver, source_map.source.filename)
+        receiver_pin = chain.define(api_map, context_pin, locals).first
+        return [] if receiver_pin.nil?
+        ys = receiver_pin.docstring.tag(:yieldself)
+        return [] if ys.nil? || ys.types.empty?
+        ysct = ComplexType.parse(*ys.types).qualify(api_map, receiver_pin.context.namespace)
+        # @todo Since this is @yieldself, should it include private and protected methods?
+        api_map.get_complex_type_methods(ysct)
       end
 
       # @param result [Array<Pin::Base>]
