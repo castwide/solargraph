@@ -84,10 +84,10 @@ module Solargraph
     end
 
     # @param location [Solargraph::Location]
-    # @return [Solargraph::Pin::Base]
-    def locate_pin location
+    # @return [Array<Solargraph::Pin::Base>]
+    def locate_pins location
       # return nil unless location.start_with?("#{filename}:")
-      pins.select { |pin| pin.location == location }.first
+      pins.select { |pin| pin.location == location }
     end
 
     def locate_named_path_pin line, character

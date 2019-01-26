@@ -229,8 +229,8 @@ module Solargraph
     #
     # @param location [Location]
     # @return [Solargraph::Pin::Base]
-    def locate_pin location
-      api_map.locate_pin location
+    def locate_pins location
+      api_map.locate_pins location
     end
 
     # Get an array of pins that match a path.
