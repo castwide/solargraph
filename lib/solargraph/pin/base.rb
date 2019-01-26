@@ -192,6 +192,31 @@ module Solargraph
         true
       end
 
+      def proxied?
+        @proxied ||= false
+      end
+
+      # Return a proxy for this pin with the specified return type. Other than
+      # the return type and the #proxied? setting, the proxy should be a clone
+      # of the original.
+      #
+      # @param return_type [ComplexType]
+      # @return [self]
+      def proxy return_type
+        result = dup
+        result.return_complex_type = return_type
+        result.proxied = true
+        result
+      end
+
+      protected
+
+      # @return [Boolean]
+      attr_writer :proxied
+
+      # @return [ComplexType]
+      attr_writer :return_complex_type
+
       private
 
       # @return [void]

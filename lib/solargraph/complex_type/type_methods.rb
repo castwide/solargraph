@@ -85,19 +85,24 @@ module Solargraph
         tag == other.tag
       end
 
+      def rooted?
+        @rooted
+      end
+
       # Generate a ComplexType that fully qualifies this type's namespaces.
       #
       # @param api_map [ApiMap] The ApiMap that performs qualification
       # @param context [String] The namespace from which to resolve names
       # @return [ComplexType] The generated ComplexType
       def qualify api_map, context = ''
-        return ComplexType.parse(tag) if duck_type? or void? or undefined?
-        fqns = api_map.qualify(name, context)
-        # return ComplexType::UNDEFINED if fqns.nil?
+        return ComplexType.new([self]) if duck_type? || void? || undefined?
+        recon = (rooted? ? '' : context)
+        fqns = api_map.qualify(name, recon)
         if fqns.nil?
           return ComplexType.parse('Boolean') if tag == 'Boolean'
           return ComplexType::UNDEFINED
         end
+        fqns = "::#{fqns}" # Ensure the resulting complex type is rooted
         ltypes = key_types.map do |t|
           t.qualify api_map, context
         end

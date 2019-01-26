@@ -59,7 +59,7 @@ module Solargraph
             type = p.typify(api_map)
             type = p.probe(api_map) if type.undefined?
             next p if p.return_complex_type == type
-            Pin::ProxyType.new(p.location, nil, p.name, type)
+            p.proxy type
           end
           result
         end
