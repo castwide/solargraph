@@ -587,6 +587,11 @@ module Solargraph
           while roots.length > 0
             fqns = roots.join('::') + '::' + name
             return fqns if store.namespace_exists?(fqns)
+            incs = store.get_includes(roots.join('::'))
+            incs.each do |inc|
+              foundinc = inner_qualify(name, inc, skip)
+              return foundinc unless foundinc.nil?
+            end
             roots.pop
           end
           return name if store.namespace_exists?(name)

@@ -71,6 +71,7 @@ module Solargraph
         block
       end
 
+      # @param api_map [ApiMap]
       def typify api_map
         # @todo Does anything need to be eliminated because it's more accurately a probe?
         type = super
@@ -87,7 +88,7 @@ module Solargraph
           else
             yps = meth.docstring.tags(:yieldparam)
             unless yps[index].nil? or yps[index].types.nil? or yps[index].types.empty?
-              return ComplexType.parse(yps[index].types[0]).first
+              return ComplexType.parse(yps[index].types.first).qualify(api_map, meth.context.namespace)
             end
           end
         end
