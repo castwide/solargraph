@@ -552,4 +552,19 @@ describe Solargraph::ApiMap do
     # The synchronized source rebuilds the store
     expect(store3).not_to be(store2)
   end
+
+  it "qualifies namespaces from includes" do
+    source = Solargraph::Source.load_string(%(
+      module Foo
+        class Bar; end
+      end
+      module Includer
+        include Foo
+      end
+    ))
+    api_map = Solargraph::ApiMap.new
+    api_map.map source
+    fqns = api_map.qualify('Bar', 'Includer')
+    expect(fqns).to eq('Foo::Bar')
+  end
 end
