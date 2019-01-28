@@ -84,3 +84,19 @@ This feature is currently disabled by default. If you'd like to try it, you can 
 
     plugins:
     - runtime
+
+## Contributing to Solargraph
+
+### Bug Reports and Feature Requests
+
+GitHub Issues are the best place to ask questions, report problems, and suggest improvements.
+
+### Development
+
+Code contributions are always appreciated. Feel free to fork the repo and submit pull requests. Check for open issues that could use help. Start new issues to discuss changes that have a major impact on the code or require large time commitments.
+
+### Sponsorship and Donation
+
+Use Patreon to support ongoing development of Solargraph at [https://www.patreon.com/castwide](https://www.patreon.com/castwide).
+
+You can also make one-time donations via PayPal at [https://www.paypal.me/castwide](https://www.paypal.me/castwide).
