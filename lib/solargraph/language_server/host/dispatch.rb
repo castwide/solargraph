@@ -26,8 +26,10 @@ module Solargraph
         def update_libraries src
           # @todo This module should not call cataloger and diagnoser
           libraries.each do |lib|
-            lib.merge src
-            cataloger.ping(lib) if lib.contain?(src.filename) || lib.open?(src.filename)
+            if lib.contain?(src.filename) || lib.open?(src.filename)
+              lib.merge src
+              cataloger.ping(lib)
+            end
           end
           diagnoser.schedule file_to_uri(src.filename) if src.synchronized?
         end
