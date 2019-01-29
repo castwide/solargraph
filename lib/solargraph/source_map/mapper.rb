@@ -59,27 +59,27 @@ module Solargraph
         @pins.select{|pin| pin.kind == Pin::NAMESPACE and pin.location.range.contain?(position)}.last
       end
 
-      def process_comment position, comment
+      def process_comment source_position, comment_position, comment
         return unless comment =~ MACRO_REGEXP
         cmnt = remove_inline_comment_hashes(comment)
         parse = YARD::Docstring.parser.parse(cmnt)
-        parse.directives.each { |d| process_directive(position, d) }
+        parse.directives.each { |d| process_directive(source_position, comment_position, d) }
       end
 
       # @param position [Position]
       # @param directive [YARD::Tags::Directive]
-      def process_directive position, directive
+      def process_directive source_position, comment_position, directive
         docstring = YARD::Docstring.parser.parse(directive.tag.text).to_docstring
-        location = Location.new(@filename, Range.new(position, position))
+        location = Location.new(@filename, Range.new(comment_position, comment_position))
         case directive.tag.tag_name
         when 'method'
-          namespace = namespace_at(position)
+          namespace = namespace_at(source_position)
           gen_src = Solargraph::SourceMap.load_string("def #{directive.tag.name};end")
           gen_pin = gen_src.pins.select{ |p| p.kind == Pin::METHOD }.first
           return if gen_pin.nil?
           @pins.push Solargraph::Pin::Method.new(location, namespace.path, gen_pin.name, docstring.all, :instance, :public, gen_pin.parameters, nil)
         when 'attribute'
-          namespace = namespace_at(position)
+          namespace = namespace_at(source_position)
           t = (directive.tag.types.nil? || directive.tag.types.empty?) ? nil : directive.tag.types.flatten.join('')
           if t.nil? || t.include?('r')
             # location, namespace, name, docstring, access
@@ -90,16 +90,16 @@ module Solargraph
           end
         when 'parse'
           # @todo Parse and map directive.tag.text
-          ns = namespace_at(position)
+          ns = namespace_at(comment_position)
           region = Region.new(source: @source, namespace: ns.path)
           begin
-            node = Solargraph::Source.parse(directive.tag.text, @filename, position.line)
+            node = Solargraph::Source.parse(directive.tag.text, @filename, comment_position.line)
             NodeProcessor.process(node, region, @pins)
           rescue Parser::SyntaxError => e
             # @todo Handle parser errors in !parse directives
           end
         when 'domain'
-          namespace = namespace_at(position)
+          namespace = namespace_at(source_position)
           namespace.domains.concat directive.tag.types unless directive.tag.types.nil?
         end
       end
@@ -126,11 +126,19 @@ module Solargraph
       # @return [void]
       def process_comment_directives
         return unless @code =~ MACRO_REGEXP
+        used = []
         @source.associated_comments.each do |line, comments|
-          pos = Position.new(line, @code.lines[line].chomp.length)
+          used.concat comments
+          src_pos = Position.new(line, @code.lines[line].chomp.length)
+          com_pos = Position.new(comments.first.loc.line, comments.first.loc.column)
           txt = comments.map(&:text).join("\n")
-          process_comment(pos, txt)
+          process_comment(src_pos, com_pos, txt)
         end
+        left = @comments - used
+        return if left.empty?
+        txt = left.map(&:text).join("\n")
+        com_pos = Position.new(left.first.loc.line, left.first.loc.column)
+        process_comment(com_pos, com_pos, txt)
       end
     end
   end
