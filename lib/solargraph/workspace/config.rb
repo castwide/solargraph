@@ -34,7 +34,6 @@ module Solargraph
         @raw_data['require'] ||= []
         @raw_data['domains'] ||= []
         @raw_data['reporters'] ||= %w[rubocop require_not_found]
-        @raw_data['plugins'] ||= []
         @raw_data['require_paths'] ||= []
         @raw_data['max_files'] ||= MAX_FILES
         included
@@ -86,13 +85,6 @@ module Solargraph
       # @return [Array<String>]
       def require_paths
         raw_data['require_paths'] || []
-      end
-
-      # An array of Solargraph plugins to install.
-      #
-      # @return [Array<String>]
-      def plugins
-        raw_data['plugins']
       end
 
       # An array of reporters to use for diagnostics.
