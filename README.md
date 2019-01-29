@@ -55,6 +55,8 @@ The gem includes an executable that provides access to the library's features. F
 The language server protocol is the recommended way for integrating Solargraph into editors and IDEs. Clients can connect using either stdio or TCP.
 See [LANGUAGE_SERVER.md](LANGUAGE_SERVER.md) for more information.
 
+## Updating Core Documentation
+
 The Solargraph gem ships with documentation for Ruby 2.2.2. As of gem version 0.15.0, there's an option to download additional documentation for other Ruby versions from the command line.
 
     $ solargraph list-cores      # List the installed documentation versions
@@ -73,17 +75,6 @@ In the Gemfile:
 Run `bundle install` and use `bundle exec yard gems` to generate the documentation. This process documents cached or vendored gems, or even gems that are installed from a local path.
 
 In order to access the gems in your project, you'll need to start the language server with Bundler. In VS Code, there's a `solargraph.useBundler` option. Other clients will vary, but the command you probably want to run is `bundle exec solargraph socket` or `bundle exec solargraph stdio`.
-
-## Runtime Suggestions (EXPERIMENTAL)
-
-As of gem version 0.15.0, Solargraph includes experimental support for plugins.
-
-The Runtime plugin enhances code completion by querying namespaces for method names in a subprocess. If it finds any undocumented or "magic" methods, they get added to the suggestions.
-
-This feature is currently disabled by default. If you'd like to try it, you can enable it by setting the `plugins` section in your project's .solargraph.yml file:
-
-    plugins:
-    - runtime
 
 ## Contributing to Solargraph
 
