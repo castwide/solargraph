@@ -215,7 +215,7 @@ module Solargraph
       # @return [void]
       def change params
         updater = generate_updater(params)
-        sources.async_update params['textDocument']['uri'], updater
+        sources.update params['textDocument']['uri'], updater
       end
 
       # Queue a message to be sent to the client.
