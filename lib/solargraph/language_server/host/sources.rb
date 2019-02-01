@@ -38,7 +38,7 @@ module Solargraph
             nxt = open_source_hash[uri].finish_synchronize
             open_source_hash[uri] = nxt
             changed
-            notify_observers open_source_hash[uri]
+            notify_observers uri
           end
         end
 
@@ -70,7 +70,7 @@ module Solargraph
           src = find(uri)
           mutex.synchronize { open_source_hash[uri] = src.synchronize(updater) }
           changed
-          notify_observers open_source_hash[uri]
+          notify_observers uri
         end
 
         # @param uri [String]
@@ -81,7 +81,7 @@ module Solargraph
           mutex.synchronize { open_source_hash[uri] = src.start_synchronize(updater) }
           mutex.synchronize { queue.push uri }
           changed
-          notify_observers open_source_hash[uri]
+          notify_observers uri
         end
 
         # Find the source with the given URI.

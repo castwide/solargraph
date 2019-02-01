@@ -21,9 +21,10 @@ module Solargraph
         # The Sources observer callback that merges a source into the host's
         # libraries when it gets updated.
         #
-        # @param src [Source]
+        # @param uri [String]
         # @return [void]
-        def update_libraries src
+        def update_libraries uri
+          src = sources.find(uri)
           # @todo This module should not call cataloger and diagnoser
           libraries.each do |lib|
             if lib.contain?(src.filename) || lib.open?(src.filename)
@@ -31,7 +32,7 @@ module Solargraph
               cataloger.ping(lib)
             end
           end
-          diagnoser.schedule file_to_uri(src.filename) if src.synchronized?
+          diagnoser.schedule uri if src.synchronized?
         end
 
         # Find the best libary match for the given URI.
