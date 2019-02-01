@@ -4,11 +4,10 @@ require 'htmlentities'
 module Solargraph::LanguageServer::Message::TextDocument
   class Hover < Base
     def process
-      filename = uri_to_file(params['textDocument']['uri'])
       line = params['position']['line']
       col = params['position']['character']
       contents = []
-      suggestions = host.definitions_at(filename, line, col)
+      suggestions = host.definitions_at(params['textDocument']['uri'], line, col)
       last_link = nil
       suggestions.each do |pin|
         parts = []

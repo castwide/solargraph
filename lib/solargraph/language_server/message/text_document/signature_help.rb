@@ -4,10 +4,9 @@ module Solargraph
       module TextDocument
         class SignatureHelp < TextDocument::Base
           def process
-            filename = uri_to_file(params['textDocument']['uri'])
             line = params['position']['line']
             col = params['position']['character']
-            suggestions = host.signatures_at(filename, line, col)
+            suggestions = host.signatures_at(params['textDocument']['uri'], line, col)
             info = suggestions.map(&:signature_help)
             set_result({
               signatures: info

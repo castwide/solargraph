@@ -459,41 +459,41 @@ module Solargraph
         library.read_text(filename)
       end
 
-      # @param filename [String]
+      # @param uri [String]
       # @param line [Integer]
       # @param column [Integer]
       # @return [Solargraph::ApiMap::Completion]
-      def completions_at filename, line, column
-        library = library_for(file_to_uri(filename))
-        library.completions_at filename, line, column
+      def completions_at uri, line, column
+        library = library_for(uri)
+        library.completions_at uri_to_file(uri), line, column
       end
 
-      # @param filename [String]
+      # @param uri [String]
       # @param line [Integer]
       # @param column [Integer]
       # @return [Array<Solargraph::Pin::Base>]
-      def definitions_at filename, line, column
-        library = library_for(file_to_uri(filename))
-        library.definitions_at(filename, line, column)
+      def definitions_at uri, line, column
+        library = library_for(uri)
+        library.definitions_at(uri_to_file(uri), line, column)
       end
 
-      # @param filename [String]
+      # @param uri [String]
       # @param line [Integer]
       # @param column [Integer]
       # @return [Array<Solargraph::Pin::Base>]
-      def signatures_at filename, line, column
-        library = library_for(file_to_uri(filename))
-        library.signatures_at(filename, line, column)
+      def signatures_at uri, line, column
+        library = library_for(uri)
+        library.signatures_at(uri_to_file(uri), line, column)
       end
 
-      # @param filename [String]
+      # @param uri [String]
       # @param line [Integer]
       # @param column [Integer]
       # @param strip [Boolean] Strip special characters from variable names
       # @return [Array<Solargraph::Range>]
-      def references_from filename, line, column, strip: true
-        library = library_for(file_to_uri(filename))
-        library.references_from(filename, line, column, strip: strip)
+      def references_from uri, line, column, strip: true
+        library = library_for(uri)
+        library.references_from(uri_to_file(uri), line, column, strip: strip)
       end
 
       # @param query [String]

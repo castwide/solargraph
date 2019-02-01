@@ -4,11 +4,10 @@ module Solargraph
       module TextDocument
         class Completion < Base
           def process
-            filename = uri_to_file(params['textDocument']['uri'])
             line = params['position']['line']
             col = params['position']['character']
             begin
-              completion = host.completions_at(filename, line, col)
+              completion = host.completions_at(params['textDocument']['uri'], line, col)
               if host.cancel?(id)
                 return set_result(empty_result) if host.cancel?(id)
               end
@@ -32,7 +31,7 @@ module Solargraph
                 items: items
               )
             rescue InvalidOffsetError => e
-              Logging.logger.info "Completion ignored invalid offset: #{filename}, line #{line}, character #{col}"
+              Logging.logger.info "Completion ignored invalid offset: #{params['textDocument']['uri']}, line #{line}, character #{col}"
               set_result empty_result
             end
           end
