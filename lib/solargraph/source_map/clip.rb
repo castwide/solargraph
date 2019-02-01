@@ -78,8 +78,10 @@ module Solargraph
       #
       # @return [Array<Solargraph::Pin::Base>]
       def locals
+        loc_pos = context_pin.location.range.contain?(cursor.position) ? cursor.position : context_pin.location.range.ending
+        adj_pos = Position.new(loc_pos.line, (loc_pos.column.zero? ? 0 : loc_pos.column - 1))
         @locals ||= source_map.locals.select { |pin|
-          pin.visible_from?(block, Position.new(cursor.position.line, (cursor.position.column.zero? ? 0 : cursor.position.column - 1)))
+          pin.visible_from?(block, adj_pos)
         }.reverse
       end
 
