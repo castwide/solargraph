@@ -119,6 +119,7 @@ module Solargraph
         @unresolved_requires = yard_map.unresolved_requires
       }
       # resolve_method_aliases
+      resolve_blocks
       self
     end
 
@@ -651,6 +652,32 @@ module Solargraph
         origin = get_method_stack(pin.namespace, pin.original, scope: pin.scope).select{|pin| pin.is_a?(Pin::BaseMethod)}.first
         next pin if origin.nil?
         Pin::Method.new(pin.location, pin.namespace, pin.name, origin.comments, origin.scope, origin.visibility, origin.parameters)
+      end
+    end
+
+    def resolve_blocks
+      store.pins.select { |pin| pin.is_a?(Pin::Block) }.each do |pin|
+        if pin.receiver
+          smap = source_map(pin.location.filename)
+          locals = smap.locals_at(pin.location)
+          chain = Solargraph::Source::NodeChainer.chain(pin.receiver, pin.location.filename)
+          receiver_pin = chain.define(self, pin, locals).first
+          next if receiver_pin.nil? || receiver_pin.docstring.nil?
+          ys = receiver_pin.docstring.tag(:yieldself)
+          unless ys.nil? || ys.types.empty?
+            ysct = ComplexType.parse(*ys.types).qualify(self, receiver_pin.context.namespace)
+            # result.concat api_map.get_complex_type_methods(ysct, ysct.namespace, true)
+            next if ysct.undefined?
+            STDERR.puts "The block's context is actually #{ysct}"
+            @mutex.synchronize do
+              pin.rebind ysct
+              # pin.instance_variable_set(:@context, ysct)
+              # @todo This means the instance variables change
+            end
+          end
+        else
+          STDERR.puts "no receiver"
+        end
       end
     end
   end

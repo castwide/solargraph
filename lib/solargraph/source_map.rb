@@ -118,6 +118,11 @@ module Solargraph
       source.references name
     end
 
+    def locals_at(location)
+      return [] if location.filename != filename
+      locals.select { |pin| pin.visible_at?(location) }
+    end
+
     class << self
       # @param filename [String]
       # @return [SourceMap]
