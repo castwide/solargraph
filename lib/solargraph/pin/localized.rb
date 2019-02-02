@@ -17,6 +17,12 @@ module Solargraph
           ) and
           presence.contain?(position)
       end
+
+      # @param other_loc [Location]
+      def visible_at?(other_loc)
+        return false if location.filename != other_loc.filename
+        presence.include?(other_loc.range.start)
+      end
     end
   end
 end

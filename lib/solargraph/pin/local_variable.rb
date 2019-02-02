@@ -13,12 +13,6 @@ module Solargraph
         Pin::LOCAL_VARIABLE
       end
 
-      # @param other_loc [Location]
-      def visible_at?(other_loc)
-        return false if location.filename != other_loc.filename
-        presence.include?(other_loc.range.start)
-      end
-
       def try_merge! pin
         return false unless super
         @presence = pin.presence
