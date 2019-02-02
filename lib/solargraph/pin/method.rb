@@ -9,8 +9,11 @@ module Solargraph
       # @return [Parser::AST::Node]
       attr_reader :node
 
-      def initialize location, namespace, name, comments, scope, visibility, args, node = nil
-        super(location, namespace, name, comments)
+      # @return [Symbol] :class or :instance
+      attr_reader :scope
+
+      def initialize scope: :instance, visibility: :public, args: [], node: nil, **splat
+        super(splat)
         @scope = scope
         @visibility = visibility
         @parameters = args
@@ -27,16 +30,16 @@ module Solargraph
       end
 
       def path
-        @path ||= namespace + (scope == :instance ? '#' : '.') + name
+        @path ||= namespace.to_s + (scope == :instance ? '#' : '.') + name.to_s
       end
 
       def context
         @context ||= begin
+          result = super
           if scope == :class
-            # @todo Determine whether the namespace is a class or a module
-            ComplexType.parse("Class<#{namespace}>")
+            ComplexType.parse("Class<#{result.namespace}>")
           else
-            ComplexType.parse(namespace)
+            result
           end
         end
       end

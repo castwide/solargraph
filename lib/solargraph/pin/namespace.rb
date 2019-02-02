@@ -7,19 +7,29 @@ module Solargraph
       # @return [Symbol] :class or :module
       attr_reader :type
 
-      def initialize location, namespace, name, comments, type, visibility
-        super(location, namespace, name, comments)
+      # def initialize location, namespace, name, comments, type, visibility
+      def initialize type: :class, visibility: :public, **splat
+        # super(location, namespace, name, comments)
+        super(splat)
         @type = type
         @visibility = visibility
+        if name.start_with?('::')
+          @name = name[2..-1]
+          @closure = Pin::ROOT_PIN
+        end
+      end
+
+      def namespace
+        context.namespace
       end
 
       def kind
         Pin::NAMESPACE
       end
 
-      def context
-        @context ||= ComplexType.parse("#{type.to_s.capitalize}<#{path}>")
-      end
+      # def context
+      #   @context ||= ComplexType.parse("#{type.to_s.capitalize}<#{path}>")
+      # end
 
       def scope
         context.scope

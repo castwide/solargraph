@@ -26,7 +26,7 @@ module Solargraph
       end
 
       def namespace
-        context.namespace
+        context.namespace.to_s
       end
 
       # @return [ComplexType]
@@ -46,7 +46,9 @@ module Solargraph
 
       # @return [ComplexType]
       def find_context
-        here = self
+        # return Solargraph::ComplexType.parse(name.empty? ? namespace : "#{namespace}::#{name}") if kind == Pin::NAMESPACE
+        # return Solargraph::ComplexType.parse(name) if kind == Pin::NAMESPACE && (closure.nil? || closure.name.empty?)
+        here = closure
         until here.nil?
           return Solargraph::ComplexType.parse(here.path) if here.kind == Pin::NAMESPACE
           here = here.closure

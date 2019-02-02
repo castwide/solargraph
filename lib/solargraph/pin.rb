@@ -19,8 +19,9 @@ module Solargraph
     autoload :Closure,          'solargraph/pin/closure'
     autoload :Namespace,        'solargraph/pin/namespace'
     autoload :Keyword,          'solargraph/pin/keyword'
-    autoload :MethodParameter,  'solargraph/pin/method_parameter'
-    autoload :BlockParameter,   'solargraph/pin/block_parameter'
+    autoload :Parameter,        'solargraph/pin/parameter'
+    # autoload :MethodParameter,  'solargraph/pin/method_parameter'
+    # autoload :BlockParameter,   'solargraph/pin/block_parameter'
     autoload :Reference,        'solargraph/pin/reference'
     autoload :Documenting,      'solargraph/pin/documenting'
     autoload :Block,            'solargraph/pin/block'
@@ -47,6 +48,7 @@ module Solargraph
     EXTEND_REFERENCE = 16
     METHOD_ALIAS = 17
 
-    ROOT_PIN = Pin::Namespace.new(nil, '', '', '', :class, :public)
+    # ROOT_PIN = Pin::Namespace.new(nil, '', '', '', :class, :public)
+    ROOT_PIN = Pin::Namespace.new(type: :class, name: '', closure: nil)
   end
 end

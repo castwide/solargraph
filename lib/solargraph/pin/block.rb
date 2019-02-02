@@ -6,8 +6,8 @@ module Solargraph
       # @return [Parser::AST::Node]
       attr_reader :receiver
 
-      def initialize location, namespace, name, comments, receiver, context
-        super(location, namespace, name, comments)
+      def initialize receiver: nil, **splat
+        super(splat)
         @receiver = receiver
         @context = context
       end
@@ -23,6 +23,11 @@ module Solargraph
       # @return [Array<String>]
       def parameters
         @parameters ||= []
+      end
+
+      # @return [Array<String>]
+      def parameter_names
+        @parameter_names ||= parameters.map{|p| p.split(/[ =:]/).first}
       end
 
       def nearly? other

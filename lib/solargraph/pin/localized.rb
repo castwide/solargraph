@@ -1,8 +1,6 @@
 module Solargraph
   module Pin
     module Localized
-      attr_reader :block
-
       # @return [Range]
       attr_reader :presence
 
@@ -12,9 +10,9 @@ module Solargraph
       def visible_from?(other, position)
         position = Position.normalize(position)
         other.filename == filename and
-          ( other == block or 
-            (block.location.range.contain?(other.location.range.start) and block.location.range.contain?(other.location.range.ending))
-          ) and
+          (other == closure ||
+            (closure.location.range.contain?(closure.location.range.start) && closure.location.range.contain?(other.location.range.ending))
+          ) &&
           presence.contain?(position)
       end
 

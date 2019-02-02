@@ -4,8 +4,9 @@ module Solargraph
       # @param location [Solargraph::Location]
       # @param name [String]
       def initialize location, name
-        @name = name
-        @location = location
+        super(location: location, name: name)
+        # @name = name
+        # @location = location
       end
 
       def namespace

@@ -23,7 +23,8 @@ module Solargraph
         @comments = source.comments
         @pins = Solargraph::SourceMap::NodeProcessor.process(source.node, Solargraph::SourceMap::Region.new(source: source), [])
         process_comment_directives
-        locals = @pins.select{|p| [Pin::LocalVariable, Pin::MethodParameter, Pin::BlockParameter].include?(p.class)}
+        # locals = @pins.select{|p| [Pin::LocalVariable, Pin::MethodParameter, Pin::BlockParameter].include?(p.class)}
+        locals = @pins.select{|p| [Pin::LocalVariable, Pin::Parameter].include?(p.class)}
         [@pins - locals, locals]
       end
 
@@ -31,7 +32,8 @@ module Solargraph
         s = Position.new(0, 0)
         e = Position.from_offset(code, code.length)
         location = Location.new(filename, Range.new(s, e))
-        [[Pin::Namespace.new(location, '', '', '', :class, :public)], []]
+        # [[Pin::Namespace.new(location, '', '', '', :class, :public)], []]
+        [[Pin::Namespace.new(location: location, name: '')], []]
       end
 
       class << self
@@ -77,7 +79,14 @@ module Solargraph
           gen_src = Solargraph::SourceMap.load_string("def #{directive.tag.name};end")
           gen_pin = gen_src.pins.select{ |p| p.kind == Pin::METHOD }.first
           return if gen_pin.nil?
-          @pins.push Solargraph::Pin::Method.new(location, namespace.path, gen_pin.name, docstring.all, :instance, :public, gen_pin.parameters, nil)
+          # @pins.push Solargraph::Pin::Method.new(location, namespace.path, gen_pin.name, docstring.all, :instance, :public, gen_pin.parameters, nil)
+          @pins.push Solargraph::Pin::Method.new(
+            location: location,
+            closure: namespace,
+            name: gen_pin.name,
+            comments: docstring.all,
+            args: gen_pin.parameters
+          )
         when 'attribute'
           namespace = namespace_at(source_position)
           t = (directive.tag.types.nil? || directive.tag.types.empty?) ? nil : directive.tag.types.flatten.join('')

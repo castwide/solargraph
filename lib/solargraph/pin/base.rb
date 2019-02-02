@@ -14,7 +14,7 @@ module Solargraph
       # The root namespace is an empty string.
       #
       # @return [String]
-      attr_reader :namespace
+      # attr_reader :namespace
 
       # @return [String]
       attr_reader :name
@@ -26,12 +26,14 @@ module Solargraph
       attr_reader :path
 
       # @param location [Solargraph::Location]
-      # @param namespace [String]
+      # @param kind [Integer]
+      # @param closure [String]
       # @param name [String]
       # @param comments [String]
-      def initialize location, namespace, name, comments
+      def initialize location: nil, kind: KEYWORD, closure: nil, name: '', comments: ''
         @location = location
-        @namespace = namespace
+        @kind = kind
+        @closure = closure
         @name = name
         @comments = comments
       end
@@ -67,9 +69,9 @@ module Solargraph
       end
 
       # @return [ComplexType]
-      def context
-        @context ||= ComplexType.parse(namespace || '')
-      end
+      # def context
+      #   @context ||= ComplexType.parse(namespace || '')
+      # end
 
       # Pin equality is determined using the #nearly? method and also
       # requiring both pins to have the same location.
@@ -209,6 +211,10 @@ module Solargraph
         result.proxied = true
         result
       end
+
+      # def inspect
+      #   "#{self.class} at #{self.location.inspect}"
+      # end
 
       protected
 

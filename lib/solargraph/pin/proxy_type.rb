@@ -5,10 +5,11 @@ module Solargraph
       # @param namespace [String]
       # @param name [String]
       # @param return_type [ComplexType]
-      def initialize location, namespace, name, return_type
-        super(location, namespace, name, '')
-        @return_complex_type = return_type
-      end
+      # def initialize location, namespace, name, return_type
+      # def initialize
+      #   super(location, namespace, name, '')
+      #   @return_complex_type = return_type
+      # end
 
       def path
         @path ||= begin

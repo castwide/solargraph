@@ -3,15 +3,13 @@ module Solargraph
     class BaseVariable < Base
       include Solargraph::Source::NodeMethods
 
-      attr_reader :context
-
       attr_reader :assignment
 
-      def initialize location, namespace, name, comments, assignment, literal, context
-        super(location, namespace, name, comments)
+      def initialize assignment: nil, literal: nil, **splat
+        super(splat)
         @assignment = assignment
         @literal = literal
-        @context = context
+        # @context = context
       end
 
       def signature

@@ -56,11 +56,15 @@ module Solargraph
         end
 
         def named_path_pin position
-          pins.select{|pin| [Pin::NAMESPACE, Pin::METHOD].include?(pin.kind) and pin.location.range.contain?(position)}.last
+          pins.select{|pin| [Pin::NAMESPACE, Pin::METHOD].include?(pin.kind) && pin.location.range.contain?(position)}.last
         end
 
         def block_pin position
-          pins.select{|pin| [Pin::BLOCK, Pin::NAMESPACE, Pin::METHOD].include?(pin.kind) and pin.location.range.contain?(position)}.last
+          pins.select{|pin| [Pin::BLOCK, Pin::NAMESPACE, Pin::METHOD].include?(pin.kind) && pin.location.range.contain?(position)}.last
+        end
+
+        def closure_pin position
+          pins.select{|pin| pin.is_a?(Pin::Closure) && pin.location.range.contain?(position)}.last
         end
       end
     end

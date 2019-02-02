@@ -513,7 +513,7 @@ describe Solargraph::SourceMap::Mapper do
       end
     ))
     pin = map.locals.select{|p| p.name == 'y'}.first
-    expect(pin).to be_a(Solargraph::Pin::BlockParameter)
+    expect(pin).to be_a(Solargraph::Pin::Parameter)
   end
 
   it "forces initialize methods to be private" do
@@ -762,16 +762,18 @@ describe Solargraph::SourceMap::Mapper do
     expect(pin.assignment).to be_a(Parser::AST::Node)
   end
 
-  it "maps alias methods to attributes" do
-    smap = Solargraph::SourceMap.load_string(%(
-      class MyClass
-        attr_accessor :foo
-        alias_method :bar, :foo
-      end
-    ))
-    pin = smap.pins.select{|p| p.path == 'MyClass#bar'}.first
-    expect(pin).to be_a(Solargraph::Pin::Attribute)
-  end
+  # @todo This might not be relevant if ApiMap is always responsible for
+  #   method aliases.
+  # it "maps alias methods to attributes" do
+  #   smap = Solargraph::SourceMap.load_string(%(
+  #     class MyClass
+  #       attr_accessor :foo
+  #       alias_method :bar, :foo
+  #     end
+  #   ))
+  #   pin = smap.pins.select{|p| p.path == 'MyClass#bar'}.first
+  #   expect(pin).to be_a(Solargraph::Pin::Attribute)
+  # end
 
   it "defers resolution of distant alias_method aliases" do
     smap = Solargraph::SourceMap.load_string(%(
@@ -832,8 +834,11 @@ describe Solargraph::SourceMap::Mapper do
     ), 'test.rb')
     pin = smap.pins.select{|p| p.path == 'Foo::Bar'}.first
     expect(pin).not_to be_nil
-    expect(pin.namespace).to eq('Foo')
-    expect(pin.name).to eq('Bar')
+    # expect(pin.namespace).to eq('Foo')
+    # expect(pin.name).to eq('Bar')
+    expect(pin.namespace).to be_empty
+    expect(pin.name).to eq('Foo::Bar')
+    expect(pin.path).to eq('Foo::Bar')
   end
 
   it "ignores aliases that do not map to methods or attributes" do

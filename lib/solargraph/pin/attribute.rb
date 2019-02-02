@@ -4,8 +4,8 @@ module Solargraph
       # @return [Symbol] :reader or :writer
       attr_reader :access
 
-      def initialize location, namespace, name, comments, access, scope, visibility
-        super(location, namespace, name, comments)
+      def initialize scope: :instance, visibility: :public, access: :reader, node: nil, **splat
+        super(splat)
         @access = access
         @scope = scope
         @visibility = visibility

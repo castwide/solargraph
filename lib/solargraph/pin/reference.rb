@@ -6,9 +6,9 @@ module Solargraph
       autoload :Include,    'solargraph/pin/reference/include'
       autoload :Extend,     'solargraph/pin/reference/extend'
 
-      def initialize location, namespace, name
-        super(location, namespace, name, '')
-      end
+      # def initialize location, namespace, name
+      #   super(location, namespace, name, '')
+      # end
 
       # @todo Should Reference.new be protected?
       # class << self

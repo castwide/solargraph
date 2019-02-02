@@ -3,8 +3,10 @@ module Solargraph
     class Constant < BaseVariable
       attr_reader :visibility
 
-      def initialize location, namespace, name, comments, assignment, literal, context, visibility
-        super(location, namespace, name, comments, assignment, literal, context)
+      # def initialize location, namespace, name, comments, assignment, literal, context, visibility
+      def initialize assignment: nil, literal: nil, visibility: :public, **splat
+        # super(location, namespace, name, comments, assignment, literal, context)
+        super(splat)
         @visibility = visibility
       end
 
@@ -21,10 +23,10 @@ module Solargraph
         LanguageServer::SymbolKinds::CONSTANT
       end
 
-      def path
-        return name if namespace.empty?
-        "#{namespace}::#{name}"
-      end
+      # def path
+      #   return name if namespace.to_s.empty?
+      #   "#{namespace}::#{name}"
+      # end
     end
   end
 end
