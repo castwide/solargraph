@@ -16,8 +16,18 @@ module Solargraph
             closure: closure_pin(loc.range.start),
             name: node.children[0].to_s,
             comments: comments_for(node),
-            assignment: node.children[1]
+            assignment: node.children[1],
+            scope: region.scope == :module_function ? :class : region.scope
           )
+          if region.scope == :module_function
+            here = get_node_start_position(node)
+            named_path = named_path_pin(here)
+            if named_path.kind == Pin::METHOD
+              clon = pins.last.dup
+              clon.instance_variable_set(:@scope, :instance)
+              pins.push clon
+            end
+          end
           process_children
         end
       end

@@ -92,10 +92,26 @@ module Solargraph
           t = (directive.tag.types.nil? || directive.tag.types.empty?) ? nil : directive.tag.types.flatten.join('')
           if t.nil? || t.include?('r')
             # location, namespace, name, docstring, access
-            pins.push Solargraph::Pin::Attribute.new(location, namespace.path, directive.tag.name, docstring.all, :reader, :instance, :public)
+            pins.push Solargraph::Pin::Attribute.new(
+              location: location,
+              closure: namespace,
+              name: directive.tag.name,
+              comments: docstring.all,
+              access: :reader,
+              scope: :instance,
+              visibility: :public
+            )
           end
           if t.nil? || t.include?('w')
-            pins.push Solargraph::Pin::Attribute.new(location, namespace.path, "#{directive.tag.name}=", docstring.all, :writer, :instance, :public)
+            pins.push Solargraph::Pin::Attribute.new(
+              location: location,
+              closure: namespace,
+              name: "#{directive.tag.name}=",
+              comments: docstring.all,
+              access: :writer,
+              scope: :instance,
+              visibility: :public
+            )
           end
         when 'parse'
           # @todo Parse and map directive.tag.text

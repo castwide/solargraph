@@ -227,11 +227,11 @@ describe Solargraph::SourceMap::Mapper do
     pin = map.first_pin('Foo#bar')
     expect(pin.parameters).to eq(['baz', "boo = 'boo'", "key: 'value'"])
     pin = map.locals.select{|p| p.name == 'baz'}.first
-    expect(pin).to be_a(Solargraph::Pin::MethodParameter)
+    expect(pin).to be_a(Solargraph::Pin::Parameter)
     pin = map.locals.select{|p| p.name == 'boo'}.first
-    expect(pin).to be_a(Solargraph::Pin::MethodParameter)
+    expect(pin).to be_a(Solargraph::Pin::Parameter)
     pin = map.locals.select{|p| p.name == 'key'}.first
-    expect(pin).to be_a(Solargraph::Pin::MethodParameter)
+    expect(pin).to be_a(Solargraph::Pin::Parameter)
   end
 
   it "maps method splat parameters" do

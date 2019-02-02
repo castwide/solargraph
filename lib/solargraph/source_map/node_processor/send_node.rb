@@ -75,11 +75,16 @@ module Solargraph
 
         def process_include
           if node.children[2].kind_of?(AST::Node) && node.children[2].type == :const
+            cp = closure_pin(get_node_start_position(node))
             node.children[2..-1].each do |i|
-              nspin = pins.select{|pin| pin.kind == Pin::NAMESPACE and pin.path == region.namespace}.last
-              unless nspin.nil?
-                pins.push Pin::Reference::Include.new(get_node_location(node), nspin.path, unpack_name(i))
-              end
+              # nspin = pins.select{|pin| pin.kind == Pin::NAMESPACE and pin.path == region.namespace}.last
+              # unless nspin.nil?
+                pins.push Pin::Reference::Include.new(
+                  location: get_node_location(i),
+                  closure: cp,
+                  name: unpack_name(i)
+                )
+              # end
             end
           end
         end
@@ -152,21 +157,23 @@ module Solargraph
                   args: ref.parameters,
                   node: ref.node)
                 pins.push mm, cm
-                pins.select{|pin| pin.kind == Pin::INSTANCE_VARIABLE and pin.context == ref.context}.each do |ivar|
+                pins.select{|pin| pin.kind == Pin::INSTANCE_VARIABLE && pin.context == ref.context}.each do |ivar|
                   pins.delete ivar
                   pins.push Solargraph::Pin::InstanceVariable.new(
                     location: ivar.location,
                     closure: ivar.closure,
                     name: ivar.name,
                     comments: ivar.comments,
-                    assignment: ivar.assignment
+                    assignment: ivar.assignment,
+                    scope: :instance
                   )
                   pins.push Solargraph::Pin::InstanceVariable.new(
                     location: ivar.location,
                     closure: ivar.closure,
                     name: ivar.name,
                     comments: ivar.comments,
-                    assignment: ivar.assignment
+                    assignment: ivar.assignment,
+                    scope: :class
                   )
                 end
               end

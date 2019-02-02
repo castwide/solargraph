@@ -23,10 +23,10 @@ module Solargraph
         LanguageServer::SymbolKinds::CONSTANT
       end
 
-      # def path
-      #   return name if namespace.to_s.empty?
-      #   "#{namespace}::#{name}"
-      # end
+      def path
+        return name if context.namespace.to_s.empty?
+        "#{context.namespace}::#{name}"
+      end
     end
   end
 end

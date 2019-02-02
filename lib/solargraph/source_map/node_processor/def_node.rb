@@ -26,15 +26,35 @@ module Solargraph
             )
             # @todo Smelly instance variable access.
             pins.last.instance_variable_set(:@return_complex_type, ComplexType.parse(methpin.namespace))
+            pins.push methpin
             # pins.push Solargraph::Pin::Method.new(methpin.location, methpin.namespace, methpin.name, methpin.comments, methpin.scope, :private, methpin.parameters, methpin.node)
             methpin.instance_variable_set(:@visibility, :private)
-          # elsif region.visibility == :module_function
-          #   pins.push Solargraph::Pin::Method.new(methpin.location, methpin.namespace, methpin.name, methpin.comments, :class, :public, methpin.parameters, methpin.node)
-          #   pins.push Solargraph::Pin::Method.new(methpin.location, methpin.namespace, methpin.name, methpin.comments, :instance, :private, methpin.parameters, methpin.node)
-          # else
-          #   pins.push methpin
+          elsif region.visibility == :module_function
+            # pins.push Solargraph::Pin::Method.new(methpin.location, methpin.namespace, methpin.name, methpin.comments, :class, :public, methpin.parameters, methpin.node)
+            # pins.push Solargraph::Pin::Method.new(methpin.location, methpin.namespace, methpin.name, methpin.comments, :instance, :private, methpin.parameters, methpin.node)
+            pins.push Solargraph::Pin::Method.new(
+              location: methpin.location,
+              closure: methpin.closure,
+              name: methpin.name,
+              comments: methpin.comments,
+              scope: :class,
+              visibility: :public,
+              args: methpin.parameters,
+              node: methpin.node
+            )
+            pins.push Solargraph::Pin::Method.new(
+              location: methpin.location,
+              closure: methpin.closure,
+              name: methpin.name,
+              comments: methpin.comments,
+              scope: :instance,
+              visibility: :private,
+              args: methpin.parameters,
+              node: methpin.node
+            )
+          else
+            pins.push methpin
           end
-          pins.push methpin
           process_children
         end
 
