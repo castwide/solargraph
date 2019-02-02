@@ -3,6 +3,7 @@ module Solargraph
     # The base class for map pins.
     #
     class Base
+      include Common
       include Conversions
       include Documenting
 

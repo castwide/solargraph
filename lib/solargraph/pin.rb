@@ -2,6 +2,7 @@ module Solargraph
   # The namespace for pins used in maps.
   #
   module Pin
+    autoload :Common,           'solargraph/pin/common'
     autoload :Conversions,      'solargraph/pin/conversions'
     autoload :Base,             'solargraph/pin/base'
     autoload :BaseMethod,       'solargraph/pin/base_method'
