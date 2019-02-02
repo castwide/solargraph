@@ -20,8 +20,6 @@ module Solargraph
     autoload :Namespace,        'solargraph/pin/namespace'
     autoload :Keyword,          'solargraph/pin/keyword'
     autoload :Parameter,        'solargraph/pin/parameter'
-    # autoload :MethodParameter,  'solargraph/pin/method_parameter'
-    # autoload :BlockParameter,   'solargraph/pin/block_parameter'
     autoload :Reference,        'solargraph/pin/reference'
     autoload :Documenting,      'solargraph/pin/documenting'
     autoload :Block,            'solargraph/pin/block'
