@@ -15,6 +15,7 @@ module Solargraph
     autoload :GlobalVariable,   'solargraph/pin/global_variable'
     autoload :Constant,         'solargraph/pin/constant'
     autoload :Symbol,           'solargraph/pin/symbol'
+    autoload :Closure,          'solargraph/pin/closure'
     autoload :Namespace,        'solargraph/pin/namespace'
     autoload :Keyword,          'solargraph/pin/keyword'
     autoload :MethodParameter,  'solargraph/pin/method_parameter'

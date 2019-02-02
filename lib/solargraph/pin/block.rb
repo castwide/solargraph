@@ -1,6 +1,6 @@
 module Solargraph
   module Pin
-    class Block < Base
+    class Block < Closure
       # The signature of the method that receives this block.
       #
       # @return [Parser::AST::Node]
@@ -10,6 +10,10 @@ module Solargraph
         super(location, namespace, name, comments)
         @receiver = receiver
         @context = context
+      end
+
+      def rebind context
+        @binder = context
       end
 
       def kind

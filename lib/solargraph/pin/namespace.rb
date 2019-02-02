@@ -1,6 +1,6 @@
 module Solargraph
   module Pin
-    class Namespace < Pin::Base
+    class Namespace < Closure
       # @return [Symbol] :public or :private
       attr_reader :visibility
 
