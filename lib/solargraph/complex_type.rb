@@ -1,7 +1,7 @@
 module Solargraph
   # A container for type data based on YARD type tags.
   #
-  class ComplexType < Array
+  class ComplexType
     # @todo Figure out how to add the basic type methods here without actually
     #   including the module. One possibility:
     #
@@ -13,23 +13,42 @@ module Solargraph
 
     # @param types [Array<ComplexType>]
     def initialize types = [ComplexType::UNDEFINED]
-      super()
-      concat types
+      @items = types
     end
 
     # @param api_map [ApiMap]
     # @param context [String]
     # @return [ComplexType]
     def qualify api_map, context = ''
-      types = map do |t|
+      types = @items.map do |t|
         t.qualify api_map, context
       end
       ComplexType.new(types)
     end
 
+    def first
+      @items.first
+    end
+
+    def map &block
+      @items.map &block
+    end
+
+    def length
+      @items.length
+    end
+
+    def [](index)
+      @items[index]
+    end
+
+    def select &block
+      @items.select &block
+    end
+
     def method_missing name, *args, &block
-      return if first.nil?
-      return first.send(name, *args, &block) if respond_to_missing?(name)
+      return if @items.first.nil?
+      return @items.first.send(name, *args, &block) if respond_to_missing?(name)
       super
     end
 
@@ -39,6 +58,10 @@ module Solargraph
 
     def to_s
       map(&:tag).join(', ')
+    end
+
+    def all? &block
+      @items.all? &block
     end
 
     class << self
