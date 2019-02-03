@@ -159,11 +159,7 @@ module Solargraph
                   args: ref.parameters,
                   node: ref.node)
                 pins.push mm, cm
-                STDERR.puts "NS pin: #{nspin.path}"
-                STDERR.puts "Ref closure: #{ref.closure.path}"
-                STDERR.puts pins.select{|pin| pin.kind == Pin::INSTANCE_VARIABLE}.map(&:closure).map(&:path)
                 pins.select{|pin| pin.kind == Pin::INSTANCE_VARIABLE && pin.closure.path == ref.path}.each do |ivar|
-                  STDERR.puts "Found an ivar!!!!"
                   pins.delete ivar
                   pins.push Solargraph::Pin::InstanceVariable.new(
                     location: ivar.location,

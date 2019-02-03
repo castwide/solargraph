@@ -21,7 +21,7 @@ module Solargraph
       # @param scope [Symbol]
       # @param visibility [Symbol]
       def initialize source: Solargraph::Source.load_string(''), namespace: '',
-                     scope: :instance, visibility: :public
+                     scope: nil, visibility: :public
         @source = source
         @namespace = namespace
         @scope = scope

@@ -10,7 +10,8 @@ module Solargraph
             location: get_node_location(node),
             closure: closure_pin(here),
             receiver: node.children[0],
-            comments: comments_for(node)
+            comments: comments_for(node),
+            scope: region.scope || closure_pin(here).context.scope
           )
           process_children
         end

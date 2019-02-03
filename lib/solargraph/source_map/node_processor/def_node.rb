@@ -10,7 +10,7 @@ module Solargraph
             closure: closure_pin(loc.range.start),
             name: node.children[0].to_s,
             comments: comments_for(node),
-            scope: :instance,
+            scope: region.scope || :instance,
             visibility: region.visibility,
             args: method_args
           )
@@ -55,7 +55,7 @@ module Solargraph
           else
             pins.push methpin
           end
-          process_children region.update(scope: :instance)
+          process_children region.update(scope: methpin.scope)
         end
 
         private
