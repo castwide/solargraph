@@ -47,25 +47,24 @@ module Solargraph
           node.children[2..-1].each do |a|
             loc = get_node_location(node)
             clos = closure_pin(loc.range.start)
+            cmnt = comments_for(node)
             if node.children[1] == :attr_reader || node.children[1] == :attr_accessor
-              # pins.push Solargraph::Pin::Attribute.new(get_node_location(node), region.namespace, "#{a.children[0]}", comments_for(node), :reader, region.scope, region.visibility)
               pins.push Solargraph::Pin::Attribute.new(
                 location: loc,
                 closure: clos,
                 name: a.children[0].to_s,
-                comments: comments_for(node),
+                comments: cmnt,
                 access: :reader,
                 scope: region.scope || :instance,
                 visibility: region.visibility
               )
             end
             if node.children[1] == :attr_writer || node.children[1] == :attr_accessor
-              # pins.push Solargraph::Pin::Attribute.new(get_node_location(node), region.namespace, "#{a.children[0]}=", comments_for(node), :writer, region.scope, region.visibility)
               pins.push Solargraph::Pin::Attribute.new(
                 location: loc,
                 closure: clos,
                 name: "#{a.children[0]}=",
-                comments: comments_for(node),
+                comments: cmnt,
                 access: :writer,
                 scope: region.scope || :instance,
                 visibility: region.visibility
@@ -78,30 +77,17 @@ module Solargraph
           if node.children[2].kind_of?(AST::Node) && node.children[2].type == :const
             cp = closure_pin(get_node_start_position(node))
             node.children[2..-1].each do |i|
-              # nspin = pins.select{|pin| pin.kind == Pin::NAMESPACE and pin.path == region.namespace}.last
-              # unless nspin.nil?
-                pins.push Pin::Reference::Include.new(
-                  location: get_node_location(i),
-                  closure: cp,
-                  name: unpack_name(i)
-                )
-              # end
+              pins.push Pin::Reference::Include.new(
+                location: get_node_location(i),
+                closure: cp,
+                name: unpack_name(i)
+              )
             end
           end
         end
 
         def process_extend
           node.children[2..-1].each do |i|
-            # nspin = pins.select{|pin| pin.kind == Pin::NAMESPACE and pin.path == region.namespace}.last
-            # unless nspin.nil?
-            #   ref = nil
-            #   if i.type == :self
-            #     ref = Pin::Reference::Extend.new(get_node_location(node), nspin.path, nspin.path)
-            #   elsif i.type == :const
-            #     ref = Pin::Reference::Extend.new(get_node_location(node), nspin.path, unpack_name(i))
-            #   end
-            #   pins.push ref unless ref.nil?
-            # end
             loc = get_node_location(node)
             path_pin = named_path_pin(loc.range.start)
             closure = closure_pin(loc.range.start)
@@ -195,7 +181,6 @@ module Solargraph
               pins.delete ref
               # Might be either a namespace or constant
               if ref.kind == Pin::CONSTANT
-                # pins.push ref.class.new(ref.location, ref.namespace, ref.name, ref.comments, ref.signature, ref.return_type, ref.context, :private)
                 pins.push ref.class.new(
                   location: ref.location,
                   closure: ref.closure,
@@ -206,8 +191,6 @@ module Solargraph
                 # @todo Smelly instance variable access
                 pins.last.instance_variable_set(:@return_complex_type, ref.return_type)
               else
-                # pins.push ref.class.new(ref.location, ref.namespace, ref.name, ref.comments, ref.type, :private, (ref.superclass_reference.nil? ? nil : ref.superclass_reference.name))
-                # pins.push ref.class.new(ref.location, ref.namespace, ref.name, ref.comments, ref.type, :private)
                 pins.push ref.class.new(
                   location: ref.location,
                   closure: ref.closure,
@@ -225,7 +208,6 @@ module Solargraph
           loc = get_node_location(node)
           pin = pins.select{|p| [Solargraph::Pin::Method, Solargraph::Pin::Attribute].include?(p.class) && p.name == node.children[3].children[0].to_s && p.namespace == region.namespace && p.scope == (region.scope || :instance)}.first
           if pin.nil?
-            # pins.push Solargraph::Pin::MethodAlias.new(get_node_location(node), region.namespace, node.children[2].children[0].to_s, region.scope, node.children[3].children[0].to_s)
             pins.push Solargraph::Pin::MethodAlias.new(
               location: get_node_location(node),
               closure: closure_pin(loc.range.start),
@@ -234,7 +216,6 @@ module Solargraph
             )
           else
             if pin.is_a?(Solargraph::Pin::Method)
-              # pins.push Solargraph::Pin::Method.new(get_node_location(node), pin.namespace, node.children[2].children[0].to_s, comments_for(node) || pin.comments, pin.scope, pin.visibility, pin.parameters, pin.node)
               pins.push Solargraph::Pin::Method.new(
                 location: loc,
                 closure: pin.closure,
@@ -244,7 +225,6 @@ module Solargraph
                 visibility: pin.visibility
               )
             elsif pin.is_a?(Solargraph::Pin::Attribute)
-              # pins.push Solargraph::Pin::Attribute.new(get_node_location(node), pin.namespace, node.children[2].children[0].to_s, comments_for(node) || pin.comments, pin.access, pin.scope, pin.visibility)
               pins.push Solargraph::Pin::Attribute.new(
                 location: loc,
                 closure: pin.closure,
@@ -263,7 +243,6 @@ module Solargraph
             ref = pins.select{|p| [Solargraph::Pin::Method, Solargraph::Pin::Attribute].include?(p.class) && p.namespace == region.namespace && p.name == node.children[2].children[0].to_s}.first
             unless ref.nil?
               pins.delete ref
-              # pins.push Solargraph::Pin::Method.new(ref.location, ref.namespace, ref.name, ref.comments, ref.scope, :private, ref.parameters, ref.node)
               pins.push Solargraph::Pin::Method.new(
                 location: ref.location,
                 closure: ref.closure,
