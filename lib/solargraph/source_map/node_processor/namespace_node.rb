@@ -3,15 +3,6 @@ module Solargraph
     module NodeProcessor
       class NamespaceNode < Base
         def process
-          visibility = :public
-          if node.children[0].kind_of?(AST::Node) and node.children[0].children[0].kind_of?(AST::Node) and node.children[0].children[0].type == :cbase
-            tree = pack_name(node.children[0])
-            tree.shift if tree.first.empty?
-          else
-            tree = region.namespace.empty? ? [] : [region.namespace]
-            tree.concat pack_name(node.children[0])
-          end
-          fqn = tree.join('::')
           sc = nil
           if node.type == :class and !node.children[1].nil?
             sc = unpack_name(node.children[1])
@@ -26,11 +17,13 @@ module Solargraph
             visibility: :public
           )
           pins.push nspin
-          pins.push Pin::Reference::Superclass.new(
-            location: loc,
-            closure: pins.last,
-            name: sc
-          ) unless sc.nil?
+          unless sc.nil?
+            pins.push Pin::Reference::Superclass.new(
+              location: loc,
+              closure: pins.last,
+              name: sc
+            )
+          end
           process_children region.update(namespace: nspin.path, visibility: :public)
         end
       end
