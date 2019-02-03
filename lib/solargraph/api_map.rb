@@ -650,7 +650,7 @@ module Solargraph
       pins.map { |pin| resolve_method_alias(pin) }
     end
 
-    # @param pin [Pin::Base]
+    # @param pin [Pin::MethodAlias, Pin::Base]
     # @return [Pin::Base]
     def resolve_method_alias pin
       return pin unless pin.is_a?(Pin::MethodAlias)
