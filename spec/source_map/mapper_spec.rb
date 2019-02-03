@@ -661,7 +661,7 @@ describe Solargraph::SourceMap::Mapper do
       end
     ))
     pin = smap.pins.select{|p| p.path == 'Foo#baz'}.first
-    expect(pin).to be_a(Solargraph::Pin::Method)
+    expect(pin).to be_a(Solargraph::Pin::MethodAlias)
   end
 
   it "maps attribute aliases" do
@@ -672,7 +672,7 @@ describe Solargraph::SourceMap::Mapper do
       end
     ))
     pin = smap.pins.select{|p| p.path == 'Foo#baz'}.first
-    expect(pin).to be_a(Solargraph::Pin::Attribute)
+    expect(pin).to be_a(Solargraph::Pin::MethodAlias)
   end
 
   it "maps class method aliases" do
@@ -685,7 +685,7 @@ describe Solargraph::SourceMap::Mapper do
       end
     ))
     pin = smap.pins.select{|p| p.path == 'Foo.baz'}.first
-    expect(pin).to be_a(Solargraph::Pin::Method)
+    expect(pin).to be_a(Solargraph::Pin::MethodAlias)
     expect(pin.location.range.start.line).to eq(4)
   end
 
@@ -723,7 +723,7 @@ describe Solargraph::SourceMap::Mapper do
       end
     ))
     pin = smap.pins.select{|p| p.path == 'Foo.baz'}.first
-    expect(pin).to be_a(Solargraph::Pin::Method)
+    expect(pin).to be_a(Solargraph::Pin::MethodAlias)
     expect(pin.location.range.start.line).to eq(4)
   end
 

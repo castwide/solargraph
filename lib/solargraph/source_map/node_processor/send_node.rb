@@ -206,36 +206,13 @@ module Solargraph
 
         def process_alias_method
           loc = get_node_location(node)
-          pin = pins.select{|p| [Solargraph::Pin::Method, Solargraph::Pin::Attribute].include?(p.class) && p.name == node.children[3].children[0].to_s && p.namespace == region.namespace && p.scope == (region.scope || :instance)}.first
-          if pin.nil?
-            pins.push Solargraph::Pin::MethodAlias.new(
-              location: get_node_location(node),
-              closure: closure_pin(loc.range.start),
-              name: node.children[2].children[0].to_s,
-              original: node.children[3].children[0].to_s
-            )
-          else
-            if pin.is_a?(Solargraph::Pin::Method)
-              pins.push Solargraph::Pin::Method.new(
-                location: loc,
-                closure: pin.closure,
-                name: node.children[2].children[0].to_s,
-                comments: comments_for(node) || pin.comments,
-                scope: pin.scope,
-                visibility: pin.visibility
-              )
-            elsif pin.is_a?(Solargraph::Pin::Attribute)
-              pins.push Solargraph::Pin::Attribute.new(
-                location: loc,
-                closure: pin.closure,
-                name: node.children[2].children[0].to_s,
-                comments: comments_for(node) || pin.comments,
-                scope: pin.scope,
-                visibility: pin.visibility,
-                access: pin.access
-              )
-            end
-          end
+          pins.push Solargraph::Pin::MethodAlias.new(
+            location: get_node_location(node),
+            closure: closure_pin(loc.range.start),
+            name: node.children[2].children[0].to_s,
+            original: node.children[3].children[0].to_s,
+            scope: region.scope || :instance
+          )
         end
 
         def process_private_class_method
