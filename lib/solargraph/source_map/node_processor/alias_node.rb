@@ -12,7 +12,7 @@ module Solargraph
               closure: closure_pin(loc.range.start),
               name: node.children[0].children[0].to_s,
               original: node.children[1].children[0].to_s,
-              scope: region.scope || closure_pin(loc.range.start).context.scope
+              scope: region.scope || :instance
             )
           elsif pin.is_a?(Solargraph::Pin::Method)
             # pins.push Solargraph::Pin::Method.new(get_node_location(node), pin.namespace, node.children[0].children[0].to_s, comments_for(node) || pin.comments, pin.scope, pin.visibility, pin.parameters, pin.node)

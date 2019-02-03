@@ -12,7 +12,8 @@ module Solargraph
             comments: comments_for(node),
             scope: region.scope || :instance,
             visibility: region.visibility,
-            args: method_args
+            args: method_args,
+            node: node
           )
           if methpin.name == 'initialize' and methpin.scope == :instance
             # pins.push Solargraph::Pin::Method.new(methpin.location, methpin.namespace, 'new', methpin.comments, :class, :public, methpin.parameters, nil)
