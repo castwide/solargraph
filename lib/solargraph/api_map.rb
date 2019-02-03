@@ -647,20 +647,24 @@ module Solargraph
     # @param pins [Array<Pin::Base>]
     # @return [Array<Pin::Base>]
     def resolve_method_aliases pins
-      pins.map do |pin|
-        next pin unless pin.kind == Pin::METHOD_ALIAS
-        origin = get_method_stack(pin.namespace, pin.original, scope: pin.scope).select{|pin| pin.is_a?(Pin::BaseMethod)}.first
-        next pin if origin.nil?
-        Pin::Method.new(
-          location: pin.location,
-          closure: pin.closure,
-          name: pin.name,
-          comments: origin.comments,
-          scope: origin.scope,
-          visibility: origin.visibility,
-          args: origin.parameters
-        )
-      end
+      pins.map { |pin| resolve_method_alias(pin) }
+    end
+
+    # @param pin [Pin::Base]
+    # @return [Pin::Base]
+    def resolve_method_alias pin
+      return pin unless pin.is_a?(Pin::MethodAlias)
+      origin = get_method_stack(pin.namespace, pin.original, scope: pin.scope).first
+      return pin if origin.nil?
+      Pin::Method.new(
+        location: pin.location,
+        closure: pin.closure,
+        name: pin.name,
+        comments: origin.comments,
+        scope: origin.scope,
+        visibility: origin.visibility,
+        args: origin.parameters
+      )
     end
 
     def resolve_blocks
