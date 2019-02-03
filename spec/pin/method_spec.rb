@@ -47,7 +47,7 @@ describe Solargraph::Pin::Method do
 
   it "ignores malformed return tags" do
     pin = Solargraph::Pin::Method.new(name: 'bar', comments: '@return [Array<String')
-    expect(pin.return_complex_type).to be_undefined
+    expect(pin.return_type).to be_undefined
   end
 
   it "will not merge with changes in parameters" do

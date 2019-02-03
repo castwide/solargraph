@@ -25,12 +25,12 @@ module Solargraph
         Solargraph::LanguageServer::SymbolKinds::VARIABLE
       end
 
-      def return_complex_type
-        @return_complex_type ||= generate_complex_type
+      def return_type
+        @return_type ||= generate_complex_type
       end
 
       def nil_assignment?
-        return_complex_type.nil?
+        return_type.nil?
       end
 
       def variable?
@@ -53,7 +53,7 @@ module Solargraph
       def try_merge! pin
         return false unless super
         @assignment = pin.assignment
-        @return_complex_type = pin.return_complex_type
+        @return_type = pin.return_type
         true
       end
 

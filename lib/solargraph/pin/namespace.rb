@@ -48,8 +48,8 @@ module Solargraph
         @path ||= (namespace.empty? ? '' : "#{namespace}::") + name
       end
 
-      def return_complex_type
-        @return_complex_type ||= ComplexType.parse( (type == :class ? 'Class' : 'Module') + "<#{path}>" )
+      def return_type
+        @return_type ||= ComplexType.parse( (type == :class ? 'Class' : 'Module') + "<#{path}>" )
       end
 
       def domains
@@ -57,7 +57,7 @@ module Solargraph
       end
 
       def typify api_map
-        return_complex_type
+        return_type
       end
     end
   end

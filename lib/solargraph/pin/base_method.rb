@@ -6,8 +6,8 @@ module Solargraph
       # @return [Symbol] :public, :private, or :protected
       attr_reader :visibility
 
-      def return_complex_type
-        @return_complex_type ||= generate_complex_type
+      def return_type
+        @return_type ||= generate_complex_type
       end
 
       def path

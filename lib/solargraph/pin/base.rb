@@ -97,18 +97,11 @@ module Solargraph
           )
       end
 
-      # An alias for return_complex_type.
+      # The pin's return type.
       #
       # @return [ComplexType]
       def return_type
-        return_complex_type
-      end
-
-      # All of the pin's return types as an array of ComplexTypes.
-      #
-      # @return [ComplexType]
-      def return_complex_type
-        @return_complex_type ||= ComplexType::UNDEFINED
+        @return_type ||= ComplexType::UNDEFINED
       end
 
       # @return [YARD::Docstring]
@@ -155,7 +148,7 @@ module Solargraph
       # @param api_map [ApiMap]
       # @return [ComplexType]
       def typify api_map
-        return_complex_type.qualify(api_map, namespace)
+        return_type.qualify(api_map, namespace)
       end
 
       # Infer the pin's return type via static code analysis.
@@ -188,7 +181,7 @@ module Solargraph
         return true if comments == pin.comments
         @comments = pin.comments
         @docstring = pin.docstring
-        @return_complex_type = pin.return_complex_type
+        @return_type = pin.return_type
         @documentation = nil
         @deprecated = nil
         reset_conversions
@@ -207,7 +200,7 @@ module Solargraph
       # @return [self]
       def proxy return_type
         result = dup
-        result.return_complex_type = return_type
+        result.return_type = return_type
         result.proxied = true
         result
       end
@@ -222,7 +215,7 @@ module Solargraph
       attr_writer :proxied
 
       # @return [ComplexType]
-      attr_writer :return_complex_type
+      attr_writer :return_type
 
       private
 

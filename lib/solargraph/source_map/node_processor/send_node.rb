@@ -189,7 +189,7 @@ module Solargraph
                   visibility: :private
                 )
                 # @todo Smelly instance variable access
-                pins.last.instance_variable_set(:@return_complex_type, ref.return_type)
+                pins.last.instance_variable_set(:@return_type, ref.return_type)
               else
                 pins.push ref.class.new(
                   location: ref.location,

@@ -39,6 +39,6 @@ describe Solargraph::Pin::Attribute do
 
   it "handles invalid return type tags" do
     pin = Solargraph::Pin::Attribute.new(closure: nspin, name: 'bar', comments: '@return [Array<]', access: :reader)
-    expect(pin.return_complex_type).to be_undefined
+    expect(pin.return_type).to be_undefined
   end
 end
