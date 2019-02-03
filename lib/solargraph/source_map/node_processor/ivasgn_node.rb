@@ -17,7 +17,7 @@ module Solargraph
             name: node.children[0].to_s,
             comments: comments_for(node),
             assignment: node.children[1],
-            scope: region.visibility == :module_function ? :class : region.scope
+            scope: region.visibility == :module_function ? :class : (region.scope || closure_pin(loc.range.start).scope)
           )
           if region.visibility == :module_function
             here = get_node_start_position(node)

@@ -65,7 +65,7 @@ module Solargraph
       # @param region [Region]
       # @param pins [Array<Pin::Base>]
       # @return [Array<Pin::Base>]
-      def self.process node, region = Region.new(nil, '', :instance, :public, []), pins = []
+      def self.process node, region = Region.new(nil, '', nil, :public, []), pins = []
         # pins.push Pin::Namespace.new(region.source.location, '', '', nil, :class, :public) if pins.empty?
         pins.push Pin::Namespace.new(
           location: region.source.location,

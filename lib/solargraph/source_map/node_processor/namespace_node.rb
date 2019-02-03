@@ -18,8 +18,8 @@ module Solargraph
           end
           loc = get_node_location(node)
           # pins.push Solargraph::Pin::Namespace.new(get_node_location(node), tree[0..-2].join('::') || '', pack_name(node.children[0]).last.to_s, comments_for(node), node.type, visibility)
-          # pins.push Pin::Reference::Superclass.new(pins.last.location, pins.last.path, sc) unless sc.nil?
-          pins.push Solargraph::Pin::Namespace.new(
+          # pins.push Pin::Reference::Superclass.new(pins.last.location, pins.last.path, sc) unless sc.nil? 
+          nspin = Solargraph::Pin::Namespace.new(
             type: node.type,
             location: loc,
             closure: closure_pin(loc.range.start),
@@ -27,12 +27,13 @@ module Solargraph
             comments: comments_for(node),
             visibility: :public
           )
+          pins.push nspin
           pins.push Pin::Reference::Superclass.new(
             location: loc,
             closure: pins.last,
             name: sc
           ) unless sc.nil?
-          process_children region.update(namespace: fqn, scope: :instance, visibility: :public)
+          process_children region.update(namespace: nspin.path, visibility: :public)
         end
       end
     end

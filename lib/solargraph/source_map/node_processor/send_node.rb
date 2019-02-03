@@ -46,15 +46,16 @@ module Solargraph
         def process_attribute
           node.children[2..-1].each do |a|
             loc = get_node_location(node)
+            clos = closure_pin(loc.range.start)
             if node.children[1] == :attr_reader || node.children[1] == :attr_accessor
               # pins.push Solargraph::Pin::Attribute.new(get_node_location(node), region.namespace, "#{a.children[0]}", comments_for(node), :reader, region.scope, region.visibility)
               pins.push Solargraph::Pin::Attribute.new(
                 location: loc,
-                closure: closure_pin(loc.range.start),
+                closure: clos,
                 name: a.children[0].to_s,
                 comments: comments_for(node),
                 access: :reader,
-                scope: region.scope,
+                scope: region.scope || :instance,
                 visibility: region.visibility
               )
             end
@@ -62,11 +63,11 @@ module Solargraph
               # pins.push Solargraph::Pin::Attribute.new(get_node_location(node), region.namespace, "#{a.children[0]}=", comments_for(node), :writer, region.scope, region.visibility)
               pins.push Solargraph::Pin::Attribute.new(
                 location: loc,
-                closure: closure_pin(loc.range.start),
+                closure: clos,
                 name: "#{a.children[0]}=",
                 comments: comments_for(node),
                 access: :writer,
-                scope: region.scope,
+                scope: region.scope || :instance,
                 visibility: region.visibility
               )
             end
