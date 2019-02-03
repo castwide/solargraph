@@ -9,7 +9,7 @@ module Solargraph
                 node.children[2..-1].each do |child|
                   next unless child.is_a?(AST::Node) && (child.type == :sym || child.type == :str)
                   name = child.children[0].to_s
-                  matches = pins.select{ |pin| [Pin::METHOD, Pin::ATTRIBUTE].include?(pin.kind) && pin.name == name && pin.namespace == region.namespace && pin.context.scope == region.scope }
+                  matches = pins.select{ |pin| [Pin::METHOD, Pin::ATTRIBUTE].include?(pin.kind) && pin.name == name && pin.namespace == region.namespace && pin.context.scope == (region.scope || :instance)}
                   matches.each do |pin|
                     # @todo Smelly instance variable access
                     pin.instance_variable_set(:@visibility, node.children[1])
@@ -223,7 +223,7 @@ module Solargraph
 
         def process_alias_method
           loc = get_node_location(node)
-          pin = pins.select{|p| [Solargraph::Pin::Method, Solargraph::Pin::Attribute].include?(p.class) && p.name == node.children[3].children[0].to_s && p.namespace == region.namespace && p.scope == region.scope}.first
+          pin = pins.select{|p| [Solargraph::Pin::Method, Solargraph::Pin::Attribute].include?(p.class) && p.name == node.children[3].children[0].to_s && p.namespace == region.namespace && p.scope == (region.scope || :instance)}.first
           if pin.nil?
             # pins.push Solargraph::Pin::MethodAlias.new(get_node_location(node), region.namespace, node.children[2].children[0].to_s, region.scope, node.children[3].children[0].to_s)
             pins.push Solargraph::Pin::MethodAlias.new(
