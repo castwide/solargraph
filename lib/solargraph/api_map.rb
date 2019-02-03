@@ -664,7 +664,6 @@ module Solargraph
     end
 
     def resolve_blocks
-      return # @todo Temporarily disabled
       store.pins.select { |pin| pin.is_a?(Pin::Block) }.each do |pin|
         if pin.receiver
           smap = source_map(pin.location.filename)
@@ -675,17 +674,11 @@ module Solargraph
           ys = receiver_pin.docstring.tag(:yieldself)
           unless ys.nil? || ys.types.empty?
             ysct = ComplexType.parse(*ys.types).qualify(self, receiver_pin.context.namespace)
-            # result.concat api_map.get_complex_type_methods(ysct, ysct.namespace, true)
             next if ysct.undefined?
-            STDERR.puts "The block's context is actually #{ysct}"
             @mutex.synchronize do
               pin.rebind ysct
-              # pin.instance_variable_set(:@context, ysct)
-              # @todo This means the instance variables change
             end
           end
-        else
-          STDERR.puts "no receiver"
         end
       end
     end
