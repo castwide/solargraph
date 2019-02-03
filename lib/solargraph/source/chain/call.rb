@@ -42,10 +42,29 @@ module Solargraph
         def inferred_pins pins, api_map, context, locals
           result = pins.map do |p|
             if CoreFills::METHODS_RETURNING_SELF.include?(p.path)
-              next Solargraph::Pin::Method.new(p.location, p.namespace, p.name, "@return [#{context.tag}]", p.scope, p.visibility, p.parameters, p.node)
+              # next Solargraph::Pin::Method.new(p.location, p.namespace, p.name, "@return [#{context.tag}]", p.scope, p.visibility, p.parameters, p.node)
+              next Solargraph::Pin::Method.new(
+                location: p.location,
+                closure: p.closure,
+                name: p.name,
+                comments: "@return [#{context.tag}]",
+                scope: p.scope,
+                visibility: p.visibility,
+                args: p.parameters,
+                node: p.node
+              )
             end
             if CoreFills::METHODS_RETURNING_SUBTYPES.include?(p.path) && !context.subtypes.empty?
-              next Solargraph::Pin::Method.new(p.location, p.namespace, p.name, "@return [#{context.subtypes.first.tag}]", p.scope, p.visibility, p.parameters, p.node)
+              next Solargraph::Pin::Method.new(
+                location: p.location,
+                closure: p.closure,
+                name: p.name,
+                comments: "@return [#{context.subtypes.first.tag}]",
+                scope: p.scope,
+                visibility: p.visibility,
+                args: p.parameters,
+                node: p.node
+              )
             end
             if p.kind == Pin::METHOD && !p.macros.empty?
               result = process_macro(p, api_map, context, locals)

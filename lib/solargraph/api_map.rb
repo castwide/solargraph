@@ -328,7 +328,7 @@ module Solargraph
       result = []
       if type.duck_type?
         type.select(&:duck_type?).each do |t|
-          result.push Pin::DuckMethod.new(nil, t.tag[1..-1])
+          result.push Pin::DuckMethod.new(name: t.tag[1..-1])
         end
         result.concat get_methods('Object')
       else
@@ -651,7 +651,15 @@ module Solargraph
         next pin unless pin.kind == Pin::METHOD_ALIAS
         origin = get_method_stack(pin.namespace, pin.original, scope: pin.scope).select{|pin| pin.is_a?(Pin::BaseMethod)}.first
         next pin if origin.nil?
-        Pin::Method.new(pin.location, pin.namespace, pin.name, origin.comments, origin.scope, origin.visibility, origin.parameters)
+        Pin::Method.new(
+          location: pin.location,
+          closure: pin.closure,
+          name: pin.name,
+          comments: origin.comments,
+          scope: origin.scope,
+          visibility: origin.visibility,
+          args: origin.parameters
+        )
       end
     end
 
