@@ -132,13 +132,15 @@ module Solargraph
             region.instance_variable_set(:@visibility, :module_function)
           elsif node.children[2].type == :sym || node.children[2].type == :str
             # @todo What to do about references?
+            nspin = named_path_pin(get_node_start_position(node))
+            clos = closure_pin(get_node_start_position(node))
             node.children[2..-1].each do |x|
               cn = x.children[0].to_s
-              ref = pins.select{|p| [Solargraph::Pin::Method, Solargraph::Pin::Attribute].include?(p.class) && p.namespace == region.namespace && p.name == cn}.first
+              ref = pins.select{|p| [Solargraph::Pin::Method, Solargraph::Pin::Attribute].include?(p.class) && p.namespace == nspin.path && p.name == cn}.first
               unless ref.nil?
                 pins.delete ref
                 mm = Solargraph::Pin::Method.new(
-                  location: ref.location, 
+                  location: ref.location,
                   closure: ref.closure,
                   name: ref.name,
                   comments: ref.comments,
@@ -157,11 +159,15 @@ module Solargraph
                   args: ref.parameters,
                   node: ref.node)
                 pins.push mm, cm
-                pins.select{|pin| pin.kind == Pin::INSTANCE_VARIABLE && pin.context == ref.context}.each do |ivar|
+                STDERR.puts "NS pin: #{nspin.path}"
+                STDERR.puts "Ref closure: #{ref.closure.path}"
+                STDERR.puts pins.select{|pin| pin.kind == Pin::INSTANCE_VARIABLE}.map(&:closure).map(&:path)
+                pins.select{|pin| pin.kind == Pin::INSTANCE_VARIABLE && pin.closure.path == ref.path}.each do |ivar|
+                  STDERR.puts "Found an ivar!!!!"
                   pins.delete ivar
                   pins.push Solargraph::Pin::InstanceVariable.new(
                     location: ivar.location,
-                    closure: ivar.closure,
+                    closure: cm,
                     name: ivar.name,
                     comments: ivar.comments,
                     assignment: ivar.assignment,
@@ -169,7 +175,7 @@ module Solargraph
                   )
                   pins.push Solargraph::Pin::InstanceVariable.new(
                     location: ivar.location,
-                    closure: ivar.closure,
+                    closure: mm,
                     name: ivar.name,
                     comments: ivar.comments,
                     assignment: ivar.assignment,

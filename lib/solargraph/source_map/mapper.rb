@@ -85,6 +85,7 @@ module Solargraph
             closure: namespace,
             name: gen_pin.name,
             comments: docstring.all,
+            scope: :instance,
             args: gen_pin.parameters
           )
         when 'attribute'

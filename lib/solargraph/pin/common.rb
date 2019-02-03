@@ -50,7 +50,8 @@ module Solargraph
         # return Solargraph::ComplexType.parse(name) if kind == Pin::NAMESPACE && (closure.nil? || closure.name.empty?)
         here = closure
         until here.nil?
-          return Solargraph::ComplexType.parse(here.path) if here.kind == Pin::NAMESPACE
+          # return Solargraph::ComplexType.parse(here.path) if here.kind == Pin::NAMESPACE
+          return here.return_type if here.kind == Pin::NAMESPACE
           here = here.closure
         end
         ComplexType::ROOT

@@ -9,10 +9,7 @@ module Solargraph
       # @return [Parser::AST::Node]
       attr_reader :node
 
-      # @return [Symbol] :class or :instance
-      attr_reader :scope
-
-      def initialize scope: :instance, visibility: :public, args: [], node: nil, **splat
+      def initialize visibility: :public, args: [], node: nil, **splat
         super(splat)
         @scope = scope
         @visibility = visibility
@@ -27,21 +24,6 @@ module Solargraph
 
       def kind
         Solargraph::Pin::METHOD
-      end
-
-      def path
-        @path ||= namespace.to_s + (scope == :instance ? '#' : '.') + name.to_s
-      end
-
-      def context
-        @context ||= begin
-          result = super
-          if scope == :class
-            ComplexType.parse("Class<#{result.namespace}>")
-          else
-            result
-          end
-        end
       end
 
       def completion_item_kind

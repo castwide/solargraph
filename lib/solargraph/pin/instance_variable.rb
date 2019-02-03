@@ -18,7 +18,7 @@ module Solargraph
           if scope == :class
             ComplexType.parse("Class<#{result.namespace}>")
           else
-            result
+            ComplexType.parse("#{result.namespace}")
           end
         end
       end
