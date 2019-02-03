@@ -11,6 +11,11 @@ module Solargraph
       #   @return_complex_type = return_type
       # end
 
+      def initialize return_type: ComplexType::UNDEFINED, **splat
+        super(splat)
+        @return_complex_type = return_type
+      end
+
       def path
         @path ||= begin
           result = namespace.to_s
@@ -29,7 +34,10 @@ module Solargraph
         parts = return_type.namespace.split('::')
         namespace = parts[0..-2].join('::').to_s
         name = parts.last.to_s
-        ProxyType.new(nil, namespace, name, return_type)
+        # ProxyType.new(nil, namespace, name, return_type)
+        ProxyType.new(
+          closure: Solargraph::Pin::Namespace.new(name: namespace), return_type: return_type
+        )
       end
     end
   end

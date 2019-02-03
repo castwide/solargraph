@@ -27,7 +27,8 @@ module Solargraph
               closure: closure_pin(loc.range.start),
               comments: comments_for(node),
               name: u.children[0].to_s,
-              assignment: u.children[1]
+              assignment: u.children[1],
+              presence: closure_pin(loc.range.start).location.range
             )
           end
           process_children
