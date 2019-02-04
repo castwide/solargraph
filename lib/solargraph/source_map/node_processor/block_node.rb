@@ -9,9 +9,39 @@ module Solargraph
             closure: closure_pin(here),
             receiver: node.children[0],
             comments: comments_for(node),
-            scope: region.scope || closure_pin(here).context.scope
+            scope: region.scope || closure_pin(here).context.scope,
+            args: method_args
           )
           process_children
+        end
+
+        def method_args
+          return [] if node.nil?
+          list = nil
+          args = []
+          node.children.each { |c|
+            if c.kind_of?(AST::Node) and c.type == :args
+              list = c
+              break
+            end
+          }
+          return args if list.nil?
+          list.children.each { |c|
+            if c.type == :arg
+              args.push c.children[0].to_s
+            elsif c.type == :restarg
+              args.push "*#{c.children[0]}"
+            elsif c.type == :optarg
+              args.push "#{c.children[0]} = #{region.code_for(c.children[1])}"
+            elsif c.type == :kwarg
+              args.push "#{c.children[0]}:"
+            elsif c.type == :kwoptarg
+              args.push "#{c.children[0]}: #{region.code_for(c.children[1])}"
+            elsif c.type == :blockarg
+              args.push "&#{c.children[0]}"
+            end
+          }
+          args
         end
       end
     end

@@ -6,10 +6,11 @@ module Solargraph
       # @return [Parser::AST::Node]
       attr_reader :receiver
 
-      def initialize receiver: nil, **splat
+      def initialize receiver: nil, args: [], **splat
         super(splat)
         @receiver = receiver
-        @context = context
+        @parameters = args
+        # @context = context
       end
 
       def rebind context
