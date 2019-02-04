@@ -17,7 +17,8 @@ module Solargraph
             name: name || code_object.name.to_s,
             comments: comments,
             scope: scope || code_object.scope,
-            visibility: visibility || code_object.visibility
+            visibility: visibility || code_object.visibility,
+            args: get_parameters(code_object)
           )
         end
 
