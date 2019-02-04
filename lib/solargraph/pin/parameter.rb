@@ -5,7 +5,6 @@ module Solargraph
         if @return_type.nil?
           @return_type = ComplexType.new
           found = nil
-          # params = block.docstring.tags(:param)
           params = closure.docstring.tags(:param)
           params.each do |p|
             next unless p.name == name
@@ -31,7 +30,7 @@ module Solargraph
       # @param api_map [ApiMap]
       def typify api_map
         # @todo Does anything need to be eliminated because it's more accurately a probe?
-        closure.is_a?(Pin::Block) ? typify_block_param(api_map) : super
+        closure.is_a?(Pin::Block) ? typify_block_param(api_map) : typify_method_param(api_map)
       end
 
       def try_merge! pin
@@ -69,6 +68,22 @@ module Solargraph
       end
 
       def typify_method_param api_map
+        meths = api_map.get_method_stack(closure.full_context.namespace, closure.name, scope: closure.scope)
+        # meths.shift # Ignore the first one
+        meths.each do |meth|
+          found = nil
+          params = meth.docstring.tags(:param)
+          params.each do |p|
+            next unless p.name == name
+            found = p
+            break
+          end
+          if found.nil? and !index.nil?
+            found = params[index] if params[index] && (params[index].name.nil? || params[index].name.empty?)
+          end
+          return ComplexType.parse(*found.types).qualify(api_map, meth.context.namespace) unless found.nil? || found.types.nil?
+        end
+        ComplexType::UNDEFINED
       end
     end
   end
