@@ -205,6 +205,22 @@ e = d # inline
     expect(source2).not_to be_synchronized
   end
 
+  it "finishes synchronizations for unbalanced lines" do
+    source1 = Solargraph::Source.load_string('x = 1', 'test.rb')
+    source2 = source1.start_synchronize Solargraph::Source::Updater.new(
+      'test.rb',
+      2,
+      [
+        Solargraph::Source::Change.new(
+          Solargraph::Range.from_to(0, 5, 0, 5),
+          "\n2"
+        )
+      ]
+    )
+    expect(source2.code).to eq("x = 1\n2")
+    expect(source2).to be_synchronized
+  end
+
   it "handles comment arrays that overlap lines" do
     # Fixes negative argument error (castwide/solargraph#141)
     source = Solargraph::Source.load_string(%(

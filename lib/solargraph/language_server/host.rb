@@ -586,9 +586,6 @@ module Solargraph
       # @param uri [String]
       # @return [Array<Range>]
       def folding_ranges uri
-        # library = library_for(uri)
-        # file = uri_to_file(uri)
-        # library.folding_ranges(file)
         sources.find(uri).folding_ranges
       end
 
