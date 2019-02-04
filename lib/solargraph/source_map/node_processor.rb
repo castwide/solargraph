@@ -66,12 +66,13 @@ module Solargraph
       # @param pins [Array<Pin::Base>]
       # @return [Array<Pin::Base>]
       def self.process node, region = Region.new(nil, '', nil, :public, []), pins = []
-        # pins.push Pin::Namespace.new(region.source.location, '', '', nil, :class, :public) if pins.empty?
-        pins.push Pin::Namespace.new(
-          location: region.source.location,
-          name: ''
-        ) if pins.empty?
-        return pins unless node.is_a?(Parser::AST::Node) #&& @@processors.key?(node.type)
+        if pins.empty?
+          pins.push Pin::Namespace.new(
+            location: region.source.location,
+            name: ''
+          )
+        end
+        return pins unless node.is_a?(Parser::AST::Node)
         klass = @@processors[node.type] || BeginNode
         processor = klass.new(node, region, pins)
         processor.process
