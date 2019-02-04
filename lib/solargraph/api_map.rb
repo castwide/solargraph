@@ -13,11 +13,6 @@ module Solargraph
 
     include SourceToYard
 
-    # Get a LiveMap associated with the current workspace.
-    #
-    # @return [Solargraph::LiveMap]
-    attr_reader :live_map
-
     # @return [Array<String>]
     attr_reader :unresolved_requires
 
@@ -293,11 +288,6 @@ module Solargraph
       else
         result.concat inner_get_methods(fqns, scope, visibility, deep, skip)
       end
-      # live = live_map.get_methods(fqns, '', scope.to_s, visibility.include?(:private))
-      # unless live.empty?
-      #   exist = result.map(&:name)
-      #   result.concat live.reject{|p| exist.include?(p.name)}
-      # end
       resolved = resolve_method_aliases(result)
       cache.set_methods(fqns, scope, visibility, deep, resolved)
       resolved
@@ -370,10 +360,6 @@ module Solargraph
       return [] if path.nil?
       result = []
       result.concat store.get_path_pins(path)
-      # if result.empty?
-      #   lp = live_map.get_path_pin(path)
-      #   result.push lp unless lp.nil?
-      # end
       resolve_method_aliases(result)
     end
 
@@ -545,20 +531,7 @@ module Solargraph
         fqis = qualify(is, fqns)
         result.concat inner_get_constants(fqis, [:public], skip) unless fqis.nil?
       end
-      # result.concat live_map.get_constants(fqns)
       result
-    end
-
-    # Require extensions for the experimental plugin architecture. Any
-    # installed gem with a name that starts with "solargraph-" is considered
-    # an extension.
-    #
-    # @return [void]
-    def require_extensions
-      Gem::Specification.all_names.select{|n| n.match(/^solargraph\-[a-z0-9_\-]*?\-ext\-[0-9\.]*$/)}.each do |n|
-        Solargraph::Logging.logger.info "Loading extension #{n}"
-        require n.match(/^(solargraph\-[a-z0-9_\-]*?\-ext)\-[0-9\.]*$/)[1]
-      end
     end
 
     # @return [Hash]
@@ -598,7 +571,6 @@ module Solargraph
           return name if store.namespace_exists?(name)
         end
       end
-      # live_map.get_fqns(name, root)
     end
 
     # Get the namespace's type (Class or Module).
