@@ -24,6 +24,7 @@ module Solargraph
         # Get the static context from the nearest namespace
         @context ||= find_context
       end
+      alias full_context context
 
       def namespace
         context.namespace.to_s
