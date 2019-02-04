@@ -647,24 +647,27 @@ module Solargraph
     # @param pins [Array<Pin::Base>]
     # @return [Array<Pin::Base>]
     def resolve_method_aliases pins
-      pins.map do |pin|
-        next pin unless pin.kind == Pin::METHOD_ALIAS
-        origin = get_method_stack(pin.namespace, pin.original, scope: pin.scope).select{|pin| pin.is_a?(Pin::BaseMethod)}.first
-        next pin if origin.nil?
-        Pin::Method.new(
-          location: pin.location,
-          closure: pin.closure,
-          name: pin.name,
-          comments: origin.comments,
-          scope: origin.scope,
-          visibility: origin.visibility,
-          args: origin.parameters
-        )
-      end
+      pins.map { |pin| resolve_method_alias(pin) }
+    end
+
+    # @param pin [Pin::MethodAlias, Pin::Base]
+    # @return [Pin::Base]
+    def resolve_method_alias pin
+      return pin unless pin.is_a?(Pin::MethodAlias)
+      origin = get_method_stack(pin.namespace, pin.original, scope: pin.scope).first
+      return pin if origin.nil?
+      Pin::Method.new(
+        location: pin.location,
+        closure: pin.closure,
+        name: pin.name,
+        comments: origin.comments,
+        scope: origin.scope,
+        visibility: origin.visibility,
+        args: origin.parameters
+      )
     end
 
     def resolve_blocks
-      return # @todo Temporarily disabled
       store.pins.select { |pin| pin.is_a?(Pin::Block) }.each do |pin|
         if pin.receiver
           smap = source_map(pin.location.filename)
@@ -675,17 +678,11 @@ module Solargraph
           ys = receiver_pin.docstring.tag(:yieldself)
           unless ys.nil? || ys.types.empty?
             ysct = ComplexType.parse(*ys.types).qualify(self, receiver_pin.context.namespace)
-            # result.concat api_map.get_complex_type_methods(ysct, ysct.namespace, true)
             next if ysct.undefined?
-            STDERR.puts "The block's context is actually #{ysct}"
             @mutex.synchronize do
               pin.rebind ysct
-              # pin.instance_variable_set(:@context, ysct)
-              # @todo This means the instance variables change
             end
           end
-        else
-          STDERR.puts "no receiver"
         end
       end
     end
