@@ -23,6 +23,10 @@ module Solargraph
         Pin::METHOD_ALIAS
       end
 
+      def visibility
+        :public
+      end
+
       def path
         @path ||= namespace + (scope == :instance ? '#' : '.') + name
       end
