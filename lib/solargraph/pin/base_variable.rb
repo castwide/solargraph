@@ -42,7 +42,7 @@ module Solargraph
         chain = Source::NodeChainer.chain(@assignment, filename)
         clip = api_map.clip_at(location.filename, location.range.start)
         locals = clip.locals - [self]
-        chain.infer(api_map, ProxyType.anonymous(context), locals)
+        chain.infer(api_map, closure, locals)
       end
 
       def == other
