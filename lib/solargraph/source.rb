@@ -123,6 +123,7 @@ module Solargraph
       src.comments = @comments
       src.error_ranges = error_ranges
       src.last_updater = updater
+      return src.finish_synchronize unless real_code.lines.length == @code.lines.length
       src
     end
 
