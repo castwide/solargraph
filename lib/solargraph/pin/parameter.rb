@@ -29,7 +29,7 @@ module Solargraph
 
       # @param api_map [ApiMap]
       def typify api_map
-        # @todo Does anything need to be eliminated because it's more accurately a probe?
+        return return_type.qualify(api_map, closure.context.namespace) unless return_type.undefined?
         closure.is_a?(Pin::Block) ? typify_block_param(api_map) : typify_method_param(api_map)
       end
 
