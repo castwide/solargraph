@@ -643,7 +643,7 @@ module Solargraph
     end
 
     def resolve_blocks
-      store.pins.select { |pin| pin.is_a?(Pin::Block) }.each do |pin|
+      store.block_pins.each do |pin|
         if pin.receiver
           smap = source_map(pin.location.filename)
           locals = smap.locals_at(pin.location)

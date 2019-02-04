@@ -121,6 +121,11 @@ module Solargraph
         end
       end
 
+      # @return [Array<Pin::Block>]
+      def block_pins
+        @block_pins ||= []
+      end
+
       def inspect
         # Avoid insane dumps in specs
         to_s
@@ -176,6 +181,7 @@ module Solargraph
         namespace_map.clear
         namespaces.clear
         symbols.clear
+        block_pins.clear
         namespace_map[''] = []
         pins.each do |pin|
           namespace_map[pin.namespace] ||= []
@@ -191,6 +197,8 @@ module Solargraph
           elsif pin.kind == Pin::SUPERCLASS_REFERENCE
             superclass_references[pin.namespace] ||= []
             superclass_references[pin.namespace].push pin.name
+          elsif pin.is_a?(Pin::Block)
+            block_pins.push pin
           end
         end
         @namespace_pins = nil
