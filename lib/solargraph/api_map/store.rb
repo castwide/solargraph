@@ -26,10 +26,10 @@ module Solargraph
       # @param visibility [Array<Symbol>]
       # @return [Array<Solargraph::Pin::Base>]
       def get_methods fqns, scope: :instance, visibility: [:public]
-        kinds = [Pin::METHOD, Pin::ATTRIBUTE]
-        namespace_children(fqns).select{ |pin|
+        kinds = [Pin::METHOD, Pin::ATTRIBUTE, Pin::METHOD_ALIAS]
+        namespace_children(fqns).select do |pin|
           kinds.include?(pin.kind) && pin.scope == scope && visibility.include?(pin.visibility)
-        }
+        end
       end
 
       # @param fqns [String]

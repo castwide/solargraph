@@ -23,6 +23,7 @@ module Solargraph
       @source_map_hash = {}
       @cache = Cache.new
       @mutex = Mutex.new
+      @method_alias_stack = []
       index pins
     end
 
@@ -625,8 +626,10 @@ module Solargraph
     # @param pin [Pin::MethodAlias, Pin::Base]
     # @return [Pin::Base]
     def resolve_method_alias pin
-      return pin unless pin.is_a?(Pin::MethodAlias)
-      origin = get_method_stack(pin.namespace, pin.original, scope: pin.scope).first
+      return pin if !pin.is_a?(Pin::MethodAlias) || @method_alias_stack.include?(pin.path)
+      @method_alias_stack.push pin.path
+      origin = get_method_stack(pin.full_context.namespace, pin.original, scope: pin.scope).first
+      @method_alias_stack.pop
       return pin if origin.nil?
       Pin::Method.new(
         location: pin.location,
