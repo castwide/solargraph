@@ -10,11 +10,15 @@ module Solargraph
         super(splat)
         @receiver = receiver
         @parameters = args
-        # @context = context
       end
 
       def rebind context
-        @binder = context
+        @rebound = true
+        @binder = context unless context.undefined?
+      end
+
+      def rebound?
+        @rebound ||= false
       end
 
       def kind
@@ -32,7 +36,7 @@ module Solargraph
       end
 
       def nearly? other
-        return false unless super
+        return false unless super && closure.nearly?(other.closure)
         # @todo Trying to not to block merges too much
         # receiver == other.receiver and parameters == other.parameters
         true

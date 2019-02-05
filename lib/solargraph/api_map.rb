@@ -642,21 +642,31 @@ module Solargraph
       )
     end
 
+    def skippable_block_receivers
+      @skippable_block_receivers ||= (
+        get_methods('Array', deep: false).map(&:name) +
+        get_methods('Enumerable', deep: false).map(&:name) +
+        get_methods('Hash', deep: false).map(&:name) +
+        ['new']
+      ).to_set
+    end
+
+    # @return [Boolean]
     def resolve_blocks
       store.block_pins.each do |pin|
-        if pin.receiver
+        if pin.receiver && !pin.rebound?
+          # This first rebind just sets the block pin's rebound state
+          pin.rebind ComplexType::UNDEFINED
+          chain = Solargraph::Source::NodeChainer.chain(pin.receiver, pin.location.filename)
+          next if skippable_block_receivers.include?(chain.links.last.word)
           smap = source_map(pin.location.filename)
           locals = smap.locals_at(pin.location)
-          chain = Solargraph::Source::NodeChainer.chain(pin.receiver, pin.location.filename)
           receiver_pin = chain.define(self, pin, locals).first
           next if receiver_pin.nil? || receiver_pin.docstring.nil?
           ys = receiver_pin.docstring.tag(:yieldself)
           unless ys.nil? || ys.types.empty?
             ysct = ComplexType.parse(*ys.types).qualify(self, receiver_pin.context.namespace)
-            next if ysct.undefined?
-            @mutex.synchronize do
-              pin.rebind ysct
-            end
+            @mutex.synchronize { pin.rebind ysct }
           end
         end
       end
