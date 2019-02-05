@@ -69,7 +69,7 @@ module Solargraph
 
       # @return [ComplexType]
       def infer
-        cursor.chain.infer(api_map, context_pin, locals)
+        cursor.chain.infer(api_map, block, locals)
       end
 
       # Get an array of all the locals that are visible from the cursors's
