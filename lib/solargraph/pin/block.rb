@@ -36,7 +36,7 @@ module Solargraph
       end
 
       def nearly? other
-        return false unless super && closure.nearly?(other.closure)
+        return false unless super
         # @todo Trying to not to block merges too much
         # receiver == other.receiver and parameters == other.parameters
         true
