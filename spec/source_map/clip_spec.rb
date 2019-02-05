@@ -472,4 +472,21 @@ describe Solargraph::SourceMap::Clip do
     expect(clip.complete.pins.map(&:path)).to include('Par#action')
     expect(clip.complete.pins.map(&:path)).not_to include('Par#hidden')
   end
+
+  it "infers instance variable types in rebound blocks" do
+    source = Solargraph::Source.load_string(%(
+      class Foo
+        def initialize
+          @foo = ''
+        end
+      end
+      Foo.new.instance_eval do
+        @foo
+      end
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new
+    api_map.map source
+    clip = api_map.clip_at('test.rb', [7, 8])
+    expect(clip.infer.tag).to eq('String')
+  end
 end
