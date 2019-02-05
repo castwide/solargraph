@@ -21,6 +21,10 @@ module Solargraph
         @rebound ||= false
       end
 
+      def binder
+        @binder || context
+      end
+
       def kind
         Pin::BLOCK
       end

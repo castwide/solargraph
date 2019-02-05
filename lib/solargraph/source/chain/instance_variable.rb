@@ -6,7 +6,7 @@ module Solargraph
           if name_pin.is_a?(Pin::Namespace)
             api_map.get_instance_variable_pins(name_pin.path, :class).select{|p| p.name == word}
           else
-            api_map.get_instance_variable_pins(name_pin.context.namespace, name_pin.context.scope).select{|p| p.name == word}
+            api_map.get_instance_variable_pins(name_pin.binder.namespace, name_pin.binder.scope).select{|p| p.name == word}
           end
         end
       end
