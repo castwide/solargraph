@@ -39,7 +39,7 @@ module Solargraph
           end
           result.concat api_map.get_constants(type.undefined? ? '' : type.namespace, cursor.start_of_constant? ? '' : context_pin.full_context.namespace)
         else
-          type = cursor.chain.base.infer(api_map, context_pin, locals)
+          type = cursor.chain.base.infer(api_map, block, locals)
           result.concat api_map.get_complex_type_methods(type, context_pin.full_context.namespace, cursor.chain.links.length == 1)
           if cursor.chain.links.length == 1
             if cursor.word.start_with?('@@')
