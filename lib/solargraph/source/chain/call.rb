@@ -32,7 +32,7 @@ module Solargraph
         # @param context [Solargraph::ComplexType]
         # @return [Pin::Method]
         def virtual_new_pin new_pin, context
-          Pin::ProxyType.anonymous(ComplexType.parse(context.namespace))
+          Pin::ProxyType.anonymous(ComplexType.try_parse(context.namespace))
         end
 
         def inferred_pins pins, api_map, context, locals
@@ -116,7 +116,7 @@ module Solargraph
           docstring = YARD::Docstring.parser.parse(txt).to_docstring
           tag = docstring.tag(:return)
           unless tag.nil? || tag.types.nil?
-            return Pin::ProxyType.anonymous(ComplexType.parse(*tag.types))
+            return Pin::ProxyType.anonymous(ComplexType.try_parse(*tag.types))
           end
           Pin::ProxyType.new(nil, nil, nil, ComplexType::UNDEFINED)
         end

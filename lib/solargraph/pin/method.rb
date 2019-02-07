@@ -104,7 +104,7 @@ module Solargraph
           result.push type unless type.undefined?
         end
         return ComplexType::UNDEFINED if result.empty?
-        ComplexType.parse(*result.map(&:tag))
+        ComplexType.try_parse(*result.map(&:tag))
       end
     end
   end
