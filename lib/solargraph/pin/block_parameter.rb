@@ -61,7 +61,7 @@ module Solargraph
           if found.nil? and !index.nil?
             found = params[index] if params[index] && (params[index].name.nil? || params[index].name.empty?)
           end
-          @return_complex_type = ComplexType.parse(*found.types) unless found.nil? or found.types.nil?
+          @return_complex_type = ComplexType.try_parse(*found.types) unless found.nil? or found.types.nil?
         end
         super
         @return_complex_type
@@ -88,7 +88,7 @@ module Solargraph
           else
             yps = meth.docstring.tags(:yieldparam)
             unless yps[index].nil? or yps[index].types.nil? or yps[index].types.empty?
-              return ComplexType.parse(yps[index].types.first).qualify(api_map, meth.context.namespace)
+              return ComplexType.try_parse(yps[index].types.first).qualify(api_map, meth.context.namespace)
             end
           end
         end

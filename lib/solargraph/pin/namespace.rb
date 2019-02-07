@@ -18,7 +18,7 @@ module Solargraph
       end
 
       def context
-        @context ||= ComplexType.parse("#{type.to_s.capitalize}<#{path}>")
+        @context ||= ComplexType.try_parse("#{type.to_s.capitalize}<#{path}>")
       end
 
       def scope
@@ -39,7 +39,7 @@ module Solargraph
       end
 
       def return_complex_type
-        @return_complex_type ||= ComplexType.parse( (type == :class ? 'Class' : 'Module') + "<#{path}>" )
+        @return_complex_type ||= ComplexType.try_parse( (type == :class ? 'Class' : 'Module') + "<#{path}>" )
       end
 
       def domains

@@ -524,7 +524,7 @@ module Solargraph
           end
         end
         store.domains(fqns).each do |d|
-          dt = ComplexType.parse(d)
+          dt = ComplexType.try_parse(d)
           result.concat inner_get_methods(dt.namespace, dt.scope, [:public], deep, skip)
         end
       end

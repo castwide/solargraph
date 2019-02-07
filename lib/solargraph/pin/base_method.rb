@@ -31,12 +31,7 @@ module Solargraph
           tag = ol.tag(:return) unless ol.nil?
         end
         return ComplexType::UNDEFINED if tag.nil? or tag.types.nil? or tag.types.empty?
-        begin
-          ComplexType.parse *tag.types
-        rescue Solargraph::ComplexTypeError => e
-          Solargraph::Logging.logger.warn e.message
-          ComplexType::UNDEFINED
-        end
+        ComplexType.try_parse *tag.types
       end
 
       # @param [ApiMap]

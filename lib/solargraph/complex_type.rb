@@ -133,6 +133,13 @@ module Solargraph
         @cache[strings] = result unless partial
         result
       end
+
+      def try_parse *strings
+        parse *strings
+      rescue ComplexTypeError => e
+        Solargraph.logger.info "Error parsing complex type: #{e.message}"
+        ComplexType::UNDEFINED
+      end
     end
 
     VOID = ComplexType.parse('void')

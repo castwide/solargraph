@@ -34,9 +34,9 @@ module Solargraph
         @context ||= begin
           if scope == :class
             # @todo Determine whether the namespace is a class or a module
-            ComplexType.parse("Class<#{namespace}>")
+            ComplexType.try_parse("Class<#{namespace}>")
           else
-            ComplexType.parse(namespace)
+            ComplexType.try_parse(namespace)
           end
         end
       end
@@ -119,7 +119,7 @@ module Solargraph
           result.push type unless type.undefined?
         end
         return ComplexType::UNDEFINED if result.empty?
-        ComplexType.parse(*result.map(&:tag))
+        ComplexType.try_parse(*result.map(&:tag))
       end
     end
   end

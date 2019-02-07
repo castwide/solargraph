@@ -14,7 +14,7 @@ module Solargraph
           if found.nil? and !index.nil?
             found = params[index] if params[index] && (params[index].name.nil? || params[index].name.empty?)
           end
-          @return_complex_type = ComplexType.parse(*found.types) unless found.nil? or found.types.nil?
+          @return_complex_type = ComplexType.try_parse(*found.types) unless found.nil? or found.types.nil?
         end
         super
         @return_complex_type

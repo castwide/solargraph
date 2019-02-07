@@ -30,9 +30,9 @@ module Solargraph
           else
             full = cursor.chain.links.first.word
             if full.include?('::') && cursor.chain.links.length == 1
-              type = ComplexType.parse(full.split('::')[0..-2].join('::'))
+              type = ComplexType.try_parse(full.split('::')[0..-2].join('::'))
             elsif cursor.chain.links.length > 1
-              type = ComplexType.parse(full)
+              type = ComplexType.try_parse(full)
             else
               type = ComplexType::UNDEFINED
             end
@@ -119,12 +119,12 @@ module Solargraph
         result = []
         ys = receiver_pin.docstring.tag(:yieldself)
         unless ys.nil? || ys.types.empty?
-          ysct = ComplexType.parse(*ys.types).qualify(api_map, receiver_pin.context.namespace)
+          ysct = ComplexType.try_parse(*ys.types).qualify(api_map, receiver_pin.context.namespace)
           result.concat api_map.get_complex_type_methods(ysct, ysct.namespace, true)
         end
         ys = receiver_pin.docstring.tag(:yieldpublic)
         unless ys.nil? || ys.types.empty?
-          ysct = ComplexType.parse(*ys.types).qualify(api_map, receiver_pin.context.namespace)
+          ysct = ComplexType.try_parse(*ys.types).qualify(api_map, receiver_pin.context.namespace)
           result.concat api_map.get_complex_type_methods(ysct, '', false)
         end
         result

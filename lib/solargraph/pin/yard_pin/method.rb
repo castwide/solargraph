@@ -10,7 +10,7 @@ module Solargraph
         end
 
         def return_complex_type
-          @return_complex_type ||= Solargraph::ComplexType.parse(Solargraph::CoreFills::CUSTOM_RETURN_TYPES[path]) if Solargraph::CoreFills::CUSTOM_RETURN_TYPES.has_key?(path)
+          @return_complex_type ||= Solargraph::ComplexType.try_parse(Solargraph::CoreFills::CUSTOM_RETURN_TYPES[path]) if Solargraph::CoreFills::CUSTOM_RETURN_TYPES.has_key?(path)
           super
         end
 

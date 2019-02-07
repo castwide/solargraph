@@ -67,7 +67,7 @@ module Solargraph
 
       # @return [ComplexType]
       def context
-        @context ||= ComplexType.parse(namespace || '')
+        @context ||= ComplexType.try_parse(namespace || '')
       end
 
       # Pin equality is determined using the #nearly? method and also
