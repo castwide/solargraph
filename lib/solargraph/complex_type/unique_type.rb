@@ -28,9 +28,9 @@ module Solargraph
         return unless parameters?
         subs = ComplexType.parse(substring[1..-2], partial: true)
         if hash_parameters?
-          raise ComplexTypeError, "Bad hash type" unless !subs.is_a?(ComplexType) and subs.length == 2 and !subs[0].is_a?(ComplexType) and !subs[1].is_a?(ComplexType)
-          @key_types.concat subs[0]
-          @subtypes.concat subs[1]
+          raise ComplexTypeError, "Bad hash type" unless !subs.is_a?(ComplexType) and subs.length == 2 and !subs[0].is_a?(UniqueType) and !subs[1].is_a?(UniqueType)
+          @key_types.concat subs[0].map { |u| ComplexType.new([u]) }
+          @subtypes.concat subs[1].map { |u| ComplexType.new([u]) }
         else
           @subtypes.concat subs
         end
@@ -39,6 +39,8 @@ module Solargraph
       def to_s
         tag
       end
+
+      UNDEFINED = UniqueType.new('undefined')
     end
   end
 end
