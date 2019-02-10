@@ -19,10 +19,11 @@ module Solargraph
         end
         @gate = @name
         if @gate.include?('::')
-          @name = @gate.split('::').last
-          beg = namespace.split('::')
-          adjusted = (beg + @gate.split('::')[0..-2]).join('::')
-          @closure = Pin::Namespace.new(name: adjusted)
+          parts = @gate.split('::')
+          @name = parts.last
+          adjusted = (@closure ? @closure.path : Pin::ROOT_PIN.path).split('::') + parts[0..-2]
+          # @closure = Pin::Base.new(kind: NAMESPACE, name: adjusted.join('::'))
+          @closure = Pin::Namespace.new(name: adjusted.join('::'))
           @context = nil
         end
       end

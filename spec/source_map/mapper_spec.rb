@@ -836,8 +836,8 @@ describe Solargraph::SourceMap::Mapper do
     expect(pin).not_to be_nil
     # expect(pin.namespace).to eq('Foo')
     # expect(pin.name).to eq('Bar')
-    expect(pin.namespace).to be_empty
-    expect(pin.name).to eq('Foo::Bar')
+    expect(pin.namespace).to eq('Foo')
+    expect(pin.name).to eq('Bar')
     expect(pin.path).to eq('Foo::Bar')
   end
 
