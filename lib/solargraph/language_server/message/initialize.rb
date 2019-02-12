@@ -108,7 +108,7 @@ module Solargraph
 
         def static_rename
           {
-            renameProvider: true
+            renameProvider: {prepareProvider: true}
           }
         end
 
