@@ -7,7 +7,7 @@ module Solargraph
           s_visi = :public if s_visi == :module_function || region.scope != :class
           loc = get_node_location(node)
           if node.children[0].is_a?(AST::Node) && node.children[0].type == :self
-            closure = closure_pin(loc.range.start)
+            closure = region.closure
           else
             closure = Solargraph::Pin::Namespace.new(
               name: unpack_name(node.children[0])
@@ -23,7 +23,7 @@ module Solargraph
             args: method_args,
             node: node
           )
-          process_children region.update(namespace: closure.context.namespace, scope: :class)
+          process_children region.update(closure: pins.last, scope: :class)
         end
       end
     end

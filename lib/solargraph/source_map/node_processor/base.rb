@@ -59,10 +59,12 @@ module Solargraph
           pins.select{|pin| [Pin::NAMESPACE, Pin::METHOD].include?(pin.kind) && pin.location.range.contain?(position)}.last
         end
 
+        # @todo Candidate for deprecation
         def block_pin position
           pins.select{|pin| [Pin::BLOCK, Pin::NAMESPACE, Pin::METHOD].include?(pin.kind) && pin.location.range.contain?(position)}.last
         end
 
+        # @todo Candidate for deprecation
         def closure_pin position
           pins.select{|pin| pin.is_a?(Pin::Closure) && pin.location.range.contain?(position)}.last
         end

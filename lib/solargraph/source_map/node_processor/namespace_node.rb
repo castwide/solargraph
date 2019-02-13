@@ -11,7 +11,7 @@ module Solargraph
           nspin = Solargraph::Pin::Namespace.new(
             type: node.type,
             location: loc,
-            closure: closure_pin(loc.range.start),
+            closure: region.closure,
             name: unpack_name(node.children[0]),
             comments: comments_for(node),
             visibility: :public
@@ -24,7 +24,7 @@ module Solargraph
               name: sc
             )
           end
-          process_children region.update(namespace: nspin.path, visibility: :public)
+          process_children region.update(closure: nspin, visibility: :public)
         end
       end
     end

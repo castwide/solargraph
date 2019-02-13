@@ -6,13 +6,13 @@ module Solargraph
           here = get_node_start_position(node)
           pins.push Solargraph::Pin::Block.new(
             location: get_node_location(node),
-            closure: closure_pin(here),
+            closure: region.closure,
             receiver: node.children[0],
             comments: comments_for(node),
-            scope: region.scope || closure_pin(here).context.scope,
+            scope: region.scope || region.closure.context.scope,
             args: method_args
           )
-          process_children
+          process_children region.update(closure: pins.last)
         end
 
         def method_args

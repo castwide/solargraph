@@ -4,12 +4,11 @@ module Solargraph
       class LvasgnNode < Base
         def process
           here = get_node_start_position(node)
-          block = block_pin(here)
-          presence = Range.new(here, block.location.range.ending)
+          presence = Range.new(here, region.closure.location.range.ending)
           loc = get_node_location(node)
           pins.push Solargraph::Pin::LocalVariable.new(
             location: loc,
-            closure: closure_pin(loc.range.start),
+            closure: region.closure,
             name: node.children[0].to_s,
             assignment: node.children[1],
             comments: comments_for(node),

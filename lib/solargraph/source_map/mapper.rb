@@ -117,7 +117,7 @@ module Solargraph
         when 'parse'
           # @todo Parse and map directive.tag.text
           ns = namespace_at(comment_position)
-          region = Region.new(source: @source, namespace: ns.path)
+          region = Region.new(source: @source, closure: ns)
           begin
             node = Solargraph::Source.parse(directive.tag.text, @filename, comment_position.line)
             NodeProcessor.process(node, region, @pins)
