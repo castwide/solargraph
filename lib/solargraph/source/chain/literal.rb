@@ -9,7 +9,7 @@ module Solargraph
         # @param type [String]
         def initialize type
           @type = type
-          @complex_type = ComplexType.parse(type).first
+          @complex_type = ComplexType.try_parse(type).first
         end
 
         def resolve api_map, name_pin, locals

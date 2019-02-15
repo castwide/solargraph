@@ -4,8 +4,8 @@ module Solargraph
     # locations in a source.
     #
     class Region
-      # @return [String]
-      attr_reader :namespace
+      # @return [Pin::Closure]
+      attr_reader :closure
 
       # @return [Symbol]
       attr_reader :scope
@@ -20,10 +20,11 @@ module Solargraph
       # @param namespace [String]
       # @param scope [Symbol]
       # @param visibility [Symbol]
-      def initialize source: Solargraph::Source.load_string(''), namespace: '',
+      def initialize source: Solargraph::Source.load_string(''), closure: nil,
                      scope: nil, visibility: :public
         @source = source
-        @namespace = namespace
+        # @closure = closure
+        @closure = closure || Pin::Namespace.new(name: '', location: source.location)
         @scope = scope
         @visibility = visibility
       end
@@ -35,14 +36,14 @@ module Solargraph
 
       # Generate a new Region with the provided attribute changes.
       #
-      # @param namespace [String, nil]
+      # @param closure [Pin::Closure, nil]
       # @param scope [Symbol, nil]
       # @param visibility [Symbol, nil]
       # @return [Region]
-      def update namespace: nil, scope: nil, visibility: nil
+      def update closure: nil, scope: nil, visibility: nil
         Region.new(
           source: source,
-          namespace: namespace || self.namespace,
+          closure: closure || self.closure,
           scope: scope || self.scope,
           visibility: visibility || self.visibility
         )

@@ -17,6 +17,15 @@ module Solargraph
           @name = name[2..-1]
           @closure = Pin::ROOT_PIN
         end
+        @gate = @name
+        if @gate.include?('::')
+          parts = @gate.split('::')
+          @name = parts.last
+          adjusted = (@closure ? @closure.path : Pin::ROOT_PIN.path).split('::') + parts[0..-2]
+          # @closure = Pin::Base.new(kind: NAMESPACE, name: adjusted.join('::'))
+          @closure = Pin::Namespace.new(name: adjusted.join('::'))
+          @context = nil
+        end
       end
 
       def namespace
@@ -28,7 +37,7 @@ module Solargraph
       end
 
       def full_context
-        @full_context ||= ComplexType.parse("#{type.to_s.capitalize}<#{path}>")
+        @full_context ||= ComplexType.try_parse("#{type.to_s.capitalize}<#{path}>")
       end
 
       def scope
@@ -49,7 +58,7 @@ module Solargraph
       end
 
       def return_type
-        @return_type ||= ComplexType.parse( (type == :class ? 'Class' : 'Module') + "<#{path}>" )
+        @return_type ||= ComplexType.try_parse( (type == :class ? 'Class' : 'Module') + "<#{path}>" )
       end
 
       def domains

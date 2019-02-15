@@ -213,7 +213,7 @@ describe Solargraph::Library do
     expect(pins.map(&:path)).to include('Foo#bar')
   end
 
-  it "collects references to a method symbol" do
+  it "collects references to an instance method symbol" do
     workspace = Solargraph::Workspace.new('*')
     library = Solargraph::Library.new(workspace)
     src1 = Solargraph::Source.load_string(%(
@@ -238,6 +238,41 @@ describe Solargraph::Library do
     locs = library.references_from('file2.rb', 2, 11)
     expect(locs.length).to eq(3)
     expect(locs.select{|l| l.filename == 'file2.rb' && l.range.start.line == 6}).to be_empty
+  end
+
+  it "collects references to a class method symbol" do
+    workspace = Solargraph::Workspace.new('*')
+    library = Solargraph::Library.new(workspace)
+    src1 = Solargraph::Source.load_string(%(
+      class Foo
+        def self.bar
+        end
+
+        def bar
+        end
+      end
+
+      Foo.bar
+      Foo.new.bar
+    ), 'file1.rb', 0)
+    library.merge src1
+    src2 = Solargraph::Source.load_string(%(
+      Foo.bar
+      Foo.new.bar
+      class Other
+        def self.bar; end
+        def bar; end
+      end
+      Other.bar
+      Other.new.bar
+    ), 'file2.rb', 0)
+    library.merge src2
+    library.catalog
+    locs = library.references_from('file2.rb', 1, 11)
+    expect(locs.length).to eq(3)
+    expect(locs.select{|l| l.filename == 'file1.rb' && l.range.start.line == 2}).not_to be_empty
+    expect(locs.select{|l| l.filename == 'file1.rb' && l.range.start.line == 9}).not_to be_empty
+    expect(locs.select{|l| l.filename == 'file2.rb' && l.range.start.line == 1}).not_to be_empty
   end
 
   it "collects stripped references to constant symbols" do

@@ -6,7 +6,7 @@ module Solargraph
           loc = get_node_location(node)
           pins.push Solargraph::Pin::GlobalVariable.new(
             location: loc,
-            closure: closure_pin(loc.range.start),
+            closure: region.closure,
             name: node.children[0].to_s,
             comments: comments_for(node),
             assignment: node.children[1]
