@@ -660,7 +660,7 @@ module Solargraph
             referencesProvider: true
           },
           'textDocument/rename' => {
-            renameProvider: true
+            renameProvider: {prepareProvider: true}
           },
           'textDocument/documentSymbol' => {
             documentSymbolProvider: true

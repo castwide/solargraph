@@ -225,7 +225,9 @@ module Solargraph
           @docstring = nil
           @directives = []
         else
-          parse = YARD::Docstring.parser.parse(comments)
+          # HACK: Pass a dummy code object to the parser for plugins that
+          # expect it not to be nil
+          parse = YARD::Docstring.parser.parse(comments, YARD::CodeObjects::Base.new(:root, 'stub'))
           @docstring = parse.to_docstring
           @directives = parse.directives
         end
