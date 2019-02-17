@@ -305,6 +305,22 @@ describe Protocol do
     expect(response['result']['changes']['file:///file.rb']).to be_a(Array)
   end
 
+  it "handles textDocument/prepareRename" do
+    @protocol.request 'textDocument/prepareRename', {
+      'textDocument' => {
+        'uri' => 'file:///file.rb'
+      },
+      'position' => {
+        'line' => 7,
+        'character' => 15
+      },
+      'newName' => 'new_name'
+    }
+    response = @protocol.response
+    expect(response['error']).to be_nil
+    expect(response['result']).to be_a(Hash)
+  end
+
   it "handles textDocument/foldingRange" do
     @protocol.request 'textDocument/foldingRange', {
       'textDocument' => {
