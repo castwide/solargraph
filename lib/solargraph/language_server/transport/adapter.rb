@@ -21,7 +21,7 @@ module Solargraph
         end
 
         # @param data [String]
-        def sending data
+        def receiving data
           @data_reader.receive data
         end
 
