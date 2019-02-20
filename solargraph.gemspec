@@ -17,7 +17,7 @@ Gem::Specification.new do |s|
 
   s.required_ruby_version = '>= 2.1'
 
-  s.add_runtime_dependency 'backport', '~> 0.3'
+  s.add_runtime_dependency 'backport', '~> 1.0'
   s.add_runtime_dependency 'htmlentities', '~> 4.3', '>= 4.3.4'
   s.add_runtime_dependency 'jaro_winkler', '~> 1.5'
   s.add_runtime_dependency 'kramdown', '~> 1.16'
