@@ -327,7 +327,7 @@ module Solargraph
       last_line = nil
       comments.each { |l|
         # Trim the comment and minimum leading whitespace
-        p = l.text.gsub(/^#/, '')
+        p = l.text.gsub(/^#+/, '')
         if num.nil? and !p.strip.empty?
           num = p.index(/[^ ]/)
           started = true
