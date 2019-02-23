@@ -206,9 +206,9 @@ module Solargraph
         result
       end
 
-      # def inspect
-      #   "#{self.class} at #{self.location.inspect}"
-      # end
+      def inspect
+        "#<#{self.class} at #{self.location.inspect}>"
+      end
 
       protected
 

@@ -27,5 +27,9 @@ module Solargraph
       return false unless other.is_a?(Location)
       filename == other.filename and range == other.range
     end
+
+    def inspect
+      "#<#{self.class} #{filename}, #{range.inspect}>"
+    end
   end
 end
