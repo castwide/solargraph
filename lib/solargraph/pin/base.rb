@@ -178,6 +178,7 @@ module Solargraph
       def try_merge! pin
         return false unless nearly?(pin)
         @location = pin.location
+        @closure = pin.closure
         return true if comments == pin.comments
         @comments = pin.comments
         @docstring = pin.docstring
