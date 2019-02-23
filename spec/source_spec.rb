@@ -233,4 +233,15 @@ y = 1 #foo
       source.comments_for(node)
     }.not_to raise_error
   end
+
+  it "formats comments with multiple hash prefixes" do
+    source = Solargraph::Source.load_string(%(
+      ##
+      # one
+      # two
+      class Foo; end
+    ))
+    comments = source.comments_for(source.node)
+    expect(comments.lines.map(&:chomp)).to eq(['one', 'two'])
+  end
 end
