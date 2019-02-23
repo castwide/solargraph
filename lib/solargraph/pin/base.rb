@@ -89,8 +89,8 @@ module Solargraph
       # @return [Boolean]
       def nearly? other
         self.class == other.class &&
-          namespace == other.namespace &&
           name == other.name &&
+          (closure == other.closure || (closure && closure.nearly?(other.closure))) &&
           (comments == other.comments ||
             (((maybe_directives? == false && other.maybe_directives? == false) || compare_directives(directives, other.directives)) &&
             compare_docstring_tags(docstring, other.docstring))
