@@ -64,14 +64,14 @@ module Solargraph
       def process_comment source_position, comment_position, comment
         return unless comment =~ MACRO_REGEXP
         cmnt = remove_inline_comment_hashes(comment)
-        parse = YARD::Docstring.parser.parse(cmnt)
+        parse = Solargraph::Source.parse_docstring(cmnt)
         parse.directives.each { |d| process_directive(source_position, comment_position, d) }
       end
 
       # @param position [Position]
       # @param directive [YARD::Tags::Directive]
       def process_directive source_position, comment_position, directive
-        docstring = YARD::Docstring.parser.parse(directive.tag.text).to_docstring
+        docstring = Solargraph::Source.parse_docstring(directive.tag.text).to_docstring
         location = Location.new(@filename, Range.new(comment_position, comment_position))
         case directive.tag.tag_name
         when 'method'

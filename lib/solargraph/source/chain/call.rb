@@ -113,7 +113,7 @@ module Solargraph
             txt.gsub!(/\$#{i}/, v.context.namespace)
             i += 1
           end
-          docstring = YARD::Docstring.parser.parse(txt).to_docstring
+          docstring = Solargraph::Source.parse_docstring(txt).to_docstring
           tag = docstring.tag(:return)
           unless tag.nil? || tag.types.nil?
             return Pin::ProxyType.anonymous(ComplexType.try_parse(*tag.types))

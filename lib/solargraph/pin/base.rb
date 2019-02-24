@@ -107,7 +107,7 @@ module Solargraph
       # @return [YARD::Docstring]
       def docstring
         parse_comments unless defined?(@docstring)
-        @docstring ||= YARD::Docstring.parser.parse('').to_docstring
+        @docstring ||= Solargraph::Source.parse_docstring('').to_docstring
       end
 
       # @return [Array<YARD::Tags::Directive>]
@@ -228,7 +228,7 @@ module Solargraph
         else
           # HACK: Pass a dummy code object to the parser for plugins that
           # expect it not to be nil
-          parse = YARD::Docstring.parser.parse(comments, YARD::CodeObjects::Base.new(:root, 'stub'))
+          parse = Solargraph::Source.parse_docstring(comments)
           @docstring = parse.to_docstring
           @directives = parse.directives
         end
@@ -273,7 +273,7 @@ module Solargraph
       # @return [Array<YARD::Tags::Handlers::Directive>]
       def collect_macros
         return [] unless maybe_directives?
-        parse = YARD::Docstring.parser.parse(comments)
+        parse = Solargraph::Source.parse_docstring(comments)
         parse.directives.select{ |d| d.tag.tag_name == 'macro' }
       end
     end
