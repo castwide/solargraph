@@ -1,4 +1,5 @@
 require 'parser/current'
+require 'yard'
 
 module Solargraph
   # A Ruby file that has been parsed into an AST.
@@ -506,6 +507,14 @@ module Solargraph
         parser.diagnostics.all_errors_are_fatal = true
         parser.diagnostics.ignore_warnings      = true
         parser
+      end
+
+      # @param comments [String]
+      # @return [YARD::DocstringParser]
+      def parse_docstring comments
+        # HACK: Pass a dummy code object to the parser for plugins that
+        # expect it not to be nil
+        YARD::Docstring.parser.parse(comments, YARD::CodeObjects::Base.new(:root, 'stub'))
       end
     end
   end
