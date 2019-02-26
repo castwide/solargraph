@@ -19,7 +19,7 @@ describe Solargraph::ApiMap::SourceToYard do
 
   it "generates docstrings" do
     source = Solargraph::SourceMap.load_string(%(
-      # My foo class
+      # My foo class 描述
       class Foo
         # @return [Hash]
         def bar
@@ -33,7 +33,7 @@ describe Solargraph::ApiMap::SourceToYard do
     object.extend Solargraph::ApiMap::SourceToYard
     object.rake_yard Solargraph::ApiMap::Store.new(source.pins)
     class_object = object.code_object_at('Foo')
-    expect(class_object.docstring).to eq('My foo class')
+    expect(class_object.docstring).to eq('My foo class 描述')
     instance_method_object = object.code_object_at('Foo#bar')
     expect(instance_method_object.tag(:return).types).to eq(['Hash'])
     class_method_object = object.code_object_at('Foo.baz')

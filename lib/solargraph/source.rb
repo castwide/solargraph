@@ -485,7 +485,7 @@ module Solargraph
       # @return [Array(Parser::AST::Node, Array<Parser::Source::Comment>)]
       def parse_with_comments code, filename = nil
         buffer = Parser::Source::Buffer.new(filename, 0)
-        buffer.source = code.encode('UTF-8', 'binary', invalid: :replace, undef: :replace, replace: '_')
+        buffer.source = code.encode('UTF-8', invalid: :replace, undef: :replace, replace: '_')
         parser.parse_with_comments(buffer)
       end
 
@@ -495,7 +495,7 @@ module Solargraph
       # @return [Parser::AST::Node]
       def parse code, filename = nil, line = 0
         buffer = Parser::Source::Buffer.new(filename, line)
-        buffer.source = code.encode('UTF-8', 'binary', invalid: :replace, undef: :replace, replace: '_')
+        buffer.source = code.encode('UTF-8', invalid: :replace, undef: :replace, replace: '_')
         parser.parse(buffer)
       end
 
