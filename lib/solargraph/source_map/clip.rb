@@ -39,13 +39,13 @@ module Solargraph
           end
           result.concat api_map.get_constants(type.undefined? ? '' : type.namespace, cursor.start_of_constant? ? '' : context_pin.full_context.namespace)
         else
-          type = cursor.chain.base.infer(api_map, context_pin, locals)
+          type = cursor.chain.base.infer(api_map, block, locals)
           result.concat api_map.get_complex_type_methods(type, context_pin.full_context.namespace, cursor.chain.links.length == 1)
           if cursor.chain.links.length == 1
             if cursor.word.start_with?('@@')
               return package_completions(api_map.get_class_variable_pins(context_pin.context.namespace))
             elsif cursor.word.start_with?('@')
-              return package_completions(api_map.get_instance_variable_pins(context_pin.context.namespace, context_pin.context.scope))
+              return package_completions(api_map.get_instance_variable_pins(block.binder.namespace, block.binder.scope))
             elsif cursor.word.start_with?('$')
               return package_completions(api_map.get_global_variable_pins)
             end
@@ -69,7 +69,7 @@ module Solargraph
 
       # @return [ComplexType]
       def infer
-        cursor.chain.infer(api_map, context_pin, locals)
+        cursor.chain.infer(api_map, block, locals)
       end
 
       # Get an array of all the locals that are visible from the cursors's

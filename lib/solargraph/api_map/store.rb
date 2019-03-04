@@ -62,7 +62,10 @@ module Solargraph
       # @param scope [Symbol] :class or :instance
       # @return [Array<Solargraph::Pin::Base>]
       def get_instance_variables(fqns, scope = :instance)
-        namespace_children(fqns).select{|pin| pin.kind == Pin::INSTANCE_VARIABLE and pin.context.scope == scope}
+        # namespace_children(fqns).select{|pin| pin.kind == Pin::INSTANCE_VARIABLE and pin.context.scope == scope}
+        all_instance_variables.select { |pin|
+          pin.binder.namespace == fqns && pin.binder.scope == scope
+        }
       end
 
       # @param fqns [String]
@@ -176,12 +179,17 @@ module Solargraph
         @namespace_map ||= {}
       end
 
+      def all_instance_variables
+        @all_instance_variables ||= []
+      end
+
       # @return [void]
       def index
         namespace_map.clear
         namespaces.clear
         symbols.clear
         block_pins.clear
+        all_instance_variables.clear
         namespace_map[''] = []
         pins.each do |pin|
           namespace_map[pin.namespace] ||= []
@@ -199,6 +207,8 @@ module Solargraph
             superclass_references[pin.namespace].push pin.name
           elsif pin.is_a?(Pin::Block)
             block_pins.push pin
+          elsif pin.is_a?(Pin::InstanceVariable)
+            all_instance_variables.push pin
           end
         end
         @namespace_pins = nil

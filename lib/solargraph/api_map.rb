@@ -654,13 +654,17 @@ module Solargraph
     # @return [Boolean]
     def resolve_blocks
       store.block_pins.each do |pin|
-        if pin.receiver && !pin.rebound?
-          # This first rebind just sets the block pin's rebound state
-          pin.rebind ComplexType::UNDEFINED
-          chain = Solargraph::Source::NodeChainer.chain(pin.receiver, pin.location.filename)
-          next if skippable_block_receivers.include?(chain.links.last.word)
-          smap = source_map(pin.location.filename)
-          locals = smap.locals_at(pin.location)
+        next unless pin.receiver && !pin.rebound?
+        # This first rebind just sets the block pin's rebound state
+        pin.rebind ComplexType::UNDEFINED
+        chain = Solargraph::Source::NodeChainer.chain(pin.receiver, pin.location.filename)
+        next if skippable_block_receivers.include?(chain.links.last.word)
+        smap = source_map(pin.location.filename)
+        locals = smap.locals_at(pin.location)
+        if chain.links.last.word == 'instance_eval'
+          type = chain.base.infer(self, pin, locals)
+          @mutex.synchronize { pin.rebind type }
+        else
           receiver_pin = chain.define(self, pin, locals).first
           next if receiver_pin.nil? || receiver_pin.docstring.nil?
           ys = receiver_pin.docstring.tag(:yieldself)
