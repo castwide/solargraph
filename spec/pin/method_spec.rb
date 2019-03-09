@@ -117,6 +117,24 @@ describe Solargraph::Pin::Method do
     expect(type.tag).to eq('Hash')
   end
 
+  it "infers return types from top-level reference tags" do
+    source = Solargraph::Source.load_string(%(
+      class Other
+        # @return [Hash]
+        def origin; end
+      end
+      class Foo
+        # (see Other#origin)
+        def bar; end
+      end
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new
+    api_map.map source
+    pin = api_map.get_path_pins('Foo#bar').first
+    type = pin.typify(api_map)
+    expect(type.tag).to eq('Hash')
+  end
+
   it "typifies Booleans" do
     pin = Solargraph::Pin::Method.new(nil, '', 'foo', '@return [Boolean]', :instance, :public, [])
     api_map = Solargraph::ApiMap.new

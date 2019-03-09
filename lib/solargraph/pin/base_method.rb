@@ -38,19 +38,32 @@ module Solargraph
       def see_reference api_map
         docstring.ref_tags.each do |ref|
           next unless ref.tag_name == 'return' && ref.owner
-          parts = ref.owner.to_s.split(/[\.#]/)
-          if parts.first.empty?
-            path = "#{namespace}#{ref.owner.to_s}"
-          else
-            fqns = api_map.qualify(parts.first, namespace)
-            return ComplexType::UNDEFINED if fqns.nil?
-            path = fqns + ref.owner.to_s[parts.first.length] + parts.last
-          end
-          pins = api_map.get_path_pins(path)
-          pins.each do |pin|
-            type = pin.typify(api_map)
-            return type unless type.undefined?
-          end
+          result = resolve_reference(ref.owner.to_s, api_map)
+          return result unless result.nil?
+        end
+        match = comments.match(/\(see (.*)\)/)
+        return nil if match.nil?
+        resolve_reference match[1], api_map
+      end
+
+      def resolve_reference ref, api_map
+        parts = ref.split(/[\.#]/)
+        if parts.first.empty?
+          path = "#{namespace}#{ref}"
+        else
+          fqns = api_map.qualify(parts.first, namespace)
+          return ComplexType::UNDEFINED if fqns.nil?
+          path = fqns + ref[parts.first.length] + parts.last
+        end
+        pins = api_map.get_path_pins(path)
+        pins.each do |pin|
+          type = pin.typify(api_map)
+          return type unless type.undefined?
+        end
+        pins = api_map.get_path_pins(path)
+        pins.each do |pin|
+          type = pin.typify(api_map)
+          return type unless type.undefined?
         end
         nil
       end
