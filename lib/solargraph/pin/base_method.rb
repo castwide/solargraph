@@ -34,7 +34,8 @@ module Solargraph
         ComplexType.try_parse *tag.types
       end
 
-      # @param [ApiMap]
+      # @param api_map [ApiMap]
+      # @return [ComplexType]
       def see_reference api_map
         docstring.ref_tags.each do |ref|
           next unless ref.tag_name == 'return' && ref.owner
@@ -46,6 +47,9 @@ module Solargraph
         resolve_reference match[1], api_map
       end
 
+      # @param ref [String]
+      # @param api_map [ApiMap]
+      # @return [ComplexType]
       def resolve_reference ref, api_map
         parts = ref.split(/[\.#]/)
         if parts.first.empty?
