@@ -203,4 +203,13 @@ describe Solargraph::Source::SourceChainer do
     expect(chain.links.first.word).to eq('<String>')
     expect(chain.links.last.word).to eq('<undefined>')
   end
+
+  it "ignores ? and ! that are not method suffixes" do
+    source = Solargraph::Source.load_string(%(
+      if !t
+    ), 'test.rb')
+    chain = Solargraph::Source::SourceChainer.chain(source, Solargraph::Position.new(1, 11))
+    expect(chain.links.length).to eq(1)
+    expect(chain.links.first.word).to eq('t')
+  end
 end

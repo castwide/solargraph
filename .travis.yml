@@ -8,8 +8,8 @@ rvm:
   - 2.5.3
   - 2.6.0
   - 2.6.1
-  - jruby-9.0.5.0
   - jruby-9.1.16.0
+  - jruby-9.2
 matrix:
   include:
     - rvm: 2.4
