@@ -157,6 +157,7 @@ module Solargraph
               end
               if brackets.zero? and parens.zero? and squares.zero?
                 break if ['"', "'", ',', ';', '%'].include?(char)
+                break if !signature.empty? && ['!', '?'].include?(char)
                 signature = char + signature if char.match(/[a-z0-9:\._@\$\?\!]/i) and @source.code[index - 1] != '%'
                 break if char == '$'
                 if char == '@'
