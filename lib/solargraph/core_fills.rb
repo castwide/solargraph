@@ -11,12 +11,16 @@ module Solargraph
     METHODS_RETURNING_SELF = %w[
       Array#select Array#reject Array#keep_if Array#delete_if
       Enumerable#select
-      Object#clone Object#dup Object#freeze Object#taint Object#untaint
+      Object#clone Object#dup Object#freeze Object#taint Object#untaint Object#tap
       String#freeze
     ].freeze
 
     METHODS_RETURNING_SUBTYPES = %w[
       Array#[] Array#first Array#last
+    ].freeze
+
+    METHODS_WITH_YIELDPARAM_SELF = %w[
+      Object#tap
     ].freeze
 
     METHODS_WITH_YIELDPARAM_SUBTYPES = %w[

@@ -85,6 +85,10 @@ module Solargraph
             bmeth = chain.base.define(api_map, context, locals).first
             return ComplexType::UNDEFINED if bmeth.nil? or bmeth.return_complex_type.undefined? or bmeth.return_complex_type.subtypes.empty?
             return bmeth.return_complex_type.subtypes.first.qualify(api_map, bmeth.context.namespace)
+          elsif (Solargraph::CoreFills::METHODS_WITH_YIELDPARAM_SELF.include?(meth.path))
+            bmeth = chain.base.define(api_map, context, locals).first
+            return ComplexType::UNDEFINED if bmeth.nil?
+            return bmeth.typify(api_map)
           else
             yps = meth.docstring.tags(:yieldparam)
             unless yps[index].nil? or yps[index].types.nil? or yps[index].types.empty?
