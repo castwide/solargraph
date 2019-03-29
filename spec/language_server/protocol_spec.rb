@@ -149,7 +149,7 @@ describe Protocol do
     item = response['result']['items'].select{|h| h['label'] == 'bar'}.first
     @protocol.request 'completionItem/resolve', item
     response = @protocol.response
-    expect(response['result']['documentation']).to include('bar method')
+    expect(response['result']['documentation']['value']).to include('bar method')
   end
 
   it "documents YARD pins" do
