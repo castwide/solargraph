@@ -281,12 +281,24 @@ module Solargraph
     # @param obj [YARD::CodeObjects::Base]
     # @return [Solargraph::Location]
     def object_location obj
-      return nil if obj.file.nil? or obj.line.nil?
-      @gem_paths.values.each do |path|
-        file = File.join(path, obj.file)
-        return Solargraph::Location.new(file, Solargraph::Range.from_to(obj.line, 0, obj.line, 0)) if File.exist?(file)
+      @object_file_cache ||= {}
+      return nil if obj.file.nil? || obj.line.nil?
+      file = nil
+      if @object_file_cache.key?(obj.file)
+        file = @object_file_cache[obj.file]
+      else
+        @object_file_cache[obj.file] = nil
+        @gem_paths.values.each do |path|
+          tmp = File.join(path, obj.file)
+          if File.exist?(tmp)
+            @object_file_cache[obj.file] = tmp
+            file = tmp
+            break
+          end
+        end
       end
-      nil
+      return nil if file.nil?
+      Solargraph::Location.new(file, Solargraph::Range.from_to(obj.line, 0, obj.line, 0))
     end
   end
 end
