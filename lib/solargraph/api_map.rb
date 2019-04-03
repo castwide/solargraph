@@ -555,22 +555,24 @@ module Solargraph
           return inner_qualify(root, '', skip)
         end
       else
-        if root == ''
-          return name if store.namespace_exists?(name)
-        else
-          roots = root.to_s.split('::')
-          while roots.length > 0
-            fqns = roots.join('::') + '::' + name
-            return fqns if store.namespace_exists?(fqns)
-            incs = store.get_includes(roots.join('::'))
-            incs.each do |inc|
-              foundinc = inner_qualify(name, inc, skip)
-              return foundinc unless foundinc.nil?
-            end
-            roots.pop
+        return name if root == '' && store.namespace_exists?(name)
+        roots = root.to_s.split('::')
+        while roots.length > 0
+          fqns = roots.join('::') + '::' + name
+          return fqns if store.namespace_exists?(fqns)
+          incs = store.get_includes(roots.join('::'))
+          incs.each do |inc|
+            foundinc = inner_qualify(name, inc, skip)
+            return foundinc unless foundinc.nil?
           end
-          return name if store.namespace_exists?(name)
+          roots.pop
         end
+        incs = store.get_includes('')
+        incs.each do |inc|
+          foundinc = inner_qualify(name, inc, skip)
+          return foundinc unless foundinc.nil?
+        end
+        return name if store.namespace_exists?(name)
       end
     end
 

@@ -567,4 +567,23 @@ describe Solargraph::ApiMap do
     fqns = api_map.qualify('Bar', 'Includer')
     expect(fqns).to eq('Foo::Bar')
   end
+
+  it "qualifies namespaces from root includes" do
+    source = Solargraph::Source.load_string(%(
+      module A
+        module B
+          module C
+            def self.foo; end
+          end
+        end
+      end
+
+      include A
+      B::C
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new
+    api_map.map source
+    fqns = api_map.qualify('B::C', '')
+    expect(fqns).to eq('A::B::C')
+  end
 end
