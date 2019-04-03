@@ -215,17 +215,8 @@ module Solargraph
           if node.children[2].type == :sym || node.children[2].type == :str
             ref = pins.select{|p| [Solargraph::Pin::Method, Solargraph::Pin::Attribute].include?(p.class) && p.namespace == region.closure.full_context.namespace && p.name == node.children[2].children[0].to_s}.first
             unless ref.nil?
-              pins.delete ref
-              pins.push Solargraph::Pin::Method.new(
-                location: ref.location,
-                closure: ref.closure,
-                name: ref.name,
-                comments: ref.comments,
-                scope: ref.scope,
-                visibility: :private,
-                args: ref.parameters,
-                node: ref.node
-              )
+              # HACK: Smelly instance variable access
+              ref.instance_variable_set(:@visibility, :private)
             end
             false
           else

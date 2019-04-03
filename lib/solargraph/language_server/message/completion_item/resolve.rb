@@ -21,7 +21,16 @@ module Solargraph
                    .map { |pin| pin.resolve_completion_item[:documentation] }
             params
               .merge(pins.first.resolve_completion_item)
-              .merge(documentation: docs.join("\n\n"))
+              .merge(documentation: markup_content(docs.join("\n\n")))
+          end
+
+          # @param text [String]
+          # @return [Hash{Symbol => String}]
+          def markup_content text
+            {
+              kind: 'markdown',
+              value: text
+            }
           end
         end
       end
