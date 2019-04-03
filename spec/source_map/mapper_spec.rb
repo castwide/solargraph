@@ -938,4 +938,17 @@ describe Solargraph::SourceMap::Mapper do
       Solargraph::SourceMap.load(File.join('spec', 'fixtures', 'invalid_utf8.rb'))
     }.not_to raise_error
   end
+
+  it "applies private_class_method to attributes" do
+    smap = Solargraph::SourceMap.load_string(%(
+      module Foo
+        class << self
+          attr_reader :bar
+        end
+        private_class_method :bar
+      end
+    ))
+    pin = smap.pins.select{|pin| pin.path == 'Foo.bar'}.first
+    expect(pin.visibility).to eq(:private)
+  end
 end
