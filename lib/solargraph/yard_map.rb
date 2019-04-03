@@ -298,7 +298,7 @@ module Solargraph
         end
       end
       return nil if file.nil?
-      Solargraph::Location.new(file, Solargraph::Range.from_to(obj.line, 0, obj.line, 0))
+      Solargraph::Location.new(file, Solargraph::Range.from_to(obj.line - 1, 0, obj.line - 1, 0))
     end
   end
 end
