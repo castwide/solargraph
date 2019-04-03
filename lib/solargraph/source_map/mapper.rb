@@ -21,10 +21,14 @@ module Solargraph
         @filename = source.filename
         @code = source.code
         @comments = source.comments
-        @pins = Solargraph::SourceMap::NodeProcessor.process(source.node, Solargraph::SourceMap::Region.new(source: source), [])
+        @pins = NodeProcessor.process(source.node, Region.new(source: source))
         process_comment_directives
         locals = @pins.select{|p| [Pin::LocalVariable, Pin::MethodParameter, Pin::BlockParameter].include?(p.class)}
         [@pins - locals, locals]
+      rescue Exception => e
+        Solargraph.logger.warn "Error mapping #{source.filename}: [#{e.class}] #{e.message}"
+        Solargraph.logger.warn e.backtrace
+        [[], []]
       end
 
       def unmap filename, code
