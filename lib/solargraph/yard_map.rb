@@ -123,9 +123,9 @@ module Solargraph
 
     # @param code_object [YARD::CodeObjects::Base]
     # @return [Solargraph::Pin::Base]
-    def generate_pins code_object
+    def generate_pins code_object, spec = nil
       result = []
-      location = object_location(code_object)
+      location = object_location(code_object, spec)
       if code_object.is_a?(YARD::CodeObjects::NamespaceObject)
         result.push Solargraph::Pin::YardPin::Namespace.new(code_object, location)
         if code_object.is_a?(YARD::CodeObjects::ClassObject) and !code_object.superclass.nil?
@@ -186,7 +186,7 @@ module Solargraph
           @gem_paths[spec.name] = spec.full_gem_path
           unless yardocs.include?(yd)
             yardocs.unshift yd
-            result.concat process_yardoc yd
+            result.concat process_yardoc yd, spec
             result.concat add_gem_dependencies(spec) if with_dependencies?
           end
         rescue Gem::LoadError => e
@@ -248,7 +248,7 @@ module Solargraph
           else
             next if yardocs.include?(gy)
             yardocs.unshift gy
-            result.concat process_yardoc gy
+            result.concat process_yardoc gy, depspec
             result.concat add_gem_dependencies(depspec)
           end
         rescue Gem::LoadError
@@ -261,7 +261,7 @@ module Solargraph
 
     # @param y [String, nil]
     # @return [Array<Pin::Base>]
-    def process_yardoc y
+    def process_yardoc y, spec = nil
       return [] if y.nil?
       size = Dir.glob(File.join(y, '**', '*'))
         .map{ |f| File.size(f) }
@@ -273,28 +273,24 @@ module Solargraph
       result = []
       load_yardoc y
       YARD::Registry.each do |o|
-        result.concat generate_pins(o)
+        result.concat generate_pins(o, spec)
       end
       result
     end
 
     # @param obj [YARD::CodeObjects::Base]
     # @return [Solargraph::Location]
-    def object_location obj
+    def object_location obj, spec = nil
       @object_file_cache ||= {}
-      return nil if obj.file.nil? || obj.line.nil?
+      return nil if spec.nil? || obj.file.nil? || obj.line.nil?
       file = nil
       if @object_file_cache.key?(obj.file)
         file = @object_file_cache[obj.file]
       else
-        @object_file_cache[obj.file] = nil
-        @gem_paths.values.each do |path|
-          tmp = File.join(path, obj.file)
-          if File.exist?(tmp)
-            @object_file_cache[obj.file] = tmp
-            file = tmp
-            break
-          end
+        tmp = File.join(spec.full_gem_path, obj.file)
+        if File.exist?(tmp)
+          @object_file_cache[obj.file] = tmp
+          file = tmp
         end
       end
       return nil if file.nil?
