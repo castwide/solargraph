@@ -506,4 +506,21 @@ describe Solargraph::SourceMap::Clip do
     clip = api_map.clip_at('test.rb', [7, 13])
     expect(clip.complete.pins.map(&:path)).to include('String#upcase')
   end
+
+  it "completes extended class methods" do
+    source = Solargraph::Source.load_string(%(
+      module Extender
+        def foobar; end
+      end
+
+      class Extended
+        extend Extender
+        foo
+      end
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new
+    api_map.map source
+    clip = api_map.clip_at('test.rb', [7, 11])
+    expect(clip.complete.pins.map(&:name)).to include('foobar')
+  end
 end
