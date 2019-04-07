@@ -27,6 +27,7 @@ module Solargraph
           # @param text [String]
           # @return [Hash{Symbol => String}]
           def markup_content text
+            return nil if text.strip.empty?
             {
               kind: 'markdown',
               value: text
