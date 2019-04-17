@@ -6,8 +6,8 @@ Gem::Specification.new do |s|
   s.name        = 'solargraph'
   s.version     = Solargraph::VERSION
   s.date        = Date.today.strftime("%Y-%m-%d")
-  s.summary     = "Solargraph for Ruby"
-  s.description = "IDE tools for code completion and inline documentation"
+  s.summary     = "A Ruby language server"
+  s.description = "IDE tools for code completion, inline documentation, and static analysis"
   s.authors     = ["Fred Snyder"]
   s.email       = 'admin@castwide.com'
   s.files       = Dir.chdir(File.expand_path('..', __FILE__)) do
