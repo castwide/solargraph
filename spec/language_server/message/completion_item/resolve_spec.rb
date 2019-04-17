@@ -1,13 +1,13 @@
 describe Solargraph::LanguageServer::Message::CompletionItem::Resolve do
   it "returns MarkupContent for documentation" do
     pin = Solargraph::Pin::Method.new(
-      nil,
-      'Foo',
-      'bar',
-      'A method',
-      :instance,
-      :public,
-      []
+      location: nil,
+      closure: Solargraph::Pin::Namespace.new(name: 'Foo'),
+      name: 'bar',
+      comments: 'A method',
+      scope: :instance,
+      visibility: :public,
+      args: []
     )
     host = double(Solargraph::LanguageServer::Host, locate_pins: [pin])
     resolve = Solargraph::LanguageServer::Message::CompletionItem::Resolve.new(host, {
@@ -20,13 +20,13 @@ describe Solargraph::LanguageServer::Message::CompletionItem::Resolve do
 
   it "returns nil documentation for empty strings" do
     pin = Solargraph::Pin::Method.new(
-      nil,
-      'Foo',
-      'bar',
-      '',
-      :instance,
-      :public,
-      []
+      location: nil,
+      closure: Solargraph::Pin::Namespace.new(name: 'Foo'),
+      name: 'bar',
+      comments: '',
+      scope: :instance,
+      visibility: :public,
+      args: []
     )
     host = double(Solargraph::LanguageServer::Host, locate_pins: [pin])
     resolve = Solargraph::LanguageServer::Message::CompletionItem::Resolve.new(host, {
