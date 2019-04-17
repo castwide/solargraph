@@ -10,7 +10,9 @@ Gem::Specification.new do |s|
   s.description = "IDE tools for code completion and inline documentation"
   s.authors     = ["Fred Snyder"]
   s.email       = 'admin@castwide.com'
-  s.files       = Dir['lib/**/*'] + Dir['yardoc/**/*'] + ['.yardopts']
+  s.files       = Dir.chdir(File.expand_path('..', __FILE__)) do
+    `git ls-files -z`.split("\x0").reject { |f| f.match(%r{^(test|spec|features)/}) }
+  end
   s.homepage    = 'http://solargraph.org'
   s.license     = 'MIT'
   s.executables   = ['solargraph', 'solargraph-runtime']
