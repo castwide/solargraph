@@ -78,4 +78,16 @@ describe Solargraph::Source::Cursor do
     cur = described_class.new(source, Solargraph::Position.new(0, 5))
     expect(cur.word).to eq('Bar')
   end
+
+  it "detects cursors in dynamic strings" do
+    source = Solargraph::Source.load_string('"#{100}"')
+    cursor = source.cursor_at(Solargraph::Position.new(0, 7))
+    expect(cursor).to be_string
+  end
+
+  it "detects cursors in embedded strings" do
+    source = Solargraph::Source.load_string('"#{100}..."')
+    cursor = source.cursor_at(Solargraph::Position.new(0, 10))
+    expect(cursor).to be_string
+  end
 end

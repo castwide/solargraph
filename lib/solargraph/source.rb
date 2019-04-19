@@ -191,8 +191,17 @@ module Solargraph
     # @param position [Position]
     # @return [Boolean]
     def string_at? position
-      string_ranges.each do |range|
-        return true if range.include?(position)
+      string_nodes.each do |node|
+        range = Range.from_node(node)
+        break if range.ending.line > position.line
+        return true if node.type == :str && range.include?(position) && range.start != position
+        if node.type == :dstr
+          inner = node_at(position.line, position.column)
+          inner_range = Range.from_node(inner)
+          return true if inner.type == :str ||
+            (inner.type == :dstr && inner_range.ending.character < position.character) ||
+            (inner.type != :dstr && inner_range.ending == position)
+        end
         break if range.ending.line > position.line
       end
       false
@@ -356,6 +365,10 @@ module Solargraph
       @string_ranges ||= string_ranges_in(@node)
     end
 
+    def string_nodes
+      @string_nodes ||= string_nodes_in(@node)
+    end
+
     # @return [Array<Range>]
     def comment_ranges
       @comment_ranges ||= @comments.map do |cmnt|
@@ -400,6 +413,18 @@ module Solargraph
           result.push Range.from_node(n)
         else
           n.children.each{ |c| result.concat string_ranges_in(c) }
+        end
+      end
+      result
+    end
+
+    def string_nodes_in n
+      result = []
+      if n.is_a?(Parser::AST::Node)
+        if n.type == :str || n.type == :dstr
+          result.push n
+        else
+          n.children.each{ |c| result.concat string_nodes_in(c) }
         end
       end
       result
