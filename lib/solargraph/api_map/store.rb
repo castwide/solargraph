@@ -35,7 +35,7 @@ module Solargraph
       # @param fqns [String]
       # @return [String]
       def get_superclass fqns
-        return superclass_references[fqns].first if superclass_references.has_key?(fqns)
+        return superclass_references[fqns].first if superclass_references.key?(fqns)
         nil
       end
 
@@ -92,12 +92,14 @@ module Solargraph
 
       # @return [Array<Solargraph::Pin::Base>]
       def namespace_pins
-        @namespace_pins ||= pins.select{|p| p.kind == Pin::NAMESPACE}
+        # @namespace_pins ||= pins.select{|p| p.kind == Pin::NAMESPACE}
+        @namespace_pins ||= []
       end
 
       # @return [Array<Solargraph::Pin::Base>]
       def method_pins
-        @method_pins ||= pins.select{|p| p.kind == Pin::METHOD or p.kind == Pin::ATTRIBUTE}
+        # @method_pins ||= pins.select{|p| p.kind == Pin::METHOD or p.kind == Pin::ATTRIBUTE}
+        @method_pins ||= []
       end
 
       # @param fqns [String]
@@ -187,6 +189,8 @@ module Solargraph
       def index
         namespace_map.clear
         namespaces.clear
+        namespace_pins.clear
+        method_pins.clear
         symbols.clear
         block_pins.clear
         all_instance_variables.clear
@@ -195,6 +199,8 @@ module Solargraph
           namespace_map[pin.namespace] ||= []
           namespace_map[pin.namespace].push pin
           namespaces.add pin.path if pin.kind == Pin::NAMESPACE and !pin.path.empty?
+          namespace_pins.push pin if pin.kind == Pin::NAMESPACE
+          method_pins.push pin if pin.kind == Pin::METHOD || pin.kind == Pin::ATTRIBUTE
           symbols.push pin if pin.kind == Pin::SYMBOL
           if pin.kind == Pin::INCLUDE_REFERENCE
             include_references[pin.namespace] ||= []
@@ -211,8 +217,8 @@ module Solargraph
             all_instance_variables.push pin
           end
         end
-        @namespace_pins = nil
-        @method_pins = nil
+        # @namespace_pins = nil
+        # @method_pins = nil
       end
     end
   end
