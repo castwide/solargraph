@@ -27,7 +27,7 @@ Plug-ins and extensions are available for the following editors:
     * GitHub: https://github.com/castwide/atom-solargraph
 
 * **Vim**
-    * GitHub: https://github.com/hackhowtofaq/vim-solargraph
+    * GitHub: https://github.com/autozimu/LanguageClient-neovim
 
 * **Emacs**
     * GitHub: https://github.com/guskovd/emacs-solargraph
