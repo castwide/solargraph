@@ -6,7 +6,6 @@ module Solargraph
       class Cataloger
         def initialize host
           @host = host
-          @mutex = Mutex.new
           @stopped = true
         end
 
@@ -42,16 +41,13 @@ module Solargraph
         #
         # @return [void]
         def tick
-          mutex.synchronize { host.catalog }
+          host.catalog
         end
 
         private
 
         # @return [Host]
         attr_reader :host
-
-        # @return [Mutex]
-        attr_reader :mutex
       end
     end
   end

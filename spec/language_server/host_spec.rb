@@ -137,7 +137,7 @@ describe Solargraph::LanguageServer::Host do
     }.not_to raise_error
   end
 
-  it "pings the cataloger for library changes" do
+  it "is unsynchronized after library changes" do
     host = Solargraph::LanguageServer::Host.new
     dir = File.absolute_path('spec/fixtures/workspace')
     file = File.join(dir, 'app.rb')
@@ -166,10 +166,7 @@ describe Solargraph::LanguageServer::Host do
         }
       ]
     }
-    cataloger = double()
-    # @todo Smelly instance variable access
-    host.instance_variable_set(:@cataloger, cataloger)
-    expect(cataloger).to receive(:ping)
+    expect(host.synchronizing?).to be(true)
     host.change params
   end
 
