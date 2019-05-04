@@ -207,6 +207,32 @@ describe Solargraph::LanguageServer::Host do
     }.not_to raise_error
   end
 
+  it 'synchronizes libraries after creating files' do
+    Dir.mktmpdir do |dir|
+      host = Solargraph::LanguageServer::Host.new
+      host.prepare dir
+      file = File.join(dir, 'foo.rb')
+      uri = Solargraph::LanguageServer::UriHelpers.file_to_uri(file)
+      File.write file, 'class Foo; end'
+      host.create uri
+      expect(host.libraries.first).to be_synchronized
+      expect(host.libraries.first.contain?(file)).to be(true)
+    end
+  end
+
+  it 'synchronizes libraries after deleting files' do
+    Dir.mktmpdir do |dir|
+      file = File.join(dir, 'foo.rb')
+      uri = Solargraph::LanguageServer::UriHelpers.file_to_uri(file)
+      File.write file, 'class Foo; end'
+      host = Solargraph::LanguageServer::Host.new
+      host.prepare dir
+      host.delete uri
+      expect(host.libraries.first).to be_synchronized
+      expect(host.libraries.first.contain?(file)).to be(false)
+    end
+  end
+
   describe "Workspace variations" do
     before :each do
       @host = Solargraph::LanguageServer::Host.new
