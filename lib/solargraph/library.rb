@@ -126,13 +126,15 @@ module Solargraph
     # workspace configuration determines that it should still exist.
     #
     # @param filename [String]
-    # @return [void]
+    # @return [Boolean] True if the file was deleted
     def delete filename
       detach filename
+      result = false
       mutex.synchronize do
         result = workspace.remove(filename)
         @synchronized = !result if synchronized?
       end
+      result
     end
 
     # Close a file in the library. Closing a file will make it unavailable for

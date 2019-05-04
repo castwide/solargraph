@@ -118,7 +118,10 @@ module Solargraph
         filename = uri_to_file(uri)
         result = false
         libraries.each do |lib|
-          result = true if lib.create_from_disk filename
+          if lib.create_from_disk(filename)
+            result = true
+            cataloger.ping lib
+          end
         end
         diagnoser.schedule uri if open?(uri)
         result
@@ -132,8 +135,7 @@ module Solargraph
         # sources.close uri # @todo It's possible for a deleted file to be open in an editor
         filename = uri_to_file(uri)
         libraries.each do |lib|
-          # lib.delete filename
-          lib.detach filename
+          cataloger.ping(lib) if lib.delete(filename)
         end
         send_notification "textDocument/publishDiagnostics", {
           uri: uri,
