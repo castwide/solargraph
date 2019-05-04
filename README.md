@@ -32,6 +32,10 @@ Plug-ins and extensions are available for the following editors:
 * **Emacs**
     * GitHub: https://github.com/guskovd/emacs-solargraph
 
+* **Eclipse**
+    * Plugin: https://marketplace.eclipse.org/content/ruby-solargraph
+    * GitHub: https://github.com/PyvesB/eclipse-solargraph
+
 ### Gem Support
 
 Solargraph is capable of providing code completion and documentation for gems that have YARD documentation. You can make sure your gems are documented by running `yard gems` from the command line. (The first time you run it might take a while if you have a lot of gems installed).
