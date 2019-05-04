@@ -118,11 +118,7 @@ module Solargraph
         filename = uri_to_file(uri)
         result = false
         libraries.each do |lib|
-          if lib.create_from_disk(filename)
-            result = true
-            # @todo Cataloging now is slower but safer than using the cataloger
-            lib.catalog
-          end
+          result = true if lib.create_from_disk(filename)
         end
         diagnoser.schedule uri if open?(uri)
         result
@@ -136,8 +132,7 @@ module Solargraph
         # sources.close uri # @todo It's possible for a deleted file to be open in an editor
         filename = uri_to_file(uri)
         libraries.each do |lib|
-          # @todo Cataloging now is slower but safer than using the cataloger
-          lib.catalog if lib.delete(filename)
+          lib.delete(filename)
         end
         send_notification "textDocument/publishDiagnostics", {
           uri: uri,
@@ -411,7 +406,7 @@ module Solargraph
       end
 
       def synchronizing?
-        cataloger.synchronizing?
+        !libraries.all?(&:synchronized?)
       end
 
       # @return [void]
@@ -591,6 +586,10 @@ module Solargraph
       # @return [Array<Range>]
       def folding_ranges uri
         sources.find(uri).folding_ranges
+      end
+
+      def catalog
+        libraries.each(&:catalog)
       end
 
       private

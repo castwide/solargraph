@@ -8,20 +8,6 @@ module Solargraph
           @host = host
           @mutex = Mutex.new
           @stopped = true
-          @pings = []
-        end
-
-        # Notify the Cataloger that changes are pending.
-        #
-        # @param lib [Library] The library that needs cataloging
-        # @return [void]
-        def ping lib
-          mutex.synchronize { pings.push lib }
-        end
-        alias schedule ping
-
-        def synchronizing?
-          !pings.empty?
         end
 
         # Stop the catalog thread.
@@ -56,11 +42,7 @@ module Solargraph
         #
         # @return [void]
         def tick
-          return if pings.empty?
-          mutex.synchronize do
-            lib = pings.shift
-            lib.catalog unless pings.include?(lib)
-          end
+          mutex.synchronize { host.catalog }
         end
 
         private
@@ -70,9 +52,6 @@ module Solargraph
 
         # @return [Mutex]
         attr_reader :mutex
-
-        # @return [Array]
-        attr_reader :pings
       end
     end
   end
