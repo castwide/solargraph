@@ -22,6 +22,8 @@ module Solargraph::LanguageServer::Message::Workspace
           set_error Solargraph::LanguageServer::ErrorCodes::INVALID_PARAMS, "Unknown change type ##{change['type']} for #{uri_to_file(change['uri'])}"
         end
       end
+      # Force host to catalog libraries after file changes (see castwide/solargraph#139)
+      host.catalog
     end
   end
 end

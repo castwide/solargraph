@@ -29,7 +29,6 @@ module Solargraph
           libraries.each do |lib|
             if lib.contain?(src.filename) || lib.open?(src.filename)
               lib.merge src
-              cataloger.ping(lib)
             end
           end
           diagnoser.schedule uri if src.synchronized?

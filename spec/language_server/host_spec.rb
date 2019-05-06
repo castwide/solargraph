@@ -137,7 +137,7 @@ describe Solargraph::LanguageServer::Host do
     }.not_to raise_error
   end
 
-  it "pings the cataloger for library changes" do
+  it "is unsynchronized after library changes" do
     host = Solargraph::LanguageServer::Host.new
     dir = File.absolute_path('spec/fixtures/workspace')
     file = File.join(dir, 'app.rb')
@@ -166,10 +166,7 @@ describe Solargraph::LanguageServer::Host do
         }
       ]
     }
-    cataloger = double()
-    # @todo Smelly instance variable access
-    host.instance_variable_set(:@cataloger, cataloger)
-    expect(cataloger).to receive(:ping)
+    expect(host.synchronizing?).to be(true)
     host.change params
   end
 
@@ -205,6 +202,34 @@ describe Solargraph::LanguageServer::Host do
     expect {
       host.receive({ 'bad' => 'message' })
     }.not_to raise_error
+  end
+
+  it 'unsynchronizes libraries after creating files' do
+    Dir.mktmpdir do |dir|
+      host = Solargraph::LanguageServer::Host.new
+      host.prepare dir
+      file = File.join(dir, 'foo.rb')
+      uri = Solargraph::LanguageServer::UriHelpers.file_to_uri(file)
+      File.write file, 'class Foo; end'
+      host.create uri
+      expect(host.libraries.first).not_to be_synchronized
+      # expect(host.libraries.first).to be_synchronized
+      # expect(host.libraries.first.contain?(file)).to be(true)
+    end
+  end
+
+  it 'unsynchronizes libraries after deleting files' do
+    Dir.mktmpdir do |dir|
+      file = File.join(dir, 'foo.rb')
+      uri = Solargraph::LanguageServer::UriHelpers.file_to_uri(file)
+      File.write file, 'class Foo; end'
+      host = Solargraph::LanguageServer::Host.new
+      host.prepare dir
+      host.delete uri
+      expect(host.libraries.first).not_to be_synchronized
+      # expect(host.libraries.first).to be_synchronized
+      # expect(host.libraries.first.contain?(file)).to be(false)
+    end
   end
 
   describe "Workspace variations" do
