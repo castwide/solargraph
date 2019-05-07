@@ -956,4 +956,64 @@ describe Solargraph::SourceMap::Mapper do
     pin = smap.pins.select{|pin| pin.path == 'Foo.bar'}.first
     expect(pin.visibility).to eq(:private)
   end
+
+  it 'maps rest arguments' do
+    smap = Solargraph::SourceMap.load_string(%(
+      module Foo
+        def bar(*baz); end
+      end
+    ))
+    local = smap.locals.first
+    expect(local.name).to eq('baz')
+    pin = smap.first_pin('Foo#bar')
+    expect(pin.parameters).to eq(['*baz'])
+  end
+
+  it 'maps optional arguments' do
+    smap = Solargraph::SourceMap.load_string(%(
+      module Foo
+        def bar(baz=nil); end
+      end
+    ))
+    local = smap.locals.first
+    expect(local.name).to eq('baz')
+    pin = smap.first_pin('Foo#bar')
+    expect(pin.parameters).to eq(['baz = nil'])
+  end
+
+  it 'maps keyword arguments' do
+    smap = Solargraph::SourceMap.load_string(%(
+      module Foo
+        def bar(baz:); end
+      end
+    ))
+    local = smap.locals.first
+    expect(local.name).to eq('baz')
+    pin = smap.first_pin('Foo#bar')
+    expect(pin.parameters).to eq(['baz:'])
+  end
+
+  it 'maps optional keyword arguments' do
+    smap = Solargraph::SourceMap.load_string(%(
+      module Foo
+        def bar(baz:nil); end
+      end
+    ))
+    local = smap.locals.first
+    expect(local.name).to eq('baz')
+    pin = smap.first_pin('Foo#bar')
+    expect(pin.parameters).to eq(['baz: nil'])
+  end
+
+  it 'maps block arguments' do
+    smap = Solargraph::SourceMap.load_string(%(
+      module Foo
+        def bar(&block); end
+      end
+    ))
+    local = smap.locals.first
+    expect(local.name).to eq('block')
+    pin = smap.first_pin('Foo#bar')
+    expect(pin.parameters).to eq(['&block'])
+  end
 end
