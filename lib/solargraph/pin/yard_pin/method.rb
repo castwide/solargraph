@@ -9,8 +9,6 @@ module Solargraph
           closure = Solargraph::Pin::Namespace.new(
             name: code_object.namespace.to_s
           )
-          # puts "Closure is in #{closure.path}"
-          # super(location, code_object.namespace.to_s, name || code_object.name.to_s, comments, scope || code_object.scope, visibility || code_object.visibility, get_parameters(code_object), nil)
           super(
             location: location,
             closure: closure,
