@@ -608,7 +608,7 @@ module Solargraph
     # @return [Symbol] :class, :module, or nil
     def get_namespace_type fqns
       return nil if fqns.nil?
-      pin = store.get_path_pins(fqns).first
+      pin = store.get_path_pins(fqns).select{|p| p.is_a?(Pin::Namespace)}.first
       return nil if pin.nil?
       pin.type
     end
