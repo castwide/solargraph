@@ -4,9 +4,9 @@ module Solargraph
       class Method < Pin::Method
         include YardMixin
 
-        def initialize code_object, location, name = nil, scope = nil, visibility = nil
+        def initialize code_object, location, name = nil, scope = nil, visibility = nil, closure = nil
           comments = (code_object.docstring ? code_object.docstring.all : nil)
-          closure = Solargraph::Pin::Namespace.new(
+          closure ||= Solargraph::Pin::Namespace.new(
             name: code_object.namespace.to_s
           )
           super(

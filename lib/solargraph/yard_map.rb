@@ -8,6 +8,7 @@ module Solargraph
     autoload :Cache,    'solargraph/yard_map/cache'
     autoload :CoreDocs, 'solargraph/yard_map/core_docs'
     autoload :CoreGen,  'solargraph/yard_map/core_gen'
+    autoload :Mapper,   'solargraph/yard_map/mapper'
 
     CoreDocs.require_minimum
     @@stdlib_yardoc = CoreDocs.yardoc_stdlib_file
@@ -88,12 +89,13 @@ module Solargraph
     # @return [Array<Solargraph::Pin::Base>]
     def core_pins
       @@core_pins ||= begin
-        result = []
+        # result = []
         load_yardoc CoreDocs.yardoc_file
-        YARD::Registry.each do |o|
-          result.concat generate_pins(o)
-        end
-        result
+        # YARD::Registry.each do |o|
+        #   result.concat generate_pins(o)
+        # end
+        # result
+        Mapper.new(YARD::Registry.all).map
       end
     end
 
@@ -111,58 +113,13 @@ module Solargraph
     end
 
     # @param ns [YARD::CodeObjects::Namespace]
-    # @return [Array<Solargraph::Pin::Base>]
+    # @return [Array<YARD::CodeObjects::Base>]
     def recurse_namespace_object ns
       result = []
       ns.children.each do |c|
-        result.concat generate_pins(c)
+        # result.concat generate_pins(c)
+        result.push c
         result.concat recurse_namespace_object(c) if c.respond_to?(:children)
-      end
-      result
-    end
-
-    # @param code_object [YARD::CodeObjects::Base]
-    # @return [Solargraph::Pin::Base]
-    def generate_pins code_object, spec = nil
-      result = []
-      location = object_location(code_object, spec)
-      if code_object.is_a?(YARD::CodeObjects::NamespaceObject)
-        nspin = Solargraph::Pin::YardPin::Namespace.new(code_object, location)
-        result.push nspin
-        if code_object.is_a?(YARD::CodeObjects::ClassObject) and !code_object.superclass.nil?
-          # @todo This method of superclass detection is a bit of a hack. If
-          #   the superclass is a Proxy, it is assumed to be undefined in its
-          #   yardoc and converted to a fully qualified namespace.
-          if code_object.superclass.is_a?(YARD::CodeObjects::Proxy)
-            superclass = "::#{code_object.superclass}"
-          else
-            superclass = code_object.superclass.to_s
-          end
-          # result.push Solargraph::Pin::Reference::Superclass.new(location, code_object.path, superclass) # @todo Finish this
-          result.push Solargraph::Pin::Reference::Superclass.new(location: location, name: superclass, closure: nspin)
-        end
-        code_object.class_mixins.each do |m|
-          # result.push Solargraph::Pin::Reference::Extend.new(location, code_object.path, m.path)
-          result.push Solargraph::Pin::Reference::Extend.new(location: location, closure: nspin, name: m.path) # @todo Fix closure
-        end
-        code_object.instance_mixins.each do |m|
-          # result.push Solargraph::Pin::Reference::Include.new(location, code_object.path, m.path)
-          result.push Solargraph::Pin::Reference::Include.new(
-            location: location,
-            closure: nspin, # @todo Fix this
-            name: m.path
-          )
-        end
-      elsif code_object.is_a?(YARD::CodeObjects::MethodObject)
-        if code_object.name == :initialize && code_object.scope == :instance
-          # @todo Check the visibility of <Class>.new
-          result.push Solargraph::Pin::YardPin::Method.new(code_object, location, 'new', :class, :public)
-          result.push Solargraph::Pin::YardPin::Method.new(code_object, location, 'initialize', :instance, :private)
-        else
-          result.push Solargraph::Pin::YardPin::Method.new(code_object, location)
-        end
-      elsif code_object.is_a?(YARD::CodeObjects::ConstantObject)
-        result.push Solargraph::Pin::YardPin::Constant.new(code_object, location)
       end
       result
     end
@@ -230,8 +187,11 @@ module Solargraph
           objects.each do |ns|
             next if done.include?(ns.path)
             done.push ns.path
-            result.concat generate_pins(ns)
-            result.concat recurse_namespace_object(ns)
+            all = [ns]
+            all.concat recurse_namespace_object(ns)
+            # result.concat generate_pins(ns)
+            # result.concat recurse_namespace_object(ns)
+            result.concat Mapper.new(all).map
           end
           result.delete_if(&:nil?)
           cache.set_path_pins(r, result) unless result.empty?
@@ -278,29 +238,13 @@ module Solargraph
         Solargraph::Logging.logger.warn "Yardoc at #{y} is too large to process (#{size} bytes)"
         return []
       end
-      result = []
+      # result = []
       load_yardoc y
-      YARD::Registry.each do |o|
-        result.concat generate_pins(o, spec)
-      end
-      result
-    end
-
-    # @param obj [YARD::CodeObjects::Base]
-    # @return [Solargraph::Location]
-    def object_location obj, spec = nil
-      @object_file_cache ||= {}
-      return nil if spec.nil? || obj.file.nil? || obj.line.nil?
-      file = nil
-      if @object_file_cache.key?(obj.file)
-        file = @object_file_cache[obj.file]
-      else
-        tmp = File.join(spec.full_gem_path, obj.file)
-        file = tmp if File.exist?(tmp)
-        @object_file_cache[obj.file] = file
-      end
-      return nil if file.nil?
-      Solargraph::Location.new(file, Solargraph::Range.from_to(obj.line - 1, 0, obj.line - 1, 0))
+      # YARD::Registry.each do |o|
+      #   result.concat generate_pins(o, spec)
+      # end
+      # result
+      Mapper.new(YARD::Registry.all, spec).map
     end
   end
 end
