@@ -59,7 +59,7 @@ module Solargraph
           closure = @namespace_pins[code_object.namespace]
           result.push Solargraph::Pin::YardPin::Constant.new(code_object, location, closure)
         end
-        result  
+        result
       end
 
       # @param obj [YARD::CodeObjects::Base]
