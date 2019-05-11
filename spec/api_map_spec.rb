@@ -586,4 +586,19 @@ describe Solargraph::ApiMap do
     fqns = api_map.qualify('B::C', '')
     expect(fqns).to eq('A::B::C')
   end
+
+  it 'finds methods for classes that override constant assignments' do
+    source = Solargraph::Source.load_string(%(
+      class Foo
+        Bar = String
+        class Bar
+          def baz; end
+        end
+      end
+    ))
+    api_map = Solargraph::ApiMap.new
+    api_map.map source
+    paths = api_map.get_methods('Foo::Bar').map(&:path)
+    expect(paths).to include('Foo::Bar#baz')
+  end
 end

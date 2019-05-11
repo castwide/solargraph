@@ -523,4 +523,40 @@ describe Solargraph::SourceMap::Clip do
     clip = api_map.clip_at('test.rb', [7, 11])
     expect(clip.complete.pins.map(&:name)).to include('foobar')
   end
+
+  it 'infers explicit return types from <Class>.new methods' do
+    source = Solargraph::Source.load_string(%(
+      class Value
+        # @return [Class]
+        def self.new
+        end
+      end
+      value = Value.new
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new
+    api_map.map source
+    clip = api_map.clip_at('test.rb', [6, 11])
+    expect(clip.infer.tag).to eq('Class')
+  end
+
+  it 'infers Object from Class#new' do
+    source = Solargraph::Source.load_string(%(
+      cls = Class.new
+      cls.new
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new
+    api_map.map source
+    clip = api_map.clip_at('test.rb', [2, 11])
+    expect(clip.infer.tag).to eq('Object')
+  end
+
+  it 'infers Object from Class.new.new' do
+    source = Solargraph::Source.load_string(%(
+      Class.new.new
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new
+    api_map.map source
+    clip = api_map.clip_at('test.rb', [1, 17])
+    expect(clip.infer.tag).to eq('Object')
+  end
 end
