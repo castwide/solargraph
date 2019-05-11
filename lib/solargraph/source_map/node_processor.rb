@@ -22,6 +22,7 @@ module Solargraph
       autoload :BlockNode,     'solargraph/source_map/node_processor/block_node'
       autoload :OrasgnNode,    'solargraph/source_map/node_processor/orasgn_node'
       autoload :SymNode,       'solargraph/source_map/node_processor/sym_node'
+      autoload :ResbodyNode,   'solargraph/source_map/node_processor/resbody_node'
 
       class << self
         @@processors ||= {}
@@ -43,7 +44,7 @@ module Solargraph
       register :kwbegin, BeginNode
       # # @todo Is this the best way to handle rescue nodes?
       register :rescue,  BeginNode
-      register :resbody, BeginNode
+      register :resbody, ResbodyNode
       register :def,     DefNode
       register :defs,    DefsNode
       register :send,    SendNode
