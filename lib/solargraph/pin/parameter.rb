@@ -76,6 +76,9 @@ module Solargraph
         meths.each do |meth|
           found = nil
           params = meth.docstring.tags(:param)
+          if params.empty?
+            params = see_reference(docstring, api_map)
+          end
           params.each do |p|
             next unless p.name == name
             found = p
@@ -87,6 +90,41 @@ module Solargraph
           return ComplexType.parse(*found.types).qualify(api_map, meth.context.namespace) unless found.nil? || found.types.nil?
         end
         ComplexType::UNDEFINED
+      end
+
+      # @param api_map [ApiMap]
+      # @return [ComplexType]
+      def see_reference heredoc, api_map
+        heredoc.ref_tags.each do |ref|
+          next unless ref.tag_name == 'param' && ref.owner
+          result = resolve_reference(ref.owner.to_s, api_map)
+          return result unless result.nil?
+        end
+        []
+      end
+
+      # @param ref [String]
+      # @param api_map [ApiMap]
+      # @return [ComplexType]
+      def resolve_reference ref, api_map
+        parts = ref.split(/[\.#]/)
+        if parts.first.empty?
+          path = "#{namespace}#{ref}"
+        else
+          fqns = api_map.qualify(parts.first, namespace)
+          return ComplexType::UNDEFINED if fqns.nil?
+          path = fqns + ref[parts.first.length] + parts.last
+        end
+        pins = api_map.get_path_pins(path)
+        pins.each do |pin|
+          params = pin.docstring.tags(:param)
+          return params unless params.empty?
+        end
+        pins.each do |pin|
+          params = see_reference(pin.docstring, api_map)
+          return params unless params.empty?
+        end
+        nil
       end
     end
   end

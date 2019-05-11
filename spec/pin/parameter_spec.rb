@@ -146,4 +146,42 @@ describe Solargraph::Pin::Parameter do
     pin = smap.locals.select{|p| p.name == 'bar'}.first
     expect(pin.return_type.tag).to eq('String')
   end
+
+  it 'infers return types from method reference tags' do
+    source = Solargraph::Source.load_string(%(
+      class Foo
+        # @param bla [String]
+        def bar(bla)
+        end
+        # @param (see Foo#bar)
+        def baz(bla)
+          bla._
+        end
+      end
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new
+    api_map.map source
+    clip = api_map.clip_at('test.rb', [7, 14])
+    paths = clip.complete.pins.map(&:path)
+    expect(paths).to include('String#upcase')
+  end
+
+  it 'infers return types from relative method reference tags' do
+    source = Solargraph::Source.load_string(%(
+      class Foo
+        # @param bla [String]
+        def bar(bla)
+        end
+        # @param (see #bar)
+        def baz(bla)
+          bla._
+        end
+      end
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new
+    api_map.map source
+    clip = api_map.clip_at('test.rb', [7, 14])
+    paths = clip.complete.pins.map(&:path)
+    expect(paths).to include('String#upcase')
+  end
 end

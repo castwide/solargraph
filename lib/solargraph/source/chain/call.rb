@@ -109,7 +109,7 @@ module Solargraph
             result = inner_process_macro(pin, macro, api_map, context, locals)
             return result unless result.return_type.undefined?
           end
-          Pin::ProxyType.new(nil, nil, nil, ComplexType::UNDEFINED)
+          Pin::ProxyType.anonymous ComplexType::UNDEFINED
         end
 
         def inner_process_macro pin, macro, api_map, context, locals
