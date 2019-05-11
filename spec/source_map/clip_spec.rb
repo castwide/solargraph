@@ -485,10 +485,10 @@ describe Solargraph::SourceMap::Clip do
     api_map = Solargraph::ApiMap.new
     api_map.map source
     clip = api_map.clip_at('test.rb', [6, 11])
-    expect(clip.infer.tag).to eq('Class')    
+    expect(clip.infer.tag).to eq('Class')
   end
 
-  it 'returns Object from Class#new' do
+  it 'infers Object from Class#new' do
     source = Solargraph::Source.load_string(%(
       cls = Class.new
       cls.new
@@ -499,19 +499,13 @@ describe Solargraph::SourceMap::Clip do
     expect(clip.infer.tag).to eq('Object')
   end
 
-  it 'returns Object from Class.new.new' do
+  it 'infers Object from Class.new.new' do
     source = Solargraph::Source.load_string(%(
-      class Value
-        # @return [Class]
-        def self.new
-        end
-      end
-      value = Value.new
-      object = value.new
+      Class.new.new
     ), 'test.rb')
     api_map = Solargraph::ApiMap.new
     api_map.map source
-    clip = api_map.clip_at('test.rb', [7, 7])
+    clip = api_map.clip_at('test.rb', [1, 17])
     expect(clip.infer.tag).to eq('Object')
   end
 end
