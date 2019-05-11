@@ -9,7 +9,7 @@ module Solargraph
             closure: region.closure,
             name: node.children[0].to_s,
             comments: comments_for(node),
-            scope: region.scope || :instance,
+            scope: region.scope || (region.closure.is_a?(Pin::Singleton) ? :class : :instance),
             visibility: region.visibility,
             args: method_args,
             node: node

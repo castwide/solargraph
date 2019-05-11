@@ -27,6 +27,7 @@ module Solargraph
     autoload :ProxyType,        'solargraph/pin/proxy_type'
     autoload :DuckMethod,       'solargraph/pin/duck_method'
     autoload :YardPin,          'solargraph/pin/yard_pin'
+    autoload :Singleton,        'solargraph/pin/singleton'
 
     ATTRIBUTE = 1
     CLASS_VARIABLE = 2

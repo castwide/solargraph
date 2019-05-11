@@ -65,6 +65,10 @@ module Solargraph
         @pins.select{|pin| pin.kind == Pin::NAMESPACE and pin.location.range.contain?(position)}.last
       end
 
+      def closure_at(position)
+        @pins.select{|pin| pin.is_a?(Pin::Closure) and pin.location.range.contain?(position)}.last
+      end
+
       def process_comment source_position, comment_position, comment
         return unless comment =~ MACRO_REGEXP
         cmnt = remove_inline_comment_hashes(comment)
@@ -79,7 +83,8 @@ module Solargraph
         location = Location.new(@filename, Range.new(comment_position, comment_position))
         case directive.tag.tag_name
         when 'method'
-          namespace = namespace_at(source_position)
+          # namespace = namespace_at(source_position)
+          namespace = closure_at(source_position)
           gen_src = Solargraph::SourceMap.load_string("def #{directive.tag.name};end")
           gen_pin = gen_src.pins.select{ |p| p.kind == Pin::METHOD }.first
           return if gen_pin.nil?
@@ -89,11 +94,12 @@ module Solargraph
             closure: namespace,
             name: gen_pin.name,
             comments: docstring.all,
-            scope: :instance,
+            scope: namespace.is_a?(Pin::Singleton) ? :class : :instance,
             args: gen_pin.parameters
           )
         when 'attribute'
-          namespace = namespace_at(source_position)
+          # namespace = namespace_at(source_position)
+          namespace = closure_at(source_position)
           t = (directive.tag.types.nil? || directive.tag.types.empty?) ? nil : directive.tag.types.flatten.join('')
           if t.nil? || t.include?('r')
             # location, namespace, name, docstring, access
@@ -103,7 +109,7 @@ module Solargraph
               name: directive.tag.name,
               comments: docstring.all,
               access: :reader,
-              scope: :instance,
+              scope: namespace.is_a?(Pin::Singleton) ? :class : :instance,
               visibility: :public
             )
           end
@@ -114,13 +120,14 @@ module Solargraph
               name: "#{directive.tag.name}=",
               comments: docstring.all,
               access: :writer,
-              scope: :instance,
+              scope: namespace.is_a?(Pin::Singleton) ? :class : :instance,
               visibility: :public
             )
           end
         when 'parse'
           # @todo Parse and map directive.tag.text
-          ns = namespace_at(comment_position)
+          # ns = namespace_at(comment_position)
+          ns = closure_at(source_position)
           region = Region.new(source: @source, closure: ns)
           begin
             node = Solargraph::Source.parse(directive.tag.text, @filename, comment_position.line)
@@ -129,7 +136,8 @@ module Solargraph
             # @todo Handle parser errors in !parse directives
           end
         when 'domain'
-          namespace = namespace_at(source_position)
+          # namespace = namespace_at(source_position)
+          namespace = closure_at(source_position)
           namespace.domains.concat directive.tag.types unless directive.tag.types.nil?
         end
       end

@@ -197,6 +197,7 @@ module Solargraph
         return true if node.type == :str && range.include?(position) && range.start != position
         if node.type == :dstr
           inner = node_at(position.line, position.column)
+          next if inner.nil?
           inner_range = Range.from_node(inner)
           return true if inner.type == :str ||
             (inner.type == :dstr && inner_range.ending.character < position.character) ||

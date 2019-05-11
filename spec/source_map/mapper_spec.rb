@@ -1016,4 +1016,43 @@ describe Solargraph::SourceMap::Mapper do
     pin = smap.first_pin('Foo#bar')
     expect(pin.parameters).to eq(['&block'])
   end
+
+  it 'maps method directives to singleton classes' do
+    smap = Solargraph::SourceMap.load_string(%(
+      class Foo
+        class << self
+          # @!method bar()
+        end
+      end
+    ))
+    paths = smap.pins.map(&:path)
+    expect(paths).to include('Foo.bar')
+    expect(paths).not_to include('Foo#bar')
+  end
+
+  it 'maps parse directives to singleton classes' do
+    smap = Solargraph::SourceMap.load_string(%(
+      class Foo
+        class << self
+          # @!parse def bar; end
+        end
+      end
+    ))
+    paths = smap.pins.map(&:path)
+    expect(paths).to include('Foo.bar')
+    expect(paths).not_to include('Foo#bar')
+  end
+
+  it 'maps attribute directives to singleton classes' do
+    smap = Solargraph::SourceMap.load_string(%(
+      class Foo
+        class << self
+          # @!attribute bar
+        end
+      end
+    ))
+    paths = smap.pins.map(&:path)
+    expect(paths).to include('Foo.bar')
+    expect(paths).not_to include('Foo#bar')
+  end
 end
