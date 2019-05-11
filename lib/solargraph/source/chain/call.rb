@@ -32,7 +32,14 @@ module Solargraph
         # @param context [Solargraph::ComplexType]
         # @return [Pin::Method]
         def virtual_new_pin new_pin, context
-          Pin::ProxyType.anonymous(ComplexType.try_parse(context.namespace))
+          case new_pin.path
+          when 'Class.new'
+            Pin::ProxyType.anonymous(ComplexType.try_parse('Class<Object>'))
+          when 'Class#new'
+            Pin::ProxyType.anonymous(ComplexType.try_parse(context.namespace == 'Class' ? 'Object' : context.namespace))
+          else
+            Pin::ProxyType.anonymous(ComplexType.try_parse(context.namespace))
+          end
         end
 
         def inferred_pins pins, api_map, context, locals
@@ -61,7 +68,7 @@ module Solargraph
         end
 
         def external_constructor? pin, context
-          pin.path == 'Class#new' || (pin.name == 'new' && pin.scope == :class && pin.return_type != context)
+          pin.path == 'Class#new' || (pin.name == 'new' && pin.scope == :class && pin.docstring.tag(:return).nil?)
         end
 
         # @param pin [Pin::Method]
