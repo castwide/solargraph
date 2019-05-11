@@ -184,4 +184,47 @@ describe Solargraph::Pin::Parameter do
     paths = clip.complete.pins.map(&:path)
     expect(paths).to include('String#upcase')
   end
+
+  it 'infers return types recursively' do
+    source = Solargraph::Source.load_string(%(
+      class Foo
+        # @param bla [String]
+        def bar(bla)
+        end
+        # @param (see Foo#bar)
+        def baz(bla)
+        end
+      end
+      class Other
+        # @param (see Foo#baz)
+        def deep(bla)
+          bla._
+        end
+      end
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new
+    api_map.map source
+    clip = api_map.clip_at('test.rb', [12, 14])
+    paths = clip.complete.pins.map(&:path)
+    expect(paths).to include('String#upcase')
+  end
+
+  it 'avoids infinite recursion in reference tags' do
+    source = Solargraph::Source.load_string(%(
+      class Foo
+        # @param (see #baz)
+        def bar(bla)
+        end
+        # @param (see #bar)
+        def baz(bla)
+          bla._
+        end
+      end
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new
+    api_map.map source
+    clip = api_map.clip_at('test.rb', [7, 14])
+    paths = clip.complete.pins.map(&:path)
+    expect(paths).to be_empty
+  end
 end

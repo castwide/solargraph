@@ -92,12 +92,14 @@ module Solargraph
         ComplexType::UNDEFINED
       end
 
+      # @param heredoc [YARD::Docstring]
       # @param api_map [ApiMap]
+      # @param skip [Array]
       # @return [ComplexType]
-      def see_reference heredoc, api_map
+      def see_reference heredoc, api_map, skip = []
         heredoc.ref_tags.each do |ref|
           next unless ref.tag_name == 'param' && ref.owner
-          result = resolve_reference(ref.owner.to_s, api_map)
+          result = resolve_reference(ref.owner.to_s, api_map, skip)
           return result unless result.nil?
         end
         []
@@ -105,8 +107,11 @@ module Solargraph
 
       # @param ref [String]
       # @param api_map [ApiMap]
+      # @param skip [Array]
       # @return [ComplexType]
-      def resolve_reference ref, api_map
+      def resolve_reference ref, api_map, skip
+        return nil if skip.include?(ref)
+        skip.push ref
         parts = ref.split(/[\.#]/)
         if parts.first.empty?
           path = "#{namespace}#{ref}"
@@ -121,7 +126,7 @@ module Solargraph
           return params unless params.empty?
         end
         pins.each do |pin|
-          params = see_reference(pin.docstring, api_map)
+          params = see_reference(pin.docstring, api_map, skip)
           return params unless params.empty?
         end
         nil
