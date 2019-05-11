@@ -89,12 +89,7 @@ module Solargraph
     # @return [Array<Solargraph::Pin::Base>]
     def core_pins
       @@core_pins ||= begin
-        # result = []
         load_yardoc CoreDocs.yardoc_file
-        # YARD::Registry.each do |o|
-        #   result.concat generate_pins(o)
-        # end
-        # result
         Mapper.new(YARD::Registry.all).map
       end
     end
@@ -117,7 +112,6 @@ module Solargraph
     def recurse_namespace_object ns
       result = []
       ns.children.each do |c|
-        # result.concat generate_pins(c)
         result.push c
         result.concat recurse_namespace_object(c) if c.respond_to?(:children)
       end
@@ -238,12 +232,7 @@ module Solargraph
         Solargraph::Logging.logger.warn "Yardoc at #{y} is too large to process (#{size} bytes)"
         return []
       end
-      # result = []
       load_yardoc y
-      # YARD::Registry.each do |o|
-      #   result.concat generate_pins(o, spec)
-      # end
-      # result
       Mapper.new(YARD::Registry.all, spec).map
     end
   end
