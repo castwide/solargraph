@@ -27,9 +27,7 @@ module Solargraph
           src = sources.find(uri)
           # @todo This module should not call cataloger and diagnoser
           libraries.each do |lib|
-            if lib.contain?(src.filename) || lib.open?(src.filename)
-              lib.merge src
-            end
+            lib.merge src if lib.contain?(src.filename)
           end
           diagnoser.schedule uri if src.synchronized?
         end
