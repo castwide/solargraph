@@ -559,4 +559,18 @@ describe Solargraph::SourceMap::Clip do
     clip = api_map.clip_at('test.rb', [1, 17])
     expect(clip.infer.tag).to eq('Object')
   end
+
+  it 'completes class instance variables in the namespace' do
+    source = Solargraph::Source.load_string(%(
+      class Foo
+        @bar = 'bar'
+        @b
+      end
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new
+    api_map.map source
+    clip = api_map.clip_at('test.rb', [3, 10])
+    names = clip.complete.pins.map(&:name)
+    expect(names).to include('@bar')
+  end
 end
