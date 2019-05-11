@@ -15,7 +15,18 @@ module Solargraph::LanguageServer::Message::TextDocument
         if !this_link.nil? and this_link != last_link
           parts.push this_link
         end
-        parts.push HTMLEntities.new.encode(pin.detail) unless pin.kind == Solargraph::Pin::NAMESPACE or pin.detail.nil?
+        # parts.push HTMLEntities.new.encode(pin.detail) unless pin.kind == Solargraph::Pin::NAMESPACE or pin.detail.nil?
+        unless pin.kind == Solargraph::Pin::NAMESPACE
+          more = host.probe({
+            'data' => {
+              'uri' => params['textDocument']['uri'],
+              'path' => pin.path
+            },
+            'detail' => pin.detail,
+            'kind' => pin.completion_item_kind
+          })
+          parts.push HTMLEntities.new.encode(more) unless more.nil? || more.empty?
+        end
         parts.push pin.documentation unless pin.documentation.nil? or pin.documentation.empty?
         contents.push parts.join("\n\n") unless parts.empty?
         last_link = this_link unless this_link.nil?

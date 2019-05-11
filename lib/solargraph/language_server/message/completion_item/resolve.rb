@@ -19,9 +19,11 @@ module Solargraph
             docs = pins
                    .reject { |pin| pin.documentation.empty? }
                    .map { |pin| pin.resolve_completion_item[:documentation] }
-            params
+            result = params
               .merge(pins.first.resolve_completion_item)
               .merge(documentation: markup_content(docs.join("\n\n")))
+            result[:detail] = host.probe(params)
+            result
           end
 
           # @param text [String]

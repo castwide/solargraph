@@ -384,6 +384,14 @@ module Solargraph
       result
     end
 
+    def probe path
+      api_map.get_path_pins(path).each do |pin|
+        type = pin.probe(api_map)
+        return type if type.defined?
+      end
+      ComplexType::UNDEFINED
+    end
+
     private
 
     # @return [Mutex]

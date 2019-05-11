@@ -450,6 +450,16 @@ module Solargraph
         result.uniq
       end
 
+      def probe params
+        return params['detail'] if params['data']['uri'].nil? || params['kind'] != Solargraph::LanguageServer::CompletionItemKinds::METHOD || params['detail'].to_s.include?('=>')
+        result = params['detail'].to_s
+        result += ' ' unless result.empty?
+        library = library_for(params['data']['uri'])
+        type = library.probe(params['data']['path'])
+        result += "=~ #{type}" if type.defined?
+        result
+      end
+
       # @param uri [String]
       # @return [String]
       def read_text uri

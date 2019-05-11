@@ -9,7 +9,7 @@ describe Solargraph::LanguageServer::Message::CompletionItem::Resolve do
       visibility: :public,
       args: []
     )
-    host = double(Solargraph::LanguageServer::Host, locate_pins: [pin])
+    host = double(Solargraph::LanguageServer::Host, locate_pins: [pin], probe: pin.detail)
     resolve = Solargraph::LanguageServer::Message::CompletionItem::Resolve.new(host, {
       'params' => pin.completion_item
     })
@@ -28,7 +28,7 @@ describe Solargraph::LanguageServer::Message::CompletionItem::Resolve do
       visibility: :public,
       args: []
     )
-    host = double(Solargraph::LanguageServer::Host, locate_pins: [pin])
+    host = double(Solargraph::LanguageServer::Host, locate_pins: [pin], probe: pin.detail)
     resolve = Solargraph::LanguageServer::Message::CompletionItem::Resolve.new(host, {
       'params' => pin.completion_item
     })
