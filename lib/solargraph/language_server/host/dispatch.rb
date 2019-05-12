@@ -29,7 +29,7 @@ module Solargraph
           libraries.each do |lib|
             lib.merge src if lib.contain?(src.filename)
           end
-          diagnoser.schedule uri if src.synchronized?
+          diagnoser.schedule uri
         end
 
         # Find the best libary match for the given URI.
