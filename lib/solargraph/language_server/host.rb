@@ -184,20 +184,23 @@ module Solargraph
         if sources.include?(uri)
           logger.info "Diagnosing #{uri}"
           library = library_for(uri)
-          library.catalog
-          begin
-            results = library.diagnose uri_to_file(uri)
-            send_notification "textDocument/publishDiagnostics", {
-              uri: uri,
-              diagnostics: results
-            }
-          rescue DiagnosticsError => e
-            logger.warn "Error in diagnostics: #{e.message}"
-            options['diagnostics'] = false
-            send_notification 'window/showMessage', {
-              type: LanguageServer::MessageTypes::ERROR,
-              message: "Error in diagnostics: #{e.message}"
-            }
+          if library.synchronized?
+            begin
+              results = library.diagnose uri_to_file(uri)
+              send_notification "textDocument/publishDiagnostics", {
+                uri: uri,
+                diagnostics: results
+              }
+            rescue DiagnosticsError => e
+              logger.warn "Error in diagnostics: #{e.message}"
+              options['diagnostics'] = false
+              send_notification 'window/showMessage', {
+                type: LanguageServer::MessageTypes::ERROR,
+                message: "Error in diagnostics: #{e.message}"
+              }
+            end
+          else
+            diagnoser.schedule uri
           end
         else
           send_notification 'textDocument/publishDiagnostics', {

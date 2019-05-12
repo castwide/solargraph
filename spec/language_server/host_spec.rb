@@ -87,6 +87,7 @@ describe Solargraph::LanguageServer::Host do
     library = double(:Library)
     allow(library).to receive(:diagnose).and_raise(Solargraph::DiagnosticsError)
     allow(library).to receive(:contain?).and_return(true)
+    allow(library).to receive(:synchronized?).and_return(true)
     allow(library).to receive(:attach)
     allow(library).to receive(:merge)
     allow(library).to receive(:catalog)
