@@ -183,8 +183,6 @@ module Solargraph
             done.push ns.path
             all = [ns]
             all.concat recurse_namespace_object(ns)
-            # result.concat generate_pins(ns)
-            # result.concat recurse_namespace_object(ns)
             result.concat Mapper.new(all).map
           end
           result.delete_if(&:nil?)
