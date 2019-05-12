@@ -5,7 +5,7 @@ module Solargraph
         def process
           node.children.each do |u|
             loc = get_node_location(u)
-            pins.push Solargraph::Pin::Parameter.new(
+            locals.push Solargraph::Pin::Parameter.new(
               location: loc,
               closure: region.closure,
               comments: comments_for(node),

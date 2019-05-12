@@ -6,7 +6,7 @@ module Solargraph
           here = get_node_start_position(node)
           presence = Range.new(here, region.closure.location.range.ending)
           loc = get_node_location(node)
-          pins.push Solargraph::Pin::LocalVariable.new(
+          locals.push Solargraph::Pin::LocalVariable.new(
             location: loc,
             closure: region.closure,
             name: node.children[0].to_s,
