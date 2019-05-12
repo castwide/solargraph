@@ -182,9 +182,9 @@ module Solargraph
       # @return [void]
       def diagnose uri
         if sources.include?(uri)
-          logger.info "Diagnosing #{uri}"
           library = library_for(uri)
           if library.synchronized?
+            logger.info "Diagnosing #{uri}"
             begin
               results = library.diagnose uri_to_file(uri)
               send_notification "textDocument/publishDiagnostics", {
@@ -199,7 +199,10 @@ module Solargraph
                 message: "Error in diagnostics: #{e.message}"
               }
             end
+            # @todo Trying to resolve stale diagnostics after changes
+            # diagnoser.schedule uri unless library.synchronized?
           else
+            logger.info "Deferring diagnosis of #{uri}"
             diagnoser.schedule uri
           end
         else
