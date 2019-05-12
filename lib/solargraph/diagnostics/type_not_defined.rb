@@ -17,6 +17,10 @@ module Solargraph
 
       private
 
+      # @param pin [Pin::BaseMethod]
+      # @param api_map [ApiMap]
+      # @param source [Source]
+      # @return [Array<Hash>]
       def check_return_type pin, api_map, source
         return [] if (pin.name == 'initialize' && pin.scope == :instance) || (pin.name == 'new' && pin.scope == :class)
         result = []
@@ -31,6 +35,10 @@ module Solargraph
         result
       end
 
+      # @param pin [Pin::BaseMethod]
+      # @param api_map [ApiMap]
+      # @param source [Source]
+      # @return [Array<Hash>]
       def check_param_types pin, api_map, source
         return [] if pin.name == 'new' and pin.scope == :class
         result = []
@@ -46,6 +54,10 @@ module Solargraph
         result
       end
 
+      # @param pin [Pin::BaseMethod]
+      # @param api_map [ApiMap]
+      # @param source [Source]
+      # @return [Array<Hash>]
       def check_param_tags pin, api_map, source
         result = []
         pin.docstring.tags(:param).each do |par|
@@ -60,6 +72,9 @@ module Solargraph
         result
       end
 
+      # @param pin [Pin::Base]
+      # @param source [Source]
+      # @return [Hash]
       def extract_first_line pin, source
         {
           start: {
@@ -73,13 +88,20 @@ module Solargraph
         }
       end
 
+      # @param pin [Pin::Base]
+      # @param api_map [ApiMap]
+      # @return [Boolean]
       def defined_return_type? pin, api_map
         return true unless pin.return_type.undefined?
         matches = api_map.get_method_stack(pin.namespace, pin.name, scope: pin.scope)
         matches.shift
-        matches.any?{|m| !m.return_type.undefined?}
+        matches.any? { |m| !m.return_type.undefined? }
       end
 
+      # @param pin [Pin::Base]
+      # @param param [String]
+      # @param api_map [ApiMap]
+      # @return [Boolean]
       def defined_param_type? pin, param, api_map
         return true if param_in_docstring?(param, pin.docstring)
         matches = api_map.get_method_stack(pin.namespace, pin.name, scope: pin.scope)
@@ -91,9 +113,12 @@ module Solargraph
         false
       end
 
+      # @param param [String]
+      # @param docstring [YARD::Docstring]
+      # @return [Boolean]
       def param_in_docstring? param, docstring
         tags = docstring.tags(:param)
-        tags.any?{|t| t.name == param}
+        tags.any? { |t| t.name == param }
       end
 
       # @param position [Solargraph::Position]
