@@ -3,7 +3,6 @@ module Solargraph
     module NodeProcessor
       class BlockNode < Base
         def process
-          here = get_node_start_position(node)
           pins.push Solargraph::Pin::Block.new(
             location: get_node_location(node),
             closure: region.closure,
