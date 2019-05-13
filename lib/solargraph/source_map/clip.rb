@@ -63,8 +63,8 @@ module Solargraph
       # @return [Array<Pin::Base>]
       def signify
         return [] unless cursor.argument?
-        clip = Clip.new(api_map, cursor.recipient)
-        clip.define.select{|pin| pin.kind == Pin::METHOD}
+        chain = Source::NodeChainer.chain(cursor.recipient_node, cursor.filename)
+        chain.define(api_map, context_pin, locals).select { |pin| pin.is_a?(Pin::Method) }
       end
 
       # @return [ComplexType]

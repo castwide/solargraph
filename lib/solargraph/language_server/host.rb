@@ -647,7 +647,7 @@ module Solargraph
           # hoverProvider: true,
           # definitionProvider: true,
           'textDocument/signatureHelp' => {
-            triggerCharacters: ['(', ',']
+            triggerCharacters: ['(', ',', ' ']
           },
           # documentFormattingProvider: true,
           'textDocument/onTypeFormatting' => {
