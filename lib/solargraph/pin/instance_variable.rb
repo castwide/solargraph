@@ -12,6 +12,10 @@ module Solargraph
         @scope = scope
       end
 
+      def binder
+        closure.binder
+      end
+
       def context
         @context ||= begin
           result = super
@@ -21,6 +25,17 @@ module Solargraph
             ComplexType.parse("#{result.namespace}")
           end
         end
+      end
+
+      def nearly? other
+        super && binder == other.binder
+      end
+
+      def try_merge! pin
+        return false unless super
+        @assignment = pin.assignment
+        @return_type = pin.return_type
+        true
       end
     end
   end
