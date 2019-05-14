@@ -7,19 +7,12 @@ module Solargraph
       # @note Chain::Head is only intended to handle `self` and `super`.
       class Head < Link
         def resolve api_map, name_pin, locals
-          # return [self_pin(name_pin.context)] if word == 'self'
           return [name_pin] if word == 'self'
           return super_pins(api_map, name_pin) if word == 'super'
           []
         end
 
         private
-
-        # @param context [ComplexType]
-        # @return [Pin::ProxyType]
-        def self_pin(context)
-          Pin::ProxyType.anonymous(context)
-        end
 
         # @param api_map [ApiMap]
         # @param name_pin [Pin::Base]
