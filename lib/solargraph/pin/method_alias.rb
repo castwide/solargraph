@@ -30,6 +30,10 @@ module Solargraph
       def path
         @path ||= namespace + (scope == :instance ? '#' : '.') + name
       end
+
+      def parameters
+        []
+      end
     end
   end
 end
