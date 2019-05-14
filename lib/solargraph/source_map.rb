@@ -160,7 +160,7 @@ module Solargraph
         found = pin if (kinds.empty? || kinds.include?(pin.kind)) && pin.location.range.contain?(position)
         break if pin.location.range.start.line > line
       end
-      # @todo Assuming the root pin is always valid
+      # Assuming the root pin is always valid
       found || pins.first
     end
 

@@ -18,8 +18,6 @@ module Solargraph
 
     # @param pins [Array<Solargraph::Pin::Base>]
     def initialize pins: []
-      # @todo Extensions don't work yet
-      # require_extensions
       @source_map_hash = {}
       @cache = Cache.new
       @mutex = Mutex.new

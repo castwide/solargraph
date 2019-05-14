@@ -152,7 +152,7 @@ module Solargraph
       result = []
       gemspecs.each do |file|
         base = File.dirname(file)
-        # @todo Evaluating gemspec files violates the goal of not running
+        # HACK: Evaluating gemspec files violates the goal of not running
         #   workspace code, but this is how Gem::Specification.load does it
         #   anyway.
         begin

@@ -25,7 +25,6 @@ module Solargraph
         # @return [void]
         def update_libraries uri
           src = sources.find(uri)
-          # @todo This module should not call cataloger and diagnoser
           libraries.each do |lib|
             lib.merge src if lib.contain?(src.filename)
           end
@@ -77,9 +76,6 @@ module Solargraph
         def implicit_library_for uri
           filename = UriHelpers.uri_to_file(uri)
           libraries.each do |lib|
-            # @todo We probably shouldn't depend on attachments to select
-            #   a library.
-            # return lib if lib.open?(filename)
             if filename.start_with?(lib.workspace.directory)
               lib.attach sources.find(uri)
               return lib

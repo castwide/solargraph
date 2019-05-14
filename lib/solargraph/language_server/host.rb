@@ -129,7 +129,6 @@ module Solargraph
       # @param uri [String] The file uri.
       # @return [void]
       def delete uri
-        # sources.close uri # @todo It's possible for a deleted file to be open in an editor
         filename = uri_to_file(uri)
         libraries.each do |lib|
           lib.delete(filename)
@@ -199,8 +198,6 @@ module Solargraph
                 message: "Error in diagnostics: #{e.message}"
               }
             end
-            # @todo Trying to resolve stale diagnostics after changes
-            # diagnoser.schedule uri unless library.synchronized?
           else
             logger.info "Deferring diagnosis of #{uri}"
             diagnoser.schedule uri
