@@ -9,8 +9,7 @@ module Solargraph
             closure: region.closure,
             name: node.children[0].to_s,
             comments: comments_for(node),
-            assignment: node.children[1],
-            scope: region.visibility == :module_function ? :class : (region.scope || region.closure.scope)
+            assignment: node.children[1]
           )
           if region.visibility == :module_function
             here = get_node_start_position(node)
@@ -18,11 +17,10 @@ module Solargraph
             if named_path.kind == Pin::METHOD
               pins.push Solargraph::Pin::InstanceVariable.new(
                 location: loc,
-                closure: region.closure,
+                closure: Pin::Namespace.new(type: :module, closure: region.closure.closure, name: region.closure.name),
                 name: node.children[0].to_s,
                 comments: comments_for(node),
-                assignment: node.children[1],
-                scope: :instance
+                assignment: node.children[1]
               )
             end
           end

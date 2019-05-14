@@ -1,19 +1,16 @@
 module Solargraph
   module Pin
     class InstanceVariable < BaseVariable
-      attr_reader :scope
-
       def kind
         Pin::INSTANCE_VARIABLE
       end
 
-      def initialize scope: :instance, **splat
-        super(splat)
-        @scope = scope
-      end
-
       def binder
         closure.binder
+      end
+
+      def scope
+        closure.binder.scope
       end
 
       def context

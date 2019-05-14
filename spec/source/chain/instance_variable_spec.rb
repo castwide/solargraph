@@ -1,18 +1,17 @@
 describe Solargraph::Source::Chain::InstanceVariable do
   it "resolves instance variable pins" do
     closure = Solargraph::Pin::Namespace.new(name: 'Foo')
-    foo_pin = Solargraph::Pin::InstanceVariable.new(closure: closure, name: '@foo', scope: :instance)
-    bar_pin = Solargraph::Pin::InstanceVariable.new(closure: closure, name: '@foo', scope: :class)
-    not_pin1 = Solargraph::Pin::InstanceVariable.new(closure: closure, name: '@bar', scope: :instance)
-    not_pin2 = Solargraph::Pin::InstanceVariable.new(closure: closure, name: '@bar', scope: :class)
+    methpin = Solargraph::Pin::Method.new(closure: closure, name: 'imeth', scope: :instance)
+    foo_pin = Solargraph::Pin::InstanceVariable.new(closure: methpin, name: '@foo')
+    bar_pin = Solargraph::Pin::InstanceVariable.new(closure: closure, name: '@foo')
     api_map = Solargraph::ApiMap.new
-    api_map.index [foo_pin, bar_pin, not_pin1, not_pin2]
+    api_map.index [closure, methpin, foo_pin, bar_pin]
     link = Solargraph::Source::Chain::InstanceVariable.new('@foo')
-    pins = link.resolve(api_map, Solargraph::Pin::ProxyType.anonymous(Solargraph::ComplexType.parse('Foo')), [])
+    pins = link.resolve(api_map, methpin, [])
     expect(pins.length).to eq(1)
     expect(pins.first.name).to eq('@foo')
     expect(pins.first.context.scope).to eq(:instance)
-    pins = link.resolve(api_map, Solargraph::Pin::Namespace.new(name: 'Foo'), [])
+    pins = link.resolve(api_map, closure, [])
     expect(pins.length).to eq(1)
     expect(pins.first.name).to eq('@foo')
     expect(pins.first.context.scope).to eq(:class)

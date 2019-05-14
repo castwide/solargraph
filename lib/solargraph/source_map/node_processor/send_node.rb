@@ -149,16 +149,16 @@ module Solargraph
                     closure: cm,
                     name: ivar.name,
                     comments: ivar.comments,
-                    assignment: ivar.assignment,
-                    scope: :instance
+                    assignment: ivar.assignment
+                    # scope: :instance
                   )
                   pins.push Solargraph::Pin::InstanceVariable.new(
                     location: ivar.location,
                     closure: mm,
                     name: ivar.name,
                     comments: ivar.comments,
-                    assignment: ivar.assignment,
-                    scope: :class
+                    assignment: ivar.assignment
+                    # scope: :class
                   )
                 end
               end
