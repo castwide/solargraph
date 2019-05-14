@@ -49,13 +49,15 @@ module Solargraph
         @methods.clear
         @constants.clear
         @qualified_namespaces.clear
+        @receiver_definitions.clear
       end
 
       # @return [Boolean]
       def empty?
         @methods.empty? &&
           @constants.empty? &&
-          @qualified_namespaces.empty?
+          @qualified_namespaces.empty? &&
+          @receiver_definitions.empty?
       end
     end
   end
