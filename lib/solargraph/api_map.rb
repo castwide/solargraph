@@ -114,8 +114,9 @@ module Solargraph
         @store = new_store
         @unresolved_requires = yard_map.unresolved_requires
       }
-      # resolve_method_aliases
-      resolve_blocks
+      # @todo Block rebinding is an experimental feature, temporarily disabled
+      #   due to performance issues
+      # resolve_blocks
       self
     end
 
