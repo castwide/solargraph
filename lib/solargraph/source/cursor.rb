@@ -183,27 +183,6 @@ module Solargraph
       def end_word_pattern
         /^([a-z0-9_]|[^\u0000-\u007F])*[\?\!]?/i
       end
-
-      def signature_position
-        if @signature_position.nil?
-          open_parens = 0
-          cursor = offset - 1
-          while cursor >= 0
-            break if cursor < 0
-            if source.code[cursor] == ')'
-              open_parens -= 1
-            elsif source.code[cursor] == '('
-              open_parens += 1
-            end
-            break if open_parens == 1
-            cursor -= 1
-          end
-          if cursor >= 0
-            @signature_position = Position.from_offset(source.code, cursor)
-          end
-        end
-        @signature_position
-      end
     end
   end
 end
