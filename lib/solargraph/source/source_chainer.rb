@@ -67,7 +67,7 @@ module Solargraph
 
       # @return [String]
       def phrase
-        @phrase ||= source.code[signature_data[0]..offset-1]
+        @phrase ||= source.code[signature_data..offset-1]
       end
 
       # @return [String]
@@ -120,7 +120,6 @@ module Solargraph
         brackets = 0
         squares = 0
         parens = 0
-        signature = ''
         index -=1
         in_whitespace = false
         while index >= 0
@@ -152,18 +151,15 @@ module Solargraph
               brackets += 1
             elsif char == '['
               squares += 1
-              signature = ".[]#{signature}" if parens.zero? and brackets.zero? and squares.zero? and @source.code[index-2] != '%'
             end
             if brackets.zero? and parens.zero? and squares.zero?
               break if ['"', "'", ',', ';', '%'].include?(char)
-              break if !signature.empty? && ['!', '?'].include?(char)
-              signature = char + signature if char.match(/[a-z0-9:\._@\$\?\!]/i) and @source.code[index - 1] != '%'
+              break if ['!', '?'].include?(char) && index < offset - 1
               break if char == '$'
               if char == '@'
                 index -= 1
                 if @source.code[index, 1] == '@'
                   index -= 1
-                  signature = "@#{signature}"
                 end
                 break
               end
@@ -174,7 +170,7 @@ module Solargraph
           end
           index -= 1
         end
-        [index + 1, signature]
+        index + 1
       end
     end
   end
