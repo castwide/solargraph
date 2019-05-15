@@ -664,6 +664,9 @@ module Solargraph
         type = chain.base.infer(self, pin, locals)
         result = ComplexType.parse(type.namespace).qualify(self, pin.context.namespace)
         @mutex.synchronize { pin.rebind result }
+      elsif ['class_eval', 'module_eval'].include?(chain.links.last.word)
+        type = chain.base.infer(self, pin, locals)
+        @mutex.synchronize { pin.rebind type }
       else
         receiver_pin = if cache.receiver_defined?(pin.path)
           cache.get_receiver_definition(pin.path)
