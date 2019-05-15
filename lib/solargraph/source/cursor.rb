@@ -119,6 +119,7 @@ module Solargraph
           result
         end
       end
+      alias receiver recipient
 
       def node_position
         @node_position ||= begin
