@@ -51,17 +51,6 @@ module Solargraph
         @pins ||= []
       end
 
-      # @param node [Parser::AST::Node]
-      # @return [Solargraph::Pin::Namespace]
-      def namespace_for(node)
-        position = Position.new(node.loc.line, node.loc.column)
-        namespace_at(position)
-      end
-
-      def namespace_at(position)
-        @pins.select{|pin| pin.kind == Pin::NAMESPACE and pin.location.range.contain?(position)}.last
-      end
-
       def closure_at(position)
         @pins.select{|pin| pin.is_a?(Pin::Closure) and pin.location.range.contain?(position)}.last
       end

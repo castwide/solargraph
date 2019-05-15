@@ -1069,4 +1069,15 @@ describe Solargraph::SourceMap::Mapper do
     pin = smap.locals.first
     expect(pin.return_type.tag).to eq('ArgumentError')
   end
+
+  it 'processes comments without associations' do
+    smap = Solargraph::SourceMap.load_string(%(
+      class Foo; end
+      # @!parse
+      #   class Foo
+      #     def bar; end
+      #   end
+    ))
+    expect(smap.first_pin('Foo#bar')).to be_a(Solargraph::Pin::Method)
+  end
 end
