@@ -361,11 +361,6 @@ module Solargraph
       @stringified_comments ||= {}
     end
 
-    # @return [Array<Range>]
-    def string_ranges
-      @string_ranges ||= string_ranges_in(@node)
-    end
-
     def string_nodes
       @string_nodes ||= string_nodes_in(@node)
     end
@@ -404,18 +399,6 @@ module Solargraph
         end
       end
       result.push Range.from_to(grouped.first.loc.expression.line, 0, grouped.last.loc.expression.line, 0) unless grouped.length < 3
-      result
-    end
-
-    def string_ranges_in n
-      result = []
-      if n.is_a?(Parser::AST::Node)
-        if n.type == :str
-          result.push Range.from_node(n)
-        else
-          n.children.each{ |c| result.concat string_ranges_in(c) }
-        end
-      end
       result
     end
 
