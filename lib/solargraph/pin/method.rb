@@ -51,7 +51,7 @@ module Solargraph
             @documentation += lines.join("\n")
           end
         end
-        @documentation
+        @documentation.to_s
       end
 
       def nearly? other

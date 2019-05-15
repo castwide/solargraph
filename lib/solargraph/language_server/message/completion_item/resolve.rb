@@ -17,12 +17,13 @@ module Solargraph
           def merge pins
             return params if pins.empty?
             docs = pins
+                   .map { |pin| host.probe(pin) }
                    .reject { |pin| pin.documentation.empty? }
                    .map { |pin| pin.resolve_completion_item[:documentation] }
             result = params
               .merge(pins.first.resolve_completion_item)
               .merge(documentation: markup_content(docs.join("\n\n")))
-            result[:detail] = host.probe(params)
+            result[:detail] = pins.first.detail
             result
           end
 

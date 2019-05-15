@@ -384,12 +384,11 @@ module Solargraph
       result
     end
 
-    def probe path
-      api_map.get_path_pins(path).each do |pin|
-        type = pin.probe(api_map)
-        return type if type.defined?
-      end
-      ComplexType::UNDEFINED
+    # @param pin [Solargraph::Pin::Base]
+    # @return [Solargraph::Pin::Base]
+    def probe pin
+      return pin if pin.proxied? || pin.return_type.defined?
+      pin.proxy(pin.probe(api_map))
     end
 
     private
