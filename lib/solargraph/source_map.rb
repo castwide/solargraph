@@ -44,20 +44,6 @@ module Solargraph
       @requires ||= pins.select{|p| p.kind == Pin::REQUIRE_REFERENCE}
     end
 
-    # @param position [Position, Array(Integer, Integer)]
-    # @return [Boolean]
-    def string_at? position
-      position = Position.normalize(position)
-      @source.string_at?(position)
-    end
-
-    # @param position [Position, Array(Integer, Integer)]
-    # @return [Boolean]
-    def comment_at? position
-      position = Position.normalize(position)
-      @source.comment_at?(position)
-    end
-
     # @return [Array<Pin::Base>]
     def document_symbols
       @document_symbols ||= pins.select { |pin|
