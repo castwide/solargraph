@@ -67,7 +67,7 @@ module Solargraph
 
       # @return [String]
       def phrase
-        @phrase ||= source.code[signature_data[0]..offset-1]
+        @phrase ||= source.code[signature_data..offset-1]
       end
 
       # @return [String]
@@ -120,63 +120,57 @@ module Solargraph
         brackets = 0
         squares = 0
         parens = 0
-        signature = ''
         index -=1
         in_whitespace = false
         while index >= 0
           pos = Position.from_offset(@source.code, index)
           break if index > 0 and @source.comment_at?(pos)
-          unless !in_whitespace and string?
-            break if brackets > 0 or parens > 0 or squares > 0
-            char = @source.code[index, 1]
-            break if char.nil? # @todo Is this the right way to handle this?
-            if brackets.zero? and parens.zero? and squares.zero? and [' ', "\r", "\n", "\t"].include?(char)
-              in_whitespace = true
-            else
-              if brackets.zero? and parens.zero? and squares.zero? and in_whitespace
-                unless char == '.' or @source.code[index+1..-1].strip.start_with?('.')
-                  old = @source.code[index+1..-1]
-                  nxt = @source.code[index+1..-1].lstrip
-                  index += (@source.code[index+1..-1].length - @source.code[index+1..-1].lstrip.length)
-                  break
-                end
-              end
-              if char == ')'
-                parens -=1
-              elsif char == ']'
-                squares -=1
-              elsif char == '}'
-                brackets -= 1
-              elsif char == '('
-                parens += 1
-              elsif char == '{'
-                brackets += 1
-              elsif char == '['
-                squares += 1
-                signature = ".[]#{signature}" if parens.zero? and brackets.zero? and squares.zero? and @source.code[index-2] != '%'
-              end
-              if brackets.zero? and parens.zero? and squares.zero?
-                break if ['"', "'", ',', ';', '%'].include?(char)
-                break if !signature.empty? && ['!', '?'].include?(char)
-                signature = char + signature if char.match(/[a-z0-9:\._@\$\?\!]/i) and @source.code[index - 1] != '%'
-                break if char == '$'
-                if char == '@'
-                  index -= 1
-                  if @source.code[index, 1] == '@'
-                    index -= 1
-                    signature = "@#{signature}"
-                  end
-                  break
-                end
-              elsif parens == 1 || brackets == 1 || squares == 1
+          break if brackets > 0 or parens > 0 or squares > 0
+          char = @source.code[index, 1]
+          break if char.nil? # @todo Is this the right way to handle this?
+          if brackets.zero? and parens.zero? and squares.zero? and [' ', "\r", "\n", "\t"].include?(char)
+            in_whitespace = true
+          else
+            if brackets.zero? and parens.zero? and squares.zero? and in_whitespace
+              unless char == '.' or @source.code[index+1..-1].strip.start_with?('.')
+                old = @source.code[index+1..-1]
+                nxt = @source.code[index+1..-1].lstrip
+                index += (@source.code[index+1..-1].length - @source.code[index+1..-1].lstrip.length)
                 break
               end
-              in_whitespace = false
             end
+            if char == ')'
+              parens -=1
+            elsif char == ']'
+              squares -=1
+            elsif char == '}'
+              brackets -= 1
+            elsif char == '('
+              parens += 1
+            elsif char == '{'
+              brackets += 1
+            elsif char == '['
+              squares += 1
+            end
+            if brackets.zero? and parens.zero? and squares.zero?
+              break if ['"', "'", ',', ';', '%'].include?(char)
+              break if ['!', '?'].include?(char) && index < offset - 1
+              break if char == '$'
+              if char == '@'
+                index -= 1
+                if @source.code[index, 1] == '@'
+                  index -= 1
+                end
+                break
+              end
+            elsif parens == 1 || brackets == 1 || squares == 1
+              break
+            end
+            in_whitespace = false
           end
           index -= 1
         end
-        [index + 1, signature]
+        index + 1
       end
     end
   end

@@ -5,6 +5,7 @@ module Solargraph
         @methods = {}
         @constants = {}
         @qualified_namespaces = {}
+        @receiver_definitions = {}
       end
 
       def get_methods fqns, scope, visibility, deep
@@ -31,18 +32,32 @@ module Solargraph
         @qualified_namespaces[[name, context]] = value
       end
 
+      def receiver_defined? path
+        @receiver_definitions.key? path
+      end
+
+      def get_receiver_definition path
+        @receiver_definitions[path]
+      end
+
+      def set_receiver_definition path, pin
+        @receiver_definitions[path] = pin
+      end
+
       # @return [void]
       def clear
         @methods.clear
         @constants.clear
         @qualified_namespaces.clear
+        @receiver_definitions.clear
       end
 
       # @return [Boolean]
       def empty?
         @methods.empty? &&
           @constants.empty? &&
-          @qualified_namespaces.empty?
+          @qualified_namespaces.empty? &&
+          @receiver_definitions.empty?
       end
     end
   end

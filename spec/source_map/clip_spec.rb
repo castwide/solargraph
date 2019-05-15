@@ -507,6 +507,21 @@ describe Solargraph::SourceMap::Clip do
     expect(clip.complete.pins.map(&:path)).to include('String#upcase')
   end
 
+  it 'infers class instance variable types in rebound blocks' do
+    source = Solargraph::Source.load_string(%(
+      class Foo
+        @foo = ''
+      end
+      Foo.class_eval do
+        @foo
+      end
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new
+    api_map.map source
+    clip = api_map.clip_at('test.rb', [5, 8])
+    expect(clip.infer.tag).to eq('String')
+  end
+
   it "completes extended class methods" do
     source = Solargraph::Source.load_string(%(
       module Extender
@@ -558,5 +573,19 @@ describe Solargraph::SourceMap::Clip do
     api_map.map source
     clip = api_map.clip_at('test.rb', [1, 17])
     expect(clip.infer.tag).to eq('Object')
+  end
+
+  it 'completes class instance variables in the namespace' do
+    source = Solargraph::Source.load_string(%(
+      class Foo
+        @bar = 'bar'
+        @b
+      end
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new
+    api_map.map source
+    clip = api_map.clip_at('test.rb', [3, 10])
+    names = clip.complete.pins.map(&:name)
+    expect(names).to include('@bar')
   end
 end

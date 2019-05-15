@@ -116,7 +116,6 @@ module Solargraph
             # @todo Smelly instance variable access
             region.instance_variable_set(:@visibility, :module_function)
           elsif node.children[2].type == :sym || node.children[2].type == :str
-            # @todo What to do about references?
             node.children[2..-1].each do |x|
               cn = x.children[0].to_s
               ref = pins.select{|p| [Solargraph::Pin::Method, Solargraph::Pin::Attribute].include?(p.class) && p.namespace == region.closure.full_context.namespace && p.name == cn}.first
@@ -149,28 +148,27 @@ module Solargraph
                     closure: cm,
                     name: ivar.name,
                     comments: ivar.comments,
-                    assignment: ivar.assignment,
-                    scope: :instance
+                    assignment: ivar.assignment
+                    # scope: :instance
                   )
                   pins.push Solargraph::Pin::InstanceVariable.new(
                     location: ivar.location,
                     closure: mm,
                     name: ivar.name,
                     comments: ivar.comments,
-                    assignment: ivar.assignment,
-                    scope: :class
+                    assignment: ivar.assignment
+                    # scope: :class
                   )
                 end
               end
             end
           elsif node.children[2].type == :def
-            NodeProcessor.process node.children[2], region.update(visibility: :module_function), pins
+            NodeProcessor.process node.children[2], region.update(visibility: :module_function), pins, locals
           end
         end
 
         def process_private_constant
           if node.children[2] && (node.children[2].type == :sym || node.children[2].type == :str)
-            # @todo What to do about references?
             cn = node.children[2].children[0].to_s
             ref = pins.select{|p| [Solargraph::Pin::Namespace, Solargraph::Pin::Constant].include?(p.class) && p.namespace == region.closure.full_context.namespace && p.name == cn}.first
             unless ref.nil?

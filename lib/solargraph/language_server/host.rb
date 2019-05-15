@@ -129,7 +129,6 @@ module Solargraph
       # @param uri [String] The file uri.
       # @return [void]
       def delete uri
-        # sources.close uri # @todo It's possible for a deleted file to be open in an editor
         filename = uri_to_file(uri)
         libraries.each do |lib|
           lib.delete(filename)
@@ -182,22 +181,26 @@ module Solargraph
       # @return [void]
       def diagnose uri
         if sources.include?(uri)
-          logger.info "Diagnosing #{uri}"
           library = library_for(uri)
-          library.catalog
-          begin
-            results = library.diagnose uri_to_file(uri)
-            send_notification "textDocument/publishDiagnostics", {
-              uri: uri,
-              diagnostics: results
-            }
-          rescue DiagnosticsError => e
-            logger.warn "Error in diagnostics: #{e.message}"
-            options['diagnostics'] = false
-            send_notification 'window/showMessage', {
-              type: LanguageServer::MessageTypes::ERROR,
-              message: "Error in diagnostics: #{e.message}"
-            }
+          if library.synchronized?
+            logger.info "Diagnosing #{uri}"
+            begin
+              results = library.diagnose uri_to_file(uri)
+              send_notification "textDocument/publishDiagnostics", {
+                uri: uri,
+                diagnostics: results
+              }
+            rescue DiagnosticsError => e
+              logger.warn "Error in diagnostics: #{e.message}"
+              options['diagnostics'] = false
+              send_notification 'window/showMessage', {
+                type: LanguageServer::MessageTypes::ERROR,
+                message: "Error in diagnostics: #{e.message}"
+              }
+            end
+          else
+            logger.info "Deferring diagnosis of #{uri}"
+            diagnoser.schedule uri
           end
         else
           send_notification 'textDocument/publishDiagnostics', {
@@ -651,7 +654,7 @@ module Solargraph
           # hoverProvider: true,
           # definitionProvider: true,
           'textDocument/signatureHelp' => {
-            triggerCharacters: ['(', ',']
+            triggerCharacters: ['(', ',', ' ']
           },
           # documentFormattingProvider: true,
           'textDocument/onTypeFormatting' => {

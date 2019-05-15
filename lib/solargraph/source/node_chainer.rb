@@ -43,8 +43,6 @@ module Solargraph
       def generate_links n
         return [] unless n.is_a?(Parser::AST::Node)
         return generate_links(n.children[0]) if n.type == :begin
-        # @todo This might not be right. It's weird either way.
-        # return generate_links(n.children[2] || n.children[0]) if n.type == :block
         result = []
         if n.type == :block
           result.concat generate_links(n.children[0])

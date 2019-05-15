@@ -1,15 +1,16 @@
 module Solargraph
   module Pin
     class InstanceVariable < BaseVariable
-      attr_reader :scope
-
       def kind
         Pin::INSTANCE_VARIABLE
       end
 
-      def initialize scope: :instance, **splat
-        super(splat)
-        @scope = scope
+      def binder
+        closure.binder
+      end
+
+      def scope
+        closure.binder.scope
       end
 
       def context
@@ -21,6 +22,17 @@ module Solargraph
             ComplexType.parse("#{result.namespace}")
           end
         end
+      end
+
+      def nearly? other
+        super && binder == other.binder
+      end
+
+      def try_merge! pin
+        return false unless super
+        @assignment = pin.assignment
+        @return_type = pin.return_type
+        true
       end
     end
   end

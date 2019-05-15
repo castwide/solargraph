@@ -10,10 +10,6 @@ module Solargraph
       attr_reader :original
 
       def initialize scope: :instance, original: nil, **splat
-        # @todo Determine how to handle these parameters. Among other things,
-        #   determine if the visibility is defined by the location of the
-        #   alias call or the original method.
-        # super(location, namespace, name, '')
         super(splat)
         @scope = scope
         @original = original
@@ -29,6 +25,10 @@ module Solargraph
 
       def path
         @path ||= namespace + (scope == :instance ? '#' : '.') + name
+      end
+
+      def parameters
+        []
       end
     end
   end

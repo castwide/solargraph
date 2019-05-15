@@ -1,6 +1,5 @@
 require 'tmpdir'
 
-# @todo Rewrite the specs for the new YardMap
 describe Solargraph::YardMap do
   it "finds stdlib require paths" do
     yard_map = Solargraph::YardMap.new(required: ['set'])

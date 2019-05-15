@@ -35,8 +35,6 @@ module Solargraph
 
       def try_merge! pin
         return false unless super && closure.nearly?(pin.closure)
-        # @todo This is a little expensive, but it's necessary because
-        #   parameter data depends on the method's docstring.
         @return_type = pin.return_type
         reset_conversions
         true

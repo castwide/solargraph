@@ -40,6 +40,10 @@ module Solargraph
         @full_context ||= ComplexType.try_parse("#{type.to_s.capitalize}<#{path}>")
       end
 
+      def binder
+        full_context
+      end
+
       def scope
         context.scope
       end

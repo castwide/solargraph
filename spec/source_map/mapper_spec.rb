@@ -1055,4 +1055,29 @@ describe Solargraph::SourceMap::Mapper do
     expect(paths).to include('Foo.bar')
     expect(paths).not_to include('Foo#bar')
   end
+
+  it 'sets return types for exception variables' do
+    smap = Solargraph::SourceMap.load_string(%(
+      class Foo
+        def bar
+          xyz
+        rescue ArgumentError => e
+          e._
+        end
+      end
+    ), 'test.rb')
+    pin = smap.locals.first
+    expect(pin.return_type.tag).to eq('ArgumentError')
+  end
+
+  it 'processes comments without associations' do
+    smap = Solargraph::SourceMap.load_string(%(
+      class Foo; end
+      # @!parse
+      #   class Foo
+      #     def bar; end
+      #   end
+    ))
+    expect(smap.first_pin('Foo#bar')).to be_a(Solargraph::Pin::Method)
+  end
 end

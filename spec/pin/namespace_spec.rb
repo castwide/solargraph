@@ -1,5 +1,4 @@
 describe Solargraph::Pin::Namespace do
-  # @todo The namespace_pins methods was only ever used in specs.
   it "handles long namespaces" do
     pin = Solargraph::Pin::Namespace.new(closure: Solargraph::Pin::Namespace.new(name: 'Foo'), name: 'Bar')
     expect(pin.path).to eq('Foo::Bar')

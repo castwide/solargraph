@@ -18,8 +18,6 @@ module Solargraph
 
     # @param pins [Array<Solargraph::Pin::Base>]
     def initialize pins: []
-      # @todo Extensions don't work yet
-      # require_extensions
       @source_map_hash = {}
       @cache = Cache.new
       @mutex = Mutex.new
@@ -114,7 +112,6 @@ module Solargraph
         @store = new_store
         @unresolved_requires = yard_map.unresolved_requires
       }
-      # resolve_method_aliases
       resolve_blocks
       self
     end
@@ -653,28 +650,42 @@ module Solargraph
       ).to_set
     end
 
-    # @return [Boolean]
+    # @param pin [Pin::Block]
+    # @return [void]
+    def resolve_block_context pin
+      return unless pin.receiver && !pin.rebound?
+      # This first rebind just sets the block pin's rebound state
+      pin.rebind ComplexType::UNDEFINED
+      chain = Solargraph::Source::NodeChainer.chain(pin.receiver, pin.location.filename)
+      return if skippable_block_receivers.include?(chain.links.last.word)
+      smap = source_map(pin.location.filename)
+      locals = smap.locals_at(pin.location)
+      if chain.links.last.word == 'instance_eval'
+        type = chain.base.infer(self, pin, locals)
+        result = ComplexType.parse(type.namespace).qualify(self, pin.context.namespace)
+        @mutex.synchronize { pin.rebind result }
+      elsif ['class_eval', 'module_eval'].include?(chain.links.last.word)
+        type = chain.base.infer(self, pin, locals)
+        @mutex.synchronize { pin.rebind type }
+      else
+        receiver_pin = if cache.receiver_defined?(pin.path)
+          cache.get_receiver_definition(pin.path)
+        else
+          cache.set_receiver_definition pin.path, chain.define(self, pin, locals).first
+        end
+        return if receiver_pin.nil? || receiver_pin.docstring.nil?
+        ys = receiver_pin.docstring.tag(:yieldself)
+        unless ys.nil? || ys.types.empty?
+          ysct = ComplexType.parse(*ys.types).qualify(self, receiver_pin.context.namespace)
+          @mutex.synchronize { pin.rebind ysct }
+        end
+      end
+    end
+
+    # @return [void]
     def resolve_blocks
       store.block_pins.each do |pin|
-        next unless pin.receiver && !pin.rebound?
-        # This first rebind just sets the block pin's rebound state
-        pin.rebind ComplexType::UNDEFINED
-        chain = Solargraph::Source::NodeChainer.chain(pin.receiver, pin.location.filename)
-        next if skippable_block_receivers.include?(chain.links.last.word)
-        smap = source_map(pin.location.filename)
-        locals = smap.locals_at(pin.location)
-        if chain.links.last.word == 'instance_eval'
-          type = chain.base.infer(self, pin, locals)
-          @mutex.synchronize { pin.rebind type }
-        else
-          receiver_pin = chain.define(self, pin, locals).first
-          next if receiver_pin.nil? || receiver_pin.docstring.nil?
-          ys = receiver_pin.docstring.tag(:yieldself)
-          unless ys.nil? || ys.types.empty?
-            ysct = ComplexType.parse(*ys.types).qualify(self, receiver_pin.context.namespace)
-            @mutex.synchronize { pin.rebind ysct }
-          end
-        end
+        resolve_block_context pin
       end
     end
   end

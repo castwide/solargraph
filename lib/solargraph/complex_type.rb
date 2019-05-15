@@ -2,9 +2,6 @@ module Solargraph
   # A container for type data based on YARD type tags.
   #
   class ComplexType
-    # @todo Figure out how to add the basic type methods here without actually
-    #   including the module. One possibility:
-    #
     # @!parse
     #   include TypeMethods
 
