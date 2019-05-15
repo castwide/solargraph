@@ -387,7 +387,7 @@ module Solargraph
     # @param pin [Solargraph::Pin::Base]
     # @return [Solargraph::Pin::Base]
     def probe pin
-      return pin if pin.proxied? || pin.return_type.defined?
+      return pin if pin.return_type.defined?
       pin.proxy(pin.probe(api_map))
     end
 
