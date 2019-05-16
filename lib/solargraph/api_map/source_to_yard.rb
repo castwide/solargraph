@@ -15,7 +15,7 @@ module Solargraph
         code_object_map.keys
       end
 
-      # @param store [Array<Store>] ApiMap pin store
+      # @param store [ApiMap::Store] ApiMap pin store
       # @return [void]
       def rake_yard store
         code_object_map.clear
@@ -27,19 +27,22 @@ module Solargraph
             code_object_map[pin.path] ||= YARD::CodeObjects::ModuleObject.new(root_code_object, pin.path)
           end
           code_object_map[pin.path].docstring = pin.docstring
-          code_object_map[pin.path].files.push pin.location.filename unless pin.location.nil?
+          code_object_map[pin.path].files.push pin.location.filename unless pin.location.nil? || code_object_map[pin.path].files.include?(pin.location.filename)
         end
         store.namespace_pins.each do |pin|
-          # pin.include_references.each do |ref|
           store.get_includes(pin.path).each do |ref|
             code_object_map[pin.path].instance_mixins.push code_object_map[ref] unless code_object_map[ref].nil? or code_object_map[pin.path].nil?
+          end
+          store.get_extends(pin.path).each do |ref|
+            code_object_map[pin.path].instance_mixins.push code_object_map[ref] unless code_object_map[ref].nil? or code_object_map[pin.path].nil?
+            code_object_map[pin.path].class_mixins.push code_object_map[ref] unless code_object_map[ref].nil? or code_object_map[pin.path].nil?
           end
         end
         store.method_pins.each do |pin|
           code_object_map[pin.path] ||= YARD::CodeObjects::MethodObject.new(code_object_at(pin.namespace), pin.name, pin.scope)
           code_object_map[pin.path].docstring = pin.docstring
           code_object_map[pin.path].visibility = pin.visibility || :public
-          code_object_map[pin.path].files.push pin.location.filename unless pin.location.nil?
+          code_object_map[pin.path].files.push pin.location.filename unless pin.location.nil? || code_object_map[pin.path].files.include?(pin.location.filename)
           code_object_map[pin.path].parameters = pin.parameters.map do |p|
             n = p.match(/^[a-z0-9_]*:?/i)[0]
             v = nil
@@ -53,7 +56,7 @@ module Solargraph
 
       private
 
-      # @return [Hash]
+      # @return [Hash{String => YARD::CodeObjects::Base}]
       def code_object_map
         @code_object_map ||= {}
       end
