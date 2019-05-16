@@ -41,14 +41,14 @@ module Solargraph
 
       # @return [String]
       def detail
-        if @detail.nil?
-          @detail = ''
-          @detail += "(#{parameters.join(', ')}) " unless kind != Pin::METHOD or parameters.empty?
-          @detail += "=#{proxied? ? '~' : '>'} #{return_type}" unless return_type.undefined?
-          @detail.strip!
-        end
-        return nil if @detail.empty?
-        @detail
+        # This property is not cached in an instance variable because it can
+        # change when pins get proxied.
+        detail = ''
+        detail += "(#{parameters.join(', ')}) " unless kind != Pin::METHOD or parameters.empty?
+        detail += "=#{proxied? ? '~' : '>'} #{return_type}" unless return_type.undefined?
+        detail.strip!
+        return nil if detail.empty?
+        detail
       end
 
       # Get a markdown-flavored link to a documentation page.
