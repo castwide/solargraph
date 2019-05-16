@@ -384,6 +384,13 @@ module Solargraph
       result
     end
 
+    # @param pin [Solargraph::Pin::Base]
+    # @return [Solargraph::Pin::Base]
+    def probe pin
+      return pin if pin.return_type.defined?
+      pin.proxy(pin.probe(api_map))
+    end
+
     private
 
     # @return [Mutex]

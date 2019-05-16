@@ -9,7 +9,7 @@ module Solargraph::LanguageServer::Message::TextDocument
       contents = []
       suggestions = host.definitions_at(params['textDocument']['uri'], line, col)
       last_link = nil
-      suggestions.each do |pin|
+      suggestions.map { |pin| host.probe(pin) }.each do |pin|
         parts = []
         this_link = pin.link_documentation
         if !this_link.nil? and this_link != last_link

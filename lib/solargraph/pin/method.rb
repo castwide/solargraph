@@ -51,7 +51,7 @@ module Solargraph
             @documentation += lines.join("\n")
           end
         end
-        @documentation
+        @documentation.to_s
       end
 
       def nearly? other
@@ -93,7 +93,12 @@ module Solargraph
       # @return [ComplexType]
       def infer_from_return_nodes api_map
         result = []
+        has_nil = false
         returns_from(method_body_node).each do |n|
+          if n.nil? || n.type == :nil
+            has_nil = true
+            next
+          end
           next if n.loc.nil?
           clip = api_map.clip_at(
             location.filename,
@@ -103,6 +108,7 @@ module Solargraph
           type = chain.infer(api_map, self, clip.locals)
           result.push type unless type.undefined?
         end
+        result.push ComplexType::NIL if has_nil
         return ComplexType::UNDEFINED if result.empty?
         ComplexType.try_parse(*result.map(&:tag))
       end

@@ -595,6 +595,16 @@ module Solargraph
         libraries.each(&:catalog)
       end
 
+      # @param pin [Solargraph::Pin::Base]
+      # @return [Solargraph::Pin::Base]
+      def probe pin
+        return pin if pin.filename.nil?
+        library = library_for(file_to_uri(pin.filename))
+        library.probe(pin)
+      rescue FileNotFoundError
+        pin
+      end
+
       private
 
       # @return [Diagnoser]
