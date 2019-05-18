@@ -8,12 +8,12 @@ module Solargraph
       module Adapter
         def opening
           @host = Solargraph::LanguageServer::Host.new
+          @host.add_observer self
           @host.start
           @data_reader = Solargraph::LanguageServer::Transport::DataReader.new
           @data_reader.set_message_handler do |message|
             process message
           end
-          start_timer
         end
 
         def closing
@@ -28,6 +28,15 @@ module Solargraph
         #   the Backport API
         alias sending receiving
 
+        def update
+          if @host.stopped?
+            shutdown
+          else
+            tmp = @host.flush
+            write tmp unless tmp.empty?
+          end
+        end
+
         private
 
         # @param request [String]
@@ -35,20 +44,8 @@ module Solargraph
         def process request
           message = @host.receive(request)
           message.send_response
-          tmp = @host.flush
-          write tmp unless tmp.empty?
-        end
-
-        def start_timer
-          Backport.prepare_interval 0.1 do |server|
-            if @host.stopped?
-              server.stop
-              shutdown
-            else
-              tmp = @host.flush
-              write tmp unless tmp.empty?
-            end
-          end
+          # tmp = @host.flush
+          # write tmp unless tmp.empty?
         end
 
         def shutdown
