@@ -14,7 +14,7 @@ module Solargraph
       # @return [Array<Pin::Base>]
       def define
         return [] if cursor.comment? || cursor.chain.literal?
-        result = cursor.chain.define(api_map, context_pin, locals)
+        result = cursor.chain.define(api_map, block, locals)
         result.concat((source_map.pins + source_map.locals).select{ |p| p.name == cursor.word && p.location.range.contain?(cursor.position) }) if result.empty?
         result
       end
@@ -118,7 +118,7 @@ module Solargraph
         return [] if receiver_pin.nil?
         result = []
         ys = receiver_pin.docstring.tag(:yieldself)
-        unless ys.nil? || ys.types.empty?
+        unless ys.nil? || ys.types.nil? || ys.types.empty?
           ysct = ComplexType.try_parse(*ys.types).qualify(api_map, receiver_pin.context.namespace)
           result.concat api_map.get_complex_type_methods(ysct, ysct.namespace, true)
         end
