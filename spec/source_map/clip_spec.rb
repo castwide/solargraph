@@ -588,4 +588,19 @@ describe Solargraph::SourceMap::Clip do
     names = clip.complete.pins.map(&:name)
     expect(names).to include('@bar')
   end
+
+  it 'infers variable types from multiple return nodes' do
+    source = Solargraph::Source.load_string(%(
+      x = if foo
+        'one'
+      else
+        [two]
+      end
+      x
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new
+    api_map.map source
+    clip = api_map.clip_at('test.rb', [6, 7])
+    expect(clip.infer.to_s).to eq('String, Array')
+  end
 end
