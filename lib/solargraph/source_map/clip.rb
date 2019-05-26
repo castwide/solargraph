@@ -51,7 +51,7 @@ module Solargraph
             end
             result.concat locals
             result.concat api_map.get_constants('', context_pin.context.namespace)
-            result.concat api_map.get_methods(context_pin.full_context.namespace, scope: context_pin.context.scope, visibility: [:public, :private, :protected])
+            result.concat api_map.get_methods(block.binder.namespace, scope: block.binder.scope, visibility: [:public, :private, :protected])
             result.concat api_map.get_methods('Kernel')
             result.concat ApiMap.keywords
             result.concat yielded_self_pins

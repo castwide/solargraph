@@ -660,11 +660,7 @@ module Solargraph
       return if skippable_block_receivers.include?(chain.links.last.word)
       smap = source_map(pin.location.filename)
       locals = smap.locals_at(pin.location)
-      if chain.links.last.word == 'instance_eval'
-        type = chain.base.infer(self, pin, locals)
-        result = ComplexType.parse(type.namespace).qualify(self, pin.context.namespace)
-        @mutex.synchronize { pin.rebind result }
-      elsif ['class_eval', 'module_eval'].include?(chain.links.last.word)
+      if ['instance_eval', 'instance_exec', 'class_eval', 'class_exec', 'module_eval', 'module_exec'].include?(chain.links.last.word)
         type = chain.base.infer(self, pin, locals)
         @mutex.synchronize { pin.rebind type }
       else
@@ -675,7 +671,7 @@ module Solargraph
         end
         return if receiver_pin.nil? || receiver_pin.docstring.nil?
         ys = receiver_pin.docstring.tag(:yieldself)
-        unless ys.nil? || ys.types.empty?
+        unless ys.nil? || ys.types.nil? || ys.types.empty?
           ysct = ComplexType.parse(*ys.types).qualify(self, receiver_pin.context.namespace)
           @mutex.synchronize { pin.rebind ysct }
         end

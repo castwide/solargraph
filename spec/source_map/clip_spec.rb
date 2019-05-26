@@ -603,4 +603,21 @@ describe Solargraph::SourceMap::Clip do
     clip = api_map.clip_at('test.rb', [6, 7])
     expect(clip.infer.to_s).to eq('String, Array')
   end
+
+  it 'detects scoped methods in rebound blocks' do
+    source = Solargraph::Source.load_string(%(
+      class MyClass
+        def my_method
+        end
+      end
+      object = MyClass.new
+      object.instance_eval do
+        m
+      end
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new
+    api_map.map source
+    clip = api_map.clip_at('test.rb', [7, 9])
+    expect(clip.complete.pins.map(&:path)).to include('MyClass#my_method')
+  end
 end
