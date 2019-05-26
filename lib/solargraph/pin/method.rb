@@ -11,7 +11,6 @@ module Solargraph
 
       def initialize visibility: :public, args: [], node: nil, **splat
         super(splat)
-        @scope = scope
         @visibility = visibility
         @parameters = args
         @node = node
