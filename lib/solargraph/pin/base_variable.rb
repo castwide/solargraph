@@ -39,10 +39,16 @@ module Solargraph
 
       def probe api_map
         return ComplexType::UNDEFINED if @assignment.nil?
-        chain = Source::NodeChainer.chain(@assignment, filename)
-        clip = api_map.clip_at(location.filename, location.range.start)
-        locals = clip.locals - [self]
-        chain.infer(api_map, closure, locals)
+        types = []
+        returns_from(@assignment).each do |node|
+          chain = Source::NodeChainer.chain(node, filename)
+          clip = api_map.clip_at(location.filename, location.range.start)
+          locals = clip.locals - [self]
+          result = chain.infer(api_map, closure, locals)
+          types.push result unless result.undefined?
+        end
+        return ComplexType::UNDEFINED if types.empty?
+        ComplexType.try_parse(*types.map(&:tag))
       end
 
       def == other

@@ -588,4 +588,61 @@ describe Solargraph::SourceMap::Clip do
     names = clip.complete.pins.map(&:name)
     expect(names).to include('@bar')
   end
+
+  it 'infers variable types from multiple return nodes' do
+    source = Solargraph::Source.load_string(%(
+      x = if foo
+        'one'
+      else
+        [two]
+      end
+      x
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new
+    api_map.map source
+    clip = api_map.clip_at('test.rb', [6, 7])
+    expect(clip.infer.to_s).to eq('String, Array')
+  end
+
+  it 'detects scoped methods in rebound blocks' do
+    source = Solargraph::Source.load_string(%(
+      class MyClass
+        def my_method
+        end
+      end
+      object = MyClass.new
+      object.instance_eval do
+        m
+      end
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new
+    api_map.map source
+    clip = api_map.clip_at('test.rb', [7, 9])
+    expect(clip.complete.pins.map(&:path)).to include('MyClass#my_method')
+  end
+
+  it 'infers types from scoped methods in rebound blocks' do
+    source = Solargraph::Source.load_string(%(
+      class InnerClass
+        def inner_method
+          @inner_method = ''
+        end
+      end
+
+      class MyClass
+        # @yieldself [InnerClass]
+        def my_method
+          @my_method ||= 'mines'
+        end
+      end
+
+      MyClass.new.my_method do
+        inner_method
+      end
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new
+    api_map.map source
+    clip = api_map.clip_at('test.rb', [15, 20])
+    expect(clip.infer.tag).to eq('String')
+  end
 end

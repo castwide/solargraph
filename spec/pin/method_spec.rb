@@ -141,4 +141,9 @@ describe Solargraph::Pin::Method do
     type = pin.typify(api_map)
     expect(type.tag).to eq('Boolean')
   end
+
+  it 'strips prefixes from parameter names' do
+    pin = Solargraph::Pin::Method.new(args: ['foo', '*bar', '&block'])
+    expect(pin.parameter_names).to eq(['foo', 'bar', 'block'])
+  end
 end

@@ -16,7 +16,7 @@ module Solargraph
         def resolve api_map, name_pin, locals
           found = locals.select{|p| p.name == word}
           return inferred_pins(found, api_map, name_pin.context, locals) unless found.empty?
-          pins = api_map.get_method_stack(name_pin.context.namespace, word, scope: name_pin.context.scope)
+          pins = api_map.get_method_stack(name_pin.binder.namespace, word, scope: name_pin.binder.scope)
           return [] if pins.empty?
           pins.unshift virtual_new_pin(pins.first, name_pin.context) if external_constructor?(pins.first, name_pin.context)
           inferred_pins(pins, api_map, name_pin.context, locals)
