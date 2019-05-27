@@ -122,10 +122,15 @@ module Solargraph
         def download version
           FileUtils.mkdir_p cache_dir
           uri = URI.parse("#{SOURCE}/#{version}.tar.gz")
+          # @type [Net::HTTPResponse]
           response = Net::HTTP.get_response(uri)
-          zipfile = File.join(cache_dir, "#{version}.tar.gz")
-          File.binwrite zipfile, response.body
-          install_archive zipfile
+          if response.code == '404'
+            raise ArgumentError, "Version #{version} is not available from #{SOURCE}"
+          else
+            zipfile = File.join(cache_dir, "#{version}.tar.gz")
+            File.binwrite zipfile, response.body
+            install_archive zipfile
+          end
         end
 
         # Reset the core documentation cache to the minimum requirement.

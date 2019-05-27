@@ -77,6 +77,10 @@ module Solargraph
       ver = version || Solargraph::YardMap::CoreDocs.best_download
       puts "Downloading docs for #{ver}..."
       Solargraph::YardMap::CoreDocs.download ver
+    rescue ArgumentError => e
+      STDERR.puts "ERROR: #{e.message}"
+      STDERR.puts "Run `solargraph available-cores` for a list."
+      exit 1
     end
 
     desc 'list-cores', 'List the local documentation versions'

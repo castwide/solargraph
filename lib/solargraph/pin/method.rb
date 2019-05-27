@@ -11,7 +11,6 @@ module Solargraph
 
       def initialize visibility: :public, args: [], node: nil, **splat
         super(splat)
-        @scope = scope
         @visibility = visibility
         @parameters = args
         @node = node
@@ -19,7 +18,7 @@ module Solargraph
 
       # @return [Array<String>]
       def parameter_names
-        @parameter_names ||= parameters.map{|p| p.split(/[ =:]/).first}
+        @parameter_names ||= parameters.map{|p| p.split(/[ =:]/).first.gsub(/^(\*{1,2}|&)/, '')}
       end
 
       def kind
