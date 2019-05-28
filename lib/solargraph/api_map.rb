@@ -112,7 +112,6 @@ module Solargraph
         @store = new_store
         @unresolved_requires = yard_map.unresolved_requires
       }
-      resolve_blocks
       self
     end
 
@@ -639,50 +638,6 @@ module Solargraph
         visibility: origin.visibility,
         args: origin.parameters
       )
-    end
-
-    def skippable_block_receivers
-      @skippable_block_receivers ||= (
-        get_methods('Array', deep: false).map(&:name) +
-        get_methods('Enumerable', deep: false).map(&:name) +
-        get_methods('Hash', deep: false).map(&:name) +
-        ['new']
-      ).to_set
-    end
-
-    # @param pin [Pin::Block]
-    # @return [void]
-    def resolve_block_context pin
-      return unless pin.receiver && !pin.rebound?
-      # This first rebind just sets the block pin's rebound state
-      pin.rebind ComplexType::UNDEFINED
-      chain = Solargraph::Source::NodeChainer.chain(pin.receiver, pin.location.filename)
-      return if skippable_block_receivers.include?(chain.links.last.word)
-      smap = source_map(pin.location.filename)
-      locals = smap.locals_at(pin.location)
-      if ['instance_eval', 'instance_exec', 'class_eval', 'class_exec', 'module_eval', 'module_exec'].include?(chain.links.last.word)
-        type = chain.base.infer(self, pin, locals)
-        @mutex.synchronize { pin.rebind type }
-      else
-        receiver_pin = if cache.receiver_defined?(pin.path)
-          cache.get_receiver_definition(pin.path)
-        else
-          cache.set_receiver_definition pin.path, chain.define(self, pin, locals).first
-        end
-        return if receiver_pin.nil? || receiver_pin.docstring.nil?
-        ys = receiver_pin.docstring.tag(:yieldself)
-        unless ys.nil? || ys.types.nil? || ys.types.empty?
-          ysct = ComplexType.parse(*ys.types).qualify(self, receiver_pin.context.namespace)
-          @mutex.synchronize { pin.rebind ysct }
-        end
-      end
-    end
-
-    # @return [void]
-    def resolve_blocks
-      store.block_pins.each do |pin|
-        resolve_block_context pin
-      end
     end
   end
 end
