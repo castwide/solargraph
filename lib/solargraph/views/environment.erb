@@ -36,7 +36,7 @@
       Parser Target Version: <%= Solargraph::Source.parser.version %>
     </li>
     <li>
-      Using Bundler: <%= ENV.key?('BUNDLE_GEMFILE') %>
+      Using Bundler: <%= config['useBundler'] %>
     </li>
   </ul>
   <h2>
