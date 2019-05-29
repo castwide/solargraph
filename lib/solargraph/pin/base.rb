@@ -7,6 +7,7 @@ module Solargraph
       include Conversions
       include Documenting
 
+      # @return [YARD::CodeObjects::Base]
       attr_reader :code_object
 
       # @return [Solargraph::Location]

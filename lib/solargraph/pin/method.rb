@@ -9,9 +9,8 @@ module Solargraph
       # @return [Parser::AST::Node]
       attr_reader :node
 
-      def initialize visibility: :public, args: [], node: nil, **splat
+      def initialize args: [], node: nil, **splat
         super(splat)
-        @visibility = visibility
         @parameters = args
         @node = node
       end

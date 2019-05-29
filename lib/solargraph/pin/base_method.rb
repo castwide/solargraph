@@ -6,6 +6,11 @@ module Solargraph
       # @return [Symbol] :public, :private, or :protected
       attr_reader :visibility
 
+      def initialize visibility: :public, **splat
+        super(splat)
+        @visibility = visibility
+      end
+
       def return_type
         @return_type ||= generate_complex_type
       end

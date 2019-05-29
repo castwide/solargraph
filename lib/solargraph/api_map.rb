@@ -34,7 +34,6 @@ module Solargraph
         @store = Store.new(pins + YardMap.new.pins)
         @unresolved_requires = []
       }
-      # resolve_method_aliases
       self
     end
 
@@ -267,7 +266,7 @@ module Solargraph
     # @param scope [Symbol] :class or :instance
     # @param visibility [Array<Symbol>] :public, :protected, and/or :private
     # @param deep [Boolean] True to include superclasses, mixins, etc.
-    # @return [Array<Solargraph::Pin::Base>]
+    # @return [Array<Solargraph::Pin::BaseMethod>]
     def get_methods fqns, scope: :instance, visibility: [:public], deep: true
       cached = cache.get_methods(fqns, scope, visibility, deep)
       return cached.clone unless cached.nil?
@@ -285,7 +284,7 @@ module Solargraph
       else
         result.concat inner_get_methods(fqns, scope, visibility, deep, skip)
       end
-      resolved = resolve_method_aliases(result)
+      resolved = resolve_method_aliases(result).select { |pin| visibility.include?(pin.visibility) }
       cache.set_methods(fqns, scope, visibility, deep, resolved)
       resolved
     end

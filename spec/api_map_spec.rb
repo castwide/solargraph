@@ -601,4 +601,19 @@ describe Solargraph::ApiMap do
     paths = api_map.get_methods('Foo::Bar').map(&:path)
     expect(paths).to include('Foo::Bar#baz')
   end
+
+  it 'sets method alias visibility' do
+    source = Solargraph::Source.load_string(%(
+      class Foo
+        private
+        def bar; end
+        alias baz bar
+      end
+    ))
+    api_map = Solargraph::ApiMap.new
+    api_map.map source
+    pins = api_map.get_methods('Foo', visibility: [:public, :private])
+    baz = pins.select { |pin| pin.name == 'baz' }.first
+    expect(baz.visibility).to be(:private)
+  end
 end
