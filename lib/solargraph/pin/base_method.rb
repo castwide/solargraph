@@ -22,6 +22,14 @@ module Solargraph
         ComplexType::UNDEFINED
       end
 
+      def parameters
+        []
+      end
+
+      def parameter_names
+        []
+      end
+
       private
 
       # @return [ComplexType]

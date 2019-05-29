@@ -26,16 +26,6 @@ module Solargraph
       def path
         @path ||= namespace + (scope == :instance ? '#' : '.') + name
       end
-
-      def parameters
-        # Since attributes are generally equivalent to methods, treat
-        # them as methods without parameters
-        []
-      end
-
-      def parameter_names
-        []
-      end
     end
   end
 end
