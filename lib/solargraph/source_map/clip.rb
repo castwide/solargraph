@@ -117,11 +117,6 @@ module Solargraph
         receiver_pin = chain.define(api_map, context_pin, locals).first
         return [] if receiver_pin.nil?
         result = []
-        ys = receiver_pin.docstring.tag(:yieldself)
-        unless ys.nil? || ys.types.nil? || ys.types.empty?
-          ysct = ComplexType.try_parse(*ys.types).qualify(api_map, receiver_pin.context.namespace)
-          result.concat api_map.get_complex_type_methods(ysct, ysct.namespace, true)
-        end
         ys = receiver_pin.docstring.tag(:yieldpublic)
         unless ys.nil? || ys.types.empty?
           ysct = ComplexType.try_parse(*ys.types).qualify(api_map, receiver_pin.context.namespace)
