@@ -21,6 +21,10 @@ module Solargraph
         code_object_map.clear
         store.namespace_pins.each do |pin|
           next if pin.path.nil? or pin.path.empty?
+          if pin.code_object
+            code_object_map[pin.path] ||= pin.code_object
+            next
+          end
           if pin.type == :class
             code_object_map[pin.path] ||= YARD::CodeObjects::ClassObject.new(root_code_object, pin.path)
           else

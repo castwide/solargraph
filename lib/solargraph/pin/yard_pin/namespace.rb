@@ -5,7 +5,7 @@ module Solargraph
         include YardMixin
 
         def initialize code_object, location
-          # super(location, code_object.namespace.to_s, code_object.name.to_s, comments_from(code_object), namespace_type(code_object), code_object.visibility)
+          @code_object = code_object
           closure = Solargraph::Pin::Namespace.new(
             name: code_object.namespace.to_s,
             closure: Pin::ROOT_PIN
