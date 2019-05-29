@@ -645,4 +645,25 @@ describe Solargraph::SourceMap::Clip do
     clip = api_map.clip_at('test.rb', [15, 20])
     expect(clip.infer.tag).to eq('String')
   end
+
+  it 'finds instance methods inside private classes' do
+    source = Solargraph::Source.load_string(%(
+      module First
+        module Second
+          class Sub
+            def method1; end
+            def method2
+              meth
+            end
+          end
+          private_constant :Sub
+        end
+      end
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new
+    api_map.map source
+    clip = api_map.clip_at('test.rb', [6, 18])
+    expect(clip.complete.pins.map(&:path)).to include('First::Second::Sub#method1')
+    expect(clip.complete.pins.map(&:path)).to include('First::Second::Sub#method2')
+  end
 end

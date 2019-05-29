@@ -171,30 +171,8 @@ module Solargraph
           if node.children[2] && (node.children[2].type == :sym || node.children[2].type == :str)
             cn = node.children[2].children[0].to_s
             ref = pins.select{|p| [Solargraph::Pin::Namespace, Solargraph::Pin::Constant].include?(p.class) && p.namespace == region.closure.full_context.namespace && p.name == cn}.first
-            unless ref.nil?
-              pins.delete ref
-              # Might be either a namespace or constant
-              if ref.kind == Pin::CONSTANT
-                pins.push ref.class.new(
-                  location: ref.location,
-                  closure: ref.closure,
-                  name: ref.name,
-                  comments: ref.comments,
-                  visibility: :private
-                )
-                # @todo Smelly instance variable access
-                pins.last.instance_variable_set(:@return_type, ref.return_type)
-              else
-                pins.push ref.class.new(
-                  location: ref.location,
-                  closure: ref.closure,
-                  name: ref.name,
-                  comments: ref.comments,
-                  type: ref.type,
-                  visibility: :private
-                )
-              end
-            end
+            # HACK: Smelly instance variable access
+            ref.instance_variable_set(:@visibility, :private) unless ref.nil?
           end
         end
 
