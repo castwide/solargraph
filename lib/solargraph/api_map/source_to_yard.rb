@@ -21,6 +21,10 @@ module Solargraph
         code_object_map.clear
         store.namespace_pins.each do |pin|
           next if pin.path.nil? or pin.path.empty?
+          if pin.code_object
+            code_object_map[pin.path] ||= pin.code_object
+            next
+          end
           if pin.type == :class
             code_object_map[pin.path] ||= YARD::CodeObjects::ClassObject.new(root_code_object, pin.path)
           else
@@ -28,8 +32,6 @@ module Solargraph
           end
           code_object_map[pin.path].docstring = pin.docstring
           code_object_map[pin.path].files.push pin.location.filename unless pin.location.nil? || code_object_map[pin.path].files.include?(pin.location.filename)
-        end
-        store.namespace_pins.each do |pin|
           store.get_includes(pin.path).each do |ref|
             code_object_map[pin.path].instance_mixins.push code_object_map[ref] unless code_object_map[ref].nil? or code_object_map[pin.path].nil?
           end
@@ -39,6 +41,10 @@ module Solargraph
           end
         end
         store.method_pins.each do |pin|
+          if pin.code_object
+            code_object_map[pin.path] ||= pin.code_object
+            next
+          end
           code_object_map[pin.path] ||= YARD::CodeObjects::MethodObject.new(code_object_at(pin.namespace), pin.name, pin.scope)
           code_object_map[pin.path].docstring = pin.docstring
           code_object_map[pin.path].visibility = pin.visibility || :public
