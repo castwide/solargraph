@@ -27,7 +27,7 @@ module Solargraph
               process_include
             elsif node.children[1] == :extend
               process_extend
-            elsif node.children[1] == :require 
+            elsif node.children[1] == :require
               process_require
             elsif node.children[1] == :private_constant
               process_private_constant
@@ -43,6 +43,7 @@ module Solargraph
 
         private
 
+        # @return [void]
         def process_attribute
           node.children[2..-1].each do |a|
             loc = get_node_location(node)
@@ -73,6 +74,7 @@ module Solargraph
           end
         end
 
+        # @return [void]
         def process_include
           if node.children[2].kind_of?(AST::Node) && node.children[2].type == :const
             cp = region.closure
@@ -86,6 +88,7 @@ module Solargraph
           end
         end
 
+        # @return [void]
         def process_extend
           node.children[2..-1].each do |i|
             loc = get_node_location(node)
@@ -105,12 +108,14 @@ module Solargraph
           end
         end
 
+        # @return [void]
         def process_require
           if node.children[2].kind_of?(AST::Node) && node.children[2].type == :str
             pins.push Pin::Reference::Require.new(get_node_location(node), node.children[2].children[0].to_s)
           end
         end
 
+        # @return [void]
         def process_module_function
           if node.children[2].nil?
             # @todo Smelly instance variable access
@@ -167,6 +172,7 @@ module Solargraph
           end
         end
 
+        # @return [void]
         def process_private_constant
           if node.children[2] && (node.children[2].type == :sym || node.children[2].type == :str)
             cn = node.children[2].children[0].to_s
@@ -176,6 +182,7 @@ module Solargraph
           end
         end
 
+        # @return [void]
         def process_alias_method
           loc = get_node_location(node)
           pins.push Solargraph::Pin::MethodAlias.new(
@@ -187,13 +194,12 @@ module Solargraph
           )
         end
 
+        # @return [Boolean]
         def process_private_class_method
           if node.children[2].type == :sym || node.children[2].type == :str
             ref = pins.select{|p| [Solargraph::Pin::Method, Solargraph::Pin::Attribute].include?(p.class) && p.namespace == region.closure.full_context.namespace && p.name == node.children[2].children[0].to_s}.first
-            unless ref.nil?
-              # HACK: Smelly instance variable access
-              ref.instance_variable_set(:@visibility, :private)
-            end
+            # HACK: Smelly instance variable access
+            ref.instance_variable_set(:@visibility, :private) unless ref.nil?
             false
           else
             process_children region.update(scope: :class, visibility: :private)
