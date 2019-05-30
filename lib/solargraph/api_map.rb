@@ -444,6 +444,16 @@ module Solargraph
       source_map_hash[filename]
     end
 
+    # @param location [Location]
+    def require_reference_at location
+      map = source_map(location.filename)
+      pin = map.requires.select { |pin| pin.location.range.contain?(location.range.start) }.first
+      return nil if pin.nil?
+      pin # @todo Get a location
+    rescue FileNotFoundError
+      nil
+    end
+
     private
 
     # @return [YardMap]
