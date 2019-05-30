@@ -26,6 +26,10 @@ module Solargraph::LanguageServer::Message::TextDocument
           value: contents.join("\n\n")
         }
       )
+    rescue FileNotFoundError => e
+      Logging.logger.warn "[#{e.class}] #{e.message}"
+      Logging.logger.warn e.backtrace
+      set_result empty_result
     end
   end
 end
