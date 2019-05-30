@@ -34,6 +34,10 @@ module Solargraph
               Logging.logger.info "Completion ignored invalid offset: #{params['textDocument']['uri']}, line #{line}, character #{col}"
               set_result empty_result
             end
+          rescue FileNotFoundError => e
+            Logging.logger.warn "[#{e.class}] #{e.message}"
+            Logging.logger.warn e.backtrace
+            set_result empty_result
           end
 
           # @param incomplete [Boolean]
