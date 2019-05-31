@@ -152,6 +152,19 @@ describe Protocol do
     expect(response['result']['documentation']['value']).to include('bar method')
   end
 
+  it 'suppresses FileNotFoundError in textDocument/completion' do
+    @protocol.request 'textDocument/completion', {
+      'textDocument' => {
+        'uri' => 'file:///notfile.rb'
+      },
+      'position' => {
+        'line' => 1,
+        'character' => 1
+      }
+    }
+    expect(@protocol.response['error']).to be_nil
+  end
+
   it "documents YARD pins" do
     @protocol.request 'textDocument/completion', {
       'textDocument' => {
@@ -233,6 +246,19 @@ describe Protocol do
     expect(response['error']).to be_nil
     # Given this request hovers over `Foo`, the result should not be empty
     expect(response['result']['contents']).not_to be_empty
+  end
+
+  it 'suppresses FileNotFoundError in textDocument/hover' do
+    @protocol.request 'textDocument/hover', {
+      'textDocument' => {
+        'uri' => 'file:///notfile.rb'
+      },
+      'position' => {
+        'line' => 6,
+        'character' => 17
+      }
+    }
+    expect(@protocol.response['error']).to be_nil
   end
 
   it "handles textDocument/signatureHelp" do
