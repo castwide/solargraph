@@ -62,7 +62,7 @@ module Solargraph
 
       # @return [Array<Pin::Base>]
       def signify
-        return [] unless cursor.argument? && source_map.code[Position.to_offset(source_map.code, cursor.position) - 1] != "\n"
+        return [] unless cursor.argument?
         chain = Source::NodeChainer.chain(cursor.recipient_node, cursor.filename)
         chain.define(api_map, context_pin, locals).select { |pin| pin.is_a?(Pin::Method) }
       end

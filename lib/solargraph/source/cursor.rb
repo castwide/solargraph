@@ -138,7 +138,7 @@ module Solargraph
 
       # @return [Parser::AST::Node, nil]
       def recipient_node
-        return nil if source.code[offset-1] == ')'
+        return nil if source.code[offset-1] == ')' || source.code[0..offset] =~ /[^,][ \t]*?\n[ \t]*?\Z/
         return nil if first_char_offset < offset && source.code[first_char_offset..offset-1] =~ /\)[\s]*\Z/
         pos = Position.from_offset(source.code, first_char_offset)
         tree = source.tree_at(pos.line, pos.character)
