@@ -24,10 +24,13 @@ module Solargraph::LanguageServer::Message::TextDocument
     def require_location
       # @todo Terrible hack
       lib = host.library_for(params['textDocument']['uri'])
-      loc = Solargraph::Location.new(uri_to_file(params['textDocument']['uri']), Solargraph::Range.from_to(@line, @column, @line, @column))
-      pin = lib.locate_ref(loc)
-      return nil if pin.nil?
-      STDERR.puts "It's #{pin.name}"
+      rloc = Solargraph::Location.new(uri_to_file(params['textDocument']['uri']), Solargraph::Range.from_to(@line, @column, @line, @column))
+      dloc = lib.locate_ref(rloc)
+      return nil if dloc.nil?
+      {
+        uri: file_to_uri(dloc.filename),
+        range: dloc.range.to_hash
+      }
     end
   end
 end

@@ -100,6 +100,19 @@ module Solargraph
       pins.select{ |p| p.path == path }.first
     end
 
+    def require_reference path
+      # @type [Gem::Specification]
+      spec = Gem::Specification.find_by_path(path) || Gem::Specification.find_by_name(path.split('/').first)
+      spec.full_require_paths.each do |rp|
+        file = File.join(rp, "#{path}.rb")
+        next unless File.file?(file)
+        return Solargraph::Location.new(file, Solargraph::Range.from_to(0, 0, 0, 0))
+      end
+      nil
+    rescue Gem::LoadError
+      nil
+    end
+
     private
 
     # @return [YardMap::Cache]

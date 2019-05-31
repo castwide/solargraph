@@ -90,12 +90,14 @@ module Solargraph
         reqs.concat map.requires.map(&:name)
       end
       reqs.concat bundle.workspace.config.required
+      local_path_hash.clear
       unless bundle.workspace.require_paths.empty?
         reqs.delete_if do |r|
           result = false
           bundle.workspace.require_paths.each do |l|
             pn = Pathname.new(bundle.workspace.directory).join(l, "#{r}.rb")
             if new_map_hash.keys.include?(pn.to_s)
+              local_path_hash[r] = pn.to_s
               result = true
               break
             end
@@ -112,6 +114,10 @@ module Solargraph
         @unresolved_requires = yard_map.unresolved_requires
       }
       self
+    end
+
+    def local_path_hash
+      @local_paths ||= {}
     end
 
     # @param filename [String]
@@ -449,7 +455,10 @@ module Solargraph
       map = source_map(location.filename)
       pin = map.requires.select { |pin| pin.location.range.contain?(location.range.start) }.first
       return nil if pin.nil?
-      pin # @todo Get a location
+      if local_path_hash.key?(pin.name)
+        return Location.new(local_path_hash[pin.name], Solargraph::Range.from_to(0, 0, 0, 0))
+      end
+      yard_map.require_reference(pin.name)
     rescue FileNotFoundError
       nil
     end
