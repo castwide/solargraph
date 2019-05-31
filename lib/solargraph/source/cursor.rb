@@ -55,6 +55,7 @@ module Solargraph
         end
       end
 
+      # @return [Boolean]
       def start_of_constant?
         source.code[offset-2, 2] == '::'
       end
@@ -121,6 +122,7 @@ module Solargraph
       end
       alias receiver recipient
 
+      # @return [Position]
       def node_position
         @node_position ||= begin
           if start_of_word.empty?
@@ -159,6 +161,7 @@ module Solargraph
         @offset ||= Position.to_offset(source.code, position)
       end
 
+      # @return [Integer]
       def first_char_offset
         @first_char_position ||= begin
           if source.code[offset - 1] == ')'

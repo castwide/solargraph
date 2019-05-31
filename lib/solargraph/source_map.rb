@@ -104,6 +104,8 @@ module Solargraph
       source.references name
     end
 
+    # @param location [Location]
+    # @return [Array<Pin::LocalVariable>]
     def locals_at(location)
       return [] if location.filename != filename
       locals.select { |pin| pin.visible_at?(location) }
@@ -137,7 +139,7 @@ module Solargraph
 
     # @param line [Integer]
     # @param character [Integer]
-    # @param *kinds [Array<Symbol>]
+    # @param kinds [Array<Symbol>]
     # @return [Pin::Base]
     def _locate_pin line, character, *kinds
       position = Position.new(line, character)

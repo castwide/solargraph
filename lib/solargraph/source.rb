@@ -361,6 +361,7 @@ module Solargraph
       @stringified_comments ||= {}
     end
 
+    # @return [Array<Parser::AST::Node>]
     def string_nodes
       @string_nodes ||= string_nodes_in(@node)
     end
@@ -402,6 +403,8 @@ module Solargraph
       result
     end
 
+    # @param n [Parser::AST::Node]
+    # @return [Array<Parser::AST::Node>]
     def string_nodes_in n
       result = []
       if n.is_a?(Parser::AST::Node)
@@ -414,6 +417,10 @@ module Solargraph
       result
     end
 
+    # @param node [Parser::AST::Node]
+    # @param position [Position]
+    # @param stack [Array<Parser::AST::Node>]
+    # @return [void]
     def inner_tree_at node, position, stack
       return if node.nil?
       here = Range.from_to(node.loc.expression.line, node.loc.expression.column, node.loc.expression.last_line, node.loc.expression.last_column)
