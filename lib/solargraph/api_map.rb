@@ -284,7 +284,7 @@ module Solargraph
       else
         result.concat inner_get_methods(fqns, scope, visibility, deep, skip)
       end
-      resolved = resolve_method_aliases(result).select { |pin| visibility.include?(pin.visibility) }
+      resolved = resolve_method_aliases(result, visibility)
       cache.set_methods(fqns, scope, visibility, deep, resolved)
       resolved
     end
@@ -616,8 +616,14 @@ module Solargraph
 
     # @param pins [Array<Pin::Base>]
     # @return [Array<Pin::Base>]
-    def resolve_method_aliases pins
-      pins.map { |pin| resolve_method_alias(pin) }
+    def resolve_method_aliases pins, visibility = [:public, :private, :protected]
+      result = []
+      pins.each do |pin|
+        resolved = resolve_method_alias(pin)
+        next unless visibility.include?(resolved.visibility)
+        result.push resolved
+      end
+      result
     end
 
     # @param pin [Pin::MethodAlias, Pin::Base]
