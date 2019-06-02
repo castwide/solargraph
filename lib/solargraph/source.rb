@@ -191,6 +191,7 @@ module Solargraph
     # @param position [Position]
     # @return [Boolean]
     def string_at? position
+      return false if Position.to_offset(code, position) >= code.length
       string_nodes.each do |node|
         range = Range.from_node(node)
         break if range.ending.line > position.line
