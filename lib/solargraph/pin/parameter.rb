@@ -4,16 +4,7 @@ module Solargraph
       def return_type
         if @return_type.nil?
           @return_type = ComplexType.new
-          found = nil
-          params = closure.docstring.tags(:param)
-          params.each do |p|
-            next unless p.name == name
-            found = p
-            break
-          end
-          if found.nil? and !index.nil?
-            found = params[index] if params[index] && (params[index].name.nil? || params[index].name.empty?)
-          end
+          found = param_tag
           @return_type = ComplexType.try_parse(*found.types) unless found.nil? or found.types.nil?
         end
         super
@@ -40,7 +31,28 @@ module Solargraph
         true
       end
 
+      def documentation
+        tag = param_tag
+        return nil if tag.nil?
+        tag.text
+      end
+
       private
+
+      # @return [YARD::Tags::Tag]
+      def param_tag
+        found = nil
+        params = closure.docstring.tags(:param)
+        params.each do |p|
+          next unless p.name == name
+          found = p
+          break
+        end
+        if found.nil? and !index.nil?
+          found = params[index] if params[index] && (params[index].name.nil? || params[index].name.empty?)
+        end
+        found
+      end
 
       def typify_block_param api_map
         if closure.is_a?(Pin::Block) && closure.receiver
@@ -68,6 +80,8 @@ module Solargraph
         ComplexType::UNDEFINED
       end
 
+      # @param api_map [ApiMap]
+      # @return [ComplexType]
       def typify_method_param api_map
         meths = api_map.get_method_stack(closure.full_context.namespace, closure.name, scope: closure.scope)
         # meths.shift # Ignore the first one
