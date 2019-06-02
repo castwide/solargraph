@@ -227,4 +227,19 @@ describe Solargraph::Pin::Parameter do
     paths = clip.complete.pins.map(&:path)
     expect(paths).to be_empty
   end
+
+  it 'uses tags for documentation' do
+    smap = Solargraph::SourceMap.load_string(%(
+      class Foo
+        # The bar method
+        # @param baz [String] The baz param
+        def bar baz
+          use(baz)
+        end
+      end
+    ), 'test.rb')
+    pin = smap.locals.first
+    expect(pin.documentation).to include('The baz param')
+    expect(pin.documentation).not_to include('The bar method')
+  end
 end
