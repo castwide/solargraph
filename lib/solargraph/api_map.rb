@@ -615,6 +615,7 @@ module Solargraph
     end
 
     # @param pins [Array<Pin::Base>]
+    # @param visibility [Array<Symbol>]
     # @return [Array<Pin::Base>]
     def resolve_method_aliases pins, visibility = [:public, :private, :protected]
       result = []

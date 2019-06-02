@@ -666,4 +666,23 @@ describe Solargraph::SourceMap::Clip do
     expect(clip.complete.pins.map(&:path)).to include('First::Second::Sub#method1')
     expect(clip.complete.pins.map(&:path)).to include('First::Second::Sub#method2')
   end
+
+  it 'avoids completion inside strings for unsynchronized sources' do
+    source = Solargraph::Source.load_string(%(
+      'one two'
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new
+    api_map.map source
+    updater = Solargraph::Source::Updater.new(
+      'test.rb',
+      1,
+      [
+        Solargraph::Source::Change.new(Solargraph::Range.from_to(1, 6, 1, 6), '.')
+      ]
+    )
+    updated = source.start_synchronize(updater)
+    cursor = updated.cursor_at(Solargraph::Position.new(1, 7))
+    clip = api_map.clip(cursor)
+    expect(clip.complete.pins).to be_empty
+  end
 end
