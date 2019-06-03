@@ -33,7 +33,7 @@ module Solargraph
 
       def documentation
         tag = param_tag
-        return nil if tag.nil?
+        return '' if tag.nil?
         tag.text
       end
 
