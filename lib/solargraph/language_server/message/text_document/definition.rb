@@ -27,10 +27,12 @@ module Solargraph::LanguageServer::Message::TextDocument
       rloc = Solargraph::Location.new(uri_to_file(params['textDocument']['uri']), Solargraph::Range.from_to(@line, @column, @line, @column))
       dloc = lib.locate_ref(rloc)
       return nil if dloc.nil?
-      {
-        uri: file_to_uri(dloc.filename),
-        range: dloc.range.to_hash
-      }
+      [
+        {
+          uri: file_to_uri(dloc.filename),
+          range: dloc.range.to_hash
+        }
+      ]
     end
   end
 end
