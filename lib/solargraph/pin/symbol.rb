@@ -37,6 +37,10 @@ module Solargraph
         []
       end
 
+      def visibility
+        :public
+      end
+
       def deprecated?
         false
       end
