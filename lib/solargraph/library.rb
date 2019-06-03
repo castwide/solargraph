@@ -235,6 +235,10 @@ module Solargraph
       api_map.locate_pins location
     end
 
+    def locate_ref location
+      api_map.require_reference_at location
+    end
+
     # Get an array of pins that match a path.
     #
     # @param path [String]
