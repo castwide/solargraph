@@ -24,7 +24,7 @@ describe Solargraph::LanguageServer::Message::TextDocument::Definition do
     message = Solargraph::LanguageServer::Message::TextDocument::Definition.new(host, {
       'params' => {
         'textDocument' => {
-          'uri' => "file:///#{path}/lib/other.rb"
+          'uri' => Solargraph::LanguageServer::UriHelpers.file_to_uri(File.join(path, 'lib', 'other.rb'))
         },
         'position' => {
           'line' => 0,
@@ -33,6 +33,6 @@ describe Solargraph::LanguageServer::Message::TextDocument::Definition do
       }
     })
     message.process
-    expect(message.result.first[:uri]).to eq("file:///#{path}/lib/thing.rb")
+    expect(message.result.first[:uri]).to eq(Solargraph::LanguageServer::UriHelpers.file_to_uri(File.join(path, 'lib', 'thing.rb')))
   end
 end
