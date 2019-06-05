@@ -691,13 +691,16 @@ describe Solargraph::SourceMap::Clip do
       class Foo
         # @return [self]
         def self.make; end
+        def foo_method; end
       end
-      class Bar < Foo; end
-      Bar.make
+      class Bar < Foo
+        def bar_method; end
+      end
+      Bar.make.bar_method
     ), 'test.rb')
     api_map = Solargraph::ApiMap.new
     api_map.map source
-    clip = api_map.clip_at('test.rb', [6, 10])
-    expect(clip.define.first.typify(api_map).tag).to eq('Bar')
+    clip = api_map.clip_at('test.rb', [9, 15])
+    expect(clip.define.first.path).to eq('Bar#bar_method')
   end
 end
