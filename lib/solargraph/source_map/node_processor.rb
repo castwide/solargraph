@@ -64,7 +64,7 @@ module Solargraph
       # @param node [Parser::AST::Node]
       # @param region [Region]
       # @param pins [Array<Pin::Base>]
-      # @return [Array<Pin::Base>, Array<Pin::Base>]
+      # @return [Array(Array<Pin::Base>, Array<Pin::Base>)]
       def self.process node, region = Region.new, pins = [], locals = []
         if pins.empty?
           pins.push Pin::Namespace.new(

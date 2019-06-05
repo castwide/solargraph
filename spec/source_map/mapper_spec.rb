@@ -98,6 +98,16 @@ describe Solargraph::SourceMap::Mapper do
     expect(pin.return_type.tag).to eq('String')
   end
 
+  it 'processes singleton method directives' do
+    map = Solargraph::SourceMap.load_string(%(
+      class Foo
+        # @!method self.bar(baz)
+      end
+    ))
+    pin = map.first_pin('Foo.bar')
+    expect(pin.scope).to eq(:class)
+  end
+
   it "processes attribute reader directives" do
     map = Solargraph::SourceMap.load_string(%(
       class Foo

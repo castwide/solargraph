@@ -70,17 +70,13 @@ module Solargraph
         case directive.tag.tag_name
         when 'method'
           namespace = closure_at(source_position)
-          gen_src = Solargraph::SourceMap.load_string("def #{directive.tag.name};end")
-          gen_pin = gen_src.pins.select{ |p| p.kind == Pin::METHOD }.first
+          region = Region.new(source: @source, closure: namespace)
+          src_node = Solargraph::Source.parse("def #{directive.tag.name};end", @filename, location.range.start.line)
+          gen_pin = Solargraph::SourceMap::NodeProcessor.process(src_node, region).first.last
           return if gen_pin.nil?
-          @pins.push Solargraph::Pin::Method.new(
-            location: location,
-            closure: namespace,
-            name: gen_pin.name,
-            comments: docstring.all,
-            scope: namespace.is_a?(Pin::Singleton) ? :class : :instance,
-            args: gen_pin.parameters
-          )
+          # @todo: Smelly instance variable access
+          gen_pin.instance_variable_set(:@comments, docstring.all)
+          @pins.push gen_pin
         when 'attribute'
           namespace = closure_at(source_position)
           t = (directive.tag.types.nil? || directive.tag.types.empty?) ? nil : directive.tag.types.flatten.join('')
