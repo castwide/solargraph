@@ -52,7 +52,11 @@ module Solargraph
           locals = []
           type = infer_first_defined(pins, api_map)
           return [] if type.undefined?
-          working_pin = Pin::ProxyType.anonymous(type)
+          if type.tag == 'self'
+            working_pin = Pin::ProxyType.anonymous(ComplexType.try_parse(working_pin.return_type.namespace))
+          else
+            working_pin = Pin::ProxyType.anonymous(type)
+          end
         end
         links.last.resolve(api_map, working_pin, locals)
       end

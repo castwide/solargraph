@@ -685,4 +685,42 @@ describe Solargraph::SourceMap::Clip do
     clip = api_map.clip(cursor)
     expect(clip.complete.pins).to be_empty
   end
+
+  it 'resolves self return types to the current scope' do
+    source = Solargraph::Source.load_string(%(
+      class Foo
+        # @return [self]
+        def self.make; end
+        def foo_method; end
+      end
+      class Bar < Foo
+        def bar_method; end
+      end
+      Bar.make.bar_method
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new
+    api_map.map source
+    clip = api_map.clip_at('test.rb', [9, 10])
+    expect(clip.infer.tag).to eq('Bar')
+    clip = api_map.clip_at('test.rb', [9, 15])
+    expect(clip.define.first.path).to eq('Bar#bar_method')
+  end
+
+  it 'resolves methods when completing base self types' do
+    source = Solargraph::Source.load_string(%(
+      class Foo
+        # @return [self]
+        def self.make; end
+        def foo_method; end
+      end
+      class Bar < Foo
+        def bar_method; end
+      end
+      Bar.make.b
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new
+    api_map.map source
+    clip = api_map.clip_at('test.rb', [9, 15])
+    expect(clip.complete.pins.map(&:path)).to include('Bar#bar_method')
+  end
 end
