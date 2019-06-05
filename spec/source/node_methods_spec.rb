@@ -31,6 +31,11 @@ describe Solargraph::Source::NodeMethods do
     expect(Solargraph::Source::NodeMethods.infer_literal_node_type(ast.children[1])).to eq 'Float'
   end
 
+  it "infers literal symbols" do
+    ast = Parser::CurrentRuby.parse(":symbol")
+    expect(Solargraph::Source::NodeMethods.infer_literal_node_type(ast)).to eq 'Symbol'
+  end
+
   it "unpacks a multi-part constant" do
     ast = Parser::CurrentRuby.parse("class Foo::Bar;end")
     expect(Solargraph::Source::NodeMethods.const_from(ast.children[0])).to eq 'Foo::Bar'

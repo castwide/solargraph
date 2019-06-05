@@ -94,4 +94,17 @@ describe Solargraph::YardMap do
     expect(yard_map.pins.map(&:path)).to include('Parser')
     expect(yard_map.pins.map(&:path)).not_to include('AST')
   end
+
+  it 'finds require paths in gems' do
+    # Assuming the parser gem exists because it's a Solargraph dependency
+    yard_map = Solargraph::YardMap.new(required: ['parser'], with_dependencies: false)
+    location = yard_map.require_reference('parser')
+    expect(location).to be_a(Solargraph::Location)
+  end
+
+  it 'returns nil for require paths without gems' do
+    yard_map = Solargraph::YardMap.new
+    location = yard_map.require_reference('not_a_gem')
+    expect(location).to be_nil
+  end
 end
