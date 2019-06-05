@@ -700,6 +700,8 @@ describe Solargraph::SourceMap::Clip do
     ), 'test.rb')
     api_map = Solargraph::ApiMap.new
     api_map.map source
+    clip = api_map.clip_at('test.rb', [9, 10])
+    expect(clip.infer.tag).to eq('Bar')
     clip = api_map.clip_at('test.rb', [9, 15])
     expect(clip.define.first.path).to eq('Bar#bar_method')
   end

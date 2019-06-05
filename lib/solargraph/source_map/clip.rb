@@ -70,7 +70,9 @@ module Solargraph
 
       # @return [ComplexType]
       def infer
-        cursor.chain.infer(api_map, block, locals)
+        result = cursor.chain.infer(api_map, block, locals)
+        return result unless result.tag == 'self'
+        ComplexType.try_parse(cursor.chain.base.infer(api_map, block, locals).namespace)
       end
 
       # Get an array of all the locals that are visible from the cursors's
