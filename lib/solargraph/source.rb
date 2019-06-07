@@ -301,7 +301,7 @@ module Solargraph
       @associated_comments ||= begin
         result = {}
         Parser::Source::Comment.associate_locations(node, comments).each_pair do |loc, all|
-          block = all #.select{ |l| l.document? || code.lines[l.loc.line].strip.start_with?('#')}
+          block = all.select { |l| l.loc.line < loc.line }
           next if block.empty?
           result[loc.line] ||= []
           result[loc.line].concat block
