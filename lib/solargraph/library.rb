@@ -235,6 +235,10 @@ module Solargraph
       api_map.locate_pins location
     end
 
+    def locate_ref location
+      api_map.require_reference_at location
+    end
+
     # Get an array of pins that match a path.
     #
     # @param path [String]
@@ -382,6 +386,13 @@ module Solargraph
         @synchronized = !result if synchronized?
       end
       result
+    end
+
+    # @param pin [Solargraph::Pin::Base]
+    # @return [Solargraph::Pin::Base]
+    def probe pin
+      return pin if pin.return_type.defined?
+      pin.proxy(pin.probe(api_map))
     end
 
     private

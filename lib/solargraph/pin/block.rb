@@ -1,15 +1,28 @@
 module Solargraph
   module Pin
-    class Block < Base
+    class Block < Closure
       # The signature of the method that receives this block.
       #
       # @return [Parser::AST::Node]
       attr_reader :receiver
 
-      def initialize location, namespace, name, comments, receiver, context
-        super(location, namespace, name, comments)
+      def initialize receiver: nil, args: [], **splat
+        super(splat)
         @receiver = receiver
-        @context = context
+        @parameters = args
+      end
+
+      def rebind context
+        @rebound = true
+        @binder = context unless context.undefined?
+      end
+
+      def rebound?
+        @rebound ||= false
+      end
+
+      def binder
+        @binder || context
       end
 
       def kind
@@ -19,6 +32,11 @@ module Solargraph
       # @return [Array<String>]
       def parameters
         @parameters ||= []
+      end
+
+      # @return [Array<String>]
+      def parameter_names
+        @parameter_names ||= parameters.map{|p| p.split(/[ =:]/).first.gsub(/^(\*{1,2}|&)/, '')}
       end
 
       def nearly? other

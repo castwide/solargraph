@@ -21,10 +21,9 @@ module Solargraph
         @filename = source.filename
         @code = source.code
         @comments = source.comments
-        @pins = NodeProcessor.process(source.node, Region.new(source: source))
+        @pins, @locals = NodeProcessor.process(source.node, Region.new(source: source))
         process_comment_directives
-        locals = @pins.select{|p| [Pin::LocalVariable, Pin::MethodParameter, Pin::BlockParameter].include?(p.class)}
-        [@pins - locals, locals]
+        [@pins, @locals]
       rescue Exception => e
         Solargraph.logger.warn "Error mapping #{source.filename}: [#{e.class}] #{e.message}"
         Solargraph.logger.warn e.backtrace
@@ -35,7 +34,7 @@ module Solargraph
         s = Position.new(0, 0)
         e = Position.from_offset(code, code.length)
         location = Location.new(filename, Range.new(s, e))
-        [[Pin::Namespace.new(location, '', '', '', :class, :public)], []]
+        [[Pin::Namespace.new(location: location, name: '')], []]
       end
 
       class << self
@@ -52,15 +51,8 @@ module Solargraph
         @pins ||= []
       end
 
-      # @param node [Parser::AST::Node]
-      # @return [Solargraph::Pin::Namespace]
-      def namespace_for(node)
-        position = Position.new(node.loc.line, node.loc.column)
-        namespace_at(position)
-      end
-
-      def namespace_at(position)
-        @pins.select{|pin| pin.kind == Pin::NAMESPACE and pin.location.range.contain?(position)}.last
+      def closure_at(position)
+        @pins.select{|pin| pin.is_a?(Pin::Closure) and pin.location.range.contain?(position)}.last
       end
 
       def process_comment source_position, comment_position, comment
@@ -77,25 +69,42 @@ module Solargraph
         location = Location.new(@filename, Range.new(comment_position, comment_position))
         case directive.tag.tag_name
         when 'method'
-          namespace = namespace_at(source_position)
-          gen_src = Solargraph::SourceMap.load_string("def #{directive.tag.name};end")
-          gen_pin = gen_src.pins.select{ |p| p.kind == Pin::METHOD }.first
+          namespace = closure_at(source_position)
+          region = Region.new(source: @source, closure: namespace)
+          src_node = Solargraph::Source.parse("def #{directive.tag.name};end", @filename, location.range.start.line)
+          gen_pin = Solargraph::SourceMap::NodeProcessor.process(src_node, region).first.last
           return if gen_pin.nil?
-          @pins.push Solargraph::Pin::Method.new(location, namespace.path, gen_pin.name, docstring.all, :instance, :public, gen_pin.parameters, nil)
+          # @todo: Smelly instance variable access
+          gen_pin.instance_variable_set(:@comments, docstring.all)
+          @pins.push gen_pin
         when 'attribute'
-          namespace = namespace_at(source_position)
+          namespace = closure_at(source_position)
           t = (directive.tag.types.nil? || directive.tag.types.empty?) ? nil : directive.tag.types.flatten.join('')
           if t.nil? || t.include?('r')
-            # location, namespace, name, docstring, access
-            pins.push Solargraph::Pin::Attribute.new(location, namespace.path, directive.tag.name, docstring.all, :reader, :instance, :public)
+            pins.push Solargraph::Pin::Attribute.new(
+              location: location,
+              closure: namespace,
+              name: directive.tag.name,
+              comments: docstring.all,
+              access: :reader,
+              scope: namespace.is_a?(Pin::Singleton) ? :class : :instance,
+              visibility: :public
+            )
           end
           if t.nil? || t.include?('w')
-            pins.push Solargraph::Pin::Attribute.new(location, namespace.path, "#{directive.tag.name}=", docstring.all, :writer, :instance, :public)
+            pins.push Solargraph::Pin::Attribute.new(
+              location: location,
+              closure: namespace,
+              name: "#{directive.tag.name}=",
+              comments: docstring.all,
+              access: :writer,
+              scope: namespace.is_a?(Pin::Singleton) ? :class : :instance,
+              visibility: :public
+            )
           end
         when 'parse'
-          # @todo Parse and map directive.tag.text
-          ns = namespace_at(comment_position)
-          region = Region.new(source: @source, namespace: ns.path)
+          ns = closure_at(source_position)
+          region = Region.new(source: @source, closure: ns)
           begin
             node = Solargraph::Source.parse(directive.tag.text, @filename, comment_position.line)
             NodeProcessor.process(node, region, @pins)
@@ -103,7 +112,7 @@ module Solargraph
             # @todo Handle parser errors in !parse directives
           end
         when 'domain'
-          namespace = namespace_at(source_position)
+          namespace = closure_at(source_position)
           namespace.domains.concat directive.tag.types unless directive.tag.types.nil?
         end
       end

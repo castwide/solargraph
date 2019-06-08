@@ -58,8 +58,7 @@ module Solargraph
             mutex.synchronize { queue.clear }
             return
           end
-          current = nil
-          mutex.synchronize { current = queue.shift }
+          current = mutex.synchronize { queue.shift }
           return if queue.include?(current)
           host.diagnose current
         end

@@ -1,4 +1,4 @@
-require 'thread'
+require 'observer'
 require 'set'
 
 module Solargraph
@@ -16,6 +16,7 @@ module Solargraph
       include UriHelpers
       include Logging
       include Dispatch
+      include Observable
 
       def initialize
         @cancel_semaphore = Mutex.new
@@ -43,6 +44,7 @@ module Solargraph
       # Update the configuration options with the provided hash.
       #
       # @param update [Hash]
+      # @return [void]
       def configure update
         return if update.nil?
         options.merge! update
@@ -57,6 +59,7 @@ module Solargraph
       # Cancel the method with the specified ID.
       #
       # @param id [Integer]
+      # @return [void]
       def cancel id
         @cancel_semaphore.synchronize { @cancel.push id }
       end
@@ -129,7 +132,6 @@ module Solargraph
       # @param uri [String] The file uri.
       # @return [void]
       def delete uri
-        # sources.close uri # @todo It's possible for a deleted file to be open in an editor
         filename = uri_to_file(uri)
         libraries.each do |lib|
           lib.delete(filename)
@@ -154,6 +156,8 @@ module Solargraph
         diagnoser.schedule uri
       end
 
+      # @param uri [String]
+      # @return [void]
       def open_from_disk uri
         library = library_for(uri)
         library.open_from_disk uri_to_file(uri)
@@ -182,22 +186,26 @@ module Solargraph
       # @return [void]
       def diagnose uri
         if sources.include?(uri)
-          logger.info "Diagnosing #{uri}"
           library = library_for(uri)
-          library.catalog
-          begin
-            results = library.diagnose uri_to_file(uri)
-            send_notification "textDocument/publishDiagnostics", {
-              uri: uri,
-              diagnostics: results
-            }
-          rescue DiagnosticsError => e
-            logger.warn "Error in diagnostics: #{e.message}"
-            options['diagnostics'] = false
-            send_notification 'window/showMessage', {
-              type: LanguageServer::MessageTypes::ERROR,
-              message: "Error in diagnostics: #{e.message}"
-            }
+          if library.synchronized?
+            logger.info "Diagnosing #{uri}"
+            begin
+              results = library.diagnose uri_to_file(uri)
+              send_notification "textDocument/publishDiagnostics", {
+                uri: uri,
+                diagnostics: results
+              }
+            rescue DiagnosticsError => e
+              logger.warn "Error in diagnostics: #{e.message}"
+              options['diagnostics'] = false
+              send_notification 'window/showMessage', {
+                type: LanguageServer::MessageTypes::ERROR,
+                message: "Error in diagnostics: #{e.message}"
+              }
+            end
+          else
+            logger.info "Deferring diagnosis of #{uri}"
+            diagnoser.schedule uri
           end
         else
           send_notification 'textDocument/publishDiagnostics', {
@@ -220,10 +228,11 @@ module Solargraph
       # Queue a message to be sent to the client.
       #
       # @param message [String] The message to send.
+      # @return [void]
       def queue message
-        @buffer_semaphore.synchronize do
-          @buffer += message
-        end
+        @buffer_semaphore.synchronize { @buffer += message }
+        changed
+        notify_observers
       end
 
       # Clear the message buffer and return the most recent data.
@@ -285,12 +294,15 @@ module Solargraph
         end
       end
 
+      # @param array [Array<Hash>]
+      # @return [void]
       def remove_folders array
         array.each do |folder|
           remove uri_to_file(folder['uri'])
         end
       end
 
+      # @return [Array<String>]
       def folders
         libraries.map { |lib| lib.workspace.directory }
       end
@@ -299,6 +311,7 @@ module Solargraph
       #
       # @param method [String] The message method
       # @param params [Hash] The method parameters
+      # @return [void]
       def send_notification method, params
         response = {
           jsonrpc: "2.0",
@@ -318,8 +331,9 @@ module Solargraph
       #
       # @param method [String] The message method
       # @param params [Hash] The method parameters
-      # @param id [String] An optional ID
+      # @param block [Proc] The block that processes the response
       # @yieldparam [Hash] The result sent by the client
+      # @return [void]
       def send_request method, params, &block
         message = {
           jsonrpc: "2.0",
@@ -416,6 +430,8 @@ module Solargraph
         cataloger.stop
         diagnoser.stop
         sources.stop
+        changed
+        notify_observers
       end
 
       def stopped?
@@ -546,7 +562,7 @@ module Solargraph
       # @param text [String]
       # @param type [Integer] A MessageType constant
       # @param actions [Array<String>] Response options for the client
-      # @param &block The block that processes the response
+      # @param block The block that processes the response
       # @yieldparam [String] The action received from the client
       # @return [void]
       def show_message_request text, type, actions, &block
@@ -588,8 +604,19 @@ module Solargraph
         sources.find(uri).folding_ranges
       end
 
+      # @return [void]
       def catalog
         libraries.each(&:catalog)
+      end
+
+      # @param pin [Solargraph::Pin::Base]
+      # @return [Solargraph::Pin::Base]
+      def probe pin
+        return pin if pin.filename.nil?
+        library = library_for(file_to_uri(pin.filename))
+        library.probe(pin)
+      rescue FileNotFoundError
+        pin
       end
 
       private
@@ -604,6 +631,10 @@ module Solargraph
         @cataloger ||= Cataloger.new(self)
       end
 
+      # A hash of client requests by ID. The host uses this to keep track of
+      # pending responses.
+      #
+      # @return [Hash{Integer => Hash}]
       def requests
         @requests ||= {}
       end
@@ -631,6 +662,7 @@ module Solargraph
         )
       end
 
+      # @return [Hash]
       def dynamic_capability_options
         @dynamic_capability_options ||= {
           # textDocumentSync: 2, # @todo What should this be?
@@ -641,7 +673,7 @@ module Solargraph
           # hoverProvider: true,
           # definitionProvider: true,
           'textDocument/signatureHelp' => {
-            triggerCharacters: ['(', ',']
+            triggerCharacters: ['(', ',', ' ']
           },
           # documentFormattingProvider: true,
           'textDocument/onTypeFormatting' => {

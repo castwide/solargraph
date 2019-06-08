@@ -2,7 +2,7 @@ module Solargraph
   module Pin
     class Keyword < Base
       def initialize name
-        @name = name
+        super(name: name)
       end
 
       def name

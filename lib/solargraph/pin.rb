@@ -2,6 +2,7 @@ module Solargraph
   # The namespace for pins used in maps.
   #
   module Pin
+    autoload :Common,           'solargraph/pin/common'
     autoload :Conversions,      'solargraph/pin/conversions'
     autoload :Base,             'solargraph/pin/base'
     autoload :BaseMethod,       'solargraph/pin/base_method'
@@ -15,10 +16,10 @@ module Solargraph
     autoload :GlobalVariable,   'solargraph/pin/global_variable'
     autoload :Constant,         'solargraph/pin/constant'
     autoload :Symbol,           'solargraph/pin/symbol'
+    autoload :Closure,          'solargraph/pin/closure'
     autoload :Namespace,        'solargraph/pin/namespace'
     autoload :Keyword,          'solargraph/pin/keyword'
-    autoload :MethodParameter,  'solargraph/pin/method_parameter'
-    autoload :BlockParameter,   'solargraph/pin/block_parameter'
+    autoload :Parameter,        'solargraph/pin/parameter'
     autoload :Reference,        'solargraph/pin/reference'
     autoload :Documenting,      'solargraph/pin/documenting'
     autoload :Block,            'solargraph/pin/block'
@@ -26,6 +27,7 @@ module Solargraph
     autoload :ProxyType,        'solargraph/pin/proxy_type'
     autoload :DuckMethod,       'solargraph/pin/duck_method'
     autoload :YardPin,          'solargraph/pin/yard_pin'
+    autoload :Singleton,        'solargraph/pin/singleton'
 
     ATTRIBUTE = 1
     CLASS_VARIABLE = 2
@@ -45,6 +47,7 @@ module Solargraph
     EXTEND_REFERENCE = 16
     METHOD_ALIAS = 17
 
-    ROOT_PIN = Pin::Namespace.new(nil, '', '', '', :class, :public)
+    # ROOT_PIN = Pin::Namespace.new(nil, '', '', '', :class, :public)
+    ROOT_PIN = Pin::Namespace.new(type: :class, name: '', closure: nil)
   end
 end

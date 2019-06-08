@@ -3,15 +3,13 @@ module Solargraph
     class BaseVariable < Base
       include Solargraph::Source::NodeMethods
 
-      attr_reader :context
-
       attr_reader :assignment
 
-      def initialize location, namespace, name, comments, assignment, literal, context
-        super(location, namespace, name, comments)
+      def initialize assignment: nil, literal: nil, **splat
+        super(splat)
         @assignment = assignment
         @literal = literal
-        @context = context
+        # @context = context
       end
 
       def signature
@@ -27,12 +25,12 @@ module Solargraph
         Solargraph::LanguageServer::SymbolKinds::VARIABLE
       end
 
-      def return_complex_type
-        @return_complex_type ||= generate_complex_type
+      def return_type
+        @return_type ||= generate_complex_type
       end
 
       def nil_assignment?
-        return_complex_type.nil?
+        return_type.nil?
       end
 
       def variable?
@@ -41,10 +39,16 @@ module Solargraph
 
       def probe api_map
         return ComplexType::UNDEFINED if @assignment.nil?
-        chain = Source::NodeChainer.chain(@assignment, filename)
-        clip = api_map.clip_at(location.filename, location.range.start)
-        locals = clip.locals - [self]
-        chain.infer(api_map, ProxyType.anonymous(context), locals)
+        types = []
+        returns_from(@assignment).each do |node|
+          chain = Source::NodeChainer.chain(node, filename)
+          clip = api_map.clip_at(location.filename, location.range.start)
+          locals = clip.locals - [self]
+          result = chain.infer(api_map, closure, locals)
+          types.push result unless result.undefined?
+        end
+        return ComplexType::UNDEFINED if types.empty?
+        ComplexType.try_parse(*types.map(&:tag))
       end
 
       def == other
@@ -55,7 +59,7 @@ module Solargraph
       def try_merge! pin
         return false unless super
         @assignment = pin.assignment
-        @return_complex_type = pin.return_complex_type
+        @return_type = pin.return_type
         true
       end
 

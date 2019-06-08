@@ -3,8 +3,12 @@ module Solargraph
     # The base class for map pins.
     #
     class Base
+      include Common
       include Conversions
       include Documenting
+
+      # @return [YARD::CodeObjects::Base]
+      attr_reader :code_object
 
       # @return [Solargraph::Location]
       attr_reader :location
@@ -13,7 +17,7 @@ module Solargraph
       # The root namespace is an empty string.
       #
       # @return [String]
-      attr_reader :namespace
+      # attr_reader :namespace
 
       # @return [String]
       attr_reader :name
@@ -25,12 +29,14 @@ module Solargraph
       attr_reader :path
 
       # @param location [Solargraph::Location]
-      # @param namespace [String]
+      # @param kind [Integer]
+      # @param closure [String]
       # @param name [String]
       # @param comments [String]
-      def initialize location, namespace, name, comments
+      def initialize location: nil, kind: KEYWORD, closure: nil, name: '', comments: ''
         @location = location
-        @namespace = namespace
+        @kind = kind
+        @closure = closure
         @name = name
         @comments = comments
       end
@@ -66,9 +72,9 @@ module Solargraph
       end
 
       # @return [ComplexType]
-      def context
-        @context ||= ComplexType.try_parse(namespace || '')
-      end
+      # def context
+      #   @context ||= ComplexType.parse(namespace || '')
+      # end
 
       # Pin equality is determined using the #nearly? method and also
       # requiring both pins to have the same location.
@@ -86,26 +92,19 @@ module Solargraph
       # @return [Boolean]
       def nearly? other
         self.class == other.class &&
-          namespace == other.namespace &&
           name == other.name &&
+          (closure == other.closure || (closure && closure.nearly?(other.closure))) &&
           (comments == other.comments ||
             (((maybe_directives? == false && other.maybe_directives? == false) || compare_directives(directives, other.directives)) &&
             compare_docstring_tags(docstring, other.docstring))
           )
       end
 
-      # An alias for return_complex_type.
+      # The pin's return type.
       #
       # @return [ComplexType]
       def return_type
-        return_complex_type
-      end
-
-      # All of the pin's return types as an array of ComplexTypes.
-      #
-      # @return [ComplexType]
-      def return_complex_type
-        @return_complex_type ||= ComplexType::UNDEFINED
+        @return_type ||= ComplexType::UNDEFINED
       end
 
       # @return [YARD::Docstring]
@@ -152,7 +151,7 @@ module Solargraph
       # @param api_map [ApiMap]
       # @return [ComplexType]
       def typify api_map
-        return_complex_type.qualify(api_map, namespace)
+        return_type.qualify(api_map, namespace)
       end
 
       # Infer the pin's return type via static code analysis.
@@ -182,10 +181,11 @@ module Solargraph
       def try_merge! pin
         return false unless nearly?(pin)
         @location = pin.location
+        @closure = pin.closure
         return true if comments == pin.comments
         @comments = pin.comments
         @docstring = pin.docstring
-        @return_complex_type = pin.return_complex_type
+        @return_type = pin.return_type
         @documentation = nil
         @deprecated = nil
         reset_conversions
@@ -204,9 +204,13 @@ module Solargraph
       # @return [self]
       def proxy return_type
         result = dup
-        result.return_complex_type = return_type
+        result.return_type = return_type
         result.proxied = true
         result
+      end
+
+      def inspect
+        "#<#{self.class} at #{self.location.inspect}>"
       end
 
       protected
@@ -215,7 +219,7 @@ module Solargraph
       attr_writer :proxied
 
       # @return [ComplexType]
-      attr_writer :return_complex_type
+      attr_writer :return_type
 
       private
 

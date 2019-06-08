@@ -1,10 +1,7 @@
 module Solargraph
   # A container for type data based on YARD type tags.
   #
-  class ComplexType < Array
-    # @todo Figure out how to add the basic type methods here without actually
-    #   including the module. One possibility:
-    #
+  class ComplexType
     # @!parse
     #   include TypeMethods
 
@@ -12,24 +9,46 @@ module Solargraph
     autoload :UniqueType,  'solargraph/complex_type/unique_type'
 
     # @param types [Array<ComplexType>]
-    def initialize types = [ComplexType::UNDEFINED]
-      super()
-      concat types
+    # def initialize types = [ComplexType::UNDEFINED]
+    #   @items = types
+    # end
+    def initialize types = [UniqueType::UNDEFINED]
+      @items = types
     end
 
     # @param api_map [ApiMap]
     # @param context [String]
     # @return [ComplexType]
     def qualify api_map, context = ''
-      types = map do |t|
+      types = @items.map do |t|
         t.qualify api_map, context
       end
       ComplexType.new(types)
     end
 
+    def first
+      @items.first
+    end
+
+    def map &block
+      @items.map &block
+    end
+
+    def length
+      @items.length
+    end
+
+    def [](index)
+      @items[index]
+    end
+
+    def select &block
+      @items.select &block
+    end
+
     def method_missing name, *args, &block
-      return if first.nil?
-      return first.send(name, *args, &block) if respond_to_missing?(name)
+      return if @items.first.nil?
+      return @items.first.send(name, *args, &block) if respond_to_missing?(name)
       super
     end
 
@@ -39,6 +58,10 @@ module Solargraph
 
     def to_s
       map(&:tag).join(', ')
+    end
+
+    def all? &block
+      @items.all? &block
     end
 
     class << self
@@ -81,7 +104,8 @@ module Solargraph
                 subtype_string += char
               elsif base.end_with?('=')
                 raise ComplexTypeError, "Invalid hash thing" unless key_types.nil?
-                types.push ComplexType.new([UniqueType.new(base[0..-2].strip)])
+                # types.push ComplexType.new([UniqueType.new(base[0..-2].strip)])
+                types.push UniqueType.new(base[0..-2].strip)
                 key_types = types
                 types = []
                 base = ''
@@ -108,7 +132,8 @@ module Solargraph
               raise ComplexTypeError, "Invalid close in type #{type_string}" if paren_stack < 0
               next
             elsif char == ',' && point_stack == 0 && curly_stack == 0 && paren_stack == 0
-              types.push ComplexType.new([UniqueType.new(base.strip, subtype_string.strip)])
+              # types.push ComplexType.new([UniqueType.new(base.strip, subtype_string.strip)])
+              types.push UniqueType.new(base.strip, subtype_string.strip)
               base = ''
               subtype_string = ''
               next
@@ -122,7 +147,8 @@ module Solargraph
           base.strip!
           subtype_string.strip!
           raise ComplexTypeError, "Unclosed subtype in #{type_string}" if point_stack != 0 || curly_stack != 0 || paren_stack != 0
-          types.push ComplexType.new([UniqueType.new(base, subtype_string)])
+          # types.push ComplexType.new([UniqueType.new(base, subtype_string)])
+          types.push UniqueType.new(base, subtype_string)
         end
         unless key_types.nil?
           raise ComplexTypeError, "Invalid use of key/value parameters" unless partial
@@ -146,5 +172,6 @@ module Solargraph
     UNDEFINED = ComplexType.parse('undefined')
     SYMBOL = ComplexType.parse('Symbol')
     ROOT = ComplexType.parse('Class<>')
+    NIL = ComplexType.parse('nil')
   end
 end

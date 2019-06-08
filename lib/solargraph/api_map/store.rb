@@ -26,16 +26,16 @@ module Solargraph
       # @param visibility [Array<Symbol>]
       # @return [Array<Solargraph::Pin::Base>]
       def get_methods fqns, scope: :instance, visibility: [:public]
-        kinds = [Pin::METHOD, Pin::ATTRIBUTE]
-        namespace_children(fqns).select{ |pin|
+        kinds = [Pin::METHOD, Pin::ATTRIBUTE, Pin::METHOD_ALIAS]
+        namespace_children(fqns).select do |pin|
           kinds.include?(pin.kind) && pin.scope == scope && visibility.include?(pin.visibility)
-        }
+        end
       end
 
       # @param fqns [String]
       # @return [String]
       def get_superclass fqns
-        return superclass_references[fqns].first if superclass_references.has_key?(fqns)
+        return superclass_references[fqns].first if superclass_references.key?(fqns)
         nil
       end
 
@@ -62,7 +62,10 @@ module Solargraph
       # @param scope [Symbol] :class or :instance
       # @return [Array<Solargraph::Pin::Base>]
       def get_instance_variables(fqns, scope = :instance)
-        namespace_children(fqns).select{|pin| pin.kind == Pin::INSTANCE_VARIABLE and pin.context.scope == scope}
+        # namespace_children(fqns).select{|pin| pin.kind == Pin::INSTANCE_VARIABLE and pin.context.scope == scope}
+        all_instance_variables.select { |pin|
+          pin.binder.namespace == fqns && pin.binder.scope == scope
+        }
       end
 
       # @param fqns [String]
@@ -89,12 +92,14 @@ module Solargraph
 
       # @return [Array<Solargraph::Pin::Base>]
       def namespace_pins
-        @namespace_pins ||= pins.select{|p| p.kind == Pin::NAMESPACE}
+        # @namespace_pins ||= pins.select{|p| p.kind == Pin::NAMESPACE}
+        @namespace_pins ||= []
       end
 
       # @return [Array<Solargraph::Pin::Base>]
       def method_pins
-        @method_pins ||= pins.select{|p| p.kind == Pin::METHOD or p.kind == Pin::ATTRIBUTE}
+        # @method_pins ||= pins.select{|p| p.kind == Pin::METHOD or p.kind == Pin::ATTRIBUTE}
+        @method_pins ||= []
       end
 
       # @param fqns [String]
@@ -119,6 +124,11 @@ module Solargraph
           end
           result
         end
+      end
+
+      # @return [Array<Pin::Block>]
+      def block_pins
+        @block_pins ||= []
       end
 
       def inspect
@@ -171,16 +181,26 @@ module Solargraph
         @namespace_map ||= {}
       end
 
+      def all_instance_variables
+        @all_instance_variables ||= []
+      end
+
       # @return [void]
       def index
         namespace_map.clear
         namespaces.clear
+        namespace_pins.clear
+        method_pins.clear
         symbols.clear
+        block_pins.clear
+        all_instance_variables.clear
         namespace_map[''] = []
         pins.each do |pin|
           namespace_map[pin.namespace] ||= []
           namespace_map[pin.namespace].push pin
           namespaces.add pin.path if pin.kind == Pin::NAMESPACE and !pin.path.empty?
+          namespace_pins.push pin if pin.kind == Pin::NAMESPACE
+          method_pins.push pin if pin.kind == Pin::METHOD || pin.kind == Pin::ATTRIBUTE
           symbols.push pin if pin.kind == Pin::SYMBOL
           if pin.kind == Pin::INCLUDE_REFERENCE
             include_references[pin.namespace] ||= []
@@ -191,10 +211,14 @@ module Solargraph
           elsif pin.kind == Pin::SUPERCLASS_REFERENCE
             superclass_references[pin.namespace] ||= []
             superclass_references[pin.namespace].push pin.name
+          elsif pin.is_a?(Pin::Block)
+            block_pins.push pin
+          elsif pin.is_a?(Pin::InstanceVariable)
+            all_instance_variables.push pin
           end
         end
-        @namespace_pins = nil
-        @method_pins = nil
+        # @namespace_pins = nil
+        # @method_pins = nil
       end
     end
   end

@@ -43,6 +43,7 @@ module Solargraph
       # @param locals [Array<Pin::Base>]
       # @return [Array<Pin::Base>]
       def define api_map, name_pin, locals
+        rebind_block name_pin, api_map, locals
         return [] if undefined?
         working_pin = name_pin
         links[0..-2].each do |link|
@@ -51,7 +52,11 @@ module Solargraph
           locals = []
           type = infer_first_defined(pins, api_map)
           return [] if type.undefined?
-          working_pin = Pin::ProxyType.anonymous(type)
+          if type.tag == 'self'
+            working_pin = Pin::ProxyType.anonymous(ComplexType.try_parse(working_pin.return_type.namespace))
+          else
+            working_pin = Pin::ProxyType.anonymous(type)
+          end
         end
         links.last.resolve(api_map, working_pin, locals)
       end
@@ -61,6 +66,7 @@ module Solargraph
       # @param locals [Array<Pin::Base>]
       # @return [ComplexType]
       def infer api_map, name_pin, locals
+        rebind_block name_pin, api_map, locals
         return ComplexType::UNDEFINED if undefined? || @@inference_stack.include?(active_signature(name_pin))
         @@inference_stack.push active_signature(name_pin)
         type = ComplexType::UNDEFINED
@@ -114,6 +120,35 @@ module Solargraph
         end
         type = pins.first.probe(api_map) unless type.defined? || pins.empty?
         type
+      end
+
+      def skippable_block_receivers api_map
+        @@skippable_block_receivers ||= (
+          api_map.get_methods('Array', deep: false).map(&:name) +
+          api_map.get_methods('Enumerable', deep: false).map(&:name) +
+          api_map.get_methods('Hash', deep: false).map(&:name) +
+          ['new']
+        ).to_set
+      end
+
+      def rebind_block pin, api_map, locals
+        return unless pin.is_a?(Pin::Block) && pin.receiver && !pin.rebound?
+        # This first rebind just sets the block pin's rebound state
+        pin.rebind ComplexType::UNDEFINED
+        chain = Solargraph::Source::NodeChainer.chain(pin.receiver, pin.location.filename)
+        return if skippable_block_receivers(api_map).include?(chain.links.last.word)
+        if ['instance_eval', 'instance_exec', 'class_eval', 'class_exec', 'module_eval', 'module_exec'].include?(chain.links.last.word)
+          type = chain.base.infer(api_map, pin, locals)
+          pin.rebind type
+        else
+          receiver_pin = chain.define(api_map, pin, locals).first
+          return if receiver_pin.nil? || receiver_pin.docstring.nil?
+          ys = receiver_pin.docstring.tag(:yieldself)
+          unless ys.nil? || ys.types.nil? || ys.types.empty?
+            ysct = ComplexType.try_parse(*ys.types).qualify(api_map, receiver_pin.context.namespace)
+            pin.rebind ysct
+          end
+        end
       end
     end
   end

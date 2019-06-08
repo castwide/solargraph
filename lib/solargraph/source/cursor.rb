@@ -55,6 +55,7 @@ module Solargraph
         end
       end
 
+      # @return [Boolean]
       def start_of_constant?
         source.code[offset-2, 2] == '::'
       end
@@ -75,9 +76,19 @@ module Solargraph
         @chain ||= SourceChainer.chain(source, position)
       end
 
+      # True if the statement at the cursor is an argument to a previous
+      # method.
+      #
+      # Given the code `process(foo)`, a cursor pointing at `foo` would
+      # identify it as an argument being passed to the `process` method.
+      #
+      # If #argument? is true, the #recipient method will return a cursor that
+      # points to the method receiving the argument.
+      #
       # @return [Boolean]
       def argument?
-        @argument ||= !signature_position.nil?
+        # @argument ||= !signature_position.nil?
+        @argument ||= !recipient.nil?
       end
 
       # @return [Boolean]
@@ -90,12 +101,28 @@ module Solargraph
         @string ||= source.string_at?(position)
       end
 
+      # Get a cursor pointing to the method that receives the current statement
+      # as an argument.
+      #
       # @return [Cursor, nil]
       def recipient
-        return nil unless argument?
-        @recipient ||= Cursor.new(source, signature_position)
+        @recipient ||= begin
+          result = nil
+          node = recipient_node
+          unless node.nil?
+            result = if node.children[1].is_a?(AST::Node)
+                       pos = Range.from_node(node.children[1]).start
+                       Cursor.new(source, Position.new(pos.line, pos.column - 1))
+                     else
+                       Cursor.new(source, Range.from_node(node).ending)
+                     end
+          end
+          result
+        end
       end
+      alias receiver recipient
 
+      # @return [Position]
       def node_position
         @node_position ||= begin
           if start_of_word.empty?
@@ -111,11 +138,40 @@ module Solargraph
         end
       end
 
+      # @return [Parser::AST::Node, nil]
+      def recipient_node
+        return nil if source.code[offset-1] == ')' || source.code[0..offset] =~ /[^,][ \t]*?\n[ \t]*?\Z/
+        return nil if first_char_offset < offset && source.code[first_char_offset..offset-1] =~ /\)[\s]*\Z/
+        pos = Position.from_offset(source.code, first_char_offset)
+        tree = source.tree_at(pos.line, pos.character)
+        if tree[0] && tree[0].type == :send
+          rng = Range.from_node(tree[0])
+          return tree[0] if (rng.contain?(position) || offset + 1 == Position.to_offset(source.code, rng.ending)) && source.code[offset] =~ /[ \t\)\,'")]/
+          return tree[0] if (source.code[0..offset-1] =~ /\([\s]*\Z/ || source.code[0..offset-1] =~ /[a-z0-9_][ \t]+\Z/i)
+        end
+        return tree[1] if tree[1] && tree[1].type == :send
+        return tree[3] if tree[1] && tree[3] && tree[1].type == :pair && tree[3].type == :send
+        nil
+      end
+
       private
 
       # @return [Integer]
       def offset
         @offset ||= Position.to_offset(source.code, position)
+      end
+
+      # @return [Integer]
+      def first_char_offset
+        @first_char_position ||= begin
+          if source.code[offset - 1] == ')'
+            position
+          else
+            index = offset - 1
+            index -= 1 while index > 0 && source.code[index].strip.empty?
+            index
+          end
+        end
       end
 
       # A regular expression to find the start of a word from an offset.
@@ -130,27 +186,6 @@ module Solargraph
       # @return [Regexp]
       def end_word_pattern
         /^([a-z0-9_]|[^\u0000-\u007F])*[\?\!]?/i
-      end
-
-      def signature_position
-        if @signature_position.nil?
-          open_parens = 0
-          cursor = offset - 1
-          while cursor >= 0
-            break if cursor < 0
-            if source.code[cursor] == ')'
-              open_parens -= 1
-            elsif source.code[cursor] == '('
-              open_parens += 1
-            end
-            break if open_parens == 1
-            cursor -= 1
-          end
-          if cursor >= 0
-            @signature_position = Position.from_offset(source.code, cursor)
-          end
-        end
-        @signature_position
       end
     end
   end

@@ -24,8 +24,10 @@ module Solargraph
     ].freeze
 
     METHODS_WITH_YIELDPARAM_SUBTYPES = %w[
-      Array#each Array#map Array#any? Array#all? Array#index
+      Array#each Array#map Array#any? Array#all? Array#index Array#keep_if
+      Array#delete_if
       Enumerable#each_entry Enumerable#map Enumerable#any? Enumerable#all?
+      Enumerable#select Enumerable#reject
       Set#each
     ].freeze
 

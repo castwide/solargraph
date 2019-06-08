@@ -22,6 +22,7 @@ module Solargraph
       autoload :BlockNode,     'solargraph/source_map/node_processor/block_node'
       autoload :OrasgnNode,    'solargraph/source_map/node_processor/orasgn_node'
       autoload :SymNode,       'solargraph/source_map/node_processor/sym_node'
+      autoload :ResbodyNode,   'solargraph/source_map/node_processor/resbody_node'
 
       class << self
         @@processors ||= {}
@@ -41,9 +42,8 @@ module Solargraph
       register :source,  BeginNode
       register :begin,   BeginNode
       register :kwbegin, BeginNode
-      # # @todo Is this the best way to handle rescue nodes?
       register :rescue,  BeginNode
-      register :resbody, BeginNode
+      register :resbody, ResbodyNode
       register :def,     DefNode
       register :defs,    DefsNode
       register :send,    SendNode
@@ -64,14 +64,19 @@ module Solargraph
       # @param node [Parser::AST::Node]
       # @param region [Region]
       # @param pins [Array<Pin::Base>]
-      # @return [Array<Pin::Base>]
-      def self.process node, region = Region.new(nil, '', :instance, :public, []), pins = []
-        pins.push Pin::Namespace.new(region.source.location, '', '', nil, :class, :public) if pins.empty?
-        return pins unless node.is_a?(Parser::AST::Node) #&& @@processors.key?(node.type)
+      # @return [Array(Array<Pin::Base>, Array<Pin::Base>)]
+      def self.process node, region = Region.new, pins = [], locals = []
+        if pins.empty?
+          pins.push Pin::Namespace.new(
+            location: region.source.location,
+            name: ''
+          )
+        end
+        return [pins, locals] unless node.is_a?(Parser::AST::Node)
         klass = @@processors[node.type] || BeginNode
-        processor = klass.new(node, region, pins)
+        processor = klass.new(node, region, pins, locals)
         processor.process
-        processor.pins
+        [processor.pins, processor.locals]
       end
     end
   end

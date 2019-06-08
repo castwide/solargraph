@@ -2,15 +2,21 @@ module Solargraph
   module Pin
     # The base class for method and attribute pins.
     #
-    class BaseMethod < Base
-      # @return [Symbol] :instance or :class
-      attr_reader :scope
-
+    class BaseMethod < Closure
       # @return [Symbol] :public, :private, or :protected
       attr_reader :visibility
 
-      def return_complex_type
-        @return_complex_type ||= generate_complex_type
+      def initialize visibility: :public, **splat
+        super(splat)
+        @visibility = visibility
+      end
+
+      def return_type
+        @return_type ||= generate_complex_type
+      end
+
+      def path
+        @path ||= namespace.to_s + (scope == :instance ? '#' : '.') + name.to_s
       end
 
       def typify api_map
@@ -19,6 +25,14 @@ module Solargraph
         type = see_reference(api_map)
         return type unless type.nil?
         ComplexType::UNDEFINED
+      end
+
+      def parameters
+        []
+      end
+
+      def parameter_names
+        []
       end
 
       private
@@ -58,11 +72,6 @@ module Solargraph
           fqns = api_map.qualify(parts.first, namespace)
           return ComplexType::UNDEFINED if fqns.nil?
           path = fqns + ref[parts.first.length] + parts.last
-        end
-        pins = api_map.get_path_pins(path)
-        pins.each do |pin|
-          type = pin.typify(api_map)
-          return type unless type.undefined?
         end
         pins = api_map.get_path_pins(path)
         pins.each do |pin|

@@ -473,6 +473,72 @@ describe Solargraph::SourceMap::Clip do
     expect(clip.complete.pins.map(&:path)).not_to include('Par#hidden')
   end
 
+  it "infers instance variable types in rebound blocks" do
+    source = Solargraph::Source.load_string(%(
+      class Foo
+        def initialize
+          @foo = ''
+        end
+      end
+      Foo.new.instance_eval do
+        @foo
+      end
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new
+    api_map.map source
+    clip = api_map.clip_at('test.rb', [7, 8])
+    expect(clip.infer.tag).to eq('String')
+  end
+
+  it "completes instance variable methods in rebound blocks" do
+    source = Solargraph::Source.load_string(%(
+      class Foo
+        def initialize
+          @foo = ''
+        end
+      end
+      Foo.new.instance_eval do
+        @foo._
+      end
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new
+    api_map.map source
+    clip = api_map.clip_at('test.rb', [7, 13])
+    expect(clip.complete.pins.map(&:path)).to include('String#upcase')
+  end
+
+  it 'infers class instance variable types in rebound blocks' do
+    source = Solargraph::Source.load_string(%(
+      class Foo
+        @foo = ''
+      end
+      Foo.class_eval do
+        @foo
+      end
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new
+    api_map.map source
+    clip = api_map.clip_at('test.rb', [5, 8])
+    expect(clip.infer.tag).to eq('String')
+  end
+
+  it "completes extended class methods" do
+    source = Solargraph::Source.load_string(%(
+      module Extender
+        def foobar; end
+      end
+
+      class Extended
+        extend Extender
+        foo
+      end
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new
+    api_map.map source
+    clip = api_map.clip_at('test.rb', [7, 11])
+    expect(clip.complete.pins.map(&:name)).to include('foobar')
+  end
+
   it 'infers explicit return types from <Class>.new methods' do
     source = Solargraph::Source.load_string(%(
       class Value
@@ -507,5 +573,154 @@ describe Solargraph::SourceMap::Clip do
     api_map.map source
     clip = api_map.clip_at('test.rb', [1, 17])
     expect(clip.infer.tag).to eq('Object')
+  end
+
+  it 'completes class instance variables in the namespace' do
+    source = Solargraph::Source.load_string(%(
+      class Foo
+        @bar = 'bar'
+        @b
+      end
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new
+    api_map.map source
+    clip = api_map.clip_at('test.rb', [3, 10])
+    names = clip.complete.pins.map(&:name)
+    expect(names).to include('@bar')
+  end
+
+  it 'infers variable types from multiple return nodes' do
+    source = Solargraph::Source.load_string(%(
+      x = if foo
+        'one'
+      else
+        [two]
+      end
+      x
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new
+    api_map.map source
+    clip = api_map.clip_at('test.rb', [6, 7])
+    expect(clip.infer.to_s).to eq('String, Array')
+  end
+
+  it 'detects scoped methods in rebound blocks' do
+    source = Solargraph::Source.load_string(%(
+      class MyClass
+        def my_method
+        end
+      end
+      object = MyClass.new
+      object.instance_eval do
+        m
+      end
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new
+    api_map.map source
+    clip = api_map.clip_at('test.rb', [7, 9])
+    expect(clip.complete.pins.map(&:path)).to include('MyClass#my_method')
+  end
+
+  it 'infers types from scoped methods in rebound blocks' do
+    source = Solargraph::Source.load_string(%(
+      class InnerClass
+        def inner_method
+          @inner_method = ''
+        end
+      end
+
+      class MyClass
+        # @yieldself [InnerClass]
+        def my_method
+          @my_method ||= 'mines'
+        end
+      end
+
+      MyClass.new.my_method do
+        inner_method
+      end
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new
+    api_map.map source
+    clip = api_map.clip_at('test.rb', [15, 20])
+    expect(clip.infer.tag).to eq('String')
+  end
+
+  it 'finds instance methods inside private classes' do
+    source = Solargraph::Source.load_string(%(
+      module First
+        module Second
+          class Sub
+            def method1; end
+            def method2
+              meth
+            end
+          end
+          private_constant :Sub
+        end
+      end
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new
+    api_map.map source
+    clip = api_map.clip_at('test.rb', [6, 18])
+    expect(clip.complete.pins.map(&:path)).to include('First::Second::Sub#method1')
+    expect(clip.complete.pins.map(&:path)).to include('First::Second::Sub#method2')
+  end
+
+  it 'avoids completion inside strings for unsynchronized sources' do
+    source = Solargraph::Source.load_string(%(
+      'one two'
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new
+    api_map.map source
+    updater = Solargraph::Source::Updater.new(
+      'test.rb',
+      1,
+      [
+        Solargraph::Source::Change.new(Solargraph::Range.from_to(1, 6, 1, 6), '.')
+      ]
+    )
+    updated = source.start_synchronize(updater)
+    cursor = updated.cursor_at(Solargraph::Position.new(1, 7))
+    clip = api_map.clip(cursor)
+    expect(clip.complete.pins).to be_empty
+  end
+
+  it 'resolves self return types to the current scope' do
+    source = Solargraph::Source.load_string(%(
+      class Foo
+        # @return [self]
+        def self.make; end
+        def foo_method; end
+      end
+      class Bar < Foo
+        def bar_method; end
+      end
+      Bar.make.bar_method
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new
+    api_map.map source
+    clip = api_map.clip_at('test.rb', [9, 10])
+    expect(clip.infer.tag).to eq('Bar')
+    clip = api_map.clip_at('test.rb', [9, 15])
+    expect(clip.define.first.path).to eq('Bar#bar_method')
+  end
+
+  it 'resolves methods when completing base self types' do
+    source = Solargraph::Source.load_string(%(
+      class Foo
+        # @return [self]
+        def self.make; end
+        def foo_method; end
+      end
+      class Bar < Foo
+        def bar_method; end
+      end
+      Bar.make.b
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new
+    api_map.map source
+    clip = api_map.clip_at('test.rb', [9, 15])
+    expect(clip.complete.pins.map(&:path)).to include('Bar#bar_method')
   end
 end

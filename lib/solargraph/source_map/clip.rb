@@ -14,13 +14,14 @@ module Solargraph
       # @return [Array<Pin::Base>]
       def define
         return [] if cursor.comment? || cursor.chain.literal?
-        result = cursor.chain.define(api_map, context_pin, locals)
+        result = cursor.chain.define(api_map, block, locals)
         result.concat((source_map.pins + source_map.locals).select{ |p| p.name == cursor.word && p.location.range.contain?(cursor.position) }) if result.empty?
         result
       end
 
       # @return [Completion]
       def complete
+        return package_completions([]) if cursor.string?
         return package_completions(api_map.get_symbols) if cursor.chain.literal? && cursor.chain.links.last.word == '<Symbol>'
         return Completion.new([], cursor.range) if cursor.chain.literal? || cursor.comment?
         result = []
@@ -37,21 +38,24 @@ module Solargraph
               type = ComplexType::UNDEFINED
             end
           end
-          result.concat api_map.get_constants(type.undefined? ? '' : type.namespace, cursor.start_of_constant? ? '' : context_pin.context.namespace)
+          result.concat api_map.get_constants(type.undefined? ? '' : type.namespace, cursor.start_of_constant? ? '' : context_pin.full_context.namespace)
         else
-          type = cursor.chain.base.infer(api_map, context_pin, locals)
-          result.concat api_map.get_complex_type_methods(type, context_pin.context.namespace, cursor.chain.links.length == 1)
+          type = cursor.chain.base.infer(api_map, block, locals)
+          if type.tag == 'self'
+            type = ComplexType.try_parse(cursor.chain.base.base.infer(api_map, block, locals).namespace)
+          end
+          result.concat api_map.get_complex_type_methods(type, context_pin.full_context.namespace, cursor.chain.links.length == 1)
           if cursor.chain.links.length == 1
             if cursor.word.start_with?('@@')
               return package_completions(api_map.get_class_variable_pins(context_pin.context.namespace))
             elsif cursor.word.start_with?('@')
-              return package_completions(api_map.get_instance_variable_pins(context_pin.context.namespace, context_pin.context.scope))
+              return package_completions(api_map.get_instance_variable_pins(block.binder.namespace, block.binder.scope))
             elsif cursor.word.start_with?('$')
               return package_completions(api_map.get_global_variable_pins)
             end
             result.concat locals
             result.concat api_map.get_constants('', context_pin.context.namespace)
-            result.concat api_map.get_methods(context_pin.context.namespace, scope: context_pin.context.scope, visibility: [:public, :private, :protected])
+            result.concat api_map.get_methods(block.binder.namespace, scope: block.binder.scope, visibility: [:public, :private, :protected])
             result.concat api_map.get_methods('Kernel')
             result.concat ApiMap.keywords
             result.concat yielded_self_pins
@@ -63,13 +67,15 @@ module Solargraph
       # @return [Array<Pin::Base>]
       def signify
         return [] unless cursor.argument?
-        clip = Clip.new(api_map, cursor.recipient)
-        clip.define.select{|pin| pin.kind == Pin::METHOD}
+        chain = Source::NodeChainer.chain(cursor.recipient_node, cursor.filename)
+        chain.define(api_map, context_pin, locals).select { |pin| pin.is_a?(Pin::Method) }
       end
 
       # @return [ComplexType]
       def infer
-        cursor.chain.infer(api_map, context_pin, locals)
+        result = cursor.chain.infer(api_map, block, locals)
+        return result unless result.tag == 'self'
+        ComplexType.try_parse(cursor.chain.base.infer(api_map, block, locals).namespace)
       end
 
       # Get an array of all the locals that are visible from the cursors's
@@ -117,11 +123,6 @@ module Solargraph
         receiver_pin = chain.define(api_map, context_pin, locals).first
         return [] if receiver_pin.nil?
         result = []
-        ys = receiver_pin.docstring.tag(:yieldself)
-        unless ys.nil? || ys.types.empty?
-          ysct = ComplexType.try_parse(*ys.types).qualify(api_map, receiver_pin.context.namespace)
-          result.concat api_map.get_complex_type_methods(ysct, ysct.namespace, true)
-        end
         ys = receiver_pin.docstring.tag(:yieldpublic)
         unless ys.nil? || ys.types.empty?
           ysct = ComplexType.try_parse(*ys.types).qualify(api_map, receiver_pin.context.namespace)

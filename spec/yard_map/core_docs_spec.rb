@@ -48,10 +48,21 @@ describe Solargraph::YardMap::CoreDocs do
     expect(Solargraph::YardMap::CoreDocs.valid?(best_match)).to be(true)
   end
 
-  it "clears the cache" do
+  it 'reverts to earliest match for legacy versions' do
+    result = Solargraph::YardMap::CoreDocs.best_download('1.0.0')
+    expect(result).to eq(Solargraph::YardMap::CoreDocs.available.last)
+  end
+
+  it 'clears the cache' do
     expect {
       Solargraph::YardMap::CoreDocs.clear
     }.not_to raise_error
     expect(Solargraph::YardMap::CoreDocs.best_match).to eq(Solargraph::YardMap::CoreDocs::DEFAULT)
+  end
+
+  it 'raises errors for invalid version downloads' do
+    expect {
+      Solargraph::YardMap::CoreDocs.download('99.99.99')
+    }.to raise_error(ArgumentError)
   end
 end

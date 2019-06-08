@@ -4,8 +4,9 @@ module Solargraph
       # @param location [Solargraph::Location]
       # @param name [String]
       def initialize location, name
-        @name = name
-        @location = location
+        super(location: location, name: name)
+        # @name = name
+        # @location = location
       end
 
       def namespace
@@ -28,12 +29,16 @@ module Solargraph
         ''
       end
 
-      def return_complex_type
-        @return_complex_type ||= Solargraph::ComplexType::SYMBOL
+      def return_type
+        @return_type ||= Solargraph::ComplexType::SYMBOL
       end
 
       def directives
         []
+      end
+
+      def visibility
+        :public
       end
 
       def deprecated?
