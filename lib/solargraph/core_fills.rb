@@ -19,6 +19,10 @@ module Solargraph
       Array#[] Array#first Array#last
     ].freeze
 
+    METHODS_RETURNING_VALUE_TYPES = %w[
+      Hash#[]
+    ].freeze
+
     METHODS_WITH_YIELDPARAM_SELF = %w[
       Object#tap
     ].freeze
