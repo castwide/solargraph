@@ -75,7 +75,7 @@ module Solargraph
 
         # @param uri [String]
         # @param updater [Source::Updater]
-        # @return [Thread]
+        # @return [void]
         def async_update uri, updater
           src = find(uri)
           mutex.synchronize { open_source_hash[uri] = src.start_synchronize(updater) }

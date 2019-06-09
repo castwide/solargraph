@@ -13,21 +13,15 @@ module Solargraph
 
     include SourceToYard
 
-    # Get a LiveMap associated with the current workspace.
-    #
-    # @return [Solargraph::LiveMap]
-    attr_reader :live_map
-
     # @return [Array<String>]
     attr_reader :unresolved_requires
 
     # @param pins [Array<Solargraph::Pin::Base>]
     def initialize pins: []
-      # @todo Extensions don't work yet
-      # require_extensions
       @source_map_hash = {}
       @cache = Cache.new
       @mutex = Mutex.new
+      @method_alias_stack = []
       index pins
     end
 
@@ -40,7 +34,6 @@ module Solargraph
         @store = Store.new(pins + YardMap.new.pins)
         @unresolved_requires = []
       }
-      # resolve_method_aliases
       self
     end
 
@@ -97,12 +90,14 @@ module Solargraph
         reqs.concat map.requires.map(&:name)
       end
       reqs.concat bundle.workspace.config.required
+      local_path_hash.clear
       unless bundle.workspace.require_paths.empty?
         reqs.delete_if do |r|
           result = false
           bundle.workspace.require_paths.each do |l|
             pn = Pathname.new(bundle.workspace.directory).join(l, "#{r}.rb")
             if new_map_hash.keys.include?(pn.to_s)
+              local_path_hash[r] = pn.to_s
               result = true
               break
             end
@@ -118,8 +113,11 @@ module Solargraph
         @store = new_store
         @unresolved_requires = yard_map.unresolved_requires
       }
-      # resolve_method_aliases
       self
+    end
+
+    def local_path_hash
+      @local_paths ||= {}
     end
 
     # @param filename [String]
@@ -218,9 +216,7 @@ module Solargraph
     # @param context [String] The context to search
     # @return [String]
     def qualify namespace, context = ''
-      # @todo The return for self might work better elsewhere
-      return nil if namespace.nil?
-      return qualify(context) if namespace == 'self'
+      return namespace if ['self', nil].include?(namespace)
       cached = cache.get_qualified_namespace(namespace, context)
       return cached.clone unless cached.nil?
       result = if namespace.start_with?('::')
@@ -274,7 +270,7 @@ module Solargraph
     # @param scope [Symbol] :class or :instance
     # @param visibility [Array<Symbol>] :public, :protected, and/or :private
     # @param deep [Boolean] True to include superclasses, mixins, etc.
-    # @return [Array<Solargraph::Pin::Base>]
+    # @return [Array<Solargraph::Pin::BaseMethod>]
     def get_methods fqns, scope: :instance, visibility: [:public], deep: true
       cached = cache.get_methods(fqns, scope, visibility, deep)
       return cached.clone unless cached.nil?
@@ -292,12 +288,7 @@ module Solargraph
       else
         result.concat inner_get_methods(fqns, scope, visibility, deep, skip)
       end
-      # live = live_map.get_methods(fqns, '', scope.to_s, visibility.include?(:private))
-      # unless live.empty?
-      #   exist = result.map(&:name)
-      #   result.concat live.reject{|p| exist.include?(p.name)}
-      # end
-      resolved = resolve_method_aliases(result)
+      resolved = resolve_method_aliases(result, visibility)
       cache.set_methods(fqns, scope, visibility, deep, resolved)
       resolved
     end
@@ -327,7 +318,7 @@ module Solargraph
       result = []
       if type.duck_type?
         type.select(&:duck_type?).each do |t|
-          result.push Pin::DuckMethod.new(nil, t.tag[1..-1])
+          result.push Pin::DuckMethod.new(name: t.tag[1..-1])
         end
         result.concat get_methods('Object')
       else
@@ -369,10 +360,6 @@ module Solargraph
       return [] if path.nil?
       result = []
       result.concat store.get_path_pins(path)
-      # if result.empty?
-      #   lp = live_map.get_path_pin(path)
-      #   result.push lp unless lp.nil?
-      # end
       resolve_method_aliases(result)
     end
 
@@ -461,6 +448,19 @@ module Solargraph
       source_map_hash[filename]
     end
 
+    # @param location [Location]
+    def require_reference_at location
+      map = source_map(location.filename)
+      pin = map.requires.select { |pin| pin.location.range.contain?(location.range.start) }.first
+      return nil if pin.nil?
+      if local_path_hash.key?(pin.name)
+        return Location.new(local_path_hash[pin.name], Solargraph::Range.from_to(0, 0, 0, 0))
+      end
+      yard_map.require_reference(pin.name)
+    rescue FileNotFoundError
+      nil
+    end
+
     private
 
     # @return [YardMap]
@@ -544,20 +544,7 @@ module Solargraph
         fqis = qualify(is, fqns)
         result.concat inner_get_constants(fqis, [:public], skip) unless fqis.nil?
       end
-      # result.concat live_map.get_constants(fqns)
       result
-    end
-
-    # Require extensions for the experimental plugin architecture. Any
-    # installed gem with a name that starts with "solargraph-" is considered
-    # an extension.
-    #
-    # @return [void]
-    def require_extensions
-      Gem::Specification.all_names.select{|n| n.match(/^solargraph\-[a-z0-9_\-]*?\-ext\-[0-9\.]*$/)}.each do |n|
-        Solargraph::Logging.logger.info "Loading extension #{n}"
-        require n.match(/^(solargraph\-[a-z0-9_\-]*?\-ext)\-[0-9\.]*$/)[1]
-      end
     end
 
     # @return [Hash]
@@ -599,7 +586,6 @@ module Solargraph
         end
         return name if store.namespace_exists?(name)
       end
-      # live_map.get_fqns(name, root)
     end
 
     # Get the namespace's type (Class or Module).
@@ -646,14 +632,35 @@ module Solargraph
     end
 
     # @param pins [Array<Pin::Base>]
+    # @param visibility [Array<Symbol>]
     # @return [Array<Pin::Base>]
-    def resolve_method_aliases pins
-      pins.map do |pin|
-        next pin unless pin.kind == Pin::METHOD_ALIAS
-        origin = get_method_stack(pin.namespace, pin.original, scope: pin.scope).select{|pin| pin.is_a?(Pin::BaseMethod)}.first
-        next pin if origin.nil?
-        Pin::Method.new(pin.location, pin.namespace, pin.name, origin.comments, origin.scope, origin.visibility, origin.parameters)
+    def resolve_method_aliases pins, visibility = [:public, :private, :protected]
+      result = []
+      pins.each do |pin|
+        resolved = resolve_method_alias(pin)
+        next unless visibility.include?(resolved.visibility)
+        result.push resolved
       end
+      result
+    end
+
+    # @param pin [Pin::MethodAlias, Pin::Base]
+    # @return [Pin::Base]
+    def resolve_method_alias pin
+      return pin if !pin.is_a?(Pin::MethodAlias) || @method_alias_stack.include?(pin.path)
+      @method_alias_stack.push pin.path
+      origin = get_method_stack(pin.full_context.namespace, pin.original, scope: pin.scope).first
+      @method_alias_stack.pop
+      return pin if origin.nil?
+      Pin::Method.new(
+        location: pin.location,
+        closure: pin.closure,
+        name: pin.name,
+        comments: origin.comments,
+        scope: origin.scope,
+        visibility: origin.visibility,
+        args: origin.parameters
+      )
     end
   end
 end

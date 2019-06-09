@@ -21,7 +21,7 @@ describe Solargraph::Source::Cursor do
   end
 
   it "detects arguments" do
-    source = double(:Source, :code => 'a(1), b')
+    source = Solargraph::Source.load_string('a(1); b')
     cur = described_class.new(source, Solargraph::Position.new(0,2))
     expect(cur).to be_argument
     cur = described_class.new(source, Solargraph::Position.new(0,3))
@@ -60,11 +60,13 @@ describe Solargraph::Source::Cursor do
     expect(source.at(cur.range)).to eq('bar')
   end
 
-  it "detects recipients" do
-    source = double(:Source, :code => 'a(1), b')
-    cur = described_class.new(source, Solargraph::Position.new(0, 2))
-    expect(cur.recipient.word).to eq('a')
-  end
+  # @todo This test might not apply anymore. The cursor uses a new recipient
+  #   detection method based on nodes and chains.
+  # it "detects recipients" do
+  #   source = Solargraph::Source.load_string('a(1); b')
+  #   cur = described_class.new(source, Solargraph::Position.new(0, 2))
+  #   expect(cur.recipient.word).to eq('a')
+  # end
 
   it "generates chains" do
     source = Solargraph::Source.load_string('foo.bar(1,2).baz{}')
@@ -77,5 +79,17 @@ describe Solargraph::Source::Cursor do
     source = double(:Source, :code => 'Foo::Bar')
     cur = described_class.new(source, Solargraph::Position.new(0, 5))
     expect(cur.word).to eq('Bar')
+  end
+
+  it "detects cursors in dynamic strings" do
+    source = Solargraph::Source.load_string('"#{100}"')
+    cursor = source.cursor_at(Solargraph::Position.new(0, 7))
+    expect(cursor).to be_string
+  end
+
+  it "detects cursors in embedded strings" do
+    source = Solargraph::Source.load_string('"#{100}..."')
+    cursor = source.cursor_at(Solargraph::Position.new(0, 10))
+    expect(cursor).to be_string
   end
 end

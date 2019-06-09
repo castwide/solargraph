@@ -191,8 +191,19 @@ module Solargraph
     # @param position [Position]
     # @return [Boolean]
     def string_at? position
-      string_ranges.each do |range|
-        return true if range.include?(position)
+      return false if Position.to_offset(code, position) >= code.length
+      string_nodes.each do |node|
+        range = Range.from_node(node)
+        break if range.ending.line > position.line
+        return true if node.type == :str && range.include?(position) && range.start != position
+        if node.type == :dstr
+          inner = node_at(position.line, position.column)
+          next if inner.nil?
+          inner_range = Range.from_node(inner)
+          return true if inner.type == :str ||
+            (inner.type == :dstr && inner_range.ending.character < position.character) ||
+            (inner.type != :dstr && inner_range.ending == position)
+        end
         break if range.ending.line > position.line
       end
       false
@@ -290,7 +301,7 @@ module Solargraph
       @associated_comments ||= begin
         result = {}
         Parser::Source::Comment.associate_locations(node, comments).each_pair do |loc, all|
-          block = all #.select{ |l| l.document? || code.lines[l.loc.line].strip.start_with?('#')}
+          block = all.select { |l| l.loc.line < loc.line }
           next if block.empty?
           result[loc.line] ||= []
           result[loc.line].concat block
@@ -351,9 +362,9 @@ module Solargraph
       @stringified_comments ||= {}
     end
 
-    # @return [Array<Range>]
-    def string_ranges
-      @string_ranges ||= string_ranges_in(@node)
+    # @return [Array<Parser::AST::Node>]
+    def string_nodes
+      @string_nodes ||= string_nodes_in(@node)
     end
 
     # @return [Array<Range>]
@@ -393,18 +404,24 @@ module Solargraph
       result
     end
 
-    def string_ranges_in n
+    # @param n [Parser::AST::Node]
+    # @return [Array<Parser::AST::Node>]
+    def string_nodes_in n
       result = []
       if n.is_a?(Parser::AST::Node)
-        if n.type == :str
-          result.push Range.from_node(n)
+        if n.type == :str || n.type == :dstr
+          result.push n
         else
-          n.children.each{ |c| result.concat string_ranges_in(c) }
+          n.children.each{ |c| result.concat string_nodes_in(c) }
         end
       end
       result
     end
 
+    # @param node [Parser::AST::Node]
+    # @param position [Position]
+    # @param stack [Array<Parser::AST::Node>]
+    # @return [void]
     def inner_tree_at node, position, stack
       return if node.nil?
       here = Range.from_to(node.loc.expression.line, node.loc.expression.column, node.loc.expression.last_line, node.loc.expression.last_column)

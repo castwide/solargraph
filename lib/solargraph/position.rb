@@ -29,7 +29,7 @@ module Solargraph
     end
 
     def inspect
-      "<Position #{line}, #{character}>"
+      "#<#{self.class} #{line}, #{character}>"
     end
 
     # Get a numeric offset for the specified text and position.

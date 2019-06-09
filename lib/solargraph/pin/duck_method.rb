@@ -6,9 +6,9 @@ module Solargraph
     class DuckMethod < Pin::Method
       # @param location [Solargraph::Location]
       # @param name [String]
-      def initialize location, name
-        super(location, '', name, nil, :instance, :public, [])
-      end
+      # def initialize location, name
+      #   # super(location, '', name, nil, :instance, :public, [])
+      # end
     end
   end
 end

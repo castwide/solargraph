@@ -66,7 +66,7 @@ module Solargraph
           return 'Symbol'
         elsif node.type == :regexp
           return 'Regexp'
-        # @todo Maybe ignore nils
+        # @todo Support `nil` keyword in types
         # elsif node.type == :nil
         #   return 'NilClass'
         end
@@ -203,8 +203,9 @@ module Solargraph
           def reduce_to_value_nodes nodes
             result = []
             nodes.each do |node|
-              next unless node.is_a?(Parser::AST::Node)
-              if REDUCEABLE.include?(node.type)
+              if !node.is_a?(Parser::AST::Node)
+                result.push nil
+              elsif REDUCEABLE.include?(node.type)
                 result.concat get_return_nodes_from_children(node)
               elsif CONDITIONAL.include?(node.type)
                 result.concat reduce_to_value_nodes(node.children[1..-1])

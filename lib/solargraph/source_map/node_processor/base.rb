@@ -13,13 +13,17 @@ module Solargraph
         # @return [Array<Pin::Base>]
         attr_reader :pins
 
+        # @return [Array<Pin::Base>]
+        attr_reader :locals
+
         # @param node [Parser::AST::Node]
         # @param region [Region]
         # @param pins [Array<Pin::Base>]
-        def initialize node, region, pins
+        def initialize node, region, pins, locals
           @node = node
           @region = region
           @pins = pins
+          @locals = locals
         end
 
         protected
@@ -38,7 +42,7 @@ module Solargraph
         def process_children subregion = region
           node.children.each do |child|
             next unless child.is_a?(Parser::AST::Node)
-            NodeProcessor.process(child, subregion, pins)
+            NodeProcessor.process(child, subregion, pins, locals)
           end
         end
 
@@ -56,11 +60,48 @@ module Solargraph
         end
 
         def named_path_pin position
-          pins.select{|pin| [Pin::NAMESPACE, Pin::METHOD].include?(pin.kind) and pin.location.range.contain?(position)}.last
+          pins.select{|pin| [Pin::NAMESPACE, Pin::METHOD].include?(pin.kind) && pin.location.range.contain?(position)}.last
         end
 
+        # @todo Candidate for deprecation
         def block_pin position
-          pins.select{|pin| [Pin::BLOCK, Pin::NAMESPACE, Pin::METHOD].include?(pin.kind) and pin.location.range.contain?(position)}.last
+          pins.select{|pin| [Pin::BLOCK, Pin::NAMESPACE, Pin::METHOD].include?(pin.kind) && pin.location.range.contain?(position)}.last
+        end
+
+        # @todo Candidate for deprecation
+        def closure_pin position
+          pins.select{|pin| pin.is_a?(Pin::Closure) && pin.location.range.contain?(position)}.last
+        end
+
+        private
+
+        def method_args
+          return [] if node.nil?
+          list = nil
+          args = []
+          node.children.each { |c|
+            if c.kind_of?(AST::Node) and c.type == :args
+              list = c
+              break
+            end
+          }
+          return args if list.nil?
+          list.children.each { |c|
+            if c.type == :arg
+              args.push c.children[0].to_s
+            elsif c.type == :restarg
+              args.push "*#{c.children[0]}"
+            elsif c.type == :optarg
+              args.push "#{c.children[0]} = #{region.code_for(c.children[1])}"
+            elsif c.type == :kwarg
+              args.push "#{c.children[0]}:"
+            elsif c.type == :kwoptarg
+              args.push "#{c.children[0]}: #{region.code_for(c.children[1])}"
+            elsif c.type == :blockarg
+              args.push "&#{c.children[0]}"
+            end
+          }
+          args
         end
       end
     end

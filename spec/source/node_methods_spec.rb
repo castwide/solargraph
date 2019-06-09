@@ -31,6 +31,11 @@ describe Solargraph::Source::NodeMethods do
     expect(Solargraph::Source::NodeMethods.infer_literal_node_type(ast.children[1])).to eq 'Float'
   end
 
+  it "infers literal symbols" do
+    ast = Parser::CurrentRuby.parse(":symbol")
+    expect(Solargraph::Source::NodeMethods.infer_literal_node_type(ast)).to eq 'Symbol'
+  end
+
   it "unpacks a multi-part constant" do
     ast = Parser::CurrentRuby.parse("class Foo::Bar;end")
     expect(Solargraph::Source::NodeMethods.const_from(ast.children[0])).to eq 'Foo::Bar'
@@ -57,7 +62,7 @@ describe Solargraph::Source::NodeMethods do
     ))
     rets = Solargraph::Source::NodeMethods.returns_from(node)
     # @todo Should there be two returns, the second being nil?
-    expect(rets.length).to eq(0)
+    expect(rets.length).to eq(1)
   end
 
   it "handles return nodes with implicit nil values" do
@@ -66,7 +71,7 @@ describe Solargraph::Source::NodeMethods do
     ))
     rets = Solargraph::Source::NodeMethods.returns_from(node)
     # @todo Should there be two returns, the second being nil?
-    expect(rets.length).to eq(1)
+    expect(rets.length).to eq(2)
   end
 
   it "handles return nodes in reduceable (begin) nodes" do
@@ -77,7 +82,7 @@ describe Solargraph::Source::NodeMethods do
     ))
     rets = Solargraph::Source::NodeMethods.returns_from(node)
     # @todo Should there be two nil returns?
-    expect(rets.length).to eq(0)
+    expect(rets.length).to eq(1)
   end
 
   it "handles return nodes after other nodes" do

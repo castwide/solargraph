@@ -44,20 +44,6 @@ module Solargraph
       @requires ||= pins.select{|p| p.kind == Pin::REQUIRE_REFERENCE}
     end
 
-    # @param position [Position, Array(Integer, Integer)]
-    # @return [Boolean]
-    def string_at? position
-      position = Position.normalize(position)
-      @source.string_at?(position)
-    end
-
-    # @param position [Position, Array(Integer, Integer)]
-    # @return [Boolean]
-    def comment_at? position
-      position = Position.normalize(position)
-      @source.comment_at?(position)
-    end
-
     # @return [Array<Pin::Base>]
     def document_symbols
       @document_symbols ||= pins.select { |pin|
@@ -87,7 +73,7 @@ module Solargraph
     # @return [Array<Solargraph::Pin::Base>]
     def locate_pins location
       # return nil unless location.start_with?("#{filename}:")
-      pins.select { |pin| pin.location == location }
+      (pins + locals).select { |pin| pin.location == location }
     end
 
     def locate_named_path_pin line, character
@@ -118,6 +104,13 @@ module Solargraph
       source.references name
     end
 
+    # @param location [Location]
+    # @return [Array<Pin::LocalVariable>]
+    def locals_at(location)
+      return [] if location.filename != filename
+      locals.select { |pin| pin.visible_at?(location) }
+    end
+
     class << self
       # @param filename [String]
       # @return [SourceMap]
@@ -146,7 +139,7 @@ module Solargraph
 
     # @param line [Integer]
     # @param character [Integer]
-    # @param *kinds [Array<Symbol>]
+    # @param kinds [Array<Symbol>]
     # @return [Pin::Base]
     def _locate_pin line, character, *kinds
       position = Position.new(line, character)
@@ -155,7 +148,7 @@ module Solargraph
         found = pin if (kinds.empty? || kinds.include?(pin.kind)) && pin.location.range.contain?(position)
         break if pin.location.range.start.line > line
       end
-      # @todo Assuming the root pin is always valid
+      # Assuming the root pin is always valid
       found || pins.first
     end
 

@@ -9,36 +9,19 @@ module Solargraph
       # @return [Parser::AST::Node]
       attr_reader :node
 
-      def initialize location, namespace, name, comments, scope, visibility, args, node = nil
-        super(location, namespace, name, comments)
-        @scope = scope
-        @visibility = visibility
+      def initialize args: [], node: nil, **splat
+        super(splat)
         @parameters = args
         @node = node
       end
 
       # @return [Array<String>]
       def parameter_names
-        @parameter_names ||= parameters.map{|p| p.split(/[ =:]/).first}
+        @parameter_names ||= parameters.map{|p| p.split(/[ =:]/).first.gsub(/^(\*{1,2}|&)/, '')}
       end
 
       def kind
         Solargraph::Pin::METHOD
-      end
-
-      def path
-        @path ||= namespace + (scope == :instance ? '#' : '.') + name
-      end
-
-      def context
-        @context ||= begin
-          if scope == :class
-            # @todo Determine whether the namespace is a class or a module
-            ComplexType.try_parse("Class<#{namespace}>")
-          else
-            ComplexType.try_parse(namespace)
-          end
-        end
       end
 
       def completion_item_kind
@@ -66,7 +49,7 @@ module Solargraph
             @documentation += lines.join("\n")
           end
         end
-        @documentation
+        @documentation.to_s
       end
 
       def nearly? other
@@ -108,7 +91,12 @@ module Solargraph
       # @return [ComplexType]
       def infer_from_return_nodes api_map
         result = []
+        has_nil = false
         returns_from(method_body_node).each do |n|
+          if n.nil? || n.type == :nil
+            has_nil = true
+            next
+          end
           next if n.loc.nil?
           clip = api_map.clip_at(
             location.filename,
@@ -118,6 +106,7 @@ module Solargraph
           type = chain.infer(api_map, self, clip.locals)
           result.push type unless type.undefined?
         end
+        result.push ComplexType::NIL if has_nil
         return ComplexType::UNDEFINED if result.empty?
         ComplexType.try_parse(*result.map(&:tag))
       end

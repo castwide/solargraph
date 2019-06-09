@@ -4,11 +4,10 @@ module Solargraph
       # @return [Symbol] :reader or :writer
       attr_reader :access
 
-      def initialize location, namespace, name, comments, access, scope, visibility
-        super(location, namespace, name, comments)
+      def initialize access: :reader, node: nil, **splat
+        super(splat)
         @access = access
         @scope = scope
-        @visibility = visibility
       end
 
       def kind
@@ -25,16 +24,6 @@ module Solargraph
 
       def path
         @path ||= namespace + (scope == :instance ? '#' : '.') + name
-      end
-
-      def parameters
-        # Since attributes are generally equivalent to methods, treat
-        # them as methods without parameters
-        []
-      end
-
-      def parameter_names
-        []
       end
     end
   end

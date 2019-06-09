@@ -3,14 +3,14 @@ module Solargraph
     module NodeProcessor
       class AliasNode < Base
         def process
-          pin = pins.select{|p| [Solargraph::Pin::Method, Solargraph::Pin::Attribute].include?(p.class) && p.name == node.children[1].children[0].to_s && p.namespace == region.namespace && p.scope == region.scope}.first
-          if pin.nil?
-            pins.push Solargraph::Pin::MethodAlias.new(get_node_location(node), region.namespace, node.children[0].children[0].to_s, region.scope, node.children[1].children[0].to_s)
-          elsif pin.is_a?(Solargraph::Pin::Method)
-            pins.push Solargraph::Pin::Method.new(get_node_location(node), pin.namespace, node.children[0].children[0].to_s, comments_for(node) || pin.comments, pin.scope, pin.visibility, pin.parameters, pin.node)
-          elsif pin.is_a?(Solargraph::Pin::Attribute)
-            pins.push Solargraph::Pin::Attribute.new(get_node_location(node), pin.namespace, node.children[0].children[0].to_s, comments_for(node) || pin.comments, pin.access, pin.scope, pin.visibility)
-          end
+          loc = get_node_location(node)
+          pins.push Solargraph::Pin::MethodAlias.new(
+            location: loc,
+            closure: region.closure,
+            name: node.children[0].children[0].to_s,
+            original: node.children[1].children[0].to_s,
+            scope: region.scope || :instance
+          )
           process_children
         end
       end

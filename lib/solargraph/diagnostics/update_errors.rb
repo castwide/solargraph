@@ -18,6 +18,7 @@ module Solargraph
 
       # Combine an array of ranges by their starting lines.
       #
+      # @param code [String]
       # @param ranges [Array<Range>]
       # @return [Array<Range>]
       def combine_ranges code, ranges

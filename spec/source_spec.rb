@@ -244,4 +244,16 @@ y = 1 #foo
     comments = source.comments_for(source.node)
     expect(comments.lines.map(&:chomp)).to eq(['one', 'two'])
   end
+
+  it 'does not include inner comments' do
+    source = Solargraph::Source.load_string(%(
+      # included
+      class Foo
+        # ignored
+      end
+    ))
+    comments = source.comments_for(source.node)
+    expect(comments).to include('included')
+    expect(comments).not_to include('ignored')
+  end
 end

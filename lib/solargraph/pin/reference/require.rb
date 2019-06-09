@@ -3,7 +3,8 @@ module Solargraph
     class Reference
       class Require < Reference
         def initialize location, name
-          super(location, '', name)
+          # super(location, '', name)
+          super(location: location, name: name)
         end
 
         def kind

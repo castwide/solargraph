@@ -19,12 +19,10 @@ module Solargraph
           path_name = Pathname.new(Dir.pwd).join(dest_dir).to_s
           FileUtils.mkdir_p path_name
           Dir.chdir(ruby_dir) do
-            `yardoc --plugin coregen -b "#{File.join(path_name, 'yardoc')}" -n *.c`
+            `yardoc -b "#{File.join(path_name, 'yardoc')}" -n *.c`
             raise 'An error occurred generating the core yardoc.' unless $?.success?
-            # YARD::CLI::Yardoc.run('--plugin', 'coregen', '-b', "#{File.join(path_name, 'yardoc')}", '-n', File.join(ruby_dir, '*.c'))
             `yardoc -b "#{File.join(path_name, 'yardoc-stdlib')}" -n lib ext`
             raise 'An error occurred generating the stdlib yardoc.' unless $?.success?
-            # YARD::CLI::Yardoc.run('-b', "#{File.join(path_name, 'yardoc-stdlib')}", '-n', File.join(ruby_dir, 'lib', '**', '*.rb'), File.join(ruby_dir, 'ext', '**', '*.c'), File.join(ruby_dir, 'ext', '**', '*.rb'))
           end
         end
 

@@ -12,7 +12,7 @@ module Solargraph
             context = ''
             bottom = word[2..-1]
           else
-            context = name_pin.context.namespace
+            context = name_pin.full_context.namespace
             bottom = word
           end
           if bottom.include?('::')

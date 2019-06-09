@@ -473,6 +473,72 @@ describe Solargraph::SourceMap::Clip do
     expect(clip.complete.pins.map(&:path)).not_to include('Par#hidden')
   end
 
+  it "infers instance variable types in rebound blocks" do
+    source = Solargraph::Source.load_string(%(
+      class Foo
+        def initialize
+          @foo = ''
+        end
+      end
+      Foo.new.instance_eval do
+        @foo
+      end
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new
+    api_map.map source
+    clip = api_map.clip_at('test.rb', [7, 8])
+    expect(clip.infer.tag).to eq('String')
+  end
+
+  it "completes instance variable methods in rebound blocks" do
+    source = Solargraph::Source.load_string(%(
+      class Foo
+        def initialize
+          @foo = ''
+        end
+      end
+      Foo.new.instance_eval do
+        @foo._
+      end
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new
+    api_map.map source
+    clip = api_map.clip_at('test.rb', [7, 13])
+    expect(clip.complete.pins.map(&:path)).to include('String#upcase')
+  end
+
+  it 'infers class instance variable types in rebound blocks' do
+    source = Solargraph::Source.load_string(%(
+      class Foo
+        @foo = ''
+      end
+      Foo.class_eval do
+        @foo
+      end
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new
+    api_map.map source
+    clip = api_map.clip_at('test.rb', [5, 8])
+    expect(clip.infer.tag).to eq('String')
+  end
+
+  it "completes extended class methods" do
+    source = Solargraph::Source.load_string(%(
+      module Extender
+        def foobar; end
+      end
+
+      class Extended
+        extend Extender
+        foo
+      end
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new
+    api_map.map source
+    clip = api_map.clip_at('test.rb', [7, 11])
+    expect(clip.complete.pins.map(&:name)).to include('foobar')
+  end
+
   it 'infers explicit return types from <Class>.new methods' do
     source = Solargraph::Source.load_string(%(
       class Value

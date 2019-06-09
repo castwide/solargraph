@@ -16,7 +16,7 @@ module Solargraph
         def resolve api_map, name_pin, locals
           found = locals.select{|p| p.name == word}
           return inferred_pins(found, api_map, name_pin.context, locals) unless found.empty?
-          pins = api_map.get_method_stack(name_pin.context.namespace, word, scope: name_pin.context.scope)
+          pins = api_map.get_method_stack(name_pin.binder.namespace, word, scope: name_pin.binder.scope)
           return [] if pins.empty?
           pins.unshift virtual_new_pin(pins.first, name_pin.context) if external_constructor?(pins.first, name_pin.context)
           inferred_pins(pins, api_map, name_pin.context, locals)
@@ -45,10 +45,29 @@ module Solargraph
         def inferred_pins pins, api_map, context, locals
           result = pins.map do |p|
             if CoreFills::METHODS_RETURNING_SELF.include?(p.path)
-              next Solargraph::Pin::Method.new(p.location, p.namespace, p.name, "@return [#{context.tag}]", p.scope, p.visibility, p.parameters, p.node)
+              # next Solargraph::Pin::Method.new(p.location, p.namespace, p.name, "@return [#{context.tag}]", p.scope, p.visibility, p.parameters, p.node)
+              next Solargraph::Pin::Method.new(
+                location: p.location,
+                closure: p.closure,
+                name: p.name,
+                comments: "@return [#{context.tag}]",
+                scope: p.scope,
+                visibility: p.visibility,
+                args: p.parameters,
+                node: p.node
+              )
             end
             if CoreFills::METHODS_RETURNING_SUBTYPES.include?(p.path) && !context.subtypes.empty?
-              next Solargraph::Pin::Method.new(p.location, p.namespace, p.name, "@return [#{context.subtypes.first.tag}]", p.scope, p.visibility, p.parameters, p.node)
+              next Solargraph::Pin::Method.new(
+                location: p.location,
+                closure: p.closure,
+                name: p.name,
+                comments: "@return [#{context.subtypes.first.tag}]",
+                scope: p.scope,
+                visibility: p.visibility,
+                args: p.parameters,
+                node: p.node
+              )
             end
             if CoreFills::METHODS_RETURNING_VALUE_TYPES.include?(p.path) && !context.value_types.empty?
               next Solargraph::Pin::Method.new(
@@ -73,7 +92,7 @@ module Solargraph
             # type = p.infer(api_map)
             type = p.typify(api_map)
             type = p.probe(api_map) if type.undefined?
-            next p if p.return_complex_type == type
+            next p if p.return_type == type
             p.proxy type
           end
           result
@@ -92,7 +111,7 @@ module Solargraph
             result = inner_process_macro(pin, macro, api_map, context, locals)
             return result unless result.return_type.undefined?
           end
-          Pin::ProxyType.new(nil, nil, nil, ComplexType::UNDEFINED)
+          Pin::ProxyType.anonymous(ComplexType::UNDEFINED)
         end
 
         def process_directive pin, api_map, context, locals
@@ -102,7 +121,7 @@ module Solargraph
             result = inner_process_macro(pin, macro, api_map, context, locals)
             return result unless result.return_type.undefined?
           end
-          Pin::ProxyType.new(nil, nil, nil, ComplexType::UNDEFINED)
+          Pin::ProxyType.anonymous ComplexType::UNDEFINED
         end
 
         def inner_process_macro pin, macro, api_map, context, locals
@@ -118,7 +137,7 @@ module Solargraph
           unless tag.nil? || tag.types.nil?
             return Pin::ProxyType.anonymous(ComplexType.try_parse(*tag.types))
           end
-          Pin::ProxyType.new(nil, nil, nil, ComplexType::UNDEFINED)
+          Pin::ProxyType.anonymous(ComplexType::UNDEFINED)
         end
       end
     end

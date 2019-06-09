@@ -79,5 +79,9 @@ module Solargraph
       return false unless other.is_a?(Range)
       start == other.start && ending == other.ending
     end
+
+    def inspect
+      "#<#{self.class} #{start.inspect} to #{ending.inspect}>"
+    end
   end
 end
