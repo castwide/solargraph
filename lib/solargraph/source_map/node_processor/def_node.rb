@@ -24,10 +24,11 @@ module Solargraph
               args: methpin.parameters
             )
             # @todo Smelly instance variable access.
-            pins.last.instance_variable_set(:@return_type, ComplexType.try_parse('self'))
+            pins.last.instance_variable_set(:@return_type, ComplexType::SELF)
             pins.push methpin
             # @todo Smelly instance variable access.
             methpin.instance_variable_set(:@visibility, :private)
+            methpin.instance_variable_set(:@return_type, ComplexType::VOID)
           elsif region.visibility == :module_function
             pins.push Solargraph::Pin::Method.new(
               location: methpin.location,

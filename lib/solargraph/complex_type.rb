@@ -173,5 +173,6 @@ module Solargraph
     SYMBOL = ComplexType.parse('Symbol')
     ROOT = ComplexType.parse('Class<>')
     NIL = ComplexType.parse('nil')
+    SELF = ComplexType.parse('self')
   end
 end
