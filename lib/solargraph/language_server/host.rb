@@ -97,7 +97,7 @@ module Solargraph
             message.process
           rescue Exception => e
             logger.warn "Error processing request: [#{e.class}] #{e.message}"
-            logger.warn e.backtrace
+            logger.warn e.backtrace.join("\n")
             message.set_error Solargraph::LanguageServer::ErrorCodes::INTERNAL_ERROR, "[#{e.class}] #{e.message}"
           end
           message

@@ -36,7 +36,7 @@ module Solargraph
             end
           rescue FileNotFoundError => e
             Logging.logger.warn "[#{e.class}] #{e.message}"
-            Logging.logger.warn e.backtrace
+            Logging.logger.warn e.backtrace.join("\n")
             set_result empty_result
           end
 

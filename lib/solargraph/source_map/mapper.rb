@@ -26,7 +26,7 @@ module Solargraph
         [@pins, @locals]
       rescue Exception => e
         Solargraph.logger.warn "Error mapping #{source.filename}: [#{e.class}] #{e.message}"
-        Solargraph.logger.warn e.backtrace
+        Solargraph.logger.warn e.backtrace.join("\n")
         [[], []]
       end
 

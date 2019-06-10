@@ -56,8 +56,8 @@ module Solargraph
         @comments = []
         @parsed = false
       rescue Exception => e
-        STDERR.puts e.message
-        STDERR.puts e.backtrace
+        Solargraph.logger.warn "[#{e.class}] #{e.message}"
+        Solargraph.logger.warn e.backtrace.join("\n")
         raise "Error parsing #{filename || '(source)'}: [#{e.class}] #{e.message}"
       ensure
         @code.freeze
