@@ -41,4 +41,24 @@ describe Solargraph::Pin::Attribute do
     pin = Solargraph::Pin::Attribute.new(closure: nspin, name: 'bar', comments: '@return [Array<]', access: :reader)
     expect(pin.return_type).to be_undefined
   end
+
+  it 'infers untagged types from instance variables' do
+    source = Solargraph::Source.load_string(%(
+      class Foo
+        attr_reader :bar
+        attr_writer :bar
+        def initialize
+          @bar = String.new
+        end
+      end
+    ))
+    api_map = Solargraph::ApiMap.new
+    api_map.map source
+    pin = api_map.get_path_pins('Foo#bar').first
+    expect(pin.typify(api_map)).to be_undefined
+    expect(pin.probe(api_map).tag).to eq('String')
+    pin = api_map.get_path_pins('Foo#bar=').first
+    expect(pin.typify(api_map)).to be_undefined
+    expect(pin.probe(api_map).tag).to eq('String')
+  end
 end

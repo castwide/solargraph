@@ -25,6 +25,19 @@ module Solargraph
       def path
         @path ||= namespace + (scope == :instance ? '#' : '.') + name
       end
+
+      def probe api_map
+        types = []
+        varname = "@#{name.gsub(/=$/, '')}"
+        pins = api_map.get_instance_variable_pins(binder.namespace, binder.scope).select { |iv| iv.name == varname }
+        pins.each do |pin|
+          type = pin.typify(api_map)
+          type = pin.probe(api_map) if type.undefined?
+          types.push type if type.defined?
+        end
+        return ComplexType::UNDEFINED if types.empty?
+        ComplexType.try_parse(*types.map(&:tag).uniq)
+      end
     end
   end
 end
