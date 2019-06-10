@@ -41,9 +41,6 @@ module Solargraph
           result.concat api_map.get_constants(type.undefined? ? '' : type.namespace, cursor.start_of_constant? ? '' : context_pin.full_context.namespace)
         else
           type = cursor.chain.base.infer(api_map, block, locals)
-          if type.tag == 'self'
-            type = ComplexType.try_parse(cursor.chain.base.base.infer(api_map, block, locals).namespace)
-          end
           result.concat api_map.get_complex_type_methods(type, context_pin.full_context.namespace, cursor.chain.links.length == 1)
           if cursor.chain.links.length == 1
             if cursor.word.start_with?('@@')
