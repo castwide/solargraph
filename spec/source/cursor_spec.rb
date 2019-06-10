@@ -111,4 +111,16 @@ describe Solargraph::Source::Cursor do
     cursor = source.cursor_at(Solargraph::Position.new(1, 10))
     expect(cursor.string?).to be(false)
   end
+
+  it 'detects strings outside of interpolation in unsynchronized sources' do
+    source = Solargraph::Source.load_string('
+      "#{[]}"
+    ', 'test.rb')
+    updater = Solargraph::Source::Updater.new('test.rb', 1, [
+      Solargraph::Source::Change.new(Solargraph::Range.from_to(1, 12, 1, 12), '.')
+    ])
+    updated = source.start_synchronize(updater)
+    cursor = updated.cursor_at(Solargraph::Position.new(1, 13))
+    expect(cursor).to be_string
+  end
 end

@@ -201,9 +201,10 @@ module Solargraph
           next if inner.nil?
           inner_range = Range.from_node(inner)
           next unless range.include?(inner_range.ending)
-          return true if inner.type == :str ||
-            (inner.type == :dstr && inner_range.ending.character < position.character) ||
-            (inner.type != :dstr && inner_range.ending.line == position.line && position.character <= inner_range.ending.character && at(inner_range).end_with?('}'))
+          return true if inner.type == :str
+          inner_code = at(Solargraph::Range.new(inner_range.start, position))
+          return true if (inner.type == :dstr && inner_range.ending.character <= position.character) && !inner_code.end_with?('}') ||
+            (inner.type != :dstr && inner_range.ending.line == position.line && position.character <= inner_range.ending.character && inner_code.end_with?('}'))
         end
         break if range.ending.line > position.line
       end
