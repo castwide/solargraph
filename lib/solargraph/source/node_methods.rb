@@ -52,7 +52,7 @@ module Solargraph
       # @return [String]
       def infer_literal_node_type node
         return nil unless node.kind_of?(AST::Node)
-        if node.type == :str or node.type == :dstr
+        if node.type == :str || node.type == :dstr
           return 'String'
         elsif node.type == :array
           return 'Array'
@@ -157,6 +157,8 @@ module Solargraph
               result.concat reduce_to_value_nodes(node.children)
             elsif node.type == :return
               result.concat reduce_to_value_nodes([node.children[0]])
+            elsif node.type == :block
+              result.concat get_return_nodes(node.children[2])
             else
               result.push node
             end
@@ -184,8 +186,9 @@ module Solargraph
           end
 
           def get_return_nodes_only parent
+            return [] unless parent.is_a?(Parser::AST::Node)
             result = []
-            nodes = parent.children.select{|n| n.is_a?(AST::Node)}
+            nodes = parent.children.select{|n| n.is_a?(Parser::AST::Node)}
             nodes.each do |node|
               next if SKIPPABLE.include?(node.type)
               if node.type == :return
@@ -213,6 +216,8 @@ module Solargraph
                 result.concat get_return_nodes(node.children[0])
               elsif node.type == :and || node.type == :or
                 result.concat reduce_to_value_nodes(node.children)
+              elsif node.type == :block
+                result.concat get_return_nodes_only(node.children[2])
               else
                 result.push node
               end
