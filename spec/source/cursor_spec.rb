@@ -103,4 +103,12 @@ describe Solargraph::Source::Cursor do
     cursor = source.cursor_at(Solargraph::Position.new(4, 18))
     expect(cursor.string?).to be(false)
   end
+
+  it 'does not detect string? at end of interpolation' do
+    source = Solargraph::Source.load_string('
+      "#{a}"
+    ')
+    cursor = source.cursor_at(Solargraph::Position.new(1, 10))
+    expect(cursor.string?).to be(false)
+  end
 end
