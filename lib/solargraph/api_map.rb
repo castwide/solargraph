@@ -236,11 +236,13 @@ module Solargraph
     # @return [Array<Solargraph::Pin::InstanceVariable>]
     def get_instance_variable_pins(namespace, scope = :instance)
       result = []
+      used = [namespace]
       result.concat store.get_instance_variables(namespace, scope)
-      sc = qualify(store.get_superclass(namespace), namespace)
-      until sc.nil?
+      sc = qualify_lower(store.get_superclass(namespace), namespace)
+      until sc.nil? || used.include?(sc)
+        used.push sc
         result.concat store.get_instance_variables(sc, scope)
-        sc = qualify(store.get_superclass(sc), sc)
+        sc = qualify_lower(store.get_superclass(sc), sc)
       end
       result
     end
@@ -550,6 +552,10 @@ module Solargraph
     # @return [Hash]
     def path_macros
       @path_macros ||= {}
+    end
+
+    def qualify_lower namespace, context
+      qualify namespace, context.split('::')[0..-2].join('::')
     end
 
     # @param name [String]
