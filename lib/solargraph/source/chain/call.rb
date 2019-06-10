@@ -18,34 +18,14 @@ module Solargraph
           return inferred_pins(found, api_map, name_pin.context, locals) unless found.empty?
           pins = api_map.get_method_stack(name_pin.binder.namespace, word, scope: name_pin.binder.scope)
           return [] if pins.empty?
-          pins.unshift virtual_new_pin(pins.first, name_pin.context) if external_constructor?(pins.first, name_pin.context)
           inferred_pins(pins, api_map, name_pin.context, locals)
         end
 
         private
 
-        # Create a `new` pin to facilitate type inference. This is necessary for
-        # classes from YARD and classes in the namespace that do not have an
-        # `initialize` method.
-        #
-        # @param new_pin [Solargraph::Pin::Base]
-        # @param context [Solargraph::ComplexType]
-        # @return [Pin::Method]
-        def virtual_new_pin new_pin, context
-          case new_pin.path
-          when 'Class.new'
-            Pin::ProxyType.anonymous(ComplexType.try_parse('Class<Object>'))
-          when 'Class#new'
-            Pin::ProxyType.anonymous(ComplexType.try_parse(context.namespace == 'Class' ? 'Object' : context.namespace))
-          else
-            Pin::ProxyType.anonymous(ComplexType.try_parse(context.namespace))
-          end
-        end
-
         def inferred_pins pins, api_map, context, locals
           result = pins.map do |p|
             if CoreFills::METHODS_RETURNING_SELF.include?(p.path)
-              # next Solargraph::Pin::Method.new(p.location, p.namespace, p.name, "@return [#{context.tag}]", p.scope, p.visibility, p.parameters, p.node)
               next Solargraph::Pin::Method.new(
                 location: p.location,
                 closure: p.closure,
@@ -88,18 +68,13 @@ module Solargraph
               result = process_directive(p, api_map, context, locals)
               next result unless result.return_type.undefined?
             end
-            next p if p.kind == Pin::METHOD || p.kind == Pin::ATTRIBUTE || p.kind == Pin::NAMESPACE
-            # type = p.infer(api_map)
             type = p.typify(api_map)
+            type = ComplexType.try_parse(context.namespace) if type.tag == 'self'
             type = p.probe(api_map) if type.undefined?
             next p if p.return_type == type
             p.proxy type
           end
           result
-        end
-
-        def external_constructor? pin, context
-          pin.path == 'Class#new' || (pin.name == 'new' && pin.scope == :class && pin.docstring.tag(:return).nil?)
         end
 
         # @param pin [Pin::Method]
