@@ -194,6 +194,7 @@ module Solargraph
       return false if Position.to_offset(code, position) >= code.length
       string_nodes.each do |node|
         range = Range.from_node(node)
+        next if range.ending.line < position.line
         break if range.ending.line > position.line
         return true if node.type == :str && range.include?(position) && range.start != position
         if node.type == :dstr
