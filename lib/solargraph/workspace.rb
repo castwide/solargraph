@@ -126,7 +126,7 @@ module Solargraph
 
     private
 
-    # @return [Hash<String, Solargraph::Source>]
+    # @return [Hash{String => Solargraph::Source}]
     def source_hash
       @source_hash ||= {}
     end

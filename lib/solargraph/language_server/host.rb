@@ -477,7 +477,7 @@ module Solargraph
       # @param uri [String]
       # @param line [Integer]
       # @param column [Integer]
-      # @return [Solargraph::ApiMap::Completion]
+      # @return [Solargraph::SourceMap::Completion]
       def completions_at uri, line, column
         library = library_for(uri)
         library.completions_at uri_to_file(uri), line, column

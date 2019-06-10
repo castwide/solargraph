@@ -58,7 +58,7 @@ module Solargraph
     end
 
     # @param position [Position]
-    # @return [Solargraph::SourceMap::Fragment]
+    # @return [Source::Cursor]
     def cursor_at position
       Source::Cursor.new(source, position)
     end
