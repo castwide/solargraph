@@ -22,9 +22,9 @@ module Solargraph
       def typify api_map
         decl = super
         return decl unless decl.undefined?
-        type = see_reference(api_map)
-        return type unless type.nil?
-        ComplexType::UNDEFINED
+        type = see_reference(api_map) || typify_from_super(api_map)
+        return ComplexType::UNDEFINED if type.nil?
+        type.qualify(api_map, namespace)
       end
 
       def parameters
@@ -49,7 +49,7 @@ module Solargraph
       end
 
       # @param api_map [ApiMap]
-      # @return [ComplexType]
+      # @return [ComplexType, nil]
       def see_reference api_map
         docstring.ref_tags.each do |ref|
           next unless ref.tag_name == 'return' && ref.owner
@@ -59,6 +59,17 @@ module Solargraph
         match = comments.match(/\(see (.*)\)/)
         return nil if match.nil?
         resolve_reference match[1], api_map
+      end
+
+      # @param api_map [ApiMap]
+      # @return [ComplexType, nil]
+      def typify_from_super api_map
+        stack = api_map.get_method_stack(namespace, name, scope: scope).reject { |pin| pin.path == path }
+        return nil if stack.empty?
+        stack.each do |pin|
+          return pin.return_type unless pin.return_type.undefined?
+        end
+        nil
       end
 
       # @param ref [String]
