@@ -100,7 +100,7 @@ module Solargraph
         end
         result.push ComplexType::NIL if has_nil
         return ComplexType::UNDEFINED if result.empty?
-        ComplexType.try_parse(*result.map(&:tag))
+        ComplexType.try_parse(*result.map(&:tag).uniq)
       end
     end
   end
