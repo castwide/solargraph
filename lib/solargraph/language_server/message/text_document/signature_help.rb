@@ -11,6 +11,10 @@ module Solargraph
             set_result({
               signatures: info
             })
+          rescue FileNotFoundError => e
+            Logging.logger.warn "[#{e.class}] #{e.message}"
+            Logging.logger.warn e.backtrace
+            set_result nil
           end
         end
       end
