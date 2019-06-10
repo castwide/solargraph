@@ -92,4 +92,15 @@ describe Solargraph::Source::Cursor do
     cursor = source.cursor_at(Solargraph::Position.new(0, 10))
     expect(cursor).to be_string
   end
+
+  it 'avoids errant string? detection from nearby dstr nodes' do
+    source = Solargraph::Source.load_string(%(
+      source = some_call(%(
+        class Foo; end
+      ))
+      String.new(S)
+    ))
+    cursor = source.cursor_at(Solargraph::Position.new(4, 18))
+    expect(cursor.string?).to be(false)
+  end
 end

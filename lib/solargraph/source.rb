@@ -200,6 +200,7 @@ module Solargraph
           inner = node_at(position.line, position.column)
           next if inner.nil?
           inner_range = Range.from_node(inner)
+          next unless range.include?(inner_range.ending)
           return true if inner.type == :str ||
             (inner.type == :dstr && inner_range.ending.character < position.character) ||
             (inner.type != :dstr && inner_range.ending == position)
