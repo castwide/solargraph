@@ -71,7 +71,7 @@ module Solargraph
 
       private
 
-      # @return [Parser::AST:Node, nil]
+      # @return [Parser::AST::Node, nil]
       def method_body_node
         return nil if node.nil?
         return node.children[2] if node.type == :def

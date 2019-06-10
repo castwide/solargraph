@@ -242,7 +242,7 @@ module Solargraph
       #
       # @param d1 [YARD::Docstring]
       # @param d2 [YARD::Docstring]
-      # @return [boolean]
+      # @return [Boolean]
       def compare_docstring_tags d1, d2
         return false if d1.tags.length != d2.tags.length
         d1.tags.each_index do |i|
