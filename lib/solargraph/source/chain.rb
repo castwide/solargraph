@@ -62,18 +62,15 @@ module Solargraph
       # @param locals [Array<Pin::Base>]
       # @return [ComplexType]
       def infer api_map, name_pin, locals
-        STDERR.puts "infer #{links.map(&:word).join('|')}"
         rebind_block name_pin, api_map, locals
         return ComplexType::UNDEFINED if undefined? || @@inference_stack.include?(active_signature(name_pin))
         @@inference_stack.push active_signature(name_pin)
         type = ComplexType::UNDEFINED
         pins = define(api_map, name_pin, locals)
-        STDERR.puts "Definitions: #{pins.length} pins"
         pins.each do |pin|
           type = pin.typify(api_map)
           break unless type.undefined?
         end
-        STDERR.puts "#{pins.first.path} or #{name_pin.path}" unless pins.empty?
         type = pins.first.probe(api_map) unless type.defined? || pins.empty?
         @@inference_stack.pop
         type
