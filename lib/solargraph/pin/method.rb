@@ -63,14 +63,6 @@ module Solargraph
         infer_from_return_nodes(api_map)
       end
 
-      # @deprecated Use #typify and/or #probe instead
-      def infer api_map
-        Solargraph::Logging.logger.warn 'WARNING: Pin #infer methods are deprecated. Use #typify or #probe instead.'
-        type = typify(api_map)
-        return type unless type.undefined?
-        probe api_map
-      end
-
       def try_merge! pin
         return false unless super
         @node = pin.node
