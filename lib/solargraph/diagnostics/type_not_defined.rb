@@ -22,9 +22,9 @@ module Solargraph
       # @param source [Source]
       # @return [Array<Hash>]
       def check_return_type pin, api_map, source
-        return [] if (pin.name == 'initialize' && pin.scope == :instance) || (pin.name == 'new' && pin.scope == :class)
+        type = pin.typify(api_map)
         result = []
-        unless defined_return_type?(pin, api_map)
+        if type.undefined?
           result.push(
             range: extract_first_line(pin, source),
             severity: Diagnostics::Severities::WARNING,
@@ -42,14 +42,19 @@ module Solargraph
       def check_param_types pin, api_map, source
         return [] if pin.name == 'new' and pin.scope == :class
         result = []
-        pin.parameter_names.each do |par|
-          next if defined_param_type?(pin, par, api_map)
-          result.push(
-            range: extract_first_line(pin, source),
-            severity: Diagnostics::Severities::WARNING,
-            source: 'Solargraph',
-            message: "Method `#{pin.name}` has undefined param `#{par}`."
-          )
+        smap = api_map.source_map(source.filename)
+        locals = smap.locals_at(Location.new(source.filename, Solargraph::Range.from_to(pin.location.range.ending.line, pin.location.range.ending.column, pin.location.range.ending.line, pin.location.range.ending.column)))
+        pin.parameter_names.each do |name|
+          par = locals.select { |l| l.name == name }.first
+          type = par.typify(api_map)
+          if type.undefined?
+            result.push(
+              range: extract_first_line(pin, source),
+              severity: Diagnostics::Severities::WARNING,
+              source: 'Solargraph',
+              message: "Method `#{pin.name}` has undefined param `#{par}`."
+            )
+          end
         end
         result
       end
@@ -86,39 +91,6 @@ module Solargraph
             character: last_character(pin.location.range.start, source)
           }
         }
-      end
-
-      # @param pin [Pin::Base]
-      # @param api_map [ApiMap]
-      # @return [Boolean]
-      def defined_return_type? pin, api_map
-        return true unless pin.return_type.undefined?
-        matches = api_map.get_method_stack(pin.namespace, pin.name, scope: pin.scope)
-        matches.shift
-        matches.any? { |m| !m.return_type.undefined? }
-      end
-
-      # @param pin [Pin::Base]
-      # @param param [String]
-      # @param api_map [ApiMap]
-      # @return [Boolean]
-      def defined_param_type? pin, param, api_map
-        return true if param_in_docstring?(param, pin.docstring)
-        matches = api_map.get_method_stack(pin.namespace, pin.name, scope: pin.scope)
-        matches.shift
-        matches.each do |m|
-          next unless pin.parameter_names == m.parameter_names
-          return true if param_in_docstring?(param, m.docstring)
-        end
-        false
-      end
-
-      # @param param [String]
-      # @param docstring [YARD::Docstring]
-      # @return [Boolean]
-      def param_in_docstring? param, docstring
-        tags = docstring.tags(:param)
-        tags.any? { |t| t.name == param }
       end
 
       # @param position [Solargraph::Position]
