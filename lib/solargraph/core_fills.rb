@@ -36,6 +36,8 @@ module Solargraph
     ].freeze
 
     CUSTOM_RETURN_TYPES = {
+      'Class#new' => 'self',
+      'Class.new' => 'Class<Object>',
       'String#split' => 'Array<String>',
       'String#lines' => 'Array<String>'
     }.freeze
