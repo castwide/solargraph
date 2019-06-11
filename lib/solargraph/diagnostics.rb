@@ -10,6 +10,7 @@ module Solargraph
     autoload :RequireNotFound, 'solargraph/diagnostics/require_not_found'
     autoload :TypeNotDefined,  'solargraph/diagnostics/type_not_defined'
     autoload :UpdateErrors,    'solargraph/diagnostics/update_errors'
+    autoload :TypeCheck,       'solargraph/diagnostics/type_check'
 
     class << self
       # Add a reporter with a name to identify it in .solargraph.yml files.
@@ -48,5 +49,6 @@ module Solargraph
     register 'require_not_found', RequireNotFound
     register 'type_not_defined', TypeNotDefined
     register 'update_errors', UpdateErrors
+    register 'type_check', TypeCheck
   end
 end

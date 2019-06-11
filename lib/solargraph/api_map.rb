@@ -441,6 +441,11 @@ module Solargraph
       source_map_hash[filename].document_symbols
     end
 
+    # @return [Array<SourceMap>]
+    def source_maps
+      source_map_hash.values
+    end
+
     # Get a source map by filename.
     #
     # @param filename [String]
