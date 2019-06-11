@@ -6,7 +6,7 @@ module Solargraph
       # @return [Array<Solargraph::Pin::Base>]
       attr_reader :pins
 
-      # @param pins [Array<Solargraph::Source>]
+      # @param pins [Array<Solargraph::Pin::Base>]
       def initialize pins = []
         @pins = pins
         index
