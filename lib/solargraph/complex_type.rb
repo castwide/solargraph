@@ -8,10 +8,7 @@ module Solargraph
     autoload :TypeMethods, 'solargraph/complex_type/type_methods'
     autoload :UniqueType,  'solargraph/complex_type/unique_type'
 
-    # @param types [Array<ComplexType>]
-    # def initialize types = [ComplexType::UNDEFINED]
-    #   @items = types
-    # end
+    # @param types [Array<UniqueType>]
     def initialize types = [UniqueType::UNDEFINED]
       @items = types
     end
