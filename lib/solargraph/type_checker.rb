@@ -66,8 +66,13 @@ module Solargraph
 
     # @return [Array<Problem>]
     def strict_types
+      result = []
       smap = api_map.source_map(filename)
-      check_send_args smap.source.node
+      smap.pins.select { |pin| pin.is_a?(Pin::BaseMethod) }.each do |pin|
+        result.concat confirm_return_type(pin)
+      end
+      result.concat check_send_args smap.source.node
+      result
     end
 
     private
@@ -97,20 +102,23 @@ module Solargraph
         else
           return [Problem.new(pin.location, "#{pin.name} has unresolved @return type #{pin.return_type}")]
         end
-      else
-        # @todo These problems should be detected in some sort of "strict" mode
-        # return [] if tagged.void? || probed.undefined? || pin.is_a?(Pin::Attribute)
-        # if tagged.to_s != probed.to_s
-        #   if probed.name == 'Array' && probed.subtypes.empty?
-        #     return [] if tagged.name == 'Array'
-        #   end
-        #   if probed.name == 'Hash' && probed.value_types.empty?
-        #     return [] if tagged.name == 'Hash'
-        #   end
-        #   return [Problem.new(pin.location, "@return type `#{tagged.to_s}` does not match detected type `#{probed.to_s}`", probed.to_s)]
-        # end
       end
       []
+    end
+
+    def confirm_return_type pin
+      tagged = pin.typify(api_map)
+      probed = pin.probe(api_map)
+      return [] if tagged.void? || probed.undefined? || pin.is_a?(Pin::Attribute)
+      if tagged.to_s != probed.to_s
+        if probed.name == 'Array' && probed.subtypes.empty?
+          return [] if tagged.name == 'Array'
+        end
+        if probed.name == 'Hash' && probed.value_types.empty?
+          return [] if tagged.name == 'Hash'
+        end
+        return [Problem.new(pin.location, "@return type `#{tagged.to_s}` does not match detected type `#{probed.to_s}`", probed.to_s)]
+      end
     end
 
     def check_send_args node
