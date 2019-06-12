@@ -395,6 +395,21 @@ module Solargraph
       pin.proxy(pin.probe(api_map))
     end
 
+    def detail pin
+      type = pin.typify(api_map)
+      probed = false
+      if type.undefined?
+        type = pin.probe(api_map)
+        probed = true
+      end
+      detail = ''
+      detail += "(#{pin.parameters.join(', ')}) " unless pin.kind != Pin::METHOD || pin.parameters.empty?
+      detail += "=#{probed ? '~' : '>'} #{type}" unless type.undefined?
+      detail.strip!
+      return nil if detail.empty?
+      detail
+    end
+
     private
 
     # @return [Mutex]

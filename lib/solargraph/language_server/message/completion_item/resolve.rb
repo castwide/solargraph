@@ -23,7 +23,8 @@ module Solargraph
             result = params
               .merge(pins.first.resolve_completion_item)
               .merge(documentation: markup_content(docs.join("\n\n")))
-            result[:detail] = pins.first.detail
+            # result[:detail] = pins.first.detail
+            result[:detail] = host.detail(pins.first)
             result
           end
 

@@ -18,7 +18,7 @@ module Solargraph
               if !this_link.nil? and this_link != last_link
                 parts.push this_link
               end
-              parts.push HTMLEntities.new.encode(pin.detail) unless pin.kind == Solargraph::Pin::NAMESPACE or pin.detail.nil?
+              parts.push HTMLEntities.new.encode(host.detail(pin)) unless pin.kind == Solargraph::Pin::NAMESPACE or pin.detail.nil?
               parts.push pin.documentation unless pin.documentation.nil? or pin.documentation.empty?
               contents.push parts.join("\n\n") unless parts.empty?
               last_link = this_link unless this_link.nil?
