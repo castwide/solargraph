@@ -16,7 +16,6 @@ module Solargraph
           # @return [Hash]
           def merge pins
             return params if pins.empty?
-            pins = pins.map { |pin| host.probe(pin) }
             docs = pins
                    .reject { |pin| pin.documentation.empty? && pin.return_type.undefined? }
                    .map { |pin| pin.resolve_completion_item[:documentation] }

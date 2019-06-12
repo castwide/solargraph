@@ -196,6 +196,21 @@ module Solargraph
         @proxied ||= false
       end
 
+      def probed?
+        @probed ||= false
+      end
+
+      def realize api_map
+        return self if return_type.defined?
+        type = typify(api_map)
+        return proxy(type) if type.defined?
+        type = probe(api_map)
+        return self if type.undefined?
+        result = proxy(type)
+        result.probed = true
+        result
+      end
+
       # Return a proxy for this pin with the specified return type. Other than
       # the return type and the #proxied? setting, the proxy should be a clone
       # of the original.
@@ -214,6 +229,9 @@ module Solargraph
       end
 
       protected
+
+      # @return [Boolean]
+      attr_writer :probed
 
       # @return [Boolean]
       attr_writer :proxied

@@ -22,7 +22,7 @@ describe Solargraph::Pin::Parameter do
     ), 'file.rb')
     api_map.map source
     clip = api_map.clip_at('file.rb', Solargraph::Position.new(2, 8))
-    expect(clip.define.first.return_type.namespace).to eq('String')
+    expect(clip.infer.tag).to eq('String')
   end
 
   it "detects block parameter return self from core methods" do
@@ -34,7 +34,7 @@ describe Solargraph::Pin::Parameter do
     ), 'file.rb')
     api_map.map source
     clip = api_map.clip_at('file.rb', Solargraph::Position.new(2, 8))
-    expect(clip.define.first.return_type.namespace).to eq('String')
+    expect(clip.infer.tag).to eq('String')
   end
 
   it "gets return types from param type tags" do

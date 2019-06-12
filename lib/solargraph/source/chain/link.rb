@@ -4,6 +4,8 @@ module Solargraph
       class Link
         attr_reader :word
 
+        attr_accessor :last_context
+
         def initialize word = '<undefined>'
           @word = word
         end
