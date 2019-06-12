@@ -106,10 +106,13 @@ module Solargraph
       []
     end
 
+    # @param pin [Solargraph::Pin::Base]
+    # @return [Array<Problem>]
     def confirm_return_type pin
       tagged = pin.typify(api_map)
+      return [] if tagged.void? || tagged.undefined? || pin.is_a?(Pin::Attribute)
       probed = pin.probe(api_map)
-      return [] if tagged.void? || probed.undefined? || pin.is_a?(Pin::Attribute)
+      return [] if probed.undefined?
       if tagged.to_s != probed.to_s
         if probed.name == 'Array' && probed.subtypes.empty?
           return [] if tagged.name == 'Array'
@@ -119,6 +122,7 @@ module Solargraph
         end
         return [Problem.new(pin.location, "@return type `#{tagged.to_s}` does not match detected type `#{probed.to_s}`", probed.to_s)]
       end
+      []
     end
 
     def check_send_args node
@@ -133,8 +137,7 @@ module Solargraph
           result.push Problem.new(Solargraph::Location.new(filename, Solargraph::Range.from_node(node)), "Unresolved method signature #{chain.links.map(&:word).join('.')}")
         else
           pins.each do |pin|
-            STDERR.puts node.children[2]
-            # result.push Problem.new(Solargraph::Location.new(filename, Solargraph::Range.from_node(node)), "I should check the arguments for #{pin.path}")
+            # @todo Check arguments (node.children[2])
           end
         end
       end
