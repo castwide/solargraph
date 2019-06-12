@@ -60,7 +60,7 @@ module Solargraph
           }
         end
 
-        def static_codeaction
+        def static_code_action
           {
             codeActionProvider: true,
             codeActionKinds: ["quickfix"]
