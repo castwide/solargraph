@@ -13,12 +13,6 @@ module Solargraph
       # @return [Solargraph::Location]
       attr_reader :location
 
-      # The namespace in which this pin is defined.
-      # The root namespace is an empty string.
-      #
-      # @return [String]
-      # attr_reader :namespace
-
       # @return [String]
       attr_reader :name
 
@@ -70,11 +64,6 @@ module Solargraph
       def variable?
         false
       end
-
-      # @return [ComplexType]
-      # def context
-      #   @context ||= ComplexType.parse(namespace || '')
-      # end
 
       # Pin equality is determined using the #nearly? method and also
       # requiring both pins to have the same location.
