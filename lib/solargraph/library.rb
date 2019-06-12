@@ -174,7 +174,7 @@ module Solargraph
     def definitions_at filename, line, column
       position = Position.new(line, column)
       cursor = Source::Cursor.new(checkout(filename), position)
-      api_map.clip(cursor).define
+      api_map.clip(cursor).define.map { |pin| pin.realize(api_map) }
     end
 
     # Get signature suggestions for the method at the specified file and
@@ -232,7 +232,7 @@ module Solargraph
     # @param location [Location]
     # @return [Solargraph::Pin::Base]
     def locate_pins location
-      api_map.locate_pins location
+      api_map.locate_pins(location).map { |pin| pin.realize(api_map) }
     end
 
     def locate_ref location
@@ -386,28 +386,6 @@ module Solargraph
         @synchronized = !result if synchronized?
       end
       result
-    end
-
-    # @param pin [Solargraph::Pin::Base]
-    # @return [Solargraph::Pin::Base]
-    def probe pin
-      return pin if pin.return_type.defined?
-      pin.proxy(pin.probe(api_map))
-    end
-
-    def detail pin
-      type = pin.typify(api_map)
-      probed = false
-      if type.undefined?
-        type = pin.probe(api_map)
-        probed = true
-      end
-      detail = ''
-      detail += "(#{pin.parameters.join(', ')}) " unless pin.kind != Pin::METHOD || pin.parameters.empty?
-      detail += "=#{probed ? '~' : '>'} #{type}" unless type.undefined?
-      detail.strip!
-      return nil if detail.empty?
-      detail
     end
 
     private

@@ -45,7 +45,7 @@ module Solargraph
         # change when pins get proxied.
         detail = ''
         detail += "(#{parameters.join(', ')}) " unless kind != Pin::METHOD or parameters.empty?
-        detail += "=#{proxied? ? '~' : '>'} #{return_type}" unless return_type.undefined?
+        detail += "=#{probed? ? '~' : (proxied? ? '^' : '>')} #{return_type}" unless return_type.undefined?
         detail.strip!
         return nil if detail.empty?
         detail
