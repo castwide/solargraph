@@ -102,5 +102,25 @@ module Solargraph
     def reporters
       puts Solargraph::Diagnostics.reporters
     end
+
+    desc 'typecheck', 'Run the type checker'
+    option :strict, type: :boolean, aliases: :strict, desc: 'Use strict typing', default: false
+    def typecheck
+      api_map = Solargraph::ApiMap.load('.')
+      files = api_map.source_maps.map(&:filename)
+      probcount = 0
+      filecount = 0
+      files.each do |file|
+        checker = TypeChecker.new(file, api_map: api_map)
+        problems = checker.param_types + checker.return_types
+        problems.concat checker.strict_types if options[:strict]
+        next if problems.empty?
+        problems.sort! { |a, b| a.location.range.start.line <=> b.location.range.start.line }
+        puts problems.map { |prob| "#{prob.location.filename}:#{prob.location.range.start.line + 1} - #{prob.message}" }.join("\n")
+        filecount += 1
+        probcount += problems.length
+      end
+      puts "#{probcount} problems found in #{filecount} of #{files.length} files."
+    end
   end
 end
