@@ -50,10 +50,11 @@ module Solargraph
           pins = link.resolve(api_map, working_pin, locals)
           # Locals are only used when resolving the first link
           locals = []
-          type = infer_first_defined(pins, api_map)
+          type = infer_first_defined(pins, working_pin, api_map)
           return [] if type.undefined?
           working_pin = Pin::ProxyType.anonymous(type)
         end
+        links.last.last_context = working_pin
         links.last.resolve(api_map, working_pin, locals)
       end
 
@@ -67,11 +68,12 @@ module Solargraph
         @@inference_stack.push active_signature(name_pin)
         type = ComplexType::UNDEFINED
         pins = define(api_map, name_pin, locals)
-        pins.each do |pin|
-          type = pin.typify(api_map)
-          break unless type.undefined?
-        end
-        type = pins.first.probe(api_map) unless type.defined? || pins.empty?
+        # pins.each do |pin|
+        #   type = pin.typify(api_map)
+        #   break unless type.undefined?
+        # end
+        # type = pins.first.probe(api_map) unless type.defined? || pins.empty?
+        type = infer_first_defined(pins, links.last.last_context, api_map)
         @@inference_stack.pop
         type
       end
@@ -107,14 +109,19 @@ module Solargraph
       # @param pins [Array<Pin::Base>]
       # @param api_map [ApiMap]
       # @return [ComplexType]
-      def infer_first_defined pins, api_map
+      def infer_first_defined pins, context, api_map
         type = ComplexType::UNDEFINED
         pins.each do |pin|
-          # type = pin.infer(api_map)
           type = pin.typify(api_map)
-          break unless type.undefined?
+          break if type.defined?
         end
-        type = pins.first.probe(api_map) unless type.defined? || pins.empty?
+        if type.undefined?
+          pins.each do |pin|
+            type = pin.probe(api_map)
+            break if type.defined?
+          end
+        end
+        return ComplexType.parse(context.return_type.namespace) if type.tag == 'self'
         type
       end
 

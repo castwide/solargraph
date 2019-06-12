@@ -68,11 +68,7 @@ module Solargraph
               result = process_directive(p, api_map, context, locals)
               next result unless result.return_type.undefined?
             end
-            type = p.typify(api_map)
-            type = ComplexType.try_parse(context.namespace) if type.tag == 'self'
-            type = p.probe(api_map) if type.undefined?
-            next p if p.return_type == type
-            p.proxy type
+            p
           end
           result
         end
