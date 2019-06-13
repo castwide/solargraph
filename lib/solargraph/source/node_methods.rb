@@ -142,7 +142,7 @@ module Solargraph
         class << self
           CONDITIONAL = [:if, :unless]
           REDUCEABLE = [:begin, :kwbegin]
-          SKIPPABLE = [:def, :defs, :class, :sclass, :module]
+          SKIPPABLE = [:def, :defs, :class, :sclass, :module, :block]
 
           # @param node [Parser::AST::Node]
           # @return [Array<Parser::AST::Node>]
@@ -158,7 +158,7 @@ module Solargraph
             elsif node.type == :return
               result.concat reduce_to_value_nodes([node.children[0]])
             elsif node.type == :block
-              result.concat get_return_nodes(node.children[2])
+              result.concat reduce_to_value_nodes(node.children[0..-2])
             else
               result.push node
             end
