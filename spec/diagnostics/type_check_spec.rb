@@ -1,4 +1,4 @@
-describe Solargraph::Diagnostics::TypeNotDefined do
+describe Solargraph::Diagnostics::TypeCheck do
   let(:api_map) { Solargraph::ApiMap.new }
 
   it "detects defined return types" do
@@ -8,7 +8,7 @@ describe Solargraph::Diagnostics::TypeNotDefined do
       end
     ))
     api_map.map source
-    result = Solargraph::Diagnostics::TypeNotDefined.new.diagnose(source, api_map)
+    result = Solargraph::Diagnostics::TypeCheck.new.diagnose(source, api_map)
     expect(result).to be_empty
   end
 
@@ -18,9 +18,9 @@ describe Solargraph::Diagnostics::TypeNotDefined do
       end
     ))
     api_map.map source
-    result = Solargraph::Diagnostics::TypeNotDefined.new.diagnose(source, api_map)
+    result = Solargraph::Diagnostics::TypeCheck.new.diagnose(source, api_map)
     expect(result.length).to eq(1)
-    expect(result[0][:message]).to include('`foo`')
+    expect(result[0][:message]).to include('foo')
   end
 
   it "detects defined parameter types" do
@@ -31,7 +31,7 @@ describe Solargraph::Diagnostics::TypeNotDefined do
       end
     ))
     api_map.map source
-    result = Solargraph::Diagnostics::TypeNotDefined.new.diagnose(source, api_map)
+    result = Solargraph::Diagnostics::TypeCheck.new.diagnose(source, api_map)
     expect(result).to be_empty
   end
 
@@ -42,9 +42,9 @@ describe Solargraph::Diagnostics::TypeNotDefined do
       end
     ))
     api_map.map source
-    result = Solargraph::Diagnostics::TypeNotDefined.new.diagnose(source, api_map)
+    result = Solargraph::Diagnostics::TypeCheck.new.diagnose(source, api_map)
     expect(result.length).to eq(1)
-    expect(result[0][:message]).to include('`bar`')
+    expect(result[0][:message]).to include('bar')
   end
 
   it "detects invalid parameter tags" do
@@ -56,9 +56,9 @@ describe Solargraph::Diagnostics::TypeNotDefined do
       end
     ))
     api_map.map source
-    result = Solargraph::Diagnostics::TypeNotDefined.new.diagnose(source, api_map)
+    result = Solargraph::Diagnostics::TypeCheck.new.diagnose(source, api_map)
     expect(result.length).to eq(1)
-    expect(result[0][:message]).to include('`wrong`')
+    expect(result[0][:message]).to include('wrong')
   end
 
   it "detects return types from superclasses" do
@@ -74,7 +74,7 @@ describe Solargraph::Diagnostics::TypeNotDefined do
       end
     ))
     api_map.map source
-    result = Solargraph::Diagnostics::TypeNotDefined.new.diagnose(source, api_map)
+    result = Solargraph::Diagnostics::TypeCheck.new.diagnose(source, api_map)
     expect(result).to be_empty
   end
 
@@ -92,7 +92,7 @@ describe Solargraph::Diagnostics::TypeNotDefined do
       end
     ))
     api_map.map source
-    result = Solargraph::Diagnostics::TypeNotDefined.new.diagnose(source, api_map)
+    result = Solargraph::Diagnostics::TypeCheck.new.diagnose(source, api_map)
     expect(result).to be_empty
   end
 
@@ -105,7 +105,7 @@ describe Solargraph::Diagnostics::TypeNotDefined do
       end
     ))
     api_map.map source
-    result = Solargraph::Diagnostics::TypeNotDefined.new.diagnose(source, api_map)
+    result = Solargraph::Diagnostics::TypeCheck.new.diagnose(source, api_map)
     expect(result).to be_empty
   end
 end
