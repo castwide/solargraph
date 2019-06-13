@@ -123,14 +123,29 @@ module Solargraph
         all = true
         probed.each do |pt|
           tagged.each do |tt|
-            if !api_map.super_and_sub?(tt.to_s, pt.to_s) && !tagged.map(&:to_s).include?(pt.to_s)
+            if pt.name == tt.name && !api_map.super_and_sub?(tt.namespace, pt.namespace) && !tagged.map(&:namespace).include?(pt.namespace)
+              all = false
+              break
+            elsif pt.name == tt.name && ['Array', 'Class', 'Module'].include?(pt.name)
+              if !(tt.subtypes.any? { |ttx| pt.subtypes.any? { |ptx| api_map.super_and_sub?(ttx.to_s, ptx.to_s) } })
+                all = false
+                break
+              end
+            elsif pt.name == tt.name && pt.name == 'Hash'
+              if !(tt.key_types.empty? && !pt.key_types.empty?) && !(tt.key_types.any? { |ttx| pt.key_types.any? { |ptx| api_map.super_and_sub?(ttx.to_s, ptx.to_s) } })
+                if !(tt.value_types.empty? && !pt.value_types.empty?) && !(tt.value_types.any? { |ttx| pt.value_types.any? { |ptx| api_map.super_and_sub?(ttx.to_s, ptx.to_s) } })
+                  all = false
+                  break
+                end
+              end
+            elsif pt.name != tt.name && !api_map.super_and_sub?(tt.to_s, pt.to_s) && !tagged.map(&:to_s).include?(pt.to_s)
               all = false
               break
             end
           end
         end
         return [] if all
-        return [Problem.new(pin.location, "@return type `#{tagged.to_s}` does not match detected type `#{probed.to_s}`", probed.to_s)]
+        return [Problem.new(pin.location, "@return type `#{tagged.to_s}` does not match inferred type `#{probed.to_s}`", probed.to_s)]
       end
       []
     end

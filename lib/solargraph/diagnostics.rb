@@ -49,6 +49,6 @@ module Solargraph
     register 'require_not_found', RequireNotFound
     register 'type_not_defined', TypeNotDefined
     register 'update_errors', UpdateErrors
-    # register 'type_check', TypeCheck
+    register 'typecheck', TypeCheck
   end
 end

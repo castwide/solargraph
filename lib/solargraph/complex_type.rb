@@ -31,6 +31,8 @@ module Solargraph
       @items.map &block
     end
 
+    # @yieldparam [UniqueType]
+    # @return [Array]
     def each &block
       @items.each &block
     end

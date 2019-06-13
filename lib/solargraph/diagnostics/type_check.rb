@@ -12,7 +12,7 @@ module Solargraph
           {
             range: extract_first_line(problem.location, source),
             severity: Diagnostics::Severities::WARNING,
-            source: 'TypeCheck',
+            source: 'Typecheck',
             message: problem.message
           }
         end
