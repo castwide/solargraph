@@ -89,11 +89,11 @@ module Solargraph
             has_nil = true
             next
           end
-          next if n.loc.nil?
           literal = infer_literal_node_type(n)
           if literal
             result.push ComplexType.try_parse(literal)
           else
+            next if n.loc.nil? || n.loc.expression.nil?
             clip = api_map.clip_at(
               location.filename,
               [n.loc.expression.last_line, n.loc.expression.last_column]
