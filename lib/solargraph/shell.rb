@@ -104,9 +104,10 @@ module Solargraph
     end
 
     desc 'typecheck [FILE]', 'Run the type checker'
-    option :strict, type: :boolean, aliases: :strict, desc: 'Use strict typing', default: false
+    option :strict, type: :boolean, aliases: :s, desc: 'Use strict typing', default: false
+    option :directory, type: :string, aliases: :d, desc: 'The project directory', default: '.'
     def typecheck *files
-      directory = File.realpath('.')
+      directory = File.realpath(options[:directory])
       api_map = Solargraph::ApiMap.load(directory)
       if files.empty?
         files = api_map.source_maps.map(&:filename)
