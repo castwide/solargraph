@@ -5,11 +5,9 @@ module Solargraph
 
       attr_reader :assignment
 
-      def initialize assignment: nil, literal: nil, **splat
+      def initialize assignment: nil, **splat
         super(splat)
         @assignment = assignment
-        @literal = literal
-        # @context = context
       end
 
       def signature
@@ -68,7 +66,6 @@ module Solargraph
       def generate_complex_type
         tag = docstring.tag(:type)
         return ComplexType.try_parse(*tag.types) unless tag.nil? || tag.types.nil? || tag.types.empty?
-        return ComplexType.try_parse(@literal) unless @literal.nil?
         ComplexType.new
       end
     end

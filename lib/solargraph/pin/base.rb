@@ -189,6 +189,8 @@ module Solargraph
         @probed ||= false
       end
 
+      # @param api_map [ApiMap]
+      # @return [self]
       def realize api_map
         return self if return_type.defined?
         type = typify(api_map)
