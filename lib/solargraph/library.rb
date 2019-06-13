@@ -335,7 +335,7 @@ module Solargraph
       source = read(filename)
       repargs = {}
       workspace.config.reporters.each do |line|
-        if line == 'all'
+        if line == 'all!'
           Diagnostics.reporters.each do |reporter|
             repargs[reporter] ||= []
           end
