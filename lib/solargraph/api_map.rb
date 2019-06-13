@@ -574,6 +574,9 @@ module Solargraph
       @path_macros ||= {}
     end
 
+    # @param namespace [String]
+    # @param context [String]
+    # @return [String]
     def qualify_lower namespace, context
       qualify namespace, context.split('::')[0..-2].join('::')
     end
