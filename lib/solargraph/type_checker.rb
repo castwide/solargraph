@@ -120,6 +120,16 @@ module Solargraph
         if probed.name == 'Hash' && probed.value_types.empty?
           return [] if tagged.name == 'Hash'
         end
+        all = true
+        probed.each do |pt|
+          tagged.each do |tt|
+            if !api_map.super_and_sub?(tt.to_s, pt.to_s) && !tagged.map(&:to_s).include?(pt.to_s)
+              all = false
+              break
+            end
+          end
+        end
+        return [] if all
         return [Problem.new(pin.location, "@return type `#{tagged.to_s}` does not match detected type `#{probed.to_s}`", probed.to_s)]
       end
       []

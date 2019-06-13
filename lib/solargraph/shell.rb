@@ -103,11 +103,16 @@ module Solargraph
       puts Solargraph::Diagnostics.reporters
     end
 
-    desc 'typecheck', 'Run the type checker'
+    desc 'typecheck [FILE]', 'Run the type checker'
     option :strict, type: :boolean, aliases: :strict, desc: 'Use strict typing', default: false
-    def typecheck
-      api_map = Solargraph::ApiMap.load('.')
-      files = api_map.source_maps.map(&:filename)
+    def typecheck *files
+      directory = File.realpath('.')
+      api_map = Solargraph::ApiMap.load(directory)
+      if files.empty?
+        files = api_map.source_maps.map(&:filename)
+      else
+        files.map! { |file| File.realpath(file) }
+      end
       probcount = 0
       filecount = 0
       files.each do |file|
@@ -120,7 +125,7 @@ module Solargraph
         filecount += 1
         probcount += problems.length
       end
-      puts "#{probcount} problems found in #{filecount} of #{files.length} files."
+      puts "#{probcount} problem#{probcount != 1 ? 's' : ''} found#{files.length != 1 ? " in #{filecount} of #{files.length} files" : ''}."
     end
   end
 end

@@ -31,6 +31,10 @@ module Solargraph
       @items.map &block
     end
 
+    def each &block
+      @items.each &block
+    end
+
     def length
       @items.length
     end
@@ -171,5 +175,6 @@ module Solargraph
     ROOT = ComplexType.parse('Class<>')
     NIL = ComplexType.parse('nil')
     SELF = ComplexType.parse('self')
+    BOOLEAN = ComplexType.parse('Boolean')
   end
 end

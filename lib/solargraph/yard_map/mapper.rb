@@ -1,6 +1,8 @@
 module Solargraph
   class YardMap
     class Mapper
+      # @param code_objects [Array<YARD::CodeObject::Base>]
+      # @param spec [Gem::Specification]
       def initialize code_objects, spec = nil
         @code_objects = code_objects
         @spec = spec
@@ -8,6 +10,7 @@ module Solargraph
         @namespace_pins = {}
       end
 
+      # @return [Array<Pin::Base>]
       def map
         @code_objects.each do |co|
           @pins.concat generate_pins co
@@ -15,6 +18,8 @@ module Solargraph
         @pins
       end
 
+      # @param code_object [YARD::CodeObjects::Base]
+      # @return [Array<Pin::Base>]
       def generate_pins code_object
         result = []
         location = object_location(code_object, @spec)
@@ -60,7 +65,7 @@ module Solargraph
       end
 
       # @param obj [YARD::CodeObjects::Base]
-      # @return [Solargraph::Location]
+      # @return [Solargraph::Location, nil]
       def object_location obj, spec = nil
         @object_file_cache ||= {}
         return nil if spec.nil? || obj.file.nil? || obj.line.nil?

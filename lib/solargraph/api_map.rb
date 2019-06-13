@@ -468,6 +468,21 @@ module Solargraph
       nil
     end
 
+    # Check if a class is a superclass of another class.
+    #
+    # @param sup [String] The superclass
+    # @param sub [String] The subclass
+    # @return [Boolean]
+    def super_and_sub?(sup, sub)
+      fqsup = qualify(sup)
+      cls = qualify(store.get_superclass(sub), sub)
+      until cls.nil?
+        return true if cls == fqsup
+        cls = qualify(store.get_superclass(cls), cls)
+      end
+      false
+    end
+
     private
 
     # @return [YardMap]
@@ -625,21 +640,6 @@ module Solargraph
         end
       end
       result + nil_pins
-    end
-
-    # Check if a class is a superclass of another class.
-    #
-    # @param sup [String] The superclass
-    # @param sub [String] The subclass
-    # @return [Boolean]
-    def super_and_sub?(sup, sub)
-      fqsup = qualify(sup)
-      cls = qualify(store.get_superclass(sub), sub)
-      until cls.nil?
-        return true if cls == fqsup
-        cls = qualify(store.get_superclass(cls), cls)
-      end
-      false
     end
 
     # @param pins [Array<Pin::Base>]
