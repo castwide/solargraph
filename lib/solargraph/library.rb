@@ -333,10 +333,23 @@ module Solargraph
       catalog
       result = []
       source = read(filename)
-      workspace.config.reporters.each do |name|
-        reporter = Diagnostics.reporter(name)
-        raise DiagnosticsError, "Diagnostics reporter #{name} does not exist" if reporter.nil?
-        result.concat reporter.new.diagnose(source, api_map)
+      repargs = {}
+      workspace.config.reporters.each do |line|
+        if line == 'all'
+          Diagnostics.reporters.each do |reporter|
+            repargs[reporter] ||= []
+          end
+        else
+          args = line.split(':').map(&:strip)
+          name = args.pop
+            reporter = Diagnostics.reporter(name)
+          raise DiagnosticsError, "Diagnostics reporter #{name} does not exist" if reporter.nil?
+          repargs[reporter] ||= []
+          repargs[reporter].concat args
+        end
+      end
+      repargs.each_pair do |reporter, args|
+        result.concat reporter.new(*args.uniq).diagnose(source, api_map)
       end
       result
     end

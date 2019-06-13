@@ -7,6 +7,7 @@ module Solargraph
       def diagnose source, api_map
         checker = Solargraph::TypeChecker.new(source.filename, api_map: api_map)
         result = checker.return_types + checker.param_types
+        result.concat checker.strict_types if args.include?('strict')
         result.sort! { |a, b| a.location.range.start.line <=> b.location.range.start.line }
         result.map do |problem|
           {

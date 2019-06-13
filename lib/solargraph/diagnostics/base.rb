@@ -3,6 +3,12 @@ module Solargraph
     # The base class for diagnostics reporters.
     #
     class Base
+      attr_reader :args
+
+      def initialize *args
+        @args = args
+      end
+
       # Perform a diagnosis on a Source within the context of an ApiMap.
       # The result is an array of hash objects that conform to the LSP's
       # Diagnostic specification.
