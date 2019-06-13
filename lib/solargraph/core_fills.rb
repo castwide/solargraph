@@ -41,7 +41,8 @@ module Solargraph
       'Class#allocate' => 'self',
       'Class.allocate' => 'Class<Object>',
       'String#split' => 'Array<String>',
-      'String#lines' => 'Array<String>'
+      'String#lines' => 'Array<String>',
+      'Object#!' => 'Boolean'
     }.freeze
   end
 end

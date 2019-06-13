@@ -63,7 +63,6 @@ module Solargraph
       # @param locals [Array<Pin::Base>]
       # @return [ComplexType]
       def infer api_map, name_pin, locals
-        return ComplexType::BOOLEAN if links.last.word == '!'
         rebind_block name_pin, api_map, locals
         return ComplexType::UNDEFINED if undefined? || @@inference_stack.include?(active_signature(name_pin))
         @@inference_stack.push active_signature(name_pin)
