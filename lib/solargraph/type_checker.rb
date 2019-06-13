@@ -95,9 +95,9 @@ module Solargraph
     # @return [Array<Problem>]
     def check_return_type pin
       tagged = pin.typify(api_map)
-      probed = pin.probe(api_map)
       if tagged.undefined?
         if pin.return_type.undefined?
+          probed = pin.probe(api_map)
           return [Problem.new(pin.location, "#{pin.name} has undefined @return type", probed.to_s)]
         else
           return [Problem.new(pin.location, "#{pin.name} has unresolved @return type #{pin.return_type}")]
