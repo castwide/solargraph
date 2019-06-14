@@ -260,26 +260,26 @@ module Solargraph
         true
       end
 
-      # @param d1 [Array<YARD::Tags::Directive>]
-      # @param d2 [Array<YARD::Tags::Directive>]
+      # @param dir1 [Array<YARD::Tags::Directive>]
+      # @param dir2 [Array<YARD::Tags::Directive>]
       # @return [Boolean]
-      def compare_directives d1, d2
-        return false if d1.length != d2.length
-        d1.each_index do |i|
-          return false unless compare_tags(d1[i].tag, d2[i].tag)
+      def compare_directives dir1, dir2
+        return false if dir1.length != dir2.length
+        dir1.each_index do |i|
+          return false unless compare_tags(dir1[i].tag, dir2[i].tag)
         end
         true
       end
 
-      # @param t1 [YARD::Tags::Tag]
-      # @param t2 [YARD::Tags::Tag]
+      # @param tag1 [YARD::Tags::Tag]
+      # @param tag2 [YARD::Tags::Tag]
       # @return [Boolean]
-      def compare_tags t1, t2
-        t1.class == t2.class &&
-          t1.tag_name == t2.tag_name &&
-          t1.text == t2.text &&
-          t1.name == t2.name &&
-          t1.types == t2.types
+      def compare_tags tag1, tag2
+        tag1.class == tag2.class &&
+          tag1.tag_name == tag2.tag_name &&
+          tag1.text == tag2.text &&
+          tag1.name == tag2.name &&
+          tag1.types == tag2.types
       end
 
       # @return [Array<YARD::Tags::Handlers::Directive>]
