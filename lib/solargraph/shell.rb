@@ -101,8 +101,14 @@ module Solargraph
     end
 
     desc 'typecheck [FILE]', 'Run the type checker'
+    long_desc %(
+      Perform type checking on one or more files is a workspace.
+      A normal check reports problems with type definitions in method
+      parameters and return values. A strict check performs static analysis of
+      code to validate return types and arguments in method calls.
+    )
     option :strict, type: :boolean, aliases: :s, desc: 'Use strict typing', default: false
-    option :directory, type: :string, aliases: :d, desc: 'The project directory', default: '.'
+    option :directory, type: :string, aliases: :d, desc: 'The workspace directory', default: '.'
     def typecheck *files
       directory = File.realpath(options[:directory])
       api_map = Solargraph::ApiMap.load(directory)
@@ -126,10 +132,16 @@ module Solargraph
       puts "#{probcount} problem#{probcount != 1 ? 's' : ''} found#{files.length != 1 ? " in #{filecount} of #{files.length} files" : ''}."
     end
 
-    desc 'probe', 'Test the workspace for problems'
+    desc 'scan', 'Test the workspace for problems'
+    long_desc %(
+      A scan loads the entire workspace to make sure that the ASTs and
+      maps do not raise errors during analysis. It does not perform any type
+      checking or validation; it only confirms that the analysis itself is
+      error-free.
+    )
     option :directory, type: :string, aliases: :d, desc: 'The workspace directory', default: '.'
     option :verbose, type: :boolean, aliases: :v, desc: 'Verbose output', default: false
-    def probe
+    def scan
       directory = File.realpath(options[:directory])
       api_map = nil
       time = Benchmark.measure {
@@ -147,7 +159,7 @@ module Solargraph
           end
         end
       }
-      puts "Probed #{directory} (#{api_map.pins.length} pins) in #{time.real} seconds."
+      puts "Scanned #{directory} (#{api_map.pins.length} pins) in #{time.real} seconds."
     end
 
     private
