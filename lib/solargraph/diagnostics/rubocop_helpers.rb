@@ -1,5 +1,7 @@
 module Solargraph
   module Diagnostics
+    # Utility methods for the RuboCop diagnostics reporter.
+    #
     module RubocopHelpers
       module_function
 

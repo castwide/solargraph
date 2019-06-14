@@ -8,8 +8,8 @@ module Solargraph
     autoload :Rubocop,         'solargraph/diagnostics/rubocop'
     autoload :RubocopHelpers,  'solargraph/diagnostics/rubocop_helpers'
     autoload :RequireNotFound, 'solargraph/diagnostics/require_not_found'
-    autoload :TypeNotDefined,  'solargraph/diagnostics/type_not_defined'
     autoload :UpdateErrors,    'solargraph/diagnostics/update_errors'
+    autoload :TypeCheck,       'solargraph/diagnostics/type_check'
 
     class << self
       # Add a reporter with a name to identify it in .solargraph.yml files.
@@ -25,7 +25,7 @@ module Solargraph
       #
       # @return [Array<String>]
       def reporters
-        reporter_hash.keys
+        reporter_hash.keys - ['type_not_defined'] # @todo Hide type_not_defined for now
       end
 
       # Find a reporter by name.
@@ -46,7 +46,8 @@ module Solargraph
 
     register 'rubocop', Rubocop
     register 'require_not_found', RequireNotFound
-    register 'type_not_defined', TypeNotDefined
+    register 'typecheck', TypeCheck
     register 'update_errors', UpdateErrors
+    register 'type_not_defined', TypeCheck # @todo Retained for backwards compatibility
   end
 end

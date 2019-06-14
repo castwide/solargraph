@@ -14,6 +14,7 @@ module Solargraph
             textDocument/rename
             textDocument/prepareRename
             textDocument/foldingRange
+            textDocument/codeAction
             workspace/symbol
           ]
         end

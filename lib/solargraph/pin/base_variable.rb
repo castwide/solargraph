@@ -40,6 +40,7 @@ module Solargraph
         types = []
         returns_from(@assignment).each do |node|
           chain = Source::NodeChainer.chain(node, filename)
+          next if chain.links.first.word == name
           clip = api_map.clip_at(location.filename, location.range.start)
           locals = clip.locals - [self]
           result = chain.infer(api_map, closure, locals)

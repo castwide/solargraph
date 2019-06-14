@@ -3,9 +3,10 @@ module Solargraph
     # The base class for method and attribute pins.
     #
     class BaseMethod < Closure
-      # @return [Symbol] :public, :private, or :protected
+      # @return [::Symbol] :public, :private, or :protected
       attr_reader :visibility
 
+      # @param visibility [::Symbol] :public, :protected, or :private
       def initialize visibility: :public, **splat
         super(splat)
         @visibility = visibility

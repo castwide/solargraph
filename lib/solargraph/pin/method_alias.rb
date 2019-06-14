@@ -5,8 +5,10 @@ module Solargraph
     # methods from included modules.
     #
     class MethodAlias < BaseMethod
+      # @return [::Symbol]
       attr_reader :scope
 
+      # @return [String]
       attr_reader :original
 
       def initialize scope: :instance, original: nil, **splat

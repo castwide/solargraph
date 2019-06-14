@@ -347,7 +347,7 @@ module Solargraph
     # @param fqns [String]
     # @param name [String]
     # @param scope [Symbol] :instance or :class
-    # @return [Array<Solargraph::Pin::Base>]
+    # @return [Array<Solargraph::Pin::BaseMethod>]
     def get_method_stack fqns, name, scope: :instance
       get_methods(fqns, scope: scope, visibility: [:private, :protected, :public]).select{|p| p.name == name}
     end
@@ -441,6 +441,11 @@ module Solargraph
       source_map_hash[filename].document_symbols
     end
 
+    # @return [Array<SourceMap>]
+    def source_maps
+      source_map_hash.values
+    end
+
     # Get a source map by filename.
     #
     # @param filename [String]
@@ -448,6 +453,10 @@ module Solargraph
     def source_map filename
       raise FileNotFoundError, "Source map for `#{filename}` not found" unless source_map_hash.has_key?(filename)
       source_map_hash[filename]
+    end
+
+    def bundled? filename
+      source_map_hash.keys.include?(filename)
     end
 
     # @param location [Location]
@@ -461,6 +470,21 @@ module Solargraph
       yard_map.require_reference(pin.name)
     rescue FileNotFoundError
       nil
+    end
+
+    # Check if a class is a superclass of another class.
+    #
+    # @param sup [String] The superclass
+    # @param sub [String] The subclass
+    # @return [Boolean]
+    def super_and_sub?(sup, sub)
+      fqsup = qualify(sup)
+      cls = qualify(store.get_superclass(sub), sub)
+      until cls.nil?
+        return true if cls == fqsup
+        cls = qualify(store.get_superclass(cls), cls)
+      end
+      false
     end
 
     private
@@ -554,6 +578,9 @@ module Solargraph
       @path_macros ||= {}
     end
 
+    # @param namespace [String]
+    # @param context [String]
+    # @return [String]
     def qualify_lower namespace, context
       qualify namespace, context.split('::')[0..-2].join('::')
     end
@@ -600,6 +627,7 @@ module Solargraph
     # @return [Symbol] :class, :module, or nil
     def get_namespace_type fqns
       return nil if fqns.nil?
+      # @type [Pin::Namespace, nil]
       pin = store.get_path_pins(fqns).select{|p| p.is_a?(Pin::Namespace)}.first
       return nil if pin.nil?
       pin.type
@@ -622,21 +650,6 @@ module Solargraph
       result + nil_pins
     end
 
-    # Check if a class is a superclass of another class.
-    #
-    # @param sup [String] The superclass
-    # @param sub [String] The subclass
-    # @return [Boolean]
-    def super_and_sub?(sup, sub)
-      fqsup = qualify(sup)
-      cls = qualify(store.get_superclass(sub), sub)
-      until cls.nil?
-        return true if cls == fqsup
-        cls = qualify(store.get_superclass(cls), cls)
-      end
-      false
-    end
-
     # @param pins [Array<Pin::Base>]
     # @param visibility [Array<Symbol>]
     # @return [Array<Pin::Base>]
@@ -651,7 +664,7 @@ module Solargraph
     end
 
     # @param pin [Pin::MethodAlias, Pin::Base]
-    # @return [Pin::Base]
+    # @return [Pin::BaseMethod]
     def resolve_method_alias pin
       return pin if !pin.is_a?(Pin::MethodAlias) || @method_alias_stack.include?(pin.path)
       @method_alias_stack.push pin.path

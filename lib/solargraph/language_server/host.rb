@@ -698,6 +698,9 @@ module Solargraph
           },
           'textDocument/foldingRange' => {
             foldingRangeProvider: true
+          },
+          'textDocument/codeAction' => {
+            codeActionProvider: true
           }
         }
       end

@@ -19,6 +19,7 @@ module Solargraph
         autoload :Rename,           'solargraph/language_server/message/text_document/rename'
         autoload :PrepareRename,    'solargraph/language_server/message/text_document/prepare_rename'
         autoload :FoldingRange,     'solargraph/language_server/message/text_document/folding_range'
+        autoload :CodeAction,       'solargraph/language_server/message/text_document/code_action'
       end
     end
   end

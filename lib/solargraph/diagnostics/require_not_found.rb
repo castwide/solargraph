@@ -26,7 +26,7 @@ module Solargraph
         {
           range: location.range.to_hash,
           severity: Diagnostics::Severities::WARNING,
-          source: 'Solargraph',
+          source: 'RequireNotFound',
           message: "Required path #{path} could not be resolved."
         }
       end

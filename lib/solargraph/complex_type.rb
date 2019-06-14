@@ -8,10 +8,7 @@ module Solargraph
     autoload :TypeMethods, 'solargraph/complex_type/type_methods'
     autoload :UniqueType,  'solargraph/complex_type/unique_type'
 
-    # @param types [Array<ComplexType>]
-    # def initialize types = [ComplexType::UNDEFINED]
-    #   @items = types
-    # end
+    # @param types [Array<UniqueType>]
     def initialize types = [UniqueType::UNDEFINED]
       @items = types
     end
@@ -32,6 +29,12 @@ module Solargraph
 
     def map &block
       @items.map &block
+    end
+
+    # @yieldparam [UniqueType]
+    # @return [Array]
+    def each &block
+      @items.each &block
     end
 
     def length
@@ -160,6 +163,8 @@ module Solargraph
         result
       end
 
+      # @param strings [Array<String>]
+      # @return [ComplexType]
       def try_parse *strings
         parse *strings
       rescue ComplexTypeError => e
@@ -174,5 +179,6 @@ module Solargraph
     ROOT = ComplexType.parse('Class<>')
     NIL = ComplexType.parse('nil')
     SELF = ComplexType.parse('self')
+    BOOLEAN = ComplexType.parse('Boolean')
   end
 end

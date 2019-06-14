@@ -36,6 +36,7 @@ module Solargraph
             result[:capabilities].merge! static_references unless dynamic_registration_for?('textDocument', 'references')
             result[:capabilities].merge! static_workspace_symbols unless dynamic_registration_for?('workspace', 'symbol')
             result[:capabilities].merge! static_folding_range unless dynamic_registration_for?('textDocument', 'foldingRange')
+            result[:capabilities].merge! static_code_action unless dynamic_registration_for?('textDocument', 'codeAction')
             set_result result
           }
           Solargraph.logger.unknown "Solargraph initialized (#{bm.real} seconds)"
@@ -56,6 +57,13 @@ module Solargraph
               resolveProvider: true,
               triggerCharacters: ['.', ':', '@']
             }
+          }
+        end
+
+        def static_code_action
+          {
+            codeActionProvider: true,
+            codeActionKinds: ["quickfix"]
           }
         end
 
