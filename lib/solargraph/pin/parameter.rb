@@ -54,6 +54,8 @@ module Solargraph
         found
       end
 
+      # @param api_map [ApiMap]
+      # @return [ComplexType]
       def typify_block_param api_map
         if closure.is_a?(Pin::Block) && closure.receiver
           chain = Source::NodeChainer.chain(closure.receiver, filename)

@@ -630,11 +630,15 @@ module Solargraph
         @requests ||= {}
       end
 
+      # @param path [String]
+      # @return [String]
       def normalize_separators path
         return path if File::ALT_SEPARATOR.nil?
         path.gsub(File::ALT_SEPARATOR, File::SEPARATOR)
       end
 
+      # @param params [Hash]
+      # @return [Source::Updater]
       def generate_updater params
         changes = []
         params['contentChanges'].each do |chng|

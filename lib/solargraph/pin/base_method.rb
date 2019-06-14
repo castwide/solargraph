@@ -28,10 +28,12 @@ module Solargraph
         type.qualify(api_map, namespace)
       end
 
+      # @return [Array<String>]
       def parameters
         []
       end
 
+      # @return [Array<String>]
       def parameter_names
         []
       end
