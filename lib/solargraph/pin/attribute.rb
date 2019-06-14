@@ -1,7 +1,7 @@
 module Solargraph
   module Pin
     class Attribute < BaseMethod
-      # @return [Symbol] :reader or :writer
+      # @return [::Symbol] :reader or :writer
       attr_reader :access
 
       def initialize access: :reader, node: nil, **splat

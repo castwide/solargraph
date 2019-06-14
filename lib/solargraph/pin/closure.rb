@@ -1,7 +1,7 @@
 module Solargraph
   module Pin
     class Closure < Base
-      # @return [Symbol] :class or :instance
+      # @return [::Symbol] :class or :instance
       attr_reader :scope
 
       def initialize scope: :class, **splat

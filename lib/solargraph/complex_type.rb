@@ -163,6 +163,8 @@ module Solargraph
         result
       end
 
+      # @param strings [Array<String>]
+      # @return [ComplexType]
       def try_parse *strings
         parse *strings
       rescue ComplexTypeError => e

@@ -347,7 +347,7 @@ module Solargraph
     # @param fqns [String]
     # @param name [String]
     # @param scope [Symbol] :instance or :class
-    # @return [Array<Solargraph::Pin::Base>]
+    # @return [Array<Solargraph::Pin::BaseMethod>]
     def get_method_stack fqns, name, scope: :instance
       get_methods(fqns, scope: scope, visibility: [:private, :protected, :public]).select{|p| p.name == name}
     end
@@ -453,6 +453,10 @@ module Solargraph
     def source_map filename
       raise FileNotFoundError, "Source map for `#{filename}` not found" unless source_map_hash.has_key?(filename)
       source_map_hash[filename]
+    end
+
+    def bundled? filename
+      source_map_hash.keys.include?(filename)
     end
 
     # @param location [Location]
@@ -623,6 +627,7 @@ module Solargraph
     # @return [Symbol] :class, :module, or nil
     def get_namespace_type fqns
       return nil if fqns.nil?
+      # @type [Pin::Namespace, nil]
       pin = store.get_path_pins(fqns).select{|p| p.is_a?(Pin::Namespace)}.first
       return nil if pin.nil?
       pin.type
@@ -659,7 +664,7 @@ module Solargraph
     end
 
     # @param pin [Pin::MethodAlias, Pin::Base]
-    # @return [Pin::Base]
+    # @return [Pin::BaseMethod]
     def resolve_method_alias pin
       return pin if !pin.is_a?(Pin::MethodAlias) || @method_alias_stack.include?(pin.path)
       @method_alias_stack.push pin.path

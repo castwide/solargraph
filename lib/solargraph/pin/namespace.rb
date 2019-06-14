@@ -1,10 +1,10 @@
 module Solargraph
   module Pin
     class Namespace < Closure
-      # @return [Symbol] :public or :private
+      # @return [::Symbol] :public or :private
       attr_reader :visibility
 
-      # @return [Symbol] :class or :module
+      # @return [::Symbol] :class or :module
       attr_reader :type
 
       # def initialize location, namespace, name, comments, type, visibility

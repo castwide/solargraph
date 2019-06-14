@@ -151,6 +151,7 @@ module Solargraph
     end
 
     def check_send_args node
+      # return [] # @todo Temporarily disabled
       result = []
       if node.type == :send
         smap = api_map.source_map(filename)
@@ -161,8 +162,57 @@ module Solargraph
         if pins.empty?
           result.push Problem.new(Solargraph::Location.new(filename, Solargraph::Range.from_node(node)), "Unresolved method signature #{chain.links.map(&:word).join('.')}")
         else
-          pins.each do |pin|
-            # @todo Check arguments (node.children[2])
+          pin = pins.first
+          ptypes = arg_types(pin)
+          params = param_tags_from(pin)
+          cursor = 0
+          curtype = nil
+          node.children[2..-1].each_with_index do |arg, index|
+            curtype = ptypes[cursor] if curtype.nil? || curtype == :arg
+            break if curtype == :restarg || curtype == :kwrestarg
+            if curtype.nil?
+              result.push Problem.new(Solargraph::Location.new(filename, Solargraph::Range.from_node(node)), "Not enough arguments send to #{pin.path}")
+              break
+            else
+              if arg.is_a?(Parser::AST::Node) && arg.type == :hash
+                # result.push Problem.new(Solargraph::Location.new(filename, Solargraph::Range.from_node(node)), "Can't handle hash in #{pin.parameter_names[index]} #{pin.path}")
+                # break if curtype != :arg && ptypes.include?(:kwrestarg)
+                arg.children.each do |pair|
+                  sym = pair.children[0].children[0].to_s
+                  partype = params[pin.parameter_names[index]]
+                  if partype.nil?
+                    if report_location?(pin.location)
+                      unless ptypes.include?(:kwrestarg)
+                        result.push Problem.new(Solargraph::Location.new(filename, Solargraph::Range.from_node(node)), "No @param type for #{pin.parameter_names[index]} in #{pin.path}")
+                      end
+                    end
+                  else
+                    chain = Solargraph::Source::NodeChainer.chain(pair.children[1], filename)
+                    argtype = chain.infer(api_map, block, locals)
+                    if argtype.tag != partype.tag
+                      result.push Problem.new(Solargraph::Location.new(filename, Solargraph::Range.from_node(node)), "Wrong parameter type for #{pin.path}: #{pin.parameter_names[index]} expected #{partype.tag}, received #{argtype.tag}")
+                    end
+                  end
+                end
+              elsif arg.is_a?(Parser::AST::Node) && arg.type == :splat
+                result.push Problem.new(Solargraph::Location.new(filename, Solargraph::Range.from_node(node)), "Can't handle splat in #{pin.parameter_names[index]} #{pin.path}")
+                break if curtype != :arg && ptypes.include?(:restarg)
+              else
+                partype = params[pin.parameter_names[index]]
+                if partype.nil?
+                  if report_location?(pin.location)
+                    result.push Problem.new(Solargraph::Location.new(filename, Solargraph::Range.from_node(node)), "No @param type for #{pin.parameter_names[index]} in #{pin.path}")
+                  end
+                else
+                  chain = Solargraph::Source::NodeChainer.chain(arg, filename)
+                  argtype = chain.infer(api_map, block, locals)
+                  if argtype.tag != partype.tag
+                    result.push Problem.new(Solargraph::Location.new(filename, Solargraph::Range.from_node(node)), "Wrong parameter type for #{pin.path}: #{pin.parameter_names[index]} expected #{partype.tag}, received #{argtype.tag}")
+                  end
+                end
+              end
+            end
+            cursor += 1 if curtype == :arg
           end
         end
       end
@@ -171,6 +221,56 @@ module Solargraph
         result.concat check_send_args(child)
       end
       result
+    end
+
+    def check_arity pins, args
+      args ||= []
+      pins.each do |pin|
+        return pin if pin.parameters.empty? && args.empty?
+        return pin if pin.parameters.length == args.length
+        return pin if pin.parameters.any? { |par| par.start_with?('*') }
+      end
+      return nil
+    end
+
+    def param_tags_from pin
+      # @todo Look for see references
+      #   and dig through all the pins
+      return {} if pin.nil?
+      tags = pin.docstring.tags(:param)
+      result = {}
+      tags.each do |tag|
+        result[tag.name] = ComplexType::UNDEFINED
+        result[tag.name] = ComplexType.try_parse(*tag.types).qualify(api_map, pin.context.namespace)
+      end
+      result
+    end
+
+    # @param pin [Pin::BaseMethod]
+    # @return [Hash]
+    def arg_types pin
+      return [] if pin.nil?
+      result = []
+      pin.parameters.each_with_index do |full, index|
+        result.push arg_type(full)
+      end
+      result
+    end
+
+    # @param string [String]
+    # @return [Symbol]
+    def arg_type string
+      return :kwrestarg if string.start_with?('**')
+      return :restarg if string.start_with?('*')
+      return :optarg if string.include?('=')
+      return :kwoptarg if string.end_with?(':')
+      return :kwarg if string =~ /^[a-z0-9_]*?:/
+      :arg
+    end
+
+    def report_location? location
+      return false if location.nil?
+      filename == location.filename || api_map.bundled?(location.filename)
     end
   end
 end
