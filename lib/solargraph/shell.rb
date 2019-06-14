@@ -1,9 +1,6 @@
 require 'thor'
-require 'json'
-require 'fileutils'
-require 'rubygems/package'
-require 'zlib'
 require 'backport'
+require 'benchmark'
 
 module Solargraph
   class Shell < Thor
@@ -127,6 +124,46 @@ module Solargraph
         probcount += problems.length
       end
       puts "#{probcount} problem#{probcount != 1 ? 's' : ''} found#{files.length != 1 ? " in #{filecount} of #{files.length} files" : ''}."
+    end
+
+    desc 'probe', 'Test the workspace for problems'
+    option :directory, type: :string, aliases: :d, desc: 'The workspace directory', default: '.'
+    option :verbose, type: :boolean, aliases: :v, desc: 'Verbose output', default: false
+    def probe
+      directory = File.realpath(options[:directory])
+      api_map = nil
+      time = Benchmark.measure {
+        api_map = Solargraph::ApiMap.load(directory)
+        api_map.pins.each do |pin|
+          begin
+            puts pin_description(pin) if options[:verbose]
+            pin.typify api_map
+            pin.probe api_map
+          rescue Exception => e
+            STDERR.puts "Error testing #{pin_description(pin)}"
+            STDERR.puts "[#{e.class}]: #{e.message}"
+            STDERR.puts e.backtrace.join("\n")
+            exit 1
+          end
+        end
+      }
+      puts "Probed #{directory} (#{api_map.pins.length} pins) in #{time.real} seconds."
+    end
+
+    private
+
+    # @param pin [Solargraph::Pin::Base]
+    # @return [String]
+    def pin_description pin
+      if pin.path.nil? || pin.path.empty?
+        if pin.closure
+          "#{pin.closure.path} | #{pin.name}"
+        else
+          "#{pin.context.namespace} | #{pin.name}"
+        end
+      else
+        pin.path
+      end
     end
   end
 end
