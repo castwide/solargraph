@@ -57,7 +57,7 @@ module Solargraph
           result = resolve_reference(ref.owner.to_s, api_map)
           return result unless result.nil?
         end
-        match = comments.match(/\(see (.*)\)/)
+        match = comments.match(/^[ \t]*\(see (.*)\)/m)
         return nil if match.nil?
         resolve_reference match[1], api_map
       end
