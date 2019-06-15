@@ -24,8 +24,8 @@ module Solargraph
         decl = super
         return decl unless decl.undefined?
         type = see_reference(api_map) || typify_from_super(api_map)
-        return ComplexType::UNDEFINED if type.nil?
-        type.qualify(api_map, namespace)
+        return type.qualify(api_map, namespace) unless type.nil?
+        name.end_with?('?') ? ComplexType::BOOLEAN : ComplexType::UNDEFINED
       end
 
       # @return [Array<String>]
