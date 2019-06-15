@@ -100,6 +100,10 @@ module Solargraph
       pins.select{ |p| p.path == path }.first
     end
 
+    # Get the location of a file referenced by a require path.
+    #
+    # @param path [String]
+    # @return [Location]
     def require_reference path
       # @type [Gem::Specification]
       spec = Gem::Specification.find_by_path(path) || Gem::Specification.find_by_name(path.split('/').first)

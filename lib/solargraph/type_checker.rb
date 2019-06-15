@@ -133,7 +133,7 @@ module Solargraph
       []
     end
 
-    def check_send_args node
+    def check_send_args node, skip_send = false
       result = []
       if node.type == :send
         smap = api_map.source_map(filename)
@@ -142,7 +142,12 @@ module Solargraph
         chain = Solargraph::Source::NodeChainer.chain(node, filename)
         pins = chain.define(api_map, block, locals)
         if pins.empty?
-          result.push Problem.new(Solargraph::Location.new(filename, Solargraph::Range.from_node(node)), "Unresolved method signature #{chain.links.map(&:word).join('.')}")
+          if !more_signature?(node)
+            base = chain.base.define(api_map, block, locals).first
+            if base.nil? || report_location?(base.location)
+              result.push Problem.new(Solargraph::Location.new(filename, Solargraph::Range.from_node(node)), "Unresolved method signature #{chain.links.map(&:word).join('.')}")
+            end
+          end
         else
           pin = pins.first
           ptypes = ParamDef.from(pin)
@@ -199,6 +204,7 @@ module Solargraph
       end
       node.children.each do |child|
         next unless child.is_a?(Parser::AST::Node)
+        next if child.type == :send && skip_send
         result.concat check_send_args(child)
       end
       result
@@ -227,9 +233,18 @@ module Solargraph
       result
     end
 
+    # @param location [Location, nil]
     def report_location? location
       return false if location.nil?
       filename == location.filename || api_map.bundled?(location.filename)
+    end
+
+    def more_signature? node
+      node.children.any? do |child|
+        child.is_a?(Parser::AST::Node) && (
+          child.type == :send || (child.type == :block && more_signature?(child))
+        )
+      end
     end
 
     class << self
