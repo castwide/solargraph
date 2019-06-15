@@ -15,7 +15,7 @@ describe Solargraph::TypeChecker do
         def bar; end
       end
     ), 'test.rb')
-    expect(checker.return_type_problems).not_to be_empty
+    expect(checker.return_type_problems).to be_one
   end
 
   it 'validates tagged param types' do
@@ -34,7 +34,7 @@ describe Solargraph::TypeChecker do
         def bar(baz); end
       end
     ), 'test.rb')
-    expect(checker.param_type_problems).not_to be_empty
+    expect(checker.param_type_problems).to be_one
   end
 
   it 'validates undefined params with kwrestargs' do
@@ -67,6 +67,17 @@ describe Solargraph::TypeChecker do
     expect(checker.param_type_problems).to be_empty
   end
 
+  it 'reports unresolved param types' do
+    checker = Solargraph::TypeChecker.load_string(%(
+      class Foo
+        # @param foo [UndefinedClass]
+        def bar(foo:); end
+      end
+    ), 'test.rb')
+    expect(checker.param_type_problems).to be_one
+    expect(checker.param_type_problems.first.message).to include('unresolved @param type')
+  end
+
   it 'validates literal strings' do
     checker = Solargraph::TypeChecker.load_string(%(
       class Foo
@@ -88,7 +99,7 @@ describe Solargraph::TypeChecker do
         end
       end
     ), 'test.rb')
-    expect(checker.strict_type_problems).not_to be_empty
+    expect(checker.strict_type_problems).to be_one
   end
 
   it 'ignores undefined return types from external libraries' do
@@ -117,7 +128,7 @@ describe Solargraph::TypeChecker do
         end
       end
     ), 'test.rb')
-    expect(checker.strict_type_problems).not_to be_empty
+    expect(checker.strict_type_problems).to be_one
   end
 
   it 'validates parameterized return types with unparameterized arrays' do
