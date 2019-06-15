@@ -38,7 +38,7 @@ module Solargraph
           if par.return_type.undefined? && !pdefs.any? { |pd| pd.name == par.name && [:restarg, :kwrestarg].include?(pd.type) }
             result.push Problem.new(
               par.location, "#{par.closure.name} has undefined @param type for #{par.name}")
-          elsif !pdefs.map(&:type).include?(:kwrestarg)
+          elsif !pdefs.any? { |pd| [:restarg, :kwrestarg].include?(pd.type) }
             result.push Problem.new(par.location, "#{par.closure.name} has unresolved @param type for #{par.name}")
           end
         end

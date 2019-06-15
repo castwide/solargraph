@@ -89,6 +89,24 @@ describe Solargraph::TypeChecker do
     expect(checker.param_type_problems.first.message).to include('unresolved @param type')
   end
 
+  it 'validates untagged restarg params' do
+    checker = Solargraph::TypeChecker.load_string(%(
+      class Foo
+        def bar(*args); end
+      end
+    ), 'test.rb')
+    expect(checker.param_type_problems).to be_empty
+  end
+
+  it 'validates untagged kwrestarg params' do
+    checker = Solargraph::TypeChecker.load_string(%(
+      class Foo
+        def bar(**args); end
+      end
+    ), 'test.rb')
+    expect(checker.param_type_problems).to be_empty
+  end
+
   it 'validates literal strings' do
     checker = Solargraph::TypeChecker.load_string(%(
       class Foo
@@ -129,8 +147,6 @@ describe Solargraph::TypeChecker do
   end
 
   it 'reports unresolved signatures' do
-    # This test uses Benchmark because Benchmark.measure#time is known to
-    # return a Float but it's not tagged in the stdlib yardoc.
     checker = Solargraph::TypeChecker.load_string(%(
       class Foo
         # @return [Float]
