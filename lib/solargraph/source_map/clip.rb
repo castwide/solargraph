@@ -41,10 +41,10 @@ module Solargraph
           result.concat api_map.get_constants(type.undefined? ? '' : type.namespace, cursor.start_of_constant? ? '' : context_pin.full_context.namespace)
         else
           type = cursor.chain.base.infer(api_map, block, locals)
-          result.concat api_map.get_complex_type_methods(type, context_pin.full_context.namespace, cursor.chain.links.length == 1)
+          result.concat api_map.get_complex_type_methods(type, block.binder.namespace, cursor.chain.links.length == 1)
           if cursor.chain.links.length == 1
             if cursor.word.start_with?('@@')
-              return package_completions(api_map.get_class_variable_pins(context_pin.context.namespace))
+              return package_completions(api_map.get_class_variable_pins(context_pin.full_context.namespace))
             elsif cursor.word.start_with?('@')
               return package_completions(api_map.get_instance_variable_pins(block.binder.namespace, block.binder.scope))
             elsif cursor.word.start_with?('$')

@@ -23,6 +23,38 @@ describe Solargraph::SourceMap::Clip do
     expect(comp.pins.map(&:name)).to include('@@foo')
   end
 
+  it 'completes class variables in open scopes' do
+    source = Solargraph::Source.load_string(%(
+      class Foo
+        @@bar = 'bar'
+        @@b
+      end
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new
+    api_map.map source
+    clip = api_map.clip_at('test.rb', [3, 11])
+    pins = clip.complete.pins
+    expect(pins.length).to eq(1)
+    expect(pins.first.name).to eq('@@bar')
+  end
+
+  it 'uses scope gates to detect class variables' do
+    source = Solargraph::Source.load_string(%(
+      class Foo
+        @@foo = 'foo'
+      end
+      class Bar
+        Foo.class_eval do
+          @@f
+        end
+      end
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new
+    api_map.map source
+    clip = api_map.clip_at('test.rb', [6, 13])
+    expect(clip.complete.pins).to be_empty
+  end
+
   it "completes instance variables" do
     source = Solargraph::Source.load_string('@foo = 1; @f', 'test.rb')
     api_map.map source
