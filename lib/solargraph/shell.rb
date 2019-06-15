@@ -121,8 +121,8 @@ module Solargraph
       filecount = 0
       files.each do |file|
         checker = TypeChecker.new(file, api_map: api_map)
-        problems = checker.param_types + checker.return_types
-        problems.concat checker.strict_types if options[:strict]
+        problems = checker.param_type_problems + checker.return_type_problems
+        problems.concat checker.strict_type_problems if options[:strict]
         next if problems.empty?
         problems.sort! { |a, b| a.location.range.start.line <=> b.location.range.start.line }
         puts problems.map { |prob| "#{prob.location.filename}:#{prob.location.range.start.line + 1} - #{prob.message}" }.join("\n")

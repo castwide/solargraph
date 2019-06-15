@@ -36,7 +36,7 @@ module Solargraph
     end
 
     # @return [Array<Problem>]
-    def return_types
+    def return_type_problems
       result = []
       smap = api_map.source_map(filename)
       pins = smap.pins.select { |pin| pin.is_a?(Solargraph::Pin::BaseMethod) }
@@ -45,7 +45,7 @@ module Solargraph
     end
 
     # @return [Array<Problem>]
-    def param_types
+    def param_type_problems
       result = []
       smap = api_map.source_map(filename)
       smap.locals.select { |pin| pin.is_a?(Solargraph::Pin::Parameter) }.each do |par|
@@ -65,7 +65,7 @@ module Solargraph
     end
 
     # @return [Array<Problem>]
-    def strict_types
+    def strict_type_problems
       result = []
       smap = api_map.source_map(filename)
       smap.pins.select { |pin| pin.is_a?(Pin::BaseMethod) }.each do |pin|
@@ -151,7 +151,6 @@ module Solargraph
     end
 
     def check_send_args node
-      # return [] # @todo Temporarily disabled
       result = []
       if node.type == :send
         smap = api_map.source_map(filename)
@@ -271,6 +270,27 @@ module Solargraph
     def report_location? location
       return false if location.nil?
       filename == location.filename || api_map.bundled?(location.filename)
+    end
+
+    class << self
+      # @param filename [String]
+      # @return [self]
+      def load filename
+        source = Solargraph::Source.load(filename)
+        api_map = Solargraph::ApiMap.new
+        api_map.map(source)
+        new(filename, api_map: api_map)
+      end
+
+      # @param code [String]
+      # @param filename [String, nil]
+      # @return [self]
+      def load_string code, filename = nil
+        source = Solargraph::Source.load_string(code, filename)
+        api_map = Solargraph::ApiMap.new
+        api_map.map(source)
+        new(filename, api_map: api_map)
+      end
     end
   end
 end
