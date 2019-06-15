@@ -78,6 +78,7 @@ module Solargraph
           libraries.each do |lib|
             if filename.start_with?(lib.workspace.directory)
               lib.attach sources.find(uri)
+              lib.catalog
               return lib
             end
           end
