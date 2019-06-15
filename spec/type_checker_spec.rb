@@ -165,4 +165,58 @@ describe Solargraph::TypeChecker do
     ), 'test.rb')
     expect(checker.strict_type_problems).to be_empty
   end
+
+  it 'validates subclasses of return types' do
+    checker = Solargraph::TypeChecker.load_string(%(
+      class Sup; end
+      class Sub < Sup
+        # @return [Sup]
+        def foo
+          Sub.new
+        end
+      end
+    ), 'test.rb')
+    expect(checker.strict_type_problems).to be_empty   
+  end
+
+  it 'reports superclasses of return types' do
+    checker = Solargraph::TypeChecker.load_string(%(
+      class Sup; end
+      class Sub < Sup
+        # @return [Sub]
+        def foo
+          Sup.new
+        end
+      end
+    ), 'test.rb')
+    expect(checker.strict_type_problems).to be_one
+    expect(checker.strict_type_problems.first.message).to include('does not match inferred type')
+  end
+
+  it 'validates parameterized subclasses of return types' do
+    checker = Solargraph::TypeChecker.load_string(%(
+      class Sup; end
+      class Sub < Sup
+        # @return [Class<Sup>]
+        def foo
+          Sub
+        end
+      end
+    ), 'test.rb')
+    expect(checker.strict_type_problems).to be_empty   
+  end
+
+  it 'reports parameterized subclasses of return types' do
+    checker = Solargraph::TypeChecker.load_string(%(
+      class Sup; end
+      class Sub < Sup
+        # @return [Class<Sub>]
+        def foo
+          Sup
+        end
+      end
+    ), 'test.rb')
+    expect(checker.strict_type_problems).to be_one
+    expect(checker.strict_type_problems.first.message).to include('does not match inferred type')
+  end
 end

@@ -210,16 +210,6 @@ module Solargraph
       result
     end
 
-    def check_arity pins, args
-      args ||= []
-      pins.each do |pin|
-        return pin if pin.parameters.empty? && args.empty?
-        return pin if pin.parameters.length == args.length
-        return pin if pin.parameters.any? { |par| par.start_with?('*') }
-      end
-      return nil
-    end
-
     def param_tags_from pin
       # @todo Look for see references
       #   and dig through all the pins
