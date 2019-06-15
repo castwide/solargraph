@@ -455,6 +455,10 @@ module Solargraph
       source_map_hash[filename]
     end
 
+    # True if the specified file was included in a bundle, i.e., it's either
+    # included in a workspace or open in a library.
+    #
+    # @param filename [String]
     def bundled? filename
       source_map_hash.keys.include?(filename)
     end
