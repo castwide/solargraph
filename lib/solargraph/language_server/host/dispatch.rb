@@ -94,6 +94,7 @@ module Solargraph
         # @return [Library]
         def generic_library_for uri
           generic_library.attach sources.find(uri)
+          generic_library.catalog
           generic_library
         end
 
