@@ -8,13 +8,6 @@ module Solargraph
       'then', 'true', 'undef', 'unless', 'until', 'when', 'while', 'yield'
     ].freeze
 
-    METHODS_RETURNING_SELF = %w[
-      Array#select Array#reject Array#keep_if Array#delete_if
-      Enumerable#select
-      Object#clone Object#dup Object#freeze Object#taint Object#untaint Object#tap
-      String#freeze
-    ].freeze
-
     METHODS_RETURNING_SUBTYPES = %w[
       Array#[] Array#first Array#last
     ].freeze
@@ -36,13 +29,29 @@ module Solargraph
     ].freeze
 
     CUSTOM_RETURN_TYPES = {
+      'Array#select' => 'self',
+      'Array#reject' => 'self',
+      'Array#keep_if' => 'self',
+      'Array#delete_if' => 'self',
+
       'Class#new' => 'self',
       'Class.new' => 'Class<Object>',
       'Class#allocate' => 'self',
       'Class.allocate' => 'Class<Object>',
+
+      'Enumerable#select' => 'self',
+
+      'Object#!' => 'Boolean',
+      'Object#clone' => 'self',
+      'Object#dup' => 'self',
+      'Object#freeze' => 'self',
+      'Object#taint' => 'self',
+      'Object#untaint' => 'self',
+      'Object#tap' => 'self',
+
+      'String#freeze' => 'self',
       'String#split' => 'Array<String>',
-      'String#lines' => 'Array<String>',
-      'Object#!' => 'Boolean'
+      'String#lines' => 'Array<String>'
     }.freeze
   end
 end
