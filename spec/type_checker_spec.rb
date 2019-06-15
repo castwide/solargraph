@@ -18,6 +18,17 @@ describe Solargraph::TypeChecker do
     expect(checker.return_type_problems).to be_one
   end
 
+  it 'reports unresolved return types' do
+    checker = Solargraph::TypeChecker.load_string(%(
+      class Foo
+        # @return [UndefinedClass]
+        def bar; end
+      end
+    ), 'test.rb')
+    expect(checker.return_type_problems).to be_one
+    expect(checker.return_type_problems.first.message).to include('unresolved @return type')
+  end
+
   it 'validates tagged param types' do
     checker = Solargraph::TypeChecker.load_string(%(
       class Foo
@@ -137,6 +148,18 @@ describe Solargraph::TypeChecker do
         # @return [Array<String>]
         def bar
           []
+        end
+      end
+    ), 'test.rb')
+    expect(checker.strict_type_problems).to be_empty
+  end
+
+  it 'validates parameterized return types with unparameterized hashes' do
+    checker = Solargraph::TypeChecker.load_string(%(
+      class Foo
+        # @return [Hash{String => Integer}]
+        def bar
+          {}
         end
       end
     ), 'test.rb')
