@@ -41,6 +41,7 @@ module Solargraph
       end
 
       UNDEFINED = UniqueType.new('undefined')
+      BOOLEAN = UniqueType.new('Boolean')
     end
   end
 end

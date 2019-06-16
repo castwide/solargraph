@@ -70,20 +70,20 @@ module Solargraph
                 name, default = pair
                 achain = arguments[idx]
                 if achain.nil?
-                  match = false if default.nil?
+                  match = false if default.nil? && !name.start_with?('*')
                   break
                 end
-                atype = achain.infer(api_map, Pin::ProxyType.anonymous(context), locals)
                 par = ol.tags(:param).select { |pp| pp.name == name }.first
                 next if par.nil?
+                atype = achain.infer(api_map, Pin::ProxyType.anonymous(context), locals)
                 other = ComplexType.try_parse(*par.types)
-                if atype.tag != other.tag
+                # @todo Weak type comparison
+                unless atype.tag == other.tag || api_map.super_and_sub?(other.tag, atype.tag)
                   match = false
                   break
                 end
               end
               type = ComplexType.try_parse(*ol.tag(:return).types).qualify(api_map, context.namespace) if match
-              type = ComplexType.try_parse(context.namespace) if type.tag == 'self'
               break if type.defined?
             end
             next p.proxy(type) if type.defined?

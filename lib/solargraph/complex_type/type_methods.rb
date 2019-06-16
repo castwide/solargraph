@@ -99,8 +99,8 @@ module Solargraph
         recon = (rooted? ? '' : context)
         fqns = api_map.qualify(name, recon)
         if fqns.nil?
-          return ComplexType.parse('Boolean') if tag == 'Boolean'
-          return ComplexType::UNDEFINED
+          return UniqueType::BOOLEAN if tag == 'Boolean'
+          return UniqueType::UNDEFINED
         end
         fqns = "::#{fqns}" # Ensure the resulting complex type is rooted
         ltypes = key_types.map do |t|
