@@ -26,7 +26,11 @@ module Solargraph
         @key_types = []
         @subtypes = []
         return unless parameters?
-        subs = ComplexType.parse(substring[1..-2], partial: true)
+        if @substring.start_with?('<(') && @substring.end_with?(')>')
+          subs = ComplexType.parse(substring[2..-3], partial: true)
+        else
+          subs = ComplexType.parse(substring[1..-2], partial: true)
+        end
         if hash_parameters?
           raise ComplexTypeError, "Bad hash type" unless !subs.is_a?(ComplexType) and subs.length == 2 and !subs[0].is_a?(UniqueType) and !subs[1].is_a?(UniqueType)
           @key_types.concat subs[0].map { |u| ComplexType.new([u]) }
@@ -38,6 +42,28 @@ module Solargraph
 
       def to_s
         tag
+      end
+
+      def self_to dst
+        return self unless selfy?
+        new_name = (@name == 'self' ? dst : @name)
+        new_key_types = @key_types.map { |t| t.self_to dst }
+        new_subtypes = @subtypes.map { |t| t.self_to dst }
+        if hash_parameters?
+          UniqueType.new(new_name, "{#{new_key_types.join(', ')} => #{new_subtypes.join(', ')}}")
+        elsif parameters?
+          if @substring.start_with?'<('
+            UniqueType.new(new_name, "<(#{new_subtypes.join(', ')})>")
+          else
+            UniqueType.new(new_name, "<#{new_subtypes.join(', ')}>")
+          end
+        else
+          UniqueType.new(new_name)
+        end
+      end
+
+      def selfy?
+        @name == 'self' || @key_types.any?(&:selfy?) || @subtypes.any?(&:selfy?)
       end
 
       UNDEFINED = UniqueType.new('undefined')
