@@ -37,6 +37,8 @@ module Solargraph
               # Processing a private class can potentially handle children on its own
               return if process_private_class_method
             end
+          elsif node.children[1] == :require && node.children[0].to_s == '(const nil :Bundler)'
+            pins.push Pin::Reference::Require.new(Solargraph::Location.new(region.filename, Solargraph::Range.from_to(0, 0, 0, 0)), 'bundler/require')
           end
           process_children
         end
@@ -111,7 +113,8 @@ module Solargraph
         # @return [void]
         def process_require
           if node.children[2].kind_of?(AST::Node) && node.children[2].type == :str
-            pins.push Pin::Reference::Require.new(get_node_location(node), node.children[2].children[0].to_s)
+            path = node.children[2].children[0].to_s
+            pins.push Pin::Reference::Require.new(get_node_location(node), path)
           end
         end
 
