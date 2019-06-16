@@ -157,8 +157,10 @@ module Solargraph
           node.children[2..-1].each_with_index do |arg, index|
             curtype = ptypes[cursor] if curtype.nil? || curtype == :arg
             if curtype.nil?
-              result.push Problem.new(Solargraph::Location.new(filename, Solargraph::Range.from_node(node)), "Not enough arguments send to #{pin.path}")
-              break
+              if pin.parameters[index].nil?
+                result.push Problem.new(Solargraph::Location.new(filename, Solargraph::Range.from_node(node)), "Not enough arguments sent to #{pin.path}")
+                break
+              end
             else
               # @todo Break here? Not sure about that
               break if curtype.type == :restarg || curtype.type == :kwrestarg
@@ -190,8 +192,7 @@ module Solargraph
                     result.push Problem.new(Solargraph::Location.new(filename, Solargraph::Range.from_node(node)), "No @param type for #{pin.parameter_names[index]} in #{pin.path}")
                   end
                 else
-                  chain = Solargraph::Source::NodeChainer.chain(arg, filename)
-                  argtype = chain.infer(api_map, block, locals)
+                  argtype = chain.links.last.arguments[index].infer(api_map, block, locals)
                   if argtype.tag != partype.tag
                     result.push Problem.new(Solargraph::Location.new(filename, Solargraph::Range.from_node(node)), "Wrong parameter type for #{pin.path}: #{pin.parameter_names[index]} expected #{partype.tag}, received #{argtype.tag}")
                   end
