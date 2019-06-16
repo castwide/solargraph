@@ -28,30 +28,38 @@ module Solargraph
       Set#each
     ].freeze
 
-    CUSTOM_RETURN_TYPES = {
-      'Array#select' => 'self',
-      'Array#reject' => 'self',
-      'Array#keep_if' => 'self',
-      'Array#delete_if' => 'self',
+    class << self
+      private
 
-      'Class#new' => 'self',
-      'Class.new' => 'Class<Object>',
-      'Class#allocate' => 'self',
-      'Class.allocate' => 'Class<Object>',
+      def override path, *tags
+        Solargraph::Pin::Reference::Override.new(nil, path, [YARD::Tags::Tag.new('return', nil, tags)])
+      end
+    end
 
-      'Enumerable#select' => 'self',
+    OVERRIDES = [
+      override('Array#select', 'self'),
+      override('Array#reject', 'self'),
+      override('Array#keep_if', 'self'),
+      override('Array#delete_if', 'self'),
 
-      'Object#!' => 'Boolean',
-      'Object#clone' => 'self',
-      'Object#dup' => 'self',
-      'Object#freeze' => 'self',
-      'Object#taint' => 'self',
-      'Object#untaint' => 'self',
-      'Object#tap' => 'self',
+      override('Class#new', 'self'),
+      override('Class.new', 'Class<Object>'),
+      override('Class#allocate', 'self'),
+      override('Class.allocate', 'Class<Object>'),
 
-      'String#freeze' => 'self',
-      'String#split' => 'Array<String>',
-      'String#lines' => 'Array<String>'
-    }.freeze
+      override('Enumerable#select', 'self'),
+
+      override('Object#!', 'Boolean'),
+      override('Object#clone', 'self'),
+      override('Object#dup', 'self'),
+      override('Object#freeze', 'self'),
+      override('Object#taint', 'self'),
+      override('Object#untaint', 'self'),
+      override('Object#tap', 'self'),
+
+      override('String#freeze', 'self'),
+      override('String#split', 'Array<String>'),
+      override('String#lines', 'Array<String>')
+    ]
   end
 end
