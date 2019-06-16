@@ -114,6 +114,8 @@ module Solargraph
         when 'domain'
           namespace = closure_at(source_position)
           namespace.domains.concat directive.tag.types unless directive.tag.types.nil?
+        when 'override'
+          pins.push Pin::Reference::Override.new(location, directive.tag.name, docstring.tags)
         end
       end
 

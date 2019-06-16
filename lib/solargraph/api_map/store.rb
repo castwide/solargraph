@@ -195,6 +195,7 @@ module Solargraph
         block_pins.clear
         all_instance_variables.clear
         namespace_map[''] = []
+        override_pins = []
         pins.each do |pin|
           namespace_map[pin.namespace] ||= []
           namespace_map[pin.namespace].push pin
@@ -215,10 +216,18 @@ module Solargraph
             block_pins.push pin
           elsif pin.is_a?(Pin::InstanceVariable)
             all_instance_variables.push pin
+          elsif pin.is_a?(Pin::Reference::Override)
+            override_pins.push pin
           end
         end
-        # @namespace_pins = nil
-        # @method_pins = nil
+        override_pins.each do |ret|
+          pin = get_path_pins(ret.name).first
+          next if pin.nil?
+          ret.tags.each do |tag|
+            pin.docstring.delete_tags(tag.tag_name)
+            pin.docstring.add_tag(tag)
+          end
+        end
       end
     end
   end
