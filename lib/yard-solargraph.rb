@@ -16,3 +16,5 @@ YARD::Tags::Library.define_tag("Yieldself", :yieldself, :with_types)
 YARD::Tags::Library.define_tag("Yieldpublic", :yieldpublic, :with_types)
 # Define a @!domain directive for documenting DSLs
 YARD::Tags::Library.define_directive("domain", :with_types, Solargraph::DomainDirective)
+# Define an @!override directive for overriding method tags
+YARD::Tags::Library.define_directive("override", :with_name, Solargraph::DomainDirective)

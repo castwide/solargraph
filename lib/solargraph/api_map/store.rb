@@ -54,8 +54,7 @@ module Solargraph
       # @param path [String]
       # @return [Array<Solargraph::Pin::Base>]
       def get_path_pins path
-        return [] if path.nil? # @todo Should be '' instead?
-        pins.select { |pin| pin.path == path }
+        path_pin_hash[path] || []
       end
 
       # @param fqns [String]
@@ -185,6 +184,10 @@ module Solargraph
         @all_instance_variables ||= []
       end
 
+      def path_pin_hash
+        @path_pin_hash ||= {}
+      end
+
       # @return [void]
       def index
         namespace_map.clear
@@ -194,7 +197,9 @@ module Solargraph
         symbols.clear
         block_pins.clear
         all_instance_variables.clear
+        path_pin_hash.clear
         namespace_map[''] = []
+        override_pins = []
         pins.each do |pin|
           namespace_map[pin.namespace] ||= []
           namespace_map[pin.namespace].push pin
@@ -215,10 +220,24 @@ module Solargraph
             block_pins.push pin
           elsif pin.is_a?(Pin::InstanceVariable)
             all_instance_variables.push pin
+          elsif pin.is_a?(Pin::Reference::Override)
+            override_pins.push pin
+          end
+          if pin.path
+            path_pin_hash[pin.path] ||= []
+            path_pin_hash[pin.path].push pin
           end
         end
-        # @namespace_pins = nil
-        # @method_pins = nil
+        override_pins.concat CoreFills::OVERRIDES
+        override_pins.each do |ovr|
+          pin = get_path_pins(ovr.name).first
+          next if pin.nil?
+          pin.docstring.delete_tags(:overload)
+          pin.docstring.delete_tags(:return)
+          ovr.tags.each do |tag|
+            pin.docstring.add_tag(tag)
+          end
+        end
       end
     end
   end
