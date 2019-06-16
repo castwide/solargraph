@@ -68,11 +68,6 @@ module Solargraph
         @@inference_stack.push active_signature(name_pin)
         type = ComplexType::UNDEFINED
         pins = define(api_map, name_pin, locals)
-        # pins.each do |pin|
-        #   type = pin.typify(api_map)
-        #   break unless type.undefined?
-        # end
-        # type = pins.first.probe(api_map) unless type.defined? || pins.empty?
         type = infer_first_defined(pins, links.last.last_context, api_map)
         @@inference_stack.pop
         type
