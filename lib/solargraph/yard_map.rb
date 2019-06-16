@@ -255,7 +255,7 @@ module Solargraph
     end
 
     def bundler_require
-      Solargraph.logger.warn "Using bundler/require"
+      Solargraph.logger.debug "Using bundler/require"
       result = []
       Dir.chdir @directory do
         # @type [Array<Gem::Specification>]
