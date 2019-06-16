@@ -56,6 +56,37 @@ module Solargraph
               result = process_directive(p, api_map, context, locals)
               next result unless result.return_type.undefined?
             end
+            overloads = p.docstring.tags(:overload)
+            # @todo Exception for Class#new is temporary
+            next p if overloads.empty? || p.path == 'Class#new'
+            type = ComplexType::UNDEFINED
+            # @param ol [YARD::Tags::OverloadTag]
+            overloads.each do |ol|
+              next if ol.tag(:return).nil?
+              # @todo Weak arity check
+              next if ol.parameters.length != arguments.length
+              match = true
+              ol.parameters.each_with_index do |pair, idx|
+                name, default = pair
+                achain = arguments[idx]
+                if achain.nil?
+                  match = false if default.nil?
+                  break
+                end
+                atype = achain.infer(api_map, Pin::ProxyType.anonymous(context), locals)
+                par = ol.tags(:param).select { |pp| pp.name == name }.first
+                next if par.nil?
+                other = ComplexType.try_parse(*par.types)
+                if atype.tag != other.tag
+                  match = false
+                  break
+                end
+              end
+              type = ComplexType.try_parse(*ol.tag(:return).types).qualify(api_map, context.namespace) if match
+              type = ComplexType.try_parse(context.namespace) if type.tag == 'self'
+              break if type.defined?
+            end
+            next p.proxy(type) if type.defined?
             p
           end
           result
