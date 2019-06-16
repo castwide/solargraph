@@ -121,8 +121,8 @@ module Solargraph
             break if type.defined?
           end
         end
-        return ComplexType.parse(context.return_type.namespace) if type.tag == 'self'
-        type
+        return type if context.nil? || context.return_type.undefined?
+        type.self_to(context.return_type.namespace)
       end
 
       def skippable_block_receivers api_map

@@ -89,7 +89,11 @@ module Solargraph
             next p.proxy(type) if type.defined?
             p
           end
-          result
+          result.map do |pin|
+            next pin if pin.return_type.undefined?
+            selfy = pin.return_type.self_to(context.namespace)
+            selfy == pin.return_type ? pin : pin.proxy(selfy)
+          end
         end
 
         # @param pin [Pin::Method]
