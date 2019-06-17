@@ -16,6 +16,9 @@ module Solargraph
       @api_map = api_map || Solargraph::ApiMap.load(File.dirname(filename))
     end
 
+    # Return type problems indicate that a method does not specify a type in a
+    # @return tag or the specified type could not be resolved to a known type.
+    #
     # @return [Array<Problem>]
     def return_type_problems
       result = []
@@ -25,6 +28,11 @@ module Solargraph
       result
     end
 
+    # Param type problems indicate that a method does not specify a type in a
+    # @param tag for one or more of its parameters, a @param tag is defined
+    # that does not correlate with the method signature, or the specified type
+    # could not be resolved to a known type.
+    #
     # @return [Array<Problem>]
     def param_type_problems
       result = []
@@ -46,6 +54,11 @@ module Solargraph
       result
     end
 
+    # Strict type problems indicate that a @return type or a @param type does
+    # not match the type inferred from code analysis; or that an argument
+    # sent to a method does not match the type specified in the corresponding
+    # @param tag.
+    #
     # @return [Array<Problem>]
     def strict_type_problems
       result = []
