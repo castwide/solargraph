@@ -4,10 +4,9 @@ module Solargraph
       # @return [::Symbol] :reader or :writer
       attr_reader :access
 
-      def initialize access: :reader, node: nil, **splat
+      def initialize access: :reader, **splat
         super(splat)
         @access = access
-        @scope = scope
       end
 
       def kind
