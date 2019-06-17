@@ -192,9 +192,14 @@ module Solargraph
                     result.push Problem.new(Solargraph::Location.new(filename, Solargraph::Range.from_node(node)), "No @param type for #{pin.parameter_names[index]} in #{pin.path}")
                   end
                 else
-                  argtype = chain.links.last.arguments[index].infer(api_map, block, locals)
-                  if argtype.tag != partype.tag
-                    result.push Problem.new(Solargraph::Location.new(filename, Solargraph::Range.from_node(node)), "Wrong parameter type for #{pin.path}: #{pin.parameter_names[index]} expected #{partype.tag}, received #{argtype.tag}")
+                  arg = chain.links.last.arguments[index]
+                  if arg.nil?
+                    result.push Problem.new(Solargraph::Location.new(filename, Solargraph::Range.from_node(node)), "Wrong number of arguments to #{pin.path}")
+                  else
+                    argtype = arg.infer(api_map, block, locals)
+                    if argtype.tag != partype.tag
+                      result.push Problem.new(Solargraph::Location.new(filename, Solargraph::Range.from_node(node)), "Wrong parameter type for #{pin.path}: #{pin.parameter_names[index]} expected #{partype.tag}, received #{argtype.tag}")
+                    end
                   end
                 end
               end
