@@ -153,7 +153,7 @@ module Solargraph
         locals = smap.locals_at(Solargraph::Location.new(filename, Solargraph::Range.from_node(node)))
         block = smap.locate_block_pin(node.loc.line, node.loc.column)
         chain = Solargraph::Source::NodeChainer.chain(node, filename)
-        pins = chain.define(api_map, block, locals)
+        pins = chain.define(api_map, block, locals).select { |pin| pin.is_a?(Pin::BaseMethod ) }
         if pins.empty?
           if !more_signature?(node)
             base = chain.base.define(api_map, block, locals).first
