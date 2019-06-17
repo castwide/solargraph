@@ -3,6 +3,7 @@ module Solargraph
     module Message
       class Initialized < Base
         def process
+          # @todo Temporarily removed textDocument/codeAction
           host.register_capabilities %w[
             textDocument/completion
             textDocument/hover
@@ -14,7 +15,6 @@ module Solargraph
             textDocument/rename
             textDocument/prepareRename
             textDocument/foldingRange
-            textDocument/codeAction
             workspace/symbol
           ]
         end
