@@ -138,8 +138,8 @@ module Solargraph
         pins.each do |pin|
           pin.parameter_names.each do |name|
             next if done.include?(name)
+            done.push name
             if pin.parameters.any? { |par| par.start_with?("#{name}:") }
-              done.push name
               result.push Pin::KeywordParam.new(pin.location, "#{name}:")
             end
           end

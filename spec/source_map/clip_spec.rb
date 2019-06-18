@@ -781,4 +781,22 @@ describe Solargraph::SourceMap::Clip do
     clip = api_map.clip_at('test.rb', [5, 19])
     expect(clip.complete.pins.map(&:name)).to include('baz:')
   end
+
+  it 'ignores shadowed keyword parameters' do
+    source = Solargraph::Source.load_string(%(
+      class Sup
+        def foo bar: ''
+        end
+      end
+      class Sub < Sup
+        def foo bar
+        end
+      end
+      Sub.new.foo(b)
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new
+    api_map.map source
+    clip = api_map.clip_at('test.rb', [9, 19])
+    expect(clip.complete.pins.map(&:name)).not_to include('bar:')
+  end
 end
