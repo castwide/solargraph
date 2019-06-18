@@ -17,7 +17,8 @@ module Solargraph
     end
 
     # Return type problems indicate that a method does not specify a type in a
-    # @return tag or the specified type could not be resolved to a known type.
+    # `@return` tag or the specified type could not be resolved to a known
+    # type.
     #
     # @return [Array<Problem>]
     def return_type_problems
@@ -29,7 +30,7 @@ module Solargraph
     end
 
     # Param type problems indicate that a method does not specify a type in a
-    # @param tag for one or more of its parameters, a @param tag is defined
+    # `@param` tag for one or more of its parameters, a `@param` tag is defined
     # that does not correlate with the method signature, or the specified type
     # could not be resolved to a known type.
     #
@@ -54,10 +55,10 @@ module Solargraph
       result
     end
 
-    # Strict type problems indicate that a @return type or a @param type does
-    # not match the type inferred from code analysis; or that an argument
+    # Strict type problems indicate that a `@return` type or a `@param` type
+    # does not match the type inferred from code analysis; or that an argument
     # sent to a method does not match the type specified in the corresponding
-    # @param tag.
+    # `@param` tag.
     #
     # @return [Array<Problem>]
     def strict_type_problems
@@ -66,6 +67,7 @@ module Solargraph
       smap.pins.select { |pin| pin.is_a?(Pin::BaseMethod) }.each do |pin|
         result.concat confirm_return_type(pin)
       end
+      return result if smap.source.node.nil?
       result.concat check_send_args smap.source.node
       result
     end
