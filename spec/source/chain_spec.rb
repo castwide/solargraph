@@ -171,7 +171,7 @@ describe Solargraph::Source::Chain do
     api_map = Solargraph::ApiMap.new
     chain = Solargraph::Source::NodeChainer.chain(source.node)
     type = chain.infer(api_map, Solargraph::Pin::ROOT_PIN, [])
-    expect(type.tag).to eq('String')
+    expect(type.to_s).to eq('String')
   end
 
   it 'infers multiple types from or-nodes' do
