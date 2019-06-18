@@ -3,6 +3,8 @@ require 'rdoc'
 module Solargraph
   class YardMap
     module RdocToYard
+      extend ApiMap::SourceToYard
+
       def self.run
         pins = []
         pins.push Solargraph::Pin::ROOT_PIN
@@ -21,27 +23,26 @@ module Solargraph
           )
           mod.parse(mod.comment_location)
           pins.push namepin
-          puts namepin.inspect
           name_hash[mod.full_name] = namepin
-          puts mod.full_name
           # @param met [RDoc::AnyMethod]
           mod.each_method do |met|
-            puts met.full_name
-            puts met.params
+            pin = Solargraph::SourceMap.load_string("def Object.tmp#{met.param_seq};end").first_pin('Object.tmp') || Solargraph::Pin::BaseMethod.new
             pins.push Solargraph::Pin::Method.new(
               name: met.name,
               closure: namepin,
               comments: commentary(met.comment),
-              scope: (met.singleton ? :class : :method)
+              scope: (met.singleton ? :class : :method),
+              args: pin.parameters
             )
           end
         end
-        puts "#{pins.length} pins."
-        api_map = Solargraph::ApiMap.new(pins: pins)
-        pin = api_map.get_path_pins('AbstractController::Callbacks::ClassMethods.before_action').first
-        puts pin.docstring.all
-        res = api_map.search('_insert_callbacks')
-        puts res.inspect
+        store = Solargraph::ApiMap::Store.new(pins)
+        rake_yard(store)
+        YARD::Registry.clear
+        code_object_map.values.each do |co|
+          YARD::Registry.register(co)
+        end
+        YARD::Registry.save(false, '.yardoc')
       end
 
       def self.base_name mod
