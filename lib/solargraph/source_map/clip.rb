@@ -143,6 +143,13 @@ module Solargraph
               result.push Pin::KeywordParam.new(pin.location, "#{name}:")
             end
           end
+          if !pin.parameters.empty? && pin.parameters.last.start_with?('**') || pin.parameters.last =~ /= *?\{\}$/
+            pin.docstring.tags(:param).each do |tag|
+              next if done.include?(tag.name)
+              done.push tag.name
+              result.push Pin::KeywordParam.new(pin.location, "#{tag.name}:")
+            end
+          end
         end
         result
       end
