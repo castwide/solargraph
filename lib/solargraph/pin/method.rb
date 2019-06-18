@@ -1,3 +1,5 @@
+require 'htmlentities'
+
 module Solargraph
   module Pin
     class Method < BaseMethod

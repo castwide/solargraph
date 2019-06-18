@@ -83,6 +83,12 @@ module Solargraph
         elsif [:class, :module, :def, :defs].include?(n.type)
           # @todo Undefined or what?
           result.push Chain::UNDEFINED_CALL
+        elsif [:and, :or].include?(n.type)
+          n.children.each do |c|
+            result.concat generate_links(c)
+          end
+        elsif [:begin, :kwbegin].include?(n.type)
+          result.concat generate_links(n.children[0])
         else
           lit = infer_literal_node_type(n)
           result.push (lit ? Chain::Literal.new(lit) : Chain::Link.new)

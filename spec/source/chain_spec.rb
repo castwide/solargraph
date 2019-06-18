@@ -152,4 +152,15 @@ describe Solargraph::Source::Chain do
     result = chain.define(api_map, Solargraph::Pin::ROOT_PIN, [])
     expect(result.map(&:path)).to eq(['Correct'])
   end
+
+  it 'infers booleans from or-nodes passed to !' do
+    source = Solargraph::Source.load_string(%(
+      !([].include?('.') || [].include?('#'))
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new
+    api_map.map source
+    chain = Solargraph::Source::NodeChainer.chain(source.node, source.filename)
+    type = chain.infer(api_map, api_map.pins.first, [])    
+    expect(type.tag).to eq('Boolean')
+  end
 end
