@@ -5,6 +5,7 @@ module Solargraph
     #
     class TypeCheck < Base
       def diagnose source, api_map
+        return [] unless args.include?('always') || api_map.workspaced?(source.filename)
         severity = (args.include?('strict') ? Diagnostics::Severities::ERROR : Diagnostics::Severities::WARNING)
         checker = Solargraph::TypeChecker.new(source.filename, api_map: api_map)
         result = checker.return_type_problems + checker.param_type_problems

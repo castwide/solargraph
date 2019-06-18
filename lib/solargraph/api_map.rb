@@ -33,6 +33,7 @@ module Solargraph
         @cache.clear
         @store = Store.new(pins + YardMap.new.pins)
         @unresolved_requires = []
+        workspace_filenames.clear
       }
       self
     end
@@ -112,6 +113,8 @@ module Solargraph
         @source_map_hash = new_map_hash
         @store = new_store
         @unresolved_requires = yard_map.unresolved_requires
+        workspace_filenames.clear
+        workspace_filenames.concat bundle.workspace.filenames
       }
       self
     end
@@ -463,6 +466,10 @@ module Solargraph
       source_map_hash.keys.include?(filename)
     end
 
+    def workspaced? filename
+      workspace_filenames.include?(filename)
+    end
+
     # @param location [Location]
     def require_reference_at location
       map = source_map(location.filename)
@@ -492,6 +499,10 @@ module Solargraph
     end
 
     private
+
+    def workspace_filenames
+      @workspace_filenames ||= []
+    end
 
     # @return [YardMap]
     def yard_map
