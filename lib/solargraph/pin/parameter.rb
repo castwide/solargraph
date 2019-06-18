@@ -74,7 +74,7 @@ module Solargraph
             else
               yps = meth.docstring.tags(:yieldparam)
               unless yps[index].nil? or yps[index].types.nil? or yps[index].types.empty?
-                return ComplexType.parse(yps[index].types.first).qualify(api_map, meth.context.namespace)
+                return ComplexType.try_parse(yps[index].types.first).qualify(api_map, meth.context.namespace)
               end
             end
           end
@@ -101,7 +101,7 @@ module Solargraph
           if found.nil? and !index.nil?
             found = params[index] if params[index] && (params[index].name.nil? || params[index].name.empty?)
           end
-          return ComplexType.parse(*found.types).qualify(api_map, meth.context.namespace) unless found.nil? || found.types.nil?
+          return ComplexType.try_parse(*found.types).qualify(api_map, meth.context.namespace) unless found.nil? || found.types.nil?
         end
         ComplexType::UNDEFINED
       end

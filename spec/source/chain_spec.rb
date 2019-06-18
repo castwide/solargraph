@@ -152,4 +152,35 @@ describe Solargraph::Source::Chain do
     result = chain.define(api_map, Solargraph::Pin::ROOT_PIN, [])
     expect(result.map(&:path)).to eq(['Correct'])
   end
+
+  it 'infers booleans from or-nodes passed to !' do
+    source = Solargraph::Source.load_string(%(
+      !([].include?('.') || [].include?('#'))
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new
+    api_map.map source
+    chain = Solargraph::Source::NodeChainer.chain(source.node, source.filename)
+    type = chain.infer(api_map, api_map.pins.first, [])    
+    expect(type.tag).to eq('Boolean')
+  end
+
+  it 'infers last type from and-nodes' do
+    source = Solargraph::Source.load_string(%(
+      [] && ''
+    ))
+    api_map = Solargraph::ApiMap.new
+    chain = Solargraph::Source::NodeChainer.chain(source.node)
+    type = chain.infer(api_map, Solargraph::Pin::ROOT_PIN, [])
+    expect(type.to_s).to eq('String')
+  end
+
+  it 'infers multiple types from or-nodes' do
+    source = Solargraph::Source.load_string(%(
+      [] || ''
+    ))
+    api_map = Solargraph::ApiMap.new
+    chain = Solargraph::Source::NodeChainer.chain(source.node)
+    type = chain.infer(api_map, Solargraph::Pin::ROOT_PIN, [])
+    expect(type.to_s).to eq('Array, String')
+  end
 end

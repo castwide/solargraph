@@ -8,11 +8,16 @@ module Solargraph
         # @return [Array<Chain>]
         attr_reader :arguments
 
+        # @param word [String]
+        # @param arguments [Array<Chain>]
         def initialize word, arguments = []
           @word = word
           @arguments = arguments
         end
 
+        # @param api_map [ApiMap]
+        # @param name_pin [Pin::Base]
+        # @param locals [Array<Pin::Base>]
         def resolve api_map, name_pin, locals
           found = locals.select{|p| p.name == word}
           return inferred_pins(found, api_map, name_pin.context, locals) unless found.empty?

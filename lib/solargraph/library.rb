@@ -341,7 +341,7 @@ module Solargraph
           end
         else
           args = line.split(':').map(&:strip)
-          name = args.pop
+          name = args.shift
             reporter = Diagnostics.reporter(name)
           raise DiagnosticsError, "Diagnostics reporter #{name} does not exist" if reporter.nil?
           repargs[reporter] ||= []

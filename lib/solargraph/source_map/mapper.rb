@@ -78,6 +78,7 @@ module Solargraph
           gen_pin.instance_variable_set(:@comments, docstring.all)
           @pins.push gen_pin
         when 'attribute'
+          return if directive.tag.name.nil?
           namespace = closure_at(source_position)
           t = (directive.tag.types.nil? || directive.tag.types.empty?) ? nil : directive.tag.types.flatten.join('')
           if t.nil? || t.include?('r')
