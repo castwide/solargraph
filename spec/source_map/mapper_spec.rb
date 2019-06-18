@@ -1090,4 +1090,24 @@ describe Solargraph::SourceMap::Mapper do
     ))
     expect(smap.first_pin('Foo#bar')).to be_a(Solargraph::Pin::Method)
   end
+
+  it 'ignores attribute directives without names' do
+    smap = Solargraph::SourceMap.load_string(%(
+      class Foo
+        # @!attribute
+      end
+    ))
+    attrs = smap.pins.select { |pin| pin.is_a?(Solargraph::Pin::Attribute) }
+    expect(attrs).to be_empty
+  end
+
+  it 'ignores method directives without names' do
+    smap = Solargraph::SourceMap.load_string(%(
+      class Foo
+        # @!method
+      end
+    ))
+    attrs = smap.pins.select { |pin| pin.is_a?(Solargraph::Pin::Method) }
+    expect(attrs).to be_empty
+  end
 end
