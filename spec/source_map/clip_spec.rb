@@ -767,4 +767,18 @@ describe Solargraph::SourceMap::Clip do
     clip = api_map.clip_at('test.rb', [3, 19])
     expect(clip.infer.tag).to eq('File')
   end
+
+  it 'completes keyword parameters' do
+    source = Solargraph::Source.load_string(%(
+      class Foo
+        def bar baz: ''
+        end
+      end
+      Foo.new.bar(b)
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new
+    api_map.map source
+    clip = api_map.clip_at('test.rb', [5, 19])
+    expect(clip.complete.pins.map(&:name)).to include('baz:')
+  end
 end
