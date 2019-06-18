@@ -163,4 +163,24 @@ describe Solargraph::Source::Chain do
     type = chain.infer(api_map, api_map.pins.first, [])    
     expect(type.tag).to eq('Boolean')
   end
+
+  it 'infers last type from and-nodes' do
+    source = Solargraph::Source.load_string(%(
+      [] && ''
+    ))
+    api_map = Solargraph::ApiMap.new
+    chain = Solargraph::Source::NodeChainer.chain(source.node)
+    type = chain.infer(api_map, Solargraph::Pin::ROOT_PIN, [])
+    expect(type.tag).to eq('String')
+  end
+
+  it 'infers multiple types from or-nodes' do
+    source = Solargraph::Source.load_string(%(
+      [] || ''
+    ))
+    api_map = Solargraph::ApiMap.new
+    chain = Solargraph::Source::NodeChainer.chain(source.node)
+    type = chain.infer(api_map, Solargraph::Pin::ROOT_PIN, [])
+    expect(type.to_s).to eq('Array, String')
+  end
 end

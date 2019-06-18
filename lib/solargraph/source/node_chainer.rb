@@ -83,10 +83,10 @@ module Solargraph
         elsif [:class, :module, :def, :defs].include?(n.type)
           # @todo Undefined or what?
           result.push Chain::UNDEFINED_CALL
-        elsif [:and, :or].include?(n.type)
-          n.children.each do |c|
-            result.concat generate_links(c)
-          end
+        elsif n.type == :and
+          result.concat generate_links(n.children.last)
+        elsif n.type == :or
+          result.push Chain::Or.new([NodeChainer.chain(n.children[0], @filename), NodeChainer.chain(n.children[1], @filename)])
         elsif [:begin, :kwbegin].include?(n.type)
           result.concat generate_links(n.children[0])
         else

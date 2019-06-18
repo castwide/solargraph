@@ -16,6 +16,7 @@ module Solargraph
       autoload :GlobalVariable,   'solargraph/source/chain/global_variable'
       autoload :Literal,          'solargraph/source/chain/literal'
       autoload :Head,             'solargraph/source/chain/head'
+      autoload :Or,               'solargraph/source/chain/or'
 
       @@inference_depth = 0
 
@@ -73,9 +74,12 @@ module Solargraph
         links.last.is_a?(Chain::Literal)
       end
 
-      # @return [Boolean]
       def undefined?
         links.any?(&:undefined?)
+      end
+
+      def defined?
+        !undefined?
       end
 
       # @return [Boolean]
