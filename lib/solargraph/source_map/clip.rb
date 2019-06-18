@@ -131,7 +131,7 @@ module Solargraph
 
       # @return [Array<Pin::KeywordParam]
       def complete_keyword_parameters
-        return [] unless cursor.argument?
+        return [] unless cursor.argument? && cursor.chain.links.one? && cursor.word =~ /^[a-z0-9_]*:?$/
         pins = signify
         result = []
         done = []
