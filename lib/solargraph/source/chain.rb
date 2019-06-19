@@ -19,6 +19,7 @@ module Solargraph
       autoload :Or,               'solargraph/source/chain/or'
 
       @@inference_stack = []
+      @@inference_depth = 0
 
       UNDEFINED_CALL = Chain::Call.new('<undefined>')
       UNDEFINED_CONSTANT = Chain::Constant.new('<undefined>')
@@ -99,13 +100,18 @@ module Solargraph
           break if type.defined?
         end
         if type.undefined?
+          # Limit method inference recursion
+          return type if @@inference_depth >= 2 && pins.first.is_a?(Pin::BaseMethod)
+          @@inference_depth += 1
           pins.each do |pin|
+            # Avoid infinite recursion
             next if @@inference_stack.include?(pin)
             @@inference_stack.push pin
             type = pin.probe(api_map)
             @@inference_stack.pop
             break if type.defined?
           end
+          @@inference_depth -= 1
         end
         return type if context.nil? || context.return_type.undefined?
         type.self_to(context.return_type.namespace)

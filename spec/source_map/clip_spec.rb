@@ -782,4 +782,20 @@ describe Solargraph::SourceMap::Clip do
     type = clip.infer
     expect(type.tag).to eq('Foo')    
   end
+
+  it 'infers deep variables' do
+    code = "v0 = []\n"
+    # 100 is an arbitrary depth that should be way higher than most users will
+    # encounter in practice
+    100.times do |index|
+      code += "v#{index + 1} = v#{index}\n"
+    end
+    code += "v100"
+    source = Solargraph::Source.load_string(code, 'test.rb')
+    api_map = Solargraph::ApiMap.new
+    api_map.map source
+    clip = api_map.clip_at('test.rb', [code.lines.length - 1, 0])
+    type = clip.infer
+    expect(type.tag).to eq('Array')
+  end
 end
