@@ -767,4 +767,19 @@ describe Solargraph::SourceMap::Clip do
     clip = api_map.clip_at('test.rb', [3, 19])
     expect(clip.infer.tag).to eq('File')
   end
+
+  it 'infers self in instance methods' do
+    source = Solargraph::Source.load_string(%(
+      class Foo
+        def initialize
+          self
+        end
+      end
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new
+    api_map.map source
+    clip = api_map.clip_at('test.rb', [3, 10])
+    type = clip.infer
+    expect(type.tag).to eq('Foo')    
+  end
 end
