@@ -11,6 +11,8 @@ module Solargraph
       # @return [Parser::AST::Node]
       attr_reader :node
 
+      # @param args [Array<String>]
+      # @param node [Parser::AST::Node, nil]
       def initialize args: [], node: nil, **splat
         super(splat)
         @parameters = args

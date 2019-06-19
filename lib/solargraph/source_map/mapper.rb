@@ -30,6 +30,9 @@ module Solargraph
         [[], []]
       end
 
+      # @param filename [String]
+      # @param code [String]
+      # @return [Array]
       def unmap filename, code
         s = Position.new(0, 0)
         e = Position.from_offset(code, code.length)

@@ -147,6 +147,9 @@ module Solargraph
       []
     end
 
+    # @param node [Parser::AST::Node]
+    # @param skip_send [Boolean]
+    # @return [Array<Problem>]
     def check_send_args node, skip_send = false
       result = []
       if node.type == :send
@@ -230,6 +233,8 @@ module Solargraph
       result
     end
 
+    # @param pin [Pin::Base]
+    # @return [Hash]
     def param_tags_from pin
       # @todo Look for see references
       #   and dig through all the pins
