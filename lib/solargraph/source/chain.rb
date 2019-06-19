@@ -18,7 +18,7 @@ module Solargraph
       autoload :Head,             'solargraph/source/chain/head'
       autoload :Or,               'solargraph/source/chain/or'
 
-      @@inference_depth = 0
+      @@inference_stack = []
 
       UNDEFINED_CALL = Chain::Call.new('<undefined>')
       UNDEFINED_CONSTANT = Chain::Constant.new('<undefined>')
@@ -94,19 +94,19 @@ module Solargraph
       # @return [ComplexType]
       def infer_first_defined pins, context, api_map
         type = ComplexType::UNDEFINED
-        return type if @@inference_depth >= 3
-        @@inference_depth += 1
         pins.each do |pin|
           type = pin.typify(api_map)
           break if type.defined?
         end
         if type.undefined?
           pins.each do |pin|
+            next if @@inference_stack.include?(pin)
+            @@inference_stack.push pin
             type = pin.probe(api_map)
+            @@inference_stack.pop
             break if type.defined?
           end
         end
-        @@inference_depth -= 1
         return type if context.nil? || context.return_type.undefined?
         type.self_to(context.return_type.namespace)
       end
