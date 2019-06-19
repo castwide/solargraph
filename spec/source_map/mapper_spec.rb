@@ -1110,4 +1110,38 @@ describe Solargraph::SourceMap::Mapper do
     attrs = smap.pins.select { |pin| pin.is_a?(Solargraph::Pin::Method) }
     expect(attrs).to be_empty
   end
+
+  it 'maps multiple method directives in a class' do
+    source = Solargraph::Source.load_string(%(
+      class Foo
+        class << self
+          # @!method bar
+          # @!method baz
+        end
+      end  
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new
+    api_map.map source
+    bar = api_map.get_path_pins('Foo.bar').first
+    expect(bar).to be_a(Solargraph::Pin::Base)
+    baz = api_map.get_path_pins('Foo.baz').first
+    expect(baz).to be_a(Solargraph::Pin::Base)
+  end
+
+  it 'maps method directives in class headers' do
+    source = Solargraph::Source.load_string(%(
+      # @!method self.bar
+      class Foo
+        class << self
+          # @!method baz
+        end
+      end  
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new
+    api_map.map source
+    bar = api_map.get_path_pins('Foo.bar').first
+    expect(bar).to be_a(Solargraph::Pin::Base)
+    baz = api_map.get_path_pins('Foo.baz').first
+    expect(baz).to be_a(Solargraph::Pin::Base)
+  end
 end
