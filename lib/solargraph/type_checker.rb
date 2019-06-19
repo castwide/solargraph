@@ -45,8 +45,7 @@ module Solargraph
         pdefs = ParamDef.from(par.closure)
         if type.undefined?
           if par.return_type.undefined? && !pdefs.any? { |pd| pd.name == par.name && [:restarg, :kwrestarg].include?(pd.type) }
-            result.push Problem.new(
-              par.location, "#{par.closure.name} has undefined @param type for #{par.name}")
+            result.push Problem.new(par.location, "#{par.closure.name} has undefined @param type for #{par.name}")
           elsif !pdefs.any? { |pd| [:restarg, :kwrestarg].include?(pd.type) }
             result.push Problem.new(par.location, "#{par.closure.name} has unresolved @param type for #{par.name}")
           end
@@ -96,7 +95,7 @@ module Solargraph
       if tagged.undefined?
         if pin.return_type.undefined?
           probed = pin.probe(api_map)
-          return [Problem.new(pin.location, "#{pin.name} has undefined @return type", probed.to_s)]
+          return [Problem.new(pin.location, "#{pin.name} has undefined @return type", pin: pin, suggestion: probed.to_s)]
         else
           return [Problem.new(pin.location, "#{pin.name} has unresolved @return type #{pin.return_type}")]
         end
@@ -143,7 +142,7 @@ module Solargraph
           end
         end
         return [] if all
-        return [Problem.new(pin.location, "@return type `#{tagged.to_s}` does not match inferred type `#{probed.to_s}`", probed.to_s)]
+        return [Problem.new(pin.location, "@return type `#{tagged.to_s}` does not match inferred type `#{probed.to_s}`", pin: pin, suggestion: probed.to_s)]
       end
       []
     end
