@@ -2,22 +2,6 @@ require 'tmpdir'
 require 'yard'
 
 describe Solargraph::Library do
-  it "raises an exception for unknown filenames" do
-    library = Solargraph::Library.new
-    expect {
-      library.checkout 'invalid_filename.rb'
-    }.to raise_error(Solargraph::FileNotFoundError)
-  end
-
-  it "ignores created files that are not in the workspace" do
-    library = Solargraph::Library.new
-    result = library.create('file.rb', 'a = b')
-    expect(result).to be(false)
-    expect {
-      library.checkout 'file.rb'
-    }.to raise_error(Solargraph::FileNotFoundError)
-  end
-
   it "does not open created files in the workspace" do
     Dir.mktmpdir do |temp_dir_path|
       # Ensure we resolve any symlinks to their real path
@@ -28,94 +12,6 @@ describe Solargraph::Library do
       result = library.create(file_path, File.read(file_path))
       expect(result).to be(true)
       expect(library.open?(file_path)).to be(false)
-    end
-  end
-
-  it "raises an exception for files that do not exist" do
-    Dir.mktmpdir do |temp_dir_path|
-      # Ensure we resolve any symlinks to their real path
-      workspace_path = File.realpath(temp_dir_path)
-      file_path = File.join(workspace_path, 'not_real.rb')
-      library = Solargraph::Library.load(workspace_path)
-      expect {
-        library.checkout file_path
-      }.to raise_error(Solargraph::FileNotFoundError)
-    end
-  end
-
-  it "opens an attached file" do
-    library = Solargraph::Library.new
-    library.attach Solargraph::Source.load_string('a = b', 'file.rb')
-    expect(library.open?('file.rb')).to be(true)
-    expect {
-      source = library.checkout('file.rb')
-    }.not_to raise_error
-  end
-
-  it "closes a detached file" do
-    library = Solargraph::Library.new
-    library.attach(Solargraph::Source.load_string('a = b', 'file.rb', 0))
-    library.detach 'file.rb'
-    expect(library.open?('file.rb')).to be(false)
-    expect {
-      library.checkout 'file.rb'
-    }.to raise_error(Solargraph::FileNotFoundError)
-  end
-
-  it "deletes a file from the workspace" do
-    Dir.mktmpdir do |dir|
-      file = File.join(dir, 'file.rb')
-      File.write(file, 'a = b')
-      library = Solargraph::Library.load(dir)
-      library.attach Solargraph::Source.load(file)
-      expect {
-        library.checkout file
-      }.not_to raise_error
-      File.unlink file
-      library.delete file
-      expect {
-        library.checkout file
-      }.to raise_error(Solargraph::FileNotFoundError)
-    end
-  end
-
-  it "makes a closed file unavailable if it doesn't exist on disk" do
-    library = Solargraph::Library.new
-    library.attach Solargraph::Source.load_string('a = b', 'file.rb', 0)
-    expect {
-      library.checkout 'file.rb'
-    }.not_to raise_error
-    library.close 'file.rb'
-    expect {
-      library.checkout 'file.rb'
-    }.to raise_error(Solargraph::FileNotFoundError)
-  end
-
-  it "keeps a closed file available if it exists in the workspace" do
-    library = Solargraph::Library.load('spec/fixtures/workspace')
-    file = 'spec/fixtures/workspace/app.rb'
-    library.attach Solargraph::Source.load(file)
-    expect {
-      library.checkout file
-    }.not_to raise_error
-    library.close file
-    expect {
-      library.checkout file
-    }.not_to raise_error
-  end
-
-  it "keeps a closed file in the workspace" do
-    Dir.mktmpdir do |dir|
-      file = File.join(dir, 'file.rb')
-      File.write file, 'a = b'
-      library = Solargraph::Library.load(dir)
-      library.attach Solargraph::Source.load(file)
-      expect {
-        library.checkout file
-      }.not_to raise_error
-      library.close file
-      expect(library.open?(file)).to be(false)
-      expect(library.contain?(file)).to be(true)
     end
   end
 
@@ -349,7 +245,7 @@ describe Solargraph::Library do
       [Solargraph::Source::Change.new(nil, repl)]
     )
     library.attach src.synchronize(updater)
-    expect(library.checkout('test.rb').code).to eq(repl)
+    expect(library.current.code).to eq(repl)
   end
 
   it "finds unique references" do
