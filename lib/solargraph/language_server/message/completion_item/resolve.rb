@@ -18,10 +18,10 @@ module Solargraph
             return params if pins.empty?
             docs = pins
                    .reject { |pin| pin.documentation.empty? && pin.return_type.undefined? }
-                   .map { |pin| pin.resolve_completion_item[:documentation] }
+            # docs = filt.map { |pin| pin.resolve_completion_item[:documentation] }
             result = params
               .merge(pins.first.resolve_completion_item)
-              .merge(documentation: markup_content(docs.join("\n\n")))
+              .merge(documentation: markup_content(join_docs(docs)))
             result[:detail] = pins.first.detail
             result
           end
@@ -34,6 +34,19 @@ module Solargraph
               kind: 'markdown',
               value: text
             }
+          end
+
+          def join_docs pins
+            result = []
+            last_link = nil
+            pins.each_with_index do |pin|
+              if pin.link_documentation && pin.link_documentation != last_link
+                result.push pin.link_documentation
+              end
+              result.push pin.documentation
+              last_link = pin.link_documentation
+            end
+            result.join("\n\n")
           end
         end
       end
