@@ -27,6 +27,17 @@ module Solargraph
       @source = source.dup
       @pins = pins
       @locals = locals
+      if source.filename
+        if File.basename(source.filename) == 'Gemfile'
+          environ.requires.push 'bundler'
+          environ.domains.push 'Bundler::Dsl'
+        end
+        if File.basename(source.filename) =~ /_spec\.rb$/
+          environ.requires.push 'rspec'
+          environ.domains.push 'RSpec::Matchers'
+          environ.domains.push 'RSpec::ExpectationGroups'
+        end
+      end
     end
 
     # @return [String]
@@ -42,6 +53,11 @@ module Solargraph
     # @return [Array<Pin::Reference::Require>]
     def requires
       @requires ||= pins.select{|p| p.kind == Pin::REQUIRE_REFERENCE}
+    end
+
+    # @return [Environ]
+    def environ
+      @environ ||= Environ.new
     end
 
     # @return [Array<Pin::Base>]

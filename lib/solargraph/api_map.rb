@@ -83,10 +83,12 @@ module Solargraph
         end
       end
       return self if merged
+      implicit.clear
       pins = []
       reqs = []
       # @param map [SourceMap]
       new_map_hash.values.each do |map|
+        implicit.merge map.environ
         pins.concat map.pins
         reqs.concat map.requires.map(&:name)
       end
@@ -106,6 +108,7 @@ module Solargraph
           result
         end
       end
+      reqs.concat implicit.requires
       yard_map.change(reqs)
       new_store = Store.new(pins + yard_map.pins)
       @mutex.synchronize {
@@ -117,6 +120,10 @@ module Solargraph
         workspace_filenames.concat bundle.workspace.filenames
       }
       self
+    end
+
+    def implicit
+      @implicit ||= Environ.new
     end
 
     def local_path_hash
@@ -283,10 +290,11 @@ module Solargraph
       skip = []
       if fqns == ''
         # @todo Implement domains
-        # domains.each do |domain|
-        #   type = ComplexType.parse(domain).first
-        #   result.concat inner_get_methods(type.name, type.scope, [:public], deep, skip)
-        # end
+        implicit.domains.each do |domain|
+          type = ComplexType.try_parse(domain)
+          next if type.undefined?
+          result.concat inner_get_methods(type.name, type.scope, [:public], deep, skip)
+        end
         result.concat inner_get_methods(fqns, :class, visibility, deep, skip)
         result.concat inner_get_methods(fqns, :instance, visibility, deep, skip)
         result.concat inner_get_methods('Kernel', :instance, visibility, deep, skip)
