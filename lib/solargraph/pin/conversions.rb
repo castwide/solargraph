@@ -22,8 +22,8 @@ module Solargraph
         if @resolve_completion_item.nil?
           extra = {}
           alldoc = ''
-          alldoc += link_documentation unless link_documentation.nil?
-          alldoc += "\n\n" unless alldoc.empty?
+          # alldoc += link_documentation unless link_documentation.nil?
+          # alldoc += "\n\n" unless alldoc.empty?
           alldoc += documentation unless documentation.nil?
           extra[:documentation] = alldoc unless alldoc.empty?
           @resolve_completion_item = completion_item.merge(extra)
