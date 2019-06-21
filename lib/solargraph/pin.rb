@@ -28,6 +28,7 @@ module Solargraph
     autoload :DuckMethod,       'solargraph/pin/duck_method'
     autoload :YardPin,          'solargraph/pin/yard_pin'
     autoload :Singleton,        'solargraph/pin/singleton'
+    autoload :KeywordParam,     'solargraph/pin/keyword_param'
 
     ATTRIBUTE = 1
     CLASS_VARIABLE = 2
