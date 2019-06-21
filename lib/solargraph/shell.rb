@@ -162,6 +162,14 @@ module Solargraph
       puts "Scanned #{directory} (#{api_map.pins.length} pins) in #{time.real} seconds."
     end
 
+    desc 'gems', 'Generate documentation for bundled gems'
+    def gems
+      # @todo Process:
+      #   1. Get a list of bundled gems
+      #   2. Run `yard gems [gem_name] [version]` for each
+      #   3. Get cached documentation
+    end
+
     private
 
     # @param pin [Solargraph::Pin::Base]
