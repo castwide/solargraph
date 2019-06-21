@@ -196,13 +196,7 @@ module Solargraph
                 arg.children.each do |pair|
                   sym = pair.children[0].children[0].to_s
                   partype = params[pin.parameter_names[index]]
-                  if partype.nil?
-                    if report_location?(pin.location)
-                      unless ptypes.map(&:type).include?(:kwrestarg)
-                        result.push Problem.new(Solargraph::Location.new(filename, Solargraph::Range.from_node(node)), "No @param type for #{pin.parameter_names[index]} in #{pin.path}")
-                      end
-                    end
-                  else
+                  if partype
                     chain = Solargraph::Source::NodeChainer.chain(pair.children[1], filename)
                     argtype = chain.infer(api_map, block, locals)
                     if argtype.tag != partype.tag && !api_map.super_and_sub?(partype.tag.to_s, argtype.tag.to_s)
@@ -219,11 +213,7 @@ module Solargraph
                 else
                   partype = params[pin.parameter_names[index]]
                 end
-                if partype.nil?
-                  if report_location?(pin.location)
-                    result.push Problem.new(Solargraph::Location.new(filename, Solargraph::Range.from_node(node)), "No @param type for #{pin.parameter_names[index]} in #{pin.path}")
-                  end
-                else
+                if partype
                   arg = chain.links.last.arguments[index]
                   if arg.nil?
                     result.push Problem.new(Solargraph::Location.new(filename, Solargraph::Range.from_node(node)), "Wrong number of arguments to #{pin.path}")
