@@ -236,6 +236,19 @@ describe Solargraph::TypeChecker do
     expect(checker.strict_type_problems.first.message).to include('does not match inferred type')
   end
 
+  it 'validates subclass arguments of param types' do
+    checker = Solargraph::TypeChecker.load_string(%(
+      class Sup
+        # @param other [Sup]
+        # @return [void]
+        def take(other); end
+      end
+      class Sub < Sup; end
+      Sup.new.take(Sub.new)
+      ), 'test.rb')
+    expect(checker.strict_type_problems).to be_empty
+  end
+
   it 'does not raise errors checking unparsed sources' do
     checker = Solargraph::TypeChecker.load_string(%(
       foo{

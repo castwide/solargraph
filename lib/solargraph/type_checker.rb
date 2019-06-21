@@ -194,7 +194,7 @@ module Solargraph
                   else
                     chain = Solargraph::Source::NodeChainer.chain(pair.children[1], filename)
                     argtype = chain.infer(api_map, block, locals)
-                    if argtype.tag != partype.tag
+                    if argtype.tag != partype.tag && !api_map.super_and_sub?(partype.tag.to_s, argtype.tag.to_s)
                       result.push Problem.new(Solargraph::Location.new(filename, Solargraph::Range.from_node(node)), "Wrong parameter type for #{pin.path}: #{pin.parameter_names[index]} expected #{partype.tag}, received #{argtype.tag}")
                     end
                   end
@@ -214,7 +214,7 @@ module Solargraph
                     result.push Problem.new(Solargraph::Location.new(filename, Solargraph::Range.from_node(node)), "Wrong number of arguments to #{pin.path}")
                   else
                     argtype = arg.infer(api_map, block, locals)
-                    if argtype.tag != partype.tag
+                    if argtype.tag != partype.tag && !api_map.super_and_sub?(partype.tag.to_s, argtype.tag.to_s)
                       result.push Problem.new(Solargraph::Location.new(filename, Solargraph::Range.from_node(node)), "Wrong parameter type for #{pin.path}: #{pin.parameter_names[index]} expected #{partype.tag}, received #{argtype.tag}")
                     end
                   end
