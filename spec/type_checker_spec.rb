@@ -249,6 +249,28 @@ describe Solargraph::TypeChecker do
     expect(checker.strict_type_problems).to be_empty
   end
 
+  it 'validates attr_writer parameters' do
+    checker = Solargraph::TypeChecker.load_string(%(
+      class Foo
+        # @return [String]
+        attr_accessor :bar
+      end
+      Foo.new.bar = 'hello'
+    ))
+    expect(checker.strict_type_problems).to be_empty
+  end
+
+  it 'reports invalid attr_writer parameters' do
+    checker = Solargraph::TypeChecker.load_string(%(
+      class Foo
+        # @return [Integer]
+        attr_accessor :bar
+      end
+      Foo.new.bar = 'hello'
+    ))
+    expect(checker.strict_type_problems).to be_one
+  end
+
   it 'does not raise errors checking unparsed sources' do
     checker = Solargraph::TypeChecker.load_string(%(
       foo{

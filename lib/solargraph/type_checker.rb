@@ -172,7 +172,11 @@ module Solargraph
           cursor = 0
           curtype = nil
           node.children[2..-1].each_with_index do |arg, index|
-            curtype = ptypes[cursor] if curtype.nil? || curtype == :arg
+            if pin.is_a?(Pin::Attribute)
+              curtype = ParamDef.new('value', :arg)
+            else
+              curtype = ptypes[cursor] if curtype.nil? || curtype == :arg
+            end
             if curtype.nil?
               if pin.parameters[index].nil?
                 result.push Problem.new(Solargraph::Location.new(filename, Solargraph::Range.from_node(node)), "Not enough arguments sent to #{pin.path}")
@@ -203,7 +207,11 @@ module Solargraph
                 result.push Problem.new(Solargraph::Location.new(filename, Solargraph::Range.from_node(node)), "Can't handle splat in #{pin.parameter_names[index]} #{pin.path}")
                 break if curtype != :arg && ptypes.map(&:type).include?(:restarg)
               else
-                partype = params[pin.parameter_names[index]]
+                if pin.is_a?(Pin::Attribute)
+                  partype = pin.return_type
+                else
+                  partype = params[pin.parameter_names[index]]
+                end
                 if partype.nil?
                   if report_location?(pin.location)
                     result.push Problem.new(Solargraph::Location.new(filename, Solargraph::Range.from_node(node)), "No @param type for #{pin.parameter_names[index]} in #{pin.path}")
