@@ -282,6 +282,18 @@ describe Solargraph::TypeChecker do
     expect(checker.strict_type_problems).to be_one
   end
 
+  it 'resolves self when validating inferred types' do
+    checker = Solargraph::TypeChecker.load_string(%(
+      class Foo
+        # @return [self]
+        def bar
+          Foo.new
+        end
+      end
+    ))
+    expect(checker.strict_type_problems).to be_empty
+  end
+
   it 'does not raise errors checking unparsed sources' do
     checker = Solargraph::TypeChecker.load_string(%(
       foo{

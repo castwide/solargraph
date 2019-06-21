@@ -113,7 +113,7 @@ module Solargraph
     # @param pin [Solargraph::Pin::Base]
     # @return [Array<Problem>]
     def confirm_return_type pin
-      tagged = pin.typify(api_map)
+      tagged = pin.typify(api_map).self_to(pin.namespace)
       return [] if tagged.void? || tagged.undefined? || pin.is_a?(Pin::Attribute)
       probed = pin.probe(api_map)
       return [] if probed.undefined?
