@@ -75,7 +75,7 @@ module Solargraph
             else
               yps = meth.docstring.tags(:yieldparam)
               unless yps[index].nil? or yps[index].types.nil? or yps[index].types.empty?
-                return ComplexType.try_parse(yps[index].types.first).self_to(chain.base.infer(api_map, closure, locals).to_s).qualify(api_map, meth.context.namespace)
+                return ComplexType.try_parse(yps[index].types.first).self_to(chain.base.infer(api_map, closure, locals).namespace).qualify(api_map, meth.context.namespace)
               end
             end
           end

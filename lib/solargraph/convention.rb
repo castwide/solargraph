@@ -8,6 +8,7 @@ module Solargraph
     autoload :Base,    'solargraph/convention/base'
     autoload :Gemfile, 'solargraph/convention/gemfile'
     autoload :Rspec,   'solargraph/convention/rspec'
+    autoload :Gemspec, 'solargraph/convention/gemspec'
 
     @@conventions = Set.new
 
@@ -29,6 +30,7 @@ module Solargraph
     end
 
     register Gemfile
+    register Gemspec
     register Rspec
   end
 end
