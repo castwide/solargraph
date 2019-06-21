@@ -16,10 +16,6 @@ module Solargraph
       Hash#[]
     ].freeze
 
-    METHODS_WITH_YIELDPARAM_SELF = %w[
-      Object#tap
-    ].freeze
-
     METHODS_WITH_YIELDPARAM_SUBTYPES = %w[
       Array#each Array#map Array#any? Array#all? Array#index Array#keep_if
       Array#delete_if
@@ -57,7 +53,10 @@ module Solargraph
       override('Object#freeze', 'self'),
       override('Object#taint', 'self'),
       override('Object#untaint', 'self'),
-      override('Object#tap', 'self'),
+      Pin::Reference::Override.from_comment('Object#tap', %(
+@return [self]
+@yieldparam [self]
+      )),
 
       override('String#freeze', 'self'),
       override('String#split', 'Array<String>'),
