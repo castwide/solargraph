@@ -27,17 +27,7 @@ module Solargraph
       @source = source.dup
       @pins = pins
       @locals = locals
-      if source.filename
-        if File.basename(source.filename) == 'Gemfile'
-          environ.requires.push 'bundler'
-          environ.domains.push 'Bundler::Dsl'
-        end
-        if File.basename(source.filename) =~ /_spec\.rb$/
-          environ.requires.push 'rspec'
-          environ.domains.push 'RSpec::Matchers'
-          environ.domains.push 'RSpec::ExpectationGroups'
-        end
-      end
+      environ.merge Convention.for(source)
     end
 
     # @return [String]
