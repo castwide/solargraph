@@ -92,7 +92,17 @@ module Solargraph
     def core_pins
       @@core_pins ||= begin
         load_yardoc CoreDocs.yardoc_file
-        Mapper.new(YARD::Registry.all).map
+        result = Mapper.new(YARD::Registry.all).map
+        CoreFills::OVERRIDES.each do |ovr|
+          pin = result.select { |p| p.path == ovr.name }.first
+          next if pin.nil?
+          pin.docstring.delete_tags(:overload)
+          pin.docstring.delete_tags(:return)
+          ovr.tags.each do |tag|
+            pin.docstring.add_tag(tag)
+          end
+        end
+        result
       end
     end
 

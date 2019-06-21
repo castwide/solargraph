@@ -228,7 +228,6 @@ module Solargraph
             path_pin_hash[pin.path].push pin
           end
         end
-        override_pins.concat CoreFills::OVERRIDES
         override_pins.each do |ovr|
           pin = get_path_pins(ovr.name).first
           next if pin.nil?
