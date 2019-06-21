@@ -8,7 +8,10 @@ module Solargraph
       def environ
         @environ ||= Environ.new(
           requires: ['rspec'],
-          domains: ['RSpec::Matchers', 'RSpec::ExpectationGroups']
+          domains: ['RSpec::Matchers', 'RSpec::ExpectationGroups'],
+          overrides: [
+            Solargraph::Pin::Reference::Override.method_return('RSpec::Matchers#expect', 'RSpec::Expectations::ExpectationTarget')
+          ]
         )
       end
     end

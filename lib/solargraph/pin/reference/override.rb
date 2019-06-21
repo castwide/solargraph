@@ -12,6 +12,10 @@ module Solargraph
         def kind
           Pin::OVERRIDE_REFERENCE
         end
+
+        def self.method_return name, *tags
+          new(nil, name, [YARD::Tags::Tag.new('return', nil, tags)])
+        end
       end
     end
   end

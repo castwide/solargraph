@@ -109,6 +109,7 @@ module Solargraph
         end
       end
       reqs.concat implicit.requires
+      pins.concat implicit.overrides
       yard_map.change(reqs)
       new_store = Store.new(pins + yard_map.pins)
       @mutex.synchronize {
