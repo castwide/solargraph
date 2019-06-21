@@ -6,7 +6,7 @@ module Solargraph
       end
 
       def environ
-        Environ.new(
+        @environ ||= Environ.new(
           requires: ['rspec'],
           domains: ['RSpec::Matchers', 'RSpec::ExpectationGroups']
         )
