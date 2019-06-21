@@ -15,7 +15,7 @@ module Solargraph
             suggestions.each do |pin|
               parts = []
               this_link = pin.link_documentation
-              if !this_link.nil? and this_link != last_link
+              if !this_link.nil? && this_link != last_link
                 parts.push this_link
               end
               parts.push HTMLEntities.new.encode(pin.detail) unless pin.kind == Solargraph::Pin::NAMESPACE or pin.detail.nil?

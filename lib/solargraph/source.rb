@@ -443,7 +443,7 @@ module Solargraph
     # @return [Array<AST::Node>]
     def inner_node_references name, top
       result = []
-      if top.is_a?(AST::Node)
+      if top.is_a?(AST::Node) && top.to_s.include?(":#{name}")
         result.push top if top.children.any? { |c| c.to_s == name }
         top.children.each { |c| result.concat inner_node_references(name, c) }
       end

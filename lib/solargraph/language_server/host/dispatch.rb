@@ -36,9 +36,11 @@ module Solargraph
         # @param uri [String]
         # @return [Library]
         def library_for uri
-          explicit_library_for(uri) ||
+          result = explicit_library_for(uri) ||
             implicit_library_for(uri) ||
             generic_library_for(uri)
+          result.attach sources.find(uri) if sources.include?(uri)
+          result
         end
 
         # Find an explicit library match for the given URI. An explicit match

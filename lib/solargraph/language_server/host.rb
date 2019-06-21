@@ -159,8 +159,9 @@ module Solargraph
       # @param uri [String]
       # @return [void]
       def open_from_disk uri
+        sources.open_from_disk(uri)
         library = library_for(uri)
-        library.open_from_disk uri_to_file(uri)
+        # library.open_from_disk uri_to_file(uri)
         diagnoser.schedule uri
       end
 

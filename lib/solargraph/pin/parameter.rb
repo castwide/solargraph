@@ -37,6 +37,11 @@ module Solargraph
         tag.text
       end
 
+      def try_merge! pin
+        return false unless super && closure == pin.closure
+        true
+      end
+
       private
 
       # @return [YARD::Tags::Tag]
