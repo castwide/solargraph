@@ -49,6 +49,8 @@ module Solargraph
 
       override('Enumerable#select', 'self'),
 
+      override('File.dirname', 'String'),
+
       override('Object#!', 'Boolean'),
       override('Object#clone', 'self'),
       override('Object#dup', 'self'),
