@@ -107,6 +107,17 @@ describe Solargraph::TypeChecker do
     expect(checker.param_type_problems).to be_empty
   end
 
+  it 'reports param tags without defined parameters' do
+    checker = Solargraph::TypeChecker.load_string(%(
+      class Foo
+        # @param baz [String]
+        def bar; end
+      end
+    ))
+    expect(checker.param_type_problems).to be_one
+    expect(checker.param_type_problems.first.message).to include('unknown @param baz')    
+  end
+
   it 'validates literal strings' do
     checker = Solargraph::TypeChecker.load_string(%(
       class Foo

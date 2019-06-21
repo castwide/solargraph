@@ -38,6 +38,13 @@ module Solargraph
     def param_type_problems
       result = []
       smap = api_map.source_map(filename)
+      smap.pins.select { |pin| pin.is_a?(Pin::Method) }.each do |pin|
+        if pin.parameters.empty?
+          pin.docstring.tags(:param).each do |tag|
+            result.push Problem.new(pin.location, "#{pin.name} has unknown @param #{tag.name}", pin: pin)
+          end
+        end
+      end
       smap.locals.select { |pin| pin.is_a?(Solargraph::Pin::Parameter) }.each do |par|
         next unless par.closure.is_a?(Solargraph::Pin::Method)
         result.concat check_param_tags(par.closure)
