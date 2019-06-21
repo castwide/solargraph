@@ -7,14 +7,6 @@ module Solargraph
         @return_type = return_type
       end
 
-      def path
-        @path ||= begin
-          result = namespace.to_s
-          result += '::' unless result.empty? or name.to_s.empty?
-          result += name.to_s
-        end
-      end
-
       def context
         @return_type
       end

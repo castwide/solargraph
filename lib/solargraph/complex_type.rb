@@ -67,6 +67,16 @@ module Solargraph
       @items.all? &block
     end
 
+    def selfy?
+      @items.any?(&:selfy?)
+    end
+
+    def self_to dst
+      return self unless selfy?
+      result = @items.map { |i| i.self_to dst }
+      ComplexType.parse(*result.map(&:tag))
+    end
+
     class << self
       # Parse type strings into a ComplexType.
       #

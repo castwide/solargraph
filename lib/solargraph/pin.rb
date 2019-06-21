@@ -28,6 +28,7 @@ module Solargraph
     autoload :DuckMethod,       'solargraph/pin/duck_method'
     autoload :YardPin,          'solargraph/pin/yard_pin'
     autoload :Singleton,        'solargraph/pin/singleton'
+    autoload :KeywordParam,     'solargraph/pin/keyword_param'
 
     ATTRIBUTE = 1
     CLASS_VARIABLE = 2
@@ -46,6 +47,7 @@ module Solargraph
     INCLUDE_REFERENCE = 15
     EXTEND_REFERENCE = 16
     METHOD_ALIAS = 17
+    OVERRIDE_REFERENCE = 18
 
     # ROOT_PIN = Pin::Namespace.new(nil, '', '', '', :class, :public)
     ROOT_PIN = Pin::Namespace.new(type: :class, name: '', closure: nil)

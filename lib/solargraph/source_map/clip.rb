@@ -25,6 +25,7 @@ module Solargraph
         return package_completions(api_map.get_symbols) if cursor.chain.literal? && cursor.chain.links.last.word == '<Symbol>'
         return Completion.new([], cursor.range) if cursor.chain.literal? || cursor.comment?
         result = []
+        result.concat complete_keyword_parameters
         if cursor.chain.constant? || cursor.start_of_constant?
           if cursor.chain.undefined?
             type = cursor.chain.base.infer(api_map, context_pin, locals)
@@ -124,6 +125,31 @@ module Solargraph
         unless ys.nil? || ys.types.empty?
           ysct = ComplexType.try_parse(*ys.types).qualify(api_map, receiver_pin.context.namespace)
           result.concat api_map.get_complex_type_methods(ysct, '', false)
+        end
+        result
+      end
+
+      # @return [Array<Pin::KeywordParam]
+      def complete_keyword_parameters
+        return [] unless cursor.argument? && cursor.chain.links.one? && cursor.word =~ /^[a-z0-9_]*:?$/
+        pins = signify
+        result = []
+        done = []
+        pins.each do |pin|
+          pin.parameter_names.each do |name|
+            next if done.include?(name)
+            done.push name
+            if pin.parameters.any? { |par| par.start_with?("#{name}:") }
+              result.push Pin::KeywordParam.new(pin.location, "#{name}:")
+            end
+          end
+          if !pin.parameters.empty? && pin.parameters.last.start_with?('**') || pin.parameters.last =~ /= *?\{\}$/
+            pin.docstring.tags(:param).each do |tag|
+              next if done.include?(tag.name)
+              done.push tag.name
+              result.push Pin::KeywordParam.new(pin.location, "#{tag.name}:")
+            end
+          end
         end
         result
       end

@@ -107,6 +107,17 @@ describe Solargraph::TypeChecker do
     expect(checker.param_type_problems).to be_empty
   end
 
+  it 'reports param tags without defined parameters' do
+    checker = Solargraph::TypeChecker.load_string(%(
+      class Foo
+        # @param baz [String]
+        def bar; end
+      end
+    ))
+    expect(checker.param_type_problems).to be_one
+    expect(checker.param_type_problems.first.message).to include('unknown @param baz')    
+  end
+
   it 'validates literal strings' do
     checker = Solargraph::TypeChecker.load_string(%(
       class Foo
@@ -234,5 +245,63 @@ describe Solargraph::TypeChecker do
     ), 'test.rb')
     expect(checker.strict_type_problems).to be_one
     expect(checker.strict_type_problems.first.message).to include('does not match inferred type')
+  end
+
+  it 'validates subclass arguments of param types' do
+    checker = Solargraph::TypeChecker.load_string(%(
+      class Sup
+        # @param other [Sup]
+        # @return [void]
+        def take(other); end
+      end
+      class Sub < Sup; end
+      Sup.new.take(Sub.new)
+      ), 'test.rb')
+    expect(checker.strict_type_problems).to be_empty
+  end
+
+  it 'validates attr_writer parameters' do
+    checker = Solargraph::TypeChecker.load_string(%(
+      class Foo
+        # @return [String]
+        attr_accessor :bar
+      end
+      Foo.new.bar = 'hello'
+    ))
+    expect(checker.strict_type_problems).to be_empty
+  end
+
+  it 'reports invalid attr_writer parameters' do
+    checker = Solargraph::TypeChecker.load_string(%(
+      class Foo
+        # @return [Integer]
+        attr_accessor :bar
+      end
+      Foo.new.bar = 'hello'
+    ))
+    expect(checker.strict_type_problems).to be_one
+  end
+
+  it 'resolves self when validating inferred types' do
+    checker = Solargraph::TypeChecker.load_string(%(
+      class Foo
+        # @return [self]
+        def bar
+          Foo.new
+        end
+      end
+    ))
+    expect(checker.strict_type_problems).to be_empty
+  end
+
+  it 'does not raise errors checking unparsed sources' do
+    checker = Solargraph::TypeChecker.load_string(%(
+      foo{
+    ))
+    expect {
+      checker.param_type_problems
+      checker.return_type_problems
+      checker.strict_type_problems
+    }.not_to raise_error
   end
 end

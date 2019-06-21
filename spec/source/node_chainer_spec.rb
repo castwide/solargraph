@@ -59,4 +59,12 @@ describe Solargraph::Source::NodeChainer do
     chain = Solargraph::Source::NodeChainer.chain(node)
     expect(chain.links.map(&:word)).to eq(['Bar', 'meth1', 'meth2'])
   end
+
+  it 'chains and/or nodes' do
+    source = Solargraph::Source.load_string(%(
+      [] || ''
+    ))
+    chain = Solargraph::Source::NodeChainer.chain(source.node)
+    expect(chain).to be_defined
+  end
 end

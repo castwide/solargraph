@@ -8,7 +8,7 @@ describe Solargraph::Diagnostics::TypeCheck do
       end
     ))
     api_map.map source
-    result = Solargraph::Diagnostics::TypeCheck.new.diagnose(source, api_map)
+    result = Solargraph::Diagnostics::TypeCheck.new('always').diagnose(source, api_map)
     expect(result).to be_empty
   end
 
@@ -18,7 +18,7 @@ describe Solargraph::Diagnostics::TypeCheck do
       end
     ))
     api_map.map source
-    result = Solargraph::Diagnostics::TypeCheck.new.diagnose(source, api_map)
+    result = Solargraph::Diagnostics::TypeCheck.new('always').diagnose(source, api_map)
     expect(result.length).to eq(1)
     expect(result[0][:message]).to include('foo')
   end
@@ -31,7 +31,7 @@ describe Solargraph::Diagnostics::TypeCheck do
       end
     ))
     api_map.map source
-    result = Solargraph::Diagnostics::TypeCheck.new.diagnose(source, api_map)
+    result = Solargraph::Diagnostics::TypeCheck.new('always').diagnose(source, api_map)
     expect(result).to be_empty
   end
 
@@ -42,7 +42,7 @@ describe Solargraph::Diagnostics::TypeCheck do
       end
     ))
     api_map.map source
-    result = Solargraph::Diagnostics::TypeCheck.new.diagnose(source, api_map)
+    result = Solargraph::Diagnostics::TypeCheck.new('always').diagnose(source, api_map)
     expect(result.length).to eq(1)
     expect(result[0][:message]).to include('bar')
   end
@@ -56,7 +56,7 @@ describe Solargraph::Diagnostics::TypeCheck do
       end
     ))
     api_map.map source
-    result = Solargraph::Diagnostics::TypeCheck.new.diagnose(source, api_map)
+    result = Solargraph::Diagnostics::TypeCheck.new('always').diagnose(source, api_map)
     expect(result.length).to eq(1)
     expect(result[0][:message]).to include('wrong')
   end
@@ -74,7 +74,7 @@ describe Solargraph::Diagnostics::TypeCheck do
       end
     ))
     api_map.map source
-    result = Solargraph::Diagnostics::TypeCheck.new.diagnose(source, api_map)
+    result = Solargraph::Diagnostics::TypeCheck.new('always').diagnose(source, api_map)
     expect(result).to be_empty
   end
 
@@ -92,7 +92,7 @@ describe Solargraph::Diagnostics::TypeCheck do
       end
     ))
     api_map.map source
-    result = Solargraph::Diagnostics::TypeCheck.new.diagnose(source, api_map)
+    result = Solargraph::Diagnostics::TypeCheck.new('always').diagnose(source, api_map)
     expect(result).to be_empty
   end
 
@@ -105,7 +105,7 @@ describe Solargraph::Diagnostics::TypeCheck do
       end
     ))
     api_map.map source
-    result = Solargraph::Diagnostics::TypeCheck.new.diagnose(source, api_map)
+    result = Solargraph::Diagnostics::TypeCheck.new('always').diagnose(source, api_map)
     expect(result).to be_empty
   end
 end

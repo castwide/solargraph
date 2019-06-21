@@ -1090,4 +1090,58 @@ describe Solargraph::SourceMap::Mapper do
     ))
     expect(smap.first_pin('Foo#bar')).to be_a(Solargraph::Pin::Method)
   end
+
+  it 'ignores attribute directives without names' do
+    smap = Solargraph::SourceMap.load_string(%(
+      class Foo
+        # @!attribute
+      end
+    ))
+    attrs = smap.pins.select { |pin| pin.is_a?(Solargraph::Pin::Attribute) }
+    expect(attrs).to be_empty
+  end
+
+  it 'ignores method directives without names' do
+    smap = Solargraph::SourceMap.load_string(%(
+      class Foo
+        # @!method
+      end
+    ))
+    attrs = smap.pins.select { |pin| pin.is_a?(Solargraph::Pin::Method) }
+    expect(attrs).to be_empty
+  end
+
+  it 'maps multiple method directives in a class' do
+    source = Solargraph::Source.load_string(%(
+      class Foo
+        class << self
+          # @!method bar
+          # @!method baz
+        end
+      end  
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new
+    api_map.map source
+    bar = api_map.get_path_pins('Foo.bar').first
+    expect(bar).to be_a(Solargraph::Pin::Base)
+    baz = api_map.get_path_pins('Foo.baz').first
+    expect(baz).to be_a(Solargraph::Pin::Base)
+  end
+
+  it 'maps method directives in class headers' do
+    source = Solargraph::Source.load_string(%(
+      # @!method self.bar
+      class Foo
+        class << self
+          # @!method baz
+        end
+      end  
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new
+    api_map.map source
+    bar = api_map.get_path_pins('Foo.bar').first
+    expect(bar).to be_a(Solargraph::Pin::Base)
+    baz = api_map.get_path_pins('Foo.baz').first
+    expect(baz).to be_a(Solargraph::Pin::Base)
+  end
 end

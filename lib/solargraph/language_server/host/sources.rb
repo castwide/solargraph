@@ -59,6 +59,11 @@ module Solargraph
           open_source_hash[uri] = source
         end
 
+        def open_from_disk uri
+          source = Solargraph::Source.load(UriHelpers.uri_to_file(uri))
+          open_source_hash[uri] = source
+        end
+    
         # Update an existing source.
         #
         # @raise [FileNotFoundError] if the URI does not match an open source.

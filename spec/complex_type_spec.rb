@@ -218,4 +218,38 @@ describe Solargraph::ComplexType do
     qualified = type.qualify(api_map)
     expect(qualified).to be_undefined
   end
+
+  it 'reports selfy types' do
+    type = Solargraph::ComplexType.parse('self')
+    expect(type).to be_selfy
+  end
+
+  it 'reports selfy parameter types' do
+    type = Solargraph::ComplexType.parse('Class<self>')
+    expect(type).to be_selfy
+  end
+
+  it 'resolves self keywords in types' do
+    selfy = Solargraph::ComplexType.parse('self')
+    type = selfy.self_to('Foo')
+    expect(type.tag).to eq('Foo')
+  end
+
+  it 'resolves self keywords in parameter types' do
+    selfy = Solargraph::ComplexType.parse('Array<self>')
+    type = selfy.self_to('Foo')
+    expect(type.tag).to eq('Array<Foo>')
+  end
+
+  it 'resolves self keywords in hash parameter types' do
+    selfy = Solargraph::ComplexType.parse('Hash{String => self}')
+    type = selfy.self_to('Foo')
+    expect(type.tag).to eq('Hash{String => Foo}')
+  end
+
+  it 'resolves self keywords in ordered array types' do
+    selfy = Solargraph::ComplexType.parse('Array<(String, Symbol, self)>')
+    type = selfy.self_to('Foo')
+    expect(type.tag).to eq('Array<(String, Symbol, Foo)>')
+  end
 end

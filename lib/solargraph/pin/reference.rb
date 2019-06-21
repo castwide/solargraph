@@ -5,6 +5,7 @@ module Solargraph
       autoload :Superclass, 'solargraph/pin/reference/superclass'
       autoload :Include,    'solargraph/pin/reference/include'
       autoload :Extend,     'solargraph/pin/reference/extend'
+      autoload :Override,   'solargraph/pin/reference/override'
     end
   end
 end

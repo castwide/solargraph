@@ -767,4 +767,97 @@ describe Solargraph::SourceMap::Clip do
     clip = api_map.clip_at('test.rb', [3, 19])
     expect(clip.infer.tag).to eq('File')
   end
+
+  it 'infers self in instance methods' do
+    source = Solargraph::Source.load_string(%(
+      class Foo
+        def initialize
+          self
+        end
+      end
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new
+    api_map.map source
+    clip = api_map.clip_at('test.rb', [3, 10])
+    type = clip.infer
+    expect(type.tag).to eq('Foo')    
+  end
+
+  it 'infers deep variables' do
+    code = "v0 = []\n"
+    # 100 is an arbitrary depth that should be way higher than most users will
+    # encounter in practice
+    100.times do |index|
+      code += "v#{index + 1} = v#{index}\n"
+    end
+    code += "v100"
+    source = Solargraph::Source.load_string(code, 'test.rb')
+    api_map = Solargraph::ApiMap.new
+    api_map.map source
+    clip = api_map.clip_at('test.rb', [code.lines.length - 1, 0])
+    type = clip.infer
+    expect(type.tag).to eq('Array')
+  end
+
+  it 'completes keyword parameters' do
+    source = Solargraph::Source.load_string(%(
+      class Foo
+        def bar baz: ''
+        end
+      end
+      Foo.new.bar(b)
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new
+    api_map.map source
+    clip = api_map.clip_at('test.rb', [5, 19])
+    expect(clip.complete.pins.map(&:name)).to include('baz:')
+  end
+
+  it 'ignores shadowed keyword parameters' do
+    source = Solargraph::Source.load_string(%(
+      class Sup
+        def foo bar: ''
+        end
+      end
+      class Sub < Sup
+        def foo bar
+        end
+      end
+      Sub.new.foo(b)
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new
+    api_map.map source
+    clip = api_map.clip_at('test.rb', [9, 19])
+    expect(clip.complete.pins.map(&:name)).not_to include('bar:')
+  end
+
+  it 'includes tagged params for double splats' do
+    source = Solargraph::Source.load_string(%(
+      class Foo
+        # @param baz [String]
+        def bar **splat
+        end
+      end
+      Foo.new.bar(b)
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new
+    api_map.map source
+    clip = api_map.clip_at('test.rb', [6, 19])
+    expect(clip.complete.pins.map(&:name)).to include('baz:')
+  end
+
+  it 'includes tagged params for trailing hashes' do
+    source = Solargraph::Source.load_string(%(
+      class Foo
+        # @param baz [String]
+        def bar opts = {}
+        end
+      end
+      Foo.new.bar(b)
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new
+    api_map.map source
+    clip = api_map.clip_at('test.rb', [6, 19])
+    expect(clip.complete.pins.map(&:name)).to include('baz:')
+  end
 end

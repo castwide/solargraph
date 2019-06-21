@@ -10,6 +10,9 @@ module Solargraph
     # @return [String, nil]
     attr_reader :name
 
+    # @return [Source, nil]
+    attr_reader :current
+
     # @param workspace [Solargraph::Workspace]
     # @param name [String, nil]
     def initialize workspace = Solargraph::Workspace.new, name = nil
@@ -33,15 +36,6 @@ module Solargraph
       @synchronized
     end
 
-    # Open a file from disk and try to merge it into the workspace.
-    #
-    # @param filename [String]
-    # @return [Boolean] True if the file was merged into the source.
-    def open_from_disk filename
-      source = Solargraph::Source.load(filename)
-      merge source
-    end
-
     # Attach a source to the library.
     #
     # The attached source does not need to be a part of the workspace. The
@@ -54,6 +48,7 @@ module Solargraph
       mutex.synchronize do
         @synchronized = (@current == source) if synchronized?
         @current = source
+        catalog
       end
     end
 
@@ -159,7 +154,7 @@ module Solargraph
     # @todo Take a Location instead of filename/line/column
     def completions_at filename, line, column
       position = Position.new(line, column)
-      cursor = Source::Cursor.new(checkout(filename), position)
+      cursor = Source::Cursor.new(read(filename), position)
       api_map.clip(cursor).complete
     end
 
@@ -173,7 +168,7 @@ module Solargraph
     # @todo Take filename/position instead of filename/line/column
     def definitions_at filename, line, column
       position = Position.new(line, column)
-      cursor = Source::Cursor.new(checkout(filename), position)
+      cursor = Source::Cursor.new(read(filename), position)
       api_map.clip(cursor).define.map { |pin| pin.realize(api_map) }
     end
 
@@ -187,7 +182,7 @@ module Solargraph
     # @todo Take filename/position instead of filename/line/column
     def signatures_at filename, line, column
       position = Position.new(line, column)
-      cursor = Source::Cursor.new(checkout(filename), position)
+      cursor = Source::Cursor.new(read(filename), position)
       api_map.clip(cursor).signify
     end
 
@@ -198,7 +193,7 @@ module Solargraph
     # @return [Array<Solargraph::Range>]
     # @todo Take a Location instead of filename/line/column
     def references_from filename, line, column, strip: false
-      checkout filename
+      # checkout filename
       cursor = api_map.cursor_at(filename, Position.new(line, column))
       clip = api_map.clip(cursor)
       pins = clip.define
@@ -247,27 +242,6 @@ module Solargraph
       api_map.get_path_suggestions(path)
     end
 
-    # Check a file out of the library. If the file is not part of the
-    # workspace, the ApiMap will virtualize it for mapping purposes. If
-    # filename is nil, any source currently checked out of the library
-    # will be removed from the ApiMap. Only one file can be checked out
-    # (virtualized) at a time.
-    #
-    # @raise [FileNotFoundError] if the file does not exist.
-    #
-    # @param filename [String]
-    # @return [Source]
-    def checkout filename
-      checked = read(filename)
-      @synchronized = (checked == @current) if synchronized?
-      @current = checked
-      # Cataloging is necessary to avoid FileNotFoundErrors when the file is
-      # not in the workspace. Otherwise it should be safe to defer
-      # synchronization.
-      catalog unless workspace.has_file?(filename)
-      @current
-    end
-
     # @param query [String]
     # @return [Array<YARD::CodeObject::Base>]
     def document query
@@ -300,7 +274,7 @@ module Solargraph
     # @param filename [String]
     # @return [Array<Solargraph::Pin::Base>]
     def document_symbols filename
-      checkout filename
+      # checkout filename
       api_map.document_symbols(filename)
     end
 
@@ -341,7 +315,7 @@ module Solargraph
           end
         else
           args = line.split(':').map(&:strip)
-          name = args.pop
+          name = args.shift
             reporter = Diagnostics.reporter(name)
           raise DiagnosticsError, "Diagnostics reporter #{name} does not exist" if reporter.nil?
           repargs[reporter] ||= []

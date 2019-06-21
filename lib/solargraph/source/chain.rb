@@ -16,10 +16,10 @@ module Solargraph
       autoload :GlobalVariable,   'solargraph/source/chain/global_variable'
       autoload :Literal,          'solargraph/source/chain/literal'
       autoload :Head,             'solargraph/source/chain/head'
+      autoload :Or,               'solargraph/source/chain/or'
 
-      # Chain#infer uses the inference stack to avoid recursing into itself.
-      # See Chain#active_signature for more information.
       @@inference_stack = []
+      @@inference_depth = 0
 
       UNDEFINED_CALL = Chain::Call.new('<undefined>')
       UNDEFINED_CONSTANT = Chain::Constant.new('<undefined>')
@@ -64,17 +64,9 @@ module Solargraph
       # @return [ComplexType]
       def infer api_map, name_pin, locals
         rebind_block name_pin, api_map, locals
-        return ComplexType::UNDEFINED if undefined? || @@inference_stack.include?(active_signature(name_pin))
-        @@inference_stack.push active_signature(name_pin)
         type = ComplexType::UNDEFINED
         pins = define(api_map, name_pin, locals)
-        # pins.each do |pin|
-        #   type = pin.typify(api_map)
-        #   break unless type.undefined?
-        # end
-        # type = pins.first.probe(api_map) unless type.defined? || pins.empty?
         type = infer_first_defined(pins, links.last.last_context, api_map)
-        @@inference_stack.pop
         type
       end
 
@@ -83,9 +75,12 @@ module Solargraph
         links.last.is_a?(Chain::Literal)
       end
 
-      # @return [Boolean]
       def undefined?
         links.any?(&:undefined?)
+      end
+
+      def defined?
+        !undefined?
       end
 
       # @return [Boolean]
@@ -94,17 +89,6 @@ module Solargraph
       end
 
       private
-
-      # Get a signature for this chain that includes the current context
-      # where it's being analyzed. Chain#infer uses this value to detect
-      # recursive inference into the same chain, e.g., when two variables
-      # reference each other in their assignments.
-      #
-      # @param pin [Pin::Base] The named pin context
-      # @return [String]
-      def active_signature(pin)
-        "#{pin.path}|#{links.map(&:word).join('.')}"
-      end
 
       # @param pins [Array<Pin::Base>]
       # @param api_map [ApiMap]
@@ -116,13 +100,21 @@ module Solargraph
           break if type.defined?
         end
         if type.undefined?
+          # Limit method inference recursion
+          return type if @@inference_depth >= 2 && pins.first.is_a?(Pin::BaseMethod)
+          @@inference_depth += 1
           pins.each do |pin|
+            # Avoid infinite recursion
+            next if @@inference_stack.include?(pin)
+            @@inference_stack.push pin
             type = pin.probe(api_map)
+            @@inference_stack.pop
             break if type.defined?
           end
+          @@inference_depth -= 1
         end
-        return ComplexType.parse(context.return_type.namespace) if type.tag == 'self'
-        type
+        return type if context.nil? || context.return_type.undefined?
+        type.self_to(context.return_type.namespace)
       end
 
       def skippable_block_receivers api_map

@@ -146,4 +146,19 @@ describe Solargraph::Pin::Method do
     pin = Solargraph::Pin::Method.new(args: ['foo', '*bar', '&block'])
     expect(pin.parameter_names).to eq(['foo', 'bar', 'block'])
   end
+
+  it 'does not include yielded blocks in return nodes' do
+    source = Solargraph::Source.load_string(%(
+      class Foo
+        def bar
+          [].select{|p| Hash.new}
+        end
+      end
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new
+    api_map.map source
+    pin = api_map.get_path_pins('Foo#bar').first
+    type = pin.probe(api_map)
+    expect(type.tag).to eq('Array')    
+  end
 end

@@ -16,6 +16,10 @@ module Solargraph
       @api_map = api_map || Solargraph::ApiMap.load(File.dirname(filename))
     end
 
+    # Return type problems indicate that a method does not specify a type in a
+    # `@return` tag or the specified type could not be resolved to a known
+    # type.
+    #
     # @return [Array<Problem>]
     def return_type_problems
       result = []
@@ -25,10 +29,22 @@ module Solargraph
       result
     end
 
+    # Param type problems indicate that a method does not specify a type in a
+    # `@param` tag for one or more of its parameters, a `@param` tag is defined
+    # that does not correlate with the method signature, or the specified type
+    # could not be resolved to a known type.
+    #
     # @return [Array<Problem>]
     def param_type_problems
       result = []
       smap = api_map.source_map(filename)
+      smap.pins.select { |pin| pin.is_a?(Pin::Method) }.each do |pin|
+        if pin.parameters.empty?
+          pin.docstring.tags(:param).each do |tag|
+            result.push Problem.new(pin.location, "#{pin.name} has unknown @param #{tag.name}", pin: pin)
+          end
+        end
+      end
       smap.locals.select { |pin| pin.is_a?(Solargraph::Pin::Parameter) }.each do |par|
         next unless par.closure.is_a?(Solargraph::Pin::Method)
         result.concat check_param_tags(par.closure)
@@ -36,8 +52,7 @@ module Solargraph
         pdefs = ParamDef.from(par.closure)
         if type.undefined?
           if par.return_type.undefined? && !pdefs.any? { |pd| pd.name == par.name && [:restarg, :kwrestarg].include?(pd.type) }
-            result.push Problem.new(
-              par.location, "#{par.closure.name} has undefined @param type for #{par.name}")
+            result.push Problem.new(par.location, "#{par.closure.name} has undefined @param type for #{par.name}")
           elsif !pdefs.any? { |pd| [:restarg, :kwrestarg].include?(pd.type) }
             result.push Problem.new(par.location, "#{par.closure.name} has unresolved @param type for #{par.name}")
           end
@@ -46,6 +61,11 @@ module Solargraph
       result
     end
 
+    # Strict type problems indicate that a `@return` type or a `@param` type
+    # does not match the type inferred from code analysis; or that an argument
+    # sent to a method does not match the type specified in the corresponding
+    # `@param` tag.
+    #
     # @return [Array<Problem>]
     def strict_type_problems
       result = []
@@ -53,6 +73,7 @@ module Solargraph
       smap.pins.select { |pin| pin.is_a?(Pin::BaseMethod) }.each do |pin|
         result.concat confirm_return_type(pin)
       end
+      return result if smap.source.node.nil?
       result.concat check_send_args smap.source.node
       result
     end
@@ -81,7 +102,7 @@ module Solargraph
       if tagged.undefined?
         if pin.return_type.undefined?
           probed = pin.probe(api_map)
-          return [Problem.new(pin.location, "#{pin.name} has undefined @return type", probed.to_s)]
+          return [Problem.new(pin.location, "#{pin.name} has undefined @return type", pin: pin, suggestion: probed.to_s)]
         else
           return [Problem.new(pin.location, "#{pin.name} has unresolved @return type #{pin.return_type}")]
         end
@@ -92,7 +113,7 @@ module Solargraph
     # @param pin [Solargraph::Pin::Base]
     # @return [Array<Problem>]
     def confirm_return_type pin
-      tagged = pin.typify(api_map)
+      tagged = pin.typify(api_map).self_to(pin.namespace)
       return [] if tagged.void? || tagged.undefined? || pin.is_a?(Pin::Attribute)
       probed = pin.probe(api_map)
       return [] if probed.undefined?
@@ -128,11 +149,14 @@ module Solargraph
           end
         end
         return [] if all
-        return [Problem.new(pin.location, "@return type `#{tagged.to_s}` does not match inferred type `#{probed.to_s}`", probed.to_s)]
+        return [Problem.new(pin.location, "@return type `#{tagged.to_s}` does not match inferred type `#{probed.to_s}`", pin: pin, suggestion: probed.to_s)]
       end
       []
     end
 
+    # @param node [Parser::AST::Node]
+    # @param skip_send [Boolean]
+    # @return [Array<Problem>]
     def check_send_args node, skip_send = false
       result = []
       if node.type == :send
@@ -140,7 +164,7 @@ module Solargraph
         locals = smap.locals_at(Solargraph::Location.new(filename, Solargraph::Range.from_node(node)))
         block = smap.locate_block_pin(node.loc.line, node.loc.column)
         chain = Solargraph::Source::NodeChainer.chain(node, filename)
-        pins = chain.define(api_map, block, locals)
+        pins = chain.define(api_map, block, locals).select { |pin| pin.is_a?(Pin::BaseMethod ) }
         if pins.empty?
           if !more_signature?(node)
             base = chain.base.define(api_map, block, locals).first
@@ -155,10 +179,16 @@ module Solargraph
           cursor = 0
           curtype = nil
           node.children[2..-1].each_with_index do |arg, index|
-            curtype = ptypes[cursor] if curtype.nil? || curtype == :arg
+            if pin.is_a?(Pin::Attribute)
+              curtype = ParamDef.new('value', :arg)
+            else
+              curtype = ptypes[cursor] if curtype.nil? || curtype == :arg
+            end
             if curtype.nil?
-              result.push Problem.new(Solargraph::Location.new(filename, Solargraph::Range.from_node(node)), "Not enough arguments send to #{pin.path}")
-              break
+              if pin.parameters[index].nil?
+                result.push Problem.new(Solargraph::Location.new(filename, Solargraph::Range.from_node(node)), "Not enough arguments sent to #{pin.path}")
+                break
+              end
             else
               # @todo Break here? Not sure about that
               break if curtype.type == :restarg || curtype.type == :kwrestarg
@@ -166,16 +196,10 @@ module Solargraph
                 arg.children.each do |pair|
                   sym = pair.children[0].children[0].to_s
                   partype = params[pin.parameter_names[index]]
-                  if partype.nil?
-                    if report_location?(pin.location)
-                      unless ptypes.map(&:type).include?(:kwrestarg)
-                        result.push Problem.new(Solargraph::Location.new(filename, Solargraph::Range.from_node(node)), "No @param type for #{pin.parameter_names[index]} in #{pin.path}")
-                      end
-                    end
-                  else
+                  if partype
                     chain = Solargraph::Source::NodeChainer.chain(pair.children[1], filename)
                     argtype = chain.infer(api_map, block, locals)
-                    if argtype.tag != partype.tag
+                    if argtype.tag != partype.tag && !api_map.super_and_sub?(partype.tag.to_s, argtype.tag.to_s)
                       result.push Problem.new(Solargraph::Location.new(filename, Solargraph::Range.from_node(node)), "Wrong parameter type for #{pin.path}: #{pin.parameter_names[index]} expected #{partype.tag}, received #{argtype.tag}")
                     end
                   end
@@ -184,16 +208,20 @@ module Solargraph
                 result.push Problem.new(Solargraph::Location.new(filename, Solargraph::Range.from_node(node)), "Can't handle splat in #{pin.parameter_names[index]} #{pin.path}")
                 break if curtype != :arg && ptypes.map(&:type).include?(:restarg)
               else
-                partype = params[pin.parameter_names[index]]
-                if partype.nil?
-                  if report_location?(pin.location)
-                    result.push Problem.new(Solargraph::Location.new(filename, Solargraph::Range.from_node(node)), "No @param type for #{pin.parameter_names[index]} in #{pin.path}")
-                  end
+                if pin.is_a?(Pin::Attribute)
+                  partype = pin.return_type
                 else
-                  chain = Solargraph::Source::NodeChainer.chain(arg, filename)
-                  argtype = chain.infer(api_map, block, locals)
-                  if argtype.tag != partype.tag
-                    result.push Problem.new(Solargraph::Location.new(filename, Solargraph::Range.from_node(node)), "Wrong parameter type for #{pin.path}: #{pin.parameter_names[index]} expected #{partype.tag}, received #{argtype.tag}")
+                  partype = params[pin.parameter_names[index]]
+                end
+                if partype
+                  arg = chain.links.last.arguments[index]
+                  if arg.nil?
+                    result.push Problem.new(Solargraph::Location.new(filename, Solargraph::Range.from_node(node)), "Wrong number of arguments to #{pin.path}")
+                  else
+                    argtype = arg.infer(api_map, block, locals)
+                    if argtype.tag != partype.tag && !api_map.super_and_sub?(partype.tag.to_s, argtype.tag.to_s)
+                      result.push Problem.new(Solargraph::Location.new(filename, Solargraph::Range.from_node(node)), "Wrong parameter type for #{pin.path}: #{pin.parameter_names[index]} expected #{partype.tag}, received #{argtype.tag}")
+                    end
                   end
                 end
               end
@@ -210,6 +238,8 @@ module Solargraph
       result
     end
 
+    # @param pin [Pin::Base]
+    # @return [Hash]
     def param_tags_from pin
       # @todo Look for see references
       #   and dig through all the pins

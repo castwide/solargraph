@@ -30,6 +30,9 @@ module Solargraph
         [[], []]
       end
 
+      # @param filename [String]
+      # @param code [String]
+      # @return [Array]
       def unmap filename, code
         s = Position.new(0, 0)
         e = Position.from_offset(code, code.length)
@@ -59,7 +62,15 @@ module Solargraph
         return unless comment =~ MACRO_REGEXP
         cmnt = remove_inline_comment_hashes(comment)
         parse = Solargraph::Source.parse_docstring(cmnt)
-        parse.directives.each { |d| process_directive(source_position, comment_position, d) }
+        last_line = 0
+        # @param d [YARD::Tags::Directive]
+        parse.directives.each do |d|
+          line_num = cmnt.lines[last_line..-1].find_index { |l| l.include?("@!#{d.tag.tag_name}") }
+          line_num += last_line
+          pos = Solargraph::Position.new(comment_position.line + line_num, comment_position.column)
+          process_directive(source_position, pos, d)
+          last_line = line_num + 1
+        end
       end
 
       # @param position [Position]
@@ -70,6 +81,9 @@ module Solargraph
         case directive.tag.tag_name
         when 'method'
           namespace = closure_at(source_position)
+          if namespace.location.range.start.line < comment_position.line
+            namespace = closure_at(comment_position)
+          end
           region = Region.new(source: @source, closure: namespace)
           src_node = Solargraph::Source.parse("def #{directive.tag.name};end", @filename, location.range.start.line)
           gen_pin = Solargraph::SourceMap::NodeProcessor.process(src_node, region).first.last
@@ -78,6 +92,7 @@ module Solargraph
           gen_pin.instance_variable_set(:@comments, docstring.all)
           @pins.push gen_pin
         when 'attribute'
+          return if directive.tag.name.nil?
           namespace = closure_at(source_position)
           t = (directive.tag.types.nil? || directive.tag.types.empty?) ? nil : directive.tag.types.flatten.join('')
           if t.nil? || t.include?('r')
@@ -114,6 +129,8 @@ module Solargraph
         when 'domain'
           namespace = closure_at(source_position)
           namespace.domains.concat directive.tag.types unless directive.tag.types.nil?
+        when 'override'
+          pins.push Pin::Reference::Override.new(location, directive.tag.name, docstring.tags)
         end
       end
 
