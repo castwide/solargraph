@@ -35,28 +35,8 @@ module Solargraph
         # @return [Array<Pin::Base>]
         def inferred_pins pins, api_map, context, locals
           result = pins.map do |p|
-            type = extra_return_type(p.docstring, context)
-            if type
-              next Solargraph::Pin::Method.new(
-                location: p.location,
-                closure: p.closure,
-                name: p.name,
-                comments: "@return [#{context.subtypes.first.to_s}]",
-                scope: p.scope,
-                visibility: p.visibility,
-                args: p.parameters,
-                node: p.node
-              )
-            end
-            if p.kind == Pin::METHOD && !p.macros.empty?
-              result = process_macro(p, api_map, context, locals)
-              next result unless result.return_type.undefined?
-            elsif !p.directives.empty?
-              result = process_directive(p, api_map, context, locals)
-              next result unless result.return_type.undefined?
-            end
             overloads = p.docstring.tags(:overload)
-            next p if overloads.empty?
+            # next p if overloads.empty?
             type = ComplexType::UNDEFINED
             # @type [YARD::Tags::OverloadTag]
             ol = nil
@@ -85,6 +65,26 @@ module Solargraph
               break if type.defined?
             end
             next p.proxy(type) if type.defined?
+            type = extra_return_type(p.docstring, context)
+            if type
+              next Solargraph::Pin::Method.new(
+                location: p.location,
+                closure: p.closure,
+                name: p.name,
+                comments: "@return [#{context.subtypes.first.to_s}]",
+                scope: p.scope,
+                visibility: p.visibility,
+                args: p.parameters,
+                node: p.node
+              )
+            end
+            if p.kind == Pin::METHOD && !p.macros.empty?
+              result = process_macro(p, api_map, context, locals)
+              next result unless result.return_type.undefined?
+            elsif !p.directives.empty?
+              result = process_directive(p, api_map, context, locals)
+              next result unless result.return_type.undefined?
+            end
             p
           end
           result.map do |pin|

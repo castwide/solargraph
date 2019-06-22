@@ -34,6 +34,7 @@ module Solargraph
 @overload [](num)
   @param num [Integer]
   @return_single_parameter
+@return_single_parameter
       )),
       Override.from_comment('Array#first', %(
 @return_single_parameter
