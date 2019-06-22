@@ -24,7 +24,16 @@ module Solargraph
       Override.method_return('Array#keep_if', 'self'),
       Override.method_return('Array#delete_if', 'self'),
       Override.from_comment('Array#[]', %(
-@return_single_parameter
+@overload [](range)
+  @param range [Range]
+  @return [self]
+@overload [](num1, num2)
+  @param num1 [Integer]
+  @param num2 [Integer]
+  @return [self]
+@overload [](num)
+  @param num [Integer]
+  @return_single_parameter
       )),
       Override.from_comment('Array#first', %(
 @return_single_parameter
