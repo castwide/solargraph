@@ -8,10 +8,6 @@ module Solargraph
       'then', 'true', 'undef', 'unless', 'until', 'when', 'while', 'yield'
     ].freeze
 
-    METHODS_RETURNING_SUBTYPES = %w[
-      Array#[] Array#first Array#last
-    ].freeze
-
     METHODS_RETURNING_VALUE_TYPES = %w[
       Hash#[]
     ].freeze
@@ -37,7 +33,16 @@ module Solargraph
       override('Array#reject', 'self'),
       override('Array#keep_if', 'self'),
       override('Array#delete_if', 'self'),
-
+      Pin::Reference::Override.from_comment('Array#[]', %(
+@return_single_parameter
+      )),
+      Pin::Reference::Override.from_comment('Array#first', %(
+@return_single_parameter
+      )),
+      Pin::Reference::Override.from_comment('Array#last', %(
+@return_single_parameter
+      )),
+                
       override('Class#new', 'self'),
       override('Class.new', 'Class<Object>'),
       override('Class#allocate', 'self'),
