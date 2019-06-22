@@ -860,4 +860,22 @@ describe Solargraph::SourceMap::Clip do
     clip = api_map.clip_at('test.rb', [6, 19])
     expect(clip.complete.pins.map(&:name)).to include('baz:')
   end
+
+  it 'infers Array#[] types from overloads' do
+    source = Solargraph::Source.load_string(%(
+      # @type [Array<String>]
+      arr = []
+      arr[0..2]
+      arr[0, 2]
+      arr[1000]
+    ), 'test.rb')
+    map = Solargraph::ApiMap.new
+    map.map source
+    clip = map.clip_at('test.rb', Solargraph::Position.new(3, 15))
+    expect(clip.infer.to_s).to eq('Array<String>')
+    clip = map.clip_at('test.rb', Solargraph::Position.new(4, 15))
+    expect(clip.infer.to_s).to eq('Array<String>')
+    clip = map.clip_at('test.rb', Solargraph::Position.new(5, 15))
+    expect(clip.infer.to_s).to eq('String')
+  end
 end
