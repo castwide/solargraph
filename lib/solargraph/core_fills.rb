@@ -8,10 +8,6 @@ module Solargraph
       'then', 'true', 'undef', 'unless', 'until', 'when', 'while', 'yield'
     ].freeze
 
-    METHODS_RETURNING_VALUE_TYPES = %w[
-      Hash#[]
-    ].freeze
-
     METHODS_WITH_YIELDPARAM_SUBTYPES = %w[
       Array#each Array#map Array#any? Array#all? Array#index Array#keep_if
       Array#delete_if
@@ -52,6 +48,10 @@ module Solargraph
 
       override('File.dirname', 'String'),
 
+      Pin::Reference::Override.from_comment('Hash#[]', %(
+@return_value_parameter
+      )),
+        
       override('Object#!', 'Boolean'),
       override('Object#clone', 'self'),
       override('Object#dup', 'self'),
@@ -66,6 +66,12 @@ module Solargraph
       override('String#freeze', 'self'),
       override('String#split', 'Array<String>'),
       override('String#lines', 'Array<String>')
-    ]
+      ].concat(
+        METHODS_WITH_YIELDPARAM_SUBTYPES.map do |path|
+          Pin::Reference::Override.from_comment(path, %(
+@yieldparam_single_parameter
+          ))
+        end
+      )
   end
 end

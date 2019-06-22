@@ -14,8 +14,12 @@ YARD::Tags::Library.define_tag("Type", :type, :with_types_and_name)
 YARD::Tags::Library.define_tag("Yieldself", :yieldself, :with_types)
 # Define a @yieldpublic tag for documenting block domains
 YARD::Tags::Library.define_tag("Yieldpublic", :yieldpublic, :with_types)
-# Define a @return_first_parameter tag for returning Array parameters
+# Define a @return_single_parameter tag for returning e.g. Array parameters
 YARD::Tags::Library.define_tag('ReturnSingleParameter', :return_single_parameter)
+# Define a @yieldparam_single_parameter tag for yielding e.g. Array parameters
+YARD::Tags::Library.define_tag('YieldparamSingleParameter', :yieldparam_single_parameter)
+# Define a @return_value_parameter tag for returning e.g. Hash values
+YARD::Tags::Library.define_tag('ReturnValueParameter', :return_value_parameter)
 # Define a @!domain directive for documenting DSLs
 YARD::Tags::Library.define_directive("domain", :with_types, Solargraph::DomainDirective)
 # Define an @!override directive for overriding method tags

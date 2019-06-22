@@ -45,12 +45,12 @@ module Solargraph
                 node: p.node
               )
             end
-            if CoreFills::METHODS_RETURNING_VALUE_TYPES.include?(p.path) && !context.value_types.empty?
+            if p.docstring.has_tag?(:return_value_parameter) && context.value_types.one?
               next Solargraph::Pin::Method.new(
                 location: p.location,
                 closure: p.closure,
                 name: p.name,
-                comments: "@return [#{context.value_types.first.tag}]",
+                comments: "@return [#{context.value_types.first.to_s}]",
                 scope: p.scope,
                 visibility: p.visibility,
                 args: p.parameters,
