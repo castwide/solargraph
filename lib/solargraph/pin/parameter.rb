@@ -68,7 +68,7 @@ module Solargraph
           locals = clip.locals - [self]
           meths = chain.define(api_map, closure, locals)
           meths.each do |meth|
-            if (Solargraph::CoreFills::METHODS_WITH_YIELDPARAM_SUBTYPES.include?(meth.path))
+            if meth.docstring.has_tag?(:yieldparam_single_parameter)
               bmeth = chain.base.define(api_map, closure, locals).first
               return ComplexType::UNDEFINED if bmeth.nil? || bmeth.return_type.undefined? || bmeth.return_type.subtypes.empty?
               return bmeth.return_type.subtypes.first.qualify(api_map, bmeth.context.namespace)

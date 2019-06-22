@@ -9,6 +9,8 @@ module Solargraph
         @environ ||= Environ.new(
           requires: ['rspec'],
           domains: ['RSpec::Matchers', 'RSpec::ExpectationGroups'],
+          # This override is necessary due to an erroneous @return tag in
+          # rspec's YARD documentation.
           overrides: [
             Solargraph::Pin::Reference::Override.method_return('RSpec::Matchers#expect', 'RSpec::Expectations::ExpectationTarget')
           ]

@@ -1,5 +1,7 @@
 module Solargraph
   module CoreFills
+    Override = Pin::Reference::Override
+
     KEYWORDS = [
       '__ENCODING__', '__LINE__', '__FILE__', 'BEGIN', 'END', 'alias', 'and',
       'begin', 'break', 'case', 'class', 'def', 'defined?', 'do', 'else',
@@ -8,68 +10,71 @@ module Solargraph
       'then', 'true', 'undef', 'unless', 'until', 'when', 'while', 'yield'
     ].freeze
 
-    METHODS_RETURNING_SUBTYPES = %w[
-      Array#[] Array#first Array#last
-    ].freeze
-
-    METHODS_RETURNING_VALUE_TYPES = %w[
-      Hash#[]
-    ].freeze
-
-    METHODS_WITH_YIELDPARAM_SUBTYPES = %w[
+    methods_with_yieldparam_subtypes = %w[
       Array#each Array#map Array#any? Array#all? Array#index Array#keep_if
       Array#delete_if
       Enumerable#each_entry Enumerable#map Enumerable#any? Enumerable#all?
       Enumerable#select Enumerable#reject
       Set#each
-    ].freeze
-
-    class << self
-      private
-
-      def override path, *tags
-        Solargraph::Pin::Reference::Override.new(nil, path, [YARD::Tags::Tag.new('return', nil, tags)])
-      end
-    end
+    ]
 
     OVERRIDES = [
-      override('Array#select', 'self'),
-      override('Array#reject', 'self'),
-      override('Array#keep_if', 'self'),
-      override('Array#delete_if', 'self'),
-      Pin::Reference::Override.from_comment('Array#[]', %(
-@overload [](rng)
-  @param rng [Range]
+      Override.method_return('Array#select', 'self'),
+      Override.method_return('Array#reject', 'self'),
+      Override.method_return('Array#keep_if', 'self'),
+      Override.method_return('Array#delete_if', 'self'),
+      Override.from_comment('Array#[]', %(
+@overload [](range)
+  @param range [Range]
   @return [self]
 @overload [](num1, num2)
   @param num1 [Integer]
   @param num2 [Integer]
   @return [self]
+@overload [](num)
+  @param num [Integer]
+  @return_single_parameter
       )),
+      Override.from_comment('Array#first', %(
+@return_single_parameter
+      )),
+      Override.from_comment('Array#last', %(
+@return_single_parameter
+      )),
+                
+      Override.method_return('Class#new', 'self'),
+      Override.method_return('Class.new', 'Class<Object>'),
+      Override.method_return('Class#allocate', 'self'),
+      Override.method_return('Class.allocate', 'Class<Object>'),
 
-      override('Class#new', 'self'),
-      override('Class.new', 'Class<Object>'),
-      override('Class#allocate', 'self'),
-      override('Class.allocate', 'Class<Object>'),
+      Override.method_return('Enumerable#select', 'self'),
 
-      override('Enumerable#select', 'self'),
+      Override.method_return('File.dirname', 'String'),
 
-      override('File.dirname', 'String'),
-
-      override('Object#!', 'Boolean'),
-      override('Object#clone', 'self'),
-      override('Object#dup', 'self'),
-      override('Object#freeze', 'self'),
-      override('Object#taint', 'self'),
-      override('Object#untaint', 'self'),
-      Pin::Reference::Override.from_comment('Object#tap', %(
+      Override.from_comment('Hash#[]', %(
+@return_value_parameter
+      )),
+        
+      Override.method_return('Object#!', 'Boolean'),
+      Override.method_return('Object#clone', 'self'),
+      Override.method_return('Object#dup', 'self'),
+      Override.method_return('Object#freeze', 'self'),
+      Override.method_return('Object#taint', 'self'),
+      Override.method_return('Object#untaint', 'self'),
+      Override.from_comment('Object#tap', %(
 @return [self]
 @yieldparam [self]
       )),
 
-      override('String#freeze', 'self'),
-      override('String#split', 'Array<String>'),
-      override('String#lines', 'Array<String>')
-    ]
+      Override.method_return('String#freeze', 'self'),
+      Override.method_return('String#split', 'Array<String>'),
+      Override.method_return('String#lines', 'Array<String>')
+      ].concat(
+        methods_with_yieldparam_subtypes.map do |path|
+          Override.from_comment(path, %(
+@yieldparam_single_parameter
+          ))
+        end
+      )
   end
 end
