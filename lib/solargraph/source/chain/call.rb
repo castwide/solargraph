@@ -30,8 +30,9 @@ module Solargraph
 
         def inferred_pins pins, api_map, context, locals
           result = pins.map do |p|
+            tmp = nil
             if CoreFills::METHODS_RETURNING_SUBTYPES.include?(p.path) && !context.subtypes.empty?
-              next Solargraph::Pin::Method.new(
+              tmp = Solargraph::Pin::Method.new(
                 location: p.location,
                 closure: p.closure,
                 name: p.name,
@@ -43,7 +44,7 @@ module Solargraph
               )
             end
             if CoreFills::METHODS_RETURNING_VALUE_TYPES.include?(p.path) && !context.value_types.empty?
-              next Solargraph::Pin::Method.new(
+              tmp = Solargraph::Pin::Method.new(
                 location: p.location,
                 closure: p.closure,
                 name: p.name,
@@ -92,6 +93,7 @@ module Solargraph
               break if type.defined?
             end
             next p.proxy(type) if type.defined?
+            next tmp unless tmp.nil?
             p
           end
           result.map do |pin|

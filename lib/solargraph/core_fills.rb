@@ -37,6 +37,15 @@ module Solargraph
       override('Array#reject', 'self'),
       override('Array#keep_if', 'self'),
       override('Array#delete_if', 'self'),
+      Pin::Reference::Override.from_comment('Array#[]', %(
+@overload [](rng)
+  @param rng [Range]
+  @return [self]
+@overload [](num1, num2)
+  @param num1 [Integer]
+  @param num2 [Integer]
+  @return [self]
+      )),
 
       override('Class#new', 'self'),
       override('Class.new', 'Class<Object>'),
