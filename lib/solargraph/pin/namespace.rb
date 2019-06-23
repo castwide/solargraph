@@ -10,7 +10,9 @@ module Solargraph
       # @return [String]
       attr_reader :gate
 
-      # def initialize location, namespace, name, comments, type, visibility
+      # @param type [Symbol] :class or :module
+      # @param visibility [Symbol] :public or :private
+      # @param gated [Boolean] True if this namespace opens a scope gate
       def initialize type: :class, visibility: :public, gated: true, **splat
         # super(location, namespace, name, comments)
         super(splat)
@@ -79,6 +81,8 @@ module Solargraph
         return_type
       end
 
+      # Get an array of all the open scope gates in the current context.
+      #
       # @return [Array<String>]
       def gates
         return [gate] if gate.empty?
