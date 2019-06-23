@@ -902,4 +902,28 @@ describe Solargraph::SourceMap::Clip do
     clip = api_map.clip_at('test.rb', [9, 14])
     expect(clip.infer).to be_undefined  
   end
+
+  it 'follows scope gates' do
+    source = Solargraph::Source.load_string(%(
+      module Foo
+        FOO_CONST = 'foo_const'
+        module Bar; end
+      end
+      module Foo
+        module Bar
+          F
+        end
+      end
+      module Foo::Bar
+        F
+      end  
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new
+    api_map.map source
+  
+    clip = api_map.clip_at('test.rb', [7, 11])
+    expect(clip.complete.pins.map(&:name)).to include('FOO_CONST')
+    clip = api_map.clip_at('test.rb', [11, 9])
+    expect(clip.complete.pins.map(&:name)).not_to include('FOO_CONST')
+  end  
 end

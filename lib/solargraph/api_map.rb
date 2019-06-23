@@ -195,28 +195,26 @@ module Solargraph
     # may contain both constant and namespace pins.
     #
     # @param namespace [String] The namespace
-    # @param context [String] The context
+    # @param contexts [Array<String>] The contexts
     # @return [Array<Solargraph::Pin::Base>]
-    def get_constants namespace, context = ''
+    def get_constants namespace, *contexts
       namespace ||= ''
-      cached = cache.get_constants(namespace, context)
+      contexts.push '' if contexts.empty?
+      cached = cache.get_constants(namespace, contexts)
       return cached.clone unless cached.nil?
       skip = []
       result = []
-      bases = context.split('::')
-      while bases.length > 0
-        built = bases.join('::')
-        fqns = qualify(namespace, built)
+      contexts.each do |context|
+        fqns = qualify(namespace, context)
         visibility = [:public]
         visibility.push :private if fqns == context
         result.concat inner_get_constants(fqns, visibility, skip)
-        bases.pop
+        fqns = qualify(namespace, '')
+        visibility = [:public]
+        visibility.push :private if fqns == context
+        result.concat inner_get_constants(fqns, visibility, skip)
       end
-      fqns = qualify(namespace, '')
-      visibility = [:public]
-      visibility.push :private if fqns == context
-      result.concat inner_get_constants(fqns, visibility, skip)
-      cache.set_constants(namespace, context, result)
+      cache.set_constants(namespace, contexts, result)
       result
     end
 
