@@ -96,8 +96,8 @@ module Solargraph
       puts "Deleting the cached documentation"
       Solargraph::YardMap::CoreDocs.clear
     end
-    map 'clear-cache'.to_sym => :clear
-    map 'clear-cores'.to_sym => :clear
+    map 'clear-cache' => :clear
+    map 'clear-cores' => :clear
 
     desc 'uncache GEM [...GEM]', "Delete cached gem documentation"
     def uncache *gems
@@ -179,6 +179,7 @@ module Solargraph
 
     desc 'bundle', 'Generate documentation for bundled gems'
     option :directory, type: :string, aliases: :d, desc: 'The workspace directory', default: '.'
+    option :rebuild, type: :boolean, aliases: :r, desc: 'Rebuild existing documentation', default: false
     def bundle
       Documentor.new(options[:directory]).document
     end
