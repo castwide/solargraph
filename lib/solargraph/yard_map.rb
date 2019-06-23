@@ -168,7 +168,7 @@ module Solargraph
           spec = Gem::Specification.find_by_path(r) || Gem::Specification.find_by_name(r.split('/').first)
           ver = spec.version.to_s
           ver = ">= 0" if ver.empty?
-          yd = YARD::Registry.yardoc_file_for_gem(spec.name, ver)
+          yd = yardoc_file_for_spec(spec)
           # YARD detects gems for certain libraries that do not have a yardoc
           # but exist in the stdlib. `fileutils` is an example. Treat those
           # cases as errors and check the stdlib yardoc.
@@ -233,7 +233,7 @@ module Solargraph
           depspec = Gem::Specification.find_by_name(dep.name)
           next if depspec.nil? || @gem_paths.key?(depspec.name)
           @gem_paths[depspec.name] = depspec.full_gem_path
-          gy = YARD::Registry.yardoc_file_for_gem(dep.name)
+          gy = yardoc_file_for_spec(depspec)
           if gy.nil?
             unresolved_requires.push dep.name
           else
@@ -277,7 +277,7 @@ module Solargraph
         specs.each do |spec|
           ver = spec.version.to_s
           ver = ">= 0" if ver.empty?
-          yd = YARD::Registry.yardoc_file_for_gem(spec.name, ver)
+          yd = YARD::Registry.yardoc_file_for_spec(spec)
           # YARD detects gems for certain libraries that do not have a yardoc
           # but exist in the stdlib. `fileutils` is an example. Treat those
           # cases as errors and check the stdlib yardoc.
@@ -295,6 +295,11 @@ module Solargraph
       end
       Bundler.reset!
       result.reject(&:nil?)
+    end
+
+    def yardoc_file_for_spec spec
+      cache_dir = File.join(Solargraph::YardMap::CoreDocs.cache_dir, 'gems', "#{spec.name}-#{spec.version}", 'yardoc')
+      File.exist?(cache_dir) ? cache_dir : YARD::Registry.yardoc_file_for_gem(spec.name, spec.version)
     end
   end
 end
