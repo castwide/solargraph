@@ -39,7 +39,7 @@ module Solargraph
               type = ComplexType::UNDEFINED
             end
           end
-          result.concat api_map.get_constants(type.undefined? ? '' : type.namespace, cursor.start_of_constant? ? '' : context_pin.full_context.namespace)
+          result.concat api_map.get_constants(type.undefined? ? '' : type.namespace, cursor.start_of_constant? ? '' : context_pin.full_context.namespace, *gates)
         else
           type = cursor.chain.base.infer(api_map, block, locals)
           result.concat api_map.get_complex_type_methods(type, block.binder.namespace, cursor.chain.links.length == 1)
@@ -52,7 +52,7 @@ module Solargraph
               return package_completions(api_map.get_global_variable_pins)
             end
             result.concat locals
-            result.concat api_map.get_constants('', context_pin.context.namespace)
+            result.concat api_map.get_constants(context_pin.context.namespace, *gates)
             result.concat api_map.get_methods(block.binder.namespace, scope: block.binder.scope, visibility: [:public, :private, :protected])
             result.concat api_map.get_methods('Kernel')
             result.concat ApiMap.keywords
@@ -87,6 +87,15 @@ module Solargraph
         @locals ||= source_map.locals.select { |pin|
           pin.visible_from?(block, adj_pos)
         }.reverse
+      end
+
+      def gates
+        closure = block
+        until closure.nil?
+          return closure.gates if closure.is_a?(Pin::Namespace)
+          closure = closure.closure
+        end
+        []
       end
 
       private
