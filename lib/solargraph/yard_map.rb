@@ -10,6 +10,7 @@ module Solargraph
     autoload :CoreDocs, 'solargraph/yard_map/core_docs'
     autoload :CoreGen,  'solargraph/yard_map/core_gen'
     autoload :Mapper,   'solargraph/yard_map/mapper'
+    autoload :RdocToYard, 'solargraph/yard_map/rdoc_to_yard'
 
     CoreDocs.require_minimum
     @@stdlib_yardoc = CoreDocs.yardoc_stdlib_file
