@@ -61,7 +61,10 @@ module Solargraph
                   break
                 end
               end
-              type = extra_return_type(ol, context) || ComplexType.try_parse(*ol.tag(:return).types).self_to(context.to_s).qualify(api_map, context.namespace) if match
+              if match
+                type = extra_return_type(ol, context)
+                type = ComplexType.try_parse(*ol.tag(:return).types).self_to(context.to_s).qualify(api_map, context.namespace) if ol.has_tag?(:return)
+              end
               break if type.defined?
             end
             next p.proxy(type) if type.defined?
