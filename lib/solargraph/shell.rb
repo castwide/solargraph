@@ -14,6 +14,7 @@ module Solargraph
     end
 
     desc 'socket', 'Run a Solargraph socket server'
+    
     option :host, type: :string, aliases: :h, desc: 'The server host', default: '127.0.0.1'
     option :port, type: :numeric, aliases: :p, desc: 'The server port', default: 7658
     def socket
@@ -90,9 +91,23 @@ module Solargraph
       puts Solargraph::YardMap::CoreDocs.available.join("\n")
     end
 
-    desc 'clear-cores', 'Clear the cached core documentation'
-    def clear_cores
+    desc 'clear', 'Delete the cached documentation'
+    def clear
+      puts "Deleting the cached documentation"
       Solargraph::YardMap::CoreDocs.clear
+    end
+    map 'clear-cache'.to_sym => :clear
+    map 'clear-cores'.to_sym => :clear
+
+    desc 'uncache GEM [...GEM]', "Delete cached gem documentation"
+    def uncache *gems
+      raise ArgumentError, 'No gems specified.' if gems.empty?
+      gems.each do |gem|
+        Dir[File.join(Solargraph::YardMap::CoreDocs.cache_dir, 'gems', "#{gem}-*")].each do |dir|
+          puts "Deleting cache: #{dir}"
+          FileUtils.remove_entry_secure dir
+        end
+      end
     end
 
     desc 'reporters', 'Get a list of diagnostics reporters'
@@ -162,12 +177,17 @@ module Solargraph
       puts "Scanned #{directory} (#{api_map.pins.length} pins) in #{time.real} seconds."
     end
 
-    desc 'gems', 'Generate documentation for bundled gems'
-    def gems
-      # @todo Process:
-      #   1. Get a list of bundled gems
-      #   2. Run `yard gems [gem_name] [version]` for each
-      #   3. Get cached documentation
+    desc 'bundle', 'Generate documentation for bundled gems'
+    option :directory, type: :string, aliases: :d, desc: 'The workspace directory', default: '.'
+    def bundle
+      Documentor.new(options[:directory]).document
+    end
+
+    desc 'rdoc GEM [VERSION]', 'Use RDoc to cache documentation'
+    def rdoc gem, version = '>= 0'
+      spec = Gem::Specification.find_by_name(gem, version)
+      puts "Caching #{spec.name} #{spec.version} from RDoc"
+      Solargraph::YardMap::RdocToYard.run(spec)
     end
 
     private
