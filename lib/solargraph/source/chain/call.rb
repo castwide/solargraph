@@ -64,6 +64,7 @@ module Solargraph
               if match
                 type = extra_return_type(ol, context)
                 type = ComplexType.try_parse(*ol.tag(:return).types).self_to(context.to_s).qualify(api_map, context.namespace) if ol.has_tag?(:return)
+                type ||= ComplexType::UNDEFINED
               end
               break if type.defined?
             end
