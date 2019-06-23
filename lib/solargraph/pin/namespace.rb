@@ -7,8 +7,13 @@ module Solargraph
       # @return [::Symbol] :class or :module
       attr_reader :type
 
-      # def initialize location, namespace, name, comments, type, visibility
-      def initialize type: :class, visibility: :public, **splat
+      # @return [String]
+      attr_reader :gate
+
+      # @param type [Symbol] :class or :module
+      # @param visibility [Symbol] :public or :private
+      # @param gated [Boolean] True if this namespace opens a scope gate
+      def initialize type: :class, visibility: :public, gated: true, **splat
         # super(location, namespace, name, comments)
         super(splat)
         @type = type
@@ -17,14 +22,17 @@ module Solargraph
           @name = name[2..-1]
           @closure = Pin::ROOT_PIN
         end
-        @gate = @name
-        if @gate.include?('::')
-          parts = @gate.split('::')
-          @name = parts.last
-          adjusted = (@closure ? @closure.path : Pin::ROOT_PIN.path).split('::') + parts[0..-2]
-          # @closure = Pin::Base.new(kind: NAMESPACE, name: adjusted.join('::'))
-          @closure = Pin::Namespace.new(name: adjusted.join('::'))
-          @context = nil
+        if gated
+          @gate = @name
+          if @gate.include?('::')
+            parts = @gate.split('::')
+            @name = parts.last
+            adjusted = (@closure ? @closure.path : Pin::ROOT_PIN.path).split('::') + parts[0..-2]
+            @closure = Pin::Namespace.new(name: adjusted.join('::'), gated: false)
+            @context = nil
+          end
+        else
+          @gate = ''
         end
       end
 
@@ -71,6 +79,21 @@ module Solargraph
 
       def typify api_map
         return_type
+      end
+
+      # Get an array of all the open scope gates in the current context.
+      #
+      # @return [Array<String>]
+      def gates
+        return [gate] if gate.empty?
+        result = [gate]
+        clos = closure
+        until clos.nil?
+          result.push clos.gate if clos.is_a?(Pin::Namespace)
+          break if result.last.empty?
+          clos = clos.closure
+        end
+        result
       end
     end
   end
