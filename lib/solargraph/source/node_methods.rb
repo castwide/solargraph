@@ -66,6 +66,8 @@ module Solargraph
           return 'Symbol'
         elsif node.type == :regexp
           return 'Regexp'
+        elsif node.type == :irange
+          return 'Range'
         # @todo Support `nil` keyword in types
         # elsif node.type == :nil
         #   return 'NilClass'

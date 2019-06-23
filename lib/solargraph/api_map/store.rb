@@ -116,7 +116,7 @@ module Solargraph
         @named_macros ||= begin
           result = {}
           pins.each do |pin|
-            pin.macros.select{|m| m.tag.tag_name == 'macro'}.each do |macro|
+            pin.macros.select{|m| m.tag.tag_name == 'macro' && !m.tag.text.empty? }.each do |macro|
               next if macro.tag.name.nil? || macro.tag.name.empty?
               result[macro.tag.name] = macro
             end
@@ -228,7 +228,6 @@ module Solargraph
             path_pin_hash[pin.path].push pin
           end
         end
-        override_pins.concat CoreFills::OVERRIDES
         override_pins.each do |ovr|
           pin = get_path_pins(ovr.name).first
           next if pin.nil?

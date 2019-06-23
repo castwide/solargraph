@@ -113,7 +113,9 @@ module Solargraph
     # @return [Array<String>]
     def gemspecs
       return [] if directory.empty? || directory == '*'
-      @gemspecs ||= Dir[File.join(directory, '**/*.gemspec')]
+      @gemspecs ||= Dir[File.join(directory, '**/*.gemspec')].select do |gs|
+        config.allow? gs
+      end
     end
 
     # Synchronize the workspace from the provided updater.

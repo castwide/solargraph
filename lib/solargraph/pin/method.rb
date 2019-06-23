@@ -73,6 +73,18 @@ module Solargraph
         true
       end
 
+      # @return [Array<Pin::Method>]
+      def overloads
+        @overloads ||= docstring.tags(:overload).map do |tag|
+          Solargraph::Pin::Method.new(
+            name: name,
+            closure: closure,
+            args: tag.parameters.map(&:first),
+            comments: tag.text
+          )
+        end
+      end
+
       private
 
       # @return [Parser::AST::Node, nil]

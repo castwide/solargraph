@@ -27,6 +27,7 @@ module Solargraph
       @source = source.dup
       @pins = pins
       @locals = locals
+      environ.merge Convention.for(source)
     end
 
     # @return [String]
@@ -42,6 +43,11 @@ module Solargraph
     # @return [Array<Pin::Reference::Require>]
     def requires
       @requires ||= pins.select{|p| p.kind == Pin::REQUIRE_REFERENCE}
+    end
+
+    # @return [Environ]
+    def environ
+      @environ ||= Environ.new
     end
 
     # @return [Array<Pin::Base>]

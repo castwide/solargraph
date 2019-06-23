@@ -56,6 +56,12 @@ module Solargraph
         @excluded ||= process_exclusions(@raw_data['exclude'])
       end
 
+      def allow? filename
+        filename.start_with?(directory) && 
+          !excluded.include?(filename) &&
+          excluded_directories.none? { |d| filename.start_with?(d) }
+      end
+
       # The calculated array of (included - excluded) files in the workspace.
       #
       # @return [Array<String>]
@@ -156,6 +162,12 @@ module Solargraph
       # @return [String]
       def glob_to_directory glob
         glob.gsub(/(\/\*|\/\*\*\/\*\*?)$/, '')
+      end
+
+      def excluded_directories
+        @raw_data['exclude']
+          .select { |g| glob_is_directory?(g) }
+          .map { |g| File.join(directory, glob_to_directory(g)) }
       end
     end
   end

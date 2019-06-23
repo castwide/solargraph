@@ -120,4 +120,10 @@ describe Solargraph::Workspace do
     workspace = Solargraph::Workspace.new('spec/fixtures/workspace')
     expect(workspace.require_paths).to eq(['spec/fixtures/workspace/lib', 'spec/fixtures/workspace/ext'])
   end
+
+  it 'ignores gemspecs in excluded directories' do
+    # vendor/**/* is excluded by default
+    workspace = Solargraph::Workspace.new('spec/fixtures/vendored')
+    expect(workspace.gemspecs).to be_empty
+  end
 end

@@ -38,6 +38,13 @@ module Solargraph
     def param_type_problems
       result = []
       smap = api_map.source_map(filename)
+      smap.pins.select { |pin| pin.is_a?(Pin::Method) }.each do |pin|
+        if pin.parameters.empty?
+          pin.docstring.tags(:param).each do |tag|
+            result.push Problem.new(pin.location, "#{pin.name} has unknown @param #{tag.name}", pin: pin)
+          end
+        end
+      end
       smap.locals.select { |pin| pin.is_a?(Solargraph::Pin::Parameter) }.each do |par|
         next unless par.closure.is_a?(Solargraph::Pin::Method)
         result.concat check_param_tags(par.closure)
@@ -106,7 +113,7 @@ module Solargraph
     # @param pin [Solargraph::Pin::Base]
     # @return [Array<Problem>]
     def confirm_return_type pin
-      tagged = pin.typify(api_map)
+      tagged = pin.typify(api_map).self_to(pin.namespace)
       return [] if tagged.void? || tagged.undefined? || pin.is_a?(Pin::Attribute)
       probed = pin.probe(api_map)
       return [] if probed.undefined?
@@ -172,7 +179,11 @@ module Solargraph
           cursor = 0
           curtype = nil
           node.children[2..-1].each_with_index do |arg, index|
-            curtype = ptypes[cursor] if curtype.nil? || curtype == :arg
+            if pin.is_a?(Pin::Attribute)
+              curtype = ParamDef.new('value', :arg)
+            else
+              curtype = ptypes[cursor] if curtype.nil? || curtype == :arg
+            end
             if curtype.nil?
               if pin.parameters[index].nil?
                 result.push Problem.new(Solargraph::Location.new(filename, Solargraph::Range.from_node(node)), "Not enough arguments sent to #{pin.path}")
@@ -185,16 +196,10 @@ module Solargraph
                 arg.children.each do |pair|
                   sym = pair.children[0].children[0].to_s
                   partype = params[pin.parameter_names[index]]
-                  if partype.nil?
-                    if report_location?(pin.location)
-                      unless ptypes.map(&:type).include?(:kwrestarg)
-                        result.push Problem.new(Solargraph::Location.new(filename, Solargraph::Range.from_node(node)), "No @param type for #{pin.parameter_names[index]} in #{pin.path}")
-                      end
-                    end
-                  else
+                  if partype
                     chain = Solargraph::Source::NodeChainer.chain(pair.children[1], filename)
                     argtype = chain.infer(api_map, block, locals)
-                    if argtype.tag != partype.tag
+                    if argtype.tag != partype.tag && !api_map.super_and_sub?(partype.tag.to_s, argtype.tag.to_s)
                       result.push Problem.new(Solargraph::Location.new(filename, Solargraph::Range.from_node(node)), "Wrong parameter type for #{pin.path}: #{pin.parameter_names[index]} expected #{partype.tag}, received #{argtype.tag}")
                     end
                   end
@@ -203,18 +208,18 @@ module Solargraph
                 result.push Problem.new(Solargraph::Location.new(filename, Solargraph::Range.from_node(node)), "Can't handle splat in #{pin.parameter_names[index]} #{pin.path}")
                 break if curtype != :arg && ptypes.map(&:type).include?(:restarg)
               else
-                partype = params[pin.parameter_names[index]]
-                if partype.nil?
-                  if report_location?(pin.location)
-                    result.push Problem.new(Solargraph::Location.new(filename, Solargraph::Range.from_node(node)), "No @param type for #{pin.parameter_names[index]} in #{pin.path}")
-                  end
+                if pin.is_a?(Pin::Attribute)
+                  partype = pin.return_type
                 else
+                  partype = params[pin.parameter_names[index]]
+                end
+                if partype
                   arg = chain.links.last.arguments[index]
                   if arg.nil?
                     result.push Problem.new(Solargraph::Location.new(filename, Solargraph::Range.from_node(node)), "Wrong number of arguments to #{pin.path}")
                   else
                     argtype = arg.infer(api_map, block, locals)
-                    if argtype.tag != partype.tag
+                    if argtype.tag != partype.tag && !api_map.super_and_sub?(partype.tag.to_s, argtype.tag.to_s)
                       result.push Problem.new(Solargraph::Location.new(filename, Solargraph::Range.from_node(node)), "Wrong parameter type for #{pin.path}: #{pin.parameter_names[index]} expected #{partype.tag}, received #{argtype.tag}")
                     end
                   end

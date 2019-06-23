@@ -1,4 +1,5 @@
 require 'yard'
+require 'bundler'
 
 module Solargraph
   # The YardMap provides access to YARD documentation for the Ruby core, the
@@ -29,7 +30,8 @@ module Solargraph
 
     # @param required [Array<String>]
     # @param with_dependencies [Boolean]
-    def initialize(required: [], with_dependencies: true)
+    def initialize(directory: '.', required: [], with_dependencies: true)
+      @directory = directory
       # HACK: YardMap needs its own copy of this array
       @required = required.clone
       @with_dependencies = with_dependencies
@@ -90,7 +92,17 @@ module Solargraph
     def core_pins
       @@core_pins ||= begin
         load_yardoc CoreDocs.yardoc_file
-        Mapper.new(YARD::Registry.all).map
+        result = Mapper.new(YARD::Registry.all).map
+        CoreFills::OVERRIDES.each do |ovr|
+          pin = result.select { |p| p.path == ovr.name }.first
+          next if pin.nil?
+          pin.docstring.delete_tags(:overload)
+          pin.docstring.delete_tags(:return)
+          ovr.tags.each do |tag|
+            pin.docstring.add_tag(tag)
+          end
+        end
+        result
       end
     end
 
@@ -141,6 +153,7 @@ module Solargraph
       unresolved_requires.clear
       stdnames = {}
       done = []
+      pins.concat(bundler_require) if required.include?('bundler/require')
       required.each do |r|
         next if r.nil? || r.empty? || done.include?(r)
         done.push r
@@ -249,6 +262,38 @@ module Solargraph
       end
       load_yardoc y
       Mapper.new(YARD::Registry.all, spec).map
+    end
+
+    def bundler_require
+      Solargraph.logger.debug "Using bundler/require"
+      result = []
+      Dir.chdir @directory do
+        # @type [Array<Gem::Specification>]
+        specs = Bundler.with_original_env do
+          Bundler.reset!
+          Bundler.definition.specs_for([:default])
+        end
+        specs.each do |spec|
+          ver = spec.version.to_s
+          ver = ">= 0" if ver.empty?
+          yd = YARD::Registry.yardoc_file_for_gem(spec.name, ver)
+          # YARD detects gems for certain libraries that do not have a yardoc
+          # but exist in the stdlib. `fileutils` is an example. Treat those
+          # cases as errors and check the stdlib yardoc.
+          if yd.nil?
+            Solargraph.logger.warn "Failed to load gem #{spec.name} #{ver} via bundler/require"
+            next
+          end
+          @gem_paths[spec.name] = spec.full_gem_path
+          unless yardocs.include?(yd)
+            yardocs.unshift yd
+            result.concat process_yardoc yd, spec
+            result.concat add_gem_dependencies(spec) if with_dependencies?
+          end
+        end
+      end
+      Bundler.reset!
+      result.reject(&:nil?)
     end
   end
 end
