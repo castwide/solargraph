@@ -878,4 +878,28 @@ describe Solargraph::SourceMap::Clip do
     clip = map.clip_at('test.rb', Solargraph::Position.new(5, 15))
     expect(clip.infer.to_s).to eq('String')
   end
+
+  it 'infers overloads with splats' do
+    source = Solargraph::Source.load_string(%(
+      class Foo
+        # @overload bar(num1, *num2)
+        #   @return [String]
+        def bar; end
+      end
+      Foo.new.bar(1)
+      Foo.new.bar(1, 2)
+      Foo.new.bar(1, 2, 3)
+      Foo.new.bar
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new
+    api_map.map source
+    clip = api_map.clip_at('test.rb', [6, 14])
+    expect(clip.infer.to_s).to eq('String')
+    clip = api_map.clip_at('test.rb', [7, 14])
+    expect(clip.infer.to_s).to eq('String')
+    clip = api_map.clip_at('test.rb', [8, 14])
+    expect(clip.infer.to_s).to eq('String')
+    clip = api_map.clip_at('test.rb', [9, 14])
+    expect(clip.infer).to be_undefined  
+  end
 end

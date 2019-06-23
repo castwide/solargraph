@@ -43,10 +43,6 @@ module Solargraph
       # @return [ComplexType]
       def generate_complex_type
         tag = docstring.tag(:return)
-        if tag.nil?
-          ol = docstring.tag(:overload)
-          tag = ol.tag(:return) unless ol.nil?
-        end
         return ComplexType::UNDEFINED if tag.nil? or tag.types.nil? or tag.types.empty?
         ComplexType.try_parse *tag.types
       end

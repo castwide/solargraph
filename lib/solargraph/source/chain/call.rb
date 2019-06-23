@@ -38,21 +38,21 @@ module Solargraph
             overloads = p.docstring.tags(:overload)
             # next p if overloads.empty?
             type = ComplexType::UNDEFINED
-            # @type [YARD::Tags::OverloadTag]
-            ol = nil
+            # @param [YARD::Tags::OverloadTag]
             overloads.each do |ol|
-              # # @todo Weak arity check
-              # next if ol.parameters.length != arguments.length
+              next if arguments.length < ol.parameters.length &&
+                !(arguments.length == ol.parameters.length - 1 && ol.parameters.last.first.start_with?('*'))
               match = true
-              ol.parameters.each_with_index do |pair, idx|
-                name, default = pair
+              arguments.each_with_index do |arg, idx|
                 achain = arguments[idx]
-                if achain.nil?
-                  match = false if default.nil? && !name.start_with?('*')
+                next if achain.nil?
+                param = ol.parameters[idx]
+                if param.nil?
+                  match = false unless ol.parameters.last && ol.parameters.last.first.start_with?('*')
                   break
                 end
-                par = ol.tags(:param).select { |pp| pp.name == name }.first
-                next if par.nil?
+                par = ol.tags(:param).select { |pp| pp.name == param.first }.first
+                next if par.nil? || par.types.nil? || par.types.empty?
                 atype = achain.infer(api_map, Pin::ProxyType.anonymous(context), locals)
                 other = ComplexType.try_parse(*par.types)
                 # @todo Weak type comparison
