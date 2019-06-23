@@ -27,11 +27,12 @@ module Solargraph
               # store.load_class(mod)
               # @type [RDoc::NormalClass]
               mod = store.find_class_or_module(mod)
+              closure = pins.select { |pin| pin.path == mod.full_name.split('::')[0..-2].join('::') }.first || pins.first
               namepin = Solargraph::Pin::Namespace.new(
                 type: (mod.module? ? :module : :class),
                 name: mod.name,
                 comments: commentary(mod.comment),
-                closure: name_hash[base_name(mod)] || pins.first
+                closure: closure
               )
               mod.parse(mod.comment_location)
               pins.push namepin
@@ -43,8 +44,9 @@ module Solargraph
                   name: met.name,
                   closure: namepin,
                   comments: commentary(met.comment),
-                  scope: (met.singleton ? :class : :method),
-                  args: pin.parameters
+                  scope: (met.singleton ? :class : :instance),
+                  args: pin.parameters,
+                  visibility: met.visibility
                 )
               end
               # @param const [RDoc::Constant]
@@ -56,8 +58,8 @@ module Solargraph
                 )
               end
             end
-            store = Solargraph::ApiMap::Store.new(pins)
-            rake_yard(store)
+            mapstore = Solargraph::ApiMap::Store.new(pins)
+            rake_yard(mapstore)
             YARD::Registry.clear
             code_object_map.values.each do |co|
               YARD::Registry.register(co)
