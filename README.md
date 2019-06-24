@@ -44,7 +44,7 @@ When editing code, a `require` call that references a gem will pull the document
 
 ### More Information
 
-See [http://solargraph.org/tips](http://solargraph.org/tips) for more tips on using Solargraph with an editor.
+See [http://solargraph.org/guides](http://solargraph.org/guides) for more tips and tutorials for using Solargraph.
 
 ## How It Works
 
