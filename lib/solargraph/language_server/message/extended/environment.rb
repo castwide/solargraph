@@ -1,3 +1,6 @@
+# Make sure the environment page can report RuboCop's version
+require 'rubocop'
+
 module Solargraph
   module LanguageServer
     module Message
