@@ -12,7 +12,12 @@ module Solargraph
             original = host.read_text(params['textDocument']['uri'])
             cmd = "rubocop -a -f fi -s #{Shellwords.escape(filename)}"
             o, e, s = Open3.capture3(cmd, stdin_data: original)
-            lines = o.lines
+            return format(original, o) if o && !o.empty?
+            set_error(Solargraph::LanguageServer::ErrorCodes::INTERNAL_ERROR, e)
+          end
+
+          def format original, result
+            lines = result.lines
             index = lines.index{|l| l.start_with?('====================')}
             formatted = lines[index+1..-1].join
             # The response is required to send an explicit range. Text edits
