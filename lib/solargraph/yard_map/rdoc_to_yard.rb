@@ -36,6 +36,22 @@ module Solargraph
                 location: locate(mod)
               )
               mod.parse(mod.comment_location)
+              # @param inc [RDoc::Include]
+              mod.includes.each do |inc|
+                pins.push Solargraph::Pin::Reference::Include.new(
+                  location: locate(inc),
+                  name: inc.name,
+                  closure: namepin
+                )
+              end
+              # @param inc [RDoc::Extend]
+              mod.extends.each do |ext|
+                pins.push Solargraph::Pin::Reference::Extend.new(
+                  location: locate(ext),
+                  name: ext.name,
+                  closure: namepin
+                )
+              end
               pins.push namepin
               name_hash[mod.full_name] = namepin
               # @param met [RDoc::AnyMethod]

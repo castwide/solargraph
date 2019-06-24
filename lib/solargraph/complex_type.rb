@@ -73,15 +73,20 @@ module Solargraph
 
     def self_to dst
       return self unless selfy?
-      result = @items.map { |i| i.self_to reduce_class(dst) }
+      red = reduce_class(dst)
+      result = @items.map { |i| i.self_to red }
       ComplexType.parse(*result.map(&:tag))
     end
 
     private
 
+    # @todo This is a quick and dirty hack that forces `self` keywords
+    #   to reference an instance of their class and never the class itself.
+    #   This behavior may change depending on which result is expected
+    #   from YARD conventions. See https://github.com/lsegal/yard/issues/1257
     def reduce_class dst
-      while dst =~ /^Class|Module\<(.*?)\>$/
-        dst = dst.sub(/^Class|Module\</, '').sub(/\>$/, '')
+      while dst =~ /^(Class|Module)\<(.*?)\>$/
+        dst = dst.sub(/^(Class|Module)\</, '').sub(/\>$/, '')
       end
       dst
     end
