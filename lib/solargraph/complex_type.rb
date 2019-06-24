@@ -73,8 +73,17 @@ module Solargraph
 
     def self_to dst
       return self unless selfy?
-      result = @items.map { |i| i.self_to dst }
+      result = @items.map { |i| i.self_to reduce_class(dst) }
       ComplexType.parse(*result.map(&:tag))
+    end
+
+    private
+
+    def reduce_class dst
+      while dst =~ /^Class|Module\<(.*?)\>$/
+        dst = dst.sub(/^Class|Module\</, '').sub(/\>$/, '')
+      end
+      dst
     end
 
     class << self
