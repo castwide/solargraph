@@ -16,7 +16,7 @@ module Solargraph
             pins = []
             pins.push Solargraph::Pin::ROOT_PIN
             name_hash = {}
-            cmd = "rdoc -q -r -o #{rdir}"
+            cmd = "rdoc -q -N -r -o #{rdir}"
             spec.load_paths.each do |path|
               cmd += " -i #{path}"
             end
@@ -32,7 +32,8 @@ module Solargraph
                 type: (mod.module? ? :module : :class),
                 name: mod.name,
                 comments: commentary(mod.comment),
-                closure: closure
+                closure: closure,
+                location: locate(mod)
               )
               mod.parse(mod.comment_location)
               pins.push namepin
@@ -44,9 +45,10 @@ module Solargraph
                   name: met.name,
                   closure: namepin,
                   comments: commentary(met.comment),
-                  scope: (met.singleton ? :class : :instance),
+                  scope: met.type.to_sym,
                   args: pin.parameters,
-                  visibility: met.visibility
+                  visibility: met.visibility,
+                  location: locate(met)
                 )
               end
               # @param const [RDoc::Constant]
@@ -54,7 +56,8 @@ module Solargraph
                 pins.push Solargraph::Pin::Constant.new(
                   name: const.name,
                   closure: namepin,
-                  comments: commentary(const.comment)
+                  comments: commentary(const.comment),
+                  location: locate(const)
                 )
               end
             end
@@ -83,6 +86,25 @@ module Solargraph
           result.push RDoc::Markup::ToHtml.new({}).to_html(part.text) if part.respond_to?(:text)
         end
         result.join("\n\n")
+      end
+
+      # @param obj [RDoc::Context]
+      def self.locate obj
+        # @todo line is always nil for some reason
+        file, line = find_file(obj)
+        return nil if file.nil?
+        Location.new(
+          file,
+          Range.from_to(line || 1, 0, line || 1, 0)
+        )
+      end
+
+      def self.find_file obj
+        if obj.respond_to?(:in_files) && !obj.in_files.empty?
+          [obj.in_files.first.to_s.sub(/^file /, ''), obj.in_files.first.line]
+        else
+          [obj.file_name, obj.line]
+        end
       end
     end
   end

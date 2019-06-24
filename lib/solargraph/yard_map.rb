@@ -299,7 +299,12 @@ module Solargraph
 
     def yardoc_file_for_spec spec
       cache_dir = File.join(Solargraph::YardMap::CoreDocs.cache_dir, 'gems', "#{spec.name}-#{spec.version}", 'yardoc')
-      File.exist?(cache_dir) ? cache_dir : YARD::Registry.yardoc_file_for_gem(spec.name, spec.version)
+      if File.exist?(cache_dir)
+        Solargraph.logger.info "Using cached documentation for #{spec.name} at #{cache_dir}"
+        cache_dir
+      else
+        YARD::Registry.yardoc_file_for_gem(spec.name, spec.version)
+      end
     end
   end
 end

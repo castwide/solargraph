@@ -26,12 +26,17 @@ module Solargraph
             next
           end
           if pin.type == :class
-            code_object_map[pin.path] ||= YARD::CodeObjects::ClassObject.new(root_code_object, pin.path)
+            code_object_map[pin.path] ||= YARD::CodeObjects::ClassObject.new(root_code_object, pin.path) { |obj|
+              next if pin.location.nil? || pin.location.filename.nil?
+              obj.add_file(pin.location.filename, pin.location.range.start.line, !pin.comments.empty?)
+            }
           else
-            code_object_map[pin.path] ||= YARD::CodeObjects::ModuleObject.new(root_code_object, pin.path)
+            code_object_map[pin.path] ||= YARD::CodeObjects::ModuleObject.new(root_code_object, pin.path) { |obj|
+              next if pin.location.nil? || pin.location.filename.nil?
+              obj.add_file(pin.location.filename, pin.location.range.start.line, !pin.comments.empty?)
+            }
           end
           code_object_map[pin.path].docstring = pin.docstring
-          code_object_map[pin.path].files.push pin.location.filename unless pin.location.nil? || code_object_map[pin.path].files.include?(pin.location.filename)
           store.get_includes(pin.path).each do |ref|
             code_object_map[pin.path].instance_mixins.push code_object_map[ref] unless code_object_map[ref].nil? or code_object_map[pin.path].nil?
           end
@@ -45,10 +50,12 @@ module Solargraph
             code_object_map[pin.path] ||= pin.code_object
             next
           end
-          code_object_map[pin.path] ||= YARD::CodeObjects::MethodObject.new(code_object_at(pin.namespace), pin.name, pin.scope)
+          code_object_map[pin.path] ||= YARD::CodeObjects::MethodObject.new(code_object_at(pin.namespace), pin.name, pin.scope) { |obj|
+            next if pin.location.nil? || pin.location.filename.nil?
+            obj.add_file pin.location.filename, pin.location.range.start.line
+          }
           code_object_map[pin.path].docstring = pin.docstring
           code_object_map[pin.path].visibility = pin.visibility || :public
-          code_object_map[pin.path].files.push pin.location.filename unless pin.location.nil? || code_object_map[pin.path].files.include?(pin.location.filename)
           code_object_map[pin.path].parameters = pin.parameters.map do |p|
             n = p.match(/^[a-z0-9_]*:?/i)[0]
             v = nil
