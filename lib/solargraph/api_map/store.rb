@@ -231,8 +231,9 @@ module Solargraph
         override_pins.each do |ovr|
           pin = get_path_pins(ovr.name).first
           next if pin.nil?
-          pin.docstring.delete_tags(:overload)
-          pin.docstring.delete_tags(:return)
+          ovr.tags.map(&:tag_name).uniq.each do |tag|
+            pin.docstring.delete_tags tag.to_sym
+          end
           ovr.tags.each do |tag|
             pin.docstring.add_tag(tag)
           end
