@@ -1,18 +1,22 @@
 # Solargraph
 
-IDE tools for the Ruby language.
+## A Ruby Language Server
 
-Solargraph is a set of tools to integrate Ruby code completion and inline documentation into IDEs.
+Solargraph provides a comprehensive suite of tools for Ruby programming: intellisense, diagnostics, inline documentation, and type checking.
 
 ## Online Demo
 
-A web-based demonstration of Solargraph is available at http://solargraph.org/demo.
+A web-based demonstration of Solargraph's autocomplete is available at http://solargraph.org/demo.
 
 ## Installation
 
-Solargraph is available as a Ruby gem:
+Install the gem from the command line:
 
     gem install solargraph
+
+Or add it to your Gemfile:
+
+    gem 'solargraph', group: :development
 
 ## Using Solargraph
 
@@ -38,39 +42,28 @@ Plug-ins and extensions are available for the following editors:
 
 ### Gem Support
 
-Solargraph is capable of providing code completion and documentation for gems that have YARD documentation. You can make sure your gems are documented by running `yard gems` from the command line. (The first time you run it might take a while if you have a lot of gems installed).
+Solargraph is capable of providing code completion and documentation for gems that have YARD documentation. You can make sure your gems are documented by running `yard gems` from the command line. (YARD is included as one of Solargraph's gem dependencies. The first time you run it might take a while if you have a lot of gems installed).
 
 When editing code, a `require` call that references a gem will pull the documentation into the code maps and include the gem's API in code completion and intellisense.
 
-### More Information
+If your project automatically requires bundled gems (e.g., `require 'bundler/require'`), Solargraph will add all of the Gemfile's default dependecies to the map.
 
-See [http://solargraph.org/guides](http://solargraph.org/guides) for more tips and tutorials for using Solargraph.
+### Type Checking
 
-## How It Works
+As of version 0.33.0, Solargraph includes a [type checker](https://github.com/castwide/solargraph/issues/192) that uses a combination of YARD tags and code analysis to report missing type definitions. In strict mode, it performs type inference to determine whether the tags match the types it detects from code.
 
-Solargraph uses [parser](https://github.com/whitequark/parser) for code analysis and [YARD](https://github.com/lsegal/yard) for API documentation.
+### Updating Core Documentation
 
-## Using the `solargraph` Executable
-
-The gem includes an executable that provides access to the library's features. For code completion, IDEs will typically integrate using `solargraph stdio` or `solargraph socket`.
-
-### Language Server Protocol
-
-The language server protocol is the recommended way for integrating Solargraph into editors and IDEs. Clients can connect using either stdio or TCP.
-See [LANGUAGE_SERVER.md](LANGUAGE_SERVER.md) for more information.
-
-## Updating Core Documentation
-
-The Solargraph gem ships with documentation for Ruby 2.2.2. As of gem version 0.15.0, there's an option to download additional documentation for other Ruby versions from the command line.
+The Solargraph gem ships with documentation for Ruby 2.2.2. You can download documentation for other Ruby versions from the command line.
 
     $ solargraph list-cores      # List the installed documentation versions
     $ solargraph available-cores # List the versions available for download
     $ solargraph download-core   # Install the best match for your Ruby version
-    $ solargraph clear-cores     # Clear the documentation cache
+    $ solargraph clear           # Reset the documentation cache
 
-## Solargraph and Bundler
+### Solargraph and Bundler
 
-If you're using the Solargraph language server with a project that uses Bundler, the most comprehensive way to use your bundled gems is to bundle Solargraph.
+If you're using the language server with a project that uses Bundler, the most comprehensive way to use your bundled gems is to bundle Solargraph.
 
 In the Gemfile:
 
@@ -78,13 +71,21 @@ In the Gemfile:
 
 Run `bundle install` and use `bundle exec yard gems` to generate the documentation. This process documents cached or vendored gems, or even gems that are installed from a local path.
 
-In order to access the gems in your project, you'll need to start the language server with Bundler. In VS Code, there's a `solargraph.useBundler` option. Other clients will vary, but the command you probably want to run is `bundle exec solargraph socket` or `bundle exec solargraph stdio`.
+In order to make sure you're using the correct dependencies, you can start the language server with Bundler. In VS Code, there's a `solargraph.useBundler` option. Other clients will vary, but the command you probably want to run is `bundle exec solargraph socket` or `bundle exec solargraph stdio`.
+
+### Integrating Other Editors
+
+The [language server protocol](https://microsoft.github.io/language-server-protocol/specification) is the recommended way for integrating Solargraph into editors and IDEs. Clients can connect using either stdio or TCP. Language client developers should refer to [https://solargraph.org/guides/language-server](https://solargraph.org/guides/language-server).
+
+### More Information
+
+See [https://solargraph.org/guides](https://solargraph.org/guides) for more tips and tutorials about Solargraph.
 
 ## Contributing to Solargraph
 
 ### Bug Reports and Feature Requests
 
-GitHub Issues are the best place to ask questions, report problems, and suggest improvements.
+[https://github.com/castwide/solargraph/issues](GitHub Issues) are the best place to ask questions, report problems, and suggest improvements.
 
 ### Development
 
