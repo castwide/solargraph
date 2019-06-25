@@ -6,7 +6,7 @@ Solargraph provides a comprehensive suite of tools for Ruby programming: intelli
 
 ## Online Demo
 
-A web-based demonstration of Solargraph's autocomplete is available at http://solargraph.org/demo.
+A web-based demonstration of Solargraph's autocomplete is available at https://solargraph.org/demo.
 
 ## Installation
 
