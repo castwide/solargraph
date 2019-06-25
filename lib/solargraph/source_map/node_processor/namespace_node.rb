@@ -14,7 +14,8 @@ module Solargraph
             closure: region.closure,
             name: unpack_name(node.children[0]),
             comments: comments_for(node),
-            visibility: :public
+            visibility: :public,
+            gates: region.closure.gates.clone
           )
           pins.push nspin
           unless sc.nil?

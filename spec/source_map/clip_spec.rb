@@ -916,11 +916,10 @@ describe Solargraph::SourceMap::Clip do
       end
       module Foo::Bar
         F
-      end  
+      end
     ), 'test.rb')
     api_map = Solargraph::ApiMap.new
     api_map.map source
-
     clip = api_map.clip_at('test.rb', [7, 11])
     expect(clip.complete.pins.map(&:name)).to include('FOO_CONST')
     clip = api_map.clip_at('test.rb', [11, 9])

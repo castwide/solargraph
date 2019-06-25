@@ -16,8 +16,7 @@ module Solargraph
             comments: comments_from(code_object),
             type: namespace_type(code_object),
             visibility: code_object.visibility,
-            closure: closure,
-            gated: false
+            closure: closure
           )
         end
 

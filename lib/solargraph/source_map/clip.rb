@@ -90,12 +90,7 @@ module Solargraph
       end
 
       def gates
-        closure = block
-        until closure.nil?
-          return closure.gates if closure.is_a?(Pin::Namespace)
-          closure = closure.closure
-        end
-        []
+        block.gates
       end
 
       private

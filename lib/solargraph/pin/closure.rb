@@ -23,6 +23,13 @@ module Solargraph
       def binder
         @binder || context
       end
+
+      # @return [Array<String>]
+      def gates
+        # @todo This check might not be necessary. There should always be a
+        #   root pin
+        closure ? closure.gates : ['']
+      end
     end
   end
 end

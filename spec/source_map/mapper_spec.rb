@@ -844,8 +844,6 @@ describe Solargraph::SourceMap::Mapper do
     ), 'test.rb')
     pin = smap.pins.select{|p| p.path == 'Foo::Bar'}.first
     expect(pin).not_to be_nil
-    # expect(pin.namespace).to eq('Foo')
-    # expect(pin.name).to eq('Bar')
     expect(pin.namespace).to eq('Foo')
     expect(pin.name).to eq('Bar')
     expect(pin.path).to eq('Foo::Bar')

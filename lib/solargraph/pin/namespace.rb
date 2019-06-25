@@ -7,32 +7,28 @@ module Solargraph
       # @return [::Symbol] :class or :module
       attr_reader :type
 
-      # @return [String]
-      attr_reader :gate
-
       # @param type [Symbol] :class or :module
       # @param visibility [Symbol] :public or :private
-      # @param gated [Boolean] True if this namespace opens a scope gate
-      def initialize type: :class, visibility: :public, gated: true, **splat
+      # @param gates [Array<String>]
+      def initialize type: :class, visibility: :public, gates: [''], **splat
         # super(location, namespace, name, comments)
         super(splat)
         @type = type
         @visibility = visibility
         if name.start_with?('::')
           @name = name[2..-1]
-          @closure = Pin::ROOT_PIN
+          @closure = Solargraph::Pin::ROOT_PIN
         end
-        if gated
-          @gate = @name
-          if @gate.include?('::')
-            parts = @gate.split('::')
-            @name = parts.last
-            adjusted = (@closure ? @closure.path : Pin::ROOT_PIN.path).split('::') + parts[0..-2]
-            @closure = Pin::Namespace.new(name: adjusted.join('::'), gated: false)
-            @context = nil
-          end
+        @gates = gates
+        if @gates.one? && @gates.first.empty? && @name.include?('::')
+          # In this case, a chained namespace was opened (e.g., Foo::Bar)
+          # but Foo does not exist.
+          parts = @name.split('::')
+          @name = parts.pop
+          @closure = Pin::Namespace.new(name: parts.join('::'), gates: [parts.join('::')])
+          @context = nil
         else
-          @gate = ''
+          @gates.push path unless path.empty?
         end
       end
 
@@ -77,21 +73,8 @@ module Solargraph
         return_type
       end
 
-      # Get an array of all the open scope gates in the current context.
-      #
-      # @return [Array<String>]
       def gates
-        return [gate] if gate.empty?
-        @gates ||= begin
-          result = [gate]
-          clos = closure
-          until clos.nil?
-            result.push clos.gate if clos.is_a?(Pin::Namespace)
-            break if result.last.empty?
-            clos = clos.closure
-          end
-          result
-        end
+        @gates
       end
     end
   end
