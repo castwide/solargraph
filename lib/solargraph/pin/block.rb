@@ -25,10 +25,6 @@ module Solargraph
         @binder || context
       end
 
-      def kind
-        Pin::BLOCK
-      end
-
       # @return [Array<String>]
       def parameters
         @parameters ||= []

@@ -8,10 +8,6 @@ module Solargraph
         @visibility = visibility
       end
 
-      def kind
-        Pin::CONSTANT
-      end
-
       def completion_item_kind
         Solargraph::LanguageServer::CompletionItemKinds::CONSTANT
       end

@@ -6,10 +6,6 @@ module Solargraph
           # super(location, '', name)
           super(location: location, name: name)
         end
-
-        def kind
-          Pin::REQUIRE_REFERENCE
-        end
       end
     end
   end

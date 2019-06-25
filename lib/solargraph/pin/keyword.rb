@@ -8,10 +8,6 @@ module Solargraph
       def name
         @name
       end
-
-      def kind
-        Solargraph::Pin::KEYWORD
-      end
     end
   end
 end

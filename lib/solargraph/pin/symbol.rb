@@ -13,10 +13,6 @@ module Solargraph
         ''
       end
 
-      def kind
-        Pin::SYMBOL
-      end
-
       def path
         ''
       end

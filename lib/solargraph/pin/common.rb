@@ -11,10 +11,6 @@ module Solargraph
         @name ||= ''
       end
 
-      def kind
-        @kind ||= Pin::KEYWORD
-      end
-
       def return_type
         @return_type ||= ComplexType::UNDEFINED
       end

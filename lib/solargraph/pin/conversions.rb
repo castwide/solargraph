@@ -44,7 +44,7 @@ module Solargraph
         # This property is not cached in an instance variable because it can
         # change when pins get proxied.
         detail = ''
-        detail += "(#{parameters.join(', ')}) " unless kind != Pin::METHOD or parameters.empty?
+        detail += "(#{parameters.join(', ')}) " unless !is_a?(Pin::BaseMethod) or parameters.empty?
         detail += "=#{probed? ? '~' : (proxied? ? '^' : '>')} #{return_type}" unless return_type.undefined?
         detail.strip!
         return nil if detail.empty?

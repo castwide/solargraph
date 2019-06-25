@@ -17,10 +17,6 @@ module Solargraph
         @original = original
       end
 
-      def kind
-        Pin::METHOD_ALIAS
-      end
-
       def visibility
         :public
       end

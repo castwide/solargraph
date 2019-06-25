@@ -24,10 +24,6 @@ module Solargraph
         @parameter_names ||= parameters.map{|p| p.split(/[ =:]/).first.gsub(/^(\*{1,2}|&)/, '')}
       end
 
-      def kind
-        Solargraph::Pin::METHOD
-      end
-
       def completion_item_kind
         Solargraph::LanguageServer::CompletionItemKinds::METHOD
       end

@@ -1,10 +1,6 @@
 module Solargraph
   module Pin
     class InstanceVariable < BaseVariable
-      def kind
-        Pin::INSTANCE_VARIABLE
-      end
-
       def binder
         closure.binder
       end

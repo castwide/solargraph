@@ -10,10 +10,6 @@ module Solargraph
         @access = access
       end
 
-      def kind
-        Solargraph::Pin::ATTRIBUTE
-      end
-
       def completion_item_kind
         Solargraph::LanguageServer::CompletionItemKinds::PROPERTY
       end

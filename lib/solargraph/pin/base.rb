@@ -16,9 +16,6 @@ module Solargraph
       # @return [String]
       attr_reader :name
 
-      # @return [Integer]
-      attr_reader :kind
-
       # @return [String]
       attr_reader :path
 
@@ -27,9 +24,8 @@ module Solargraph
       # @param closure [String]
       # @param name [String]
       # @param comments [String]
-      def initialize location: nil, kind: KEYWORD, closure: nil, name: '', comments: ''
+      def initialize location: nil, closure: nil, name: '', comments: ''
         @location = location
-        @kind = kind
         @closure = closure
         @name = name
         @comments = comments

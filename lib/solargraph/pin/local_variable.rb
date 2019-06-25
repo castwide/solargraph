@@ -9,10 +9,6 @@ module Solargraph
         @presence = presence
       end
 
-      def kind
-        Pin::LOCAL_VARIABLE
-      end
-
       def try_merge! pin
         return false unless super
         @presence = pin.presence
