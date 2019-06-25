@@ -28,7 +28,7 @@ describe Solargraph::SourceMap do
       end
     ))
     pin = map.locate_block_pin(3, 0)
-    expect(pin.kind).to eq(Solargraph::Pin::BLOCK)
+    expect(pin).to be_a(Solargraph::Pin::Block)
   end
 
   it "merges comment changes" do

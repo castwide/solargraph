@@ -86,14 +86,16 @@ module Solargraph
       # @return [Array<String>]
       def gates
         return [gate] if gate.empty?
-        result = [gate]
-        clos = closure
-        until clos.nil?
-          result.push clos.gate if clos.is_a?(Pin::Namespace)
-          break if result.last.empty?
-          clos = clos.closure
+        @gates ||= begin
+          result = [gate]
+          clos = closure
+          until clos.nil?
+            result.push clos.gate if clos.is_a?(Pin::Namespace)
+            break if result.last.empty?
+            clos = clos.closure
+          end
+          result
         end
-        result
       end
     end
   end

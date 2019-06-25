@@ -29,7 +29,7 @@ module Solargraph
         private
 
         def get_parameters code_object
-          return [] unless code_object.kind_of?(YARD::CodeObjects::MethodObject)
+          return [] unless code_object.is_a?(YARD::CodeObjects::MethodObject)
           args = []
           code_object.parameters.each do |a|
             p = a[0]

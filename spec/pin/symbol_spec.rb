@@ -1,7 +1,6 @@
 describe Solargraph::Pin::Symbol do
   it "is a kind of keyword" do
     pin = Solargraph::Pin::Symbol.new(nil, ':symbol')
-    expect(pin.kind).to eq(Solargraph::Pin::SYMBOL)
     expect(pin.completion_item_kind).to eq(Solargraph::LanguageServer::CompletionItemKinds::KEYWORD)
   end
 

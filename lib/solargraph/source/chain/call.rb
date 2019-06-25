@@ -82,7 +82,7 @@ module Solargraph
                 node: p.node
               )
             end
-            if p.kind == Pin::METHOD && !p.macros.empty?
+            if p.is_a?(Pin::Method) && !p.macros.empty?
               result = process_macro(p, api_map, context, locals)
               next result unless result.return_type.undefined?
             elsif !p.directives.empty?

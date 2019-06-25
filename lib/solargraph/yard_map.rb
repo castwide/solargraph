@@ -78,7 +78,7 @@ module Solargraph
     # @param y [String]
     # @return [YARD::Registry]
     def load_yardoc y
-      if y.kind_of?(Array)
+      if y.is_a?(Array)
         YARD::Registry.load y, true
       else
         YARD::Registry.load! y

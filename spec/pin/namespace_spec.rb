@@ -15,10 +15,8 @@ describe Solargraph::Pin::Namespace do
 
   it "is a kind of namespace/class/module" do
     pin1 = Solargraph::Pin::Namespace.new(name: 'Foo')
-    expect(pin1.kind).to eq(Solargraph::Pin::NAMESPACE)
     expect(pin1.completion_item_kind).to eq(Solargraph::LanguageServer::CompletionItemKinds::CLASS)
     pin2 = Solargraph::Pin::Namespace.new(name: 'Foo', type: :module)
-    expect(pin2.kind).to eq(Solargraph::Pin::NAMESPACE)
     expect(pin2.completion_item_kind).to eq(Solargraph::LanguageServer::CompletionItemKinds::MODULE)
   end
 end

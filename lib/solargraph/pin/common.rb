@@ -49,7 +49,7 @@ module Solargraph
       def find_context
         here = closure
         until here.nil?
-          return here.return_type if here.kind == Pin::NAMESPACE
+          return here.return_type if here.is_a?(Pin::Namespace)
           here = here.closure
         end
         ComplexType::ROOT

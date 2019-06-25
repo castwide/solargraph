@@ -13,9 +13,9 @@ module Solargraph
       # @return [Array<String>]
       def pack_name(node)
         parts = []
-        if node.kind_of?(AST::Node)
+        if node.is_a?(AST::Node)
           node.children.each { |n|
-            if n.kind_of?(AST::Node)
+            if n.is_a?(AST::Node)
               if n.type == :cbase
                 parts = [''] + pack_name(n)
               else
@@ -32,7 +32,7 @@ module Solargraph
       # @param node [Parser::AST::Node]
       # @return [String]
       def const_from node
-        if node.kind_of?(AST::Node) and node.type == :const
+        if node.is_a?(AST::Node) and node.type == :const
           result = ''
           unless node.children[0].nil?
             result = const_from(node.children[0])
@@ -51,7 +51,7 @@ module Solargraph
       # @param node [Parser::AST::Node]
       # @return [String]
       def infer_literal_node_type node
-        return nil unless node.kind_of?(AST::Node)
+        return nil unless node.is_a?(AST::Node)
         if node.type == :str || node.type == :dstr
           return 'String'
         elsif node.type == :array
@@ -100,7 +100,7 @@ module Solargraph
       end
 
       def drill_signature node, signature
-        return signature unless node.kind_of?(AST::Node)
+        return signature unless node.is_a?(AST::Node)
         if node.type == :const or node.type == :cbase
           unless node.children[0].nil?
             signature += drill_signature(node.children[0], signature)

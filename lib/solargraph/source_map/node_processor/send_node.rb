@@ -9,7 +9,7 @@ module Solargraph
                 node.children[2..-1].each do |child|
                   next unless child.is_a?(AST::Node) && (child.type == :sym || child.type == :str)
                   name = child.children[0].to_s
-                  matches = pins.select{ |pin| [Pin::METHOD, Pin::ATTRIBUTE].include?(pin.kind) && pin.name == name && pin.namespace == region.closure.full_context.namespace && pin.context.scope == (region.scope || :instance)}
+                  matches = pins.select{ |pin| pin.is_a?(Pin::BaseMethod) && pin.name == name && pin.namespace == region.closure.full_context.namespace && pin.context.scope == (region.scope || :instance)}
                   matches.each do |pin|
                     # @todo Smelly instance variable access
                     pin.instance_variable_set(:@visibility, node.children[1])
@@ -33,7 +33,7 @@ module Solargraph
               process_private_constant
             elsif node.children[1] == :alias_method && node.children[2] && node.children[2] && node.children[2].type == :sym && node.children[3] && node.children[3].type == :sym
               process_alias_method
-            elsif node.children[1] == :private_class_method && node.children[2].kind_of?(AST::Node)
+            elsif node.children[1] == :private_class_method && node.children[2].is_a?(AST::Node)
               # Processing a private class can potentially handle children on its own
               return if process_private_class_method
             end
@@ -78,7 +78,7 @@ module Solargraph
 
         # @return [void]
         def process_include
-          if node.children[2].kind_of?(AST::Node) && node.children[2].type == :const
+          if node.children[2].is_a?(AST::Node) && node.children[2].type == :const
             cp = region.closure
             node.children[2..-1].each do |i|
               pins.push Pin::Reference::Include.new(
@@ -112,7 +112,7 @@ module Solargraph
 
         # @return [void]
         def process_require
-          if node.children[2].kind_of?(AST::Node) && node.children[2].type == :str
+          if node.children[2].is_a?(AST::Node) && node.children[2].type == :str
             path = node.children[2].children[0].to_s
             pins.push Pin::Reference::Require.new(get_node_location(node), path)
           end
@@ -149,7 +149,7 @@ module Solargraph
                   args: ref.parameters,
                   node: ref.node)
                 pins.push mm, cm
-                pins.select{|pin| pin.kind == Pin::INSTANCE_VARIABLE && pin.closure.path == ref.path}.each do |ivar|
+                pins.select{|pin| pin.is_a?(Pin::InstanceVariable) && pin.closure.path == ref.path}.each do |ivar|
                   pins.delete ivar
                   pins.push Solargraph::Pin::InstanceVariable.new(
                     location: ivar.location,

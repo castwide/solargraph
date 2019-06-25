@@ -170,7 +170,7 @@ describe Solargraph::SourceMap::Clip do
     cursor = source.cursor_at(Solargraph::Position.new(1, 8))
     clip = described_class.new(api_map, cursor)
     pins = clip.complete.pins
-    expect(pins.all?{|p| [Solargraph::Pin::NAMESPACE, Solargraph::Pin::CONSTANT].include?(p.kind) }).to be(true)
+    expect(pins.all?{ |p| p.is_a?(Solargraph::Pin::Namespace) || p.is_a?(Solargraph::Pin::Constant) }).to be(true)
   end
 
   it "completes partially completed constants" do

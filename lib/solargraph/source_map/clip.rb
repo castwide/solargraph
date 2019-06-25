@@ -169,7 +169,7 @@ module Solargraph
         frag_start = cursor.start_of_word.to_s.downcase
         filtered = result.uniq(&:name).select { |s|
           s.name.downcase.start_with?(frag_start) &&
-            (s.kind != Pin::METHOD || s.name.match(/^[a-z0-9_]+(\!|\?|=)?$/i))
+            (!s.is_a?(Pin::BaseMethod) || s.name.match(/^[a-z0-9_]+(\!|\?|=)?$/i))
         }
         Completion.new(filtered, cursor.range)
       end

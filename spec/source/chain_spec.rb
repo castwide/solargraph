@@ -23,7 +23,7 @@ describe Solargraph::Source::Chain do
     api_map = Solargraph::ApiMap.new
     chain = described_class.new([Solargraph::Source::Chain::Constant.new('String')])
     pins = chain.define(api_map, Solargraph::Pin::ROOT_PIN, [])
-    expect(pins.first.kind).to eq(Solargraph::Pin::NAMESPACE)
+    expect(pins.first).to be_a(Solargraph::Pin::Namespace)
     expect(pins.first.path).to eq('String')
   end
 

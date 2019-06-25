@@ -26,8 +26,7 @@ describe Solargraph::Pin::InstanceVariable do
   it "is a kind of variable" do
     source = Solargraph::Source.load_string("@foo = 'foo'", 'file.rb')
     map = Solargraph::SourceMap.map(source)
-    pin = map.pins.select{|p| p.kind == Solargraph::Pin::INSTANCE_VARIABLE}.first
-    expect(pin.kind).to eq(Solargraph::Pin::INSTANCE_VARIABLE)
+    pin = map.pins.select{ |p| p.is_a?(Solargraph::Pin::InstanceVariable) }.first
     expect(pin.completion_item_kind).to eq(Solargraph::LanguageServer::CompletionItemKinds::VARIABLE)
     expect(pin.symbol_kind).to eq(Solargraph::LanguageServer::SymbolKinds::VARIABLE)
   end

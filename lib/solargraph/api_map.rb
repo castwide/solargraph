@@ -276,7 +276,7 @@ module Solargraph
     # @return [Array<Solargraph::Pin::GlobalVariable>]
     def get_global_variable_pins
       # @todo Slow version
-      pins.select{|p| p.kind == Pin::GLOBAL_VARIABLE}
+      pins.select{ |p| p.is_a?(Pin::GlobalVariable) }
     end
 
     # Get an array of methods available in a particular context.

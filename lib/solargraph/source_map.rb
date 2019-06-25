@@ -42,7 +42,7 @@ module Solargraph
 
     # @return [Array<Pin::Reference::Require>]
     def requires
-      @requires ||= pins.select{|p| p.kind == Pin::REQUIRE_REFERENCE}
+      @requires ||= pins.select{ |p| p.is_a?(Pin::Reference::Require) }
     end
 
     # @return [Environ]
@@ -53,7 +53,7 @@ module Solargraph
     # @return [Array<Pin::Base>]
     def document_symbols
       @document_symbols ||= pins.select { |pin|
-        [Pin::ATTRIBUTE, Pin::CONSTANT, Pin::METHOD, Pin::NAMESPACE].include?(pin.kind) and !pin.path.empty?
+        !pin.path.empty?
       }
     end
 
@@ -83,11 +83,11 @@ module Solargraph
     end
 
     def locate_named_path_pin line, character
-      _locate_pin line, character, Pin::NAMESPACE, Pin::METHOD
+      _locate_pin line, character, Pin::Namespace, Pin::Method
     end
 
     def locate_block_pin line, character
-      _locate_pin line, character, Pin::NAMESPACE, Pin::METHOD, Pin::BLOCK
+      _locate_pin line, character, Pin::Namespace, Pin::Method, Pin::Block
     end
 
     # @param other_map [SourceMap]
@@ -145,13 +145,13 @@ module Solargraph
 
     # @param line [Integer]
     # @param character [Integer]
-    # @param kinds [Array<Symbol>]
+    # @param klasses [Array<Class>]
     # @return [Pin::Base]
-    def _locate_pin line, character, *kinds
+    def _locate_pin line, character, *klasses
       position = Position.new(line, character)
       found = nil
       pins.each do |pin|
-        found = pin if (kinds.empty? || kinds.include?(pin.kind)) && pin.location.range.contain?(position)
+        found = pin if (klasses.empty? || klasses.any? { |kls| pin.is_a?(kls) } ) && pin.location.range.contain?(position)
         break if pin.location.range.start.line > line
       end
       # Assuming the root pin is always valid

@@ -7,9 +7,8 @@ describe Solargraph::Pin::Attribute do
       end
     ))
     map = Solargraph::SourceMap.map(source)
-    pin = map.pins.select{|p| p.kind == Solargraph::Pin::ATTRIBUTE}.first
+    pin = map.pins.select{|p| p.is_a?(Solargraph::Pin::Attribute)}.first
     expect(pin).not_to be_nil
-    expect(pin.kind).to eq(Solargraph::Pin::ATTRIBUTE)
     expect(pin.completion_item_kind).to eq(Solargraph::LanguageServer::CompletionItemKinds::PROPERTY)
     expect(pin.symbol_kind).to eq(Solargraph::LanguageServer::SymbolKinds::PROPERTY)
   end

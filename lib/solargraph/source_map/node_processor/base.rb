@@ -60,12 +60,12 @@ module Solargraph
         end
 
         def named_path_pin position
-          pins.select{|pin| [Pin::NAMESPACE, Pin::METHOD].include?(pin.kind) && pin.location.range.contain?(position)}.last
+          pins.select{|pin| pin.is_a?(Pin::Closure) && !pin.path.empty? && pin.location.range.contain?(position)}.last
         end
 
         # @todo Candidate for deprecation
         def block_pin position
-          pins.select{|pin| [Pin::BLOCK, Pin::NAMESPACE, Pin::METHOD].include?(pin.kind) && pin.location.range.contain?(position)}.last
+          pins.select{|pin| pin.is_a?(Pin::Closure) && pin.location.range.contain?(position)}.last
         end
 
         # @todo Candidate for deprecation
@@ -80,7 +80,7 @@ module Solargraph
           list = nil
           args = []
           node.children.each { |c|
-            if c.kind_of?(AST::Node) and c.type == :args
+            if c.is_a?(AST::Node) and c.type == :args
               list = c
               break
             end
