@@ -8,25 +8,24 @@ module Solargraph
 
         def initialize code_object, location, name = nil, scope = nil, visibility = nil, closure = nil
           @code_object = code_object
-          comments = (code_object.docstring ? code_object.docstring.all : nil)
           closure ||= Solargraph::Pin::Namespace.new(
-            name: code_object.namespace.to_s
+            name: code_object.namespace.to_s,
+            gates: [code_object.namespace.to_s]
           )
           super(
             location: location,
             closure: closure,
             name: name || code_object.name.to_s,
-            comments: comments,
+            comments: nil,
             scope: scope || code_object.scope,
             visibility: visibility || code_object.visibility,
-            args: get_parameters(code_object)
+            args: nil
           )
         end
 
-        # def return_type
-        #   @return_type ||= Solargraph::ComplexType.try_parse(Solargraph::CoreFills::CUSTOM_RETURN_TYPES[path]) if Solargraph::CoreFills::CUSTOM_RETURN_TYPES.has_key?(path)
-        #   super
-        # end
+        def parameters
+          @parameters ||= get_parameters(code_object)
+        end
 
         private
 
