@@ -10,10 +10,12 @@ module Solargraph
           return [Pin::ROOT_PIN] if word.empty?
           if word.start_with?('::')
             bottom = ''
+            gates = [word[2..-1].split('::')[0..-2].join('::')]
           else
             bottom = word.split('::')[0..-2].join('::')
+            gates = crawl_gates(name_pin)
           end
-          result = api_map.get_constants(bottom, *crawl_gates(name_pin))
+          result = api_map.get_constants(bottom, *gates)
           result.select{ |p| p.path == word || "::#{p.path}" == word || p.path.end_with?("::#{word}") }
         end
 
