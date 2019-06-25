@@ -47,6 +47,8 @@ module Solargraph
       self
     end
 
+    # @param name [String]
+    # @return [YARD::Tags::MacroDirective, nil]
     def named_macro name
       store.named_macros[name]
     end
@@ -123,10 +125,12 @@ module Solargraph
       self
     end
 
+    # @return [Environ]
     def implicit
       @implicit ||= Environ.new
     end
 
+    # @return [Hash]
     def local_path_hash
       @local_paths ||= {}
     end
@@ -473,11 +477,15 @@ module Solargraph
       source_map_hash.keys.include?(filename)
     end
 
+    # True if the specified file is included in the workspace.
+    #
+    # @param filename [String]
     def workspaced? filename
       workspace_filenames.include?(filename)
     end
 
     # @param location [Location]
+    # @return [Location]
     def require_reference_at location
       map = source_map(location.filename)
       pin = map.requires.select { |pin| pin.location.range.contain?(location.range.start) }.first
@@ -507,6 +515,7 @@ module Solargraph
 
     private
 
+    # @return [Array<String>]
     def workspace_filenames
       @workspace_filenames ||= []
     end
