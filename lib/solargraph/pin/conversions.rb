@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 module Solargraph
   module Pin
     # @todo Move this stuff. It should be the responsibility of the language server.
@@ -43,7 +45,7 @@ module Solargraph
       def detail
         # This property is not cached in an instance variable because it can
         # change when pins get proxied.
-        detail = ''
+        detail = String.new
         detail += "(#{parameters.join(', ')}) " unless !is_a?(Pin::BaseMethod) or parameters.empty?
         detail += "=#{probed? ? '~' : (proxied? ? '^' : '>')} #{return_type}" unless return_type.undefined?
         detail.strip!

@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 module Solargraph
   module Pin
     # The base class for map pins.

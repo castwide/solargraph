@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 module Solargraph
   # The Diagnostics library provides reporters for analyzing problems in code
   # and providing the results to language server clients.

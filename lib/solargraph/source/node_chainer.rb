@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 module Solargraph
   class Source
     # A factory for generating chains from nodes.

@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 module Solargraph
   module LanguageServer
     # The MessageType constants from the language server specification.

@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require 'observer'
 require 'set'
 
@@ -23,7 +25,7 @@ module Solargraph
         @buffer_semaphore = Mutex.new
         @register_semaphore = Mutex.new
         @cancel = []
-        @buffer = ''
+        @buffer = String.new
         @stopped = true
         @next_request_id = 0
         @dynamic_capabilities = Set.new

@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 module Solargraph
   module LanguageServer
     # Methods to handle conversions between file URIs and paths.

@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 module Solargraph
   class SourceMap
     # Data used by the NodeProcessor library to track context at various

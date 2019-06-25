@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require 'jaro_winkler'
 
 module Solargraph

@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 module Solargraph
   # The namespace for pins used in maps.
   #

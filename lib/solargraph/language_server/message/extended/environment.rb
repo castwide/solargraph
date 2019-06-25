@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 # Make sure the environment page can report RuboCop's version
 require 'rubocop'
 

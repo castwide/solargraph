@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 module Solargraph
   class Source
     # Information about a position in a source, including the word located

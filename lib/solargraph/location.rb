@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 module Solargraph
   # A section of text identified by its filename and range.
   #

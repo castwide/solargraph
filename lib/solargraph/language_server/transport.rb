@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 module Solargraph
   module LanguageServer
     # The Transport namespace contains concrete implementations of

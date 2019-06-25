@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 module Solargraph
   class YardMap
     class Mapper

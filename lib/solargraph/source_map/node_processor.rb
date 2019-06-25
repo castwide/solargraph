@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 module Solargraph
   class SourceMap
     # The processor classes used by SourceMap::Mapper to generate pins from

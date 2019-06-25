@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 class Solargraph::LanguageServer::Message::Workspace::WorkspaceSymbol < Solargraph::LanguageServer::Message::Base
   include Solargraph::LanguageServer::UriHelpers
 

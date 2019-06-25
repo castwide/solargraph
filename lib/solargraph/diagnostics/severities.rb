@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 module Solargraph
   module Diagnostics
     # These severity constants match the DiagnosticSeverity constants in the

@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 module Solargraph
   class Source
     # Updaters contain changes to be applied to a source. The source applies

@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 module Solargraph
   class Source
     # A change to be applied to text.

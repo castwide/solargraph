@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 module Solargraph
   module Pin
     # DuckMethod pins are used to add completion items for type tags that

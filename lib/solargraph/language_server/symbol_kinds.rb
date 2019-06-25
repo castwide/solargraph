@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 module Solargraph
   module LanguageServer
     # The SymbolKind constants for the language server protocol.

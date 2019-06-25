@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 module Solargraph
   # A container for type data based on YARD type tags.
   #
@@ -171,11 +173,9 @@ module Solargraph
               subtype_string += char
             end
           end
-          base.strip!
-          subtype_string.strip!
           raise ComplexTypeError, "Unclosed subtype in #{type_string}" if point_stack != 0 || curly_stack != 0 || paren_stack != 0
           # types.push ComplexType.new([UniqueType.new(base, subtype_string)])
-          types.push UniqueType.new(base, subtype_string)
+          types.push UniqueType.new(base.strip, subtype_string.strip)
         end
         unless key_types.nil?
           raise ComplexTypeError, "Invalid use of key/value parameters" unless partial

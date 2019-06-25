@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 module Solargraph
   class TypeChecker
     # A problem reported by TypeChecker.

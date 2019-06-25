@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 module Solargraph
   class SourceMap
     # A static analysis tool for obtaining definitions, completions,

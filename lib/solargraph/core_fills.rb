@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 module Solargraph
   module CoreFills
     Override = Pin::Reference::Override

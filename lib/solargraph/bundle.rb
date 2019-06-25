@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 module Solargraph
   # An aggregation of a workspace and additional sources to be cataloged in an
   # ApiMap.

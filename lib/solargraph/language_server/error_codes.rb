@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 module Solargraph
   module LanguageServer
     # The ErrorCode constants for the language server protocol.

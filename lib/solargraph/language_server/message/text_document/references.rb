@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 module Solargraph::LanguageServer::Message::TextDocument
   class References < Base
     def process

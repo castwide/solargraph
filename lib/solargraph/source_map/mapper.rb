@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 module Solargraph
   class SourceMap
     # The Mapper generates pins and other data for SourceMaps.

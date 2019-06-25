@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require 'solargraph/language_server/error_codes'
 require 'solargraph/language_server/completion_item_kinds'
 require 'solargraph/language_server/symbol_kinds'

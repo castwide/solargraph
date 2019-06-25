@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 module Solargraph
   class ComplexType
     # An individual type signature. A complex type can consist of multiple

@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 module Solargraph
   module Diagnostics
     # The base class for diagnostics reporters.

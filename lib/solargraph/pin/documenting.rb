@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require 'rdoc'
 require 'reverse_markdown'
 require 'kramdown'

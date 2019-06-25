@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 module Solargraph
   class TypeChecker
     # Data about a method parameter definition. This is the information from

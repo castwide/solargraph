@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 # HACK: Fix autoload issue
 require 'solargraph/source/chain/link'
 

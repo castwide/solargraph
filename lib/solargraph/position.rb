@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 module Solargraph
   # The zero-based line and column numbers of a position in a string.
   #

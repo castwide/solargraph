@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 module Solargraph
   class Source
     # A custom builder for source parsers that ignores character encoding

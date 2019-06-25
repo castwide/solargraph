@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 module Solargraph
   # A Library handles coordination between a Workspace and an ApiMap.
   #

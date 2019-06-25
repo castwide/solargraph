@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 module Solargraph
   module Diagnostics
     # Utility methods for the RuboCop diagnostics reporter.

@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 module Solargraph
   # A workspace consists of the files in a project's directory and the
   # project's configuration. It provides a Source for each file to be used

@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 module Solargraph
   module Diagnostics
     # TypeCheck reports methods with undefined return types, untagged

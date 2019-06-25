@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 module Solargraph
   module LanguageServer
     module Transport
@@ -5,7 +7,7 @@ module Solargraph
         def initialize
           @in_header = true
           @content_length = 0
-          @buffer = ''
+          @buffer = String.new
         end
 
         # Declare a block to be executed for each message received from the

@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 module Solargraph
   class ComplexType
     # Methods for accessing type data.

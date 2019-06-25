@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 module Solargraph
   # A static analysis tool for validating data types.
   #
