@@ -19,16 +19,14 @@ module Solargraph
           @name = name[2..-1]
           @closure = Solargraph::Pin::ROOT_PIN
         end
-        @gates = gates
-        if @gates.one? && @gates.first.empty? && @name.include?('::')
+        @open_gates = gates
+        if @open_gates.one? && @open_gates.first.empty? && @name.include?('::')
           # In this case, a chained namespace was opened (e.g., Foo::Bar)
           # but Foo does not exist.
           parts = @name.split('::')
           @name = parts.pop
           @closure = Pin::Namespace.new(name: parts.join('::'), gates: [parts.join('::')])
           @context = nil
-        else
-          @gates.push path unless path.empty?
         end
       end
 
@@ -74,7 +72,11 @@ module Solargraph
       end
 
       def gates
-        @gates
+        @gates ||= if path.empty?
+          @open_gates
+        else
+          [path] + @open_gates
+        end
       end
     end
   end
