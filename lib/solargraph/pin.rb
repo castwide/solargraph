@@ -30,26 +30,6 @@ module Solargraph
     autoload :Singleton,        'solargraph/pin/singleton'
     autoload :KeywordParam,     'solargraph/pin/keyword_param'
 
-    ATTRIBUTE = 1
-    CLASS_VARIABLE = 2
-    CONSTANT = 3
-    GLOBAL_VARIABLE = 4
-    INSTANCE_VARIABLE = 5
-    KEYWORD = 6
-    LOCAL_VARIABLE = 7
-    METHOD = 8
-    NAMESPACE = 9
-    SYMBOL = 10
-    BLOCK = 11
-    BLOCK_PARAMETER = 12
-    REQUIRE_REFERENCE = 13
-    SUPERCLASS_REFERENCE = 14
-    INCLUDE_REFERENCE = 15
-    EXTEND_REFERENCE = 16
-    METHOD_ALIAS = 17
-    OVERRIDE_REFERENCE = 18
-
-    # ROOT_PIN = Pin::Namespace.new(nil, '', '', '', :class, :public)
     ROOT_PIN = Pin::Namespace.new(type: :class, name: '', closure: nil)
   end
 end
