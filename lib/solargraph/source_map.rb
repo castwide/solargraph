@@ -53,7 +53,7 @@ module Solargraph
     # @return [Array<Pin::Base>]
     def document_symbols
       @document_symbols ||= pins.select { |pin|
-        !pin.path.empty?
+        pin.path && !pin.path.empty?
       }
     end
 
