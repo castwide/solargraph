@@ -6,10 +6,18 @@ module Solargraph
       module YardMixin
         attr_reader :code_object
 
+        attr_reader :spec
+
         @@gate_cache ||= {}
 
         def comments
           @comments ||= code_object.docstring ? code_object.docstring.all : ''
+        end
+
+        def location
+          return @location if @located
+          @located = true
+          @location = Solargraph::YardMap::Mapper.object_location(code_object, spec)
         end
 
         private

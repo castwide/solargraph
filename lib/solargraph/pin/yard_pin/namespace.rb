@@ -6,8 +6,9 @@ module Solargraph
       class Namespace < Pin::Namespace
         include YardMixin
 
-        def initialize code_object, location
+        def initialize code_object, spec
           @code_object = code_object
+          @spec = spec
           closure = Solargraph::Pin::Namespace.new(
             name: code_object.namespace.to_s,
             closure: Pin::ROOT_PIN,

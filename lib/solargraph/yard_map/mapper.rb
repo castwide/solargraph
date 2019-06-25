@@ -3,6 +3,8 @@
 module Solargraph
   class YardMap
     class Mapper
+      @@object_file_cache = {}
+
       # @param code_objects [Array<YARD::CodeObject::Base>]
       # @param spec [Gem::Specification]
       def initialize code_objects, spec = nil
@@ -24,9 +26,8 @@ module Solargraph
       # @return [Array<Pin::Base>]
       def generate_pins code_object
         result = []
-        location = object_location(code_object, @spec)
         if code_object.is_a?(YARD::CodeObjects::NamespaceObject)
-          nspin = Solargraph::Pin::YardPin::Namespace.new(code_object, location)
+          nspin = Solargraph::Pin::YardPin::Namespace.new(code_object, @spec)
           @namespace_pins[code_object.path] = nspin
           result.push nspin
           if code_object.is_a?(YARD::CodeObjects::ClassObject) and !code_object.superclass.nil?
@@ -38,14 +39,13 @@ module Solargraph
             else
               superclass = code_object.superclass.to_s
             end
-            result.push Solargraph::Pin::Reference::Superclass.new(location: location, name: superclass, closure: nspin)
+            result.push Solargraph::Pin::Reference::Superclass.new(name: superclass, closure: nspin)
           end
           code_object.class_mixins.each do |m|
-            result.push Solargraph::Pin::Reference::Extend.new(location: location, closure: nspin, name: m.path)
+            result.push Solargraph::Pin::Reference::Extend.new(closure: nspin, name: m.path)
           end
           code_object.instance_mixins.each do |m|
             result.push Solargraph::Pin::Reference::Include.new(
-              location: location,
               closure: nspin, # @todo Fix this
               name: m.path
             )
@@ -54,30 +54,29 @@ module Solargraph
           closure = @namespace_pins[code_object.namespace.to_s]
           if code_object.name == :initialize && code_object.scope == :instance
             # @todo Check the visibility of <Class>.new
-            result.push Solargraph::Pin::YardPin::Method.new(code_object, location, 'new', :class, :public, closure)
-            result.push Solargraph::Pin::YardPin::Method.new(code_object, location, 'initialize', :instance, :private, closure)
+            result.push Solargraph::Pin::YardPin::Method.new(code_object, 'new', :class, :public, closure, @spec)
+            result.push Solargraph::Pin::YardPin::Method.new(code_object, 'initialize', :instance, :private, closure, @spec)
           else
-            result.push Solargraph::Pin::YardPin::Method.new(code_object, location, nil, nil, nil, closure)
+            result.push Solargraph::Pin::YardPin::Method.new(code_object, nil, nil, nil, closure, @spec)
           end
         elsif code_object.is_a?(YARD::CodeObjects::ConstantObject)
           closure = @namespace_pins[code_object.namespace]
-          result.push Solargraph::Pin::YardPin::Constant.new(code_object, location, closure)
+          result.push Solargraph::Pin::YardPin::Constant.new(code_object, closure, @spec)
         end
         result
       end
 
       # @param obj [YARD::CodeObjects::Base]
       # @return [Solargraph::Location, nil]
-      def object_location obj, spec = nil
-        @object_file_cache ||= {}
+      def self.object_location obj, spec = nil
         return nil if spec.nil? || obj.file.nil? || obj.line.nil?
         file = nil
-        if @object_file_cache.key?(obj.file)
-          file = @object_file_cache[obj.file]
+        if @@object_file_cache.key?(obj.file)
+          file = @@object_file_cache[obj.file]
         else
           tmp = File.join(spec.full_gem_path, obj.file)
           file = tmp if File.exist?(tmp)
-          @object_file_cache[obj.file] = file
+          @@object_file_cache[obj.file] = file
         end
         return nil if file.nil?
         Solargraph::Location.new(file, Solargraph::Range.from_to(obj.line - 1, 0, obj.line - 1, 0))

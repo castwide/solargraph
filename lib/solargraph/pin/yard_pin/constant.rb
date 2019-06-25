@@ -6,8 +6,9 @@ module Solargraph
       class Constant < Pin::Constant
         include YardMixin
 
-        def initialize code_object, location, closure = nil
+        def initialize code_object, closure = nil, spec = nil
           @code_object = code_object
+          @spec = spec
           closure ||= Solargraph::Pin::Namespace.new(
             name: code_object.namespace.to_s,
             gates: [code_object.namespace.to_s]
