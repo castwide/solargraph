@@ -920,10 +920,35 @@ describe Solargraph::SourceMap::Clip do
     ), 'test.rb')
     api_map = Solargraph::ApiMap.new
     api_map.map source
-  
+
     clip = api_map.clip_at('test.rb', [7, 11])
     expect(clip.complete.pins.map(&:name)).to include('FOO_CONST')
     clip = api_map.clip_at('test.rb', [11, 9])
     expect(clip.complete.pins.map(&:name)).not_to include('FOO_CONST')
-  end  
+  end
+
+  it 'detects sibling constants in open scope gates' do
+    source = Solargraph::Source.load_string(%(
+      class Super
+        class One; end
+      end
+      class Super
+        class Two
+          def one
+            One.n
+          end
+        end
+      end
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new
+    api_map.map source
+
+    clip = api_map.clip_at('test.rb', [7, 15])
+    pin = clip.infer
+    expect(pin.tag).to eq('Class<Super::One>')
+
+    clip = api_map.clip_at('test.rb', [7, 17])
+    pin = clip.complete.pins.select { |p| p.name == 'new' }.first
+    expect(pin.path).to eq('Class#new')
+  end
 end
