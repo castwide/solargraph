@@ -29,6 +29,16 @@ describe Solargraph::TypeChecker do
     expect(checker.return_type_problems.first.message).to include('unresolved @return type')
   end
 
+  it 'validates return duck types' do
+    checker = Solargraph::TypeChecker.load_string(%(
+      class Foo
+        # @return [#to_s]
+        def bar; end
+      end
+    ), 'test.rb')
+    expect(checker.return_type_problems).to be_empty
+  end
+
   it 'validates tagged param types' do
     checker = Solargraph::TypeChecker.load_string(%(
       class Foo
@@ -116,6 +126,16 @@ describe Solargraph::TypeChecker do
     ))
     expect(checker.param_type_problems).to be_one
     expect(checker.param_type_problems.first.message).to include('unknown @param baz')    
+  end
+
+  it 'validates param duck types' do
+    checker = Solargraph::TypeChecker.load_string(%(
+      class Foo
+        # @param baz [#to_s]
+        def bar(baz); end
+      end
+    ), 'test.rb')
+    expect(checker.param_type_problems).to be_empty
   end
 
   it 'validates literal strings' do
@@ -303,5 +323,29 @@ describe Solargraph::TypeChecker do
       checker.return_type_problems
       checker.strict_type_problems
     }.not_to raise_error
+  end
+
+  it 'validates arguments that match duck type params' do
+    checker = Solargraph::TypeChecker.load_string(%(
+      class Foo
+        # @param baz [#to_s]
+        # @return [void]
+        def bar(baz); end
+      end
+      Foo.new.bar(100)
+    ))
+    expect(checker.strict_type_problems).to be_empty
+  end
+
+  it 'reports arguments that do not match duck type params' do
+    checker = Solargraph::TypeChecker.load_string(%(
+      class Foo
+        # @param baz [#upcase]
+        # @return [void]
+        def bar(baz); end
+      end
+      Foo.new.bar(100)
+    ))
+    expect(checker.strict_type_problems).to be_one
   end
 end

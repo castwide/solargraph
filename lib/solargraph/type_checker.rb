@@ -219,8 +219,10 @@ module Solargraph
                     result.push Problem.new(Solargraph::Location.new(filename, Solargraph::Range.from_node(node)), "Wrong number of arguments to #{pin.path}")
                   else
                     argtype = arg.infer(api_map, block, locals)
-                    if argtype.tag != partype.tag && !api_map.super_and_sub?(partype.tag.to_s, argtype.tag.to_s)
-                      result.push Problem.new(Solargraph::Location.new(filename, Solargraph::Range.from_node(node)), "Wrong parameter type for #{pin.path}: #{pin.parameter_names[index]} expected #{partype.tag}, received #{argtype.tag}")
+                    if !arg_to_duck(argtype, partype)
+                      if argtype.tag != partype.tag && !api_map.super_and_sub?(partype.tag.to_s, argtype.tag.to_s)
+                        result.push Problem.new(Solargraph::Location.new(filename, Solargraph::Range.from_node(node)), "Wrong parameter type for #{pin.path}: #{pin.parameter_names[index]} expected #{partype.tag}, received #{argtype.tag}")
+                      end
                     end
                   end
                 end
@@ -236,6 +238,15 @@ module Solargraph
         result.concat check_send_args(child)
       end
       result
+    end
+
+    def arg_to_duck arg, par
+      return false unless par.duck_type?
+      meths = api_map.get_complex_type_methods(arg).map(&:name)
+      par.each do |quack|
+        return false unless meths.include?(quack.to_s[1..-1])
+      end
+      true
     end
 
     # @param pin [Pin::Base]
