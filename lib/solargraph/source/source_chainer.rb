@@ -37,6 +37,8 @@ module Solargraph
           return Chain.new([]) if phrase.end_with?('..')
           if !source.repaired? && source.parsed? && source.synchronized?
             node = source.node_at(position.line, position.column)
+          elsif source.parsed? && source.repaired? && end_of_phrase == '.'
+            node = source.node_at(fixed_position.line, fixed_position.column)
           else
             node = nil
             node = source.node_at(fixed_position.line, fixed_position.column) unless source.error_ranges.any?{|r| r.nil? || r.include?(fixed_position)}

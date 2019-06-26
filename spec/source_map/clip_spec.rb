@@ -950,4 +950,22 @@ describe Solargraph::SourceMap::Clip do
     pin = clip.complete.pins.select { |p| p.name == 'new' }.first
     expect(pin.path).to eq('Class#new')
   end
+
+  it 'completes clips from repaired sources ending with a period' do
+    source = Solargraph::Source.load_string(%(
+      nums = '1,2,3'.split(',')
+    ), 'test.rb')
+    updater = Solargraph::Source::Updater.new('test.rb', 1, [
+      Solargraph::Source::Change.new(
+        Solargraph::Range.from_to(1, 31, 1, 31),
+        '.'
+      )
+    ])
+    updated = source.start_synchronize(updater)
+    api_map = Solargraph::ApiMap.new
+    api_map.map updated
+    clip = api_map.clip_at('test.rb', [1, 32])
+    paths = clip.complete.pins.map(&:path)
+    expect(paths).to include('Array#length')
+  end
 end
