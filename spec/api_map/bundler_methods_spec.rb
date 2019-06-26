@@ -1,7 +1,7 @@
 require 'tmpdir'
 
 describe Solargraph::ApiMap::BundlerMethods do
-  it 'find default gems from bundler/require' do
+  it 'finds default gems from bundler/require' do
     result = Solargraph::ApiMap::BundlerMethods.require_from_bundle('spec/fixtures/workspace')
     expect(result).to eq(['backport', 'bundler'])
     expect(Bundler.environment.specs.map(&:name)).to include('solargraph')

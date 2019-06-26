@@ -16,6 +16,7 @@ matrix:
 # See https://github.com/travis-ci/travis-ci/issues/8978
 before_install:
 - gem install bundler -v '~> 2.0'
+- bundle update --bundler
 - bundle install
 before_script: yard gems
 script: rspec
