@@ -4,7 +4,9 @@ require 'fileutils'
 describe Solargraph::ApiMap::BundlerMethods do
   describe 'with Gemfile.lock' do
     before :all do
-      `cd spec/fixtures/workspace && bundle install`
+      Bundler.with_clean_env do
+        `cd spec/fixtures/workspace && bundle install`
+      end
     end
 
     after :all do
