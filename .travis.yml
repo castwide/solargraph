@@ -19,7 +19,7 @@ matrix:
 before_install:
 - ruby ./travis-bundler.rb
 - bundle install
-before_script: bundle exec yard gems
-script: bundle exec rspec
+before_script: yard gems
+script: rspec
 # cache:
 #   - bundler
