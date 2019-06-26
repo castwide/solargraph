@@ -9,11 +9,13 @@ module Solargraph
   # the Ruby core.
   #
   class ApiMap
-    autoload :Cache,        'solargraph/api_map/cache'
-    autoload :SourceToYard, 'solargraph/api_map/source_to_yard'
-    autoload :Store,        'solargraph/api_map/store'
+    autoload :Cache,          'solargraph/api_map/cache'
+    autoload :SourceToYard,   'solargraph/api_map/source_to_yard'
+    autoload :Store,          'solargraph/api_map/store'
+    autoload :BundlerMethods, 'solargraph/api_map/bundler_methods'
 
     include SourceToYard
+    include BundlerMethods
 
     # @return [Array<String>]
     attr_reader :unresolved_requires
@@ -114,6 +116,7 @@ module Solargraph
       end
       reqs.concat implicit.requires
       pins.concat implicit.overrides
+      reqs.concat require_from_bundle(bundle.workspace.directory) if reqs.include?('bundler/require')
       yard_map.change(reqs)
       new_store = Store.new(pins + yard_map.pins)
       @mutex.synchronize {

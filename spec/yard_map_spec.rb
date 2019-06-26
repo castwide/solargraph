@@ -107,11 +107,4 @@ describe Solargraph::YardMap do
     location = yard_map.require_reference('not_a_gem')
     expect(location).to be_nil
   end
-
-  it "loads all gems for bundler/require" do
-    yard_map = Solargraph::YardMap.new(required: ['bundler/require'], with_dependencies: false)
-    # Assuming the parser gem exists because it's a Solargraph dependency
-    pin = yard_map.path_pin('Parser')
-    expect(pin).to be_a(Solargraph::Pin::Base)
-  end
 end
