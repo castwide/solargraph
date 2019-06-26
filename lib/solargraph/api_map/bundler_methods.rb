@@ -6,7 +6,7 @@ module Solargraph
       module_function
 
       def require_from_bundle directory
-        return [] unless File.directory?(directory)
+        return [] unless File.file?(File.join(directory, 'Gemfile.lock'))
         result = []
         begin
           Solargraph.logger.info "Using bundler/require"
