@@ -17,8 +17,10 @@ module Solargraph
             Bundler.reset!
           end
           result
-        rescue Bundler::GemfileNotFound => e
+        rescue Bundler::GemfileNotFound, Bundler::GemNotFound => e
           Solargraph.logger.info "[#{e.class}] #{e.message}"
+          puts e.message
+          puts e.backtrace
           result
         end
       end
