@@ -22,7 +22,7 @@ module Solargraph
       def rake_yard store
         code_object_map.clear
         store.namespace_pins.each do |pin|
-          next if pin.path.nil? or pin.path.empty?
+          next if pin.path.nil? || pin.path.empty?
           if pin.code_object
             code_object_map[pin.path] ||= pin.code_object
             next

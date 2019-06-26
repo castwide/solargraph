@@ -62,7 +62,7 @@ module Solargraph
         end
 
         def named_path_pin position
-          pins.select{|pin| pin.is_a?(Pin::Closure) && !pin.path.empty? && pin.location.range.contain?(position)}.last
+          pins.select{|pin| pin.is_a?(Pin::Closure) && pin.path && !pin.path.empty? && pin.location.range.contain?(position)}.last
         end
 
         # @todo Candidate for deprecation

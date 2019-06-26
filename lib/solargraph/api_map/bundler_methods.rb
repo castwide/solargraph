@@ -1,4 +1,5 @@
 require 'bundler'
+require 'shellwords'
 
 module Solargraph
   class ApiMap
@@ -6,23 +7,21 @@ module Solargraph
       module_function
 
       def require_from_bundle directory
-        return [] unless File.file?(File.join(directory, 'Gemfile.lock'))
-        result = []
-        begin
-          Solargraph.logger.info "Using bundler/require"
-          Dir.chdir directory do
-            result.concat(Bundler.with_clean_env do
-              Bundler.definition.specs_for([:default]).map(&:name)
-            end)
-            Bundler.reset!
+        @require_from_bundle ||= begin
+          Solargraph.logger.info "Loading gems for bundler/require"
+          Bundler.with_clean_env do
+            specs = `cd #{Shellwords.escape(directory)} && ruby -e "require 'bundler'; puts Bundler.definition.specs_for([:default]).map(&:name)"`
+            if specs
+              specs.lines.map(&:strip).reject(&:nil?)
+            else
+              []
+            end
           end
-          result
-        rescue Bundler::GemfileNotFound, Bundler::GemNotFound => e
-          Solargraph.logger.info "[#{e.class}] #{e.message}"
-          puts e.message
-          puts e.backtrace
-          result
         end
+      end
+
+      def reset_require_from_bundle
+        @require_from_bundle = nil
       end
     end
   end
