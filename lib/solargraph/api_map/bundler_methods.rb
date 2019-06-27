@@ -10,7 +10,7 @@ module Solargraph
         @require_from_bundle ||= begin
           Solargraph.logger.info "Loading gems for bundler/require"
           Bundler.with_clean_env do
-            specs = `cd #{Shellwords.escape(directory)} && ruby -e "require 'bundler'; puts Bundler.definition.specs_for([:default]).map(&:name)"`
+            specs = `cd #{Shellwords.escape(directory)} && bundle exec ruby -e "require 'bundler'; puts Bundler.definition.specs_for([:default]).map(&:name)"`
             if specs
               specs.lines.map(&:strip).reject(&:nil?)
             else
