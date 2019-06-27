@@ -192,8 +192,17 @@ module Solargraph
                 break
               end
             else
-              # @todo Break here? Not sure about that
-              break if curtype.type == :restarg || curtype.type == :kwrestarg
+              # @todo This should also detect when the last parameter is a hash
+              if curtype.type == :kwrestarg
+                if arg.type != :hash
+                  result.push Problem.new(Solargraph::Location.new(filename, Solargraph::Range.from_node(node)), "Wrong parameter type for #{pin.path}: expected hash or keyword")
+                else
+                  result.concat check_hash_params arg, params
+                end
+                # @todo Break here? Not sure about that
+                break
+              end
+              break if curtype.type == :restarg
               if arg.is_a?(Parser::AST::Node) && arg.type == :hash
                 arg.children.each do |pair|
                   sym = pair.children[0].children[0].to_s
@@ -238,6 +247,24 @@ module Solargraph
         next unless child.is_a?(Parser::AST::Node)
         next if child.type == :send && skip_send
         result.concat check_send_args(child)
+      end
+      result
+    end
+
+    def check_hash_params arg, params
+      result = []
+      keys = arg.children.map do |child|
+        child.children[0].children[0].to_s
+      end
+      keys.each do |key|
+        param = params[key]
+        if param
+          # @todo typecheck
+        else
+          # @todo This error might not be valid. If there's a splat in the
+          #   method parameters, should the type checker let it pass?
+          result.push Problem.new(nil, "Keyword argument #{key} does not have a @param tag")
+        end
       end
       result
     end

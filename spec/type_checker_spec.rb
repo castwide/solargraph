@@ -348,4 +348,7 @@ describe Solargraph::TypeChecker do
     ))
     expect(checker.strict_type_problems).to be_one
   end
+
+  it 'reports keyword parameters missing from tags' do
+  end
 end
