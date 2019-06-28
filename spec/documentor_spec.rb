@@ -1,18 +1,6 @@
 require 'tmpdir'
 
 describe Solargraph::Documentor do
-  before :all do
-    Bundler.with_clean_env do
-      Dir.chdir 'spec/fixtures/workspace' do
-        `bundle install`
-      end
-    end
-  end
-
-  after :all do
-    File.unlink 'spec/fixtures/workspace/Gemfile.lock'
-  end
-
   it 'returns gemsets for directories with bundles' do
     gemset = Solargraph::Documentor.specs_from_bundle('spec/fixtures/workspace')
     expect(gemset.keys).to eq(['backport', 'bundler'])
