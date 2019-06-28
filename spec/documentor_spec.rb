@@ -17,4 +17,16 @@ describe Solargraph::Documentor do
       }.to raise_error(Solargraph::BundleNotFoundError)
     end
   end
+
+  it 'documents bundles' do
+    result = Solargraph::Documentor.new('spec/fixtures/workspace', rebuild: true, quiet: true).document
+    expect(result).to be(true)
+  end
+
+  it 'reports failures to document bundles' do
+    Dir.mktmpdir do |tmp|
+      result = Solargraph::Documentor.new(tmp, rebuild: true).document
+      expect(result).to be(false)
+    end
+  end
 end

@@ -13,9 +13,10 @@ module Solargraph
       activejob activemodel activerecord activestorage activesupport railties
     ]
 
-    def initialize directory, rebuild: false
+    def initialize directory, rebuild: false, quiet: false
       @directory = directory
       @rebuild = rebuild
+      @quiet = quiet
     end
 
     # @return [Boolean] True if all specs were found and documented.
@@ -24,12 +25,12 @@ module Solargraph
       Documentor.specs_from_bundle(@directory).each_pair do |name, version|
         yd = YARD::Registry.yardoc_file_for_gem(name, "= #{version}")
         if !yd || @rebuild
-          puts "Documenting #{name} #{version}"
+          puts "Documenting #{name} #{version}" unless @quiet
           `yard gems #{name} #{version} #{@rebuild ? '--rebuild' : ''}`
           yd = YARD::Registry.yardoc_file_for_gem(name, "= #{version}")
           if !yd
-            puts "#{name} #{version} YARD documentation failed"
-            failed += 1
+            puts "#{name} #{version} YARD documentation failed" unless @quiet
+            failures += 1
           end
         end
         if yd && RDOC_GEMS.include?(name)
@@ -41,10 +42,13 @@ module Solargraph
           end
         end
       end
-      if failures > 0
-        puts "#{failures} gem#{failures == 1 ? '' : 's'} could not be documented. You might need to run `bundle install` first."
+      if failures > 0 && !quiet
+        puts "#{failures} gem#{failures == 1 ? '' : 's'} could not be documented. You might need to run `bundle install`."
       end
       failures == 0
+    rescue Solargraph::BundleNotFoundError => e
+      puts "No bundled gems are available in #{@directory}" unless @quiet
+      false
     end
 
     def self.specs_from_bundle directory
