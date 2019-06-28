@@ -183,7 +183,7 @@ module Solargraph
     option :directory, type: :string, aliases: :d, desc: 'The workspace directory', default: '.'
     option :rebuild, type: :boolean, aliases: :r, desc: 'Rebuild existing documentation', default: false
     def bundle
-      Documentor.new(options[:directory]).document
+      Documentor.new(options[:directory], rebuild: options[:rebuild]).document
     end
 
     desc 'rdoc GEM [VERSION]', 'Use RDoc to cache documentation'
