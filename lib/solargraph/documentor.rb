@@ -42,7 +42,7 @@ module Solargraph
           end
         end
       end
-      if failures > 0 && !quiet
+      if failures > 0 && !@quiet
         puts "#{failures} gem#{failures == 1 ? '' : 's'} could not be documented. You might need to run `bundle install`."
       end
       failures == 0

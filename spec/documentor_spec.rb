@@ -3,7 +3,9 @@ require 'tmpdir'
 describe Solargraph::Documentor do
   before :all do
     Bundler.with_clean_env do
-      `cd spec/fixtures/workspace && bundle install`
+      Dir.chdir 'spec/fixtures/workspace' do
+        `bundle install`
+      end
     end
   end
 
