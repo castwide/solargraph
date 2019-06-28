@@ -1,6 +1,12 @@
 require 'tmpdir'
 
 describe Solargraph::Documentor do
+  before :all do
+    Bundler.with_clean_env do
+      `cd spec/fixtures/workspace && bundle install`
+    end
+  end
+
   after :all do
     File.unlink 'spec/fixtures/workspace/Gemfile.lock'
   end
