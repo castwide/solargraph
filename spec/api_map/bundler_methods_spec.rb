@@ -2,6 +2,18 @@ require 'tmpdir'
 require 'fileutils'
 
 describe Solargraph::ApiMap::BundlerMethods do
+  # Build the Gemfile.lock in specs so Travis jobs use the correct version of
+  # Bundler (e.g., Ruby 2.1 uses Bundler 1)
+  before :all do
+    Dir.chdir 'spec/fixtures/workspace' do
+      `bundle install`
+    end
+  end
+
+  after :all do
+    File.unlink 'spec/fixtures/workspace/Gemfile.lock'
+  end
+
   after :each do
     Solargraph::ApiMap::BundlerMethods.reset_require_from_bundle
   end
