@@ -1,6 +1,9 @@
 # frozen_string_literal: true
 
 require 'bundler'
+require 'json'
+require 'shellwords'
+require 'yard'
 
 module Solargraph
   class Documentor
@@ -17,37 +20,42 @@ module Solargraph
     # @return [Boolean] True if all specs were found and documented.
     def document
       failures = 0
-      Dir.chdir @directory do
-        Bundler.with_clean_env do
-          Bundler.reset!
-          lockfile = Bundler::LockfileParser.new(Bundler.read_file(Bundler.default_lockfile))
-          # @param spec [Gem::Specification]
-          lockfile.specs.each do |spec|
-            real = spec.__materialize__
-            if real.nil?
-              puts "WARNING: #{spec.name} #{spec.version} not found"
-              failures += 1
-              next
-            end
-            yd = YARD::Registry.yardoc_file_for_gem(real.name, real.version)
-            if !yd || @rebuild
-              puts "Documenting #{real.name} #{real.version}"
-              `yard gems #{real.name} #{real.version} #{@rebuild ? '--rebuild' : ''}`
-            end
-            if RDOC_GEMS.include?(spec.name)
-              cache = File.join(Solargraph::YardMap::CoreDocs.cache_dir, 'gems', "#{real.name}-#{real.version}", 'yardoc')
-              next if File.exist?(cache) && !@rebuild
-              puts "Caching custom documentation for #{real.name} #{real.version}"
-              Solargraph::YardMap::RdocToYard.run(real)
-            end
+      specs_from_bundle(@directory).each_pair do |name, version|
+        yd = YARD::Registry.yardoc_file_for_gem(name, "= #{version}")
+        if !yd || @rebuild
+          puts "Documenting #{name} #{version}"
+          `yard gems #{name} #{version} #{@rebuild ? '--rebuild' : ''}`
+          yd = YARD::Registry.yardoc_file_for_gem(name, "= #{version}")
+          if !yd
+            puts "#{name} #{version} YARD documentation failed"
+            failed += 1
+          end
+        end
+        if yd && RDOC_GEMS.include?(name)
+          cache = File.join(Solargraph::YardMap::CoreDocs.cache_dir, 'gems', "#{name}-#{version}", 'yardoc')
+          if !File.exist?(cache) || @rebuild
+            puts "Caching custom documentation for #{name} #{version}"
+            spec = Gem::Specification.find_by_name(name, "= #{version}")
+            Solargraph::YardMap::RdocToYard.run(spec)
           end
         end
       end
-      Bundler.reset!
       if failures > 0
-        puts "#{failures} spec#{failures == 1 ? '' : 's'} could not be found. You might need to run `bundle install` first."
+        puts "#{failures} gem#{failures == 1 ? '' : 's'} could not be documented. You might need to run `bundle install` first."
       end
       failures == 0
+    end
+
+    private
+
+    def specs_from_bundle directory
+      @require_from_bundle ||= begin
+        Solargraph.logger.info "Loading gems for bundler/require"
+        Bundler.with_clean_env do
+          out = `cd #{Shellwords.escape(directory)} && bundle exec ruby -e "require 'bundler'; require 'json'; puts Bundler.definition.specs_for([:default]).map { |spec| [spec.name, spec.version] }.to_h.to_json"`
+          out ? JSON.parse(out) : {}
+        end
+      end
     end
   end
 end
