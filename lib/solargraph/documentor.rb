@@ -47,7 +47,10 @@ module Solargraph
       end
       failures == 0
     rescue Solargraph::BundleNotFoundError => e
-      puts "No bundled gems are available in #{@directory}" unless @quiet
+      unless @quiet
+        puts "[#{e.class}] #{e.message}"
+        puts "No bundled gems are available in #{@directory}"
+      end
       false
     end
 

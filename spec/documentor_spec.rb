@@ -27,7 +27,7 @@ describe Solargraph::Documentor do
   end
 
   it 'documents bundles' do
-    result = Solargraph::Documentor.new('spec/fixtures/workspace', rebuild: true, quiet: true).document
+    result = Solargraph::Documentor.new('spec/fixtures/workspace', rebuild: true).document
     expect(result).to be(true)
   end
 
