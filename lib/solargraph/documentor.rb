@@ -2,6 +2,7 @@
 
 require 'bundler'
 require 'json'
+require 'open3'
 require 'shellwords'
 require 'yard'
 
@@ -20,7 +21,7 @@ module Solargraph
     # @return [Boolean] True if all specs were found and documented.
     def document
       failures = 0
-      specs_from_bundle(@directory).each_pair do |name, version|
+      Documentor.specs_from_bundle(@directory).each_pair do |name, version|
         yd = YARD::Registry.yardoc_file_for_gem(name, "= #{version}")
         if !yd || @rebuild
           puts "Documenting #{name} #{version}"
@@ -46,14 +47,15 @@ module Solargraph
       failures == 0
     end
 
-    private
-
-    def specs_from_bundle directory
-      @require_from_bundle ||= begin
-        Solargraph.logger.info "Loading gems for bundler/require"
-        Bundler.with_clean_env do
-          out = `cd #{Shellwords.escape(directory)} && bundle exec ruby -e "require 'bundler'; require 'json'; puts Bundler.definition.specs_for([:default]).map { |spec| [spec.name, spec.version] }.to_h.to_json"`
-          out ? JSON.parse(out) : {}
+    def self.specs_from_bundle directory
+      Bundler.with_clean_env do
+        cmd = "cd #{Shellwords.escape(directory)} && bundle exec ruby -e \"require 'bundler'; require 'json'; puts Bundler.definition.specs_for([:default]).map { |spec| [spec.name, spec.version] }.to_h.to_json\""
+        o, e, s = Open3.capture3(cmd)
+        if s.success?
+          o && !o.empty? ? JSON.parse(o) : {}
+        else
+          Solargraph.logger.warn e
+          raise BundleNotFoundError, "Failed to load gems from bundle at #{directory}"
         end
       end
     end

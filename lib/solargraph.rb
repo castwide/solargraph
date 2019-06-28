@@ -15,6 +15,7 @@ module Solargraph
   class SourceNotAvailableError < StandardError; end
   class ComplexTypeError        < StandardError; end
   class WorkspaceTooLargeError <  RuntimeError;  end
+  class BundleNotFoundError <     StandardError; end
 
   autoload :Position,         'solargraph/position'
   autoload :Range,            'solargraph/range'

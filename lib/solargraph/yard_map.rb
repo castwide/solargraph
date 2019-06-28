@@ -30,14 +30,18 @@ module Solargraph
 
     attr_writer :with_dependencies
 
+    attr_reader :gemset
+
     # @param required [Array<String>]
+    # @param gemset [Hash{String => String}]
     # @param with_dependencies [Boolean]
-    def initialize(required: [], with_dependencies: true)
+    def initialize(required: [], gemset: {}, with_dependencies: true)
       # HACK: YardMap needs its own copy of this array
       @required = required.clone
       @with_dependencies = with_dependencies
       @gem_paths = {}
       @stdlib_namespaces = []
+      @gemset = gemset
       process_requires
       yardocs.uniq!
     end
@@ -54,12 +58,13 @@ module Solargraph
 
     # @param new_requires [Array<String>]
     # @return [Boolean]
-    def change new_requires
-      if new_requires.uniq.sort == required.uniq.sort
+    def change new_requires, new_gemset
+      if new_requires.uniq.sort == required.uniq.sort && new_gemset == gemset
         false
       else
         required.clear
         required.concat new_requires
+        @gemset = new_gemset
         process_requires
         true
       end
@@ -120,7 +125,7 @@ module Solargraph
     # @return [Location]
     def require_reference path
       # @type [Gem::Specification]
-      spec = Gem::Specification.find_by_path(path) || Gem::Specification.find_by_name(path.split('/').first)
+      spec = spec_for_require(path)
       spec.full_require_paths.each do |rp|
         file = File.join(rp, "#{path}.rb")
         next unless File.file?(file)
@@ -165,7 +170,7 @@ module Solargraph
         end
         result = []
         begin
-          spec = Gem::Specification.find_by_path(r) || Gem::Specification.find_by_name(r.split('/').first)
+          spec = spec_for_require(r)
           ver = spec.version.to_s
           ver = ">= 0" if ver.empty?
           yd = yardoc_file_for_spec(spec)
@@ -271,24 +276,20 @@ module Solargraph
         Solargraph.logger.info "Using cached documentation for #{spec.name} at #{cache_dir}"
         cache_dir
       else
-        YARD::Registry.yardoc_file_for_gem(spec.name, spec.version)
+        YARD::Registry.yardoc_file_for_gem(spec.name, "= #{spec.version}")
       end
     end
-  end
-end
-def bundler_require directory
-  Solargraph.logger.info "Using bundler/require"
-  result = Dir.chdir directory do
-    # @type [Array<Gem::Specification>]
-    specs = Bundler.with_original_env do
-      Bundler.reset!
-      Bundler.definition.specs_for([:default])
+
+    def spec_for_require path
+      spec = Gem::Specification.find_by_path(path) || Gem::Specification.find_by_name(path.split('/').first)
+      if @gemset[spec.name]
+        begin
+          return Gem::Specification.find_by_name(spec.name, "= #{@gemset[spec.name]}")
+        rescue Gem::LoadError
+          Solargraph.logger.warn "Unable to load #{spec.name} #{@gemset[spec.name]} specified by workspace, using #{spec.version} instead"
+        end
+      end
+      spec
     end
-    specs.map(&:name)
   end
-  Bundler.reset!
-  result
-rescue Bundler::GemfileNotFound => e
-  Solargraph.logger.info "Ignoring bundler/require: #{e.message}"
-  []
 end

@@ -19,7 +19,7 @@ describe Solargraph::ApiMap::BundlerMethods do
 
     it 'finds default gems from bundler/require' do
       result = Solargraph::ApiMap::BundlerMethods.require_from_bundle('spec/fixtures/workspace')
-      expect(result).to eq(['backport', 'bundler'])
+      expect(result.keys).to eq(['backport', 'bundler'])
     end
   end
 

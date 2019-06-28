@@ -116,8 +116,9 @@ module Solargraph
       end
       reqs.concat implicit.requires
       pins.concat implicit.overrides
-      reqs.concat require_from_bundle(bundle.workspace.directory) if reqs.include?('bundler/require')
-      yard_map.change(reqs)
+      br = reqs.include?('bundler/require') ? require_from_bundle(bundle.workspace.directory) : {}
+      reqs.concat br.keys
+      yard_map.change(reqs, br)
       new_store = Store.new(pins + yard_map.pins)
       @mutex.synchronize {
         @cache.clear
