@@ -13,10 +13,10 @@ module Solargraph
       activejob activemodel activerecord activestorage activesupport railties
     ]
 
-    def initialize directory, rebuild: false, quiet: false
+    def initialize directory, rebuild: false, out: File.new(File::NULL, 'w')
       @directory = directory
       @rebuild = rebuild
-      @quiet = quiet
+      @out = out
     end
 
     # @return [Boolean] True if all specs were found and documented.
@@ -25,32 +25,30 @@ module Solargraph
       Documentor.specs_from_bundle(@directory).each_pair do |name, version|
         yd = YARD::Registry.yardoc_file_for_gem(name, "= #{version}")
         if !yd || @rebuild
-          puts "Documenting #{name} #{version}" unless @quiet
+          @out.puts "Documenting #{name} #{version}"
           `yard gems #{name} #{version} #{@rebuild ? '--rebuild' : ''}`
           yd = YARD::Registry.yardoc_file_for_gem(name, "= #{version}")
           if !yd
-            puts "#{name} #{version} YARD documentation failed" unless @quiet
+            @out.puts "#{name} #{version} YARD documentation failed"
             failures += 1
           end
         end
         if yd && RDOC_GEMS.include?(name)
           cache = File.join(Solargraph::YardMap::CoreDocs.cache_dir, 'gems', "#{name}-#{version}", 'yardoc')
           if !File.exist?(cache) || @rebuild
-            puts "Caching custom documentation for #{name} #{version}"
+            @out.puts "Caching custom documentation for #{name} #{version}"
             spec = Gem::Specification.find_by_name(name, "= #{version}")
             Solargraph::YardMap::RdocToYard.run(spec)
           end
         end
       end
-      if failures > 0 && !@quiet
-        puts "#{failures} gem#{failures == 1 ? '' : 's'} could not be documented. You might need to run `bundle install`."
+      if failures > 0
+        @out.puts "#{failures} gem#{failures == 1 ? '' : 's'} could not be documented. You might need to run `bundle install`."
       end
       failures == 0
     rescue Solargraph::BundleNotFoundError => e
-      unless @quiet
-        puts "[#{e.class}] #{e.message}"
-        puts "No bundled gems are available in #{@directory}"
-      end
+      @out.puts "[#{e.class}] #{e.message}"
+      @out.puts "No bundled gems are available in #{@directory}"
       false
     end
 
