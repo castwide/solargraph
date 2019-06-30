@@ -1,11 +1,13 @@
 require 'tmpdir'
+require 'open3'
 
 describe Solargraph::Documentor do
   # Build the Gemfile.lock in specs so Travis jobs use the correct version of
   # Bundler (e.g., Ruby 2.1 uses Bundler 1)
   before :all do
     Dir.chdir 'spec/fixtures/workspace' do
-      `bundle install`
+      o, e, s = Open3.capture3('bundle', 'install')
+      raise RuntimeError, e unless s.success?
     end
   end
 
