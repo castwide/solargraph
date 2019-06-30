@@ -19,11 +19,12 @@ module Solargraph
     # @param context [String]
     # @return [ComplexType]
     def qualify api_map, context = ''
-      types = @items.map do |t|
+      red = reduce_object
+      types = red.items.map do |t|
         next t if ['Boolean', 'nil', 'void', 'undefined'].include?(t.name)
         t.qualify api_map, context
       end
-      ComplexType.new(types)
+      ComplexType.new(types).reduce_object
     end
 
     def first
@@ -120,7 +121,7 @@ module Solargraph
       return self unless selfy?
       red = reduce_class(dst)
       result = @items.map { |i| i.self_to red }
-      ComplexType.parse(*result.map(&:to_s))
+      ComplexType.parse(*result.map(&:tag))
     end
 
     def nullable?
@@ -129,6 +130,15 @@ module Solargraph
 
     def all_params
       @items.first.all_params || []
+    end
+
+    protected
+
+    attr_reader :items
+
+    def reduce_object
+      return self if name != 'Object' || subtypes.empty?
+      ComplexType.try_parse(reduce_class(subtypes.join(', ')))
     end
 
     private

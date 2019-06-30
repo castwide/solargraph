@@ -277,4 +277,13 @@ describe Solargraph::ComplexType do
     type = Solargraph::ComplexType.parse('Object<param<Variable>>')
     expect(type).to be_parameterized
   end
+
+  it 'reduces objects' do
+    api_map = Solargraph::ApiMap.new
+    selfy = Solargraph::ComplexType.parse('Object<self>')
+    type = selfy.self_to('String')
+    expect(type.tag).to eq('Object<String>')
+    result = type.qualify(api_map)
+    expect(result.tag).to eq('String')
+  end
 end

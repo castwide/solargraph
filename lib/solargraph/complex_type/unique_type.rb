@@ -124,7 +124,7 @@ module Solargraph
       def selfy?
         @name == 'self' || @key_types.any?(&:selfy?) || @subtypes.any?(&:selfy?)
       end
-
+  
       UNDEFINED = UniqueType.new('undefined')
       BOOLEAN = UniqueType.new('Boolean')
     end
