@@ -20,6 +20,7 @@ module Solargraph
       # @param store [ApiMap::Store] ApiMap pin store
       # @return [void]
       def rake_yard store
+        YARD::Registry.clear
         code_object_map.clear
         store.namespace_pins.each do |pin|
           next if pin.path.nil? || pin.path.empty?
