@@ -2,6 +2,9 @@ require 'tmpdir'
 require 'fileutils'
 
 describe Solargraph::ApiMap::BundlerMethods do
+  # @todo Skipping Bundler-related tests on JRuby
+  next if RUBY_PLATFORM == 'java'
+
   # Build the Gemfile.lock in specs so Travis jobs use the correct version of
   # Bundler (e.g., Ruby 2.1 uses Bundler 1)
   before :all do

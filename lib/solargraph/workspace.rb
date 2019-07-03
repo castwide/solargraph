@@ -159,15 +159,18 @@ module Solargraph
         # HACK: Evaluating gemspec files violates the goal of not running
         #   workspace code, but this is how Gem::Specification.load does it
         #   anyway.
-        begin
-          spec = eval(File.read(file), binding, file)
-          next unless Gem::Specification === spec
-          result.concat(spec.require_paths.map { |path| File.join(base, path) })
-        rescue Exception => e
-          # Don't die if we have an error during eval-ing a gem spec.
-          # Concat the default lib directory instead.
-          Solargraph.logger.warn "Error reading #{file}: [#{e.class}] #{e.message}"
-          result.push File.join(base, 'lib')
+        Dir.chdir base do
+          begin
+            # @type [Gem::Specification]
+            spec = eval(File.read(file), binding, file)
+            next unless Gem::Specification === spec
+            result.concat(spec.require_paths.map { |path| File.join(base, path) })
+          rescue Exception => e
+            # Don't die if we have an error during eval-ing a gem spec.
+            # Concat the default lib directory instead.
+            Solargraph.logger.warn "Error reading #{file}: [#{e.class}] #{e.message}"
+            result.push File.join(base, 'lib')
+          end
         end
       end
       result.concat config.require_paths
