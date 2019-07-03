@@ -85,7 +85,7 @@ See [https://solargraph.org/guides](https://solargraph.org/guides) for more tips
 
 ### Bug Reports and Feature Requests
 
-[https://github.com/castwide/solargraph/issues](GitHub Issues) are the best place to ask questions, report problems, and suggest improvements.
+[GitHub Issues](https://github.com/castwide/solargraph/issues) are the best place to ask questions, report problems, and suggest improvements.
 
 ### Development
 

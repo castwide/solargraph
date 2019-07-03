@@ -4,7 +4,8 @@
 # each job.
 
 if RUBY_VERSION =~ /^2\.(1|2)\./
-  exec "gem install bundler -v '< 2'"
+  `gem install bundler -v '< 2'`
 else
-  exec "gem install bundler"
+  `gem update --system`
+  `gem install bundler`
 end
