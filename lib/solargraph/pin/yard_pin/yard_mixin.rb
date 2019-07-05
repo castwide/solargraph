@@ -15,25 +15,19 @@ module Solargraph
         end
 
         def location
+          # Guarding with @located because nil locations are valid
           return @location if @located
           @located = true
-          @location = Solargraph::YardMap::Mapper.object_location(code_object, spec)
+          @location = object_location
         end
 
         private
 
-        def split_to_gates namespace
-          @@gate_cache[namespace] || begin
-            parts = namespace.split('::')
-            result = []
-            until parts.empty?
-              result.push parts.join('::')
-              parts.pop
-            end
-            result.push ''
-            @@gate_cache[namespace] = result.freeze
-            result
-          end
+        # @return [Solargraph::Location, nil]
+        def object_location
+          return nil if spec.nil? || code_object.nil? || code_object.file.nil? || code_object.line.nil?
+          file = File.join(spec.full_gem_path, code_object.file)
+          Solargraph::Location.new(file, Solargraph::Range.from_to(code_object.line - 1, 0, code_object.line - 1, 0))
         end
       end
     end

@@ -18,16 +18,15 @@ module Solargraph
             location: location,
             name: code_object.name.to_s,
             comments: nil,
-            type: namespace_type(code_object),
+            type: namespace_type,
             visibility: code_object.visibility,
-            closure: closure,
-            gates: split_to_gates(code_object.path)
+            closure: closure
           )
         end
 
         private
 
-        def namespace_type code_object
+        def namespace_type
           code_object.is_a?(YARD::CodeObjects::ClassObject) ? :class : :module
         end
       end

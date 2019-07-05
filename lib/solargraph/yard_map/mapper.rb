@@ -65,22 +65,6 @@ module Solargraph
         end
         result
       end
-
-      # @param obj [YARD::CodeObjects::Base]
-      # @return [Solargraph::Location, nil]
-      def self.object_location obj, spec = nil
-        return nil if spec.nil? || obj.file.nil? || obj.line.nil?
-        file = nil
-        if @@object_file_cache.key?(obj.file)
-          file = @@object_file_cache[obj.file]
-        else
-          tmp = File.join(spec.full_gem_path, obj.file)
-          file = tmp if File.exist?(tmp)
-          @@object_file_cache[obj.file] = file
-        end
-        return nil if file.nil?
-        Solargraph::Location.new(file, Solargraph::Range.from_to(obj.line - 1, 0, obj.line - 1, 0))
-      end
     end
   end
 end
