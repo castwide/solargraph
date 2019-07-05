@@ -20,8 +20,7 @@ module Solargraph
       end
 
       def path
-        return name if context.namespace.to_s.empty?
-        "#{context.namespace}::#{name}"
+        @path ||= context.namespace.to_s.empty? ? name : "#{context.namespace}::#{name}"
       end
     end
   end

@@ -121,8 +121,8 @@ module Solargraph
           point_stack = 0
           curly_stack = 0
           paren_stack = 0
-          base = ''
-          subtype_string = ''
+          base = String.new
+          subtype_string = String.new
           type_string.each_char do |char|
             if char == '='
               #raise ComplexTypeError, "Invalid = in type #{type_string}" unless curly_stack > 0
@@ -137,8 +137,8 @@ module Solargraph
                 types.push UniqueType.new(base[0..-2].strip)
                 key_types = types
                 types = []
-                base = ''
-                subtype_string = ''
+                base.clear
+                subtype_string.clear
                 next
               else
                 point_stack -= 1
@@ -163,14 +163,14 @@ module Solargraph
             elsif char == ',' && point_stack == 0 && curly_stack == 0 && paren_stack == 0
               # types.push ComplexType.new([UniqueType.new(base.strip, subtype_string.strip)])
               types.push UniqueType.new(base.strip, subtype_string.strip)
-              base = ''
-              subtype_string = ''
+              base.clear
+              subtype_string.clear
               next
             end
             if point_stack == 0 && curly_stack == 0 && paren_stack == 0
-              base += char 
+              base.concat char
             else
-              subtype_string += char
+              subtype_string.concat char
             end
           end
           raise ComplexTypeError, "Unclosed subtype in #{type_string}" if point_stack != 0 || curly_stack != 0 || paren_stack != 0

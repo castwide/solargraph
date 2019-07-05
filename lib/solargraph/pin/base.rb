@@ -213,6 +213,10 @@ module Solargraph
         result
       end
 
+      def identity
+        @identity ||= "#{closure.context.namespace}|#{name}"
+      end
+
       def inspect
         "#<#{self.class} at #{self.location.inspect}>"
       end

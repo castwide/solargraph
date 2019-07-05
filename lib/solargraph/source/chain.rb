@@ -22,6 +22,8 @@ module Solargraph
 
       @@inference_stack = []
       @@inference_depth = 0
+      @@last_api_map = nil
+      @@pin_cache = {}
 
       UNDEFINED_CALL = Chain::Call.new('<undefined>')
       UNDEFINED_CONSTANT = Chain::Constant.new('<undefined>')
@@ -105,11 +107,18 @@ module Solargraph
           # Limit method inference recursion
           return type if @@inference_depth >= 2 && pins.first.is_a?(Pin::BaseMethod)
           @@inference_depth += 1
+          name_count = {}
           pins.each do |pin|
+            # Limit pin name hits for, e.g., variables with insane amounts of definitions
+            name_count[pin.identity] ||= 0
+            name_count[pin.identity] += 1
+            next if name_count[pin.identity] >= 10
             # Avoid infinite recursion
             next if @@inference_stack.include?(pin)
             @@inference_stack.push pin
-            type = pin.probe(api_map)
+            # puts "    Inferring #{pin.class} | #{pin.path} | #{pin.name} | #{pin.location ? pin.location.to_hash : pin.location}"
+            # type = pin.probe(api_map)
+            type = remember_or_probe(pin, api_map)
             @@inference_stack.pop
             break if type.defined?
           end
@@ -146,6 +155,12 @@ module Solargraph
             pin.rebind ysct
           end
         end
+      end
+
+      def remember_or_probe pin, api_map
+        @@pin_cache.clear if @@last_api_map != api_map
+        @@last_api_map = api_map
+        @@pin_cache[pin] ||= pin.probe(api_map)
       end
     end
   end

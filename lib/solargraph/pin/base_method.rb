@@ -19,7 +19,7 @@ module Solargraph
       end
 
       def path
-        @path ||= namespace.to_s + (scope == :instance ? '#' : '.') + name.to_s
+        @path ||= "#{namespace}#{(scope == :instance ? '#' : '.')}#{name}"
       end
 
       def typify api_map

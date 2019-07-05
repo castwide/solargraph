@@ -24,7 +24,8 @@ module Solargraph
 
       # @return [Boolean]
       def nil_type?
-        @nil_type ||= (name.downcase == 'nil')
+        @nil_type = (name.casecmp('nil') == 0) if @nil_type.nil?
+        @nil_type
       end
 
       # @return [Boolean]
