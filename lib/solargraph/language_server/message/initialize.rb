@@ -9,6 +9,7 @@ module Solargraph
         def process
           bm = Benchmark.measure {
             host.configure params['initializationOptions']
+            host.client_capabilities = params['capabilities']
             if support_workspace_folders?
               host.prepare_folders params['workspaceFolders']
             elsif params['rootUri']

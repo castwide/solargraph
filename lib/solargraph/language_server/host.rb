@@ -20,6 +20,8 @@ module Solargraph
       include Dispatch
       include Observable
 
+      attr_writer :client_capabilities
+
       def initialize
         @cancel_semaphore = Mutex.new
         @buffer_semaphore = Mutex.new
@@ -613,6 +615,10 @@ module Solargraph
         libraries.each(&:catalog)
       end
 
+      def client_capabilities
+        @client_capabilities ||= {}
+      end
+
       private
 
       # @return [Diagnoser]
@@ -693,7 +699,7 @@ module Solargraph
             referencesProvider: true
           },
           'textDocument/rename' => {
-            renameProvider: {prepareProvider: true}
+            renameProvider: prepare_rename? ? { prepareProvider: true } : true
           },
           'textDocument/documentSymbol' => {
             documentSymbolProvider: true
@@ -711,6 +717,10 @@ module Solargraph
             codeActionProvider: true
           }
         }
+      end
+
+      def prepare_rename?
+        client_capabilities['rename'] && client_capabilities['rename']['prepareSupport']
       end
     end
   end
