@@ -198,7 +198,7 @@ module Solargraph
     # @param pin [Solargraph::Pin::Base]
     # @return [String]
     def pin_description pin
-      if pin.path.nil? || pin.path.empty?
+      desc = if pin.path.nil? || pin.path.empty?
         if pin.closure
           "#{pin.closure.path} | #{pin.name}"
         else
@@ -207,6 +207,8 @@ module Solargraph
       else
         pin.path
       end
+      desc.concat(" (#{pin.location.filename} #{pin.location.range.start.line})") if pin.location
+      desc
     end
   end
 end
