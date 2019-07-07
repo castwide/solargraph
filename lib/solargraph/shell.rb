@@ -207,7 +207,7 @@ module Solargraph
       else
         pin.path
       end
-      desc.concat(" (#{pin.location.filename} #{pin.location.range.start.line})") if pin.location
+      desc += " (#{pin.location.filename} #{pin.location.range.start.line})" if pin.location
       desc
     end
   end
