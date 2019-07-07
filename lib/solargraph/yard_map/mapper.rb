@@ -5,7 +5,7 @@ module Solargraph
     class Mapper
       @@object_file_cache = {}
 
-      # @param code_objects [Array<YARD::CodeObject::Base>]
+      # @param code_objects [Array<YARD::CodeObjects::Base>]
       # @param spec [Gem::Specification]
       def initialize code_objects, spec = nil
         @code_objects = code_objects
