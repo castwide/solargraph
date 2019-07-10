@@ -364,16 +364,18 @@ module Solargraph
       # @return [void]
       def register_capabilities methods
         logger.debug "Registering capabilities: #{methods}"
+        registrations = methods.select{|m| can_register?(m) and !registered?(m)}.map { |m|
+          @registered_capabilities.add m
+          {
+            id: m,
+            method: m,
+            registerOptions: dynamic_capability_options[m]
+          }
+        }
+        return if registrations.empty?
         @register_semaphore.synchronize do
           send_request 'client/registerCapability', {
-            registrations: methods.select{|m| can_register?(m) and !registered?(m)}.map { |m|
-              @registered_capabilities.add m
-              {
-                id: m,
-                method: m,
-                registerOptions: dynamic_capability_options[m]
-              }
-            }
+            registrations: registrations
           }
         end
       end
@@ -386,15 +388,17 @@ module Solargraph
       # @return [void]
       def unregister_capabilities methods
         logger.debug "Unregistering capabilities: #{methods}"
+        unregisterations = methods.select{|m| registered?(m)}.map{ |m|
+          @registered_capabilities.delete m
+          {
+            id: m,
+            method: m
+          }
+        }
+        return if unregisterations.empty?
         @register_semaphore.synchronize do
           send_request 'client/unregisterCapability', {
-            unregisterations: methods.select{|m| registered?(m)}.map{ |m|
-              @registered_capabilities.delete m
-              {
-                id: m,
-                method: m
-              }
-            }
+            unregisterations: unregisterations
           }
         end
       end
