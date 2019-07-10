@@ -171,8 +171,6 @@ module Solargraph
         result = []
         begin
           spec = spec_for_require(r)
-          ver = spec.version.to_s
-          ver = ">= 0" if ver.empty?
           yd = yardoc_file_for_spec(spec)
           # YARD detects gems for certain libraries that do not have a yardoc
           # but exist in the stdlib. `fileutils` is an example. Treat those
