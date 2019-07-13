@@ -206,7 +206,7 @@ module Solargraph
               if arg.is_a?(Parser::AST::Node) && arg.type == :hash
                 arg.children.each do |pair|
                   sym = pair.children[0].children[0].to_s
-                  partype = params[pin.parameter_names[index]]
+                  partype = params[sym]
                   if partype
                     chain = Solargraph::Source::NodeChainer.chain(pair.children[1], filename)
                     argtype = chain.infer(api_map, block, locals)
