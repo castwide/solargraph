@@ -76,7 +76,7 @@ module Solargraph
           meths.each do |meth|
             if meth.docstring.has_tag?(:yieldparam_single_parameter)
               type = chain.base.infer(api_map, closure, locals)
-              if type.defined?
+              if type.defined? && !type.subtypes.empty?
                 bmeth = chain.base.define(api_map, closure, locals).first
                 return type.subtypes.first.qualify(api_map, bmeth.context.namespace)
               end
