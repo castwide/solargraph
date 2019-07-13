@@ -125,7 +125,7 @@ describe Solargraph::TypeChecker do
       end
     ))
     expect(checker.param_type_problems).to be_one
-    expect(checker.param_type_problems.first.message).to include('unknown @param baz')    
+    expect(checker.param_type_problems.first.message).to include('unknown @param baz')
   end
 
   it 'validates param duck types' do
@@ -136,6 +136,16 @@ describe Solargraph::TypeChecker do
       end
     ), 'test.rb')
     expect(checker.param_type_problems).to be_empty
+  end
+
+  it 'reports keyword parameters missing from tags' do
+    checker = Solargraph::TypeChecker.load_string(%(
+      class Foo
+        # @return [void]
+        def bar(baz: 0); end
+      end
+    ))
+    expect(checker.param_type_problems).to be_one
   end
 
   it 'validates literal strings' do
