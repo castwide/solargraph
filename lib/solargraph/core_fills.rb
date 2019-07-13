@@ -25,6 +25,7 @@ module Solargraph
       Override.method_return('Array#reject', 'self'),
       Override.method_return('Array#keep_if', 'self'),
       Override.method_return('Array#delete_if', 'self'),
+      Override.method_return('Array#reverse', 'self', delete: ['overload']),
       Override.from_comment('Array#[]', %(
 @overload [](range)
   @param range [Range]
@@ -50,7 +51,7 @@ module Solargraph
   @return [self]
 @return_single_parameter
       )),
-                
+
       Override.method_return('Class#new', 'self'),
       Override.method_return('Class.new', 'Class<Object>'),
       Override.method_return('Class#allocate', 'self'),
@@ -63,7 +64,7 @@ module Solargraph
       Override.from_comment('Hash#[]', %(
 @return_value_parameter
       )),
-        
+
       Override.method_return('Object#!', 'Boolean'),
       Override.method_return('Object#clone', 'self', delete: [:overload]),
       Override.method_return('Object#dup', 'self'),

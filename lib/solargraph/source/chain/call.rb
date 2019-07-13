@@ -95,7 +95,7 @@ module Solargraph
           end
           result.map do |pin|
             next pin if pin.return_type.undefined?
-            selfy = pin.return_type.self_to(context.namespace)
+            selfy = pin.return_type.self_to(context.tag)
             selfy == pin.return_type ? pin : pin.proxy(selfy)
           end
         end
