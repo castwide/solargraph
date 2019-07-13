@@ -44,6 +44,10 @@ module Solargraph
         true
       end
 
+      def probe api_map
+        typify api_map
+      end
+
       private
 
       # @return [YARD::Tags::Tag]
@@ -71,9 +75,11 @@ module Solargraph
           meths = chain.define(api_map, closure, locals)
           meths.each do |meth|
             if meth.docstring.has_tag?(:yieldparam_single_parameter)
-              bmeth = chain.base.define(api_map, closure, locals).first
-              return ComplexType::UNDEFINED if bmeth.nil? || bmeth.return_type.undefined? || bmeth.return_type.subtypes.empty?
-              return bmeth.return_type.subtypes.first.qualify(api_map, bmeth.context.namespace)
+              type = chain.base.infer(api_map, closure, locals)
+              if type.defined?
+                bmeth = chain.base.define(api_map, closure, locals).first
+                return type.subtypes.first.qualify(api_map, bmeth.context.namespace)
+              end
             else
               yps = meth.docstring.tags(:yieldparam)
               unless yps[index].nil? or yps[index].types.nil? or yps[index].types.empty?

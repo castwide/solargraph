@@ -242,4 +242,30 @@ describe Solargraph::Pin::Parameter do
     expect(pin.documentation).to include('The baz param')
     expect(pin.documentation).not_to include('The bar method')
   end
+
+  it "typifies from yieldparam_single_parameter" do
+    # This test depends on the fact that Array#each has a
+    # yieldparam_single_parameter tag.
+    source = Solargraph::Source.load_string(%(
+      # @return [Array<String>]
+      def list_strings; end
+
+      # @param str [String]
+      # @return [void]
+      def use_string str
+        while x
+          list = list_strings
+          list.each do |s|
+            use_string(s)
+          end
+        end
+      end
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new
+    api_map.map source
+    clip = api_map.clip_at('test.rb', [10, 23])
+    pin = clip.define.first
+    type = pin.typify(api_map)
+    expect(type.tag).to eq('String')
+  end
 end
