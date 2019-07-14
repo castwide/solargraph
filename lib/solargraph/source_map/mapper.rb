@@ -12,7 +12,7 @@ module Solargraph
 
       private_class_method :new
 
-      MACRO_REGEXP = /(@\!method|@\!attribute|@\!domain|@\!macro|@\!parse)/.freeze
+      MACRO_REGEXP = /(@\!method|@\!attribute|@\!domain|@\!macro|@\!parse|@\!override)/.freeze
 
       # Generate the data.
       #

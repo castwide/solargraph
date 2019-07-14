@@ -1142,4 +1142,17 @@ describe Solargraph::SourceMap::Mapper do
     baz = api_map.get_path_pins('Foo.baz').first
     expect(baz).to be_a(Solargraph::Pin::Base)
   end
+
+  it 'processes override directives' do
+    source = Solargraph::Source.load_string(%(
+      class Foo
+        def bar; end
+      end
+      # @!override Foo#bar
+      #   return [String]
+    ), 'test.rb')
+    pins, _locals = Solargraph::SourceMap::Mapper.map(source)
+    over = pins.select { |pin| pin.is_a?(Solargraph::Pin::Reference::Override) }.first
+    expect(over.name).to eq('Foo#bar')
+  end
 end
