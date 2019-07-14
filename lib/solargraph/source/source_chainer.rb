@@ -35,13 +35,14 @@ module Solargraph
         return Chain.new([Chain::Literal.new('Symbol')]) if phrase.start_with?(':') && !phrase.start_with?('::')
         begin
           return Chain.new([]) if phrase.end_with?('..')
+          node = nil
+          parent = nil
           if !source.repaired? && source.parsed? && source.synchronized?
-            node = source.node_at(position.line, position.column)
+            node, parent = source.tree_at(position.line, position.column)[0..2]
           elsif source.parsed? && source.repaired? && end_of_phrase == '.'
-            node = source.node_at(fixed_position.line, fixed_position.column)
+            node, parent = source.tree_at(fixed_position.line, fixed_position.column)[0..2]
           else
-            node = nil
-            node = source.node_at(fixed_position.line, fixed_position.column) unless source.error_ranges.any?{|r| r.nil? || r.include?(fixed_position)}
+            node, parent = source.tree_at(fixed_position.line, fixed_position.column)[0..2] unless source.error_ranges.any?{|r| r.nil? || r.include?(fixed_position)}
             # Exception for positions that chain literal nodes in unsynchronized sources
             node = nil unless source.synchronized? || !infer_literal_node_type(node).nil?
             node = Source.parse(fixed_phrase) if node.nil?
@@ -50,7 +51,7 @@ module Solargraph
           return Chain.new([Chain::UNDEFINED_CALL])
         end
         return Chain.new([Chain::UNDEFINED_CALL]) if node.nil? || (node.type == :sym && !phrase.start_with?(':'))
-        chain = NodeChainer.chain(node, source.filename)
+        chain = NodeChainer.chain(node, source.filename, parent && parent.type == :block)
         if source.repaired? || !source.parsed? || !source.synchronized?
           if end_of_phrase.strip == '.'
             chain.links.push Chain::UNDEFINED_CALL

@@ -12,9 +12,14 @@ module Solargraph
 
         # @param word [String]
         # @param arguments [Array<Chain>]
-        def initialize word, arguments = []
+        def initialize word, arguments = [], with_block = false
           @word = word
           @arguments = arguments
+          @with_block = with_block
+        end
+
+        def with_block?
+          @with_block
         end
 
         # @param api_map [ApiMap]
@@ -42,8 +47,8 @@ module Solargraph
             type = ComplexType::UNDEFINED
             # @param [YARD::Tags::OverloadTag]
             overloads.each do |ol|
-              next if arguments.length < ol.parameters.length &&
-                !(arguments.length == ol.parameters.length - 1 && ol.parameters.last.first.start_with?('*'))
+              next unless arguments_match(arguments, ol.parameters)
+              next if ol.parameters.last && ol.parameters.last.first.start_with?('&') && ol.parameters.last.last.nil? && !with_block?
               match = true
               arguments.each_with_index do |arg, idx|
                 achain = arguments[idx]
@@ -155,6 +160,15 @@ module Solargraph
           #   return ComplexType.try_parse(*docstring.tag(:return).types)
           end
           nil
+        end
+
+        def arguments_match arguments, parameters
+          argcount = arguments.length
+          # argcount -= 1 if !arguments.empty? && arguments.last.links.first.word.start_with?('&')
+          parcount = parameters.length
+          parcount -= 1 if !parameters.empty? && parameters.last.first.start_with?('&')
+          return false if argcount < parcount && !(argcount == parcount - 1 && parameters.last.first.start_with?('*'))
+          true
         end
       end
     end

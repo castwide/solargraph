@@ -160,7 +160,8 @@ describe Solargraph::Source::SourceChainer do
       :repaired? => false,
       :parsed? => true,
       :error_ranges => [],
-      :node_at => nil
+      :node_at => nil,
+      :tree_at => []
     )
     chain = Solargraph::Source::SourceChainer.chain(source, Solargraph::Position.new(0, 5))
     expect(chain.links.first.word).to eq('@foo')
@@ -177,7 +178,8 @@ describe Solargraph::Source::SourceChainer do
       :repaired? => false,
       :parsed? => true,
       :error_ranges => [],
-      :node_at => nil
+      :node_at => nil,
+      :tree_at => []
     )
     chain = Solargraph::Source::SourceChainer.chain(source, Solargraph::Position.new(0, 6))
     expect(chain.links.first.word).to eq('@@foo')

@@ -26,6 +26,12 @@ module Solargraph
       Override.method_return('Array#keep_if', 'self'),
       Override.method_return('Array#delete_if', 'self'),
       Override.method_return('Array#reverse', 'self', delete: ['overload']),
+      Override.from_comment('Array#select', %(
+@overload select(&block)
+  @return [self]
+@overload select()
+  @return [Enumerator]
+      )),
       Override.from_comment('Array#[]', %(
 @overload [](range)
   @param range [Range]

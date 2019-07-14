@@ -9,9 +9,10 @@ module Solargraph
 
       # @param node [Parser::AST::Node]
       # @param filename [String]
-      def initialize node, filename = nil
+      def initialize node, filename = nil, in_block = false
         @node = node
         @filename = filename
+        @in_block = in_block
       end
 
       # @return [Source::Chain]
@@ -24,8 +25,8 @@ module Solargraph
         # @param node [Parser::AST::Node]
         # @param filename [String]
         # @return [Chain]
-        def chain node, filename = nil
-          NodeChainer.new(node, filename).chain
+        def chain node, filename = nil, in_block = false
+          NodeChainer.new(node, filename, in_block).chain
         end
 
         # @param code [String]
@@ -55,13 +56,13 @@ module Solargraph
             n.children[2..-1].each do |c|
               args.push NodeChainer.chain(c)
             end
-            result.push Chain::Call.new(n.children[1].to_s, args)
+            result.push Chain::Call.new(n.children[1].to_s, args, @in_block)
           elsif n.children[0].nil?
             args = []
             n.children[2..-1].each do |c|
               args.push NodeChainer.chain(c)
             end
-            result.push Chain::Call.new(n.children[1].to_s, args)
+            result.push Chain::Call.new(n.children[1].to_s, args, @in_block)
           else
             raise "No idea what to do with #{n}"
           end

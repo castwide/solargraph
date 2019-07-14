@@ -159,6 +159,6 @@ describe Solargraph::Pin::Method do
     api_map.map source
     pin = api_map.get_path_pins('Foo#bar').first
     type = pin.probe(api_map)
-    expect(type.tag).to eq('Array')    
+    expect(type.tag).to eq('Array')
   end
 end
