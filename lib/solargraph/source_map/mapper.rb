@@ -64,15 +64,27 @@ module Solargraph
         return unless comment =~ MACRO_REGEXP
         cmnt = remove_inline_comment_hashes(comment)
         parse = Solargraph::Source.parse_docstring(cmnt)
-        last_line = 0
+        # last_line = 0
         # @param d [YARD::Tags::Directive]
         parse.directives.each do |d|
-          line_num = cmnt.lines[last_line..-1].find_index { |l| l.include?("@!#{d.tag.tag_name}") }
-          line_num += last_line
-          pos = Solargraph::Position.new(comment_position.line + line_num, comment_position.column)
-          process_directive(source_position, pos, d)
-          last_line = line_num + 1
+          # @todo The find_directive_line_number process is stubbed due to
+          #   errant positions from comment blocks containing blank lines.
+          # line_num = find_directive_line_number(cmnt, d.tag.tag_name, last_line)
+          # pos = Solargraph::Position.new(comment_position.line + line_num, comment_position.column)
+          # process_directive(source_position, pos, d)
+          # last_line = line_num + 1
+          # @todo This call always assumes the topmost comment line.
+          process_directive(source_position, comment_position, d)
         end
+      end
+
+      def find_directive_line_number comment, tag, start
+        num = comment.lines[start..-1].find_index do |line|
+          # Legacy method directives might be `@method` instead of `@!method`
+          # @todo Legacy syntax should probably emit a warning
+          line.include?("@!#{tag}") || (tag == 'method' && line.include?("@#{tag}"))
+        end
+        num.to_i + start
       end
 
       # @param position [Position]
