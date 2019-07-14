@@ -64,17 +64,18 @@ module Solargraph
         return unless comment =~ MACRO_REGEXP
         cmnt = remove_inline_comment_hashes(comment)
         parse = Solargraph::Source.parse_docstring(cmnt)
-        # last_line = 0
+        last_line = 0
         # @param d [YARD::Tags::Directive]
         parse.directives.each do |d|
-          # @todo The find_directive_line_number process is stubbed due to
-          #   errant positions from comment blocks containing blank lines.
-          # line_num = find_directive_line_number(cmnt, d.tag.tag_name, last_line)
-          # pos = Solargraph::Position.new(comment_position.line + line_num, comment_position.column)
-          # process_directive(source_position, pos, d)
-          # last_line = line_num + 1
-          # @todo This call always assumes the topmost comment line.
-          process_directive(source_position, comment_position, d)
+          line_num = find_directive_line_number(cmnt, d.tag.tag_name, last_line)
+          pos = Solargraph::Position.new(comment_position.line + line_num, comment_position.column)
+          process_directive(source_position, pos, d)
+          last_line = line_num + 1
+          # @todo The below call assumes the topmost comment line. The above
+          #   process occasionally emits incorrect comment positions due to
+          #   blank lines in comment blocks, but at least it processes all the
+          #   directives.
+          # process_directive(source_position, comment_position, d)
         end
       end
 
