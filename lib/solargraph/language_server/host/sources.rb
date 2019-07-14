@@ -85,8 +85,10 @@ module Solargraph
         # @return [void]
         def async_update uri, updater
           src = find(uri)
-          mutex.synchronize { open_source_hash[uri] = src.start_synchronize(updater) }
-          mutex.synchronize { queue.push uri }
+          mutex.synchronize do
+            open_source_hash[uri] = src.start_synchronize(updater)
+            queue.push uri
+          end
           changed
           notify_observers uri
         end
