@@ -48,7 +48,9 @@ module Solargraph
         return generate_links(n.children[0]) if n.type == :begin
         result = []
         if n.type == :block
+          @in_block = true
           result.concat generate_links(n.children[0])
+          @in_block = false
         elsif n.type == :send
           if n.children[0].is_a?(Parser::AST::Node)
             result.concat generate_links(n.children[0])
