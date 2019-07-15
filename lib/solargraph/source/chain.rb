@@ -19,6 +19,7 @@ module Solargraph
       autoload :Literal,          'solargraph/source/chain/literal'
       autoload :Head,             'solargraph/source/chain/head'
       autoload :Or,               'solargraph/source/chain/or'
+      autoload :BlockVariable,    'solargraph/source/chain/block_variable'
 
       @@inference_stack = []
       @@inference_depth = 0
