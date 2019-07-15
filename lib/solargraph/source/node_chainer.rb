@@ -58,13 +58,13 @@ module Solargraph
             n.children[2..-1].each do |c|
               args.push NodeChainer.chain(c)
             end
-            result.push Chain::Call.new(n.children[1].to_s, args, @in_block)
+            result.push Chain::Call.new(n.children[1].to_s, args, @in_block || block_passed?(n))
           elsif n.children[0].nil?
             args = []
             n.children[2..-1].each do |c|
               args.push NodeChainer.chain(c)
             end
-            result.push Chain::Call.new(n.children[1].to_s, args, @in_block)
+            result.push Chain::Call.new(n.children[1].to_s, args, @in_block || block_passed?(n))
           else
             raise "No idea what to do with #{n}"
           end
@@ -99,6 +99,10 @@ module Solargraph
           result.push (lit ? Chain::Literal.new(lit) : Chain::Link.new)
         end
         result
+      end
+
+      def block_passed? node
+        node.children.last.is_a?(Parser::AST::Node) && node.children.last.type == :block_pass
       end
     end
   end

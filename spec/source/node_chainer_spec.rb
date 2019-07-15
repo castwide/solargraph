@@ -77,4 +77,15 @@ describe Solargraph::Source::NodeChainer do
     expect(chain.links[-2].with_block?).to be(true)
     expect(chain.links.last.with_block?).to be(false)
   end
+
+  it 'tracks block-passes in methods' do
+    source = Solargraph::Source.load_string(%(
+      Array.new.select(&:foo).first
+    ))
+    puts source.node
+    chain = Solargraph::Source::NodeChainer.chain(source.node)
+    # The `select` link has a yielded block and the `first` link does not
+    expect(chain.links[-2].with_block?).to be(true)
+    expect(chain.links.last.with_block?).to be(false)
+  end
 end
