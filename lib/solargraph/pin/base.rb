@@ -236,7 +236,8 @@ module Solargraph
 
       # @return [void]
       def parse_comments
-        if comments.empty?
+        # HACK: Avoid a NoMethodError on nil with empty overload tags
+        if comments.empty? || comments.strip.end_with?('@overload')
           @docstring = nil
           @directives = []
         else
