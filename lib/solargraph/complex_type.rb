@@ -73,6 +73,8 @@ module Solargraph
       @items.any?(&:selfy?)
     end
 
+    # @param dst [String]
+    # @return [ComplexType]
     def self_to dst
       return self unless selfy?
       red = reduce_class(dst)
@@ -86,6 +88,8 @@ module Solargraph
     #   to reference an instance of their class and never the class itself.
     #   This behavior may change depending on which result is expected
     #   from YARD conventions. See https://github.com/lsegal/yard/issues/1257
+    # @param dst [String]
+    # @return [String]
     def reduce_class dst
       while dst =~ /^(Class|Module)\<(.*?)\>$/
         dst = dst.sub(/^(Class|Module)\</, '').sub(/\>$/, '')

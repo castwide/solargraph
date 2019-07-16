@@ -40,6 +40,7 @@ module Solargraph
           return :optarg if string.include?('=')
           return :kwoptarg if string.end_with?(':')
           return :kwarg if string =~ /^[a-z0-9_]*?:/
+          return :blockarg if string.start_with?('&')
           :arg
         end
       end
