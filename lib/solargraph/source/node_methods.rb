@@ -136,8 +136,8 @@ module Solargraph
       #   For example, a bare `return` would return a :nil node instead of an
       #   empty array.
       #
-      # @param node [AST::Node]
-      # @return [Array<AST::Node>]
+      # @param node [Parser::AST::Node]
+      # @return [Array<Parser::AST::Node>]
       def returns_from node
         DeepInference.get_return_nodes(node)
       end

@@ -5,8 +5,10 @@ module Solargraph
     class BaseVariable < Base
       include Solargraph::Source::NodeMethods
 
+      # @return [Parser::AST::Node, nil]
       attr_reader :assignment
 
+      # @param assignment [Parser::AST::Node, nil]
       def initialize assignment: nil, **splat
         super(splat)
         @assignment = assignment
@@ -64,6 +66,7 @@ module Solargraph
 
       private
 
+      # @return [ComplexType]
       def generate_complex_type
         tag = docstring.tag(:type)
         return ComplexType.try_parse(*tag.types) unless tag.nil? || tag.types.nil? || tag.types.empty?
