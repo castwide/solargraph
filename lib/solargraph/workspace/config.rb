@@ -10,6 +10,9 @@ module Solargraph
       # The maximum number of files that can be added to a workspace.
       # The workspace's .solargraph.yml can override this value.
       MAX_FILES = 5000
+        
+      # The directory that contains the global config file
+      GLOBAL_CONFIG_DIR = File.expand_path('~')
 
       # @return [String]
       attr_reader :directory
@@ -20,24 +23,7 @@ module Solargraph
       # @param directory [String]
       def initialize directory = ''
         @directory = directory
-        include_globs = ['**/*.rb']
-        exclude_globs = ['spec/**/*', 'test/**/*', 'vendor/**/*', '.bundle/**/*']
-        unless @directory.empty?
-          sfile = File.join(@directory, '.solargraph.yml')
-          if File.file?(sfile)
-            @raw_data = YAML.safe_load(File.read(sfile))
-            include_globs = @raw_data['include'] || include_globs
-            exclude_globs = @raw_data['exclude'] || []
-          end
-        end
-        @raw_data ||= {}
-        @raw_data['include'] ||= include_globs
-        @raw_data['exclude'] ||= exclude_globs
-        @raw_data['require'] ||= []
-        @raw_data['domains'] ||= []
-        @raw_data['reporters'] ||= %w[rubocop require_not_found]
-        @raw_data['require_paths'] ||= []
-        @raw_data['max_files'] ||= MAX_FILES
+        @raw_data = config_data
         included
         excluded
       end
@@ -110,6 +96,44 @@ module Solargraph
       end
 
       private
+
+      # @return [Hash]
+      def config_data
+        workspace_config = read_config(@directory)
+        global_config = read_config(GLOBAL_CONFIG_DIR)
+        
+        defaults = default_config
+        defaults.merge({'exclude' => []}) unless workspace_config.nil?
+
+        defaults
+          .merge(global_config || {})
+          .merge(workspace_config || {})
+      end
+      
+      # Read a .solargraph yaml config
+      #
+      # @param directory [String]
+      # @return [Hash]
+      def read_config directory = ''
+        return nil if directory.empty?
+        sfile = File.join(directory, '.solargraph.yml')
+
+        return nil unless File.file?(sfile)
+        YAML.safe_load(File.read(sfile))
+      end
+      
+      # @return [Hash]
+      def default_config
+        {
+          'include' => ['**/*.rb'],
+          'exclude' => ['spec/**/*', 'test/**/*', 'vendor/**/*', '.bundle/**/*'],
+          'require' => [],
+          'domains' => [],
+          'reporters' => %w[rubocop require_not_found],
+          'require_paths' => [],
+          'max_files' => MAX_FILES,
+        }
+      end
 
       # Get an array of files from the provided globs.
       #
