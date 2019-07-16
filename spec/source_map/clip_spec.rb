@@ -968,4 +968,17 @@ describe Solargraph::SourceMap::Clip do
     paths = clip.complete.pins.map(&:path)
     expect(paths).to include('Array#length')
   end
+
+  it 'infers using yielded blocks' do
+    source = Solargraph::Source.load_string(%(
+      # @type [Array<String>]
+      list = []
+      sub = list.select { |str| str.ascii_only? }
+      sub
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new
+    api_map.map source
+    clip = api_map.clip_at('test.rb', [4, 6])
+    expect(clip.infer.tag).to eq('Array<String>')
+  end
 end

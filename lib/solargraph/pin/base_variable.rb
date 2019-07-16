@@ -41,11 +41,9 @@ module Solargraph
         return ComplexType::UNDEFINED if @assignment.nil?
         types = []
         returns_from(@assignment).each do |node|
-          chain = Source::NodeChainer.chain(node, filename)
-          next if chain.links.first.word == name
-          clip = api_map.clip_at(location.filename, location.range.start)
-          locals = clip.locals - [self]
-          result = chain.infer(api_map, closure, locals)
+          pos = Solargraph::Position.new(node.loc.expression.last_line, node.loc.expression.last_column)
+          clip = api_map.clip_at(location.filename, pos)
+          result = clip.infer
           types.push result unless result.undefined?
         end
         return ComplexType::UNDEFINED if types.empty?
