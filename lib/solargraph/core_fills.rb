@@ -21,10 +21,14 @@ module Solargraph
     ]
 
     OVERRIDES = [
-      Override.method_return('Array#select', 'self'),
-      Override.method_return('Array#reject', 'self'),
       Override.method_return('Array#keep_if', 'self'),
       Override.method_return('Array#delete_if', 'self'),
+      Override.from_comment('Array#reject', %(
+@overload reject(&block)
+  @return [self]
+@overload reject()
+  @return [Enumerator]
+              )),
       Override.method_return('Array#reverse', 'self', delete: ['overload']),
       Override.from_comment('Array#select', %(
 @overload select(&block)
@@ -76,6 +80,7 @@ module Solargraph
       Override.method_return('Object#dup', 'self'),
       Override.method_return('Object#freeze', 'self'),
       Override.method_return('Object#taint', 'self'),
+      Override.method_return('Object#to_s', 'String'),
       Override.method_return('Object#untaint', 'self'),
       Override.from_comment('Object#tap', %(
 @return [self]

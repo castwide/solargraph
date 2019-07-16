@@ -53,9 +53,9 @@ module Solargraph
         type = par.typify(api_map)
         pdefs = ParamDef.from(par.closure)
         if type.undefined?
-          if par.return_type.undefined? && !pdefs.any? { |pd| pd.name == par.name && [:restarg, :kwrestarg].include?(pd.type) }
+          if par.return_type.undefined? && !pdefs.any? { |pd| pd.name == par.name && [:restarg, :kwrestarg, :blockarg].include?(pd.type) }
             result.push Problem.new(par.location, "#{par.closure.name} has undefined @param type for #{par.name}")
-          elsif !pdefs.any? { |pd| [:restarg, :kwrestarg].include?(pd.type) }
+          elsif !pdefs.any? { |pd| [:restarg, :kwrestarg, :blockarg].include?(pd.type) }
             result.push Problem.new(par.location, "#{par.closure.name} has unresolved @param type for #{par.name}")
           end
         end
