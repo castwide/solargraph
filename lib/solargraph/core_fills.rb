@@ -80,6 +80,7 @@ module Solargraph
       Override.method_return('Object#dup', 'self'),
       Override.method_return('Object#freeze', 'self'),
       Override.method_return('Object#taint', 'self'),
+      Override.method_return('Object#to_s', 'String'),
       Override.method_return('Object#untaint', 'self'),
       Override.from_comment('Object#tap', %(
 @return [self]
