@@ -146,7 +146,7 @@ module Solargraph
         class << self
           CONDITIONAL = [:if, :unless]
           REDUCEABLE = [:begin, :kwbegin]
-          SKIPPABLE = [:def, :defs, :class, :sclass, :module, :block]
+          SKIPPABLE = [:def, :defs, :class, :sclass, :module]
 
           # @param node [Parser::AST::Node]
           # @return [Array<Parser::AST::Node>]
