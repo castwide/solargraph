@@ -11,9 +11,6 @@ module Solargraph
       # The workspace's .solargraph.yml can override this value.
       MAX_FILES = 5000
         
-      # The directory that contains the global config file
-      GLOBAL_CONFIG_DIR = File.expand_path('~')
-
       # @return [String]
       attr_reader :directory
 
@@ -96,11 +93,23 @@ module Solargraph
       end
 
       private
+      
+      # @return [String]
+      def global_config_path
+        ENV['SOLARGRAPH_GLOBAL_CONFIG'] || 
+          File.join(Dir.home, '.config', 'solargraph', 'config.yml')
+      end
+
+      # @return [String]
+      def workspace_config_path
+        return '' if @directory.empty?
+        File.join(@directory, '.solargraph.yml')
+      end
 
       # @return [Hash]
       def config_data
-        workspace_config = read_config(@directory)
-        global_config = read_config(GLOBAL_CONFIG_DIR)
+        workspace_config = read_config(workspace_config_path)
+        global_config = read_config(global_config_path)
         
         defaults = default_config
         defaults.merge({'exclude' => []}) unless workspace_config.nil?
@@ -114,12 +123,10 @@ module Solargraph
       #
       # @param directory [String]
       # @return [Hash]
-      def read_config directory = ''
-        return nil if directory.empty?
-        sfile = File.join(directory, '.solargraph.yml')
-
-        return nil unless File.file?(sfile)
-        YAML.safe_load(File.read(sfile))
+      def read_config config_path = ''
+        return nil if config_path.empty?
+        return nil unless File.file?(config_path)
+        YAML.safe_load(File.read(config_path))
       end
       
       # @return [Hash]
