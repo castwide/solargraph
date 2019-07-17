@@ -162,7 +162,8 @@ module Solargraph
             elsif node.type == :return
               result.concat reduce_to_value_nodes([node.children[0]])
             elsif node.type == :block
-              result.concat reduce_to_value_nodes(node.children[0..-2])
+              result.concat reduce_to_value_nodes([node.children[0]])
+              result.concat get_return_nodes_only(node.children[2])
             else
               result.push node
             end
@@ -174,9 +175,12 @@ module Solargraph
           def get_return_nodes_from_children parent
             result = []
             nodes = parent.children.select{|n| n.is_a?(AST::Node)}
-            nodes[0..-2].each do |node|
-              next if SKIPPABLE.include?(node.type)
-              if node.type == :return
+            nodes.each_with_index do |node, idx|
+              if node.type == :block
+                result.concat get_return_nodes_only(node.children[2])
+              elsif SKIPPABLE.include?(node.type)
+                next
+              elsif node.type == :return
                 result.concat reduce_to_value_nodes([node.children[0]])
                 # Return the result here because the rest of the code is
                 # unreachable
@@ -184,8 +188,8 @@ module Solargraph
               else
                 result.concat get_return_nodes_only(node)
               end
+              result.concat reduce_to_value_nodes([nodes.last]) if idx == nodes.length - 1
             end
-            result.concat reduce_to_value_nodes([nodes.last]) unless nodes.last.nil?
             result
           end
 
