@@ -122,6 +122,8 @@ module Solargraph
         signature
       end
 
+      NIL_NODE = Parser::AST::Node.new(:nil)
+
       # Find all the nodes within the provided node that potentially return a
       # value.
       #
@@ -129,17 +131,13 @@ module Solargraph
       # second child (after the :args node) of a :def node. A simple one-line
       # method would typically return itself, while a node with conditions
       # would return the resulting node from each conditional branch. Nodes
-      # that follow a :return node are assumed to be unreachable. Implicit nil
-      # values are ignored.
-      #
-      # @todo Maybe this method should include implicit nil values in results.
-      #   For example, a bare `return` would return a :nil node instead of an
-      #   empty array.
+      # that follow a :return node are assumed to be unreachable. Nil values
+      # are converted to nil node types.
       #
       # @param node [Parser::AST::Node]
       # @return [Array<Parser::AST::Node>]
       def returns_from node
-        DeepInference.get_return_nodes(node)
+        DeepInference.get_return_nodes(node).map { |n| n || NIL_NODE }
       end
 
       module DeepInference
