@@ -95,6 +95,14 @@ module Solargraph
         block.gates
       end
 
+      def in_block?
+        return @in_block unless @in_block.nil?
+        @in_block = begin
+          tree = cursor.source.tree_at(cursor.position.line, cursor.position.column)
+          tree[1].is_a?(Parser::AST::Node) && tree[1].type == :block
+        end
+      end
+
       private
 
       # @return [ApiMap]

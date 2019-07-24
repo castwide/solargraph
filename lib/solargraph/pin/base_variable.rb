@@ -45,7 +45,10 @@ module Solargraph
         returns_from(@assignment).each do |node|
           pos = Solargraph::Position.new(node.loc.expression.last_line, node.loc.expression.last_column)
           clip = api_map.clip_at(location.filename, pos)
-          result = clip.infer
+          # Use the return node for inference. The clip might infer from the
+          # first node in a method call instead of the entire call.
+          chain = Solargraph::Source::NodeChainer.chain(node, nil, clip.in_block?)
+          result = chain.infer(api_map, closure, clip.locals)
           types.push result unless result.undefined?
         end
         return ComplexType::UNDEFINED if types.empty?
