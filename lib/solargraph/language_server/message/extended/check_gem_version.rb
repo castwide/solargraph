@@ -11,6 +11,14 @@ module Solargraph
         # is true, notify the client when the gem is up to date.
         #
         class CheckGemVersion < Base
+          def self.fetcher
+            @fetcher ||= Gem::SpecFetcher.new
+          end
+
+          def self.fetcher= obj
+            @fetcher = obj
+          end
+
           GEM_ZERO = Gem::Version.new('0.0.0')
 
           def initialize host, request, current: Gem::Version.new(Solargraph::VERSION), available: nil
@@ -58,8 +66,7 @@ module Solargraph
               @fetched = true
               begin
                 @available ||= begin
-                  fetcher = Gem::SpecFetcher.new
-                  tuple = fetcher.search_for_dependency(Gem::Dependency.new('solargraph')).flatten.first
+                  tuple = CheckGemVersion.fetcher.search_for_dependency(Gem::Dependency.new('solargraph')).flatten.first
                   if tuple.nil?
                     @error = 'An error occurred fetching the gem data'
                     GEM_ZERO

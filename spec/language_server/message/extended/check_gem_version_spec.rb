@@ -1,4 +1,13 @@
 describe Solargraph::LanguageServer::Message::Extended::CheckGemVersion do
+  before :each do
+    version = double(:GemVersion, version: Gem::Version.new('1.0.0'))
+    Solargraph::LanguageServer::Message::Extended::CheckGemVersion.fetcher = double(:fetcher, search_for_dependency: [version])
+  end
+
+  after :each do
+    Solargraph::LanguageServer::Message::Extended::CheckGemVersion.fetcher = nil
+  end
+
   it "checks the gem source" do
     host = Solargraph::LanguageServer::Host.new
     message = described_class.new(host, {})

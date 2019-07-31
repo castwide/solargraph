@@ -43,6 +43,15 @@ describe Protocol do
     @protocol.stop
   end
 
+  before :each do
+    version = double(:GemVersion, version: Gem::Version.new('1.0.0'))
+    Solargraph::LanguageServer::Message::Extended::CheckGemVersion.fetcher = double(:fetcher, search_for_dependency: [version])
+  end
+
+  after :each do
+    Solargraph::LanguageServer::Message::Extended::CheckGemVersion.fetcher = nil
+  end
+
   it "handles initialize" do
     @protocol.request 'initialize', {
       'capabilities' => {
