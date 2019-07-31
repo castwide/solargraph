@@ -981,4 +981,20 @@ describe Solargraph::SourceMap::Clip do
     clip = api_map.clip_at('test.rb', [4, 6])
     expect(clip.infer.tag).to eq('Array<String>')
   end
+
+  it 'completes from repaired sources with missing nodes' do
+    source = Solargraph::Source.load_string(%(
+      x = []
+      
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new
+    api_map.map source
+    updater = Solargraph::Source::Updater.new('test.rb', 1, [
+      Solargraph::Source::Change.new(Solargraph::Range.from_to(2, 6, 2, 6), 'x.')
+    ])
+    updated = source.start_synchronize(updater)
+    api_map.map updated
+    clip = api_map.clip_at('test.rb', [2, 8])
+    expect(clip.complete.pins.first.path).to start_with('Array#')
+  end
 end

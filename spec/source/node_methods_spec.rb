@@ -81,8 +81,7 @@ describe Solargraph::Source::NodeMethods do
       end
     ))
     rets = Solargraph::Source::NodeMethods.returns_from(node)
-    # @todo Should there be two nil returns?
-    expect(rets.length).to eq(1)
+    expect(rets.length).to eq(2)
   end
 
   it "handles return nodes after other nodes" do
@@ -155,5 +154,30 @@ describe Solargraph::Source::NodeMethods do
     expect(rets.length).to eq(2)
     expect(rets[0].type).to eq(:int)
     expect(rets[1].type).to eq(:str)
+  end
+
+  it 'finds return nodes in blocks' do
+    node = Solargraph::Source.parse(%(
+      array.each do |item|
+        return item if foo
+      end
+    ))
+    rets = Solargraph::Source::NodeMethods.returns_from(node)
+    expect(rets.length).to eq(2)
+    expect(rets[1].type).to eq(:lvar)
+  end
+
+  it 'returns nested return blocks' do
+    node = Solargraph::Source.parse(%(
+      if foo
+        array.each do |item|
+          return item if foo
+        end
+      end
+      nil
+    ))
+    rets = Solargraph::Source::NodeMethods.returns_from(node)
+    expect(rets.length).to eq(2)
+    expect(rets[0].type).to eq(:lvar)
   end
 end

@@ -69,10 +69,8 @@ module Solargraph
       # @return [ComplexType]
       def infer api_map, name_pin, locals
         rebind_block name_pin, api_map, locals
-        type = ComplexType::UNDEFINED
         pins = define(api_map, name_pin, locals)
-        type = infer_first_defined(pins, links.last.last_context, api_map)
-        type
+        infer_first_defined(pins, links.last.last_context, api_map)
       end
 
       # @return [Boolean]

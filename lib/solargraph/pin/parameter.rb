@@ -26,13 +26,6 @@ module Solargraph
         closure.is_a?(Pin::Block) ? typify_block_param(api_map) : typify_method_param(api_map)
       end
 
-      def try_merge! pin
-        return false unless super && closure.nearly?(pin.closure)
-        @return_type = pin.return_type
-        reset_conversions
-        true
-      end
-
       def documentation
         tag = param_tag
         return '' if tag.nil? || tag.text.nil?
@@ -118,7 +111,7 @@ module Solargraph
       # @param heredoc [YARD::Docstring]
       # @param api_map [ApiMap]
       # @param skip [Array]
-      # @return [ComplexType]
+      # @return [Array<YARD::Tags::Tag>]
       def see_reference heredoc, api_map, skip = []
         heredoc.ref_tags.each do |ref|
           next unless ref.tag_name == 'param' && ref.owner
@@ -131,7 +124,7 @@ module Solargraph
       # @param ref [String]
       # @param api_map [ApiMap]
       # @param skip [Array]
-      # @return [ComplexType]
+      # @return [Array<YARD::Tags::Tag>, nil]
       def resolve_reference ref, api_map, skip
         return nil if skip.include?(ref)
         skip.push ref
@@ -140,7 +133,7 @@ module Solargraph
           path = "#{namespace}#{ref}"
         else
           fqns = api_map.qualify(parts.first, namespace)
-          return ComplexType::UNDEFINED if fqns.nil?
+          return nil if fqns.nil?
           path = fqns + ref[parts.first.length] + parts.last
         end
         pins = api_map.get_path_pins(path)

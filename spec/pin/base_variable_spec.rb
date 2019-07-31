@@ -9,4 +9,18 @@ describe Solargraph::Pin::BaseVariable do
     pin2 = smap.locals.first
     expect(pin1).not_to eq(pin2)
   end
+
+  it 'infers types from variable assignments with unparenthesized parameters' do
+    source = Solargraph::Source.load_string(%(
+      class Container
+        def initialize; end
+      end
+      cnt = Container.new param1, param2
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new
+    api_map.map source
+    pin = api_map.source_map('test.rb').locals.first
+    type = pin.probe(api_map)
+    expect(type.tag).to eq('Container')
+  end
 end

@@ -122,6 +122,8 @@ module Solargraph
         signature
       end
 
+      NIL_NODE = Parser::AST::Node.new(:nil)
+
       # Find all the nodes within the provided node that potentially return a
       # value.
       #
@@ -129,24 +131,20 @@ module Solargraph
       # second child (after the :args node) of a :def node. A simple one-line
       # method would typically return itself, while a node with conditions
       # would return the resulting node from each conditional branch. Nodes
-      # that follow a :return node are assumed to be unreachable. Implicit nil
-      # values are ignored.
-      #
-      # @todo Maybe this method should include implicit nil values in results.
-      #   For example, a bare `return` would return a :nil node instead of an
-      #   empty array.
+      # that follow a :return node are assumed to be unreachable. Nil values
+      # are converted to nil node types.
       #
       # @param node [Parser::AST::Node]
       # @return [Array<Parser::AST::Node>]
       def returns_from node
-        DeepInference.get_return_nodes(node)
+        DeepInference.get_return_nodes(node).map { |n| n || NIL_NODE }
       end
 
       module DeepInference
         class << self
           CONDITIONAL = [:if, :unless]
           REDUCEABLE = [:begin, :kwbegin]
-          SKIPPABLE = [:def, :defs, :class, :sclass, :module, :block]
+          SKIPPABLE = [:def, :defs, :class, :sclass, :module]
 
           # @param node [Parser::AST::Node]
           # @return [Array<Parser::AST::Node>]
@@ -162,7 +160,8 @@ module Solargraph
             elsif node.type == :return
               result.concat reduce_to_value_nodes([node.children[0]])
             elsif node.type == :block
-              result.concat reduce_to_value_nodes(node.children[0..-2])
+              result.concat reduce_to_value_nodes([node.children[0]])
+              result.concat get_return_nodes_only(node.children[2])
             else
               result.push node
             end
@@ -174,9 +173,12 @@ module Solargraph
           def get_return_nodes_from_children parent
             result = []
             nodes = parent.children.select{|n| n.is_a?(AST::Node)}
-            nodes[0..-2].each do |node|
-              next if SKIPPABLE.include?(node.type)
-              if node.type == :return
+            nodes.each_with_index do |node, idx|
+              if node.type == :block
+                result.concat get_return_nodes_only(node.children[2])
+              elsif SKIPPABLE.include?(node.type)
+                next
+              elsif node.type == :return
                 result.concat reduce_to_value_nodes([node.children[0]])
                 # Return the result here because the rest of the code is
                 # unreachable
@@ -184,8 +186,8 @@ module Solargraph
               else
                 result.concat get_return_nodes_only(node)
               end
+              result.concat reduce_to_value_nodes([nodes.last]) if idx == nodes.length - 1
             end
-            result.concat reduce_to_value_nodes([nodes.last]) unless nodes.last.nil?
             result
           end
 

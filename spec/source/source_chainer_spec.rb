@@ -214,4 +214,17 @@ describe Solargraph::Source::SourceChainer do
     expect(chain.links.length).to eq(1)
     expect(chain.links.first.word).to eq('t')
   end
+
+  it "chains from fixed phrases in repaired sources with missing nodes" do
+    source = Solargraph::Source.load_string(%(
+      x = []
+      
+    ), 'test.rb')
+    updater = Solargraph::Source::Updater.new('test.rb', 1, [
+      Solargraph::Source::Change.new(Solargraph::Range.from_to(2, 6, 2, 6), 'x.')
+    ])
+    updated = source.start_synchronize(updater)
+    cursor = updated.cursor_at(Solargraph::Position.new(2, 8))
+    expect(cursor.chain.links.first.word).to eq('x')
+  end
 end
