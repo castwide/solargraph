@@ -1,5 +1,0 @@
-#!/usr/bin/env ruby
-
-require 'solargraph/plugin/process'
-
-Solargraph::Plugin::Process.new.run
