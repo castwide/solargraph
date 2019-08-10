@@ -2,27 +2,19 @@
 
 require 'rdoc'
 require 'reverse_markdown'
-require 'kramdown'
-begin
-  require 'kramdown-parser-gfm'
-rescue LoadError
-  Solargraph.logger.info "Using legacy kramdown #{Kramdown::VERSION}"
-end
+require 'redcarpet'
 
 module Solargraph
   module Pin
     # A module to add the Pin::Base#documentation method.
     #
     module Documenting
+      [].join
       # @return [String]
       def documentation
         @documentation ||= begin
-          html = Kramdown::Document.new(
-            normalize_indentation(docstring.to_s),
-            input: 'GFM',
-            entity_output: :symbolic,
-            syntax_highlighter: nil
-          ).to_html
+          redcarpet = Redcarpet::Markdown.new(Redcarpet::Render::HTML)
+          html = redcarpet.render(normalize_indentation(docstring.to_s))
           ReverseMarkdown.convert(html, github_flavored: true).lines.map(&:rstrip).join("\n")
         end
       end

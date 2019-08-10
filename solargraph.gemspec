@@ -15,7 +15,7 @@ Gem::Specification.new do |s|
   end
   s.homepage    = 'http://solargraph.org'
   s.license     = 'MIT'
-  s.executables   = ['solargraph', 'solargraph-runtime']
+  s.executables   = ['solargraph']
 
   s.required_ruby_version = '>= 2.1'
 
@@ -23,9 +23,9 @@ Gem::Specification.new do |s|
   s.add_runtime_dependency 'bundler', '>= 1.17.2'
   s.add_runtime_dependency 'htmlentities', '~> 4.3', '>= 4.3.4'
   s.add_runtime_dependency 'jaro_winkler', '~> 1.5'
-  s.add_runtime_dependency 'kramdown', '>= 1.16'
   s.add_runtime_dependency 'nokogiri', '>= 1.9.1'
   s.add_runtime_dependency 'parser', '~> 2.3'
+  s.add_runtime_dependency 'redcarpet', '~> 3.4'
   s.add_runtime_dependency 'reverse_markdown', '~> 1.0', '>= 1.0.5'
   s.add_runtime_dependency 'rubocop', '~> 0.52'
   s.add_runtime_dependency 'thor', '~> 0.19', '>= 0.19.4'

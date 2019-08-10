@@ -2,7 +2,7 @@
 
 require 'ostruct'
 require 'tilt'
-require 'kramdown'
+require 'redcarpet'
 require 'htmlentities'
 require 'cgi'
 
@@ -24,17 +24,8 @@ module Solargraph
       # @param text [String]
       # @return [String]
       def htmlify text
-        Kramdown::Document.new(
-          text.to_s.lines.map{|l| l.gsub(/^  /, "\t")}.join,
-          input: 'GFM',
-          entity_output: :symbolic,
-          syntax_highlighter_opts: {
-            block: {
-              line_numbers: false
-            },
-            default_lang: :ruby
-          },
-        ).to_html
+        redcarpet = Redcarpet::Markdown.new(Redcarpet::Render::HTML)
+        redcarpet.render(text.to_s.lines.map{|l| l.gsub(/^  /, "\t")}.join)
       end
 
       # @param code [String]
