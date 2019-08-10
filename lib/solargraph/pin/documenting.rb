@@ -3,6 +3,11 @@
 require 'rdoc'
 require 'reverse_markdown'
 require 'kramdown'
+begin
+  require 'kramdown-parser-gfm'
+rescue LoadError
+  Solargraph.logger.info "Using legacy kramdown #{Kramdown::VERSION}"
+end
 
 module Solargraph
   module Pin
