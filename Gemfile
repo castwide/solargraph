@@ -2,7 +2,7 @@ source 'https://rubygems.org'
 
 gemspec name: 'solargraph'
 
-if (RUBY_VERSION =~ /^2\.(1|2)\./)
+if RUBY_VERSION =~ /^2\.(1|2)\./
   gem 'kramdown', '~> 1.16'
 else
   gem 'kramdown', '~> 2.0'
