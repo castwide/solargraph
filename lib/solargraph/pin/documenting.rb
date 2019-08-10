@@ -2,19 +2,17 @@
 
 require 'rdoc'
 require 'reverse_markdown'
-require 'redcarpet'
+require 'maruku'
 
 module Solargraph
   module Pin
     # A module to add the Pin::Base#documentation method.
     #
     module Documenting
-      [].join
       # @return [String]
       def documentation
         @documentation ||= begin
-          redcarpet = Redcarpet::Markdown.new(Redcarpet::Render::HTML)
-          html = redcarpet.render(normalize_indentation(docstring.to_s))
+          html = Maruku.new(normalize_indentation(docstring.to_s)).to_html
           ReverseMarkdown.convert(html, github_flavored: true).lines.map(&:rstrip).join("\n")
         end
       end

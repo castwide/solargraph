@@ -2,7 +2,7 @@
 
 require 'ostruct'
 require 'tilt'
-require 'redcarpet'
+require 'maruku'
 require 'htmlentities'
 require 'cgi'
 
@@ -24,8 +24,9 @@ module Solargraph
       # @param text [String]
       # @return [String]
       def htmlify text
-        redcarpet = Redcarpet::Markdown.new(Redcarpet::Render::HTML)
-        redcarpet.render(text.to_s.lines.map{|l| l.gsub(/^  /, "\t")}.join)
+        Maruku.new(text.to_s.lines.map{|l| l.gsub(/^  /, "\t")}.join).to_html
+        # redcarpet = Redcarpet::Markdown.new(Redcarpet::Render::HTML)
+        # redcarpet.render(text.to_s.lines.map{|l| l.gsub(/^  /, "\t")}.join)
       end
 
       # @param code [String]
