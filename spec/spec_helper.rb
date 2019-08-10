@@ -1,4 +1,4 @@
-require 'bundler/setup'
+$LOAD_PATH.unshift File.realpath(File.join(File.dirname(__FILE__), '..', 'lib'))
 require 'webmock/rspec'
 WebMock.disable_net_connect!(allow_localhost: true)
 require 'simplecov'
