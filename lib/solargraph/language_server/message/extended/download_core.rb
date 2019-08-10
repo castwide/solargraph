@@ -10,15 +10,11 @@ module Solargraph
         #
         class DownloadCore < Base
           def process
-            cmd = "solargraph download-core"
-            o, s = Open3.capture2(cmd)
-            if s != 0
-              host.show_message "An error occurred while downloading documentation.", LanguageServer::MessageTypes::ERROR
-            else
-              ver = o.match(/[\d]*\.[\d]*\.[\d]*/)[0]
-              host.show_message "Downloaded documentation for Ruby #{ver}.", LanguageServer::MessageTypes::INFO
-              # @todo YardMap should be refreshed
-            end
+            ver = Solargraph::YardMap::CoreDocs.best_download
+            Solargraph::YardMap::CoreDocs.download ver
+            host.show_message "Downloaded documentation for Ruby #{ver}.", LanguageServer::MessageTypes::INFO
+          rescue StandardError => e
+            host.show_message "An error occurred while downloading documentation: [#{e.class}] #{e.message}", LanguageServer::MessageTypes::ERROR
           end
         end
       end
