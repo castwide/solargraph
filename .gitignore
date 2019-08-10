@@ -1,5 +1,5 @@
 /Gemfile.lock
-
+.Gemfile
 .idea
 .vscode
 .yardoc
