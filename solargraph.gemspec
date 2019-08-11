@@ -15,7 +15,7 @@ Gem::Specification.new do |s|
   end
   s.homepage    = 'http://solargraph.org'
   s.license     = 'MIT'
-  s.executables   = ['solargraph']
+  s.executables = ['solargraph']
 
   s.required_ruby_version = '>= 2.1'
 
