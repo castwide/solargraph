@@ -23,4 +23,22 @@ describe Solargraph::Pin::BaseVariable do
     type = pin.probe(api_map)
     expect(type.tag).to eq('Container')
   end
+
+  it 'infers from nil nodes without locations' do
+    source = Solargraph::Source.load_string(%(
+      class Foo
+        def bar
+          @bar =
+            if baz
+              1
+            end
+        end
+      end
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new
+    api_map.map source
+    pin = api_map.get_instance_variable_pins('Foo').first
+    type = pin.probe(api_map)
+    expect(type.to_s).to eq('Integer, nil')
+  end
 end

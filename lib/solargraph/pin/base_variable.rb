@@ -43,13 +43,18 @@ module Solargraph
         return ComplexType::UNDEFINED if @assignment.nil?
         types = []
         returns_from(@assignment).each do |node|
-          pos = Solargraph::Position.new(node.loc.expression.last_line, node.loc.expression.last_column)
-          clip = api_map.clip_at(location.filename, pos)
-          # Use the return node for inference. The clip might infer from the
-          # first node in a method call instead of the entire call.
-          chain = Solargraph::Source::NodeChainer.chain(node, nil, clip.in_block?)
-          result = chain.infer(api_map, closure, clip.locals)
-          types.push result unless result.undefined?
+          # Nil nodes may not have a location
+          if node.type == :nil
+            types.push ComplexType::NIL
+          else
+            pos = Solargraph::Position.new(node.loc.expression.last_line, node.loc.expression.last_column)
+            clip = api_map.clip_at(location.filename, pos)
+            # Use the return node for inference. The clip might infer from the
+            # first node in a method call instead of the entire call.
+            chain = Solargraph::Source::NodeChainer.chain(node, nil, clip.in_block?)
+            result = chain.infer(api_map, closure, clip.locals)
+            types.push result unless result.undefined?
+          end
         end
         return ComplexType::UNDEFINED if types.empty?
         ComplexType.try_parse(*types.map(&:tag))
