@@ -161,4 +161,33 @@ describe Solargraph::Pin::Method do
     type = pin.probe(api_map)
     expect(type.tag).to eq('Array')
   end
+
+  it 'processes overload tags' do
+    pin = Solargraph::Pin::Method.new(name: 'foo', comments: %<
+@overload foo(bar)
+  @param bar [Integer]
+  @return [String]
+    >)
+    expect(pin.overloads.length).to eq(1)
+    overload = pin.overloads.first
+    expect(overload.return_type.tag).to eq('String')
+    expect(overload.docstring.tag(:param).types).to eq(['Integer'])
+  end
+
+  it 'infers from nil return nodes' do
+    source = Solargraph::Source.load_string(%(
+      class Foo
+        def bar
+          if baz
+            1
+          end
+        end
+      end
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new
+    api_map.map source
+    pin = api_map.get_path_pins('Foo#bar').first
+    type = pin.probe(api_map)
+    expect(type.to_s).to eq('Integer, nil')
+  end
 end

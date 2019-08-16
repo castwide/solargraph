@@ -1,7 +1,5 @@
 # frozen_string_literal: true
 
-require 'htmlentities'
-
 module Solargraph
   module Pin
     class Method < BaseMethod
@@ -44,7 +42,7 @@ module Solargraph
             lines = []
             param_tags.each do |p|
               l = "* #{p.name}"
-              l += " [#{p.types.map { |t| HTMLEntities.new.encode(t) }.join(', ')}]" unless p.types.nil? or p.types.empty?
+              l += " [#{p.types.join(', ')}]" unless p.types.nil? or p.types.empty?
               l += " #{p.text}"
               lines.push l
             end
