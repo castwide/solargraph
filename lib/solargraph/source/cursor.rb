@@ -109,20 +109,15 @@ module Solargraph
       # @return [Cursor, nil]
       def recipient
         @recipient ||= begin
-          result = nil
           node = recipient_node
-          unless node.nil?
-            result = if node.children[1].is_a?(AST::Node)
-                       pos = Range.from_node(node.children[1]).start
-                       Cursor.new(source, Position.new(pos.line, pos.column - 1))
-                     else
-                       Cursor.new(source, Range.from_node(node).ending)
-                     end
-          end
-          result
+          node ? Cursor.new(source, Range.from_node(node).ending) : nil
         end
       end
       alias receiver recipient
+
+      def node
+        @node ||= source.node_at(position.line, position.column)
+      end
 
       # @return [Position]
       def node_position

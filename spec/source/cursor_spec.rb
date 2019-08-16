@@ -123,4 +123,13 @@ describe Solargraph::Source::Cursor do
     cursor = updated.cursor_at(Solargraph::Position.new(1, 13))
     expect(cursor).to be_string
   end
+
+  it 'returns recipient cursors' do
+    source = Solargraph::Source.load_string(%(
+      recipient(argument)
+    ))
+    r = source.cursor_at(Solargraph::Position.new(1, 6))
+    a = source.cursor_at(Solargraph::Position.new(1, 16))
+    expect(a.recipient.node).to eq(r.node)
+  end
 end

@@ -78,7 +78,7 @@ module Solargraph
             name: name,
             closure: closure,
             args: tag.parameters.map(&:first),
-            comments: tag.text
+            comments: tag.docstring.all
           )
         end
       end
