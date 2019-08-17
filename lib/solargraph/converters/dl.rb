@@ -3,7 +3,7 @@ module ReverseMarkdown
     class Dl < Base
       def convert node, state = {}
         content = treat_children(node, state).strip
-        "\n\n|---|---|\n#{content}\n"
+        "\n\n#{content}\n"
       end
     end
   end
