@@ -27,6 +27,12 @@ module Solargraph
         YARD::Templates::Helpers::Markup::RDocMarkup.new(text).to_html
       end
 
+      # @param text [String]
+      # @return [String]
+      def escape text
+        HTMLEntities.new.encode(text)
+      end
+
       # @param code [String]
       # @return [String]
       def ruby_to_html code
