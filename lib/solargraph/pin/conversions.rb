@@ -47,7 +47,7 @@ module Solargraph
         # change when pins get proxied.
         detail = String.new
         detail += "(#{parameters.join(', ')}) " unless !is_a?(Pin::BaseMethod) or parameters.empty?
-        detail += "=#{probed? ? '~' : (proxied? ? '^' : '>')} #{return_type}" unless return_type.undefined?
+        detail += "=#{probed? ? '~' : (proxied? ? '^' : '>')} #{escape_brackets(return_type.to_s)}" unless return_type.undefined?
         detail.strip!
         return nil if detail.empty?
         detail
@@ -63,7 +63,7 @@ module Solargraph
       def text_documentation
         this_path = path || return_type.tag
         return nil if this_path == 'undefined'
-        this_path
+        escape_brackets this_path
       end
 
       def reset_conversions
@@ -76,10 +76,19 @@ module Solargraph
 
       private
 
+      # @return [String]
       def generate_link
-        this_path = text_documentation
+        this_path = path || return_type.tag
+        return nil if this_path == 'undefined'
         return nil if this_path.nil? || this_path == 'undefined'
-        "[#{this_path.gsub('_', '\\\\_')}](solargraph:/document?query=#{URI.escape(this_path)})"
+        "[#{escape_brackets(this_path).gsub('_', '\\\\_')}](solargraph:/document?query=#{URI.escape(this_path)})"
+      end
+
+      # @param text [String]
+      # @return [String]
+      def escape_brackets text
+        # text.gsub(/(\<|\>)/, "\\#{$1}")
+        text.gsub("<", "\\<").gsub(">", "\\>")
       end
     end
   end
