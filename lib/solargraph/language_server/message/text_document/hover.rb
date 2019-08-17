@@ -15,7 +15,7 @@ module Solargraph
             last_link = nil
             suggestions.each do |pin|
               parts = []
-              this_link = pin.link_documentation
+              this_link = host.options['enablePages'] ? pin.link_documentation : pin.text_documentation
               if !this_link.nil? && this_link != last_link
                 parts.push this_link
               end

@@ -60,6 +60,12 @@ module Solargraph
         @link_documentation ||= generate_link
       end
 
+      def text_documentation
+        this_path = path || return_type.tag
+        return nil if this_path == 'undefined'
+        this_path
+      end
+
       def reset_conversions
         @completion_item = nil
         @resolve_completion_item = nil
@@ -71,9 +77,8 @@ module Solargraph
       private
 
       def generate_link
-        this_path = path || return_type.tag
+        this_path = text_documentation
         return nil if this_path.nil? || this_path == 'undefined'
-        # return this_path if comments.empty?
         "[#{this_path.gsub('_', '\\\\_')}](solargraph:/document?query=#{URI.escape(this_path)})"
       end
     end
