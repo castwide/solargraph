@@ -47,7 +47,7 @@ module Solargraph
         # change when pins get proxied.
         detail = String.new
         detail += "(#{parameters.join(', ')}) " unless !is_a?(Pin::BaseMethod) or parameters.empty?
-        detail += "=#{probed? ? '~' : (proxied? ? '^' : '>')} #{escape_brackets(return_type.to_s)}" unless return_type.undefined?
+        detail += "=#{probed? ? '~' : (proxied? ? '^' : '>')} #{return_type.to_s}" unless return_type.undefined?
         detail.strip!
         return nil if detail.empty?
         detail
@@ -88,7 +88,7 @@ module Solargraph
       # @return [String]
       def escape_brackets text
         # text.gsub(/(\<|\>)/, "\\#{$1}")
-        text.gsub("<", "\\<").gsub(">", "\\>")
+        text.gsub("<", '\<').gsub(">", '\>')
       end
     end
   end
