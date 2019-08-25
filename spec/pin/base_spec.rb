@@ -50,26 +50,29 @@ describe Solargraph::Pin::Base do
     expect(pin).to be_deprecated
   end
 
-  it "turns indented docstring blocks into code blocks" do
-    pin = Solargraph::Pin::Base.new(name: 'Foo', comments: %(
-Example:
+# @todo This spec is not currently valid because pin documentation is using
+#   indented blocks instead of backticks.
 
-  def meth
-    foo = Foo.new
-    foo.bar
-  end
+#   it "turns indented docstring blocks into code blocks" do
+#     pin = Solargraph::Pin::Base.new(name: 'Foo', comments: %(
+# Example:
 
-Hmm.
-      ).strip)
-    expect(pin.documentation).to include(%(
-```
-def meth
-  foo = Foo.new
-  foo.bar
-end
-```
-    ).strip)
-  end
+#   def meth
+#     foo = Foo.new
+#     foo.bar
+#   end
+
+# Hmm.
+#       ).strip)
+#     expect(pin.documentation).to include(%(
+# ```
+# def meth
+#   foo = Foo.new
+#   foo.bar
+# end
+# ```
+#     ).strip)
+#   end
 
   it "does not link documentation for undefined return types" do
     pin = Solargraph::Pin::Base.new(name: 'Foo', comments: '@return [undefined]')

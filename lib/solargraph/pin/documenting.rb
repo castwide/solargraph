@@ -1,8 +1,6 @@
 # frozen_string_literal: true
 
-require 'rdoc'
 require 'reverse_markdown'
-require 'yard'
 
 module Solargraph
   module Pin
@@ -12,11 +10,16 @@ module Solargraph
       # @return [String]
       def documentation
         @documentation ||= begin
-          text = normalize_indentation(docstring.to_s)
-          markup = YARD::Templates::Helpers::Markup::RDocMarkup.new(text)
-          html = markup.to_html
-          ReverseMarkdown.convert(html, github_flavored: true)
-                         .lines.map(&:rstrip).join("\n")
+          indented = false
+          normalize_indentation(docstring.to_s).gsub(/\t/, '  ').lines.map { |l|
+            if l =~ /^  [^\s]/ || (l.start_with?(' ') && indented)
+              indented = true
+              "  #{l}"
+            else
+              indented = false
+              l # (was `unhtml l`)
+            end
+          }.join
         end
       end
 
@@ -35,6 +38,15 @@ module Solargraph
         spaces = line.match(/^ +/)[0].length
         return line unless spaces.odd?
         line[1..-1]
+      end
+
+      # @todo This was tested as a simple way to convert some of the more
+      #   common markup in documentation to Markdown. We should still look
+      #   for a solution, but it'll have to be more robust than this.
+      def unhtml text
+        text.gsub(/\<\/?(code|tt)\>/, '`')
+            .gsub(/\<\/?(em|i)\>/, '*')
+            .gsub(/\<\/?(strong|b)\>/, '**')
       end
     end
   end
