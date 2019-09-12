@@ -12,6 +12,7 @@ module Solargraph
         @documentation ||= begin
           indented = false
           normalize_indentation(docstring.to_s).gsub(/\t/, '  ').lines.map { |l|
+            next l if l.strip.empty?
             if l =~ /^  [^\s]/ || (l.start_with?(' ') && indented)
               indented = true
               "  #{l}"
