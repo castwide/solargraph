@@ -3,7 +3,6 @@
 require 'ostruct'
 require 'tilt'
 require 'yard'
-require 'htmlentities'
 require 'cgi'
 
 module Solargraph
@@ -30,7 +29,7 @@ module Solargraph
       # @param text [String]
       # @return [String]
       def escape text
-        HTMLEntities.new.encode(text)
+        CGI.escapeHTML(text)
       end
 
       # @param code [String]
