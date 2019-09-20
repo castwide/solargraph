@@ -11,16 +11,26 @@ module Solargraph
       def documentation
         @documentation ||= begin
           indented = false
-          normalize_indentation(docstring.to_s).gsub(/\t/, '  ').lines.map { |l|
+          result = normalize_indentation(docstring.to_s).gsub(/\t/, '  ').lines.map { |l|
             next l if l.strip.empty?
-            if l =~ /^  [^\s]/ || (l.start_with?(' ') && indented)
-              indented = true
-              "  #{l}"
+            if l =~ /^  [^\s]/ || (l.start_with?('  ') && indented)
+              if indented
+                l[2..-1]
+              else
+                indented = true
+                "\n```ruby\n#{l[2..-1]}"
+              end
             else
-              indented = false
-              l # (was `unhtml l`)
+              if indented
+                indented = false
+                "```\n\n#{l}"
+              else
+                l # (was `unhtml l`)
+              end
             end
           }.join
+          result += "\n```" if indented
+          result
         end
       end
 
