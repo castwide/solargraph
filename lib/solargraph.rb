@@ -8,6 +8,7 @@ require 'reverse_markdown'
 require 'solargraph/converters/dl'
 require 'solargraph/converters/dt'
 require 'solargraph/converters/dd'
+require 'solargraph/converters/misc'
 
 # The top-level namespace for the Solargraph code mapping, documentation,
 # static analysis, and language server libraries.
