@@ -76,15 +76,6 @@ module Solargraph
         return line unless spaces.odd?
         line[1..-1]
       end
-
-      # @todo This was tested as a simple way to convert some of the more
-      #   common markup in documentation to Markdown. We should still look
-      #   for a solution, but it'll have to be more robust than this.
-      def unhtml text
-        text.gsub(/\<\/?(code|tt)\>/, '`')
-            .gsub(/\<\/?(em|i)\>/, '*')
-            .gsub(/\<\/?(strong|b)\>/, '**')
-      end
     end
   end
 end
