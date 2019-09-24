@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 
+require 'redcarpet'
 require 'reverse_markdown'
 
 module Solargraph
@@ -7,30 +8,55 @@ module Solargraph
     # A module to add the Pin::Base#documentation method.
     #
     module Documenting
+      # A documentation formatter that either performs Markdown conversion for
+      # text, or applies backticks for code blocks.
+      #
+      class DocSection
+        @@markdown = Redcarpet::Markdown.new(Redcarpet::Render::HTML, lax_spacing: true)
+
+        # @param code [Boolean] True if this section is a code block
+        def initialize code
+          @text = String.new('')
+          @code = code
+        end
+
+        def code?
+          @code
+        end
+
+        def concat text
+          @text.concat text
+        end
+
+        def to_s
+          return "\n```ruby\n#{@text}#{@text.end_with?("\n") ? '' : "\n"}```\n\n" if code?
+          ReverseMarkdown.convert @@markdown.render(@text)
+        end
+      end
+
       # @return [String]
       def documentation
         @documentation ||= begin
-          indented = false
-          result = normalize_indentation(docstring.to_s).gsub(/\t/, '  ').lines.map { |l|
-            next l if l.strip.empty?
-            if l =~ /^  [^\s]/ || (l.start_with?('  ') && indented)
-              if indented
-                l[2..-1]
-              else
-                indented = true
-                "\n```ruby\n#{l[2..-1]}"
-              end
+          # Using DocSections allows for code blocks that start with an empty
+          # line and at least two spaces of indentation. This is a common
+          # convention in Ruby core documentation, e.g., String#split.
+          sections = [DocSection.new(false)]
+          normalize_indentation(docstring.to_s).gsub(/\t/, '  ').lines.each do |l|
+            if l.strip.empty?
+              sections.last.concat l
             else
-              if indented
-                indented = false
-                "```\n\n#{l}"
+              if (l =~ /^  [^\s]/ && sections.last.to_s =~ /(\r?\n[ \t]*?){2,}$/) || (l.start_with?('  ') && sections.last.code?)
+                # Code block
+                sections.push DocSection.new(true) unless sections.last.code?
+                sections.last.concat l[2..-1]
               else
-                l # (was `unhtml l`)
+                # Regular documentation
+                sections.push DocSection.new(false) if sections.last.code?
+                sections.last.concat l
               end
             end
-          }.join
-          result += "\n```" if indented
-          result
+          end
+          sections.map(&:to_s).join
         end
       end
 

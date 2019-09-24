@@ -25,6 +25,7 @@ Gem::Specification.new do |s|
   s.add_runtime_dependency 'jaro_winkler', '~> 1.5'
   s.add_runtime_dependency 'nokogiri', '~> 1.9', '>= 1.9.1'
   s.add_runtime_dependency 'parser', '~> 2.3'
+  s.add_runtime_dependency 'redcarpet', '~> 3.5'
   s.add_runtime_dependency 'reverse_markdown', '~> 1.0', '>= 1.0.5'
   s.add_runtime_dependency 'rubocop', '~> 0.52'
   s.add_runtime_dependency 'thor', '~> 0.19', '>= 0.19.4'
