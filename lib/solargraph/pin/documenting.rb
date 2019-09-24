@@ -12,7 +12,9 @@ module Solargraph
       # text, or applies backticks for code blocks.
       #
       class DocSection
-        @@markdown = Redcarpet::Markdown.new(Redcarpet::Render::HTML, lax_spacing: true)
+        @@markdown = Redcarpet::Markdown.new(Redcarpet::Render::HTML,
+                                             lax_spacing: true,
+                                             space_after_headers: true)
 
         attr_reader :plaintext
 
