@@ -14,9 +14,11 @@ module Solargraph
       class DocSection
         @@markdown = Redcarpet::Markdown.new(Redcarpet::Render::HTML, lax_spacing: true)
 
+        attr_reader :plaintext
+
         # @param code [Boolean] True if this section is a code block
         def initialize code
-          @text = String.new('')
+          @plaintext = String.new('')
           @code = code
         end
 
@@ -25,12 +27,12 @@ module Solargraph
         end
 
         def concat text
-          @text.concat text
+          @plaintext.concat text
         end
 
         def to_s
-          return "\n```ruby\n#{@text}#{@text.end_with?("\n") ? '' : "\n"}```\n\n" if code?
-          ReverseMarkdown.convert @@markdown.render(@text)
+          return "\n```ruby\n#{@plaintext}#{@plaintext.end_with?("\n") ? '' : "\n"}```\n\n" if code?
+          ReverseMarkdown.convert @@markdown.render(@plaintext)
         end
       end
 
@@ -45,7 +47,7 @@ module Solargraph
             if l.strip.empty?
               sections.last.concat l
             else
-              if (l =~ /^  [^\s]/ && sections.last.to_s =~ /(\r?\n[ \t]*?){2,}$/) || (l.start_with?('  ') && sections.last.code?)
+              if (l =~ /^  [^\s]/ && sections.last.plaintext =~ /(\r?\n[ \t]*?){2,}$/) || (l.start_with?('  ') && sections.last.code?)
                 # Code block
                 sections.push DocSection.new(true) unless sections.last.code?
                 sections.last.concat l[2..-1]
