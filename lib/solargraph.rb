@@ -4,6 +4,10 @@ require 'yard'
 require 'solargraph/version'
 require 'rubygems/package'
 require 'yard-solargraph'
+require 'reverse_markdown'
+require 'solargraph/converters/dl'
+require 'solargraph/converters/dt'
+require 'solargraph/converters/dd'
 
 # The top-level namespace for the Solargraph code mapping, documentation,
 # static analysis, and language server libraries.
