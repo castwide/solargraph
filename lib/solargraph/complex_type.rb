@@ -20,6 +20,7 @@ module Solargraph
     # @return [ComplexType]
     def qualify api_map, context = ''
       types = @items.map do |t|
+        next t if ['Boolean', 'nil', 'void', 'undefined'].include?(t.name)
         t.qualify api_map, context
       end
       ComplexType.new(types)

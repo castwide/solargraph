@@ -252,4 +252,11 @@ describe Solargraph::ComplexType do
     type = selfy.self_to('Foo')
     expect(type.tag).to eq('Array<(String, Symbol, Foo)>')
   end
+
+  it 'qualifies special types' do
+    api_map = Solargraph::ApiMap.new
+    type = Solargraph::ComplexType.parse('nil')
+    qual = type.qualify(api_map)
+    expect(qual.tag).to eq('nil')
+  end
 end
