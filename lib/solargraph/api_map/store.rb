@@ -147,7 +147,14 @@ module Solargraph
           base = ''
           name = fqns
         end
-        namespace_children(base).select{|pin| pin.name == name && pin.is_a?(Pin::Namespace)}
+        fqns_pins_map[[base, name]]
+      end
+
+      def fqns_pins_map
+        @fqns_pins_map ||= Hash.new do |h, (base, name)|
+          value = namespace_children(base).select { |pin| pin.name == name && pin.is_a?(Pin::Namespace) }
+          h[[base, name]] = value
+        end
       end
 
       # @return [Array<Solargraph::Pin::Symbol>]
