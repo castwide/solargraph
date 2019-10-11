@@ -104,7 +104,7 @@ module Solargraph
           gen_pin = Solargraph::SourceMap::NodeProcessor.process(src_node, region).first.last
           return if gen_pin.nil?
           # @todo: Smelly instance variable access
-          gen_pin.instance_variable_set(:@comments, docstring.all)
+          gen_pin.instance_variable_set(:@comments, docstring.all.to_s)
           @pins.push gen_pin
         when 'attribute'
           return if directive.tag.name.nil?
@@ -115,7 +115,7 @@ module Solargraph
               location: location,
               closure: namespace,
               name: directive.tag.name,
-              comments: docstring.all,
+              comments: docstring.all.to_s,
               access: :reader,
               scope: namespace.is_a?(Pin::Singleton) ? :class : :instance,
               visibility: :public
@@ -126,7 +126,7 @@ module Solargraph
               location: location,
               closure: namespace,
               name: "#{directive.tag.name}=",
-              comments: docstring.all,
+              comments: docstring.all.to_s,
               access: :writer,
               scope: namespace.is_a?(Pin::Singleton) ? :class : :instance,
               visibility: :public

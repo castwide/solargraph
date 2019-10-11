@@ -11,7 +11,7 @@ module Solargraph
         @@gate_cache ||= {}
 
         def comments
-          @comments ||= code_object.docstring ? code_object.docstring.all : ''
+          @comments ||= code_object.docstring ? code_object.docstring.all.to_s : ''
         end
 
         def location
