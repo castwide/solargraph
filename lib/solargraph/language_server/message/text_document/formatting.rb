@@ -1,7 +1,8 @@
 # frozen_string_literal: true
 
-require 'open3'
+require 'rubocop'
 require 'shellwords'
+require 'solargraph'
 
 module Solargraph
   module LanguageServer
@@ -12,9 +13,12 @@ module Solargraph
             filename = uri_to_file(params['textDocument']['uri'])
             filename = 'tmp.rb' if filename.nil? or filename.empty?
             original = host.read_text(params['textDocument']['uri'])
-            cmd = "rubocop -a -f fi -s #{Shellwords.escape(filename)}"
-            o, e, s = Open3.capture3(cmd, stdin_data: original)
-            return format(original, o) if o && !o.empty?
+            options, paths = RuboCop::Options.new.parse(['-a', '-f', 'fi', filename])
+            options[:stdin] = original
+            runner = RuboCop::Runner.new(options, RuboCop::ConfigStore.new)
+            result = Solargraph::Diagnostics::RubocopHelpers.redirect_stdout{ runner.run(paths) }
+            return format(original, result) if result && !result.empty?
+          rescue RuboCop::ValidationError, RuboCop::ConfigNotFoundError => e
             set_error(Solargraph::LanguageServer::ErrorCodes::INTERNAL_ERROR, e)
           end
 
