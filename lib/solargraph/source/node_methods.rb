@@ -55,21 +55,21 @@ module Solargraph
       def infer_literal_node_type node
         return nil unless node.is_a?(AST::Node)
         if node.type == :str || node.type == :dstr
-          return 'String'
+          return '::String'
         elsif node.type == :array
-          return 'Array'
+          return '::Array'
         elsif node.type == :hash
-          return 'Hash'
+          return '::Hash'
         elsif node.type == :int
-          return 'Integer'
+          return '::Integer'
         elsif node.type == :float
-          return 'Float'
+          return '::Float'
         elsif node.type == :sym
-          return 'Symbol'
+          return '::Symbol'
         elsif node.type == :regexp
-          return 'Regexp'
+          return '::Regexp'
         elsif node.type == :irange
-          return 'Range'
+          return '::Range'
         # @todo Support `nil` keyword in types
         # elsif node.type == :nil
         #   return 'NilClass'

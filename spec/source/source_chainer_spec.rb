@@ -12,7 +12,7 @@ describe Solargraph::Source::SourceChainer do
     expect(cursor.chain).not_to be_a(Solargraph::Source::Chain::Literal)
     cursor = map.cursor_at(Solargraph::Position.new(0, 1))
     expect(cursor.chain.links.first).to be_a(Solargraph::Source::Chain::Literal)
-    expect(cursor.chain.links.first.word).to eq('<String>')
+    expect(cursor.chain.links.first.word).to eq('<::String>')
   end
 
   it "recognizes literal integers" do
@@ -21,14 +21,14 @@ describe Solargraph::Source::SourceChainer do
     expect(cursor.chain).not_to be_a(Solargraph::Source::Chain::Literal)
     cursor = map.cursor_at(Solargraph::Position.new(0, 1))
     expect(cursor.chain.links.first).to be_a(Solargraph::Source::Chain::Literal)
-    expect(cursor.chain.links.first.word).to eq('<Integer>')
+    expect(cursor.chain.links.first.word).to eq('<::Integer>')
   end
 
   it "recognizes literal regexps" do
     map = Solargraph::SourceMap.load_string("/[a-z]/")
     cursor = map.cursor_at(Solargraph::Position.new(0, 0))
     expect(cursor.chain.links.first).to be_a(Solargraph::Source::Chain::Literal)
-    expect(cursor.chain.links.first.word).to eq('<Regexp>')
+    expect(cursor.chain.links.first.word).to eq('<::Regexp>')
   end
 
   it "recognizes class variables" do
@@ -202,7 +202,7 @@ describe Solargraph::Source::SourceChainer do
     ))
     chain = Solargraph::Source::SourceChainer.chain(source2, Solargraph::Position.new(1, 9))
     expect(chain.links.first).to be_a(Solargraph::Source::Chain::Literal)
-    expect(chain.links.first.word).to eq('<String>')
+    expect(chain.links.first.word).to eq('<::String>')
     expect(chain.links.last.word).to eq('<undefined>')
   end
 

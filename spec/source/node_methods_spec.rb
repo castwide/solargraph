@@ -8,32 +8,32 @@ describe Solargraph::Source::NodeMethods do
 
   it "infers literal strings" do
     ast = Parser::CurrentRuby.parse("x = 'string'")
-    expect(Solargraph::Source::NodeMethods.infer_literal_node_type(ast.children[1])).to eq 'String'
+    expect(Solargraph::Source::NodeMethods.infer_literal_node_type(ast.children[1])).to eq '::String'
   end
 
   it "infers literal hashes" do
     ast = Parser::CurrentRuby.parse("x = {}")
-    expect(Solargraph::Source::NodeMethods.infer_literal_node_type(ast.children[1])).to eq 'Hash'
+    expect(Solargraph::Source::NodeMethods.infer_literal_node_type(ast.children[1])).to eq '::Hash'
   end
 
   it "infers literal arrays" do
     ast = Parser::CurrentRuby.parse("x = []")
-    expect(Solargraph::Source::NodeMethods.infer_literal_node_type(ast.children[1])).to eq 'Array'
+    expect(Solargraph::Source::NodeMethods.infer_literal_node_type(ast.children[1])).to eq '::Array'
   end
 
   it "infers literal integers" do
     ast = Parser::CurrentRuby.parse("x = 100")
-    expect(Solargraph::Source::NodeMethods.infer_literal_node_type(ast.children[1])).to eq 'Integer'
+    expect(Solargraph::Source::NodeMethods.infer_literal_node_type(ast.children[1])).to eq '::Integer'
   end
 
   it "infers literal floats" do
     ast = Parser::CurrentRuby.parse("x = 10.1")
-    expect(Solargraph::Source::NodeMethods.infer_literal_node_type(ast.children[1])).to eq 'Float'
+    expect(Solargraph::Source::NodeMethods.infer_literal_node_type(ast.children[1])).to eq '::Float'
   end
 
   it "infers literal symbols" do
     ast = Parser::CurrentRuby.parse(":symbol")
-    expect(Solargraph::Source::NodeMethods.infer_literal_node_type(ast)).to eq 'Symbol'
+    expect(Solargraph::Source::NodeMethods.infer_literal_node_type(ast)).to eq '::Symbol'
   end
 
   it "unpacks a multi-part constant" do
