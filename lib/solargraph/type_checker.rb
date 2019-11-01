@@ -231,8 +231,15 @@ module Solargraph
                   else
                     argtype = arg.infer(api_map, block, locals)
                     if !arg_to_duck(argtype, partype)
-                      if argtype.tag != partype.tag && !api_map.super_and_sub?(partype.tag.to_s, argtype.tag.to_s)
-                        result.push Problem.new(Solargraph::Location.new(filename, Solargraph::Range.from_node(node)), "Wrong parameter type for #{pin.path}: #{pin.parameter_names[index]} expected #{partype.tag}, received #{argtype.tag}")
+                      match = false
+                      partype.each do |pt|
+                        if argtype.tag == pt.tag || api_map.super_and_sub?(pt.tag.to_s, argtype.tag.to_s)
+                          match = true
+                          break
+                        end
+                      end
+                      unless match
+                        result.push Problem.new(Solargraph::Location.new(filename, Solargraph::Range.from_node(node)), "Wrong parameter type for #{pin.path}: #{pin.parameter_names[index]} expected [#{partype}], received [#{argtype.tag}]")
                       end
                     end
                   end

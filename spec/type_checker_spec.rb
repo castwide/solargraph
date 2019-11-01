@@ -358,4 +358,28 @@ describe Solargraph::TypeChecker do
     ))
     expect(checker.strict_type_problems).to be_one
   end
+
+  it 'validates complex parameters' do
+    checker = Solargraph::TypeChecker.load_string(%(
+      class Foo
+        # @param baz [Hash, Array]
+        def bar baz
+        end
+      end
+      Foo.new.bar([1, 2])
+    ))
+    expect(checker.strict_type_problems).to be_empty
+  end
+
+  it 'reports arguments that do not match complex parameters' do
+    checker = Solargraph::TypeChecker.load_string(%(
+      class Foo
+        # @param baz [Hash, Array]
+        def bar baz
+        end
+      end
+      Foo.new.bar('string')
+    ))
+    expect(checker.strict_type_problems).to be_one
+  end
 end
