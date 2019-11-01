@@ -45,17 +45,6 @@ module Solargraph
         return path unless path.match(/^[a-z]:/)
         path[0].upcase + path[1..-1]
       end
-
-      # @todo This is a smelly way to redirect output, but the RuboCop specs do
-      #   the same thing.
-      # @return [String]
-      def redirect_stdout
-        redir = StringIO.new
-        $stdout = redir
-        yield if block_given?
-        $stdout = STDOUT
-        redir.string
-      end
     end
   end
 end
