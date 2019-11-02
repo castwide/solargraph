@@ -35,17 +35,6 @@ module Solargraph
 
       private
 
-      # @todo This is a smelly way to redirect output, but the RuboCop specs do
-      #   the same thing.
-      # @return [String]
-      def redirect_stdout
-        redir = StringIO.new
-        $stdout = redir
-        yield if block_given?
-        $stdout = STDOUT
-        redir.string
-      end
-
       # @param resp [Hash]
       # @return [Array<Hash>]
       def make_array resp

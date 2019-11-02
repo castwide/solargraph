@@ -8,6 +8,8 @@ module Solargraph
     module Message
       module TextDocument
         class Formatting < Base
+          include Solargraph::Diagnostics::RubocopHelpers
+
           def process
             filename = uri_to_file(params['textDocument']['uri'])
             # Make the temp file in the original file's directory so RuboCop
@@ -17,7 +19,7 @@ module Solargraph
             File.write tempfile, original
             begin
               options, paths = RuboCop::Options.new.parse(['-a', '-f', 'fi', tempfile])
-              RuboCop::Runner.new(options, RuboCop::ConfigStore.new).run(paths)
+              redirect_stdout { RuboCop::Runner.new(options, RuboCop::ConfigStore.new).run(paths) }
               result = File.read(tempfile)
               File.unlink tempfile
               format original, result
