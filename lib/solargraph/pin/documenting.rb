@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-require 'redcarpet'
+require 'maruku'
 require 'reverse_markdown'
 
 module Solargraph
@@ -12,10 +12,6 @@ module Solargraph
       # text, or applies backticks for code blocks.
       #
       class DocSection
-        @@markdown = Redcarpet::Markdown.new(Redcarpet::Render::HTML,
-                                             lax_spacing: true,
-                                             space_after_headers: true)
-
         attr_reader :plaintext
 
         # @param code [Boolean] True if this section is a code block
@@ -34,7 +30,22 @@ module Solargraph
 
         def to_s
           return "\n```ruby\n#{@plaintext}#{@plaintext.end_with?("\n") ? '' : "\n"}```\n\n" if code?
-          ReverseMarkdown.convert @@markdown.render(@plaintext)
+          # ReverseMarkdown.convert @@markdown.render(@plaintext)
+          ReverseMarkdown.convert unescape_brackets(Maruku.new(escape_brackets(@plaintext)).to_html)
+        end
+
+        private
+
+        # @param text [String]
+        # @return [String]
+        def escape_brackets text
+          text.gsub(/(\[[^\]]*\])([^\(]|\z)/, '!!!`\1`!!!\2')
+        end
+
+        # @param text [String]
+        # @return [String]
+        def unescape_brackets text
+          text.gsub('!!!`[', '[').gsub(']`!!!', ']')
         end
       end
 
