@@ -3,6 +3,9 @@
 require 'maruku'
 require 'reverse_markdown'
 
+# HACK: Setting :html_parser through `Maruku.new` does not work
+MaRuKu::Globals[:html_parser] = 'nokogiri'
+
 module Solargraph
   module Pin
     # A module to add the Pin::Base#documentation method.
@@ -12,6 +15,7 @@ module Solargraph
       # text, or applies backticks for code blocks.
       #
       class DocSection
+        # @return [String]
         attr_reader :plaintext
 
         # @param code [Boolean] True if this section is a code block
@@ -24,14 +28,17 @@ module Solargraph
           @code
         end
 
+        # @param text [String]
+        # @return [String]
         def concat text
           @plaintext.concat text
         end
 
         def to_s
           return "\n```ruby\n#{@plaintext}#{@plaintext.end_with?("\n") ? '' : "\n"}```\n\n" if code?
-          # ReverseMarkdown.convert @@markdown.render(@plaintext)
-          ReverseMarkdown.convert unescape_brackets(Maruku.new(escape_brackets(@plaintext)).to_html)
+           ReverseMarkdown.convert unescape_brackets(Maruku.new(escape_brackets(@plaintext), on_error: :raise).to_html)
+        rescue MaRuKu::Exception
+          ReverseMarkdown.convert YARD::Templates::Helpers::Markup::RDocMarkup.new(@plaintext).to_html
         end
 
         private
