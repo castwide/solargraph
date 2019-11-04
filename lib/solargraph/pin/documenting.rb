@@ -36,8 +36,10 @@ module Solargraph
 
         def to_s
           return "\n```ruby\n#{@plaintext}#{@plaintext.end_with?("\n") ? '' : "\n"}```\n\n" if code?
-           ReverseMarkdown.convert unescape_brackets(Maruku.new(escape_brackets(@plaintext), on_error: :raise).to_html)
+          ReverseMarkdown.convert unescape_brackets(Maruku.new(escape_brackets(@plaintext), on_error: :raise).to_html)
         rescue MaRuKu::Exception
+          # Maruku exceptions usually indicate that the documentation is in
+          # RDoc syntax.
           ReverseMarkdown.convert YARD::Templates::Helpers::Markup::RDocMarkup.new(@plaintext).to_html
         end
 
