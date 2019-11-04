@@ -1,6 +1,8 @@
 # frozen_string_literal: true
 
 require 'jaro_winkler'
+require 'yard'
+require 'yard-solargraph'
 
 module Solargraph
   # An index of pins and other ApiMap-related data for a Source.

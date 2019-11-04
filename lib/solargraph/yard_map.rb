@@ -1,6 +1,8 @@
 # frozen_string_literal: true
 
 require 'yard'
+require 'yard-solargraph'
+require 'rubygems/package'
 
 module Solargraph
   # The YardMap provides access to YARD documentation for the Ruby core, the
@@ -291,3 +293,7 @@ module Solargraph
     end
   end
 end
+
+Solargraph::YardMap::CoreDocs.require_minimum
+# Change YARD log IO to avoid sending unexpected messages to STDOUT
+YARD::Logger.instance.io = File.new(File::NULL, 'w')

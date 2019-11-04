@@ -3,6 +3,8 @@
 require 'rubygems'
 require 'set'
 require 'pathname'
+require 'yard'
+require 'yard-solargraph'
 
 module Solargraph
   # An aggregate provider for information about workspaces, sources, gems, and

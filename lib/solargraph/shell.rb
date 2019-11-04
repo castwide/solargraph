@@ -1,8 +1,6 @@
 # frozen_string_literal: true
 
 require 'thor'
-require 'backport'
-require 'benchmark'
 
 module Solargraph
   class Shell < Thor
@@ -20,6 +18,7 @@ module Solargraph
     option :host, type: :string, aliases: :h, desc: 'The server host', default: '127.0.0.1'
     option :port, type: :numeric, aliases: :p, desc: 'The server port', default: 7658
     def socket
+      require 'backport'
       port = options[:port]
       port = available_port if port.zero?
       Backport.run do
@@ -36,6 +35,7 @@ module Solargraph
 
     desc 'stdio', 'Run a Solargraph stdio server'
     def stdio
+      require 'backport'
       Backport.run do
         Signal.trap("INT") do
           Backport.stop
@@ -159,6 +159,7 @@ module Solargraph
     option :directory, type: :string, aliases: :d, desc: 'The workspace directory', default: '.'
     option :verbose, type: :boolean, aliases: :v, desc: 'Verbose output', default: false
     def scan
+      require 'benchmark'
       directory = File.realpath(options[:directory])
       api_map = nil
       time = Benchmark.measure {

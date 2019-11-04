@@ -1,14 +1,8 @@
 # frozen_string_literal: true
 
-require 'yard'
+# require 'yard'
 require 'solargraph/version'
-require 'rubygems/package'
-require 'yard-solargraph'
-require 'reverse_markdown'
-require 'solargraph/converters/dl'
-require 'solargraph/converters/dt'
-require 'solargraph/converters/dd'
-require 'solargraph/converters/misc'
+# require 'yard-solargraph'
 
 # The top-level namespace for the Solargraph code mapping, documentation,
 # static analysis, and language server libraries.
@@ -58,7 +52,3 @@ module Solargraph
     Solargraph::Logging.logger
   end
 end
-
-Solargraph::YardMap::CoreDocs.require_minimum
-# Change YARD log IO to avoid sending unexpected messages to STDOUT
-YARD::Logger.instance.io = File.new(File::NULL, 'w')

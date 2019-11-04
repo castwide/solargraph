@@ -1,7 +1,12 @@
 # frozen_string_literal: true
 
 require 'maruku'
+require 'yard'
 require 'reverse_markdown'
+require 'solargraph/converters/dl'
+require 'solargraph/converters/dt'
+require 'solargraph/converters/dd'
+require 'solargraph/converters/misc'
 
 # HACK: Setting :html_parser through `Maruku.new` does not work
 MaRuKu::Globals[:html_parser] = 'nokogiri'
