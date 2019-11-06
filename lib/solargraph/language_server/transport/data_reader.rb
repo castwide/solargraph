@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require 'json'
+
 module Solargraph
   module LanguageServer
     module Transport
