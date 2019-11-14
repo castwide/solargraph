@@ -20,7 +20,7 @@ module Solargraph
     @@stdlib_paths = {}
     YARD::Registry.load! @@stdlib_yardoc
     YARD::Registry.all(:class, :module).each do |ns|
-      next if ns.file.nil?
+      next if ns&.file.nil?
       path = ns.file.sub(/^(ext|lib)\//, '').sub(/\.(rb|c)$/, '')
       next if path.start_with?('-')
       @@stdlib_paths[path] ||= []
