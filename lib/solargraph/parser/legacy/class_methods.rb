@@ -34,6 +34,10 @@ module Solargraph
         def map source
           NodeProcessor.process(source.node, Region.new(source: source))
         end
+
+        def returns_from node
+          NodeMethods.returns_from(node)
+        end
       end
     end
   end

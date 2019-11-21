@@ -96,7 +96,7 @@ module Solargraph
       def infer_from_return_nodes api_map
         result = []
         has_nil = false
-        returns_from(method_body_node).each do |n|
+        Parser.returns_from(method_body_node).each do |n|
           if n.nil? || n.type == :nil
             has_nil = true
             next
