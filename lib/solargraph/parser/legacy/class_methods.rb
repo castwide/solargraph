@@ -77,6 +77,10 @@ module Solargraph
         def process_node *args
           Solargraph::Parser::Legacy::NodeProcessor.process *args
         end
+
+        def infer_literal_node_type node
+          NodeMethods.infer_literal_node_type node
+        end
       end
     end
   end

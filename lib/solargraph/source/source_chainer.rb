@@ -45,7 +45,7 @@ module Solargraph
           else
             node, parent = source.tree_at(fixed_position.line, fixed_position.column)[0..2] unless source.error_ranges.any?{|r| r.nil? || r.include?(fixed_position)}
             # Exception for positions that chain literal nodes in unsynchronized sources
-            node = nil unless source.synchronized? || !infer_literal_node_type(node).nil?
+            node = nil unless source.synchronized? || !Parser.infer_literal_node_type(node).nil?
             node = Parser.parse(fixed_phrase) if node.nil?
           end
         rescue Parser::SyntaxError
