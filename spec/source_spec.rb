@@ -100,11 +100,6 @@ describe Solargraph::Source do
     expect(changed).to be_repaired
   end
 
-  it "parses nodes" do
-    node = Solargraph::Source.parse('class Foo; end', 'test.rb')
-    expect(node).to be_a(Parser::AST::Node)
-  end
-
   it "finds references" do
     source = Solargraph::Source.load_string(%(
       class Foo
