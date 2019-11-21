@@ -152,7 +152,7 @@ module Solargraph
             # @param node [Parser::AST::Node]
             # @return [Array<Parser::AST::Node>]
             def get_return_nodes node
-              return [] unless node.is_a?(Parser::AST::Node)
+              return [] unless node.is_a?(::Parser::AST::Node)
               result = []
               if REDUCEABLE.include?(node.type)
                 result.concat get_return_nodes_from_children(node)
@@ -195,9 +195,9 @@ module Solargraph
             end
 
             def get_return_nodes_only parent
-              return [] unless parent.is_a?(Parser::AST::Node)
+              return [] unless parent.is_a?(::Parser::AST::Node)
               result = []
-              nodes = parent.children.select{|n| n.is_a?(Parser::AST::Node)}
+              nodes = parent.children.select{|n| n.is_a?(::Parser::AST::Node)}
               nodes.each do |node|
                 next if SKIPPABLE.include?(node.type)
                 if node.type == :return
@@ -215,7 +215,7 @@ module Solargraph
             def reduce_to_value_nodes nodes
               result = []
               nodes.each do |node|
-                if !node.is_a?(Parser::AST::Node)
+                if !node.is_a?(::Parser::AST::Node)
                   result.push nil
                 elsif REDUCEABLE.include?(node.type)
                   result.concat get_return_nodes_from_children(node)
