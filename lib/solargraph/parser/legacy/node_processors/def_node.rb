@@ -3,8 +3,8 @@
 module Solargraph
   module Parser
     module Legacy
-      module NodeProcessor
-        class DefNode < Base
+      module NodeProcessors
+        class DefNode < Parser::NodeProcessor::Base
           def process
             loc = get_node_location(node)
             methpin = Solargraph::Pin::Method.new(

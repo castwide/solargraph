@@ -3,8 +3,8 @@
 module Solargraph
   module Parser
     module Legacy
-      module NodeProcessor
-        class NamespaceNode < Base
+      module NodeProcessors
+        class NamespaceNode < Parser::NodeProcessor::Base
           def process
             sc = nil
             if node.type == :class and !node.children[1].nil?

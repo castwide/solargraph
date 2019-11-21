@@ -3,8 +3,8 @@
 module Solargraph
   module Parser
     module Legacy
-      module NodeProcessor
-        class AliasNode < Base
+      module NodeProcessors
+        class AliasNode < Parser::NodeProcessor::Base
           def process
             loc = get_node_location(node)
             pins.push Solargraph::Pin::MethodAlias.new(

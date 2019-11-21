@@ -3,8 +3,8 @@
 module Solargraph
   module Parser
     module Legacy
-      module NodeProcessor
-        class SendNode < Base
+      module NodeProcessors
+        class SendNode < Parser::NodeProcessor::Base
           def process
             if node.children[0].nil?
               if [:private, :public, :protected].include?(node.children[1])

@@ -3,8 +3,8 @@
 module Solargraph
   module Parser
     module Legacy
-      module NodeProcessor
-        class ArgsNode < Base
+      module NodeProcessors
+        class ArgsNode < Parser::NodeProcessor::Base
           def process
             node.children.each do |u|
               loc = get_node_location(u)

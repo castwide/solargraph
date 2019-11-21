@@ -3,11 +3,11 @@
 module Solargraph
   module Parser
     module Legacy
-      module NodeProcessor
-        class GvasgnNode < Base
+      module NodeProcessors
+        class CvasgnNode < Parser::NodeProcessor::Base
           def process
             loc = get_node_location(node)
-            pins.push Solargraph::Pin::GlobalVariable.new(
+            pins.push Solargraph::Pin::ClassVariable.new(
               location: loc,
               closure: region.closure,
               name: node.children[0].to_s,

@@ -3,8 +3,8 @@
 module Solargraph
   module Parser
     module Legacy
-      module NodeProcessor
-        class SclassNode < Base
+      module NodeProcessors
+        class SclassNode < Parser::NodeProcessor::Base
           def process
             # @todo Temporarily skipping remote metaclasses
             return unless node.children[0].is_a?(AST::Node) && node.children[0].type == :self

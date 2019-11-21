@@ -3,8 +3,8 @@
 module Solargraph
   module Parser
     module Legacy
-      module NodeProcessor
-        class BlockNode < Base
+      module NodeProcessors
+        class BlockNode < Parser::NodeProcessor::Base
           def process
             pins.push Solargraph::Pin::Block.new(
               location: get_node_location(node),

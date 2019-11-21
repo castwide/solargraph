@@ -3,8 +3,8 @@
 module Solargraph
   module Parser
     module Legacy
-      module NodeProcessor
-        class IvasgnNode < Base
+      module NodeProcessors
+        class IvasgnNode < Parser::NodeProcessor::Base
           def process
             loc = get_node_location(node)
             pins.push Solargraph::Pin::InstanceVariable.new(

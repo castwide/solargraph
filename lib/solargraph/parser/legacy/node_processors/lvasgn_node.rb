@@ -3,16 +3,19 @@
 module Solargraph
   module Parser
     module Legacy
-      module NodeProcessor
-        class CvasgnNode < Base
+      module NodeProcessors
+        class LvasgnNode < Parser::NodeProcessor::Base
           def process
+            here = get_node_start_position(node)
+            presence = Range.new(here, region.closure.location.range.ending)
             loc = get_node_location(node)
-            pins.push Solargraph::Pin::ClassVariable.new(
+            locals.push Solargraph::Pin::LocalVariable.new(
               location: loc,
               closure: region.closure,
               name: node.children[0].to_s,
+              assignment: node.children[1],
               comments: comments_for(node),
-              assignment: node.children[1]
+              presence: presence
             )
             process_children
           end

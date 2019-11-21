@@ -3,8 +3,8 @@
 module Solargraph
   module Parser
     module Legacy
-      module NodeProcessor
-        class CasgnNode < Base
+      module NodeProcessors
+        class CasgnNode < Parser::NodeProcessor::Base
           def process
             here = get_node_start_position(node)
             pins.push Solargraph::Pin::Constant.new(

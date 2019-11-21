@@ -3,7 +3,7 @@
 module Solargraph
   module Parser
     module Legacy
-      module NodeProcessor
+      module NodeProcessors
         class DefsNode < DefNode
           def process
             s_visi = region.visibility
