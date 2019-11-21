@@ -85,6 +85,16 @@ module Solargraph
         def version
           parser.version
         end
+
+        def is_ast_node? node
+          node.is_a?(::Parser::AST::Node)
+        end
+
+        def node_range node
+          st = Position.new(node.loc.line, node.loc.column)
+          en = Position.new(node.loc.last_line, node.loc.last_column)
+          Range.new(st, en)
+        end
       end
     end
   end

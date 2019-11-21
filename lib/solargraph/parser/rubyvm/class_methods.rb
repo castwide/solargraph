@@ -1,3 +1,5 @@
+require 'solargraph/parser/rubyvm/node_processors'
+
 module Solargraph
   module Parser
     module Rubyvm
@@ -19,7 +21,7 @@ module Solargraph
         end
 
         def map source
-          # NodeProcessor.process(source.node, Region.new(source: source))
+          NodeProcessor.process(source.node, Region.new(source: source))
         end
 
         def returns_from node
@@ -67,6 +69,20 @@ module Solargraph
 
         def version
           Ruby::VERSION
+        end
+
+        def is_ast_node? node
+          if Parser.rubyvm?
+            node.is_a?(RubyVM::AbstractSyntaxTree::Node)
+          else
+            node.is_a?(::Parser::AST::Node)
+          end
+        end
+
+        def node_range node
+          st = Position.new(node.first_lineno, node.first_column)
+          en = Position.new(node.last_lineno, node.last_column)
+          Range.new(st, en)
         end
       end
     end

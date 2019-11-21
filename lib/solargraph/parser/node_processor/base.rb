@@ -29,13 +29,11 @@ module Solargraph
           @locals = locals
         end
 
-        protected
-
         # Subclasses should override this method to generate new pins.
         #
         # @return [void]
         def process
-          raise NoMethodError, "#{self.class} does not implement the `process` method"
+          process_children
         end
 
         private
@@ -44,7 +42,7 @@ module Solargraph
         # @return [void]
         def process_children subregion = region
           node.children.each do |child|
-            next unless child.is_a?(::Parser::AST::Node)
+            next unless Parser.is_ast_node?(child)
             NodeProcessor.process(child, subregion, pins, locals)
           end
         end
@@ -52,9 +50,7 @@ module Solargraph
         # @param node [Parser::AST::Node]
         # @return [Solargraph::Location]
         def get_node_location(node)
-          st = Position.new(node.loc.line, node.loc.column)
-          en = Position.new(node.loc.last_line, node.loc.last_column)
-          range = Range.new(st, en)
+          range = Parser.node_range(node)
           Location.new(region.filename, range)
         end
 
@@ -75,8 +71,6 @@ module Solargraph
         def closure_pin position
           pins.select{|pin| pin.is_a?(Pin::Closure) && pin.location.range.contain?(position)}.last
         end
-
-        private
 
         def method_args
           return [] if node.nil?

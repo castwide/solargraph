@@ -5,3 +5,5 @@ module Solargraph
     end
   end
 end
+
+require 'solargraph/parser/rubyvm/node_processors'

@@ -249,6 +249,7 @@ module Solargraph
     # @param node [Parser::AST::Node]
     # @return [String]
     def comments_for node
+      return '' # @todo Temporarily disabled
       stringified_comments[node.loc.line] ||= begin
         arr = associated_comments[node.loc.line]
         arr ? stringify_comment_array(arr) : nil

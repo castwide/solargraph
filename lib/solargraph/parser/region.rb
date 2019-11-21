@@ -18,17 +18,21 @@ module Solargraph
       # @return [Solargraph::Source]
       attr_reader :source
 
+      # @return [Array<Symbol>]
+      attr_reader :lvars
+
       # @param source [Source]
       # @param namespace [String]
       # @param scope [Symbol]
       # @param visibility [Symbol]
       def initialize source: Solargraph::Source.load_string(''), closure: nil,
-                     scope: nil, visibility: :public
+                     scope: nil, visibility: :public, lvars: []
         @source = source
         # @closure = closure
         @closure = closure || Pin::Namespace.new(name: '', location: source.location)
         @scope = scope
         @visibility = visibility
+        @lvars = lvars
       end
 
       # @return [String]
@@ -42,12 +46,13 @@ module Solargraph
       # @param scope [Symbol, nil]
       # @param visibility [Symbol, nil]
       # @return [Region]
-      def update closure: nil, scope: nil, visibility: nil
+      def update closure: nil, scope: nil, visibility: nil, lvars: nil
         Region.new(
           source: source,
           closure: closure || self.closure,
           scope: scope || self.scope,
-          visibility: visibility || self.visibility
+          visibility: visibility || self.visibility,
+          lvars: lvars || self.lvars
         )
       end
 

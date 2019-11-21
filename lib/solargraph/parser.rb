@@ -11,8 +11,7 @@ module Solargraph
     # True if the parser can use RubyVM.
     #
     def self.rubyvm?
-      # !!defined?(RubyVM::AbstractSyntaxTree)
-      false
+      !!defined?(RubyVM::AbstractSyntaxTree)
     end
 
     selected = rubyvm? ? Rubyvm : Legacy

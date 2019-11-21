@@ -32,8 +32,8 @@ module Solargraph
             name: ''
           )
         end
-        return [pins, locals] unless node.is_a?(::Parser::AST::Node)
-        klass = @@processors[node.type] || Legacy::NodeProcessors::BeginNode
+        return [pins, locals] unless Parser.is_ast_node?(node)
+        klass = @@processors[node.type] || NodeProcessor::Base
         processor = klass.new(node, region, pins, locals)
         processor.process
         [processor.pins, processor.locals]

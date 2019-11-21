@@ -2,11 +2,11 @@
 
 module Solargraph
   module Parser
-    module Legacy
+    module Rubyvm
       module NodeProcessors
-        class OrasgnNode < Parser::NodeProcessor::Base
+        class BeginNode < Parser::NodeProcessor::Base
           def process
-            NodeProcessor.process(node.children[2], region, pins, locals)
+            process_children
           end
         end
       end
