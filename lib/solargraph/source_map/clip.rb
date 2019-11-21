@@ -67,7 +67,7 @@ module Solargraph
       # @return [Array<Pin::Base>]
       def signify
         return [] unless cursor.argument?
-        chain = Source::NodeChainer.chain(cursor.recipient_node, cursor.filename)
+        chain = Parser.chain(cursor.recipient_node, cursor.filename)
         chain.define(api_map, context_pin, locals).select { |pin| pin.is_a?(Pin::Method) }
       end
 
@@ -99,7 +99,7 @@ module Solargraph
         return @in_block unless @in_block.nil?
         @in_block = begin
           tree = cursor.source.tree_at(cursor.position.line, cursor.position.column)
-          tree[1].is_a?(Parser::AST::Node) && tree[1].type == :block
+          tree[1].is_a?(::Parser::AST::Node) && tree[1].type == :block
         end
       end
 
@@ -131,7 +131,7 @@ module Solargraph
       # @return [Array<Pin::Base>]
       def yielded_self_pins
         return [] unless block.is_a?(Pin::Block) && block.receiver
-        chain = Solargraph::Source::NodeChainer.chain(block.receiver, source_map.source.filename)
+        chain = Parser.chain(block.receiver, source_map.source.filename)
         receiver_pin = chain.define(api_map, context_pin, locals).first
         return [] if receiver_pin.nil?
         result = []

@@ -41,18 +41,19 @@ module Solargraph
             node, parent = source.tree_at(position.line, position.column)[0..2]
           elsif source.parsed? && source.repaired? && end_of_phrase == '.'
             node, parent = source.tree_at(fixed_position.line, fixed_position.column)[0..2]
-            node = Source.parse(fixed_phrase) if node.nil?
+            node = Parser.parse(fixed_phrase) if node.nil?
           else
             node, parent = source.tree_at(fixed_position.line, fixed_position.column)[0..2] unless source.error_ranges.any?{|r| r.nil? || r.include?(fixed_position)}
             # Exception for positions that chain literal nodes in unsynchronized sources
             node = nil unless source.synchronized? || !infer_literal_node_type(node).nil?
-            node = Source.parse(fixed_phrase) if node.nil?
+            node = Parser.parse(fixed_phrase) if node.nil?
           end
         rescue Parser::SyntaxError
           return Chain.new([Chain::UNDEFINED_CALL])
         end
         return Chain.new([Chain::UNDEFINED_CALL]) if node.nil? || (node.type == :sym && !phrase.start_with?(':'))
-        chain = NodeChainer.chain(node, source.filename, parent && parent.type == :block)
+        # chain = NodeChainer.chain(node, source.filename, parent && parent.type == :block)
+        chain = Parser.chain(node, source.filename, parent && parent.type == :block)
         if source.repaired? || !source.parsed? || !source.synchronized?
           if end_of_phrase.strip == '.'
             chain.links.push Chain::UNDEFINED_CALL

@@ -51,7 +51,7 @@ module Solargraph
             clip = api_map.clip_at(location.filename, pos)
             # Use the return node for inference. The clip might infer from the
             # first node in a method call instead of the entire call.
-            chain = Solargraph::Source::NodeChainer.chain(node, nil, clip.in_block?)
+            chain = Parser.chain(node, nil, clip.in_block?)
             result = chain.infer(api_map, closure, clip.locals)
             types.push result unless result.undefined?
           end

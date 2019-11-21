@@ -140,7 +140,7 @@ module Solargraph
         return unless pin.is_a?(Pin::Block) && pin.receiver && !pin.rebound?
         # This first rebind just sets the block pin's rebound state
         pin.rebind ComplexType::UNDEFINED
-        chain = Solargraph::Source::NodeChainer.chain(pin.receiver, pin.location.filename)
+        chain = Parser.chain(pin.receiver, pin.location.filename)
         return if skippable_block_receivers(api_map).include?(chain.links.last.word)
         if ['instance_eval', 'instance_exec', 'class_eval', 'class_exec', 'module_eval', 'module_exec'].include?(chain.links.last.word)
           type = chain.base.infer(api_map, pin, locals)

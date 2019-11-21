@@ -403,7 +403,7 @@ module Solargraph
     # @return [Array<Parser::AST::Node>]
     def string_nodes_in n
       result = []
-      if n.is_a?(Parser::AST::Node)
+      if n.is_a?(::Parser::AST::Node)
         if n.type == :str || n.type == :dstr
           result.push n
         else

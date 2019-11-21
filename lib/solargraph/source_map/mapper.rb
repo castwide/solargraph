@@ -101,7 +101,7 @@ module Solargraph
             namespace = closure_at(comment_position)
           end
           region = Region.new(source: @source, closure: namespace)
-          src_node = Solargraph::Source.parse("def #{directive.tag.name};end", @filename, location.range.start.line)
+          src_node = Parser.parse("def #{directive.tag.name};end", @filename, location.range.start.line)
           gen_pin = Solargraph::SourceMap::NodeProcessor.process(src_node, region).first.last
           return if gen_pin.nil?
           # @todo: Smelly instance variable access
@@ -138,7 +138,7 @@ module Solargraph
           region = Region.new(source: @source, closure: ns)
           begin
             node = Solargraph::Source.parse(directive.tag.text, @filename, comment_position.line)
-            NodeProcessor.process(node, region, @pins)
+            Parser.process_node(node, region, @pins)
           rescue Parser::SyntaxError => e
             # @todo Handle parser errors in !parse directives
           end

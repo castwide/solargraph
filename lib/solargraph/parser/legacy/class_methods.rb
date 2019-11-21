@@ -69,6 +69,14 @@ module Solargraph
           end
           result
         end
+
+        def chain *args
+          NodeChainer.chain *args
+        end
+
+        def process_node *args
+          Solargraph::Parser::Legacy::NodeProcessor.process *args
+        end
       end
     end
   end
