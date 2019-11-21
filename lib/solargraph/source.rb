@@ -7,19 +7,19 @@ module Solargraph
   # A Ruby file that has been parsed into an AST.
   #
   class Source
-    autoload :FlawedBuilder, 'solargraph/source/flawed_builder'
+    # autoload :FlawedBuilder, 'solargraph/source/flawed_builder'
     autoload :Updater,       'solargraph/source/updater'
     autoload :Change,        'solargraph/source/change'
     autoload :Mapper,        'solargraph/source/mapper'
-    autoload :NodeMethods,   'solargraph/source/node_methods'
+    # autoload :NodeMethods,   'solargraph/source/node_methods'
     autoload :EncodingFixes, 'solargraph/source/encoding_fixes'
     autoload :Cursor,        'solargraph/source/cursor'
     autoload :Chain,         'solargraph/source/chain'
     autoload :SourceChainer, 'solargraph/source/source_chainer'
-    autoload :NodeChainer,   'solargraph/source/node_chainer'
+    # autoload :NodeChainer,   'solargraph/source/node_chainer'
 
     include EncodingFixes
-    include NodeMethods
+    # include NodeMethods
 
     # @return [String]
     attr_reader :filename
@@ -47,7 +47,8 @@ module Solargraph
       @version = version
       @domains = []
       begin
-        @node, @comments = Source.parse_with_comments(@code, filename)
+        # @node, @comments = Source.parse_with_comments(@code, filename)
+        @node, @comments = Solargraph::Parser.parse_with_comments(@code, filename)
         @parsed = true
       rescue Parser::SyntaxError, EncodingError => e
         # @todo 100% whitespace results in a nil node, so there's no reason to parse it.
@@ -305,7 +306,7 @@ module Solargraph
     def associated_comments
       @associated_comments ||= begin
         result = {}
-        Parser::Source::Comment.associate_locations(node, comments).each_pair do |loc, all|
+        ::Parser::Source::Comment.associate_locations(node, comments).each_pair do |loc, all|
           block = all.select { |l| l.loc.line < loc.line }
           next if block.empty?
           result[loc.line] ||= []
@@ -500,35 +501,6 @@ module Solargraph
       # @return [Solargraph::Source]
       def load_string code, filename = nil, version = 0
         Source.new code, filename, version
-      end
-
-      # @param code [String]
-      # @param filename [String]
-      # @return [Array(Parser::AST::Node, Array<Parser::Source::Comment>)]
-      def parse_with_comments code, filename = nil
-        buffer = Parser::Source::Buffer.new(filename, 0)
-        buffer.source = code
-        parser.parse_with_comments(buffer)
-      end
-
-      # @param code [String]
-      # @param filename [String, nil]
-      # @param line [Integer]
-      # @return [Parser::AST::Node]
-      def parse code, filename = nil, line = 0
-        buffer = Parser::Source::Buffer.new(filename, line)
-        buffer.source = code
-        parser.parse(buffer)
-      end
-
-      # @return [Parser::Base]
-      def parser
-        # @todo Consider setting an instance variable. We might not need to
-        #   recreate the parser every time we use it.
-        parser = Parser::CurrentRuby.new(FlawedBuilder.new)
-        parser.diagnostics.all_errors_are_fatal = true
-        parser.diagnostics.ignore_warnings      = true
-        parser
       end
 
       # @param comments [String]

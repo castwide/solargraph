@@ -3,7 +3,7 @@
 module Solargraph
   module Pin
     class BaseVariable < Base
-      include Solargraph::Source::NodeMethods
+      # include Solargraph::Source::NodeMethods
 
       # @return [Parser::AST::Node, nil]
       attr_reader :assignment

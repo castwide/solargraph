@@ -8,7 +8,7 @@ module Solargraph
     # normally need to call it directly.
     #
     class Mapper
-      include Source::NodeMethods
+      # include Source::NodeMethods
 
       private_class_method :new
 
@@ -23,7 +23,8 @@ module Solargraph
         @filename = source.filename
         @code = source.code
         @comments = source.comments
-        @pins, @locals = NodeProcessor.process(source.node, Region.new(source: source))
+        # @pins, @locals = NodeProcessor.process(source.node, Region.new(source: source))
+        @pins, @locals = Parser.map(source)
         process_comment_directives
         [@pins, @locals]
       rescue Exception => e

@@ -3,7 +3,7 @@
 module Solargraph
   module Pin
     class Method < BaseMethod
-      include Source::NodeMethods
+      # include Source::NodeMethods
 
       # @return [Array<String>]
       attr_reader :parameters
