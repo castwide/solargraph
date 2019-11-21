@@ -81,6 +81,10 @@ module Solargraph
         def infer_literal_node_type node
           NodeMethods.infer_literal_node_type node
         end
+
+        def version
+          parser.version
+        end
       end
     end
   end
