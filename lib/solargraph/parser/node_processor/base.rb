@@ -72,6 +72,9 @@ module Solargraph
           pins.select{|pin| pin.is_a?(Pin::Closure) && pin.location.range.contain?(position)}.last
         end
 
+        # @todo This does not belong here. Its implementation is specific to
+        #   Parser::AST::Node.
+        #
         def method_args
           return [] if node.nil?
           list = nil
