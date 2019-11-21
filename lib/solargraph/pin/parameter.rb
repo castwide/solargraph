@@ -62,7 +62,7 @@ module Solargraph
       # @return [ComplexType]
       def typify_block_param api_map
         if closure.is_a?(Pin::Block) && closure.receiver
-          chain = Source::NodeChainer.chain(closure.receiver, filename)
+          chain = Parser.chain(closure.receiver, filename)
           clip = api_map.clip_at(location.filename, location.range.start)
           locals = clip.locals - [self]
           meths = chain.define(api_map, closure, locals)

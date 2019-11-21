@@ -159,7 +159,7 @@ describe Solargraph::Source::Chain do
     ), 'test.rb')
     api_map = Solargraph::ApiMap.new
     api_map.map source
-    chain = Solargraph::Source::NodeChainer.chain(source.node, source.filename)
+    chain = Solargraph::Parser.chain(source.node, source.filename)
     type = chain.infer(api_map, api_map.pins.first, [])
     expect(type.tag).to eq('Boolean')
   end
@@ -169,7 +169,7 @@ describe Solargraph::Source::Chain do
       [] && ''
     ))
     api_map = Solargraph::ApiMap.new
-    chain = Solargraph::Source::NodeChainer.chain(source.node)
+    chain = Solargraph::Parser.chain(source.node)
     type = chain.infer(api_map, Solargraph::Pin::ROOT_PIN, [])
     expect(type.to_s).to eq('String')
   end
@@ -179,7 +179,7 @@ describe Solargraph::Source::Chain do
       [] || ''
     ))
     api_map = Solargraph::ApiMap.new
-    chain = Solargraph::Source::NodeChainer.chain(source.node)
+    chain = Solargraph::Parser.chain(source.node)
     type = chain.infer(api_map, Solargraph::Pin::ROOT_PIN, [])
     expect(type.to_s).to eq('Array, String')
   end
@@ -192,7 +192,7 @@ describe Solargraph::Source::Chain do
     api_map = Solargraph::ApiMap.new
     api_map.map source
     node = source.node_at(2, 12)
-    chain = Solargraph::Source::NodeChainer.chain(node, 'test.rb')
+    chain = Solargraph::Parser.chain(node, 'test.rb')
     pin = chain.define(api_map, Solargraph::Pin::ROOT_PIN, []).first
     expect(pin.return_type.tag).to eq('Proc')
     type = chain.infer(api_map, Solargraph::Pin::ROOT_PIN, [])
