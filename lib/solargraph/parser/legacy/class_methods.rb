@@ -9,6 +9,8 @@ module Solargraph
           buffer = ::Parser::Source::Buffer.new(filename, 0)
           buffer.source = code
           parser.parse_with_comments(buffer)
+        rescue ::Parser::SyntaxError => e
+          raise Parser::SyntaxError, e.message
         end
 
         # @param code [String]
@@ -19,6 +21,8 @@ module Solargraph
           buffer = ::Parser::Source::Buffer.new(filename, line)
           buffer.source = code
           parser.parse(buffer)
+        rescue ::Parser::SyntaxError => e
+          raise Parser::SyntaxError, e.message
         end
 
         # @return [Parser::Base]
@@ -37,6 +41,33 @@ module Solargraph
 
         def returns_from node
           NodeMethods.returns_from(node)
+        end
+
+        def references source, name
+          inner_node_references(name, source.node).map do |n|
+            offset = Position.to_offset(source.code, NodeMethods.get_node_start_position(n))
+            soff = source.code.index(name, offset)
+            eoff = soff + name.length
+            Location.new(
+              source.filename,
+              Range.new(
+                Position.from_offset(source.code, soff),
+                Position.from_offset(source.code, eoff)
+              )
+            )
+          end
+        end
+
+        # @param name [String]
+        # @param top [AST::Node]
+        # @return [Array<AST::Node>]
+        def inner_node_references name, top
+          result = []
+          if top.is_a?(AST::Node) && top.to_s.include?(":#{name}")
+            result.push top if top.children.any? { |c| c.to_s == name }
+            top.children.each { |c| result.concat inner_node_references(name, c) }
+          end
+          result
         end
       end
     end

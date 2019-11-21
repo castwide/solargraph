@@ -229,18 +229,7 @@ module Solargraph
     # @param name [String]
     # @return [Array<Location>]
     def references name
-      inner_node_references(name, node).map do |n|
-        offset = Position.to_offset(code, get_node_start_position(n))
-        soff = code.index(name, offset)
-        eoff = soff + name.length
-        Location.new(
-          filename,
-          Range.new(
-            Position.from_offset(code, soff),
-            Position.from_offset(code, eoff)
-          )
-        )
-      end
+      Parser.references self, name
     end
 
     # @return [Array<Range>]
@@ -322,7 +311,7 @@ module Solargraph
     # @param result [Array<Range>]
     # @return [void]
     def inner_folding_ranges top, result = []
-      return unless top.is_a?(Parser::AST::Node)
+      return unless top.is_a?(::Parser::AST::Node)
       if FOLDING_NODE_TYPES.include?(top.type)
         range = Range.from_node(top)
         if result.empty? || range.start.line > result.last.start.line
@@ -439,18 +428,6 @@ module Solargraph
           inner_tree_at(c, position, stack)
         end
       end
-    end
-
-    # @param name [String]
-    # @param top [AST::Node]
-    # @return [Array<AST::Node>]
-    def inner_node_references name, top
-      result = []
-      if top.is_a?(AST::Node) && top.to_s.include?(":#{name}")
-        result.push top if top.children.any? { |c| c.to_s == name }
-        top.children.each { |c| result.concat inner_node_references(name, c) }
-      end
-      result
     end
 
     protected
