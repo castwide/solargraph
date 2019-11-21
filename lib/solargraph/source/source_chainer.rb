@@ -8,7 +8,7 @@ module Solargraph
     # results for completion and definition queries.
     #
     class SourceChainer
-      include Source::NodeMethods
+      # include Source::NodeMethods
 
       private_class_method :new
 

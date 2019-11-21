@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require 'parser'
+
 module Solargraph
   module Parser
     module Legacy

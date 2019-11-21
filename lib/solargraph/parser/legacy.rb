@@ -6,6 +6,7 @@ module Solargraph
       autoload :NodeProcessor, 'solargraph/parser/legacy/node_processor'
       # autoload :Region, 'solargraph/parser/legacy/region'
       autoload :NodeMethods, 'solargraph/parser/legacy/node_methods'
+      autoload :NodeChainer, 'solargraph/parser/legacy/node_chainer'
     end
   end
 end
