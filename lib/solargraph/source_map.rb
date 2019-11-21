@@ -12,7 +12,6 @@ module Solargraph
     autoload :Mapper,        'solargraph/source_map/mapper'
     autoload :Clip,          'solargraph/source_map/clip'
     autoload :Completion,    'solargraph/source_map/completion'
-    autoload :Region,        'solargraph/source_map/region'
 
     # @return [Source]
     attr_reader :source

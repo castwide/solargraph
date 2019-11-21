@@ -23,7 +23,6 @@ module Solargraph
         @filename = source.filename
         @code = source.code
         @comments = source.comments
-        # @pins, @locals = NodeProcessor.process(source.node, Region.new(source: source))
         @pins, @locals = Parser.map(source)
         process_comment_directives
         [@pins, @locals]
@@ -100,7 +99,7 @@ module Solargraph
           if namespace.location.range.start.line < comment_position.line
             namespace = closure_at(comment_position)
           end
-          region = Region.new(source: @source, closure: namespace)
+          region = Parser::Region.new(source: @source, closure: namespace)
           src_node = Parser.parse("def #{directive.tag.name};end", @filename, location.range.start.line)
           gen_pin = Solargraph::SourceMap::NodeProcessor.process(src_node, region).first.last
           return if gen_pin.nil?
@@ -135,9 +134,9 @@ module Solargraph
           end
         when 'parse'
           ns = closure_at(source_position)
-          region = Region.new(source: @source, closure: ns)
+          region = Parser::Region.new(source: @source, closure: ns)
           begin
-            node = Solargraph::Source.parse(directive.tag.text, @filename, comment_position.line)
+            node = Parser.parse(directive.tag.text, @filename, comment_position.line)
             Parser.process_node(node, region, @pins)
           rescue Parser::SyntaxError => e
             # @todo Handle parser errors in !parse directives
