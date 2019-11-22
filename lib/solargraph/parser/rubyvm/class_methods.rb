@@ -32,30 +32,42 @@ module Solargraph
         end
 
         def references source, name
-          # inner_node_references(name, source.node).map do |n|
-          #   offset = Position.to_offset(source.code, NodeMethods.get_node_start_position(n))
-          #   soff = source.code.index(name, offset)
-          #   eoff = soff + name.length
-          #   Location.new(
-          #     source.filename,
-          #     Range.new(
-          #       Position.from_offset(source.code, soff),
-          #       Position.from_offset(source.code, eoff)
-          #     )
-          #   )
-          # end
+          inner_node_references(name, source.node).map do |n|
+            rng = Range.from_node(n)
+            offset = Position.to_offset(source.code, rng.start)
+            soff = source.code.index(name, offset)
+            eoff = soff + name.length
+            Location.new(
+              source.filename,
+              Range.new(
+                Position.from_offset(source.code, soff),
+                Position.from_offset(source.code, eoff)
+              )
+            )
+          end
         end
 
         # @param name [String]
         # @param top [AST::Node]
         # @return [Array<AST::Node>]
         def inner_node_references name, top
-          # result = []
-          # if top.is_a?(AST::Node) && top.to_s.include?(":#{name}")
-          #   result.push top if top.children.any? { |c| c.to_s == name }
-          #   top.children.each { |c| result.concat inner_node_references(name, c) }
-          # end
-          # result
+          result = []
+          if Parser.rubyvm?
+            if Parser.is_ast_node?(top)
+              result.push top if match_rubyvm_node_to_ref(top, name)
+              top.children.each { |c| result.concat inner_node_references(name, c) }
+            end
+          else
+            if Parser.is_ast_node?(top) && top.to_s.include?(":#{name}")
+              result.push top if top.children.any? { |c| c.to_s == name }
+              top.children.each { |c| result.concat inner_node_references(name, c) }
+            end
+          end
+          result
+        end
+
+        def match_rubyvm_node_to_ref(top, name)
+          top.children.select { |c| c.is_a?(Symbol) }.any? { |c| c.to_s == name }
         end
 
         def chain *args
