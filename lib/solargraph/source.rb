@@ -240,8 +240,9 @@ module Solargraph
     # @param node [Parser::AST::Node]
     # @return [String]
     def code_for(node)
-      b = Position.line_char_to_offset(@code, node.location.line, node.location.column)
-      e = Position.line_char_to_offset(@code, node.location.last_line, node.location.last_column)
+      rng = Range.from_node(node)
+      b = Position.line_char_to_offset(@code, rng.start.line, rng.start.column)
+      e = Position.line_char_to_offset(@code, rng.ending.line, rng.ending.column)
       frag = code[b..e-1].to_s
       frag.strip.gsub(/,$/, '')
     end
@@ -249,8 +250,9 @@ module Solargraph
     # @param node [Parser::AST::Node]
     # @return [String]
     def comments_for node
-      stringified_comments[node.loc.line] ||= begin
-        buff = associated_comments[node.loc.line]
+      rng = Range.from_node(node)
+      stringified_comments[rng.start.line] ||= begin
+        buff = associated_comments[rng.start.line]
         buff ? stringify_comment_array(buff) : nil
       end
     end
@@ -413,13 +415,16 @@ module Solargraph
     # @return [void]
     def inner_tree_at node, position, stack
       return if node.nil?
-      here = Range.from_to(node.loc.expression.line, node.loc.expression.column, node.loc.expression.last_line, node.loc.expression.last_column)
+      # here = Range.from_to(node.loc.expression.line, node.loc.expression.column, node.loc.expression.last_line, node.loc.expression.last_column)
+      here = Range.from_node(node)
       if here.contain?(position)
         stack.unshift node
         node.children.each do |c|
-          next unless c.is_a?(AST::Node)
-          next if c.loc.expression.nil?
-          inner_tree_at(c, position, stack)
+          # next unless c.is_a?(AST::Node)
+          next unless Parser.is_ast_node?(c)
+          # next if c.loc.expression.nil?
+          rng = Range.from_node(c)
+          inner_tree_at(c, rng.start, stack)
         end
       end
     end

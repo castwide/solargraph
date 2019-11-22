@@ -3,7 +3,7 @@ describe Solargraph::Source do
     code = 'class Foo;def bar;end;end'
     source = described_class.new(code)
     expect(source.code).to eq(code)
-    expect(source.node).to be_a(Parser::AST::Node)
+    expect(Solargraph::Parser.is_ast_node?(source.node)).to be_truthy
     expect(source).to be_parsed
   end
 
@@ -236,7 +236,8 @@ y = 1 #foo
       # two
       class Foo; end
     ))
-    comments = source.comments_for(source.node)
+    node = source.node_at(4, 7)
+    comments = source.comments_for(node)
     expect(comments.lines.map(&:chomp)).to eq(['one', 'two'])
   end
 
@@ -247,7 +248,8 @@ y = 1 #foo
         # ignored
       end
     ))
-    comments = source.comments_for(source.node)
+    node = source.node_at(2, 6)
+    comments = source.comments_for(node)
     expect(comments).to include('included')
     expect(comments).not_to include('ignored')
   end
