@@ -11,6 +11,8 @@ module Solargraph
           node = RubyVM::AbstractSyntaxTree.parse(code)
           comments = CommentRipper.new(code).parse
           [node, comments]
+        rescue ::SyntaxError => e
+          raise Parser::SyntaxError, e.message
         end
 
         # @param code [String]
