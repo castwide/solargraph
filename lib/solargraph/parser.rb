@@ -1,5 +1,6 @@
 module Solargraph
   module Parser
+    autoload :CommentRipper, 'solargraph/parser/comment_ripper'
     autoload :Legacy, 'solargraph/parser/legacy'
     autoload :Rubyvm, 'solargraph/parser/rubyvm'
     autoload :Region, 'solargraph/parser/region'
@@ -11,7 +12,8 @@ module Solargraph
     # True if the parser can use RubyVM.
     #
     def self.rubyvm?
-      !!defined?(RubyVM::AbstractSyntaxTree)
+      # !!defined?(RubyVM::AbstractSyntaxTree)
+      false
     end
 
     selected = rubyvm? ? Rubyvm : Legacy

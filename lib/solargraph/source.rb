@@ -30,7 +30,7 @@ module Solargraph
     # @return [Parser::AST::Node]
     attr_reader :node
 
-    # @return [Array<Parser::Source::Comment>]
+    # @return [Hash{Integer => Array<String>}]
     attr_reader :comments
 
     # @todo Deprecate?
@@ -56,7 +56,7 @@ module Solargraph
         #   node with a location that encompasses the range.
         # @node, @comments = Source.parse_with_comments(@code.gsub(/[^\s]/, ' '), filename)
         @node = nil
-        @comments = []
+        @comments = {}
         @parsed = false
       # rescue Exception => e
       #   Solargraph.logger.warn "[#{e.class}] #{e.message}"
@@ -250,8 +250,8 @@ module Solargraph
     # @return [String]
     def comments_for node
       stringified_comments[node.loc.line] ||= begin
-        arr = associated_comments[node.loc.line]
-        arr ? stringify_comment_array(arr) : nil
+        buff = associated_comments[node.loc.line]
+        buff ? stringify_comment_array(buff) : nil
       end
     end
 
@@ -295,17 +295,30 @@ module Solargraph
     def associated_comments
       @associated_comments ||= begin
         result = {}
-        ::Parser::Source::Comment.associate_locations(node, comments).each_pair do |loc, all|
-          block = all.select { |l| l.loc.line < loc.line }
-          next if block.empty?
-          result[loc.line] ||= []
-          result[loc.line].concat block
+        buffer = String.new('')
+        last = nil
+        @comments.each_pair do |num, text|
+          if !last || num == last + 1
+            buffer.concat text
+          else
+            result[first_not_empty_from(last + 1)] = buffer.clone
+            buffer = text
+          end
+          last = num
         end
+        result[first_not_empty_from(last + 1)] = buffer unless buffer.empty? || last.nil?
         result
       end
     end
 
     private
+
+    def first_not_empty_from line
+      cursor = line
+      cursor += 1 while cursor < code.lines.length && code.lines[cursor].strip.empty?
+      cursor = line if cursor > code.lines.length
+      cursor
+    end
 
     # @param top [Parser::AST::Node]
     # @param result [Array<Range>]
@@ -325,27 +338,20 @@ module Solargraph
 
     # Get a string representation of an array of comments.
     #
-    # @param comments [Array<Parser::Source::Comment>]
+    # @param comments [String]
     # @return [String]
     def stringify_comment_array comments
-      ctxt = ''
-      num = nil
+      ctxt = String.new('')
       started = false
-      last_line = nil
-      comments.each { |l|
+      skip = nil
+      comments.lines.each { |l|
         # Trim the comment and minimum leading whitespace
-        p = l.text.gsub(/^#+/, '')
-        if num.nil? and !p.strip.empty?
-          num = p.index(/[^ ]/)
-          started = true
-        elsif started and !p.strip.empty?
-          cur = p.index(/[^ ]/)
-          num = cur if cur < num
-        end
-        # Include blank lines between comments
-        ctxt += ("\n" * (l.loc.first_line - last_line - 1)) unless last_line.nil? || l.loc.first_line - last_line <= 0
-        ctxt += "#{p[num..-1]}\n" if started
-        last_line = l.loc.last_line if last_line.nil? || l.loc.last_line > last_line
+        p = l.gsub(/^#+/, '')
+        next if p.strip.empty? && !started
+        here = p.index(/[^ \t]/)
+        skip = here if skip.nil? || here < skip
+        ctxt.concat p[skip..-1]
+        started = true
       }
       ctxt
     end
@@ -364,8 +370,8 @@ module Solargraph
 
     # @return [Array<Range>]
     def comment_ranges
-      @comment_ranges ||= @comments.map do |cmnt|
-        Range.from_expr(cmnt.loc.expression)
+      @comment_ranges ||= @comments.map do |line, cmnt|
+        Solargraph::Range.from_to(line, 0, line, cmnt.length)
       end
     end
 
@@ -377,25 +383,15 @@ module Solargraph
       return [] unless synchronized?
       result = []
       grouped = []
-      # @param cmnt [Parser::Source::Comment]
-      @comments.each do |cmnt|
-        if cmnt.document?
-          result.push Range.from_expr(cmnt.loc.expression)
-        elsif code.lines[cmnt.loc.expression.line].strip.start_with?('#')
-          if grouped.empty? || cmnt.loc.expression.line == grouped.last.loc.expression.line + 1
-            grouped.push cmnt
-          else
-            result.push Range.from_to(grouped.first.loc.expression.line, 0, grouped.last.loc.expression.line, 0) unless grouped.length < 3
-            grouped = [cmnt]
-          end
+      comments.keys.each do |l|
+        if grouped.empty? || l == grouped.last + 1
+          grouped.push l
         else
-          unless grouped.length < 3
-            result.push Range.from_to(grouped.first.loc.expression.line, 0, grouped.last.loc.expression.line, 0)
-          end
-          grouped.clear
+          result.push Range.from_to(grouped.first, 0, grouped.last, 0) unless grouped.length < 3
+          grouped = [l]
         end
       end
-      result.push Range.from_to(grouped.first.loc.expression.line, 0, grouped.last.loc.expression.line, 0) unless grouped.length < 3
+      result.push Range.from_to(grouped.first, 0, grouped.last, 0) unless grouped.length < 3
       result
     end
 

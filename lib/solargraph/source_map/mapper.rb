@@ -26,10 +26,10 @@ module Solargraph
         @pins, @locals = Parser.map(source)
         process_comment_directives
         [@pins, @locals]
-      rescue Exception => e
-        Solargraph.logger.warn "Error mapping #{source.filename}: [#{e.class}] #{e.message}"
-        Solargraph.logger.warn e.backtrace.join("\n")
-        [[], []]
+      # rescue Exception => e
+      #   Solargraph.logger.warn "Error mapping #{source.filename}: [#{e.class}] #{e.message}"
+      #   Solargraph.logger.warn e.backtrace.join("\n")
+      #   [[], []]
       end
 
       # @param filename [String]
@@ -100,12 +100,17 @@ module Solargraph
             namespace = closure_at(comment_position)
           end
           region = Parser::Region.new(source: @source, closure: namespace)
-          src_node = Parser.parse("def #{directive.tag.name};end", @filename, location.range.start.line)
-          gen_pin = Solargraph::SourceMap::NodeProcessor.process(src_node, region).first.last
-          return if gen_pin.nil?
-          # @todo: Smelly instance variable access
-          gen_pin.instance_variable_set(:@comments, docstring.all.to_s)
-          @pins.push gen_pin
+          begin
+            src_node = Parser.parse("def #{directive.tag.name};end", @filename, location.range.start.line)
+            # gen_pin = Solargraph::SourceMap::NodeProcessor.process(src_node, region).first.last
+            gen_pin = Parser.process_node(src_node, region).first.last
+            return if gen_pin.nil?
+            # @todo: Smelly instance variable access
+            gen_pin.instance_variable_set(:@comments, docstring.all.to_s)
+            @pins.push gen_pin
+          rescue Parser::SyntaxError => e
+            # @todo Handle error in directive
+          end
         when 'attribute'
           return if directive.tag.name.nil?
           namespace = closure_at(source_position)
@@ -163,7 +168,7 @@ module Solargraph
             cur = p.index(/[^ ]/)
             num = cur if cur < num
           end
-          ctxt += "#{p[num..-1]}\n" if started
+          ctxt += "#{p[num..-1]}" if started
         }
         ctxt
       end
@@ -173,17 +178,10 @@ module Solargraph
         return unless @code =~ MACRO_REGEXP
         used = []
         @source.associated_comments.each do |line, comments|
-          used.concat comments
-          src_pos = Position.new(line, @code.lines[line].chomp.length)
-          com_pos = Position.new(comments.first.loc.line, comments.first.loc.column)
-          txt = comments.map(&:text).join("\n")
-          process_comment(src_pos, com_pos, txt)
+          src_pos = line ? Position.new(line, @code.lines[line].to_s.chomp.index(/[^\s]/) || 0) : Position.new(@code.lines.length, 0)
+          com_pos = Position.new(line - 1, 0)
+          process_comment(src_pos, com_pos, comments)
         end
-        left = @comments - used
-        return if left.empty?
-        txt = left.map(&:text).join("\n")
-        com_pos = Position.new(left.first.loc.line, left.first.loc.column)
-        process_comment(com_pos, com_pos, txt)
       end
     end
   end

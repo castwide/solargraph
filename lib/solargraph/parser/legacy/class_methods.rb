@@ -8,7 +8,9 @@ module Solargraph
         def parse_with_comments code, filename = nil
           buffer = ::Parser::Source::Buffer.new(filename, 0)
           buffer.source = code
-          parser.parse_with_comments(buffer)
+          node = parser.parse(buffer)
+          comments = CommentRipper.new(code, filename, 0).parse
+          [node, comments]
         rescue ::Parser::SyntaxError => e
           raise Parser::SyntaxError, e.message
         end

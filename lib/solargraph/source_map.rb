@@ -8,7 +8,6 @@ module Solargraph
   # An index of pins and other ApiMap-related data for a Source.
   #
   class SourceMap
-    autoload :NodeProcessor, 'solargraph/source_map/node_processor'
     autoload :Mapper,        'solargraph/source_map/mapper'
     autoload :Clip,          'solargraph/source_map/clip'
     autoload :Completion,    'solargraph/source_map/completion'

@@ -9,7 +9,8 @@ module Solargraph
         # @return [Array(Parser::AST::Node, Array<Parser::Source::Comment>)]
         def parse_with_comments code, filename = nil
           node = RubyVM::AbstractSyntaxTree.parse(code)
-          [node, []]
+          comments = CommentRipper.new(code).parse
+          [node, comments]
         end
 
         # @param code [String]
