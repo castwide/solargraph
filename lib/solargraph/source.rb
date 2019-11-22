@@ -297,12 +297,12 @@ module Solargraph
         result = {}
         buffer = String.new('')
         last = nil
-        @comments.each_pair do |num, text|
+        @comments.each_pair do |num, snip|
           if !last || num == last + 1
-            buffer.concat text
+            buffer.concat "#{snip.text}\n"
           else
             result[first_not_empty_from(last + 1)] = buffer.clone
-            buffer = text
+            buffer.replace "#{snip.text}\n"
           end
           last = num
         end
@@ -370,9 +370,7 @@ module Solargraph
 
     # @return [Array<Range>]
     def comment_ranges
-      @comment_ranges ||= @comments.map do |line, cmnt|
-        Solargraph::Range.from_to(line, 0, line, cmnt.length)
-      end
+      @comment_ranges ||= @comments.values.map(&:range)
     end
 
     # Get an array of foldable comment block ranges. Blocks are excluded if

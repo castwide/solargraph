@@ -5,6 +5,7 @@ module Solargraph
     autoload :Rubyvm, 'solargraph/parser/rubyvm'
     autoload :Region, 'solargraph/parser/region'
     autoload :NodeProcessor, 'solargraph/parser/node_processor'
+    autoload :Snippet, 'solargraph/parser/snippet'
 
     class SyntaxError < StandardError
     end
