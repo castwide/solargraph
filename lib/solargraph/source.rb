@@ -420,9 +420,8 @@ module Solargraph
       if here.contain?(position)
         stack.unshift node
         node.children.each do |c|
-          # next unless c.is_a?(AST::Node)
           next unless Parser.is_ast_node?(c)
-          # next if c.loc.expression.nil?
+          next if !Parser.rubyvm? && c.loc.expression.nil?
           rng = Range.from_node(c)
           inner_tree_at(c, rng.start, stack)
         end
