@@ -29,6 +29,7 @@ module Solargraph
 
         def returns_from node
           # NodeMethods.returns_from(node)
+          []
         end
 
         def references source, name
@@ -71,7 +72,7 @@ module Solargraph
         end
 
         def chain *args
-          # NodeChainer.chain *args
+          NodeChainer.chain *args
         end
 
         def process_node *args
