@@ -28,8 +28,7 @@ module Solargraph
         end
 
         def returns_from node
-          # NodeMethods.returns_from(node)
-          []
+          DeepInference.get_return_nodes(node).map { |n| n || NIL_NODE }
         end
 
         def references source, name
@@ -99,6 +98,99 @@ module Solargraph
           st = Position.new(node.first_lineno, node.first_column)
           en = Position.new(node.last_lineno, node.last_column)
           Range.new(st, en)
+        end
+
+        module DeepInference
+          class << self
+            CONDITIONAL = [:if, :unless]
+            REDUCEABLE = [:begin, :kwbegin]
+            SKIPPABLE = [:def, :defs, :class, :sclass, :module]
+
+            # @param node [Parser::AST::Node]
+            # @return [Array<Parser::AST::Node>]
+            def get_return_nodes node
+              return [] unless node.is_a?(RubyVM::AbstractSyntaxTree::Node)
+              result = []
+              if REDUCEABLE.include?(node.type)
+                result.concat get_return_nodes_from_children(node)
+              elsif CONDITIONAL.include?(node.type)
+                result.concat reduce_to_value_nodes(node.children[1..-1])
+              elsif node.type == :and || node.type == :or
+                result.concat reduce_to_value_nodes(node.children)
+              elsif node.type == :return
+                result.concat reduce_to_value_nodes([node.children[0]])
+              elsif node.type == :block
+                result.concat reduce_to_value_nodes([node.children[0]])
+                result.concat get_return_nodes_only(node.children[2])
+              else
+                result.push node
+              end
+              result
+            end
+
+            private
+
+            def get_return_nodes_from_children parent
+              result = []
+              nodes = parent.children.select{|n| n.is_a?(AST::Node)}
+              nodes.each_with_index do |node, idx|
+                if node.type == :block
+                  result.concat get_return_nodes_only(node.children[2])
+                elsif SKIPPABLE.include?(node.type)
+                  next
+                elsif node.type == :return
+                  result.concat reduce_to_value_nodes([node.children[0]])
+                  # Return the result here because the rest of the code is
+                  # unreachable
+                  return result
+                else
+                  result.concat get_return_nodes_only(node)
+                end
+                result.concat reduce_to_value_nodes([nodes.last]) if idx == nodes.length - 1
+              end
+              result
+            end
+
+            def get_return_nodes_only parent
+              return [] unless parent.is_a?(::Parser::AST::Node)
+              result = []
+              nodes = parent.children.select{|n| n.is_a?(::Parser::AST::Node)}
+              nodes.each do |node|
+                next if SKIPPABLE.include?(node.type)
+                if node.type == :return
+                  result.concat reduce_to_value_nodes([node.children[0]])
+                  # Return the result here because the rest of the code is
+                  # unreachable
+                  return result
+                else
+                  result.concat get_return_nodes_only(node)
+                end
+              end
+              result
+            end
+
+            def reduce_to_value_nodes nodes
+              result = []
+              nodes.each do |node|
+                if !node.is_a?(::Parser::AST::Node)
+                  result.push nil
+                elsif REDUCEABLE.include?(node.type)
+                  result.concat get_return_nodes_from_children(node)
+                elsif CONDITIONAL.include?(node.type)
+                  result.concat reduce_to_value_nodes(node.children[1..-1])
+                elsif node.type == :return
+                  result.concat get_return_nodes(node.children[0])
+                elsif node.type == :and || node.type == :or
+                  result.concat reduce_to_value_nodes(node.children)
+                elsif node.type == :block
+                  result.concat get_return_nodes_only(node.children[2])
+                else
+                  result.push node
+                end
+              end
+              result
+            end
+          end
         end
       end
     end
