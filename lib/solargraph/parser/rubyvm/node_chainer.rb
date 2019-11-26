@@ -6,7 +6,7 @@ module Solargraph
       # A factory for generating chains from nodes.
       #
       class NodeChainer
-        include NodeMethods
+        # include NodeMethods
         Chain = Source::Chain
 
         # @param node [Parser::AST::Node]
