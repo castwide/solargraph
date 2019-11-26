@@ -422,8 +422,7 @@ module Solargraph
         node.children.each do |c|
           next unless Parser.is_ast_node?(c)
           next if !Parser.rubyvm? && c.loc.expression.nil?
-          rng = Range.from_node(c)
-          inner_tree_at(c, rng.start, stack)
+          inner_tree_at(c, position, stack)
         end
       end
     end
