@@ -28,7 +28,11 @@ module Solargraph
         end
 
         def returns_from node
-          DeepInference.get_return_nodes(node).map { |n| n || NIL_NODE }
+          if node.type == :SCOPE
+            node.children.select { |n| n.is_a?(RubyVM::AbstractSyntaxTree::Node) }.map { |n| DeepInference.get_return_nodes(n) }.flatten
+          else
+            DeepInference.get_return_nodes(node)
+          end
         end
 
         def references source, name
@@ -102,9 +106,9 @@ module Solargraph
 
         module DeepInference
           class << self
-            CONDITIONAL = [:if, :unless]
-            REDUCEABLE = [:begin, :kwbegin]
-            SKIPPABLE = [:def, :defs, :class, :sclass, :module]
+            CONDITIONAL = [:IF, :UNLESS]
+            REDUCEABLE = [:BLOCK]
+            SKIPPABLE = [:DEFN, :DEFS, :CLASS, :SCLASS, :MODULE]
 
             # @param node [Parser::AST::Node]
             # @return [Array<Parser::AST::Node>]
@@ -115,11 +119,11 @@ module Solargraph
                 result.concat get_return_nodes_from_children(node)
               elsif CONDITIONAL.include?(node.type)
                 result.concat reduce_to_value_nodes(node.children[1..-1])
-              elsif node.type == :and || node.type == :or
+              elsif node.type == :AND || node.type == :OR
                 result.concat reduce_to_value_nodes(node.children)
-              elsif node.type == :return
+              elsif node.type == :RETURN
                 result.concat reduce_to_value_nodes([node.children[0]])
-              elsif node.type == :block
+              elsif node.type == :BLOCK
                 result.concat reduce_to_value_nodes([node.children[0]])
                 result.concat get_return_nodes_only(node.children[2])
               else
@@ -132,13 +136,13 @@ module Solargraph
 
             def get_return_nodes_from_children parent
               result = []
-              nodes = parent.children.select{|n| n.is_a?(AST::Node)}
+              nodes = parent.children.select{|n| n.is_a?(RubyVM::AbstractSyntaxTree::Node)}
               nodes.each_with_index do |node, idx|
-                if node.type == :block
+                if node.type == :BLOCK
                   result.concat get_return_nodes_only(node.children[2])
                 elsif SKIPPABLE.include?(node.type)
                   next
-                elsif node.type == :return
+                elsif node.type == :RETURN
                   result.concat reduce_to_value_nodes([node.children[0]])
                   # Return the result here because the rest of the code is
                   # unreachable
@@ -157,7 +161,7 @@ module Solargraph
               nodes = parent.children.select{|n| n.is_a?(::Parser::AST::Node)}
               nodes.each do |node|
                 next if SKIPPABLE.include?(node.type)
-                if node.type == :return
+                if node.type == :RETURN
                   result.concat reduce_to_value_nodes([node.children[0]])
                   # Return the result here because the rest of the code is
                   # unreachable
@@ -172,17 +176,17 @@ module Solargraph
             def reduce_to_value_nodes nodes
               result = []
               nodes.each do |node|
-                if !node.is_a?(::Parser::AST::Node)
+                if !node.is_a?(RubyVM::AbstractSyntaxTree::Node)
                   result.push nil
                 elsif REDUCEABLE.include?(node.type)
                   result.concat get_return_nodes_from_children(node)
                 elsif CONDITIONAL.include?(node.type)
                   result.concat reduce_to_value_nodes(node.children[1..-1])
-                elsif node.type == :return
+                elsif node.type == :RETURN
                   result.concat get_return_nodes(node.children[0])
-                elsif node.type == :and || node.type == :or
+                elsif node.type == :AND || node.type == :OR
                   result.concat reduce_to_value_nodes(node.children)
-                elsif node.type == :block
+                elsif node.type == :BLOCK
                   result.concat get_return_nodes_only(node.children[2])
                 else
                   result.push node
