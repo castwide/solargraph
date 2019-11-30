@@ -771,7 +771,8 @@ describe Solargraph::SourceMap::Mapper do
       end
     ))
     pin = smap.locals.select{|p| p.name == 'baz'}.first
-    expect(pin.assignment).to be_a(Parser::AST::Node)
+    # expect(pin.assignment).to be_a(Parser::AST::Node)
+    expect(Solargraph::Parser.is_ast_node?(pin.assignment)).to be(true)
   end
 
   # @todo This might not be relevant if ApiMap is always responsible for
