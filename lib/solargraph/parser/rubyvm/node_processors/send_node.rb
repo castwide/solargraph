@@ -24,6 +24,8 @@ module Solargraph
                 # @todo Smelly instance variable access
                 region.instance_variable_set(:@visibility, node.children[0])
               end
+            elsif node.children[0] == :module_function
+              process_module_function
             elsif node.children[0] == :require
               process_require
             elsif node.children[0] == :alias_method
@@ -168,11 +170,14 @@ module Solargraph
 
           # @return [void]
           def process_module_function
-            if node.children[2].nil?
+            if node.type == :VCALL
               # @todo Smelly instance variable access
               region.instance_variable_set(:@visibility, :module_function)
-            elsif node.children[2].type == :sym || node.children[2].type == :str
-              node.children[2..-1].each do |x|
+            elsif node.children.last.children[0].type == :DEFN
+              NodeProcessor.process node.children.last.children[0], region.update(visibility: :module_function), pins, locals
+            else
+              node.children.last.children[0..-2].each do |x|
+                next unless [:LIT, :STR].include?(x.type)
                 cn = x.children[0].to_s
                 ref = pins.select{|p| [Solargraph::Pin::Method, Solargraph::Pin::Attribute].include?(p.class) && p.namespace == region.closure.full_context.namespace && p.name == cn}.first
                 unless ref.nil?
@@ -218,8 +223,6 @@ module Solargraph
                   end
                 end
               end
-            elsif node.children[2].type == :def
-              NodeProcessor.process node.children[2], region.update(visibility: :module_function), pins, locals
             end
           end
 

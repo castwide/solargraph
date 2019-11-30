@@ -38,6 +38,7 @@ module Solargraph
       register :DEFS,      Rubyvm::NodeProcessors::DefsNode
       # register :send,    Legacy::NodeProcessors::SendNode
       register :FCALL,     Rubyvm::NodeProcessors::SendNode
+      register :VCALL,     Rubyvm::NodeProcessors::SendNode
       register :CLASS,     Rubyvm::NodeProcessors::NamespaceNode
       register :MODULE,    Rubyvm::NodeProcessors::NamespaceNode
       register :SCLASS,    Rubyvm::NodeProcessors::SclassNode
