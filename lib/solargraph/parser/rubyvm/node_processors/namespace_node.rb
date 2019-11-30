@@ -40,13 +40,10 @@ module Solargraph
           def pack_name(node)
             parts = []
             if node.is_a?(RubyVM::AbstractSyntaxTree::Node)
+              parts.push '' if node.type == :COLON3
               node.children.each { |n|
                 if n.is_a?(RubyVM::AbstractSyntaxTree::Node)
-                  if n.type == :COLON2
-                    parts = [''] + pack_name(n)
-                  else
-                    parts += pack_name(n)
-                  end
+                  parts += pack_name(n)
                 else
                   parts.push n unless n.nil?
                 end
