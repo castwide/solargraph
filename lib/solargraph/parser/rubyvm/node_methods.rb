@@ -28,6 +28,18 @@ module Solargraph
           end
           parts
         end
+
+        def infer_literal_node_type node
+          return nil unless Parser.is_ast_node?(node)
+          case node.type
+          when :LIT, :STR
+            "::#{node.children.first.class.to_s}"
+          when :ARRAY, :ZARRAY
+            '::Array'
+          when :HASH
+            '::Hash'
+          end
+        end
       end
     end
   end

@@ -6,7 +6,8 @@ module Solargraph
       # A factory for generating chains from nodes.
       #
       class NodeChainer
-        # include NodeMethods
+        include Rubyvm::NodeMethods
+
         Chain = Source::Chain
 
         # @param node [Parser::AST::Node]
@@ -46,57 +47,77 @@ module Solargraph
         # @param n [Parser::AST::Node]
         # @return [Array<Chain::Link>]
         def generate_links n
-          return [] unless n.is_a?(::Parser::AST::Node)
-          return generate_links(n.children[0]) if n.type == :begin
+          return [] unless Parser.is_ast_node?(n)
+          return generate_links(n.children[2]) if n.type == :SCOPE
           result = []
-          if n.type == :block
+          if n.type == :ITER
             @in_block = true
             result.concat generate_links(n.children[0])
             @in_block = false
-          elsif n.type == :send
-            if n.children[0].is_a?(::Parser::AST::Node)
-              result.concat generate_links(n.children[0])
-              args = []
-              n.children[2..-1].each do |c|
-                args.push NodeChainer.chain(c)
-              end
-              result.push Chain::Call.new(n.children[1].to_s, args, @in_block || block_passed?(n))
-            elsif n.children[0].nil?
-              args = []
-              n.children[2..-1].each do |c|
-                args.push NodeChainer.chain(c)
-              end
-              result.push Chain::Call.new(n.children[1].to_s, args, @in_block || block_passed?(n))
-            else
-              raise "No idea what to do with #{n}"
+          elsif n.type == :CALL
+            n.children[0..-3].each do |c|
+              result.concat generate_links(c)
             end
-          elsif n.type == :self
+            args = []
+            if n.children.last && n.children.last.type == :ARRAY
+              n.children.last.children.each do |c|
+                args.push NodeChainer.chain(c)
+              end
+            elsif n.children.last && n.children.last.type == :BLOCK_PASS
+              # @todo This probably shouldn't be a BlockVariable, if this is
+              #   necessary at all.
+              # args.push Chain::BlockVariable.new("&#{n.children.last.children[1].children[0].to_s}")
+            end
+            result.push Chain::Call.new(n.children[-2].to_s, args, @in_block || block_passed?(n))
+            # if n.children.last && n.children.last.type == :BLOCK_PASS
+            #   result.push Chain::BlockVariable.new("&#{n.children.last.children[0].to_s}")
+            # end
+            # result.concat generate_links(n.children.last)
+            # if Parser.is_ast_node?(n.children[0])
+            #   result.concat generate_links(n.children[0])
+            #   args = []
+            #   n.children[2..-1].each do |c|
+            #     args.push NodeChainer.chain(c)
+            #   end
+            #   result.push Chain::Call.new(n.children[1].to_s, args, @in_block || block_passed?(n))
+            # elsif n.children[0].nil?
+            #   args = []
+            #   n.children[2..-1].each do |c|
+            #     args.push NodeChainer.chain(c)
+            #   end
+            #   result.push Chain::Call.new(n.children[1].to_s, args, @in_block || block_passed?(n))
+            # else
+            #   raise "No idea what to do with #{n}"
+            # end
+          elsif n.type == :VCALL
+            result.push Chain::Call.new(n.children[0].to_s, [], @in_block || block_passed?(n))
+          elsif n.type == :SELF
             result.push Chain::Head.new('self')
-          elsif n.type == :zsuper
+          elsif n.type == :ZSUPER
             result.push Chain::Head.new('super')
-          elsif n.type == :const
+          elsif [:COLON2, :COLON3, :CONST].include?(n.type)
             const = unpack_name(n)
             result.push Chain::Constant.new(const)
           elsif [:lvar, :lvasgn].include?(n.type)
             result.push Chain::Call.new(n.children[0].to_s)
-          elsif [:ivar, :ivasgn].include?(n.type)
+          elsif [:IVAR, :IASGN].include?(n.type)
             result.push Chain::InstanceVariable.new(n.children[0].to_s)
-          elsif [:cvar, :cvasgn].include?(n.type)
+          elsif [:CVAR, :CVASGN].include?(n.type)
             result.push Chain::ClassVariable.new(n.children[0].to_s)
-          elsif [:gvar, :gvasgn].include?(n.type)
+          elsif [:GVAR, :GASGN].include?(n.type)
             result.push Chain::GlobalVariable.new(n.children[0].to_s)
-          elsif n.type == :or_asgn
-            result.concat generate_links n.children[1]
+          elsif n.type == :OP_ASGN_OR
+            result.concat generate_links n.children[2]
           elsif [:class, :module, :def, :defs].include?(n.type)
             # @todo Undefined or what?
             result.push Chain::UNDEFINED_CALL
-          elsif n.type == :and
+          elsif n.type == :AND
             result.concat generate_links(n.children.last)
-          elsif n.type == :or
+          elsif n.type == :OR
             result.push Chain::Or.new([NodeChainer.chain(n.children[0], @filename), NodeChainer.chain(n.children[1], @filename)])
           elsif [:begin, :kwbegin].include?(n.type)
             result.concat generate_links(n.children[0])
-          elsif n.type == :block_pass
+          elsif n.type == :BLOCK_PASS
             result.push Chain::BlockVariable.new("&#{n.children[0].children[0].to_s}")
           else
             lit = infer_literal_node_type(n)
@@ -106,7 +127,7 @@ module Solargraph
         end
 
         def block_passed? node
-          node.children.last.is_a?(::Parser::AST::Node) && node.children.last.type == :block_pass
+          node.children.last.is_a?(RubyVM::AbstractSyntaxTree::Node) && node.children.last.type == :BLOCK_PASS
         end
       end
     end
