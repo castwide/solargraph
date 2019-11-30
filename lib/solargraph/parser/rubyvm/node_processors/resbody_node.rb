@@ -13,10 +13,10 @@ module Solargraph
               # presence = Range.new(here, region.closure.location.range.ending)
               presence = Range.from_node(node)
               loc = get_node_location(node.children[1])
-              types = if node.children.first.children.empty?
+              types = if !node.children.first || node.children.first.children.empty?
                         ['Exception']
                       else
-                        node.children.first.children[0..-1].map do |child|
+                        node.children.first.children[0..-2].map do |child|
                           unpack_name(child)
                         end
                       end
@@ -28,7 +28,7 @@ module Solargraph
                 presence: presence
               )
             # end
-            NodeProcessor.process(node.children[2], region, pins, locals)
+            NodeProcessor.process(node.children[1], region, pins, locals)
           end
         end
       end
