@@ -13,15 +13,15 @@ module Solargraph
 
       # @param args [Array<String>]
       # @param node [Parser::AST::Node, nil]
-      def initialize args: [], node: nil, **splat
+      def initialize parameters: [], node: nil, **splat
         super(splat)
-        @parameters = args
+        @parameters = parameters
         @node = node
       end
 
       # @return [Array<String>]
       def parameter_names
-        @parameter_names ||= parameters.map{|p| p.split(/[ =:]/).first.gsub(/^(\*{1,2}|&)/, '')}
+        @parameter_names ||= parameters.map(&:name)
       end
 
       def completion_item_kind
@@ -74,8 +74,18 @@ module Solargraph
         @overloads ||= docstring.tags(:overload).map do |tag|
           Solargraph::Pin::Method.new(
             name: name,
-            closure: closure,
-            args: tag.parameters.map(&:first),
+            closure: self,
+            # args: tag.parameters.map(&:first),
+            parameters: tag.parameters.map do |src|
+              Pin::Parameter.new(
+                location: location,
+                closure: self,
+                comments: tag.docstring.all.to_s,
+                name: src.first,
+                presence: location ? location.range : nil,
+                decl: :arg
+              )
+            end,
             comments: tag.docstring.all.to_s
           )
         end

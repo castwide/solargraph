@@ -19,8 +19,7 @@ module Solargraph
             name: name || code_object.name.to_s,
             comments: nil,
             scope: scope || code_object.scope,
-            visibility: visibility || code_object.visibility,
-            args: nil
+            visibility: visibility || code_object.visibility
           )
         end
 

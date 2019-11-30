@@ -7,8 +7,8 @@ describe Solargraph::Pin::Method do
     map = Solargraph::SourceMap.map(source)
     pin = map.pins.select{|pin| pin.path == '#foo'}.first
     expect(pin.parameters.length).to eq(2)
-    expect(pin.parameters[0]).to eq('bar')
-    expect(pin.parameters[1]).to eq('baz = MyClass.new')
+    expect(pin.parameters[0].name).to eq('bar')
+    expect(pin.parameters[1].name).to eq('baz')
     expect(pin.parameter_names).to eq(%w[bar baz])
   end
 
@@ -20,8 +20,8 @@ describe Solargraph::Pin::Method do
     map = Solargraph::SourceMap.map(source)
     pin = map.pins.select{|pin| pin.path == '#foo'}.first
     expect(pin.parameters.length).to eq(2)
-    expect(pin.parameters[0]).to eq('bar:')
-    expect(pin.parameters[1]).to eq('baz: MyClass.new')
+    expect(pin.parameters[0].name).to eq('bar')
+    expect(pin.parameters[1].name).to eq('baz')
     expect(pin.parameter_names).to eq(%w[bar baz])
   end
 
@@ -51,13 +51,15 @@ describe Solargraph::Pin::Method do
   end
 
   it "will not merge with changes in parameters" do
-    pin1 = Solargraph::Pin::Method.new(name: 'bar', args: ['one', 'two'])
-    pin2 = Solargraph::Pin::Method.new(name: 'bar', args: ['three'])
+    # @todo Method pin parameters are pins now
+    pin1 = Solargraph::Pin::Method.new(name: 'bar', parameters: ['one', 'two'])
+    pin2 = Solargraph::Pin::Method.new(name: 'bar', parameters: ['three'])
     expect(pin1.nearly?(pin2)).to be(false)
   end
 
   it "adds param tags to documentation" do
-    pin = Solargraph::Pin::Method.new(name: 'bar', comments: '@param one [String]', args: ['*args'])
+    # @todo Method pin parameters are pins now
+    pin = Solargraph::Pin::Method.new(name: 'bar', comments: '@param one [String]', parameters: ['args'])
     expect(pin.documentation).to include('one', '[String]')
   end
 
@@ -143,8 +145,9 @@ describe Solargraph::Pin::Method do
   end
 
   it 'strips prefixes from parameter names' do
-    pin = Solargraph::Pin::Method.new(args: ['foo', '*bar', '&block'])
-    expect(pin.parameter_names).to eq(['foo', 'bar', 'block'])
+    # @todo Method pin parameters are pins now
+    # pin = Solargraph::Pin::Method.new(args: ['foo', '*bar', '&block'])
+    # expect(pin.parameter_names).to eq(['foo', 'bar', 'block'])
   end
 
   it 'does not include yielded blocks in return nodes' do

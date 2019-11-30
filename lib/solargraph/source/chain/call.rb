@@ -85,7 +85,7 @@ module Solargraph
                 comments: "@return [#{context.subtypes.first.to_s}]",
                 scope: p.scope,
                 visibility: p.visibility,
-                args: p.parameters,
+                parameters: p.parameters,
                 node: p.node
               )
             end

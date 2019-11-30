@@ -1,3 +1,5 @@
+require 'parser/current'
+
 module Solargraph
   module Parser
     module Legacy

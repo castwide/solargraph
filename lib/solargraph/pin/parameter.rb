@@ -3,6 +3,24 @@
 module Solargraph
   module Pin
     class Parameter < LocalVariable
+      attr_reader :decl
+
+      attr_reader :asgn_code
+
+      def initialize decl: :arg, asgn_code: nil, **splat
+        super(splat)
+        @asgn_code = asgn_code
+        @decl = decl
+      end
+
+      def keyword?
+        [:kwarg, :kwoptarg].include?(decl)
+      end
+
+      def kwrestarg?
+        decl == :kwrestarg || (assignment && assignment.type == :hash)
+      end
+
       def return_type
         if @return_type.nil?
           @return_type = ComplexType.new

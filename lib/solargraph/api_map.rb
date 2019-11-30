@@ -717,7 +717,7 @@ module Solargraph
         comments: origin.comments,
         scope: origin.scope,
         visibility: origin.visibility,
-        args: origin.parameters
+        parameters: origin.parameters
       )
     end
   end

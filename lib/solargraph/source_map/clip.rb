@@ -150,14 +150,13 @@ module Solargraph
         result = []
         done = []
         pins.each do |pin|
-          pin.parameter_names.each do |name|
-            next if done.include?(name)
-            done.push name
-            if pin.parameters.any? { |par| par.start_with?("#{name}:") }
-              result.push Pin::KeywordParam.new(pin.location, "#{name}:")
-            end
+          pin.parameters.each do |param|
+            next if done.include?(param.name)
+            done.push param.name
+            next unless param.keyword?
+            result.push Pin::KeywordParam.new(pin.location, "#{param.name}:")
           end
-          if !pin.parameters.empty? && pin.parameters.last.start_with?('**') || pin.parameters.last =~ /= *?\{\}$/
+          if !pin.parameters.empty? && pin.parameters.last.kwrestarg?
             pin.docstring.tags(:param).each do |tag|
               next if done.include?(tag.name)
               done.push tag.name

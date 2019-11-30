@@ -235,7 +235,7 @@ describe Solargraph::SourceMap::Mapper do
       end
     ))
     pin = map.first_pin('Foo#bar')
-    expect(pin.parameters).to eq(['baz', "boo = 'boo'", "key: 'value'"])
+    expect(pin.parameter_names).to eq(['baz', 'boo', 'key'])
     pin = map.locals.select{|p| p.name == 'baz'}.first
     expect(pin).to be_a(Solargraph::Pin::Parameter)
     pin = map.locals.select{|p| p.name == 'boo'}.first
@@ -252,7 +252,8 @@ describe Solargraph::SourceMap::Mapper do
       end
     ))
     pin = map.first_pin('Foo#bar')
-    expect(pin.parameters).to eq(['*baz'])
+    expect(pin.parameters.length).to eq(1)
+    expect(pin.parameters.first.name).to eq('baz')
   end
 
   it "maps method block parameters" do
@@ -263,7 +264,8 @@ describe Solargraph::SourceMap::Mapper do
       end
     ))
     pin = map.first_pin('Foo#bar')
-    expect(pin.parameters).to eq(['&block'])
+    expect(pin.parameters.length).to eq(1)
+    expect(pin.parameters.first.name).to eq('block')
   end
 
   it "adds superclasses to class pins" do
@@ -974,7 +976,8 @@ describe Solargraph::SourceMap::Mapper do
     local = smap.locals.first
     expect(local.name).to eq('baz')
     pin = smap.first_pin('Foo#bar')
-    expect(pin.parameters).to eq(['*baz'])
+    expect(pin.parameters.length).to eq(1)
+    expect(pin.parameters.first.name).to eq('baz')
   end
 
   it 'maps optional arguments' do
@@ -986,7 +989,8 @@ describe Solargraph::SourceMap::Mapper do
     local = smap.locals.first
     expect(local.name).to eq('baz')
     pin = smap.first_pin('Foo#bar')
-    expect(pin.parameters).to eq(['baz = nil'])
+    expect(pin.parameters.length).to eq(1)
+    expect(pin.parameters.first.name).to eq('baz')
   end
 
   it 'maps keyword arguments' do
@@ -998,7 +1002,8 @@ describe Solargraph::SourceMap::Mapper do
     local = smap.locals.first
     expect(local.name).to eq('baz')
     pin = smap.first_pin('Foo#bar')
-    expect(pin.parameters).to eq(['baz:'])
+    expect(pin.parameters.length).to eq(1)
+    expect(pin.parameters.first.name).to eq('baz')
   end
 
   it 'maps optional keyword arguments' do
@@ -1010,7 +1015,8 @@ describe Solargraph::SourceMap::Mapper do
     local = smap.locals.first
     expect(local.name).to eq('baz')
     pin = smap.first_pin('Foo#bar')
-    expect(pin.parameters).to eq(['baz: nil'])
+    expect(pin.parameters.length).to eq(1)
+    expect(pin.parameters.first.name).to eq('baz')
   end
 
   it 'maps block arguments' do
@@ -1022,7 +1028,8 @@ describe Solargraph::SourceMap::Mapper do
     local = smap.locals.first
     expect(local.name).to eq('block')
     pin = smap.first_pin('Foo#bar')
-    expect(pin.parameters).to eq(['&block'])
+    expect(pin.parameters.length).to eq(1)
+    expect(pin.parameters.first.name).to eq('block')
   end
 
   it 'maps method directives to singleton classes' do
@@ -1154,5 +1161,27 @@ describe Solargraph::SourceMap::Mapper do
     pins, _locals = Solargraph::SourceMap::Mapper.map(source)
     over = pins.select { |pin| pin.is_a?(Solargraph::Pin::Reference::Override) }.first
     expect(over.name).to eq('Foo#bar')
+  end
+
+  it 'maps kwrestarg parameters' do
+    source = Solargraph::Source.load_string(%(
+      class Foo
+        def bar(**baz); end
+      end
+    ))
+    _pins, locals = Solargraph::SourceMap::Mapper.map(source)
+    param = locals.select { |pin| pin.is_a?(Solargraph::Pin::Parameter) }.first
+    expect(param).to be_kwrestarg
+  end
+
+  it 'maps hash parameters as kwrestargs' do
+    source = Solargraph::Source.load_string(%(
+      class Foo
+        def bar(baz = {}); end
+      end
+    ))
+    _pins, locals = Solargraph::SourceMap::Mapper.map(source)
+    param = locals.select { |pin| pin.is_a?(Solargraph::Pin::Parameter) }.first
+    expect(param).to be_kwrestarg
   end
 end

@@ -14,10 +14,19 @@ module Solargraph
                 comments: comments_for(node),
                 name: u.children[0].to_s,
                 assignment: u.children[1],
-                presence: region.closure.location.range
+                asgn_code: u.children[1] ? region.code_for(u.children[1]) : nil,
+                presence: region.closure.location.range,
+                decl: get_decl(u)
               )
+              region.closure.parameters.push locals.last
             end
             process_children
+          end
+
+          private
+
+          def get_decl node
+            node.type
           end
         end
       end

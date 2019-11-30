@@ -11,8 +11,7 @@ module Solargraph
               closure: region.closure,
               receiver: node.children[0],
               comments: comments_for(node),
-              scope: region.scope || region.closure.context.scope,
-              args: method_args
+              scope: region.scope || region.closure.context.scope
             )
             process_children region.update(closure: pins.last)
           end

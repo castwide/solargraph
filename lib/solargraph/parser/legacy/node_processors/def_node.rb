@@ -14,7 +14,6 @@ module Solargraph
               comments: comments_for(node),
               scope: region.scope || (region.closure.is_a?(Pin::Singleton) ? :class : :instance),
               visibility: region.visibility,
-              args: method_args,
               node: node
             )
             if methpin.name == 'initialize' and methpin.scope == :instance
@@ -24,7 +23,7 @@ module Solargraph
                 name: 'new',
                 comments: methpin.comments,
                 scope: :class,
-                args: methpin.parameters
+                parameters: methpin.parameters
               )
               # @todo Smelly instance variable access.
               pins.last.instance_variable_set(:@return_type, ComplexType::SELF)
@@ -40,7 +39,7 @@ module Solargraph
                 comments: methpin.comments,
                 scope: :class,
                 visibility: :public,
-                args: methpin.parameters,
+                parameters: methpin.parameters,
                 node: methpin.node
               )
               pins.push Solargraph::Pin::Method.new(
@@ -50,7 +49,7 @@ module Solargraph
                 comments: methpin.comments,
                 scope: :instance,
                 visibility: :private,
-                args: methpin.parameters,
+                parameters: methpin.parameters,
                 node: methpin.node
               )
             else

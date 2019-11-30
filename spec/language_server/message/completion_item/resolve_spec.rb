@@ -7,7 +7,7 @@ describe Solargraph::LanguageServer::Message::CompletionItem::Resolve do
       comments: 'A method',
       scope: :instance,
       visibility: :public,
-      args: []
+      parameters: []
     )
     host = double(Solargraph::LanguageServer::Host, locate_pins: [pin], probe: pin, detail: nil, options: { 'enablePages' => true })
     resolve = Solargraph::LanguageServer::Message::CompletionItem::Resolve.new(host, {
@@ -26,7 +26,7 @@ describe Solargraph::LanguageServer::Message::CompletionItem::Resolve do
       comments: '',
       scope: :instance,
       visibility: :public,
-      args: []
+      parameters: []
     )
     host = double(Solargraph::LanguageServer::Host, locate_pins: [pin], probe: pin, detail: nil)
     resolve = Solargraph::LanguageServer::Message::CompletionItem::Resolve.new(host, {
