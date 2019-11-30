@@ -153,7 +153,7 @@ module Solargraph
                     comments: ref.comments,
                     scope: :class,
                     visibility: :public,
-                    args: ref.parameters,
+                    parameters: ref.parameters,
                     node: ref.node
                   )
                   cm = Solargraph::Pin::Method.new(
@@ -163,7 +163,7 @@ module Solargraph
                     comments: ref.comments,
                     scope: :instance,
                     visibility: :private,
-                    args: ref.parameters,
+                    parameters: ref.parameters,
                     node: ref.node)
                   pins.push mm, cm
                   pins.select{|pin| pin.is_a?(Pin::InstanceVariable) && pin.closure.path == ref.path}.each do |ivar|

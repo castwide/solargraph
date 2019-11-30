@@ -23,7 +23,6 @@ module Solargraph
               comments: comments_for(node),
               scope: :class,
               visibility: s_visi,
-              args: method_args,
               node: node
             )
             process_children region.update(closure: pins.last, scope: :class)

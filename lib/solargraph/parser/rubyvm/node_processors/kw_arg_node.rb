@@ -12,8 +12,11 @@ module Solargraph
               comments: comments_for(node),
               name: node.children[0].children[0].to_s,
               assignment: node.children[0].children[1],
-              presence: region.closure.location.range
+              presence: region.closure.location.range,
+              # @todo It can be a kwoptarg
+              decl: :kwarg
             )
+            region.closure.parameters.push locals.last
             node.children[1] && NodeProcessor.process(node.children[1], region, pins, locals)
           end
         end
