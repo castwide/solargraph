@@ -26,7 +26,7 @@ module Solargraph
               end
             elsif node.children[0] == :require
               process_require
-            elsif node.children[0] == :alias_method #&& node.children[2] && node.children[2] && node.children[2].type == :sym && node.children[3] && node.children[3].type == :sym
+            elsif node.children[0] == :alias_method
               process_alias_method
             elsif node.children[0] == :private_class_method && Parser.is_ast_node?(node)
               # Processing a private class can potentially handle children on its own
@@ -37,7 +37,9 @@ module Solargraph
               process_include
             elsif node.children[0] == :extend
               process_extend
-          end
+            elsif node.children[0] == :private_constant
+              process_private_constant
+            end
             process_children
             return
             # @todo Get rid of legacy
@@ -223,11 +225,13 @@ module Solargraph
 
           # @return [void]
           def process_private_constant
-            if node.children[2] && (node.children[2].type == :sym || node.children[2].type == :str)
-              cn = node.children[2].children[0].to_s
-              ref = pins.select{|p| [Solargraph::Pin::Namespace, Solargraph::Pin::Constant].include?(p.class) && p.namespace == region.closure.full_context.namespace && p.name == cn}.first
-              # HACK: Smelly instance variable access
-              ref.instance_variable_set(:@visibility, :private) unless ref.nil?
+            node.children.last.children[0..-2].each do |child|
+              if [:LIT, :STR].include?(child.type)
+                cn = child.children[0].to_s
+                ref = pins.select{|p| [Solargraph::Pin::Namespace, Solargraph::Pin::Constant].include?(p.class) && p.namespace == region.closure.full_context.namespace && p.name == cn}.first
+                # HACK: Smelly instance variable access
+                ref.instance_variable_set(:@visibility, :private) unless ref.nil?
+              end
             end
           end
 
