@@ -25,8 +25,17 @@ module Solargraph
                 name: region.lvars[i].to_s,
                 presence: region.closure.location.range
               )
+            end
             # @todo Optional args, keyword args, etc.
-          end
+            if node.children.last
+              locals.push Solargraph::Pin::Parameter.new(
+                location: region.closure.location,
+                closure: region.closure,
+                comments: comments_for(node),
+                name: node.children.last.to_s,
+                presence: region.closure.location.range
+              )
+            end
             process_children
           end
         end

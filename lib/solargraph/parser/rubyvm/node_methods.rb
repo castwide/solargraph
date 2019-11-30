@@ -16,7 +16,7 @@ module Solargraph
           if Parser.is_ast_node?(node)
             node.children.each { |n|
               if Parser.is_ast_node?(n)
-                if n.type == :cbase
+                if n.type == :COLON2
                   parts = [''] + pack_name(n)
                 else
                   parts += pack_name(n)

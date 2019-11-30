@@ -73,36 +73,48 @@ module Solargraph
         end
 
         # @todo This does not belong here. Its implementation is specific to
-        #   Parser::AST::Node.
+        #   Parser::AST::Node. Even after refactoring, it should be split into
+        #   two different methods selected via Parser.rubyvm?
         #
         def method_args
           return [] if node.nil?
           list = nil
           args = []
-          node.children.each { |c|
-            if Parser.is_ast_node?(c) && c.type == :args
+          here = Parser.rubyvm? ? node.children.last : node
+          here.children.each { |c|
+            if Parser.is_ast_node?(c) && [:ARGS, :args].include?(c.type)
               list = c
               break
             end
           }
           return args if list.nil?
-          list.children.each { |c|
-            if c.type == :arg
-              args.push c.children[0].to_s
-            elsif c.type == :restarg
-              args.push "*#{c.children[0]}"
-            elsif c.type == :optarg
-              args.push "#{c.children[0]} = #{region.code_for(c.children[1])}"
-            elsif c.type == :kwarg
-              args.push "#{c.children[0]}:"
-            elsif c.type == :kwoptarg
-              args.push "#{c.children[0]}: #{region.code_for(c.children[1])}"
-            elsif c.type == :kwrestarg
-              args.push "**#{c.children[0]}"
-            elsif c.type == :blockarg
-              args.push "&#{c.children[0]}"
+          if Parser.rubyvm?
+            list.children[0].times do |i|
+              args.push region.lvars[i].to_s
             end
-          }
+            # @todo Optional args, keyword args, etc.
+            if list.children.last
+              args.push "&#{list.children.last.to_s}"
+            end
+          else
+            list.children.each { |c|
+              if c.type == :arg
+                args.push c.children[0].to_s
+              elsif c.type == :restarg
+                args.push "*#{c.children[0]}"
+              elsif c.type == :optarg
+                args.push "#{c.children[0]} = #{region.code_for(c.children[1])}"
+              elsif c.type == :kwarg
+                args.push "#{c.children[0]}:"
+              elsif c.type == :kwoptarg
+                args.push "#{c.children[0]}: #{region.code_for(c.children[1])}"
+              elsif c.type == :kwrestarg
+                args.push "**#{c.children[0]}"
+              elsif c.type == :blockarg
+                args.push "&#{c.children[0]}"
+              end
+            }
+          end
           args
         end
       end
