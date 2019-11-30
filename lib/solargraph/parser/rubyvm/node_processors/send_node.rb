@@ -5,6 +5,8 @@ module Solargraph
     module Rubyvm
       module NodeProcessors
         class SendNode < Parser::NodeProcessor::Base
+          include Rubyvm::NodeMethods
+
           def process
             if [:private, :public, :protected].include?(node.children[0])
               if (node.children.last.children.length > 1)
@@ -31,7 +33,11 @@ module Solargraph
               return if process_private_class_method
             elsif [:attr_reader, :attr_writer, :attr_accessor].include?(node.children[0])
               process_attribute
-            end
+            elsif node.children[0] == :include
+              process_include
+            elsif node.children[0] == :extend
+              process_extend
+          end
             process_children
             return
             # @todo Get rid of legacy
@@ -111,23 +117,22 @@ module Solargraph
 
           # @return [void]
           def process_include
-            if node.children[2].is_a?(AST::Node) && node.children[2].type == :const
-              cp = region.closure
-              node.children[2..-1].each do |i|
-                pins.push Pin::Reference::Include.new(
-                  location: get_node_location(i),
-                  closure: cp,
-                  name: unpack_name(i)
-                )
-              end
+            node.children.last.children[0..-2].each do |i|
+              next unless [:COLON2, :COLON3, :CONST].include?(i.type)
+              pins.push Pin::Reference::Include.new(
+                location: get_node_location(i),
+                closure: region.closure,
+                name: unpack_name(i)
+              )
             end
           end
 
           # @return [void]
           def process_extend
-            node.children[2..-1].each do |i|
+            node.children.last.children[0..-2].each do |i|
+              next unless [:COLON2, :COLON3, :CONST, :SELF].include?(i.type)
               loc = get_node_location(node)
-              if i.type == :self
+              if i.type == :SELF
                 pins.push Pin::Reference::Extend.new(
                   location: loc,
                   closure: region.closure,
