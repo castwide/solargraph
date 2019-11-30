@@ -24,6 +24,8 @@ module Solargraph
               end
             elsif node.children[0] == :require
               process_require
+            elsif node.children[0] == :alias_method #&& node.children[2] && node.children[2] && node.children[2].type == :sym && node.children[3] && node.children[3].type == :sym
+              process_alias_method
             elsif node.children[0] == :private_class_method && Parser.is_ast_node?(node)
               # Processing a private class can potentially handle children on its own
               return if process_private_class_method
@@ -226,12 +228,17 @@ module Solargraph
 
           # @return [void]
           def process_alias_method
+            arr = node.children[1]
+            return if arr.nil?
+            first = arr.children[0]
+            second = arr.children[1]
+            return unless first && second && [:LIT, :STR].include?(first.type) && [:LIT, :STR].include?(second.type)
             loc = get_node_location(node)
             pins.push Solargraph::Pin::MethodAlias.new(
               location: get_node_location(node),
               closure: region.closure,
-              name: node.children[2].children[0].to_s,
-              original: node.children[3].children[0].to_s,
+              name: first.children[0].to_s,
+              original: second.children[0].to_s,
               scope: region.scope || :instance
             )
           end
