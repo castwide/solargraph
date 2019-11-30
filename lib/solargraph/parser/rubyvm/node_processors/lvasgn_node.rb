@@ -7,7 +7,7 @@ module Solargraph
         class LvasgnNode < Parser::NodeProcessor::Base
           def process
             # here = get_node_start_position(node)
-            here = Position.new(node.first_lineno, node.first_column)
+            here = Position.new(node.first_lineno - 1, node.first_column)
             presence = Range.new(here, region.closure.location.range.ending)
             loc = get_node_location(node)
             locals.push Solargraph::Pin::LocalVariable.new(

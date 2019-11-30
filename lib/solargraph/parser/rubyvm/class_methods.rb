@@ -99,8 +99,8 @@ module Solargraph
         end
 
         def node_range node
-          st = Position.new(node.first_lineno, node.first_column)
-          en = Position.new(node.last_lineno, node.last_column)
+          st = Position.new(node.first_lineno - 1, node.first_column)
+          en = Position.new(node.last_lineno - 1, node.last_column)
           Range.new(st, en)
         end
 
