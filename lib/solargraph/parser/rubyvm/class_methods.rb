@@ -123,9 +123,9 @@ module Solargraph
                 result.concat reduce_to_value_nodes(node.children)
               elsif node.type == :RETURN
                 result.concat reduce_to_value_nodes([node.children[0]])
-              elsif node.type == :BLOCK
+              elsif node.type == :ITER
                 result.concat reduce_to_value_nodes([node.children[0]])
-                result.concat get_return_nodes_only(node.children[2])
+                result.concat get_return_nodes_only(node.children[1])
               else
                 result.push node
               end
@@ -142,6 +142,8 @@ module Solargraph
                   result.concat get_return_nodes_only(node.children[2])
                 elsif SKIPPABLE.include?(node.type)
                   next
+                elsif CONDITIONAL.include?(node.type)
+                  result.concat get_return_nodes_only(node)
                 elsif node.type == :RETURN
                   result.concat reduce_to_value_nodes([node.children[0]])
                   # Return the result here because the rest of the code is
@@ -156,9 +158,9 @@ module Solargraph
             end
 
             def get_return_nodes_only parent
-              return [] unless parent.is_a?(::Parser::AST::Node)
+              return [] unless parent.is_a?(RubyVM::AbstractSyntaxTree::Node)
               result = []
-              nodes = parent.children.select{|n| n.is_a?(::Parser::AST::Node)}
+              nodes = parent.children.select{|n| n.is_a?(RubyVM::AbstractSyntaxTree::Node)}
               nodes.each do |node|
                 next if SKIPPABLE.include?(node.type)
                 if node.type == :RETURN
@@ -183,7 +185,11 @@ module Solargraph
                 elsif CONDITIONAL.include?(node.type)
                   result.concat reduce_to_value_nodes(node.children[1..-1])
                 elsif node.type == :RETURN
-                  result.concat get_return_nodes(node.children[0])
+                  if node.children[0].nil?
+                    result.push nil
+                  else
+                    result.concat get_return_nodes(node.children[0])
+                  end
                 elsif node.type == :AND || node.type == :OR
                   result.concat reduce_to_value_nodes(node.children)
                 elsif node.type == :BLOCK
