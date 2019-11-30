@@ -6,6 +6,12 @@ module Solargraph
       module NodeProcessors
         class SendNode < Parser::NodeProcessor::Base
           def process
+            if node.children[0] == :require
+              process_require
+            end
+            process_children
+            return
+            # @todo Get rid of legacy
             if node.children[0].nil?
               if [:private, :public, :protected].include?(node.children[1])
                 if (node.children.length > 2)
@@ -115,6 +121,14 @@ module Solargraph
 
           # @return [void]
           def process_require
+            node.children[1].children.each do |arg|
+              next unless Parser.is_ast_node?(arg)
+              if arg.type == :STR
+                pins.push Pin::Reference::Require.new(get_node_location(arg), arg.children[0])
+              end
+            end
+            return
+            # @todo Get rid of legacy
             if node.children[2].is_a?(AST::Node) && node.children[2].type == :str
               path = node.children[2].children[0].to_s
               pins.push Pin::Reference::Require.new(get_node_location(node), path)
