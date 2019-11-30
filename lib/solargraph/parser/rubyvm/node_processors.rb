@@ -33,11 +33,7 @@ module Solargraph
 
     module NodeProcessor
       register :SCOPE,     Rubyvm::NodeProcessors::ScopeNode
-      # register :source,  Legacy::NodeProcessors::BeginNode
-      # register :begin,   Legacy::NodeProcessors::BeginNode
-      # register :kwbegin, Legacy::NodeProcessors::BeginNode
-      # register :rescue,  Legacy::NodeProcessors::BeginNode
-      # register :resbody, Legacy::NodeProcessors::ResbodyNode
+      register :RESBODY,   Rubyvm::NodeProcessors::ResbodyNode
       register :DEFN,      Rubyvm::NodeProcessors::DefNode
       register :DEFS,      Rubyvm::NodeProcessors::DefsNode
       # register :send,    Legacy::NodeProcessors::SendNode

@@ -5,7 +5,7 @@ module Solargraph
     module NodeProcessor
       class Base
         # @todo The base node processor should not include legacy node methods
-        include Legacy::NodeMethods
+        # include Legacy::NodeMethods
 
         # @return [Parser::AST::Node]
         attr_reader :node
@@ -80,7 +80,7 @@ module Solargraph
           list = nil
           args = []
           node.children.each { |c|
-            if c.is_a?(AST::Node) and c.type == :args
+            if Parser.is_ast_node?(c) && c.type == :args
               list = c
               break
             end

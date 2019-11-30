@@ -3,6 +3,7 @@ module Solargraph
     module Rubyvm
       autoload :ClassMethods, 'solargraph/parser/rubyvm/class_methods'
       autoload :NodeChainer,  'solargraph/parser/rubyvm/node_chainer'
+      autoload :NodeMethods,  'solargraph/parser/rubyvm/node_methods'
     end
   end
 end
