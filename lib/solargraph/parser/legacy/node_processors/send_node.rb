@@ -5,6 +5,8 @@ module Solargraph
     module Legacy
       module NodeProcessors
         class SendNode < Parser::NodeProcessor::Base
+          include Legacy::NodeMethods
+
           def process
             if node.children[0].nil?
               if [:private, :public, :protected].include?(node.children[1])

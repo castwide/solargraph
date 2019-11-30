@@ -5,6 +5,8 @@ module Solargraph
     module Legacy
       module NodeProcessors
         class DefsNode < DefNode
+          include Legacy::NodeMethods
+
           def process
             s_visi = region.visibility
             s_visi = :public if s_visi == :module_function || region.scope != :class

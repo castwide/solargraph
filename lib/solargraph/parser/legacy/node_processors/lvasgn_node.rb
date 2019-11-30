@@ -5,6 +5,8 @@ module Solargraph
     module Legacy
       module NodeProcessors
         class LvasgnNode < Parser::NodeProcessor::Base
+          include Legacy::NodeMethods
+
           def process
             here = get_node_start_position(node)
             presence = Range.new(here, region.closure.location.range.ending)

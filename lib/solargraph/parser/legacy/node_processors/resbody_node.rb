@@ -5,6 +5,8 @@ module Solargraph
     module Legacy
       module NodeProcessors
         class ResbodyNode < Parser::NodeProcessor::Base
+          include Legacy::NodeMethods
+
           def process
             if node.children[1]
               here = get_node_start_position(node.children[1])

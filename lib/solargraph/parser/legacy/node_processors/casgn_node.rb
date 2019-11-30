@@ -5,6 +5,8 @@ module Solargraph
     module Legacy
       module NodeProcessors
         class CasgnNode < Parser::NodeProcessor::Base
+          include Legacy::NodeMethods
+
           def process
             here = get_node_start_position(node)
             pins.push Solargraph::Pin::Constant.new(

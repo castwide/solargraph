@@ -5,6 +5,8 @@ module Solargraph
     module Legacy
       module NodeProcessors
         class NamespaceNode < Parser::NodeProcessor::Base
+          include Legacy::NodeMethods
+
           def process
             sc = nil
             if node.type == :class and !node.children[1].nil?
