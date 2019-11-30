@@ -21,6 +21,8 @@ module Solargraph
         # @return [Parser::AST::Node]
         def parse code, filename = nil, line = 0
           RubyVM::AbstractSyntaxTree.parse(code)
+        rescue ::SyntaxError => e
+          raise Parser::SyntaxError, e.message
         end
 
         def map source
