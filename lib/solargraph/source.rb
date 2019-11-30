@@ -266,9 +266,15 @@ module Solargraph
       Location.new(filename, range)
     end
 
-    FOLDING_NODE_TYPES = %i[
-      class sclass module def defs if str dstr array while unless kwbegin hash block
-    ].freeze
+    FOLDING_NODE_TYPES = if Parser.rubyvm?
+      %i[
+        CLASS SCLASS MODULE DEFN DEFS IF WHILE UNLESS ITER BLOCK
+      ].freeze
+    else
+      %i[
+        class sclass module def defs if str dstr array while unless kwbegin hash block
+      ].freeze
+    end
 
     # Get an array of ranges that can be folded, e.g., the range of a class
     # definition or an if condition.
@@ -325,7 +331,8 @@ module Solargraph
     # @param result [Array<Range>]
     # @return [void]
     def inner_folding_ranges top, result = []
-      return unless top.is_a?(::Parser::AST::Node)
+      # return unless top.is_a?(::Parser::AST::Node)
+      return unless Parser.is_ast_node?(top)
       if FOLDING_NODE_TYPES.include?(top.type)
         range = Range.from_node(top)
         if result.empty? || range.start.line > result.last.start.line
