@@ -10,7 +10,7 @@ module Solargraph
               location: region.closure.location,
               closure: region.closure,
               comments: comments_for(node),
-              name: node.children[0].children[0],
+              name: node.children[0].children[0].to_s,
               assignment: node.children[0].children[1],
               presence: region.closure.location.range
             )
