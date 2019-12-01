@@ -54,7 +54,7 @@ module Solargraph
             @in_block = true
             result.concat generate_links(n.children[0])
             @in_block = false
-          elsif n.type == :CALL
+          elsif n.type == :CALL || n.type == :OPCALL
             n.children[0..-3].each do |c|
               result.concat generate_links(c)
             end
