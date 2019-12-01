@@ -35,9 +35,11 @@
     <li>
       Core Cache Directory: <%= Solargraph::YardMap::CoreDocs.cache_dir %>
     </li>
-    <li>
-      Parser Target Version: <%= Solargraph::Parser.version %>
-    </li>
+    <% unless Solargraph::Parser.rubyvm? %>
+      <li>
+        Parser Target Version: <%= Solargraph::Parser.version %>
+      </li>
+    <% end %>
     <li>
       Using Bundler: <%= ENV.key?('BUNDLE_BIN_PATH') %>
     </li>
