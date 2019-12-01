@@ -8,11 +8,9 @@ module Solargraph
           include Rubyvm::NodeMethods
 
           def process
-            # if node.children[1]
-              # here = get_node_start_position(node.children[1])
-              # presence = Range.new(here, region.closure.location.range.ending)
-              presence = Range.from_node(node)
-              loc = get_node_location(node.children[1])
+            presence = Range.from_node(node)
+            loc = get_node_location(node.children[1])
+            if node.children[1] && node.children[1].children.first
               types = if !node.children.first || node.children.first.children.empty?
                         ['Exception']
                       else
@@ -27,7 +25,7 @@ module Solargraph
                 comments: "@type [#{types.join(',')}]",
                 presence: presence
               )
-            # end
+            end
             NodeProcessor.process(node.children[1], region, pins, locals)
           end
         end
