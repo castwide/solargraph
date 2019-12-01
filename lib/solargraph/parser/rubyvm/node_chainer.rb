@@ -119,7 +119,7 @@ module Solargraph
           elsif [:BEGIN].include?(n.type)
             result.concat generate_links(n.children[0])
           elsif n.type == :BLOCK_PASS
-            result.push Chain::BlockVariable.new("&#{n.children[0].children[0].to_s}")
+            result.push Chain::BlockVariable.new("&#{n.children[1].children[0].to_s}")
           else
             lit = infer_literal_node_type(n)
             result.push (lit ? Chain::Literal.new(lit) : Chain::Link.new)
