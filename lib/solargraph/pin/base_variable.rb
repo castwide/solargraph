@@ -44,10 +44,12 @@ module Solargraph
         types = []
         Parser.returns_from(@assignment).each do |node|
           # Nil nodes may not have a location
-          if node.nil? || node.type == :NIL
+          if node.nil? || node.type == :NIL || node.type == :nil
             types.push ComplexType::NIL
           else
-            pos = Range.from_node(node).ending
+            rng = Range.from_node(node)
+            next if rng.nil?
+            pos = rng.ending
             clip = api_map.clip_at(location.filename, pos)
             # Use the return node for inference. The clip might infer from the
             # first node in a method call instead of the entire call.
