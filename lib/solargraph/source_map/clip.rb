@@ -99,7 +99,7 @@ module Solargraph
         return @in_block unless @in_block.nil?
         @in_block = begin
           tree = cursor.source.tree_at(cursor.position.line, cursor.position.column)
-          tree[1].is_a?(::Parser::AST::Node) && tree[1].type == :block
+          Parser.is_ast_node?(tree[1]) && [:block, :ITER].include?(tree[1].type)
         end
       end
 

@@ -38,7 +38,10 @@ module Solargraph
           node = nil
           parent = nil
           if !source.repaired? && source.parsed? && source.synchronized?
-            node, parent = source.tree_at(position.line, position.column)[0..2]
+            tree = source.tree_at(position.line, position.column)
+            # node, parent = source.tree_at(position.line, position.column)[0..2]
+            tree.shift while tree.length > 1 && tree.first.type == :SCOPE
+            node, parent = tree[0..2]
           elsif source.parsed? && source.repaired? && end_of_phrase == '.'
             node, parent = source.tree_at(fixed_position.line, fixed_position.column)[0..2]
             node = Parser.parse(fixed_phrase) if node.nil?
@@ -53,7 +56,7 @@ module Solargraph
         end
         return Chain.new([Chain::UNDEFINED_CALL]) if node.nil? || (node.type == :sym && !phrase.start_with?(':'))
         # chain = NodeChainer.chain(node, source.filename, parent && parent.type == :block)
-        chain = Parser.chain(node, source.filename, parent && parent.type == :block)
+        chain = Parser.chain(node, source.filename, parent && [:ITER, :block].include?(parent.type))
         if source.repaired? || !source.parsed? || !source.synchronized?
           if end_of_phrase.strip == '.'
             chain.links.push Chain::UNDEFINED_CALL
