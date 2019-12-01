@@ -75,7 +75,8 @@ module Solargraph
         end
 
         def match_rubyvm_node_to_ref(top, name)
-          top.children.select { |c| c.is_a?(Symbol) }.any? { |c| c.to_s == name }
+          top.children.select { |c| c.is_a?(Symbol) }.any? { |c| c.to_s == name } ||
+            top.children.select { |c| c.is_a?(Array) }.any? { |c| c.include?(name.to_sym) }
         end
 
         def chain *args
