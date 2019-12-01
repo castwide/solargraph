@@ -38,6 +38,8 @@ module Solargraph
             '::Array'
           when :HASH
             '::Hash'
+          when :DOT2
+            '::Range'
           end
         end
       end

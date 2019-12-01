@@ -60,7 +60,7 @@ module Solargraph
             end
             args = []
             if n.children.last && n.children.last.type == :ARRAY
-              n.children.last.children.each do |c|
+              n.children.last.children[0..-2].each do |c|
                 args.push NodeChainer.chain(c)
               end
             elsif n.children.last && n.children.last.type == :BLOCK_PASS
@@ -89,7 +89,7 @@ module Solargraph
             # else
             #   raise "No idea what to do with #{n}"
             # end
-          elsif n.type == :VCALL
+          elsif n.type == :VCALL || n.type == :FCALL
             result.push Chain::Call.new(n.children[0].to_s, [], @in_block || block_passed?(n))
           elsif n.type == :SELF
             result.push Chain::Head.new('self')
@@ -98,7 +98,7 @@ module Solargraph
           elsif [:COLON2, :COLON3, :CONST].include?(n.type)
             const = unpack_name(n)
             result.push Chain::Constant.new(const)
-          elsif [:lvar, :lvasgn].include?(n.type)
+          elsif [:LVAR, :LASGN].include?(n.type)
             result.push Chain::Call.new(n.children[0].to_s)
           elsif [:IVAR, :IASGN].include?(n.type)
             result.push Chain::InstanceVariable.new(n.children[0].to_s)

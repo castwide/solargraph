@@ -139,6 +139,12 @@ module Solargraph
       def recipient_node
         if Parser.rubyvm?
           tree = source.tree_at(position.line, position.column)
+          result = Parser.recipient_node(tree)
+          if result.nil? && tree.first && tree.first.type == :CALL && source.code[Position.to_offset(source.code, Position.new(position.line, position.column - 1)), 1] == '(' && source.code[Position.to_offset(source.code, position), 1] == ')'
+              return tree.first
+          else
+            nil
+          end
           Parser.recipient_node(tree)
         else
           tree = source.tree_at(position.line, position.column)

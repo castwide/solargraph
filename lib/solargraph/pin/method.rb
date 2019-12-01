@@ -96,7 +96,8 @@ module Solargraph
       # @return [Parser::AST::Node, nil]
       def method_body_node
         return nil if node.nil?
-        return node.children[2] if node.type == :def
+        return node.children[1] if node.type == :DEFN
+        return node.children[2] if node.type == :def || node.type == :DEFS
         return node.children[3] if node.type == :defs
         nil
       end
@@ -111,10 +112,11 @@ module Solargraph
             has_nil = true
             next
           end
-          next if n.loc.nil? || n.loc.expression.nil?
+          rng = Range.from_node(n)
+          next unless rng
           clip = api_map.clip_at(
             location.filename,
-            [n.loc.expression.last_line, n.loc.expression.last_column]
+            rng.ending
           )
           type = clip.infer
           result.push type unless type.undefined?

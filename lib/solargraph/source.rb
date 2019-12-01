@@ -435,7 +435,7 @@ module Solargraph
       return if node.nil?
       # here = Range.from_to(node.loc.expression.line, node.loc.expression.column, node.loc.expression.last_line, node.loc.expression.last_column)
       here = Range.from_node(node)
-      if here.contain?(position)
+      if here.contain?(position) || colonized(here, position, node)
         stack.unshift node
         node.children.each do |c|
           next unless Parser.is_ast_node?(c)
@@ -443,6 +443,13 @@ module Solargraph
           inner_tree_at(c, position, stack)
         end
       end
+    end
+
+    def colonized range, position, node
+      node.type == :COLON2 &&
+        range.ending.line == position.line &&
+        range.ending.character == position.character - 2 &&
+        code[Position.to_offset(code, Position.new(position.line, position.character - 2)), 2] == '::'
     end
 
     protected

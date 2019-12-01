@@ -30,8 +30,10 @@ module Solargraph
         end
 
         def returns_from node
+          return [] unless Parser.is_ast_node?(node)
           if node.type == :SCOPE
-            node.children.select { |n| n.is_a?(RubyVM::AbstractSyntaxTree::Node) }.map { |n| DeepInference.get_return_nodes(n) }.flatten
+            # node.children.select { |n| n.is_a?(RubyVM::AbstractSyntaxTree::Node) }.map { |n| DeepInference.get_return_nodes(n) }.flatten
+            DeepInference.get_return_nodes(node.children[2])
           else
             DeepInference.get_return_nodes(node)
           end
@@ -108,7 +110,7 @@ module Solargraph
 
         def recipient_node tree
           tree.each_with_index do |node, idx|
-            return tree[idx + 1] if node.type == :ARRAY && tree[idx + 1] && tree[idx + 1].type == :FCALL
+            return tree[idx + 1] if node.type == :ARRAY && tree[idx + 1] && [:FCALL, :VCALL, :CALL].include?(tree[idx + 1].type)
           end
           nil
         end

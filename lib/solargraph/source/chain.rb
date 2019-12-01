@@ -104,7 +104,7 @@ module Solargraph
         end
         if type.undefined?
           # Limit method inference recursion
-          return type if @@inference_depth >= 2 && pins.first.is_a?(Pin::BaseMethod)
+          return type if @@inference_depth >= 10 && pins.first.is_a?(Pin::BaseMethod)
           @@inference_depth += 1
           name_count = {}
           pins.each do |pin|
