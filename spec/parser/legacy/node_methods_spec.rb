@@ -1,3 +1,5 @@
+return if Solargraph::Parser.rubyvm?
+
 require 'parser/current'
 
 describe Solargraph::Parser::Legacy::NodeMethods do
