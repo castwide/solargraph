@@ -106,6 +106,38 @@ module Solargraph
           Range.new(st, en)
         end
 
+        def recipient_node tree
+          tree.each_with_index do |node, idx|
+            return tree[idx + 1] if node.type == :ARRAY && tree[idx + 1] && tree[idx + 1].type == :FCALL
+          end
+          nil
+        end
+
+        def string_ranges node
+          return [] unless is_ast_node?(node)
+          result = []
+          if node.type == :STR
+            result.push Range.from_node(node)
+          elsif node.type == :DSTR
+            here = Range.from_node(node)
+            there = Range.from_node(node.children[1])
+            result.push Range.new(here.start, there.start)
+          end
+          node.children.each do |child|
+            result.concat string_ranges(child)
+          end
+          if node.type == :DSTR && node.children.last.nil?
+            # result.push Range.new(result.last.ending, result.last.ending)
+            last = node.children[-2]
+            unless last.nil?
+              rng = Range.from_node(last)
+              pos = Position.new(rng.ending.line, rng.ending.column - 1)
+              result.push Range.new(pos, pos)
+            end
+          end
+          result
+        end
+
         module DeepInference
           class << self
             CONDITIONAL = [:IF, :UNLESS]

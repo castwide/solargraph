@@ -193,25 +193,37 @@ module Solargraph
     # @param position [Position]
     # @return [Boolean]
     def string_at? position
-      return false if Position.to_offset(code, position) >= code.length
-      string_nodes.each do |node|
-        range = Range.from_node(node)
-        next if range.ending.line < position.line
-        break if range.ending.line > position.line
-        return true if node.type == :str && range.include?(position) && range.start != position
-        if node.type == :dstr
-          inner = node_at(position.line, position.column)
-          next if inner.nil?
-          inner_range = Range.from_node(inner)
-          next unless range.include?(inner_range.ending)
-          return true if inner.type == :str
-          inner_code = at(Solargraph::Range.new(inner_range.start, position))
-          return true if (inner.type == :dstr && inner_range.ending.character <= position.character) && !inner_code.end_with?('}') ||
-            (inner.type != :dstr && inner_range.ending.line == position.line && position.character <= inner_range.ending.character && inner_code.end_with?('}'))
+      if Parser.rubyvm?
+        string_ranges.each do |range|
+          return true if range.include?(position) || range.ending == position
         end
-        break if range.ending.line > position.line
+        false
+      else
+        return false if Position.to_offset(code, position) >= code.length
+        string_nodes.each do |node|
+          range = Range.from_node(node)
+          next if range.ending.line < position.line
+          break if range.ending.line > position.line
+          return true if node.type == :str && range.include?(position) && range.start != position
+          return true if [:STR, :str].include?(node.type) && range.include?(position) && range.start != position
+          if node.type == :dstr
+            inner = node_at(position.line, position.column)
+            next if inner.nil?
+            inner_range = Range.from_node(inner)
+            next unless range.include?(inner_range.ending)
+            return true if inner.type == :str
+            inner_code = at(Solargraph::Range.new(inner_range.start, position))
+            return true if (inner.type == :dstr && inner_range.ending.character <= position.character) && !inner_code.end_with?('}') ||
+              (inner.type != :dstr && inner_range.ending.line == position.line && position.character <= inner_range.ending.character && inner_code.end_with?('}'))
+          end
+          break if range.ending.line > position.line
+        end
+        false
       end
-      false
+    end
+
+    def string_ranges
+      @string_ranges ||= Parser.string_ranges(node)
     end
 
     # @param position [Position]
@@ -405,8 +417,8 @@ module Solargraph
     # @return [Array<Parser::AST::Node>]
     def string_nodes_in n
       result = []
-      if n.is_a?(::Parser::AST::Node)
-        if n.type == :str || n.type == :dstr
+      if Parser.is_ast_node?(n)
+        if n.type == :str || n.type == :dstr || n.type == :STR || n.type == :DSTR
           result.push n
         else
           n.children.each{ |c| result.concat string_nodes_in(c) }
