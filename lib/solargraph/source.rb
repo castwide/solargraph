@@ -195,7 +195,11 @@ module Solargraph
     def string_at? position
       if Parser.rubyvm?
         string_ranges.each do |range|
-          return true if range.include?(position) || range.ending == position
+          if synchronized?
+            return true if range.include?(position) || range.ending == position
+          else
+            return true if last_updater && last_updater.changes.one? && range.contain?(last_updater.changes.first.range.start)
+          end
         end
         false
       else
