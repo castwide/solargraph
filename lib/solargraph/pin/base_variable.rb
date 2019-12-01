@@ -44,7 +44,7 @@ module Solargraph
         types = []
         Parser.returns_from(@assignment).each do |node|
           # Nil nodes may not have a location
-          if node.type == :NIL
+          if node.nil? || node.type == :NIL
             types.push ComplexType::NIL
           else
             pos = Range.from_node(node).ending

@@ -98,7 +98,7 @@ module Solargraph
           elsif [:COLON2, :COLON3, :CONST].include?(n.type)
             const = unpack_name(n)
             result.push Chain::Constant.new(const)
-          elsif [:LVAR, :LASGN].include?(n.type)
+          elsif [:LVAR, :LASGN, :DVAR].include?(n.type)
             result.push Chain::Call.new(n.children[0].to_s)
           elsif [:IVAR, :IASGN].include?(n.type)
             result.push Chain::InstanceVariable.new(n.children[0].to_s)
