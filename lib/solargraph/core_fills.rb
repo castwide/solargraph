@@ -78,8 +78,7 @@ module Solargraph
       # @todo This override isn't robust enough. It needs to allow for
       #   parameterized Hash types, e.g., [Hash{Symbol => String}].
       Override.from_comment('Hash#[]=', %(
-@param key [Object],
-@param value [Object]
+@param_tuple
       )),
 
       Override.method_return('Object#!', 'Boolean'),
