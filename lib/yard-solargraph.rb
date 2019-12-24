@@ -22,6 +22,8 @@ YARD::Tags::Library.define_tag('ReturnSingleParameter', :return_single_parameter
 YARD::Tags::Library.define_tag('YieldparamSingleParameter', :yieldparam_single_parameter)
 # Define a @return_value_parameter tag for returning e.g. Hash values
 YARD::Tags::Library.define_tag('ReturnValueParameter', :return_value_parameter)
+# Define a @param_tuple tag for e.g. Hash#[]= parameters
+YARD::Tags::Library.define_tag('ParamTuple', :param_tuple)
 # Define a @!domain directive for documenting DSLs
 YARD::Tags::Library.define_directive("domain", :with_types, Solargraph::DomainDirective)
 # Define an @!override directive for overriding method tags

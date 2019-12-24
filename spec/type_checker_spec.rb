@@ -382,4 +382,119 @@ describe Solargraph::TypeChecker do
     ))
     expect(checker.strict_type_problems).to be_one
   end
+
+  it 'handles Hash#[]= with simple objects' do
+    checker = Solargraph::TypeChecker.load_string(%(
+      h = {}
+      h['foo'] = 'bar'
+      h[100] = []
+    ))
+    expect(checker.strict_type_problems).to be_empty
+  end
+
+  it 'handles Hash#[]= with incorrect key parameter' do
+    checker = Solargraph::TypeChecker.load_string(%(
+      # @type [Hash{Symbol => Object}]
+      h = {}
+      # This should raise a problem. The key needs to be a Symbol.
+      h[100] = 'bar'
+    ))
+    expect(checker.strict_type_problems).to be_one
+    expect(checker.strict_type_problems.first.message).to include('Wrong parameter type')
+  end
+
+  it 'handles Hash#[]= with incorrect value parameter' do
+    checker = Solargraph::TypeChecker.load_string(%(
+      # @type [Hash{Symbol => Integer}]
+      h = {}
+      # This should raise a problem. The value needs to be an Integer.
+      h[:foo] = 'bar'
+    ))
+    expect(checker.strict_type_problems).to be_one
+    expect(checker.strict_type_problems.first.message).to include('Wrong parameter type')
+  end
+
+  it 'handles Hash#[]= with correct parameters' do
+    checker = Solargraph::TypeChecker.load_string(%(
+      # @type [Hash{Symbol => Integer}]
+      h = {}
+      h[:foo] = 100
+    ))
+    expect(checker.strict_type_problems).to be_empty
+  end
+
+  it 'inherits param tags from superclass methods' do
+    checker = Solargraph::TypeChecker.load_string(%(
+      class Foo
+        # @param arg [Integer]
+        def meth arg
+        end
+      end
+
+      class Bar < Foo
+        def meth arg
+        end
+      end
+
+      Bar.new.meth(100)
+    ))
+    expect(checker.strict_type_problems).to be_empty
+  end
+
+  it 'invalidates incorrect arguments from superclass param tags' do
+    checker = Solargraph::TypeChecker.load_string(%(
+      class Foo
+        # @param arg [String]
+        def meth arg
+        end
+      end
+
+      class Bar < Foo
+        def meth arg
+        end
+      end
+
+      # Error: arg should be a String
+      Bar.new.meth(100)
+    ))
+    expect(checker.strict_type_problems).to be_one
+  end
+
+  it 'validates Boolean parameters' do
+    checker = Solargraph::TypeChecker.load_string(%(
+      class Foo
+        # @param bool [Boolean]
+        def bar bool
+        end
+      end
+
+      Foo.new.bar(true)
+      Foo.new.bar(false)
+    ))
+    expect(checker.strict_type_problems).to be_empty
+  end
+
+  it 'invalidates incorrect Boolean parameters' do
+    checker = Solargraph::TypeChecker.load_string(%(
+      class Foo
+        # @param bool [Boolean]
+        def bar bool
+        end
+      end
+
+      Foo.new.bar(1)
+    ))
+    expect(checker.strict_type_problems).to be_one
+  end
+
+  it 'resolves Kernel methods in instance scopes' do
+    checker = Solargraph::TypeChecker.load_string(%(
+      class Foo
+        def bar
+          raise 'oops'
+        end
+      end
+    ))
+    expect(checker.strict_type_problems).to be_empty
+  end
 end

@@ -12,14 +12,21 @@ module Solargraph
 
         # @param word [String]
         # @param arguments [Array<Chain>]
-        def initialize word, arguments = [], with_block = false
+        # @param with_block [Boolean] True if the chain is inside a block
+        # @param head [Boolean] True if the call is the start of its chain
+        def initialize word, arguments = [], with_block = false, head = false
           @word = word
           @arguments = arguments
           @with_block = with_block
+          @head = head
         end
 
         def with_block?
           @with_block
+        end
+
+        def head?
+          @head
         end
 
         # @param api_map [ApiMap]
@@ -29,6 +36,7 @@ module Solargraph
           found = locals.select{|p| p.name == word}
           return inferred_pins(found, api_map, name_pin.context, locals) unless found.empty?
           pins = api_map.get_method_stack(name_pin.binder.namespace, word, scope: name_pin.binder.scope)
+          pins.concat api_map.get_method_stack('Kernel', word, scope: :instance) if head?
           return [] if pins.empty?
           inferred_pins(pins, api_map, name_pin.context, locals)
         end
@@ -108,6 +116,7 @@ module Solargraph
         # @param pin [Pin::Method]
         # @param api_map [ApiMap]
         # @param context [ComplexType]
+        # @param locals [Pin::Base]
         # @return [Pin::Base]
         def process_macro pin, api_map, context, locals
           pin.macros.each do |macro|
@@ -117,6 +126,11 @@ module Solargraph
           Pin::ProxyType.anonymous(ComplexType::UNDEFINED)
         end
 
+        # @param pin [Pin::Method]
+        # @param api_map [ApiMap]
+        # @param context [ComplexType]
+        # @param locals [Pin::Base]
+        # @return [Pin::ProxyType]
         def process_directive pin, api_map, context, locals
           pin.directives.each do |dir|
             macro = api_map.named_macro(dir.tag.name)
@@ -127,8 +141,12 @@ module Solargraph
           Pin::ProxyType.anonymous ComplexType::UNDEFINED
         end
 
-        # @param api_map [ApiMap]
+        # @param pin [Pin]
         # @param macro [YARD::Tags::MacroDirective]
+        # @param api_map [ApiMap]
+        # @param context [ComplexType]
+        # @param locals [Array<Pin::Base>]
+        # @return [Pin::ProxyType]
         def inner_process_macro pin, macro, api_map, context, locals
           vals = arguments.map{ |c| Pin::ProxyType.anonymous(c.infer(api_map, pin, locals)) }
           txt = macro.tag.text.clone
@@ -151,17 +169,19 @@ module Solargraph
 
         # @param docstring [YARD::Docstring]
         # @param context [ComplexType]
+        # @return [ComplexType]
         def extra_return_type docstring, context
           if docstring.has_tag?(:return_single_parameter) && context.subtypes.one?
             return context.subtypes.first
           elsif docstring.has_tag?(:return_value_parameter) && context.value_types.one?
             return context.value_types.first
-          # elsif docstring.has_tag?(:return) && docstring.tag(:return).types && !docstring.tag(:return).types.empty?
-          #   return ComplexType.try_parse(*docstring.tag(:return).types)
           end
           nil
         end
 
+        # @param arguments [Array<Chain>]
+        # @param parameters [Array<String>]
+        # @return [Boolean]
         def arguments_match arguments, parameters
           argcount = arguments.length
           # argcount -= 1 if !arguments.empty? && arguments.last.links.first.word.start_with?('&')

@@ -62,6 +62,11 @@ module Solargraph
 @return_single_parameter
       )),
 
+      Override.from_comment('BasicObject#==', %(
+@param other [BasicObject]
+@return [Boolean]
+      )),
+
       Override.method_return('Class#new', 'self'),
       Override.method_return('Class.new', 'Class<Object>'),
       Override.method_return('Class#allocate', 'self'),
@@ -75,10 +80,16 @@ module Solargraph
 @return_value_parameter
       )),
 
+      # @todo This override isn't robust enough. It needs to allow for
+      #   parameterized Hash types, e.g., [Hash{Symbol => String}].
+      Override.from_comment('Hash#[]=', %(
+@param_tuple
+      )),
+
       Override.method_return('Object#!', 'Boolean'),
       Override.method_return('Object#clone', 'self', delete: [:overload]),
       Override.method_return('Object#dup', 'self'),
-      Override.method_return('Object#freeze', 'self'),
+      Override.method_return('Object#freeze', 'self', delete: [:overload]),
       Override.method_return('Object#taint', 'self'),
       Override.method_return('Object#to_s', 'String'),
       Override.method_return('Object#untaint', 'self'),
@@ -99,3 +110,4 @@ module Solargraph
       )
   end
 end
+
