@@ -6,7 +6,12 @@ module Solargraph
 
     LIBS = {
       'pathname' => [
-        Override.method_return('Pathname#join', 'Pathname')
+        Override.method_return('Pathname#join', 'Pathname'),
+        Override.method_return('Pathname#basename', 'Pathname'),
+        Override.method_return('Pathname#dirname', 'Pathname'),
+        Override.method_return('Pathname#cleanpath', 'Pathname'),
+        Override.method_return('Pathname#children', 'Array<Pathname>'),
+        Override.method_return('Pathname#entries', 'Array<Pathname>')
       ]
     }
 
