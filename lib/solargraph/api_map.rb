@@ -189,7 +189,7 @@ module Solargraph
 
     # An array of namespace names defined in the ApiMap.
     #
-    # @return [Array<String>]
+    # @return [Set<String>]
     def namespaces
       store.namespaces
     end
