@@ -222,6 +222,16 @@ module Solargraph
             result.concat Mapper.new(all).map
           end
           result.delete_if(&:nil?)
+          StdlibFills.get(r).each do |ovr|
+            pin = result.select { |p| p.path == ovr.name }.first
+            next if pin.nil?
+            (ovr.tags.map(&:tag_name) + ovr.delete).uniq.each do |tag|
+              pin.docstring.delete_tags tag.to_sym
+            end
+            ovr.tags.each do |tag|
+              pin.docstring.add_tag(tag)
+            end
+          end
           cache.set_path_pins(r, result) unless result.empty?
           pins.concat result
         end
