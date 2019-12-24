@@ -513,9 +513,11 @@ module Solargraph
     # @return [Boolean]
     def super_and_sub?(sup, sub)
       fqsup = qualify(sup)
-      cls = qualify(store.get_superclass(sub), sub)
-      until cls.nil?
-        return true if cls == fqsup
+      cls = qualify(sub)
+      until fqsup.nil? || cls.nil?
+        # @todo Classes in the workspace are not detected as subclasses of
+        #   Object. The quick and dirty fix is to hardcode it here.
+        return true if fqsup == 'Object' || cls == fqsup
         cls = qualify(store.get_superclass(cls), cls)
       end
       false
@@ -627,7 +629,7 @@ module Solargraph
     # @param name [String]
     # @param root [String]
     # @param skip [Array<String>]
-    # @return [String]
+    # @return [String, nil]
     def inner_qualify name, root, skip
       return nil if name.nil?
       return nil if skip.include?(root)
@@ -663,7 +665,7 @@ module Solargraph
     # Get the namespace's type (Class or Module).
     #
     # @param fqns [String] A fully qualified namespace
-    # @return [Symbol] :class, :module, or nil
+    # @return [Symbol, nil] :class, :module, or nil
     def get_namespace_type fqns
       return nil if fqns.nil?
       # @type [Pin::Namespace, nil]

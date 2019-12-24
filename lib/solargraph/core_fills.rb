@@ -75,6 +75,13 @@ module Solargraph
 @return_value_parameter
       )),
 
+      # @todo This override isn't robust enough. It needs to allow for
+      #   parameterized Hash types, e.g., [Hash{Symbol => String}].
+      Override.from_comment('Hash#[]=', %(
+@param key [Object],
+@param value [Object]
+      )),
+
       Override.method_return('Object#!', 'Boolean'),
       Override.method_return('Object#clone', 'self', delete: [:overload]),
       Override.method_return('Object#dup', 'self'),

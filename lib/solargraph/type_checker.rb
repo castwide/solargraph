@@ -188,8 +188,20 @@ module Solargraph
             end
             if curtype.nil?
               if pin.parameters[index].nil?
-                result.push Problem.new(Solargraph::Location.new(filename, Solargraph::Range.from_node(node)), "Not enough arguments sent to #{pin.path}")
-                break
+                if params.values[index]
+                  # Allow for methods that have named parameters but no
+                  # arguments in their definitions. This is common in the Ruby
+                  # core, e.g., the Hash#[]= method.
+                  chain = Solargraph::Source::NodeChainer.chain(arg, filename)
+                  argtype = chain.infer(api_map, block, locals)
+                  partype = params.values[index]
+                  if argtype.tag != partype.tag && !api_map.super_and_sub?(partype.tag.to_s, argtype.tag.to_s)
+                    result.push Problem.new(Solargraph::Location.new(filename, Solargraph::Range.from_node(node)), "Wrong parameter type for #{pin.path}: #{params.keys[index]} expected #{partype.tag}, received #{argtype.tag}")
+                  end
+                else
+                  result.push Problem.new(Solargraph::Location.new(filename, Solargraph::Range.from_node(node)), "Not enough arguments sent to #{pin.path}")
+                  break
+                end
               end
             else
               # @todo This should also detect when the last parameter is a hash
