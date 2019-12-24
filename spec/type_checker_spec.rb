@@ -486,4 +486,15 @@ describe Solargraph::TypeChecker do
     ))
     expect(checker.strict_type_problems).to be_one
   end
+
+  it 'resolves Kernel methods in instance scopes' do
+    checker = Solargraph::TypeChecker.load_string(%(
+      class Foo
+        def bar
+          raise 'oops'
+        end
+      end
+    ))
+    expect(checker.strict_type_problems).to be_empty
+  end
 end
