@@ -177,7 +177,7 @@ module Solargraph
         else
           pin = pins.first
           ptypes = ParamDef.from(pin)
-          params = param_tags_from(pin)
+          params = first_param_tags_from(pins)
           cursor = 0
           curtype = nil
           # The @param_tuple tag marks exceptional cases for handling, e.g., the Hash#[]= method.
@@ -334,6 +334,14 @@ module Solargraph
         result[tag.name] = ComplexType.try_parse(*tag.types).qualify(api_map, pin.context.namespace)
       end
       result
+    end
+
+    def first_param_tags_from pins
+      pins.each do |pin|
+        result = param_tags_from(pin)
+        return result unless result.empty?
+      end
+      {}
     end
 
     # @param location [Location, nil]

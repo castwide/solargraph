@@ -422,4 +422,41 @@ describe Solargraph::TypeChecker do
     ))
     expect(checker.strict_type_problems).to be_empty
   end
+
+  it 'inherits param tags from superclass methods' do
+    checker = Solargraph::TypeChecker.load_string(%(
+      class Foo
+        # @param arg [Integer]
+        def meth arg
+        end
+      end
+
+      class Bar < Foo
+        def meth arg
+        end
+      end
+
+      Bar.new.meth(100)
+    ))
+    expect(checker.strict_type_problems).to be_empty
+  end
+
+  it 'validates param tags from superclass methods' do
+    checker = Solargraph::TypeChecker.load_string(%(
+      class Foo
+        # @param arg [String]
+        def meth arg
+        end
+      end
+
+      class Bar < Foo
+        def meth arg
+        end
+      end
+
+      # Error: arg should be a String
+      Bar.new.meth(100)
+    ))
+    expect(checker.strict_type_problems).to be_one
+  end
 end
