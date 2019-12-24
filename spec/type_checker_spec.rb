@@ -441,7 +441,7 @@ describe Solargraph::TypeChecker do
     expect(checker.strict_type_problems).to be_empty
   end
 
-  it 'validates param tags from superclass methods' do
+  it 'invalidates incorrect arguments from superclass param tags' do
     checker = Solargraph::TypeChecker.load_string(%(
       class Foo
         # @param arg [String]
@@ -456,6 +456,33 @@ describe Solargraph::TypeChecker do
 
       # Error: arg should be a String
       Bar.new.meth(100)
+    ))
+    expect(checker.strict_type_problems).to be_one
+  end
+
+  it 'validates Boolean parameters' do
+    checker = Solargraph::TypeChecker.load_string(%(
+      class Foo
+        # @param bool [Boolean]
+        def bar bool
+        end
+      end
+
+      Foo.new.bar(true)
+      Foo.new.bar(false)
+    ))
+    expect(checker.strict_type_problems).to be_empty
+  end
+
+  it 'invalidates incorrect Boolean parameters' do
+    checker = Solargraph::TypeChecker.load_string(%(
+      class Foo
+        # @param bool [Boolean]
+        def bar bool
+        end
+      end
+
+      Foo.new.bar(1)
     ))
     expect(checker.strict_type_problems).to be_one
   end
