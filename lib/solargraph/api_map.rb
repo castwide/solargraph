@@ -138,7 +138,7 @@ module Solargraph
       @implicit ||= Environ.new
     end
 
-    # @return [Hash]
+    # @return [Hash{String => String}]
     def local_path_hash
       @local_paths ||= {}
     end
