@@ -194,7 +194,7 @@ module Solargraph
     # @param strip [Boolean] Strip special characters from variable names
     # @return [Array<Solargraph::Range>]
     # @todo Take a Location instead of filename/line/column
-    def references_from filename, line, column, strip: false
+    def references_from filename, line, column, strip: false, only: false
       # checkout filename
       cursor = api_map.cursor_at(filename, Position.new(line, column))
       clip = api_map.clip(cursor)
@@ -202,7 +202,12 @@ module Solargraph
       return [] if pins.empty?
       result = []
       pins.uniq.each do |pin|
-        (workspace.sources + (@current ? [@current] : [])).uniq(&:filename).each do |source|
+        files = if only
+          [api_map.source_map(filename)]
+        else
+          (workspace.sources + (@current ? [@current] : []))
+        end
+        files.uniq(&:filename).each do |source|
           found = source.references(pin.name)
           found.select! do |loc|
             referenced = definitions_at(loc.filename, loc.range.ending.line, loc.range.ending.character)
