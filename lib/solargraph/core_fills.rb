@@ -62,6 +62,11 @@ module Solargraph
 @return_single_parameter
       )),
 
+      Override.from_comment('BasicObject#==', %(
+@param other [BasicObject]
+@return [Boolean]
+      )),
+
       Override.method_return('Class#new', 'self'),
       Override.method_return('Class.new', 'Class<Object>'),
       Override.method_return('Class#allocate', 'self'),
