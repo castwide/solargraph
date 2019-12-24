@@ -89,7 +89,7 @@ module Solargraph
       Override.method_return('Object#!', 'Boolean'),
       Override.method_return('Object#clone', 'self', delete: [:overload]),
       Override.method_return('Object#dup', 'self'),
-      Override.method_return('Object#freeze', 'self'),
+      Override.method_return('Object#freeze', 'self', delete: [:overload]),
       Override.method_return('Object#taint', 'self'),
       Override.method_return('Object#to_s', 'String'),
       Override.method_return('Object#untaint', 'self'),
@@ -110,3 +110,4 @@ module Solargraph
       )
   end
 end
+
