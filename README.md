@@ -61,6 +61,12 @@ The Solargraph gem ships with documentation for Ruby 2.2.2. You can download doc
     $ solargraph download-core   # Install the best match for your Ruby version
     $ solargraph clear           # Reset the documentation cache
 
+### The Documentation Cache
+
+Solargraph uses a cache directory to store documentation for the Ruby core and customized documentation for certain gems. The default location is `~/.solargraph/cache`, e.g., `/home/<username>/.solargraph/cache` on Linux or `C:\Users\<username>\.solargraph` on Windows.
+
+You can change the location of the cache directory with the `SOLARGRAPH_CACHE` environment variable. This can be useful if you want the cache to comply with the XDG Base Directory Specification.
+
 ### Solargraph and Bundler
 
 If you're using the language server with a project that uses Bundler, the most comprehensive way to use your bundled gems is to bundle Solargraph.
