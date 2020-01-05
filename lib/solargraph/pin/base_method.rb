@@ -57,7 +57,7 @@ module Solargraph
             @documentation += lines.join("\n")
           end
           @documentation += "\n\n" unless @documentation.empty?
-          @documentation += "#{visibility}"
+          @documentation += "Visibility: #{visibility}"
         end
         @documentation.to_s
       end
