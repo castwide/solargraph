@@ -40,6 +40,28 @@ module Solargraph
         []
       end
 
+      def documentation
+        if @documentation.nil?
+          @documentation ||= super || ''
+          param_tags = docstring.tags(:param)
+          unless param_tags.nil? or param_tags.empty?
+            @documentation += "\n\n" unless @documentation.empty?
+            @documentation += "Params:\n"
+            lines = []
+            param_tags.each do |p|
+              l = "* #{p.name}"
+              l += " [#{escape_brackets(p.types.join(', '))}]" unless p.types.nil? or p.types.empty?
+              l += " #{p.text}"
+              lines.push l
+            end
+            @documentation += lines.join("\n")
+          end
+          @documentation += "\n\n" unless @documentation.empty?
+          @documentation += "#{visibility}"
+        end
+        @documentation.to_s
+      end
+
       private
 
       # @return [ComplexType]
