@@ -20,7 +20,9 @@ Gem::Specification.new do |s|
   s.required_ruby_version = '>= 2.1'
 
   s.add_runtime_dependency 'backport', '~> 1.1'
+  s.add_runtime_dependency 'benchmark'
   s.add_runtime_dependency 'bundler', '>= 1.17.2'
+  s.add_runtime_dependency 'e2mmap'
   s.add_runtime_dependency 'jaro_winkler', '~> 1.5'
   s.add_runtime_dependency 'maruku', '~> 0.7', '>= 0.7.3'
   s.add_runtime_dependency 'nokogiri', '~> 1.9', '>= 1.9.1'
@@ -30,9 +32,6 @@ Gem::Specification.new do |s|
   s.add_runtime_dependency 'thor', '~> 1.0'
   s.add_runtime_dependency 'tilt', '~> 2.0'
   s.add_runtime_dependency 'yard', '~> 0.9'
-  s.add_runtime_dependency 'e2mmap'
-  s.add_runtime_dependency 'irb', '<= 1.1.0'
-  s.add_runtime_dependency 'benchmark'
 
   s.add_development_dependency 'pry', '~> 0.11.3'
   s.add_development_dependency 'rspec', '~> 3.5', '>= 3.5.0'
