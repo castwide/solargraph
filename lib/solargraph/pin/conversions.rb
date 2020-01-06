@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require 'cgi'
+
 module Solargraph
   module Pin
     # @todo Move this stuff. It should be the responsibility of the language server.
@@ -81,7 +83,7 @@ module Solargraph
         this_path = path || return_type.tag
         return nil if this_path == 'undefined'
         return nil if this_path.nil? || this_path == 'undefined'
-        "[#{escape_brackets(this_path).gsub('_', '\\\\_')}](solargraph:/document?query=#{URI.escape(this_path)})"
+        "[#{escape_brackets(this_path).gsub('_', '\\\\_')}](solargraph:/document?query=#{CGI.escape(this_path)})"
       end
 
       # @param text [String]

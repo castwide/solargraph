@@ -1,7 +1,5 @@
 # frozen_string_literal: true
 
-require 'uri'
-
 module Solargraph::LanguageServer::Message::TextDocument
   class Definition < Base
     def process
