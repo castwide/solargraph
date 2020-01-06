@@ -51,4 +51,16 @@ module Solargraph
   def self.logger
     Solargraph::Logging.logger
   end
+
+  # A helper method that runs Bundler.with_unbundled_env or falls back to
+  # Bundler.with_clean env for earlier versions of Bundler.
+  #
+  def self.with_clean_env &block
+    meth = if Bundler.respond_to?(:with_unbundled_env)
+      :with_unbundled_env
+    else
+      :with_clean_env
+    end
+    Bundler.send meth, &block
+  end
 end
