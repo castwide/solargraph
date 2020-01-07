@@ -603,14 +603,14 @@ module Solargraph
     # @param skip [Array<String>]
     # @return [Array<Pin::Base>]
     def inner_get_constants fqns, visibility, skip
-      return [] if skip.include?(fqns)
+      return [] if fqns.nil? || skip.include?(fqns)
       skip.push fqns
-      result = []
-      result.concat store.get_constants(fqns, visibility).sort{ |a, b| a.name <=> b.name }
+      result = store.get_constants(fqns, visibility)
+                    .sort { |a, b| a.name <=> b.name }
       store.get_includes(fqns).each do |is|
-        fqis = qualify(is, fqns)
-        result.concat inner_get_constants(fqis, [:public], skip) unless fqis.nil?
+        result.concat inner_get_constants(qualify(is, fqns), [:public], skip)
       end
+      result.concat inner_get_constants(store.get_superclass(fqns), [:public], skip)
       result
     end
 
