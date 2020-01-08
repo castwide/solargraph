@@ -99,6 +99,18 @@ module Solargraph
 @yieldparam [self]
       )),
 
+      Override.from_comment('STDERR', %(
+@type [IO]
+      )),
+
+      Override.from_comment('STDIN', %(
+@type [IO]
+      )),
+
+      Override.from_comment('STDOUT', %(
+@type [IO]
+      )),
+
       Override.method_return('String#freeze', 'self'),
       Override.method_return('String#split', 'Array<String>'),
       Override.method_return('String#lines', 'Array<String>')
