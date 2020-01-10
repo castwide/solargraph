@@ -23,6 +23,7 @@ Gem::Specification.new do |s|
   s.add_runtime_dependency 'benchmark'
   s.add_runtime_dependency 'bundler', '>= 1.17.2'
   s.add_runtime_dependency 'e2mmap'
+  s.add_runtime_dependency 'fast_trie', '~> 0.5.1'
   s.add_runtime_dependency 'jaro_winkler', '~> 1.5'
   s.add_runtime_dependency 'maruku', '~> 0.7', '>= 0.7.3'
   s.add_runtime_dependency 'nokogiri', '~> 1.9', '>= 1.9.1'
