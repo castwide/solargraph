@@ -10,8 +10,7 @@ rvm:
   - jruby-head
 matrix:
   include:
-    # System Ruby is 2.3.7 on OSX 10.14
-    - rvm: 2.3.7
+    - rvm: 2.4
       os: osx
     - rvm: 2.6
       os: osx
