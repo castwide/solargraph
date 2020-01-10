@@ -16,7 +16,6 @@ matrix:
       os: osx
     - rvm: 2.7
       os: osx
-    - rvm: jruby-head
 # Update RubyGems and Bundler due to error with Bundler 1.16.1 and RubyGems 2.7.3
 # See https://github.com/travis-ci/travis-ci/issues/8978
 before_install:
