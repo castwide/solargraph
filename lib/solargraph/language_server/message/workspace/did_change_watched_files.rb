@@ -1,7 +1,5 @@
 # frozen_string_literal: true
 
-require 'uri'
-
 module Solargraph::LanguageServer::Message::Workspace
   class DidChangeWatchedFiles < Solargraph::LanguageServer::Message::Base
     CREATED = 1

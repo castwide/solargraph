@@ -53,7 +53,7 @@ module Solargraph
     end
 
     def self.specs_from_bundle directory
-      Bundler.with_clean_env do
+      Solargraph.with_clean_env do
         Dir.chdir directory do
           cmd = [
             'bundle', 'exec', 'ruby', '-e',

@@ -311,7 +311,6 @@ module Solargraph
         result.concat inner_get_methods('Kernel', :instance, visibility, deep, skip)
       else
         result.concat inner_get_methods(fqns, scope, visibility, deep, skip)
-        result.concat get_methods('Kernel', scope: :instance, visibility: [:public], deep: true) if deep && fqns != 'Kernel'
       end
       resolved = resolve_method_aliases(result, visibility)
       cache.set_methods(fqns, scope, visibility, deep, resolved)
@@ -604,14 +603,14 @@ module Solargraph
     # @param skip [Array<String>]
     # @return [Array<Pin::Base>]
     def inner_get_constants fqns, visibility, skip
-      return [] if skip.include?(fqns)
+      return [] if fqns.nil? || skip.include?(fqns)
       skip.push fqns
-      result = []
-      result.concat store.get_constants(fqns, visibility).sort{ |a, b| a.name <=> b.name }
+      result = store.get_constants(fqns, visibility)
+                    .sort { |a, b| a.name <=> b.name }
       store.get_includes(fqns).each do |is|
-        fqis = qualify(is, fqns)
-        result.concat inner_get_constants(fqis, [:public], skip) unless fqis.nil?
+        result.concat inner_get_constants(qualify(is, fqns), [:public], skip)
       end
+      result.concat inner_get_constants(store.get_superclass(fqns), [:public], skip)
       result
     end
 

@@ -30,8 +30,12 @@ module Solargraph
     # @return [Array<String>]
     attr_reader :required
 
+    # @return [Boolean]
     attr_writer :with_dependencies
 
+    # A hash of gem names and the version numbers to include in the map.
+    #
+    # @return [Hash{String => String}]
     attr_reader :gemset
 
     # @param required [Array<String>]
@@ -59,6 +63,7 @@ module Solargraph
     end
 
     # @param new_requires [Array<String>]
+    # @param new_gemset [Hash{String => String}]
     # @return [Boolean]
     def change new_requires, new_gemset
       if new_requires.uniq.sort == required.uniq.sort && new_gemset == gemset
@@ -145,7 +150,7 @@ module Solargraph
       @cache ||= YardMap::Cache.new
     end
 
-    # @param ns [YARD::CodeObjects::Namespace]
+    # @param ns [YARD::CodeObjects::NamespaceObject]
     # @return [Array<YARD::CodeObjects::Base>]
     def recurse_namespace_object ns
       result = []
@@ -266,6 +271,7 @@ module Solargraph
     end
 
     # @param y [String, nil]
+    # @param spec [Gem::Specification, nil]
     # @return [Array<Pin::Base>]
     def process_yardoc y, spec = nil
       return [] if y.nil?
@@ -280,6 +286,8 @@ module Solargraph
       Mapper.new(YARD::Registry.all, spec).map
     end
 
+    # @param spec [Gem::Specification]
+    # @return [String]
     def yardoc_file_for_spec spec
       cache_dir = File.join(Solargraph::YardMap::CoreDocs.cache_dir, 'gems', "#{spec.name}-#{spec.version}", 'yardoc')
       if File.exist?(cache_dir)
@@ -290,6 +298,8 @@ module Solargraph
       end
     end
 
+    # @param path [String]
+    # @return [Gem::Specification]
     def spec_for_require path
       spec = Gem::Specification.find_by_path(path) || Gem::Specification.find_by_name(path.split('/').first)
       if @gemset[spec.name]
