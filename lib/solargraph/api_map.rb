@@ -98,10 +98,8 @@ module Solargraph
       new_map_hash.values.each do |map|
         implicit.merge map.environ
         pins.concat map.pins
-        # reqs.concat map.requires.map(&:name)
         reqs.merge map.requires.map(&:name)
       end
-      # reqs.concat bundle.workspace.config.required
       reqs.merge bundle.workspace.config.required
       local_path_hash.clear
       unless bundle.workspace.require_paths.empty?
@@ -109,7 +107,13 @@ module Solargraph
         workspace_path = Pathname.new(bundle.workspace.directory)
         reqs.delete_if do |r|
           bundle.workspace.require_paths.any? do |base|
-            file_keys.include? workspace_path.join(base, "#{r}.rb").to_s
+            pn = workspace_path.join(base, "#{r}.rb").to_s
+            if file_keys.include? pn
+              local_path_hash[r] = pn
+              true
+            else
+              false
+            end
           end
         end
       end
