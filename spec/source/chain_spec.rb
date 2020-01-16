@@ -206,7 +206,8 @@ describe Solargraph::Source::Chain do
     api_map = Solargraph::ApiMap.new
     api_map.map source
     node = source.node_at(1, 6)
-    chain = Solargraph::Source::NodeChainer.chain(node, 'test.rb')
+    # chain = Solargraph::Source::NodeChainer.chain(node, 'test.rb')
+    chain = Solargraph::Parser.chain(node, 'test.rb')
     type = chain.infer(api_map, Solargraph::Pin::ROOT_PIN, [])
     expect(type.tag).to eq('Boolean')
   end
@@ -218,7 +219,8 @@ describe Solargraph::Source::Chain do
     api_map = Solargraph::ApiMap.new
     api_map.map source
     node = source.node_at(1, 16)
-    chain = Solargraph::Source::NodeChainer.chain(node, 'test.rb')
+    # chain = Solargraph::Source::NodeChainer.chain(node, 'test.rb')
+    chain = Solargraph::Parser.chain(node, 'test.rb')
     type = chain.infer(api_map, Solargraph::Pin::ROOT_PIN, [])
     expect(type.tag).to eq('Array')
   end

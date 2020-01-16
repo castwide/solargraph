@@ -40,6 +40,8 @@ module Solargraph
             '::Hash'
           when :DOT2
             '::Range'
+          when :TRUE, :FALSE
+            '::Boolean'
           end
         end
       end
