@@ -161,17 +161,18 @@ module Solargraph
     # @return [Array<Problem>]
     def check_send_args node, skip_send = false
       result = []
-      if node.type == :send
+      if [:VCALL, :send].include?(node.type)
         smap = api_map.source_map(filename)
-        locals = smap.locals_at(Solargraph::Location.new(filename, Solargraph::Range.from_node(node)))
-        block = smap.locate_block_pin(node.loc.line, node.loc.column)
-        chain = Solargraph::Source::NodeChainer.chain(node, filename)
+        range = Solargraph::Range.from_node(node)
+        locals = smap.locals_at(Solargraph::Location.new(filename, range))
+        block = smap.locate_block_pin(range.start.line, range.start.column)
+        chain = Solargraph::Parser.chain(node, filename)
         pins = chain.define(api_map, block, locals).select { |pin| pin.is_a?(Pin::BaseMethod ) }
         if pins.empty?
           if !more_signature?(node)
             base = chain.base.define(api_map, block, locals).first
             if base.nil? || report_location?(base.location)
-              result.push Problem.new(Solargraph::Location.new(filename, Solargraph::Range.from_node(node)), "Unresolved method signature #{chain.links.map(&:word).join('.')}")
+              result.push Problem.new(Solargraph::Location.new(filename, range), "Unresolved method signature #{chain.links.map(&:word).join('.')}")
             end
           end
         else
@@ -287,8 +288,9 @@ module Solargraph
         end
       end
       node.children.each do |child|
-        next unless child.is_a?(Parser::AST::Node)
-        next if child.type == :send && skip_send
+        # next unless child.is_a?(Parser::AST::Node)
+        next unless Parser.is_ast_node?(child)
+        next if [:VCALL, :SEND, :send].include?(child.type) && skip_send
         result.concat check_send_args(child)
       end
       result
@@ -352,7 +354,7 @@ module Solargraph
 
     def more_signature? node
       node.children.any? do |child|
-        child.is_a?(Parser::AST::Node) && (
+        Parser.is_ast_node?(child) && (
           child.type == :send || (child.type == :block && more_signature?(child))
         )
       end
