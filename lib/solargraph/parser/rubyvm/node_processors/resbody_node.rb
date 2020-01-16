@@ -18,13 +18,14 @@ module Solargraph
                           unpack_name(child)
                         end
                       end
-              locals.push Solargraph::Pin::LocalVariable.new(
-                location: loc,
-                closure: region.closure,
-                name: node.children[1].children.first.children.first.to_s,
-                comments: "@type [#{types.join(',')}]",
-                presence: presence
-              )
+              # @todo Determine how to handle exception variables
+              # locals.push Solargraph::Pin::LocalVariable.new(
+              #   location: loc,
+              #   closure: region.closure,
+              #   name: node.children[1].children.first.children.first.to_s,
+              #   comments: "@type [#{types.join(',')}]",
+              #   presence: presence
+              # )
             end
             NodeProcessor.process(node.children[1], region, pins, locals)
           end
