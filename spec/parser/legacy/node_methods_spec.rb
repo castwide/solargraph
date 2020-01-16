@@ -39,9 +39,9 @@ unless Solargraph::Parser.rubyvm?
 
     it 'infers literal booleans' do
       true_ast = Parser::CurrentRuby.parse("true")
-      expect(Solargraph::Source::NodeMethods.infer_literal_node_type(true_ast)).to eq '::Boolean'
+      expect(Solargraph::Parser::Legacy::NodeMethods.infer_literal_node_type(true_ast)).to eq '::Boolean'
       false_ast = Parser::CurrentRuby.parse("false")
-      expect(Solargraph::Source::NodeMethods.infer_literal_node_type(false_ast)).to eq '::Boolean'
+      expect(Solargraph::Parser::Legacy::NodeMethods.infer_literal_node_type(false_ast)).to eq '::Boolean'
     end
 
     it "unpacks a multi-part constant" do
