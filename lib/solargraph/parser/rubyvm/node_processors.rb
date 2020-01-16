@@ -32,28 +32,28 @@ module Solargraph
     end
 
     module NodeProcessor
-      register :SCOPE,     Rubyvm::NodeProcessors::ScopeNode
-      register :RESBODY,   Rubyvm::NodeProcessors::ResbodyNode
-      register :DEFN,      Rubyvm::NodeProcessors::DefNode
-      register :DEFS,      Rubyvm::NodeProcessors::DefsNode
-      # register :send,    Legacy::NodeProcessors::SendNode
-      register :FCALL,     Rubyvm::NodeProcessors::SendNode
-      register :VCALL,     Rubyvm::NodeProcessors::SendNode
-      register :CLASS,     Rubyvm::NodeProcessors::NamespaceNode
-      register :MODULE,    Rubyvm::NodeProcessors::NamespaceNode
-      register :SCLASS,    Rubyvm::NodeProcessors::SclassNode
-      register :IASGN,     Rubyvm::NodeProcessors::IvasgnNode
-      register :CVASGN,    Rubyvm::NodeProcessors::CvasgnNode
-      register :LASGN,     Rubyvm::NodeProcessors::LvasgnNode
-      register :GASGN,     Rubyvm::NodeProcessors::GvasgnNode
-      register :CDECL,     Rubyvm::NodeProcessors::CasgnNode
-      register :ALIAS,     Rubyvm::NodeProcessors::AliasNode
-      register :ARGS,      Rubyvm::NodeProcessors::ArgsNode
-      register :OPT_ARG,   Rubyvm::NodeProcessors::OptArgNode
-      register :KW_ARG,    Rubyvm::NodeProcessors::KwArgNode
-      register :ITER,      Rubyvm::NodeProcessors::BlockNode
+      register :SCOPE,      Rubyvm::NodeProcessors::ScopeNode
+      register :RESBODY,    Rubyvm::NodeProcessors::ResbodyNode
+      register :DEFN,       Rubyvm::NodeProcessors::DefNode
+      register :DEFS,       Rubyvm::NodeProcessors::DefsNode
+      register :FCALL,      Rubyvm::NodeProcessors::SendNode
+      register :VCALL,      Rubyvm::NodeProcessors::SendNode
+      register :CLASS,      Rubyvm::NodeProcessors::NamespaceNode
+      register :MODULE,     Rubyvm::NodeProcessors::NamespaceNode
+      register :SCLASS,     Rubyvm::NodeProcessors::SclassNode
+      register :IASGN,      Rubyvm::NodeProcessors::IvasgnNode
+      register :CVASGN,     Rubyvm::NodeProcessors::CvasgnNode
+      register :LASGN,      Rubyvm::NodeProcessors::LvasgnNode
+      register :GASGN,      Rubyvm::NodeProcessors::GvasgnNode
+      register :CDECL,      Rubyvm::NodeProcessors::CasgnNode
+      register :ALIAS,      Rubyvm::NodeProcessors::AliasNode
+      register :ARGS,       Rubyvm::NodeProcessors::ArgsNode
+      register :OPT_ARG,    Rubyvm::NodeProcessors::OptArgNode
+      register :KW_ARG,     Rubyvm::NodeProcessors::KwArgNode
+      register :ITER,       Rubyvm::NodeProcessors::BlockNode
+      register :LAMBDA,     Rubyvm::NodeProcessors::BlockNode
       register :OP_ASGN_OR, Rubyvm::NodeProcessors::OrasgnNode
-      register :LIT,       Rubyvm::NodeProcessors::LitNode
+      register :LIT,        Rubyvm::NodeProcessors::LitNode
     end
   end
 end
