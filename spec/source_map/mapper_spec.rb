@@ -1090,6 +1090,19 @@ describe Solargraph::SourceMap::Mapper do
     expect(pin.return_type.tag).to eq('ArgumentError')
   end
 
+  it 'handles rescue nodes without exception variables' do
+    smap = Solargraph::SourceMap.load_string(%(
+      class Foo
+        def bar
+          xyz
+        rescue ArgumentError
+          # do nothing
+        end
+      end
+    ), 'test.rb')
+    expect(smap.locals).to be_empty
+  end
+
   it 'processes comments without associations' do
     smap = Solargraph::SourceMap.load_string(%(
       class Foo; end
