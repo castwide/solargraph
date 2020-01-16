@@ -93,34 +93,35 @@ module Solargraph
       return self if merged
       implicit.clear
       pins = []
-      reqs = []
+      reqs = Set.new
       # @param map [SourceMap]
       new_map_hash.values.each do |map|
         implicit.merge map.environ
         pins.concat map.pins
-        reqs.concat map.requires.map(&:name)
+        reqs.merge map.requires.map(&:name)
       end
-      reqs.concat bundle.workspace.config.required
+      reqs.merge bundle.workspace.config.required
       local_path_hash.clear
       unless bundle.workspace.require_paths.empty?
+        file_keys = new_map_hash.keys
+        workspace_path = Pathname.new(bundle.workspace.directory)
         reqs.delete_if do |r|
-          result = false
-          bundle.workspace.require_paths.each do |l|
-            pn = Pathname.new(bundle.workspace.directory).join(l, "#{r}.rb")
-            if new_map_hash.keys.include?(pn.to_s)
-              local_path_hash[r] = pn.to_s
-              result = true
-              break
+          bundle.workspace.require_paths.any? do |base|
+            pn = workspace_path.join(base, "#{r}.rb").to_s
+            if file_keys.include? pn
+              local_path_hash[r] = pn
+              true
+            else
+              false
             end
           end
-          result
         end
       end
-      reqs.concat implicit.requires
+      reqs.merge implicit.requires
       pins.concat implicit.overrides
       br = reqs.include?('bundler/require') ? require_from_bundle(bundle.workspace.directory) : {}
-      reqs.concat br.keys
-      yard_map.change(reqs, br)
+      reqs.merge br.keys
+      yard_map.change(reqs.to_a, br)
       new_store = Store.new(pins + yard_map.pins)
       @mutex.synchronize {
         @cache.clear
