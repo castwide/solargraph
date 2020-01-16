@@ -38,6 +38,13 @@ describe Solargraph::Parser::Legacy::NodeMethods do
     expect(Solargraph::Parser::Legacy::NodeMethods.infer_literal_node_type(ast)).to eq '::Symbol'
   end
 
+  it 'infers literal booleans' do
+    true_ast = Parser::CurrentRuby.parse("true")
+    expect(Solargraph::Source::NodeMethods.infer_literal_node_type(true_ast)).to eq '::Boolean'
+    false_ast = Parser::CurrentRuby.parse("false")
+    expect(Solargraph::Source::NodeMethods.infer_literal_node_type(false_ast)).to eq '::Boolean'
+  end
+
   it "unpacks a multi-part constant" do
     ast = Parser::CurrentRuby.parse("class Foo::Bar;end")
     expect(Solargraph::Parser::Legacy::NodeMethods.const_from(ast.children[0])).to eq 'Foo::Bar'

@@ -7,6 +7,8 @@ module Solargraph
 
       # True if the source qualifies for this convention.
       # Subclasses should override this method.
+      #
+      # @param source [Source]
       def match? source
         false
       end

@@ -177,9 +177,33 @@ module Solargraph
         else
           pin = pins.first
           ptypes = ParamDef.from(pin)
-          params = param_tags_from(pin)
+          params = first_param_tags_from(pins)
           cursor = 0
           curtype = nil
+          # The @param_tuple tag marks exceptional cases for handling, e.g., the Hash#[]= method.
+          if pin.docstring.tag(:param_tuple)
+            if node.children[2..-1].length > 2
+              result.push Problem.new(Solargraph::Location.new(filename, Solargraph::Range.from_node(node)), "Wrong number of arguments to #{pin.path}")
+            else
+              base = chain.base.infer(api_map, block, locals)
+              # @todo Don't just use the first key/value type
+              k = base.key_types.first || ComplexType.parse('Object')
+              v = base.value_types.first || ComplexType.parse('Object')
+              tuple = [
+                ParamDef.new('key', k),
+                ParamDef.new('value', v)
+              ]
+              node.children[2..-1].each_with_index do |arg, index|
+                chain = Solargraph::Source::NodeChainer.chain(arg, filename)
+                argtype = chain.infer(api_map, block, locals)
+                partype = tuple[index].type
+                if argtype.tag != partype.tag && !api_map.super_and_sub?(partype.tag.to_s, argtype.tag.to_s)
+                  result.push Problem.new(Solargraph::Location.new(filename, Solargraph::Range.from_node(node)), "Wrong parameter type for #{pin.path}: #{tuple[index].name} expected #{partype.tag}, received #{argtype.tag}")
+                end
+              end
+            end
+            return result
+          end
           node.children[2..-1].each_with_index do |arg, index|
             if pin.is_a?(Pin::Attribute)
               curtype = ParamDef.new('value', :arg)
@@ -188,8 +212,20 @@ module Solargraph
             end
             if curtype.nil?
               if pin.parameters[index].nil?
-                result.push Problem.new(Solargraph::Location.new(filename, Solargraph::Range.from_node(node)), "Not enough arguments sent to #{pin.path}")
-                break
+                if params.values[index]
+                  # Allow for methods that have named parameters but no
+                  # arguments in their definitions. This is common in the Ruby
+                  # core, e.g., the Hash#[]= method.
+                  chain = Solargraph::Source::NodeChainer.chain(arg, filename)
+                  argtype = chain.infer(api_map, block, locals)
+                  partype = params.values[index]
+                  if argtype.tag != partype.tag && !api_map.super_and_sub?(partype.tag.to_s, argtype.tag.to_s)
+                    result.push Problem.new(Solargraph::Location.new(filename, Solargraph::Range.from_node(node)), "Wrong parameter type for #{pin.path}: #{params.keys[index]} expected #{partype.tag}, received #{argtype.tag}")
+                  end
+                else
+                  result.push Problem.new(Solargraph::Location.new(filename, Solargraph::Range.from_node(node)), "Not enough arguments sent to #{pin.path}")
+                  break
+                end
               end
             else
               # @todo This should also detect when the last parameter is a hash
@@ -298,6 +334,14 @@ module Solargraph
         result[tag.name] = ComplexType.try_parse(*tag.types).qualify(api_map, pin.context.namespace)
       end
       result
+    end
+
+    def first_param_tags_from pins
+      pins.each do |pin|
+        result = param_tags_from(pin)
+        return result unless result.empty?
+      end
+      {}
     end
 
     # @param location [Location, nil]

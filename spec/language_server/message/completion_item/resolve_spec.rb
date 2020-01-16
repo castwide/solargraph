@@ -19,14 +19,11 @@ describe Solargraph::LanguageServer::Message::CompletionItem::Resolve do
   end
 
   it "returns nil documentation for empty strings" do
-    pin = Solargraph::Pin::Method.new(
+    pin = Solargraph::Pin::InstanceVariable.new(
       location: nil,
       closure: Solargraph::Pin::Namespace.new(name: 'Foo'),
-      name: 'bar',
-      comments: '',
-      scope: :instance,
-      visibility: :public,
-      parameters: []
+      name: '@bar',
+      comments: ''
     )
     host = double(Solargraph::LanguageServer::Host, locate_pins: [pin], probe: pin, detail: nil)
     resolve = Solargraph::LanguageServer::Message::CompletionItem::Resolve.new(host, {

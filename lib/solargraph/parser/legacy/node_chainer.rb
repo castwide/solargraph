@@ -60,13 +60,13 @@ module Solargraph
               n.children[2..-1].each do |c|
                 args.push NodeChainer.chain(c)
               end
-              result.push Chain::Call.new(n.children[1].to_s, args, @in_block || block_passed?(n))
+              result.push Chain::Call.new(n.children[1].to_s, args, @in_block || block_passed?(n), result.length.zero?)
             elsif n.children[0].nil?
               args = []
               n.children[2..-1].each do |c|
                 args.push NodeChainer.chain(c)
               end
-              result.push Chain::Call.new(n.children[1].to_s, args, @in_block || block_passed?(n))
+              result.push Chain::Call.new(n.children[1].to_s, args, @in_block || block_passed?(n), result.length.zero?)
             else
               raise "No idea what to do with #{n}"
             end

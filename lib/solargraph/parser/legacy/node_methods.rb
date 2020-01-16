@@ -73,7 +73,9 @@ module Solargraph
             return '::Regexp'
           elsif node.type == :irange
             return '::Range'
-          # @todo Support `nil` keyword in types
+          elsif node.type == :true || node.type == :false
+            return '::Boolean'
+            # @todo Support `nil` keyword in types
           # elsif node.type == :nil
           #   return 'NilClass'
           end

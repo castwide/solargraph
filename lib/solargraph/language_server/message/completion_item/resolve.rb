@@ -20,7 +20,6 @@ module Solargraph
             return params if pins.empty?
             docs = pins
                    .reject { |pin| pin.documentation.empty? && pin.return_type.undefined? }
-            # docs = filt.map { |pin| pin.resolve_completion_item[:documentation] }
             result = params
               .merge(pins.first.resolve_completion_item)
               .merge(documentation: markup_content(join_docs(docs)))

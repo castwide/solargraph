@@ -62,6 +62,11 @@ module Solargraph
 @return_single_parameter
       )),
 
+      Override.from_comment('BasicObject#==', %(
+@param other [BasicObject]
+@return [Boolean]
+      )),
+
       Override.method_return('Class#new', 'self'),
       Override.method_return('Class.new', 'Class<Object>'),
       Override.method_return('Class#allocate', 'self'),
@@ -75,10 +80,17 @@ module Solargraph
 @return_value_parameter
       )),
 
+      # @todo This override isn't robust enough. It needs to allow for
+      #   parameterized Hash types, e.g., [Hash{Symbol => String}].
+      Override.from_comment('Hash#[]=', %(
+@param_tuple
+      )),
+
       Override.method_return('Object#!', 'Boolean'),
       Override.method_return('Object#clone', 'self', delete: [:overload]),
       Override.method_return('Object#dup', 'self'),
-      Override.method_return('Object#freeze', 'self'),
+      Override.method_return('Object#freeze', 'self', delete: [:overload]),
+      Override.method_return('Object#inspect', 'String'),
       Override.method_return('Object#taint', 'self'),
       Override.method_return('Object#to_s', 'String'),
       Override.method_return('Object#untaint', 'self'),
@@ -87,15 +99,27 @@ module Solargraph
 @yieldparam [self]
       )),
 
+      Override.from_comment('STDERR', %(
+@type [IO]
+      )),
+
+      Override.from_comment('STDIN', %(
+@type [IO]
+      )),
+
+      Override.from_comment('STDOUT', %(
+@type [IO]
+      )),
+
       Override.method_return('String#freeze', 'self'),
       Override.method_return('String#split', 'Array<String>'),
       Override.method_return('String#lines', 'Array<String>')
-      ].concat(
-        methods_with_yieldparam_subtypes.map do |path|
-          Override.from_comment(path, %(
+    ].concat(
+      methods_with_yieldparam_subtypes.map do |path|
+        Override.from_comment(path, %(
 @yieldparam_single_parameter
           ))
-        end
-      )
+      end
+    )
   end
 end
