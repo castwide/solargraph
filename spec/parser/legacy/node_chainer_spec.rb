@@ -56,7 +56,7 @@ unless Solargraph::Parser.rubyvm?
           Bar.meth1(1, 2).meth2{}
         end
       ))
-      node = source.node_at(2, 25)
+      node = source.node_at(2, 26)
       chain = Solargraph::Parser::Legacy::NodeChainer.chain(node)
       expect(chain.links.map(&:word)).to eq(['Bar', 'meth1', 'meth2'])
     end
