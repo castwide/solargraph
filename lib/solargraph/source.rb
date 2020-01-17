@@ -372,9 +372,13 @@ module Solargraph
         # Trim the comment and minimum leading whitespace
         p = l.gsub(/^#+/, '')
         next if p.strip.empty? && !started
-        here = p.index(/[^ \t]/)
-        skip = here if skip.nil? || here < skip
-        ctxt.concat p[skip..-1]
+        if p.strip.empty?
+          ctxt.concat p
+        else
+          here = p.index(/[^ \t]/)
+          skip = here if skip.nil? || here < skip
+          ctxt.concat p[skip..-1]
+        end
         started = true
       }
       ctxt
