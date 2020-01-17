@@ -3,8 +3,6 @@
 module Solargraph
   class YardMap
     class Mapper
-      @@object_file_cache = {}
-
       # @param code_objects [Array<YARD::CodeObjects::Base>]
       # @param spec [Gem::Specification]
       def initialize code_objects, spec = nil
