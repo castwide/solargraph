@@ -1202,4 +1202,14 @@ describe Solargraph::SourceMap::Mapper do
     param = locals.select { |pin| pin.is_a?(Solargraph::Pin::Parameter) }.first
     expect(param).to be_kwrestarg
   end
+
+  it 'maps local variables in blocks' do
+    source = Solargraph::Source.load_string(%(
+      1.times do
+        var = 'var'
+      end
+    ))
+    _pins, locals = Solargraph::SourceMap::Mapper.map(source)
+    expect(locals).to be_one
+  end
 end

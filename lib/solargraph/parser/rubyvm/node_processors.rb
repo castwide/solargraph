@@ -6,7 +6,7 @@ module Solargraph
   module Parser
     module Rubyvm
       module NodeProcessors
-        autoload :ScopeNode,    'solargraph/parser/rubyvm/node_processors/scope_node'
+        autoload :ScopeNode,     'solargraph/parser/rubyvm/node_processors/scope_node'
         autoload :BeginNode,     'solargraph/parser/rubyvm/node_processors/begin_node'
         autoload :DefNode,       'solargraph/parser/rubyvm/node_processors/def_node'
         autoload :DefsNode,      'solargraph/parser/rubyvm/node_processors/defs_node'
@@ -22,7 +22,7 @@ module Solargraph
         autoload :AliasNode,     'solargraph/parser/rubyvm/node_processors/alias_node'
         autoload :ArgsNode,      'solargraph/parser/rubyvm/node_processors/args_node'
         autoload :OptArgNode,    'solargraph/parser/rubyvm/node_processors/opt_arg_node'
-        autoload :KwArgNode,    'solargraph/parser/rubyvm/node_processors/kw_arg_node'
+        autoload :KwArgNode,     'solargraph/parser/rubyvm/node_processors/kw_arg_node'
         autoload :BlockNode,     'solargraph/parser/rubyvm/node_processors/block_node'
         autoload :OrasgnNode,    'solargraph/parser/rubyvm/node_processors/orasgn_node'
         autoload :SymNode,       'solargraph/parser/rubyvm/node_processors/sym_node'
@@ -44,6 +44,7 @@ module Solargraph
       register :IASGN,      Rubyvm::NodeProcessors::IvasgnNode
       register :CVASGN,     Rubyvm::NodeProcessors::CvasgnNode
       register :LASGN,      Rubyvm::NodeProcessors::LvasgnNode
+      register :DASGN_CURR, Rubyvm::NodeProcessors::LvasgnNode
       register :GASGN,      Rubyvm::NodeProcessors::GvasgnNode
       register :CDECL,      Rubyvm::NodeProcessors::CasgnNode
       register :ALIAS,      Rubyvm::NodeProcessors::AliasNode
