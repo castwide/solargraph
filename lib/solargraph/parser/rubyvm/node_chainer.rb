@@ -89,6 +89,13 @@ module Solargraph
             # else
             #   raise "No idea what to do with #{n}"
             # end
+          elsif n.type == :ATTRASGN
+            result.concat generate_links(n.children[0])
+            args = []
+            n.children[2].children[0..-2].each do |c|
+              args.push Parser.chain(c)
+            end
+            result.push Chain::Call.new(n.children[1].to_s, args, @in_block || block_passed?(n))
           elsif n.type == :VCALL || n.type == :FCALL
             result.push Chain::Call.new(n.children[0].to_s, [], @in_block || block_passed?(n))
           elsif n.type == :SELF
