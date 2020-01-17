@@ -23,8 +23,10 @@ module Solargraph
       next if ns.nil? || ns.file.nil?
       path = ns.file.sub(/^(ext|lib)\//, '').sub(/\.(rb|c)$/, '')
       next if path.start_with?('-')
-      @@stdlib_paths[path] ||= []
-      @@stdlib_paths[path].push ns
+      base = path.split('/').first
+      @@stdlib_paths[base] ||= {}
+      @@stdlib_paths[base][path] ||= []
+      @@stdlib_paths[base][path].push ns
     end
 
     # @return [Array<String>]
@@ -167,6 +169,7 @@ module Solargraph
       unresolved_requires.clear
       stdnames = {}
       done = []
+      from_std = []
       required.each do |r|
         next if r.nil? || r.empty? || done.include?(r)
         done.push r
@@ -190,9 +193,16 @@ module Solargraph
             result.concat add_gem_dependencies(spec) if with_dependencies?
           end
         rescue Gem::LoadError => e
+          base = r.split('/').first
           stdtmp = []
-          @@stdlib_paths.each_pair do |path, objects|
-            stdtmp.concat objects if path == r || path.start_with?("#{r}/")
+          if @@stdlib_paths[base]
+            @@stdlib_paths[base].each_pair do |path, objects|
+              next if from_std.include?(path)
+              if path == r || path.start_with?("#{r}/")
+                from_std.push path
+                stdtmp.concat objects
+              end
+            end
           end
           if stdtmp.empty?
             unresolved_requires.push r
