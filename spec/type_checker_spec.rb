@@ -237,7 +237,7 @@ describe Solargraph::TypeChecker do
         end
       end
     ), 'test.rb')
-    expect(checker.strict_type_problems).to be_empty   
+    expect(checker.strict_type_problems).to be_empty
   end
 
   it 'reports superclasses of return types' do

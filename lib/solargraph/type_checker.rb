@@ -7,6 +7,8 @@ module Solargraph
     autoload :Problem, 'solargraph/type_checker/problem'
     autoload :ParamDef, 'solargraph/type_checker/param_def'
 
+    include Parser::NodeMethods
+
     # @return [String]
     attr_reader :filename
 
@@ -161,7 +163,7 @@ module Solargraph
     # @return [Array<Problem>]
     def check_send_args node, skip_send = false
       result = []
-      if [:VCALL, :send].include?(node.type)
+      if [:ATTRASGN, :CALL, :VCALL, :send].include?(node.type)
         smap = api_map.source_map(filename)
         range = Solargraph::Range.from_node(node)
         locals = smap.locals_at(Solargraph::Location.new(filename, range))
@@ -181,110 +183,138 @@ module Solargraph
           params = first_param_tags_from(pins)
           cursor = 0
           curtype = nil
-          # The @param_tuple tag marks exceptional cases for handling, e.g., the Hash#[]= method.
+          # The @param_tuple tag marks exceptional cases for params, e.g., the Hash#[]= method.
           if pin.docstring.tag(:param_tuple)
-            if node.children[2..-1].length > 2
-              result.push Problem.new(Solargraph::Location.new(filename, Solargraph::Range.from_node(node)), "Wrong number of arguments to #{pin.path}")
-            else
-              base = chain.base.infer(api_map, block, locals)
-              # @todo Don't just use the first key/value type
-              k = base.key_types.first || ComplexType.parse('Object')
-              v = base.value_types.first || ComplexType.parse('Object')
-              tuple = [
-                ParamDef.new('key', k),
-                ParamDef.new('value', v)
-              ]
-              node.children[2..-1].each_with_index do |arg, index|
-                chain = Solargraph::Source::NodeChainer.chain(arg, filename)
-                argtype = chain.infer(api_map, block, locals)
-                partype = tuple[index].type
-                if argtype.tag != partype.tag && !api_map.super_and_sub?(partype.tag.to_s, argtype.tag.to_s)
-                  result.push Problem.new(Solargraph::Location.new(filename, Solargraph::Range.from_node(node)), "Wrong parameter type for #{pin.path}: #{tuple[index].name} expected #{partype.tag}, received #{argtype.tag}")
-                end
-              end
-            end
-            return result
+            base = chain.base.infer(api_map, block, locals)
+            # @todo Don't just use the first key/value type
+            k = base.key_types.first || ComplexType.parse('Object')
+            v = base.value_types.first || ComplexType.parse('Object')
+            ptypes = [
+              ParamDef.new('key', k),
+              ParamDef.new('value', v)
+            ]
           end
-          node.children[2..-1].each_with_index do |arg, index|
-            if pin.is_a?(Pin::Attribute)
-              curtype = ParamDef.new('value', :arg)
+          chain.links.last.arguments.each_with_index do |arg, index|
+            # @todo Validate the argument
+            curtype = if pin.is_a?(Pin::Attribute)
+              ParamDef.new('value', :arg)
             else
-              curtype = ptypes[cursor] if curtype.nil? || curtype == :arg
+              ptypes[index]
             end
             if curtype.nil?
-              if pin.parameters[index].nil?
-                if params.values[index]
-                  # Allow for methods that have named parameters but no
-                  # arguments in their definitions. This is common in the Ruby
-                  # core, e.g., the Hash#[]= method.
-                  chain = Solargraph::Source::NodeChainer.chain(arg, filename)
-                  argtype = chain.infer(api_map, block, locals)
-                  partype = params.values[index]
-                  if argtype.tag != partype.tag && !api_map.super_and_sub?(partype.tag.to_s, argtype.tag.to_s)
-                    result.push Problem.new(Solargraph::Location.new(filename, Solargraph::Range.from_node(node)), "Wrong parameter type for #{pin.path}: #{params.keys[index]} expected #{partype.tag}, received #{argtype.tag}")
-                  end
-                else
-                  result.push Problem.new(Solargraph::Location.new(filename, Solargraph::Range.from_node(node)), "Not enough arguments sent to #{pin.path}")
-                  break
-                end
-              end
+              # @todo Handle nil curtype
             else
-              # @todo This should also detect when the last parameter is a hash
-              if curtype.type == :kwrestarg
-                if arg.type != :hash
-                  result.push Problem.new(Solargraph::Location.new(filename, Solargraph::Range.from_node(node)), "Wrong parameter type for #{pin.path}: expected hash or keyword")
+              # @todo Always doing this for now
+              # if curtype.type == :arg
+              if true
+                partype = if pin.is_a?(Pin::Attribute)
+                  pin.return_type
                 else
-                  result.concat check_hash_params arg, params
-                end
-                # @todo Break here? Not sure about that
-                break
-              end
-              break if curtype.type == :restarg
-              if arg.is_a?(Parser::AST::Node) && arg.type == :hash
-                arg.children.each do |pair|
-                  sym = pair.children[0].children[0].to_s
-                  partype = params[sym]
-                  if partype
-                    chain = Solargraph::Source::NodeChainer.chain(pair.children[1], filename)
-                    argtype = chain.infer(api_map, block, locals)
-                    if argtype.tag != partype.tag && !api_map.super_and_sub?(partype.tag.to_s, argtype.tag.to_s)
-                      result.push Problem.new(Solargraph::Location.new(filename, Solargraph::Range.from_node(node)), "Wrong parameter type for #{pin.path}: #{pin.parameter_names[index]} expected #{partype.tag}, received #{argtype.tag}")
-                    end
-                  end
-                end
-              elsif arg.is_a?(Parser::AST::Node) && arg.type == :splat
-                result.push Problem.new(Solargraph::Location.new(filename, Solargraph::Range.from_node(node)), "Can't handle splat in #{pin.parameter_names[index]} #{pin.path}")
-                break if curtype != :arg && ptypes.map(&:type).include?(:restarg)
-              else
-                if pin.is_a?(Pin::Attribute)
-                  partype = pin.return_type
-                else
-                  partype = params[pin.parameter_names[index]]
-                end
-                if partype
-                  arg = chain.links.last.arguments[index]
-                  if arg.nil?
-                    result.push Problem.new(Solargraph::Location.new(filename, Solargraph::Range.from_node(node)), "Wrong number of arguments to #{pin.path}")
+                  if params[pin.parameter_names[index]]
+                    params[pin.parameter_names[index]]
                   else
-                    argtype = arg.infer(api_map, block, locals)
-                    if !arg_to_duck(argtype, partype)
-                      match = false
-                      partype.each do |pt|
-                        if argtype.tag == pt.tag || api_map.super_and_sub?(pt.tag.to_s, argtype.tag.to_s)
-                          match = true
-                          break
-                        end
-                      end
-                      unless match
-                        result.push Problem.new(Solargraph::Location.new(filename, Solargraph::Range.from_node(node)), "Wrong parameter type for #{pin.path}: #{pin.parameter_names[index]} expected [#{partype}], received [#{argtype.tag}]")
-                      end
-                    end
+                    # @todo How else to get the partype?
+                    curtype.type
                   end
                 end
+                argtype = arg.infer(api_map, block, locals)
+                if !arg_to_duck(argtype, partype)
+                  match = false
+                  partype.each do |pt|
+                    if argtype.tag == pt.tag || api_map.super_and_sub?(pt.tag.to_s, argtype.tag.to_s)
+                      match = true
+                      break
+                    end
+                  end
+                  unless match
+                    result.push Problem.new(Solargraph::Location.new(filename, Solargraph::Range.from_node(node)), "Wrong parameter type for #{pin.path}: #{pin.parameter_names[index]} expected [#{partype}], received [#{argtype.tag}]")
+                  end
+                end
+              else
+                # @todo Other types
               end
             end
-            cursor += 1 if curtype == :arg
           end
+          # node.children[2..-1].each_with_index do |arg, index|
+          #   if pin.is_a?(Pin::Attribute)
+          #     curtype = ParamDef.new('value', :arg)
+          #   else
+          #     curtype = ptypes[cursor] if curtype.nil? || curtype == :arg
+          #   end
+          #   if curtype.nil?
+          #     if pin.parameters[index].nil?
+          #       if params.values[index]
+          #         # Allow for methods that have named parameters but no
+          #         # arguments in their definitions. This is common in the Ruby
+          #         # core, e.g., the Hash#[]= method.
+          #         chain = Solargraph::Source::NodeChainer.chain(arg, filename)
+          #         argtype = chain.infer(api_map, block, locals)
+          #         partype = params.values[index]
+          #         if argtype.tag != partype.tag && !api_map.super_and_sub?(partype.tag.to_s, argtype.tag.to_s)
+          #           result.push Problem.new(Solargraph::Location.new(filename, Solargraph::Range.from_node(node)), "Wrong parameter type for #{pin.path}: #{params.keys[index]} expected #{partype.tag}, received #{argtype.tag}")
+          #         end
+          #       else
+          #         result.push Problem.new(Solargraph::Location.new(filename, Solargraph::Range.from_node(node)), "Not enough arguments sent to #{pin.path}")
+          #         break
+          #       end
+          #     end
+          #   else
+          #     # @todo This should also detect when the last parameter is a hash
+          #     if curtype.type == :kwrestarg
+          #       if arg.type != :hash
+          #         result.push Problem.new(Solargraph::Location.new(filename, Solargraph::Range.from_node(node)), "Wrong parameter type for #{pin.path}: expected hash or keyword")
+          #       else
+          #         result.concat check_hash_params arg, params
+          #       end
+          #       # @todo Break here? Not sure about that
+          #       break
+          #     end
+          #     break if curtype.type == :restarg
+          #     if Parser.is_ast_node?(arg) && infer_literal_node_type(arg) == '::HASH'
+          #       arg.children.each do |pair|
+          #         sym = pair.children[0].children[0].to_s
+          #         partype = params[sym]
+          #         if partype
+          #           chain = Solargraph::Parser.chain(pair.children[1], filename)
+          #           argtype = chain.infer(api_map, block, locals)
+          #           if argtype.tag != partype.tag && !api_map.super_and_sub?(partype.tag.to_s, argtype.tag.to_s)
+          #             result.push Problem.new(Solargraph::Location.new(filename, Solargraph::Range.from_node(node)), "Wrong parameter type for #{pin.path}: #{pin.parameter_names[index]} expected #{partype.tag}, received #{argtype.tag}")
+          #           end
+          #         end
+          #       end
+          #     elsif Parser.is_ast_node?(arg) && arg.type == :splat
+          #       result.push Problem.new(Solargraph::Location.new(filename, Solargraph::Range.from_node(node)), "Can't handle splat in #{pin.parameter_names[index]} #{pin.path}")
+          #       break if curtype != :arg && ptypes.map(&:type).include?(:restarg)
+          #     else
+          #       if pin.is_a?(Pin::Attribute)
+          #         partype = pin.return_type
+          #       else
+          #         partype = params[pin.parameter_names[index]]
+          #       end
+          #       if partype
+          #         arg = chain.links.last.arguments[index]
+          #         if arg.nil?
+          #           result.push Problem.new(Solargraph::Location.new(filename, Solargraph::Range.from_node(node)), "Wrong number of arguments to #{pin.path}")
+          #         else
+          #           argtype = arg.infer(api_map, block, locals)
+          #           if !arg_to_duck(argtype, partype)
+          #             match = false
+          #             partype.each do |pt|
+          #               if argtype.tag == pt.tag || api_map.super_and_sub?(pt.tag.to_s, argtype.tag.to_s)
+          #                 match = true
+          #                 break
+          #               end
+          #             end
+          #             unless match
+          #               result.push Problem.new(Solargraph::Location.new(filename, Solargraph::Range.from_node(node)), "Wrong parameter type for #{pin.path}: #{pin.parameter_names[index]} expected [#{partype}], received [#{argtype.tag}]")
+          #             end
+          #           end
+          #         end
+          #       end
+          #     end
+          #   end
+          #   cursor += 1 if curtype == :arg
+          # end
         end
       end
       node.children.each do |child|
