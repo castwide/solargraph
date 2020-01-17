@@ -37,6 +37,8 @@ module Solargraph
       # @return [String]
       def get_superclass fqns
         return superclass_references[fqns].first if superclass_references.key?(fqns)
+        return 'Object' if fqns != 'BasicObject' && namespace_exists?(fqns)
+        return 'Object' if fqns == 'Boolean'
         nil
       end
 
