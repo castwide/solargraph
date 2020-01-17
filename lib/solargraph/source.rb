@@ -371,8 +371,8 @@ module Solargraph
       comments.lines.each { |l|
         # Trim the comment and minimum leading whitespace
         p = l.gsub(/^#+/, '')
-        next if p.strip.empty? && !started
         if p.strip.empty?
+          next unless started
           ctxt.concat p
         else
           here = p.index(/[^ \t]/)
