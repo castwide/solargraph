@@ -501,4 +501,16 @@ describe Solargraph::TypeChecker do
     ))
     expect(checker.strict_type_problems).to be_empty
   end
+
+  it 'reports missing arguments' do
+    checker = Solargraph::TypeChecker.load_string(%(
+      class Foo
+        def bar(baz)
+        end
+      end
+      Foo.new.bar
+    ))
+    expect(checker.strict_type_problems).to be_one
+    expect(checker.strict_type_problems.first.message).to include('Not enough arguments')
+  end
 end

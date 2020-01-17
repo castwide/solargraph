@@ -65,10 +65,10 @@ module Solargraph
       result
     end
 
-    # Strict type problems indicate that a `@return` type or a `@param` type
-    # does not match the type inferred from code analysis; or that an argument
-    # sent to a method does not match the type specified in the corresponding
-    # `@param` tag.
+    # Strict type problems indicate that a `@return` type does not match the
+    # type inferred from code analysis; the arguments sent to a method do not
+    # match the method's arity; or an argument sent to a method does not match
+    # the type specified in the corresponding `@param` tag.
     #
     # @return [Array<Problem>]
     def strict_type_problems
@@ -78,7 +78,7 @@ module Solargraph
         result.concat confirm_return_type(pin)
       end
       return result if smap.source.node.nil?
-      result.concat check_send_args smap.source.node
+      result.concat check_calls smap.source.node
       result
     end
 
@@ -159,9 +159,8 @@ module Solargraph
     end
 
     # @param node [Parser::AST::Node]
-    # @param skip_send [Boolean]
     # @return [Array<Problem>]
-    def check_send_args node, skip_send = false
+    def check_calls node
       result = []
       if [:ATTRASGN, :CALL, :VCALL, :send].include?(node.type)
         smap = api_map.source_map(filename)
@@ -179,34 +178,33 @@ module Solargraph
           end
         else
           pin = pins.first
-          ptypes = ParamDef.from(pin)
-          params = first_param_tags_from(pins)
-          cursor = 0
-          curtype = nil
-          # The @param_tuple tag marks exceptional cases for params, e.g., the Hash#[]= method.
-          if pin.docstring.tag(:param_tuple)
-            base = chain.base.infer(api_map, block, locals)
-            # @todo Don't just use the first key/value type
-            k = base.key_types.first || ComplexType.parse('Object')
-            v = base.value_types.first || ComplexType.parse('Object')
-            ptypes = [
-              ParamDef.new('key', k),
-              ParamDef.new('value', v)
-            ]
-          end
-          chain.links.last.arguments.each_with_index do |arg, index|
-            # @todo Validate the argument
-            curtype = if pin.is_a?(Pin::Attribute)
-              ParamDef.new('value', :arg)
-            else
-              ptypes[index]
+          min_args = pin.parameters.select { |p| p.decl == :arg }.length
+          if chain.links.last.arguments.length < min_args
+            result.push Problem.new(Solargraph::Location.new(filename, range), "Not enough arguments sent to #{chain.links.map(&:word).join('.')}")
+          else
+            ptypes = ParamDef.from(pin)
+            params = first_param_tags_from(pins)
+            cursor = 0
+            curtype = nil
+            # The @param_tuple tag marks exceptional cases for params, e.g., the Hash#[]= method.
+            if pin.docstring.tag(:param_tuple)
+              base = chain.base.infer(api_map, block, locals)
+              # @todo Don't just use the first key/value type
+              k = base.key_types.first || ComplexType.parse('Object')
+              v = base.value_types.first || ComplexType.parse('Object')
+              ptypes = [
+                ParamDef.new('key', k),
+                ParamDef.new('value', v)
+              ]
+            elsif pin.is_a?(Pin::Attribute)
+              ptypes = [ParamDef.new('value', :arg)]
             end
-            if curtype.nil?
-              # @todo Handle nil curtype
-            else
-              # @todo Always doing this for now
-              # if curtype.type == :arg
-              if true
+            chain.links.last.arguments.each_with_index do |arg, index|
+              # @todo Validate the argument
+              curtype = ptypes[index]
+              if curtype.nil?
+                # @todo Handle nil curtype
+              else
                 partype = if pin.is_a?(Pin::Attribute)
                   pin.return_type
                 else
@@ -230,8 +228,6 @@ module Solargraph
                     result.push Problem.new(Solargraph::Location.new(filename, Solargraph::Range.from_node(node)), "Wrong parameter type for #{pin.path}: #{pin.parameter_names[index]} expected [#{partype}], received [#{argtype.tag}]")
                   end
                 end
-              else
-                # @todo Other types
               end
             end
           end
@@ -318,10 +314,8 @@ module Solargraph
         end
       end
       node.children.each do |child|
-        # next unless child.is_a?(Parser::AST::Node)
         next unless Parser.is_ast_node?(child)
-        next if [:VCALL, :SEND, :send].include?(child.type) && skip_send
-        result.concat check_send_args(child)
+        result.concat check_calls(child)
       end
       result
     end
