@@ -5,6 +5,10 @@ module Solargraph
     Override = Pin::Reference::Override
 
     LIBS = {
+      'benchmark' => [
+        Override.method_return('Benchmark.measure', 'Benchmark::Tms')
+      ],
+
       'pathname' => [
         Override.method_return('Pathname#join', 'Pathname'),
         Override.method_return('Pathname#basename', 'Pathname'),
