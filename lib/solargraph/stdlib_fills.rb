@@ -1,6 +1,10 @@
 # frozen_string_literal: true
 
 module Solargraph
+  # Overrides for the Ruby stdlib.
+  #
+  # The YardMap uses this module to add type information to stdlib methods.
+  #
   module StdlibFills
     Override = Pin::Reference::Override
 
@@ -19,6 +23,8 @@ module Solargraph
       ]
     }
 
+    # @param path [String]
+    # @return [Array<Pin::Reference::Override>]
     def self.get path
       LIBS[path] || []
     end

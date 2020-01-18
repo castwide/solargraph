@@ -1,6 +1,10 @@
 # frozen_string_literal: true
 
 module Solargraph
+  # Overrides for the Ruby core.
+  #
+  # The YardMap uses this module to add type information to core methods.
+  #
   module CoreFills
     Override = Pin::Reference::Override
 
