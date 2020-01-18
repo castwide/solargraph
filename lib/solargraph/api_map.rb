@@ -93,34 +93,35 @@ module Solargraph
       return self if merged
       implicit.clear
       pins = []
-      reqs = []
+      reqs = Set.new
       # @param map [SourceMap]
       new_map_hash.values.each do |map|
         implicit.merge map.environ
         pins.concat map.pins
-        reqs.concat map.requires.map(&:name)
+        reqs.merge map.requires.map(&:name)
       end
-      reqs.concat bundle.workspace.config.required
+      reqs.merge bundle.workspace.config.required
       local_path_hash.clear
       unless bundle.workspace.require_paths.empty?
+        file_keys = new_map_hash.keys
+        workspace_path = Pathname.new(bundle.workspace.directory)
         reqs.delete_if do |r|
-          result = false
-          bundle.workspace.require_paths.each do |l|
-            pn = Pathname.new(bundle.workspace.directory).join(l, "#{r}.rb")
-            if new_map_hash.keys.include?(pn.to_s)
-              local_path_hash[r] = pn.to_s
-              result = true
-              break
+          bundle.workspace.require_paths.any? do |base|
+            pn = workspace_path.join(base, "#{r}.rb").to_s
+            if file_keys.include? pn
+              local_path_hash[r] = pn
+              true
+            else
+              false
             end
           end
-          result
         end
       end
-      reqs.concat implicit.requires
+      reqs.merge implicit.requires
       pins.concat implicit.overrides
       br = reqs.include?('bundler/require') ? require_from_bundle(bundle.workspace.directory) : {}
-      reqs.concat br.keys
-      yard_map.change(reqs, br)
+      reqs.merge br.keys
+      yard_map.change(reqs.to_a, br)
       new_store = Store.new(pins + yard_map.pins)
       @mutex.synchronize {
         @cache.clear
@@ -567,18 +568,11 @@ module Solargraph
       result = []
       result.concat store.get_methods(fqns, scope: scope, visibility: visibility).sort{ |a, b| a.name <=> b.name }
       if deep
-        sc = store.get_superclass(fqns)
-        unless sc.nil?
-          fqsc = qualify(sc, fqns.split('::')[0..-2].join('::'))
-          result.concat inner_get_methods(fqsc, scope, visibility, true, skip, true) unless fqsc.nil?
-        end
         if scope == :instance
           store.get_includes(fqns).reverse.each do |im|
             fqim = qualify(im, fqns)
             result.concat inner_get_methods(fqim, scope, visibility, deep, skip, true) unless fqim.nil?
           end
-          result.concat inner_get_methods('Object', :instance, [:public], deep, skip, no_core)
-          result.concat inner_get_methods('BasicObject', :instance, [:public], deep, skip, no_core)
         else
           store.get_extends(fqns).reverse.each do |em|
             fqem = qualify(em, fqns)
@@ -587,8 +581,13 @@ module Solargraph
           unless no_core || fqns.empty?
             type = get_namespace_type(fqns)
             result.concat inner_get_methods('Class', :instance, visibility, deep, skip, no_core) if type == :class
-            result.concat inner_get_methods('Module', :instance,visibility, deep, skip, no_core)
+            result.concat inner_get_methods('Module', :instance, visibility, deep, skip, no_core)
           end
+        end
+        sc = store.get_superclass(fqns)
+        unless sc.nil?
+          fqsc = qualify(sc, fqns.split('::')[0..-2].join('::'))
+          result.concat inner_get_methods(fqsc, scope, visibility, true, skip, no_core) unless fqsc.nil?
         end
         store.domains(fqns).each do |d|
           dt = ComplexType.try_parse(d)
@@ -603,13 +602,16 @@ module Solargraph
     # @param skip [Array<String>]
     # @return [Array<Pin::Base>]
     def inner_get_constants fqns, visibility, skip
-      return [] if skip.include?(fqns)
+      return [] if fqns.nil? || skip.include?(fqns)
       skip.push fqns
-      result = []
-      result.concat store.get_constants(fqns, visibility).sort{ |a, b| a.name <=> b.name }
+      result = store.get_constants(fqns, visibility)
+                    .sort { |a, b| a.name <=> b.name }
       store.get_includes(fqns).each do |is|
-        fqis = qualify(is, fqns)
-        result.concat inner_get_constants(fqis, [:public], skip) unless fqis.nil?
+        result.concat inner_get_constants(qualify(is, fqns), [:public], skip)
+      end
+      sc = store.get_superclass(fqns)
+      unless %w[Object BasicObject].include?(sc)
+        result.concat inner_get_constants(store.get_superclass(fqns), [:public], skip)
       end
       result
     end

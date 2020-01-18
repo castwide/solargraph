@@ -473,7 +473,8 @@ module Solargraph
         if params['data']['path']
           result.concat library.path_pins(params['data']['path'])
         end
-        result.uniq
+        # Selecting by both location and path can result in duplicate pins
+        result.uniq { |p| [p.path, p.location] }
       end
 
       # @param uri [String]

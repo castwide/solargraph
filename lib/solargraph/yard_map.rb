@@ -23,15 +23,21 @@ module Solargraph
       next if ns.nil? || ns.file.nil?
       path = ns.file.sub(/^(ext|lib)\//, '').sub(/\.(rb|c)$/, '')
       next if path.start_with?('-')
-      @@stdlib_paths[path] ||= []
-      @@stdlib_paths[path].push ns
+      base = path.split('/').first
+      @@stdlib_paths[base] ||= {}
+      @@stdlib_paths[base][path] ||= []
+      @@stdlib_paths[base][path].push ns
     end
 
     # @return [Array<String>]
     attr_reader :required
 
+    # @return [Boolean]
     attr_writer :with_dependencies
 
+    # A hash of gem names and the version numbers to include in the map.
+    #
+    # @return [Hash{String => String}]
     attr_reader :gemset
 
     # @param required [Array<String>]
@@ -59,6 +65,7 @@ module Solargraph
     end
 
     # @param new_requires [Array<String>]
+    # @param new_gemset [Hash{String => String}]
     # @return [Boolean]
     def change new_requires, new_gemset
       if new_requires.uniq.sort == required.uniq.sort && new_gemset == gemset
@@ -145,7 +152,7 @@ module Solargraph
       @cache ||= YardMap::Cache.new
     end
 
-    # @param ns [YARD::CodeObjects::Namespace]
+    # @param ns [YARD::CodeObjects::NamespaceObject]
     # @return [Array<YARD::CodeObjects::Base>]
     def recurse_namespace_object ns
       result = []
@@ -162,6 +169,7 @@ module Solargraph
       unresolved_requires.clear
       stdnames = {}
       done = []
+      from_std = []
       required.each do |r|
         next if r.nil? || r.empty? || done.include?(r)
         done.push r
@@ -185,9 +193,16 @@ module Solargraph
             result.concat add_gem_dependencies(spec) if with_dependencies?
           end
         rescue Gem::LoadError => e
+          base = r.split('/').first
           stdtmp = []
-          @@stdlib_paths.each_pair do |path, objects|
-            stdtmp.concat objects if path == r || path.start_with?("#{r}/")
+          if @@stdlib_paths[base]
+            @@stdlib_paths[base].each_pair do |path, objects|
+              next if from_std.include?(path)
+              if path == r || path.start_with?("#{r}/")
+                from_std.push path
+                stdtmp.concat objects
+              end
+            end
           end
           if stdtmp.empty?
             unresolved_requires.push r
@@ -222,6 +237,16 @@ module Solargraph
             result.concat Mapper.new(all).map
           end
           result.delete_if(&:nil?)
+          StdlibFills.get(r).each do |ovr|
+            pin = result.select { |p| p.path == ovr.name }.first
+            next if pin.nil?
+            (ovr.tags.map(&:tag_name) + ovr.delete).uniq.each do |tag|
+              pin.docstring.delete_tags tag.to_sym
+            end
+            ovr.tags.each do |tag|
+              pin.docstring.add_tag(tag)
+            end
+          end
           cache.set_path_pins(r, result) unless result.empty?
           pins.concat result
         end
@@ -256,6 +281,7 @@ module Solargraph
     end
 
     # @param y [String, nil]
+    # @param spec [Gem::Specification, nil]
     # @return [Array<Pin::Base>]
     def process_yardoc y, spec = nil
       return [] if y.nil?
@@ -270,6 +296,8 @@ module Solargraph
       Mapper.new(YARD::Registry.all, spec).map
     end
 
+    # @param spec [Gem::Specification]
+    # @return [String]
     def yardoc_file_for_spec spec
       cache_dir = File.join(Solargraph::YardMap::CoreDocs.cache_dir, 'gems', "#{spec.name}-#{spec.version}", 'yardoc')
       if File.exist?(cache_dir)
@@ -280,6 +308,8 @@ module Solargraph
       end
     end
 
+    # @param path [String]
+    # @return [Gem::Specification]
     def spec_for_require path
       spec = Gem::Specification.find_by_path(path) || Gem::Specification.find_by_name(path.split('/').first)
       if @gemset[spec.name]

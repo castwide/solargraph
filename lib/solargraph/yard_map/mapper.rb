@@ -3,8 +3,6 @@
 module Solargraph
   class YardMap
     class Mapper
-      @@object_file_cache = {}
-
       # @param code_objects [Array<YARD::CodeObjects::Base>]
       # @param spec [Gem::Specification]
       def initialize code_objects, spec = nil
@@ -27,7 +25,7 @@ module Solargraph
       def generate_pins code_object
         result = []
         if code_object.is_a?(YARD::CodeObjects::NamespaceObject)
-          nspin = Solargraph::Pin::YardPin::Namespace.new(code_object, @spec)
+          nspin = Solargraph::Pin::YardPin::Namespace.new(code_object, @spec, @namespace_pins[code_object.namespace.to_s])
           @namespace_pins[code_object.path] = nspin
           result.push nspin
           if code_object.is_a?(YARD::CodeObjects::ClassObject) and !code_object.superclass.nil?

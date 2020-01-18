@@ -1,7 +1,5 @@
 # frozen_string_literal: true
 
-require 'uri'
-
 module Solargraph
   module LanguageServer
     module Message
@@ -20,7 +18,7 @@ module Solargraph
                 parts.push this_link
               end
               parts.push pin.detail.gsub(':', '\\:') unless pin.is_a?(Pin::Namespace) || pin.detail.nil?
-              parts.push pin.documentation unless pin.documentation.nil? or pin.documentation.empty?
+              parts.push pin.documentation unless pin.documentation.nil? || pin.documentation.empty?
               contents.push parts.join("\n\n") unless parts.empty?
               last_link = this_link unless this_link.nil?
             end

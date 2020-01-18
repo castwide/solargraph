@@ -316,9 +316,9 @@ module Solargraph
       return false unless par.duck_type?
       meths = api_map.get_complex_type_methods(arg).map(&:name)
       par.each do |quack|
-        return false unless meths.include?(quack.to_s[1..-1])
+        return true if quack.duck_type? && meths.include?(quack.to_s[1..-1])
       end
-      true
+      false
     end
 
     # @param pin [Pin::Base]

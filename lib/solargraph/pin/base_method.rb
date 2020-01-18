@@ -40,13 +40,35 @@ module Solargraph
         []
       end
 
+      def documentation
+        if @documentation.nil?
+          @documentation ||= super || ''
+          param_tags = docstring.tags(:param)
+          unless param_tags.nil? or param_tags.empty?
+            @documentation += "\n\n" unless @documentation.empty?
+            @documentation += "Params:\n"
+            lines = []
+            param_tags.each do |p|
+              l = "* #{p.name}"
+              l += " [#{escape_brackets(p.types.join(', '))}]" unless p.types.nil? or p.types.empty?
+              l += " #{p.text}"
+              lines.push l
+            end
+            @documentation += lines.join("\n")
+          end
+          @documentation += "\n\n" unless @documentation.empty?
+          @documentation += "Visibility: #{visibility}"
+        end
+        @documentation.to_s
+      end
+
       private
 
       # @return [ComplexType]
       def generate_complex_type
-        tag = docstring.tag(:return)
-        return ComplexType::UNDEFINED if tag.nil? or tag.types.nil? or tag.types.empty?
-        ComplexType.try_parse *tag.types
+        tags = docstring.tags(:return).map(&:types).flatten.reject(&:nil?)
+        return ComplexType::UNDEFINED if tags.empty?
+        ComplexType.try_parse *tags
       end
 
       # @param api_map [ApiMap]

@@ -29,7 +29,7 @@ describe Solargraph::ApiMap::BundlerMethods do
   it 'does not raise an error without a bundle' do
     expect {
       Dir.mktmpdir do |dir|
-        Bundler.with_clean_env do
+        Solargraph.with_clean_env do
           Solargraph::ApiMap::BundlerMethods.require_from_bundle(dir)
         end
       end

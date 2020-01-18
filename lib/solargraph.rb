@@ -1,8 +1,6 @@
 # frozen_string_literal: true
 
-# require 'yard'
 require 'solargraph/version'
-# require 'yard-solargraph'
 
 # The top-level namespace for the Solargraph code mapping, documentation,
 # static analysis, and language server libraries.
@@ -27,6 +25,7 @@ module Solargraph
   autoload :Pin,              'solargraph/pin'
   autoload :ServerMethods,    'solargraph/server_methods'
   autoload :CoreFills,        'solargraph/core_fills'
+  autoload :StdlibFills,      'solargraph/stdlib_fills'
   autoload :LanguageServer,   'solargraph/language_server'
   autoload :Workspace,        'solargraph/workspace'
   autoload :Page,             'solargraph/page'
@@ -50,5 +49,17 @@ module Solargraph
   # @return [Logger]
   def self.logger
     Solargraph::Logging.logger
+  end
+
+  # A helper method that runs Bundler.with_unbundled_env or falls back to
+  # Bundler.with_clean env for earlier versions of Bundler.
+  #
+  def self.with_clean_env &block
+    meth = if Bundler.respond_to?(:with_unbundled_env)
+      :with_unbundled_env
+    else
+      :with_clean_env
+    end
+    Bundler.send meth, &block
   end
 end
