@@ -121,6 +121,7 @@ module Solargraph
 
           # @return [void]
           def process_include
+            return if node.children.empty?
             node.children.last.children[0..-2].each do |i|
               next unless [:COLON2, :COLON3, :CONST].include?(i.type)
               pins.push Pin::Reference::Include.new(

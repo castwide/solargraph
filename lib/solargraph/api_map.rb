@@ -312,6 +312,7 @@ module Solargraph
         result.concat inner_get_methods('Kernel', :instance, visibility, deep, skip)
       else
         result.concat inner_get_methods(fqns, scope, visibility, deep, skip)
+        result.concat inner_get_methods('Kernel', :instance, [:public], deep, skip) if visibility.include?(:private)
       end
       resolved = resolve_method_aliases(result, visibility)
       cache.set_methods(fqns, scope, visibility, deep, resolved)

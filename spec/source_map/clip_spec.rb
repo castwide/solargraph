@@ -1017,4 +1017,30 @@ describe Solargraph::SourceMap::Clip do
     expect(names).to include('lvar1')
     expect(names).not_to include('lvar2')
   end
+
+  it 'includes Kernel method calls in namespaces' do
+    source = Solargraph::Source.load_string(%(
+      class Foo
+        caller
+      end
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new
+    api_map.map source
+    clip = api_map.clip_at('test.rb', [2, 10])
+    paths = clip.define.map(&:path)
+    expect(paths).to include('Kernel#caller')
+    paths = clip.complete.pins.map(&:path)
+    expect(paths).to include('Kernel#caller')
+  end
+
+  it 'excludes Kernel method calls in chains' do
+    source = Solargraph::Source.load_string(%(
+      Object.new.caller
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new
+    api_map.map source
+    clip = api_map.clip_at('test.rb', [1, 18])
+    paths = clip.complete.pins.map(&:path)
+    expect(paths).not_to include('Kernel#caller')
+  end
 end
