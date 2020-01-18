@@ -1,8 +1,6 @@
 # frozen_string_literal: true
 
-# require 'yard'
 require 'solargraph/version'
-# require 'yard-solargraph'
 
 # The top-level namespace for the Solargraph code mapping, documentation,
 # static analysis, and language server libraries.
