@@ -2,25 +2,21 @@ module Solargraph
   module Parser
     module Rubyvm
       module NodeMethods
-        # @param node [Parser::AST::Node]
+        # @param node [RubyVM::AbstractSyntaxTree::Node]
         # @return [String]
-        def unpack_name(node)
-          pack_name(node).join("::")
+        def unpack_name node
+          pack_name(node).join('::')
         end
 
-        # @param node [Parser::AST::Node]
+        # @param node [RubyVM::AbstractSyntaxTree::Node]
         # @return [Array<String>]
         def pack_name(node)
           parts = []
-          # if node.is_a?(AST::Node)
-          if Parser.is_ast_node?(node)
+          if node.is_a?(RubyVM::AbstractSyntaxTree::Node)
+            parts.push '' if node.type == :COLON3
             node.children.each { |n|
-              if Parser.is_ast_node?(n)
-                if n.type == :COLON2
-                  parts = [''] + pack_name(n)
-                else
-                  parts += pack_name(n)
-                end
+              if n.is_a?(RubyVM::AbstractSyntaxTree::Node)
+                parts += pack_name(n)
               else
                 parts.push n unless n.nil?
               end
@@ -29,6 +25,8 @@ module Solargraph
           parts
         end
 
+        # @param node [RubyVM::AbstractSyntaxTree::Node]
+        # @return [String, nil]
         def infer_literal_node_type node
           return nil unless Parser.is_ast_node?(node)
           case node.type

@@ -5,6 +5,8 @@ module Solargraph
     module Rubyvm
       module NodeProcessors
         class DefsNode < DefNode
+          include NodeMethods
+
           def process
             s_visi = region.visibility
             s_visi = :public if region.scope != :class
@@ -47,30 +49,6 @@ module Solargraph
               )
             end
             process_children region.update(closure: pins.last, scope: :class)
-          end
-
-          # @todo This belongs elsewhere
-          def unpack_name node
-            pack_name(node).join('::')
-          end
-
-          # @todo This belongs elsewhere
-          def pack_name(node)
-            parts = []
-            if node.is_a?(RubyVM::AbstractSyntaxTree::Node)
-              node.children.each { |n|
-                if n.is_a?(RubyVM::AbstractSyntaxTree::Node)
-                  if n.type == :COLON2
-                    parts = [''] + pack_name(n)
-                  else
-                    parts += pack_name(n)
-                  end
-                else
-                  parts.push n unless n.nil?
-                end
-              }
-            end
-            parts
           end
         end
       end
