@@ -11,7 +11,8 @@ module Solargraph
       # @return [Boolean]
       def visible_from?(other, position)
         position = Position.normalize(position)
-        other.filename == filename and
+        other.filename == filename &&
+          other.full_context.tag == full_context.tag &&
           (other == closure ||
             (closure.location.range.contain?(closure.location.range.start) && closure.location.range.contain?(other.location.range.ending))
           ) &&
