@@ -1017,4 +1017,26 @@ describe Solargraph::SourceMap::Clip do
     expect(names).to include('lvar1')
     expect(names).not_to include('lvar2')
   end
+
+  it 'detects local variables across closures' do
+    source = Solargraph::Source.load_string(%(
+      class Mod
+        def meth
+          arr = []
+          1.times do
+            arr
+          end
+          arr
+        end
+      end
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new
+    api_map.map source
+    clip = api_map.clip_at('test.rb', [3, 11])
+    expect(clip.infer.tag).to eq('Array')
+    clip = api_map.clip_at('test.rb', [5, 12])
+    expect(clip.infer.tag).to eq('Array')
+    clip = api_map.clip_at('test.rb', [7, 10])
+    expect(clip.infer.tag).to eq('Array')
+  end
 end
