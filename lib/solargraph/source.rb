@@ -284,7 +284,7 @@ module Solargraph
 
     FOLDING_NODE_TYPES = if Parser.rubyvm?
       %i[
-        CLASS SCLASS MODULE DEFN DEFS IF WHILE UNLESS ITER BLOCK
+        CLASS SCLASS MODULE DEFN DEFS IF WHILE UNLESS ITER
       ].freeze
     else
       %i[
