@@ -1212,4 +1212,25 @@ describe Solargraph::SourceMap::Mapper do
     _pins, locals = Solargraph::SourceMap::Mapper.map(source)
     expect(locals).to be_one
   end
+
+  it 'handles mapped methods without arguments' do
+    source = Solargraph::Source.load_string(%(
+      class Foo
+        # The Mapper expects to generate pins from these method calls. It
+        # should gracefully ignore them if they don't have arguments.
+        include
+        extend
+        require
+        attr_reader
+        attr_writer
+        attr_accessor
+        autoload
+        alias
+        alias_method
+      end
+    ))
+    pins, locals = Solargraph::SourceMap::Mapper.map(source)
+    expect(pins).to be_one
+    expect(locals).to be_empty
+  end
 end
