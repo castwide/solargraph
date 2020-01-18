@@ -12,7 +12,7 @@ module Solargraph
       def visible_from?(other, position)
         position = Position.normalize(position)
         other.filename == filename &&
-          other.full_context.tag == full_context.tag &&
+          match_tags(other.full_context.tag, full_context.tag) &&
           (other == closure ||
             (closure.location.range.contain?(closure.location.range.start) && closure.location.range.contain?(other.location.range.ending))
           ) &&
@@ -23,6 +23,13 @@ module Solargraph
       def visible_at?(other_loc)
         return false if location.filename != other_loc.filename
         presence.include?(other_loc.range.start)
+      end
+
+      private
+
+      def match_tags t1, t2
+        t1 == t2 ||
+          (['', 'Class<>'].include?(t1) && ['', 'Class<>'].include?(t2))
       end
     end
   end

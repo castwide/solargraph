@@ -14,6 +14,10 @@ module Solargraph
         @visibility = visibility
       end
 
+      def full_context
+        closure.return_type
+      end
+
       def return_type
         @return_type ||= generate_complex_type
       end
