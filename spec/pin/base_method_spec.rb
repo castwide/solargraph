@@ -28,4 +28,15 @@ describe Solargraph::Pin::BaseMethod do
     type = pin.typify(api_map)
     expect(type.tag).to eq('Boolean')
   end
+
+  it 'supports multiple return tags' do
+    pin = Solargraph::Pin::BaseMethod.new(
+      name: 'foo',
+      comments: %(
+@return [String]
+@return [Integer]
+      )
+    )
+    expect(pin.return_type.to_s).to eq('String, Integer')
+  end
 end
