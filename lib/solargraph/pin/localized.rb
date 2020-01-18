@@ -14,7 +14,7 @@ module Solargraph
         other.filename == filename &&
           match_tags(other.full_context.tag, full_context.tag) &&
           (other == closure ||
-            (closure.location.range.contain?(closure.location.range.start) && closure.location.range.contain?(other.location.range.ending))
+            (closure.location.range.contain?(other.location.range.start) && closure.location.range.contain?(other.location.range.ending))
           ) &&
           presence.contain?(position)
       end
@@ -27,13 +27,16 @@ module Solargraph
 
       private
 
-      def match_tags t1, t2
+      # @param tag1 [String]
+      # @param tag2 [String]
+      # @return [Boolean]
+      def match_tags tag1, tag2
         # @todo This is an unfortunate hack made necessary by a discrepancy in
         #   how tags indicate the root namespace. The long-term solution is to
         #   standardize it, whether it's `Class<>`, an empty string, or
         #   something else.
-        t1 == t2 ||
-          (['', 'Class<>'].include?(t1) && ['', 'Class<>'].include?(t2))
+        tag1 == tag2 ||
+          (['', 'Class<>'].include?(tag1) && ['', 'Class<>'].include?(tag2))
       end
     end
   end
