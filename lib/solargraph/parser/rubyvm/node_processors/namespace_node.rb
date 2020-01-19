@@ -5,6 +5,8 @@ module Solargraph
     module Rubyvm
       module NodeProcessors
         class NamespaceNode < Parser::NodeProcessor::Base
+          include NodeMethods
+
           def process
             sc = nil
             if node.type == :CLASS && !node.children[1].nil?
@@ -29,27 +31,6 @@ module Solargraph
               )
             end
             process_children region.update(closure: nspin, visibility: :public)
-          end
-
-          # @todo This belongs elsewhere
-          def unpack_name node
-            pack_name(node).join('::')
-          end
-
-          # @todo This belongs elsewhere
-          def pack_name(node)
-            parts = []
-            if node.is_a?(RubyVM::AbstractSyntaxTree::Node)
-              parts.push '' if node.type == :COLON3
-              node.children.each { |n|
-                if n.is_a?(RubyVM::AbstractSyntaxTree::Node)
-                  parts += pack_name(n)
-                else
-                  parts.push n unless n.nil?
-                end
-              }
-            end
-            parts
           end
         end
       end

@@ -89,6 +89,7 @@ module Solargraph
 
           # @return [void]
           def process_attribute
+            return unless Parser.is_ast_node?(node.children[1])
             node.children[1].children[0..-2].each do |a|
               next unless a.type == :LIT
               loc = get_node_location(node)
@@ -121,6 +122,7 @@ module Solargraph
 
           # @return [void]
           def process_include
+            return unless Parser.is_ast_node?(node.children.last)
             node.children.last.children[0..-2].each do |i|
               next unless [:COLON2, :COLON3, :CONST].include?(i.type)
               pins.push Pin::Reference::Include.new(
@@ -133,6 +135,7 @@ module Solargraph
 
           # @return [void]
           def process_extend
+            return unless Parser.is_ast_node?(node.children.last)
             node.children.last.children[0..-2].each do |i|
               next unless [:COLON2, :COLON3, :CONST, :SELF].include?(i.type)
               loc = get_node_location(node)
@@ -154,17 +157,12 @@ module Solargraph
 
           # @return [void]
           def process_require
+            return unless Parser.is_ast_node?(node.children[1])
             node.children[1].children.each do |arg|
               next unless Parser.is_ast_node?(arg)
               if arg.type == :STR
                 pins.push Pin::Reference::Require.new(get_node_location(arg), arg.children[0])
               end
-            end
-            return
-            # @todo Get rid of legacy
-            if node.children[2].is_a?(AST::Node) && node.children[2].type == :str
-              path = node.children[2].children[0].to_s
-              pins.push Pin::Reference::Require.new(get_node_location(node), path)
             end
           end
 
@@ -271,16 +269,6 @@ module Solargraph
                 end
               end
             end
-
-            # if node.children[2].type == :sym || node.children[2].type == :str
-            #   ref = pins.select{|p| [Solargraph::Pin::Method, Solargraph::Pin::Attribute].include?(p.class) && p.namespace == region.closure.full_context.namespace && p.name == node.children[2].children[0].to_s}.first
-            #   # HACK: Smelly instance variable access
-            #   ref.instance_variable_set(:@visibility, :private) unless ref.nil?
-            #   false
-            # else
-            #   process_children region.update(scope: :class, visibility: :private)
-            #   true
-            # end
           end
         end
       end

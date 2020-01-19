@@ -88,7 +88,7 @@ module Solargraph
         result = []
         has_nil = false
         Parser.returns_from(method_body_node).each do |n|
-          if n.nil? || n.type == :nil
+          if n.nil? || [:NIL, :nil].include?(n.type)
             has_nil = true
             next
           end
@@ -98,7 +98,8 @@ module Solargraph
             location.filename,
             rng.ending
           )
-          type = clip.infer
+          chain = Solargraph::Parser.chain(n, location.filename)
+          type = chain.infer(api_map, self, clip.locals)
           result.push type unless type.undefined?
         end
         result.push ComplexType::NIL if has_nil

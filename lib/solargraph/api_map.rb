@@ -312,6 +312,7 @@ module Solargraph
         result.concat inner_get_methods('Kernel', :instance, visibility, deep, skip)
       else
         result.concat inner_get_methods(fqns, scope, visibility, deep, skip)
+        result.concat inner_get_methods('Kernel', :instance, [:public], deep, skip) if visibility.include?(:private)
       end
       resolved = resolve_method_aliases(result, visibility)
       cache.set_methods(fqns, scope, visibility, deep, resolved)
@@ -568,27 +569,30 @@ module Solargraph
       result = []
       result.concat store.get_methods(fqns, scope: scope, visibility: visibility).sort{ |a, b| a.name <=> b.name }
       if deep
-        sc = store.get_superclass(fqns)
-        unless sc.nil?
-          fqsc = qualify(sc, fqns.split('::')[0..-2].join('::'))
-          result.concat inner_get_methods(fqsc, scope, visibility, true, skip, true) unless fqsc.nil?
-        end
         if scope == :instance
           store.get_includes(fqns).reverse.each do |im|
             fqim = qualify(im, fqns)
             result.concat inner_get_methods(fqim, scope, visibility, deep, skip, true) unless fqim.nil?
           end
-          result.concat inner_get_methods('Object', :instance, [:public], deep, skip, no_core)
-          result.concat inner_get_methods('BasicObject', :instance, [:public], deep, skip, no_core)
+          sc = store.get_superclass(fqns)
+          unless sc.nil?
+            fqsc = qualify(sc, fqns.split('::')[0..-2].join('::'))
+            result.concat inner_get_methods(fqsc, scope, visibility, true, skip, no_core) unless fqsc.nil?
+          end
         else
           store.get_extends(fqns).reverse.each do |em|
             fqem = qualify(em, fqns)
             result.concat inner_get_methods(fqem, :instance, visibility, deep, skip, true) unless fqem.nil?
           end
+          sc = store.get_superclass(fqns)
+          unless sc.nil?
+            fqsc = qualify(sc, fqns.split('::')[0..-2].join('::'))
+            result.concat inner_get_methods(fqsc, scope, visibility, true, skip, true) unless fqsc.nil?
+          end
           unless no_core || fqns.empty?
             type = get_namespace_type(fqns)
             result.concat inner_get_methods('Class', :instance, visibility, deep, skip, no_core) if type == :class
-            result.concat inner_get_methods('Module', :instance,visibility, deep, skip, no_core)
+            result.concat inner_get_methods('Module', :instance, visibility, deep, skip, no_core)
           end
         end
         store.domains(fqns).each do |d|
@@ -611,7 +615,10 @@ module Solargraph
       store.get_includes(fqns).each do |is|
         result.concat inner_get_constants(qualify(is, fqns), [:public], skip)
       end
-      result.concat inner_get_constants(store.get_superclass(fqns), [:public], skip)
+      sc = store.get_superclass(fqns)
+      unless %w[Object BasicObject].include?(sc)
+        result.concat inner_get_constants(store.get_superclass(fqns), [:public], skip)
+      end
       result
     end
 

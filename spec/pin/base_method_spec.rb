@@ -25,7 +25,21 @@ describe Solargraph::Pin::BaseMethod do
     api_map = Solargraph::ApiMap.new
     api_map.map source
     pin = api_map.get_path_pins('Foo#bar?').first
+    # The return type is undefined without a @return tag
+    expect(pin.return_type).to be_undefined
+    # Typify infers Boolean
     type = pin.typify(api_map)
     expect(type.tag).to eq('Boolean')
+  end
+
+  it 'supports multiple return tags' do
+    pin = Solargraph::Pin::BaseMethod.new(
+      name: 'foo',
+      comments: %(
+@return [String]
+@return [Integer]
+      )
+    )
+    expect(pin.return_type.to_s).to eq('String, Integer')
   end
 end

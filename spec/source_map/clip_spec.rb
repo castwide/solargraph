@@ -997,4 +997,72 @@ describe Solargraph::SourceMap::Clip do
     clip = api_map.clip_at('test.rb', [2, 8])
     expect(clip.complete.pins.first.path).to start_with('Array#')
   end
+
+  it 'selects local variables using gated scopes' do
+    source = Solargraph::Source.load_string(%(
+      lvar1 = 'lvar1'
+      module MyModule
+        lvar2 = 'lvar2'
+
+      end
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new
+    api_map.map source
+    clip = api_map.clip_at('test.rb', [4, 0])
+    names = clip.complete.pins.map(&:name)
+    expect(names).not_to include('lvar1')
+    expect(names).to include('lvar2')
+    clip = api_map.clip_at('test.rb', [6, 0])
+    names = clip.complete.pins.map(&:name)
+    expect(names).to include('lvar1')
+    expect(names).not_to include('lvar2')
+  end
+
+  it 'includes Kernel method calls in namespaces' do
+    source = Solargraph::Source.load_string(%(
+      class Foo
+        caller
+      end
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new
+    api_map.map source
+    clip = api_map.clip_at('test.rb', [2, 10])
+    paths = clip.define.map(&:path)
+    expect(paths).to include('Kernel#caller')
+    paths = clip.complete.pins.map(&:path)
+    expect(paths).to include('Kernel#caller')
+  end
+
+  it 'excludes Kernel method calls in chains' do
+    source = Solargraph::Source.load_string(%(
+      Object.new.caller
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new
+    api_map.map source
+    clip = api_map.clip_at('test.rb', [1, 18])
+    paths = clip.complete.pins.map(&:path)
+    expect(paths).not_to include('Kernel#caller')
+  end
+
+  it 'detects local variables across closures' do
+    source = Solargraph::Source.load_string(%(
+      class Mod
+        def meth
+          arr = []
+          1.times do
+            arr
+          end
+          arr
+        end
+      end
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new
+    api_map.map source
+    clip = api_map.clip_at('test.rb', [3, 11])
+    expect(clip.infer.tag).to eq('Array')
+    clip = api_map.clip_at('test.rb', [5, 12])
+    expect(clip.infer.tag).to eq('Array')
+    clip = api_map.clip_at('test.rb', [7, 10])
+    expect(clip.infer.tag).to eq('Array')
+  end
 end
