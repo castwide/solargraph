@@ -90,7 +90,8 @@ module Solargraph
               location.filename,
               [n.loc.expression.last_line, n.loc.expression.last_column]
             )
-            type = clip.infer
+            chain = Solargraph::Source::NodeChainer.chain(n, location.filename)
+            type = chain.infer(api_map, self, clip.locals)
             result.push type unless type.undefined?
           end
         end
