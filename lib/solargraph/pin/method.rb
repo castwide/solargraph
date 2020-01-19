@@ -88,7 +88,7 @@ module Solargraph
         result = []
         has_nil = false
         Parser.returns_from(method_body_node).each do |n|
-          if n.nil?
+          if n.nil? || [:NIL, :nil].include?(n.type)
             has_nil = true
             next
           end
