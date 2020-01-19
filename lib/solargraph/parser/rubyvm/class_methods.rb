@@ -161,7 +161,7 @@ module Solargraph
               elsif node.type == :RETURN
                 result.concat reduce_to_value_nodes([node.children[0]])
               elsif node.type == :ITER
-                result.concat reduce_to_value_nodes([node.children[0]])
+                result.push node
                 result.concat get_return_nodes_only(node.children[1])
               else
                 result.push node

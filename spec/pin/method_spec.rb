@@ -193,4 +193,19 @@ describe Solargraph::Pin::Method do
     type = pin.probe(api_map)
     expect(type.to_s).to eq('Integer, nil')
   end
+
+  it 'infers from chains' do
+    source = Solargraph::Source.load_string(%(
+      class Foo
+        def bar
+          1 == 2
+        end
+      end
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new
+    api_map.map source
+    pin = api_map.get_path_pins('Foo#bar').first
+    type = pin.probe(api_map)
+    expect(type.to_s).to eq('Boolean')
+  end
 end
