@@ -102,7 +102,7 @@ module Solargraph
       reqs.merge bundle.workspace.config.required
       local_path_hash.clear
       unless bundle.workspace.require_paths.empty?
-        reqs = @require_diff.unresolved_requires(bundle, reqs.clone, new_map_hash)
+        local_path_hash.merge! @require_diff.unresolved_requires(bundle, reqs, new_map_hash)
       end
       reqs.merge implicit.requires
       pins.concat implicit.overrides

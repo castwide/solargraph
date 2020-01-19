@@ -18,9 +18,9 @@ module Solargraph
       # @return [Array<String>]
       def unresolved_requires bundle, reqs, new_map_hash
         if @native
-          diff_native bundle, reqs, new_map_hash
+          diff_native(bundle, reqs, new_map_hash)
         else
-          diff_pure bundle, reqs, new_map_hash
+          diff_pure(bundle, reqs, new_map_hash)
         end
       end
 
@@ -33,6 +33,8 @@ module Solargraph
       # @param new_map_hash [Hash<String, String>]
       # @return [Array<String>]
       def diff_native bundle, reqs, new_map_hash
+        local_path_hash = {}
+        
         # convert new map hash to a trie
         source_trie = Trie.new
         new_map_hash.keys.each do |key|
@@ -55,7 +57,7 @@ module Solargraph
           prefix_node = prefix_node.walk(c)
           break if prefix_node.nil?
         end
-        return reqs if prefix_node.nil?
+        return local_path_hash if prefix_node.nil?
 
         all_paths.each do |req_path|
           break if reqs.empty?
@@ -78,11 +80,16 @@ module Solargraph
               break if req_node.nil?
             end
 
-            !req_node.nil?
+            if req_node.nil?
+              true
+            else
+              local_path_hash[req] = req_node.full_state
+              false
+            end
           end
         end
 
-        reqs
+        local_path_hash
       end
 
       # Determine requires that still need processing using trie_fast
@@ -92,17 +99,22 @@ module Solargraph
       # @param new_map_hash [Hash<String, String>]
       # @return [Array<String>]
       def diff_pure bundle, reqs, new_map_hash
-        reqs.reject do |r|
-          result = false
-          bundle.workspace.require_paths.each do |l|
-            pn = Pathname.new(bundle.workspace.directory).join(l, "#{r}.rb")
-            next unless new_map_hash.keys.include?(pn.to_s)
-            local_path_hash[r] = pn.to_s
-            result = true
-            break
+        local_path_hash = {}
+        file_keys = new_map_hash.keys
+        workspace_path = Pathname.new(bundle.workspace.directory)
+        reqs.delete_if do |r|
+          bundle.workspace.require_paths.any? do |base|
+            pn = workspace_path.join(base, "#{r}.rb").to_s
+            if file_keys.include? pn
+              local_path_hash[r] = pn
+              true
+            else
+              false
+            end
           end
-          result
         end
+
+        local_path_hash
       end
 
       # Find the longest prefix in an array of strings
