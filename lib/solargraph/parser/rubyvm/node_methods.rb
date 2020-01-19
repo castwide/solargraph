@@ -34,7 +34,7 @@ module Solargraph
           case node.type
           when :LIT, :STR
             "::#{node.children.first.class.to_s}"
-          when :ARRAY, :ZARRAY
+          when :ARRAY, :ZARRAY, :LIST, :ZLIST
             '::Array'
           when :HASH
             '::Hash'
@@ -42,6 +42,8 @@ module Solargraph
             '::Range'
           when :TRUE, :FALSE
             '::Boolean'
+          when :SCOPE
+            infer_literal_node_type(node.children[2])
           end
         end
       end

@@ -59,7 +59,7 @@ module Solargraph
               result.concat generate_links(c)
             end
             args = []
-            if n.children.last && n.children.last.type == :ARRAY
+            if n.children.last && [:ZARRAY, :ARRAY, :LIST].include?(n.children.last.type)
               n.children.last.children[0..-2].each do |c|
                 args.push NodeChainer.chain(c)
               end

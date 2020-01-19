@@ -190,7 +190,7 @@ describe Solargraph::SourceMap::Mapper do
     ))
     pin = map.locals.first
     # @todo Dirty test
-    expect([:ZARRAY, :array]).to include(pin.assignment.type)
+    expect([:ZLIST, :ZARRAY, :array]).to include(pin.assignment.type)
   end
 
   it "finds assignment nodes for instance variables using nil guards" do
@@ -199,7 +199,7 @@ describe Solargraph::SourceMap::Mapper do
     ))
     pin = map.pins.last
     # @todo Dirty test
-    expect([:ZARRAY, :array]).to include(pin.assignment.type)
+    expect([:ZLIST, :ZARRAY, :array]).to include(pin.assignment.type)
   end
 
   it "finds assignment nodes for class variables using nil guards" do
@@ -208,7 +208,7 @@ describe Solargraph::SourceMap::Mapper do
     ))
     pin = map.pins.last
     # @todo Dirty test
-    expect([:ZARRAY, :array]).to include(pin.assignment.type)
+    expect([:ZLIST, :ZARRAY, :array]).to include(pin.assignment.type)
   end
 
   it "finds assignment nodes for global variables using nil guards" do
@@ -217,7 +217,7 @@ describe Solargraph::SourceMap::Mapper do
     ))
     pin = map.pins.last
     # @todo Dirty test
-    expect([:ZARRAY, :array]).to include(pin.assignment.type)
+    expect([:ZLIST, :ZARRAY, :array]).to include(pin.assignment.type)
   end
 
   it "requalifies namespace definitions with leading colons" do

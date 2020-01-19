@@ -111,7 +111,7 @@ module Solargraph
 
         def recipient_node tree
           tree.each_with_index do |node, idx|
-            return tree[idx + 1] if node.type == :ARRAY && tree[idx + 1] && [:FCALL, :VCALL, :CALL].include?(tree[idx + 1].type)
+            return tree[idx + 1] if [:ARRAY, :ZARRAY, :LIST].include?(node.type) && tree[idx + 1] && [:FCALL, :VCALL, :CALL].include?(tree[idx + 1].type)
           end
           nil
         end
