@@ -38,5 +38,31 @@ describe Solargraph::TypeChecker do
       ))
       expect(checker.problems).to be_empty
     end
+
+    it 'skips type inference for method macros' do
+      # @todo This test uses Nokogiri because it's a gem dependency known to
+      #   lack typed methods. A better test wouldn't depend on the state of
+      #   vendored code.
+      checker = type_checker(%(
+        # @!method bar
+        #   @return [String]
+        class Foo; end
+      ))
+      expect(checker.problems).to be_empty
+    end
+
+    it 'reports mismatched types for empty methods' do
+      # @todo This test uses Nokogiri because it's a gem dependency known to
+      #   lack typed methods. A better test wouldn't depend on the state of
+      #   vendored code.
+      checker = type_checker(%(
+        class Foo
+          # @return [String]
+          def bar; end
+        end
+      ))
+      expect(checker.problems).to be_one
+      expect(checker.problems.first.message).to include('could not be inferred')
+    end
   end
 end

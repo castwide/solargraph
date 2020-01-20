@@ -89,7 +89,7 @@ module Solargraph
           result.push Problem.new(pin.location, "Untyped method #{pin.path} could not be inferred")
         end
       else
-        unless declared.void?
+        unless declared.void? || macro_pin?(pin)
           inferred = pin.probe(api_map)
           if inferred.undefined?
             unless rules.ignore_all_undefined? || external?(pin)
@@ -103,6 +103,10 @@ module Solargraph
         end
       end
       result
+    end
+
+    def macro_pin? pin
+      pin.location && source_map.source.comment_at?(pin.location.range.ending)
     end
 
     # @param pin [Pin::BaseMethod]
@@ -173,25 +177,43 @@ module Solargraph
             result.push Problem.new(location, "Unresolved call signature #{base.links.map(&:word).join('.')}")
           end
         end
-        result.concat argument_problems_for(chain)
+        result.concat argument_problems_for(chain, api_map, block_pin, locals)
       end
       result
     end
 
-    def argument_problems_for chain
-      # @todo Argument validation
-      return []
+    def argument_problems_for chain, api_map, block_pin, locals
+      result = []
+      base = chain
+      until base.links.length == 1 && base.undefined?
+        pins = base.define(api_map, block_pin, locals)
+        if pins.first.is_a?(Pin::Method)
+          pin = pins.first
+          params = first_param_tags(pins)
+        end
+        base = base.base
+      end
+      result
     end
 
-      # @param pin [Pin::Base]
-      def internal? pin
-        pin.location.nil? || api_map.bundled?(pin.location.filename)
+    # @param [Array<Pin::Method>]
+    def first_param_tags(pins)
+      pins.each do |pin|
+        tags = pin.docstring.tags(:param)
+        return tags unless tags.empty?
       end
+      []
+    end
 
-      # @param pin [Pin::Base]
-      def external? pin
-        !internal? pin
-      end
+    # @param pin [Pin::Base]
+    def internal? pin
+      pin.location.nil? || api_map.bundled?(pin.location.filename)
+    end
+
+    # @param pin [Pin::Base]
+    def external? pin
+      !internal? pin
+    end
 
     # @todo DEPRECATE BELOW
 

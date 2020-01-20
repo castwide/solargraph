@@ -221,5 +221,17 @@ describe Solargraph::TypeChecker do
       ))
       expect(checker.problems).to be_empty
     end
+
+    it 'ignores variable types with undefined inferences from external sources' do
+      # @todo This test uses Nokogiri because it's a gem dependency known to
+      #   lack typed methods. A better test wouldn't depend on the state of
+      #   vendored code.
+      checker = type_checker(%(
+        require 'nokogiri'
+        # @type [Nokogiri::HTML::Document]
+        doc = Nokogiri::HTML.parse('something')
+      ))
+      expect(checker.problems).to be_empty
+    end
   end
 end
