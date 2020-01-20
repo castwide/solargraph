@@ -107,15 +107,6 @@ describe Solargraph::TypeChecker::Checks do
     expect(match).to be(true)
   end
 
-  it 'invalidates classes with expected subclasses' do
-    # @todo Don't trust this. An inferred class probably never has a parameter.
-    # api_map = Solargraph::ApiMap.new
-    # exp = Solargraph::ComplexType.parse('Class<String>')
-    # inf = Solargraph::ComplexType.parse('Class<Object>')
-    # match = Solargraph::TypeChecker::Checks.types_match?(api_map, exp, inf)
-    # expect(match).to be(false)
-  end
-
   it 'validates parameterized classes with expected Class' do
     api_map = Solargraph::ApiMap.new
     exp = Solargraph::ComplexType.parse('Class<String>')

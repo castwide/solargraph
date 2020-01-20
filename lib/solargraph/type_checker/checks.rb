@@ -39,6 +39,15 @@ module Solargraph
         true
       end
 
+      # @param pin [Pin::Base]
+      def internal? pin
+        pin.location && api_map.source_map(pin.location.filename)
+      end
+
+      def external? pin
+        !internal? pin
+      end
+
       # @param type1 [ComplexType]
       # @param type2 [ComplexType]
       # @return [String]

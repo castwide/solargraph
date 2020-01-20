@@ -34,49 +34,98 @@ module Solargraph
 
     # @return [Array<Problem>]
     def problems
-      result = method_type_tag_problems
-      result.concat variable_type_tag_problems
-      result
+      @problems ||= begin
+        method_tag_problems
+          .concat variable_type_tag_problems
+      end
     end
 
     private
 
     # @return [Array<Problem>]
-    def method_type_tag_problems
+    def method_tag_problems
       result = []
-      source_map.pins.each do |pin|
-        next unless pin.is_a?(Pin::BaseMethod)
-        declared = pin.typify(api_map)
-        if declared.undefined?
-          if pin.return_type.undefined? && rules.require_type_tags?
-            result.push Problem.new(pin.location, "Missing @return tag for #{pin.path}", pin: pin)
-          elsif pin.return_type.defined?
-            result.push Problem.new(pin.location, "Unresolved return type #{pin.return_type} for #{pin.path}", pin: pin)
-          end
-        else
+      # @param pin [Pin::BaseMethod]
+      source_map.pins.select { |pin| pin.is_a?(Pin::BaseMethod) }.each do |pin|
+        result.concat method_return_type_problems_for(pin)
+        result.concat method_param_type_problems_for(pin)
+      end
+      result
+    end
+
+    # @param pin [Pin::BaseMethod]
+    # @return [Array<Problem>]
+    def method_return_type_problems_for pin
+      result = []
+      declared = pin.typify(api_map)
+      if declared.undefined?
+        if pin.return_type.undefined? && rules.require_type_tags?
+          result.push Problem.new(pin.location, "Missing @return tag for #{pin.path}", pin: pin)
+        elsif pin.return_type.defined?
+          result.push Problem.new(pin.location, "Unresolved return type #{pin.return_type} for #{pin.path}", pin: pin)
+        end
+      else
+        unless declared.void?
           inferred = pin.probe(api_map)
           if inferred.undefined?
-            next if rules.ignore_all_undefined?
-            next unless internal?(pin)
-            result.push Problem.new(pin.location, "#{pin.path} return type could not be inferred", pin: pin)
+            unless rules.ignore_all_undefined? || external?(pin)
+              result.push Problem.new(pin.location, "#{pin.path} return type could not be inferred", pin: pin)
+            end
           else
-            unless types_match? declared, inferred
+            unless types_match? api_map, declared, inferred
               result.push Problem.new(pin.location, "Declared return type #{declared} does not match inferred type #{inferred}", pin: pin)
             end
           end
         end
       end
+      result
     end
 
-    # @param pin [Pin::Base]
-    def internal? pin
-      pin.location && api_map.source_map(pin.location.filename)
-    end
+      # @param pin [Pin::BaseMethod]
+      # @return [Array<Problem>]
+      def method_param_type_problems_for pin
+        result = []
+        pin.docstring.tags(:param).each do |ptag|
+          unless ptag.types.nil? || ptag.types.empty?
+            type = ComplexType.try_parse(*ptag.types)
+            type.qualify(api_map, pin.context.namespace)
+            if type.undefined?
+              result.push Problem.new(pin.location, "Unresolved return type #{pin.return_type} for #{ptag.name} param on #{pin.path}", pin: pin)
+            end
+          end
+        end
+        result
+      end
 
     # @return [Array<Problem>]
     def variable_type_tag_problems
       result = []
+      all_variables.each do |pin|
+        if pin.return_type.defined?
+          declared = pin.typify(api_map)
+          if declared.defined?
+            inferred = pin.probe(api_map)
+            if inferred.undefined?
+              next if rules.ignore_all_undefined?
+              next unless internal?(pin) # @todo This might be redundant for variables
+              result.push Problem.new(pin.location, "Variable type could not be inferred for #{pin.name}", pin: pin)
+            else
+              unless types_match? api_map, declared, inferred
+                result.push Problem.new(pin.location, "Declared type #{declared} does not match inferred type #{inferred} for variable #{pin.name}", pin: pin)
+              end
+            end
+          else
+            result.push Problem.new(pin.location, "Unresolved type #{pin.return_type} for variable #{pin.name}", pin: pin)
+          end
+        end
+      end
       result
+    end
+
+    # @return [Array<Pin::BaseVariable]
+    def all_variables
+      source_map.pins.select { |pin| pin.is_a?(Pin::BaseVariable) } +
+        source_map.locals.select { |pin| pin.is_a?(Pin::LocalVariable) }
     end
 
     # Return type problems indicate that a method does not specify a type in a
@@ -422,21 +471,21 @@ module Solargraph
     class << self
       # @param filename [String]
       # @return [self]
-      def load filename
+      def load filename, level = :normal
         source = Solargraph::Source.load(filename)
         api_map = Solargraph::ApiMap.new
         api_map.map(source)
-        new(filename, api_map: api_map)
+        new(filename, api_map: api_map, level: level)
       end
 
       # @param code [String]
       # @param filename [String, nil]
       # @return [self]
-      def load_string code, filename = nil
+      def load_string code, filename = nil, level = :normal
         source = Solargraph::Source.load_string(code, filename)
         api_map = Solargraph::ApiMap.new
         api_map.map(source)
-        new(filename, api_map: api_map)
+        new(filename, api_map: api_map, level: level)
       end
     end
   end
