@@ -47,13 +47,13 @@ module Solargraph
       source_map.pins.each do |pin|
         next unless pin.is_a?(Pin::BaseMethod)
         declared = pin.typify(api_map)
-        if declared.undefined? && rules.require_type_tags?
-          if pin.return_type.undefined?
+        if declared.undefined?
+          if pin.return_type.undefined? && rules.require_type_tags?
             result.push Problem.new(pin.location, "Missing @return tag for #{pin.path}", pin: pin)
-          else
-            result.push Problem.new(pin.location, "Unresolved return type #{declared} for #{pin.path}", pin: pin)
+          elsif pin.return_type.defined?
+            result.push Problem.new(pin.location, "Unresolved return type #{pin.return_type} for #{pin.path}", pin: pin)
           end
-        elsif declared.defined?
+        else
           inferred = pin.probe(api_map)
           if inferred.undefined?
             next if rules.ignore_all_undefined?
