@@ -28,8 +28,37 @@ module Solargraph
           []
         end
 
+        def head?
+          @head ||= false
+        end
+
         def == other
           self.class == other.class and word == other.word
+        end
+
+        # Make a copy of this link marked as the head of a chain
+        #
+        # @return [self]
+        def clone_head
+          clone.mark_head(true)
+        end
+
+        # Make a copy of this link unmarked as the head of a chain
+        #
+        # @return [self]
+        def clone_body
+          clone.mark_head(false)
+        end
+
+        protected
+
+        # Mark whether this link is the head of a chain
+        #
+        # @param bool [Boolean]
+        # @return [self]
+        def mark_head bool
+          @head = bool
+          self
         end
       end
     end

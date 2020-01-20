@@ -34,8 +34,14 @@ module Solargraph
 
       # @param links [Array<Chain::Link>]
       def initialize links
-        @links = links
+        @links = links.clone
         @links.push UNDEFINED_CALL if @links.empty?
+        head = true
+        @links.map! do |link|
+          result = (head ? link.clone_head : link.clone_body)
+          head = false
+          result
+        end
       end
 
       # @return [Chain]
@@ -54,7 +60,9 @@ module Solargraph
         links[0..-2].each do |link|
           pins = link.resolve(api_map, working_pin, locals)
           # Locals are only used when resolving the first link
-          locals = []
+          # @todo There's a problem here. Call links need to resolve arguments
+          #   that might refer to local variables.
+          # locals = []
           type = infer_first_defined(pins, working_pin, api_map)
           return [] if type.undefined?
           working_pin = Pin::ProxyType.anonymous(type)
