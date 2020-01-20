@@ -54,7 +54,9 @@ module Solargraph
         links[0..-2].each do |link|
           pins = link.resolve(api_map, working_pin, locals)
           # Locals are only used when resolving the first link
-          locals = []
+          # @todo There's a problem here. Call links need to resolve arguments
+          #   that might refer to local variables.
+          # locals = []
           type = infer_first_defined(pins, working_pin, api_map)
           return [] if type.undefined?
           working_pin = Pin::ProxyType.anonymous(type)

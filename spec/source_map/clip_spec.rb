@@ -1039,4 +1039,19 @@ describe Solargraph::SourceMap::Clip do
     clip = api_map.clip_at('test.rb', [7, 10])
     expect(clip.infer.tag).to eq('Array')
   end
+
+  it 'uses arguments to infer from overloaded methods' do
+    source = Solargraph::Source.load_string(%(
+      # @type [Array<String>]
+      a = []
+      i1 = 0
+      i2 = 5
+      b = a[i2, i2]
+      b # should be Array<String>
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new
+    api_map.map source
+    clip = api_map.clip_at('test.rb', [6, 6])
+    expect(clip.infer.tag).to eq('Array<String>')    
+  end
 end
