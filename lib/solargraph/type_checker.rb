@@ -57,7 +57,7 @@ module Solargraph
           inferred = pin.probe(api_map)
           if inferred.undefined?
             next if rules.ignore_all_undefined?
-            next if external?(pin)
+            next unless internal?(pin)
             result.push Problem.new(pin.location, "#{pin.path} return type could not be inferred", pin: pin)
           else
             unless types_match? declared, inferred
@@ -69,9 +69,8 @@ module Solargraph
     end
 
     # @param pin [Pin::Base]
-    def external? pin
-      return true if pin.location.nil?
-      !!api_map.source_map(pin.location.filename)
+    def internal? pin
+      pin.location && api_map.source_map(pin.location.filename)
     end
 
     # @return [Array<Problem>]
