@@ -34,8 +34,14 @@ module Solargraph
 
       # @param links [Array<Chain::Link>]
       def initialize links
-        @links = links
+        @links = links.clone
         @links.push UNDEFINED_CALL if @links.empty?
+        head = true
+        @links.map! do |link|
+          result = (head ? link.clone_head : link.clone_body)
+          head = false
+          result
+        end
       end
 
       # @return [Chain]

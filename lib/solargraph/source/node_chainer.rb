@@ -18,8 +18,6 @@ module Solargraph
       # @return [Source::Chain]
       def chain
         links = generate_links(@node)
-        # @todo Smelly instance variable access
-        links.first.instance_variable_set(:@head, true) unless links.empty?
         Chain.new(links)
       end
 
@@ -60,13 +58,13 @@ module Solargraph
             n.children[2..-1].each do |c|
               args.push NodeChainer.chain(c)
             end
-            result.push Chain::Call.new(n.children[1].to_s, args, @in_block || block_passed?(n), result.length.zero?)
+            result.push Chain::Call.new(n.children[1].to_s, args, @in_block || block_passed?(n))
           elsif n.children[0].nil?
             args = []
             n.children[2..-1].each do |c|
               args.push NodeChainer.chain(c)
             end
-            result.push Chain::Call.new(n.children[1].to_s, args, @in_block || block_passed?(n), result.length.zero?)
+            result.push Chain::Call.new(n.children[1].to_s, args, @in_block || block_passed?(n))
           else
             raise "No idea what to do with #{n}"
           end
