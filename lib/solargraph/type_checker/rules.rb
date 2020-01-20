@@ -40,6 +40,10 @@ module Solargraph
       def require_type_tags?
         rank >= LEVELS[:strong]
       end
+
+      def must_tag_or_infer?
+        rank > LEVELS[:normal]
+      end
     end
   end
 end

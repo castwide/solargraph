@@ -63,6 +63,8 @@ module Solargraph
           result.push Problem.new(pin.location, "Missing @return tag for #{pin.path}", pin: pin)
         elsif pin.return_type.defined?
           result.push Problem.new(pin.location, "Unresolved return type #{pin.return_type} for #{pin.path}", pin: pin)
+        elsif rules.must_tag_or_infer? && pin.probe(api_map).undefined?
+          result.push Problem.new(pin.location, "Untyped method #{pin.path} could not be inferred")
         end
       else
         unless declared.void?
