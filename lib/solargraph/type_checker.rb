@@ -4,18 +4,80 @@ module Solargraph
   # A static analysis tool for validating data types.
   #
   class TypeChecker
-    autoload :Problem, 'solargraph/type_checker/problem'
+    autoload :Problem,  'solargraph/type_checker/problem'
     autoload :ParamDef, 'solargraph/type_checker/param_def'
+    autoload :Rules,    'solargraph/type_checker/rules'
+    autoload :Checks,   'solargraph/type_checker/checks'
+
+    include Checks
 
     # @return [String]
     attr_reader :filename
 
+    # @return [Rules]
+    attr_reader :rules
+
     # @param filename [String]
     # @param api_map [ApiMap]
-    def initialize filename, api_map: nil
+    # @param level [Symbol]
+    def initialize filename, api_map: nil, level: :normal
       @filename = filename
       # @todo Smarter directory resolution
       @api_map = api_map || Solargraph::ApiMap.load(File.dirname(filename))
+      @rules = Rules.new(level)
+    end
+
+    # @return [SourceMap]
+    def source_map
+      @source_map ||= api_map.source_map(filename)
+    end
+
+    # @return [Array<Problem>]
+    def problems
+      result = method_type_tag_problems
+      result.concat variable_type_tag_problems
+      result
+    end
+
+    private
+
+    # @return [Array<Problem>]
+    def method_type_tag_problems
+      result = []
+      source_map.pins.each do |pin|
+        next unless pin.is_a?(Pin::BaseMethod)
+        declared = pin.typify(api_map)
+        if declared.undefined? && rules.require_type_tags?
+          if pin.return_type.undefined?
+            result.push Problem.new(pin.location, "Missing @return tag for #{pin.path}", pin: pin)
+          else
+            result.push Problem.new(pin.location, "Unresolved return type #{declared} for #{pin.path}", pin: pin)
+          end
+        elsif declared.defined?
+          inferred = pin.probe(api_map)
+          if inferred.undefined?
+            next if rules.ignore_all_undefined?
+            next if external?(pin)
+            result.push Problem.new(pin.location, "#{pin.path} return type could not be inferred", pin: pin)
+          else
+            unless types_match? declared, inferred
+              result.push Problem.new(pin.location, "Declared return type #{declared} does not match inferred type #{inferred}", pin: pin)
+            end
+          end
+        end
+      end
+    end
+
+    # @param pin [Pin::Base]
+    def external? pin
+      return true if pin.location.nil?
+      !!api_map.source_map(pin.location.filename)
+    end
+
+    # @return [Array<Problem>]
+    def variable_type_tag_problems
+      result = []
+      result
     end
 
     # Return type problems indicate that a method does not specify a type in a
