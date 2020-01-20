@@ -38,7 +38,7 @@ module Solargraph
       end
 
       def require_type_tags?
-        rank >= LEVELS[:strict]
+        rank >= LEVELS[:strong]
       end
     end
   end
