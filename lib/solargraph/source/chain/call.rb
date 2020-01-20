@@ -33,7 +33,11 @@ module Solargraph
         # @param name_pin [Pin::Base]
         # @param locals [Array<Pin::Base>]
         def resolve api_map, name_pin, locals
-          found = locals.select{|p| p.name == word}
+          found = if head?
+            locals.select { |p| p.name == word }
+          else
+            []
+          end
           return inferred_pins(found, api_map, name_pin.context, locals) unless found.empty?
           pins = api_map.get_method_stack(name_pin.binder.namespace, word, scope: name_pin.binder.scope)
           pins.concat api_map.get_method_stack('Kernel', word, scope: :instance) if head?

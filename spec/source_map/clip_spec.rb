@@ -1054,4 +1054,15 @@ describe Solargraph::SourceMap::Clip do
     clip = api_map.clip_at('test.rb', [6, 6])
     expect(clip.infer.tag).to eq('Array<String>')    
   end
+
+  it 'excludes local variables from chained call resolution' do
+    source = Solargraph::Source.load_string(%(
+      a = 1 # => Integer
+      a.a   # => undefined (Integer#a does not exist)
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new
+    api_map.map source
+    clip = api_map.clip_at('test.rb', [2, 9])
+    expect(clip.infer.tag).to eq('undefined')
+  end
 end

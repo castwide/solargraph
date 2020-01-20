@@ -18,6 +18,8 @@ module Solargraph
       # @return [Source::Chain]
       def chain
         links = generate_links(@node)
+        # @todo Smelly instance variable access
+        links.first.instance_variable_set(:@head, true) unless links.empty?
         Chain.new(links)
       end
 
