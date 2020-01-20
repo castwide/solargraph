@@ -17,7 +17,7 @@ module Solargraph
         expected.each do |exp|
           found = false
           inferred.each do |inf|
-            if api_map.super_and_sub?(*fuzz_pair(exp, inf))
+            if api_map.super_and_sub?(fuzz(exp), fuzz(inf))
               found = true
               matches.push inf
               break
@@ -29,7 +29,7 @@ module Solargraph
           next if matches.include?(inf)
           found = false
           expected.each do |exp|
-            if api_map.super_and_sub?(*fuzz_pair(exp, inf))
+            if api_map.super_and_sub?(fuzz(exp), fuzz(inf))
               found = true
               break
             end
@@ -37,29 +37,6 @@ module Solargraph
           return false unless found
         end
         true
-      end
-
-      # @param pin [Pin::Base]
-      def internal? pin
-        pin.location && api_map.source_map(pin.location.filename)
-      end
-
-      def external? pin
-        !internal? pin
-      end
-
-      # @param type1 [ComplexType]
-      # @param type2 [ComplexType]
-      # @return [String]
-      def fuzz_pair type1, type2
-        # if type1.name == 'Class' && type2.name == 'Class'
-        #   [
-        #     (type1.parameters? ? type1.namespace : 'Object'),
-        #     (type2.parameters? ? type2.namespace : 'Object')
-        #   ]
-        # else
-          [fuzz(type1), fuzz(type2)]
-        # end
       end
 
       # @param type [ComplexType]

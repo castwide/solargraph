@@ -37,6 +37,28 @@ module Solargraph
       @problems ||= begin
         method_tag_problems
           .concat variable_type_tag_problems
+          .concat call_problems
+      end
+    end
+
+    class << self
+      # @param filename [String]
+      # @return [self]
+      def load filename, level = :normal
+        source = Solargraph::Source.load(filename)
+        api_map = Solargraph::ApiMap.new
+        api_map.map(source)
+        new(filename, api_map: api_map, level: level)
+      end
+
+      # @param code [String]
+      # @param filename [String, nil]
+      # @return [self]
+      def load_string code, filename = nil, level = :normal
+        source = Solargraph::Source.load_string(code, filename)
+        api_map = Solargraph::ApiMap.new
+        api_map.map(source)
+        new(filename, api_map: api_map, level: level)
       end
     end
 
@@ -83,21 +105,21 @@ module Solargraph
       result
     end
 
-      # @param pin [Pin::BaseMethod]
-      # @return [Array<Problem>]
-      def method_param_type_problems_for pin
-        result = []
-        pin.docstring.tags(:param).each do |ptag|
-          unless ptag.types.nil? || ptag.types.empty?
-            type = ComplexType.try_parse(*ptag.types)
-            type.qualify(api_map, pin.context.namespace)
-            if type.undefined?
-              result.push Problem.new(pin.location, "Unresolved return type #{pin.return_type} for #{ptag.name} param on #{pin.path}", pin: pin)
-            end
+    # @param pin [Pin::BaseMethod]
+    # @return [Array<Problem>]
+    def method_param_type_problems_for pin
+      result = []
+      pin.docstring.tags(:param).each do |ptag|
+        unless ptag.types.nil? || ptag.types.empty?
+          type = ComplexType.try_parse(*ptag.types)
+          type.qualify(api_map, pin.context.namespace)
+          if type.undefined?
+            result.push Problem.new(pin.location, "Unresolved return type #{pin.return_type} for #{ptag.name} param on #{pin.path}", pin: pin)
           end
         end
-        result
       end
+      result
+    end
 
     # @return [Array<Problem>]
     def variable_type_tag_problems
@@ -124,11 +146,54 @@ module Solargraph
       result
     end
 
-    # @return [Array<Pin::BaseVariable]
+    # @return [Array<Pin::BaseVariable>]
     def all_variables
       source_map.pins.select { |pin| pin.is_a?(Pin::BaseVariable) } +
         source_map.locals.select { |pin| pin.is_a?(Pin::LocalVariable) }
     end
+
+    def call_problems
+      return [] unless rules.validate_calls?
+      result = []
+      Solargraph::Source::NodeMethods.call_nodes_from(source_map.source.node).each do |call|
+        chain = Solargraph::Source::NodeChainer.chain(call, filename)
+        block_pin = source_map.locate_block_pin(call.loc.expression.line, call.loc.expression.column)
+        location = Location.new(filename, Range.from_node(call))
+        locals = source_map.locals_at(location)
+        type = chain.infer(api_map, block_pin, locals)
+        if type.undefined?
+          base = chain
+          found = nil
+          until base.base.links.first.undefined?
+            found = base.base.define(api_map, block_pin, locals).first
+            break if found
+            base = base.base
+          end
+          if !found || internal?(found)
+            result.push Problem.new(location, "Unresolved call signature #{base.links.map(&:word).join('.')}")
+          end
+        end
+        result.concat argument_problems_for(chain)
+      end
+      result
+    end
+
+    def argument_problems_for chain
+      # @todo Argument validation
+      return []
+    end
+
+      # @param pin [Pin::Base]
+      def internal? pin
+        pin.location.nil? || api_map.bundled?(pin.location.filename)
+      end
+
+      # @param pin [Pin::Base]
+      def external? pin
+        !internal? pin
+      end
+
+    # @todo DEPRECATE BELOW
 
     # Return type problems indicate that a method does not specify a type in a
     # `@return` tag or the specified type could not be resolved to a known
@@ -467,27 +532,6 @@ module Solargraph
         child.is_a?(Parser::AST::Node) && (
           child.type == :send || (child.type == :block && more_signature?(child))
         )
-      end
-    end
-
-    class << self
-      # @param filename [String]
-      # @return [self]
-      def load filename, level = :normal
-        source = Solargraph::Source.load(filename)
-        api_map = Solargraph::ApiMap.new
-        api_map.map(source)
-        new(filename, api_map: api_map, level: level)
-      end
-
-      # @param code [String]
-      # @param filename [String, nil]
-      # @return [self]
-      def load_string code, filename = nil, level = :normal
-        source = Solargraph::Source.load_string(code, filename)
-        api_map = Solargraph::ApiMap.new
-        api_map.map(source)
-        new(filename, api_map: api_map, level: level)
       end
     end
   end

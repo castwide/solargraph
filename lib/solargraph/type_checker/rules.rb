@@ -33,6 +33,10 @@ module Solargraph
         rank > LEVELS[:normal]
       end
 
+      def validate_calls?
+        rank >= LEVELS[:strict]
+      end
+
       def validate_return_tags?
         rank > LEVELS[:normal]
       end
