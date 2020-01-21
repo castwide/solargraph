@@ -540,5 +540,24 @@ describe Solargraph::TypeChecker do
       expect(checker.problems).to be_one
       expect(checker.problems.first.message).to include('does not match')
     end
+
+    it 'qualifies param tags in declaration context' do
+      checker = Solargraph::TypeChecker.load_string(%(
+        module Container
+          class First
+          end
+
+          class Second
+            # @param one [First]
+            def self.take one
+            end
+          end
+        end
+
+        first = Container::First.new
+        Container::Second.take first
+      ), 'test.rb')
+      expect(checker.problems).to be_empty
+    end
   end
 end

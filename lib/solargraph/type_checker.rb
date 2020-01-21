@@ -293,7 +293,7 @@ module Solargraph
         result = {}
         tags.each do |tag|
           next if tag.types.nil? || tag.types.empty?
-          result[tag.name.to_s] = Solargraph::ComplexType.try_parse(*tag.types)
+          result[tag.name.to_s] = Solargraph::ComplexType.try_parse(*tag.types).qualify(api_map, pin.full_context.namespace)
         end
         return result
       end
