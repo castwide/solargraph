@@ -424,5 +424,71 @@ describe Solargraph::TypeChecker do
       expect(checker.problems).to be_one
       expect(checker.problems.first.message).to include('Wrong argument type')
     end
+
+    it 'validates untagged kwrestargs' do
+      checker = type_checker(%(
+        class Foo
+          def bar **baz
+          end
+        end
+        Foo.new.bar one: 'one', two: 2
+      ))
+      expect(checker.problems).to be_empty
+    end
+
+    it 'validates tagged kwrestargs' do
+      checker = type_checker(%(
+        class Foo
+          # @param one [String]
+          # @param two [Integer]
+          def bar **baz
+          end
+        end
+        Foo.new.bar one: 'one', two: 2
+      ))
+      expect(checker.problems).to be_empty
+    end
+
+    it 'reports mismatched kwrestargs' do
+      checker = type_checker(%(
+        class Foo
+          # @param one [String]
+          # @param two [Integer]
+          def bar **baz
+          end
+        end
+        Foo.new.bar one: 'one', two: 'two'
+      ))
+      expect(checker.problems).to be_one
+      expect(checker.problems.first.message).to include('Wrong argument type')
+      expect(checker.problems.first.message).to include('two')
+    end
+
+    it 'ignores undocumented blocks' do
+      checker = type_checker(%(
+        class Foo
+          def bar
+            yield if block_given?
+          end
+        end
+        Foo.new.bar do
+          puts 'block'
+        end
+      ))
+      expect(checker.problems).to be_empty
+    end
+
+    it 'ignores parameterized blocks' do
+      checker = type_checker(%(
+        class Foo
+          def bar &block
+          end
+        end
+        Foo.new.bar do
+          puts 'block'
+        end
+      ))
+      expect(checker.problems).to be_empty
+    end
   end
 end

@@ -197,7 +197,7 @@ module Solargraph
             full = pin.parameters[index]
             argchain = base.links.last.arguments[index]
             if argchain
-              if full.start_with?("#{name}:")
+              if full.start_with?("#{name}:") || full.start_with?('**')
                 result.concat kwarg_problems_for argchain, api_map, block_pin, locals, location, pin, params, index
                 break
               else
@@ -234,20 +234,40 @@ module Solargraph
       pin.parameter_names[first..-1].each_with_index do |pname, index|
         full = pin.parameters[index]
         argchain = kwargs[pname.to_sym]
-        if argchain
-          ptype = params[pname]
-          if ptype.nil?
-            # @todo Some level (strong, I guess) should require the param here
+        if full.start_with?('**')
+          result.concat kwrestarg_problems_for(api_map, block_pin, locals, location, pin, params, kwargs)
+        else
+          if argchain
+            ptype = params[pname]
+            if ptype.nil?
+              # @todo Some level (strong, I guess) should require the param here
+            else
+              argtype = argchain.infer(api_map, block_pin, locals)
+              if argtype.defined? && ptype && !any_types_match?(api_map, ptype, argtype)
+                result.push Problem.new(location, "Wrong argument type for #{pin.path}: #{pname} expected #{ptype}, received #{argtype}")
+              end
+            end
           else
-            argtype = argchain.infer(api_map, block_pin, locals)
-            if argtype.defined? && ptype && !any_types_match?(api_map, ptype, argtype)
-              result.push Problem.new(location, "Wrong argument type for #{pin.path}: #{pname} expected #{ptype}, received #{argtype}")
+            if full.end_with?(':')
+              # @todo Problem: missing required keyword argument
+              result.push Problem.new(location, "Call to #{pin.path} is missing keyword argument #{pname}")
             end
           end
+        end
+      end
+      result
+    end
+
+    def kwrestarg_problems_for(api_map, block_pin, locals, location, pin, params, kwargs)
+      result = []
+      kwargs.each_pair do |pname, argchain|
+        ptype = params[pname.to_s]
+        if ptype.nil?
+          # Probably nothing to do here. All of these args should be optional.
         else
-          if full.end_with?(':')
-            # @todo Problem: missing required keyword argument
-            result.push Problem.new(location, "Call to #{pin.path} is missing keyword argument #{pname}")
+          argtype = argchain.infer(api_map, block_pin, locals)
+          if argtype.defined? && ptype && !any_types_match?(api_map, ptype, argtype)
+            result.push Problem.new(location, "Wrong argument type for #{pin.path}: #{pname} expected #{ptype}, received #{argtype}")
           end
         end
       end
