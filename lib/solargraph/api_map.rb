@@ -222,10 +222,6 @@ module Solargraph
         visibility = [:public]
         visibility.push :private if fqns == context
         result.concat inner_get_constants(fqns, visibility, skip)
-        fqns = qualify(namespace, '')
-        visibility = [:public]
-        visibility.push :private if fqns == context
-        result.concat inner_get_constants(fqns, visibility, skip)
       end
       cache.set_constants(namespace, contexts, result)
       result
