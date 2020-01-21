@@ -344,7 +344,7 @@ describe Solargraph::SourceMap::Clip do
     expect(type.tag).to eq('String')
   end
 
-  it "infers undefined for empty methods" do
+  it "infers nil for empty methods" do
     source = Solargraph::Source.load_string(%(
       def foo; end
       foo
@@ -353,7 +353,7 @@ describe Solargraph::SourceMap::Clip do
     map.map source
     clip = map.clip_at('test.rb', Solargraph::Position.new(2, 6))
     type = clip.infer
-    expect(type).to be_undefined
+    expect(type.tag).to eq('nil')
   end
 
   it "handles missing type annotations in @type tags" do
@@ -900,7 +900,7 @@ describe Solargraph::SourceMap::Clip do
     clip = api_map.clip_at('test.rb', [8, 14])
     expect(clip.infer.to_s).to eq('String')
     clip = api_map.clip_at('test.rb', [9, 14])
-    expect(clip.infer).to be_undefined  
+    expect(clip.infer.tag).to eq('nil')
   end
 
   it 'follows scope gates' do
