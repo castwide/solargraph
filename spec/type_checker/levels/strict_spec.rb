@@ -33,9 +33,36 @@ describe Solargraph::TypeChecker do
       #   vendored code.
       checker = type_checker(%(
         require 'nokogiri'
-        Nokogiri::HTML.parse.undefined_call
+        Nokogiri::HTML.parse('code').undefined_call
       ))
       expect(checker.problems).to be_empty
+    end
+
+    it 'validates existing param tags' do
+      checker = type_checker(%(
+        class Foo
+          # @param baz [Integer]
+          def bar(baz)
+            'test'
+          end
+        end
+        Foo.new.bar(100)
+      ))
+      expect(checker.problems).to be_empty
+    end
+
+    it 'reports mismatched argument types' do
+      checker = type_checker(%(
+        class Foo
+          # @param baz [Integer]
+          def bar(baz)
+            'test'
+          end
+        end
+        Foo.new.bar('string')
+      ))
+      expect(checker.problems).to be_one
+      expect(checker.problems.first.message).to include('Wrong argument type')
     end
   end
 end

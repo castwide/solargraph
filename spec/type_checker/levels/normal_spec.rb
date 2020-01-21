@@ -233,5 +233,16 @@ describe Solargraph::TypeChecker do
       ))
       expect(checker.problems).to be_empty
     end
+
+    it 'ignores mismatched argument types' do
+      checker = type_checker(%(
+        class Foo
+          # @param baz [Integer]
+          def bar(baz); end
+        end
+        Foo.new.bar('string')
+      ))
+      expect(checker.problems).to be_empty
+    end
   end
 end

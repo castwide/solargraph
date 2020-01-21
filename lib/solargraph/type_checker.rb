@@ -177,19 +177,42 @@ module Solargraph
             result.push Problem.new(location, "Unresolved call signature #{base.links.map(&:word).join('.')}")
           end
         end
-        result.concat argument_problems_for(chain, api_map, block_pin, locals)
+        result.concat argument_problems_for(chain, api_map, block_pin, locals, location)
       end
       result
     end
 
-    def argument_problems_for chain, api_map, block_pin, locals
+    def argument_problems_for chain, api_map, block_pin, locals, location
       result = []
       base = chain
       until base.links.length == 1 && base.undefined?
         pins = base.define(api_map, block_pin, locals)
         if pins.first.is_a?(Pin::Method)
           pin = pins.first
-          params = first_param_tags(pins)
+          params = first_param_hash(pins)
+          args = base.links.last.arguments
+          pin.parameter_names.each_with_index do |name, index|
+            full = pin.parameters[index]
+            argchain = base.links.last.arguments[index]
+            if argchain
+              ptype = params[name]
+              if ptype.nil?
+                # @todo Some level (strong, I guess) should require the param here
+              else
+                argtype = argchain.infer(api_map, block_pin, locals)
+                if argtype.defined? && ptype && !types_match?(api_map, ptype, argtype)
+                  # @todo Problem location
+                  result.push Problem.new(location, "Wrong argument type for #{pin.path}: #{name} expected #{ptype}, received #{argtype}")
+                end
+              end
+            elsif full.start_with?('*') || full.start_with?('&') || full.include?('=')
+              next
+            else
+              # @todo Problem location
+              result.push Problem.new(location, "Not enough arguments to #{pin.path} (missing #{name})")
+              break
+            end
+          end
         end
         base = base.base
       end
@@ -197,12 +220,18 @@ module Solargraph
     end
 
     # @param [Array<Pin::Method>]
-    def first_param_tags(pins)
+    def first_param_hash(pins)
       pins.each do |pin|
         tags = pin.docstring.tags(:param)
-        return tags unless tags.empty?
+        next if tags.empty?
+        result = {}
+        tags.each do |tag|
+          next if tag.types.nil? || tag.types.empty?
+          result[tag.name.to_s] = Solargraph::ComplexType.try_parse(*tag.types)
+        end
+        return result
       end
-      []
+      {}
     end
 
     # @param pin [Pin::Base]
