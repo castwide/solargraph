@@ -399,5 +399,30 @@ describe Solargraph::TypeChecker do
       ))
       expect(checker.problems).to be_empty
     end
+
+    it 'validates duck types' do
+      checker = type_checker(%(
+        class Foo
+          # @param baz [#to_s]
+          def bar baz: ''
+          end
+        end
+        Foo.new.bar baz: String.new
+      ))
+      expect(checker.problems).to be_empty
+    end
+
+    it 'reports mismatched duck types' do
+      checker = type_checker(%(
+        class Foo
+          # @param baz [#unknown_method]
+          def bar baz: ''
+          end
+        end
+        Foo.new.bar baz: String.new
+      ))
+      expect(checker.problems).to be_one
+      expect(checker.problems.first.message).to include('Wrong argument type')
+    end
   end
 end

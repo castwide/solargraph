@@ -39,13 +39,33 @@ module Solargraph
         true
       end
 
+      # @param api_map [ApiMap]
+      # @param expected [ComplexType]
+      # @param inferred [ComplexType]
+      # @return [Boolean]
       def any_types_match? api_map, expected, inferred
+        return duck_types_match?(api_map, expected, inferred) if expected.duck_type?
         expected.each do |exp|
+          next if exp.duck_type?
           inferred.each do |inf|
             return true if api_map.super_and_sub?(fuzz(exp), fuzz(inf))
           end
         end
         false
+      end
+
+      # @param api_map [ApiMap]
+      # @param expected [ComplexType]
+      # @param inferred [ComplexType]
+      # @return [Boolean]
+      def duck_types_match? api_map, expected, inferred
+        raise ArgumentError, "Expected type must be duck type" unless expected.duck_type?
+        expected.each do |exp|
+          next unless exp.duck_type?
+          quack = exp.to_s[1..-1]
+          return false if api_map.get_method_stack(inferred.namespace, quack, scope: inferred.scope).empty?
+        end
+        true
       end
 
       # @param type [ComplexType]

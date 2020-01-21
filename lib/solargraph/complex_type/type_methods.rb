@@ -113,13 +113,13 @@ module Solargraph
           t.qualify api_map, context
         end
         if list_parameters?
-          Solargraph::ComplexType.parse("#{fqns}<#{rtypes.map(&:tag).join(', ')}>").first
+          Solargraph::ComplexType.parse("#{fqns}<#{rtypes.map(&:tag).join(', ')}>")
         elsif fixed_parameters?
-          Solargraph::ComplexType.parse("#{fqns}(#{rtypes.map(&:tag).join(', ')})").first
+          Solargraph::ComplexType.parse("#{fqns}(#{rtypes.map(&:tag).join(', ')})")
         elsif hash_parameters?
-          Solargraph::ComplexType.parse("#{fqns}{#{ltypes.map(&:tag).join(', ')} => #{rtypes.map(&:tag).join(', ')}}").first
+          Solargraph::ComplexType.parse("#{fqns}{#{ltypes.map(&:tag).join(', ')} => #{rtypes.map(&:tag).join(', ')}}")
         else
-          Solargraph::ComplexType.parse(fqns).first
+          Solargraph::ComplexType.parse(fqns)
         end
       end
     end
