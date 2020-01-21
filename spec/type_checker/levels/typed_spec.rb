@@ -40,9 +40,6 @@ describe Solargraph::TypeChecker do
     end
 
     it 'skips type inference for method macros' do
-      # @todo This test uses Nokogiri because it's a gem dependency known to
-      #   lack typed methods. A better test wouldn't depend on the state of
-      #   vendored code.
       checker = type_checker(%(
         # @!method bar
         #   @return [String]
@@ -52,9 +49,6 @@ describe Solargraph::TypeChecker do
     end
 
     it 'reports mismatched types for empty methods' do
-      # @todo This test uses Nokogiri because it's a gem dependency known to
-      #   lack typed methods. A better test wouldn't depend on the state of
-      #   vendored code.
       checker = type_checker(%(
         class Foo
           # @return [String]
