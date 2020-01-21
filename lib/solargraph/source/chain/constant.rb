@@ -10,7 +10,9 @@ module Solargraph
 
         def resolve api_map, name_pin, locals
           return [Pin::ROOT_PIN] if word.empty?
+          rooted = false
           if word.start_with?('::')
+            rooted = true
             bottom = ''
             gates = [word[2..-1].split('::')[0..-2].join('::')]
           else
@@ -18,7 +20,7 @@ module Solargraph
             gates = crawl_gates(name_pin)
           end
           result = api_map.get_constants(bottom, *gates)
-          result.select{ |p| p.path == word || "::#{p.path}" == word || p.path.end_with?("::#{word}") }
+          result.select{ |p| rooted ? p.path == word[2..-1] : p.path == word || "::#{p.path}" == word || p.path.end_with?("::#{word}") }
         end
 
         private
