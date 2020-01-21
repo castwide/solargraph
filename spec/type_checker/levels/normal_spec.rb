@@ -515,5 +515,30 @@ describe Solargraph::TypeChecker do
       expect(checker.problems.first.message).to include('Wrong argument type')
       expect(checker.problems.first.message).to include('named')
     end
+
+    it 'validates boolean return types' do
+      checker = type_checker(%(
+        class Foo
+          # @return [Boolean]
+          def bar
+            1 == 2
+          end
+        end
+      ))
+      expect(checker.problems).to be_empty
+    end
+
+    it 'reports mismatched boolean return types' do
+      checker = type_checker(%(
+        class Foo
+          # @return [Boolean]
+          def bar
+            'true'
+          end
+        end
+      ))
+      expect(checker.problems).to be_one
+      expect(checker.problems.first.message).to include('does not match')
+    end
   end
 end
