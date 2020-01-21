@@ -197,24 +197,68 @@ module Solargraph
             full = pin.parameters[index]
             argchain = base.links.last.arguments[index]
             if argchain
-              ptype = params[name]
-              if ptype.nil?
-                # @todo Some level (strong, I guess) should require the param here
+              if full.start_with?("#{name}:")
+                result.concat kwarg_problems_for argchain, api_map, block_pin, locals, location, pin, params, index
+                break
               else
-                argtype = argchain.infer(api_map, block_pin, locals)
-                if argtype.defined? && ptype && !types_match?(api_map, ptype, argtype)
-                  result.push Problem.new(location, "Wrong argument type for #{pin.path}: #{name} expected #{ptype}, received #{argtype}")
+                ptype = params[name]
+                if ptype.nil?
+                  # @todo Some level (strong, I guess) should require the param here
+                else
+                  argtype = argchain.infer(api_map, block_pin, locals)
+                  if argtype.defined? && ptype && !any_types_match?(api_map, ptype, argtype)
+                    result.push Problem.new(location, "Wrong argument type for #{pin.path}: #{name} expected #{ptype}, received #{argtype}")
+                  end
                 end
               end
             elsif full.start_with?('*') || full.start_with?('&') || full.include?('=')
               next
             else
-              result.push Problem.new(location, "Not enough arguments to #{pin.path} (missing #{name})")
+              if full.end_with?(":")
+                result.push Problem.new(location, "Call to #{pin.path} is missing keyword argument #{name}")
+              elsif !full.start_with?("#{name}:")
+                result.push Problem.new(location, "Not enough arguments to #{pin.path} (missing #{name})")
+              end
               break
             end
           end
         end
         base = base.base
+      end
+      result
+    end
+
+    def kwarg_problems_for argchain, api_map, block_pin, locals, location, pin, params, first
+      result = []
+      kwargs = convert_hash_node(argchain.node)
+      pin.parameter_names[first..-1].each_with_index do |pname, index|
+        full = pin.parameters[index]
+        argchain = kwargs[pname.to_sym]
+        if argchain
+          ptype = params[pname]
+          if ptype.nil?
+            # @todo Some level (strong, I guess) should require the param here
+          else
+            argtype = argchain.infer(api_map, block_pin, locals)
+            if argtype.defined? && ptype && !any_types_match?(api_map, ptype, argtype)
+              result.push Problem.new(location, "Wrong argument type for #{pin.path}: #{pname} expected #{ptype}, received #{argtype}")
+            end
+          end
+        else
+          if full.end_with?(':')
+            # @todo Problem: missing required keyword argument
+            result.push Problem.new(location, "Call to #{pin.path} is missing keyword argument #{pname}")
+          end
+        end
+      end
+      result
+    end
+
+    def convert_hash_node node
+      return {} unless node.type == :hash
+      result = {}
+      node.children.each do |pair|
+        result[pair.children[0].children[0]] = Solargraph::Source::NodeChainer.chain(pair.children[1])
       end
       result
     end

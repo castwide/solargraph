@@ -39,6 +39,15 @@ module Solargraph
         true
       end
 
+      def any_types_match? api_map, expected, inferred
+        expected.each do |exp|
+          inferred.each do |inf|
+            return true if api_map.super_and_sub?(fuzz(exp), fuzz(inf))
+          end
+        end
+        false
+      end
+
       # @param type [ComplexType]
       # @return [String]
       def fuzz type

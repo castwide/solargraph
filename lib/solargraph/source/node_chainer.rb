@@ -18,7 +18,7 @@ module Solargraph
       # @return [Source::Chain]
       def chain
         links = generate_links(@node)
-        Chain.new(links)
+        Chain.new(links, @node)
       end
 
       class << self
