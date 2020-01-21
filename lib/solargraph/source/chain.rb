@@ -23,8 +23,6 @@ module Solargraph
 
       @@inference_stack = []
       @@inference_depth = 0
-      @@last_api_map = nil
-      @@pin_cache = {}
 
       UNDEFINED_CALL = Chain::Call.new('<undefined>')
       UNDEFINED_CONSTANT = Chain::Constant.new('<undefined>')
@@ -123,9 +121,7 @@ module Solargraph
             # Avoid infinite recursion
             next if @@inference_stack.include?(pin)
             @@inference_stack.push pin
-            # puts "    Inferring #{pin.class} | #{pin.path} | #{pin.name} | #{pin.location ? pin.location.to_hash : pin.location}"
-            # type = pin.probe(api_map)
-            type = remember_or_probe(pin, api_map)
+            type = pin.probe(api_map)
             @@inference_stack.pop
             break if type.defined?
           end
@@ -162,12 +158,6 @@ module Solargraph
             pin.rebind ysct
           end
         end
-      end
-
-      def remember_or_probe pin, api_map
-        @@pin_cache.clear if @@last_api_map != api_map
-        @@last_api_map = api_map
-        @@pin_cache[pin] ||= pin.probe(api_map)
       end
     end
   end
