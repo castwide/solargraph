@@ -197,7 +197,7 @@ module Solargraph
             full = pin.parameters[index]
             argchain = base.links.last.arguments[index]
             if argchain
-              if full.start_with?("#{name}:") || full.start_with?('**')
+              if full.start_with?("#{name}:") || full.start_with?('**') || (full.end_with?('{}') && index == pin.parameter_names.length - 1)
                 result.concat kwarg_problems_for argchain, api_map, block_pin, locals, location, pin, params, index
                 break
               else
@@ -234,7 +234,7 @@ module Solargraph
       pin.parameter_names[first..-1].each_with_index do |pname, index|
         full = pin.parameters[index]
         argchain = kwargs[pname.to_sym]
-        if full.start_with?('**')
+        if full.start_with?('**') || full.end_with?('{}')
           result.concat kwrestarg_problems_for(api_map, block_pin, locals, location, pin, params, kwargs)
         else
           if argchain

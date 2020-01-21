@@ -490,5 +490,30 @@ describe Solargraph::TypeChecker do
       ))
       expect(checker.problems).to be_empty
     end
+
+    it 'ignores trailing optional hash parameters without tags' do
+      checker = type_checker(%(
+        class Foo
+          def bar opts = {}
+          end
+        end
+        Foo.new.bar one: 'one', two: 'two'
+      ))
+      expect(checker.problems).to be_empty
+    end
+
+    it 'reports mismatched params in trailing optional hash parameters' do
+      checker = type_checker(%(
+        class Foo
+          # @param named [String]
+          def bar opts = {}
+          end
+        end
+        Foo.new.bar named: 0
+      ))
+      expect(checker.problems).to be_one
+      expect(checker.problems.first.message).to include('Wrong argument type')
+      expect(checker.problems.first.message).to include('named')
+    end
   end
 end
