@@ -11,12 +11,22 @@ module Solargraph
     # @return [String]
     attr_reader :directory
 
+    # The require paths associated with the workspace.
+    #
+    # @return [Array<String>]
+    attr_reader :require_paths
+
+    # @return [Array<String>]
+    attr_reader :gemnames
+
     # @param directory [String]
     # @param config [Config, nil]
     def initialize directory = '', config = nil
       @directory = directory
       @config = config
       load_sources
+      @gemnames = []
+      @require_paths = generate_require_paths
     end
 
     # @return [Solargraph::Workspace::Config]
@@ -83,13 +93,6 @@ module Solargraph
     # @return [Solargraph::Source]
     def source filename
       source_hash[filename]
-    end
-
-    # The require paths associated with the workspace.
-    #
-    # @return [Array<String>]
-    def require_paths
-      @require_paths ||= generate_require_paths
     end
 
     # True if the path resolves to a file in the workspace's require paths.
@@ -164,6 +167,7 @@ module Solargraph
             # @type [Gem::Specification]
             spec = eval(File.read(file), binding, file)
             next unless Gem::Specification === spec
+            @gemnames.push spec.name
             result.concat(spec.require_paths.map { |path| File.join(base, path) })
           rescue Exception => e
             # Don't die if we have an error during eval-ing a gem spec.
