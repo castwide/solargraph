@@ -244,5 +244,17 @@ describe Solargraph::TypeChecker do
       ))
       expect(checker.problems).to be_empty
     end
+
+    it 'ignores undefined argument types' do
+      checker = type_checker(%(
+        class Foo
+          # @param baz [Integer]
+          # @return [String]
+          def bar(baz); end
+        end
+        Foo.new.bar(unknown_method)
+      ))
+      expect(checker.problems).to be_empty
+    end
   end
 end
