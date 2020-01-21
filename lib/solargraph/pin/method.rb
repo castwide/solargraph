@@ -74,8 +74,10 @@ module Solargraph
       # @param api_map [ApiMap]
       # @return [ComplexType]
       def infer_from_return_nodes api_map
+        return ComplexType::UNDEFINED if is_a?(Pin::YardPin::YardMixin)
         result = []
         has_nil = false
+        return ComplexType::NIL if method_body_node.nil?
         returns_from(method_body_node).each do |n|
           if n.nil? || n.type == :nil
             has_nil = true

@@ -44,7 +44,7 @@ describe Solargraph::TypeChecker do
         end
       ))
       expect(checker.problems).to be_one
-      expect(checker.problems.first.message).to include('could not be inferred')
+      expect(checker.problems.first.message).to include('does not match')
     end
   end
 end

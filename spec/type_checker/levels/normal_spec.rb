@@ -249,7 +249,6 @@ describe Solargraph::TypeChecker do
       checker = type_checker(%(
         class Foo
           # @param baz [Integer]
-          # @return [String]
           def bar(baz); end
         end
         Foo.new.bar(unknown_method)
