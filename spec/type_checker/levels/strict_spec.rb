@@ -16,7 +16,7 @@ describe Solargraph::TypeChecker do
         unknown_method
       ))
       expect(checker.problems).to be_one
-      expect(checker.problems.first.message).to include('Unresolved call signature')
+      expect(checker.problems.first.message).to include('Unresolved call')
     end
 
     it 'reports undefined method calls with defined roots' do
@@ -24,7 +24,8 @@ describe Solargraph::TypeChecker do
         String.new.not_a_method
       ))
       expect(checker.problems).to be_one
-      expect(checker.problems.first.message).to include('Unresolved call signature')
+      expect(checker.problems.first.message).to include('Unresolved call')
+      expect(checker.problems.first.message).to include('not_a_method')
     end
 
     it 'ignores undefined method calls from external sources' do

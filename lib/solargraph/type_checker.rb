@@ -166,14 +166,18 @@ module Solargraph
         type = chain.infer(api_map, block_pin, locals)
         if type.undefined? && !rules.ignore_all_undefined?
           base = chain
+          missing = chain
           found = nil
-          until base.base.links.first.undefined?
-            found = base.base.define(api_map, block_pin, locals).first
+          closest = ComplexType::UNDEFINED
+          until base.links.first.undefined?
+            found = base.define(api_map, block_pin, locals).first
             break if found
+            missing = base
             base = base.base
           end
-          if !found || internal?(found)
-            result.push Problem.new(location, "Unresolved call signature #{base.links.map(&:word).join('.')}")
+          closest = found.typify(api_map) if found
+          if !found || closest.defined? || internal?(found)
+            result.push Problem.new(location, "Unresolved call to #{missing.links.last.word}")
           end
         end
         result.concat argument_problems_for(chain, api_map, block_pin, locals, location)
@@ -189,7 +193,6 @@ module Solargraph
         if pins.first.is_a?(Pin::Method)
           pin = pins.first
           params = first_param_hash(pins)
-          args = base.links.last.arguments
           pin.parameter_names.each_with_index do |name, index|
             full = pin.parameters[index]
             argchain = base.links.last.arguments[index]
@@ -200,14 +203,12 @@ module Solargraph
               else
                 argtype = argchain.infer(api_map, block_pin, locals)
                 if argtype.defined? && ptype && !types_match?(api_map, ptype, argtype)
-                  # @todo Problem location
                   result.push Problem.new(location, "Wrong argument type for #{pin.path}: #{name} expected #{ptype}, received #{argtype}")
                 end
               end
             elsif full.start_with?('*') || full.start_with?('&') || full.include?('=')
               next
             else
-              # @todo Problem location
               result.push Problem.new(location, "Not enough arguments to #{pin.path} (missing #{name})")
               break
             end
@@ -235,7 +236,7 @@ module Solargraph
 
     # @param pin [Pin::Base]
     def internal? pin
-      pin.location.nil? || api_map.bundled?(pin.location.filename)
+      pin.location && api_map.bundled?(pin.location.filename)
     end
 
     # @param pin [Pin::Base]

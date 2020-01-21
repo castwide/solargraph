@@ -256,5 +256,14 @@ describe Solargraph::TypeChecker do
       ))
       expect(checker.problems).to be_empty
     end
+
+    it 'ignores untyped attributes' do
+      checker = type_checker(%(
+        class Foo
+          attr_accessor :bar
+        end
+      ))
+      expect(checker.problems).to be_empty
+    end
   end
 end
