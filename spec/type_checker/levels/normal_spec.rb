@@ -234,7 +234,7 @@ describe Solargraph::TypeChecker do
       expect(checker.problems).to be_empty
     end
 
-    it 'ignores mismatched argument types' do
+    it 'reports mismatched argument types' do
       checker = type_checker(%(
         class Foo
           # @param baz [Integer]
@@ -242,7 +242,8 @@ describe Solargraph::TypeChecker do
         end
         Foo.new.bar('string')
       ))
-      expect(checker.problems).to be_empty
+      expect(checker.problems).to be_one
+      expect(checker.problems.first.message).to include('Wrong argument type')
     end
 
     it 'ignores undefined argument types' do

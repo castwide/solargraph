@@ -157,7 +157,6 @@ module Solargraph
     end
 
     def call_problems
-      return [] unless rules.validate_calls?
       result = []
       Solargraph::Source::NodeMethods.call_nodes_from(source_map.source.node).each do |call|
         chain = Solargraph::Source::NodeChainer.chain(call, filename)
@@ -165,7 +164,7 @@ module Solargraph
         location = Location.new(filename, Range.from_node(call))
         locals = source_map.locals_at(location)
         type = chain.infer(api_map, block_pin, locals)
-        if type.undefined?
+        if type.undefined? && !rules.ignore_all_undefined?
           base = chain
           found = nil
           until base.base.links.first.undefined?
