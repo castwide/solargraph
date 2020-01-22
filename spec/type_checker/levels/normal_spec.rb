@@ -542,7 +542,7 @@ describe Solargraph::TypeChecker do
     end
 
     it 'qualifies param tags in declaration context' do
-      checker = Solargraph::TypeChecker.load_string(%(
+      checker = type_checker(%(
         module Container
           class First
           end
