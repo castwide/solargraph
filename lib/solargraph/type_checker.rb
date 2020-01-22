@@ -115,13 +115,21 @@ module Solargraph
     # @param pin [Pin::BaseMethod]
     # @return [Array<Problem>]
     def method_param_type_problems_for pin
+      params = param_hash(pin)
       result = []
-      pin.docstring.tags(:param).each do |ptag|
-        unless ptag.types.nil? || ptag.types.empty?
-          type = ComplexType.try_parse(*ptag.types).qualify(api_map, pin.full_context.namespace)
-          if type.undefined?
-            result.push Problem.new(pin.location, "Unresolved type #{ptag.types.join(',')} for #{ptag.name} param on #{pin.path}", pin: pin)
+      if rules.require_type_tags?
+        pin.parameter_names.each_with_index do |name, index|
+          full = pin.parameters[index]
+          break if full.start_with?('*') || full.start_with?('&')
+          unless params[name]
+            result.push Problem.new(pin.location, "Missing @param tag for #{name} on #{pin.path}", pin: pin)
           end
+        end
+      end
+      params.each_pair do |name, tag|
+        type = tag.qualify(api_map, pin.full_context.namespace)
+        if type.undefined?
+          result.push Problem.new(pin.location, "Unresolved type #{tag} for #{name} param on #{pin.path}", pin: pin)
         end
       end
       result
@@ -287,17 +295,22 @@ module Solargraph
       result
     end
 
+    def param_hash(pin)
+      tags = pin.docstring.tags(:param)
+      return {} if tags.empty?
+      result = {}
+      tags.each do |tag|
+        next if tag.types.nil? || tag.types.empty?
+        result[tag.name.to_s] = Solargraph::ComplexType.try_parse(*tag.types).qualify(api_map, pin.full_context.namespace)
+      end
+      result
+    end
+
     # @param [Array<Pin::Method>]
     def first_param_hash(pins)
       pins.each do |pin|
-        tags = pin.docstring.tags(:param)
-        next if tags.empty?
-        result = {}
-        tags.each do |tag|
-          next if tag.types.nil? || tag.types.empty?
-          result[tag.name.to_s] = Solargraph::ComplexType.try_parse(*tag.types).qualify(api_map, pin.full_context.namespace)
-        end
-        return result
+        result = param_hash(pin)
+        return result unless result.empty?
       end
       {}
     end
