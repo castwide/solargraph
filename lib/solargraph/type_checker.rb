@@ -82,7 +82,7 @@ module Solargraph
     # @return [Array<Problem>]
     def method_return_type_problems_for pin
       result = []
-      declared = pin.typify(api_map)
+      declared = pin.typify(api_map).self_to(pin.full_context.namespace)
       if declared.undefined?
         if pin.return_type.undefined? && rules.require_type_tags?
           result.push Problem.new(pin.location, "Missing @return tag for #{pin.path}", pin: pin)
