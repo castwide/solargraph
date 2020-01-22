@@ -93,7 +93,7 @@ module Solargraph
         end
       else
         unless declared.void? || pin.is_a?(Pin::Attribute) || macro_pin?(pin)
-          inferred = pin.probe(api_map)
+          inferred = pin.probe(api_map).self_to(pin.full_context.namespace)
           if inferred.undefined?
             unless rules.ignore_all_undefined? || external?(pin)
               result.push Problem.new(pin.location, "#{pin.path} return type could not be inferred", pin: pin)

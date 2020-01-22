@@ -556,7 +556,7 @@ describe Solargraph::TypeChecker do
 
         first = Container::First.new
         Container::Second.take first
-      ), 'test.rb')
+      ))
       expect(checker.problems).to be_empty
     end
   end

@@ -29,7 +29,7 @@ module Solargraph
               args: methpin.parameters
             )
             # @todo Smelly instance variable access.
-            pins.last.instance_variable_set(:@return_type, ComplexType.try_parse(region.closure.namespace))
+            pins.last.instance_variable_set(:@return_type, ComplexType::SELF)
             pins.push methpin
             # @todo Smelly instance variable access.
             methpin.instance_variable_set(:@visibility, :private)
