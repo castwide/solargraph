@@ -4,6 +4,8 @@ module Solargraph
   class SourceMap
     module NodeProcessor
       class DefNode < Base
+        NEW_METHOD_NODE = Solargraph::Source.parse('def new(*_); super; end')
+
         def process
           loc = get_node_location(node)
           methpin = Solargraph::Pin::Method.new(
@@ -22,6 +24,7 @@ module Solargraph
               closure: methpin.closure,
               name: 'new',
               comments: methpin.comments,
+              node: NEW_METHOD_NODE,
               scope: :class,
               args: methpin.parameters
             )
