@@ -210,18 +210,6 @@ describe Solargraph::TypeChecker do
       expect(checker.problems).to be_empty
     end
 
-    it 'reports mismatched argument types' do
-      checker = type_checker(%(
-        class Foo
-          # @param baz [Integer]
-          def bar(baz); end
-        end
-        Foo.new.bar('string')
-      ))
-      expect(checker.problems).to be_one
-      expect(checker.problems.first.message).to include('Wrong argument type')
-    end
-
     it 'ignores undefined argument types' do
       checker = type_checker(%(
         class Foo
@@ -268,20 +256,6 @@ describe Solargraph::TypeChecker do
       expect(checker.problems).to be_empty
     end
 
-    it 'reports missing keyword params' do
-      # @todo Skip for legacy Ruby
-      checker = type_checker(%(
-        class Foo
-          # @param baz [String]
-          def bar baz:
-          end
-        end
-        Foo.new.bar
-      ))
-      expect(checker.problems).to be_one
-      expect(checker.problems.first.message).to include('missing keyword argument')
-    end
-
     it 'validates optional keyword params' do
       checker = type_checker(%(
         class Foo
@@ -292,19 +266,6 @@ describe Solargraph::TypeChecker do
         Foo.new.bar baz: 'string'
       ))
       expect(checker.problems).to be_empty
-    end
-
-    it 'reports mismatched keyword arguments' do
-      checker = type_checker(%(
-        class Foo
-          # @param baz [String]
-          def bar baz: ''
-          end
-        end
-        Foo.new.bar baz: 100
-      ))
-      expect(checker.problems).to be_one
-      expect(checker.problems.first.message).to include('Wrong argument type')
     end
 
     it 'validates mixed arguments and kwargs' do
@@ -321,21 +282,6 @@ describe Solargraph::TypeChecker do
       expect(checker.problems).to be_empty
     end
 
-    it 'reports argument mismatches in mixed arguments and kwargs' do
-      checker = type_checker(%(
-        class Foo
-          # @param baz [String]
-          # @param quz [String]
-          def bar baz, quz: ''
-          end
-        end
-        Foo.new.bar 1, quz: 'two'
-      ))
-      expect(checker.problems).to be_one
-      expect(checker.problems.first.message).to include('Wrong argument type')
-      expect(checker.problems.first.message).to include('baz')
-    end
-
     it 'validates multiple optional kwargs' do
       checker = type_checker(%(
         class Foo
@@ -347,21 +293,6 @@ describe Solargraph::TypeChecker do
         Foo.new.bar quz: 'string'
       ))
       expect(checker.problems).to be_empty
-    end
-
-    it 'reports mismatches in multiple kwargs' do
-      checker = type_checker(%(
-        class Foo
-          # @param baz [String]
-          # @param quz [String]
-          def bar baz: '', quz: ''
-          end
-        end
-        Foo.new.bar quz: 100
-      ))
-      expect(checker.problems).to be_one
-      expect(checker.problems.first.message).to include('Wrong argument type')
-      expect(checker.problems.first.message).to include('quz')
     end
 
     it 'ignores untagged kwarg params' do
@@ -388,19 +319,6 @@ describe Solargraph::TypeChecker do
       expect(checker.problems).to be_empty
     end
 
-    it 'reports mismatched duck types' do
-      checker = type_checker(%(
-        class Foo
-          # @param baz [#unknown_method]
-          def bar baz: ''
-          end
-        end
-        Foo.new.bar baz: String.new
-      ))
-      expect(checker.problems).to be_one
-      expect(checker.problems.first.message).to include('Wrong argument type')
-    end
-
     it 'validates untagged kwrestargs' do
       checker = type_checker(%(
         class Foo
@@ -423,21 +341,6 @@ describe Solargraph::TypeChecker do
         Foo.new.bar one: 'one', two: 2
       ))
       expect(checker.problems).to be_empty
-    end
-
-    it 'reports mismatched kwrestargs' do
-      checker = type_checker(%(
-        class Foo
-          # @param one [String]
-          # @param two [Integer]
-          def bar **baz
-          end
-        end
-        Foo.new.bar one: 'one', two: 'two'
-      ))
-      expect(checker.problems).to be_one
-      expect(checker.problems.first.message).to include('Wrong argument type')
-      expect(checker.problems.first.message).to include('two')
     end
 
     it 'ignores undocumented blocks' do
@@ -478,20 +381,6 @@ describe Solargraph::TypeChecker do
       expect(checker.problems).to be_empty
     end
 
-    it 'reports mismatched params in trailing optional hash parameters' do
-      checker = type_checker(%(
-        class Foo
-          # @param named [String]
-          def bar opts = {}
-          end
-        end
-        Foo.new.bar named: 0
-      ))
-      expect(checker.problems).to be_one
-      expect(checker.problems.first.message).to include('Wrong argument type')
-      expect(checker.problems.first.message).to include('named')
-    end
-
     it 'ignores mismatched boolean return types' do
       checker = type_checker(%(
         class Foo
@@ -519,6 +408,17 @@ describe Solargraph::TypeChecker do
 
         first = Container::First.new
         Container::Second.take first
+      ))
+      expect(checker.problems).to be_empty
+    end
+
+    it 'ignores problems with call arguments' do
+      checker = type_checker(%(
+        class Foo
+          def bar arg
+          end
+        end
+        Foo.new.bar
       ))
       expect(checker.problems).to be_empty
     end

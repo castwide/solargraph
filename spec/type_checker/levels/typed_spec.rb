@@ -12,10 +12,8 @@ describe Solargraph::TypeChecker do
           end
         end
       ))
-      expect(checker.problems.length).to eq(2)
+      expect(checker.problems).to be_one
       expect(checker.problems.first.message).to include('could not be inferred')
-      expect(checker.problems.last.message).to include('Unresolved call')
-      expect(checker.problems.last.message).to include('unknown_method')
     end
 
     it 'ignores untyped methods with inferred types' do

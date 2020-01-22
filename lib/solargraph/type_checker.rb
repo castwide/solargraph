@@ -169,6 +169,7 @@ module Solargraph
     end
 
     def call_problems
+      return [] unless rules.validate_calls?
       result = []
       Solargraph::Source::NodeMethods.call_nodes_from(source_map.source.node).each do |call|
         chain = Solargraph::Source::NodeChainer.chain(call, filename)
