@@ -58,7 +58,7 @@ module Solargraph
             if here.scope == :instance
               return ComplexType.try_parse(here.context.namespace)
             else
-              return here.closure.return_type
+              return here.context
             end
           end
           here = here.closure
