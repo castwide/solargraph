@@ -26,7 +26,7 @@ module Solargraph
       end
 
       def ignore_all_undefined?
-        rank == LEVELS[:normal]
+        rank < LEVELS[:strict]
       end
 
       def validate_calls?
@@ -38,7 +38,7 @@ module Solargraph
       end
 
       def must_tag_or_infer?
-        rank > LEVELS[:normal]
+        rank > LEVELS[:typed]
       end
 
       def validate_tags?
