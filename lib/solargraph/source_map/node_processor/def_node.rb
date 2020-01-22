@@ -5,7 +5,6 @@ module Solargraph
     module NodeProcessor
       class DefNode < Base
         def process
-          loc = get_node_location(node)
           methpin = Solargraph::Pin::Method.new(
             location: get_node_location(node),
             closure: region.closure,
