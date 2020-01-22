@@ -224,4 +224,50 @@ describe Solargraph::Source::Chain do
     type = chain.infer(api_map, Solargraph::Pin::ROOT_PIN, [])
     expect(type.tag).to eq('Array')
   end
+
+  it 'infers the nearest constants first' do
+    source = Solargraph::Source.load_string(%(
+      module Outer
+        class String; end
+      end
+      module Outer
+        module Inner
+          def self.outer_string
+            String
+          end
+        end
+      end
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new
+    api_map.map source
+    closure = api_map.get_path_pins('Outer::Inner').first
+
+    outer_node = api_map.get_path_pins('Outer::Inner.outer_string').first.send(:method_body_node)
+    outer_chain = Solargraph::Source::NodeChainer.chain(outer_node)
+    outer_type = outer_chain.infer(api_map, closure, [])
+    expect(outer_type.tag).to eq('Class<Outer::String>')
+  end
+
+  it 'infers rooted constants' do
+    source = Solargraph::Source.load_string(%(
+      module Outer
+        class String; end
+      end
+      module Outer
+        module Inner
+          def self.core_string
+            ::String
+          end
+        end
+      end
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new
+    api_map.map source
+    closure = api_map.get_path_pins('Outer::Inner').first
+
+    core_node = api_map.get_path_pins('Outer::Inner.core_string').first.send(:method_body_node)
+    core_chain = Solargraph::Source::NodeChainer.chain(core_node)
+    core_type = core_chain.infer(api_map, closure, [])
+    expect(core_type.tag).to eq('Class<String>')
+  end
 end

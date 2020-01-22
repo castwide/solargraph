@@ -1091,4 +1091,23 @@ describe Solargraph::SourceMap::Clip do
     clip = api_map.clip_at('test.rb', [2, 9])
     expect(clip.infer.tag).to eq('undefined')
   end
+
+  it 'completes constants with the nearest pins' do
+    source = Solargraph::Source.load_string(%(
+      module Outer
+        class String
+          def self.dammit; end
+        end
+      end
+      module Outer
+        module Inner
+          Strin
+        end
+      end
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new
+    api_map.map source
+    clip = api_map.clip_at('test.rb', [8, 15])
+    expect(clip.complete.pins.first.path).to eq('Outer::String')
+  end
 end
