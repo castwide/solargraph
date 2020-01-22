@@ -92,7 +92,7 @@ module Solargraph
           result.push Problem.new(pin.location, "Untyped method #{pin.path} could not be inferred")
         end
       else
-        unless declared.void? || macro_pin?(pin)
+        unless declared.void? || pin.is_a?(Pin::Attribute) || macro_pin?(pin)
           inferred = pin.probe(api_map)
           if inferred.undefined?
             unless rules.ignore_all_undefined? || external?(pin)
@@ -100,7 +100,7 @@ module Solargraph
             end
           else
             unless types_match? api_map, declared, inferred
-              result.push Problem.new(pin.location, "Declared return type #{declared} does not match inferred type #{inferred}", pin: pin)
+              result.push Problem.new(pin.location, "Declared return type #{declared} does not match inferred type #{inferred} for #{pin.path}", pin: pin)
             end
           end
         end
