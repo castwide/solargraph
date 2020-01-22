@@ -91,7 +91,7 @@ module Solargraph
         elsif rules.must_tag_or_infer? && pin.probe(api_map).undefined?
           result.push Problem.new(pin.location, "Untyped method #{pin.path} could not be inferred")
         end
-      else
+      elsif rules.validate_tags?
         unless declared.void? || pin.is_a?(Pin::Attribute) || macro_pin?(pin)
           inferred = pin.probe(api_map).self_to(pin.full_context.namespace)
           if inferred.undefined?
@@ -118,9 +118,9 @@ module Solargraph
       result = []
       pin.docstring.tags(:param).each do |ptag|
         unless ptag.types.nil? || ptag.types.empty?
-          type = ComplexType.try_parse(*ptag.types)
+          type = ComplexType.try_parse(*ptag.types).qualify(api_map, pin.full_context.namespace)
           if type.undefined?
-            result.push Problem.new(pin.location, "Unresolved return type #{pin.return_type} for #{ptag.name} param on #{pin.path}", pin: pin)
+            result.push Problem.new(pin.location, "Unresolved type #{ptag.types.join(',')} for #{ptag.name} param on #{pin.path}", pin: pin)
           end
         end
       end
@@ -134,17 +134,19 @@ module Solargraph
         if pin.return_type.defined?
           declared = pin.typify(api_map)
           if declared.defined?
-            inferred = pin.probe(api_map)
-            if inferred.undefined?
-              next if rules.ignore_all_undefined?
-              next unless internal?(pin) # @todo This might be redundant for variables
-              result.push Problem.new(pin.location, "Variable type could not be inferred for #{pin.name}", pin: pin)
-            else
-              unless types_match? api_map, declared, inferred
-                result.push Problem.new(pin.location, "Declared type #{declared} does not match inferred type #{inferred} for variable #{pin.name}", pin: pin)
+            if rules.validate_tags?
+              inferred = pin.probe(api_map)
+              if inferred.undefined?
+                next if rules.ignore_all_undefined?
+                next unless internal?(pin) # @todo This might be redundant for variables
+                result.push Problem.new(pin.location, "Variable type could not be inferred for #{pin.name}", pin: pin)
+              else
+                unless types_match? api_map, declared, inferred
+                  result.push Problem.new(pin.location, "Declared type #{declared} does not match inferred type #{inferred} for variable #{pin.name}", pin: pin)
+                end
               end
             end
-          else
+          elsif !pin.is_a?(Pin::Parameter)
             result.push Problem.new(pin.location, "Unresolved type #{pin.return_type} for variable #{pin.name}", pin: pin)
           end
         end
