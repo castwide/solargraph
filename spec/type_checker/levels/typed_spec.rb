@@ -57,5 +57,15 @@ describe Solargraph::TypeChecker do
       ))
       expect(checker.problems).to be_one
     end
+
+    it 'ignores attributes with return tags' do
+      checker = type_checker(%(
+        class Foo
+          # @return [Integer]
+          attr_reader :bar
+        end
+      ))
+      expect(checker.problems).to be_empty
+    end
   end
 end
