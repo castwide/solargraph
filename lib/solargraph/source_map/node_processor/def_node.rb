@@ -7,7 +7,6 @@ module Solargraph
         NEW_METHOD_NODE = Solargraph::Source.parse('def new(*_); super; end')
 
         def process
-          loc = get_node_location(node)
           methpin = Solargraph::Pin::Method.new(
             location: get_node_location(node),
             closure: region.closure,
