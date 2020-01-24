@@ -258,11 +258,9 @@ module Solargraph
       result = []
       (spec.dependencies - spec.development_dependencies).each do |dep|
         begin
-          if @source_gems.include?(dep.name)
-            next
-          end
+          next if @source_gems.include?(dep.name) || @gem_paths.key?(dep.name)
           depspec = Gem::Specification.find_by_name(dep.name)
-          next if depspec.nil? || @gem_paths.key?(depspec.name)
+          next if depspec.nil?
           @gem_paths[depspec.name] = depspec.full_gem_path
           gy = yardoc_file_for_spec(depspec)
           if gy.nil?
