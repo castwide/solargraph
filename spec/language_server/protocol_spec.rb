@@ -440,6 +440,24 @@ describe Protocol do
     expect(response['result'].first['newText']).to be_a(String)
   end
 
+  it "can format file without file extension" do
+    @protocol.request 'textDocument/didOpen', {
+      'textDocument' => {
+        'uri' => Solargraph::LanguageServer::UriHelpers.file_to_uri(File.realpath('spec/fixtures/formattable')),
+        'text' => File.read('spec/fixtures/formattable'),
+        'version' => 1
+      }
+    }
+    @protocol.request 'textDocument/formatting', {
+      'textDocument' => {
+        'uri' => Solargraph::LanguageServer::UriHelpers.file_to_uri(File.realpath('spec/fixtures/formattable'))
+      }
+    }
+    response = @protocol.response
+    expect(response['error']).to be_nil
+    expect(response['result'].first['newText'].each_line.first).to eq("# frozen_string_literal: true\n")
+  end
+
   it "handles $/solargraph/downloadCore" do
     stub_request(:get, "https://solargraph.org/download/versions.json").
       with(
