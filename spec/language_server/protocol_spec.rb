@@ -456,11 +456,12 @@ describe Protocol do
     response = @protocol.response
     expect(response['error']).to be_nil
     # RuboCop does not apply frozen_string_literal in Ruby < 2.3
-    if RUBY_VERSION =~ /^2\.(1|2)\./
-      expect(response['result'].first['newText'].each_line.first).to eq("class Foobar\n")
+    first = if RUBY_VERSION =~ /^2\.(1|2)\./
+      "class Foobar\n"
     else
-      expect(response['result'].first['newText'].each_line.first).to eq("# frozen_string_literal: true\n")
+      "# frozen_string_literal: true\n"
     end
+    expect(response['result'].first['newText'].each_line.first).to eq(first)
   end
 
   it "handles $/solargraph/downloadCore" do
