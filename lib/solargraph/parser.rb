@@ -18,7 +18,9 @@ module Solargraph
     end
 
     selected = rubyvm? ? Rubyvm : Legacy
-    include selected
+    # include selected
     extend selected::ClassMethods
+
+    NodeMethods = (rubyvm? ? Rubyvm::NodeMethods : Legacy::NodeMethods)
   end
 end

@@ -3,7 +3,7 @@
 module Solargraph
   module Pin
     class Method < BaseMethod
-      # include Source::NodeMethods
+      include Solargraph::Parser::NodeMethods
 
       # @return [Array<String>]
       attr_reader :parameters
@@ -90,7 +90,7 @@ module Solargraph
         result = []
         has_nil = false
         return ComplexType::NIL if method_body_node.nil?
-        Parser.returns_from(method_body_node).each do |n|
+        returns_from(method_body_node).each do |n|
           if n.nil? || [:NIL, :nil].include?(n.type)
             has_nil = true
             next

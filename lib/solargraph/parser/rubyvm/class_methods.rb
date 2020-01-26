@@ -29,15 +29,15 @@ module Solargraph
           NodeProcessor.process(source.node, Region.new(source: source))
         end
 
-        def returns_from node
-          return [] unless Parser.is_ast_node?(node)
-          if node.type == :SCOPE
-            # node.children.select { |n| n.is_a?(RubyVM::AbstractSyntaxTree::Node) }.map { |n| DeepInference.get_return_nodes(n) }.flatten
-            DeepInference.get_return_nodes(node.children[2])
-          else
-            DeepInference.get_return_nodes(node)
-          end
-        end
+        # def returns_from node
+        #   return [] unless Parser.is_ast_node?(node)
+        #   if node.type == :SCOPE
+        #     # node.children.select { |n| n.is_a?(RubyVM::AbstractSyntaxTree::Node) }.map { |n| DeepInference.get_return_nodes(n) }.flatten
+        #     DeepInference.get_return_nodes(node.children[2])
+        #   else
+        #     DeepInference.get_return_nodes(node)
+        #   end
+        # end
 
         def references source, name
           inner_node_references(name, source.node).map do |n|
@@ -159,104 +159,104 @@ module Solargraph
           result
         end
 
-        module DeepInference
-          class << self
-            CONDITIONAL = [:IF, :UNLESS]
-            REDUCEABLE = [:BLOCK]
-            SKIPPABLE = [:DEFN, :DEFS, :CLASS, :SCLASS, :MODULE]
+        # module DeepInference
+        #   class << self
+        #     CONDITIONAL = [:IF, :UNLESS]
+        #     REDUCEABLE = [:BLOCK]
+        #     SKIPPABLE = [:DEFN, :DEFS, :CLASS, :SCLASS, :MODULE]
 
-            # @param node [Parser::AST::Node]
-            # @return [Array<Parser::AST::Node>]
-            def get_return_nodes node
-              return [] unless node.is_a?(RubyVM::AbstractSyntaxTree::Node)
-              result = []
-              if REDUCEABLE.include?(node.type)
-                result.concat get_return_nodes_from_children(node)
-              elsif CONDITIONAL.include?(node.type)
-                result.concat reduce_to_value_nodes(node.children[1..-1])
-              elsif node.type == :AND || node.type == :OR
-                result.concat reduce_to_value_nodes(node.children)
-              elsif node.type == :RETURN
-                result.concat reduce_to_value_nodes([node.children[0]])
-              elsif node.type == :ITER
-                result.push node
-                result.concat get_return_nodes_only(node.children[1])
-              else
-                result.push node
-              end
-              result
-            end
+        #     # @param node [Parser::AST::Node]
+        #     # @return [Array<Parser::AST::Node>]
+        #     def get_return_nodes node
+        #       return [] unless node.is_a?(RubyVM::AbstractSyntaxTree::Node)
+        #       result = []
+        #       if REDUCEABLE.include?(node.type)
+        #         result.concat get_return_nodes_from_children(node)
+        #       elsif CONDITIONAL.include?(node.type)
+        #         result.concat reduce_to_value_nodes(node.children[1..-1])
+        #       elsif node.type == :AND || node.type == :OR
+        #         result.concat reduce_to_value_nodes(node.children)
+        #       elsif node.type == :RETURN
+        #         result.concat reduce_to_value_nodes([node.children[0]])
+        #       elsif node.type == :ITER
+        #         result.push node
+        #         result.concat get_return_nodes_only(node.children[1])
+        #       else
+        #         result.push node
+        #       end
+        #       result
+        #     end
 
-            private
+        #     private
 
-            def get_return_nodes_from_children parent
-              result = []
-              nodes = parent.children.select{|n| n.is_a?(RubyVM::AbstractSyntaxTree::Node)}
-              nodes.each_with_index do |node, idx|
-                if node.type == :BLOCK
-                  result.concat get_return_nodes_only(node.children[2])
-                elsif SKIPPABLE.include?(node.type)
-                  next
-                elsif CONDITIONAL.include?(node.type)
-                  result.concat get_return_nodes_only(node)
-                elsif node.type == :RETURN
-                  result.concat reduce_to_value_nodes([node.children[0]])
-                  # Return the result here because the rest of the code is
-                  # unreachable
-                  return result
-                else
-                  result.concat get_return_nodes_only(node)
-                end
-                result.concat reduce_to_value_nodes([nodes.last]) if idx == nodes.length - 1
-              end
-              result
-            end
+        #     def get_return_nodes_from_children parent
+        #       result = []
+        #       nodes = parent.children.select{|n| n.is_a?(RubyVM::AbstractSyntaxTree::Node)}
+        #       nodes.each_with_index do |node, idx|
+        #         if node.type == :BLOCK
+        #           result.concat get_return_nodes_only(node.children[2])
+        #         elsif SKIPPABLE.include?(node.type)
+        #           next
+        #         elsif CONDITIONAL.include?(node.type)
+        #           result.concat get_return_nodes_only(node)
+        #         elsif node.type == :RETURN
+        #           result.concat reduce_to_value_nodes([node.children[0]])
+        #           # Return the result here because the rest of the code is
+        #           # unreachable
+        #           return result
+        #         else
+        #           result.concat get_return_nodes_only(node)
+        #         end
+        #         result.concat reduce_to_value_nodes([nodes.last]) if idx == nodes.length - 1
+        #       end
+        #       result
+        #     end
 
-            def get_return_nodes_only parent
-              return [] unless parent.is_a?(RubyVM::AbstractSyntaxTree::Node)
-              result = []
-              nodes = parent.children.select{|n| n.is_a?(RubyVM::AbstractSyntaxTree::Node)}
-              nodes.each do |node|
-                next if SKIPPABLE.include?(node.type)
-                if node.type == :RETURN
-                  result.concat reduce_to_value_nodes([node.children[0]])
-                  # Return the result here because the rest of the code is
-                  # unreachable
-                  return result
-                else
-                  result.concat get_return_nodes_only(node)
-                end
-              end
-              result
-            end
+        #     def get_return_nodes_only parent
+        #       return [] unless parent.is_a?(RubyVM::AbstractSyntaxTree::Node)
+        #       result = []
+        #       nodes = parent.children.select{|n| n.is_a?(RubyVM::AbstractSyntaxTree::Node)}
+        #       nodes.each do |node|
+        #         next if SKIPPABLE.include?(node.type)
+        #         if node.type == :RETURN
+        #           result.concat reduce_to_value_nodes([node.children[0]])
+        #           # Return the result here because the rest of the code is
+        #           # unreachable
+        #           return result
+        #         else
+        #           result.concat get_return_nodes_only(node)
+        #         end
+        #       end
+        #       result
+        #     end
 
-            def reduce_to_value_nodes nodes
-              result = []
-              nodes.each do |node|
-                if !node.is_a?(RubyVM::AbstractSyntaxTree::Node)
-                  result.push nil
-                elsif REDUCEABLE.include?(node.type)
-                  result.concat get_return_nodes_from_children(node)
-                elsif CONDITIONAL.include?(node.type)
-                  result.concat reduce_to_value_nodes(node.children[1..-1])
-                elsif node.type == :RETURN
-                  if node.children[0].nil?
-                    result.push nil
-                  else
-                    result.concat get_return_nodes(node.children[0])
-                  end
-                elsif node.type == :AND || node.type == :OR
-                  result.concat reduce_to_value_nodes(node.children)
-                elsif node.type == :BLOCK
-                  result.concat get_return_nodes_only(node.children[2])
-                else
-                  result.push node
-                end
-              end
-              result
-            end
-          end
-        end
+        #     def reduce_to_value_nodes nodes
+        #       result = []
+        #       nodes.each do |node|
+        #         if !node.is_a?(RubyVM::AbstractSyntaxTree::Node)
+        #           result.push nil
+        #         elsif REDUCEABLE.include?(node.type)
+        #           result.concat get_return_nodes_from_children(node)
+        #         elsif CONDITIONAL.include?(node.type)
+        #           result.concat reduce_to_value_nodes(node.children[1..-1])
+        #         elsif node.type == :RETURN
+        #           if node.children[0].nil?
+        #             result.push nil
+        #           else
+        #             result.concat get_return_nodes(node.children[0])
+        #           end
+        #         elsif node.type == :AND || node.type == :OR
+        #           result.concat reduce_to_value_nodes(node.children)
+        #         elsif node.type == :BLOCK
+        #           result.concat get_return_nodes_only(node.children[2])
+        #         else
+        #           result.push node
+        #         end
+        #       end
+        #       result
+        #     end
+        #   end
+        # end
       end
     end
   end

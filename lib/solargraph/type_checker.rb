@@ -10,7 +10,6 @@ module Solargraph
     autoload :Checks,   'solargraph/type_checker/checks'
 
     include Checks
-
     include Parser::NodeMethods
 
     # @return [String]
@@ -122,7 +121,7 @@ module Solargraph
       if rules.require_type_tags?
         pin.parameter_names.each_with_index do |name, index|
           full = pin.parameters[index]
-          break if full.start_with?('*') || full.start_with?('&')
+          break if full.decl == :restarg || full.decl == :kwrestarg || full.decl == :blockarg
           unless params[name]
             result.push Problem.new(pin.location, "Missing @param tag for #{name} on #{pin.path}", pin: pin)
           end
@@ -248,11 +247,12 @@ module Solargraph
 
     def kwarg_problems_for argchain, api_map, block_pin, locals, location, pin, params, first
       result = []
-      kwargs = convert_hash_node(argchain.node)
+      kwargs = convert_hash(argchain.node)
       pin.parameter_names[first..-1].each_with_index do |pname, index|
         full = pin.parameters[index]
         argchain = kwargs[pname.to_sym]
-        if full.start_with?('**') || full.end_with?('{}')
+        # if full.start_with?('**') || full.end_with?('{}')
+        if full.decl == :kwrestarg
           result.concat kwrestarg_problems_for(api_map, block_pin, locals, location, pin, params, kwargs)
         else
           if argchain
@@ -266,7 +266,8 @@ module Solargraph
               end
             end
           else
-            if full.end_with?(':')
+            # if full.end_with?(':')
+            if full.decl == :kwarg
               # @todo Problem: missing required keyword argument
               result.push Problem.new(location, "Call to #{pin.path} is missing keyword argument #{pname}")
             end
@@ -368,15 +369,6 @@ module Solargraph
             result.push Problem.new(location, "Wrong argument type for #{pin.path}: #{pname} expected #{ptype}, received #{argtype}")
           end
         end
-      end
-      result
-    end
-
-    def convert_hash_node node
-      return {} unless node.type == :hash
-      result = {}
-      node.children.each do |pair|
-        result[pair.children[0].children[0]] = Solargraph::Source::NodeChainer.chain(pair.children[1])
       end
       result
     end

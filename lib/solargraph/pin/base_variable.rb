@@ -3,6 +3,7 @@
 module Solargraph
   module Pin
     class BaseVariable < Base
+      include Solargraph::Parser::NodeMethods
       # include Solargraph::Source::NodeMethods
 
       # @return [Parser::AST::Node, nil]
@@ -38,7 +39,7 @@ module Solargraph
       def probe api_map
         return ComplexType::UNDEFINED if @assignment.nil?
         types = []
-        Parser.returns_from(@assignment).each do |node|
+        returns_from(@assignment).each do |node|
           # Nil nodes may not have a location
           if node.nil? || node.type == :NIL || node.type == :nil
             types.push ComplexType::NIL
