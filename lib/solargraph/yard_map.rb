@@ -21,14 +21,21 @@ module Solargraph
       @@stdlib_paths ||= begin
         result = {}
         YARD::Registry.load! CoreDocs.yardoc_stdlib_file
-        YARD::Registry.all(:class, :module).each do |ns|
-          next if ns.nil? || ns.file.nil?
-          path = ns.file.sub(/^(ext|lib)\//, '').sub(/\.(rb|c)$/, '')
-          next if path.start_with?('-')
+        # YARD::Registry.all(:class, :module).each do |ns|
+        #   next if ns.nil? || ns.file.nil?
+        #   path = ns.file.sub(/^(ext|lib)\//, '').sub(/\.(rb|c)$/, '')
+        #   next if path.start_with?('-')
+        #   base = path.split('/').first
+        #   result[base] ||= {}
+        #   result[base][path] ||= []
+        #   result[base][path].push ns
+        # end
+        YARD::Registry.all.each do |co|
+          next if co.file.nil?
+          path = co.file.sub(/^(ext|lib)\//, '').sub(/\.(rb|c)$/, '')
           base = path.split('/').first
-          result[base] ||= {}
-          result[base][path] ||= []
-          result[base][path].push ns
+          result[base] ||= []
+          result[base].push co
         end
         result
       end
@@ -188,7 +195,7 @@ module Solargraph
     def process_requires
       pins.clear
       unresolved_requires.clear
-      stdnames = {}
+      # stdnames = {}
       done = []
       from_std = []
       required.each do |r|
@@ -225,18 +232,18 @@ module Solargraph
           stdtmp = []
           ser = File.join(File.dirname(CoreDocs.yardoc_stdlib_file), "#{base}.ser")
           if File.file?(ser)
-            STDERR.puts "Loading stdlib #{base} from serial"
             file = File.open(ser, 'rb')
             dump = file.read
             file.close
             stdtmp.concat Marshal.load(dump)
           else
             if stdlib_paths[base]
-              stdlib_paths[base].each_pair do |path, objects|
-                if path == r || path.start_with?("#{r}/")
-                  stdtmp.concat objects
-                end
-              end
+              # stdlib_paths[base].each_pair do |path, objects|
+              #   if path == r || path.start_with?("#{r}/")
+              #     stdtmp.concat objects
+              #   end
+              # end
+              stdtmp.concat Mapper.new(stdlib_paths[base]).map
               next if stdtmp.empty?
               dump = Marshal.dump(stdtmp)
               file = File.open(ser, 'wb')
@@ -247,7 +254,9 @@ module Solargraph
           if stdtmp.empty?
             unresolved_requires.push r
           else
-            stdnames[r] = stdtmp
+            stdlib_fill base, stdtmp
+            result.concat stdtmp
+            # stdnames[r] = stdtmp
           end
         end
         result.delete_if(&:nil?)
@@ -256,34 +265,34 @@ module Solargraph
           pins.concat result
         end
       end
-      pins.concat process_stdlib(stdnames)
+      # pins.concat process_stdlib(stdnames)
       pins.concat core_pins
     end
 
     # @param required_namespaces [Array<YARD::CodeObjects::Namespace>]
     # @return [Array<Solargraph::Pin::Base>]
-    def process_stdlib required_namespaces
-      pins = []
-      unless required_namespaces.empty?
-        yard = load_yardoc CoreDocs.yardoc_stdlib_file
-        done = []
-        required_namespaces.each_pair do |r, objects|
-          result = []
-          objects.each do |ns|
-            next if done.include?(ns.path)
-            done.push ns.path
-            all = [ns]
-            all.concat recurse_namespace_object(ns)
-            result.concat Mapper.new(all).map
-          end
-          result.delete_if(&:nil?)
-          stdlib_fill r, result
-          cache.set_path_pins(r, result) unless result.empty?
-          pins.concat result
-        end
-      end
-      pins
-    end
+    # def process_stdlib required_namespaces
+    #   pins = []
+    #   unless required_namespaces.empty?
+    #     yard = load_yardoc CoreDocs.yardoc_stdlib_file
+    #     done = []
+    #     required_namespaces.each_pair do |r, objects|
+    #       result = []
+    #       objects.each do |ns|
+    #         next if done.include?(ns.path)
+    #         done.push ns.path
+    #         all = [ns]
+    #         all.concat recurse_namespace_object(ns)
+    #         result.concat Mapper.new(all).map
+    #       end
+    #       result.delete_if(&:nil?)
+    #       stdlib_fill r, result
+    #       cache.set_path_pins(r, result) unless result.empty?
+    #       pins.concat result
+    #     end
+    #   end
+    #   pins
+    # end
 
     # @param spec [Gem::Specification]
     # @return [void]
@@ -320,12 +329,28 @@ module Solargraph
       size = Dir.glob(File.join(y, '**', '*'))
         .map{ |f| File.size(f) }
         .inject(:+)
+      if spec
+        ser = File.join(CoreDocs.cache_dir, 'gems', "#{spec.name}-#{spec.version}.ser")
+        if File.file?(ser)
+          file = File.open(ser, 'rb')
+          dump = file.read
+          file.close
+          return Marshal.load(dump)
+        end
+      end
       if !size.nil? && size > 20_000_000
         Solargraph::Logging.logger.warn "Yardoc at #{y} is too large to process (#{size} bytes)"
         return []
       end
       load_yardoc y
-      Mapper.new(YARD::Registry.all, spec).map
+      result = Mapper.new(YARD::Registry.all, spec).map
+      if spec
+        ser = File.join(CoreDocs.cache_dir, 'gems', "#{spec.name}-#{spec.version}.ser")
+        file = File.open(ser, 'wb')
+        file.write Marshal.dump(result)
+        file.close
+      end
+      result
     end
 
     # @param spec [Gem::Specification]
