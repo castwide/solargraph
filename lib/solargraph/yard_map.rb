@@ -223,12 +223,14 @@ module Solargraph
           stdtmp = []
           ser = File.join(File.dirname(CoreDocs.yardoc_stdlib_file), "#{base}.ser")
           if File.file?(ser)
+            Solargraph.logger.info "Loading #{base} stdlib from cache"
             file = File.open(ser, 'rb')
             dump = file.read
             file.close
             stdtmp.concat Marshal.load(dump)
           else
             if stdlib_paths[base]
+              Solargraph.logger.info "Loading #{base} stdlib from yardoc"
               stdtmp.concat Mapper.new(stdlib_paths[base]).map
               next if stdtmp.empty?
               dump = Marshal.dump(stdtmp)
@@ -293,6 +295,7 @@ module Solargraph
       if spec
         ser = File.join(CoreDocs.cache_dir, 'gems', "#{spec.name}-#{spec.version}.ser")
         if File.file?(ser)
+          Solargraph.logger.info "Loading #{spec.name} #{spec.version} from cache"
           file = File.open(ser, 'rb')
           dump = file.read
           file.close
@@ -304,6 +307,7 @@ module Solargraph
         return []
       end
       load_yardoc y
+      Solargraph.logger.info "Loading #{spec.name} #{spec.version} from yardoc"
       result = Mapper.new(YARD::Registry.all, spec).map
       if spec
         ser = File.join(CoreDocs.cache_dir, 'gems', "#{spec.name}-#{spec.version}.ser")
