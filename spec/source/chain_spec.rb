@@ -243,7 +243,7 @@ describe Solargraph::Source::Chain do
     closure = api_map.get_path_pins('Outer::Inner').first
 
     outer_node = api_map.get_path_pins('Outer::Inner.outer_string').first.send(:method_body_node)
-    outer_chain = Solargraph::Source::NodeChainer.chain(outer_node)
+    outer_chain = Solargraph::Parser.chain(outer_node)
     outer_type = outer_chain.infer(api_map, closure, [])
     expect(outer_type.tag).to eq('Class<Outer::String>')
   end
@@ -266,7 +266,7 @@ describe Solargraph::Source::Chain do
     closure = api_map.get_path_pins('Outer::Inner').first
 
     core_node = api_map.get_path_pins('Outer::Inner.core_string').first.send(:method_body_node)
-    core_chain = Solargraph::Source::NodeChainer.chain(core_node)
+    core_chain = Solargraph::Parser.chain(core_node)
     core_type = core_chain.infer(api_map, closure, [])
     expect(core_type.tag).to eq('Class<String>')
   end
