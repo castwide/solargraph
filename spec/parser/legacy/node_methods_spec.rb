@@ -44,26 +44,6 @@ unless Solargraph::Parser.rubyvm?
       expect(Solargraph::Parser::Legacy::NodeMethods.infer_literal_node_type(false_ast)).to eq '::Boolean'
     end
 
-    it "unpacks a multi-part constant" do
-      ast = Parser::CurrentRuby.parse("class Foo::Bar;end")
-      expect(Solargraph::Parser::Legacy::NodeMethods.const_from(ast.children[0])).to eq 'Foo::Bar'
-    end
-
-    it "resolves a constant signature from a node" do
-      ast = Parser::CurrentRuby.parse('String.new(foo)')
-      expect(Solargraph::Parser::Legacy::NodeMethods.resolve_node_signature(ast)).to eq('String.new')
-    end
-
-    it "resolves a method signature from a node" do
-      ast = Parser::CurrentRuby.parse('foo(1).bar.bong(2)')
-      expect(Solargraph::Parser::Legacy::NodeMethods.resolve_node_signature(ast)).to eq('foo.bar.bong')
-    end
-
-    it "resolves a local variable signature from a node" do
-      ast = Parser::CurrentRuby.parse('foo = bar; foo.bar(1).baz(2)')
-      expect(Solargraph::Parser::Legacy::NodeMethods.resolve_node_signature(ast.children[1])).to eq('foo.bar.baz')
-    end
-
     it "handles return nodes with implicit nil values" do
       node = Solargraph::Parser.parse(%(
         return if true

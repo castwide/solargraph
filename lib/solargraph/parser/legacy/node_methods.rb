@@ -36,25 +36,6 @@ module Solargraph
 
         # @param node [Parser::AST::Node]
         # @return [String]
-        def const_from node
-          if node.is_a?(AST::Node) and node.type == :const
-            result = ''
-            unless node.children[0].nil?
-              result = const_from(node.children[0])
-            end
-            if result == ''
-              result = node.children[1].to_s
-            else
-              result = result + '::' + node.children[1].to_s
-            end
-            result
-          else
-            nil
-          end
-        end
-
-        # @param node [Parser::AST::Node]
-        # @return [String]
         def infer_literal_node_type node
           return nil unless node.is_a?(AST::Node)
           if node.type == :str || node.type == :dstr
@@ -80,18 +61,6 @@ module Solargraph
           #   return 'NilClass'
           end
           nil
-        end
-
-        # Get a call signature from a node.
-        # The result should be a string in the form of a method path, e.g.,
-        # String.new or variable.method.
-        #
-        # @param node [Parser::AST::Node]
-        # @return [String]
-        def resolve_node_signature node
-          result = drill_signature node, ''
-          return nil if result.empty?
-          result
         end
 
         # @param node [Parser::AST::Node]

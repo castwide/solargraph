@@ -14,10 +14,6 @@ module Solargraph
         @assignment = assignment
       end
 
-      def signature
-        @signature ||= resolve_node_signature(@assignment)
-      end
-
       def completion_item_kind
         Solargraph::LanguageServer::CompletionItemKinds::VARIABLE
       end
