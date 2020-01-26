@@ -7,8 +7,6 @@ module Solargraph
         include YardMixin
 
         def initialize code_object, name = nil, scope = nil, visibility = nil, closure = nil, spec = nil
-          # @code_object = code_object
-          # @spec = spec
           closure ||= Solargraph::Pin::Namespace.new(
             name: code_object.namespace.to_s,
             gates: [code_object.namespace.to_s]
@@ -23,10 +21,6 @@ module Solargraph
             args: get_parameters(code_object)
           )
         end
-
-        # def parameters
-        #   @parameters ||= get_parameters(code_object)
-        # end
 
         private
 

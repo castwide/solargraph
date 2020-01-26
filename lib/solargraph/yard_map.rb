@@ -21,15 +21,6 @@ module Solargraph
       @@stdlib_paths ||= begin
         result = {}
         YARD::Registry.load! CoreDocs.yardoc_stdlib_file
-        # YARD::Registry.all(:class, :module).each do |ns|
-        #   next if ns.nil? || ns.file.nil?
-        #   path = ns.file.sub(/^(ext|lib)\//, '').sub(/\.(rb|c)$/, '')
-        #   next if path.start_with?('-')
-        #   base = path.split('/').first
-        #   result[base] ||= {}
-        #   result[base][path] ||= []
-        #   result[base][path].push ns
-        # end
         YARD::Registry.all.each do |co|
           next if co.file.nil?
           path = co.file.sub(/^(ext|lib)\//, '').sub(/\.(rb|c)$/, '')
@@ -238,11 +229,6 @@ module Solargraph
             stdtmp.concat Marshal.load(dump)
           else
             if stdlib_paths[base]
-              # stdlib_paths[base].each_pair do |path, objects|
-              #   if path == r || path.start_with?("#{r}/")
-              #     stdtmp.concat objects
-              #   end
-              # end
               stdtmp.concat Mapper.new(stdlib_paths[base]).map
               next if stdtmp.empty?
               dump = Marshal.dump(stdtmp)
@@ -268,31 +254,6 @@ module Solargraph
       # pins.concat process_stdlib(stdnames)
       pins.concat core_pins
     end
-
-    # @param required_namespaces [Array<YARD::CodeObjects::Namespace>]
-    # @return [Array<Solargraph::Pin::Base>]
-    # def process_stdlib required_namespaces
-    #   pins = []
-    #   unless required_namespaces.empty?
-    #     yard = load_yardoc CoreDocs.yardoc_stdlib_file
-    #     done = []
-    #     required_namespaces.each_pair do |r, objects|
-    #       result = []
-    #       objects.each do |ns|
-    #         next if done.include?(ns.path)
-    #         done.push ns.path
-    #         all = [ns]
-    #         all.concat recurse_namespace_object(ns)
-    #         result.concat Mapper.new(all).map
-    #       end
-    #       result.delete_if(&:nil?)
-    #       stdlib_fill r, result
-    #       cache.set_path_pins(r, result) unless result.empty?
-    #       pins.concat result
-    #     end
-    #   end
-    #   pins
-    # end
 
     # @param spec [Gem::Specification]
     # @return [void]

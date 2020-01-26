@@ -12,17 +12,6 @@ module Solargraph
 
         @@gate_cache ||= {}
 
-        # def comments
-        #   @comments ||= code_object.docstring ? code_object.docstring.all.to_s : ''
-        # end
-
-        # def location
-        #   # Guarding with @located because nil locations are valid
-        #   return @location if @located
-        #   @located = true
-        #   @location = object_location
-        # end
-
         private
 
         # @return [Solargraph::Location, nil]
