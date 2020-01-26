@@ -232,11 +232,9 @@ module Solargraph
             elsif full.rest?
               next
             else
-              # if full.end_with?(":")
-              if false # @todo This should be a check for a required keyword argument
+              if full.decl == :kwarg
                 result.push Problem.new(location, "Call to #{pin.path} is missing keyword argument #{name}")
-              # elsif !full.start_with?("#{name}:")
-              elsif false # @todo This should be a check for an optional keyword argument
+              elsif full.decl == :kwoptarg
                 result.push Problem.new(location, "Not enough arguments to #{pin.path} (missing #{name})")
               end
               break
