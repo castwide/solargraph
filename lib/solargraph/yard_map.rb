@@ -258,11 +258,9 @@ module Solargraph
       result = []
       (spec.dependencies - spec.development_dependencies).each do |dep|
         begin
-          if @source_gems.include?(dep.name)
-            next
-          end
+          next if @source_gems.include?(dep.name) || @gem_paths.key?(dep.name)
           depspec = Gem::Specification.find_by_name(dep.name)
-          next if depspec.nil? || @gem_paths.key?(depspec.name)
+          next if depspec.nil?
           @gem_paths[depspec.name] = depspec.full_gem_path
           gy = yardoc_file_for_spec(depspec)
           if gy.nil?
@@ -315,7 +313,7 @@ module Solargraph
       spec = Gem::Specification.find_by_path(path) || Gem::Specification.find_by_name(path.split('/').first)
       # Avoid loading the spec again if it's going to be skipped anyway
       return spec if @source_gems.include?(spec.name)
-      # Avoid loading the spec again if it's alredy the correct version
+      # Avoid loading the spec again if it's already the correct version
       if @gemset[spec.name] && @gemset[spec.name] != spec.version
         begin
           return Gem::Specification.find_by_name(spec.name, "= #{@gemset[spec.name]}")
