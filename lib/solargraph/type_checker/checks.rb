@@ -17,7 +17,7 @@ module Solargraph
         expected.each do |exp|
           found = false
           inferred.each do |inf|
-            if api_map.super_and_sub?(*fuzz_pair(exp, inf))
+            if api_map.super_and_sub?(fuzz(exp), fuzz(inf))
               found = true
               matches.push inf
               break
@@ -29,7 +29,7 @@ module Solargraph
           next if matches.include?(inf)
           found = false
           expected.each do |exp|
-            if api_map.super_and_sub?(*fuzz_pair(exp, inf))
+            if api_map.super_and_sub?(fuzz(exp), fuzz(inf))
               found = true
               break
             end
@@ -39,27 +39,33 @@ module Solargraph
         true
       end
 
-      # @param pin [Pin::Base]
-      def internal? pin
-        pin.location && api_map.source_map(pin.location.filename)
+      # @param api_map [ApiMap]
+      # @param expected [ComplexType]
+      # @param inferred [ComplexType]
+      # @return [Boolean]
+      def any_types_match? api_map, expected, inferred
+        return duck_types_match?(api_map, expected, inferred) if expected.duck_type?
+        expected.each do |exp|
+          next if exp.duck_type?
+          inferred.each do |inf|
+            return true if api_map.super_and_sub?(fuzz(exp), fuzz(inf))
+          end
+        end
+        false
       end
 
-      def external? pin
-        !internal? pin
-      end
-
-      # @param type1 [ComplexType]
-      # @param type2 [ComplexType]
-      # @return [String]
-      def fuzz_pair type1, type2
-        # if type1.name == 'Class' && type2.name == 'Class'
-        #   [
-        #     (type1.parameters? ? type1.namespace : 'Object'),
-        #     (type2.parameters? ? type2.namespace : 'Object')
-        #   ]
-        # else
-          [fuzz(type1), fuzz(type2)]
-        # end
+      # @param api_map [ApiMap]
+      # @param expected [ComplexType]
+      # @param inferred [ComplexType]
+      # @return [Boolean]
+      def duck_types_match? api_map, expected, inferred
+        raise ArgumentError, "Expected type must be duck type" unless expected.duck_type?
+        expected.each do |exp|
+          next unless exp.duck_type?
+          quack = exp.to_s[1..-1]
+          return false if api_map.get_method_stack(inferred.namespace, quack, scope: inferred.scope).empty?
+        end
+        true
       end
 
       # @param type [ComplexType]

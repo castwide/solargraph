@@ -117,14 +117,14 @@ module Solargraph
       puts Solargraph::Diagnostics.reporters
     end
 
-    desc 'typecheck [FILE]', 'Run the type checker'
+    desc 'typecheck [FILE(s)]', 'Run the type checker'
     long_desc %(
-      Perform type checking on one or more files is a workspace.
-      A normal check reports problems with type definitions in method
-      parameters and return values. A strict check performs static analysis of
-      code to validate return types and arguments in method calls.
+      Perform type checking on one or more files in a workspace. Check the
+      entire workspace if no files are specified.
+
+      Type checking levels are normal, typed, strict, and strong.
     )
-    option :strict, type: :boolean, aliases: :s, desc: 'Use strict typing', default: false
+    option :level, type: :string, aliases: [:mode, :m, :l], desc: 'Type checking level', default: 'normal'
     option :directory, type: :string, aliases: :d, desc: 'The workspace directory', default: '.'
     def typecheck *files
       directory = File.realpath(options[:directory])
@@ -137,9 +137,8 @@ module Solargraph
       probcount = 0
       filecount = 0
       files.each do |file|
-        checker = TypeChecker.new(file, api_map: api_map)
-        problems = checker.param_type_problems + checker.return_type_problems
-        problems.concat checker.strict_type_problems if options[:strict]
+        checker = TypeChecker.new(file, api_map: api_map, level: options[:level].to_sym)
+        problems = checker.problems
         next if problems.empty?
         problems.sort! { |a, b| a.location.range.start.line <=> b.location.range.start.line }
         puts problems.map { |prob| "#{prob.location.filename}:#{prob.location.range.start.line + 1} - #{prob.message}" }.join("\n")

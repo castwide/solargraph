@@ -30,8 +30,10 @@ module Solargraph
       # @return [Array<Source::Chain::Link>]
       attr_reader :links
 
+      attr_reader :node
+
       # @param links [Array<Chain::Link>]
-      def initialize links
+      def initialize links, node = nil
         @links = links.clone
         @links.push UNDEFINED_CALL if @links.empty?
         head = true
@@ -40,6 +42,7 @@ module Solargraph
           head = false
           result
         end
+        @node = node
       end
 
       # @return [Chain]

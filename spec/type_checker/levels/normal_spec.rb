@@ -37,7 +37,7 @@ describe Solargraph::TypeChecker do
       expect(checker.problems).to be_empty
     end
 
-    it 'reports mismatched return tags' do
+    it 'ignores mismatched return tags' do
       checker = type_checker(%(
         class Foo
           # @return [Integer]
@@ -46,8 +46,7 @@ describe Solargraph::TypeChecker do
           end
         end
       ))
-      expect(checker.problems).to be_one
-      expect(checker.problems.first.message).to include('does not match')
+      expect(checker.problems).to be_empty
     end
 
     it 'ignores undefined inferred return types' do
@@ -100,7 +99,7 @@ describe Solargraph::TypeChecker do
       expect(checker.problems).to be_empty
     end
 
-    it 'reports mismatched inherited return tags' do
+    it 'ignores mismatched inherited return tags' do
       checker = type_checker(%(
         class Sup
           # @return [String]
@@ -115,29 +114,7 @@ describe Solargraph::TypeChecker do
           end
         end
       ))
-      expect(checker.problems).to be_one
-      expect(checker.problems.first.message).to include('does not match')
-    end
-
-    it 'reports mismatched return tags from mixins' do
-      checker = type_checker(%(
-        module Mixin
-          # @return [String]
-          def name
-            'sup'
-          end
-        end
-
-        class Thing
-          include Mixin
-
-          def name
-            100
-          end
-        end
-      ))
-      expect(checker.problems).to be_one
-      expect(checker.problems.first.message).to include('does not match')
+      expect(checker.problems).to be_empty
     end
 
     it 'resolves param tags' do
@@ -160,7 +137,7 @@ describe Solargraph::TypeChecker do
         end
       ))
       expect(checker.problems).to be_one
-      expect(checker.problems.first.message).to include('Unresolved')
+      expect(checker.problems.first.message).to include('Unresolved type')
     end
 
     it 'ignores variables without type tags' do
@@ -189,13 +166,12 @@ describe Solargraph::TypeChecker do
       expect(checker.problems).to be_empty
     end
 
-    it 'reports mismatched type tags' do
+    it 'ignores mismatched type tags' do
       checker = type_checker(%(
         # @type [Integer]
         x = 'string'
       ))
-      expect(checker.problems).to be_one
-      expect(checker.problems.first.message).to include('does not match')
+      expect(checker.problems).to be_empty
     end
 
     it 'ignores undefined inferred variable types' do
@@ -218,6 +194,231 @@ describe Solargraph::TypeChecker do
     it 'ignores unresolved method calls' do
       checker = type_checker(%(
         unknown_method.another_unknown_method
+      ))
+      expect(checker.problems).to be_empty
+    end
+
+    it 'ignores variable types with undefined inferences from external sources' do
+      # @todo This test uses Nokogiri because it's a gem dependency known to
+      #   lack typed methods. A better test wouldn't depend on the state of
+      #   vendored code.
+      checker = type_checker(%(
+        require 'nokogiri'
+        # @type [Nokogiri::HTML::Document]
+        doc = Nokogiri::HTML.parse('something')
+      ))
+      expect(checker.problems).to be_empty
+    end
+
+    it 'ignores undefined argument types' do
+      checker = type_checker(%(
+        class Foo
+          # @param baz [Integer]
+          def bar(baz); end
+        end
+        Foo.new.bar(unknown_method)
+      ))
+      expect(checker.problems).to be_empty
+    end
+
+    it 'ignores untyped attributes' do
+      checker = type_checker(%(
+        class Foo
+          attr_accessor :bar
+        end
+      ))
+      expect(checker.problems).to be_empty
+    end
+
+    it 'accepts one of several param types' do
+      checker = type_checker(%(
+        class Foo
+          # @param baz [String, Integer]
+          def bar baz
+          end
+        end
+        Foo.new.bar('string')
+        Foo.new.bar(100)
+      ))
+      expect(checker.problems).to be_empty
+    end
+
+    it 'validates keyword params' do
+      # @todo Skip for legacy Ruby
+      checker = type_checker(%(
+        class Foo
+          # @param baz [String]
+          def bar baz:
+          end
+        end
+        Foo.new.bar baz: 'string'
+      ))
+      expect(checker.problems).to be_empty
+    end
+
+    it 'validates optional keyword params' do
+      checker = type_checker(%(
+        class Foo
+          # @param baz [String]
+          def bar baz: ''
+          end
+        end
+        Foo.new.bar baz: 'string'
+      ))
+      expect(checker.problems).to be_empty
+    end
+
+    it 'validates mixed arguments and kwargs' do
+      checker = type_checker(%(
+        class Foo
+          # @param baz [String]
+          # @param quz [String]
+          def bar baz, quz: ''
+          end
+        end
+        Foo.new.bar 'one', quz: 'two'
+        Foo.new.bar 'one'
+      ))
+      expect(checker.problems).to be_empty
+    end
+
+    it 'validates multiple optional kwargs' do
+      checker = type_checker(%(
+        class Foo
+          # @param baz [String]
+          # @param quz [String]
+          def bar baz: '', quz: ''
+          end
+        end
+        Foo.new.bar quz: 'string'
+      ))
+      expect(checker.problems).to be_empty
+    end
+
+    it 'ignores untagged kwarg params' do
+      checker = type_checker(%(
+        class Foo
+          # @param quz [String]
+          def bar baz: '', quz: ''
+          end
+        end
+        Foo.new.bar baz: 100, quz: ''
+      ))
+      expect(checker.problems).to be_empty
+    end
+
+    it 'validates duck types' do
+      checker = type_checker(%(
+        class Foo
+          # @param baz [#to_s]
+          def bar baz: ''
+          end
+        end
+        Foo.new.bar baz: String.new
+      ))
+      expect(checker.problems).to be_empty
+    end
+
+    it 'validates untagged kwrestargs' do
+      checker = type_checker(%(
+        class Foo
+          def bar **baz
+          end
+        end
+        Foo.new.bar one: 'one', two: 2
+      ))
+      expect(checker.problems).to be_empty
+    end
+
+    it 'validates tagged kwrestargs' do
+      checker = type_checker(%(
+        class Foo
+          # @param one [String]
+          # @param two [Integer]
+          def bar **baz
+          end
+        end
+        Foo.new.bar one: 'one', two: 2
+      ))
+      expect(checker.problems).to be_empty
+    end
+
+    it 'ignores undocumented blocks' do
+      checker = type_checker(%(
+        class Foo
+          def bar
+            yield if block_given?
+          end
+        end
+        Foo.new.bar do
+          puts 'block'
+        end
+      ))
+      expect(checker.problems).to be_empty
+    end
+
+    it 'ignores parameterized blocks' do
+      checker = type_checker(%(
+        class Foo
+          def bar &block
+          end
+        end
+        Foo.new.bar do
+          puts 'block'
+        end
+      ))
+      expect(checker.problems).to be_empty
+    end
+
+    it 'ignores trailing optional hash parameters without tags' do
+      checker = type_checker(%(
+        class Foo
+          def bar opts = {}
+          end
+        end
+        Foo.new.bar one: 'one', two: 'two'
+      ))
+      expect(checker.problems).to be_empty
+    end
+
+    it 'ignores mismatched boolean return types' do
+      checker = type_checker(%(
+        class Foo
+          # @return [Boolean]
+          def bar
+            'true'
+          end
+        end
+      ))
+      expect(checker.problems).to be_empty
+    end
+
+    it 'qualifies param tags in declaration context' do
+      checker = type_checker(%(
+        module Container
+          class First
+          end
+
+          class Second
+            # @param one [First]
+            def self.take one
+            end
+          end
+        end
+
+        first = Container::First.new
+        Container::Second.take first
+      ))
+      expect(checker.problems).to be_empty
+    end
+
+    it 'ignores problems with call arguments' do
+      checker = type_checker(%(
+        class Foo
+          def bar arg
+          end
+        end
+        Foo.new.bar
       ))
       expect(checker.problems).to be_empty
     end

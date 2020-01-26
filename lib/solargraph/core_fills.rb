@@ -70,6 +70,7 @@ module Solargraph
 @param other [BasicObject]
 @return [Boolean]
       )),
+      Override.method_return('BasicObject#initialize', 'void'),
 
       Override.method_return('Class#new', 'self'),
       Override.method_return('Class.new', 'Class<Object>'),
@@ -93,6 +94,10 @@ module Solargraph
       Override.from_comment('Hash#[]=', %(
 @param_tuple
       )),
+
+      # Override.method_return('Module#attr_reader', 'void'),
+      # Override.method_return('Module#attr_writer', 'void'),
+      # Override.method_return('Module#attr_accessor', 'void'),
 
       Override.method_return('Object#!', 'Boolean'),
       Override.method_return('Object#clone', 'self', delete: [:overload]),
