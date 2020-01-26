@@ -108,8 +108,22 @@ module Solargraph
     # @return [Array<Solargraph::Pin::Base>]
     def core_pins
       @@core_pins ||= begin
-        load_yardoc CoreDocs.yardoc_file
-        result = Mapper.new(YARD::Registry.all).map
+        yd = CoreDocs.yardoc_file
+        ser = File.join(File.dirname(yd), 'core.ser')
+        result = []
+        if File.file?(ser)
+          file = File.open(ser, 'rb')
+          dump = file.read
+          file.close
+          result.concat Marshal.load(dump)
+        else
+          load_yardoc CoreDocs.yardoc_file
+          result.concat Mapper.new(YARD::Registry.all).map
+          dump = Marshal.dump(result)
+          file = File.open(ser, 'wb')
+          file.write dump
+          file.close
+        end
         CoreFills::OVERRIDES.each do |ovr|
           pin = result.select { |p| p.path == ovr.name }.first
           next if pin.nil?
