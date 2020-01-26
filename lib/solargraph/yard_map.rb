@@ -16,17 +16,22 @@ module Solargraph
     autoload :RdocToYard, 'solargraph/yard_map/rdoc_to_yard'
 
     CoreDocs.require_minimum
-    @@stdlib_yardoc = CoreDocs.yardoc_stdlib_file
-    @@stdlib_paths = {}
-    YARD::Registry.load! @@stdlib_yardoc
-    YARD::Registry.all(:class, :module).each do |ns|
-      next if ns.nil? || ns.file.nil?
-      path = ns.file.sub(/^(ext|lib)\//, '').sub(/\.(rb|c)$/, '')
-      next if path.start_with?('-')
-      base = path.split('/').first
-      @@stdlib_paths[base] ||= {}
-      @@stdlib_paths[base][path] ||= []
-      @@stdlib_paths[base][path].push ns
+
+    def stdlib_paths
+      @@stdlib_paths ||= begin
+        result = {}
+        YARD::Registry.load! CoreDocs.yardoc_stdlib_file
+        YARD::Registry.all(:class, :module).each do |ns|
+          next if ns.nil? || ns.file.nil?
+          path = ns.file.sub(/^(ext|lib)\//, '').sub(/\.(rb|c)$/, '')
+          next if path.start_with?('-')
+          base = path.split('/').first
+          result[base] ||= {}
+          result[base][path] ||= []
+          result[base][path].push ns
+        end
+        result
+      end
     end
 
     # @return [Array<String>]
@@ -215,14 +220,28 @@ module Solargraph
           end
         rescue Gem::LoadError => e
           base = r.split('/').first
+          next if from_std.include?(base)
+          from_std.push base
           stdtmp = []
-          if @@stdlib_paths[base]
-            @@stdlib_paths[base].each_pair do |path, objects|
-              next if from_std.include?(path)
-              if path == r || path.start_with?("#{r}/")
-                from_std.push path
-                stdtmp.concat objects
+          ser = File.join(File.dirname(CoreDocs.yardoc_stdlib_file), "#{base}.ser")
+          if File.file?(ser)
+            STDERR.puts "Loading stdlib #{base} from serial"
+            file = File.open(ser, 'rb')
+            dump = file.read
+            file.close
+            stdtmp.concat Marshal.load(dump)
+          else
+            if stdlib_paths[base]
+              stdlib_paths[base].each_pair do |path, objects|
+                if path == r || path.start_with?("#{r}/")
+                  stdtmp.concat objects
+                end
               end
+              next if stdtmp.empty?
+              dump = Marshal.dump(stdtmp)
+              file = File.open(ser, 'wb')
+              file.write dump
+              file.close
             end
           end
           if stdtmp.empty?
@@ -246,7 +265,7 @@ module Solargraph
     def process_stdlib required_namespaces
       pins = []
       unless required_namespaces.empty?
-        yard = load_yardoc @@stdlib_yardoc
+        yard = load_yardoc CoreDocs.yardoc_stdlib_file
         done = []
         required_namespaces.each_pair do |r, objects|
           result = []
