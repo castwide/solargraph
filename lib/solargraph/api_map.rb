@@ -512,9 +512,7 @@ module Solargraph
       fqsup = qualify(sup)
       cls = qualify(sub)
       until fqsup.nil? || cls.nil?
-        # @todo Classes in the workspace are not detected as subclasses of
-        #   Object. The quick and dirty fix is to hardcode it here.
-        return true if fqsup == 'Object' || cls == fqsup
+        return true if cls == fqsup
         cls = qualify(store.get_superclass(cls), cls)
       end
       false
