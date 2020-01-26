@@ -173,9 +173,10 @@ module Solargraph
     def call_problems
       return [] unless rules.validate_calls?
       result = []
-      Solargraph::Source::NodeMethods.call_nodes_from(source_map.source.node).each do |call|
-        chain = Solargraph::Source::NodeChainer.chain(call, filename)
-        block_pin = source_map.locate_block_pin(call.loc.expression.line, call.loc.expression.column)
+      Solargraph::Parser.call_nodes_from(source_map.source.node).each do |call|
+        chain = Solargraph::Parser.chain(call, filename)
+        rng = Solargraph::Range.from_node(call)
+        block_pin = source_map.locate_block_pin(rng.start.line, rng.start.column)
         location = Location.new(filename, Range.from_node(call))
         locals = source_map.locals_at(location)
         type = chain.infer(api_map, block_pin, locals)
@@ -212,7 +213,8 @@ module Solargraph
             full = pin.parameters[index]
             argchain = base.links.last.arguments[index]
             if argchain
-              if full.start_with?("#{name}:") || full.start_with?('**') || (full.end_with?('{}') && index == pin.parameter_names.length - 1)
+              # if full.start_with?("#{name}:") || full.start_with?('**') || (full.end_with?('{}') && index == pin.parameter_names.length - 1)
+              if full.decl != :arg
                 result.concat kwarg_problems_for argchain, api_map, block_pin, locals, location, pin, params, index
                 break
               else
@@ -226,12 +228,15 @@ module Solargraph
                   end
                 end
               end
-            elsif full.start_with?('*') || full.start_with?('&') || full.include?('=')
+            # elsif full.start_with?('*') || full.start_with?('&') || full.include?('=')
+            elsif full.rest?
               next
             else
-              if full.end_with?(":")
+              # if full.end_with?(":")
+              if false # @todo This should be a check for a required keyword argument
                 result.push Problem.new(location, "Call to #{pin.path} is missing keyword argument #{name}")
-              elsif !full.start_with?("#{name}:")
+              # elsif !full.start_with?("#{name}:")
+              elsif false # @todo This should be a check for an optional keyword argument
                 result.push Problem.new(location, "Not enough arguments to #{pin.path} (missing #{name})")
               end
               break

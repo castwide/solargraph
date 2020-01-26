@@ -21,6 +21,10 @@ module Solargraph
         decl == :kwrestarg || (assignment && [:HASH, :hash].include?(assignment.type))
       end
 
+      def rest?
+        decl == :restarg || decl == :kwrestarg
+      end
+
       def return_type
         if @return_type.nil?
           @return_type = ComplexType.new
