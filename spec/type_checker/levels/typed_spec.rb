@@ -111,5 +111,15 @@ describe Solargraph::TypeChecker do
       expect(checker.problems).to be_one
       expect(checker.problems.first.message).to include('does not match')
     end
+
+    it 'infers self from virtual new methods' do
+      checker = type_checker(%(
+        class Butt
+          def initialize
+          end
+        end
+      ))
+      expect(checker.problems).to be_empty
+    end
   end
 end
