@@ -30,11 +30,10 @@ module Solargraph
         #
         # @return [void]
         def require_minimum
+          FileUtils.mkdir_p File.join(cache_dir, 'gems')
           return unless best_match.nil?
-          FileUtils.mkdir_p cache_dir
           FileUtils.cp File.join(Solargraph::YARDOC_PATH, "#{DEFAULT}.tar.gz"), cache_dir
           install_archive File.join(cache_dir, "#{DEFAULT}.tar.gz")
-          FileUtils.mkdir_p File.join(cache_dir, 'gems')
         end
 
         # True if core documentation is installed for the specified version
