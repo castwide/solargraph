@@ -105,8 +105,11 @@ module Solargraph
             # gen_pin = Solargraph::SourceMap::NodeProcessor.process(src_node, region).first.last
             gen_pin = Parser.process_node(src_node, region).first.last
             return if gen_pin.nil?
+            # Move the location to the end of the line so the method's location gets recognized as a comment
+            shifted = Solargraph::Position.new(comment_position.line, @code.lines[comment_position.line].chomp.length)
             # @todo: Smelly instance variable access
             gen_pin.instance_variable_set(:@comments, docstring.all.to_s)
+            gen_pin.instance_variable_set(:@location, Solargraph::Location.new(@filename, Range.new(shifted, shifted)))
             @pins.push gen_pin
           rescue Parser::SyntaxError => e
             # @todo Handle error in directive
