@@ -1233,4 +1233,13 @@ describe Solargraph::SourceMap::Mapper do
     expect(pins).to be_one
     expect(locals).to be_empty
   end
+
+  it 'maps local variables from for constructs' do
+    map = Solargraph::SourceMap.load_string(%(
+      for x in y
+        use x
+      end
+    ))
+    expect(map.locals.first.name).to eq('x')
+  end
 end
