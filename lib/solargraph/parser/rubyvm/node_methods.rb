@@ -34,6 +34,8 @@ module Solargraph
           case node.type
           when :LIT, :STR
             "::#{node.children.first.class.to_s}"
+          when :DSTR
+            "::String"
           when :ARRAY, :ZARRAY, :LIST, :ZLIST
             '::Array'
           when :HASH

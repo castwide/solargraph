@@ -270,4 +270,14 @@ describe Solargraph::Source::Chain do
     core_type = core_chain.infer(api_map, closure, [])
     expect(core_type.tag).to eq('Class<String>')
   end
+
+  it 'infers String from interpolated strings' do
+    source = Solargraph::Source.load_string('"#{Object}"', 'test.rb')
+    node = source.node
+    api_map = Solargraph::ApiMap.new
+    api_map.map source
+    chain = Solargraph::Parser.chain(node)
+    type = chain.infer(api_map, Solargraph::Pin::ROOT_PIN, [])
+    expect(type.tag).to eq('String')
+  end
 end
