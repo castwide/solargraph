@@ -88,7 +88,8 @@ module Solargraph
         num.to_i + start
       end
 
-      # @param position [Position]
+      # @param source_position [Position]
+      # @param comment_position [Position]
       # @param directive [YARD::Tags::Directive]
       def process_directive source_position, comment_position, directive
         docstring = Solargraph::Source.parse_docstring(directive.tag.text).to_docstring
@@ -102,10 +103,10 @@ module Solargraph
           region = Parser::Region.new(source: @source, closure: namespace)
           begin
             src_node = Parser.parse("def #{directive.tag.name};end", @filename, location.range.start.line)
-            # gen_pin = Solargraph::SourceMap::NodeProcessor.process(src_node, region).first.last
             gen_pin = Parser.process_node(src_node, region).first.last
             return if gen_pin.nil?
-            # Move the location to the end of the line so the method's location gets recognized as a comment
+            # Move the location to the end of the line so the it gets
+            # recognized as originating from a comment
             shifted = Solargraph::Position.new(comment_position.line, @code.lines[comment_position.line].chomp.length)
             # @todo: Smelly instance variable access
             gen_pin.instance_variable_set(:@comments, docstring.all.to_s)
