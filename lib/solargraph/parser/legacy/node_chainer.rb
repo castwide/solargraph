@@ -26,13 +26,13 @@ module Solargraph
         class << self
           # @param node [Parser::AST::Node]
           # @param filename [String]
-          # @return [Chain]
+          # @return [Source::Chain]
           def chain node, filename = nil, in_block = false
             NodeChainer.new(node, filename, in_block).chain
           end
 
           # @param code [String]
-          # @return [Chain]
+          # @return [Source::Chain]
           def load_string(code)
             node = Parser.parse(code.sub(/\.$/, ''))
             chain = NodeChainer.new(node).chain
