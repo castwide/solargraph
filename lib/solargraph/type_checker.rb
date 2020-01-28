@@ -258,12 +258,8 @@ module Solargraph
               end
             elsif full.rest?
               next
-            else
-              if full.decl == :kwarg
-                result.push Problem.new(location, "Call to #{pin.path} is missing keyword argument #{name}")
-              elsif full.decl == :kwoptarg
-                result.push Problem.new(location, "Not enough arguments to #{pin.path} (missing #{name})")
-              end
+            elsif full.decl == :kwarg
+              result.push Problem.new(location, "Call to #{pin.path} is missing keyword argument #{name}")
               break
             end
           end

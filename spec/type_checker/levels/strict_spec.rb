@@ -412,5 +412,16 @@ describe Solargraph::TypeChecker do
       ))
       expect(checker.problems).to be_empty
     end
+
+    it 'validates kwoptargs without arguments' do
+      checker = type_checker(%(
+        class Foo
+          def bar baz: ''
+          end
+        end
+        Foo.new.bar
+      ))
+      expect(checker.problems).to be_empty
+    end
   end
 end
