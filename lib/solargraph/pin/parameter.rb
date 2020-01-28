@@ -27,9 +27,18 @@ module Solargraph
 
       def return_type
         if @return_type.nil?
-          @return_type = ComplexType.new
+          @return_type = ComplexType::UNDEFINED
           found = param_tag
           @return_type = ComplexType.try_parse(*found.types) unless found.nil? or found.types.nil?
+          if @return_type.undefined?
+            if decl == :restarg
+              @return_type = ComplexType.try_parse('Array')
+            elsif decl == :kwrestarg
+              @return_type = ComplexType.try_parse('Hash')
+            elsif decl == :blockarg
+              @return_type = ComplexType.try_parse('Proc')
+            end
+          end
         end
         super
         @return_type
