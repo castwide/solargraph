@@ -125,7 +125,7 @@ module Solargraph
 
         private
 
-        # @return [Array<Source>]
+        # @return [Hash]
         def open_source_hash
           @open_source_hash ||= {}
         end
