@@ -18,7 +18,7 @@ describe Solargraph::Diagnostics::TypeCheck do
       end
     ))
     api_map.map source
-    result = Solargraph::Diagnostics::TypeCheck.new('always').diagnose(source, api_map)
+    result = Solargraph::Diagnostics::TypeCheck.new('always', 'strong').diagnose(source, api_map)
     expect(result.length).to eq(1)
     expect(result[0][:message]).to include('foo')
   end
@@ -39,26 +39,13 @@ describe Solargraph::Diagnostics::TypeCheck do
     source = Solargraph::Source.load_string(%(
       # @return [String]
       def foo(bar)
+        'foo'
       end
     ))
     api_map.map source
-    result = Solargraph::Diagnostics::TypeCheck.new('always').diagnose(source, api_map)
+    result = Solargraph::Diagnostics::TypeCheck.new('always', 'strong').diagnose(source, api_map)
     expect(result.length).to eq(1)
     expect(result[0][:message]).to include('bar')
-  end
-
-  it "detects invalid parameter tags" do
-    source = Solargraph::Source.load_string(%(
-      # @param bar [String]
-      # @param wrong [String]
-      # @return [String]
-      def foo(bar)
-      end
-    ))
-    api_map.map source
-    result = Solargraph::Diagnostics::TypeCheck.new('always').diagnose(source, api_map)
-    expect(result.length).to eq(1)
-    expect(result[0][:message]).to include('wrong')
   end
 
   it "detects return types from superclasses" do
