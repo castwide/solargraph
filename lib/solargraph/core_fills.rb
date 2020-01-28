@@ -126,7 +126,10 @@ module Solargraph
 
       Override.method_return('String#freeze', 'self'),
       Override.method_return('String#split', 'Array<String>'),
-      Override.method_return('String#lines', 'Array<String>')
+      Override.method_return('String#lines', 'Array<String>'),
+      Override.from_comment('String#each_line', %(
+@yieldparam [String]
+      ))
     ].concat(
       methods_with_yieldparam_subtypes.map do |path|
         Override.from_comment(path, %(
