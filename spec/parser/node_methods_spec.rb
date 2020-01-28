@@ -71,9 +71,7 @@ describe Solargraph::Parser::NodeMethods do
   it "handles top 'and' nodes" do
     node = Solargraph::Parser.parse('1 && "2"')
     rets = Solargraph::Parser::NodeMethods.returns_from(node)
-    expect(rets.length).to eq(2)
-    expect(rets[0].type).to eq(:LIT)
-    expect(rets[1].type).to eq(:STR)
+    expect(rets.length).to eq(1)
   end
 
   it "handles top 'or' nodes" do

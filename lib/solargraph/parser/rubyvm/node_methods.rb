@@ -91,7 +91,7 @@ module Solargraph
                 result.concat get_return_nodes_from_children(node)
               elsif CONDITIONAL.include?(node.type)
                 result.concat reduce_to_value_nodes(node.children[1..-1])
-              elsif node.type == :AND || node.type == :OR
+              elsif node.type == :OR
                 result.concat reduce_to_value_nodes(node.children)
               elsif node.type == :RETURN
                 result.concat reduce_to_value_nodes([node.children[0]])
