@@ -210,5 +210,19 @@ describe Solargraph::TypeChecker do
       ))
       expect(checker.problems).to be_empty
     end
+
+    it 'allows loose return tags' do
+      checker = type_checker(%(
+        class Foo
+          # The tag is [String] but the inference is [String, nil]
+          #
+          # @return [String]
+          def bar
+            false ? 'bar' : nil
+          end
+        end
+      ))
+      expect(checker.problems).to be_empty
+    end
   end
 end

@@ -385,5 +385,32 @@ describe Solargraph::TypeChecker do
       expect(checker.problems).to be_one
       expect(checker.problems.first.message).to include('Not enough arguments')
     end
+
+    it 'requires strict return tags' do
+      checker = type_checker(%(
+        class Foo
+          # The tag is [String] but the inference is [String, nil]
+          #
+          # @return [String]
+          def bar
+            false ? 'bar' : nil
+          end
+        end
+      ))
+      expect(checker.problems).to be_one
+      expect(checker.problems.first.message).to include('does not match inferred type')
+    end
+
+    it 'validates strict return tags' do
+      checker = type_checker(%(
+        class Foo
+          # @return [String, nil]
+          def bar
+            false ? 'bar' : nil
+          end
+        end
+      ))
+      expect(checker.problems).to be_empty
+    end
   end
 end
