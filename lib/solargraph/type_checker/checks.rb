@@ -48,7 +48,7 @@ module Solargraph
         expected.each do |exp|
           next if exp.duck_type?
           inferred.each do |inf|
-            return true if api_map.super_and_sub?(fuzz(exp), fuzz(inf))
+            return true if exp == inf || api_map.super_and_sub?(fuzz(exp), fuzz(inf))
           end
         end
         false
