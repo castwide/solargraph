@@ -121,5 +121,94 @@ describe Solargraph::TypeChecker do
       ))
       expect(checker.problems).to be_empty
     end
+
+    it 'validates parameterized return types with unparameterized arrays' do
+      checker = type_checker(%(
+        class Foo
+          # @return [Array<String>]
+          def bar
+            []
+          end
+        end
+      ))
+      expect(checker.problems).to be_empty
+    end
+
+    it 'validates parameterized return types with unparameterized hashes' do
+      checker = type_checker(%(
+        class Foo
+          # @return [Hash{String => Integer}]
+          def bar
+            {}
+          end
+        end
+      ))
+      expect(checker.problems).to be_empty
+    end
+
+    it 'validates subclasses of return types' do
+      checker = type_checker(%(
+        class Sup; end
+        class Sub < Sup
+          # @return [Sup]
+          def foo
+            Sub.new
+          end
+        end
+      ))
+      expect(checker.problems).to be_empty
+    end
+
+    it 'reports superclasses of return types' do
+      checker = type_checker(%(
+        class Sup; end
+        class Sub < Sup
+          # @return [Sub]
+          def foo
+            Sup.new
+          end
+        end
+      ))
+      expect(checker.problems).to be_one
+      expect(checker.problems.first.message).to include('does not match inferred type')
+    end
+
+    it 'validates parameterized subclasses of return types' do
+      checker = type_checker(%(
+        class Sup; end
+        class Sub < Sup
+          # @return [Class<Sup>]
+          def foo
+            Sub
+          end
+        end
+      ))
+      expect(checker.problems).to be_empty
+    end
+
+    it 'validates subclass arguments of param types' do
+      checker = type_checker(%(
+        class Sup
+          # @param other [Sup]
+          # @return [void]
+          def take(other); end
+        end
+        class Sub < Sup; end
+        Sup.new.take(Sub.new)
+        ))
+      expect(checker.problems).to be_empty
+    end
+
+    it 'resolves self when validating inferred types' do
+      checker = type_checker(%(
+        class Foo
+          # @return [self]
+          def bar
+            Foo.new
+          end
+        end
+      ))
+      expect(checker.problems).to be_empty
+    end
   end
 end

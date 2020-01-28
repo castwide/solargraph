@@ -37,6 +37,16 @@ describe Solargraph::TypeChecker do
       expect(checker.problems).to be_empty
     end
 
+    it 'ignores tagged return types with empty method bodies' do
+      checker = type_checker(%(
+        class Foo
+          # @return [String]
+          def bar; end
+        end
+      ))
+      expect(checker.problems).to be_empty
+    end
+
     it 'ignores mismatched return tags' do
       checker = type_checker(%(
         class Foo
@@ -307,7 +317,7 @@ describe Solargraph::TypeChecker do
       expect(checker.problems).to be_empty
     end
 
-    it 'validates duck types' do
+    it 'validates param duck types' do
       checker = type_checker(%(
         class Foo
           # @param baz [#to_s]
@@ -315,6 +325,16 @@ describe Solargraph::TypeChecker do
           end
         end
         Foo.new.bar baz: String.new
+      ))
+      expect(checker.problems).to be_empty
+    end
+
+    it 'validates return duck types' do
+      checker = type_checker(%(
+        class Foo
+          # @return [#to_s]
+          def bar; end
+        end
       ))
       expect(checker.problems).to be_empty
     end
@@ -339,6 +359,35 @@ describe Solargraph::TypeChecker do
           end
         end
         Foo.new.bar one: 'one', two: 2
+      ))
+      expect(checker.problems).to be_empty
+    end
+
+    it 'validates tagged kwoptarg params' do
+      checker = type_checker(%(
+        class Foo
+          # @param foo [String]
+          def bar(foo: ''); end
+        end
+      ))
+      expect(checker.problems).to be_empty
+    end
+
+    it 'validates tagged kwarg params' do
+      checker = type_checker(%(
+        class Foo
+          # @param foo [String]
+          def bar(foo:); end
+        end
+      ))
+      expect(checker.problems).to be_empty
+    end
+
+    it 'validates untagged restarg params' do
+      checker = type_checker(%(
+        class Foo
+          def bar(*args); end
+        end
       ))
       expect(checker.problems).to be_empty
     end
@@ -419,6 +468,15 @@ describe Solargraph::TypeChecker do
           end
         end
         Foo.new.bar
+      ))
+      expect(checker.problems).to be_empty
+    end
+
+    it 'ignores untagged parameters' do
+      checker = type_checker(%(
+        class Foo
+          def bar(baz); end
+        end
       ))
       expect(checker.problems).to be_empty
     end

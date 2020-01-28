@@ -7,8 +7,7 @@ describe Solargraph::TypeChecker do
     it 'reports missing return tags' do
       checker = type_checker(%(
         class Foo
-          def bar
-          end
+          def bar; end
         end
       ))
       expect(checker.problems).to be_one
@@ -21,6 +20,17 @@ describe Solargraph::TypeChecker do
           # @return [void]
           def bar baz
           end
+        end
+      ))
+      expect(checker.problems).to be_one
+      expect(checker.problems.first.message).to include('Missing @param tag')
+    end
+
+    it 'reports missing kwoptarg param tags' do
+      checker = type_checker(%(
+        class Foo
+          # @return [void]
+          def bar(baz: 0); end
         end
       ))
       expect(checker.problems).to be_one
@@ -54,6 +64,23 @@ describe Solargraph::TypeChecker do
         class Foo
           # @return [void]
           def bar &block
+          end
+        end
+      ))
+      expect(checker.problems).to be_empty
+    end
+
+    it 'inherits param tags from superclass methods' do
+      checker = type_checker(%(
+        class Foo
+          # @param arg [Integer]
+          # @return [void]
+          def meth arg
+          end
+        end
+
+        class Bar < Foo
+          def meth arg
           end
         end
       ))

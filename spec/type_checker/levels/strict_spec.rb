@@ -146,6 +146,18 @@ describe Solargraph::TypeChecker do
       expect(checker.problems.first.message).to include('quz')
     end
 
+    it 'validates arguments that match duck type params' do
+      checker = type_checker(%(
+        class Foo
+          # @param baz [#to_s]
+          # @return [void]
+          def bar(baz); end
+        end
+        Foo.new.bar(100)
+      ))
+      expect(checker.problems).to be_empty
+    end
+
     it 'reports mismatched duck types' do
       checker = type_checker(%(
         class Foo
@@ -229,6 +241,149 @@ describe Solargraph::TypeChecker do
       expect(checker.problems).to be_one
       # @todo Maybe change the message to "missing @return tag"
       expect(checker.problems.first.message).to include('could not be inferred')
+    end
+
+    it 'validates attr_writer parameters' do
+      checker = type_checker(%(
+        class Foo
+          # @return [String]
+          attr_accessor :bar
+        end
+        Foo.new.bar = 'hello'
+      ))
+      expect(checker.problems).to be_empty
+    end
+
+    it 'reports invalid attr_writer parameters' do
+      checker = type_checker(%(
+        class Foo
+          # @return [Integer]
+          attr_accessor :bar
+        end
+        Foo.new.bar = 'hello'
+      ))
+      expect(checker.problems).to be_one
+    end
+
+    it 'reports arguments that do not match duck type params' do
+      checker = type_checker(%(
+        class Foo
+          # @param baz [#upcase]
+          # @return [void]
+          def bar(baz); end
+        end
+        Foo.new.bar(100)
+      ))
+      expect(checker.problems).to be_one
+      expect(checker.problems.first.message).to include('Wrong argument type')
+    end
+
+    it 'validates complex parameters' do
+      checker = type_checker(%(
+        class Foo
+          # @param baz [Hash, Array]
+          # @return [void]
+          def bar baz
+          end
+        end
+        Foo.new.bar([1, 2])
+      ))
+      expect(checker.problems).to be_empty
+    end
+
+    it 'reports arguments that do not match complex parameters' do
+      checker = type_checker(%(
+        class Foo
+          # @param baz [Hash, Array]
+          def bar baz
+          end
+        end
+        Foo.new.bar('string')
+      ))
+      expect(checker.problems).to be_one
+      expect(checker.problems.first.message).to include('Wrong argument type')
+    end
+
+    # @todo Should this be tested at the strong level?
+    it 'validates Hash#[]= with simple objects' do
+      checker = type_checker(%(
+        h = {}
+        h['foo'] = 'bar'
+        h[100] = []
+      ))
+      expect(checker.problems).to be_empty
+    end
+
+    it 'reports incorrect arguments from superclass param tags' do
+      checker = type_checker(%(
+        class Foo
+          # @param arg [String]
+          def meth arg
+          end
+        end
+
+        class Bar < Foo
+          def meth arg
+          end
+        end
+
+        # Error: arg should be a String
+        Bar.new.meth(100)
+      ))
+      expect(checker.problems).to be_one
+      expect(checker.problems.first.message).to include('Wrong argument type')
+    end
+
+    it 'validates Boolean parameters' do
+      checker = type_checker(%(
+        class Foo
+          # @param bool [Boolean]
+          def bar bool
+          end
+        end
+
+        Foo.new.bar(true)
+        Foo.new.bar(false)
+      ))
+      expect(checker.problems).to be_empty
+    end
+
+    it 'invalidates incorrect Boolean parameters' do
+      checker = type_checker(%(
+        class Foo
+          # @param bool [Boolean]
+          def bar bool
+          end
+        end
+
+        Foo.new.bar(1)
+      ))
+      expect(checker.problems).to be_one
+      expect(checker.problems.first.message).to include('Wrong argument type')
+    end
+
+    it 'resolves Kernel methods in instance scopes' do
+      checker = type_checker(%(
+        class Foo
+          # @return [void]
+          def bar
+            raise 'oops'
+          end
+        end
+      ))
+      expect(checker.problems).to be_empty
+    end
+
+    it 'reports missing arguments' do
+      checker = type_checker(%(
+        class Foo
+          def bar(baz)
+          end
+        end
+        Foo.new.bar
+      ))
+      expect(checker.problems).to be_one
+      expect(checker.problems.first.message).to include('Not enough arguments')
     end
   end
 end
