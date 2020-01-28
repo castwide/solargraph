@@ -162,7 +162,7 @@ module Solargraph
                   else
                     result.concat get_return_nodes(node.children[0])
                   end
-                elsif node.type == :AND || node.type == :OR
+                elsif node.type == :OR
                   result.concat reduce_to_value_nodes(node.children)
                 elsif node.type == :BLOCK
                   result.concat get_return_nodes_only(node.children[2])
