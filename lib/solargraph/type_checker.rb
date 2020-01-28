@@ -116,7 +116,8 @@ module Solargraph
     # @param pin [Pin::BaseMethod]
     # @return [Array<Problem>]
     def method_param_type_problems_for pin
-      params = param_hash(pin)
+      stack = api_map.get_method_stack(pin.namespace, pin.name, scope: pin.scope)
+      params = first_param_hash(stack)
       result = []
       if rules.require_type_tags?
         pin.parameter_names.each_with_index do |name, index|
@@ -212,7 +213,6 @@ module Solargraph
             full = pin.parameters[index]
             argchain = base.links.last.arguments[index]
             if argchain
-              # if full.start_with?("#{name}:") || full.start_with?('**') || (full.end_with?('{}') && index == pin.parameter_names.length - 1)
               if full.decl != :arg
                 result.concat kwarg_problems_for argchain, api_map, block_pin, locals, location, pin, params, index
                 break
@@ -227,7 +227,6 @@ module Solargraph
                   end
                 end
               end
-            # elsif full.start_with?('*') || full.start_with?('&') || full.include?('=')
             elsif full.rest?
               next
             else
