@@ -100,7 +100,7 @@ module Solargraph
               result.push Problem.new(pin.location, "#{pin.path} return type could not be inferred", pin: pin)
             end
           else
-            unless types_match? api_map, declared, inferred
+            unless (rules.rank > 1 ? types_match?(api_map, declared, inferred) : any_types_match?(api_map, declared, inferred))
               result.push Problem.new(pin.location, "Declared return type #{declared} does not match inferred type #{inferred} for #{pin.path}", pin: pin)
             end
           end
@@ -151,7 +151,7 @@ module Solargraph
                 next unless internal?(pin) # @todo This might be redundant for variables
                 result.push Problem.new(pin.location, "Variable type could not be inferred for #{pin.name}", pin: pin)
               else
-                unless types_match? api_map, declared, inferred
+                unless (rules.rank > 1 ? types_match?(api_map, declared, inferred) : any_types_match?(api_map, declared, inferred))
                   result.push Problem.new(pin.location, "Declared type #{declared} does not match inferred type #{inferred} for variable #{pin.name}", pin: pin)
                 end
               end
