@@ -33,7 +33,8 @@ module Solargraph
               comments: comments,
               name: arg_name(a),
               presence: nil,
-              decl: arg_type(a)
+              decl: arg_type(a),
+              asgn_code: a[1]
             )
           end
         end
@@ -43,15 +44,16 @@ module Solargraph
         end
 
         def arg_type a
-          # @todo Standardize arg types
-          if a[0].end_with?(':')
-            if a[1].nil?
-              :arg
-            else
-              :arg
-            end
-          elsif a[0].end_with?('=')
-            :arg
+          if a[0].start_with?('**')
+            :kwrestarg
+          elsif a[0].start_with?('*')
+            :restarg
+          elsif a[0].start_with?('&')
+            :blockarg
+          elsif a[1]
+            :optarg
+          elsif a[0].end_with?(':')
+            a[1] ? :kwarg : :kwoptarg
           else
             :arg
           end

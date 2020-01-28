@@ -69,35 +69,17 @@ module Solargraph
               # args.push Chain::BlockVariable.new("&#{n.children.last.children[1].children[0].to_s}")
             end
             result.push Chain::Call.new(n.children[-2].to_s, args, @in_block || block_passed?(n))
-            # if n.children.last && n.children.last.type == :BLOCK_PASS
-            #   result.push Chain::BlockVariable.new("&#{n.children.last.children[0].to_s}")
-            # end
-            # result.concat generate_links(n.children.last)
-            # if Parser.is_ast_node?(n.children[0])
-            #   result.concat generate_links(n.children[0])
-            #   args = []
-            #   n.children[2..-1].each do |c|
-            #     args.push NodeChainer.chain(c)
-            #   end
-            #   result.push Chain::Call.new(n.children[1].to_s, args, @in_block || block_passed?(n))
-            # elsif n.children[0].nil?
-            #   args = []
-            #   n.children[2..-1].each do |c|
-            #     args.push NodeChainer.chain(c)
-            #   end
-            #   result.push Chain::Call.new(n.children[1].to_s, args, @in_block || block_passed?(n))
-            # else
-            #   raise "No idea what to do with #{n}"
-            # end
           elsif n.type == :ATTRASGN
             result.concat generate_links(n.children[0])
-            args = []
-            n.children[2].children[0..-2].each do |c|
-              args.push Parser.chain(c)
-            end
-            result.push Chain::Call.new(n.children[1].to_s, args, @in_block || block_passed?(n))
-          elsif n.type == :VCALL || n.type == :FCALL
+            result.push Chain::Call.new(n.children[1].to_s, nodes_to_argchains(n.children[2].children[0..-2]), @in_block || block_passed?(n))
+          elsif n.type == :VCALL
             result.push Chain::Call.new(n.children[0].to_s, [], @in_block || block_passed?(n))
+          elsif n.type == :FCALL
+            if n.children[1]
+              result.push Chain::Call.new(n.children[0].to_s, nodes_to_argchains(n.children[1].children[0..-2]), @in_block || block_passed?(n))
+            else
+              result.push Chain::Call.new(n.children[0].to_s, [], @in_block || block_passed?(n))
+            end
           elsif n.type == :SELF
             result.push Chain::Head.new('self')
           elsif n.type == :ZSUPER
@@ -122,8 +104,7 @@ module Solargraph
             result.concat generate_links(n.children.last)
           elsif n.type == :OR
             result.push Chain::Or.new([NodeChainer.chain(n.children[0], @filename), NodeChainer.chain(n.children[1], @filename)])
-          # elsif [:begin, :kwbegin].include?(n.type)
-          elsif [:BEGIN].include?(n.type)
+          elsif n.type == :begin
             result.concat generate_links(n.children[0])
           elsif n.type == :BLOCK_PASS
             result.push Chain::BlockVariable.new("&#{n.children[1].children[0].to_s}")
@@ -136,6 +117,10 @@ module Solargraph
 
         def block_passed? node
           node.children.last.is_a?(RubyVM::AbstractSyntaxTree::Node) && node.children.last.type == :BLOCK_PASS
+        end
+
+        def nodes_to_argchains nodes
+          nodes.map { |node| Parser.chain(node) }
         end
       end
     end

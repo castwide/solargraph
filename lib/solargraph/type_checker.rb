@@ -212,6 +212,10 @@ module Solargraph
           pin.parameter_names.each_with_index do |name, index|
             full = pin.parameters[index]
             argchain = base.links.last.arguments[index]
+            if argchain.nil? && full.decl == :arg
+              result.push Problem.new(location, "Not enough arguments to #{pin.path}")
+              break
+            end
             if argchain
               if full.decl != :arg
                 result.concat kwarg_problems_for argchain, api_map, block_pin, locals, location, pin, params, index
