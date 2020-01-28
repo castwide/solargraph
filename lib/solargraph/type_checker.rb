@@ -205,7 +205,7 @@ module Solargraph
       base = chain
       until base.links.length == 1 && base.undefined?
         pins = base.define(api_map, block_pin, locals)
-        if pins.first.is_a?(Pin::Method)
+        if pins.first.is_a?(Pin::BaseMethod)
           pin = pins.first
           params = first_param_hash(pins)
           pin.parameter_names.each_with_index do |name, index|

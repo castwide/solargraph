@@ -30,14 +30,14 @@ module Solargraph
         name.end_with?('?') ? ComplexType::BOOLEAN : ComplexType::UNDEFINED
       end
 
-      # @return [Array<String>]
+      # @return [Array<Pin::Parameter>]
       def parameters
-        []
+        @parameters ||= []
       end
 
       # @return [Array<String>]
       def parameter_names
-        []
+        parameters.map(&:name)
       end
 
       def documentation
