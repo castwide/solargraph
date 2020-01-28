@@ -35,7 +35,7 @@ module Solargraph
         end
 
         # @param node [Parser::AST::Node]
-        # @return [String]
+        # @return [String, nil]
         def infer_literal_node_type node
           return nil unless node.is_a?(AST::Node)
           if node.type == :str || node.type == :dstr
