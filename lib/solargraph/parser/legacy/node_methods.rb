@@ -97,10 +97,10 @@ module Solargraph
         end
 
         def convert_hash node
-          return {} unless node.type == :hash
+          return {} unless Parser.is_ast_node?(node) && node.type == :hash
           result = {}
           node.children.each do |pair|
-            result[pair.children[0].children[0]] = Solargraph::Source::NodeChainer.chain(pair.children[1])
+            result[pair.children[0].children[0]] = Solargraph::Parser.chain(pair.children[1])
           end
           result
         end
@@ -109,7 +109,7 @@ module Solargraph
 
         # @todo Temporarily here for testing. Move to Solargraph::Parser.
         def call_nodes_from node
-          return [] unless node.is_a?(Parser::AST::Node)
+          return [] unless node.is_a?(::Parser::AST::Node)
           result = []
           if node.type == :block
             result.push node
@@ -155,7 +155,8 @@ module Solargraph
                 result.concat get_return_nodes_from_children(node)
               elsif CONDITIONAL.include?(node.type)
                 result.concat reduce_to_value_nodes(node.children[1..-1])
-              elsif node.type == :and || node.type == :or
+                # result.push NIL_NODE unless node.children[2]
+              elsif node.type == :or
                 result.concat reduce_to_value_nodes(node.children)
               elsif node.type == :return
                 result.concat reduce_to_value_nodes([node.children[0]])
@@ -219,8 +220,8 @@ module Solargraph
                 elsif CONDITIONAL.include?(node.type)
                   result.concat reduce_to_value_nodes(node.children[1..-1])
                 elsif node.type == :return
-                  result.concat get_return_nodes(node.children[0])
-                elsif node.type == :and || node.type == :or
+                  result.concat reduce_to_value_nodes([node.children[0]])
+                elsif node.type == :or
                   result.concat reduce_to_value_nodes(node.children)
                 elsif node.type == :block
                   result.concat get_return_nodes_only(node.children[2])

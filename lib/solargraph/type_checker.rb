@@ -190,7 +190,7 @@ module Solargraph
       return [] unless rules.validate_calls?
       result = []
       done = []
-      Solargraph::Parser.call_nodes_from(source_map.source.node).each do |call|
+      Solargraph::Parser::NodeMethods.call_nodes_from(source_map.source.node).each do |call|
         rng = Solargraph::Range.from_node(call)
         next if done.any? { |d| d.contain?(rng.start) }
         chain = Solargraph::Parser.chain(call, filename)
