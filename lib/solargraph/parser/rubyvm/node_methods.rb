@@ -59,6 +59,21 @@ module Solargraph
           end
         end
 
+        def call_nodes_from node
+          return [] unless Parser.is_ast_node?(node)
+          result = []
+          if node.type == :ITER
+            result.push node.children[0]
+            node.children[1..-1].each { |child| result.concat call_nodes_from(child) }
+          elsif [:CALL, :VCALL, :FCALL, :ATTRASGN].include?(node.type)
+            result.push node
+            node.children.each { |child| result.concat call_nodes_from(child) }
+          else
+            node.children.each { |child| result.concat call_nodes_from(child) }
+          end
+          result
+        end
+
         def convert_hash node
           return {} unless node?(node) && node.type == :HASH
           result = {}
