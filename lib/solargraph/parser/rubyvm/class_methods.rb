@@ -143,6 +143,22 @@ module Solargraph
 
         NIL_NODE = RubyVM::AbstractSyntaxTree.parse('nil').children.last
 
+        # @todo Temporarily here for testing. Move to Solargraph::Parser.
+        def call_nodes_from node
+          return [] unless Parser.is_ast_node?(node)
+          result = []
+          if node.type == :ITER
+            result.push node.children[0]
+            node.children[1..-1].each { |child| result.concat call_nodes_from(child) }
+          elsif [:CALL, :VCALL, :FCALL, :ATTRASGN, :OPCALL].include?(node.type)
+            result.push node
+            node.children.each { |child| result.concat call_nodes_from(child) }
+          else
+            node.children.each { |child| result.concat call_nodes_from(child) }
+          end
+          result
+        end
+
         # module DeepInference
         #   class << self
         #     CONDITIONAL = [:IF, :UNLESS]
