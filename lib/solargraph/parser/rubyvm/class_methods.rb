@@ -150,7 +150,7 @@ module Solargraph
           if node.type == :ITER
             result.push node.children[0]
             node.children[1..-1].each { |child| result.concat call_nodes_from(child) }
-          elsif [:CALL, :VCALL, :FCALL, :ATTRASGN].include?(node.type)
+          elsif [:CALL, :VCALL, :FCALL, :ATTRASGN, :OPCALL].include?(node.type)
             result.push node
             node.children.each { |child| result.concat call_nodes_from(child) }
           else
