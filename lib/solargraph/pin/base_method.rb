@@ -8,6 +8,9 @@ module Solargraph
       # @return [::Symbol] :public, :private, or :protected
       attr_reader :visibility
 
+      # @return [Parser::AST::Node]
+      attr_reader :node
+
       # @param visibility [::Symbol] :public, :protected, or :private
       def initialize visibility: :public, **splat
         super(splat)
