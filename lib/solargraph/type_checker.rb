@@ -120,11 +120,10 @@ module Solargraph
       params = first_param_hash(stack)
       result = []
       if rules.require_type_tags?
-        pin.parameter_names.each_with_index do |name, index|
-          full = pin.parameters[index]
-          break if full.decl == :restarg || full.decl == :kwrestarg || full.decl == :blockarg
-          unless params[name]
-            result.push Problem.new(pin.location, "Missing @param tag for #{name} on #{pin.path}", pin: pin)
+        pin.parameters.each do |par|
+          break if par.decl == :restarg || par.decl == :kwrestarg || par.decl == :blockarg
+          unless params[par.name]
+            result.push Problem.new(pin.location, "Missing @param tag for #{par.name} on #{pin.path}", pin: pin)
           end
         end
       end
@@ -234,32 +233,31 @@ module Solargraph
         if pins.first.is_a?(Pin::BaseMethod)
           pin = pins.first
           params = first_param_hash(pins)
-          pin.parameter_names.each_with_index do |name, index|
-            full = pin.parameters[index]
-            argchain = base.links.last.arguments[index]
-            if argchain.nil? && full.decl == :arg
+          pin.parameters.each_with_index do |par, idx|
+            argchain = base.links.last.arguments[idx]
+            if argchain.nil? && par.decl == :arg
               result.push Problem.new(location, "Not enough arguments to #{pin.path}")
               break
             end
             if argchain
-              if full.decl != :arg
-                result.concat kwarg_problems_for argchain, api_map, block_pin, locals, location, pin, params, index
+              if par.decl != :arg
+                result.concat kwarg_problems_for argchain, api_map, block_pin, locals, location, pin, params, idx
                 break
               else
-                ptype = params[name]
+                ptype = params[par.name]
                 if ptype.nil?
                   # @todo Some level (strong, I guess) should require the param here
                 else
                   argtype = argchain.infer(api_map, block_pin, locals)
                   if argtype.defined? && ptype && !any_types_match?(api_map, ptype, argtype)
-                    result.push Problem.new(location, "Wrong argument type for #{pin.path}: #{name} expected #{ptype}, received #{argtype}")
+                    result.push Problem.new(location, "Wrong argument type for #{pin.path}: #{par.name} expected #{ptype}, received #{argtype}")
                   end
                 end
               end
-            elsif full.rest?
+            elsif par.rest?
               next
-            elsif full.decl == :kwarg
-              result.push Problem.new(location, "Call to #{pin.path} is missing keyword argument #{name}")
+            elsif par.decl == :kwarg
+              result.push Problem.new(location, "Call to #{pin.path} is missing keyword argument #{par.name}")
               break
             end
           end
@@ -272,26 +270,25 @@ module Solargraph
     def kwarg_problems_for argchain, api_map, block_pin, locals, location, pin, params, first
       result = []
       kwargs = convert_hash(argchain.node)
-      pin.parameter_names[first..-1].each_with_index do |pname, index|
-        full = pin.parameters[index]
-        argchain = kwargs[pname.to_sym]
-        if full.decl == :kwrestarg
+      pin.parameters[first..-1].each do |par|
+        argchain = kwargs[par.name.to_sym]
+        if par.decl == :kwrestarg
           result.concat kwrestarg_problems_for(api_map, block_pin, locals, location, pin, params, kwargs)
         else
           if argchain
-            ptype = params[pname]
+            ptype = params[par.name]
             if ptype.nil?
               # @todo Some level (strong, I guess) should require the param here
             else
               argtype = argchain.infer(api_map, block_pin, locals)
               if argtype.defined? && ptype && !any_types_match?(api_map, ptype, argtype)
-                result.push Problem.new(location, "Wrong argument type for #{pin.path}: #{pname} expected #{ptype}, received #{argtype}")
+                result.push Problem.new(location, "Wrong argument type for #{pin.path}: #{par.name} expected #{ptype}, received #{argtype}")
               end
             end
           else
-            if full.decl == :kwarg
+            if par.decl == :kwarg
               # @todo Problem: missing required keyword argument
-              result.push Problem.new(location, "Call to #{pin.path} is missing keyword argument #{pname}")
+              result.push Problem.new(location, "Call to #{pin.path} is missing keyword argument #{par.name}")
             end
           end
         end

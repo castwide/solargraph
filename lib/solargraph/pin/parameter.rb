@@ -25,6 +25,25 @@ module Solargraph
         decl == :restarg || decl == :kwrestarg
       end
 
+      def full
+        case decl
+        when :optarg
+          "#{name} = #{asgn_code}"
+        when :kwarg
+          "#{name}:"
+        when :kwoptarg
+          "#{name}: #{asgn_code}"
+        when :restarg
+          "*#{name}"
+        when :kwrestarg
+          "**#{name}"
+        when :block
+          "&#{name}"
+        else
+          name
+        end
+      end
+
       def return_type
         if @return_type.nil?
           @return_type = ComplexType::UNDEFINED
