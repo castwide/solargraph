@@ -11,7 +11,8 @@ module Solargraph
               closure: region.closure,
               comments: comments_for(node),
               name: node.children[0].children[0].to_s,
-              assignment: require_keyword?(node) ? nil : node.children[0].children[1],
+              # assignment: require_keyword?(node) ? nil : node.children[0].children[1],
+              asgn_code: require_keyword?(node) ? nil: region.code_for(node.children[0].children[1]),
               presence: region.closure.location.range,
               decl: require_keyword?(node) ? :kwarg : :kwoptarg
             )
