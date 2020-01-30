@@ -20,7 +20,9 @@ module Solargraph
           pins = []
           gates.each do |gate|
             type = ComplexType::UNDEFINED
-            base.split('::')[0..-2].each do |sym|
+            parts = base.split('::')
+            # Use deep inference to resolve root constants
+            parts[0..-2].each do |sym|
               fqns = if type.undefined?
                 if gate.empty?
                   sym
@@ -32,14 +34,19 @@ module Solargraph
               end
               pins.replace api_map.get_path_pins(fqns)
               break if pins.empty?
-              type = pins.first.typify(api_map)
-              type = pins.first.probe(api_map) if type.undefined?
+              pins.each do |pin|
+                type = pin.typify(api_map)
+                break if type.defined?
+                type = pin.probe(api_map)
+                break if type.defined?
+              end
               if type.undefined?
                 pins.clear
                 break
               end
             end
-            sym = base.split('::').last
+            # Return the last constant's pins, even if they're undefined
+            sym = parts.last
             fqns = if type.undefined?
               if gate.empty?
                 sym
