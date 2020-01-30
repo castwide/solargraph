@@ -279,4 +279,20 @@ describe Solargraph::Source::Chain do
     type = chain.infer(api_map, Solargraph::Pin::ROOT_PIN, [])
     expect(type.tag).to eq('String')
   end
+
+  it 'infers namespaces from constant aliases' do
+    source = Solargraph::Source.load_string(%(
+      class Foo
+        class Bar; end
+      end
+      Alias = Foo
+      Alias::Bar.new
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new
+    api_map.map source
+    node = source.node_at(5, 17)
+    chain = Solargraph::Parser.chain(node, 'test.rb')
+    type = chain.infer(api_map, Solargraph::Pin::ROOT_PIN, [])
+    expect(type.tag).to eq('Foo::Bar')
+  end
 end

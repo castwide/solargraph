@@ -10,17 +10,49 @@ module Solargraph
 
         def resolve api_map, name_pin, locals
           return [Pin::ROOT_PIN] if word.empty?
-          rooted = false
           if word.start_with?('::')
-            rooted = true
-            bottom = ''
-            gates = [word[2..-1].split('::')[0..-2].join('::')]
+            base = word[2..-1]
+            gates = ['']
           else
-            bottom = word.split('::')[0..-2].join('::')
+            base = word
             gates = crawl_gates(name_pin)
           end
-          result = api_map.get_constants(bottom, *gates)
-          result.select{ |p| rooted ? p.path == word[2..-1] : p.path == word || "::#{p.path}" == word || p.path.end_with?("::#{word}") }
+          pins = []
+          gates.each do |gate|
+            type = ComplexType::UNDEFINED
+            base.split('::')[0..-2].each do |sym|
+              fqns = if type.undefined?
+                if gate.empty?
+                  sym
+                else
+                  "#{gate}::#{sym}"
+                end
+              else
+                "#{type.namespace}::#{sym}"
+              end
+              pins.replace api_map.get_path_pins(fqns)
+              break if pins.empty?
+              type = pins.first.typify(api_map)
+              type = pins.first.probe(api_map) if type.undefined?
+              if type.undefined?
+                pins.clear
+                break
+              end
+            end
+            sym = base.split('::').last
+            fqns = if type.undefined?
+              if gate.empty?
+                sym
+              else
+                "#{gate}::#{sym}"
+              end
+            else
+              "#{type.namespace}::#{sym}"
+            end
+            pins.replace api_map.get_path_pins(fqns)
+            return pins unless pins.empty?
+          end
+          pins
         end
 
         private
