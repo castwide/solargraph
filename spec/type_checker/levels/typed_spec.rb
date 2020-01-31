@@ -224,5 +224,63 @@ describe Solargraph::TypeChecker do
       ))
       expect(checker.problems).to be_empty
     end
+
+    it 'ignores inferred types for abstract methods' do
+      checker = type_checker(%(
+        class Foo
+          # @abstract
+          # @return [String]
+          def bar; end
+        end
+      ))
+      expect(checker.problems).to be_empty
+    end
+
+    it 'validates inferred types for overridden abstract methods' do
+      checker = type_checker(%(
+        class Foo
+          # @abstract
+          # @return [String]
+          def bar; end
+        end
+
+        class Bar < Foo
+          def bar
+            100
+          end
+        end
+      ))
+      expect(checker.problems).to be_one
+      expect(checker.problems.first.message).to include('does not match inferred type')
+    end
+
+    it 'ignores inferred types for abstract classes' do
+      checker = type_checker(%(
+        # @abstract
+        class Foo
+          # @return [String]
+          def bar; end
+        end
+      ))
+      expect(checker.problems).to be_empty
+    end
+
+    it 'validates subclasses of abstract classes' do
+      checker = type_checker(%(
+        # @abstract
+        class Foo
+          # @return [String]
+          def bar; end
+        end
+
+        class Bar < Foo
+          def bar
+            100
+          end
+        end
+      ))
+      expect(checker.problems).to be_one
+      expect(checker.problems.first.message).to include('does not match inferred type')
+    end
   end
 end
