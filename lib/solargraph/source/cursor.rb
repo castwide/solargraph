@@ -138,14 +138,43 @@ module Solargraph
       # @return [Parser::AST::Node, nil]
       def recipient_node
         if Parser.rubyvm?
+          # tree = source.tree_at(position.line, position.column)
+          # result = Parser.recipient_node(tree)
+          # if result.nil? && tree.first && tree.first.type == :CALL && source.code[Position.to_offset(source.code, Position.new(position.line, position.column - 1)), 1] == '(' && source.code[Position.to_offset(source.code, position), 1] == ')'
+          #     return tree.first
+          # else
+          #   nil
+          # end
+          # Parser.recipient_node(tree)
+          # tree.each_with_index do |node, idx|
+          #   return tree[idx + 1] if [:ARRAY, :ZARRAY, :LIST].include?(node.type) && tree[idx + 1] && [:FCALL, :VCALL, :CALL].include?(tree[idx + 1].type)
+          # end
+          # nil
+          return nil if source.repaired?
           tree = source.tree_at(position.line, position.column)
-          result = Parser.recipient_node(tree)
-          if result.nil? && tree.first && tree.first.type == :CALL && source.code[Position.to_offset(source.code, Position.new(position.line, position.column - 1)), 1] == '(' && source.code[Position.to_offset(source.code, position), 1] == ')'
-              return tree.first
-          else
-            nil
+          tree.each do |node|
+            if [:FCALL, :VCALL, :CALL].include?(node.type)
+              args = node.children.find { |c| Parser.is_ast_node?(c) && [:ARRAY, :ZARRAY, :LIST].include?(c.type) }
+              if args
+                match = source.code[0..offset-1].match(/,[^\)]*$/)
+                rng = Solargraph::Range.from_node(args)
+                if match
+                  rng = Solargraph::Range.new(rng.start, position)
+                end
+                return node if rng.contain?(position)
+              elsif source.code[0..offset-1] =~ /\(\s*$/
+                return node
+              end
+            end
           end
-          Parser.recipient_node(tree)
+          # offset = Solargraph::Position.to_offset(source.code, position)
+          match = source.code[0..offset-1].match(/(\(|,)\s*$/)
+          if match
+            pos = Solargraph::Position.from_offset(source.code, offset - (match[0].length + 1))
+            # return source.tree_at(pos.line, pos.column).first
+            return source.node_at(pos.line, pos.column)
+          end
+          nil
         else
           tree = source.tree_at(position.line, position.column)
           return tree[1] if tree[1] && tree[1].type == :send && tree[1].children[2..-1].include?(tree[0])

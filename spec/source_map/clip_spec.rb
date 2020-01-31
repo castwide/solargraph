@@ -1110,4 +1110,46 @@ describe Solargraph::SourceMap::Clip do
     clip = api_map.clip_at('test.rb', [8, 15])
     expect(clip.complete.pins.first.path).to eq('Outer::String')
   end
+
+  it 'signifies nested methods' do
+    source = Solargraph::Source.load_string(%(
+      class Foo
+        def one arg1
+        end
+
+        def two arg2
+        end
+      end
+
+      Foo.new.one(Foo.new.two())
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new
+    api_map.map source
+    clip = api_map.clip_at('test.rb', [9, 30])
+    expect(clip.signify.first.path).to eq('Foo#two')
+  end
+
+  it 'signifies sources updated with commas' do
+    source = Solargraph::Source.load_string(%(
+      class Foo
+        def one arg1
+        end
+        def two arg2
+        end
+      end
+      Foo.new.one(Foo.new.two(x))
+    ), 'test.rb')
+    updater = Solargraph::Source::Updater.new(
+      'test.rb',
+      2,
+      [
+        Solargraph::Source::Change.new(Solargraph::Range.from_to(7, 32, 7, 32), ',')
+      ]
+    )
+    updated = source.synchronize(updater)
+    api_map = Solargraph::ApiMap.new
+    api_map.map updated
+    clip = api_map.clip_at('test.rb', [7, 33])
+    expect(clip.signify.first.path).to eq('Foo#one')
+  end
 end
