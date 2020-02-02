@@ -140,6 +140,7 @@ module Solargraph
         if Parser.rubyvm?
           if source.synchronized?
             tree = source.tree_at(position.line, position.column - 1)
+            tree.shift while tree.first && [:FCALL, :VCALL, :CALL].include?(tree.first.type) && !source.code_for(tree.first).strip.end_with?(')')
           else
             match = source.code[0..offset-1].match(/[\(,]\s*$/)
             if match
@@ -162,8 +163,7 @@ module Solargraph
                 if source.code[here-1] == '('
                   tree.shift
                 elsif tree.first && [:ARRAY, :ZARRAY, :LIST].include?(tree.first.type)
-                  tree.shift
-                  tree.shift
+                  tree.shift 2
                 end
               end
             end
@@ -179,7 +179,10 @@ module Solargraph
                 end
                 return node if rng.contain?(position)
               elsif source.code[0..offset-1] =~ /\(\s*$/
+                break  unless source.code_for(node).strip.end_with?(')')  
                 return node
+              else
+                break
               end
             end
           end
