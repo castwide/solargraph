@@ -91,6 +91,70 @@ module Solargraph
           node.is_a?(RubyVM::AbstractSyntaxTree::Node)
         end
 
+        # @param cursor [Solargraph::Source::Cursor]
+        def find_recipient_node cursor
+          if cursor.source.synchronized?
+            NodeMethods.synchronized_find_recipient_node cursor
+          else
+            NodeMethods.unsynchronized_find_recipient_node cursor
+          end
+        end
+
+        class << self
+          protected
+
+          def synchronized_find_recipient_node cursor
+            source = cursor.source
+            position = cursor.position
+            offset = cursor.offset
+            tree = source.tree_at(position.line, position.column)
+            tree.shift while tree.first && [:FCALL, :VCALL, :CALL].include?(tree.first.type) && !source.code_for(tree.first).strip.end_with?(')')
+            tree.each do |node|
+              if [:FCALL, :VCALL, :CALL].include?(node.type)
+                args = node.children.find { |c| Parser.is_ast_node?(c) && [:ARRAY, :ZARRAY, :LIST].include?(c.type) }
+                if args
+                  match = source.code[0..offset-1].match(/,[^\)]*\z/)
+                  rng = Solargraph::Range.from_node(args)
+                  if match
+                    rng = Solargraph::Range.new(rng.start, position)
+                  end
+                  return node if rng.contain?(position)
+                elsif source.code[0..offset-1] =~ /\(\s*$/
+                  break  unless source.code_for(node).strip.end_with?(')')
+                  return node
+                end
+              end
+            end
+            nil
+          end
+
+          def unsynchronized_find_recipient_node cursor
+            source = cursor.source
+            position = cursor.position
+            offset = cursor.offset
+            if source.code[0..offset-1] =~ /\([A-Zaz0-9_\s]*\z$/ #&& source.code[offset] == ')'
+              tree = source.tree_at(position.line, position.column - 1)
+              if tree.first && [:FCALL, :VCALL, :CALL].include?(tree.first.type)
+                return tree.first
+              else
+                return nil
+              end
+            else
+              match = source.code[0..offset-1].match(/[\(,][A-Zaz0-9_\s]*\z/)
+              if match
+                moved = Position.from_offset(source.code, offset - match[0].length)
+                tree = source.tree_at(moved.line, moved.column)
+                tree.shift if match[0].start_with?(',')
+                tree.shift while tree.first && ![:FCALL, :VCALL, :CALL].include?(tree.first.type)
+                if tree.first && [:FCALL, :VCALL, :CALL].include?(tree.first.type)
+                  return tree.first
+                end
+              end
+              return nil
+            end
+          end
+        end
+
         module DeepInference
           class << self
             CONDITIONAL = [:IF, :UNLESS]

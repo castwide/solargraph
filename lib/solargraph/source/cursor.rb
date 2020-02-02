@@ -136,77 +136,15 @@ module Solargraph
       end
 
       def recipient_node
-        @recipient_node ||= find_recipient_node
+        @recipient_node ||= Solargraph::Parser::NodeMethods.find_recipient_node(self)
       end
-
-      # @return [Parser::AST::Node, nil]
-      def find_recipient_node
-        if Parser.rubyvm?
-          if source.synchronized?
-            tree = source.tree_at(position.line, position.column)
-            tree.shift while tree.first && [:FCALL, :VCALL, :CALL].include?(tree.first.type) && !source.code_for(tree.first).strip.end_with?(')')
-          else
-            if source.code[0..offset-1] =~ /\([A-Zaz0-9_\s]*\z$/ #&& source.code[offset] == ')'
-              tree = source.tree_at(position.line, position.column - 1)
-              if tree.first && [:FCALL, :VCALL, :CALL].include?(tree.first.type)
-                return tree.first
-              else
-                return nil
-              end
-            else
-              match = source.code[0..offset-1].match(/[\(,][A-Zaz0-9_\s]*\z/)
-              if match
-                moved = Position.from_offset(source.code, offset - match[0].length)
-                tree = source.tree_at(moved.line, moved.column)
-                tree.shift if match[0].start_with?(',')
-                tree.shift while tree.first && ![:FCALL, :VCALL, :CALL].include?(tree.first.type)
-                if tree.first && [:FCALL, :VCALL, :CALL].include?(tree.first.type)
-                  return tree.first
-                end
-              end
-              return nil
-            end
-          end
-          tree.each do |node|
-            if [:FCALL, :VCALL, :CALL].include?(node.type)
-              args = node.children.find { |c| Parser.is_ast_node?(c) && [:ARRAY, :ZARRAY, :LIST].include?(c.type) }
-              if args
-                match = source.code[0..offset-1].match(/,[^\)]*\z/)
-                rng = Solargraph::Range.from_node(args)
-                if match
-                  rng = Solargraph::Range.new(rng.start, position)
-                end
-                return node if rng.contain?(position)
-              elsif source.code[0..offset-1] =~ /\(\s*$/
-                break  unless source.code_for(node).strip.end_with?(')')  
-                return node
-              end
-            end
-          end
-          nil
-        else
-          tree = source.tree_at(position.line, position.column)
-          return tree[1] if tree[1] && tree[1].type == :send && tree[1].children[2..-1].include?(tree[0])
-          return nil if source.code[offset-1] == ')' || source.code[0..offset] =~ /[^,][ \t]*?\n[ \t]*?\Z/
-          return nil if first_char_offset < offset && source.code[first_char_offset..offset-1] =~ /\)[\s]*\Z/
-          pos = Position.from_offset(source.code, first_char_offset)
-          tree = source.tree_at(pos.line, pos.character)
-          if tree[0] && tree[0].type == :send
-            rng = Range.from_node(tree[0])
-            return tree[0] if (rng.contain?(position) || offset + 1 == Position.to_offset(source.code, rng.ending)) && source.code[offset] =~ /[ \t\)\,'")]/
-            return tree[0] if (source.code[0..offset-1] =~ /\([\s]*\Z/ || source.code[0..offset-1] =~ /[a-z0-9_][ \t]+\Z/i)
-          end
-          return tree[1] if tree[1] && tree[1].type == :send
-          return tree[3] if tree[1] && tree[3] && tree[1].type == :pair && tree[3].type == :send
-        end
-      end
-
-      private
 
       # @return [Integer]
       def offset
         @offset ||= Position.to_offset(source.code, position)
       end
+
+      private
 
       # @return [Integer]
       def first_char_offset
