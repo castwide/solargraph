@@ -1152,4 +1152,40 @@ describe Solargraph::SourceMap::Clip do
     clip = api_map.clip_at('test.rb', [7, 33])
     expect(clip.signify.first.path).to eq('Foo#one')
   end
+
+  it 'signifies empty parentheses' do
+    src = Solargraph::Source.load_string %(
+      class Foo
+        def bar baz, key: ''
+        end
+      end
+      Foo.new.bar()
+    ), 'file.rb', 0
+    api_map = Solargraph::ApiMap.new
+    api_map.map src
+    clip = api_map.clip_at('file.rb', [5, 18])
+    expect(clip.signify.first.path).to eq('Foo#bar')
+  end
+
+  it 'signifies empty parentheses' do
+    source = Solargraph::Source.load_string %(
+      class Foo
+        def bar baz, key: ''
+        end
+      end
+      Foo.new.bar()
+    ), 'test.rb', 0
+    updater = Solargraph::Source::Updater.new(
+      'test.rb',
+      2,
+      [
+        Solargraph::Source::Change.new(Solargraph::Range.from_to(5, 17, 5, 19), '')
+      ]
+    )
+    updated = source.synchronize(updater)
+    api_map = Solargraph::ApiMap.new
+    api_map.map updated
+    clip = api_map.clip_at('test.rb', [5, 17])
+    expect(clip.signify).to be_empty
+  end
 end
