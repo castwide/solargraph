@@ -142,15 +142,26 @@ module Solargraph
             tree = source.tree_at(position.line, position.column - 1)
             tree.shift while tree.first && [:FCALL, :VCALL, :CALL].include?(tree.first.type) && !source.code_for(tree.first).strip.end_with?(')')
           else
-            match = source.code[0..offset-1].match(/[\(,]\s*$/)
-            if match
-              moved = Position.from_offset(source.code, offset - match[0].length)
-              tree = source.tree_at(moved.line, moved.column)
+            if source.code[offset - 1] == '(' && source.code[offset] == ')'
+              tree = source.tree_at(position.line, position.column - 1)
               if tree.first && [:FCALL, :VCALL, :CALL].include?(tree.first.type)
                 return tree.first
+              else
+                return nil
               end
+            else
+              match = source.code[0..offset-1].match(/[\(,]\s*$/)
+              if match
+                moved = Position.from_offset(source.code, offset - match[0].length)
+                tree = source.tree_at(moved.line, moved.column)
+                tree.shift
+                tree.shift while tree.first && ![:FCALL, :VCALL, :CALL].include?(tree.first.type)
+                if tree.first && [:FCALL, :VCALL, :CALL].include?(tree.first.type)
+                  return tree.first
+                end
+              end
+              return nil
             end
-            return nil
           end
           unless source.code[offset-1] == '(' && source.code[offset] == ')'
             match = source.code[0..offset-1].match(/,[^\)]*$/)

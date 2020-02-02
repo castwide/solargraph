@@ -1129,7 +1129,7 @@ describe Solargraph::SourceMap::Clip do
     expect(clip.signify.first.path).to eq('Foo#two')
   end
 
-  it 'signifies sources updated with commas' do
+  it 'signifies unsynchronized sources updated with commas' do
     source = Solargraph::Source.load_string(%(
       class Foo
         def one arg1
@@ -1146,7 +1146,7 @@ describe Solargraph::SourceMap::Clip do
         Solargraph::Source::Change.new(Solargraph::Range.from_to(7, 32, 7, 32), ',')
       ]
     )
-    updated = source.synchronize(updater)
+    updated = source.start_synchronize(updater)
     api_map = Solargraph::ApiMap.new
     api_map.map updated
     clip = api_map.clip_at('test.rb', [7, 33])
@@ -1167,25 +1167,41 @@ describe Solargraph::SourceMap::Clip do
     expect(clip.signify.first.path).to eq('Foo#bar')
   end
 
-  it 'signifies empty parentheses' do
+  it 'does not signify calls without parentheses' do
     source = Solargraph::Source.load_string %(
       class Foo
         def bar baz, key: ''
         end
       end
-      Foo.new.bar()
+      Foo.new.bar
     ), 'test.rb', 0
+    api_map = Solargraph::ApiMap.new
+    api_map.map source
+    clip = api_map.clip_at('test.rb', [5, 17])
+    expect(clip.signify).to be_empty
+  end
+
+  it 'signifies unsyncronized sources updated with parentheses' do
+    source = Solargraph::Source.load_string(%(
+      class Foo
+        def one arg1
+        end
+        def two arg2
+        end
+      end
+      Foo.new.one(Foo.new.two)
+    ), 'test.rb')
     updater = Solargraph::Source::Updater.new(
       'test.rb',
       2,
       [
-        Solargraph::Source::Change.new(Solargraph::Range.from_to(5, 17, 5, 19), '')
+        Solargraph::Source::Change.new(Solargraph::Range.from_to(7, 29, 7, 29), '()')
       ]
     )
-    updated = source.synchronize(updater)
+    updated = source.start_synchronize(updater)
     api_map = Solargraph::ApiMap.new
     api_map.map updated
-    clip = api_map.clip_at('test.rb', [5, 17])
-    expect(clip.signify).to be_empty
+    clip = api_map.clip_at('test.rb', [7, 30])
+    expect(clip.signify.first.path).to eq('Foo#two')
   end
 end
