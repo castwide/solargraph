@@ -1236,4 +1236,28 @@ describe Solargraph::SourceMap::Clip do
     clip = api_map.clip_at('test.rb', [7, 37])
     expect(clip.signify.first.path).to eq('Foo#one')
   end
+
+  it 'signifies unsynchronized sources with nested symbols' do
+    source = Solargraph::Source.load_string(%(
+      class Foo
+        def one arg1
+        end
+        def two arg2
+        end
+      end
+      Foo.new.one(Foo.new.two())
+    ), 'test.rb')
+    updater = Solargraph::Source::Updater.new(
+      'test.rb',
+      2,
+      [
+        Solargraph::Source::Change.new(Solargraph::Range.from_to(7, 30, 7, 30), 'F')
+      ]
+    )
+    updated = source.start_synchronize(updater)
+    api_map = Solargraph::ApiMap.new
+    api_map.map updated
+    clip = api_map.clip_at('test.rb', [7, 31])
+    expect(clip.signify.first.path).to eq('Foo#two')
+  end
 end

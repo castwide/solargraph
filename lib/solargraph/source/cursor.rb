@@ -135,14 +135,18 @@ module Solargraph
         end
       end
 
-      # @return [Parser::AST::Node, nil]
       def recipient_node
+        @recipient_node ||= find_recipient_node
+      end
+
+      # @return [Parser::AST::Node, nil]
+      def find_recipient_node
         if Parser.rubyvm?
           if source.synchronized?
             tree = source.tree_at(position.line, position.column - 1)
             tree.shift while tree.first && [:FCALL, :VCALL, :CALL].include?(tree.first.type) && !source.code_for(tree.first).strip.end_with?(')')
           else
-            if source.code[offset - 1] == '(' && source.code[offset] == ')'
+            if source.code[0..offset] =~ /\([A-Zaz0-9_\s]*$/ #&& source.code[offset] == ')'
               tree = source.tree_at(position.line, position.column - 1)
               if tree.first && [:FCALL, :VCALL, :CALL].include?(tree.first.type)
                 return tree.first
@@ -150,11 +154,11 @@ module Solargraph
                 return nil
               end
             else
-              match = source.code[0..offset-1].match(/[\(,]\s*$/)
+              match = source.code[0..offset-1].match(/[\(,][A-Zaz0-9_\s]*$/)
               if match
                 moved = Position.from_offset(source.code, offset - match[0].length)
                 tree = source.tree_at(moved.line, moved.column)
-                tree.shift
+                tree.shift if match[0].start_with?(',')
                 tree.shift while tree.first && ![:FCALL, :VCALL, :CALL].include?(tree.first.type)
                 if tree.first && [:FCALL, :VCALL, :CALL].include?(tree.first.type)
                   return tree.first
