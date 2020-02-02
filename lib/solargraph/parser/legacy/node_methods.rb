@@ -145,21 +145,33 @@ module Solargraph
           source = cursor.source
           position = cursor.position
           offset = cursor.offset
-          tree = source.tree_at(position.line, position.column)
-          return tree[1] if tree[1] && tree[1].type == :send && tree[1].children[2..-1].include?(tree[0])
-          return nil if source.code[offset-1] == ')' || source.code[0..offset] =~ /[^,][ \t]*?\n[ \t]*?\Z/
-          # @todo Smelly private method access
-          return nil if cursor.send(:first_char_offset) < offset && source.code[cursor.send(:first_char_offset)..offset-1] =~ /\)[\s]*\Z/
-          # @todo Smelly private method access
-          pos = Position.from_offset(source.code, cursor.send(:first_char_offset))
-          tree = source.tree_at(pos.line, pos.character)
-          if tree[0] && tree[0].type == :send
-            rng = Range.from_node(tree[0])
-            return tree[0] if (rng.contain?(position) || offset + 1 == Position.to_offset(source.code, rng.ending)) && source.code[offset] =~ /[ \t\)\,'")]/
-            return tree[0] if (source.code[0..offset-1] =~ /\([\s]*\Z/ || source.code[0..offset-1] =~ /[a-z0-9_][ \t]+\Z/i)
+          tree = if source.synchronized?
+            match = source.code[0..offset-1].match(/,\s*\z/)
+            if match
+              source.tree_at(position.line, position.column - match[0].length)
+            else
+              source.tree_at(position.line, position.column)
+            end
+          else
+            source.tree_at(position.line, position.column - 1)
           end
-          return tree[1] if tree[1] && tree[1].type == :send
-          return tree[3] if tree[1] && tree[3] && tree[1].type == :pair && tree[3].type == :send
+          prev = nil
+          tree.each do |node|
+            if node.type == :send
+              args = node.children[2..-1]
+              if !args.empty?
+                return node if prev && args.include?(prev)
+              else
+                if source.synchronized?
+                  return node if source.code[0..offset-1] =~ /\(\s*\z/ && source.code[offset..-1] =~ /^\s*\)/
+                else
+                  return node if source.code[0..offset-1] =~ /\([^\(]*\z/
+                end
+              end
+            end
+            prev = node
+          end
+          nil
         end
 
         module DeepInference

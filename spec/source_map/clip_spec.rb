@@ -1181,7 +1181,7 @@ describe Solargraph::SourceMap::Clip do
     expect(clip.signify).to be_empty
   end
 
-  it 'signifies unsyncronized sources updated with parentheses' do
+  it 'signifies unsynchronized sources updated with parentheses' do
     source = Solargraph::Source.load_string(%(
       class Foo
         def one arg1
