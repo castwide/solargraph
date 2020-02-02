@@ -163,22 +163,6 @@ module Solargraph
               return nil
             end
           end
-          unless source.code[offset-1] == '(' && source.code[offset] == ')'
-            match = source.code[0..offset-1].match(/,[^\)]*$/)
-            if match
-              new_pos = Position.from_offset(source.code, offset - (match[0].length + 1))
-              tree = source.tree_at(new_pos.line, new_pos.column)
-              here = offset - (match.length+1)
-              if source.code[here] == ')'
-                tree.shift
-                if source.code[here-1] == '('
-                  tree.shift
-                elsif tree.first && [:ARRAY, :ZARRAY, :LIST].include?(tree.first.type)
-                  tree.shift 2
-                end
-              end
-            end
-          end
           tree.each do |node|
             if [:FCALL, :VCALL, :CALL].include?(node.type)
               args = node.children.find { |c| Parser.is_ast_node?(c) && [:ARRAY, :ZARRAY, :LIST].include?(c.type) }

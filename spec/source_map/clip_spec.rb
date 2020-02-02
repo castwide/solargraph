@@ -1205,7 +1205,7 @@ describe Solargraph::SourceMap::Clip do
     expect(clip.signify.first.path).to eq('Foo#two')
   end
 
-  it 'signifies synchronized sources with trailing commas' do
+  it 'signifies sources with trailing commas' do
     source = Solargraph::Source.load_string(%(
       class Foo
         def one arg1
@@ -1219,5 +1219,21 @@ describe Solargraph::SourceMap::Clip do
     api_map.map source
     clip = api_map.clip_at('test.rb', [7, 32])
     expect(clip.signify.first.path).to eq('Foo#two')
+  end
+
+  it 'signifies sources with trailing commas in nested calls' do
+    source = Solargraph::Source.load_string(%(
+      class Foo
+        def one arg1
+        end
+        def two arg2
+        end
+      end
+      Foo.new.one(Foo.new.two(x, y), )
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new
+    api_map.map source
+    clip = api_map.clip_at('test.rb', [7, 37])
+    expect(clip.signify.first.path).to eq('Foo#one')
   end
 end
