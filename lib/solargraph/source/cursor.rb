@@ -192,8 +192,6 @@ module Solargraph
               elsif source.code[0..offset-1] =~ /\(\s*$/
                 break  unless source.code_for(node).strip.end_with?(')')  
                 return node
-              else
-                break
               end
             end
           end
