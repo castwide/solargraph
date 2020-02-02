@@ -143,10 +143,10 @@ module Solargraph
       def find_recipient_node
         if Parser.rubyvm?
           if source.synchronized?
-            tree = source.tree_at(position.line, position.column - 1)
+            tree = source.tree_at(position.line, position.column)
             tree.shift while tree.first && [:FCALL, :VCALL, :CALL].include?(tree.first.type) && !source.code_for(tree.first).strip.end_with?(')')
           else
-            if source.code[0..offset] =~ /\([A-Zaz0-9_\s]*$/ #&& source.code[offset] == ')'
+            if source.code[0..offset-1] =~ /\([A-Zaz0-9_\s]*\z$/ #&& source.code[offset] == ')'
               tree = source.tree_at(position.line, position.column - 1)
               if tree.first && [:FCALL, :VCALL, :CALL].include?(tree.first.type)
                 return tree.first
@@ -154,7 +154,7 @@ module Solargraph
                 return nil
               end
             else
-              match = source.code[0..offset-1].match(/[\(,][A-Zaz0-9_\s]*$/)
+              match = source.code[0..offset-1].match(/[\(,][A-Zaz0-9_\s]*\z/)
               if match
                 moved = Position.from_offset(source.code, offset - match[0].length)
                 tree = source.tree_at(moved.line, moved.column)
@@ -171,7 +171,7 @@ module Solargraph
             if [:FCALL, :VCALL, :CALL].include?(node.type)
               args = node.children.find { |c| Parser.is_ast_node?(c) && [:ARRAY, :ZARRAY, :LIST].include?(c.type) }
               if args
-                match = source.code[0..offset-1].match(/,[^\)]*$/)
+                match = source.code[0..offset-1].match(/,[^\)]*\z/)
                 rng = Solargraph::Range.from_node(args)
                 if match
                   rng = Solargraph::Range.new(rng.start, position)

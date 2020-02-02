@@ -1229,10 +1229,28 @@ describe Solargraph::SourceMap::Clip do
         def two arg2
         end
       end
+      Foo.new.one(Foo.new.two(x, y),)
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new
+    api_map.map source
+    clip = api_map.clip_at('test.rb', [7, 36])
+    expect(clip.signify.first.path).to eq('Foo#one')
+  end
+
+  it 'signifies sources with trailing commas and whitespace in nested calls' do
+    source = Solargraph::Source.load_string(%(
+      class Foo
+        def one arg1
+        end
+        def two arg2
+        end
+      end
       Foo.new.one(Foo.new.two(x, y), )
     ), 'test.rb')
     api_map = Solargraph::ApiMap.new
     api_map.map source
+    clip = api_map.clip_at('test.rb', [7, 36])
+    expect(clip.signify.first.path).to eq('Foo#one')
     clip = api_map.clip_at('test.rb', [7, 37])
     expect(clip.signify.first.path).to eq('Foo#one')
   end
