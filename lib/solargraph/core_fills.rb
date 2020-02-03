@@ -99,6 +99,11 @@ module Solargraph
       # Override.method_return('Module#attr_writer', 'void'),
       # Override.method_return('Module#attr_accessor', 'void'),
 
+      Override.from_comment('Numeric#+', %(
+@param num [Numeric]
+@return [Numeric]
+      )),
+
       Override.method_return('Object#!', 'Boolean'),
       Override.method_return('Object#clone', 'self', delete: [:overload]),
       Override.method_return('Object#dup', 'self', delete: [:overload]),
