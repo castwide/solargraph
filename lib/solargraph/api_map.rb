@@ -121,7 +121,7 @@ module Solargraph
       pins.concat implicit.overrides
       br = reqs.include?('bundler/require') ? require_from_bundle(bundle.workspace.directory) : {}
       reqs.merge br.keys
-      yard_map.change(reqs.to_a, br)
+      yard_map.change(reqs.to_a, br, bundle.workspace.gemnames)
       new_store = Store.new(pins + yard_map.pins)
       @mutex.synchronize {
         @cache.clear
@@ -219,10 +219,6 @@ module Solargraph
       result = []
       contexts.each do |context|
         fqns = qualify(namespace, context)
-        visibility = [:public]
-        visibility.push :private if fqns == context
-        result.concat inner_get_constants(fqns, visibility, skip)
-        fqns = qualify(namespace, '')
         visibility = [:public]
         visibility.push :private if fqns == context
         result.concat inner_get_constants(fqns, visibility, skip)
@@ -516,9 +512,7 @@ module Solargraph
       fqsup = qualify(sup)
       cls = qualify(sub)
       until fqsup.nil? || cls.nil?
-        # @todo Classes in the workspace are not detected as subclasses of
-        #   Object. The quick and dirty fix is to hardcode it here.
-        return true if fqsup == 'Object' || cls == fqsup
+        return true if cls == fqsup
         cls = qualify(store.get_superclass(cls), cls)
       end
       false
@@ -573,21 +567,26 @@ module Solargraph
             fqim = qualify(im, fqns)
             result.concat inner_get_methods(fqim, scope, visibility, deep, skip, true) unless fqim.nil?
           end
+          sc = store.get_superclass(fqns)
+          unless sc.nil?
+            fqsc = qualify(sc, fqns.split('::')[0..-2].join('::'))
+            result.concat inner_get_methods(fqsc, scope, visibility, true, skip, no_core) unless fqsc.nil?
+          end
         else
           store.get_extends(fqns).reverse.each do |em|
             fqem = qualify(em, fqns)
             result.concat inner_get_methods(fqem, :instance, visibility, deep, skip, true) unless fqem.nil?
+          end
+          sc = store.get_superclass(fqns)
+          unless sc.nil?
+            fqsc = qualify(sc, fqns.split('::')[0..-2].join('::'))
+            result.concat inner_get_methods(fqsc, scope, visibility, true, skip, true) unless fqsc.nil?
           end
           unless no_core || fqns.empty?
             type = get_namespace_type(fqns)
             result.concat inner_get_methods('Class', :instance, visibility, deep, skip, no_core) if type == :class
             result.concat inner_get_methods('Module', :instance, visibility, deep, skip, no_core)
           end
-        end
-        sc = store.get_superclass(fqns)
-        unless sc.nil?
-          fqsc = qualify(sc, fqns.split('::')[0..-2].join('::'))
-          result.concat inner_get_methods(fqsc, scope, visibility, true, skip, no_core) unless fqsc.nil?
         end
         store.domains(fqns).each do |d|
           dt = ComplexType.try_parse(d)

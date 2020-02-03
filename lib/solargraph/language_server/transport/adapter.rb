@@ -26,9 +26,6 @@ module Solargraph
         def receiving data
           @data_reader.receive data
         end
-        # @todo Temporary alias to avoid problems due to a breaking change in
-        #   the Backport API
-        alias sending receiving
 
         def update
           if @host.stopped?

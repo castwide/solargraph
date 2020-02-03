@@ -14,7 +14,8 @@ module Solargraph
             filename = uri_to_file(params['textDocument']['uri'])
             # Make the temp file in the original file's directory so RuboCop
             # detects the correct configuration
-            tempfile = File.join(File.dirname(filename), "_tmp_#{SecureRandom.hex(8)}_#{File.basename(filename)}")
+            # the .rb extension is needed for ruby file without extension, else rubocop won't format
+            tempfile = File.join(File.dirname(filename), "_tmp_#{SecureRandom.hex(8)}_#{File.basename(filename)}.rb")
             original = host.read_text(params['textDocument']['uri'])
             File.write tempfile, original
             begin

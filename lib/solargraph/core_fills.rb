@@ -1,6 +1,10 @@
 # frozen_string_literal: true
 
 module Solargraph
+  # Overrides for the Ruby core.
+  #
+  # The YardMap uses this module to add type information to core methods.
+  #
   module CoreFills
     Override = Pin::Reference::Override
 
@@ -13,8 +17,8 @@ module Solargraph
     ].freeze
 
     methods_with_yieldparam_subtypes = %w[
-      Array#each Array#map Array#any? Array#all? Array#index Array#keep_if
-      Array#delete_if
+      Array#each Array#map Array#map! Array#any? Array#all? Array#index
+      Array#keep_if Array#delete_if
       Enumerable#each_entry Enumerable#map Enumerable#any? Enumerable#all?
       Enumerable#select Enumerable#reject
       Set#each
@@ -74,7 +78,11 @@ module Solargraph
 
       Override.method_return('Enumerable#select', 'self'),
 
+      Override.method_return('File.absolute_path', 'String'),
+      Override.method_return('File.basename', 'String'),
       Override.method_return('File.dirname', 'String'),
+      Override.method_return('File.extname', 'String'),
+      Override.method_return('File.join', 'String'),
 
       Override.from_comment('Hash#[]', %(
 @return_value_parameter

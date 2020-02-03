@@ -23,8 +23,6 @@ module Solargraph
 
       @@inference_stack = []
       @@inference_depth = 0
-      @@last_api_map = nil
-      @@pin_cache = {}
 
       UNDEFINED_CALL = Chain::Call.new('<undefined>')
       UNDEFINED_CONSTANT = Chain::Constant.new('<undefined>')
@@ -34,8 +32,14 @@ module Solargraph
 
       # @param links [Array<Chain::Link>]
       def initialize links
-        @links = links
+        @links = links.clone
         @links.push UNDEFINED_CALL if @links.empty?
+        head = true
+        @links.map! do |link|
+          result = (head ? link.clone_head : link.clone_body)
+          head = false
+          result
+        end
       end
 
       # @return [Chain]
@@ -54,7 +58,9 @@ module Solargraph
         links[0..-2].each do |link|
           pins = link.resolve(api_map, working_pin, locals)
           # Locals are only used when resolving the first link
-          locals = []
+          # @todo There's a problem here. Call links need to resolve arguments
+          #   that might refer to local variables.
+          # locals = []
           type = infer_first_defined(pins, working_pin, api_map)
           return [] if type.undefined?
           working_pin = Pin::ProxyType.anonymous(type)
@@ -115,9 +121,7 @@ module Solargraph
             # Avoid infinite recursion
             next if @@inference_stack.include?(pin)
             @@inference_stack.push pin
-            # puts "    Inferring #{pin.class} | #{pin.path} | #{pin.name} | #{pin.location ? pin.location.to_hash : pin.location}"
-            # type = pin.probe(api_map)
-            type = remember_or_probe(pin, api_map)
+            type = pin.probe(api_map)
             @@inference_stack.pop
             break if type.defined?
           end
@@ -154,12 +158,6 @@ module Solargraph
             pin.rebind ysct
           end
         end
-      end
-
-      def remember_or_probe pin, api_map
-        @@pin_cache.clear if @@last_api_map != api_map
-        @@last_api_map = api_map
-        @@pin_cache[pin] ||= pin.probe(api_map)
       end
     end
   end

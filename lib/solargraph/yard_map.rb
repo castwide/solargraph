@@ -50,6 +50,7 @@ module Solargraph
       @gem_paths = {}
       @stdlib_namespaces = []
       @gemset = gemset
+      @source_gems = []
       process_requires
       yardocs.uniq!
     end
@@ -67,13 +68,14 @@ module Solargraph
     # @param new_requires [Array<String>]
     # @param new_gemset [Hash{String => String}]
     # @return [Boolean]
-    def change new_requires, new_gemset
-      if new_requires.uniq.sort == required.uniq.sort && new_gemset == gemset
+    def change new_requires, new_gemset, source_gems = []
+      if new_requires.uniq.sort == required.uniq.sort && new_gemset == gemset && @source_gems.uniq.sort == source_gems.uniq.sort
         false
       else
         required.clear
         required.concat new_requires
         @gemset = new_gemset
+        @source_gems = source_gems
         process_requires
         true
       end
@@ -181,6 +183,10 @@ module Solargraph
         result = []
         begin
           spec = spec_for_require(r)
+          if @source_gems.include?(spec.name)
+            next
+          end
+          next if @gem_paths.key?(spec.name)
           yd = yardoc_file_for_spec(spec)
           # YARD detects gems for certain libraries that do not have a yardoc
           # but exist in the stdlib. `fileutils` is an example. Treat those
@@ -191,6 +197,7 @@ module Solargraph
             yardocs.unshift yd
             result.concat process_yardoc yd, spec
             result.concat add_gem_dependencies(spec) if with_dependencies?
+            stdlib_fill r, result
           end
         rescue Gem::LoadError => e
           base = r.split('/').first
@@ -237,16 +244,7 @@ module Solargraph
             result.concat Mapper.new(all).map
           end
           result.delete_if(&:nil?)
-          StdlibFills.get(r).each do |ovr|
-            pin = result.select { |p| p.path == ovr.name }.first
-            next if pin.nil?
-            (ovr.tags.map(&:tag_name) + ovr.delete).uniq.each do |tag|
-              pin.docstring.delete_tags tag.to_sym
-            end
-            ovr.tags.each do |tag|
-              pin.docstring.add_tag(tag)
-            end
-          end
+          stdlib_fill r, result
           cache.set_path_pins(r, result) unless result.empty?
           pins.concat result
         end
@@ -260,8 +258,9 @@ module Solargraph
       result = []
       (spec.dependencies - spec.development_dependencies).each do |dep|
         begin
+          next if @source_gems.include?(dep.name) || @gem_paths.key?(dep.name)
           depspec = Gem::Specification.find_by_name(dep.name)
-          next if depspec.nil? || @gem_paths.key?(depspec.name)
+          next if depspec.nil?
           @gem_paths[depspec.name] = depspec.full_gem_path
           gy = yardoc_file_for_spec(depspec)
           if gy.nil?
@@ -312,7 +311,10 @@ module Solargraph
     # @return [Gem::Specification]
     def spec_for_require path
       spec = Gem::Specification.find_by_path(path) || Gem::Specification.find_by_name(path.split('/').first)
-      if @gemset[spec.name]
+      # Avoid loading the spec again if it's going to be skipped anyway
+      return spec if @source_gems.include?(spec.name)
+      # Avoid loading the spec again if it's already the correct version
+      if @gemset[spec.name] && @gemset[spec.name] != spec.version
         begin
           return Gem::Specification.find_by_name(spec.name, "= #{@gemset[spec.name]}")
         rescue Gem::LoadError
@@ -320,6 +322,22 @@ module Solargraph
         end
       end
       spec
+    end
+
+    # @param path [String]
+    # @param pins [Array<Pin::Base>]
+    # @return [void]
+    def stdlib_fill path, pins
+      StdlibFills.get(path).each do |ovr|
+        pin = pins.select { |p| p.path == ovr.name }.first
+        next if pin.nil?
+        (ovr.tags.map(&:tag_name) + ovr.delete).uniq.each do |tag|
+          pin.docstring.delete_tags tag.to_sym
+        end
+        ovr.tags.each do |tag|
+          pin.docstring.add_tag(tag)
+        end
+      end
     end
   end
 end

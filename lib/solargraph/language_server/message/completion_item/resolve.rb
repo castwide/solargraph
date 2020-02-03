@@ -45,7 +45,7 @@ module Solargraph
               if this_link && this_link != last_link && this_link != 'undefined'
                 result.push this_link
               end
-              result.push pin.documentation
+              result.push pin.documentation unless result.last && result.last.end_with?(pin.documentation)
               last_link = this_link
             end
             result.join("\n\n")
