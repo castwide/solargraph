@@ -61,7 +61,7 @@ module Solargraph
           ]
           o, e, s = Open3.capture3(*cmd)
           if s.success?
-            o && !o.empty? ? JSON.parse(o) : {}
+            o && !o.empty? ? JSON.parse(o.split("\n").last) : {}
           else
             Solargraph.logger.warn e
             raise BundleNotFoundError, "Failed to load gems from bundle at #{directory}"
