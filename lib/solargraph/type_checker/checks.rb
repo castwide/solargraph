@@ -17,7 +17,8 @@ module Solargraph
         expected.each do |exp|
           found = false
           inferred.each do |inf|
-            if api_map.super_and_sub?(fuzz(exp), fuzz(inf))
+            # if api_map.super_and_sub?(fuzz(inf), fuzz(exp))
+            if either_way?(api_map, inf, exp)
               found = true
               matches.push inf
               break
@@ -29,7 +30,8 @@ module Solargraph
           next if matches.include?(inf)
           found = false
           expected.each do |exp|
-            if api_map.super_and_sub?(fuzz(exp), fuzz(inf))
+            # if api_map.super_and_sub?(fuzz(inf), fuzz(exp))
+            if either_way?(api_map, inf, exp)
               found = true
               break
             end
@@ -48,7 +50,8 @@ module Solargraph
         expected.each do |exp|
           next if exp.duck_type?
           inferred.each do |inf|
-            return true if exp == inf || api_map.super_and_sub?(fuzz(exp), fuzz(inf))
+            # return true if exp == inf || api_map.super_and_sub?(fuzz(inf), fuzz(exp))
+            return true if exp == inf || either_way?(api_map, inf, exp)
           end
         end
         false
@@ -76,6 +79,16 @@ module Solargraph
         else
           type.tag
         end
+      end
+
+      # @param api_map [ApiMap]
+      # @param cls1 [ComplexType]
+      # @param cls2 [ComplexType]
+      # @return [Boolean]
+      def either_way?(api_map, cls1, cls2)
+        f1 = fuzz(cls1)
+        f2 = fuzz(cls2)
+        api_map.super_and_sub?(f1, f2) || api_map.super_and_sub?(f2, f1)
       end
     end
   end
