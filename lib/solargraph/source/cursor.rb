@@ -135,40 +135,16 @@ module Solargraph
         end
       end
 
-      # @return [Parser::AST::Node, nil]
       def recipient_node
-        if Parser.rubyvm?
-          tree = source.tree_at(position.line, position.column)
-          result = Parser.recipient_node(tree)
-          if result.nil? && tree.first && tree.first.type == :CALL && source.code[Position.to_offset(source.code, Position.new(position.line, position.column - 1)), 1] == '(' && source.code[Position.to_offset(source.code, position), 1] == ')'
-              return tree.first
-          else
-            nil
-          end
-          Parser.recipient_node(tree)
-        else
-          tree = source.tree_at(position.line, position.column)
-          return tree[1] if tree[1] && tree[1].type == :send && tree[1].children[2..-1].include?(tree[0])
-          return nil if source.code[offset-1] == ')' || source.code[0..offset] =~ /[^,][ \t]*?\n[ \t]*?\Z/
-          return nil if first_char_offset < offset && source.code[first_char_offset..offset-1] =~ /\)[\s]*\Z/
-          pos = Position.from_offset(source.code, first_char_offset)
-          tree = source.tree_at(pos.line, pos.character)
-          if tree[0] && tree[0].type == :send
-            rng = Range.from_node(tree[0])
-            return tree[0] if (rng.contain?(position) || offset + 1 == Position.to_offset(source.code, rng.ending)) && source.code[offset] =~ /[ \t\)\,'")]/
-            return tree[0] if (source.code[0..offset-1] =~ /\([\s]*\Z/ || source.code[0..offset-1] =~ /[a-z0-9_][ \t]+\Z/i)
-          end
-          return tree[1] if tree[1] && tree[1].type == :send
-          return tree[3] if tree[1] && tree[3] && tree[1].type == :pair && tree[3].type == :send
-        end
+        @recipient_node ||= Solargraph::Parser::NodeMethods.find_recipient_node(self)
       end
-
-      private
 
       # @return [Integer]
       def offset
         @offset ||= Position.to_offset(source.code, position)
       end
+
+      private
 
       # @return [Integer]
       def first_char_offset

@@ -140,6 +140,40 @@ module Solargraph
           DeepInference.get_return_nodes(node).map { |n| n || NIL_NODE }
         end
 
+        # @param cursor [Solargraph::Source::Cursor]
+        def find_recipient_node cursor
+          source = cursor.source
+          position = cursor.position
+          offset = cursor.offset
+          tree = if source.synchronized?
+            match = source.code[0..offset-1].match(/,\s*\z/)
+            if match
+              source.tree_at(position.line, position.column - match[0].length)
+            else
+              source.tree_at(position.line, position.column)
+            end
+          else
+            source.tree_at(position.line, position.column - 1)
+          end
+          prev = nil
+          tree.each do |node|
+            if node.type == :send
+              args = node.children[2..-1]
+              if !args.empty?
+                return node if prev && args.include?(prev)
+              else
+                if source.synchronized?
+                  return node if source.code[0..offset-1] =~ /\(\s*\z/ && source.code[offset..-1] =~ /^\s*\)/
+                else
+                  return node if source.code[0..offset-1] =~ /\([^\(]*\z/
+                end
+              end
+            end
+            prev = node
+          end
+          nil
+        end
+
         module DeepInference
           class << self
             CONDITIONAL = [:if, :unless]

@@ -149,7 +149,7 @@ module Solargraph
     # @return [Source::Cursor]
     def cursor_at filename, position
       position = Position.normalize(position)
-      raise "File not found: #{filename}" unless source_map_hash.has_key?(filename)
+      raise FileNotFoundError, "File not found: #{filename}" unless source_map_hash.has_key?(filename)
       source_map_hash[filename].cursor_at(position)
     end
 
