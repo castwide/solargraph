@@ -222,9 +222,6 @@ module Solargraph
       result
     end
 
-    def call_error? call
-    end
-
     def argument_problems_for chain, api_map, block_pin, locals, location
       result = []
       base = chain
