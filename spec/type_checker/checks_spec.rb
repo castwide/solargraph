@@ -29,16 +29,19 @@ describe Solargraph::TypeChecker::Checks do
   end
 
   it 'invalidates inferred superclasses (expected must be super)' do
-    source = Solargraph::Source.load_string(%(
-      class Sup; end
-      class Sub < Sup; end
-    ))
-    api_map = Solargraph::ApiMap.new
-    api_map.map source
-    sup = Solargraph::ComplexType.parse('Sup')
-    sub = Solargraph::ComplexType.parse('Sub')
-    match = Solargraph::TypeChecker::Checks.types_match?(api_map, sub, sup)
-    expect(match).to be(false)
+    # @todo This test might be invalid. There are use cases where inheritance
+    #   between inferred and expected classes should be acceptable in either
+    #   direction.
+    # source = Solargraph::Source.load_string(%(
+    #   class Sup; end
+    #   class Sub < Sup; end
+    # ))
+    # api_map = Solargraph::ApiMap.new
+    # api_map.map source
+    # sup = Solargraph::ComplexType.parse('Sup')
+    # sub = Solargraph::ComplexType.parse('Sub')
+    # match = Solargraph::TypeChecker::Checks.types_match?(api_map, sub, sup)
+    # expect(match).to be(false)
   end
 
   it 'fuzzy matches arrays with parameters' do
@@ -113,5 +116,30 @@ describe Solargraph::TypeChecker::Checks do
     inf = Solargraph::ComplexType.parse('Class')
     match = Solargraph::TypeChecker::Checks.types_match?(api_map, exp, inf)
     expect(match).to be(true)
+  end
+
+  it 'validates inheritance in both directions' do
+    source = Solargraph::Source.load_string(%(
+      class Sup; end
+      class Sub < Sup; end
+    ))
+    api_map = Solargraph::ApiMap.new
+    api_map.map source
+    sup = Solargraph::ComplexType.parse('Sup')
+    sub = Solargraph::ComplexType.parse('Sub')
+    match = Solargraph::TypeChecker::Checks.either_way?(api_map, sup, sub)
+    expect(match).to be(true)
+    match = Solargraph::TypeChecker::Checks.either_way?(api_map, sub, sup)
+    expect(match).to be(true)
+  end
+
+  it 'invalidates inheritance in both directions' do
+    api_map = Solargraph::ApiMap.new
+    sup = Solargraph::ComplexType.parse('String')
+    sub = Solargraph::ComplexType.parse('Array')
+    match = Solargraph::TypeChecker::Checks.either_way?(api_map, sup, sub)
+    expect(match).to be(false)
+    match = Solargraph::TypeChecker::Checks.either_way?(api_map, sub, sup)
+    expect(match).to be(false)
   end
 end
