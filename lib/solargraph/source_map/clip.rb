@@ -29,10 +29,10 @@ module Solargraph
         result = []
         result.concat complete_keyword_parameters
         if cursor.chain.constant? || cursor.start_of_constant?
+          full = cursor.chain.links.first.word
           if cursor.chain.undefined?
             type = cursor.chain.base.infer(api_map, context_pin, locals)
           else
-            full = cursor.chain.links.first.word
             if full.include?('::') && cursor.chain.links.length == 1
               type = ComplexType.try_parse(full.split('::')[0..-2].join('::'))
             elsif cursor.chain.links.length > 1
@@ -41,7 +41,15 @@ module Solargraph
               type = ComplexType::UNDEFINED
             end
           end
-          result.concat api_map.get_constants(type.undefined? ? '' : type.namespace, cursor.start_of_constant? ? '' : context_pin.full_context.namespace, *gates)
+          if type.undefined?
+            if full.include?('::')
+              result.concat api_map.get_constants(full, *gates)
+            else
+              result.concat api_map.get_constants('', cursor.start_of_constant? ? '' : context_pin.full_context.namespace, *gates) #.select { |pin| pin.name.start_with?(full) }
+            end
+          else
+            result.concat api_map.get_constants(type.namespace, cursor.start_of_constant? ? '' : context_pin.full_context.namespace, *gates)
+          end
         else
           type = cursor.chain.base.infer(api_map, block, locals)
           result.concat api_map.get_complex_type_methods(type, block.binder.namespace, cursor.chain.links.length == 1)

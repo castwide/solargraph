@@ -32,7 +32,7 @@ module Solargraph
               else
                 "#{type.namespace}::#{sym}"
               end
-              pins.replace api_map.get_path_pins(fqns)
+              pins.replace api_map.get_constants('', gate).select{ |pin| pin.name == sym }
               break if pins.empty?
               pins.each do |pin|
                 type = pin.typify(api_map)
@@ -57,6 +57,14 @@ module Solargraph
               "#{type.namespace}::#{sym}"
             end
             pins.replace api_map.get_path_pins(fqns)
+            return pins unless pins.empty?
+            pins.replace(api_map.get_constants('', gate).select do |pin|
+              pin.name == sym &&
+                (
+                  (word.start_with?('::') && pin.path.start_with?(word[2..-1])) ||
+                  (!word.include?('::') || pin.path.start_with?(word))
+                )
+            end)
             return pins unless pins.empty?
           end
           pins

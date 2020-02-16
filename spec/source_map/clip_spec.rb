@@ -1278,4 +1278,23 @@ describe Solargraph::SourceMap::Clip do
     clip = api_map.clip_at('test.rb', [7, 31])
     expect(clip.signify.first.path).to eq('Foo#two')
   end
+
+  it 'finds constants in superclasses' do
+    source = Solargraph::Source.load_string(%(
+      class A
+        class AA
+        end
+      end
+
+      class B < A
+        AA
+      end
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new
+    api_map.map source
+    clip = api_map.clip_at('test.rb', [7, 8])
+    pins = clip.define
+    expect(pins).to be_one
+    expect(pins.first.path).to eq('A::AA')
+  end
 end
