@@ -30,15 +30,15 @@ module Solargraph
         result.concat complete_keyword_parameters
         if cursor.chain.constant? || cursor.start_of_constant?
           full = cursor.chain.links.first.word
-          if cursor.chain.undefined?
-            type = cursor.chain.base.infer(api_map, context_pin, locals)
+          type = if cursor.chain.undefined?
+            cursor.chain.base.infer(api_map, context_pin, locals)
           else
             if full.include?('::') && cursor.chain.links.length == 1
-              type = ComplexType.try_parse(full.split('::')[0..-2].join('::'))
+              ComplexType.try_parse(full.split('::')[0..-2].join('::'))
             elsif cursor.chain.links.length > 1
-              type = ComplexType.try_parse(full)
+              ComplexType.try_parse(full)
             else
-              type = ComplexType::UNDEFINED
+              ComplexType::UNDEFINED
             end
           end
           if type.undefined?
