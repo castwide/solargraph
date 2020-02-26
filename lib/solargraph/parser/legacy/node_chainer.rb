@@ -72,7 +72,7 @@ module Solargraph
             end
           elsif n.type == :self
             result.push Chain::Head.new('self')
-          elsif n.type == :zsuper
+          elsif [:super, :zsuper].include?(n.type)
             result.push Chain::Head.new('super')
           elsif n.type == :const
             const = unpack_name(n)
