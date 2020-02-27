@@ -13,6 +13,7 @@ module Solargraph
 
         def initialize
           @stopped = true
+          @has_uri = ConditionVariable.new
         end
 
         def stopped?
@@ -24,17 +25,14 @@ module Solargraph
           return unless @stopped
           @stopped = false
           Thread.new do
-            until stopped?
-              tick
-              sleep 0.25 if queue.empty?
-            end
+            tick until stopped?
           end
         end
 
         # @return [void]
         def tick
-          return if queue.empty?
-          uri = mutex.synchronize { queue.shift }
+          uri = mutex.synchronize { next_uri }
+
           return if queue.include?(uri)
           mutex.synchronize do
             nxt = open_source_hash[uri].finish_synchronize
@@ -42,6 +40,18 @@ module Solargraph
             changed
             notify_observers uri
           end
+        end
+
+        # @return [void]
+        def add_uri(uri)
+          queue.push(uri)
+          @has_uri.signal
+        end
+
+        # @return [String]
+        def next_uri
+          @has_uri.wait(mutex) if queue.empty?
+          queue.shift
         end
 
         # @return [void]
@@ -87,7 +97,7 @@ module Solargraph
           src = find(uri)
           mutex.synchronize do
             open_source_hash[uri] = src.start_synchronize(updater)
-            queue.push uri
+            add_uri(uri)
           end
           changed
           notify_observers uri
