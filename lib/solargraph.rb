@@ -1,6 +1,5 @@
 # frozen_string_literal: true
 
-require 'rexml/document' # Avoid conflicts between stdlib and stdgem
 require 'solargraph/version'
 
 # The top-level namespace for the Solargraph code mapping, documentation,
