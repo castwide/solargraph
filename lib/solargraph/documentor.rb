@@ -28,7 +28,8 @@ module Solargraph
           @out.puts "Documenting #{name} #{version}"
           `yard gems #{name} #{version} #{@rebuild ? '--rebuild' : ''}`
           yd = YARD::Registry.yardoc_file_for_gem(name, "= #{version}")
-          if !yd
+          # HACK: Ignore errors documenting bundler
+          if !yd && name != 'bundler'
             @out.puts "#{name} #{version} YARD documentation failed"
             failures += 1
           end
