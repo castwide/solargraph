@@ -513,7 +513,7 @@ module Solargraph
       cls = qualify(sub)
       until fqsup.nil? || cls.nil?
         return true if cls == fqsup
-        cls = qualify(store.get_superclass(cls), cls)
+        cls = qualify_superclass(cls)
       end
       false
     end
@@ -567,9 +567,8 @@ module Solargraph
             fqim = qualify(im, fqns)
             result.concat inner_get_methods(fqim, scope, visibility, deep, skip, true) unless fqim.nil?
           end
-          sc = store.get_superclass(fqns)
-          unless sc.nil?
-            fqsc = qualify(sc, fqns.split('::')[0..-2].join('::'))
+          fqsc = qualify_superclass(fqns)
+          unless fqsc.nil?
             result.concat inner_get_methods(fqsc, scope, visibility, true, skip, no_core) unless fqsc.nil?
           end
         else
@@ -577,9 +576,8 @@ module Solargraph
             fqem = qualify(em, fqns)
             result.concat inner_get_methods(fqem, :instance, visibility, deep, skip, true) unless fqem.nil?
           end
-          sc = store.get_superclass(fqns)
-          unless sc.nil?
-            fqsc = qualify(sc, fqns.split('::')[0..-2].join('::'))
+          fqsc = qualify_superclass(fqns)
+          unless fqsc.nil?
             result.concat inner_get_methods(fqsc, scope, visibility, true, skip, true) unless fqsc.nil?
           end
           unless no_core || fqns.empty?
@@ -608,9 +606,9 @@ module Solargraph
       store.get_includes(fqns).each do |is|
         result.concat inner_get_constants(qualify(is, fqns), [:public], skip)
       end
-      sc = store.get_superclass(fqns)
-      unless %w[Object BasicObject].include?(sc)
-        result.concat inner_get_constants(store.get_superclass(fqns), [:public], skip)
+      fqsc = qualify_superclass(fqns)
+      unless %w[Object BasicObject].include?(fqsc)
+        result.concat inner_get_constants(fqsc, [:public], skip)
       end
       result
     end
@@ -625,6 +623,15 @@ module Solargraph
     # @return [String]
     def qualify_lower namespace, context
       qualify namespace, context.split('::')[0..-2].join('::')
+    end
+
+    def qualify_superclass fqsub
+      sup = store.get_superclass(fqsub)
+      return nil if sup.nil?
+      parts = fqsub.split('::')
+      last = parts.pop
+      parts.pop if last == sup
+      qualify(sup, parts.join('::'))
     end
 
     # @param name [String]
