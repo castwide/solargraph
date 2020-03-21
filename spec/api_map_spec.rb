@@ -630,4 +630,15 @@ describe Solargraph::ApiMap do
     pins = api_map.get_constants('Baz')
     expect(pins.map(&:path)).to include('Foo::Bar')
   end
+
+  it 'qualifies superclasses with same name as subclass' do
+    source = Solargraph::Source.load_string(%(
+      class Foo; end
+      class Bar; end
+      class Bar::Foo < Foo; end
+    ))
+    api_map = Solargraph::ApiMap.new
+    api_map.map source
+    expect(api_map.super_and_sub?('Foo', 'Bar::Foo')).to be(true)
+  end
 end
