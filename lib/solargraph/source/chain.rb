@@ -105,22 +105,21 @@ module Solargraph
       def infer_first_defined pins, context, api_map
         type = ComplexType::UNDEFINED
         pins.each do |pin|
+          # Avoid infinite recursion
+          next if @@inference_stack.include?(pin.identity)
+          @@inference_stack.push pin.identity
           type = pin.typify(api_map)
+          @@inference_stack.pop
           break if type.defined?
         end
         if type.undefined?
           # Limit method inference recursion
           return type if @@inference_depth >= 2 && pins.first.is_a?(Pin::BaseMethod)
           @@inference_depth += 1
-          name_count = {}
           pins.each do |pin|
-            # Limit pin name hits for, e.g., variables with insane amounts of definitions
-            name_count[pin.identity] ||= 0
-            name_count[pin.identity] += 1
-            next if name_count[pin.identity] >= 10
             # Avoid infinite recursion
-            next if @@inference_stack.include?(pin)
-            @@inference_stack.push pin
+            next if @@inference_stack.include?(pin.identity)
+            @@inference_stack.push pin.identity
             type = pin.probe(api_map)
             @@inference_stack.pop
             break if type.defined?
