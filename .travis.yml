@@ -21,8 +21,7 @@ matrix:
       os: osx
       
 before_install:
-- gem update --system
 - ruby ./travis-bundler.rb
 - bundle install
 before_script: yard gems
-script: rspec
+script: bundle exec rspec
