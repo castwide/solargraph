@@ -254,7 +254,7 @@ module Solargraph
       #
       # @return [String] The most recent data or an empty string.
       def flush
-        tmp = nil
+        tmp = ''
         @buffer_semaphore.synchronize do
           tmp = @buffer.clone
           @buffer.clear
@@ -548,7 +548,7 @@ module Solargraph
       end
 
       # @param query [String]
-      # @return [String]
+      # @return [Array]
       def document query
         result = []
         libraries.each { |lib| result.concat lib.document(query) }
