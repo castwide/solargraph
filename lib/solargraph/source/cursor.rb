@@ -146,19 +146,6 @@ module Solargraph
 
       private
 
-      # @return [Integer]
-      def first_char_offset
-        @first_char_position ||= begin
-          if source.code[offset - 1] == ')'
-            position
-          else
-            index = offset - 1
-            index -= 1 while index > 0 && source.code[index].strip.empty?
-            index
-          end
-        end
-      end
-
       # A regular expression to find the start of a word from an offset.
       #
       # @return [Regexp]
