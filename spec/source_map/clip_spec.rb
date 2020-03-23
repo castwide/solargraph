@@ -1297,4 +1297,29 @@ describe Solargraph::SourceMap::Clip do
     expect(pins).to be_one
     expect(pins.first.path).to eq('A::AA')
   end
+
+  it 'defines nearest constants' do
+    source = Solargraph::Source.load_string(%(
+      module A
+        module AA
+          class Gen
+            def a
+              pp a = A::Gen # infer to A::AA::Gen
+              pp b = A::Gen::BB # can't infer
+            end
+          end
+        end
+
+        module Gen
+          class BB; end
+        end
+      end
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new
+    api_map.map source
+    clip = api_map.clip_at('test.rb', [5, 25])
+    expect(clip.define.first.path).to eq('A::Gen')
+    clip = api_map.clip_at('test.rb', [6, 30])
+    expect(clip.define.first.path).to eq('A::Gen::BB')
+  end
 end

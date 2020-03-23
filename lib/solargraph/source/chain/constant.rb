@@ -17,57 +17,20 @@ module Solargraph
             base = word
             gates = crawl_gates(name_pin)
           end
-          pins = []
+          parts = base.split('::')
           gates.each do |gate|
-            type = ComplexType::UNDEFINED
-            parts = base.split('::')
-            # Use deep inference to resolve root constants
+            type = deep_constant_type(gate, api_map)
+            # Use deep inference to resolve root 
             parts[0..-2].each do |sym|
-              fqns = if type.undefined?
-                if gate.empty?
-                  sym
-                else
-                  "#{gate}::#{sym}"
-                end
-              else
-                "#{type.namespace}::#{sym}"
-              end
-              pins.replace api_map.get_constants('', gate).select{ |pin| pin.name == sym }
-              break if pins.empty?
-              pins.each do |pin|
-                type = pin.typify(api_map)
-                break if type.defined?
-                type = pin.probe(api_map)
-                break if type.defined?
-              end
-              if type.undefined?
-                pins.clear
-                break
-              end
+              pins = api_map.get_constants('', type.namespace).select{ |pin| pin.name == sym }
+              type = first_pin_type(pins, api_map)
+              break if type.undefined?
             end
-            # Return the last constant's pins, even if they're undefined
-            sym = parts.last
-            fqns = if type.undefined?
-              if gate.empty?
-                sym
-              else
-                "#{gate}::#{sym}"
-              end
-            else
-              "#{type.namespace}::#{sym}"
-            end
-            pins.replace api_map.get_path_pins(fqns)
-            return pins unless pins.empty?
-            pins.replace(api_map.get_constants('', gate).select do |pin|
-              pin.name == sym &&
-                (
-                  (word.start_with?('::') && pin.path.start_with?(word[2..-1])) ||
-                  (!word.include?('::') || pin.path.start_with?(word))
-                )
-            end)
-            return pins unless pins.empty?
+            next if type.undefined?
+            result = api_map.get_constants('', type.namespace).select { |pin| pin.name == parts.last }
+            return result unless result.empty?
           end
-          pins
+          []
         end
 
         private
@@ -75,10 +38,36 @@ module Solargraph
         def crawl_gates pin
           clos = pin
           until clos.nil?
-            return clos.gates if clos.is_a?(Pin::Namespace)
+            if clos.is_a?(Pin::Namespace)
+              gates = clos.gates
+              gates.push('') if gates.empty?
+              return gates
+            end
             clos = clos.closure
           end
           ['']
+        end
+
+        def first_pin_type(pins, api_map)
+          type = ComplexType::UNDEFINED
+          pins.each do |pin|
+            type = pin.typify(api_map)
+            break if type.defined?
+            type = pin.probe(api_map)
+            break if type.defined?
+          end
+          type
+        end
+
+        def deep_constant_type(gate, api_map)
+          type = ComplexType::ROOT
+          return type if gate == ''
+          gate.split('::').each do |word|
+            pins = api_map.get_constants('', type.namespace).select { |pin| pin.name == word }
+            type = first_pin_type(pins, api_map)
+            break if type.undefined?
+          end
+          type
         end
       end
     end
