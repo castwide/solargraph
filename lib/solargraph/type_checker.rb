@@ -187,7 +187,6 @@ module Solargraph
     end
 
     def call_problems
-      return [] unless rules.validate_calls?
       result = []
       done = []
       Solargraph::Parser::NodeMethods.call_nodes_from(source_map.source.node).each do |call|
@@ -228,7 +227,14 @@ module Solargraph
       until base.links.length == 1 && base.undefined?
         pins = base.define(api_map, block_pin, locals)
         if pins.first.is_a?(Pin::BaseMethod)
+          # @type [Pin::BaseMethod]
           pin = pins.first
+          ap = arity_problems_for(pin, base.links.last.arguments, location)
+          unless ap.empty?
+            result.concat ap
+            break
+          end
+          break unless rules.validate_calls?
           params = first_param_hash(pins)
           pin.parameters.each_with_index do |par, idx|
             argchain = base.links.last.arguments[idx]
@@ -365,6 +371,63 @@ module Solargraph
         end
       end
       true
+    end
+
+    # @param pin [Pin::BaseMethod]
+    def arity_problems_for(pin, arguments, location)
+      return [] if pin.parameters.empty? && arguments.empty?
+      if pin.parameters.empty?
+        # Functions tagged param_tuple accepts two arguments (e.g., Hash#[]=)
+        return [] if pin.docstring.tag(:param_tuple) && arguments.length == 2
+        return [Problem.new(location, "Too many arguments to #{pin.path}")]
+      end
+      unchecked = arguments.clone
+      add_params = 0
+      if unchecked.empty? && pin.parameters.any? { |param| param.decl == :kwarg }
+        return [Problem.new(location, "Missing keyword arguments to #{pin.path}")]
+      end
+      unless unchecked.empty?
+        kwargs = convert_hash(unchecked.last.node)
+        # unless kwargs.empty?
+          if pin.parameters.any? { |param| [:kwarg, :kwoptarg].include?(param.decl) || param.kwrestarg? }
+            if kwargs.empty?
+              add_params += 1
+            else
+              unchecked.pop
+              pin.parameters.each do |param|
+                next unless param.keyword?
+                if kwargs.key?(param.name.to_sym)
+                  kwargs.delete param.name.to_sym
+                elsif param.decl == :kwarg
+                  return [Problem.new(location, "Missing keyword argument #{param.name} to #{pin.path}")]
+                end
+              end
+              kwargs.clear if pin.parameters.any?(&:kwrestarg?)
+              unless kwargs.empty?
+                return [Problem.new(location, "Unrecognized keyword argument #{kwargs.keys.first} to #{pin.path}")]
+              end
+            end
+          end
+        # end
+      end
+      req = required_param_count(pin)
+      if req + add_params < unchecked.length
+        return [] if pin.parameters.last.rest?
+        return [Problem.new(location, "Too many arguments to #{pin.path}")]
+      elsif unchecked.length < req
+        return [Problem.new(location, "Not enough arguments to #{pin.path}")]
+      end
+      []
+    end
+
+    # @param pin [Pin::BaseMethod]
+    def required_param_count(pin)
+      count = 0
+      pin.parameters.each do |param|
+        break unless param.decl == :arg
+        count += 1
+      end
+      count
     end
   end
 end

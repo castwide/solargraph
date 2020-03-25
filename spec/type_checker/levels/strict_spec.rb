@@ -89,20 +89,6 @@ describe Solargraph::TypeChecker do
       expect(checker.problems.first.message).to include('Wrong argument type')
     end
 
-    it 'reports missing keyword params' do
-      # @todo Skip for legacy Ruby
-      checker = type_checker(%(
-        class Foo
-          # @param baz [String]
-          def bar baz:
-          end
-        end
-        Foo.new.bar
-      ))
-      expect(checker.problems).to be_one
-      expect(checker.problems.first.message).to include('missing keyword argument')
-    end
-
     it 'reports mismatched keyword arguments' do
       checker = type_checker(%(
         class Foo

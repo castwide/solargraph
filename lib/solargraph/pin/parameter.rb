@@ -21,6 +21,10 @@ module Solargraph
         decl == :kwrestarg || (assignment && [:HASH, :hash].include?(assignment.type))
       end
 
+      def restarg?
+        decl == :restarg
+      end
+
       def rest?
         decl == :restarg || decl == :kwrestarg
       end

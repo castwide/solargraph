@@ -461,22 +461,54 @@ describe Solargraph::TypeChecker do
       expect(checker.problems).to be_empty
     end
 
-    it 'ignores problems with call arguments' do
-      checker = type_checker(%(
-        class Foo
-          def bar arg
-          end
-        end
-        Foo.new.bar
-      ))
-      expect(checker.problems).to be_empty
-    end
-
     it 'ignores untagged parameters' do
       checker = type_checker(%(
         class Foo
           def bar(baz); end
         end
+      ))
+      expect(checker.problems).to be_empty
+    end
+
+    it 'reports too many arguments' do
+      checker = type_checker(%(
+        def foo; end
+        foo(1)
+      ))
+      expect(checker.problems).to be_one
+      expect(checker.problems.first.message).to include('Too many arguments')
+    end
+
+    it 'reports not enough arguments' do
+      checker = type_checker(%(
+        def foo(bar); end
+        foo()
+      ))
+      expect(checker.problems).to be_one
+      expect(checker.problems.first.message).to include('Not enough arguments')
+    end
+
+    it 'ignores restarg arguments' do
+      checker = type_checker(%(
+        def foo(*bar); end
+        foo(1, 2, 3)
+      ))
+      expect(checker.problems).to be_empty
+    end
+
+    it 'reports missing required keyword arguments' do
+      checker = type_checker(%(
+        def foo(bar:); end
+        foo()
+      ))
+      expect(checker.problems).to be_one
+    end
+
+    it 'ignores calls sent as keyword arguments' do
+      checker = type_checker(%(
+        def foo(one: '', two: ''); end
+        hash = {one: 'one', two: 'two'}
+        foo(hash)
       ))
       expect(checker.problems).to be_empty
     end
