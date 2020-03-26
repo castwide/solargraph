@@ -36,17 +36,22 @@ module Solargraph
           # @param result [String]
           # @return [void]
           def format original, result
-            if original.end_with?("\n")
-              ending = {
-                line: original.lines.length,
-                character: 0
-              }
-            else
-              ending = {
-                line: original.lines.length - 1,
-                character: original.lines.last.length
-              }
-            end
+            ending = if original.end_with?("\n")
+                       {
+                         line: original.lines.length,
+                         character: 0
+                       }
+                     elsif original.lines.empty?
+                       {
+                         line: 0,
+                         character: 0
+                       }
+                     else
+                       {
+                         line: original.lines.length - 1,
+                         character: original.lines.last.length
+                       }
+                     end
             set_result(
               [
                 {
