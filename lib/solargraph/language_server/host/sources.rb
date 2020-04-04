@@ -12,6 +12,7 @@ module Solargraph
         include UriHelpers
 
         def initialize
+          @mutex = Mutex.new
           @stopped = true
         end
 
@@ -131,9 +132,7 @@ module Solargraph
         end
 
         # @return [Mutex]
-        def mutex
-          @mutex ||= Mutex.new
-        end
+        attr_reader :mutex
 
         # An array of source URIs that are waiting to finish synchronizing.
         #
