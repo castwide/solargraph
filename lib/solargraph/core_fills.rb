@@ -95,6 +95,11 @@ module Solargraph
 @param_tuple
       )),
 
+      Override.from_comment('Integer#+', %(
+@param num [Numeric]
+@return [Numeric]
+      )),
+
       # Override.method_return('Module#attr_reader', 'void'),
       # Override.method_return('Module#attr_writer', 'void'),
       # Override.method_return('Module#attr_accessor', 'void'),
