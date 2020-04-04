@@ -85,6 +85,11 @@ module Solargraph
       Override.method_return('File.extname', 'String'),
       Override.method_return('File.join', 'String'),
 
+      Override.from_comment('Float#+', %(
+@param y [Numeric]
+@return [Numeric]
+      )),
+
       Override.from_comment('Hash#[]', %(
 @return_value_parameter
       )),
@@ -96,7 +101,7 @@ module Solargraph
       )),
 
       Override.from_comment('Integer#+', %(
-@param num [Numeric]
+@param y [Numeric]
 @return [Numeric]
       )),
 
@@ -105,7 +110,7 @@ module Solargraph
       # Override.method_return('Module#attr_accessor', 'void'),
 
       Override.from_comment('Numeric#+', %(
-@param num [Numeric]
+@param y [Numeric]
 @return [Numeric]
       )),
 

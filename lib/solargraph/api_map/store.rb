@@ -245,6 +245,9 @@ module Solargraph
             pin.docstring.add_tag(tag)
           end
         end
+        # @todo This is probably not the best place for these overrides
+        superclass_references['Integer'] = ['Numeric']
+        superclass_references['Float'] = ['Numeric']
       end
     end
   end
