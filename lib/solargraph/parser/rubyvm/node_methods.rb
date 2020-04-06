@@ -75,7 +75,7 @@ module Solargraph
         end
 
         def convert_hash node
-          return {} unless node?(node) && node.type == :HASH
+          return {} unless node?(node) && node.type == :HASH && node?(node.children[0])
           result = {}
           index = 0
           until index > node.children[0].children.length - 2
