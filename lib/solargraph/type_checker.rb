@@ -413,6 +413,8 @@ module Solargraph
       req = required_param_count(pin)
       if req + add_params < unchecked.length
         return [] if pin.parameters.any?(&:rest?)
+        opt = optional_param_count(pin)
+        return [] if unchecked.length <= req + opt
         return [Problem.new(location, "Too many arguments to #{pin.path}")]
       elsif unchecked.length < req
         return [Problem.new(location, "Not enough arguments to #{pin.path}")]
@@ -425,6 +427,16 @@ module Solargraph
       count = 0
       pin.parameters.each do |param|
         break unless param.decl == :arg
+        count += 1
+      end
+      count
+    end
+
+    # @param pin [Pin::BaseMethod]
+    def optional_param_count(pin)
+      count = 0
+      pin.parameters.each do |param|
+        next unless param.decl == :optarg
         count += 1
       end
       count

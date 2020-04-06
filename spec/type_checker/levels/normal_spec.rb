@@ -520,5 +520,22 @@ describe Solargraph::TypeChecker do
       ))
       expect(checker.problems).to be_empty
     end
+
+    it 'validates optional argument arity' do
+      checker = type_checker(%(
+        def foo(bar, baz, quz = true); end
+        foo(1, 2, 3)
+      ))
+      expect(checker.problems).to be_empty
+    end
+
+    it 'reports too many optional arguments' do
+      checker = type_checker(%(
+        def foo(bar, baz, quz = true); end
+        foo(1, 2, 3, 4)
+      ))
+      expect(checker.problems).to be_one
+      expect(checker.problems.first.message).to include('Too many arguments')
+    end
   end
 end
