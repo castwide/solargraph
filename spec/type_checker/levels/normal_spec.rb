@@ -512,5 +512,13 @@ describe Solargraph::TypeChecker do
       ))
       expect(checker.problems).to be_empty
     end
+
+    it 'validates restarg arguments with optional kw parameters' do
+      checker = type_checker(%(
+        def foo(*bar, baz: true); end
+        foo(1, 2, 3)
+      ))
+      expect(checker.problems).to be_empty
+    end
   end
 end

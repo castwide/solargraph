@@ -412,7 +412,7 @@ module Solargraph
       end
       req = required_param_count(pin)
       if req + add_params < unchecked.length
-        return [] if pin.parameters.last.rest?
+        return [] if pin.parameters.any?(&:rest?)
         return [Problem.new(location, "Too many arguments to #{pin.path}")]
       elsif unchecked.length < req
         return [Problem.new(location, "Not enough arguments to #{pin.path}")]
