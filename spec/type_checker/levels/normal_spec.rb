@@ -537,5 +537,12 @@ describe Solargraph::TypeChecker do
       expect(checker.problems).to be_one
       expect(checker.problems.first.message).to include('Too many arguments')
     end
+
+    it 'assumes restarg for `args` parameters in core' do
+      checker = type_checker(%(
+        File.join('foo', 'bar')
+      ))
+      expect(checker.problems).to be_empty
+    end
   end
 end
