@@ -34,7 +34,7 @@ module Solargraph
       # @return [Array<String>]
       def diff_native bundle, reqs, new_map_hash
         local_path_hash = {}
-        
+
         # convert new map hash to a trie
         source_trie = Trie.new
         new_map_hash.keys.each do |key|
@@ -81,10 +81,10 @@ module Solargraph
             end
 
             if req_node.nil?
-              true
+              false
             else
               local_path_hash[req] = req_node.full_state
-              false
+              true
             end
           end
         end
