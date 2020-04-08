@@ -537,5 +537,13 @@ describe Solargraph::TypeChecker do
       expect(checker.problems).to be_one
       expect(checker.problems.first.message).to include('Too many arguments')
     end
+
+    it 'reports arity problems for core methods' do
+      checker = type_checker(%(
+        File.atime()
+      ))
+      expect(checker.problems).to be_one
+      expect(checker.problems.first.message).to include('Not enough arguments')
+    end
   end
 end

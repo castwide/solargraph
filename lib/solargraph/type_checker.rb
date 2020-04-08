@@ -375,6 +375,7 @@ module Solargraph
 
     # @param pin [Pin::BaseMethod]
     def arity_problems_for(pin, arguments, location)
+      return [] unless pin.explicit?
       return [] if pin.parameters.empty? && arguments.empty?
       if pin.parameters.empty?
         # Functions tagged param_tuple accepts two arguments (e.g., Hash#[]=)
