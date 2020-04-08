@@ -122,6 +122,12 @@ module Solargraph
         else
           load_yardoc CoreDocs.yardoc_file
           result.concat Mapper.new(YARD::Registry.all).map
+          # HACK: Assume core methods with a single `args` parameter accept restarg
+          result.select { |pin| pin.is_a?(Solargraph::Pin::BaseMethod )}.each do |pin|
+            if pin.parameters.length == 1 && pin.parameters.first.name == 'args' && pin.parameters.first.decl == :arg
+              pin.parameters.first.instance_variable_set(:@decl, :restarg)
+            end
+          end
           dump = Marshal.dump(result)
           file = File.open(ser, 'wb')
           file.write dump
