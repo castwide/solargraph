@@ -11,4 +11,18 @@ describe Solargraph::YardMap::Mapper do
     # Cleanup
     FileUtils.remove_entry_secure File.join(dir, '.yardoc')
   end
+
+  it 'marks explicit methods' do
+    # Using rspec because it's a known dependency
+    map = Solargraph::YardMap.new(required: ['rspec'])
+    pin = map.path_pin('RSpec::Matchers#be_truthy')
+    expect(pin.explicit?).to be(true)
+  end
+
+  it 'marks non-explicit methods' do
+    # Using rspec because it's a known dependency
+    map = Solargraph::YardMap.new(required: ['rspec'])
+    pin = map.path_pin('RSpec::Matchers#expect')
+    expect(pin.explicit?).to be(false)
+  end
 end

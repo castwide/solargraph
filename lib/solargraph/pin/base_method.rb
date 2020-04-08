@@ -12,9 +12,11 @@ module Solargraph
       attr_reader :node
 
       # @param visibility [::Symbol] :public, :protected, or :private
-      def initialize visibility: :public, **splat
+      # @param explicit [Boolean]
+      def initialize visibility: :public, explicit: true, **splat
         super(splat)
         @visibility = visibility
+        @explicit = explicit
       end
 
       def return_type
@@ -63,6 +65,10 @@ module Solargraph
           @documentation += "Visibility: #{visibility}"
         end
         @documentation.to_s
+      end
+
+      def explicit?
+        @explicit
       end
 
       private

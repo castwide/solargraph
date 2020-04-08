@@ -18,7 +18,8 @@ module Solargraph
             comments: code_object.docstring ? code_object.docstring.all.to_s : '',
             scope: scope || code_object.scope,
             visibility: visibility || code_object.visibility,
-            parameters: get_parameters(code_object)
+            parameters: get_parameters(code_object),
+            explicit: code_object.is_explicit?
           )
         end
 

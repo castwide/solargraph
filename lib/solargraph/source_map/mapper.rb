@@ -111,6 +111,7 @@ module Solargraph
             # @todo: Smelly instance variable access
             gen_pin.instance_variable_set(:@comments, docstring.all.to_s)
             gen_pin.instance_variable_set(:@location, Solargraph::Location.new(@filename, Range.new(shifted, shifted)))
+            gen_pin.instance_variable_set(:@explicit, false)
             @pins.push gen_pin
           rescue Parser::SyntaxError => e
             # @todo Handle error in directive
@@ -127,7 +128,8 @@ module Solargraph
               comments: docstring.all.to_s,
               access: :reader,
               scope: namespace.is_a?(Pin::Singleton) ? :class : :instance,
-              visibility: :public
+              visibility: :public,
+              explicit: false
             )
           end
           if t.nil? || t.include?('w')
@@ -146,6 +148,7 @@ module Solargraph
           region = Parser::Region.new(source: @source, closure: ns)
           begin
             node = Parser.parse(directive.tag.text, @filename, comment_position.line)
+            # @todo These pins may need to be marked not explicit
             Parser.process_node(node, region, @pins)
           rescue Parser::SyntaxError => e
             # @todo Handle parser errors in !parse directives

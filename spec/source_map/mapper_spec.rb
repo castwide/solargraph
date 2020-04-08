@@ -1242,4 +1242,20 @@ describe Solargraph::SourceMap::Mapper do
     ))
     expect(map.locals.first.name).to eq('x')
   end
+
+  it 'marks explicit methods' do
+    map = Solargraph::SourceMap.load_string(%(
+      def foo(bar); end
+    ))
+    expect(map.first_pin('#foo').explicit?).to be(true)
+  end
+
+  it 'marks non-explicit methods' do
+    # HACK: The directive doesn't work if it's not attached to code
+    map = Solargraph::SourceMap.load_string(%(
+      # @!method foo(bar)
+      nil
+    ))
+    expect(map.first_pin('#foo').explicit?).to be(false)
+  end
 end
