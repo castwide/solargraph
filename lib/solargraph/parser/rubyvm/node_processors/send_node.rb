@@ -39,6 +39,8 @@ module Solargraph
               process_include
             elsif node.children[0] == :extend
               process_extend
+            elsif node.children[0] == :prepend
+              process_include
             elsif node.children[0] == :private_constant
               process_private_constant
             end

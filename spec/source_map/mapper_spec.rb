@@ -32,6 +32,22 @@ describe Solargraph::SourceMap::Mapper do
     expect(names).not_to include('Indirect')
   end
 
+  it "ignores prepend calls that are not attached to the current namespace" do
+    # @todo The prepend call inside of xyz args is probably valid
+    source = Solargraph::Source.new(%(
+      class Foo
+        prepend Direct
+        xyz.prepend Indirect
+        # xyz(prepend Indirect)
+      end
+    ))
+    map = Solargraph::SourceMap.map(source)
+    pins = map.pins.select{|pin| pin.is_a?(Solargraph::Pin::Reference::Include) && pin.namespace == 'Foo'}
+    names = pins.map(&:name)
+    expect(names).to include('Direct')
+    expect(names).not_to include('Indirect')
+  end
+
   it "ignores extend calls that are not attached to the current namespace" do
     # @todo The include call inside of xyz args is probably valid
     source = Solargraph::Source.new(%(
