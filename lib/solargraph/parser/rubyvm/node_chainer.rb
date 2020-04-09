@@ -74,7 +74,7 @@ module Solargraph
             result.push Chain::Call.new(n.children[0].to_s, [], @in_block || block_passed?(n))
           elsif n.type == :FCALL
             if n.children[1]
-              if n.children[1].type == :ARRAY
+              if [:ZARRAY, :ARRAY, :LIST].include?(n.children[1].type)
                 result.push Chain::Call.new(n.children[0].to_s, nodes_to_argchains(n.children[1].children[0..-2]), @in_block || block_passed?(n))
               else
                 # @todo Assuming BLOCK_PASS
