@@ -582,5 +582,12 @@ describe Solargraph::TypeChecker do
       ), 'test.rb')
       expect(checker.problems).to be_empty
     end
+
+    it 'verifies extra block passes in chained calls' do
+      checker = Solargraph::TypeChecker.load_string(%(
+        ''.to_s(&:nil?)
+      ), 'test.rb')
+      expect(checker.problems).to be_empty
+    end
   end
 end
