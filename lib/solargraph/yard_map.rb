@@ -128,6 +128,10 @@ module Solargraph
               pin.parameters.first.instance_variable_set(:@decl, :restarg)
             end
           end
+          # HACK: Set missing parameters on `==` methods, e.g., `Symbol#==`
+          result.select { |pin| pin.name == '==' && pin.parameters.empty? }.each do |pin|
+            pin.parameters.push Pin::Parameter.new(decl: :arg, name: 'obj2')
+          end
           dump = Marshal.dump(result)
           file = File.open(ser, 'wb')
           file.write dump
