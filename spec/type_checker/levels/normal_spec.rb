@@ -552,5 +552,35 @@ describe Solargraph::TypeChecker do
       ))
       expect(checker.problems).to be_empty
     end
+
+    it 'verifies block passes in arguments' do
+      checker = Solargraph::TypeChecker.load_string(%(
+        class Foo
+          def map(&block)
+            block.call(100)
+          end
+
+          def to_s
+            map(&:to_s)
+          end
+        end
+      ), 'test.rb')
+      expect(checker.problems).to be_empty
+    end
+
+    it 'verifies args and block passes' do
+      checker = Solargraph::TypeChecker.load_string(%(
+        class Foo
+          def map(x, &block)
+            block.call(x)
+          end
+
+          def to_s
+            map(x, &:to_s)
+          end
+        end
+      ), 'test.rb')
+      expect(checker.problems).to be_empty
+    end
   end
 end

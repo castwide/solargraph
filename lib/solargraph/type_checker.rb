@@ -416,6 +416,9 @@ module Solargraph
         return [] if pin.parameters.any?(&:rest?)
         opt = optional_param_count(pin)
         return [] if unchecked.length <= req + opt
+        if unchecked.length == req + opt + 1 && unchecked.last.links.last.is_a?(Source::Chain::BlockVariable) && pin.parameters.last.decl == :blockarg
+          return []
+        end
         return [Problem.new(location, "Too many arguments to #{pin.path}")]
       elsif unchecked.length < req
         return [Problem.new(location, "Not enough arguments to #{pin.path}")]

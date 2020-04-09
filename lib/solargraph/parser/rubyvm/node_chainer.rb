@@ -64,9 +64,7 @@ module Solargraph
                 args.push NodeChainer.chain(c)
               end
             elsif n.children.last && n.children.last.type == :BLOCK_PASS
-              # @todo This probably shouldn't be a BlockVariable, if this is
-              #   necessary at all.
-              # args.push Chain::BlockVariable.new("&#{n.children.last.children[1].children[0].to_s}")
+              args.push NodeChainer.chain(n.children.last)
             end
             result.push Chain::Call.new(n.children[-2].to_s, args, @in_block || block_passed?(n))
           elsif n.type == :ATTRASGN
@@ -76,7 +74,12 @@ module Solargraph
             result.push Chain::Call.new(n.children[0].to_s, [], @in_block || block_passed?(n))
           elsif n.type == :FCALL
             if n.children[1]
-              result.push Chain::Call.new(n.children[0].to_s, nodes_to_argchains(n.children[1].children[0..-2]), @in_block || block_passed?(n))
+              if n.children[1].type == :ARRAY
+                result.push Chain::Call.new(n.children[0].to_s, nodes_to_argchains(n.children[1].children[0..-2]), @in_block || block_passed?(n))
+              else
+                # @todo Assuming BLOCK_PASS
+                result.push Chain::BlockVariable.new("&#{n.children[1].children[0].to_s}")
+              end
             else
               result.push Chain::Call.new(n.children[0].to_s, [], @in_block || block_passed?(n))
             end
