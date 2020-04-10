@@ -21,7 +21,7 @@ module Solargraph
         # @return [Source::Chain]
         def chain
           links = generate_links(@node)
-          Chain.new(links, @node)
+          Chain.new(links, @node, (Parser.is_ast_node?(@node) && @node.type == :SPLAT))
         end
 
         class << self
@@ -49,6 +49,7 @@ module Solargraph
         def generate_links n
           return [] unless Parser.is_ast_node?(n)
           return generate_links(n.children[2]) if n.type == :SCOPE
+          return generate_links(n.children[0]) if n.type == :SPLAT
           result = []
           if n.type == :ITER
             @in_block = true
@@ -58,31 +59,14 @@ module Solargraph
             n.children[0..-3].each do |c|
               result.concat generate_links(c)
             end
-            args = []
-            if n.children.last && [:ZARRAY, :ARRAY, :LIST].include?(n.children.last.type)
-              n.children.last.children[0..-2].each do |c|
-                args.push NodeChainer.chain(c)
-              end
-            elsif n.children.last && n.children.last.type == :BLOCK_PASS
-              args.push NodeChainer.chain(n.children.last)
-            end
-            result.push Chain::Call.new(n.children[-2].to_s, args, @in_block || block_passed?(n))
+            result.push Chain::Call.new(n.children[-2].to_s, node_to_argchains(n.children.last), @in_block || block_passed?(n))
           elsif n.type == :ATTRASGN
             result.concat generate_links(n.children[0])
-            result.push Chain::Call.new(n.children[1].to_s, nodes_to_argchains(n.children[2].children[0..-2]), @in_block || block_passed?(n))
+            result.push Chain::Call.new(n.children[1].to_s, node_to_argchains(n.children[2]), @in_block || block_passed?(n))
           elsif n.type == :VCALL
             result.push Chain::Call.new(n.children[0].to_s, [], @in_block || block_passed?(n))
           elsif n.type == :FCALL
-            if n.children[1]
-              if n.children[1].type == :ARRAY
-                result.push Chain::Call.new(n.children[0].to_s, nodes_to_argchains(n.children[1].children[0..-2]), @in_block || block_passed?(n))
-              else
-                # @todo Assuming BLOCK_PASS
-                result.push Chain::BlockVariable.new("&#{n.children[1].children[0].to_s}")
-              end
-            else
-              result.push Chain::Call.new(n.children[0].to_s, [], @in_block || block_passed?(n))
-            end
+            result.push Chain::Call.new(n.children[0].to_s, node_to_argchains(n.children[1]), @in_block || block_passed?(n))
           elsif n.type == :SELF
             result.push Chain::Head.new('self')
           elsif [:SUPER, :ZSUPER].include?(n.type)
@@ -122,8 +106,26 @@ module Solargraph
           node.children.last.is_a?(RubyVM::AbstractSyntaxTree::Node) && node.children.last.type == :BLOCK_PASS
         end
 
-        def nodes_to_argchains nodes
-          nodes.map { |node| Parser.chain(node) }
+        def node_to_argchains node
+          # @todo Process array, splat, argscat
+          return [] unless Parser.is_ast_node?(node)
+          if [:ZARRAY, :ARRAY, :LIST].include?(node.type)
+            node.children[0..-2].map { |c| NodeChainer.chain(c) }
+          elsif node.type == :SPLAT
+            [NodeChainer.chain(node)]
+          elsif node.type == :ARGSCAT
+            result = node.children[0].children[0..-2].map { |c| NodeChainer.chain(c) }
+            result.push NodeChainer.chain(node.children[1])
+            # @todo Smelly instance variable access
+            result.last.instance_variable_set(:@splat, true)
+            result
+          elsif node.type == :BLOCK_PASS
+            result = node_to_argchains(node.children[0])
+            result.push Chain.new([Chain::BlockVariable.new("&#{node.children[1].children[0].to_s}")])
+            result
+          else
+            []
+          end
         end
       end
     end

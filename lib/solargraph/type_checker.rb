@@ -421,7 +421,7 @@ module Solargraph
           return []
         end
         return [Problem.new(location, "Too many arguments to #{pin.path}")]
-      elsif unchecked.length < req
+      elsif unchecked.length < req && (arguments.empty? || !arguments.last.splat?)
         return [Problem.new(location, "Not enough arguments to #{pin.path}")]
       end
       []

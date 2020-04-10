@@ -589,5 +589,13 @@ describe Solargraph::TypeChecker do
       ), 'test.rb')
       expect(checker.problems).to be_empty
     end
+
+    it 'verifies splats passed to arguments' do
+      checker = Solargraph::TypeChecker.load_string(%(
+        def foo(bar, baz); end
+        foo(*splat)
+      ), 'test.rb')
+      expect(checker.problems).to be_empty
+    end
   end
 end

@@ -88,5 +88,29 @@ if Solargraph::Parser.rubyvm?
       expect(chain.links[-2].with_block?).to be(true)
       expect(chain.links.last.with_block?).to be(false)
     end
+
+    it 'tracks splat arguments' do
+      source = Solargraph::Source.load_string(%(
+        foo(*bar)
+      ))
+      chain = Solargraph::Parser::Rubyvm::NodeChainer.chain(source.node)
+      expect(chain.links.first.arguments.last).to be_splat
+    end
+
+    it 'tracks mixed splat arguments' do
+      source = Solargraph::Source.load_string(%(
+        foo(bar, *baz)
+      ))
+      chain = Solargraph::Parser::Rubyvm::NodeChainer.chain(source.node)
+      expect(chain.links.first.arguments.last).to be_splat
+    end
+
+    it 'tracks mixed block arguments' do
+      source = Solargraph::Source.load_string(%(
+        foo(bar, &baz)
+      ))
+      chain = Solargraph::Parser::Rubyvm::NodeChainer.chain(source.node)
+      expect(chain.links.first.arguments.length).to eq(2)
+    end
   end
 end
