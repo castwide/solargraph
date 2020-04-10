@@ -104,5 +104,13 @@ if Solargraph::Parser.rubyvm?
       chain = Solargraph::Parser::Rubyvm::NodeChainer.chain(source.node)
       expect(chain.links.first.arguments.last).to be_splat
     end
+
+    it 'tracks mixed block arguments' do
+      source = Solargraph::Source.load_string(%(
+        foo(bar, &baz)
+      ))
+      chain = Solargraph::Parser::Rubyvm::NodeChainer.chain(source.node)
+      expect(chain.links.first.arguments.length).to eq(2)
+    end
   end
 end

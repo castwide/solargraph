@@ -111,13 +111,17 @@ module Solargraph
           return [] unless Parser.is_ast_node?(node)
           if [:ZARRAY, :ARRAY, :LIST].include?(node.type)
             node.children[0..-2].map { |c| NodeChainer.chain(c) }
-          elsif [:BLOCK_PASS, :SPLAT].include?(node.type)
+          elsif node.type == :SPLAT
             [NodeChainer.chain(node)]
           elsif node.type == :ARGSCAT
             result = node.children[0].children[0..-2].map { |c| NodeChainer.chain(c) }
             result.push NodeChainer.chain(node.children[1])
             # @todo Smelly instance variable access
             result.last.instance_variable_set(:@splat, true)
+            result
+          elsif node.type == :BLOCK_PASS
+            result = node_to_argchains(node.children[0])
+            result.push Chain.new([Chain::BlockVariable.new("&#{node.children[1].children[0].to_s}")])
             result
           else
             []
