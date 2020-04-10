@@ -21,7 +21,7 @@ module Solargraph
         # @return [Source::Chain]
         def chain
           links = generate_links(@node)
-          Chain.new(links, @node)
+          Chain.new(links, @node, (Parser.is_ast_node?(@node) && @node.type == :SPLAT))
         end
 
         class << self
@@ -49,6 +49,7 @@ module Solargraph
         def generate_links n
           return [] unless Parser.is_ast_node?(n)
           return generate_links(n.children[2]) if n.type == :SCOPE
+          return generate_links(n.children[0]) if n.type == :SPLAT
           result = []
           if n.type == :ITER
             @in_block = true
@@ -63,6 +64,10 @@ module Solargraph
               n.children.last.children[0..-2].each do |c|
                 args.push NodeChainer.chain(c)
               end
+            elsif n.children.last && n.children.last.type == :SPLAT
+              # @todo Handle splat
+            elsif n.children.last && n.children.last.type == :ARGSCAT
+              # @todo Handle args + splat
             elsif n.children.last && n.children.last.type == :BLOCK_PASS
               args.push NodeChainer.chain(n.children.last)
             end
@@ -76,8 +81,11 @@ module Solargraph
             if n.children[1]
               if n.children[1].type == :ARRAY
                 result.push Chain::Call.new(n.children[0].to_s, nodes_to_argchains(n.children[1].children[0..-2]), @in_block || block_passed?(n))
+              elsif n.children[1].type == :SPLAT
+                result.push Chain::Call.new(n.children[0].to_s, nodes_to_argchains([n.children[1]]), @in_block || block_passed?(n))
               else
                 # @todo Assuming BLOCK_PASS
+                # @todo This shouldn't be a block variable! It's still an fcall, but its argument is a block variable.
                 result.push Chain::BlockVariable.new("&#{n.children[1].children[0].to_s}")
               end
             else
@@ -124,6 +132,10 @@ module Solargraph
 
         def nodes_to_argchains nodes
           nodes.map { |node| Parser.chain(node) }
+        end
+
+        def node_to_argchains nodes
+          # @todo Process array, splat, argscat
         end
       end
     end

@@ -33,7 +33,7 @@ module Solargraph
       attr_reader :node
 
       # @param links [Array<Chain::Link>]
-      def initialize links, node = nil
+      def initialize links, node = nil, splat = false
         @links = links.clone
         @links.push UNDEFINED_CALL if @links.empty?
         head = true
@@ -43,6 +43,7 @@ module Solargraph
           result
         end
         @node = node
+        @splat = splat
       end
 
       # @return [Chain]
@@ -98,6 +99,10 @@ module Solargraph
       # @return [Boolean]
       def constant?
         links.last.is_a?(Chain::Constant)
+      end
+
+      def splat?
+        @splat
       end
 
       private
