@@ -123,4 +123,16 @@ describe Solargraph::Parser::NodeMethods do
     expect(rets.length).to eq(2)
     # expect(rets[0].type).to eq(:DVAR)
   end
+
+  it 'handles return nodes from case statements' do
+    node = Solargraph::Parser.parse(%(
+      case 1
+      when 1 then ""
+      else
+        ""
+      end
+    ))
+    rets = Solargraph::Parser::NodeMethods.returns_from(node)
+    expect(rets.length).to eq(2)
+  end
 end
