@@ -116,4 +116,15 @@ describe Solargraph::YardMap do
     pin = yard_map.pins.select { |p| p.path == 'Pathname#join' }.first
     expect(pin.return_type.tag).to eq('Pathname')
   end
+
+  it 'maps core Errno classes' do
+    yard_map = Solargraph::YardMap.new
+    store = Solargraph::ApiMap::Store.new(yard_map.core_pins)
+    Errno.constants.each do |const|
+      pin = store.get_path_pins("Errno::#{const}").first
+      expect(pin).to be_a(Solargraph::Pin::Namespace)
+      superclass = store.get_superclass(pin.path)
+      expect(superclass).to eq('SystemCallError')
+    end
+  end
 end

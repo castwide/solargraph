@@ -125,6 +125,7 @@ module Solargraph
           # HACK: Assume core methods with a single `args` parameter accept restarg
           result.select { |pin| pin.is_a?(Solargraph::Pin::BaseMethod )}.each do |pin|
             if pin.parameters.length == 1 && pin.parameters.first.name == 'args' && pin.parameters.first.decl == :arg
+              # @todo Smelly instance variable access
               pin.parameters.first.instance_variable_set(:@decl, :restarg)
             end
           end
@@ -136,6 +137,12 @@ module Solargraph
           file = File.open(ser, 'wb')
           file.write dump
           file.close
+        end
+        # HACK: Add Errno exception classes
+        errno = result.select{ |pin| pin.path == 'Errno' }.first
+        Errno.constants.each do |const|
+          result.push Solargraph::Pin::Namespace.new(type: :class, name: const.to_s, closure: errno)
+          result.push Solargraph::Pin::Reference::Superclass.new(closure: result.last, name: 'SystemCallError')
         end
         CoreFills::OVERRIDES.each do |ovr|
           pin = result.select { |p| p.path == ovr.name }.first
