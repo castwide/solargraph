@@ -122,7 +122,7 @@ module Solargraph
       # Read a .solargraph yaml config
       #
       # @param directory [String]
-      # @return [Hash]
+      # @return [Hash, nil]
       def read_config config_path = ''
         return nil if config_path.empty?
         return nil unless File.file?(config_path)

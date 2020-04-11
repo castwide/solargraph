@@ -61,6 +61,19 @@ module Solargraph
             end
             @documentation += lines.join("\n")
           end
+          return_tags = docstring.tags(:return)
+          unless return_tags.empty?
+            @documentation += "\n\n" unless @documentation.empty?
+            @documentation += "Returns:\n"
+            lines = []
+            return_tags.each do |r|
+              l = "*"
+              l += " [#{escape_brackets(r.types.join(', '))}]" unless r.types.nil? or r.types.empty?
+              l += " #{r.text}"
+              lines.push l
+            end
+            @documentation += lines.join("\n")
+          end
           @documentation += "\n\n" unless @documentation.empty?
           @documentation += "Visibility: #{visibility}"
         end
