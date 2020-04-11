@@ -39,4 +39,14 @@ describe Solargraph::Pin::BaseMethod do
     )
     expect(pin.return_type.to_s).to eq('String, Integer')
   end
+
+  it 'includes @return text in documentation' do
+    pin = Solargraph::Pin::BaseMethod.new(
+      name: 'foo',
+      comments: %(
+@return [String] the foo text string
+      )
+    )
+    expect(pin.documentation).to include('the foo text string')
+  end
 end
