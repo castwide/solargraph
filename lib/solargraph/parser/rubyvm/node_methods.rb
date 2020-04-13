@@ -40,7 +40,7 @@ module Solargraph
             '::Array'
           when :HASH
             '::Hash'
-          when :DOT2
+          when :DOT2, :DOT3
             '::Range'
           when :TRUE, :FALSE
             '::Boolean'
@@ -170,6 +170,9 @@ module Solargraph
                 result.concat get_return_nodes_from_children(node)
               elsif CONDITIONAL.include?(node.type)
                 result.concat reduce_to_value_nodes(node.children[1..-1])
+              elsif node.type == :RESCUE
+                result.concat reduce_to_value_nodes([node.children[0]])
+                result.concat reduce_to_value_nodes(node.children[1..-2])
               elsif node.type == :OR
                 result.concat reduce_to_value_nodes(node.children)
               elsif node.type == :RETURN
@@ -249,6 +252,8 @@ module Solargraph
                   result.concat reduce_to_value_nodes(node.children)
                 elsif node.type == :BLOCK
                   result.concat get_return_nodes_only(node.children[2])
+                elsif node.type == :RESBODY
+                  result.concat reduce_to_value_nodes([node.children[1]])
                 else
                   result.push node
                 end
