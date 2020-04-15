@@ -14,7 +14,6 @@ module Solargraph
     end
 
     desc 'socket', 'Run a Solargraph socket server'
-    
     option :host, type: :string, aliases: :h, desc: 'The server host', default: '127.0.0.1'
     option :port, type: :numeric, aliases: :p, desc: 'The server port', default: 7658
     def socket
@@ -77,6 +76,8 @@ module Solargraph
       ver = version || Solargraph::YardMap::CoreDocs.best_download
       puts "Downloading docs for #{ver}..."
       Solargraph::YardMap::CoreDocs.download ver
+      # Clear cached documentation if it exists
+      FileUtils.rm_rf Dir.glob(File.join(Solargraph::YardMap::CoreDocs.cache_dir, ver, '*.ser'))
     rescue ArgumentError => e
       STDERR.puts "ERROR: #{e.message}"
       STDERR.puts "Run `solargraph available-cores` for a list."
@@ -93,7 +94,13 @@ module Solargraph
       puts Solargraph::YardMap::CoreDocs.available.join("\n")
     end
 
-    desc 'clear', 'Delete the cached documentation'
+    desc 'clear', 'Delete all cached documentation'
+    long_desc %(
+      This command will delete all core and gem documentation from the cache.
+      You can also delete specific gem caches with the `uncache` command or
+      update documentation for specific Ruby versions with the `download-core`
+      command.
+    )
     def clear
       puts "Deleting the cached documentation"
       Solargraph::YardMap::CoreDocs.clear
