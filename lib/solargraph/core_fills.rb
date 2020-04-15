@@ -105,6 +105,8 @@ module Solargraph
 @return [Numeric]
       )),
 
+      Override.method_return('Kernel#puts', 'nil'),
+
       # Override.method_return('Module#attr_reader', 'void'),
       # Override.method_return('Module#attr_writer', 'void'),
       # Override.method_return('Module#attr_accessor', 'void'),
