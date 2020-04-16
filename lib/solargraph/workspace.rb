@@ -170,7 +170,7 @@ module Solargraph
             next unless Gem::Specification === spec
             @gemnames.push spec.name
             result.concat(spec.require_paths.map { |path| File.join(base, path) })
-          rescue Exception => e
+          rescue RuntimeError, ScriptError, Errno::ENOENT => e
             # Don't die if we have an error during eval-ing a gem spec.
             # Concat the default lib directory instead.
             Solargraph.logger.warn "Error reading #{file}: [#{e.class}] #{e.message}"

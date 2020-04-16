@@ -62,7 +62,7 @@ describe Solargraph::Workspace do
     File.write(gemspec_file, '')
     calculated = Array.new(Solargraph::Workspace::Config::MAX_FILES + 1) { gemspec_file }
     # @todo Mock reveals tight coupling
-    config = double(:config, calculated: calculated, max_files: 0, allow?: true, require_paths: [])
+    config = double(:config, calculated: calculated, max_files: 0, allow?: true, require_paths: [], plugins: [])
     expect {
       Solargraph::Workspace.new('.', config)
     }.not_to raise_error
