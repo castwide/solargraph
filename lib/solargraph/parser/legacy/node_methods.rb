@@ -197,6 +197,11 @@ module Solargraph
               elsif node.type == :block
                 result.push node
                 result.concat get_return_nodes_only(node.children[2])
+              elsif node.type == :case
+                node.children[1..-1].each do |cc|
+                  result.concat reduce_to_value_nodes(cc.children[1..-2])
+                  result.concat reduce_to_value_nodes([cc.children.last])
+                end
               else
                 result.push node
               end
