@@ -10,7 +10,7 @@ module Solargraph
       # The maximum number of files that can be added to a workspace.
       # The workspace's .solargraph.yml can override this value.
       MAX_FILES = 5000
-        
+
       # @return [String]
       attr_reader :directory
 
@@ -85,6 +85,13 @@ module Solargraph
         raw_data['reporters']
       end
 
+      # An array of plugins to require.
+      #
+      # @return [Array<String>]
+      def plugins
+        raw_data['plugins']
+      end
+
       # The maximum number of files to parse from the workspace.
       #
       # @return [Integer]
@@ -93,7 +100,7 @@ module Solargraph
       end
 
       private
-      
+
       # @return [String]
       def global_config_path
         ENV['SOLARGRAPH_GLOBAL_CONFIG'] || 
@@ -110,7 +117,7 @@ module Solargraph
       def config_data
         workspace_config = read_config(workspace_config_path)
         global_config = read_config(global_config_path)
-        
+
         defaults = default_config
         defaults.merge({'exclude' => []}) unless workspace_config.nil?
 
@@ -118,7 +125,7 @@ module Solargraph
           .merge(global_config || {})
           .merge(workspace_config || {})
       end
-      
+
       # Read a .solargraph yaml config
       #
       # @param directory [String]
@@ -128,7 +135,7 @@ module Solargraph
         return nil unless File.file?(config_path)
         YAML.safe_load(File.read(config_path))
       end
-      
+
       # @return [Hash]
       def default_config
         {
@@ -138,7 +145,8 @@ module Solargraph
           'domains' => [],
           'reporters' => %w[rubocop require_not_found],
           'require_paths' => [],
-          'max_files' => MAX_FILES,
+          'plugins' => [],
+          'max_files' => MAX_FILES
         }
       end
 

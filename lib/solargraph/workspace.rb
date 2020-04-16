@@ -27,6 +27,7 @@ module Solargraph
       load_sources
       @gemnames = []
       @require_paths = generate_require_paths
+      require_plugins
     end
 
     # @return [Solargraph::Workspace::Config]
@@ -189,6 +190,16 @@ module Solargraph
       return ['lib'] if directory.empty?
       return [File.join(directory, 'lib')] if config.require_paths.empty?
       config.require_paths.map{|p| File.join(directory, p)}
+    end
+
+    def require_plugins
+      config.plugins.each do |plugin|
+        begin
+          require plugin
+        rescue LoadError
+          Solargraph.logger.warn "Failed to load plugin '#{plugin}'"
+        end
+      end
     end
   end
 end
