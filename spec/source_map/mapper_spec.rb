@@ -42,7 +42,7 @@ describe Solargraph::SourceMap::Mapper do
       end
     ))
     map = Solargraph::SourceMap.map(source)
-    pins = map.pins.select{|pin| pin.is_a?(Solargraph::Pin::Reference::Include) && pin.namespace == 'Foo'}
+    pins = map.pins.select{|pin| pin.is_a?(Solargraph::Pin::Reference::Prepend) && pin.namespace == 'Foo'}
     names = pins.map(&:name)
     expect(names).to include('Direct')
     expect(names).not_to include('Indirect')

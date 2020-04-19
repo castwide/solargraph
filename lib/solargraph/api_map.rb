@@ -561,6 +561,12 @@ module Solargraph
       return [] if skip.include?(reqstr)
       skip.add reqstr
       result = []
+      if deep && scope == :instance
+        store.get_prepends(fqns).reverse.each do |im|
+          fqim = qualify(im, fqns)
+          result.concat inner_get_methods(fqim, scope, visibility, deep, skip, true) unless fqim.nil?
+        end
+      end
       result.concat store.get_methods(fqns, scope: scope, visibility: visibility).sort{ |a, b| a.name <=> b.name }
       if deep
         if scope == :instance
@@ -602,7 +608,11 @@ module Solargraph
     def inner_get_constants fqns, visibility, skip
       return [] if fqns.nil? || skip.include?(fqns)
       skip.add fqns
-      result = store.get_constants(fqns, visibility)
+      result = []
+      store.get_prepends(fqns).each do |is|
+        result.concat inner_get_constants(qualify(is, fqns), [:public], skip)
+      end
+      result.concat store.get_constants(fqns, visibility)
                     .sort { |a, b| a.name <=> b.name }
       store.get_includes(fqns).each do |is|
         result.concat inner_get_constants(qualify(is, fqns), [:public], skip)

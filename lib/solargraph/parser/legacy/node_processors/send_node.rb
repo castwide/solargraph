@@ -32,6 +32,8 @@ module Solargraph
                 process_include
               elsif node.children[1] == :extend
                 process_extend
+              elsif node.children[0] == :prepend
+                process_prepend
               elsif node.children[1] == :require
                 process_require
               elsif node.children[1] == :private_constant
@@ -87,6 +89,19 @@ module Solargraph
               cp = region.closure
               node.children[2..-1].each do |i|
                 pins.push Pin::Reference::Include.new(
+                  location: get_node_location(i),
+                  closure: cp,
+                  name: unpack_name(i)
+                )
+              end
+            end
+          end
+
+          def process_prepend
+            if node.children[2].is_a?(AST::Node) && node.children[2].type == :const
+              cp = region.closure
+              node.children[2..-1].each do |i|
+                pins.push Pin::Reference::Prepend.new(
                   location: get_node_location(i),
                   closure: cp,
                   name: unpack_name(i)

@@ -50,6 +50,12 @@ module Solargraph
 
       # @param fqns [String]
       # @return [Array<String>]
+      def get_prepends fqns
+        prepend_references[fqns] || []
+      end
+
+      # @param fqns [String]
+      # @return [Array<String>]
       def get_extends fqns
         extend_references[fqns] || []
       end
@@ -172,6 +178,10 @@ module Solargraph
         @include_references ||= {}
       end
 
+      def prepend_references
+        @prepend_references ||= {}
+      end
+
       def extend_references
         @extend_references ||= {}
       end
@@ -217,6 +227,9 @@ module Solargraph
           if pin.is_a?(Pin::Reference::Include)
             include_references[pin.namespace] ||= []
             include_references[pin.namespace].push pin.name
+          elsif pin.is_a?(Pin::Reference::Prepend)
+            prepend_references[pin.namespace] ||= []
+            prepend_references[pin.namespace].push pin.name
           elsif pin.is_a?(Pin::Reference::Extend)
             extend_references[pin.namespace] ||= []
             extend_references[pin.namespace].push pin.name

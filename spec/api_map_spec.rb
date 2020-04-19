@@ -641,4 +641,41 @@ describe Solargraph::ApiMap do
     api_map.map source
     expect(api_map.super_and_sub?('Foo', 'Bar::Foo')).to be(true)
   end
+
+  it 'adds prepended methods to the ancestor tree' do
+    source = Solargraph::Source.load_string(%(
+      module Prepended
+        def foo; end
+      end
+      module Included
+        def foo; end
+      end
+      class Container
+        include Included
+        prepend Prepended
+        def foo; end
+      end
+    ))
+    api_map = Solargraph::ApiMap.new
+    api_map.map source
+    pins = api_map.get_method_stack('Container', 'foo')
+    paths = pins.map(&:path)
+    expect(paths).to eq(['Prepended#foo', 'Container#foo', 'Included#foo'])
+  end
+
+  it 'adds prepended constants' do
+    source = Solargraph::Source.load_string(%(
+      module Prepended
+        PRE_CONST = 'pre_const'
+      end
+      class Container
+        prepend Prepended
+      end
+    ))
+    api_map = Solargraph::ApiMap.new
+    api_map.map source
+    pins = api_map.get_constants('Container')
+    paths = pins.map(&:path)
+    expect(paths).to eq(['Prepended::PRE_CONST'])
+  end
 end

@@ -40,7 +40,7 @@ module Solargraph
             elsif node.children[0] == :extend
               process_extend
             elsif node.children[0] == :prepend
-              process_include
+              process_prepend
             elsif node.children[0] == :private_constant
               process_private_constant
             end
@@ -128,6 +128,19 @@ module Solargraph
             node.children.last.children[0..-2].each do |i|
               next unless [:COLON2, :COLON3, :CONST].include?(i.type)
               pins.push Pin::Reference::Include.new(
+                location: get_node_location(i),
+                closure: region.closure,
+                name: unpack_name(i)
+              )
+            end
+          end
+
+          # @return [void]
+          def process_prepend
+            return unless Parser.is_ast_node?(node.children.last)
+            node.children.last.children[0..-2].each do |i|
+              next unless [:COLON2, :COLON3, :CONST].include?(i.type)
+              pins.push Pin::Reference::Prepend.new(
                 location: get_node_location(i),
                 closure: region.closure,
                 name: unpack_name(i)
