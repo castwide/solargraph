@@ -29,6 +29,7 @@ module Solargraph
       # @todo Smarter directory resolution
       @api_map = api_map || Solargraph::ApiMap.load(File.dirname(filename))
       @rules = Rules.new(level)
+      @marked_ranges = []
     end
 
     # @return [SourceMap]
@@ -41,6 +42,7 @@ module Solargraph
       @problems ||= begin
         method_tag_problems
           .concat variable_type_tag_problems
+          .concat const_problems
           .concat call_problems
       end
     end
@@ -186,15 +188,32 @@ module Solargraph
         source_map.locals.select { |pin| pin.is_a?(Pin::LocalVariable) }
     end
 
+    def const_problems
+      return [] unless rules.validate_consts?
+      result = []
+      Solargraph::Parser::NodeMethods.const_nodes_from(source_map.source.node).each do |const|
+        rng = Solargraph::Range.from_node(const)
+        chain = Solargraph::Parser.chain(const, filename)
+        block_pin = source_map.locate_block_pin(rng.start.line, rng.start.column)
+        location = Location.new(filename, rng)
+        locals = source_map.locals_at(location)
+        pins = chain.define(api_map, block_pin, locals)
+        if pins.empty?
+          result.push Problem.new(location, "Unresolved constant #{Solargraph::Parser::NodeMethods.unpack_name(const)}")
+          @marked_ranges.push location.range
+        end
+      end
+      result
+    end
+
     def call_problems
       result = []
-      done = []
       Solargraph::Parser::NodeMethods.call_nodes_from(source_map.source.node).each do |call|
         rng = Solargraph::Range.from_node(call)
-        next if done.any? { |d| d.contain?(rng.start) }
+        next if @marked_ranges.any? { |d| d.contain?(rng.start) }
         chain = Solargraph::Parser.chain(call, filename)
         block_pin = source_map.locate_block_pin(rng.start.line, rng.start.column)
-        location = Location.new(filename, Range.from_node(call))
+        location = Location.new(filename, rng)
         locals = source_map.locals_at(location)
         type = chain.infer(api_map, block_pin, locals)
         if type.undefined? && !rules.ignore_all_undefined?
@@ -212,7 +231,7 @@ module Solargraph
           if !found || closest.defined? || internal?(found)
             unless ignored_pins.include?(found)
               result.push Problem.new(location, "Unresolved call to #{missing.links.last.word}")
-              done.push rng
+              @marked_ranges.push rng
             end
           end
         end

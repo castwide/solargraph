@@ -29,6 +29,10 @@ module Solargraph
         rank < LEVELS[:strict]
       end
 
+      def validate_consts?
+        rank >= LEVELS[:strict]
+      end
+
       def validate_calls?
         rank >= LEVELS[:strict]
       end

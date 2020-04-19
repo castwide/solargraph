@@ -59,6 +59,17 @@ module Solargraph
           end
         end
 
+        def const_nodes_from node
+          return [] unless Parser.is_ast_node?(node)
+          result = []
+          if [:CONST, :COLON2, :COLON3].include?(node.type)
+            result.push node
+          else
+            node.children.each { |child| result.concat const_nodes_from(child) }
+          end
+          result
+        end
+
         def call_nodes_from node
           return [] unless Parser.is_ast_node?(node)
           result = []

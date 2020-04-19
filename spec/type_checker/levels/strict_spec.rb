@@ -409,5 +409,29 @@ describe Solargraph::TypeChecker do
       ))
       expect(checker.problems).to be_empty
     end
+
+    it 'reports unresolved constants' do
+      checker = type_checker(%(
+        NotReal
+      ))
+      expect(checker.problems).to be_one
+      expect(checker.problems.first.message).to include('Unresolved constant')
+    end
+
+    it 'reports unresolved nested constants' do
+      checker = type_checker(%(
+        String::NotReal
+      ))
+      expect(checker.problems).to be_one
+      expect(checker.problems.first.message).to include('Unresolved constant')
+    end
+
+    it 'skips validation of method calls for unresolved constants' do
+      checker = type_checker(%(
+        NotReal.not_a_method
+      ))
+      expect(checker.problems).to be_one
+      expect(checker.problems.first.message).to include('Unresolved constant')
+    end
   end
 end
