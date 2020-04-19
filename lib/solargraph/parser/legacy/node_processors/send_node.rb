@@ -32,7 +32,7 @@ module Solargraph
                 process_include
               elsif node.children[1] == :extend
                 process_extend
-              elsif node.children[0] == :prepend
+              elsif node.children[1] == :prepend
                 process_prepend
               elsif node.children[1] == :require
                 process_require
