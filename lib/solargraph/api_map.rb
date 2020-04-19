@@ -215,7 +215,7 @@ module Solargraph
       contexts.push '' if contexts.empty?
       cached = cache.get_constants(namespace, contexts)
       return cached.clone unless cached.nil?
-      skip = []
+      skip = Set.new
       result = []
       contexts.each do |context|
         fqns = qualify(namespace, context)
@@ -238,9 +238,9 @@ module Solargraph
       cached = cache.get_qualified_namespace(namespace, context)
       return cached.clone unless cached.nil?
       result = if namespace.start_with?('::')
-                 inner_qualify(namespace[2..-1], '', [])
+                 inner_qualify(namespace[2..-1], '', Set.new)
                else
-                 inner_qualify(namespace, context, [])
+                 inner_qualify(namespace, context, Set.new)
                end
       cache.set_qualified_namespace(namespace, context, result)
       result
@@ -295,7 +295,7 @@ module Solargraph
       cached = cache.get_methods(fqns, scope, visibility, deep)
       return cached.clone unless cached.nil?
       result = []
-      skip = []
+      skip = Set.new
       if fqns == ''
         # @todo Implement domains
         implicit.domains.each do |domain|
@@ -552,14 +552,14 @@ module Solargraph
     # @param scope [Symbol] :class or :instance
     # @param visibility [Array<Symbol>] :public, :protected, and/or :private
     # @param deep [Boolean]
-    # @param skip [Array<String>]
+    # @param skip [Set<String>]
     # @param no_core [Boolean] Skip core classes if true
     # @return [Array<Pin::Base>]
     def inner_get_methods fqns, scope, visibility, deep, skip, no_core = false
       return [] if no_core && fqns =~ /^(Object|BasicObject|Class|Module|Kernel)$/
       reqstr = "#{fqns}|#{scope}|#{visibility.sort}|#{deep}"
       return [] if skip.include?(reqstr)
-      skip.push reqstr
+      skip.add reqstr
       result = []
       result.concat store.get_methods(fqns, scope: scope, visibility: visibility).sort{ |a, b| a.name <=> b.name }
       if deep
@@ -597,11 +597,11 @@ module Solargraph
 
     # @param fqns [String]
     # @param visibility [Array<Symbol>]
-    # @param skip [Array<String>]
+    # @param skip [Set<String>]
     # @return [Array<Pin::Base>]
     def inner_get_constants fqns, visibility, skip
       return [] if fqns.nil? || skip.include?(fqns)
-      skip.push fqns
+      skip.add fqns
       result = store.get_constants(fqns, visibility)
                     .sort { |a, b| a.name <=> b.name }
       store.get_includes(fqns).each do |is|
@@ -637,12 +637,12 @@ module Solargraph
 
     # @param name [String]
     # @param root [String]
-    # @param skip [Array<String>]
+    # @param skip [Set<String>]
     # @return [String, nil]
     def inner_qualify name, root, skip
       return nil if name.nil?
       return nil if skip.include?(root)
-      skip.push root
+      skip.add root
       if name == ''
         if root == ''
           return ''
