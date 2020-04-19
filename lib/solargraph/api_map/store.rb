@@ -19,7 +19,7 @@ module Solargraph
       # @return [Array<Solargraph::Pin::Base>]
       def get_constants fqns, visibility = [:public]
         namespace_children(fqns).select { |pin|
-          !pin.name.empty? and (pin.is_a?(Pin::Namespace) || pin.is_a?(Pin::Constant)) && visibility.include?(pin.visibility)
+          !pin.name.empty? && (pin.is_a?(Pin::Namespace) || pin.is_a?(Pin::Constant)) && visibility.include?(pin.visibility)
         }
       end
 
@@ -220,7 +220,7 @@ module Solargraph
         pins.each do |pin|
           namespace_map[pin.namespace] ||= []
           namespace_map[pin.namespace].push pin
-          namespaces.add pin.path if pin.is_a?(Pin::Namespace) and !pin.path.empty?
+          namespaces.add pin.path if pin.is_a?(Pin::Namespace) && !pin.path.empty?
           namespace_pins.push pin if pin.is_a?(Pin::Namespace)
           method_pins.push pin if pin.is_a?(Pin::BaseMethod)
           symbols.push pin if pin.is_a?(Pin::Symbol)
