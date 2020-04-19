@@ -107,6 +107,17 @@ module Solargraph
 
         NIL_NODE = ::Parser::AST::Node.new(:nil)
 
+        def const_nodes_from node
+          return [] unless Parser.is_ast_node?(node)
+          result = []
+          if node.type == :const
+            result.push node
+          else
+            node.children.each { |child| result.concat const_nodes_from(child) }
+          end
+          result
+        end
+
         # @todo Temporarily here for testing. Move to Solargraph::Parser.
         def call_nodes_from node
           return [] unless node.is_a?(::Parser::AST::Node)
