@@ -146,7 +146,11 @@ module Solargraph
         size = config.calculated.length
         raise WorkspaceTooLargeError, "The workspace is too large to index (#{size} files, #{config.max_files} max)" if config.max_files > 0 and size > config.max_files
         config.calculated.each do |filename|
-          source_hash[filename] = Solargraph::Source.load(filename)
+          begin
+            source_hash[filename] = Solargraph::Source.load(filename)
+          rescue Errno::ENOENT => e
+            Solargraph.logger.warn("Error loading #{filename}: [#{e.class}] #{e.message}")
+          end
         end
       end
     end
