@@ -3,7 +3,7 @@ describe Solargraph::Source do
     code = 'class Foo;def bar;end;end'
     source = described_class.new(code)
     expect(source.code).to eq(code)
-    expect(source.node).to be_a(Parser::AST::Node)
+    expect(Solargraph::Parser.is_ast_node?(source.node)).to be_truthy
     expect(source).to be_parsed
   end
 
@@ -30,6 +30,8 @@ describe Solargraph::Source do
   end
 
   it "finds nodes" do
+    # @todo This test is specific to Parser and breaks with RubyVM.
+    next if Solargraph::Parser.rubyvm?
     code = 'class Foo;def bar;end;end'
     source = described_class.new(code)
     node = source.node_at(0, 0)
@@ -52,6 +54,8 @@ describe Solargraph::Source do
     )
     changed = source.synchronize(updater)
     expect(changed.code).to start_with('class Food;')
+    # @todo This test is specific to Parser and breaks with RubyVM.
+    next if Solargraph::Parser.rubyvm?
     expect(changed.node.children[0].children[1]).to eq(:Food)
   end
 
@@ -64,6 +68,8 @@ describe Solargraph::Source do
     ])
     changed = source.synchronize(updater)
     expect(changed.code).to eq(code2)
+    # @todo This test is specific to Parser and breaks with RubyVM.
+    next if Solargraph::Parser.rubyvm?
     expect(changed.node.children[0].children[1]).to eq(:Bar)
   end
 
@@ -98,11 +104,6 @@ describe Solargraph::Source do
     changed = source.synchronize(updater)
     expect(changed).to be_parsed
     expect(changed).to be_repaired
-  end
-
-  it "parses nodes" do
-    node = Solargraph::Source.parse('class Foo; end', 'test.rb')
-    expect(node).to be_a(Parser::AST::Node)
   end
 
   it "finds references" do
@@ -189,6 +190,21 @@ e = d # inline
     expect(source.folding_ranges.length).to eq(5)
   end
 
+  it 'folds multiline strings' do
+    source = Solargraph::Source.load_string(%(
+      a = 1
+      b = 2
+      c = 3
+      d = %(
+        one
+        two
+        three
+      )
+    ))
+    expect(source.folding_ranges).to be_one
+    expect(source.folding_ranges.first.start.line).to eq(4)
+  end
+
   it "returns unsynchronized sources for started synchronizations" do
     source1 = Solargraph::Source.load_string('x = 1', 'test.rb')
     source2 = source1.start_synchronize Solargraph::Source::Updater.new(
@@ -241,7 +257,8 @@ y = 1 #foo
       # two
       class Foo; end
     ))
-    comments = source.comments_for(source.node)
+    node = source.node_at(4, 7)
+    comments = source.comments_for(node)
     expect(comments.lines.map(&:chomp)).to eq(['one', 'two'])
   end
 
@@ -252,7 +269,8 @@ y = 1 #foo
         # ignored
       end
     ))
-    comments = source.comments_for(source.node)
+    node = source.node_at(2, 6)
+    comments = source.comments_for(node)
     expect(comments).to include('included')
     expect(comments).not_to include('ignored')
   end

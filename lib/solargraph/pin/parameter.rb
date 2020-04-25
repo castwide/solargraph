@@ -3,11 +3,65 @@
 module Solargraph
   module Pin
     class Parameter < LocalVariable
+      attr_reader :decl
+
+      attr_reader :asgn_code
+
+      def initialize decl: :arg, asgn_code: nil, **splat
+        super(splat)
+        @asgn_code = asgn_code
+        @decl = decl
+      end
+
+      def keyword?
+        [:kwarg, :kwoptarg].include?(decl)
+      end
+
+      def kwrestarg?
+        decl == :kwrestarg || (assignment && [:HASH, :hash].include?(assignment.type))
+      end
+
+      def restarg?
+        decl == :restarg
+      end
+
+      def rest?
+        decl == :restarg || decl == :kwrestarg
+      end
+
+      def full
+        case decl
+        when :optarg
+          "#{name} = #{asgn_code}"
+        when :kwarg
+          "#{name}:"
+        when :kwoptarg
+          "#{name}: #{asgn_code}"
+        when :restarg
+          "*#{name}"
+        when :kwrestarg
+          "**#{name}"
+        when :block
+          "&#{name}"
+        else
+          name
+        end
+      end
+
       def return_type
         if @return_type.nil?
-          @return_type = ComplexType.new
+          @return_type = ComplexType::UNDEFINED
           found = param_tag
           @return_type = ComplexType.try_parse(*found.types) unless found.nil? or found.types.nil?
+          if @return_type.undefined?
+            if decl == :restarg
+              @return_type = ComplexType.try_parse('Array')
+            elsif decl == :kwrestarg
+              @return_type = ComplexType.try_parse('Hash')
+            elsif decl == :blockarg
+              @return_type = ComplexType.try_parse('Proc')
+            end
+          end
         end
         super
         @return_type
@@ -62,7 +116,7 @@ module Solargraph
       # @return [ComplexType]
       def typify_block_param api_map
         if closure.is_a?(Pin::Block) && closure.receiver
-          chain = Source::NodeChainer.chain(closure.receiver, filename)
+          chain = Parser.chain(closure.receiver, filename)
           clip = api_map.clip_at(location.filename, location.range.start)
           locals = clip.locals - [self]
           meths = chain.define(api_map, closure, locals)

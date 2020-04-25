@@ -38,7 +38,7 @@ module Solargraph
       # @return [Hash]
       def signature_help
         @signature_help ||= {
-          label: name + '(' + parameters.join(', ') + ')',
+          label: name + '(' + parameters.map(&:full).join(', ') + ')',
           documentation: documentation
         }
       end
@@ -48,7 +48,7 @@ module Solargraph
         # This property is not cached in an instance variable because it can
         # change when pins get proxied.
         detail = String.new
-        detail += "(#{parameters.join(', ')}) " unless !is_a?(Pin::BaseMethod) or parameters.empty?
+        detail += "(#{parameters.map(&:full).join(', ')}) " unless !is_a?(Pin::BaseMethod) || parameters.empty?
         detail += "=#{probed? ? '~' : (proxied? ? '^' : '>')} #{return_type.to_s}" unless return_type.undefined?
         detail.strip!
         return nil if detail.empty?

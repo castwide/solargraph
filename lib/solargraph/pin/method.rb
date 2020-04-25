@@ -3,25 +3,22 @@
 module Solargraph
   module Pin
     class Method < BaseMethod
-      include Source::NodeMethods
+      include Solargraph::Parser::NodeMethods
 
       # @return [Array<String>]
       attr_reader :parameters
 
-      # @return [Parser::AST::Node]
-      attr_reader :node
-
       # @param args [Array<String>]
       # @param node [Parser::AST::Node, nil]
-      def initialize args: [], node: nil, **splat
+      def initialize parameters: [], node: nil, **splat
         super(splat)
-        @parameters = args
+        @parameters = parameters
         @node = node
       end
 
       # @return [Array<String>]
       def parameter_names
-        @parameter_names ||= parameters.map{|p| p.split(/[ =:]/).first.gsub(/^(\*{1,2}|&)/, '')}
+        @parameter_names ||= parameters.map(&:name)
       end
 
       def completion_item_kind
@@ -54,8 +51,18 @@ module Solargraph
         @overloads ||= docstring.tags(:overload).map do |tag|
           Solargraph::Pin::Method.new(
             name: name,
-            closure: closure,
-            args: tag.parameters.map(&:first),
+            closure: self,
+            # args: tag.parameters.map(&:first),
+            parameters: tag.parameters.map do |src|
+              Pin::Parameter.new(
+                location: location,
+                closure: self,
+                comments: tag.docstring.all.to_s,
+                name: src.first,
+                presence: location ? location.range : nil,
+                decl: :arg
+              )
+            end,
             comments: tag.docstring.all.to_s
           )
         end
@@ -66,7 +73,9 @@ module Solargraph
       # @return [Parser::AST::Node, nil]
       def method_body_node
         return nil if node.nil?
-        return node.children[2] if node.type == :def
+        return node.children[1].children.last if node.type == :DEFN
+        return node.children[2].children.last if node.type == :DEFS
+        return node.children[2] if node.type == :def || node.type == :DEFS
         return node.children[3] if node.type == :defs
         nil
       end
@@ -74,19 +83,22 @@ module Solargraph
       # @param api_map [ApiMap]
       # @return [ComplexType]
       def infer_from_return_nodes api_map
+        return ComplexType::UNDEFINED if node.nil?
         result = []
         has_nil = false
+        return ComplexType::NIL if method_body_node.nil?
         returns_from(method_body_node).each do |n|
-          if n.nil? || n.type == :nil
+          if n.nil? || [:NIL, :nil].include?(n.type)
             has_nil = true
             next
           end
-          next if n.loc.nil? || n.loc.expression.nil?
+          rng = Range.from_node(n)
+          next unless rng
           clip = api_map.clip_at(
             location.filename,
-            [n.loc.expression.last_line, n.loc.expression.last_column]
+            rng.ending
           )
-          chain = Solargraph::Source::NodeChainer.chain(n, location.filename)
+          chain = Solargraph::Parser.chain(n, location.filename)
           type = chain.infer(api_map, self, clip.locals)
           result.push type unless type.undefined?
         end

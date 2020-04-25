@@ -149,7 +149,7 @@ module Solargraph
     # @return [Source::Cursor]
     def cursor_at filename, position
       position = Position.normalize(position)
-      raise "File not found: #{filename}" unless source_map_hash.has_key?(filename)
+      raise FileNotFoundError, "File not found: #{filename}" unless source_map_hash.has_key?(filename)
       source_map_hash[filename].cursor_at(position)
     end
 
@@ -308,6 +308,7 @@ module Solargraph
         result.concat inner_get_methods('Kernel', :instance, visibility, deep, skip)
       else
         result.concat inner_get_methods(fqns, scope, visibility, deep, skip)
+        result.concat inner_get_methods('Kernel', :instance, [:public], deep, skip) if visibility.include?(:private)
       end
       resolved = resolve_method_aliases(result, visibility)
       cache.set_methods(fqns, scope, visibility, deep, resolved)
@@ -560,6 +561,12 @@ module Solargraph
       return [] if skip.include?(reqstr)
       skip.add reqstr
       result = []
+      if deep && scope == :instance
+        store.get_prepends(fqns).reverse.each do |im|
+          fqim = qualify(im, fqns)
+          result.concat inner_get_methods(fqim, scope, visibility, deep, skip, true) unless fqim.nil?
+        end
+      end
       result.concat store.get_methods(fqns, scope: scope, visibility: visibility).sort{ |a, b| a.name <=> b.name }
       if deep
         if scope == :instance
@@ -601,7 +608,11 @@ module Solargraph
     def inner_get_constants fqns, visibility, skip
       return [] if fqns.nil? || skip.include?(fqns)
       skip.add fqns
-      result = store.get_constants(fqns, visibility)
+      result = []
+      store.get_prepends(fqns).each do |is|
+        result.concat inner_get_constants(qualify(is, fqns), [:public], skip)
+      end
+      result.concat store.get_constants(fqns, visibility)
                     .sort { |a, b| a.name <=> b.name }
       store.get_includes(fqns).each do |is|
         result.concat inner_get_constants(qualify(is, fqns), [:public], skip)
@@ -727,7 +738,7 @@ module Solargraph
         comments: origin.comments,
         scope: origin.scope,
         visibility: origin.visibility,
-        args: origin.parameters
+        parameters: origin.parameters
       )
     end
   end

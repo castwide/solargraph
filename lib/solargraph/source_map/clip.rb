@@ -29,19 +29,27 @@ module Solargraph
         result = []
         result.concat complete_keyword_parameters
         if cursor.chain.constant? || cursor.start_of_constant?
-          if cursor.chain.undefined?
-            type = cursor.chain.base.infer(api_map, context_pin, locals)
+          full = cursor.chain.links.first.word
+          type = if cursor.chain.undefined?
+            cursor.chain.base.infer(api_map, context_pin, locals)
           else
-            full = cursor.chain.links.first.word
             if full.include?('::') && cursor.chain.links.length == 1
-              type = ComplexType.try_parse(full.split('::')[0..-2].join('::'))
+              ComplexType.try_parse(full.split('::')[0..-2].join('::'))
             elsif cursor.chain.links.length > 1
-              type = ComplexType.try_parse(full)
+              ComplexType.try_parse(full)
             else
-              type = ComplexType::UNDEFINED
+              ComplexType::UNDEFINED
             end
           end
-          result.concat api_map.get_constants(type.undefined? ? '' : type.namespace, cursor.start_of_constant? ? '' : context_pin.full_context.namespace, *gates)
+          if type.undefined?
+            if full.include?('::')
+              result.concat api_map.get_constants(full, *gates)
+            else
+              result.concat api_map.get_constants('', cursor.start_of_constant? ? '' : context_pin.full_context.namespace, *gates) #.select { |pin| pin.name.start_with?(full) }
+            end
+          else
+            result.concat api_map.get_constants(type.namespace, cursor.start_of_constant? ? '' : context_pin.full_context.namespace, *gates)
+          end
         else
           type = cursor.chain.base.infer(api_map, block, locals)
           result.concat api_map.get_complex_type_methods(type, block.binder.namespace, cursor.chain.links.length == 1)
@@ -67,7 +75,7 @@ module Solargraph
       # @return [Array<Pin::Base>]
       def signify
         return [] unless cursor.argument?
-        chain = Source::NodeChainer.chain(cursor.recipient_node, cursor.filename)
+        chain = Parser.chain(cursor.recipient_node, cursor.filename)
         chain.define(api_map, context_pin, locals).select { |pin| pin.is_a?(Pin::Method) }
       end
 
@@ -99,7 +107,7 @@ module Solargraph
         return @in_block unless @in_block.nil?
         @in_block = begin
           tree = cursor.source.tree_at(cursor.position.line, cursor.position.column)
-          tree[1].is_a?(Parser::AST::Node) && tree[1].type == :block
+          Parser.is_ast_node?(tree[1]) && [:block, :ITER].include?(tree[1].type)
         end
       end
 
@@ -131,7 +139,7 @@ module Solargraph
       # @return [Array<Pin::Base>]
       def yielded_self_pins
         return [] unless block.is_a?(Pin::Block) && block.receiver
-        chain = Solargraph::Source::NodeChainer.chain(block.receiver, source_map.source.filename)
+        chain = Parser.chain(block.receiver, source_map.source.filename)
         receiver_pin = chain.define(api_map, context_pin, locals).first
         return [] if receiver_pin.nil?
         result = []
@@ -150,14 +158,13 @@ module Solargraph
         result = []
         done = []
         pins.each do |pin|
-          pin.parameter_names.each do |name|
-            next if done.include?(name)
-            done.push name
-            if pin.parameters.any? { |par| par.start_with?("#{name}:") }
-              result.push Pin::KeywordParam.new(pin.location, "#{name}:")
-            end
+          pin.parameters.each do |param|
+            next if done.include?(param.name)
+            done.push param.name
+            next unless param.keyword?
+            result.push Pin::KeywordParam.new(pin.location, "#{param.name}:")
           end
-          if !pin.parameters.empty? && pin.parameters.last.start_with?('**') || pin.parameters.last =~ /= *?\{\}$/
+          if !pin.parameters.empty? && pin.parameters.last.kwrestarg?
             pin.docstring.tags(:param).each do |tag|
               next if done.include?(tag.name)
               done.push tag.name

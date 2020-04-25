@@ -62,7 +62,7 @@ describe Solargraph::Workspace do
     File.write(gemspec_file, '')
     calculated = Array.new(Solargraph::Workspace::Config::MAX_FILES + 1) { gemspec_file }
     # @todo Mock reveals tight coupling
-    config = double(:config, calculated: calculated, max_files: 0, allow?: true, require_paths: [])
+    config = double(:config, calculated: calculated, max_files: 0, allow?: true, require_paths: [], plugins: [])
     expect {
       Solargraph::Workspace.new('.', config)
     }.not_to raise_error
@@ -126,5 +126,12 @@ describe Solargraph::Workspace do
     # vendor/**/* is excluded by default
     workspace = Solargraph::Workspace.new('spec/fixtures/vendored')
     expect(workspace.gemspecs).to be_empty
+  end
+
+  it 'rescues errors loading files into sources' do
+    config = double(:Config, directory: './path', calculated: ['./path/does_not_exist.rb'], max_files: 5000, require_paths: [], plugins: [])
+    expect {
+      Solargraph::Workspace.new('./path', config)
+    }.not_to raise_error
   end
 end

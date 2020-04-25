@@ -24,27 +24,12 @@ module Solargraph
         # @return [Array<ParamDef>]
         def from pin
           result = []
-          pin.parameters.each_with_index do |full, index|
-            result.push ParamDef.new(pin.parameter_names[index], arg_type(full))
+          pin.parameters.each do |par|
+            result.push ParamDef.new(par.name, par.decl)
           end
           result
         end
-
-        private
-
-        # @param string [String]
-        # @return [Symbol]
-        def arg_type string
-          return :kwrestarg if string.start_with?('**')
-          return :restarg if string.start_with?('*')
-          return :optarg if string.include?('=')
-          return :kwoptarg if string.end_with?(':')
-          return :kwarg if string =~ /^[a-z0-9_]*?:/
-          return :blockarg if string.start_with?('&')
-          :arg
-        end
       end
-
     end
   end
 end

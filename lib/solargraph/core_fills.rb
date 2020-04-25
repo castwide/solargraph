@@ -65,11 +65,13 @@ module Solargraph
   @return [self]
 @return_single_parameter
       )),
+      Override.method_return('Array#uniq', 'self'),
 
       Override.from_comment('BasicObject#==', %(
 @param other [BasicObject]
 @return [Boolean]
       )),
+      Override.method_return('BasicObject#initialize', 'void'),
 
       Override.method_return('Class#new', 'self'),
       Override.method_return('Class.new', 'Class<Object>'),
@@ -84,6 +86,11 @@ module Solargraph
       Override.method_return('File.extname', 'String'),
       Override.method_return('File.join', 'String'),
 
+      Override.from_comment('Float#+', %(
+@param y [Numeric]
+@return [Numeric]
+      )),
+
       Override.from_comment('Hash#[]', %(
 @return_value_parameter
       )),
@@ -94,9 +101,25 @@ module Solargraph
 @param_tuple
       )),
 
+      Override.from_comment('Integer#+', %(
+@param y [Numeric]
+@return [Numeric]
+      )),
+
+      Override.method_return('Kernel#puts', 'nil'),
+
+      # Override.method_return('Module#attr_reader', 'void'),
+      # Override.method_return('Module#attr_writer', 'void'),
+      # Override.method_return('Module#attr_accessor', 'void'),
+
+      Override.from_comment('Numeric#+', %(
+@param y [Numeric]
+@return [Numeric]
+      )),
+
       Override.method_return('Object#!', 'Boolean'),
       Override.method_return('Object#clone', 'self', delete: [:overload]),
-      Override.method_return('Object#dup', 'self'),
+      Override.method_return('Object#dup', 'self', delete: [:overload]),
       Override.method_return('Object#freeze', 'self', delete: [:overload]),
       Override.method_return('Object#inspect', 'String'),
       Override.method_return('Object#taint', 'self'),
@@ -121,7 +144,10 @@ module Solargraph
 
       Override.method_return('String#freeze', 'self'),
       Override.method_return('String#split', 'Array<String>'),
-      Override.method_return('String#lines', 'Array<String>')
+      Override.method_return('String#lines', 'Array<String>'),
+      Override.from_comment('String#each_line', %(
+@yieldparam [String]
+      ))
     ].concat(
       methods_with_yieldparam_subtypes.map do |path|
         Override.from_comment(path, %(
