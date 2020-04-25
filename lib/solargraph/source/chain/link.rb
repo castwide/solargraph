@@ -4,6 +4,7 @@ module Solargraph
   class Source
     class Chain
       class Link
+        # @return [String]
         attr_reader :word
 
         attr_accessor :last_context

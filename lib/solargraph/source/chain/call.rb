@@ -35,7 +35,6 @@ module Solargraph
           end
           return inferred_pins(found, api_map, name_pin.context, locals) unless found.empty?
           pins = api_map.get_method_stack(name_pin.binder.namespace, word, scope: name_pin.binder.scope)
-          pins.concat api_map.get_method_stack('Kernel', word, scope: :instance) if head?
           return [] if pins.empty?
           inferred_pins(pins, api_map, name_pin.context, locals)
         end
@@ -92,7 +91,7 @@ module Solargraph
                 comments: "@return [#{context.subtypes.first.to_s}]",
                 scope: p.scope,
                 visibility: p.visibility,
-                args: p.parameters,
+                parameters: p.parameters,
                 node: p.node
               )
             end

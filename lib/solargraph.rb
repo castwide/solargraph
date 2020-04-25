@@ -38,6 +38,7 @@ module Solargraph
   autoload :Environ,          'solargraph/environ'
   autoload :Convention,       'solargraph/convention'
   autoload :Documentor,       'solargraph/documentor'
+  autoload :Parser,           'solargraph/parser'
 
   dir = File.dirname(__FILE__)
   YARDOC_PATH = File.realpath(File.join(dir, '..', 'yardoc'))

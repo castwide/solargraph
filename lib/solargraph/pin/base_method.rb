@@ -8,10 +8,15 @@ module Solargraph
       # @return [::Symbol] :public, :private, or :protected
       attr_reader :visibility
 
+      # @return [Parser::AST::Node]
+      attr_reader :node
+
       # @param visibility [::Symbol] :public, :protected, or :private
-      def initialize visibility: :public, **splat
+      # @param explicit [Boolean]
+      def initialize visibility: :public, explicit: true, **splat
         super(splat)
         @visibility = visibility
+        @explicit = explicit
       end
 
       def return_type
@@ -30,14 +35,14 @@ module Solargraph
         name.end_with?('?') ? ComplexType::BOOLEAN : ComplexType::UNDEFINED
       end
 
-      # @return [Array<String>]
+      # @return [Array<Pin::Parameter>]
       def parameters
-        []
+        @parameters ||= []
       end
 
       # @return [Array<String>]
       def parameter_names
-        []
+        parameters.map(&:name)
       end
 
       def documentation
@@ -56,10 +61,27 @@ module Solargraph
             end
             @documentation += lines.join("\n")
           end
+          return_tags = docstring.tags(:return)
+          unless return_tags.empty?
+            @documentation += "\n\n" unless @documentation.empty?
+            @documentation += "Returns:\n"
+            lines = []
+            return_tags.each do |r|
+              l = "*"
+              l += " [#{escape_brackets(r.types.join(', '))}]" unless r.types.nil? or r.types.empty?
+              l += " #{r.text}"
+              lines.push l
+            end
+            @documentation += lines.join("\n")
+          end
           @documentation += "\n\n" unless @documentation.empty?
           @documentation += "Visibility: #{visibility}"
         end
         @documentation.to_s
+      end
+
+      def explicit?
+        @explicit
       end
 
       private

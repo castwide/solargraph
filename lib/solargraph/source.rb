@@ -1,25 +1,24 @@
 # frozen_string_literal: true
 
-require 'parser/current'
 require 'yard'
 
 module Solargraph
   # A Ruby file that has been parsed into an AST.
   #
   class Source
-    autoload :FlawedBuilder, 'solargraph/source/flawed_builder'
+    # autoload :FlawedBuilder, 'solargraph/source/flawed_builder'
     autoload :Updater,       'solargraph/source/updater'
     autoload :Change,        'solargraph/source/change'
     autoload :Mapper,        'solargraph/source/mapper'
-    autoload :NodeMethods,   'solargraph/source/node_methods'
+    # autoload :NodeMethods,   'solargraph/source/node_methods'
     autoload :EncodingFixes, 'solargraph/source/encoding_fixes'
     autoload :Cursor,        'solargraph/source/cursor'
     autoload :Chain,         'solargraph/source/chain'
     autoload :SourceChainer, 'solargraph/source/source_chainer'
-    autoload :NodeChainer,   'solargraph/source/node_chainer'
+    # autoload :NodeChainer,   'solargraph/source/node_chainer'
 
     include EncodingFixes
-    include NodeMethods
+    # include NodeMethods
 
     # @return [String]
     attr_reader :filename
@@ -30,7 +29,7 @@ module Solargraph
     # @return [Parser::AST::Node]
     attr_reader :node
 
-    # @return [Array<Parser::Source::Comment>]
+    # @return [Hash{Integer => Array<String>}]
     attr_reader :comments
 
     # @todo Deprecate?
@@ -47,7 +46,8 @@ module Solargraph
       @version = version
       @domains = []
       begin
-        @node, @comments = Source.parse_with_comments(@code, filename)
+        # @node, @comments = Source.parse_with_comments(@code, filename)
+        @node, @comments = Solargraph::Parser.parse_with_comments(@code, filename)
         @parsed = true
       rescue Parser::SyntaxError, EncodingError => e
         # @todo 100% whitespace results in a nil node, so there's no reason to parse it.
@@ -55,12 +55,12 @@ module Solargraph
         #   node with a location that encompasses the range.
         # @node, @comments = Source.parse_with_comments(@code.gsub(/[^\s]/, ' '), filename)
         @node = nil
-        @comments = []
+        @comments = {}
         @parsed = false
-      rescue Exception => e
-        Solargraph.logger.warn "[#{e.class}] #{e.message}"
-        Solargraph.logger.warn e.backtrace.join("\n")
-        raise "Error parsing #{filename || '(source)'}: [#{e.class}] #{e.message}"
+      # rescue Exception => e
+      #   Solargraph.logger.warn "[#{e.class}] #{e.message}"
+      #   Solargraph.logger.warn e.backtrace.join("\n")
+      #   raise "Error parsing #{filename || '(source)'}: [#{e.class}] #{e.message}"
       ensure
         @code.freeze
       end
@@ -193,25 +193,41 @@ module Solargraph
     # @param position [Position]
     # @return [Boolean]
     def string_at? position
-      return false if Position.to_offset(code, position) >= code.length
-      string_nodes.each do |node|
-        range = Range.from_node(node)
-        next if range.ending.line < position.line
-        break if range.ending.line > position.line
-        return true if node.type == :str && range.include?(position) && range.start != position
-        if node.type == :dstr
-          inner = node_at(position.line, position.column)
-          next if inner.nil?
-          inner_range = Range.from_node(inner)
-          next unless range.include?(inner_range.ending)
-          return true if inner.type == :str
-          inner_code = at(Solargraph::Range.new(inner_range.start, position))
-          return true if (inner.type == :dstr && inner_range.ending.character <= position.character) && !inner_code.end_with?('}') ||
-            (inner.type != :dstr && inner_range.ending.line == position.line && position.character <= inner_range.ending.character && inner_code.end_with?('}'))
+      if Parser.rubyvm?
+        string_ranges.each do |range|
+          if synchronized?
+            return true if range.include?(position) || range.ending == position
+          else
+            return true if last_updater && last_updater.changes.one? && range.contain?(last_updater.changes.first.range.start)
+          end
         end
-        break if range.ending.line > position.line
+        false
+      else
+        return false if Position.to_offset(code, position) >= code.length
+        string_nodes.each do |node|
+          range = Range.from_node(node)
+          next if range.ending.line < position.line
+          break if range.ending.line > position.line
+          return true if node.type == :str && range.include?(position) && range.start != position
+          return true if [:STR, :str].include?(node.type) && range.include?(position) && range.start != position
+          if node.type == :dstr
+            inner = node_at(position.line, position.column)
+            next if inner.nil?
+            inner_range = Range.from_node(inner)
+            next unless range.include?(inner_range.ending)
+            return true if inner.type == :str
+            inner_code = at(Solargraph::Range.new(inner_range.start, position))
+            return true if (inner.type == :dstr && inner_range.ending.character <= position.character) && !inner_code.end_with?('}') ||
+              (inner.type != :dstr && inner_range.ending.line == position.line && position.character <= inner_range.ending.character && inner_code.end_with?('}'))
+          end
+          break if range.ending.line > position.line
+        end
+        false
       end
-      false
+    end
+
+    def string_ranges
+      @string_ranges ||= Parser.string_ranges(node)
     end
 
     # @param position [Position]
@@ -228,18 +244,7 @@ module Solargraph
     # @param name [String]
     # @return [Array<Location>]
     def references name
-      inner_node_references(name, node).map do |n|
-        offset = Position.to_offset(code, get_node_start_position(n))
-        soff = code.index(name, offset)
-        eoff = soff + name.length
-        Location.new(
-          filename,
-          Range.new(
-            Position.from_offset(code, soff),
-            Position.from_offset(code, eoff)
-          )
-        )
-      end
+      Parser.references self, name
     end
 
     # @return [Array<Range>]
@@ -250,8 +255,9 @@ module Solargraph
     # @param node [Parser::AST::Node]
     # @return [String]
     def code_for(node)
-      b = Position.line_char_to_offset(@code, node.location.line, node.location.column)
-      e = Position.line_char_to_offset(@code, node.location.last_line, node.location.last_column)
+      rng = Range.from_node(node)
+      b = Position.line_char_to_offset(@code, rng.start.line, rng.start.column)
+      e = Position.line_char_to_offset(@code, rng.ending.line, rng.ending.column)
       frag = code[b..e-1].to_s
       frag.strip.gsub(/,$/, '')
     end
@@ -259,9 +265,10 @@ module Solargraph
     # @param node [Parser::AST::Node]
     # @return [String]
     def comments_for node
-      stringified_comments[node.loc.line] ||= begin
-        arr = associated_comments[node.loc.line]
-        arr ? stringify_comment_array(arr) : nil
+      rng = Range.from_node(node)
+      stringified_comments[rng.start.line] ||= begin
+        buff = associated_comments[rng.start.line]
+        buff ? stringify_comment_array(buff) : nil
       end
     end
 
@@ -275,9 +282,15 @@ module Solargraph
       Location.new(filename, range)
     end
 
-    FOLDING_NODE_TYPES = %i[
-      class sclass module def defs if str dstr array while unless kwbegin hash block
-    ].freeze
+    FOLDING_NODE_TYPES = if Parser.rubyvm?
+      %i[
+        CLASS SCLASS MODULE DEFN DEFS IF WHILE UNLESS ITER STR
+      ].freeze
+    else
+      %i[
+        class sclass module def defs if str dstr array while unless kwbegin hash block
+      ].freeze
+    end
 
     # Get an array of ranges that can be folded, e.g., the range of a class
     # definition or an if condition.
@@ -305,23 +318,37 @@ module Solargraph
     def associated_comments
       @associated_comments ||= begin
         result = {}
-        Parser::Source::Comment.associate_locations(node, comments).each_pair do |loc, all|
-          block = all.select { |l| l.loc.line < loc.line }
-          next if block.empty?
-          result[loc.line] ||= []
-          result[loc.line].concat block
+        buffer = String.new('')
+        last = nil
+        @comments.each_pair do |num, snip|
+          if !last || num == last + 1
+            buffer.concat "#{snip.text}\n"
+          else
+            result[first_not_empty_from(last + 1)] = buffer.clone
+            buffer.replace "#{snip.text}\n"
+          end
+          last = num
         end
+        result[first_not_empty_from(last + 1)] = buffer unless buffer.empty? || last.nil?
         result
       end
     end
 
     private
 
+    def first_not_empty_from line
+      cursor = line
+      cursor += 1 while cursor < code.lines.length && code.lines[cursor].strip.empty?
+      cursor = line if cursor > code.lines.length
+      cursor
+    end
+
     # @param top [Parser::AST::Node]
     # @param result [Array<Range>]
     # @return [void]
     def inner_folding_ranges top, result = []
-      return unless top.is_a?(Parser::AST::Node)
+      # return unless top.is_a?(::Parser::AST::Node)
+      return unless Parser.is_ast_node?(top)
       if FOLDING_NODE_TYPES.include?(top.type)
         range = Range.from_node(top)
         if result.empty? || range.start.line > result.last.start.line
@@ -335,27 +362,24 @@ module Solargraph
 
     # Get a string representation of an array of comments.
     #
-    # @param comments [Array<Parser::Source::Comment>]
+    # @param comments [String]
     # @return [String]
     def stringify_comment_array comments
-      ctxt = ''
-      num = nil
+      ctxt = String.new('')
       started = false
-      last_line = nil
-      comments.each { |l|
+      skip = nil
+      comments.lines.each { |l|
         # Trim the comment and minimum leading whitespace
-        p = l.text.gsub(/^#+/, '')
-        if num.nil? and !p.strip.empty?
-          num = p.index(/[^ ]/)
-          started = true
-        elsif started and !p.strip.empty?
-          cur = p.index(/[^ ]/)
-          num = cur if cur < num
+        p = l.gsub(/^#+/, '')
+        if p.strip.empty?
+          next unless started
+          ctxt.concat p
+        else
+          here = p.index(/[^ \t]/)
+          skip = here if skip.nil? || here < skip
+          ctxt.concat p[skip..-1]
         end
-        # Include blank lines between comments
-        ctxt += ("\n" * (l.loc.first_line - last_line - 1)) unless last_line.nil? || l.loc.first_line - last_line <= 0
-        ctxt += "#{p[num..-1]}\n" if started
-        last_line = l.loc.last_line if last_line.nil? || l.loc.last_line > last_line
+        started = true
       }
       ctxt
     end
@@ -374,9 +398,7 @@ module Solargraph
 
     # @return [Array<Range>]
     def comment_ranges
-      @comment_ranges ||= @comments.map do |cmnt|
-        Range.from_expr(cmnt.loc.expression)
-      end
+      @comment_ranges ||= @comments.values.map(&:range)
     end
 
     # Get an array of foldable comment block ranges. Blocks are excluded if
@@ -387,25 +409,15 @@ module Solargraph
       return [] unless synchronized?
       result = []
       grouped = []
-      # @param cmnt [Parser::Source::Comment]
-      @comments.each do |cmnt|
-        if cmnt.document?
-          result.push Range.from_expr(cmnt.loc.expression)
-        elsif code.lines[cmnt.loc.expression.line].strip.start_with?('#')
-          if grouped.empty? || cmnt.loc.expression.line == grouped.last.loc.expression.line + 1
-            grouped.push cmnt
-          else
-            result.push Range.from_to(grouped.first.loc.expression.line, 0, grouped.last.loc.expression.line, 0) unless grouped.length < 3
-            grouped = [cmnt]
-          end
+      comments.keys.each do |l|
+        if grouped.empty? || l == grouped.last + 1
+          grouped.push l
         else
-          unless grouped.length < 3
-            result.push Range.from_to(grouped.first.loc.expression.line, 0, grouped.last.loc.expression.line, 0)
-          end
-          grouped.clear
+          result.push Range.from_to(grouped.first, 0, grouped.last, 0) unless grouped.length < 3
+          grouped = [l]
         end
       end
-      result.push Range.from_to(grouped.first.loc.expression.line, 0, grouped.last.loc.expression.line, 0) unless grouped.length < 3
+      result.push Range.from_to(grouped.first, 0, grouped.last, 0) unless grouped.length < 3
       result
     end
 
@@ -413,8 +425,8 @@ module Solargraph
     # @return [Array<Parser::AST::Node>]
     def string_nodes_in n
       result = []
-      if n.is_a?(Parser::AST::Node)
-        if n.type == :str || n.type == :dstr
+      if Parser.is_ast_node?(n)
+        if n.type == :str || n.type == :dstr || n.type == :STR || n.type == :DSTR
           result.push n
         else
           n.children.each{ |c| result.concat string_nodes_in(c) }
@@ -429,27 +441,23 @@ module Solargraph
     # @return [void]
     def inner_tree_at node, position, stack
       return if node.nil?
-      here = Range.from_to(node.loc.expression.line, node.loc.expression.column, node.loc.expression.last_line, node.loc.expression.last_column)
-      if here.contain?(position)
+      # here = Range.from_to(node.loc.expression.line, node.loc.expression.column, node.loc.expression.last_line, node.loc.expression.last_column)
+      here = Range.from_node(node)
+      if here.contain?(position) || colonized(here, position, node)
         stack.unshift node
         node.children.each do |c|
-          next unless c.is_a?(AST::Node)
-          next if c.loc.expression.nil?
+          next unless Parser.is_ast_node?(c)
+          next if !Parser.rubyvm? && c.loc.expression.nil?
           inner_tree_at(c, position, stack)
         end
       end
     end
 
-    # @param name [String]
-    # @param top [AST::Node]
-    # @return [Array<AST::Node>]
-    def inner_node_references name, top
-      result = []
-      if top.is_a?(AST::Node) && top.to_s.include?(":#{name}")
-        result.push top if top.children.any? { |c| c.to_s == name }
-        top.children.each { |c| result.concat inner_node_references(name, c) }
-      end
-      result
+    def colonized range, position, node
+      node.type == :COLON2 &&
+        range.ending.line == position.line &&
+        range.ending.character == position.character - 2 &&
+        code[Position.to_offset(code, Position.new(position.line, position.character - 2)), 2] == '::'
     end
 
     protected
@@ -500,35 +508,6 @@ module Solargraph
       # @return [Solargraph::Source]
       def load_string code, filename = nil, version = 0
         Source.new code, filename, version
-      end
-
-      # @param code [String]
-      # @param filename [String]
-      # @return [Array(Parser::AST::Node, Array<Parser::Source::Comment>)]
-      def parse_with_comments code, filename = nil
-        buffer = Parser::Source::Buffer.new(filename, 0)
-        buffer.source = code
-        parser.parse_with_comments(buffer)
-      end
-
-      # @param code [String]
-      # @param filename [String, nil]
-      # @param line [Integer]
-      # @return [Parser::AST::Node]
-      def parse code, filename = nil, line = 0
-        buffer = Parser::Source::Buffer.new(filename, line)
-        buffer.source = code
-        parser.parse(buffer)
-      end
-
-      # @return [Parser::Base]
-      def parser
-        # @todo Consider setting an instance variable. We might not need to
-        #   recreate the parser every time we use it.
-        parser = Parser::CurrentRuby.new(FlawedBuilder.new)
-        parser.diagnostics.all_errors_are_fatal = true
-        parser.diagnostics.ignore_warnings      = true
-        parser
       end
 
       # @param comments [String]

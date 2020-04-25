@@ -30,8 +30,10 @@ module Solargraph
       # @return [Array<Source::Chain::Link>]
       attr_reader :links
 
+      attr_reader :node
+
       # @param links [Array<Chain::Link>]
-      def initialize links
+      def initialize links, node = nil, splat = false
         @links = links.clone
         @links.push UNDEFINED_CALL if @links.empty?
         head = true
@@ -40,6 +42,8 @@ module Solargraph
           head = false
           result
         end
+        @node = node
+        @splat = splat
       end
 
       # @return [Chain]
@@ -97,6 +101,10 @@ module Solargraph
         links.last.is_a?(Chain::Constant)
       end
 
+      def splat?
+        @splat
+      end
+
       private
 
       # @param pins [Array<Pin::Base>]
@@ -114,7 +122,7 @@ module Solargraph
         end
         if type.undefined?
           # Limit method inference recursion
-          return type if @@inference_depth >= 2 && pins.first.is_a?(Pin::BaseMethod)
+          return type if @@inference_depth >= 10 && pins.first.is_a?(Pin::BaseMethod)
           @@inference_depth += 1
           pins.each do |pin|
             # Avoid infinite recursion
@@ -143,7 +151,7 @@ module Solargraph
         return unless pin.is_a?(Pin::Block) && pin.receiver && !pin.rebound?
         # This first rebind just sets the block pin's rebound state
         pin.rebind ComplexType::UNDEFINED
-        chain = Solargraph::Source::NodeChainer.chain(pin.receiver, pin.location.filename)
+        chain = Parser.chain(pin.receiver, pin.location.filename)
         return if skippable_block_receivers(api_map).include?(chain.links.last.word)
         if ['instance_eval', 'instance_exec', 'class_eval', 'class_exec', 'module_eval', 'module_exec'].include?(chain.links.last.word)
           type = chain.base.infer(api_map, pin, locals)

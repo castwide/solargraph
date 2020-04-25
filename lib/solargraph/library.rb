@@ -224,10 +224,10 @@ module Solargraph
       result.uniq
     end
 
-    # Get the pin at the specified location or nil if the pin does not exist.
+    # Get the pins at the specified location or nil if the pin does not exist.
     #
     # @param location [Location]
-    # @return [Solargraph::Pin::Base]
+    # @return [Array<Solargraph::Pin::Base>]
     def locate_pins location
       api_map.locate_pins(location).map { |pin| pin.realize(api_map) }
     end
@@ -369,7 +369,7 @@ module Solargraph
     # @param source [Source]
     # @return [Boolean] True if the source was merged into the workspace.
     def merge source
-      result = nil
+      result = false
       mutex.synchronize do
         result = workspace.merge(source)
         @synchronized = !result if synchronized?

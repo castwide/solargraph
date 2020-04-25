@@ -27,6 +27,8 @@ module Solargraph
         @output = nil
       end
 
+      # @param text [String]
+      # @param nullable [Boolean]
       # @return [String]
       def write text, nullable = false
         can_nullify = (nullable and changes.length == 1)

@@ -5,6 +5,7 @@ module Solargraph
     # The base class for diagnostics reporters.
     #
     class Base
+      # @return [Array<String>]
       attr_reader :args
 
       def initialize *args

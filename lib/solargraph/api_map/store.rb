@@ -19,7 +19,7 @@ module Solargraph
       # @return [Array<Solargraph::Pin::Base>]
       def get_constants fqns, visibility = [:public]
         namespace_children(fqns).select { |pin|
-          !pin.name.empty? and (pin.is_a?(Pin::Namespace) || pin.is_a?(Pin::Constant)) && visibility.include?(pin.visibility)
+          !pin.name.empty? && (pin.is_a?(Pin::Namespace) || pin.is_a?(Pin::Constant)) && visibility.include?(pin.visibility)
         }
       end
 
@@ -34,7 +34,7 @@ module Solargraph
       end
 
       # @param fqns [String]
-      # @return [String]
+      # @return [String, nil]
       def get_superclass fqns
         return superclass_references[fqns].first if superclass_references.key?(fqns)
         return 'Object' if fqns != 'BasicObject' && namespace_exists?(fqns)
@@ -46,6 +46,12 @@ module Solargraph
       # @return [Array<String>]
       def get_includes fqns
         include_references[fqns] || []
+      end
+
+      # @param fqns [String]
+      # @return [Array<String>]
+      def get_prepends fqns
+        prepend_references[fqns] || []
       end
 
       # @param fqns [String]
@@ -172,6 +178,10 @@ module Solargraph
         @include_references ||= {}
       end
 
+      def prepend_references
+        @prepend_references ||= {}
+      end
+
       def extend_references
         @extend_references ||= {}
       end
@@ -210,13 +220,16 @@ module Solargraph
         pins.each do |pin|
           namespace_map[pin.namespace] ||= []
           namespace_map[pin.namespace].push pin
-          namespaces.add pin.path if pin.is_a?(Pin::Namespace) and !pin.path.empty?
+          namespaces.add pin.path if pin.is_a?(Pin::Namespace) && !pin.path.empty?
           namespace_pins.push pin if pin.is_a?(Pin::Namespace)
           method_pins.push pin if pin.is_a?(Pin::BaseMethod)
           symbols.push pin if pin.is_a?(Pin::Symbol)
           if pin.is_a?(Pin::Reference::Include)
             include_references[pin.namespace] ||= []
             include_references[pin.namespace].push pin.name
+          elsif pin.is_a?(Pin::Reference::Prepend)
+            prepend_references[pin.namespace] ||= []
+            prepend_references[pin.namespace].push pin.name
           elsif pin.is_a?(Pin::Reference::Extend)
             extend_references[pin.namespace] ||= []
             extend_references[pin.namespace].push pin.name
@@ -245,6 +258,9 @@ module Solargraph
             pin.docstring.add_tag(tag)
           end
         end
+        # @todo This is probably not the best place for these overrides
+        superclass_references['Integer'] = ['Numeric']
+        superclass_references['Float'] = ['Numeric']
       end
     end
   end

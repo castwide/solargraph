@@ -34,7 +34,7 @@ module Solargraph
 
       # @return [Array<String>]
       def parameter_names
-        @parameter_names ||= parameters.map{|p| p.split(/[ =:]/).first.gsub(/^(\*{1,2}|&)/, '')}
+        @parameter_names ||= parameters.map(&:name)
       end
 
       def nearly? other

@@ -4,379 +4,471 @@ module Solargraph
   # A static analysis tool for validating data types.
   #
   class TypeChecker
-    autoload :Problem, 'solargraph/type_checker/problem'
+    autoload :Problem,  'solargraph/type_checker/problem'
     autoload :ParamDef, 'solargraph/type_checker/param_def'
+    autoload :Rules,    'solargraph/type_checker/rules'
+    autoload :Checks,   'solargraph/type_checker/checks'
+
+    include Checks
+    include Parser::NodeMethods
 
     # @return [String]
     attr_reader :filename
 
-    # @param filename [String]
-    # @param api_map [ApiMap]
-    def initialize filename, api_map: nil
-      @filename = filename
-      # @todo Smarter directory resolution
-      @api_map = api_map || Solargraph::ApiMap.load(File.dirname(filename))
-    end
-
-    # Return type problems indicate that a method does not specify a type in a
-    # `@return` tag or the specified type could not be resolved to a known
-    # type.
-    #
-    # @return [Array<Problem>]
-    def return_type_problems
-      result = []
-      smap = api_map.source_map(filename)
-      pins = smap.pins.select { |pin| pin.is_a?(Solargraph::Pin::BaseMethod) }
-      pins.each { |pin| result.concat check_return_type(pin) }
-      result
-    end
-
-    # Param type problems indicate that a method does not specify a type in a
-    # `@param` tag for one or more of its parameters, a `@param` tag is defined
-    # that does not correlate with the method signature, or the specified type
-    # could not be resolved to a known type.
-    #
-    # @return [Array<Problem>]
-    def param_type_problems
-      result = []
-      smap = api_map.source_map(filename)
-      smap.pins.select { |pin| pin.is_a?(Pin::Method) }.each do |pin|
-        if pin.parameters.empty?
-          pin.docstring.tags(:param).each do |tag|
-            result.push Problem.new(pin.location, "#{pin.name} has unknown @param #{tag.name}", pin: pin)
-          end
-        end
-      end
-      smap.locals.select { |pin| pin.is_a?(Solargraph::Pin::Parameter) }.each do |par|
-        next unless par.closure.is_a?(Solargraph::Pin::Method)
-        result.concat check_param_tags(par.closure)
-        type = par.typify(api_map)
-        pdefs = ParamDef.from(par.closure)
-        if type.undefined?
-          if par.return_type.undefined? && !pdefs.any? { |pd| pd.name == par.name && [:restarg, :kwrestarg, :blockarg].include?(pd.type) }
-            result.push Problem.new(par.location, "#{par.closure.name} has undefined @param type for #{par.name}")
-          elsif !pdefs.any? { |pd| [:restarg, :kwrestarg, :blockarg].include?(pd.type) }
-            result.push Problem.new(par.location, "#{par.closure.name} has unresolved @param type for #{par.name}")
-          end
-        end
-      end
-      result
-    end
-
-    # Strict type problems indicate that a `@return` type or a `@param` type
-    # does not match the type inferred from code analysis; or that an argument
-    # sent to a method does not match the type specified in the corresponding
-    # `@param` tag.
-    #
-    # @return [Array<Problem>]
-    def strict_type_problems
-      result = []
-      smap = api_map.source_map(filename)
-      smap.pins.select { |pin| pin.is_a?(Pin::BaseMethod) }.each do |pin|
-        result.concat confirm_return_type(pin)
-      end
-      return result if smap.source.node.nil?
-      result.concat check_send_args smap.source.node
-      result
-    end
-
-    private
+    # @return [Rules]
+    attr_reader :rules
 
     # @return [ApiMap]
     attr_reader :api_map
 
-    # @param pin [Pin::BaseMethod]
+    # @param filename [String]
+    # @param api_map [ApiMap]
+    # @param level [Symbol]
+    def initialize filename, api_map: nil, level: :normal
+      @filename = filename
+      # @todo Smarter directory resolution
+      @api_map = api_map || Solargraph::ApiMap.load(File.dirname(filename))
+      @rules = Rules.new(level)
+      @marked_ranges = []
+    end
+
+    # @return [SourceMap]
+    def source_map
+      @source_map ||= api_map.source_map(filename)
+    end
+
     # @return [Array<Problem>]
-    def check_param_tags pin
-      return [] if ParamDef.from(pin).map(&:type).include?(:kwrestarg)
-      result = []
-      pin.docstring.tags(:param).each do |par|
-        next if pin.parameter_names.include?(par.name)
-        result.push Problem.new(pin.location, "#{pin.name} has unknown @param #{par.name}")
-      end
-      result
-    end
-
-    # @param pin [Pin::BaseMethod]
-    # @return [Array<Problem>]
-    def check_return_type pin
-      tagged = pin.typify(api_map)
-      if tagged.undefined?
-        if pin.return_type.undefined?
-          probed = pin.probe(api_map)
-          return [Problem.new(pin.location, "#{pin.name} has undefined @return type", pin: pin, suggestion: probed.to_s)]
-        else
-          return [Problem.new(pin.location, "#{pin.name} has unresolved @return type #{pin.return_type}")]
-        end
-      end
-      []
-    end
-
-    # @param pin [Solargraph::Pin::Base]
-    # @return [Array<Problem>]
-    def confirm_return_type pin
-      tagged = pin.typify(api_map).self_to(pin.namespace)
-      return [] if tagged.void? || tagged.undefined? || pin.is_a?(Pin::Attribute)
-      probed = pin.probe(api_map)
-      return [] if probed.undefined?
-      if tagged.to_s != probed.to_s
-        if probed.name == 'Array' && probed.subtypes.empty?
-          return [] if tagged.name == 'Array'
-        end
-        if probed.name == 'Hash' && probed.value_types.empty?
-          return [] if tagged.name == 'Hash'
-        end
-        all = true
-        probed.each do |pt|
-          tagged.each do |tt|
-            if pt.name == tt.name && !api_map.super_and_sub?(tt.namespace, pt.namespace) && !tagged.map(&:namespace).include?(pt.namespace)
-              all = false
-              break
-            elsif pt.name == tt.name && ['Array', 'Class', 'Module'].include?(pt.name)
-              if !(tt.subtypes.any? { |ttx| pt.subtypes.any? { |ptx| api_map.super_and_sub?(ttx.to_s, ptx.to_s) } })
-                all = false
-                break
-              end
-            elsif pt.name == tt.name && pt.name == 'Hash'
-              if !(tt.key_types.empty? && !pt.key_types.empty?) && !(tt.key_types.any? { |ttx| pt.key_types.any? { |ptx| api_map.super_and_sub?(ttx.to_s, ptx.to_s) } })
-                if !(tt.value_types.empty? && !pt.value_types.empty?) && !(tt.value_types.any? { |ttx| pt.value_types.any? { |ptx| api_map.super_and_sub?(ttx.to_s, ptx.to_s) } })
-                  all = false
-                  break
-                end
-              end
-            elsif pt.name != tt.name && !api_map.super_and_sub?(tt.to_s, pt.to_s) && !tagged.map(&:to_s).include?(pt.to_s)
-              all = false
-              break
-            end
-          end
-        end
-        return [] if all
-        return [Problem.new(pin.location, "@return type `#{tagged.to_s}` does not match inferred type `#{probed.to_s}`", pin: pin, suggestion: probed.to_s)]
-      end
-      []
-    end
-
-    # @param node [Parser::AST::Node]
-    # @param skip_send [Boolean]
-    # @return [Array<Problem>]
-    def check_send_args node, skip_send = false
-      result = []
-      if node.type == :send
-        smap = api_map.source_map(filename)
-        locals = smap.locals_at(Solargraph::Location.new(filename, Solargraph::Range.from_node(node)))
-        block = smap.locate_block_pin(node.loc.line, node.loc.column)
-        chain = Solargraph::Source::NodeChainer.chain(node, filename)
-        pins = chain.define(api_map, block, locals).select { |pin| pin.is_a?(Pin::BaseMethod ) }
-        if pins.empty?
-          if !more_signature?(node)
-            base = chain.base.define(api_map, block, locals).first
-            if base.nil? || report_location?(base.location)
-              result.push Problem.new(Solargraph::Location.new(filename, Solargraph::Range.from_node(node)), "Unresolved method signature #{chain.links.map(&:word).join('.')}")
-            end
-          end
-        else
-          pin = pins.first
-          ptypes = ParamDef.from(pin)
-          params = first_param_tags_from(pins)
-          cursor = 0
-          curtype = nil
-          # The @param_tuple tag marks exceptional cases for handling, e.g., the Hash#[]= method.
-          if pin.docstring.tag(:param_tuple)
-            if node.children[2..-1].length > 2
-              result.push Problem.new(Solargraph::Location.new(filename, Solargraph::Range.from_node(node)), "Wrong number of arguments to #{pin.path}")
-            else
-              base = chain.base.infer(api_map, block, locals)
-              # @todo Don't just use the first key/value type
-              k = base.key_types.first || ComplexType.parse('Object')
-              v = base.value_types.first || ComplexType.parse('Object')
-              tuple = [
-                ParamDef.new('key', k),
-                ParamDef.new('value', v)
-              ]
-              node.children[2..-1].each_with_index do |arg, index|
-                chain = Solargraph::Source::NodeChainer.chain(arg, filename)
-                argtype = chain.infer(api_map, block, locals)
-                partype = tuple[index].type
-                if argtype.tag != partype.tag && !api_map.super_and_sub?(partype.tag.to_s, argtype.tag.to_s)
-                  result.push Problem.new(Solargraph::Location.new(filename, Solargraph::Range.from_node(node)), "Wrong parameter type for #{pin.path}: #{tuple[index].name} expected #{partype.tag}, received #{argtype.tag}")
-                end
-              end
-            end
-            return result
-          end
-          node.children[2..-1].each_with_index do |arg, index|
-            if pin.is_a?(Pin::Attribute)
-              curtype = ParamDef.new('value', :arg)
-            else
-              curtype = ptypes[cursor] if curtype.nil? || curtype == :arg
-            end
-            if curtype.nil?
-              if pin.parameters[index].nil?
-                if params.values[index]
-                  # Allow for methods that have named parameters but no
-                  # arguments in their definitions. This is common in the Ruby
-                  # core, e.g., the Hash#[]= method.
-                  chain = Solargraph::Source::NodeChainer.chain(arg, filename)
-                  argtype = chain.infer(api_map, block, locals)
-                  partype = params.values[index]
-                  if argtype.tag != partype.tag && !api_map.super_and_sub?(partype.tag.to_s, argtype.tag.to_s)
-                    result.push Problem.new(Solargraph::Location.new(filename, Solargraph::Range.from_node(node)), "Wrong parameter type for #{pin.path}: #{params.keys[index]} expected #{partype.tag}, received #{argtype.tag}")
-                  end
-                else
-                  result.push Problem.new(Solargraph::Location.new(filename, Solargraph::Range.from_node(node)), "Not enough arguments sent to #{pin.path}")
-                  break
-                end
-              end
-            else
-              # @todo This should also detect when the last parameter is a hash
-              if curtype.type == :kwrestarg
-                if arg.type != :hash
-                  result.push Problem.new(Solargraph::Location.new(filename, Solargraph::Range.from_node(node)), "Wrong parameter type for #{pin.path}: expected hash or keyword")
-                else
-                  result.concat check_hash_params arg, params
-                end
-                # @todo Break here? Not sure about that
-                break
-              end
-              break if curtype.type == :restarg
-              if arg.is_a?(Parser::AST::Node) && arg.type == :hash
-                arg.children.each do |pair|
-                  sym = pair.children[0].children[0].to_s
-                  partype = params[sym]
-                  if partype
-                    chain = Solargraph::Source::NodeChainer.chain(pair.children[1], filename)
-                    argtype = chain.infer(api_map, block, locals)
-                    if argtype.tag != partype.tag && !api_map.super_and_sub?(partype.tag.to_s, argtype.tag.to_s)
-                      result.push Problem.new(Solargraph::Location.new(filename, Solargraph::Range.from_node(node)), "Wrong parameter type for #{pin.path}: #{pin.parameter_names[index]} expected #{partype.tag}, received #{argtype.tag}")
-                    end
-                  end
-                end
-              elsif arg.is_a?(Parser::AST::Node) && arg.type == :splat
-                result.push Problem.new(Solargraph::Location.new(filename, Solargraph::Range.from_node(node)), "Can't handle splat in #{pin.parameter_names[index]} #{pin.path}")
-                break if curtype != :arg && ptypes.map(&:type).include?(:restarg)
-              else
-                if pin.is_a?(Pin::Attribute)
-                  partype = pin.return_type
-                else
-                  partype = params[pin.parameter_names[index]]
-                end
-                if partype
-                  arg = chain.links.last.arguments[index]
-                  if arg.nil?
-                    result.push Problem.new(Solargraph::Location.new(filename, Solargraph::Range.from_node(node)), "Wrong number of arguments to #{pin.path}")
-                  else
-                    argtype = arg.infer(api_map, block, locals)
-                    if !arg_to_duck(argtype, partype)
-                      match = false
-                      partype.each do |pt|
-                        if argtype.tag == pt.tag || api_map.super_and_sub?(pt.tag.to_s, argtype.tag.to_s)
-                          match = true
-                          break
-                        end
-                      end
-                      unless match
-                        result.push Problem.new(Solargraph::Location.new(filename, Solargraph::Range.from_node(node)), "Wrong parameter type for #{pin.path}: #{pin.parameter_names[index]} expected [#{partype}], received [#{argtype.tag}]")
-                      end
-                    end
-                  end
-                end
-              end
-            end
-            cursor += 1 if curtype == :arg
-          end
-        end
-      end
-      node.children.each do |child|
-        next unless child.is_a?(Parser::AST::Node)
-        next if child.type == :send && skip_send
-        result.concat check_send_args(child)
-      end
-      result
-    end
-
-    def check_hash_params arg, params
-      result = []
-      keys = arg.children.map do |child|
-        child.children[0].children[0].to_s
-      end
-      keys.each do |key|
-        param = params[key]
-        if param
-          # @todo typecheck
-        else
-          # @todo This error might not be valid. If there's a splat in the
-          #   method parameters, should the type checker let it pass?
-          result.push Problem.new(nil, "Keyword argument #{key} does not have a @param tag")
-        end
-      end
-      result
-    end
-
-    def arg_to_duck arg, par
-      return false unless par.duck_type?
-      meths = api_map.get_complex_type_methods(arg).map(&:name)
-      par.each do |quack|
-        return true if quack.duck_type? && meths.include?(quack.to_s[1..-1])
-      end
-      false
-    end
-
-    # @param pin [Pin::Base]
-    # @return [Hash]
-    def param_tags_from pin
-      # @todo Look for see references
-      #   and dig through all the pins
-      return {} if pin.nil?
-      tags = pin.docstring.tags(:param)
-      result = {}
-      tags.each do |tag|
-        result[tag.name] = ComplexType::UNDEFINED
-        result[tag.name] = ComplexType.try_parse(*tag.types).qualify(api_map, pin.context.namespace)
-      end
-      result
-    end
-
-    def first_param_tags_from pins
-      pins.each do |pin|
-        result = param_tags_from(pin)
-        return result unless result.empty?
-      end
-      {}
-    end
-
-    # @param location [Location, nil]
-    def report_location? location
-      return false if location.nil?
-      filename == location.filename || api_map.bundled?(location.filename)
-    end
-
-    def more_signature? node
-      node.children.any? do |child|
-        child.is_a?(Parser::AST::Node) && (
-          child.type == :send || (child.type == :block && more_signature?(child))
-        )
+    def problems
+      @problems ||= begin
+        method_tag_problems
+          .concat variable_type_tag_problems
+          .concat const_problems
+          .concat call_problems
       end
     end
 
     class << self
       # @param filename [String]
       # @return [self]
-      def load filename
+      def load filename, level = :normal
         source = Solargraph::Source.load(filename)
         api_map = Solargraph::ApiMap.new
         api_map.map(source)
-        new(filename, api_map: api_map)
+        new(filename, api_map: api_map, level: level)
       end
 
       # @param code [String]
       # @param filename [String, nil]
       # @return [self]
-      def load_string code, filename = nil
+      def load_string code, filename = nil, level = :normal
         source = Solargraph::Source.load_string(code, filename)
         api_map = Solargraph::ApiMap.new
         api_map.map(source)
-        new(filename, api_map: api_map)
+        new(filename, api_map: api_map, level: level)
       end
+    end
+
+    private
+
+    # @return [Array<Problem>]
+    def method_tag_problems
+      result = []
+      # @param pin [Pin::BaseMethod]
+      source_map.pins.select { |pin| pin.is_a?(Pin::BaseMethod) }.each do |pin|
+        result.concat method_return_type_problems_for(pin)
+        result.concat method_param_type_problems_for(pin)
+      end
+      result
+    end
+
+    # @param pin [Pin::BaseMethod]
+    # @return [Array<Problem>]
+    def method_return_type_problems_for pin
+      result = []
+      declared = pin.typify(api_map).self_to(pin.full_context.namespace)
+      if declared.undefined?
+        if pin.return_type.undefined? && rules.require_type_tags?
+          result.push Problem.new(pin.location, "Missing @return tag for #{pin.path}", pin: pin)
+        elsif pin.return_type.defined?
+          result.push Problem.new(pin.location, "Unresolved return type #{pin.return_type} for #{pin.path}", pin: pin)
+        elsif rules.must_tag_or_infer? && pin.probe(api_map).undefined?
+          result.push Problem.new(pin.location, "Untyped method #{pin.path} could not be inferred")
+        end
+      elsif rules.validate_tags?
+        unless pin.node.nil? || declared.void? || macro_pin?(pin) || abstract?(pin)
+          inferred = pin.probe(api_map).self_to(pin.full_context.namespace)
+          if inferred.undefined?
+            unless rules.ignore_all_undefined? || external?(pin)
+              result.push Problem.new(pin.location, "#{pin.path} return type could not be inferred", pin: pin)
+            end
+          else
+            unless (rules.rank > 1 ? types_match?(api_map, declared, inferred) : any_types_match?(api_map, declared, inferred))
+              result.push Problem.new(pin.location, "Declared return type #{declared} does not match inferred type #{inferred} for #{pin.path}", pin: pin)
+            end
+          end
+        end
+      end
+      result
+    end
+
+    def macro_pin? pin
+      pin.location && source_map.source.comment_at?(pin.location.range.ending)
+    end
+
+    # @param pin [Pin::BaseMethod]
+    # @return [Array<Problem>]
+    def method_param_type_problems_for pin
+      stack = api_map.get_method_stack(pin.namespace, pin.name, scope: pin.scope)
+      params = first_param_hash(stack)
+      result = []
+      if rules.require_type_tags?
+        pin.parameters.each do |par|
+          break if par.decl == :restarg || par.decl == :kwrestarg || par.decl == :blockarg
+          unless params[par.name]
+            result.push Problem.new(pin.location, "Missing @param tag for #{par.name} on #{pin.path}", pin: pin)
+          end
+        end
+      end
+      params.each_pair do |name, tag|
+        type = tag.qualify(api_map, pin.full_context.namespace)
+        if type.undefined?
+          result.push Problem.new(pin.location, "Unresolved type #{tag} for #{name} param on #{pin.path}", pin: pin)
+        end
+      end
+      result
+    end
+
+    def ignored_pins
+      @ignored_pins ||= []
+    end
+
+    # @return [Array<Problem>]
+    def variable_type_tag_problems
+      result = []
+      all_variables.each do |pin|
+        if pin.return_type.defined?
+          # @todo Somwhere in here we still need to determine if the variable is defined by an external call
+          declared = pin.typify(api_map)
+          if declared.defined?
+            if rules.validate_tags?
+              inferred = pin.probe(api_map)
+              if inferred.undefined?
+                next if rules.ignore_all_undefined?
+                # next unless internal?(pin) # @todo This might be redundant for variables
+                if declared_externally?(pin)
+                  ignored_pins.push pin
+                else
+                  result.push Problem.new(pin.location, "Variable type could not be inferred for #{pin.name}", pin: pin)
+                end
+              else
+                unless (rules.rank > 1 ? types_match?(api_map, declared, inferred) : any_types_match?(api_map, declared, inferred))
+                  result.push Problem.new(pin.location, "Declared type #{declared} does not match inferred type #{inferred} for variable #{pin.name}", pin: pin)
+                end
+              end
+            elsif declared_externally?(pin)
+              ignored_pins.push pin
+            end
+          elsif !pin.is_a?(Pin::Parameter)
+            result.push Problem.new(pin.location, "Unresolved type #{pin.return_type} for variable #{pin.name}", pin: pin)
+          end
+        else
+          # @todo Check if the variable is defined by an external call
+          inferred = pin.probe(api_map)
+          if inferred.undefined? && declared_externally?(pin)
+            ignored_pins.push pin
+          end
+        end
+      end
+      result
+    end
+
+    # @return [Array<Pin::BaseVariable>]
+    def all_variables
+      source_map.pins.select { |pin| pin.is_a?(Pin::BaseVariable) } +
+        source_map.locals.select { |pin| pin.is_a?(Pin::LocalVariable) }
+    end
+
+    def const_problems
+      return [] unless rules.validate_consts?
+      result = []
+      Solargraph::Parser::NodeMethods.const_nodes_from(source_map.source.node).each do |const|
+        rng = Solargraph::Range.from_node(const)
+        chain = Solargraph::Parser.chain(const, filename)
+        block_pin = source_map.locate_block_pin(rng.start.line, rng.start.column)
+        location = Location.new(filename, rng)
+        locals = source_map.locals_at(location)
+        pins = chain.define(api_map, block_pin, locals)
+        if pins.empty?
+          result.push Problem.new(location, "Unresolved constant #{Solargraph::Parser::NodeMethods.unpack_name(const)}")
+          @marked_ranges.push location.range
+        end
+      end
+      result
+    end
+
+    def call_problems
+      result = []
+      Solargraph::Parser::NodeMethods.call_nodes_from(source_map.source.node).each do |call|
+        rng = Solargraph::Range.from_node(call)
+        next if @marked_ranges.any? { |d| d.contain?(rng.start) }
+        chain = Solargraph::Parser.chain(call, filename)
+        block_pin = source_map.locate_block_pin(rng.start.line, rng.start.column)
+        location = Location.new(filename, rng)
+        locals = source_map.locals_at(location)
+        type = chain.infer(api_map, block_pin, locals)
+        if type.undefined? && !rules.ignore_all_undefined?
+          base = chain
+          missing = chain
+          found = nil
+          closest = ComplexType::UNDEFINED
+          until base.links.first.undefined?
+            found = base.define(api_map, block_pin, locals).first
+            break if found
+            missing = base
+            base = base.base
+          end
+          closest = found.typify(api_map) if found
+          if !found || closest.defined? || internal?(found)
+            unless ignored_pins.include?(found)
+              result.push Problem.new(location, "Unresolved call to #{missing.links.last.word}")
+              @marked_ranges.push rng
+            end
+          end
+        end
+        result.concat argument_problems_for(chain, api_map, block_pin, locals, location)
+      end
+      result
+    end
+
+    def argument_problems_for chain, api_map, block_pin, locals, location
+      result = []
+      base = chain
+      until base.links.length == 1 && base.undefined?
+        pins = base.define(api_map, block_pin, locals)
+        if pins.first.is_a?(Pin::BaseMethod)
+          # @type [Pin::BaseMethod]
+          pin = pins.first
+          ap = arity_problems_for(pin, base.links.last.arguments, location)
+          unless ap.empty?
+            result.concat ap
+            break
+          end
+          break unless rules.validate_calls?
+          params = first_param_hash(pins)
+          pin.parameters.each_with_index do |par, idx|
+            argchain = base.links.last.arguments[idx]
+            if argchain.nil? && par.decl == :arg
+              result.push Problem.new(location, "Not enough arguments to #{pin.path}")
+              break
+            end
+            if argchain
+              if par.decl != :arg
+                result.concat kwarg_problems_for argchain, api_map, block_pin, locals, location, pin, params, idx
+                break
+              else
+                ptype = params[par.name]
+                if ptype.nil?
+                  # @todo Some level (strong, I guess) should require the param here
+                else
+                  argtype = argchain.infer(api_map, block_pin, locals)
+                  if argtype.defined? && ptype && !any_types_match?(api_map, ptype, argtype)
+                    result.push Problem.new(location, "Wrong argument type for #{pin.path}: #{par.name} expected #{ptype}, received #{argtype}")
+                  end
+                end
+              end
+            elsif par.rest?
+              next
+            elsif par.decl == :kwarg
+              result.push Problem.new(location, "Call to #{pin.path} is missing keyword argument #{par.name}")
+              break
+            end
+          end
+        end
+        base = base.base
+      end
+      result
+    end
+
+    def kwarg_problems_for argchain, api_map, block_pin, locals, location, pin, params, first
+      result = []
+      kwargs = convert_hash(argchain.node)
+      pin.parameters[first..-1].each_with_index do |par, cur|
+        idx = first + cur
+        argchain = kwargs[par.name.to_sym]
+        if par.decl == :kwrestarg || (par.decl == :optarg && idx == pin.parameters.length - 1 && par.asgn_code == '{}')
+          result.concat kwrestarg_problems_for(api_map, block_pin, locals, location, pin, params, kwargs)
+        else
+          if argchain
+            ptype = params[par.name]
+            if ptype.nil?
+              # @todo Some level (strong, I guess) should require the param here
+            else
+              argtype = argchain.infer(api_map, block_pin, locals)
+              if argtype.defined? && ptype && !any_types_match?(api_map, ptype, argtype)
+                result.push Problem.new(location, "Wrong argument type for #{pin.path}: #{par.name} expected #{ptype}, received #{argtype}")
+              end
+            end
+          else
+            if par.decl == :kwarg
+              # @todo Problem: missing required keyword argument
+              result.push Problem.new(location, "Call to #{pin.path} is missing keyword argument #{par.name}")
+            end
+          end
+        end
+      end
+      result
+    end
+
+    def kwrestarg_problems_for(api_map, block_pin, locals, location, pin, params, kwargs)
+      result = []
+      kwargs.each_pair do |pname, argchain|
+        ptype = params[pname.to_s]
+        if ptype.nil?
+          # Probably nothing to do here. All of these args should be optional.
+        else
+          argtype = argchain.infer(api_map, block_pin, locals)
+          if argtype.defined? && ptype && !any_types_match?(api_map, ptype, argtype)
+            result.push Problem.new(location, "Wrong argument type for #{pin.path}: #{pname} expected #{ptype}, received #{argtype}")
+          end
+        end
+      end
+      result
+    end
+
+    def param_hash(pin)
+      tags = pin.docstring.tags(:param)
+      return {} if tags.empty?
+      result = {}
+      tags.each do |tag|
+        next if tag.types.nil? || tag.types.empty?
+        result[tag.name.to_s] = Solargraph::ComplexType.try_parse(*tag.types).qualify(api_map, pin.full_context.namespace)
+      end
+      result
+    end
+
+    # @param [Array<Pin::Method>]
+    def first_param_hash(pins)
+      pins.each do |pin|
+        result = param_hash(pin)
+        return result unless result.empty?
+      end
+      {}
+    end
+
+    # @param pin [Pin::Base]
+    def internal? pin
+      pin.location && api_map.bundled?(pin.location.filename)
+    end
+
+    # @param pin [Pin::Base]
+    def external? pin
+      !internal? pin
+    end
+
+    def declared_externally? pin
+      return true if pin.assignment.nil?
+      chain = Solargraph::Parser.chain(pin.assignment, filename)
+      rng = Solargraph::Range.from_node(pin.assignment)
+      block_pin = source_map.locate_block_pin(rng.start.line, rng.start.column)
+      location = Location.new(filename, Range.from_node(pin.assignment))
+      locals = source_map.locals_at(location)
+      type = chain.infer(api_map, block_pin, locals)
+      if type.undefined? && !rules.ignore_all_undefined?
+        base = chain
+        missing = chain
+        found = nil
+        closest = ComplexType::UNDEFINED
+        until base.links.first.undefined?
+          found = base.define(api_map, block_pin, locals).first
+          break if found
+          missing = base
+          base = base.base
+        end
+        closest = found.typify(api_map) if found
+        if !found || closest.defined? || internal?(found)
+          return false
+        end
+      end
+      true
+    end
+
+    # @param pin [Pin::BaseMethod]
+    def arity_problems_for(pin, arguments, location)
+      return [] unless pin.explicit?
+      return [] if pin.parameters.empty? && arguments.empty?
+      if pin.parameters.empty?
+        # Functions tagged param_tuple accepts two arguments (e.g., Hash#[]=)
+        return [] if pin.docstring.tag(:param_tuple) && arguments.length == 2
+        return [] if arguments.length == 1 && arguments.last.links.last.is_a?(Source::Chain::BlockVariable)
+        return [Problem.new(location, "Too many arguments to #{pin.path}")]
+      end
+      unchecked = arguments.clone
+      add_params = 0
+      if unchecked.empty? && pin.parameters.any? { |param| param.decl == :kwarg }
+        return [Problem.new(location, "Missing keyword arguments to #{pin.path}")]
+      end
+      unless unchecked.empty?
+        kwargs = convert_hash(unchecked.last.node)
+        # unless kwargs.empty?
+          if pin.parameters.any? { |param| [:kwarg, :kwoptarg].include?(param.decl) || param.kwrestarg? }
+            if kwargs.empty?
+              add_params += 1
+            else
+              unchecked.pop
+              pin.parameters.each do |param|
+                next unless param.keyword?
+                if kwargs.key?(param.name.to_sym)
+                  kwargs.delete param.name.to_sym
+                elsif param.decl == :kwarg
+                  return [Problem.new(location, "Missing keyword argument #{param.name} to #{pin.path}")]
+                end
+              end
+              kwargs.clear if pin.parameters.any?(&:kwrestarg?)
+              unless kwargs.empty?
+                return [Problem.new(location, "Unrecognized keyword argument #{kwargs.keys.first} to #{pin.path}")]
+              end
+            end
+          end
+        # end
+      end
+      req = required_param_count(pin)
+      if req + add_params < unchecked.length
+        return [] if pin.parameters.any?(&:rest?)
+        opt = optional_param_count(pin)
+        return [] if unchecked.length <= req + opt
+        if unchecked.length == req + opt + 1 && unchecked.last.links.last.is_a?(Source::Chain::BlockVariable)
+          return []
+        end
+        return [Problem.new(location, "Too many arguments to #{pin.path}")]
+      elsif unchecked.length < req && (arguments.empty? || !arguments.last.splat?)
+        return [Problem.new(location, "Not enough arguments to #{pin.path}")]
+      end
+      []
+    end
+
+    # @param pin [Pin::BaseMethod]
+    def required_param_count(pin)
+      count = 0
+      pin.parameters.each do |param|
+        break unless param.decl == :arg
+        count += 1
+      end
+      count
+    end
+
+    # @param pin [Pin::BaseMethod]
+    def optional_param_count(pin)
+      count = 0
+      pin.parameters.each do |param|
+        next unless param.decl == :optarg
+        count += 1
+      end
+      count
+    end
+
+    def abstract? pin
+      pin.docstring.has_tag?(:abstract) ||
+        (pin.closure && pin.closure.docstring.has_tag?(:abstract))
     end
   end
 end
