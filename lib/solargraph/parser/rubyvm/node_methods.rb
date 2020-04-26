@@ -76,6 +76,10 @@ module Solargraph
           if node.type == :ITER
             result.push node.children[0]
             node.children[1..-1].each { |child| result.concat call_nodes_from(child) }
+          elsif node.type == :MASGN
+            # @todo We're treating a mass assignment as a call node, but the
+            #   type checker still needs the logic to handle it.
+            result.push node
           elsif [:CALL, :VCALL, :FCALL, :ATTRASGN, :OPCALL].include?(node.type)
             result.push node
             node.children.each { |child| result.concat call_nodes_from(child) }
