@@ -8,7 +8,7 @@ module Solargraph
         # @param filename [String]
         # @return [Array(Parser::AST::Node, Array<Parser::Source::Comment>)]
         def parse_with_comments code, filename = nil
-          node = RubyVM::AbstractSyntaxTree.parse(code)
+          node = RubyVM::AbstractSyntaxTree.parse(code).children[2]
           comments = CommentRipper.new(code).parse
           [node, comments]
         rescue ::SyntaxError => e
@@ -20,7 +20,7 @@ module Solargraph
         # @param line [Integer]
         # @return [Parser::AST::Node]
         def parse code, filename = nil, line = 0
-          RubyVM::AbstractSyntaxTree.parse(code)
+          RubyVM::AbstractSyntaxTree.parse(code).children[2]
         rescue ::SyntaxError => e
           raise Parser::SyntaxError, e.message
         end

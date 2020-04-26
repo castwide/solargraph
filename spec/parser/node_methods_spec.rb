@@ -116,30 +116,30 @@ describe Solargraph::Parser::NodeMethods do
     node = Solargraph::Parser.parse('1 && "2"')
     rets = Solargraph::Parser::NodeMethods.returns_from(node)
     expect(rets.length).to eq(1)
-    expect(rets[0].type).to eq(:and)
+    expect(rets[0].type.to_s.downcase).to eq('and')
   end
 
   it "handles top 'or' nodes" do
     node = Solargraph::Parser.parse('1 || "2"')
     rets = Solargraph::Parser::NodeMethods.returns_from(node)
     expect(rets.length).to eq(2)
-    expect(rets[0].type).to eq(:int)
-    expect(rets[1].type).to eq(:str)
+    expect(Solargraph::Parser::NodeMethods.infer_literal_node_type(rets[0])).to eq('::Integer')
+    expect(Solargraph::Parser::NodeMethods.infer_literal_node_type(rets[1])).to eq('::String')
   end
 
   it "handles nested 'and' nodes" do
     node = Solargraph::Parser.parse('return 1 && "2"')
     rets = Solargraph::Parser::NodeMethods.returns_from(node)
     expect(rets.length).to eq(1)
-    expect(rets[0].type).to eq(:and)
+    expect(rets[0].type.to_s.downcase).to eq('and')
   end
 
   it "handles nested 'or' nodes" do
     node = Solargraph::Parser.parse('return 1 || "2"')
     rets = Solargraph::Parser::NodeMethods.returns_from(node)
     expect(rets.length).to eq(2)
-    expect(rets[0].type).to eq(:int)
-    expect(rets[1].type).to eq(:str)
+    expect(Solargraph::Parser::NodeMethods.infer_literal_node_type(rets[0])).to eq('::Integer')
+    expect(Solargraph::Parser::NodeMethods.infer_literal_node_type(rets[1])).to eq('::String')
   end
 
   it 'finds return nodes in blocks' do
@@ -150,7 +150,7 @@ describe Solargraph::Parser::NodeMethods do
     ))
     rets = Solargraph::Parser::NodeMethods.returns_from(node)
     expect(rets.length).to eq(2)
-    expect(rets[1].type).to eq(:lvar)
+    expect([:lvar, :DVAR]).to include(rets[1].type)
   end
 
   it 'returns nested return blocks' do
@@ -164,7 +164,7 @@ describe Solargraph::Parser::NodeMethods do
     ))
     rets = Solargraph::Parser::NodeMethods.returns_from(node)
     expect(rets.length).to eq(2)
-    expect(rets[0].type).to eq(:lvar)
+    expect([:lvar, :DVAR]).to include(rets[0].type)
   end
 
   it "handles return nodes with implicit nil values" do
