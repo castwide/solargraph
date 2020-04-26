@@ -248,7 +248,11 @@ module Solargraph
         if pins.first.is_a?(Pin::BaseMethod)
           # @type [Pin::BaseMethod]
           pin = pins.first
-          ap = arity_problems_for(pin, base.links.last.arguments, location)
+          if base.links.last.is_a?(Solargraph::Source::Chain::ZSuper)
+            ap = arity_problems_for(pin, fake_args_for(block_pin), location)
+          else
+            ap = arity_problems_for(pin, base.links.last.arguments, location)
+          end
           unless ap.empty?
             result.concat ap
             break
@@ -469,6 +473,26 @@ module Solargraph
     def abstract? pin
       pin.docstring.has_tag?(:abstract) ||
         (pin.closure && pin.closure.docstring.has_tag?(:abstract))
+    end
+
+    def fake_args_for(pin)
+      args = []
+      with_opts = false
+      with_block = false
+      pin.parameters.each do |pin|
+        if [:kwarg, :kwoptarg, :kwrestarg].include?(pin.decl)
+          with_opts = true
+        elsif pin.decl == :block
+          with_block = true
+        elsif pin.decl == :restarg
+          args.push Solargraph::Source::Chain.new([Solargraph::Source::Chain::Variable.new(pin.name)], nil, true)
+        else
+          args.push Solargraph::Source::Chain.new([Solargraph::Source::Chain::Variable.new(pin.name)])
+        end
+      end
+      args.push Solargraph::Parser.chain_string('{}') if with_opts
+      args.push Solargraph::Parser.chain_string('&') if with_block
+      args
     end
   end
 end

@@ -73,8 +73,12 @@ module Solargraph
             end
           elsif n.type == :self
             result.push Chain::Head.new('self')
-          elsif [:super, :zsuper].include?(n.type)
-            result.push Chain::Head.new('super')
+          elsif n.type == :zsuper
+            result.push Chain::ZSuper.new('super', @in_block || block_passed?(n))
+          elsif n.type == :super
+          # elsif [:super, :zsuper].include?(n.type)
+            args = n.children.map { |c| NodeChainer.chain(c) }
+            result.push Chain::Call.new('super', args, @in_block || block_passed?(n))
           elsif n.type == :const
             const = unpack_name(n)
             result.push Chain::Constant.new(const)

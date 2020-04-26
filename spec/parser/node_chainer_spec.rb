@@ -8,7 +8,7 @@ describe 'NodeChainer' do
   it "recognizes super keywords" do
     chain = Solargraph::Parser.chain_string('super.foo')
     expect(chain.links.first.word).to eq('super')
-    expect(chain.links.first).to be_a(Solargraph::Source::Chain::Head)
+    expect(chain.links.first).to be_a(Solargraph::Source::Chain::ZSuper)
   end
 
   it "recognizes constants" do

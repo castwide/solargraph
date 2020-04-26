@@ -3,7 +3,7 @@
 module Solargraph
   class Source
     class Chain
-      class Call < Link
+      class ZSuper < Call
         # @return [String]
         attr_reader :word
 
@@ -14,10 +14,8 @@ module Solargraph
         # @param arguments [Array<Chain>]
         # @param with_block [Boolean] True if the chain is inside a block
         # @param head [Boolean] True if the call is the start of its chain
-        def initialize word, arguments = [], with_block = false
-          @word = word
-          @arguments = arguments
-          @with_block = with_block
+        def initialize word, with_block = false
+          super(word, [], with_block)
         end
 
         def with_block?
@@ -28,16 +26,7 @@ module Solargraph
         # @param name_pin [Pin::Base]
         # @param locals [Array<Pin::Base>]
         def resolve api_map, name_pin, locals
-          return super_pins(api_map, name_pin) if word == 'super'
-          found = if head?
-            locals.select { |p| p.name == word }
-          else
-            []
-          end
-          return inferred_pins(found, api_map, name_pin.context, locals) unless found.empty?
-          pins = api_map.get_method_stack(name_pin.binder.namespace, word, scope: name_pin.binder.scope)
-          return [] if pins.empty?
-          inferred_pins(pins, api_map, name_pin.context, locals)
+          return super_pins(api_map, name_pin)
         end
 
         private
@@ -188,14 +177,6 @@ module Solargraph
           parcount -= 1 if !parameters.empty? && parameters.last.first.start_with?('&')
           return false if argcount < parcount && !(argcount == parcount - 1 && parameters.last.first.start_with?('*'))
           true
-        end
-
-        # @param api_map [ApiMap]
-        # @param name_pin [Pin::Base]
-        # @return [Array<Pin::Base>]
-        def super_pins api_map, name_pin
-          pins = api_map.get_method_stack(name_pin.namespace, name_pin.name, scope: name_pin.scope)
-          pins.reject{|p| p.path == name_pin.path}
         end
       end
     end

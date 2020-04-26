@@ -605,5 +605,97 @@ describe Solargraph::TypeChecker do
       ), 'test.rb')
       expect(checker.problems).to be_empty
     end
+
+    it 'verifies arity of chained super calls' do
+      checker = type_checker(%(
+        class Foo
+          def something arg
+          end
+        end
+        class Bar < Foo
+          def something
+            super(1) + 2
+          end
+        end
+      ))
+      expect(checker.problems).to be_empty
+    end
+
+    it 'reports invalid arity of chained super calls' do
+      checker = type_checker(%(
+        class Foo
+          def something
+          end
+        end
+        class Bar < Foo
+          def something
+            super(1) + 2
+          end
+        end
+      ))
+      expect(checker.problems).to be_one
+      expect(checker.problems.first.message).to include('Too many arguments')
+    end
+
+    it 'verifies arity of chained zsuper calls' do
+      checker = type_checker(%(
+        class Foo
+          def something arg
+          end
+        end
+        class Bar < Foo
+          def something arg
+            super + 2
+          end
+        end
+      ))
+      expect(checker.problems).to be_empty
+    end
+
+    it 'verifies arity of chained zsuper calls with restargs' do
+      checker = type_checker(%(
+        class Foo
+          def something arg1, arg2
+          end
+        end
+        class Bar < Foo
+          def something *arg
+            super + 2
+          end
+        end
+      ))
+      expect(checker.problems).to be_empty
+    end
+
+    it 'verifies arity of chained zsuper calls with kwargs' do
+      checker = type_checker(%(
+        class Foo
+          def something arg1, arg2:
+          end
+        end
+        class Bar < Foo
+          def something *arg
+            super + 2
+          end
+        end
+      ))
+      expect(checker.problems).to be_empty
+    end
+
+    it 'reports invalid arity of chained zsuper calls' do
+      checker = type_checker(%(
+        class Foo
+          def something arg
+          end
+        end
+        class Bar < Foo
+          def something
+            super + 2
+          end
+        end
+      ))
+      expect(checker.problems).to be_one
+      expect(checker.problems.first.message).to include('Not enough arguments')
+    end
   end
 end

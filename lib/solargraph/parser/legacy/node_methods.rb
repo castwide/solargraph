@@ -126,7 +126,7 @@ module Solargraph
             result.push node
             node.children[0].children[2..-1].each { |child| result.concat call_nodes_from(child) }
             node.children[1..-1].each { |child| result.concat call_nodes_from(child) }
-          elsif node.type == :send
+          elsif [:send, :super, :zsuper].include?(node.type)
             result.push node
             node.children[2..-1].each { |child| result.concat call_nodes_from(child) }
           else
