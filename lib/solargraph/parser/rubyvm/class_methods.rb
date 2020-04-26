@@ -83,6 +83,10 @@ module Solargraph
           NodeChainer.chain *args
         end
 
+        def chain_string *args
+          NodeChainer.load_string *args
+        end
+
         def process_node *args
           Solargraph::Parser::NodeProcessor.process *args
         end
