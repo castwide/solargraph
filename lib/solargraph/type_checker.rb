@@ -248,10 +248,10 @@ module Solargraph
         if pins.first.is_a?(Pin::BaseMethod)
           # @type [Pin::BaseMethod]
           pin = pins.first
-          if base.links.last.is_a?(Solargraph::Source::Chain::ZSuper)
-            ap = arity_problems_for(pin, fake_args_for(block_pin), location)
+          ap = if base.links.last.is_a?(Solargraph::Source::Chain::ZSuper)
+            arity_problems_for(pin, fake_args_for(block_pin), location)
           else
-            ap = arity_problems_for(pin, base.links.last.arguments, location)
+            arity_problems_for(pin, base.links.last.arguments, location)
           end
           unless ap.empty?
             result.concat ap
