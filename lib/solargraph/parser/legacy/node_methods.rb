@@ -210,8 +210,12 @@ module Solargraph
                 result.concat get_return_nodes_only(node.children[2])
               elsif node.type == :case
                 node.children[1..-1].each do |cc|
-                  result.concat reduce_to_value_nodes(cc.children[1..-2])
-                  result.concat reduce_to_value_nodes([cc.children.last])
+                  if cc.nil?
+                    result.push NIL_NODE
+                  else
+                    result.concat reduce_to_value_nodes(cc.children[1..-2]) unless cc.children.length < 1
+                    result.concat reduce_to_value_nodes([cc.children.last])
+                  end
                 end
               else
                 result.push node

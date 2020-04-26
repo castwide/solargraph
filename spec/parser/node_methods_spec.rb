@@ -135,4 +135,29 @@ describe Solargraph::Parser::NodeMethods do
     rets = Solargraph::Parser::NodeMethods.returns_from(node)
     expect(rets.length).to eq(2)
   end
+
+  it 'handles return nodes from case statements without else' do
+    node = Solargraph::Parser.parse(%(
+      case 1
+      when 1
+        ""
+      end
+    ))
+    rets = Solargraph::Parser::NodeMethods.returns_from(node)
+    expect(rets.length).to eq(2)
+  end
+
+  it 'handles return nodes from case statements with super' do
+    node = Solargraph::Parser.parse(%(
+      case other
+      when Docstring
+        Docstring.new([all, other.all].join("\n"), object)
+      else
+        super
+      end
+    ))
+    rets = Solargraph::Parser::NodeMethods.returns_from(node)
+    expect(rets.length).to eq(2)
+  end
+
 end
