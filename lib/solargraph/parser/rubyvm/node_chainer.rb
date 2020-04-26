@@ -69,8 +69,10 @@ module Solargraph
             result.push Chain::Call.new(n.children[0].to_s, node_to_argchains(n.children[1]), @in_block || block_passed?(n))
           elsif n.type == :SELF
             result.push Chain::Head.new('self')
-          elsif [:SUPER, :ZSUPER].include?(n.type)
-            result.push Chain::Head.new('super')
+          elsif n.type == :ZSUPER
+            result.push Chain::ZSuper.new('super', @in_block || block_passed?(n))
+          elsif n.type == :SUPER
+            result.push Chain::Call.new('super', node_to_argchains(n.children.last), @in_block || block_passed?(n))
           elsif [:COLON2, :COLON3, :CONST].include?(n.type)
             const = unpack_name(n)
             result.push Chain::Constant.new(const)

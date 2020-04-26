@@ -76,7 +76,6 @@ module Solargraph
           elsif n.type == :zsuper
             result.push Chain::ZSuper.new('super', @in_block || block_passed?(n))
           elsif n.type == :super
-          # elsif [:super, :zsuper].include?(n.type)
             args = n.children.map { |c| NodeChainer.chain(c) }
             result.push Chain::Call.new('super', args, @in_block || block_passed?(n))
           elsif n.type == :const
