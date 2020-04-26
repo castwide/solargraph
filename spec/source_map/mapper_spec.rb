@@ -1274,4 +1274,23 @@ describe Solargraph::SourceMap::Mapper do
     ))
     expect(map.first_pin('#foo').explicit?).to be(false)
   end
+
+  it 'maps parameters to updated module_function methods' do
+    map = Solargraph::SourceMap.load_string(%(
+      module Foo
+        def bar(baz)
+        end
+
+        module_function :bar
+      end
+    ))
+
+    cpin = map.first_pin('Foo.bar')
+    expect(cpin.parameters).to be_one
+    expect(cpin.parameters.first.name).to eq('baz')
+
+    ipin = map.first_pin('Foo#bar')
+    expect(ipin.parameters).to be_one
+    expect(ipin.parameters.first.name).to eq('baz')
+  end
 end
