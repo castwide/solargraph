@@ -1293,4 +1293,15 @@ describe Solargraph::SourceMap::Mapper do
     expect(ipin.parameters).to be_one
     expect(ipin.parameters.first.name).to eq('baz')
   end
+
+  it 'handles private_class_method without arguments' do
+    code = %(
+      class Foo
+        private_class_method
+      end
+    )
+    expect {
+      Solargraph::SourceMap.load_string(code, 'test.rb')
+    }.not_to raise_error
+  end
 end

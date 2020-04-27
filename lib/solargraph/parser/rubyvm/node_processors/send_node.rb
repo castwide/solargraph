@@ -30,7 +30,7 @@ module Solargraph
               process_require
             elsif node.children[0] == :alias_method
               process_alias_method
-            elsif node.children[0] == :private_class_method && Parser.is_ast_node?(node)
+            elsif node.children[0] == :private_class_method
               # Processing a private class can potentially handle children on its own
               return if process_private_class_method
             elsif [:attr_reader, :attr_writer, :attr_accessor].include?(node.children[0])
@@ -270,6 +270,7 @@ module Solargraph
 
           # @return [Boolean]
           def process_private_class_method
+            return false unless Parser.is_ast_node?(node.children.last)
             if node.children.last.children.first.type == :DEFN
               process_children region.update(scope: :class, visibility: :private)
               true
