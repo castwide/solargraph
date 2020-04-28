@@ -1304,4 +1304,15 @@ describe Solargraph::SourceMap::Mapper do
       Solargraph::SourceMap.load_string(code, 'test.rb')
     }.not_to raise_error
   end
+
+  it 'positions method directive pins' do
+    map = Solargraph::SourceMap.load_string(%(
+      # @!method foo
+      # @!method bar
+    ))
+    foo = map.first_pin('#foo')
+    expect(foo.location.range.start.line).to eq(1)
+    bar = map.first_pin('#bar')
+    expect(bar.location.range.start.line).to eq(2)
+  end
 end

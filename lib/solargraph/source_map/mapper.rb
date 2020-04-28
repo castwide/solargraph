@@ -68,7 +68,7 @@ module Solargraph
         # @param d [YARD::Tags::Directive]
         parse.directives.each do |d|
           line_num = find_directive_line_number(cmnt, d.tag.tag_name, last_line)
-          pos = Solargraph::Position.new(comment_position.line + line_num, comment_position.column)
+          pos = Solargraph::Position.new(comment_position.line + line_num - 1, comment_position.column)
           process_directive(source_position, pos, d)
           last_line = line_num + 1
           # @todo The below call assumes the topmost comment line. The above
@@ -79,6 +79,8 @@ module Solargraph
         end
       end
 
+      # @param comment [String]
+      # @return [Integer]
       def find_directive_line_number comment, tag, start
         num = comment.lines[start..-1].find_index do |line|
           # Legacy method directives might be `@method` instead of `@!method`
@@ -96,7 +98,7 @@ module Solargraph
         location = Location.new(@filename, Range.new(comment_position, comment_position))
         case directive.tag.tag_name
         when 'method'
-          namespace = closure_at(source_position)
+          namespace = closure_at(source_position) || @pins.first
           if namespace.location.range.start.line < comment_position.line
             namespace = closure_at(comment_position)
           end
@@ -105,9 +107,9 @@ module Solargraph
             src_node = Parser.parse("def #{directive.tag.name};end", @filename, location.range.start.line)
             gen_pin = Parser.process_node(src_node, region).first.last
             return if gen_pin.nil?
-            # Move the location to the end of the line so the it gets
-            # recognized as originating from a comment
-            shifted = Solargraph::Position.new(comment_position.line, @code.lines[comment_position.line].chomp.length)
+            # Move the location to the end of the line so it gets recognized
+            # as originating from a comment
+            shifted = Solargraph::Position.new(comment_position.line, @code.lines[comment_position.line].to_s.chomp.length)
             # @todo: Smelly instance variable access
             gen_pin.instance_variable_set(:@comments, docstring.all.to_s)
             gen_pin.instance_variable_set(:@location, Solargraph::Location.new(@filename, Range.new(shifted, shifted)))
