@@ -193,31 +193,12 @@ module Solargraph
           base = r.split('/').first
           next if from_std.include?(base)
           from_std.push base
-          stdtmp = []
-          ser = File.join(File.dirname(CoreDocs.yardoc_stdlib_file), "#{base}.ser")
-          if File.file?(ser)
-            Solargraph.logger.info "Loading #{base} stdlib from cache"
-            file = File.open(ser, 'rb')
-            dump = file.read
-            file.close
-            stdtmp.concat Marshal.load(dump)
-          else
-            if stdlib_paths[base]
-              Solargraph.logger.info "Loading #{base} stdlib from yardoc"
-              stdtmp.concat Mapper.new(stdlib_paths[base]).map
-              next if stdtmp.empty?
-              dump = Marshal.dump(stdtmp)
-              file = File.open(ser, 'wb')
-              file.write dump
-              file.close
-            end
-          end
+          stdtmp = load_stdlib_pins(base)
           if stdtmp.empty?
             unresolved_requires.push r
           else
             stdlib_fill base, stdtmp
             result.concat stdtmp
-            # stdnames[r] = stdtmp
           end
         end
         result.delete_if(&:nil?)
@@ -226,7 +207,6 @@ module Solargraph
           pins.concat result
         end
       end
-      # pins.concat process_stdlib(stdnames)
       pins.concat core_pins
     end
 
@@ -272,7 +252,12 @@ module Solargraph
           file = File.open(ser, 'rb')
           dump = file.read
           file.close
-          return Marshal.load(dump)
+          begin
+            return Marshal.load(dump)
+          rescue StandardError => e
+            Solargraph.logger.warn "Error loading pin cache: [#{e.class}] #{e.message}"
+            File.unlink ser
+          end
         end
       end
       if !size.nil? && size > 20_000_000
@@ -391,6 +376,40 @@ module Solargraph
       file = File.open(ser, 'wb')
       file.write dump
       file.close
+      result
+    end
+
+    def load_stdlib_pins base
+      ser = File.join(File.dirname(CoreDocs.yardoc_stdlib_file), "#{base}.ser")
+      if File.file?(ser)
+        Solargraph.logger.info "Loading #{base} stdlib from cache"
+        file = File.open(ser, 'rb')
+        dump = file.read
+        file.close
+        begin
+          Marshal.load(dump)
+        rescue StandardError => e
+          Solargraph.logger.warn "Error loading #{base} stdlib pin cache: [#{e.class}] #{e.message}"
+          File.unlink ser
+          read_stdlib_and_save_cache(base, ser)
+        end
+      else
+        read_stdlib_and_save_cache(base, ser)
+      end
+    end
+
+    def read_stdlib_and_save_cache base, ser
+      result = []
+      if stdlib_paths[base]
+        Solargraph.logger.info "Loading #{base} stdlib from yardoc"
+        result.concat Mapper.new(stdlib_paths[base]).map
+        unless result.empty?
+          dump = Marshal.dump(result)
+          file = File.open(ser, 'wb')
+          file.write dump
+          file.close
+        end
+      end
       result
     end
   end
