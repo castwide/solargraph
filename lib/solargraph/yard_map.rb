@@ -110,50 +110,8 @@ module Solargraph
 
     # @return [Array<Solargraph::Pin::Base>]
     def core_pins
-      @core_pins ||= load_core_pins
-      # @@core_pins ||= begin
-      #   yd = CoreDocs.yardoc_file
-      #   ser = File.join(File.dirname(yd), 'core.ser')
-      #   result = []
-      #   if File.file?(ser)
-      #     result.concat load_core_pin_cache(ser)
-      #   else
-      #     load_yardoc CoreDocs.yardoc_file
-      #     result.concat Mapper.new(YARD::Registry.all).map
-      #     # HACK: Assume core methods with a single `args` parameter accept restarg
-      #     result.select { |pin| pin.is_a?(Solargraph::Pin::BaseMethod )}.each do |pin|
-      #       if pin.parameters.length == 1 && pin.parameters.first.name == 'args' && pin.parameters.first.decl == :arg
-      #         # @todo Smelly instance variable access
-      #         pin.parameters.first.instance_variable_set(:@decl, :restarg)
-      #       end
-      #     end
-      #     # HACK: Set missing parameters on `==` methods, e.g., `Symbol#==`
-      #     result.select { |pin| pin.name == '==' && pin.parameters.empty? }.each do |pin|
-      #       pin.parameters.push Pin::Parameter.new(decl: :arg, name: 'obj2')
-      #     end
-      #     dump = Marshal.dump(result)
-      #     file = File.open(ser, 'wb')
-      #     file.write dump
-      #     file.close
-      #   end
-      #   # HACK: Add Errno exception classes
-      #   errno = result.select{ |pin| pin.path == 'Errno' }.first
-      #   Errno.constants.each do |const|
-      #     result.push Solargraph::Pin::Namespace.new(type: :class, name: const.to_s, closure: errno)
-      #     result.push Solargraph::Pin::Reference::Superclass.new(closure: result.last, name: 'SystemCallError')
-      #   end
-      #   CoreFills::OVERRIDES.each do |ovr|
-      #     pin = result.select { |p| p.path == ovr.name }.first
-      #     next if pin.nil?
-      #     (ovr.tags.map(&:tag_name) + ovr.delete).uniq.each do |tag|
-      #       pin.docstring.delete_tags tag.to_sym
-      #     end
-      #     ovr.tags.each do |tag|
-      #       pin.docstring.add_tag(tag)
-      #     end
-      #   end
-      #   result
-      # end
+      # Using a class variable to reduce loads
+      @@core_pins ||= load_core_pins
     end
 
     # @param path [String]
