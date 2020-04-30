@@ -9,7 +9,7 @@ module Solargraph
 
           def process
             if [:private, :public, :protected].include?(node.children[0])
-              if (node.type == :FCALL && node.children.last.children.length > 1)
+              if node.type == :FCALL && Parser.is_ast_node?(node.children.last)
                 node.children.last.children[0..-2].each do |child|
                   # next unless child.is_a?(AST::Node) && (child.type == :sym || child.type == :str)
                   next unless child.type == :LIT || child.type == :STR

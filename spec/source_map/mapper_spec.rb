@@ -1315,4 +1315,22 @@ describe Solargraph::SourceMap::Mapper do
     bar = map.first_pin('#bar')
     expect(bar.location.range.start.line).to eq(2)
   end
+
+  it 'maps function calls to visibility methods' do
+    map = Solargraph::SourceMap.load_string(%(
+      class Foo
+        private()
+        def meth; end
+      end
+
+      class Bar
+        def meth; end
+        private(:meth)
+      end
+    ))
+    foo_meth = map.first_pin('Foo#meth')
+    expect(foo_meth.visibility).to eq(:private)
+    bar_meth = map.first_pin('Bar#meth')
+    expect(bar_meth.visibility).to eq(:private)
+  end
 end
