@@ -338,8 +338,8 @@ module Solargraph
 
     def first_not_empty_from line
       cursor = line
-      cursor += 1 while cursor < code.lines.length && code.lines[cursor].strip.empty?
-      cursor = line if cursor > code.lines.length - 1
+      cursor += 1 while cursor < code_lines.length && code_lines[cursor].strip.empty?
+      cursor = line if cursor > code_lines.length - 1
       cursor
     end
 
@@ -468,8 +468,12 @@ module Solargraph
     # @return [Integer]
     attr_writer :version
 
+    # @param val [String]
     # @return [String]
-    attr_writer :code
+    def code=(val)
+      @code_lines= nil
+      @code = val
+    end
 
     # @return [Parser::AST::Node]
     attr_writer :node
@@ -491,6 +495,13 @@ module Solargraph
 
     # @return [Source::Updater]
     attr_accessor :last_updater
+
+    private
+
+    # @return [Array<String>]
+    def code_lines
+      @code_lines ||= code.lines
+    end
 
     class << self
       # @param filename [String]
