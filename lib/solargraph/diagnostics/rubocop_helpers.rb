@@ -17,7 +17,10 @@ module Solargraph
         rubocop_file = find_rubocop_file(filename)
         args.push('-c', fix_drive_letter(rubocop_file)) unless rubocop_file.nil?
         args.push filename
-        options, paths = RuboCop::Options.new.parse(args)
+        base_options = RuboCop::Options.new
+        options, paths = base_options.parse(args)
+        options[:force_default_config] = true if rubocop_file.nil?
+        puts options.inspect
         options[:stdin] = code
         [options, paths]
       end

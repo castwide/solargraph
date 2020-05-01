@@ -24,7 +24,9 @@ module Solargraph
       # @return [Array<Hash>]
       def diagnose source, _api_map
         options, paths = generate_options(source.filename, source.code)
-        runner = RuboCop::Runner.new(options, RuboCop::ConfigStore.new)
+        store = RuboCop::ConfigStore.new
+        store.force_default_config! if options[:force_default_config]
+        runner = RuboCop::Runner.new(options, store)
         result = redirect_stdout{ runner.run(paths) }
         make_array JSON.parse(result)
       rescue RuboCop::ValidationError, RuboCop::ConfigNotFoundError => e
