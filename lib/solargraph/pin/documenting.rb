@@ -1,15 +1,11 @@
 # frozen_string_literal: true
 
-require 'maruku'
 require 'yard'
 require 'reverse_markdown'
 require 'solargraph/converters/dl'
 require 'solargraph/converters/dt'
 require 'solargraph/converters/dd'
 require 'solargraph/converters/misc'
-
-# HACK: Setting :html_parser through `Maruku.new` does not work
-MaRuKu::Globals[:html_parser] = 'nokogiri'
 
 module Solargraph
   module Pin
@@ -41,11 +37,7 @@ module Solargraph
 
         def to_s
           return "\n```ruby\n#{@plaintext}#{@plaintext.end_with?("\n") ? '' : "\n"}```\n\n" if code?
-          ReverseMarkdown.convert unescape_brackets(Maruku.new(escape_brackets(@plaintext), on_error: :raise).to_html)
-        rescue MaRuKu::Exception
-          # Maruku exceptions usually indicate that the documentation is in
-          # RDoc syntax.
-          ReverseMarkdown.convert YARD::Templates::Helpers::Markup::RDocMarkup.new(@plaintext).to_html
+          ReverseMarkdown.convert @plaintext.gsub(/\n\n/, "<br><br>")
         end
 
         private
