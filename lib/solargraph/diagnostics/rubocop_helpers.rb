@@ -27,6 +27,7 @@ module Solargraph
       # @param filename [String]
       # @return [String, nil]
       def find_rubocop_file filename
+        return nil unless File.exist?(filename)
         dir = File.dirname(filename)
         until File.dirname(dir) == dir
           here = File.join(dir, '.rubocop.yml')
