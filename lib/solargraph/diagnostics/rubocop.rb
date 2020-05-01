@@ -25,7 +25,6 @@ module Solargraph
       def diagnose source, _api_map
         options, paths = generate_options(source.filename, source.code)
         store = RuboCop::ConfigStore.new
-        store.force_default_config! if options[:force_default_config]
         runner = RuboCop::Runner.new(options, store)
         result = redirect_stdout{ runner.run(paths) }
         make_array JSON.parse(result)

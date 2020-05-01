@@ -19,8 +19,6 @@ module Solargraph
         args.push filename
         base_options = RuboCop::Options.new
         options, paths = base_options.parse(args)
-        options[:force_default_config] = true if rubocop_file.nil?
-        puts options.inspect
         options[:stdin] = code
         [options, paths]
       end
@@ -31,6 +29,7 @@ module Solargraph
       # @return [String, nil]
       def find_rubocop_file filename
         return nil unless File.exist?(filename)
+        filename = File.realpath(filename)
         dir = File.dirname(filename)
         until File.dirname(dir) == dir
           here = File.join(dir, '.rubocop.yml')
