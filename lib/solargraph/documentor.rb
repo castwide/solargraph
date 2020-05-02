@@ -5,6 +5,7 @@ require 'json'
 require 'open3'
 require 'shellwords'
 require 'yard'
+require 'fileutils'
 
 module Solargraph
   class Documentor
@@ -25,6 +26,7 @@ module Solargraph
       Documentor.specs_from_bundle(@directory).each_pair do |name, version|
         yd = YARD::Registry.yardoc_file_for_gem(name, "= #{version}")
         if !yd || @rebuild
+          FileUtils.safe_unlink File.join(YardMap::CoreDocs.cache_dir, 'gems', "#{name}-#{version}.ser")
           @out.puts "Documenting #{name} #{version}"
           `yard gems #{name} #{version} #{@rebuild ? '--rebuild' : ''}`
           yd = YARD::Registry.yardoc_file_for_gem(name, "= #{version}")
