@@ -17,6 +17,9 @@ module Solargraph
         @code_objects.each do |co|
           @pins.concat generate_pins co
         end
+        # Some yardocs contain documentation for dependencies that can be
+        # ignored here. The YardMap will load dependencies separately.
+        @pins.keep_if { |pin| pin.location.nil? || File.file?(pin.location.filename) } if @spec
         @pins
       end
 
