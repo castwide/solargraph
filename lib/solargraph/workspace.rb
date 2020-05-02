@@ -170,7 +170,7 @@ module Solargraph
         Dir.chdir base do
           begin
             # @type [Gem::Specification]
-            spec = eval(File.read(file), binding, file)
+            spec = eval(File.read(file), nil, file)
             next unless Gem::Specification === spec
             @gemnames.push spec.name
             result.concat(spec.require_paths.map { |path| File.join(base, path) })
