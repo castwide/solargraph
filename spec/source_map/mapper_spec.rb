@@ -1333,4 +1333,12 @@ describe Solargraph::SourceMap::Mapper do
     bar_meth = map.first_pin('Bar#meth')
     expect(bar_meth.visibility).to eq(:private)
   end
+
+  it 'maps Bundler.require to require "bundler/require"' do
+    map = Solargraph::SourceMap.load_string(%(
+      Bundler.require
+    ))
+    pin = map.pins.select { |pin| pin.is_a?(Solargraph::Pin::Reference::Require) }.first
+    expect(pin.name).to eq('bundler/require')
+  end
 end

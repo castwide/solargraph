@@ -43,45 +43,7 @@ module Solargraph
               process_prepend
             elsif node.children[0] == :private_constant
               process_private_constant
-            end
-            process_children
-            return
-            # @todo Get rid of legacy
-            if node.children[0].nil?
-              if [:private, :public, :protected].include?(node.children[1])
-                if (node.children.length > 2)
-                  node.children[2..-1].each do |child|
-                    next unless child.is_a?(AST::Node) && (child.type == :sym || child.type == :str)
-                    name = child.children[0].to_s
-                    matches = pins.select{ |pin| pin.is_a?(Pin::BaseMethod) && pin.name == name && pin.namespace == region.closure.full_context.namespace && pin.context.scope == (region.scope || :instance)}
-                    matches.each do |pin|
-                      # @todo Smelly instance variable access
-                      pin.instance_variable_set(:@visibility, node.children[1])
-                    end
-                  end
-                else
-                  # @todo Smelly instance variable access
-                  region.instance_variable_set(:@visibility, node.children[1])
-                end
-              elsif node.children[1] == :module_function
-                process_module_function
-              elsif [:attr_reader, :attr_writer, :attr_accessor].include?(node.children[1])
-                process_attribute
-              elsif node.children[1] == :include
-                process_include
-              elsif node.children[1] == :extend
-                process_extend
-              elsif node.children[1] == :require
-                process_require
-              elsif node.children[1] == :private_constant
-                process_private_constant
-              elsif node.children[1] == :alias_method && node.children[2] && node.children[2] && node.children[2].type == :sym && node.children[3] && node.children[3].type == :sym
-                process_alias_method
-              elsif node.children[1] == :private_class_method && node.children[2].is_a?(AST::Node)
-                # Processing a private class can potentially handle children on its own
-                return if process_private_class_method
-              end
-            elsif node.children[1] == :require && node.children[0].to_s == '(const nil :Bundler)'
+            elsif node.children[1] == :require && unpack_name(node.children[0]) == 'Bundler'
               pins.push Pin::Reference::Require.new(Solargraph::Location.new(region.filename, Solargraph::Range.from_to(0, 0, 0, 0)), 'bundler/require')
             end
             process_children

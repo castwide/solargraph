@@ -36,6 +36,7 @@ module Solargraph
       register :RESBODY,    Rubyvm::NodeProcessors::ResbodyNode
       register :DEFN,       Rubyvm::NodeProcessors::DefNode
       register :DEFS,       Rubyvm::NodeProcessors::DefsNode
+      register :CALL,       Rubyvm::NodeProcessors::SendNode
       register :FCALL,      Rubyvm::NodeProcessors::SendNode
       register :VCALL,      Rubyvm::NodeProcessors::SendNode
       register :CLASS,      Rubyvm::NodeProcessors::NamespaceNode
