@@ -95,6 +95,8 @@ module Solargraph
             FileUtils.mkdir_p cache_dir
             # @todo Should merge be true?
             YARD::Registry.save true, cache_dir
+            # Clear the serialized cache if it exists
+            FileUtils.safe_unlink File.join(CoreDocs.cache_dir, 'gems', "#{spec.name}-#{spec.version}.ser")
           end
         end
       end
