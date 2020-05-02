@@ -9,7 +9,7 @@ module Solargraph
       attr_reader :receiver
 
       def initialize receiver: nil, args: [], **splat
-        super(splat)
+        super(**splat)
         @receiver = receiver
         @parameters = args
       end

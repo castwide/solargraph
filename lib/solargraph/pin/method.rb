@@ -11,7 +11,7 @@ module Solargraph
       # @param args [Array<String>]
       # @param node [Parser::AST::Node, nil]
       def initialize parameters: [], node: nil, **splat
-        super(splat)
+        super(**splat)
         @parameters = parameters
         @node = node
       end

@@ -14,7 +14,7 @@ module Solargraph
       attr_reader :original
 
       def initialize scope: :instance, original: nil, **splat
-        super(splat)
+        super(**splat)
         @scope = scope
         @original = original
       end

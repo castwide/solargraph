@@ -8,7 +8,7 @@ module Solargraph
 
       # @param access [::Symbol] :reader or :writer
       def initialize access: :reader, **splat
-        super(splat)
+        super(**splat)
         @access = access
         if access == :writer
           parameters.push(

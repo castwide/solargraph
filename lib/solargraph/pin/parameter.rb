@@ -8,7 +8,7 @@ module Solargraph
       attr_reader :asgn_code
 
       def initialize decl: :arg, asgn_code: nil, **splat
-        super(splat)
+        super(**splat)
         @asgn_code = asgn_code
         @decl = decl
       end

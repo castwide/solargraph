@@ -6,7 +6,7 @@ module Solargraph
       attr_reader :visibility
 
       def initialize visibility: :public, **splat
-        super(splat)
+        super(**splat)
         @visibility = visibility
       end
 

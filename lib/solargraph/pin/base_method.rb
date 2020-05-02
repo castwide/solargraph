@@ -14,7 +14,7 @@ module Solargraph
       # @param visibility [::Symbol] :public, :protected, or :private
       # @param explicit [Boolean]
       def initialize visibility: :public, explicit: true, **splat
-        super(splat)
+        super(**splat)
         @visibility = visibility
         @explicit = explicit
       end

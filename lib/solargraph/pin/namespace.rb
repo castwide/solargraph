@@ -14,7 +14,7 @@ module Solargraph
       # @param gates [Array<String>]
       def initialize type: :class, visibility: :public, gates: [''], **splat
         # super(location, namespace, name, comments)
-        super(splat)
+        super(**splat)
         @type = type
         @visibility = visibility
         if name.start_with?('::')

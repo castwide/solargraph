@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-require 'uri'
+require 'cgi'
 
 module Solargraph
   module LanguageServer
@@ -14,7 +14,7 @@ module Solargraph
       # @param uri [String]
       # @return [String]
       def uri_to_file uri
-        URI.decode(uri).sub(/^file\:\/\//, '').sub(/^\/([a-z]\:)/i, '\1')
+        decode(uri).sub(/^file\:\/\//, '').sub(/^\/([a-z]\:)/i, '\1')
       end
 
       # Convert a file path to a URI.
@@ -22,7 +22,26 @@ module Solargraph
       # @param file [String]
       # @return [String]
       def file_to_uri file
-        "file://#{URI.encode(file.gsub(/^([a-z]\:)/i, '/\1'))}"
+        "file://#{encode(file.gsub(/^([a-z]\:)/i, '/\1'))}"
+      end
+
+      # Encode text to be used as a URI path component in LSP.
+      #
+      # @param text [String]
+      # @return [String]
+      def encode text
+        CGI.escape(text)
+           .gsub('%3A', ':')
+           .gsub('%5C', '\\')
+           .gsub('%2F', '/')
+      end
+
+      # Decode text from a URI path component in LSP.
+      #
+      # @param text [String]
+      # @return [String]
+      def decode text
+        CGI.unescape(text)
       end
     end
   end

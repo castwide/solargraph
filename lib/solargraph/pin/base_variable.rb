@@ -11,7 +11,7 @@ module Solargraph
 
       # @param assignment [Parser::AST::Node, nil]
       def initialize assignment: nil, **splat
-        super(splat)
+        super(**splat)
         @assignment = assignment
       end
 

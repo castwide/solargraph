@@ -6,7 +6,7 @@ module Solargraph
       include Localized
 
       def initialize assignment: nil, presence: nil, **splat
-        super(splat)
+        super(**splat)
         @assignment = assignment
         @presence = presence
       end
