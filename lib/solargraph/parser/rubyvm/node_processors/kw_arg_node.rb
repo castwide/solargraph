@@ -16,7 +16,12 @@ module Solargraph
               presence: region.closure.location.range,
               decl: require_keyword?(node) ? :kwarg : :kwoptarg
             )
-            region.closure.parameters.push locals.last
+            idx = region.closure.parameters.find_index { |par| [:kwrestarg, :blockarg].include?(par.decl) }
+            if idx
+              region.closure.parameters.insert idx, locals.last
+            else
+              region.closure.parameters.push locals.last
+            end
             node.children[1] && NodeProcessor.process(node.children[1], region, pins, locals)
           end
 

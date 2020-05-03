@@ -41,7 +41,7 @@ module Solargraph
           "*#{name}"
         when :kwrestarg
           "**#{name}"
-        when :block
+        when :block, :blockarg
           "&#{name}"
         else
           name

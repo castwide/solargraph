@@ -1341,4 +1341,31 @@ describe Solargraph::SourceMap::Mapper do
     pin = map.pins.select { |pin| pin.is_a?(Solargraph::Pin::Reference::Require) }.first
     expect(pin.name).to eq('bundler/require')
   end
+
+  it 'correctly orders optargs and blockargs' do
+    map = Solargraph::SourceMap.load_string(%(
+      def foo bar = nil, &block
+      end
+    ))
+    pin = map.first_pin('#foo')
+    expect(pin.parameters.last.full).to eq('&block')
+  end
+
+  it 'correctly orders kwargs and blockargs' do
+    map = Solargraph::SourceMap.load_string(%(
+      def foo bar:, &block
+      end
+    ))
+    pin = map.first_pin('#foo')
+    expect(pin.parameters.last.full).to eq('&block')
+  end
+
+  it 'correctly orders kwargs and double splats' do
+    map = Solargraph::SourceMap.load_string(%(
+      def foo bar:, **splat
+      end
+    ))
+    pin = map.first_pin('#foo')
+    expect(pin.parameters.last.full).to eq('**splat')
+  end
 end
