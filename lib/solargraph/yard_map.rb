@@ -102,7 +102,7 @@ module Solargraph
       else
         YARD::Registry.load! y
       end
-    rescue Exception => e
+    rescue StandardError => e
       Solargraph::Logging.logger.warn "Error loading yardoc '#{y}' #{e.class} #{e.message}"
       yardocs.delete y
       nil

@@ -175,7 +175,7 @@ module Solargraph
             puts pin_description(pin) if options[:verbose]
             pin.typify api_map
             pin.probe api_map
-          rescue Exception => e
+          rescue StandardError => e
             STDERR.puts "Error testing #{pin_description(pin)} #{pin.location ? "at #{pin.location.filename}:#{pin.location.range.start.line + 1}" : ''}"
             STDERR.puts "[#{e.class}]: #{e.message}"
             STDERR.puts e.backtrace.join("\n")
