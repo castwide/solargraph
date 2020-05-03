@@ -82,6 +82,8 @@ module Solargraph
       # @param comment [String]
       # @return [Integer]
       def find_directive_line_number comment, tag, start
+        # Avoid overruning the index
+        return start unless start < comment.lines.length
         num = comment.lines[start..-1].find_index do |line|
           # Legacy method directives might be `@method` instead of `@!method`
           # @todo Legacy syntax should probably emit a warning

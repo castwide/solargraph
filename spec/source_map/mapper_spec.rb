@@ -1368,4 +1368,19 @@ describe Solargraph::SourceMap::Mapper do
     pin = map.first_pin('#foo')
     expect(pin.parameters.last.full).to eq('**splat')
   end
+
+  it 'gracefully handles misunderstood macros' do
+    expect {
+      Solargraph::SourceMap.load_string(%(
+        module Foo
+          # @!macro macro1
+          #   @!macro macro2
+          #   @!method macro_method
+
+          # @!macro macro1
+          class Bar; end
+        end
+      ))
+    }.not_to raise_error
+  end
 end
