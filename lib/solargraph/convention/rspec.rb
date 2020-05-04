@@ -3,11 +3,8 @@
 module Solargraph
   module Convention
     class Rspec < Base
-      def match? source
-        File.basename(source.filename) =~ /_spec\.rb$/
-      end
-
-      def environ
+      def local source_map
+        return EMPTY_ENVIRON unless File.basename(source_map.filename) =~ /_spec\.rb$/
         @environ ||= Environ.new(
           requires: ['rspec'],
           domains: ['RSpec::Matchers', 'RSpec::ExpectationGroups'],

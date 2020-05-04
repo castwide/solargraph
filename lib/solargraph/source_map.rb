@@ -29,7 +29,7 @@ module Solargraph
       @source = source.dup
       @pins = pins
       @locals = locals
-      environ.merge Convention.for(source)
+      environ.merge Convention.for_local(self) unless filename.nil?
     end
 
     # @return [String]

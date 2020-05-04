@@ -3,11 +3,8 @@
 module Solargraph
   module Convention
     class Gemspec < Base
-      def match? source
-        File.basename(source.filename).end_with?('.gemspec')
-      end
-
-      def environ
+      def local source_map
+        return EMPTY_ENVIRON unless File.basename(source_map.filename).end_with?('.gemspec')
         @environ ||= Environ.new(
           requires: ['rubygems'],
           overrides: [

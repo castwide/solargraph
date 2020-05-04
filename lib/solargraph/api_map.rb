@@ -94,12 +94,15 @@ module Solargraph
       implicit.clear
       pins = []
       reqs = Set.new
+      bundle.opened.each do |src|
+        implicit.merge new_map_hash[src.filename].environ
+      end
       # @param map [SourceMap]
       new_map_hash.values.each do |map|
-        implicit.merge map.environ
         pins.concat map.pins
         reqs.merge map.requires.map(&:name)
       end
+      implicit.merge Convention.for_global(self)
       reqs.merge bundle.workspace.config.required
       local_path_hash.clear
       unless bundle.workspace.require_paths.empty?

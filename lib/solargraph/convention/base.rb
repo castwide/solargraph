@@ -5,19 +5,21 @@ module Solargraph
     class Base
       EMPTY_ENVIRON = Environ.new
 
-      # True if the source qualifies for this convention.
-      # Subclasses should override this method.
+      # The Environ for a source map.
+      # Subclasses can override this method.
       #
-      # @param source [Source]
-      def match? source
-        false
+      # @param source_map [SourceMap]
+      # @return [Environ]
+      def local source_map
+        EMPTY_ENVIRON
       end
 
-      # The Environ for this convention.
-      # Subclasses should override this method.
+      # The Environ for an api map.
+      # Subclasses can override this method.
       #
+      # @param api_map [ApiMap]
       # @return [Environ]
-      def environ
+      def global api_map
         EMPTY_ENVIRON
       end
     end
