@@ -9,22 +9,22 @@ module Solargraph
     attr_reader :domains
 
     # @return [Array<Pin::Reference::Override>]
-    attr_reader :overrides
+    attr_reader :pins
 
     # @param requires [Array<String>]
     # @param domains [Array<String>]
     # @param overrides [Array<Pin::Reference::Override>]
-    def initialize requires: [], domains: [], overrides: []
+    def initialize requires: [], domains: [], pins: []
       @requires = requires
       @domains = domains
-      @overrides = overrides
+      @pins = pins
     end
 
     # @return [self]
     def clear
       domains.clear
       requires.clear
-      overrides.clear
+      pins.clear
       self
     end
 
@@ -33,7 +33,7 @@ module Solargraph
     def merge other
       domains.concat other.domains
       requires.concat other.requires
-      overrides.concat other.overrides
+      pins.concat other.pins
       self
     end
   end

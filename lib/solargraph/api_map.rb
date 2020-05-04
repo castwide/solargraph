@@ -121,7 +121,7 @@ module Solargraph
         end
       end
       reqs.merge implicit.requires
-      pins.concat implicit.overrides
+      pins.concat implicit.pins
       br = reqs.include?('bundler/require') ? require_from_bundle(bundle.workspace.directory) : {}
       reqs.merge br.keys
       yard_map.change(reqs.to_a, br, bundle.workspace.gemnames)
