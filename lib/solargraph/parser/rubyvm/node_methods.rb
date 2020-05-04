@@ -95,6 +95,7 @@ module Solargraph
           index = 0
           until index > node.children[0].children.length - 2
             k = node.children[0].children[index]
+            return {} unless node?(k)
             v = node.children[0].children[index + 1]
             result[k.children[0]] = Solargraph::Parser.chain(v)
             index += 2
