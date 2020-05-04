@@ -326,4 +326,17 @@ describe Solargraph::Parser::NodeMethods do
     expect(rets.length).to eq(2)
   end
 
+  describe 'convert_hash' do
+    it 'converts literal hash arguments' do
+      node = Solargraph::Parser.parse('{foo: :bar}')
+      hash = Solargraph::Parser::NodeMethods.convert_hash(node)
+      expect(hash.keys).to eq([:foo])
+    end
+
+    it 'ignores call arguments' do
+      node = Solargraph::Parser.parse('some_call')
+      hash = Solargraph::Parser::NodeMethods.convert_hash(node)
+      expect(hash).to eq({})
+    end
+  end
 end

@@ -34,6 +34,7 @@ module Solargraph
            .gsub('%3A', ':')
            .gsub('%5C', '\\')
            .gsub('%2F', '/')
+           .gsub('+', '%20')
       end
 
       # Decode text from a URI path component in LSP.
