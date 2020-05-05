@@ -261,6 +261,7 @@ module Solargraph
         # @todo This is probably not the best place for these overrides
         superclass_references['Integer'] = ['Numeric']
         superclass_references['Float'] = ['Numeric']
+        superclass_references['File'] = ['IO']
       end
     end
   end
