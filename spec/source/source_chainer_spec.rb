@@ -227,4 +227,12 @@ describe Solargraph::Source::SourceChainer do
     cursor = updated.cursor_at(Solargraph::Position.new(2, 8))
     expect(cursor.chain.links.first.word).to eq('x')
   end
+
+  it 'handles integers with dots at end of file' do
+    source = Solargraph::Source.load_string('100.')
+    chain = Solargraph::Source::SourceChainer.chain(source, Solargraph::Position.new(0, 4))
+    expect(chain.links.length).to eq(2)
+    expect(chain.links.first).to be_a(Solargraph::Source::Chain::Literal)
+    expect(chain.links.last).to be_undefined
+  end
 end
