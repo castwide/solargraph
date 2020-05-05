@@ -205,6 +205,36 @@ module Solargraph
         @path_pin_hash ||= {}
       end
 
+      # Consolidate overrides into pins.
+      #
+      # @param pins [Array<Pin::Base>]
+      # @return [Array<Pin::Base>]
+      def self.consolidate pins
+        result = []
+        map = {}
+        overrides = []
+        pins.each do |pin|
+          if pin.is_a?(Pin::Reference::Override)
+            overrides.push pin
+          else
+            map[pin.path] ||= []
+            map[pin.path].push pin
+            result.push pin
+          end
+        end
+        overrides.each do |ovr|
+          next unless map.key?(ovr.name)
+          pin = map[ovr.name].first
+          (ovr.tags.map(&:tag_name) + ovr.delete).uniq.each do |tag|
+            pin.docstring.delete_tags tag.to_sym
+          end
+          ovr.tags.each do |tag|
+            pin.docstring.add_tag(tag)
+          end
+        end
+        result
+      end
+
       # @return [void]
       def index
         namespace_map.clear
@@ -216,8 +246,7 @@ module Solargraph
         all_instance_variables.clear
         path_pin_hash.clear
         namespace_map[''] = []
-        override_pins = []
-        pins.each do |pin|
+        Store.consolidate(pins).each do |pin|
           namespace_map[pin.namespace] ||= []
           namespace_map[pin.namespace].push pin
           namespaces.add pin.path if pin.is_a?(Pin::Namespace) && !pin.path.empty?
@@ -240,27 +269,13 @@ module Solargraph
             block_pins.push pin
           elsif pin.is_a?(Pin::InstanceVariable)
             all_instance_variables.push pin
-          elsif pin.is_a?(Pin::Reference::Override)
-            override_pins.push pin
           end
           if pin.path
             path_pin_hash[pin.path] ||= []
             path_pin_hash[pin.path].push pin
           end
         end
-        override_pins.each do |ovr|
-          pin = get_path_pins(ovr.name).first
-          next if pin.nil?
-          (ovr.tags.map(&:tag_name) + ovr.delete).uniq.each do |tag|
-            pin.docstring.delete_tags tag.to_sym
-          end
-          ovr.tags.each do |tag|
-            pin.docstring.add_tag(tag)
-          end
-        end
-        # @todo This is probably not the best place for these overrides
-        superclass_references['Integer'] = ['Numeric']
-        superclass_references['Float'] = ['Numeric']
+        # superclass_references['File'] = ['IO']
       end
     end
   end
