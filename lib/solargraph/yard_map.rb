@@ -338,7 +338,7 @@ module Solargraph
       else
         read_core_and_save_cache(yd, ser)
       end
-      ApiMap::Store.consolidate result + CoreFills::ALL
+      ApiMap::Store.new(result + CoreFills::ALL).pins.reject { |pin| pin.is_a?(Pin::Reference::Override) }
     end
 
     def read_core_and_save_cache yd, ser
