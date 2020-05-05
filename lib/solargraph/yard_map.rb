@@ -338,23 +338,6 @@ module Solargraph
       else
         read_core_and_save_cache(yd, ser)
       end
-      # HACK: Add Errno exception classes
-      # errno = result.select{ |pin| pin.path == 'Errno' }.first
-      # Errno.constants.each do |const|
-      #   result.push Solargraph::Pin::Namespace.new(type: :class, name: const.to_s, closure: errno)
-      #   result.push Solargraph::Pin::Reference::Superclass.new(closure: result.last, name: 'SystemCallError')
-      # end
-      # CoreFills::OVERRIDES.each do |ovr|
-      #   pin = result.select { |p| p.path == ovr.name }.first
-      #   next if pin.nil?
-      #   (ovr.tags.map(&:tag_name) + ovr.delete).uniq.each do |tag|
-      #     pin.docstring.delete_tags tag.to_sym
-      #   end
-      #   ovr.tags.each do |tag|
-      #     pin.docstring.add_tag(tag)
-      #   end
-      # end
-      # ApiMap::Store.consolidate result + CoreFills::ALL
       result + CoreFills::ALL
     end
 

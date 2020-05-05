@@ -160,18 +160,18 @@ module Solargraph
       Pin::Reference::Superclass.new(closure: Pin::Namespace.new(name: 'File'), name: 'IO'),
       Pin::Reference::Superclass.new(closure: Pin::Namespace.new(name: 'Integer'), name: 'Numeric'),
       Pin::Reference::Superclass.new(closure: Pin::Namespace.new(name: 'Float'), name: 'Numeric')
-    ] #.concat(
-    #   # HACK: Add Errno exception classes
-    #   begin
-    #     errno = Solargraph::Pin::Namespace.new(name: 'Errno')
-    #     result = []
-    #     Errno.constants.each do |const|
-    #       result.push Solargraph::Pin::Namespace.new(type: :class, name: const.to_s, closure: errno)
-    #       result.push Solargraph::Pin::Reference::Superclass.new(closure: result.last, name: 'SystemCallError')
-    #     end
-    #     result
-    #   end
-    # )
+    ].concat(
+      # HACK: Add Errno exception classes
+      begin
+        errno = Solargraph::Pin::Namespace.new(name: 'Errno')
+        result = []
+        Errno.constants.each do |const|
+          result.push Solargraph::Pin::Namespace.new(type: :class, name: const.to_s, closure: errno)
+          result.push Solargraph::Pin::Reference::Superclass.new(closure: result.last, name: 'SystemCallError')
+        end
+        result
+      end
+    )
 
     ALL = PINS + OVERRIDES
   end

@@ -264,7 +264,7 @@ module Solargraph
             extend_references[pin.namespace].push pin.name
           elsif pin.is_a?(Pin::Reference::Superclass)
             superclass_references[pin.namespace] ||= []
-            superclass_references[pin.namespace].push pin.name
+            superclass_references[pin.namespace].unshift pin.name
           elsif pin.is_a?(Pin::Block)
             block_pins.push pin
           elsif pin.is_a?(Pin::InstanceVariable)
