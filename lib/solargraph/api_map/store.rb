@@ -275,7 +275,6 @@ module Solargraph
             path_pin_hash[pin.path].push pin
           end
         end
-        # superclass_references['File'] = ['IO']
       end
     end
   end

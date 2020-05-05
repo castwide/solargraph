@@ -338,7 +338,7 @@ module Solargraph
       else
         read_core_and_save_cache(yd, ser)
       end
-      result + CoreFills::ALL
+      ApiMap::Store.consolidate result + CoreFills::ALL
     end
 
     def read_core_and_save_cache yd, ser
