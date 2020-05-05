@@ -17,7 +17,6 @@ module Solargraph
         # @param position [Position]
         # @return [Source::Chain]
         def chain source, position
-          # raise "Not a source" unless source.is_a?(Source)
           new(source, position).chain
         end
       end
@@ -32,6 +31,8 @@ module Solargraph
 
       # @return [Source::Chain]
       def chain
+        # Special handling for files that end with an integer and a period
+        return Chain.new([Chain::Literal.new('Integer'), Chain::UNDEFINED_CALL]) if phrase =~ /^[0-9]+\.$/
         return Chain.new([Chain::Literal.new('Symbol')]) if phrase.start_with?(':') && !phrase.start_with?('::')
         begin
           return Chain.new([]) if phrase.end_with?('..')
