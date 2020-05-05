@@ -237,6 +237,11 @@ module Solargraph
               extend_references[pin.namespace] ||= []
               extend_references[pin.namespace].push pin.name
             elsif pin.is_a?(Pin::Reference::Superclass)
+              # There shouldn't be more than one superclass reference in a
+              # namespace, but it's technically possible. We're prioritizing
+              # the more recent ones to allow for features that override
+              # previously defined superclasses, such as the core fill for
+              # `File < IO`.
               superclass_references[pin.namespace] ||= []
               superclass_references[pin.namespace].unshift pin.name
             elsif pin.is_a?(Pin::Block)
