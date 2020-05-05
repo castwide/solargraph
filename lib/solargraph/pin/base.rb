@@ -38,7 +38,7 @@ module Solargraph
         @comments ||= ''
       end
 
-      # @return [String]
+      # @return [String, nil]
       def filename
         return nil if location.nil?
         location.filename
