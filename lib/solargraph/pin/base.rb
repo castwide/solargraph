@@ -23,7 +23,7 @@ module Solargraph
 
       # @param location [Solargraph::Location]
       # @param kind [Integer]
-      # @param closure [String]
+      # @param closure [Solargraph::Pin::Closure]
       # @param name [String]
       # @param comments [String]
       def initialize location: nil, closure: nil, name: '', comments: ''
