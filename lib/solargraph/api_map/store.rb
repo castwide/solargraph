@@ -99,12 +99,12 @@ module Solargraph
 
       # @return [Array<Solargraph::Pin::Base>]
       def namespace_pins
-        @namespace_pins ||= []
+        pins_by_class(Solargraph::Pin::Namespace)
       end
 
-      # @return [Array<Solargraph::Pin::Base>]
+      # @return [Array<Solargraph::Pin::BaseMethod>]
       def method_pins
-        @method_pins ||= []
+        pins_by_class(Solargraph::Pin::BaseMethod)
       end
 
       # @param fqns [String]
@@ -133,12 +133,16 @@ module Solargraph
 
       # @return [Array<Pin::Block>]
       def block_pins
-        @block_pins ||= []
+        pins_by_class(Pin::Block)
       end
 
       def inspect
         # Avoid insane dumps in specs
         to_s
+      end
+
+      def pins_by_class klass
+        @pin_class_hash.filter { |key, _| key <= klass }.values.map(&:to_a).flatten
       end
 
       private
@@ -167,7 +171,7 @@ module Solargraph
 
       # @return [Array<Solargraph::Pin::Symbol>]
       def symbols
-        @symbols ||= []
+        pins_by_class(Pin::Symbol)
       end
 
       def superclass_references
@@ -198,7 +202,7 @@ module Solargraph
       end
 
       def all_instance_variables
-        @all_instance_variables ||= []
+        pins_by_class(Pin::InstanceVariable)
       end
 
       def path_pin_hash
@@ -209,46 +213,37 @@ module Solargraph
       def index
         namespace_map.clear
         namespaces.clear
-        namespace_pins.clear
-        method_pins.clear
-        symbols.clear
-        block_pins.clear
-        all_instance_variables.clear
         path_pin_hash.clear
         namespace_map[''] = []
-        override_pins = []
+        @pin_class_hash = pins.to_set.classify(&:class)
+        # @todo The pin class hash might replace the need for a lot of the work
+        #   in this loop
         pins.each do |pin|
           namespace_map[pin.namespace] ||= []
           namespace_map[pin.namespace].push pin
           namespaces.add pin.path if pin.is_a?(Pin::Namespace) && !pin.path.empty?
-          namespace_pins.push pin if pin.is_a?(Pin::Namespace)
-          method_pins.push pin if pin.is_a?(Pin::BaseMethod)
-          symbols.push pin if pin.is_a?(Pin::Symbol)
-          if pin.is_a?(Pin::Reference::Include)
-            include_references[pin.namespace] ||= []
-            include_references[pin.namespace].push pin.name
-          elsif pin.is_a?(Pin::Reference::Prepend)
-            prepend_references[pin.namespace] ||= []
-            prepend_references[pin.namespace].push pin.name
-          elsif pin.is_a?(Pin::Reference::Extend)
-            extend_references[pin.namespace] ||= []
-            extend_references[pin.namespace].push pin.name
-          elsif pin.is_a?(Pin::Reference::Superclass)
-            superclass_references[pin.namespace] ||= []
-            superclass_references[pin.namespace].push pin.name
-          elsif pin.is_a?(Pin::Block)
-            block_pins.push pin
-          elsif pin.is_a?(Pin::InstanceVariable)
-            all_instance_variables.push pin
-          elsif pin.is_a?(Pin::Reference::Override)
-            override_pins.push pin
-          end
           if pin.path
             path_pin_hash[pin.path] ||= []
             path_pin_hash[pin.path].push pin
           end
         end
-        override_pins.each do |ovr|
+        pins_by_class(Pin::Reference::Include).each do |pin|
+          include_references[pin.namespace] ||= []
+          include_references[pin.namespace].push pin.name
+        end
+        pins_by_class(Pin::Reference::Prepend).each do |pin|
+          prepend_references[pin.namespace] ||= []
+          prepend_references[pin.namespace].push pin.name
+        end
+        pins_by_class(Pin::Reference::Extend).each do |pin|
+          extend_references[pin.namespace] ||= []
+          extend_references[pin.namespace].push pin.name
+        end
+        pins_by_class(Pin::Reference::Superclass).each do |pin|
+          superclass_references[pin.namespace] ||= []
+          superclass_references[pin.namespace].push pin.name
+        end
+        pins_by_class(Pin::Reference::Override).each do |ovr|
           pin = get_path_pins(ovr.name).first
           next if pin.nil?
           (ovr.tags.map(&:tag_name) + ovr.delete).uniq.each do |tag|

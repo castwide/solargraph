@@ -30,6 +30,11 @@ module Solargraph
       @pins = pins
       @locals = locals
       environ.merge Convention.for(source)
+      @pin_class_hash = pins.to_set.classify(&:class)
+    end
+
+    def pins_by_class klass
+      @pin_class_hash.filter { |key, _| key <= klass }.values.map(&:to_a).flatten
     end
 
     # @return [String]
@@ -44,7 +49,7 @@ module Solargraph
 
     # @return [Array<Pin::Reference::Require>]
     def requires
-      @requires ||= pins.select{ |p| p.is_a?(Pin::Reference::Require) }
+      pins_by_class(Pin::Reference::Require)
     end
 
     # @return [Environ]

@@ -74,7 +74,7 @@ module Solargraph
     def method_tag_problems
       result = []
       # @param pin [Pin::BaseMethod]
-      source_map.pins.select { |pin| pin.is_a?(Pin::BaseMethod) }.each do |pin|
+      source_map.pins_by_class(Pin::BaseMethod).each do |pin|
         result.concat method_return_type_problems_for(pin)
         result.concat method_param_type_problems_for(pin)
       end
@@ -184,8 +184,7 @@ module Solargraph
 
     # @return [Array<Pin::BaseVariable>]
     def all_variables
-      source_map.pins.select { |pin| pin.is_a?(Pin::BaseVariable) } +
-        source_map.locals.select { |pin| pin.is_a?(Pin::LocalVariable) }
+      source_map.pins_by_class(Pin::BaseVariable) + source_map.locals.select { |pin| pin.is_a?(Pin::LocalVariable) }
     end
 
     def const_problems
