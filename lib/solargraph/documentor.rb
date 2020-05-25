@@ -76,6 +76,7 @@ module Solargraph
     def self.specs_from_gemfile directory, name
       Solargraph.with_clean_env do
         Dir.chdir directory do
+          Solargraph.logger.warn Dir.entries(Dir.pwd)
           cmd = [
             'bundle', 'exec', 'ruby', '-e',
             "require 'bundler'; require 'json'; puts Bundler::Definition.build('#{name}', '#{name}.lock', false).specs_for([:default]).map { |spec| [spec.name, spec.version] }.to_h.to_json"
