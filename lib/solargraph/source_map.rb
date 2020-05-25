@@ -36,7 +36,7 @@ module Solargraph
     end
 
     def pins_by_class klass
-      @pin_select_cache[klass] ||= @pin_class_hash.filter { |key, _| key <= klass }.values.flatten
+      @pin_select_cache[klass] ||= @pin_class_hash.select { |key, _| key <= klass }.values.flatten
     end
 
     def rebindable_method_names

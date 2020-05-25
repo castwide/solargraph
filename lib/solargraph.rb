@@ -2,6 +2,7 @@
 
 Encoding.default_external = 'UTF-8'
 
+require 'solargraph/compat'
 require 'solargraph/version'
 
 # The top-level namespace for the Solargraph code mapping, documentation,
