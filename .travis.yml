@@ -24,5 +24,5 @@ matrix:
       
 before_install:
 - ruby ./travis-bundler.rb
-before_script: yard gems
-script: rspec
+before_script: bundle exec yard gems
+script: bundle exec rspec
