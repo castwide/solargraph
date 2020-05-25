@@ -26,7 +26,6 @@ module Solargraph
     def initialize pins: []
       @source_map_hash = {}
       @cache = Cache.new
-      @mutex = Mutex.new
       @method_alias_stack = []
       index pins
     end
@@ -34,13 +33,11 @@ module Solargraph
     # @param pins [Array<Pin::Base>]
     # @return [self]
     def index pins
-      @mutex.synchronize {
-        @source_map_hash.clear
-        @cache.clear
-        @store = Store.new(pins + YardMap.new.pins)
-        @unresolved_requires = []
-        workspace_filenames.clear
-      }
+      @source_map_hash.clear
+      @cache.clear
+      @store = Store.new(pins + YardMap.new.pins)
+      @unresolved_requires = []
+      workspace_filenames.clear
       self
     end
 
@@ -123,15 +120,13 @@ module Solargraph
       reqs.merge br.keys
       yard_map.change(reqs.to_a, br, bundle.workspace.gemnames)
       new_store = Store.new(pins + yard_map.pins)
-      @mutex.synchronize {
-        @cache.clear
-        @source_map_hash = new_map_hash
-        @store = new_store
-        @unresolved_requires = yard_map.unresolved_requires
-        workspace_filenames.clear
-        workspace_filenames.concat bundle.workspace.filenames
-        store.block_pins.each { |blk| blk.rebind(self) }
-      }
+      @cache.clear
+      @source_map_hash = new_map_hash
+      @store = new_store
+      @unresolved_requires = yard_map.unresolved_requires
+      workspace_filenames.clear
+      workspace_filenames.concat bundle.workspace.filenames
+      store.block_pins.each { |blk| blk.rebind(self) }
       self
     end
 
@@ -535,19 +530,16 @@ module Solargraph
     #
     # @return [Hash{String => SourceMap}]
     def source_map_hash
-      # @mutex.synchronize { @source_map_hash }
       @source_map_hash
     end
 
     # @return [ApiMap::Store]
     def store
-      # @mutex.synchronize { @store }
       @store
     end
 
     # @return [Solargraph::ApiMap::Cache]
     def cache
-      # @mutex.synchronize { @cache }
       @cache
     end
 
