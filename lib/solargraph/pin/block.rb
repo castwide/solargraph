@@ -14,6 +14,8 @@ module Solargraph
         @parameters = args
       end
 
+      # @param api_map [ApiMap]
+      # @return [void]
       def rebind api_map
         @binder ||= binder_or_nil(api_map)
       end
@@ -30,21 +32,13 @@ module Solargraph
 
       private
 
-      def skippable_block_receivers api_map
-        @@skippable_block_receivers ||= (
-          api_map.get_methods('Array', deep: false).map(&:name) +
-          api_map.get_methods('Enumerable', deep: false).map(&:name) +
-          api_map.get_methods('Hash', deep: false).map(&:name) +
-          ['new']
-        ).to_set
-      end
-
       # @param api_map [ApiMap]
       # @return [ComplexType, nil]
       def binder_or_nil api_map
         return nil unless receiver
+        word = receiver.children.find { |c| c.is_a?(::Symbol) }.to_s
+        return nil unless api_map.rebindable_method_names.include?(word)
         chain = Parser.chain(receiver, location.filename)
-        return nil if skippable_block_receivers(api_map).include?(chain.links.last.word)
         locals = api_map.source_map(location.filename).locals_at(location)
         if ['instance_eval', 'instance_exec', 'class_eval', 'class_exec', 'module_eval', 'module_exec'].include?(chain.links.last.word)
           return chain.base.infer(api_map, self, locals)

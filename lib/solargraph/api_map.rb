@@ -126,6 +126,7 @@ module Solargraph
       @unresolved_requires = yard_map.unresolved_requires
       workspace_filenames.clear
       workspace_filenames.concat bundle.workspace.filenames
+      @rebindable_method_names = nil
       store.block_pins.each { |blk| blk.rebind(self) }
       self
     end
@@ -173,6 +174,16 @@ module Solargraph
     # @return [Array<Solargraph::Pin::Base>]
     def pins
       store.pins
+    end
+
+    def rebindable_method_names
+      @rebindable_method_names ||= begin
+        result = yard_map.rebindable_method_names
+        source_maps.each do |map|
+          result.merge map.rebindable_method_names
+        end
+        result
+      end
     end
 
     # An array of pins based on Ruby keywords (`if`, `end`, etc.).
