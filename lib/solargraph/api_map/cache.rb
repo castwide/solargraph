@@ -10,6 +10,7 @@ module Solargraph
         @receiver_definitions = {}
       end
 
+      # @return [Array<Pin::BaseMethod>]
       def get_methods fqns, scope, visibility, deep
         @methods[[fqns, scope, visibility.sort, deep]]
       end
@@ -18,6 +19,7 @@ module Solargraph
         @methods[[fqns, scope, visibility.sort, deep]] = value
       end
 
+      # @return [Array<Pin::Base>]
       def get_constants namespace, context
         @constants[[namespace, context]]
       end
@@ -26,6 +28,7 @@ module Solargraph
         @constants[[namespace, context]] = value
       end
 
+      # @return [String]
       def get_qualified_namespace name, context
         @qualified_namespaces[[name, context]]
       end
@@ -38,6 +41,7 @@ module Solargraph
         @receiver_definitions.key? path
       end
 
+      # @return [Pin::BaseMethod]
       def get_receiver_definition path
         @receiver_definitions[path]
       end

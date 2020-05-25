@@ -36,6 +36,8 @@ module Solargraph
                 process_prepend
               elsif node.children[1] == :require
                 process_require
+              elsif node.children[1] == :autoload
+                process_autoload
               elsif node.children[1] == :private_constant
                 process_private_constant
               elsif node.children[1] == :alias_method && node.children[2] && node.children[2] && node.children[2].type == :sym && node.children[3] && node.children[3].type == :sym
@@ -134,6 +136,14 @@ module Solargraph
           def process_require
             if node.children[2].is_a?(AST::Node) && node.children[2].type == :str
               path = node.children[2].children[0].to_s
+              pins.push Pin::Reference::Require.new(get_node_location(node), path)
+            end
+          end
+
+          # @return [void]
+          def process_autoload
+            if node.children[3].is_a?(AST::Node) && node.children[3].type == :str
+              path = node.children[3].children[0].to_s
               pins.push Pin::Reference::Require.new(get_node_location(node), path)
             end
           end

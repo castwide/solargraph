@@ -1383,4 +1383,11 @@ describe Solargraph::SourceMap::Mapper do
       ))
     }.not_to raise_error
   end
+
+  it 'maps autoload paths' do
+    map = Solargraph::SourceMap.load_string(%(
+      autoload :Foo, 'path/to/foo'
+    ))
+    expect(map.requires.map(&:name)).to eq(['path/to/foo'])
+  end
 end

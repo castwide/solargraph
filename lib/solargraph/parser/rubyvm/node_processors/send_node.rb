@@ -28,6 +28,8 @@ module Solargraph
               process_module_function
             elsif node.children[0] == :require
               process_require
+            elsif node.children[0] == :autoload
+              process_autoload
             elsif node.children[0] == :alias_method
               process_alias_method
             elsif node.children[0] == :private_class_method
@@ -140,6 +142,15 @@ module Solargraph
               if arg.type == :STR
                 pins.push Pin::Reference::Require.new(get_node_location(arg), arg.children[0])
               end
+            end
+          end
+
+          # @return [void]
+          def process_autoload
+            return unless Parser.is_ast_node?(node.children[1]) && Parser.is_ast_node?(node.children[1].children[1])
+            arg = node.children[1].children[1]
+            if arg.type == :STR
+              pins.push Pin::Reference::Require.new(get_node_location(arg), arg.children[0])
             end
           end
 
