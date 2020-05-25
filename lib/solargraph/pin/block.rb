@@ -28,14 +28,16 @@ module Solargraph
         @parameter_names ||= parameters.map(&:name)
       end
 
-      # def nearly? other
-      #   return false unless super
-      #   # @todo Trying to not to block merges too much
-      #   # receiver == other.receiver and parameters == other.parameters
-      #   true
-      # end
-
       private
+
+      def skippable_block_receivers api_map
+        @@skippable_block_receivers ||= (
+          api_map.get_methods('Array', deep: false).map(&:name) +
+          api_map.get_methods('Enumerable', deep: false).map(&:name) +
+          api_map.get_methods('Hash', deep: false).map(&:name) +
+          ['new']
+        ).to_set
+      end
 
       # @param api_map [ApiMap]
       # @param locals [Array<Pin::LocalVariable>]
@@ -43,6 +45,7 @@ module Solargraph
       def binder_or_nil api_map
         return nil unless receiver
         chain = Parser.chain(receiver, location.filename)
+        return nil if skippable_block_receivers(api_map).include?(chain.links.last.word)
         locals = api_map.source_map(location.filename).locals_at(location)
         if ['instance_eval', 'instance_exec', 'class_eval', 'class_exec', 'module_eval', 'module_exec'].include?(chain.links.last.word)
           return chain.base.infer(api_map, self, locals)
