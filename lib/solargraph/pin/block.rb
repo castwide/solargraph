@@ -40,7 +40,6 @@ module Solargraph
       end
 
       # @param api_map [ApiMap]
-      # @param locals [Array<Pin::LocalVariable>]
       # @return [ComplexType, nil]
       def binder_or_nil api_map
         return nil unless receiver
