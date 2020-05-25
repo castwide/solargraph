@@ -9,6 +9,11 @@ describe Solargraph::Documentor do
     expect(gemset.keys).to eq(['backport', 'bundler'])
   end
 
+  it 'returns gemsets for gemfiles' do
+    gemset = Solargraph::Documentor.specs_from_gemfile('spec/fixtures/workspace', 'Gemfile')
+    expect(gemset.keys).to eq(['backport', 'bundler'])
+  end
+
   it 'raises errors for directories without bundles' do
     Dir.mktmpdir do |tmp|
       expect {
