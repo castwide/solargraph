@@ -1,5 +1,6 @@
 require 'tmpdir'
 require 'fileutils'
+require 'open3'
 
 describe Solargraph::ApiMap::BundlerMethods do
   # @todo Skipping Bundler-related tests on JRuby
@@ -9,7 +10,10 @@ describe Solargraph::ApiMap::BundlerMethods do
   # Bundler (e.g., Ruby 2.1 uses Bundler 1)
   before :all do
     Dir.chdir 'spec/fixtures/workspace' do
-      `bundle install`
+      p Dir.pwd
+      p File.dirname __FILE__
+      o, e, s = Open3.capture3('bundle', 'install')
+      raise RuntimeError, e unless s.success?
     end
   end
 
