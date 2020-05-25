@@ -141,8 +141,10 @@ module Solargraph
         to_s
       end
 
+      # @param klass [Class]
+      # @return [Array<Solargraph::Pin::Base>]
       def pins_by_class klass
-        @pin_class_hash.filter { |key, _| key <= klass }.values.map(&:to_a).flatten
+        @pin_select_cache[klass] ||= @pin_class_hash.filter { |key, _| key <= klass }.values.flatten
       end
 
       private
@@ -211,22 +213,12 @@ module Solargraph
 
       # @return [void]
       def index
-        namespace_map.clear
-        namespaces.clear
-        path_pin_hash.clear
-        namespace_map[''] = []
-        @pin_class_hash = pins.to_set.classify(&:class)
-        # @todo The pin class hash might replace the need for a lot of the work
-        #   in this loop
-        pins.each do |pin|
-          namespace_map[pin.namespace] ||= []
-          namespace_map[pin.namespace].push pin
-          namespaces.add pin.path if pin.is_a?(Pin::Namespace) && !pin.path.empty?
-          if pin.path
-            path_pin_hash[pin.path] ||= []
-            path_pin_hash[pin.path].push pin
-          end
-        end
+        set = pins.to_set
+        @pin_class_hash = set.classify(&:class).transform_values(&:to_a)
+        @pin_select_cache = {}
+        @namespace_map = set.classify(&:namespace).transform_values(&:to_a)
+        @path_pin_hash = set.classify(&:path).transform_values(&:to_a)
+        @namespaces = @path_pin_hash.keys.compact
         pins_by_class(Pin::Reference::Include).each do |pin|
           include_references[pin.namespace] ||= []
           include_references[pin.namespace].push pin.name
