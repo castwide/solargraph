@@ -130,6 +130,7 @@ module Solargraph
         @unresolved_requires = yard_map.unresolved_requires
         workspace_filenames.clear
         workspace_filenames.concat bundle.workspace.filenames
+        store.block_pins.each { |blk| blk.rebind(self) }
       }
       self
     end
@@ -534,17 +535,20 @@ module Solargraph
     #
     # @return [Hash{String => SourceMap}]
     def source_map_hash
-      @mutex.synchronize { @source_map_hash }
+      # @mutex.synchronize { @source_map_hash }
+      @source_map_hash
     end
 
     # @return [ApiMap::Store]
     def store
-      @mutex.synchronize { @store }
+      # @mutex.synchronize { @store }
+      @store
     end
 
     # @return [Solargraph::ApiMap::Cache]
     def cache
-      @mutex.synchronize { @cache }
+      # @mutex.synchronize { @cache }
+      @cache
     end
 
     # @param fqns [String] A fully qualified namespace
