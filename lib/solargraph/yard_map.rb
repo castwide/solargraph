@@ -3,6 +3,7 @@
 require 'yard'
 require 'yard-solargraph'
 require 'rubygems/package'
+require 'set'
 
 module Solargraph
   # The YardMap provides access to YARD documentation for the Ruby core, the
@@ -56,6 +57,7 @@ module Solargraph
       @source_gems = []
       process_requires
       yardocs.uniq!
+      @pin_select_cache = {}
     end
 
     # @return [Array<Solargraph::Pin::Base>]
@@ -80,8 +82,20 @@ module Solargraph
         @gemset = new_gemset
         @source_gems = source_gems
         process_requires
+        @rebindable_method_names = nil
+        @pin_class_hash = nil
+        @pin_select_cache = {}
         true
       end
+    end
+
+    # @return [Set<String>]
+    def rebindable_method_names
+      @rebindable_method_names ||= pins_by_class(Pin::Method)
+        .select { |pin| pin.comments && pin.comments.include?('@yieldself') }
+        .map(&:name)
+        .concat(['instance_eval', 'instance_exec', 'class_eval', 'class_exec', 'module_eval', 'module_exec'])
+        .to_set
     end
 
     # @return [Array<String>]
@@ -142,6 +156,14 @@ module Solargraph
     # @return [YardMap::Cache]
     def cache
       @cache ||= YardMap::Cache.new
+    end
+
+    def pin_class_hash
+      @pin_class_hash ||= pins.to_set.classify(&:class).transform_values(&:to_a)
+    end
+
+    def pins_by_class klass
+      @pin_select_cache[klass] ||= pin_class_hash.filter { |key, _| key <= klass }.values.flatten
     end
 
     # @param ns [YARD::CodeObjects::NamespaceObject]

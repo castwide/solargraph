@@ -678,4 +678,30 @@ describe Solargraph::ApiMap do
     paths = pins.map(&:path)
     expect(paths).to eq(['Prepended::PRE_CONST'])
   end
+
+  it 'finds instance variables in yieldself blocks' do
+    source = Solargraph::Source.load_string(%(
+      module Container
+        # @yieldself [Container]
+        def self.inside &block; end
+      end
+
+      Container.inside do
+        @var1 = 1
+      end
+
+      Container.inside do
+        @var2 = 2
+      end
+
+      @var3 = 3
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new
+    api_map.map source
+    vars = api_map.get_instance_variable_pins('Container')
+    names = vars.map(&:name)
+    expect(names).to include('@var1')
+    expect(names).to include('@var2')
+    expect(names).not_to include('@var3')
+  end
 end
