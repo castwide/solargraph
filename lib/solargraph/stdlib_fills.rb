@@ -20,6 +20,12 @@ module Solargraph
         Override.method_return('Pathname#cleanpath', 'Pathname'),
         Override.method_return('Pathname#children', 'Array<Pathname>'),
         Override.method_return('Pathname#entries', 'Array<Pathname>')
+      ],
+
+      'set' => [
+        Override.method_return('Set#add', 'self'),
+        Override.method_return('Set#add?', 'self, nil'),
+        Override.from_comment('Set#each', '@yieldparam_single_parameter')
       ]
     }
 
