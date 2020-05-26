@@ -13,7 +13,7 @@ module Solargraph
 
     # @param requires [Array<String>]
     # @param domains [Array<String>]
-    # @param overrides [Array<Pin::Reference::Override>]
+    # @param pins [Array<Pin::Base>]
     def initialize requires: [], domains: [], pins: []
       @requires = requires
       @domains = domains
