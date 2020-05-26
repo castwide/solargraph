@@ -23,8 +23,10 @@ module Solargraph
       ],
 
       'set' => [
+        Override.method_return('Enumerable#to_set', 'Set'),
         Override.method_return('Set#add', 'self'),
         Override.method_return('Set#add?', 'self, nil'),
+        Override.method_return('Set#classify', 'Hash'),
         Override.from_comment('Set#each', '@yieldparam_single_parameter')
       ]
     }
