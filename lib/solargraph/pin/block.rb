@@ -20,6 +20,10 @@ module Solargraph
         @binder ||= binder_or_nil(api_map)
       end
 
+      def binder
+        @binder || closure.binder
+      end
+
       # @return [Array<String>]
       def parameters
         @parameters ||= []
