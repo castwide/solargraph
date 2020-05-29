@@ -20,6 +20,7 @@ module Solargraph
       autoload :Head,             'solargraph/source/chain/head'
       autoload :Or,               'solargraph/source/chain/or'
       autoload :BlockVariable,    'solargraph/source/chain/block_variable'
+      autoload :ZSuper,           'solargraph/source/chain/z_super'
 
       @@inference_stack = []
       @@inference_depth = 0
@@ -30,8 +31,10 @@ module Solargraph
       # @return [Array<Source::Chain::Link>]
       attr_reader :links
 
+      attr_reader :node
+
       # @param links [Array<Chain::Link>]
-      def initialize links
+      def initialize links, node = nil, splat = false
         @links = links.clone
         @links.push UNDEFINED_CALL if @links.empty?
         head = true
@@ -40,6 +43,8 @@ module Solargraph
           head = false
           result
         end
+        @node = node
+        @splat = splat
       end
 
       # @return [Chain]
@@ -52,7 +57,6 @@ module Solargraph
       # @param locals [Array<Pin::Base>]
       # @return [Array<Pin::Base>]
       def define api_map, name_pin, locals
-        rebind_block name_pin, api_map, locals
         return [] if undefined?
         working_pin = name_pin
         links[0..-2].each do |link|
@@ -74,7 +78,6 @@ module Solargraph
       # @param locals [Array<Pin::Base>]
       # @return [ComplexType]
       def infer api_map, name_pin, locals
-        rebind_block name_pin, api_map, locals
         pins = define(api_map, name_pin, locals)
         infer_first_defined(pins, links.last.last_context, api_map)
       end
@@ -97,6 +100,10 @@ module Solargraph
         links.last.is_a?(Chain::Constant)
       end
 
+      def splat?
+        @splat
+      end
+
       private
 
       # @param pins [Array<Pin::Base>]
@@ -105,22 +112,21 @@ module Solargraph
       def infer_first_defined pins, context, api_map
         type = ComplexType::UNDEFINED
         pins.each do |pin|
+          # Avoid infinite recursion
+          next if @@inference_stack.include?(pin.identity)
+          @@inference_stack.push pin.identity
           type = pin.typify(api_map)
+          @@inference_stack.pop
           break if type.defined?
         end
         if type.undefined?
           # Limit method inference recursion
-          return type if @@inference_depth >= 2 && pins.first.is_a?(Pin::BaseMethod)
+          return type if @@inference_depth >= 10 && pins.first.is_a?(Pin::BaseMethod)
           @@inference_depth += 1
-          name_count = {}
           pins.each do |pin|
-            # Limit pin name hits for, e.g., variables with insane amounts of definitions
-            name_count[pin.identity] ||= 0
-            name_count[pin.identity] += 1
-            next if name_count[pin.identity] >= 10
             # Avoid infinite recursion
-            next if @@inference_stack.include?(pin)
-            @@inference_stack.push pin
+            next if @@inference_stack.include?(pin.identity)
+            @@inference_stack.push pin.identity
             type = pin.probe(api_map)
             @@inference_stack.pop
             break if type.defined?
@@ -129,35 +135,6 @@ module Solargraph
         end
         return type if context.nil? || context.return_type.undefined?
         type.self_to(context.return_type.namespace)
-      end
-
-      def skippable_block_receivers api_map
-        @@skippable_block_receivers ||= (
-          api_map.get_methods('Array', deep: false).map(&:name) +
-          api_map.get_methods('Enumerable', deep: false).map(&:name) +
-          api_map.get_methods('Hash', deep: false).map(&:name) +
-          ['new']
-        ).to_set
-      end
-
-      def rebind_block pin, api_map, locals
-        return unless pin.is_a?(Pin::Block) && pin.receiver && !pin.rebound?
-        # This first rebind just sets the block pin's rebound state
-        pin.rebind ComplexType::UNDEFINED
-        chain = Solargraph::Source::NodeChainer.chain(pin.receiver, pin.location.filename)
-        return if skippable_block_receivers(api_map).include?(chain.links.last.word)
-        if ['instance_eval', 'instance_exec', 'class_eval', 'class_exec', 'module_eval', 'module_exec'].include?(chain.links.last.word)
-          type = chain.base.infer(api_map, pin, locals)
-          pin.rebind type
-        else
-          receiver_pin = chain.define(api_map, pin, locals).first
-          return if receiver_pin.nil? || receiver_pin.docstring.nil?
-          ys = receiver_pin.docstring.tag(:yieldself)
-          unless ys.nil? || ys.types.nil? || ys.types.empty?
-            ysct = ComplexType.try_parse(*ys.types).qualify(api_map, receiver_pin.context.namespace)
-            pin.rebind ysct
-          end
-        end
       end
     end
   end

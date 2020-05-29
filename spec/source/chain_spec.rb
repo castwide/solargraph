@@ -159,7 +159,7 @@ describe Solargraph::Source::Chain do
     ), 'test.rb')
     api_map = Solargraph::ApiMap.new
     api_map.map source
-    chain = Solargraph::Source::NodeChainer.chain(source.node, source.filename)
+    chain = Solargraph::Parser.chain(source.node, source.filename)
     type = chain.infer(api_map, api_map.pins.first, [])
     expect(type.tag).to eq('Boolean')
   end
@@ -169,7 +169,7 @@ describe Solargraph::Source::Chain do
       [] && ''
     ))
     api_map = Solargraph::ApiMap.new
-    chain = Solargraph::Source::NodeChainer.chain(source.node)
+    chain = Solargraph::Parser.chain(source.node)
     type = chain.infer(api_map, Solargraph::Pin::ROOT_PIN, [])
     expect(type.to_s).to eq('String')
   end
@@ -179,7 +179,7 @@ describe Solargraph::Source::Chain do
       [] || ''
     ))
     api_map = Solargraph::ApiMap.new
-    chain = Solargraph::Source::NodeChainer.chain(source.node)
+    chain = Solargraph::Parser.chain(source.node)
     type = chain.infer(api_map, Solargraph::Pin::ROOT_PIN, [])
     expect(type.to_s).to eq('Array, String')
   end
@@ -192,7 +192,7 @@ describe Solargraph::Source::Chain do
     api_map = Solargraph::ApiMap.new
     api_map.map source
     node = source.node_at(2, 12)
-    chain = Solargraph::Source::NodeChainer.chain(node, 'test.rb')
+    chain = Solargraph::Parser.chain(node, 'test.rb')
     pin = chain.define(api_map, Solargraph::Pin::ROOT_PIN, []).first
     expect(pin.return_type.tag).to eq('Proc')
     type = chain.infer(api_map, Solargraph::Pin::ROOT_PIN, [])
@@ -206,7 +206,8 @@ describe Solargraph::Source::Chain do
     api_map = Solargraph::ApiMap.new
     api_map.map source
     node = source.node_at(1, 6)
-    chain = Solargraph::Source::NodeChainer.chain(node, 'test.rb')
+    # chain = Solargraph::Source::NodeChainer.chain(node, 'test.rb')
+    chain = Solargraph::Parser.chain(node, 'test.rb')
     type = chain.infer(api_map, Solargraph::Pin::ROOT_PIN, [])
     expect(type.tag).to eq('Boolean')
   end
@@ -218,7 +219,7 @@ describe Solargraph::Source::Chain do
     api_map = Solargraph::ApiMap.new
     api_map.map source
     node = source.node_at(1, 16)
-    chain = Solargraph::Source::NodeChainer.chain(node, 'test.rb')
+    chain = Solargraph::Parser.chain(node, 'test.rb')
     type = chain.infer(api_map, Solargraph::Pin::ROOT_PIN, [])
     expect(type.tag).to eq('Array')
   end
@@ -241,7 +242,7 @@ describe Solargraph::Source::Chain do
     closure = api_map.get_path_pins('Outer::Inner').first
 
     outer_node = api_map.get_path_pins('Outer::Inner.outer_string').first.send(:method_body_node)
-    outer_chain = Solargraph::Source::NodeChainer.chain(outer_node)
+    outer_chain = Solargraph::Parser.chain(outer_node)
     outer_type = outer_chain.infer(api_map, closure, [])
     expect(outer_type.tag).to eq('Class<Outer::String>')
   end
@@ -264,8 +265,34 @@ describe Solargraph::Source::Chain do
     closure = api_map.get_path_pins('Outer::Inner').first
 
     core_node = api_map.get_path_pins('Outer::Inner.core_string').first.send(:method_body_node)
-    core_chain = Solargraph::Source::NodeChainer.chain(core_node)
+    core_chain = Solargraph::Parser.chain(core_node)
     core_type = core_chain.infer(api_map, closure, [])
     expect(core_type.tag).to eq('Class<String>')
+  end
+
+  it 'infers String from interpolated strings' do
+    source = Solargraph::Source.load_string('"#{Object}"', 'test.rb')
+    node = source.node
+    api_map = Solargraph::ApiMap.new
+    api_map.map source
+    chain = Solargraph::Parser.chain(node)
+    type = chain.infer(api_map, Solargraph::Pin::ROOT_PIN, [])
+    expect(type.tag).to eq('String')
+  end
+
+  it 'infers namespaces from constant aliases' do
+    source = Solargraph::Source.load_string(%(
+      class Foo
+        class Bar; end
+      end
+      Alias = Foo
+      Alias::Bar.new
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new
+    api_map.map source
+    node = source.node_at(5, 17)
+    chain = Solargraph::Parser.chain(node, 'test.rb')
+    type = chain.infer(api_map, Solargraph::Pin::ROOT_PIN, [])
+    expect(type.tag).to eq('Foo::Bar')
   end
 end

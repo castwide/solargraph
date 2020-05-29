@@ -344,7 +344,7 @@ describe Solargraph::SourceMap::Clip do
     expect(type.tag).to eq('String')
   end
 
-  it "infers undefined for empty methods" do
+  it "infers nil for empty methods" do
     source = Solargraph::Source.load_string(%(
       def foo; end
       foo
@@ -353,7 +353,7 @@ describe Solargraph::SourceMap::Clip do
     map.map source
     clip = map.clip_at('test.rb', Solargraph::Position.new(2, 6))
     type = clip.infer
-    expect(type).to be_undefined
+    expect(type.tag).to eq('nil')
   end
 
   it "handles missing type annotations in @type tags" do
@@ -900,7 +900,7 @@ describe Solargraph::SourceMap::Clip do
     clip = api_map.clip_at('test.rb', [8, 14])
     expect(clip.infer.to_s).to eq('String')
     clip = api_map.clip_at('test.rb', [9, 14])
-    expect(clip.infer).to be_undefined  
+    expect(clip.infer.tag).to eq('nil')
   end
 
   it 'follows scope gates' do
@@ -1018,6 +1018,32 @@ describe Solargraph::SourceMap::Clip do
     expect(names).not_to include('lvar2')
   end
 
+  it 'includes Kernel method calls in namespaces' do
+    source = Solargraph::Source.load_string(%(
+      class Foo
+        caller
+      end
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new
+    api_map.map source
+    clip = api_map.clip_at('test.rb', [2, 10])
+    paths = clip.define.map(&:path)
+    expect(paths).to include('Kernel#caller')
+    paths = clip.complete.pins.map(&:path)
+    expect(paths).to include('Kernel#caller')
+  end
+
+  it 'excludes Kernel method calls in chains' do
+    source = Solargraph::Source.load_string(%(
+      Object.new.caller
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new
+    api_map.map source
+    clip = api_map.clip_at('test.rb', [1, 18])
+    paths = clip.complete.pins.map(&:path)
+    expect(paths).not_to include('Kernel#caller')
+  end
+
   it 'detects local variables across closures' do
     source = Solargraph::Source.load_string(%(
       class Mod
@@ -1083,5 +1109,217 @@ describe Solargraph::SourceMap::Clip do
     api_map.map source
     clip = api_map.clip_at('test.rb', [8, 15])
     expect(clip.complete.pins.first.path).to eq('Outer::String')
+  end
+
+  it 'signifies nested methods' do
+    source = Solargraph::Source.load_string(%(
+      class Foo
+        def one arg1
+        end
+
+        def two arg2
+        end
+      end
+
+      Foo.new.one(Foo.new.two())
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new
+    api_map.map source
+    clip = api_map.clip_at('test.rb', [9, 30])
+    expect(clip.signify.first.path).to eq('Foo#two')
+  end
+
+  it 'signifies unsynchronized sources updated with commas' do
+    source = Solargraph::Source.load_string(%(
+      class Foo
+        def one arg1
+        end
+        def two arg2
+        end
+      end
+      Foo.new.one(Foo.new.two(x))
+    ), 'test.rb')
+    updater = Solargraph::Source::Updater.new(
+      'test.rb',
+      2,
+      [
+        Solargraph::Source::Change.new(Solargraph::Range.from_to(7, 32, 7, 32), ',')
+      ]
+    )
+    updated = source.start_synchronize(updater)
+    api_map = Solargraph::ApiMap.new
+    api_map.map updated
+    clip = api_map.clip_at('test.rb', [7, 33])
+    expect(clip.signify.first.path).to eq('Foo#one')
+  end
+
+  it 'signifies empty parentheses' do
+    src = Solargraph::Source.load_string %(
+      class Foo
+        def bar baz, key: ''
+        end
+      end
+      Foo.new.bar()
+    ), 'file.rb', 0
+    api_map = Solargraph::ApiMap.new
+    api_map.map src
+    clip = api_map.clip_at('file.rb', [5, 18])
+    expect(clip.signify.first.path).to eq('Foo#bar')
+  end
+
+  it 'does not signify calls without parentheses' do
+    source = Solargraph::Source.load_string %(
+      class Foo
+        def bar baz, key: ''
+        end
+      end
+      Foo.new.bar
+    ), 'test.rb', 0
+    api_map = Solargraph::ApiMap.new
+    api_map.map source
+    clip = api_map.clip_at('test.rb', [5, 17])
+    expect(clip.signify).to be_empty
+  end
+
+  it 'signifies unsynchronized sources updated with parentheses' do
+    source = Solargraph::Source.load_string(%(
+      class Foo
+        def one arg1
+        end
+        def two arg2
+        end
+      end
+      Foo.new.one(Foo.new.two)
+    ), 'test.rb')
+    updater = Solargraph::Source::Updater.new(
+      'test.rb',
+      2,
+      [
+        Solargraph::Source::Change.new(Solargraph::Range.from_to(7, 29, 7, 29), '()')
+      ]
+    )
+    updated = source.start_synchronize(updater)
+    api_map = Solargraph::ApiMap.new
+    api_map.map updated
+    clip = api_map.clip_at('test.rb', [7, 30])
+    expect(clip.signify.first.path).to eq('Foo#two')
+  end
+
+  it 'signifies sources with trailing commas' do
+    source = Solargraph::Source.load_string(%(
+      class Foo
+        def one arg1
+        end
+        def two arg2
+        end
+      end
+      Foo.new.one(Foo.new.two(x,))
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new
+    api_map.map source
+    clip = api_map.clip_at('test.rb', [7, 32])
+    expect(clip.signify.first.path).to eq('Foo#two')
+  end
+
+  it 'signifies sources with trailing commas in nested calls' do
+    source = Solargraph::Source.load_string(%(
+      class Foo
+        def one arg1
+        end
+        def two arg2
+        end
+      end
+      Foo.new.one(Foo.new.two(x, y),)
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new
+    api_map.map source
+    clip = api_map.clip_at('test.rb', [7, 36])
+    expect(clip.signify.first.path).to eq('Foo#one')
+  end
+
+  it 'signifies sources with trailing commas and whitespace in nested calls' do
+    source = Solargraph::Source.load_string(%(
+      class Foo
+        def one arg1
+        end
+        def two arg2
+        end
+      end
+      Foo.new.one(Foo.new.two(x, y), )
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new
+    api_map.map source
+    clip = api_map.clip_at('test.rb', [7, 36])
+    expect(clip.signify.first.path).to eq('Foo#one')
+    clip = api_map.clip_at('test.rb', [7, 37])
+    expect(clip.signify.first.path).to eq('Foo#one')
+  end
+
+  it 'signifies unsynchronized sources with nested symbols' do
+    source = Solargraph::Source.load_string(%(
+      class Foo
+        def one arg1
+        end
+        def two arg2
+        end
+      end
+      Foo.new.one(Foo.new.two())
+    ), 'test.rb')
+    updater = Solargraph::Source::Updater.new(
+      'test.rb',
+      2,
+      [
+        Solargraph::Source::Change.new(Solargraph::Range.from_to(7, 30, 7, 30), 'F')
+      ]
+    )
+    updated = source.start_synchronize(updater)
+    api_map = Solargraph::ApiMap.new
+    api_map.map updated
+    clip = api_map.clip_at('test.rb', [7, 31])
+    expect(clip.signify.first.path).to eq('Foo#two')
+  end
+
+  it 'finds constants in superclasses' do
+    source = Solargraph::Source.load_string(%(
+      class A
+        class AA
+        end
+      end
+
+      class B < A
+        AA
+      end
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new
+    api_map.map source
+    clip = api_map.clip_at('test.rb', [7, 8])
+    pins = clip.define
+    expect(pins).to be_one
+    expect(pins.first.path).to eq('A::AA')
+  end
+
+  it 'defines nearest constants' do
+    source = Solargraph::Source.load_string(%(
+      module A
+        module AA
+          class Gen
+            def a
+              pp a = A::Gen # infer to A::AA::Gen
+              pp b = A::Gen::BB # can't infer
+            end
+          end
+        end
+
+        module Gen
+          class BB; end
+        end
+      end
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new
+    api_map.map source
+    clip = api_map.clip_at('test.rb', [5, 25])
+    expect(clip.define.first.path).to eq('A::Gen')
+    clip = api_map.clip_at('test.rb', [6, 30])
+    expect(clip.define.first.path).to eq('A::Gen::BB')
   end
 end

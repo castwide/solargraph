@@ -3,19 +3,16 @@
 module Solargraph
   module Pin
     class BaseVariable < Base
-      include Solargraph::Source::NodeMethods
+      include Solargraph::Parser::NodeMethods
+      # include Solargraph::Source::NodeMethods
 
       # @return [Parser::AST::Node, nil]
       attr_reader :assignment
 
       # @param assignment [Parser::AST::Node, nil]
       def initialize assignment: nil, **splat
-        super(splat)
+        super(**splat)
         @assignment = assignment
-      end
-
-      def signature
-        @signature ||= resolve_node_signature(@assignment)
       end
 
       def completion_item_kind
@@ -44,14 +41,16 @@ module Solargraph
         types = []
         returns_from(@assignment).each do |node|
           # Nil nodes may not have a location
-          if node.type == :nil
+          if node.nil? || node.type == :NIL || node.type == :nil
             types.push ComplexType::NIL
           else
-            pos = Solargraph::Position.new(node.loc.expression.last_line, node.loc.expression.last_column)
+            rng = Range.from_node(node)
+            next if rng.nil?
+            pos = rng.ending
             clip = api_map.clip_at(location.filename, pos)
             # Use the return node for inference. The clip might infer from the
             # first node in a method call instead of the entire call.
-            chain = Solargraph::Source::NodeChainer.chain(node, nil, clip.in_block?)
+            chain = Parser.chain(node, nil, clip.in_block?)
             result = chain.infer(api_map, closure, clip.locals)
             types.push result unless result.undefined?
           end

@@ -17,7 +17,8 @@ module Solargraph
         rubocop_file = find_rubocop_file(filename)
         args.push('-c', fix_drive_letter(rubocop_file)) unless rubocop_file.nil?
         args.push filename
-        options, paths = RuboCop::Options.new.parse(args)
+        base_options = RuboCop::Options.new
+        options, paths = base_options.parse(args)
         options[:stdin] = code
         [options, paths]
       end
@@ -27,6 +28,8 @@ module Solargraph
       # @param filename [String]
       # @return [String, nil]
       def find_rubocop_file filename
+        return nil unless File.exist?(filename)
+        filename = File.realpath(filename)
         dir = File.dirname(filename)
         until File.dirname(dir) == dir
           here = File.join(dir, '.rubocop.yml')

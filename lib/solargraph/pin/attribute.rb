@@ -8,8 +8,16 @@ module Solargraph
 
       # @param access [::Symbol] :reader or :writer
       def initialize access: :reader, **splat
-        super(splat)
+        super(**splat)
         @access = access
+        if access == :writer
+          parameters.push(
+            Pin::Parameter.new(name: 'value', decl: :arg, closure: self)
+          )
+          if return_type.defined?
+            docstring.add_tag YARD::Tags::Tag.new(:param, '', return_type.to_s.split(', '), 'value')
+          end
+        end
       end
 
       def completion_item_kind

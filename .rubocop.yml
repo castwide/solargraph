@@ -1,6 +1,0 @@
-Layout/EndOfLine:
-  EnforcedStyle: lf
-Style/MethodDefParentheses:
-  Enabled: false
-Layout/EmptyLineAfterGuardClause:
-  Enabled: false

@@ -39,6 +39,7 @@ module Solargraph
 
         private
 
+        # @return [void]
         def prepare_to_parse_message
           @in_header = false
           @buffer.each_line do |line|
@@ -51,6 +52,7 @@ module Solargraph
           @buffer.clear
         end
 
+        # @return [void]
         def parse_message_from_buffer
           begin
             msg = JSON.parse(@buffer)

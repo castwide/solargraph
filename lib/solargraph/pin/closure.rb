@@ -7,7 +7,7 @@ module Solargraph
       attr_reader :scope
 
       def initialize scope: :class, **splat
-        super(splat)
+        super(**splat)
         @scope = scope
       end
 

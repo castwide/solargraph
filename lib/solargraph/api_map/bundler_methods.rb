@@ -6,6 +6,8 @@ module Solargraph
     module BundlerMethods
       module_function
 
+      # @param directory [String]
+      # @return [Hash]
       def require_from_bundle directory
         @require_from_bundle ||= begin
           Solargraph.logger.info "Loading gems for bundler/require"
@@ -16,6 +18,7 @@ module Solargraph
         end
       end
 
+      # @return [void]
       def reset_require_from_bundle
         @require_from_bundle = nil
       end

@@ -99,7 +99,7 @@ module Solargraph
           message = Message.select(request['method']).new(self, request)
           begin
             message.process
-          rescue Exception => e
+          rescue StandardError => e
             logger.warn "Error processing request: [#{e.class}] #{e.message}"
             logger.warn e.backtrace.join("\n")
             message.set_error Solargraph::LanguageServer::ErrorCodes::INTERNAL_ERROR, "[#{e.class}] #{e.message}"
@@ -207,6 +207,15 @@ module Solargraph
                 type: LanguageServer::MessageTypes::ERROR,
                 message: "Error in diagnostics: #{e.message}"
               }
+            rescue FileNotFoundError => e
+              # @todo This appears to happen when an external file is open and
+              #   scheduled for diagnosis, but the file was closed (i.e., the
+              #   editor moved to a different file) before diagnosis started
+              logger.warn "Unable to diagnose #{uri} : #{e.message}"
+              send_notification 'textDocument/publishDiagnostics', {
+                uri: uri,
+                diagnostics: []
+              }
             end
           else
             logger.info "Deferring diagnosis of #{uri}"
@@ -245,7 +254,7 @@ module Solargraph
       #
       # @return [String] The most recent data or an empty string.
       def flush
-        tmp = nil
+        tmp = ''
         @buffer_semaphore.synchronize do
           tmp = @buffer.clone
           @buffer.clear
@@ -540,7 +549,7 @@ module Solargraph
       end
 
       # @param query [String]
-      # @return [String]
+      # @return [Array]
       def document query
         result = []
         libraries.each { |lib| result.concat lib.document(query) }

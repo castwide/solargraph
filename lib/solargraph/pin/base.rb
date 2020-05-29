@@ -23,7 +23,7 @@ module Solargraph
 
       # @param location [Solargraph::Location]
       # @param kind [Integer]
-      # @param closure [String]
+      # @param closure [Solargraph::Pin::Closure]
       # @param name [String]
       # @param comments [String]
       def initialize location: nil, closure: nil, name: '', comments: ''
@@ -38,7 +38,7 @@ module Solargraph
         @comments ||= ''
       end
 
-      # @return [String]
+      # @return [String, nil]
       def filename
         return nil if location.nil?
         location.filename
@@ -49,7 +49,7 @@ module Solargraph
         LanguageServer::CompletionItemKinds::KEYWORD
       end
 
-      # @return [Integer]
+      # @return [Integer, nil]
       def symbol_kind
         nil
       end

@@ -630,4 +630,78 @@ describe Solargraph::ApiMap do
     pins = api_map.get_constants('Baz')
     expect(pins.map(&:path)).to include('Foo::Bar')
   end
+
+  it 'qualifies superclasses with same name as subclass' do
+    source = Solargraph::Source.load_string(%(
+      class Foo; end
+      class Bar; end
+      class Bar::Foo < Foo; end
+    ))
+    api_map = Solargraph::ApiMap.new
+    api_map.map source
+    expect(api_map.super_and_sub?('Foo', 'Bar::Foo')).to be(true)
+  end
+
+  it 'adds prepended methods to the ancestor tree' do
+    source = Solargraph::Source.load_string(%(
+      module Prepended
+        def foo; end
+      end
+      module Included
+        def foo; end
+      end
+      class Container
+        include Included
+        prepend Prepended
+        def foo; end
+      end
+    ))
+    api_map = Solargraph::ApiMap.new
+    api_map.map source
+    pins = api_map.get_method_stack('Container', 'foo')
+    paths = pins.map(&:path)
+    expect(paths).to eq(['Prepended#foo', 'Container#foo', 'Included#foo'])
+  end
+
+  it 'adds prepended constants' do
+    source = Solargraph::Source.load_string(%(
+      module Prepended
+        PRE_CONST = 'pre_const'
+      end
+      class Container
+        prepend Prepended
+      end
+    ))
+    api_map = Solargraph::ApiMap.new
+    api_map.map source
+    pins = api_map.get_constants('Container')
+    paths = pins.map(&:path)
+    expect(paths).to eq(['Prepended::PRE_CONST'])
+  end
+
+  it 'finds instance variables in yieldself blocks' do
+    source = Solargraph::Source.load_string(%(
+      module Container
+        # @yieldself [Container]
+        def self.inside &block; end
+      end
+
+      Container.inside do
+        @var1 = 1
+      end
+
+      Container.inside do
+        @var2 = 2
+      end
+
+      @var3 = 3
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new
+    api_map.map source
+    vars = api_map.get_instance_variable_pins('Container')
+    names = vars.map(&:name)
+    expect(names).to include('@var1')
+    expect(names).to include('@var2')
+    expect(names).not_to include('@var3')
+  end
 end

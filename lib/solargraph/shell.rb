@@ -14,7 +14,6 @@ module Solargraph
     end
 
     desc 'socket', 'Run a Solargraph socket server'
-    
     option :host, type: :string, aliases: :h, desc: 'The server host', default: '127.0.0.1'
     option :port, type: :numeric, aliases: :p, desc: 'The server port', default: 7658
     def socket
@@ -77,6 +76,8 @@ module Solargraph
       ver = version || Solargraph::YardMap::CoreDocs.best_download
       puts "Downloading docs for #{ver}..."
       Solargraph::YardMap::CoreDocs.download ver
+      # Clear cached documentation if it exists
+      FileUtils.rm_rf Dir.glob(File.join(Solargraph::YardMap::CoreDocs.cache_dir, ver, '*.ser'))
     rescue ArgumentError => e
       STDERR.puts "ERROR: #{e.message}"
       STDERR.puts "Run `solargraph available-cores` for a list."
@@ -93,7 +94,13 @@ module Solargraph
       puts Solargraph::YardMap::CoreDocs.available.join("\n")
     end
 
-    desc 'clear', 'Delete the cached documentation'
+    desc 'clear', 'Delete all cached documentation'
+    long_desc %(
+      This command will delete all core and gem documentation from the cache.
+      You can also delete specific gem caches with the `uncache` command or
+      update documentation for specific Ruby versions with the `download-core`
+      command.
+    )
     def clear
       puts "Deleting the cached documentation"
       Solargraph::YardMap::CoreDocs.clear
@@ -117,14 +124,14 @@ module Solargraph
       puts Solargraph::Diagnostics.reporters
     end
 
-    desc 'typecheck [FILE]', 'Run the type checker'
+    desc 'typecheck [FILE(s)]', 'Run the type checker'
     long_desc %(
-      Perform type checking on one or more files is a workspace.
-      A normal check reports problems with type definitions in method
-      parameters and return values. A strict check performs static analysis of
-      code to validate return types and arguments in method calls.
+      Perform type checking on one or more files in a workspace. Check the
+      entire workspace if no files are specified.
+
+      Type checking levels are normal, typed, strict, and strong.
     )
-    option :strict, type: :boolean, aliases: :s, desc: 'Use strict typing', default: false
+    option :level, type: :string, aliases: [:mode, :m, :l], desc: 'Type checking level', default: 'normal'
     option :directory, type: :string, aliases: :d, desc: 'The workspace directory', default: '.'
     def typecheck *files
       directory = File.realpath(options[:directory])
@@ -137,9 +144,8 @@ module Solargraph
       probcount = 0
       filecount = 0
       files.each do |file|
-        checker = TypeChecker.new(file, api_map: api_map)
-        problems = checker.param_type_problems + checker.return_type_problems
-        problems.concat checker.strict_type_problems if options[:strict]
+        checker = TypeChecker.new(file, api_map: api_map, level: options[:level].to_sym)
+        problems = checker.problems
         next if problems.empty?
         problems.sort! { |a, b| a.location.range.start.line <=> b.location.range.start.line }
         puts problems.map { |prob| "#{prob.location.filename}:#{prob.location.range.start.line + 1} - #{prob.message}" }.join("\n")
@@ -169,7 +175,7 @@ module Solargraph
             puts pin_description(pin) if options[:verbose]
             pin.typify api_map
             pin.probe api_map
-          rescue Exception => e
+          rescue StandardError => e
             STDERR.puts "Error testing #{pin_description(pin)} #{pin.location ? "at #{pin.location.filename}:#{pin.location.range.start.line + 1}" : ''}"
             STDERR.puts "[#{e.class}]: #{e.message}"
             STDERR.puts e.backtrace.join("\n")

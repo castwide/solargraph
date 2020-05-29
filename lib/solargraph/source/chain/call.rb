@@ -28,6 +28,7 @@ module Solargraph
         # @param name_pin [Pin::Base]
         # @param locals [Array<Pin::Base>]
         def resolve api_map, name_pin, locals
+          return super_pins(api_map, name_pin) if word == 'super'
           found = if head?
             locals.select { |p| p.name == word }
           else
@@ -35,7 +36,6 @@ module Solargraph
           end
           return inferred_pins(found, api_map, name_pin.context, locals) unless found.empty?
           pins = api_map.get_method_stack(name_pin.binder.namespace, word, scope: name_pin.binder.scope)
-          pins.concat api_map.get_method_stack('Kernel', word, scope: :instance) if head?
           return [] if pins.empty?
           inferred_pins(pins, api_map, name_pin.context, locals)
         end
@@ -92,7 +92,7 @@ module Solargraph
                 comments: "@return [#{context.subtypes.first.to_s}]",
                 scope: p.scope,
                 visibility: p.visibility,
-                args: p.parameters,
+                parameters: p.parameters,
                 node: p.node
               )
             end
@@ -188,6 +188,14 @@ module Solargraph
           parcount -= 1 if !parameters.empty? && parameters.last.first.start_with?('&')
           return false if argcount < parcount && !(argcount == parcount - 1 && parameters.last.first.start_with?('*'))
           true
+        end
+
+        # @param api_map [ApiMap]
+        # @param name_pin [Pin::Base]
+        # @return [Array<Pin::Base>]
+        def super_pins api_map, name_pin
+          pins = api_map.get_method_stack(name_pin.namespace, name_pin.name, scope: name_pin.scope)
+          pins.reject{|p| p.path == name_pin.path}
         end
       end
     end

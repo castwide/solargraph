@@ -11,18 +11,23 @@ module Solargraph
       extend ApiMap::SourceToYard
 
       # @param spec [Gem::Specification]
-      def self.run spec
+      # @param cache_dir [String]
+      # @return [void]
+      def self.run spec, cache_dir: nil
         Dir.mktmpdir do |tmpdir|
           rdir = File.join(tmpdir, 'rdoc')
           Dir.chdir spec.full_gem_path do
             pins = []
             pins.push Solargraph::Pin::ROOT_PIN
             name_hash = {}
-            cmd = "rdoc -q -N -r -o #{rdir}"
+
+            argv = ['-q', '-N', '-r', '-o', rdir]
             spec.load_paths.each do |path|
-              cmd += " -i #{path}"
+              argv.concat ['-i', path]
             end
-            `#{cmd}`
+            rdoc = RDoc::RDoc.new
+            rdoc.document argv
+
             store = RDoc::Store.new(rdir)
             store.load_all
             store.cache[:modules].each do |mod|
@@ -64,7 +69,7 @@ module Solargraph
                   closure: namepin,
                   comments: commentary(met.comment),
                   scope: met.type.to_sym,
-                  args: pin.parameters,
+                  parameters: pin.parameters,
                   visibility: met.visibility,
                   location: locate(met)
                 )
@@ -85,11 +90,13 @@ module Solargraph
             code_object_map.values.each do |co|
               YARD::Registry.register(co)
             end
-            cache_dir = File.join(Solargraph::YardMap::CoreDocs.cache_dir, 'gems', "#{spec.name}-#{spec.version}", "yardoc")
+            cache_dir ||= File.join(Solargraph::YardMap::CoreDocs.cache_dir, 'gems', "#{spec.name}-#{spec.version}", "yardoc")
             FileUtils.remove_entry_secure cache_dir if File.exist?(cache_dir)
             FileUtils.mkdir_p cache_dir
             # @todo Should merge be true?
             YARD::Registry.save true, cache_dir
+            # Clear the serialized cache if it exists
+            FileUtils.safe_unlink File.join(CoreDocs.cache_dir, 'gems', "#{spec.name}-#{spec.version}.ser")
           end
         end
       end

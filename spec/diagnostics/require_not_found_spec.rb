@@ -1,7 +1,7 @@
 describe Solargraph::Diagnostics::RequireNotFound do
   before :each do
     @source = Solargraph::Source.new(%(
-      require 'parser'
+      require 'rexml/document'
       require 'not_valid'
     ), 'file.rb')
 

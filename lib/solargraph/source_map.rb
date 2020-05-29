@@ -3,16 +3,15 @@
 require 'jaro_winkler'
 require 'yard'
 require 'yard-solargraph'
+require 'set'
 
 module Solargraph
   # An index of pins and other ApiMap-related data for a Source.
   #
   class SourceMap
-    autoload :NodeProcessor, 'solargraph/source_map/node_processor'
     autoload :Mapper,        'solargraph/source_map/mapper'
     autoload :Clip,          'solargraph/source_map/clip'
     autoload :Completion,    'solargraph/source_map/completion'
-    autoload :Region,        'solargraph/source_map/region'
 
     # @return [Source]
     attr_reader :source
@@ -32,6 +31,19 @@ module Solargraph
       @pins = pins
       @locals = locals
       environ.merge Convention.for(source)
+      @pin_class_hash = pins.to_set.classify(&:class).transform_values(&:to_a)
+      @pin_select_cache = {}
+    end
+
+    def pins_by_class klass
+      @pin_select_cache[klass] ||= @pin_class_hash.select { |key, _| key <= klass }.values.flatten
+    end
+
+    def rebindable_method_names
+      @rebindable_method_names ||= pins_by_class(Pin::Method)
+        .select { |pin| pin.comments && pin.comments.include?('@yieldself') }
+        .map(&:name)
+        .to_set
     end
 
     # @return [String]
@@ -46,7 +58,7 @@ module Solargraph
 
     # @return [Array<Pin::Reference::Require>]
     def requires
-      @requires ||= pins.select{ |p| p.is_a?(Pin::Reference::Require) }
+      pins_by_class(Pin::Reference::Require)
     end
 
     # @return [Environ]

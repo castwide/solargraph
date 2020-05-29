@@ -13,11 +13,6 @@ module Solargraph
         false
       end
 
-      # @return [Environ]
-      def process
-        match? ? EMPTY_ENVIRON : environ
-      end
-
       # The Environ for this convention.
       # Subclasses should override this method.
       #

@@ -26,7 +26,6 @@ module Solargraph
     def initialize pins: []
       @source_map_hash = {}
       @cache = Cache.new
-      @mutex = Mutex.new
       @method_alias_stack = []
       index pins
     end
@@ -34,13 +33,11 @@ module Solargraph
     # @param pins [Array<Pin::Base>]
     # @return [self]
     def index pins
-      @mutex.synchronize {
-        @source_map_hash.clear
-        @cache.clear
-        @store = Store.new(pins + YardMap.new.pins)
-        @unresolved_requires = []
-        workspace_filenames.clear
-      }
+      @source_map_hash.clear
+      @cache.clear
+      @store = Store.new(pins + YardMap.new.pins)
+      @unresolved_requires = []
+      workspace_filenames.clear
       self
     end
 
@@ -123,14 +120,14 @@ module Solargraph
       reqs.merge br.keys
       yard_map.change(reqs.to_a, br, bundle.workspace.gemnames)
       new_store = Store.new(pins + yard_map.pins)
-      @mutex.synchronize {
-        @cache.clear
-        @source_map_hash = new_map_hash
-        @store = new_store
-        @unresolved_requires = yard_map.unresolved_requires
-        workspace_filenames.clear
-        workspace_filenames.concat bundle.workspace.filenames
-      }
+      @cache.clear
+      @source_map_hash = new_map_hash
+      @store = new_store
+      @unresolved_requires = yard_map.unresolved_requires
+      workspace_filenames.clear
+      workspace_filenames.concat bundle.workspace.filenames
+      @rebindable_method_names = nil
+      store.block_pins.each { |blk| blk.rebind(self) }
       self
     end
 
@@ -149,7 +146,7 @@ module Solargraph
     # @return [Source::Cursor]
     def cursor_at filename, position
       position = Position.normalize(position)
-      raise "File not found: #{filename}" unless source_map_hash.has_key?(filename)
+      raise FileNotFoundError, "File not found: #{filename}" unless source_map_hash.has_key?(filename)
       source_map_hash[filename].cursor_at(position)
     end
 
@@ -177,6 +174,16 @@ module Solargraph
     # @return [Array<Solargraph::Pin::Base>]
     def pins
       store.pins
+    end
+
+    def rebindable_method_names
+      @rebindable_method_names ||= begin
+        result = yard_map.rebindable_method_names
+        source_maps.each do |map|
+          result.merge map.rebindable_method_names
+        end
+        result
+      end
     end
 
     # An array of pins based on Ruby keywords (`if`, `end`, etc.).
@@ -215,7 +222,7 @@ module Solargraph
       contexts.push '' if contexts.empty?
       cached = cache.get_constants(namespace, contexts)
       return cached.clone unless cached.nil?
-      skip = []
+      skip = Set.new
       result = []
       contexts.each do |context|
         fqns = qualify(namespace, context)
@@ -238,9 +245,9 @@ module Solargraph
       cached = cache.get_qualified_namespace(namespace, context)
       return cached.clone unless cached.nil?
       result = if namespace.start_with?('::')
-                 inner_qualify(namespace[2..-1], '', [])
+                 inner_qualify(namespace[2..-1], '', Set.new)
                else
-                 inner_qualify(namespace, context, [])
+                 inner_qualify(namespace, context, Set.new)
                end
       cache.set_qualified_namespace(namespace, context, result)
       result
@@ -280,8 +287,7 @@ module Solargraph
 
     # @return [Array<Solargraph::Pin::GlobalVariable>]
     def get_global_variable_pins
-      # @todo Slow version
-      pins.select{ |p| p.is_a?(Pin::GlobalVariable) }
+      store.pins_by_class(Pin::GlobalVariable)
     end
 
     # Get an array of methods available in a particular context.
@@ -295,7 +301,7 @@ module Solargraph
       cached = cache.get_methods(fqns, scope, visibility, deep)
       return cached.clone unless cached.nil?
       result = []
-      skip = []
+      skip = Set.new
       if fqns == ''
         # @todo Implement domains
         implicit.domains.each do |domain|
@@ -308,6 +314,7 @@ module Solargraph
         result.concat inner_get_methods('Kernel', :instance, visibility, deep, skip)
       else
         result.concat inner_get_methods(fqns, scope, visibility, deep, skip)
+        result.concat inner_get_methods('Kernel', :instance, [:public], deep, skip) if visibility.include?(:private)
       end
       resolved = resolve_method_aliases(result, visibility)
       cache.set_methods(fqns, scope, visibility, deep, resolved)
@@ -513,7 +520,7 @@ module Solargraph
       cls = qualify(sub)
       until fqsup.nil? || cls.nil?
         return true if cls == fqsup
-        cls = qualify(store.get_superclass(cls), cls)
+        cls = qualify_superclass(cls)
       end
       false
     end
@@ -534,32 +541,38 @@ module Solargraph
     #
     # @return [Hash{String => SourceMap}]
     def source_map_hash
-      @mutex.synchronize { @source_map_hash }
+      @source_map_hash
     end
 
     # @return [ApiMap::Store]
     def store
-      @mutex.synchronize { @store }
+      @store
     end
 
     # @return [Solargraph::ApiMap::Cache]
     def cache
-      @mutex.synchronize { @cache }
+      @cache
     end
 
     # @param fqns [String] A fully qualified namespace
     # @param scope [Symbol] :class or :instance
     # @param visibility [Array<Symbol>] :public, :protected, and/or :private
     # @param deep [Boolean]
-    # @param skip [Array<String>]
+    # @param skip [Set<String>]
     # @param no_core [Boolean] Skip core classes if true
     # @return [Array<Pin::Base>]
     def inner_get_methods fqns, scope, visibility, deep, skip, no_core = false
       return [] if no_core && fqns =~ /^(Object|BasicObject|Class|Module|Kernel)$/
       reqstr = "#{fqns}|#{scope}|#{visibility.sort}|#{deep}"
       return [] if skip.include?(reqstr)
-      skip.push reqstr
+      skip.add reqstr
       result = []
+      if deep && scope == :instance
+        store.get_prepends(fqns).reverse.each do |im|
+          fqim = qualify(im, fqns)
+          result.concat inner_get_methods(fqim, scope, visibility, deep, skip, true) unless fqim.nil?
+        end
+      end
       result.concat store.get_methods(fqns, scope: scope, visibility: visibility).sort{ |a, b| a.name <=> b.name }
       if deep
         if scope == :instance
@@ -567,9 +580,8 @@ module Solargraph
             fqim = qualify(im, fqns)
             result.concat inner_get_methods(fqim, scope, visibility, deep, skip, true) unless fqim.nil?
           end
-          sc = store.get_superclass(fqns)
-          unless sc.nil?
-            fqsc = qualify(sc, fqns.split('::')[0..-2].join('::'))
+          fqsc = qualify_superclass(fqns)
+          unless fqsc.nil?
             result.concat inner_get_methods(fqsc, scope, visibility, true, skip, no_core) unless fqsc.nil?
           end
         else
@@ -577,9 +589,8 @@ module Solargraph
             fqem = qualify(em, fqns)
             result.concat inner_get_methods(fqem, :instance, visibility, deep, skip, true) unless fqem.nil?
           end
-          sc = store.get_superclass(fqns)
-          unless sc.nil?
-            fqsc = qualify(sc, fqns.split('::')[0..-2].join('::'))
+          fqsc = qualify_superclass(fqns)
+          unless fqsc.nil?
             result.concat inner_get_methods(fqsc, scope, visibility, true, skip, true) unless fqsc.nil?
           end
           unless no_core || fqns.empty?
@@ -598,19 +609,23 @@ module Solargraph
 
     # @param fqns [String]
     # @param visibility [Array<Symbol>]
-    # @param skip [Array<String>]
+    # @param skip [Set<String>]
     # @return [Array<Pin::Base>]
     def inner_get_constants fqns, visibility, skip
       return [] if fqns.nil? || skip.include?(fqns)
-      skip.push fqns
-      result = store.get_constants(fqns, visibility)
+      skip.add fqns
+      result = []
+      store.get_prepends(fqns).each do |is|
+        result.concat inner_get_constants(qualify(is, fqns), [:public], skip)
+      end
+      result.concat store.get_constants(fqns, visibility)
                     .sort { |a, b| a.name <=> b.name }
       store.get_includes(fqns).each do |is|
         result.concat inner_get_constants(qualify(is, fqns), [:public], skip)
       end
-      sc = store.get_superclass(fqns)
-      unless %w[Object BasicObject].include?(sc)
-        result.concat inner_get_constants(store.get_superclass(fqns), [:public], skip)
+      fqsc = qualify_superclass(fqns)
+      unless %w[Object BasicObject].include?(fqsc)
+        result.concat inner_get_constants(fqsc, [:public], skip)
       end
       result
     end
@@ -627,14 +642,23 @@ module Solargraph
       qualify namespace, context.split('::')[0..-2].join('::')
     end
 
+    def qualify_superclass fqsub
+      sup = store.get_superclass(fqsub)
+      return nil if sup.nil?
+      parts = fqsub.split('::')
+      last = parts.pop
+      parts.pop if last == sup
+      qualify(sup, parts.join('::'))
+    end
+
     # @param name [String]
     # @param root [String]
-    # @param skip [Array<String>]
+    # @param skip [Set<String>]
     # @return [String, nil]
     def inner_qualify name, root, skip
       return nil if name.nil?
       return nil if skip.include?(root)
-      skip.push root
+      skip.add root
       if name == ''
         if root == ''
           return ''
@@ -720,7 +744,7 @@ module Solargraph
         comments: origin.comments,
         scope: origin.scope,
         visibility: origin.visibility,
-        args: origin.parameters
+        parameters: origin.parameters
       )
     end
   end

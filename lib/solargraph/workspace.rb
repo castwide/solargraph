@@ -27,6 +27,7 @@ module Solargraph
       load_sources
       @gemnames = []
       @require_paths = generate_require_paths
+      require_plugins
     end
 
     # @return [Solargraph::Workspace::Config]
@@ -145,7 +146,11 @@ module Solargraph
         size = config.calculated.length
         raise WorkspaceTooLargeError, "The workspace is too large to index (#{size} files, #{config.max_files} max)" if config.max_files > 0 and size > config.max_files
         config.calculated.each do |filename|
-          source_hash[filename] = Solargraph::Source.load(filename)
+          begin
+            source_hash[filename] = Solargraph::Source.load(filename)
+          rescue Errno::ENOENT => e
+            Solargraph.logger.warn("Error loading #{filename}: [#{e.class}] #{e.message}")
+          end
         end
       end
     end
@@ -165,11 +170,11 @@ module Solargraph
         Dir.chdir base do
           begin
             # @type [Gem::Specification]
-            spec = eval(File.read(file), binding, file)
+            spec = eval(File.read(file), TOPLEVEL_BINDING, file)
             next unless Gem::Specification === spec
             @gemnames.push spec.name
             result.concat(spec.require_paths.map { |path| File.join(base, path) })
-          rescue Exception => e
+          rescue RuntimeError, ScriptError, Errno::ENOENT => e
             # Don't die if we have an error during eval-ing a gem spec.
             # Concat the default lib directory instead.
             Solargraph.logger.warn "Error reading #{file}: [#{e.class}] #{e.message}"
@@ -189,6 +194,16 @@ module Solargraph
       return ['lib'] if directory.empty?
       return [File.join(directory, 'lib')] if config.require_paths.empty?
       config.require_paths.map{|p| File.join(directory, p)}
+    end
+
+    def require_plugins
+      config.plugins.each do |plugin|
+        begin
+          require plugin
+        rescue LoadError
+          Solargraph.logger.warn "Failed to load plugin '#{plugin}'"
+        end
+      end
     end
   end
 end

@@ -16,11 +16,15 @@ module Solargraph
             # detects the correct configuration
             # the .rb extension is needed for ruby file without extension, else rubocop won't format
             tempfile = File.join(File.dirname(filename), "_tmp_#{SecureRandom.hex(8)}_#{File.basename(filename)}.rb")
+            rubocop_file = Diagnostics::RubocopHelpers.find_rubocop_file(filename)
             original = host.read_text(params['textDocument']['uri'])
             File.write tempfile, original
             begin
-              options, paths = RuboCop::Options.new.parse(['-a', '-f', 'fi', tempfile])
-              redirect_stdout { RuboCop::Runner.new(options, RuboCop::ConfigStore.new).run(paths) }
+              args = ['-a', '-f', 'fi', tempfile]
+              args.unshift('-c', fix_drive_letter(rubocop_file)) unless rubocop_file.nil?
+              options, paths = RuboCop::Options.new.parse(args)
+              store = RuboCop::ConfigStore.new
+              redirect_stdout { RuboCop::Runner.new(options, store).run(paths) }
               result = File.read(tempfile)
               File.unlink tempfile
               format original, result
@@ -36,17 +40,22 @@ module Solargraph
           # @param result [String]
           # @return [void]
           def format original, result
-            if original.end_with?("\n")
-              ending = {
-                line: original.lines.length,
-                character: 0
-              }
-            else
-              ending = {
-                line: original.lines.length - 1,
-                character: original.lines.last.length
-              }
-            end
+            ending = if original.end_with?("\n")
+                       {
+                         line: original.lines.length,
+                         character: 0
+                       }
+                     elsif original.lines.empty?
+                       {
+                         line: 0,
+                         character: 0
+                       }
+                     else
+                       {
+                         line: original.lines.length - 1,
+                         character: original.lines.last.length
+                       }
+                     end
             set_result(
               [
                 {

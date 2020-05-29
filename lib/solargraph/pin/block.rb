@@ -9,22 +9,19 @@ module Solargraph
       attr_reader :receiver
 
       def initialize receiver: nil, args: [], **splat
-        super(splat)
+        super(**splat)
         @receiver = receiver
         @parameters = args
       end
 
-      def rebind context
-        @rebound = true
-        @binder = context unless context.undefined?
-      end
-
-      def rebound?
-        @rebound ||= false
+      # @param api_map [ApiMap]
+      # @return [void]
+      def rebind api_map
+        @binder ||= binder_or_nil(api_map)
       end
 
       def binder
-        @binder || context
+        @binder || closure.binder
       end
 
       # @return [Array<String>]
@@ -34,14 +31,31 @@ module Solargraph
 
       # @return [Array<String>]
       def parameter_names
-        @parameter_names ||= parameters.map{|p| p.split(/[ =:]/).first.gsub(/^(\*{1,2}|&)/, '')}
+        @parameter_names ||= parameters.map(&:name)
       end
 
-      def nearly? other
-        return false unless super
-        # @todo Trying to not to block merges too much
-        # receiver == other.receiver and parameters == other.parameters
-        true
+      private
+
+      # @param api_map [ApiMap]
+      # @return [ComplexType, nil]
+      def binder_or_nil api_map
+        return nil unless receiver
+        word = receiver.children.find { |c| c.is_a?(::Symbol) }.to_s
+        return nil unless api_map.rebindable_method_names.include?(word)
+        chain = Parser.chain(receiver, location.filename)
+        locals = api_map.source_map(location.filename).locals_at(location)
+        if ['instance_eval', 'instance_exec', 'class_eval', 'class_exec', 'module_eval', 'module_exec'].include?(chain.links.last.word)
+          return chain.base.infer(api_map, self, locals)
+        else
+          receiver_pin = chain.define(api_map, self, locals).first
+          if receiver_pin && receiver_pin.docstring
+            ys = receiver_pin.docstring.tag(:yieldself)
+            if ys && ys.types && !ys.types.empty?
+              return ComplexType.try_parse(*ys.types).qualify(api_map, receiver_pin.context.namespace)
+            end
+          end
+        end
+        nil
       end
     end
   end

@@ -60,12 +60,7 @@ module Solargraph
           code_object_map[pin.path].docstring = pin.docstring
           code_object_map[pin.path].visibility = pin.visibility || :public
           code_object_map[pin.path].parameters = pin.parameters.map do |p|
-            n = p.match(/^[a-z0-9_]*:?/i)[0]
-            v = nil
-            if p.length > n.length
-              v = p[n.length..-1].gsub(/^ = /, '')
-            end
-            [n, v]
+            [p.name, p.asgn_code]
           end
         end
       end
