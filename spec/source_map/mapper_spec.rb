@@ -1410,4 +1410,15 @@ describe Solargraph::SourceMap::Mapper do
     pin = map.first_pin('Foo#bar')
     expect(pin.location.range.start.line).to eq(2)
   end
+
+  it 'locates pins in @!parse macros' do
+    map = Solargraph::SourceMap.load_string(%(
+      class Foo
+        # @!parse
+        #   def bar; end
+      end
+    ))
+    pin = map.first_pin('Foo#bar')
+    expect(pin.location.range.start.line).to eq(3)
+  end
 end
