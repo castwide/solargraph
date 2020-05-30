@@ -104,10 +104,10 @@ module Solargraph
           if namespace.location.range.start.line < comment_position.line
             namespace = closure_at(comment_position)
           end
-          region = Parser::Region.new(source: @source, closure: namespace)
           begin
-            src_node = Parser.parse("def #{directive.tag.name};end", @filename, location.range.start.line)
-            gen_pin = Parser.process_node(src_node, region).first.last
+            src = Solargraph::Source.load_string("def #{directive.tag.name};end", @source.filename)
+            region = Parser::Region.new(source: src, closure: namespace)
+            gen_pin = Parser.process_node(src.node, region).first.last
             return if gen_pin.nil?
             # Move the location to the end of the line so it gets recognized
             # as originating from a comment
@@ -148,12 +148,12 @@ module Solargraph
             )
           end
         when 'parse'
-          ns = closure_at(source_position)
-          region = Parser::Region.new(source: @source, closure: ns)
           begin
-            node = Parser.parse(directive.tag.text, @filename, comment_position.line)
+            ns = closure_at(source_position)
+            src = Solargraph::Source.load_string(directive.tag.text, @source.filename)
+            region = Parser::Region.new(source: src, closure: ns)
             # @todo These pins may need to be marked not explicit
-            Parser.process_node(node, region, @pins)
+            Parser.process_node(src.node, region, @pins)
           rescue Parser::SyntaxError => e
             # @todo Handle parser errors in !parse directives
           end
