@@ -95,6 +95,7 @@ module Solargraph
       # @param source_position [Position]
       # @param comment_position [Position]
       # @param directive [YARD::Tags::Directive]
+      # @return [void]
       def process_directive source_position, comment_position, directive
         docstring = Solargraph::Source.parse_docstring(directive.tag.text).to_docstring
         location = Location.new(@filename, Range.new(comment_position, comment_position))
