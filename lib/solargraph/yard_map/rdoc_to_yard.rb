@@ -15,23 +15,23 @@ module Solargraph
       # @return [void]
       def self.run spec, cache_dir: nil
         Dir.mktmpdir do |tmpdir|
-          rdir = File.join(tmpdir, 'rdoc')
-          Dir.chdir spec.full_gem_path do
+          rdir = File.join(tmpdir, 'sg_tmp_rdoc')
+          FileUtils.cp_r Dir.glob(File.join(spec.full_gem_path, '*')), tmpdir
+          Dir.chdir tmpdir do
             pins = []
             pins.push Solargraph::Pin::ROOT_PIN
             name_hash = {}
 
-            argv = ['-q', '-N', '-r', '-o', rdir]
+            argv = ['-q', '-r', '-N', '-o', rdir]
             spec.load_paths.each do |path|
               argv.concat ['-i', path]
             end
             rdoc = RDoc::RDoc.new
             rdoc.document argv
-
-            store = RDoc::Store.new(rdir)
-            store.load_all
+            # @type [RDoc::Store]
+            store = rdoc.store
+            store.path = rdir
             store.cache[:modules].each do |mod|
-              # store.load_class(mod)
               # @type [RDoc::NormalClass]
               mod = store.find_class_or_module(mod)
               closure = pins.select { |pin| pin.path == mod.full_name.split('::')[0..-2].join('::') }.first || pins.first
@@ -51,7 +51,7 @@ module Solargraph
                   closure: namepin
                 )
               end
-              # @param inc [RDoc::Extend]
+              # @param ext [RDoc::Extend]
               mod.extends.each do |ext|
                 pins.push Solargraph::Pin::Reference::Extend.new(
                   location: locate(ext),
@@ -105,7 +105,9 @@ module Solargraph
         mod.full_name.split('::')[0..-2].join('::')
       end
 
+      # @param cmnt [RDoc::Comment]
       def self.commentary cmnt
+        return cmnt.text if cmnt.is_a?(RDoc::Comment)
         result = []
         cmnt.parts.each do |part|
           result.push RDoc::Markup::ToHtml.new({}).to_html(part.text) if part.respond_to?(:text)
@@ -126,9 +128,9 @@ module Solargraph
 
       def self.find_file obj
         if obj.respond_to?(:in_files) && !obj.in_files.empty?
-          [obj.in_files.first.to_s.sub(/^file /, ''), obj.in_files.first.line]
+          [obj.in_files.first.to_s.sub(/^file /, ''), obj.line]
         else
-          [obj.file_name, obj.line]
+          [obj.file, obj.line]
         end
       end
     end
