@@ -106,7 +106,9 @@ module Solargraph
       end
 
       # @param cmnt [RDoc::Comment]
+      # @return [String]
       def self.commentary cmnt
+        return cmnt if cmnt.is_a?(String)
         return cmnt.text if cmnt.is_a?(RDoc::Comment)
         result = []
         cmnt.parts.each do |part|
