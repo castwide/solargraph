@@ -1421,4 +1421,16 @@ describe Solargraph::SourceMap::Mapper do
     pin = map.first_pin('Foo#bar')
     expect(pin.location.range.start.line).to eq(3)
   end
+
+  it 'handles bare parse directives with comments' do
+    map = Solargraph::SourceMap.load_string(%(
+      # This file is nothing but a parse
+      # with some comments above it
+      # @!parse
+      #   class Foo
+      #     def bar; end
+      #   end))
+    pin = map.first_pin('Foo#bar')
+    expect(pin.location.range.start.line).to eq(5)
+  end
 end

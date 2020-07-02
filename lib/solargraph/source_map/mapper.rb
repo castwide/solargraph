@@ -202,7 +202,7 @@ module Solargraph
         code_lines = @code.lines
         @source.associated_comments.each do |line, comments|
           src_pos = line ? Position.new(line, code_lines[line].to_s.chomp.index(/[^\s]/) || 0) : Position.new(code_lines.length, 0)
-          com_pos = Position.new(line - 1, 0)
+          com_pos = Position.new(line + 1 - comments.lines.length, 0)
           process_comment(src_pos, com_pos, comments)
         end
       end
