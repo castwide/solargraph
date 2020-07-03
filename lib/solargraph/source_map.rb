@@ -76,6 +76,7 @@ module Solargraph
     # @param query [String]
     # @return [Array<Pin::Base>]
     def query_symbols query
+      return document_symbols if query && query.empty?
       document_symbols.select{ |pin| fuzzy_string_match(pin.path, query) || fuzzy_string_match(pin.name, query) }
     end
 

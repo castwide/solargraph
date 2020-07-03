@@ -1390,4 +1390,47 @@ describe Solargraph::SourceMap::Mapper do
     ))
     expect(map.requires.map(&:name)).to eq(['path/to/foo'])
   end
+
+  it 'maps @!method parameters' do
+    map = Solargraph::SourceMap.load_string(%(
+      class Foo
+        # @!method bar(baz: 'buzz')
+      end
+    ))
+    pin = map.first_pin('Foo#bar')
+    expect(pin.parameters.first.full).to eq("baz: 'buzz'")
+  end
+
+  it 'locates @!method macros' do
+    map = Solargraph::SourceMap.load_string(%(
+      # Foo description
+      # @!method bar
+      class Foo; end
+    ))
+    pin = map.first_pin('Foo#bar')
+    expect(pin.location.range.start.line).to eq(2)
+  end
+
+  it 'locates pins in @!parse macros' do
+    map = Solargraph::SourceMap.load_string(%(
+      class Foo
+        # @!parse
+        #   def bar; end
+      end
+    ))
+    pin = map.first_pin('Foo#bar')
+    expect(pin.location.range.start.line).to eq(3)
+  end
+
+  it 'handles bare parse directives with comments' do
+    map = Solargraph::SourceMap.load_string(%(
+      # This file is nothing but a parse
+      # with some comments above it
+      # @!parse
+      #   class Foo
+      #     def bar; end
+      #   end))
+    pin = map.first_pin('Foo#bar')
+    expect(pin.location.range.start.line).to eq(5)
+  end
 end

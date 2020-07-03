@@ -5,7 +5,7 @@ module Solargraph
     class Method < BaseMethod
       include Solargraph::Parser::NodeMethods
 
-      # @return [Array<String>]
+      # @return [Array<Pin::Parameter>]
       attr_reader :parameters
 
       # @param args [Array<String>]
