@@ -25,51 +25,12 @@ module Solargraph
       def complete
         return package_completions([]) if !source_map.source.parsed? || cursor.string?
         return package_completions(api_map.get_symbols) if cursor.chain.literal? && cursor.chain.links.last.word == '<Symbol>'
-        return Completion.new([], cursor.range) if cursor.chain.literal? || cursor.comment?
-        result = []
-        result.concat complete_keyword_parameters
-        if cursor.chain.constant? || cursor.start_of_constant?
-          full = cursor.chain.links.first.word
-          type = if cursor.chain.undefined?
-            cursor.chain.base.infer(api_map, context_pin, locals)
-          else
-            if full.include?('::') && cursor.chain.links.length == 1
-              ComplexType.try_parse(full.split('::')[0..-2].join('::'))
-            elsif cursor.chain.links.length > 1
-              ComplexType.try_parse(full)
-            else
-              ComplexType::UNDEFINED
-            end
-          end
-          if type.undefined?
-            if full.include?('::')
-              result.concat api_map.get_constants(full, *gates)
-            else
-              result.concat api_map.get_constants('', cursor.start_of_constant? ? '' : context_pin.full_context.namespace, *gates) #.select { |pin| pin.name.start_with?(full) }
-            end
-          else
-            result.concat api_map.get_constants(type.namespace, cursor.start_of_constant? ? '' : context_pin.full_context.namespace, *gates)
-          end
+        return Completion.new([], cursor.range) if cursor.chain.literal?
+        if cursor.comment?
+          tag_complete
         else
-          type = cursor.chain.base.infer(api_map, block, locals)
-          result.concat api_map.get_complex_type_methods(type, block.binder.namespace, cursor.chain.links.length == 1)
-          if cursor.chain.links.length == 1
-            if cursor.word.start_with?('@@')
-              return package_completions(api_map.get_class_variable_pins(context_pin.full_context.namespace))
-            elsif cursor.word.start_with?('@')
-              return package_completions(api_map.get_instance_variable_pins(block.binder.namespace, block.binder.scope))
-            elsif cursor.word.start_with?('$')
-              return package_completions(api_map.get_global_variable_pins)
-            end
-            result.concat locals
-            result.concat api_map.get_constants(context_pin.context.namespace, *gates)
-            result.concat api_map.get_methods(block.binder.namespace, scope: block.binder.scope, visibility: [:public, :private, :protected])
-            result.concat api_map.get_methods('Kernel')
-            result.concat ApiMap.keywords
-            result.concat yielded_self_pins
-          end
+          code_complete
         end
-        package_completions(result)
       end
 
       # @return [Array<Pin::Base>]
@@ -184,6 +145,71 @@ module Solargraph
             (!s.is_a?(Pin::BaseMethod) || s.name.match(/^[a-z0-9_]+(\!|\?|=)?$/i))
         }
         Completion.new(filtered, cursor.range)
+      end
+
+      def tag_complete
+        result = []
+        match = source_map.code[0..cursor.offset-1].match(/\[([a-z0-9_:]*)\z/i)
+        if match
+          full = match[1]
+          if full.include?('::')
+            if full.end_with?('::')
+              result.concat api_map.get_constants(full[0..-3], *gates)
+            else
+              result.concat api_map.get_constants(full.split('::')[0..-2].join('::'), *gates)
+            end
+          else
+            result.concat api_map.get_constants('', full.end_with?('::') ? '' : context_pin.full_context.namespace, *gates) #.select { |pin| pin.name.start_with?(full) }
+          end
+        end
+        package_completions(result)
+      end
+
+      def code_complete
+        result = []
+        result.concat complete_keyword_parameters
+        if cursor.chain.constant? || cursor.start_of_constant?
+          full = cursor.chain.links.first.word
+          type = if cursor.chain.undefined?
+            cursor.chain.base.infer(api_map, context_pin, locals)
+          else
+            if full.include?('::') && cursor.chain.links.length == 1
+              ComplexType.try_parse(full.split('::')[0..-2].join('::'))
+            elsif cursor.chain.links.length > 1
+              ComplexType.try_parse(full)
+            else
+              ComplexType::UNDEFINED
+            end
+          end
+          if type.undefined?
+            if full.include?('::')
+              result.concat api_map.get_constants(full, *gates)
+            else
+              result.concat api_map.get_constants('', cursor.start_of_constant? ? '' : context_pin.full_context.namespace, *gates) #.select { |pin| pin.name.start_with?(full) }
+            end
+          else
+            result.concat api_map.get_constants(type.namespace, cursor.start_of_constant? ? '' : context_pin.full_context.namespace, *gates)
+          end
+        else
+          type = cursor.chain.base.infer(api_map, block, locals)
+          result.concat api_map.get_complex_type_methods(type, block.binder.namespace, cursor.chain.links.length == 1)
+          if cursor.chain.links.length == 1
+            if cursor.word.start_with?('@@')
+              return package_completions(api_map.get_class_variable_pins(context_pin.full_context.namespace))
+            elsif cursor.word.start_with?('@')
+              return package_completions(api_map.get_instance_variable_pins(block.binder.namespace, block.binder.scope))
+            elsif cursor.word.start_with?('$')
+              return package_completions(api_map.get_global_variable_pins)
+            end
+            result.concat locals
+            result.concat api_map.get_constants(context_pin.context.namespace, *gates)
+            result.concat api_map.get_methods(block.binder.namespace, scope: block.binder.scope, visibility: [:public, :private, :protected])
+            result.concat api_map.get_methods('Kernel')
+            result.concat ApiMap.keywords
+            result.concat yielded_self_pins
+          end
+        end
+        package_completions(result)
       end
     end
   end

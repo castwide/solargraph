@@ -95,6 +95,7 @@ module Solargraph
       # @param source_position [Position]
       # @param comment_position [Position]
       # @param directive [YARD::Tags::Directive]
+      # @return [void]
       def process_directive source_position, comment_position, directive
         docstring = Solargraph::Source.parse_docstring(directive.tag.text).to_docstring
         location = Location.new(@filename, Range.new(comment_position, comment_position))
@@ -104,10 +105,10 @@ module Solargraph
           if namespace.location.range.start.line < comment_position.line
             namespace = closure_at(comment_position)
           end
-          region = Parser::Region.new(source: @source, closure: namespace)
           begin
-            src_node = Parser.parse("def #{directive.tag.name};end", @filename, location.range.start.line)
-            gen_pin = Parser.process_node(src_node, region).first.last
+            src = Solargraph::Source.load_string("def #{directive.tag.name};end", @source.filename)
+            region = Parser::Region.new(source: src, closure: namespace)
+            gen_pin = Parser.process_node(src.node, region).first.last
             return if gen_pin.nil?
             # Move the location to the end of the line so it gets recognized
             # as originating from a comment
@@ -148,12 +149,23 @@ module Solargraph
             )
           end
         when 'parse'
-          ns = closure_at(source_position)
-          region = Parser::Region.new(source: @source, closure: ns)
           begin
-            node = Parser.parse(directive.tag.text, @filename, comment_position.line)
+            ns = closure_at(source_position)
+            src = Solargraph::Source.load_string(directive.tag.text, @source.filename)
+            region = Parser::Region.new(source: src, closure: ns)
             # @todo These pins may need to be marked not explicit
-            Parser.process_node(node, region, @pins)
+            index = @pins.length
+            loff = if @code.lines[comment_position.line].strip.end_with?('@!parse')
+              comment_position.line + 1
+            else
+              comment_position.line
+            end
+            Parser.process_node(src.node, region, @pins)
+            @pins[index..-1].each do |p|
+              # @todo Smelly instance variable access
+              p.location.range.start.instance_variable_set(:@line, p.location.range.start.line + loff)
+              p.location.range.ending.instance_variable_set(:@line, p.location.range.ending.line + loff)
+            end
           rescue Parser::SyntaxError => e
             # @todo Handle parser errors in !parse directives
           end
@@ -190,7 +202,7 @@ module Solargraph
         code_lines = @code.lines
         @source.associated_comments.each do |line, comments|
           src_pos = line ? Position.new(line, code_lines[line].to_s.chomp.index(/[^\s]/) || 0) : Position.new(code_lines.length, 0)
-          com_pos = Position.new(line - 1, 0)
+          com_pos = Position.new(line + 1 - comments.lines.length, 0)
           process_comment(src_pos, com_pos, comments)
         end
       end
