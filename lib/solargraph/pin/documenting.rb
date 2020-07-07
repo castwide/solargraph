@@ -53,13 +53,14 @@ module Solargraph
         # @param text [String]
         # @return [String]
         def escape_brackets text
-          text.gsub(/(\[[^\]]*\])([^\(]|\z)/, '!!!`\1`!!!\2')
+          # text.gsub(/(\[[^\]]*\])([^\(]|\z)/, '!!!^\1^!!!\2')
+          text.gsub('[', '!!!!b').gsub(']', 'e!!!!')
         end
 
         # @param text [String]
         # @return [String]
         def unescape_brackets text
-          text.gsub('!!!`[', '[').gsub(']`!!!', ']')
+          text.gsub('!!!!b', '[').gsub('e!!!!', ']')
         end
       end
 

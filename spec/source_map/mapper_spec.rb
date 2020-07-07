@@ -1263,7 +1263,7 @@ describe Solargraph::SourceMap::Mapper do
     map = Solargraph::SourceMap.load_string(%(
       def foo(bar); end
     ))
-    expect(map.first_pin('#foo').explicit?).to be(true)
+    expect(map.first_pin('#foo')).to be_explicit
   end
 
   it 'marks non-explicit methods' do
@@ -1272,7 +1272,21 @@ describe Solargraph::SourceMap::Mapper do
       # @!method foo(bar)
       nil
     ))
-    expect(map.first_pin('#foo').explicit?).to be(false)
+    expect(map.first_pin('#foo')).not_to be_explicit
+  end
+
+  it 'marks pins from @!parse directives as explicit' do
+    # @note Although it seems reasonable that a method pin from a @!parse
+    #   directive would not be explicit, we're following YARD's lead and
+    #   marking them explicit instead.
+    map = Solargraph::SourceMap.load_string(%(
+      class Foo
+        # @!parse
+        #   def bar; end
+      end
+    ))
+    bar = map.first_pin('Foo#bar')
+    expect(bar).to be_explicit
   end
 
   it 'maps parameters to updated module_function methods' do
@@ -1389,5 +1403,58 @@ describe Solargraph::SourceMap::Mapper do
       autoload :Foo, 'path/to/foo'
     ))
     expect(map.requires.map(&:name)).to eq(['path/to/foo'])
+  end
+
+  it 'maps @!method parameters' do
+    map = Solargraph::SourceMap.load_string(%(
+      class Foo
+        # @!method bar(baz: 'buzz')
+      end
+    ))
+    pin = map.first_pin('Foo#bar')
+    expect(pin.parameters.first.full).to eq("baz: 'buzz'")
+  end
+
+  it 'locates @!method macros' do
+    map = Solargraph::SourceMap.load_string(%(
+      # Foo description
+      # @!method bar
+      class Foo; end
+    ))
+    pin = map.first_pin('Foo#bar')
+    expect(pin.location.range.start.line).to eq(2)
+  end
+
+  it 'locates pins in @!parse macros' do
+    map = Solargraph::SourceMap.load_string(%(
+      class Foo
+        # @!parse
+        #   def bar; end
+      end
+    ))
+    pin = map.first_pin('Foo#bar')
+    expect(pin.location.range.start.line).to eq(3)
+  end
+
+  it 'handles bare parse directives with comments' do
+    map = Solargraph::SourceMap.load_string(%(
+      # This file is nothing but a parse
+      # with some comments above it
+      # @!parse
+      #   class Foo
+      #     def bar; end
+      #   end))
+    pin = map.first_pin('Foo#bar')
+    expect(pin.location.range.start.line).to eq(5)
+  end
+
+  it 'flags method pins as explicit' do
+    map = Solargraph::SourceMap.load_string(%(
+      class Foo
+        def bar; end
+      end
+    ))
+    bar = map.first_pin('Foo#bar')
+    expect(bar).to be_explicit
   end
 end
