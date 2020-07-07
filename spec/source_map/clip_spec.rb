@@ -1322,4 +1322,19 @@ describe Solargraph::SourceMap::Clip do
     clip = api_map.clip_at('test.rb', [6, 30])
     expect(clip.define.first.path).to eq('A::Gen::BB')
   end
+
+  it 'completes YARD tags' do
+    source = Solargraph::Source.load_string(%(
+      class TaggedExample
+      end
+      class CallerExample
+        # @return [Tagg]
+        def foo; end
+      end
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new
+    api_map.map source
+    clip = api_map.clip_at('test.rb', [4, 22])
+    expect(clip.complete.pins.map(&:path)).to include('TaggedExample')
+  end
 end
