@@ -1263,7 +1263,7 @@ describe Solargraph::SourceMap::Mapper do
     map = Solargraph::SourceMap.load_string(%(
       def foo(bar); end
     ))
-    expect(map.first_pin('#foo').explicit?).to be(true)
+    expect(map.first_pin('#foo')).to be_explicit
   end
 
   it 'marks non-explicit methods' do
@@ -1272,7 +1272,21 @@ describe Solargraph::SourceMap::Mapper do
       # @!method foo(bar)
       nil
     ))
-    expect(map.first_pin('#foo').explicit?).to be(false)
+    expect(map.first_pin('#foo')).not_to be_explicit
+  end
+
+  it 'marks pins from @!parse directives as explicit' do
+    # @note Although it seems reasonable that a method pin from a @!parse
+    #   directive would not be explicit, we're following YARD's lead and
+    #   marking them explicit instead.
+    map = Solargraph::SourceMap.load_string(%(
+      class Foo
+        # @!parse
+        #   def bar; end
+      end
+    ))
+    bar = map.first_pin('Foo#bar')
+    expect(bar).to be_explicit
   end
 
   it 'maps parameters to updated module_function methods' do
@@ -1432,5 +1446,15 @@ describe Solargraph::SourceMap::Mapper do
       #   end))
     pin = map.first_pin('Foo#bar')
     expect(pin.location.range.start.line).to eq(5)
+  end
+
+  it 'flags method pins as explicit' do
+    map = Solargraph::SourceMap.load_string(%(
+      class Foo
+        def bar; end
+      end
+    ))
+    bar = map.first_pin('Foo#bar')
+    expect(bar).to be_explicit
   end
 end

@@ -171,7 +171,21 @@ module Solargraph
     def definitions_at filename, line, column
       position = Position.new(line, column)
       cursor = Source::Cursor.new(read(filename), position)
-      api_map.clip(cursor).define.map { |pin| pin.realize(api_map) }
+      if cursor.comment?
+        source = read(filename)
+        offset = Solargraph::Position.to_offset(source.code, Solargraph::Position.new(line, column))
+        lft = source.code[0..offset].match(/\[([a-z0-9_:]*)\z/i)
+        rgt = source.code[offset+1..-1].match(/^([a-z0-9_:]*)\]/i)
+        if lft && rgt
+          tag = lft[1] + rgt[1]
+          clip = api_map.clip(cursor)
+          api_map.get_constants('', *clip.gates).select { |pin| pin.path == tag || pin.path.end_with?("::#{tag}")}
+        else
+          []
+        end
+      else
+        api_map.clip(cursor).define.map { |pin| pin.realize(api_map) }
+      end
     end
 
     # Get signature suggestions for the method at the specified file and
