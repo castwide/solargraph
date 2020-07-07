@@ -455,13 +455,7 @@ describe Protocol do
     }
     response = @protocol.response
     expect(response['error']).to be_nil
-    # RuboCop does not apply frozen_string_literal in Ruby < 2.3
-    first = if RUBY_VERSION =~ /^2\.(1|2)\./
-      "class Foobar\n"
-    else
-      "# frozen_string_literal: true\n"
-    end
-    expect(response['result'].first['newText'].each_line.first).to eq(first)
+    expect(response['result'].first['newText']).to include('def barbaz(parameter); end')
   end
 
   it "handles $/solargraph/downloadCore" do
