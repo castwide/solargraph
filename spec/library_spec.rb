@@ -293,4 +293,28 @@ describe Solargraph::Library do
     from_ref = library.references_from('test.rb', 2, 13)
     expect(from_ref.length).to eq(2)
   end
+
+  it 'defines YARD tags' do
+    library = Solargraph::Library.new
+    source = Solargraph::Source.load_string(%(
+      class TaggedExample
+      end
+      class CallerExample
+        # @return [TaggedExample]
+        def foo; end
+      end
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new
+    api_map.map source
+    library.attach source
+    # Start of tag
+    pins = library.definitions_at('test.rb', 4, 19)
+    expect(pins.map(&:path)).to include('TaggedExample')
+    # Middle of tag
+    pins = library.definitions_at('test.rb', 4, 25)
+    expect(pins.map(&:path)).to include('TaggedExample')
+    # End of tag
+    pins = library.definitions_at('test.rb', 4, 32)
+    expect(pins.map(&:path)).to include('TaggedExample')
+  end
 end
