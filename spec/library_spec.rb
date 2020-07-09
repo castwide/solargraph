@@ -304,8 +304,6 @@ describe Solargraph::Library do
         def foo; end
       end
     ), 'test.rb')
-    api_map = Solargraph::ApiMap.new
-    api_map.map source
     library.attach source
     # Start of tag
     pins = library.definitions_at('test.rb', 4, 19)
@@ -316,5 +314,23 @@ describe Solargraph::Library do
     # End of tag
     pins = library.definitions_at('test.rb', 4, 32)
     expect(pins.map(&:path)).to include('TaggedExample')
+  end
+
+  it 'defines YARD tags with nested namespaces' do
+    library = Solargraph::Library.new
+    source = Solargraph::Source.load_string(%(
+      class Tagged
+        class Example; end
+      end
+      class CallerExample
+        # @return [Tagged::Example]
+        def foo; end
+      end
+    ), 'test.rb')
+    library.attach source
+    pins = library.definitions_at('test.rb', 5, 19)
+    expect(pins.map(&:path)).to include('Tagged')
+    pins = library.definitions_at('test.rb', 5, 27)
+    expect(pins.map(&:path)).to include('Tagged::Example')
   end
 end
