@@ -333,4 +333,32 @@ describe Solargraph::Library do
     pins = library.definitions_at('test.rb', 5, 27)
     expect(pins.map(&:path)).to include('Tagged::Example')
   end
+
+  it 'defines parameterized YARD tags' do
+    library = Solargraph::Library.new
+    source = Solargraph::Source.load_string(%(
+      class TaggedExample; end
+      class CallerExample
+        # @return [Array<TaggedExample>]
+        def foo; end
+      end
+    ), 'test.rb')
+    library.attach source
+    pins = library.definitions_at('test.rb', 3, 31)
+    expect(pins.map(&:path)).to include('TaggedExample')
+  end
+
+  it 'defines multiple YARD tags' do
+    library = Solargraph::Library.new
+    source = Solargraph::Source.load_string(%(
+      class TaggedExample; end
+      class CallerExample
+        # @return [TaggedExample, String]
+        def foo; end
+      end
+    ), 'test.rb')
+    library.attach source
+    pins = library.definitions_at('test.rb', 3, 31)
+    expect(pins.map(&:path)).to include('TaggedExample')
+  end
 end
