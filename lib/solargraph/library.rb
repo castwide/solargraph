@@ -259,7 +259,7 @@ module Solargraph
     end
 
     # @param query [String]
-    # @return [Array<YARD::CodeObject::Base>]
+    # @return [Array<YARD::CodeObjects::Base>]
     def document query
       catalog
       api_map.document query

@@ -423,7 +423,7 @@ module Solargraph
     #   api_map.document('String#split')
     #
     # @param path [String] The path to find
-    # @return [Array<YARD::CodeObject::Base>]
+    # @return [Array<YARD::CodeObjects::Base>]
     def document path
       rake_yard(store)
       docs = []
