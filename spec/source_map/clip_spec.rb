@@ -1337,4 +1337,34 @@ describe Solargraph::SourceMap::Clip do
     clip = api_map.clip_at('test.rb', [4, 22])
     expect(clip.complete.pins.map(&:path)).to include('TaggedExample')
   end
+
+  it 'completes parameterized YARD tags' do
+    source = Solargraph::Source.load_string(%(
+      class TaggedExample
+      end
+      class CallerExample
+        # @return [Array<Tagg>]
+        def foo; end
+      end
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new
+    api_map.map source
+    clip = api_map.clip_at('test.rb', [4, 29])
+    expect(clip.complete.pins.map(&:path)).to include('TaggedExample')
+  end
+
+  it 'completes multiple YARD tags' do
+    source = Solargraph::Source.load_string(%(
+      class TaggedExample
+      end
+      class CallerExample
+        # @return [String, Tagg]
+        def foo; end
+      end
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new
+    api_map.map source
+    clip = api_map.clip_at('test.rb', [4, 31])
+    expect(clip.complete.pins.map(&:path)).to include('TaggedExample')
+  end
 end

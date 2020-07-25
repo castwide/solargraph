@@ -124,7 +124,9 @@ module Solargraph
           result = []
           if node.type == :block
             result.push node
-            node.children[0].children[2..-1].each { |child| result.concat call_nodes_from(child) }
+            if Parser.is_ast_node?(node.children[0]) && node.children[0].children.length > 2
+              node.children[0].children[2..-1].each { |child| result.concat call_nodes_from(child) }
+            end
             node.children[1..-1].each { |child| result.concat call_nodes_from(child) }
           elsif node.type == :send
             result.push node

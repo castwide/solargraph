@@ -26,10 +26,10 @@ module Solargraph
               store = RuboCop::ConfigStore.new
               redirect_stdout { RuboCop::Runner.new(options, store).run(paths) }
               result = File.read(tempfile)
-              File.unlink tempfile
               format original, result
             rescue RuboCop::ValidationError, RuboCop::ConfigNotFoundError => e
               set_error(Solargraph::LanguageServer::ErrorCodes::INTERNAL_ERROR, "[#{e.class}] #{e.message}")
+            ensure
               File.unlink tempfile
             end
           end

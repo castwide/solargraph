@@ -174,12 +174,12 @@ module Solargraph
       if cursor.comment?
         source = read(filename)
         offset = Solargraph::Position.to_offset(source.code, Solargraph::Position.new(line, column))
-        lft = source.code[0..offset].match(/\[([a-z0-9_:]*)\z/i)
-        rgt = source.code[offset+1..-1].match(/^([a-z0-9_:]*)\]/i)
+        lft = source.code[0..offset-1].match(/[\[<, ]([a-z0-9_:]*)\z/i)
+        rgt = source.code[offset..-1].match(/^([a-z0-9_]*)(:[a-z0-9_:]*)?[\]>, ]/i)
         if lft && rgt
           tag = lft[1] + rgt[1]
           clip = api_map.clip(cursor)
-          api_map.get_constants('', *clip.gates).select { |pin| pin.path == tag || pin.path.end_with?("::#{tag}")}
+          clip.translate tag
         else
           []
         end
@@ -259,7 +259,7 @@ module Solargraph
     end
 
     # @param query [String]
-    # @return [Array<YARD::CodeObject::Base>]
+    # @return [Array<YARD::CodeObjects::Base>]
     def document query
       catalog
       api_map.document query

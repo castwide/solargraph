@@ -339,4 +339,18 @@ describe Solargraph::Parser::NodeMethods do
       expect(hash).to eq({})
     end
   end
+
+  describe 'call_nodes_from' do
+    it 'handles super calls' do
+      source = Solargraph::Source.load_string(%(
+        class Foo
+          def super_with_block
+            super { |record| }
+          end
+        end        
+      ))
+      calls = Solargraph::Parser::NodeMethods.call_nodes_from(source.node)
+      expect(calls).to be_one
+    end
+  end
 end

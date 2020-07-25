@@ -4,16 +4,10 @@ module Solargraph
   module Pin
     module YardPin
       module YardMixin
-        attr_reader :code_object
-
-        attr_reader :spec
-
-        attr_reader :location
-
-        @@gate_cache ||= {}
-
         private
 
+        # @param code_object [YARD::CodeObjects::Base]
+        # @param spec [Gem::Specification]
         # @return [Solargraph::Location, nil]
         def object_location code_object, spec
           return nil if spec.nil? || code_object.nil? || code_object.file.nil? || code_object.line.nil?

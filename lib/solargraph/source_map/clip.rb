@@ -72,6 +72,13 @@ module Solargraph
         end
       end
 
+      # @param phrase [String]
+      # @return [Array<Solargraph::Pin::Base>]
+      def translate phrase
+        chain = Parser.chain(Parser.parse(phrase))
+        chain.define(api_map, block, locals)
+      end
+
       private
 
       # @return [ApiMap]
@@ -149,7 +156,7 @@ module Solargraph
 
       def tag_complete
         result = []
-        match = source_map.code[0..cursor.offset-1].match(/\[([a-z0-9_:]*)\z/i)
+        match = source_map.code[0..cursor.offset-1].match(/[\[<, ]([a-z0-9_:]*)\z/i)
         if match
           full = match[1]
           if full.include?('::')
