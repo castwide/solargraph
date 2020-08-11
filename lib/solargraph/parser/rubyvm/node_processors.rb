@@ -54,6 +54,7 @@ module Solargraph
       register :KW_ARG,     Rubyvm::NodeProcessors::KwArgNode
       register :ITER,       Rubyvm::NodeProcessors::BlockNode
       register :LAMBDA,     Rubyvm::NodeProcessors::BlockNode
+      register :FOR,        Rubyvm::NodeProcessors::BlockNode
       register :OP_ASGN_OR, Rubyvm::NodeProcessors::OrasgnNode
       register :LIT,        Rubyvm::NodeProcessors::LitNode
     end
