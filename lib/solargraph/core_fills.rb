@@ -66,6 +66,7 @@ module Solargraph
 @return_single_parameter
       )),
       Override.method_return('Array#uniq', 'self'),
+      Override.method_return('Array#zip', 'Array, nil'),
 
       Override.from_comment('BasicObject#==', %(
 @param other [BasicObject]
