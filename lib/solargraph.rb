@@ -27,7 +27,6 @@ module Solargraph
   autoload :YardMap,          'solargraph/yard_map'
   autoload :Pin,              'solargraph/pin'
   autoload :ServerMethods,    'solargraph/server_methods'
-  autoload :CoreFills,        'solargraph/core_fills'
   autoload :StdlibFills,      'solargraph/stdlib_fills'
   autoload :LanguageServer,   'solargraph/language_server'
   autoload :Workspace,        'solargraph/workspace'
