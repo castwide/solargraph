@@ -33,13 +33,7 @@ module Solargraph
     # @param pins [Array<Pin::Base>]
     # @return [self]
     def index pins
-      @source_map_hash.clear
-      @cache.clear
-      @unresolved_requires = []
-      workspace_filenames.clear
-      implicit.clear
-      implicit.merge Convention.for_global(self)
-      @store = Store.new(pins + YardMap.new.pins + implicit.pins + pins)
+      catalog Bench.new(pins: pins)
       self
     end
 
@@ -89,7 +83,7 @@ module Solargraph
           merged = false
         end
       end
-      return self if merged
+      return self if bench.pins.empty? && @store && merged
       implicit.clear
       pins = []
       reqs = Set.new
@@ -98,6 +92,7 @@ module Solargraph
         pins.concat map.pins
         reqs.merge map.requires.map(&:name)
       end
+      pins.concat bench.pins
       reqs.merge bench.workspace.config.required
       @required = reqs
       bench.opened.each do |src|
