@@ -346,7 +346,7 @@ module Solargraph
     def load_core_pins
       yd = CoreDocs.yardoc_file
       ser = File.join(File.dirname(yd), 'core.ser')
-      result = if File.file?(ser)
+      if File.file?(ser)
         file = File.open(ser, 'rb')
         dump = file.read
         file.close
@@ -360,7 +360,6 @@ module Solargraph
       else
         read_core_and_save_cache(yd, ser)
       end
-      ApiMap::Store.new(result + CoreFills::ALL).pins.reject { |pin| pin.is_a?(Pin::Reference::Override) }
     end
 
     def read_core_and_save_cache yd, ser
