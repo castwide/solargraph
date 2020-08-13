@@ -61,6 +61,44 @@ describe Solargraph::Parser::NodeMethods do
     expect(rets.length).to eq(2)
   end
 
+  it 'handles return nodes from case statements' do
+    node = Solargraph::Parser.parse(%(
+      case x
+      when 100
+        true
+      end
+    ))
+    returns = Solargraph::Parser::NodeMethods.returns_from(node)
+    # Include an implicit `nil` for missing else
+    expect(returns.length).to eq(2)
+  end
+
+  it 'handles return nodes from case statements with else' do
+    node = Solargraph::Parser.parse(%(
+      case x
+      when 100
+        true
+      else
+        false
+      end
+    ))
+    returns = Solargraph::Parser::NodeMethods.returns_from(node)
+    expect(returns.length).to eq(2)
+  end
+
+  it 'handles return nodes from case statements with boolean conditions' do
+    node = Solargraph::Parser.parse(%(
+      case true
+      when x
+        true
+      else
+        false
+      end
+    ))
+    returns = Solargraph::Parser::NodeMethods.returns_from(node)
+    expect(returns.length).to eq(2)
+  end
+
   it "handles return nodes in reduceable (begin) nodes" do
     # @todo Temporarily disabled. Result is 3 nodes instead of 2.
     # node = Solargraph::Parser.parse(%(

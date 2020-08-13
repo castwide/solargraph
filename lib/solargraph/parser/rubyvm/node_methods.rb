@@ -197,7 +197,7 @@ module Solargraph
                 result.push node
                 result.concat get_return_nodes_only(node.children[1])
               elsif node.type == :CASE
-                node.children.each do |cc|
+                node.children[1..-1].each do |cc|
                   result.concat reduce_to_value_nodes(cc.children[1..-1])
                 end
               else

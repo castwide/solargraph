@@ -153,6 +153,7 @@ module Solargraph
         probcount += problems.length
       end
       puts "#{probcount} problem#{probcount != 1 ? 's' : ''} found#{files.length != 1 ? " in #{filecount} of #{files.length} files" : ''}."
+      exit 1 if probcount.positive?
     end
 
     desc 'scan', 'Test the workspace for problems'
