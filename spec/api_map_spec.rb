@@ -269,10 +269,10 @@ describe Solargraph::ApiMap do
   it "catalogs changes" do
     workspace = Solargraph::Workspace.new
     s1 = Solargraph::Source.load_string('class Foo; end')
-    @api_map.catalog(Solargraph::Bundle.new(workspace: workspace, opened: [s1]))
+    @api_map.catalog(Solargraph::Bench.new(workspace: workspace, opened: [s1]))
     expect(@api_map.get_path_pins('Foo')).not_to be_empty
     s2 = Solargraph::Source.load_string('class Bar; end')
-    @api_map.catalog(Solargraph::Bundle.new(workspace: workspace, opened: [s2]))
+    @api_map.catalog(Solargraph::Bench.new(workspace: workspace, opened: [s2]))
     expect(@api_map.get_path_pins('Foo')).to be_empty
     expect(@api_map.get_path_pins('Bar')).not_to be_empty
   end
@@ -377,7 +377,7 @@ describe Solargraph::ApiMap do
       require 'foo'
       require 'invalid'
     ), 'app.rb')
-    bundle = Solargraph::Bundle.new(opened: [source1, source2])
+    bundle = Solargraph::Bench.new(opened: [source1, source2])
     api_map.catalog bundle
     expect(api_map.unresolved_requires).to eq(['invalid'])
   end
@@ -473,7 +473,7 @@ describe Solargraph::ApiMap do
       end
     ), 'source2.rb')
     api_map = Solargraph::ApiMap.new
-    bundle = Solargraph::Bundle.new(opened: [source1, source2])
+    bundle = Solargraph::Bench.new(opened: [source1, source2])
     api_map.catalog bundle
     pin = api_map.get_path_pins('Sub#bar').first
     expect(pin).not_to be_nil

@@ -33,7 +33,7 @@ module Solargraph
   autoload :Library,          'solargraph/library'
   autoload :Diagnostics,      'solargraph/diagnostics'
   autoload :ComplexType,      'solargraph/complex_type'
-  autoload :Bundle,           'solargraph/bundle'
+  autoload :Bench,            'solargraph/bench'
   autoload :Logging,          'solargraph/logging'
   autoload :TypeChecker,      'solargraph/type_checker'
   autoload :Environ,          'solargraph/environ'

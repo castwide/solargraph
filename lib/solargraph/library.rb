@@ -20,7 +20,7 @@ module Solargraph
     def initialize workspace = Solargraph::Workspace.new, name = nil
       @workspace = workspace
       @name = name
-      api_map.catalog bundle
+      api_map.catalog bench
       @synchronized = true
       @catalog_mutex = Mutex.new
     end
@@ -351,7 +351,7 @@ module Solargraph
       @catalog_mutex.synchronize do
         break if synchronized?
         logger.info "Cataloging #{workspace.directory.empty? ? 'generic workspace' : workspace.directory}"
-        api_map.catalog bundle
+        api_map.catalog bench
         @synchronized = true
         logger.info "Catalog complete (#{api_map.source_maps.length} files, #{api_map.pins.length} pins)" if logger.info?
       end
@@ -403,9 +403,9 @@ module Solargraph
       @api_map ||= Solargraph::ApiMap.new
     end
 
-    # @return [Bundle]
-    def bundle
-      Bundle.new(
+    # @return [Bench]
+    def bench
+      Bench.new(
         workspace: workspace,
         opened: @current ? [@current] : []
       )

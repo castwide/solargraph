@@ -48,7 +48,7 @@ module Solargraph
     # @param source [Source]
     # @return [self]
     def map source
-      catalog Bundle.new(opened: [source])
+      catalog Bench.new(opened: [source])
       self
     end
 
@@ -58,15 +58,15 @@ module Solargraph
       store.named_macros[name]
     end
 
-    # Catalog a bundle.
+    # Catalog a bench.
     #
-    # @param bundle [Bundle]
+    # @param bench [Bench]
     # @return [self]
-    def catalog bundle
+    def catalog bench
       new_map_hash = {}
-      # Bundle always needs to be merged if it adds or removes sources
-      merged = (bundle.sources.length == source_map_hash.values.length)
-      bundle.sources.each do |source|
+      # Bench always needs to be merged if it adds or removes sources
+      merged = (bench.sources.length == source_map_hash.values.length)
+      bench.sources.each do |source|
         if source_map_hash.key?(source.filename)
           if source_map_hash[source.filename].code == source.code && source_map_hash[source.filename].source.synchronized? && source.synchronized?
             new_map_hash[source.filename] = source_map_hash[source.filename]
@@ -98,18 +98,18 @@ module Solargraph
         pins.concat map.pins
         reqs.merge map.requires.map(&:name)
       end
-      reqs.merge bundle.workspace.config.required
+      reqs.merge bench.workspace.config.required
       @required = reqs
-      bundle.opened.each do |src|
+      bench.opened.each do |src|
         implicit.merge new_map_hash[src.filename].environ
       end
       implicit.merge Convention.for_global(self)
       local_path_hash.clear
-      unless bundle.workspace.require_paths.empty?
+      unless bench.workspace.require_paths.empty?
         file_keys = new_map_hash.keys
-        workspace_path = Pathname.new(bundle.workspace.directory)
+        workspace_path = Pathname.new(bench.workspace.directory)
         reqs.delete_if do |r|
-          bundle.workspace.require_paths.any? do |base|
+          bench.workspace.require_paths.any? do |base|
             pn = workspace_path.join(base, "#{r}.rb").to_s
             if file_keys.include? pn
               local_path_hash[r] = pn
@@ -122,16 +122,16 @@ module Solargraph
       end
       reqs.merge implicit.requires
       pins.concat implicit.pins
-      br = reqs.include?('bundler/require') ? require_from_bundle(bundle.workspace.directory) : {}
+      br = reqs.include?('bundler/require') ? require_from_bundle(bench.workspace.directory) : {}
       reqs.merge br.keys
-      yard_map.change(reqs.to_a, br, bundle.workspace.gemnames)
+      yard_map.change(reqs.to_a, br, bench.workspace.gemnames)
       new_store = Store.new(pins + yard_map.pins)
       @cache.clear
       @source_map_hash = new_map_hash
       @store = new_store
       @unresolved_requires = yard_map.unresolved_requires
       workspace_filenames.clear
-      workspace_filenames.concat bundle.workspace.filenames
+      workspace_filenames.concat bench.workspace.filenames
       @rebindable_method_names = nil
       store.block_pins.each { |blk| blk.rebind(self) }
       self
@@ -177,7 +177,7 @@ module Solargraph
     def self.load directory
       api_map = self.new
       workspace = Solargraph::Workspace.new(directory)
-      api_map.catalog Bundle.new(workspace: workspace)
+      api_map.catalog Bench.new(workspace: workspace)
       api_map
     end
 
