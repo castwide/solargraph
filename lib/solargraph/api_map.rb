@@ -35,9 +35,11 @@ module Solargraph
     def index pins
       @source_map_hash.clear
       @cache.clear
-      @store = Store.new(pins + YardMap.new.pins)
       @unresolved_requires = []
       workspace_filenames.clear
+      implicit.clear
+      implicit.merge Convention.for_global(self)
+      @store = Store.new(pins + YardMap.new.pins + implicit.pins + pins)
       self
     end
 
@@ -192,10 +194,8 @@ module Solargraph
     # An array of pins based on Ruby keywords (`if`, `end`, etc.).
     #
     # @return [Array<Solargraph::Pin::Keyword>]
-    def self.keywords
-      @keywords ||= CoreFills::KEYWORDS.map{ |s|
-        Pin::Keyword.new(s)
-      }.freeze
+    def keyword_pins
+      store.pins_by_class(Pin::Keyword)
     end
 
     # An array of namespace names defined in the ApiMap.

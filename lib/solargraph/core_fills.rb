@@ -14,7 +14,7 @@ module Solargraph
       'elsif', 'end', 'ensure', 'false', 'for', 'if', 'in', 'module', 'next',
       'nil', 'not', 'or', 'redo', 'rescue', 'retry', 'return', 'self', 'super',
       'then', 'true', 'undef', 'unless', 'until', 'when', 'while', 'yield'
-    ].freeze
+    ].map { |k| Pin::Keyword.new(k) }
 
     methods_with_yieldparam_subtypes = %w[
       Array#each Array#map Array#map! Array#any? Array#all? Array#index
@@ -174,6 +174,6 @@ module Solargraph
       end
     )
 
-    ALL = PINS + OVERRIDES
+    ALL = KEYWORDS + PINS + OVERRIDES
   end
 end
