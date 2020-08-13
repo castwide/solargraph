@@ -7,7 +7,7 @@ module Solargraph
         return EMPTY_ENVIRON unless File.basename(source_map.filename).end_with?('.gemspec')
         @environ ||= Environ.new(
           requires: ['rubygems'],
-          overrides: [
+          pins: [
             Solargraph::Pin::Reference::Override.from_comment(
               'Gem::Specification.new',
               %(
