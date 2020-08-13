@@ -209,7 +209,6 @@ module Solargraph
             yardocs.unshift yd
             result.concat process_yardoc yd, spec
             result.concat add_gem_dependencies(spec) if with_dependencies?
-            stdlib_fill r, result
           end
         rescue Gem::LoadError => e
           base = r.split('/').first
@@ -219,7 +218,6 @@ module Solargraph
           if stdtmp.empty?
             unresolved_requires.push r
           else
-            stdlib_fill base, stdtmp
             result.concat stdtmp
           end
         end
@@ -325,22 +323,6 @@ module Solargraph
         end
       end
       spec
-    end
-
-    # @param path [String]
-    # @param pins [Array<Pin::Base>]
-    # @return [void]
-    def stdlib_fill path, pins
-      StdlibFills.get(path).each do |ovr|
-        pin = pins.select { |p| p.path == ovr.name }.first
-        next if pin.nil?
-        (ovr.tags.map(&:tag_name) + ovr.delete).uniq.each do |tag|
-          pin.docstring.delete_tags tag.to_sym
-        end
-        ovr.tags.each do |tag|
-          pin.docstring.add_tag(tag)
-        end
-      end
     end
 
     def load_core_pins

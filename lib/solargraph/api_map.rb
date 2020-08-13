@@ -93,16 +93,17 @@ module Solargraph
       implicit.clear
       pins = []
       reqs = Set.new
-      bundle.opened.each do |src|
-        implicit.merge new_map_hash[src.filename].environ
-      end
       # @param map [SourceMap]
       new_map_hash.values.each do |map|
         pins.concat map.pins
         reqs.merge map.requires.map(&:name)
       end
-      implicit.merge Convention.for_global(self)
       reqs.merge bundle.workspace.config.required
+      @required = reqs
+      bundle.opened.each do |src|
+        implicit.merge new_map_hash[src.filename].environ
+      end
+      implicit.merge Convention.for_global(self)
       local_path_hash.clear
       unless bundle.workspace.require_paths.empty?
         file_keys = new_map_hash.keys
@@ -134,6 +135,10 @@ module Solargraph
       @rebindable_method_names = nil
       store.block_pins.each { |blk| blk.rebind(self) }
       self
+    end
+
+    def required
+      @required ||= Set.new
     end
 
     # @return [Environ]

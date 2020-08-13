@@ -107,13 +107,4 @@ describe Solargraph::YardMap do
     location = yard_map.require_reference('not_a_gem')
     expect(location).to be_nil
   end
-
-  it 'adds overrides to stdlib' do
-    # Pathname is a stdlib component that doesn't have method return types in
-    # the yardocs. This test makes sure that YardMap injects overrides from
-    # StdlibFills.
-    yard_map = Solargraph::YardMap.new(required: ['pathname'])
-    pin = yard_map.pins.select { |p| p.path == 'Pathname#join' }.first
-    expect(pin.return_type.tag).to eq('Pathname')
-  end
 end
