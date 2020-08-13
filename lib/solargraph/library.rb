@@ -177,7 +177,7 @@ module Solargraph
         lft = source.code[0..offset-1].match(/[\[<, ]([a-z0-9_:]*)\z/i)
         rgt = source.code[offset..-1].match(/^([a-z0-9_]*)(:[a-z0-9_:]*)?[\]>, ]/i)
         if lft && rgt
-          tag = lft[1] + rgt[1]
+          tag = (lft[1] + rgt[1]).sub(/:+$/, '')
           clip = api_map.clip(cursor)
           clip.translate tag
         else
