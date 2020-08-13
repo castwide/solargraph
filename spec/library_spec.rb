@@ -330,6 +330,8 @@ describe Solargraph::Library do
     library.attach source
     pins = library.definitions_at('test.rb', 5, 19)
     expect(pins.map(&:path)).to include('Tagged')
+    pins = library.definitions_at('test.rb', 5, 26)
+    expect(pins.map(&:path)).to include('Tagged')
     pins = library.definitions_at('test.rb', 5, 27)
     expect(pins.map(&:path)).to include('Tagged::Example')
   end
