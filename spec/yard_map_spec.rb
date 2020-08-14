@@ -127,4 +127,10 @@ describe Solargraph::YardMap do
     pin = yard_map.path_pin('Pathname#join')
     expect(pin.return_type.tag).to eq('Pathname')
   end
+
+  it 'maps YAML to Psych' do
+    yard_map = Solargraph::YardMap.new(required: ['yaml'])
+    yaml = yard_map.path_pin('YAML')
+    expect(yaml.return_type.to_s).to eq('Module<Psych>')
+  end
 end
