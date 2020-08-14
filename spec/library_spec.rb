@@ -363,4 +363,15 @@ describe Solargraph::Library do
     pins = library.definitions_at('test.rb', 3, 31)
     expect(pins.map(&:path)).to include('TaggedExample')
   end
+
+  it 'skips comment text outside of tags' do
+    library = Solargraph::Library.new
+    source = Solargraph::Source.load_string(%(
+      # String
+      def foo; end
+    ), 'test.rb')
+    library.attach source
+    pins = library.definitions_at('test.rb', 1, 14)
+    expect(pins).to be_empty
+  end
 end
