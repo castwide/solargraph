@@ -52,6 +52,8 @@ module Solargraph
     def initialize(required: [], gemset: {}, with_dependencies: true)
       # HACK: YardMap needs its own copy of this array
       @required = required.clone
+      # HACK: Hardcoded YAML handling
+      @required.push 'psych' if @required.include?('yaml')
       @with_dependencies = with_dependencies
       @gem_paths = {}
       @stdlib_namespaces = []
@@ -76,6 +78,8 @@ module Solargraph
     # @param new_gemset [Hash{String => String}]
     # @return [Boolean]
     def change new_requires, new_gemset, source_gems = []
+      # HACK: Hardcoded YAML handling
+      new_requires.push 'psych' if new_requires.include?('yaml')
       if new_requires.uniq.sort == required.uniq.sort && new_gemset == gemset && @source_gems.uniq.sort == source_gems.uniq.sort
         false
       else
@@ -227,6 +231,11 @@ module Solargraph
           cache.set_path_pins r, result
           pins.concat result
         end
+      end
+      if required.include?('yaml') && required.include?('psych')
+        # HACK: Hardcoded YAML handling
+        pin = path_pin('YAML')
+        pin.instance_variable_set(:@return_type, ComplexType.parse('Module<Psych>'))
       end
     end
 
