@@ -187,9 +187,10 @@ module Solargraph
     def process_requires
       pins.replace core_pins
       unresolved_requires.clear
+      environ = Convention.for_global(self)
       done = []
       from_std = []
-      required.each do |r|
+      (required + environ.requires).each do |r|
         next if r.nil? || r.empty? || done.include?(r)
         done.push r
         cached = cache.get_path_pins(r)
@@ -237,6 +238,7 @@ module Solargraph
         pin = path_pin('YAML')
         pin.instance_variable_set(:@return_type, ComplexType.parse('Module<Psych>'))
       end
+      pins.concat environ.pins
     end
 
     # @param spec [Gem::Specification]

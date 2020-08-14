@@ -17,9 +17,9 @@ module Solargraph
       # The Environ for an api map.
       # Subclasses can override this method.
       #
-      # @param api_map [ApiMap]
+      # @param yard_map [YardMap]
       # @return [Environ]
-      def global api_map
+      def global yard_map
         EMPTY_ENVIRON
       end
     end
