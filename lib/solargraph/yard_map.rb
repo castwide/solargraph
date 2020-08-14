@@ -183,7 +183,6 @@ module Solargraph
     def process_requires
       pins.replace core_pins
       unresolved_requires.clear
-      # stdnames = {}
       done = []
       from_std = []
       required.each do |r|
@@ -228,13 +227,6 @@ module Solargraph
           cache.set_path_pins r, result
           pins.concat result
         end
-      end
-      fills = []
-      required.each do |path|
-        fills.concat StdlibFills.get(path)
-      end
-      unless fills.empty?
-        pins.replace ApiMap::Store.new(pins + fills).pins.reject { |pin| pin.is_a?(Pin::Reference::Override) }
       end
     end
 
@@ -392,8 +384,11 @@ module Solargraph
       else
         read_stdlib_and_save_cache(base, ser)
       end
-      # result.concat Convention::Stdlib::StdlibFills.get(base)
-      # ApiMap::Store.new(result).pins.reject { |pin| pin.is_a?(Pin::Reference::Override) }
+      fills = StdlibFills.get(base)
+      unless fills.empty?
+        result = ApiMap::Store.new(result + fills).pins.reject { |pin| pin.is_a?(Pin::Reference::Override) }
+      end
+      result
     end
 
     def read_stdlib_and_save_cache base, ser
