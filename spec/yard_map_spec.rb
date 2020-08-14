@@ -107,4 +107,24 @@ describe Solargraph::YardMap do
     location = yard_map.require_reference('not_a_gem')
     expect(location).to be_nil
   end
+
+  it 'maps core Errno classes' do
+    yard_map = Solargraph::YardMap.new
+    store = Solargraph::ApiMap::Store.new(yard_map.pins)
+    Errno.constants.each do |const|
+      pin = store.get_path_pins("Errno::#{const}").first
+      expect(pin).to be_a(Solargraph::Pin::Namespace)
+      superclass = store.get_superclass(pin.path)
+      expect(superclass).to eq('SystemCallError')
+    end
+  end
+
+  it 'adds overrides' do
+    # Pathname is a stdlib component that doesn't have method return types in
+    # the yardocs. This test makes sure that YardMap injects overrides from
+    # StdlibFills.
+    yard_map = Solargraph::YardMap.new(required: ['pathname'])
+    pin = yard_map.path_pin('Pathname#join')
+    expect(pin.return_type.tag).to eq('Pathname')
+  end
 end

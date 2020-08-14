@@ -15,6 +15,8 @@ module Solargraph
     autoload :CoreGen,  'solargraph/yard_map/core_gen'
     autoload :Mapper,   'solargraph/yard_map/mapper'
     autoload :RdocToYard, 'solargraph/yard_map/rdoc_to_yard'
+    autoload :CoreFills, 'solargraph/yard_map/core_fills'
+    autoload :StdlibFills, 'solargraph/yard_map/stdlib_fills'
 
     CoreDocs.require_minimum
 
@@ -179,7 +181,7 @@ module Solargraph
 
     # @return [void]
     def process_requires
-      pins.clear
+      pins.replace core_pins
       unresolved_requires.clear
       # stdnames = {}
       done = []
@@ -227,7 +229,13 @@ module Solargraph
           pins.concat result
         end
       end
-      pins.concat core_pins
+      fills = []
+      required.each do |path|
+        fills.concat StdlibFills.get(path)
+      end
+      unless fills.empty?
+        pins.replace ApiMap::Store.new(pins + fills).pins.reject { |pin| pin.is_a?(Pin::Reference::Override) }
+      end
     end
 
     # @param spec [Gem::Specification]
@@ -328,7 +336,7 @@ module Solargraph
     def load_core_pins
       yd = CoreDocs.yardoc_file
       ser = File.join(File.dirname(yd), 'core.ser')
-      if File.file?(ser)
+      result = if File.file?(ser)
         file = File.open(ser, 'rb')
         dump = file.read
         file.close
@@ -342,6 +350,7 @@ module Solargraph
       else
         read_core_and_save_cache(yd, ser)
       end
+      ApiMap::Store.new(result + CoreFills::ALL).pins.reject { |pin| pin.is_a?(Pin::Reference::Override) }
     end
 
     def read_core_and_save_cache yd, ser
@@ -368,7 +377,7 @@ module Solargraph
 
     def load_stdlib_pins base
       ser = File.join(File.dirname(CoreDocs.yardoc_stdlib_file), "#{base}.ser")
-      if File.file?(ser)
+      result = if File.file?(ser)
         Solargraph.logger.info "Loading #{base} stdlib from cache"
         file = File.open(ser, 'rb')
         dump = file.read
@@ -383,6 +392,8 @@ module Solargraph
       else
         read_stdlib_and_save_cache(base, ser)
       end
+      # result.concat Convention::Stdlib::StdlibFills.get(base)
+      # ApiMap::Store.new(result).pins.reject { |pin| pin.is_a?(Pin::Reference::Override) }
     end
 
     def read_stdlib_and_save_cache base, ser

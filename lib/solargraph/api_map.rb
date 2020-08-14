@@ -98,7 +98,7 @@ module Solargraph
       bench.opened.each do |src|
         implicit.merge new_map_hash[src.filename].environ
       end
-      implicit.merge Convention.for_global(self)
+      # implicit.merge Convention.for_global(self)
       local_path_hash.clear
       unless bench.workspace.require_paths.empty?
         file_keys = new_map_hash.keys
@@ -116,11 +116,11 @@ module Solargraph
         end
       end
       reqs.merge implicit.requires
-      pins.concat implicit.pins
+      # pins.concat implicit.pins
       br = reqs.include?('bundler/require') ? require_from_bundle(bench.workspace.directory) : {}
       reqs.merge br.keys
       yard_map.change(reqs.to_a, br, bench.workspace.gemnames)
-      new_store = Store.new(pins + yard_map.pins)
+      new_store = Store.new(yard_map.pins + implicit.pins + pins)
       @cache.clear
       @source_map_hash = new_map_hash
       @store = new_store
