@@ -10,12 +10,12 @@ module Solargraph
   # stdlib, and gems.
   #
   class YardMap
-    autoload :Cache,    'solargraph/yard_map/cache'
-    autoload :CoreDocs, 'solargraph/yard_map/core_docs'
-    autoload :CoreGen,  'solargraph/yard_map/core_gen'
-    autoload :Mapper,   'solargraph/yard_map/mapper'
-    autoload :RdocToYard, 'solargraph/yard_map/rdoc_to_yard'
-    autoload :CoreFills, 'solargraph/yard_map/core_fills'
+    autoload :Cache,       'solargraph/yard_map/cache'
+    autoload :CoreDocs,    'solargraph/yard_map/core_docs'
+    autoload :CoreGen,     'solargraph/yard_map/core_gen'
+    autoload :Mapper,      'solargraph/yard_map/mapper'
+    autoload :RdocToYard,  'solargraph/yard_map/rdoc_to_yard'
+    autoload :CoreFills,   'solargraph/yard_map/core_fills'
     autoload :StdlibFills, 'solargraph/yard_map/stdlib_fills'
 
     CoreDocs.require_minimum
