@@ -15,7 +15,7 @@ module Solargraph
     @@conventions = Set.new
 
     # @param convention [Class<Convention::Base>]
-    # @return [Convention::Base]
+    # @return [void]
     def self.register convention
       @@conventions.add convention.new
     end
