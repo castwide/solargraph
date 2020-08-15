@@ -22,7 +22,7 @@ module Solargraph
           Override.method_return('Set#add', 'self'),
           Override.method_return('Set#add?', 'self, nil'),
           Override.method_return('Set#classify', 'Hash'),
-          Override.from_comment('Set#each', '@yieldparam_single_parameter')
+          Override.from_comment('Set#each', '@yieldparam_single_parameter'),
         ]
       }.freeze
 
