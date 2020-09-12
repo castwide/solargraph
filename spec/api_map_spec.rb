@@ -704,4 +704,22 @@ describe Solargraph::ApiMap do
     expect(names).to include('@var2')
     expect(names).not_to include('@var3')
   end
+
+  it 'finds class methods from modules included from class << self' do
+    source = Solargraph::Source.load_string(%(
+      module Extender
+        def foo; end
+      end
+
+      class Example
+        class << self
+          include Extender
+        end
+      end
+    ))
+    api_map = Solargraph::ApiMap.new
+    api_map.map source
+    pins = api_map.get_methods('Example', scope: :class)
+    expect(pins.map(&:name)).to include('foo')
+  end
 end
