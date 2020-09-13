@@ -386,9 +386,7 @@ module Solargraph
     # @return [Array<Solargraph::Pin::Base>]
     def get_path_suggestions path
       return [] if path.nil?
-      result = []
-      result.concat store.get_path_pins(path)
-      resolve_method_aliases(result)
+      resolve_method_aliases store.get_path_pins(path)
     end
 
     # Get an array of pins that match the specified path.
@@ -447,7 +445,7 @@ module Solargraph
     # @return [Array<Solargraph::Pin::Base>]
     def locate_pins location
       return [] if location.nil? || !source_map_hash.has_key?(location.filename)
-      source_map_hash[location.filename].locate_pins(location)
+      resolve_method_aliases source_map_hash[location.filename].locate_pins(location)
     end
 
     # @raise [FileNotFoundError] if the cursor's file is not in the ApiMap
@@ -464,7 +462,7 @@ module Solargraph
     # @return [Array<Pin::Symbol>]
     def document_symbols filename
       return [] unless source_map_hash.has_key?(filename) # @todo Raise error?
-      source_map_hash[filename].document_symbols
+      resolve_method_aliases source_map_hash[filename].document_symbols
     end
 
     # @return [Array<SourceMap>]
@@ -723,7 +721,7 @@ module Solargraph
       result = []
       pins.each do |pin|
         resolved = resolve_method_alias(pin)
-        next unless visibility.include?(resolved.visibility)
+        next if resolved.respond_to?(:visibility) && !visibility.include?(resolved.visibility)
         result.push resolved
       end
       result
@@ -737,15 +735,16 @@ module Solargraph
       origin = get_method_stack(pin.full_context.namespace, pin.original, scope: pin.scope).first
       @method_alias_stack.pop
       return pin if origin.nil?
-      Pin::Method.new(
+      args = {
         location: pin.location,
         closure: pin.closure,
         name: pin.name,
         comments: origin.comments,
         scope: origin.scope,
-        visibility: origin.visibility,
-        parameters: origin.parameters
-      )
+        visibility: origin.visibility
+      }
+      args[:parameters] = origin.parameters if origin.is_a?(Pin::Method)
+      origin.class.new **args
     end
   end
 end

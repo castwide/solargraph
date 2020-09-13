@@ -84,6 +84,14 @@ module Solargraph
         @explicit
       end
 
+      def completion_item_kind
+        Solargraph::LanguageServer::CompletionItemKinds::METHOD
+      end
+
+      def symbol_kind
+        Solargraph::LanguageServer::SymbolKinds::METHOD
+      end
+
       private
 
       # @return [ComplexType]
