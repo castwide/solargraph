@@ -113,7 +113,7 @@ module Solargraph
       #
       # @param *strings [Array<String>] The type definitions to parse
       # @param partial [Boolean] True if the string is part of a another type
-      # @return [ComplexType]
+      # @return [ComplexType, Array, nil]
       def parse *strings, partial: false
         @cache ||= {}
         unless partial

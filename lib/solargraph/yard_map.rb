@@ -158,10 +158,12 @@ module Solargraph
       @cache ||= YardMap::Cache.new
     end
 
+    # @return [Hash]
     def pin_class_hash
       @pin_class_hash ||= pins.to_set.classify(&:class).transform_values(&:to_a)
     end
 
+    # @return [Array<Pin::Base>]
     def pins_by_class klass
       @pin_select_cache[klass] ||= pin_class_hash.select { |key, _| key <= klass }.values.flatten
     end

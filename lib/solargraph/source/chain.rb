@@ -134,7 +134,7 @@ module Solargraph
             @@inference_stack.pop
             if type.defined?
               possibles.push type
-              break if pins.first.is_a?(Pin::BaseMethod)
+              break if pin.is_a?(Pin::BaseMethod)
             end
           end
           @@inference_depth -= 1
