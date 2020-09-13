@@ -12,7 +12,7 @@ module Solargraph
 
     # @param types [Array<UniqueType>]
     def initialize types = [UniqueType::UNDEFINED]
-      @items = types
+      @items = types.uniq(&:to_s)
     end
 
     # @param api_map [ApiMap]
