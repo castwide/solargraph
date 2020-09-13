@@ -568,6 +568,24 @@ describe Solargraph::ApiMap do
     expect(fqns).to eq('Foo::Bar')
   end
 
+  it "qualifies namespaces with conflicting includes" do
+    source = Solargraph::Source.load_string(%(
+      module Bar; end
+      module Foo
+        module Bar; end
+      end
+      module Foo
+        module Includer
+          include Bar
+        end
+      end
+    ))
+    api_map = Solargraph::ApiMap.new
+    api_map.map source
+    fqns = api_map.qualify('Bar', 'Foo::Includer')
+    expect(fqns).to eq('Foo::Bar')
+  end
+
   it "qualifies namespaces from root includes" do
     source = Solargraph::Source.load_string(%(
       module A

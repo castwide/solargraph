@@ -657,6 +657,7 @@ module Solargraph
       return nil if name.nil?
       return nil if skip.include?(root)
       skip.add root
+      possibles = []
       if name == ''
         if root == ''
           return ''
@@ -672,16 +673,19 @@ module Solargraph
           incs = store.get_includes(roots.join('::'))
           incs.each do |inc|
             foundinc = inner_qualify(name, inc, skip)
-            return foundinc unless foundinc.nil?
+            possibles.push foundinc unless foundinc.nil?
           end
           roots.pop
         end
-        incs = store.get_includes('')
-        incs.each do |inc|
-          foundinc = inner_qualify(name, inc, skip)
-          return foundinc unless foundinc.nil?
+        if possibles.empty?
+          incs = store.get_includes('')
+          incs.each do |inc|
+            foundinc = inner_qualify(name, inc, skip)
+            possibles.push foundinc unless foundinc.nil?
+          end
         end
         return name if store.namespace_exists?(name)
+        return possibles.last
       end
     end
 
