@@ -25,4 +25,4 @@ before_install:
 - ruby ./travis-bundler.rb
 - bundle install
 before_script: yard gems
-script: rake test
+script: rspec
