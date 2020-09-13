@@ -54,7 +54,7 @@ module Solargraph
         # @param a [Array]
         # @return [String]
         def arg_name a
-          a[0].match(/[A-Za-z0-9_]*/)[0]
+          a[0].gsub(/[^a-z0-9_]/i, '')
         end
 
         # @param a [Array]
@@ -66,10 +66,10 @@ module Solargraph
             :restarg
           elsif a[0].start_with?('&')
             :blockarg
+          elsif a[0].end_with?(':')
+            a[1] ? :kwoptarg : :kwarg
           elsif a[1]
             :optarg
-          elsif a[0].end_with?(':')
-            a[1] ? :kwarg : :kwoptarg
           else
             :arg
           end
