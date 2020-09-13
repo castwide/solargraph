@@ -58,7 +58,7 @@ module Solargraph
         end
 
         # @param a [Array]
-        # @return [Symbol]
+        # @return [::Symbol]
         def arg_type a
           if a[0].start_with?('**')
             :kwrestarg
