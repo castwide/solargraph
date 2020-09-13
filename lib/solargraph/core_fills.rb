@@ -53,6 +53,7 @@ module Solargraph
   @return_single_parameter
 @return_single_parameter
       )),
+      Override.method_return('Array#concat', 'Array'),
       Override.from_comment('Array#first', %(
 @overload first(num)
   @param num [Integer]
@@ -65,6 +66,7 @@ module Solargraph
   @return [self]
 @return_single_parameter
       )),
+      Override.method_return('Array#map', 'Array'),
       Override.method_return('Array#uniq', 'self'),
       Override.method_return('Array#zip', 'Array, nil'),
 
@@ -102,16 +104,14 @@ module Solargraph
 @param_tuple
       )),
 
+      Override.method_return('Hash#merge', 'Hash'),
+
       Override.from_comment('Integer#+', %(
 @param y [Numeric]
 @return [Numeric]
       )),
 
       Override.method_return('Kernel#puts', 'nil'),
-
-      # Override.method_return('Module#attr_reader', 'void'),
-      # Override.method_return('Module#attr_writer', 'void'),
-      # Override.method_return('Module#attr_accessor', 'void'),
 
       Override.from_comment('Numeric#+', %(
 @param y [Numeric]
