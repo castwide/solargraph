@@ -40,20 +40,8 @@ module Solargraph
     # @param position [Position]
     # @return [Integer]
     def self.to_offset text, position
-      result = 0
-      feed = 0
-      line = position.line
-      column = position.character
-      text.lines.each do |l|
-        line_length = l.length
-        if feed == line
-          result += column
-          break
-        end
-        result += line_length
-        feed += 1
-      end
-      result
+      return 0 if text.empty?
+      text.lines[0...position.line].sum(&:length) + position.character
     end
 
     # Get a numeric offset for the specified text and a position identified
