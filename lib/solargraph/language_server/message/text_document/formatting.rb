@@ -14,8 +14,10 @@ module Solargraph
           class BlankRubocopFormatter < ::RuboCop::Formatter::BaseFormatter; end
 
           def process
-            original = host.read_text(params['textDocument']['uri'])
-            args = cli_args(params['textDocument']['uri'])
+            file_uri = params['textDocument']['uri']
+            config = host.formatter_config(file_uri)
+            original = host.read_text(file_uri)
+            args = cli_args(file_uri, config)
 
             options, paths = RuboCop::Options.new.parse(args)
             options[:stdin] = original
@@ -31,14 +33,15 @@ module Solargraph
 
           private
 
-          def cli_args file
+          def cli_args file, config
             [
-              '--auto-correct',
+              config['cops'] == 'all' ? '--auto-correct-all' : '--auto-correct',
               '--cache', 'false',
               '--format', 'Solargraph::LanguageServer::Message::' \
                           'TextDocument::Formatting::BlankRubocopFormatter',
+              config['extra_args'],
               file
-            ]
+            ].flatten
           end
 
           # @param original [String]
