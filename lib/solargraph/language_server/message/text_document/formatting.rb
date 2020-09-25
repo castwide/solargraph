@@ -11,28 +11,35 @@ module Solargraph
         class Formatting < Base
           include Solargraph::Diagnostics::RubocopHelpers
 
+          class BlankRubocopFormatter < ::RuboCop::Formatter::BaseFormatter; end
+
           def process
-            filename = uri_to_file(params['textDocument']['uri'])
-            Dir.mktmpdir do |tempdir|
-              tempfile = File.join(tempdir, File.basename(filename))
-              rubocop_file = Diagnostics::RubocopHelpers.find_rubocop_file(filename)
-              original = host.read_text(params['textDocument']['uri'])
-              File.write tempfile, original
-              begin
-                args = ['-a', '-f', 'fi', tempfile]
-                args.unshift('-c', fix_drive_letter(rubocop_file)) unless rubocop_file.nil?
-                options, paths = RuboCop::Options.new.parse(args)
-                store = RuboCop::ConfigStore.new
-                redirect_stdout { RuboCop::Runner.new(options, store).run(paths) }
-                result = File.read(tempfile)
-                format original, result
-              rescue RuboCop::ValidationError, RuboCop::ConfigNotFoundError => e
-                set_error(Solargraph::LanguageServer::ErrorCodes::INTERNAL_ERROR, "[#{e.class}] #{e.message}")
-              end
+            original = host.read_text(params['textDocument']['uri'])
+            args = cli_args(params['textDocument']['uri'])
+
+            options, paths = RuboCop::Options.new.parse(args)
+            options[:stdin] = original
+            redirect_stdout do
+              RuboCop::Runner.new(options, RuboCop::ConfigStore.new).run(paths)
             end
+            result = options[:stdin]
+
+            format original, result
+          rescue RuboCop::ValidationError, RuboCop::ConfigNotFoundError => e
+            set_error(Solargraph::LanguageServer::ErrorCodes::INTERNAL_ERROR, "[#{e.class}] #{e.message}")
           end
 
           private
+
+          def cli_args file
+            [
+              '--auto-correct',
+              '--cache', 'false',
+              '--format', 'Solargraph::LanguageServer::Message::' \
+                          'TextDocument::Formatting::BlankRubocopFormatter',
+              file
+            ]
+          end
 
           # @param original [String]
           # @param result [String]
