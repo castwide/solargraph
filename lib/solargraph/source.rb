@@ -284,7 +284,7 @@ module Solargraph
 
     FOLDING_NODE_TYPES = if Parser.rubyvm?
       %i[
-        CLASS SCLASS MODULE DEFN DEFS IF WHILE UNLESS ITER STR
+        CLASS SCLASS MODULE DEFN DEFS IF WHILE UNLESS ITER STR HASH ARRAY
       ].freeze
     else
       %i[
@@ -345,18 +345,22 @@ module Solargraph
 
     # @param top [Parser::AST::Node]
     # @param result [Array<Range>]
+    # @param parent [Symbol]
     # @return [void]
-    def inner_folding_ranges top, result = []
+    def inner_folding_ranges top, result = [], parent = nil
       # return unless top.is_a?(::Parser::AST::Node)
       return unless Parser.is_ast_node?(top)
       if FOLDING_NODE_TYPES.include?(top.type)
-        range = Range.from_node(top)
-        if result.empty? || range.start.line > result.last.start.line
-          result.push range unless range.ending.line - range.start.line < 2
+        # @todo Smelly exception for hash's first-level array in RubyVM
+        unless top.type == :ARRAY && parent == :HASH
+          range = Range.from_node(top)
+          if result.empty? || range.start.line > result.last.start.line
+            result.push range unless range.ending.line - range.start.line < 2
+          end
         end
       end
       top.children.each do |child|
-        inner_folding_ranges(child, result)
+        inner_folding_ranges(child, result, top.type)
       end
     end
 
