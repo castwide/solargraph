@@ -148,6 +148,10 @@ module Solargraph
       Override.method_return('String#lines', 'Array<String>'),
       Override.from_comment('String#each_line', %(
 @yieldparam [String]
+      )),
+      Override.from_comment('String.new', %(
+@overload new(*)
+  @return [self]
       ))
     ].concat(
       methods_with_yieldparam_subtypes.map do |path|
