@@ -15,6 +15,7 @@ module Solargraph
     autoload :SourceToYard,   'solargraph/api_map/source_to_yard'
     autoload :Store,          'solargraph/api_map/store'
     autoload :BundlerMethods, 'solargraph/api_map/bundler_methods'
+    autoload :ReqDiff,        'solargraph/api_map/req_diff'
 
     include SourceToYard
     include BundlerMethods
@@ -25,6 +26,7 @@ module Solargraph
     # @param pins [Array<Solargraph::Pin::Base>]
     def initialize pins: []
       @source_map_hash = {}
+      @require_diff = ReqDiff.new
       @cache = Cache.new
       @method_alias_stack = []
       index pins
@@ -100,19 +102,7 @@ module Solargraph
       reqs.merge bundle.workspace.config.required
       local_path_hash.clear
       unless bundle.workspace.require_paths.empty?
-        file_keys = new_map_hash.keys
-        workspace_path = Pathname.new(bundle.workspace.directory)
-        reqs.delete_if do |r|
-          bundle.workspace.require_paths.any? do |base|
-            pn = workspace_path.join(base, "#{r}.rb").to_s
-            if file_keys.include? pn
-              local_path_hash[r] = pn
-              true
-            else
-              false
-            end
-          end
-        end
+        local_path_hash.merge! @require_diff.unresolved_requires(bundle, reqs, new_map_hash)
       end
       reqs.merge implicit.requires
       pins.concat implicit.overrides
