@@ -14,7 +14,7 @@ module Solargraph
         def initialize node, filename = nil, in_block = false
           @node = node
           @filename = filename
-          @in_block = in_block
+          @in_block = in_block ? 1 : 0
         end
 
         # @return [Source::Chain]
@@ -51,9 +51,9 @@ module Solargraph
           return generate_links(n.children[0]) if n.type == :splat
           result = []
           if n.type == :block
-            @in_block = true
+            @in_block += 1
             result.concat generate_links(n.children[0])
-            @in_block = false
+            @in_block -= 1
           elsif n.type == :send
             if n.children[0].is_a?(::Parser::AST::Node)
               result.concat generate_links(n.children[0])
@@ -61,23 +61,23 @@ module Solargraph
               n.children[2..-1].each do |c|
                 args.push NodeChainer.chain(c)
               end
-              result.push Chain::Call.new(n.children[1].to_s, args, @in_block || block_passed?(n))
+              result.push Chain::Call.new(n.children[1].to_s, args, @in_block > 0 || block_passed?(n))
             elsif n.children[0].nil?
               args = []
               n.children[2..-1].each do |c|
                 args.push NodeChainer.chain(c)
               end
-              result.push Chain::Call.new(n.children[1].to_s, args, @in_block || block_passed?(n))
+              result.push Chain::Call.new(n.children[1].to_s, args, @in_block > 0 || block_passed?(n))
             else
               raise "No idea what to do with #{n}"
             end
           elsif n.type == :self
             result.push Chain::Head.new('self')
           elsif n.type == :zsuper
-            result.push Chain::ZSuper.new('super', @in_block || block_passed?(n))
+            result.push Chain::ZSuper.new('super', @in_block > 0 || block_passed?(n))
           elsif n.type == :super
             args = n.children.map { |c| NodeChainer.chain(c) }
-            result.push Chain::Call.new('super', args, @in_block || block_passed?(n))
+            result.push Chain::Call.new('super', args, @in_block > 0 || block_passed?(n))
           elsif n.type == :const
             const = unpack_name(n)
             result.push Chain::Constant.new(const)

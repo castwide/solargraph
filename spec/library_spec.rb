@@ -374,4 +374,46 @@ describe Solargraph::Library do
     pins = library.definitions_at('test.rb', 1, 14)
     expect(pins).to be_empty
   end
+
+  it 'marks aliases as methods or attributes in completion items' do
+    library = Solargraph::Library.new
+    source = Solargraph::Source.load_string(%(
+      class Example
+        attr_reader :foo
+        def bar; end
+
+        alias foo_alias foo
+        alias bar_alias bar
+
+        def baz
+          foo_
+          bar_
+        end
+      end
+    ), 'test.rb')
+    library.attach source
+    foo_alias = library.completions_at('test.rb', 9, 14).pins.first
+    expect(foo_alias.completion_item_kind).to eq(Solargraph::LanguageServer::CompletionItemKinds::PROPERTY)
+    bar_alias = library.completions_at('test.rb', 10, 14).pins.first
+    expect(bar_alias.completion_item_kind).to eq(Solargraph::LanguageServer::CompletionItemKinds::METHOD)
+  end
+
+  it 'marks aliases as methods or attributes in definitions' do
+    library = Solargraph::Library.new
+    source = Solargraph::Source.load_string(%(
+      class Example
+        attr_reader :foo
+        def bar; end
+
+        alias foo_alias foo
+        alias bar_alias bar
+      end
+    ), 'test.rb')
+    library.attach source
+    pins = library.document_symbols('test.rb')
+    foo_alias = pins.select { |pin| pin.name == 'foo_alias' }.first
+    expect(foo_alias.symbol_kind).to eq(Solargraph::LanguageServer::SymbolKinds::PROPERTY)
+    bar_alias = pins.select { |pin| pin.name == 'bar_alias' }.first
+    expect(bar_alias.symbol_kind).to eq(Solargraph::LanguageServer::SymbolKinds::METHOD)
+  end
 end

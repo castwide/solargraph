@@ -91,7 +91,8 @@ module Solargraph
             return unless Parser.is_ast_node?(node.children.last)
             node.children.last.children[0..-2].each do |i|
               next unless [:COLON2, :COLON3, :CONST].include?(i.type)
-              pins.push Pin::Reference::Include.new(
+              type = region.scope == :class ? Pin::Reference::Extend : Pin::Reference::Include
+              pins.push type.new(
                 location: get_node_location(i),
                 closure: region.closure,
                 name: unpack_name(i)

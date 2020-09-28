@@ -568,6 +568,24 @@ describe Solargraph::ApiMap do
     expect(fqns).to eq('Foo::Bar')
   end
 
+  it "qualifies namespaces with conflicting includes" do
+    source = Solargraph::Source.load_string(%(
+      module Bar; end
+      module Foo
+        module Bar; end
+      end
+      module Foo
+        module Includer
+          include Bar
+        end
+      end
+    ))
+    api_map = Solargraph::ApiMap.new
+    api_map.map source
+    fqns = api_map.qualify('Bar', 'Foo::Includer')
+    expect(fqns).to eq('Foo::Bar')
+  end
+
   it "qualifies namespaces from root includes" do
     source = Solargraph::Source.load_string(%(
       module A
@@ -703,5 +721,23 @@ describe Solargraph::ApiMap do
     expect(names).to include('@var1')
     expect(names).to include('@var2')
     expect(names).not_to include('@var3')
+  end
+
+  it 'finds class methods from modules included from class << self' do
+    source = Solargraph::Source.load_string(%(
+      module Extender
+        def foo; end
+      end
+
+      class Example
+        class << self
+          include Extender
+        end
+      end
+    ))
+    api_map = Solargraph::ApiMap.new
+    api_map.map source
+    pins = api_map.get_methods('Example', scope: :class)
+    expect(pins.map(&:name)).to include('foo')
   end
 end

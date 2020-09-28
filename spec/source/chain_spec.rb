@@ -295,4 +295,28 @@ describe Solargraph::Source::Chain do
     type = chain.infer(api_map, Solargraph::Pin::ROOT_PIN, [])
     expect(type.tag).to eq('Foo::Bar')
   end
+
+  it 'detects blocks in multiple calls' do
+    source = Solargraph::Source.load_string(%(
+      foo { |x| x }.bar { |y| y }
+    ))
+    chain = Solargraph::Parser.chain(source.node)
+    expect(chain.links.length).to eq(2)
+    expect(chain.links[0]).to be_with_block
+    expect(chain.links[1]).to be_with_block
+  end
+
+  it 'infers instance variables from multiple assignments' do
+    source = Solargraph::Source.load_string(%(
+      def foo
+        @foo = nil
+        @foo = 'foo'
+      end
+    ))
+    api_map = Solargraph::ApiMap.new
+    api_map.map source
+    pin = api_map.get_path_pins('#foo').first
+    type = pin.probe(api_map)
+    expect(type.tag).to eq('String')
+  end
 end

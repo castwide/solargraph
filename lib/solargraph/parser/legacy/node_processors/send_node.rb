@@ -90,7 +90,8 @@ module Solargraph
             if node.children[2].is_a?(AST::Node) && node.children[2].type == :const
               cp = region.closure
               node.children[2..-1].each do |i|
-                pins.push Pin::Reference::Include.new(
+                type = region.scope == :class ? Pin::Reference::Extend : Pin::Reference::Include
+                pins.push type.new(
                   location: get_node_location(i),
                   closure: cp,
                   name: unpack_name(i)

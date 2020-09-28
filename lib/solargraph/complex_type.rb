@@ -12,7 +12,7 @@ module Solargraph
 
     # @param types [Array<UniqueType>]
     def initialize types = [UniqueType::UNDEFINED]
-      @items = types
+      @items = types.uniq(&:to_s)
     end
 
     # @param api_map [ApiMap]
@@ -113,7 +113,7 @@ module Solargraph
       #
       # @param *strings [Array<String>] The type definitions to parse
       # @param partial [Boolean] True if the string is part of a another type
-      # @return [ComplexType]
+      # @return [ComplexType, Array, nil]
       def parse *strings, partial: false
         @cache ||= {}
         unless partial

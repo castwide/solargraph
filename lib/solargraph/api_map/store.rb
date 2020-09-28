@@ -218,7 +218,7 @@ module Solargraph
         @pin_select_cache = {}
         @namespace_map = set.classify(&:namespace).transform_values(&:to_a)
         @path_pin_hash = set.classify(&:path).transform_values(&:to_a)
-        @namespaces = @path_pin_hash.keys.compact
+        @namespaces = @path_pin_hash.keys.compact.to_set
         pins_by_class(Pin::Reference::Include).each do |pin|
           include_references[pin.namespace] ||= []
           include_references[pin.namespace].push pin.name

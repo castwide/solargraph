@@ -61,4 +61,20 @@ describe 'Node processor (generic)' do
     ))
     expect(map.locals.first.decl).to eq(:blockarg)
   end
+
+  it 'generates extend pins for modules included in class << self' do
+    map = Solargraph::SourceMap.load_string(%(
+      module Extender
+        def foo; end
+      end
+
+      class Example
+        class << self
+          include Extender
+        end
+      end
+    ))
+    ext = map.pins.select { |pin| pin.is_a?(Solargraph::Pin::Reference::Extend) }.first
+    expect(ext.name).to eq('Extender')
+  end
 end
