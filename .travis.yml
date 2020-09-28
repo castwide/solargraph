@@ -17,8 +17,6 @@ matrix:
     - rvm: 2.7
       os: osx
   allow_failures:
-    - rvm: 2.7
-      os: osx
     - rvm: jruby-head
       
 before_install:
