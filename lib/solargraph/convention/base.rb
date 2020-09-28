@@ -14,7 +14,7 @@ module Solargraph
         EMPTY_ENVIRON
       end
 
-      # The Environ for an api map.
+      # The Environ for a YARD map.
       # Subclasses can override this method.
       #
       # @param yard_map [YardMap]
