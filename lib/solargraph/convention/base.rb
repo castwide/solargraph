@@ -2,6 +2,12 @@
 
 module Solargraph
   module Convention
+    # The base class for Conventions.
+    #
+    # A Convention provides Environs that customize ApiMaps with additional
+    # pins and other information. Subclasses should implement the `local` and
+    # `global` methods as necessary.
+    #
     class Base
       EMPTY_ENVIRON = Environ.new
 

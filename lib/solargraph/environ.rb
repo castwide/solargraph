@@ -1,6 +1,11 @@
 # frozen_string_literal: true
 
 module Solargraph
+  # A collection of additional data, such as map pins and required paths, that
+  # can be added to an ApiMap.
+  #
+  # Conventions are used to add Environs.
+  #
   class Environ
     # @return [Array<String>]
     attr_reader :requires
