@@ -10,8 +10,14 @@ end
 
 unless Array.method_defined?(:sum)
   class Array
-    def sum
-      inject(0, :+)
+    def sum &block
+      inject(0) do |s, x|
+        if block
+          s + block.call(x)
+        else
+          s + x
+        end
+      end
     end
   end
 end
