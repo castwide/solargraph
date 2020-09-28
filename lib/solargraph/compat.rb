@@ -7,3 +7,11 @@ unless Hash.method_defined?(:transform_values)
     end
   end
 end
+
+unless Array.method_defined?(:sum)
+  class Array
+    def sum
+      inject(0, :+)
+    end
+  end
+end
