@@ -1,39 +1,39 @@
 # frozen_string_literal: true
 
 module Solargraph
-  module Pin
-    module YardPin
-      class Method < Pin::Method
-        include YardMixin
+  class YardMap
+    class Mapper
+      class ToMethod
+        include YardMap::Helpers
 
-        # @param code_object [YARD::CodeObjects::Base]
-        # @param name [String, nil]
-        # @param scope [Symbol, nil]
-        # @param visibility [Symbol, nil]
-        # @param closure [Solargraph::Pin::Closure, nil]
-        # @param spec [Gem::Specification]
-        def initialize code_object, name = nil, scope = nil, visibility = nil, closure = nil, spec = nil
+        def make code_object, name = nil, scope = nil, visibility = nil, closure = nil, spec = nil
           closure ||= Solargraph::Pin::Namespace.new(
             name: code_object.namespace.to_s,
             gates: [code_object.namespace.to_s]
           )
-          super(
-            location: object_location(code_object, spec),
+          location = object_location(code_object, spec)
+          comments = code_object.docstring ? code_object.docstring.all.to_s : ''
+          Pin::Method.new(
+            location: location,
             closure: closure,
             name: name || code_object.name.to_s,
-            comments: code_object.docstring ? code_object.docstring.all.to_s : '',
+            comments: comments,
             scope: scope || code_object.scope,
             visibility: visibility || code_object.visibility,
-            parameters: get_parameters(code_object),
+            parameters: get_parameters(code_object, location, comments),
             explicit: code_object.is_explicit?
           )
+        end
+
+        def self.make code_object, name = nil, scope = nil, visibility = nil, closure = nil, spec = nil
+          new.make code_object, name, scope, visibility, closure, spec
         end
 
         private
 
         # @param code_object [YARD::CodeObjects::Base]
         # @return [Array<Solargraph::Pin::Parameter>]
-        def get_parameters code_object
+        def get_parameters code_object, location, comments
           return [] unless code_object.is_a?(YARD::CodeObjects::MethodObject)
           # HACK: Skip `nil` and `self` parameters that are sometimes emitted
           # for methods defined in C

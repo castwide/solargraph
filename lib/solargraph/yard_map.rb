@@ -17,6 +17,8 @@ module Solargraph
     autoload :RdocToYard,  'solargraph/yard_map/rdoc_to_yard'
     autoload :CoreFills,   'solargraph/yard_map/core_fills'
     autoload :StdlibFills, 'solargraph/yard_map/stdlib_fills'
+    autoload :Helpers,     'solargraph/yard_map/helpers'
+    autoload :ToMethod,    'solargraph/yard_map/to_method'
 
     CoreDocs.require_minimum
 

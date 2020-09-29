@@ -3,6 +3,10 @@
 module Solargraph
   class YardMap
     class Mapper
+      autoload :ToMethod, 'solargraph/yard_map/mapper/to_method'
+      autoload :ToNamespace, 'solargraph/yard_map/mapper/to_namespace'
+      autoload :ToConstant, 'solargraph/yard_map/mapper/to_constant'
+
       # @param code_objects [Array<YARD::CodeObjects::Base>]
       # @param spec [Gem::Specification]
       def initialize code_objects, spec = nil
@@ -23,12 +27,14 @@ module Solargraph
         @pins
       end
 
+      private
+
       # @param code_object [YARD::CodeObjects::Base]
       # @return [Array<Pin::Base>]
       def generate_pins code_object
         result = []
         if code_object.is_a?(YARD::CodeObjects::NamespaceObject)
-          nspin = Solargraph::Pin::YardPin::Namespace.new(code_object, @spec, @namespace_pins[code_object.namespace.to_s])
+          nspin = ToNamespace.make(code_object, @spec, @namespace_pins[code_object.namespace.to_s])
           @namespace_pins[code_object.path] = nspin
           result.push nspin
           if code_object.is_a?(YARD::CodeObjects::ClassObject) and !code_object.superclass.nil?
@@ -55,14 +61,14 @@ module Solargraph
           closure = @namespace_pins[code_object.namespace.to_s]
           if code_object.name == :initialize && code_object.scope == :instance
             # @todo Check the visibility of <Class>.new
-            result.push Solargraph::Pin::YardPin::Method.new(code_object, 'new', :class, :public, closure, @spec)
-            result.push Solargraph::Pin::YardPin::Method.new(code_object, 'initialize', :instance, :private, closure, @spec)
+            result.push ToMethod.make(code_object, 'new', :class, :public, closure, @spec)
+            result.push ToMethod.make(code_object, 'initialize', :instance, :private, closure, @spec)
           else
-            result.push Solargraph::Pin::YardPin::Method.new(code_object, nil, nil, nil, closure, @spec)
+            result.push ToMethod.make(code_object, nil, nil, nil, closure, @spec)
           end
         elsif code_object.is_a?(YARD::CodeObjects::ConstantObject)
           closure = @namespace_pins[code_object.namespace]
-          result.push Solargraph::Pin::YardPin::Constant.new(code_object, closure, @spec)
+          result.push ToConstant.make(code_object, closure, @spec)
         end
         result
       end

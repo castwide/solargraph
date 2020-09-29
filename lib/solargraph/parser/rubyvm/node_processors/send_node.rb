@@ -219,6 +219,7 @@ module Solargraph
 
           # @return [void]
           def process_private_constant
+            # @todo Bare `private_constant` causes an error
             node.children.last.children[0..-2].each do |child|
               if [:LIT, :STR].include?(child.type)
                 cn = child.children[0].to_s
