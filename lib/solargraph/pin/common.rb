@@ -54,7 +54,7 @@ module Solargraph
         until here.nil?
           if here.is_a?(Pin::Namespace)
             return here.return_type
-          elsif here.is_a?(Pin::BaseMethod)
+          elsif here.is_a?(Pin::Method)
             if here.scope == :instance
               return ComplexType.try_parse(here.context.namespace)
             else

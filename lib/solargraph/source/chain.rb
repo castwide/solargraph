@@ -119,12 +119,12 @@ module Solargraph
           @@inference_stack.pop
           if type.defined?
             possibles.push type
-            break if pin.is_a?(Pin::BaseMethod)
+            break if pin.is_a?(Pin::Method)
           end
         end
         if possibles.empty?
           # Limit method inference recursion
-          return ComplexType::UNDEFINED if @@inference_depth >= 10 && pins.first.is_a?(Pin::BaseMethod)
+          return ComplexType::UNDEFINED if @@inference_depth >= 10 && pins.first.is_a?(Pin::Method)
           @@inference_depth += 1
           pins.each do |pin|
             # Avoid infinite recursion
@@ -134,7 +134,7 @@ module Solargraph
             @@inference_stack.pop
             if type.defined?
               possibles.push type
-              break if pin.is_a?(Pin::BaseMethod)
+              break if pin.is_a?(Pin::Method)
             end
           end
           @@inference_depth -= 1

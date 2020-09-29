@@ -126,27 +126,31 @@ module Solargraph
           namespace = closure_at(source_position)
           t = (directive.tag.types.nil? || directive.tag.types.empty?) ? nil : directive.tag.types.flatten.join('')
           if t.nil? || t.include?('r')
-            pins.push Solargraph::Pin::Attribute.new(
+            pins.push Solargraph::Pin::Method.new(
               location: location,
               closure: namespace,
               name: directive.tag.name,
               comments: docstring.all.to_s,
-              access: :reader,
               scope: namespace.is_a?(Pin::Singleton) ? :class : :instance,
               visibility: :public,
-              explicit: false
+              explicit: false,
+              attribute: true
             )
           end
           if t.nil? || t.include?('w')
-            pins.push Solargraph::Pin::Attribute.new(
+            pins.push Solargraph::Pin::Method.new(
               location: location,
               closure: namespace,
               name: "#{directive.tag.name}=",
               comments: docstring.all.to_s,
-              access: :writer,
               scope: namespace.is_a?(Pin::Singleton) ? :class : :instance,
-              visibility: :public
+              visibility: :public,
+              attribute: true
             )
+            pins.last.parameters.push Pin::Parameter.new(name: 'value', decl: :arg, closure: pins.last)
+            if pins.last.return_type.defined?
+              pins.last.docstring.add_tag YARD::Tags::Tag.new(:param, '', pins.last.return_type.to_s.split(', '), 'value')
+            end
           end
         when 'parse'
           begin

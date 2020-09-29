@@ -10,7 +10,7 @@ module Solargraph
         @receiver_definitions = {}
       end
 
-      # @return [Array<Pin::BaseMethod>]
+      # @return [Array<Pin::Method>]
       def get_methods fqns, scope, visibility, deep
         @methods[[fqns, scope, visibility.sort, deep]]
       end
@@ -41,7 +41,7 @@ module Solargraph
         @receiver_definitions.key? path
       end
 
-      # @return [Pin::BaseMethod]
+      # @return [Pin::Method]
       def get_receiver_definition path
         @receiver_definitions[path]
       end

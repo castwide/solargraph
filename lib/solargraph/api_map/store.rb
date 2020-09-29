@@ -29,7 +29,7 @@ module Solargraph
       # @return [Array<Solargraph::Pin::Base>]
       def get_methods fqns, scope: :instance, visibility: [:public]
         namespace_children(fqns).select do |pin|
-          pin.is_a?(Pin::BaseMethod) && pin.scope == scope && visibility.include?(pin.visibility)
+          pin.is_a?(Pin::Method) && pin.scope == scope && visibility.include?(pin.visibility)
         end
       end
 
@@ -102,9 +102,9 @@ module Solargraph
         pins_by_class(Solargraph::Pin::Namespace)
       end
 
-      # @return [Array<Solargraph::Pin::BaseMethod>]
+      # @return [Array<Solargraph::Pin::Method>]
       def method_pins
-        pins_by_class(Solargraph::Pin::BaseMethod)
+        pins_by_class(Solargraph::Pin::Method)
       end
 
       # @param fqns [String]

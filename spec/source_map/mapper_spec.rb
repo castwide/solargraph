@@ -1136,7 +1136,7 @@ describe Solargraph::SourceMap::Mapper do
         # @!attribute
       end
     ))
-    attrs = smap.pins.select { |pin| pin.is_a?(Solargraph::Pin::Attribute) }
+    attrs = smap.pins.select { |pin| pin.is_a?(Solargraph::Pin::Method) && pin.attribute? }
     expect(attrs).to be_empty
   end
 

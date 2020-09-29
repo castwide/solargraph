@@ -363,7 +363,7 @@ module Solargraph
       load_yardoc yd
       result.concat Mapper.new(YARD::Registry.all).map
       # HACK: Assume core methods with a single `args` parameter accept restarg
-      result.select { |pin| pin.is_a?(Solargraph::Pin::BaseMethod )}.each do |pin|
+      result.select { |pin| pin.is_a?(Solargraph::Pin::Method )}.each do |pin|
         if pin.parameters.length == 1 && pin.parameters.first.name == 'args' && pin.parameters.first.decl == :arg
           # @todo Smelly instance variable access
           pin.parameters.first.instance_variable_set(:@decl, :restarg)

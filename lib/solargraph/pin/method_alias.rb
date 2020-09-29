@@ -6,7 +6,7 @@ module Solargraph
     # examples that defer mapping are aliases for superclass methods or
     # methods from included modules.
     #
-    class MethodAlias < BaseMethod
+    class MethodAlias < Method
       # @return [::Symbol]
       attr_reader :scope
 

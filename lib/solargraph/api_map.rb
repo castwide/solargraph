@@ -299,7 +299,7 @@ module Solargraph
     # @param scope [Symbol] :class or :instance
     # @param visibility [Array<Symbol>] :public, :protected, and/or :private
     # @param deep [Boolean] True to include superclasses, mixins, etc.
-    # @return [Array<Solargraph::Pin::BaseMethod>]
+    # @return [Array<Solargraph::Pin::Method>]
     def get_methods fqns, scope: :instance, visibility: [:public], deep: true
       cached = cache.get_methods(fqns, scope, visibility, deep)
       return cached.clone unless cached.nil?
@@ -376,7 +376,7 @@ module Solargraph
     # @param fqns [String]
     # @param name [String]
     # @param scope [Symbol] :instance or :class
-    # @return [Array<Solargraph::Pin::BaseMethod>]
+    # @return [Array<Solargraph::Pin::Method>]
     def get_method_stack fqns, name, scope: :instance
       get_methods(fqns, scope: scope, visibility: [:private, :protected, :public]).select{|p| p.name == name}
     end
@@ -735,24 +735,25 @@ module Solargraph
     end
 
     # @param pin [Pin::MethodAlias, Pin::Base]
-    # @return [Pin::BaseMethod]
+    # @return [Pin::Method]
     def resolve_method_alias pin
       return pin if !pin.is_a?(Pin::MethodAlias) || @method_alias_stack.include?(pin.path)
       @method_alias_stack.push pin.path
       origin = get_method_stack(pin.full_context.namespace, pin.original, scope: pin.scope).first
       @method_alias_stack.pop
       return pin if origin.nil?
+      # @todo Clean this up
       args = {
         location: pin.location,
         closure: pin.closure,
         name: pin.name,
         comments: origin.comments,
         scope: origin.scope,
-        visibility: origin.visibility
+        visibility: origin.visibility,
+        parameters: origin.parameters,
+        attribute: origin.attribute?
       }
-      args[:parameters] = origin.parameters unless origin.is_a?(Pin::Attribute)
-      klass = origin.is_a?(Pin::Attribute) ? Pin::Attribute : Pin::Method
-      klass.new **args
+      Pin::Method.new **args
     end
   end
 end

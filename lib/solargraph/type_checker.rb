@@ -73,15 +73,15 @@ module Solargraph
     # @return [Array<Problem>]
     def method_tag_problems
       result = []
-      # @param pin [Pin::BaseMethod]
-      source_map.pins_by_class(Pin::BaseMethod).each do |pin|
+      # @param pin [Pin::Method]
+      source_map.pins_by_class(Pin::Method).each do |pin|
         result.concat method_return_type_problems_for(pin)
         result.concat method_param_type_problems_for(pin)
       end
       result
     end
 
-    # @param pin [Pin::BaseMethod]
+    # @param pin [Pin::Method]
     # @return [Array<Problem>]
     def method_return_type_problems_for pin
       result = []
@@ -115,7 +115,7 @@ module Solargraph
       pin.location && source_map.source.comment_at?(pin.location.range.ending)
     end
 
-    # @param pin [Pin::BaseMethod]
+    # @param pin [Pin::Method]
     # @return [Array<Problem>]
     def method_param_type_problems_for pin
       stack = api_map.get_method_stack(pin.namespace, pin.name, scope: pin.scope)
@@ -244,8 +244,8 @@ module Solargraph
       base = chain
       until base.links.length == 1 && base.undefined?
         pins = base.define(api_map, block_pin, locals)
-        if pins.first.is_a?(Pin::BaseMethod)
-          # @type [Pin::BaseMethod]
+        if pins.first.is_a?(Pin::Method)
+          # @type [Pin::Method]
           pin = pins.first
           ap = if base.links.last.is_a?(Solargraph::Source::Chain::ZSuper)
             arity_problems_for(pin, fake_args_for(block_pin), location)
@@ -395,7 +395,7 @@ module Solargraph
       true
     end
 
-    # @param pin [Pin::BaseMethod]
+    # @param pin [Pin::Method]
     def arity_problems_for(pin, arguments, location)
       return [] unless pin.explicit?
       return [] if pin.parameters.empty? && arguments.empty?
@@ -449,7 +449,7 @@ module Solargraph
       []
     end
 
-    # @param pin [Pin::BaseMethod]
+    # @param pin [Pin::Method]
     def required_param_count(pin)
       count = 0
       pin.parameters.each do |param|
@@ -459,7 +459,7 @@ module Solargraph
       count
     end
 
-    # @param pin [Pin::BaseMethod]
+    # @param pin [Pin::Method]
     def optional_param_count(pin)
       count = 0
       pin.parameters.each do |param|

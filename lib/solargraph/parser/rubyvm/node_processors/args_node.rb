@@ -6,7 +6,7 @@ module Solargraph
       module NodeProcessors
         class ArgsNode < Parser::NodeProcessor::Base
           def process
-            if region.closure.is_a?(Pin::BaseMethod) || region.closure.is_a?(Pin::Block)
+            if region.closure.is_a?(Pin::Method) || region.closure.is_a?(Pin::Block)
               if region.lvars[0].nil?
                 node.children[0].times do |i|
                   locals.push Solargraph::Pin::Parameter.new(
