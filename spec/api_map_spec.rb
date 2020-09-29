@@ -740,4 +740,22 @@ describe Solargraph::ApiMap do
     pins = api_map.get_methods('Example', scope: :class)
     expect(pins.map(&:name)).to include('foo')
   end
+
+  it 'marks explicit methods' do
+    dir = File.absolute_path(File.join('spec', 'fixtures', 'yard_map'))
+    yard_pins = Dir.chdir dir do
+      YARD::Registry.load([File.join(dir, 'attr.rb')], true)
+      mapper = Solargraph::YardMap::Mapper.new(YARD::Registry.all)
+      mapper.map
+    end
+    source_pins = Solargraph::SourceMap.load_string(%(
+      class Foo
+        alias baz foo
+      end
+    )).pins
+    api_map = Solargraph::ApiMap.new(pins: yard_pins + source_pins)
+    baz = api_map.get_method_stack('Foo', 'baz').first
+    expect(baz).to be_a(Solargraph::Pin::Method)
+    expect(baz.path).to eq('Foo#baz')
+  end
 end
