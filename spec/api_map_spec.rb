@@ -741,7 +741,7 @@ describe Solargraph::ApiMap do
     expect(pins.map(&:name)).to include('foo')
   end
 
-  it 'marks explicit methods' do
+  it 'resolves aliases for YARD methods' do
     dir = File.absolute_path(File.join('spec', 'fixtures', 'yard_map'))
     yard_pins = Dir.chdir dir do
       YARD::Registry.load([File.join(dir, 'attr.rb')], true)
