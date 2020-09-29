@@ -168,6 +168,9 @@ module Solargraph
       position = Position.new(line, character)
       found = nil
       pins.each do |pin|
+        # @todo Attribute pins should not be treated like closures, but
+        #   there's probably a better way to handle it
+        next if pin.is_a?(Pin::Method) && pin.attribute?
         found = pin if (klasses.empty? || klasses.any? { |kls| pin.is_a?(kls) } ) && pin.location.range.contain?(position)
         break if pin.location.range.start.line > line
       end
