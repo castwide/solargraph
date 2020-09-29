@@ -750,8 +750,9 @@ module Solargraph
         scope: origin.scope,
         visibility: origin.visibility
       }
-      args[:parameters] = origin.parameters if origin.is_a?(Pin::Method)
-      origin.class.new **args
+      args[:parameters] = origin.parameters unless origin.is_a?(Pin::Attribute)
+      klass = origin.is_a?(Pin::Attribute) ? Pin::Attribute : Pin::Method
+      klass.new **args
     end
   end
 end
