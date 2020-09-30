@@ -39,7 +39,7 @@ module Solargraph
       def symbol_kind
         attribute? ? Solargraph::LanguageServer::SymbolKinds::PROPERTY : LanguageServer::SymbolKinds::METHOD
       end
-  
+
       def return_type
         @return_type ||= generate_complex_type
       end
@@ -54,16 +54,6 @@ module Solargraph
         type = see_reference(api_map) || typify_from_super(api_map)
         return type.qualify(api_map, namespace) unless type.nil?
         name.end_with?('?') ? ComplexType::BOOLEAN : ComplexType::UNDEFINED
-      end
-
-      # @return [Array<Pin::Parameter>]
-      def parameters
-        @parameters ||= []
-      end
-
-      # @return [Array<String>]
-      def parameter_names
-        parameters.map(&:name)
       end
 
       def documentation
