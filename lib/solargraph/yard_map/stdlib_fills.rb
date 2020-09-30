@@ -23,6 +23,10 @@ module Solargraph
           Override.method_return('Set#add?', 'self, nil'),
           Override.method_return('Set#classify', 'Hash'),
           Override.from_comment('Set#each', '@yieldparam_single_parameter'),
+        ],
+
+        'tempfile' => [
+          Override.method_return('Tempfile.open', 'Tempfile')
         ]
       }.freeze
 
