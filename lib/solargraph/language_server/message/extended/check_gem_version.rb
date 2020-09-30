@@ -34,7 +34,12 @@ module Solargraph
                                           LanguageServer::MessageTypes::INFO,
                                           ['Update now'] do |result|
                                             next unless result == 'Update now'
-                                            o, s = Open3.capture2("gem update solargraph")
+                                            cmd = if host.options['useBundler']
+                                              'bundle update solargraph'
+                                            else
+                                              'gem update solargraph'
+                                            end
+                                            o, s = Open3.capture2(cmd)
                                             if s == 0
                                               host.show_message 'Successfully updated the Solargraph gem.', LanguageServer::MessageTypes::INFO
                                               host.send_notification '$/solargraph/restart', {}
