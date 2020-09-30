@@ -26,7 +26,10 @@ module Solargraph
         ],
 
         'tempfile' => [
-          Override.method_return('Tempfile.open', 'Tempfile')
+          Override.from_comment('Tempfile.open', %(
+@yieldparam [Tempfile]
+@return [Tempfile]
+          ))
         ]
       }.freeze
 
