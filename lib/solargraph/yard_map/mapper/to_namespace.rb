@@ -3,10 +3,10 @@
 module Solargraph
   class YardMap
     class Mapper
-      class ToNamespace
-        include YardMap::Helpers
+      module ToNamespace
+        extend YardMap::Helpers
 
-        def make code_object, spec, closure = nil
+        def self.make code_object, spec, closure = nil
           closure ||= Solargraph::Pin::Namespace.new(
             name: code_object.namespace.to_s,
             closure: Pin::ROOT_PIN,
@@ -20,10 +20,6 @@ module Solargraph
             visibility: code_object.visibility,
             closure: closure
           )
-        end
-
-        def self.make code_object, spec, closure = nil
-          new.make code_object, spec, closure
         end
       end
     end

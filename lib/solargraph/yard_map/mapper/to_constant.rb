@@ -3,10 +3,10 @@
 module Solargraph
   class YardMap
     class Mapper
-      class ToConstant
-        include YardMap::Helpers
+      module ToConstant
+        extend YardMap::Helpers
 
-        def make code_object, closure = nil, spec = nil
+        def self.make code_object, closure = nil, spec = nil
           closure ||= Solargraph::Pin::Namespace.new(
             name: code_object.namespace.to_s,
             gates: [code_object.namespace.to_s]
@@ -18,10 +18,6 @@ module Solargraph
             comments: code_object.docstring ? code_object.docstring.all.to_s : '',
             visibility: code_object.visibility
           )
-        end
-
-        def self.make code_object, closure = nil, spec = nil
-          new.make code_object, closure, spec
         end
       end
     end
