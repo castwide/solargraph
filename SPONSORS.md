@@ -11,4 +11,3 @@ The following people and organizations provide funding or other resources. [Beco
 ## Named Sponsors
 
 - Emily Strickland
-- Tom de Grunt
