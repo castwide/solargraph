@@ -488,6 +488,22 @@ describe Solargraph::TypeChecker do
       expect(checker.problems.first.message).to include('Not enough arguments')
     end
 
+    it 'accepts kwargs with explicit blockargs' do
+      checker = type_checker(%(
+        def foo(bar:, &block); end
+        foo(bar: 'bar', &block)
+      ))
+      expect(checker.problems).to be_empty
+    end
+
+    it 'accepts kwargs with implicit blockargs' do
+      checker = type_checker(%(
+        def foo(bar:); end
+        foo(bar: 'bar', &block)
+      ))
+      expect(checker.problems).to be_empty
+    end
+
     it 'ignores restarg arguments' do
       checker = type_checker(%(
         def foo(*bar); end
