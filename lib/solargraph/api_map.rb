@@ -742,7 +742,6 @@ module Solargraph
       origin = get_method_stack(pin.full_context.namespace, pin.original, scope: pin.scope).first
       @method_alias_stack.pop
       return pin if origin.nil?
-      # @todo Clean this up
       args = {
         location: pin.location,
         closure: pin.closure,
