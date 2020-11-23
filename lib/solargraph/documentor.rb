@@ -74,5 +74,16 @@ module Solargraph
         end
       end
     end
+
+    def self.specs_from_gemfile directory, name
+      Solargraph.with_clean_env do
+        Dir.chdir directory do
+          Solargraph.logger.warn Dir.entries(Dir.pwd)
+          definition = Bundler::Definition.build(name, "#{name}.lock", false)
+          definition.specs_for([:default]).map { |spec| [spec.name, spec.version] }.to_h
+          # raise BundleNotFoundError, "Failed to load gems from #{name} at #{directory}"
+        end
+      end
+    end
   end
 end

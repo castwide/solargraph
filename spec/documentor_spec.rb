@@ -1,25 +1,16 @@
 require 'tmpdir'
-require 'open3'
 
 describe Solargraph::Documentor do
   # @todo Skipping Bundler-related tests on JRuby
   next if RUBY_PLATFORM == 'java'
 
-  # Build the Gemfile.lock in specs so Travis jobs use the correct version of
-  # Bundler (e.g., Ruby 2.1 uses Bundler 1)
-  before :all do
-    Dir.chdir 'spec/fixtures/workspace' do
-      o, e, s = Open3.capture3('bundle', 'install')
-      raise RuntimeError, e unless s.success?
-    end
-  end
-
-  after :all do
-    File.unlink 'spec/fixtures/workspace/Gemfile.lock'
-  end
-
   it 'returns gemsets for directories with bundles' do
     gemset = Solargraph::Documentor.specs_from_bundle('spec/fixtures/workspace')
+    expect(gemset.keys).to eq(['backport', 'bundler'])
+  end
+
+  it 'returns gemsets for gemfiles' do
+    gemset = Solargraph::Documentor.specs_from_gemfile('spec/fixtures/workspace', 'Gemfile')
     expect(gemset.keys).to eq(['backport', 'bundler'])
   end
 
