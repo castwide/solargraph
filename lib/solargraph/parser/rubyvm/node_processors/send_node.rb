@@ -9,21 +9,7 @@ module Solargraph
 
           def process
             if [:private, :public, :protected].include?(node.children[0])
-              if node.type == :FCALL && Parser.is_ast_node?(node.children.last)
-                node.children.last.children[0..-2].each do |child|
-                  # next unless child.is_a?(AST::Node) && (child.type == :sym || child.type == :str)
-                  next unless child.type == :LIT || child.type == :STR
-                  name = child.children[0].to_s
-                  matches = pins.select{ |pin| pin.is_a?(Pin::Method) && pin.name == name && pin.namespace == region.closure.full_context.namespace && pin.context.scope == (region.scope || :instance)}
-                  matches.each do |pin|
-                    # @todo Smelly instance variable access
-                    pin.instance_variable_set(:@visibility, node.children[0])
-                  end
-                end
-              else
-                # @todo Smelly instance variable access
-                region.instance_variable_set(:@visibility, node.children[0])
-              end
+              process_visibility
             elsif node.children[0] == :module_function
               process_module_function
             elsif node.children[0] == :require
@@ -33,8 +19,7 @@ module Solargraph
             elsif node.children[0] == :alias_method
               process_alias_method
             elsif node.children[0] == :private_class_method
-              # Processing a private class can potentially handle children on its own
-              return if process_private_class_method
+              process_private_class_method
             elsif [:attr_reader, :attr_writer, :attr_accessor].include?(node.children[0])
               process_attribute
             elsif node.children[0] == :include
@@ -52,6 +37,28 @@ module Solargraph
           end
 
           private
+
+          # @return [void]
+          def process_visibility
+            if node.type == :FCALL && Parser.is_ast_node?(node.children.last)
+              node.children.last.children[0..-2].each do |child|
+                # next unless child.is_a?(AST::Node) && (child.type == :sym || child.type == :str)
+                if child.type == :LIT || child.type == :STR
+                  name = child.children[0].to_s
+                  matches = pins.select{ |pin| pin.is_a?(Pin::Method) && pin.name == name && pin.namespace == region.closure.full_context.namespace && pin.context.scope == (region.scope || :instance)}
+                  matches.each do |pin|
+                    # @todo Smelly instance variable access
+                    pin.instance_variable_set(:@visibility, node.children[0])
+                  end
+                else
+                  process_children region.update(visibility: node.children[0])
+                end
+              end
+            else
+              # @todo Smelly instance variable access
+              region.instance_variable_set(:@visibility, node.children[0])
+            end
+          end
 
           # @return [void]
           def process_attribute
@@ -247,12 +254,11 @@ module Solargraph
             )
           end
 
-          # @return [Boolean]
+          # @return [void]
           def process_private_class_method
             return false unless Parser.is_ast_node?(node.children.last)
             if node.children.last.children.first.type == :DEFN
               process_children region.update(scope: :class, visibility: :private)
-              true
             else
               node.children.last.children[0..-2].each do |child|
                 if child.type == :LIT && child.children.first.is_a?(::Symbol)
@@ -260,7 +266,6 @@ module Solargraph
                   ref = pins.select { |p| p.is_a?(Pin::Method) && p.namespace == region.closure.full_context.namespace && p.name == sym_name }.first
                   # HACK: Smelly instance variable access
                   ref.instance_variable_set(:@visibility, :private) unless ref.nil?
-                  false
                 end
               end
             end

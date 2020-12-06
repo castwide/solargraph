@@ -1469,4 +1469,17 @@ describe Solargraph::SourceMap::Mapper do
     pin = map.first_pin('#foo')
     expect(pin.parameters.length).to eq(1)
   end
+
+  it 'maps visibility calls with method arguments' do
+    map = Solargraph::SourceMap.load_string(%(
+      class Foo
+        def bar; end
+        private def baz; end
+        def quz; end
+      end
+    ))
+    expect(map.first_pin('Foo#bar').visibility).to be(:public)
+    expect(map.first_pin('Foo#baz').visibility).to be(:private)
+    expect(map.first_pin('Foo#quz').visibility).to be(:public)
+  end
 end

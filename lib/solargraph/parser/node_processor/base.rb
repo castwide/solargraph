@@ -27,6 +27,7 @@ module Solargraph
           @region = region
           @pins = pins
           @locals = locals
+          @processed_children = false
         end
 
         # Subclasses should override this method to generate new pins.
@@ -41,6 +42,8 @@ module Solargraph
         # @param subregion [Region]
         # @return [void]
         def process_children subregion = region
+          return if @processed_children
+          @processed_children = true
           node.children.each do |child|
             next unless Parser.is_ast_node?(child)
             NodeProcessor.process(child, subregion, pins, locals)
