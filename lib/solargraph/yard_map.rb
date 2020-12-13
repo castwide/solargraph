@@ -139,7 +139,7 @@ module Solargraph
     # @param path [String]
     # @return [Pin::Base]
     def path_pin path
-      pins.select{ |p| p.path == path }.first
+      pins.select { |p| p.path == path }.first
     end
 
     # Get the location of a file referenced by a require path.
