@@ -34,7 +34,7 @@ describe Solargraph::TypeChecker do
       #   vendored code.
       checker = type_checker(%(
         require 'kramdown-parser-gfm'
-        Kramdown::Parser::GFM.new(nil, nil).undefined_call
+        Kramdown::Parser::GFM.undefined_call
       ))
       expect(checker.problems).to be_empty
     end

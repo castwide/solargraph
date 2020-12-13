@@ -526,16 +526,16 @@ module Solargraph
       false
     end
 
+    # @return [YardMap]
+    def yard_map
+      @yard_map ||= YardMap.new
+    end
+
     private
 
     # @return [Array<String>]
     def workspace_filenames
       @workspace_filenames ||= []
-    end
-
-    # @return [YardMap]
-    def yard_map
-      @yard_map ||= YardMap.new
     end
 
     # A hash of source maps with filename keys.

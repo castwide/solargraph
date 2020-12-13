@@ -154,7 +154,6 @@ module Solargraph
               inferred = pin.probe(api_map)
               if inferred.undefined?
                 next if rules.ignore_all_undefined?
-                # next unless internal?(pin) # @todo This might be redundant for variables
                 if declared_externally?(pin)
                   ignored_pins.push pin
                 else
@@ -227,7 +226,7 @@ module Solargraph
             base = base.base
           end
           closest = found.typify(api_map) if found
-          if !found || closest.defined? || internal?(found)
+          if !found || (closest.defined? && internal_or_core?(found))
             unless ignored_pins.include?(found)
               result.push Problem.new(location, "Unresolved call to #{missing.links.last.word}")
               @marked_ranges.push rng
@@ -360,7 +359,12 @@ module Solargraph
 
     # @param pin [Pin::Base]
     def internal? pin
+      return false if pin.nil?
       pin.location && api_map.bundled?(pin.location.filename)
+    end
+
+    def internal_or_core? pin
+      internal?(pin) || api_map.yard_map.core_pins.include?(pin) || api_map.yard_map.stdlib_pins.include?(pin)
     end
 
     # @param pin [Pin::Base]

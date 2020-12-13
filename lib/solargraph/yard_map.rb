@@ -159,6 +159,10 @@ module Solargraph
       nil
     end
 
+    def stdlib_pins
+      @stdlib_pins ||= []
+    end
+
     private
 
     # @return [YardMap::Cache]
@@ -191,6 +195,7 @@ module Solargraph
     def process_requires
       pins.replace core_pins
       unresolved_requires.clear
+      stdlib_pins.clear
       environ = Convention.for_global(self)
       done = []
       from_std = []
@@ -228,6 +233,7 @@ module Solargraph
           if stdtmp.empty?
             unresolved_requires.push r
           else
+            stdlib_pins.concat stdtmp
             result.concat stdtmp
           end
         end
