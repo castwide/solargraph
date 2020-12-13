@@ -19,6 +19,5 @@ matrix:
 before_install:
 - gem update --system
 - gem install bundler
-- bundle install
 before_script: yard gems
 script: rspec
