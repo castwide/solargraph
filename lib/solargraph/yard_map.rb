@@ -241,7 +241,7 @@ module Solargraph
         # HACK: Hardcoded YAML handling
         # @todo Why can't this be handled with an override or a virtual pin?
         pin = path_pin('YAML')
-        pin.instance_variable_set(:@return_type, ComplexType.parse('Module<Psych>'))
+        pin.instance_variable_set(:@return_type, ComplexType.parse('Module<Psych>')) unless pin.nil?
       end
       pins.concat environ.pins
     end
