@@ -1,8 +1,8 @@
 describe Solargraph::Pin::Documenting do
   let(:object) {
-    Class.new do |cls|
-      cls.include Solargraph::Pin::Documenting
-      cls.attr_accessor :docstring
+    Class.new do
+      include Solargraph::Pin::Documenting
+      attr_accessor :docstring
     end.new
   }
 
