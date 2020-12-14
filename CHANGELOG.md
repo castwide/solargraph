@@ -1,3 +1,17 @@
+## 0.40.0 - December 14, 2020
+- Fix alias behavior
+- Consolidate method pin classes
+- Consolidate YARD pins
+- CheckGemVersion can use Bundler for updates
+- Tempfile fills
+- Support rubocop 1.0 (#381)
+- Require Ruby >= 2.4.0 (#394)
+- Map visibility calls with method arguments (#395)
+- Switch maruku to kramdown
+- Remove nokogiri dependency
+- Detect internal_or_core? for strict type checking
+- ApiMap#catalog merges environs for all sources in bench
+
 ## 0.39.17 - September 28, 2020
 - Handle YARD pins in alias resolution
 
