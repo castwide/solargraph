@@ -175,7 +175,6 @@ describe Solargraph::LanguageServer::Host do
     host = Solargraph::LanguageServer::Host.new
     host.diagnose 'file:///file.rb'
     response = host.flush
-    # @todo Quick and dirty hack to get the data
     json = JSON.parse(response.lines.last)
     expect(json['method']).to eq('textDocument/publishDiagnostics')
     expect(json['params']['diagnostics']).to be_empty

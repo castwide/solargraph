@@ -17,12 +17,11 @@ describe Solargraph::SourceMap::Mapper do
   end
 
   it "ignores include calls that are not attached to the current namespace" do
-    # @todo The include call inside of xyz args is probably valid
     source = Solargraph::Source.new(%(
       class Foo
         include Direct
         xyz.include Indirect
-        # xyz(include Indirect)
+        xyz(include Interior)
       end
     ))
     map = Solargraph::SourceMap.map(source)
@@ -30,15 +29,15 @@ describe Solargraph::SourceMap::Mapper do
     names = pins.map(&:name)
     expect(names).to include('Direct')
     expect(names).not_to include('Indirect')
+    expect(names).to include('Interior')
   end
 
   it "ignores prepend calls that are not attached to the current namespace" do
-    # @todo The prepend call inside of xyz args is probably valid
     source = Solargraph::Source.new(%(
       class Foo
         prepend Direct
         xyz.prepend Indirect
-        # xyz(prepend Indirect)
+        xyz(prepend Interior)
       end
     ))
     map = Solargraph::SourceMap.map(source)
@@ -46,15 +45,15 @@ describe Solargraph::SourceMap::Mapper do
     names = pins.map(&:name)
     expect(names).to include('Direct')
     expect(names).not_to include('Indirect')
+    expect(names).to include('Interior')
   end
 
   it "ignores extend calls that are not attached to the current namespace" do
-    # @todo The include call inside of xyz args is probably valid
     source = Solargraph::Source.new(%(
       class Foo
         extend Direct
         xyz.extend Indirect
-        # xyz(extend Indirect)
+        xyz(extend Interior)
       end
     ))
     map = Solargraph::SourceMap.map(source)
@@ -65,6 +64,7 @@ describe Solargraph::SourceMap::Mapper do
     names = pins.map(&:name)
     expect(names).to include('Direct')
     expect(names).not_to include('Indirect')
+    expect(names).to include('Interior')
   end
 
   it "sets scopes for attributes" do

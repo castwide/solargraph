@@ -147,7 +147,6 @@ module Solargraph
       result = []
       all_variables.each do |pin|
         if pin.return_type.defined?
-          # @todo Somwhere in here we still need to determine if the variable is defined by an external call
           declared = pin.typify(api_map)
           if declared.defined?
             if rules.validate_tags?
@@ -171,7 +170,6 @@ module Solargraph
             result.push Problem.new(pin.location, "Unresolved type #{pin.return_type} for variable #{pin.name}", pin: pin)
           end
         else
-          # @todo Check if the variable is defined by an external call
           inferred = pin.probe(api_map)
           if inferred.undefined? && declared_externally?(pin)
             ignored_pins.push pin
@@ -312,7 +310,6 @@ module Solargraph
             end
           else
             if par.decl == :kwarg
-              # @todo Problem: missing required keyword argument
               result.push Problem.new(location, "Call to #{pin.path} is missing keyword argument #{par.name}")
             end
           end

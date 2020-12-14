@@ -254,7 +254,6 @@ describe Solargraph::TypeChecker do
     end
 
     it 'validates keyword params' do
-      # @todo Skip for legacy Ruby
       checker = type_checker(%(
         class Foo
           # @param baz [String]
