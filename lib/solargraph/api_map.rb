@@ -95,7 +95,7 @@ module Solargraph
       pins.concat bench.pins
       reqs.merge bench.workspace.config.required
       @required = reqs
-      bench.opened.each do |src|
+      bench.sources.each do |src|
         implicit.merge new_map_hash[src.filename].environ
       end
       # implicit.merge Convention.for_global(self)
