@@ -1,3 +1,6 @@
+## 0.40.1
+- Use temp directory for RuboCop formatting (#397)
+
 ## 0.40.0 - December 14, 2020
 - Fix alias behavior
 - Consolidate method pin classes
