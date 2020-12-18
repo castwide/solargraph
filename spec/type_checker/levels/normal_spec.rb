@@ -712,5 +712,13 @@ describe Solargraph::TypeChecker do
       expect(checker.problems).to be_one
       expect(checker.problems.first.message).to include('Not enough arguments')
     end
+
+    it 'verifies splatted kwargs' do
+      checker = type_checker(%(
+        def xxx(from:, to:); end
+        xxx(**{from: 1, to: 2})
+      ))
+      expect(checker.problems).to be_empty
+    end
   end
 end
