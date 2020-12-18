@@ -209,7 +209,6 @@ module Solargraph
     # @return [Array<Solargraph::Range>]
     # @todo Take a Location instead of filename/line/column
     def references_from filename, line, column, strip: false
-      # checkout filename
       cursor = api_map.cursor_at(filename, Position.new(line, column))
       clip = api_map.clip(cursor)
       pins = clip.define
@@ -222,7 +221,7 @@ module Solargraph
             referenced = definitions_at(loc.filename, loc.range.ending.line, loc.range.ending.character)
             # HACK: The additional location comparison is necessary because
             # Clip#define can return proxies for parameter pins
-            referenced.any?{|r| r == pin || r.location == pin.location}
+            referenced.any? { |r| r == pin || r.location == pin.location }
           end
           # HACK: for language clients that exclude special characters from the start of variable names
           if strip && match = cursor.word.match(/^[^a-z0-9_]+/i)
@@ -290,7 +289,6 @@ module Solargraph
     # @param filename [String]
     # @return [Array<Solargraph::Pin::Base>]
     def document_symbols filename
-      # checkout filename
       api_map.document_symbols(filename)
     end
 
