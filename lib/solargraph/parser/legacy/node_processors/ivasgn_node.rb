@@ -19,7 +19,7 @@ module Solargraph
             if region.visibility == :module_function
               here = get_node_start_position(node)
               named_path = named_path_pin(here)
-              if named_path.is_a?(Pin::BaseMethod)
+              if named_path.is_a?(Pin::Method)
                 pins.push Solargraph::Pin::InstanceVariable.new(
                   location: loc,
                   closure: Pin::Namespace.new(type: :module, closure: region.closure.closure, name: region.closure.name),

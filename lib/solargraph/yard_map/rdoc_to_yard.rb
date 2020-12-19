@@ -63,7 +63,7 @@ module Solargraph
               name_hash[mod.full_name] = namepin
               # @param met [RDoc::AnyMethod]
               mod.each_method do |met|
-                pin = Solargraph::SourceMap.load_string("def Object.tmp#{met.param_seq};end").first_pin('Object.tmp') || Solargraph::Pin::BaseMethod.new
+                pin = Solargraph::SourceMap.load_string("def Object.tmp#{met.param_seq};end").first_pin('Object.tmp') || Solargraph::Pin::Method.new
                 pins.push Solargraph::Pin::Method.new(
                   name: met.name,
                   closure: namepin,

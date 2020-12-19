@@ -23,16 +23,15 @@ module Solargraph
 
       # @return [Hash]
       def resolve_completion_item
-        if @resolve_completion_item.nil?
+        @resolve_completion_item ||= begin
           extra = {}
           alldoc = ''
           # alldoc += link_documentation unless link_documentation.nil?
           # alldoc += "\n\n" unless alldoc.empty?
           alldoc += documentation unless documentation.nil?
           extra[:documentation] = alldoc unless alldoc.empty?
-          @resolve_completion_item = completion_item.merge(extra)
+          completion_item.merge(extra)
         end
-        @resolve_completion_item
       end
 
       # @return [Hash]
@@ -48,7 +47,7 @@ module Solargraph
         # This property is not cached in an instance variable because it can
         # change when pins get proxied.
         detail = String.new
-        detail += "(#{parameters.map(&:full).join(', ')}) " unless !is_a?(Pin::BaseMethod) || parameters.empty?
+        detail += "(#{parameters.map(&:full).join(', ')}) " unless !is_a?(Pin::Method) || parameters.empty?
         detail += "=#{probed? ? '~' : (proxied? ? '^' : '>')} #{return_type.to_s}" unless return_type.undefined?
         detail.strip!
         return nil if detail.empty?

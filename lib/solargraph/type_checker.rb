@@ -73,15 +73,15 @@ module Solargraph
     # @return [Array<Problem>]
     def method_tag_problems
       result = []
-      # @param pin [Pin::BaseMethod]
-      source_map.pins_by_class(Pin::BaseMethod).each do |pin|
+      # @param pin [Pin::Method]
+      source_map.pins_by_class(Pin::Method).each do |pin|
         result.concat method_return_type_problems_for(pin)
         result.concat method_param_type_problems_for(pin)
       end
       result
     end
 
-    # @param pin [Pin::BaseMethod]
+    # @param pin [Pin::Method]
     # @return [Array<Problem>]
     def method_return_type_problems_for pin
       result = []
@@ -115,7 +115,7 @@ module Solargraph
       pin.location && source_map.source.comment_at?(pin.location.range.ending)
     end
 
-    # @param pin [Pin::BaseMethod]
+    # @param pin [Pin::Method]
     # @return [Array<Problem>]
     def method_param_type_problems_for pin
       stack = api_map.get_method_stack(pin.namespace, pin.name, scope: pin.scope)
@@ -147,14 +147,12 @@ module Solargraph
       result = []
       all_variables.each do |pin|
         if pin.return_type.defined?
-          # @todo Somwhere in here we still need to determine if the variable is defined by an external call
           declared = pin.typify(api_map)
           if declared.defined?
             if rules.validate_tags?
               inferred = pin.probe(api_map)
               if inferred.undefined?
                 next if rules.ignore_all_undefined?
-                # next unless internal?(pin) # @todo This might be redundant for variables
                 if declared_externally?(pin)
                   ignored_pins.push pin
                 else
@@ -172,7 +170,6 @@ module Solargraph
             result.push Problem.new(pin.location, "Unresolved type #{pin.return_type} for variable #{pin.name}", pin: pin)
           end
         else
-          # @todo Check if the variable is defined by an external call
           inferred = pin.probe(api_map)
           if inferred.undefined? && declared_externally?(pin)
             ignored_pins.push pin
@@ -227,7 +224,7 @@ module Solargraph
             base = base.base
           end
           closest = found.typify(api_map) if found
-          if !found || closest.defined? || internal?(found)
+          if !found || (closest.defined? && internal_or_core?(found))
             unless ignored_pins.include?(found)
               result.push Problem.new(location, "Unresolved call to #{missing.links.last.word}")
               @marked_ranges.push rng
@@ -244,8 +241,8 @@ module Solargraph
       base = chain
       until base.links.length == 1 && base.undefined?
         pins = base.define(api_map, block_pin, locals)
-        if pins.first.is_a?(Pin::BaseMethod)
-          # @type [Pin::BaseMethod]
+        if pins.first.is_a?(Pin::Method)
+          # @type [Pin::Method]
           pin = pins.first
           ap = if base.links.last.is_a?(Solargraph::Source::Chain::ZSuper)
             arity_problems_for(pin, fake_args_for(block_pin), location)
@@ -313,7 +310,6 @@ module Solargraph
             end
           else
             if par.decl == :kwarg
-              # @todo Problem: missing required keyword argument
               result.push Problem.new(location, "Call to #{pin.path} is missing keyword argument #{par.name}")
             end
           end
@@ -360,7 +356,12 @@ module Solargraph
 
     # @param pin [Pin::Base]
     def internal? pin
+      return false if pin.nil?
       pin.location && api_map.bundled?(pin.location.filename)
+    end
+
+    def internal_or_core? pin
+      internal?(pin) || api_map.yard_map.core_pins.include?(pin) || api_map.yard_map.stdlib_pins.include?(pin)
     end
 
     # @param pin [Pin::Base]
@@ -395,7 +396,7 @@ module Solargraph
       true
     end
 
-    # @param pin [Pin::BaseMethod]
+    # @param pin [Pin::Method]
     def arity_problems_for(pin, arguments, location)
       return [] unless pin.explicit?
       return [] if pin.parameters.empty? && arguments.empty?
@@ -410,29 +411,29 @@ module Solargraph
       if unchecked.empty? && pin.parameters.any? { |param| param.decl == :kwarg }
         return [Problem.new(location, "Missing keyword arguments to #{pin.path}")]
       end
+      settled_kwargs = 0
       unless unchecked.empty?
         kwargs = convert_hash(unchecked.last.node)
-        # unless kwargs.empty?
-          if pin.parameters.any? { |param| [:kwarg, :kwoptarg].include?(param.decl) || param.kwrestarg? }
-            if kwargs.empty?
-              add_params += 1
-            else
-              unchecked.pop
-              pin.parameters.each do |param|
-                next unless param.keyword?
-                if kwargs.key?(param.name.to_sym)
-                  kwargs.delete param.name.to_sym
-                elsif param.decl == :kwarg
-                  return [Problem.new(location, "Missing keyword argument #{param.name} to #{pin.path}")]
-                end
-              end
-              kwargs.clear if pin.parameters.any?(&:kwrestarg?)
-              unless kwargs.empty?
-                return [Problem.new(location, "Unrecognized keyword argument #{kwargs.keys.first} to #{pin.path}")]
+        if pin.parameters.any? { |param| [:kwarg, :kwoptarg].include?(param.decl) || param.kwrestarg? }
+          if kwargs.empty?
+            add_params += 1
+          else
+            unchecked.pop
+            pin.parameters.each do |param|
+              next unless param.keyword?
+              if kwargs.key?(param.name.to_sym)
+                kwargs.delete param.name.to_sym
+                settled_kwargs += 1
+              elsif param.decl == :kwarg
+                return [Problem.new(location, "Missing keyword argument #{param.name} to #{pin.path}")]
               end
             end
+            kwargs.clear if pin.parameters.any?(&:kwrestarg?)
+            unless kwargs.empty?
+              return [Problem.new(location, "Unrecognized keyword argument #{kwargs.keys.first} to #{pin.path}")]
+            end
           end
-        # end
+        end
       end
       req = required_param_count(pin)
       if req + add_params < unchecked.length
@@ -443,23 +444,18 @@ module Solargraph
           return []
         end
         return [Problem.new(location, "Too many arguments to #{pin.path}")]
-      elsif unchecked.length < req && (arguments.empty? || !arguments.last.splat?)
+      elsif unchecked.length < req - settled_kwargs && (arguments.empty? || !arguments.last.splat?)
         return [Problem.new(location, "Not enough arguments to #{pin.path}")]
       end
       []
     end
 
-    # @param pin [Pin::BaseMethod]
+    # @param pin [Pin::Method]
     def required_param_count(pin)
-      count = 0
-      pin.parameters.each do |param|
-        break unless param.decl == :arg
-        count += 1
-      end
-      count
+      pin.parameters.sum { |param| %i[arg kwarg].include?(param.decl) ? 1 : 0 }
     end
 
-    # @param pin [Pin::BaseMethod]
+    # @param pin [Pin::Method]
     def optional_param_count(pin)
       count = 0
       pin.parameters.each do |param|

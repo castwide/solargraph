@@ -209,13 +209,13 @@ describe Solargraph::TypeChecker do
     end
 
     it 'ignores variable types with undefined inferences from external sources' do
-      # @todo This test uses Nokogiri because it's a gem dependency known to
+      # @todo This test uses kramdown-parser-gfm because it's a gem dependency known to
       #   lack typed methods. A better test wouldn't depend on the state of
       #   vendored code.
       checker = type_checker(%(
-        require 'nokogiri'
-        # @type [Nokogiri::HTML::Document]
-        doc = Nokogiri::HTML.parse('something')
+        require 'kramdown-parser-gfm'
+        # @type [String]
+        doc = Kramdown::Parser::GFM.new(nil, nil).parse
       ))
       expect(checker.problems).to be_empty
     end
@@ -254,7 +254,6 @@ describe Solargraph::TypeChecker do
     end
 
     it 'validates keyword params' do
-      # @todo Skip for legacy Ruby
       checker = type_checker(%(
         class Foo
           # @param baz [String]
@@ -488,6 +487,22 @@ describe Solargraph::TypeChecker do
       expect(checker.problems.first.message).to include('Not enough arguments')
     end
 
+    it 'accepts kwargs with explicit blockargs' do
+      checker = type_checker(%(
+        def foo(bar:, &block); end
+        foo(bar: 'bar', &block)
+      ))
+      expect(checker.problems).to be_empty
+    end
+
+    it 'accepts kwargs with implicit blockargs' do
+      checker = type_checker(%(
+        def foo(bar:); end
+        foo(bar: 'bar', &block)
+      ))
+      expect(checker.problems).to be_empty
+    end
+
     it 'ignores restarg arguments' do
       checker = type_checker(%(
         def foo(*bar); end
@@ -696,6 +711,14 @@ describe Solargraph::TypeChecker do
       ))
       expect(checker.problems).to be_one
       expect(checker.problems.first.message).to include('Not enough arguments')
+    end
+
+    it 'verifies splatted kwargs' do
+      checker = type_checker(%(
+        def xxx(from:, to:); end
+        xxx(**{from: 1, to: 2})
+      ))
+      expect(checker.problems).to be_empty
     end
   end
 end

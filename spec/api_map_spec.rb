@@ -269,10 +269,10 @@ describe Solargraph::ApiMap do
   it "catalogs changes" do
     workspace = Solargraph::Workspace.new
     s1 = Solargraph::Source.load_string('class Foo; end')
-    @api_map.catalog(Solargraph::Bundle.new(workspace: workspace, opened: [s1]))
+    @api_map.catalog(Solargraph::Bench.new(workspace: workspace, opened: [s1]))
     expect(@api_map.get_path_pins('Foo')).not_to be_empty
     s2 = Solargraph::Source.load_string('class Bar; end')
-    @api_map.catalog(Solargraph::Bundle.new(workspace: workspace, opened: [s2]))
+    @api_map.catalog(Solargraph::Bench.new(workspace: workspace, opened: [s2]))
     expect(@api_map.get_path_pins('Foo')).to be_empty
     expect(@api_map.get_path_pins('Bar')).not_to be_empty
   end
@@ -377,7 +377,7 @@ describe Solargraph::ApiMap do
       require 'foo'
       require 'invalid'
     ), 'app.rb')
-    bundle = Solargraph::Bundle.new(opened: [source1, source2])
+    bundle = Solargraph::Bench.new(opened: [source1, source2])
     api_map.catalog bundle
     expect(api_map.unresolved_requires).to eq(['invalid'])
   end
@@ -473,7 +473,7 @@ describe Solargraph::ApiMap do
       end
     ), 'source2.rb')
     api_map = Solargraph::ApiMap.new
-    bundle = Solargraph::Bundle.new(opened: [source1, source2])
+    bundle = Solargraph::Bench.new(opened: [source1, source2])
     api_map.catalog bundle
     pin = api_map.get_path_pins('Sub#bar').first
     expect(pin).not_to be_nil
@@ -565,6 +565,24 @@ describe Solargraph::ApiMap do
     api_map = Solargraph::ApiMap.new
     api_map.map source
     fqns = api_map.qualify('Bar', 'Includer')
+    expect(fqns).to eq('Foo::Bar')
+  end
+
+  it "qualifies namespaces with conflicting includes" do
+    source = Solargraph::Source.load_string(%(
+      module Bar; end
+      module Foo
+        module Bar; end
+      end
+      module Foo
+        module Includer
+          include Bar
+        end
+      end
+    ))
+    api_map = Solargraph::ApiMap.new
+    api_map.map source
+    fqns = api_map.qualify('Bar', 'Foo::Includer')
     expect(fqns).to eq('Foo::Bar')
   end
 
@@ -703,5 +721,41 @@ describe Solargraph::ApiMap do
     expect(names).to include('@var1')
     expect(names).to include('@var2')
     expect(names).not_to include('@var3')
+  end
+
+  it 'finds class methods from modules included from class << self' do
+    source = Solargraph::Source.load_string(%(
+      module Extender
+        def foo; end
+      end
+
+      class Example
+        class << self
+          include Extender
+        end
+      end
+    ))
+    api_map = Solargraph::ApiMap.new
+    api_map.map source
+    pins = api_map.get_methods('Example', scope: :class)
+    expect(pins.map(&:name)).to include('foo')
+  end
+
+  it 'resolves aliases for YARD methods' do
+    dir = File.absolute_path(File.join('spec', 'fixtures', 'yard_map'))
+    yard_pins = Dir.chdir dir do
+      YARD::Registry.load([File.join(dir, 'attr.rb')], true)
+      mapper = Solargraph::YardMap::Mapper.new(YARD::Registry.all)
+      mapper.map
+    end
+    source_pins = Solargraph::SourceMap.load_string(%(
+      class Foo
+        alias baz foo
+      end
+    )).pins
+    api_map = Solargraph::ApiMap.new(pins: yard_pins + source_pins)
+    baz = api_map.get_method_stack('Foo', 'baz').first
+    expect(baz).to be_a(Solargraph::Pin::Method)
+    expect(baz.path).to eq('Foo#baz')
   end
 end

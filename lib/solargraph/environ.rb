@@ -1,6 +1,11 @@
 # frozen_string_literal: true
 
 module Solargraph
+  # A collection of additional data, such as map pins and required paths, that
+  # can be added to an ApiMap.
+  #
+  # Conventions are used to add Environs.
+  #
   class Environ
     # @return [Array<String>]
     attr_reader :requires
@@ -9,22 +14,22 @@ module Solargraph
     attr_reader :domains
 
     # @return [Array<Pin::Reference::Override>]
-    attr_reader :overrides
+    attr_reader :pins
 
     # @param requires [Array<String>]
     # @param domains [Array<String>]
-    # @param overrides [Array<Pin::Reference::Override>]
-    def initialize requires: [], domains: [], overrides: []
+    # @param pins [Array<Pin::Base>]
+    def initialize requires: [], domains: [], pins: []
       @requires = requires
       @domains = domains
-      @overrides = overrides
+      @pins = pins
     end
 
     # @return [self]
     def clear
       domains.clear
       requires.clear
-      overrides.clear
+      pins.clear
       self
     end
 
@@ -33,7 +38,7 @@ module Solargraph
     def merge other
       domains.concat other.domains
       requires.concat other.requires
-      overrides.concat other.overrides
+      pins.concat other.pins
       self
     end
   end

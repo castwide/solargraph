@@ -55,6 +55,8 @@ module Solargraph
       false
     end
 
+    # @param directory [String]
+    # @return [Hash]
     def self.specs_from_bundle directory
       Solargraph.with_clean_env do
         Dir.chdir directory do

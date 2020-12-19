@@ -110,18 +110,21 @@ module Solargraph
       # @param api_map [ApiMap]
       # @return [ComplexType]
       def infer_first_defined pins, context, api_map
-        type = ComplexType::UNDEFINED
+        possibles = []
         pins.each do |pin|
           # Avoid infinite recursion
           next if @@inference_stack.include?(pin.identity)
           @@inference_stack.push pin.identity
           type = pin.typify(api_map)
           @@inference_stack.pop
-          break if type.defined?
+          if type.defined?
+            possibles.push type
+            break if pin.is_a?(Pin::Method)
+          end
         end
-        if type.undefined?
+        if possibles.empty?
           # Limit method inference recursion
-          return type if @@inference_depth >= 10 && pins.first.is_a?(Pin::BaseMethod)
+          return ComplexType::UNDEFINED if @@inference_depth >= 10 && pins.first.is_a?(Pin::Method)
           @@inference_depth += 1
           pins.each do |pin|
             # Avoid infinite recursion
@@ -129,9 +132,19 @@ module Solargraph
             @@inference_stack.push pin.identity
             type = pin.probe(api_map)
             @@inference_stack.pop
-            break if type.defined?
+            if type.defined?
+              possibles.push type
+              break if pin.is_a?(Pin::Method)
+            end
           end
           @@inference_depth -= 1
+        end
+        return ComplexType::UNDEFINED if possibles.empty?
+        type = if possibles.length > 1
+          sorted = possibles.map { |t| t.rooted? ? "::#{t}" : t.to_s }.sort { |a, _| a == 'nil' ? 1 : 0 }
+          ComplexType.parse(*sorted)
+        else
+          possibles.first
         end
         return type if context.nil? || context.return_type.undefined?
         type.self_to(context.return_type.namespace)

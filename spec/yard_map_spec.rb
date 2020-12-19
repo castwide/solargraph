@@ -108,23 +108,31 @@ describe Solargraph::YardMap do
     expect(location).to be_nil
   end
 
-  it 'adds overrides to stdlib' do
-    # Pathname is a stdlib component that doesn't have method return types in
-    # the yardocs. This test makes sure that YardMap injects overrides from
-    # StdlibFills.
-    yard_map = Solargraph::YardMap.new(required: ['pathname'])
-    pin = yard_map.pins.select { |p| p.path == 'Pathname#join' }.first
-    expect(pin.return_type.tag).to eq('Pathname')
-  end
-
   it 'maps core Errno classes' do
     yard_map = Solargraph::YardMap.new
-    store = Solargraph::ApiMap::Store.new(yard_map.core_pins)
+    store = Solargraph::ApiMap::Store.new(yard_map.pins)
     Errno.constants.each do |const|
       pin = store.get_path_pins("Errno::#{const}").first
       expect(pin).to be_a(Solargraph::Pin::Namespace)
       superclass = store.get_superclass(pin.path)
       expect(superclass).to eq('SystemCallError')
     end
+  end
+
+  it 'adds overrides' do
+    # Pathname is a stdlib component that doesn't have method return types in
+    # the yardocs. This test makes sure that YardMap injects overrides from
+    # StdlibFills.
+    yard_map = Solargraph::YardMap.new(required: ['pathname'])
+    pin = yard_map.path_pin('Pathname#join')
+    expect(pin.return_type.tag).to eq('Pathname')
+  end
+
+  it 'maps YAML to Psych' do
+    # @todo This breaks in Ruby 2.7
+    next if RUBY_VERSION =~ /^2\.7\./
+    yard_map = Solargraph::YardMap.new(required: ['yaml'])
+    yaml = yard_map.path_pin('YAML')
+    expect(yaml.return_type.to_s).to eq('Module<Psych>')
   end
 end

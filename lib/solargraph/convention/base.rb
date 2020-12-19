@@ -2,22 +2,30 @@
 
 module Solargraph
   module Convention
+    # The base class for Conventions.
+    #
+    # A Convention provides Environs that customize ApiMaps with additional
+    # pins and other information. Subclasses should implement the `local` and
+    # `global` methods as necessary.
+    #
     class Base
       EMPTY_ENVIRON = Environ.new
 
-      # True if the source qualifies for this convention.
-      # Subclasses should override this method.
+      # The Environ for a source map.
+      # Subclasses can override this method.
       #
-      # @param source [Source]
-      def match? source
-        false
+      # @param source_map [SourceMap]
+      # @return [Environ]
+      def local source_map
+        EMPTY_ENVIRON
       end
 
-      # The Environ for this convention.
-      # Subclasses should override this method.
+      # The Environ for a YARD map.
+      # Subclasses can override this method.
       #
+      # @param yard_map [YardMap]
       # @return [Environ]
-      def environ
+      def global yard_map
         EMPTY_ENVIRON
       end
     end

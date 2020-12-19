@@ -17,12 +17,11 @@ describe Solargraph::SourceMap::Mapper do
   end
 
   it "ignores include calls that are not attached to the current namespace" do
-    # @todo The include call inside of xyz args is probably valid
     source = Solargraph::Source.new(%(
       class Foo
         include Direct
         xyz.include Indirect
-        # xyz(include Indirect)
+        xyz(include Interior)
       end
     ))
     map = Solargraph::SourceMap.map(source)
@@ -30,15 +29,15 @@ describe Solargraph::SourceMap::Mapper do
     names = pins.map(&:name)
     expect(names).to include('Direct')
     expect(names).not_to include('Indirect')
+    expect(names).to include('Interior')
   end
 
   it "ignores prepend calls that are not attached to the current namespace" do
-    # @todo The prepend call inside of xyz args is probably valid
     source = Solargraph::Source.new(%(
       class Foo
         prepend Direct
         xyz.prepend Indirect
-        # xyz(prepend Indirect)
+        xyz(prepend Interior)
       end
     ))
     map = Solargraph::SourceMap.map(source)
@@ -46,15 +45,15 @@ describe Solargraph::SourceMap::Mapper do
     names = pins.map(&:name)
     expect(names).to include('Direct')
     expect(names).not_to include('Indirect')
+    expect(names).to include('Interior')
   end
 
   it "ignores extend calls that are not attached to the current namespace" do
-    # @todo The include call inside of xyz args is probably valid
     source = Solargraph::Source.new(%(
       class Foo
         extend Direct
         xyz.extend Indirect
-        # xyz(extend Indirect)
+        xyz(extend Interior)
       end
     ))
     map = Solargraph::SourceMap.map(source)
@@ -65,6 +64,7 @@ describe Solargraph::SourceMap::Mapper do
     names = pins.map(&:name)
     expect(names).to include('Direct')
     expect(names).not_to include('Indirect')
+    expect(names).to include('Interior')
   end
 
   it "sets scopes for attributes" do
@@ -1136,7 +1136,7 @@ describe Solargraph::SourceMap::Mapper do
         # @!attribute
       end
     ))
-    attrs = smap.pins.select { |pin| pin.is_a?(Solargraph::Pin::Attribute) }
+    attrs = smap.pins.select { |pin| pin.is_a?(Solargraph::Pin::Method) && pin.attribute? }
     expect(attrs).to be_empty
   end
 
@@ -1456,5 +1456,30 @@ describe Solargraph::SourceMap::Mapper do
     ))
     bar = map.first_pin('Foo#bar')
     expect(bar).to be_explicit
+  end
+
+  it 'separates parameters from local variables' do
+    map = Solargraph::SourceMap.load_string(%(
+      def foo(bar)
+        for i in (bar.length - 1).downto(0) do
+          puts bar[i]
+        end
+      end
+    ))
+    pin = map.first_pin('#foo')
+    expect(pin.parameters.length).to eq(1)
+  end
+
+  it 'maps visibility calls with method arguments' do
+    map = Solargraph::SourceMap.load_string(%(
+      class Foo
+        def bar; end
+        private def baz; end
+        def quz; end
+      end
+    ))
+    expect(map.first_pin('Foo#bar').visibility).to be(:public)
+    expect(map.first_pin('Foo#baz').visibility).to be(:private)
+    expect(map.first_pin('Foo#quz').visibility).to be(:public)
   end
 end

@@ -15,7 +15,7 @@ module Solargraph
         def initialize node, filename = nil, in_block = false
           @node = node
           @filename = filename
-          @in_block = in_block
+          @in_block = in_block ? 1 : 0
         end
 
         # @return [Source::Chain]
@@ -52,27 +52,27 @@ module Solargraph
           return generate_links(n.children[0]) if n.type == :SPLAT
           result = []
           if n.type == :ITER
-            @in_block = true
+            @in_block += 1
             result.concat generate_links(n.children[0])
-            @in_block = false
+            @in_block -= 1
           elsif n.type == :CALL || n.type == :OPCALL
             n.children[0..-3].each do |c|
               result.concat generate_links(c)
             end
-            result.push Chain::Call.new(n.children[-2].to_s, node_to_argchains(n.children.last), @in_block || block_passed?(n))
+            result.push Chain::Call.new(n.children[-2].to_s, node_to_argchains(n.children.last), @in_block > 0 || block_passed?(n))
           elsif n.type == :ATTRASGN
             result.concat generate_links(n.children[0])
-            result.push Chain::Call.new(n.children[1].to_s, node_to_argchains(n.children[2]), @in_block || block_passed?(n))
+            result.push Chain::Call.new(n.children[1].to_s, node_to_argchains(n.children[2]), @in_block > 0 || block_passed?(n))
           elsif n.type == :VCALL
-            result.push Chain::Call.new(n.children[0].to_s, [], @in_block || block_passed?(n))
+            result.push Chain::Call.new(n.children[0].to_s, [], @in_block > 0 || block_passed?(n))
           elsif n.type == :FCALL
-            result.push Chain::Call.new(n.children[0].to_s, node_to_argchains(n.children[1]), @in_block || block_passed?(n))
+            result.push Chain::Call.new(n.children[0].to_s, node_to_argchains(n.children[1]), @in_block > 0 || block_passed?(n))
           elsif n.type == :SELF
             result.push Chain::Head.new('self')
           elsif n.type == :ZSUPER
-            result.push Chain::ZSuper.new('super', @in_block || block_passed?(n))
+            result.push Chain::ZSuper.new('super', @in_block > 0 || block_passed?(n))
           elsif n.type == :SUPER
-            result.push Chain::Call.new('super', node_to_argchains(n.children.last), @in_block || block_passed?(n))
+            result.push Chain::Call.new('super', node_to_argchains(n.children.last), @in_block > 0 || block_passed?(n))
           elsif [:COLON2, :COLON3, :CONST].include?(n.type)
             const = unpack_name(n)
             result.push Chain::Constant.new(const)

@@ -20,7 +20,7 @@ module Solargraph
     def initialize workspace = Solargraph::Workspace.new, name = nil
       @workspace = workspace
       @name = name
-      api_map.catalog bundle
+      api_map.catalog bench
       @synchronized = true
       @catalog_mutex = Mutex.new
     end
@@ -174,12 +174,12 @@ module Solargraph
       if cursor.comment?
         source = read(filename)
         offset = Solargraph::Position.to_offset(source.code, Solargraph::Position.new(line, column))
-        lft = source.code[0..offset].match(/\[([a-z0-9_:]*)\z/i)
-        rgt = source.code[offset+1..-1].match(/^([a-z0-9_:]*)\]/i)
+        lft = source.code[0..offset-1].match(/\[[a-z0-9_:<, ]*?([a-z0-9_:]*)\z/i)
+        rgt = source.code[offset..-1].match(/^([a-z0-9_]*)(:[a-z0-9_:]*)?[\]>, ]/i)
         if lft && rgt
-          tag = lft[1] + rgt[1]
+          tag = (lft[1] + rgt[1]).sub(/:+$/, '')
           clip = api_map.clip(cursor)
-          api_map.get_constants('', *clip.gates).select { |pin| pin.path == tag || pin.path.end_with?("::#{tag}")}
+          clip.translate tag
         else
           []
         end
@@ -209,7 +209,6 @@ module Solargraph
     # @return [Array<Solargraph::Range>]
     # @todo Take a Location instead of filename/line/column
     def references_from filename, line, column, strip: false, only: false
-      # checkout filename
       cursor = api_map.cursor_at(filename, Position.new(line, column))
       clip = api_map.clip(cursor)
       pins = clip.define
@@ -227,7 +226,7 @@ module Solargraph
             referenced = definitions_at(loc.filename, loc.range.ending.line, loc.range.ending.character)
             # HACK: The additional location comparison is necessary because
             # Clip#define can return proxies for parameter pins
-            referenced.any?{|r| r == pin || r.location == pin.location}
+            referenced.any? { |r| r == pin || r.location == pin.location }
           end
           # HACK: for language clients that exclude special characters from the start of variable names
           if strip && match = cursor.word.match(/^[^a-z0-9_]+/i)
@@ -264,7 +263,7 @@ module Solargraph
     end
 
     # @param query [String]
-    # @return [Array<YARD::CodeObject::Base>]
+    # @return [Array<YARD::CodeObjects::Base>]
     def document query
       catalog
       api_map.document query
@@ -295,7 +294,6 @@ module Solargraph
     # @param filename [String]
     # @return [Array<Solargraph::Pin::Base>]
     def document_symbols filename
-      # checkout filename
       api_map.document_symbols(filename)
     end
 
@@ -356,7 +354,7 @@ module Solargraph
       @catalog_mutex.synchronize do
         break if synchronized?
         logger.info "Cataloging #{workspace.directory.empty? ? 'generic workspace' : workspace.directory}"
-        api_map.catalog bundle
+        api_map.catalog bench
         @synchronized = true
         logger.info "Catalog complete (#{api_map.source_maps.length} files, #{api_map.pins.length} pins)" if logger.info?
       end
@@ -408,9 +406,9 @@ module Solargraph
       @api_map ||= Solargraph::ApiMap.new
     end
 
-    # @return [Bundle]
-    def bundle
-      Bundle.new(
+    # @return [Bench]
+    def bench
+      Bench.new(
         workspace: workspace,
         opened: @current ? [@current] : []
       )

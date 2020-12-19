@@ -3,11 +3,8 @@
 module Solargraph
   module Convention
     class Gemfile < Base
-      def match? source
-        File.basename(source.filename) == 'Gemfile'
-      end
-
-      def environ
+      def local source_map
+        return EMPTY_ENVIRON unless File.basename(source_map.filename) == 'Gemfile'
         @environ ||= Environ.new(
           requires: ['bundler'],
           domains: ['Bundler::Dsl']

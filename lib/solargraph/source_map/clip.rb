@@ -72,6 +72,13 @@ module Solargraph
         end
       end
 
+      # @param phrase [String]
+      # @return [Array<Solargraph::Pin::Base>]
+      def translate phrase
+        chain = Parser.chain(Parser.parse(phrase))
+        chain.define(api_map, block, locals)
+      end
+
       private
 
       # @return [ApiMap]
@@ -142,14 +149,14 @@ module Solargraph
         frag_start = cursor.start_of_word.to_s.downcase
         filtered = result.uniq(&:name).select { |s|
           s.name.downcase.start_with?(frag_start) &&
-            (!s.is_a?(Pin::BaseMethod) || s.name.match(/^[a-z0-9_]+(\!|\?|=)?$/i))
+            (!s.is_a?(Pin::Method) || s.name.match(/^[a-z0-9_]+(\!|\?|=)?$/i))
         }
         Completion.new(filtered, cursor.range)
       end
 
       def tag_complete
         result = []
-        match = source_map.code[0..cursor.offset-1].match(/\[([a-z0-9_:]*)\z/i)
+        match = source_map.code[0..cursor.offset-1].match(/[\[<, ]([a-z0-9_:]*)\z/i)
         if match
           full = match[1]
           if full.include?('::')
@@ -205,7 +212,8 @@ module Solargraph
             result.concat api_map.get_constants(context_pin.context.namespace, *gates)
             result.concat api_map.get_methods(block.binder.namespace, scope: block.binder.scope, visibility: [:public, :private, :protected])
             result.concat api_map.get_methods('Kernel')
-            result.concat ApiMap.keywords
+            # result.concat ApiMap.keywords
+            result.concat api_map.keyword_pins
             result.concat yielded_self_pins
           end
         end

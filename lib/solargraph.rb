@@ -27,15 +27,13 @@ module Solargraph
   autoload :YardMap,          'solargraph/yard_map'
   autoload :Pin,              'solargraph/pin'
   autoload :ServerMethods,    'solargraph/server_methods'
-  autoload :CoreFills,        'solargraph/core_fills'
-  autoload :StdlibFills,      'solargraph/stdlib_fills'
   autoload :LanguageServer,   'solargraph/language_server'
   autoload :Workspace,        'solargraph/workspace'
   autoload :Page,             'solargraph/page'
   autoload :Library,          'solargraph/library'
   autoload :Diagnostics,      'solargraph/diagnostics'
   autoload :ComplexType,      'solargraph/complex_type'
-  autoload :Bundle,           'solargraph/bundle'
+  autoload :Bench,            'solargraph/bench'
   autoload :Logging,          'solargraph/logging'
   autoload :TypeChecker,      'solargraph/type_checker'
   autoload :Environ,          'solargraph/environ'
@@ -56,7 +54,7 @@ module Solargraph
   end
 
   # A helper method that runs Bundler.with_unbundled_env or falls back to
-  # Bundler.with_clean env for earlier versions of Bundler.
+  # Bundler.with_clean_env for earlier versions of Bundler.
   #
   def self.with_clean_env &block
     meth = if Bundler.respond_to?(:with_unbundled_env)

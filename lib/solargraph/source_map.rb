@@ -30,7 +30,7 @@ module Solargraph
       @source = source.dup
       @pins = pins
       @locals = locals
-      environ.merge Convention.for(source)
+      environ.merge Convention.for_local(self) unless filename.nil?
       @pin_class_hash = pins.to_set.classify(&:class).transform_values(&:to_a)
       @pin_select_cache = {}
     end
@@ -168,6 +168,9 @@ module Solargraph
       position = Position.new(line, character)
       found = nil
       pins.each do |pin|
+        # @todo Attribute pins should not be treated like closures, but
+        #   there's probably a better way to handle it
+        next if pin.is_a?(Pin::Method) && pin.attribute?
         found = pin if (klasses.empty? || klasses.any? { |kls| pin.is_a?(kls) } ) && pin.location.range.contain?(position)
         break if pin.location.range.start.line > line
       end

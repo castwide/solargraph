@@ -29,12 +29,12 @@ describe Solargraph::TypeChecker do
     end
 
     it 'ignores undefined method calls from external sources' do
-      # @todo This test uses Nokogiri because it's a gem dependency known to
+      # @todo This test uses kramdown-parser-gfm because it's a gem dependency known to
       #   lack typed methods. A better test wouldn't depend on the state of
       #   vendored code.
       checker = type_checker(%(
-        require 'nokogiri'
-        Nokogiri::HTML.parse('code').undefined_call
+        require 'kramdown-parser-gfm'
+        Kramdown::Parser::GFM.undefined_call
       ))
       expect(checker.problems).to be_empty
     end

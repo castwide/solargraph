@@ -6,17 +6,31 @@ module Solargraph
       module NodeProcessors
         class ArgsNode < Parser::NodeProcessor::Base
           def process
-            if region.closure.is_a?(Pin::BaseMethod) || region.closure.is_a?(Pin::Block)
-              node.children[0].times do |i|
-                locals.push Solargraph::Pin::Parameter.new(
-                  location: region.closure.location,
-                  closure: region.closure,
-                  comments: comments_for(node),
-                  name: region.lvars[i].to_s,
-                  presence: region.closure.location.range,
-                  decl: :arg
-                )
-                region.closure.parameters.push locals.last
+            if region.closure.is_a?(Pin::Method) || region.closure.is_a?(Pin::Block)
+              if region.lvars[0].nil?
+                node.children[0].times do |i|
+                  locals.push Solargraph::Pin::Parameter.new(
+                    location: region.closure.location,
+                    closure: region.closure,
+                    comments: comments_for(node),
+                    name: extract_name(node.children[i + 1]),
+                    presence: region.closure.location.range,
+                    decl: :arg
+                  )
+                  region.closure.parameters.push locals.last
+                end
+              else
+                node.children[0].times do |i|
+                  locals.push Solargraph::Pin::Parameter.new(
+                    location: region.closure.location,
+                    closure: region.closure,
+                    comments: comments_for(node),
+                    name: region.lvars[i].to_s,
+                    presence: region.closure.location.range,
+                    decl: :arg
+                  )
+                  region.closure.parameters.push locals.last
+                end
               end
               # @todo Optional args, keyword args, etc.
               if node.children[6]
@@ -54,6 +68,16 @@ module Solargraph
               end
             end
             process_children
+          end
+
+          private
+
+          def extract_name var
+            if Parser.is_ast_node?(var)
+              var.children[0].to_s
+            else
+              var.to_s
+            end
           end
         end
       end

@@ -29,7 +29,7 @@ module Solargraph
       # @return [Array<Solargraph::Pin::Base>]
       def get_methods fqns, scope: :instance, visibility: [:public]
         namespace_children(fqns).select do |pin|
-          pin.is_a?(Pin::BaseMethod) && pin.scope == scope && visibility.include?(pin.visibility)
+          pin.is_a?(Pin::Method) && pin.scope == scope && visibility.include?(pin.visibility)
         end
       end
 
@@ -102,9 +102,9 @@ module Solargraph
         pins_by_class(Solargraph::Pin::Namespace)
       end
 
-      # @return [Array<Solargraph::Pin::BaseMethod>]
+      # @return [Array<Solargraph::Pin::Method>]
       def method_pins
-        pins_by_class(Solargraph::Pin::BaseMethod)
+        pins_by_class(Solargraph::Pin::Method)
       end
 
       # @param fqns [String]
@@ -218,7 +218,7 @@ module Solargraph
         @pin_select_cache = {}
         @namespace_map = set.classify(&:namespace).transform_values(&:to_a)
         @path_pin_hash = set.classify(&:path).transform_values(&:to_a)
-        @namespaces = @path_pin_hash.keys.compact
+        @namespaces = @path_pin_hash.keys.compact.to_set
         pins_by_class(Pin::Reference::Include).each do |pin|
           include_references[pin.namespace] ||= []
           include_references[pin.namespace].push pin.name
@@ -245,10 +245,6 @@ module Solargraph
             pin.docstring.add_tag(tag)
           end
         end
-        # @todo This is probably not the best place for these overrides
-        superclass_references['Integer'] = ['Numeric']
-        superclass_references['Float'] = ['Numeric']
-        superclass_references['File'] = ['IO']
       end
     end
   end

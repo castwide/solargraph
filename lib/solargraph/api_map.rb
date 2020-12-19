@@ -33,11 +33,7 @@ module Solargraph
     # @param pins [Array<Pin::Base>]
     # @return [self]
     def index pins
-      @source_map_hash.clear
-      @cache.clear
-      @store = Store.new(pins + YardMap.new.pins)
-      @unresolved_requires = []
-      workspace_filenames.clear
+      catalog Bench.new(pins: pins)
       self
     end
 
@@ -46,7 +42,7 @@ module Solargraph
     # @param source [Source]
     # @return [self]
     def map source
-      catalog Bundle.new(opened: [source])
+      catalog Bench.new(opened: [source])
       self
     end
 
@@ -56,17 +52,19 @@ module Solargraph
       store.named_macros[name]
     end
 
-    # Catalog a bundle.
+    # Catalog a bench.
     #
-    # @param bundle [Bundle]
+    # @param bench [Bench]
     # @return [self]
-    def catalog bundle
+    def catalog bench
       new_map_hash = {}
-      # Bundle always needs to be merged if it adds or removes sources
-      merged = (bundle.sources.length == source_map_hash.values.length)
-      bundle.sources.each do |source|
+      # Bench always needs to be merged if it adds or removes sources
+      merged = (bench.sources.length == source_map_hash.values.length)
+      bench.sources.each do |source|
         if source_map_hash.key?(source.filename)
-          if source_map_hash[source.filename].code == source.code && source_map_hash[source.filename].source.synchronized? && source.synchronized?
+          if source_map_hash[source.filename].code == source.code &&
+             source_map_hash[source.filename].source.synchronized? &&
+             source.synchronized?
             new_map_hash[source.filename] = source_map_hash[source.filename]
           elsif !source.synchronized?
             new_map_hash[source.filename] = source_map_hash[source.filename]
@@ -87,23 +85,28 @@ module Solargraph
           merged = false
         end
       end
-      return self if merged
+      return self if bench.pins.empty? && @store && merged
       implicit.clear
       pins = []
       reqs = Set.new
       # @param map [SourceMap]
-      new_map_hash.values.each do |map|
-        implicit.merge map.environ
+      new_map_hash.each_value do |map|
         pins.concat map.pins
         reqs.merge map.requires.map(&:name)
       end
-      reqs.merge bundle.workspace.config.required
+      pins.concat bench.pins
+      reqs.merge bench.workspace.config.required
+      @required = reqs
+      bench.sources.each do |src|
+        implicit.merge new_map_hash[src.filename].environ
+      end
+      # implicit.merge Convention.for_global(self)
       local_path_hash.clear
-      unless bundle.workspace.require_paths.empty?
+      unless bench.workspace.require_paths.empty?
         file_keys = new_map_hash.keys
-        workspace_path = Pathname.new(bundle.workspace.directory)
+        workspace_path = Pathname.new(bench.workspace.directory)
         reqs.delete_if do |r|
-          bundle.workspace.require_paths.any? do |base|
+          bench.workspace.require_paths.any? do |base|
             pn = workspace_path.join(base, "#{r}.rb").to_s
             if file_keys.include? pn
               local_path_hash[r] = pn
@@ -115,20 +118,23 @@ module Solargraph
         end
       end
       reqs.merge implicit.requires
-      pins.concat implicit.overrides
-      br = reqs.include?('bundler/require') ? require_from_bundle(bundle.workspace.directory) : {}
+      br = reqs.include?('bundler/require') ? require_from_bundle(bench.workspace.directory) : {}
       reqs.merge br.keys
-      yard_map.change(reqs.to_a, br, bundle.workspace.gemnames)
-      new_store = Store.new(pins + yard_map.pins)
+      yard_map.change(reqs.to_a, br, bench.workspace.gemnames)
+      new_store = Store.new(yard_map.pins + implicit.pins + pins)
       @cache.clear
       @source_map_hash = new_map_hash
       @store = new_store
       @unresolved_requires = yard_map.unresolved_requires
       workspace_filenames.clear
-      workspace_filenames.concat bundle.workspace.filenames
+      workspace_filenames.concat bench.workspace.filenames
       @rebindable_method_names = nil
       store.block_pins.each { |blk| blk.rebind(self) }
       self
+    end
+
+    def required
+      @required ||= Set.new
     end
 
     # @return [Environ]
@@ -146,7 +152,7 @@ module Solargraph
     # @return [Source::Cursor]
     def cursor_at filename, position
       position = Position.normalize(position)
-      raise FileNotFoundError, "File not found: #{filename}" unless source_map_hash.has_key?(filename)
+      raise FileNotFoundError, "File not found: #{filename}" unless source_map_hash.key?(filename)
       source_map_hash[filename].cursor_at(position)
     end
 
@@ -165,9 +171,9 @@ module Solargraph
     # @param directory [String]
     # @return [ApiMap]
     def self.load directory
-      api_map = self.new
+      api_map = new
       workspace = Solargraph::Workspace.new(directory)
-      api_map.catalog Bundle.new(workspace: workspace)
+      api_map.catalog Bench.new(workspace: workspace)
       api_map
     end
 
@@ -189,10 +195,8 @@ module Solargraph
     # An array of pins based on Ruby keywords (`if`, `end`, etc.).
     #
     # @return [Array<Solargraph::Pin::Keyword>]
-    def self.keywords
-      @keywords ||= CoreFills::KEYWORDS.map{ |s|
-        Pin::Keyword.new(s)
-      }.freeze
+    def keyword_pins
+      store.pins_by_class(Pin::Keyword)
     end
 
     # An array of namespace names defined in the ApiMap.
@@ -296,7 +300,7 @@ module Solargraph
     # @param scope [Symbol] :class or :instance
     # @param visibility [Array<Symbol>] :public, :protected, and/or :private
     # @param deep [Boolean] True to include superclasses, mixins, etc.
-    # @return [Array<Solargraph::Pin::BaseMethod>]
+    # @return [Array<Solargraph::Pin::Method>]
     def get_methods fqns, scope: :instance, visibility: [:public], deep: true
       cached = cache.get_methods(fqns, scope, visibility, deep)
       return cached.clone unless cached.nil?
@@ -373,9 +377,9 @@ module Solargraph
     # @param fqns [String]
     # @param name [String]
     # @param scope [Symbol] :instance or :class
-    # @return [Array<Solargraph::Pin::BaseMethod>]
+    # @return [Array<Solargraph::Pin::Method>]
     def get_method_stack fqns, name, scope: :instance
-      get_methods(fqns, scope: scope, visibility: [:private, :protected, :public]).select{|p| p.name == name}
+      get_methods(fqns, scope: scope, visibility: [:private, :protected, :public]).select { |p| p.name == name }
     end
 
     # Get an array of all suggestions that match the specified path.
@@ -386,9 +390,7 @@ module Solargraph
     # @return [Array<Solargraph::Pin::Base>]
     def get_path_suggestions path
       return [] if path.nil?
-      result = []
-      result.concat store.get_path_pins(path)
-      resolve_method_aliases(result)
+      resolve_method_aliases store.get_path_pins(path)
     end
 
     # Get an array of pins that match the specified path.
@@ -410,8 +412,9 @@ module Solargraph
       rake_yard(store)
       found = []
       code_object_paths.each do |k|
-        if found.empty? || (query.include?('.') || query.include?('#')) || !(k.include?('.') || k.include?('#'))
-          found.push k if k.downcase.include?(query.downcase)
+        if (found.empty? || (query.include?('.') || query.include?('#')) || !(k.include?('.') || k.include?('#'))) &&
+           k.downcase.include?(query.downcase)
+          found.push k
         end
       end
       found
@@ -423,7 +426,7 @@ module Solargraph
     #   api_map.document('String#split')
     #
     # @param path [String] The path to find
-    # @return [Array<YARD::CodeObject::Base>]
+    # @return [Array<YARD::CodeObjects::Base>]
     def document path
       rake_yard(store)
       docs = []
@@ -437,24 +440,22 @@ module Solargraph
     # @return [Array<Pin::Base>]
     def query_symbols query
       result = []
-      source_map_hash.values.each do |s|
-        result.concat s.query_symbols(query)
-      end
+      source_map_hash.each_value { |s| result.concat s.query_symbols(query) }
       result
     end
 
     # @param location [Solargraph::Location]
     # @return [Array<Solargraph::Pin::Base>]
     def locate_pins location
-      return [] if location.nil? || !source_map_hash.has_key?(location.filename)
-      source_map_hash[location.filename].locate_pins(location)
+      return [] if location.nil? || !source_map_hash.key?(location.filename)
+      resolve_method_aliases source_map_hash[location.filename].locate_pins(location)
     end
 
     # @raise [FileNotFoundError] if the cursor's file is not in the ApiMap
     # @param cursor [Source::Cursor]
     # @return [SourceMap::Clip]
     def clip cursor
-      raise FileNotFoundError, "ApiMap did not catalog #{cursor.filename}" unless source_map_hash.has_key?(cursor.filename)
+      raise FileNotFoundError, "ApiMap did not catalog #{cursor.filename}" unless source_map_hash.key?(cursor.filename)
       SourceMap::Clip.new(self, cursor)
     end
 
@@ -463,8 +464,8 @@ module Solargraph
     # @param filename [String]
     # @return [Array<Pin::Symbol>]
     def document_symbols filename
-      return [] unless source_map_hash.has_key?(filename) # @todo Raise error?
-      source_map_hash[filename].document_symbols
+      return [] unless source_map_hash.key?(filename) # @todo Raise error?
+      resolve_method_aliases source_map_hash[filename].document_symbols
     end
 
     # @return [Array<SourceMap>]
@@ -477,7 +478,7 @@ module Solargraph
     # @param filename [String]
     # @return [SourceMap]
     def source_map filename
-      raise FileNotFoundError, "Source map for `#{filename}` not found" unless source_map_hash.has_key?(filename)
+      raise FileNotFoundError, "Source map for `#{filename}` not found" unless source_map_hash.key?(filename)
       source_map_hash[filename]
     end
 
@@ -500,7 +501,7 @@ module Solargraph
     # @return [Location]
     def require_reference_at location
       map = source_map(location.filename)
-      pin = map.requires.select { |pin| pin.location.range.contain?(location.range.start) }.first
+      pin = map.requires.select { |p| p.location.range.contain?(location.range.start) }.first
       return nil if pin.nil?
       if local_path_hash.key?(pin.name)
         return Location.new(local_path_hash[pin.name], Solargraph::Range.from_to(0, 0, 0, 0))
@@ -525,6 +526,11 @@ module Solargraph
       false
     end
 
+    # @return [YardMap]
+    def yard_map
+      @yard_map ||= YardMap.new
+    end
+
     private
 
     # @return [Array<String>]
@@ -532,27 +538,16 @@ module Solargraph
       @workspace_filenames ||= []
     end
 
-    # @return [YardMap]
-    def yard_map
-      @yard_map ||= YardMap.new
-    end
-
     # A hash of source maps with filename keys.
     #
     # @return [Hash{String => SourceMap}]
-    def source_map_hash
-      @source_map_hash
-    end
+    attr_reader :source_map_hash
 
     # @return [ApiMap::Store]
-    def store
-      @store
-    end
+    attr_reader :store
 
     # @return [Solargraph::ApiMap::Cache]
-    def cache
-      @cache
-    end
+    attr_reader :cache
 
     # @param fqns [String] A fully qualified namespace
     # @param scope [Symbol] :class or :instance
@@ -659,6 +654,7 @@ module Solargraph
       return nil if name.nil?
       return nil if skip.include?(root)
       skip.add root
+      possibles = []
       if name == ''
         if root == ''
           return ''
@@ -674,16 +670,19 @@ module Solargraph
           incs = store.get_includes(roots.join('::'))
           incs.each do |inc|
             foundinc = inner_qualify(name, inc, skip)
-            return foundinc unless foundinc.nil?
+            possibles.push foundinc unless foundinc.nil?
           end
           roots.pop
         end
-        incs = store.get_includes('')
-        incs.each do |inc|
-          foundinc = inner_qualify(name, inc, skip)
-          return foundinc unless foundinc.nil?
+        if possibles.empty?
+          incs = store.get_includes('')
+          incs.each do |inc|
+            foundinc = inner_qualify(name, inc, skip)
+            possibles.push foundinc unless foundinc.nil?
+          end
         end
         return name if store.namespace_exists?(name)
+        return possibles.last
       end
     end
 
@@ -723,29 +722,31 @@ module Solargraph
       result = []
       pins.each do |pin|
         resolved = resolve_method_alias(pin)
-        next unless visibility.include?(resolved.visibility)
+        next if resolved.respond_to?(:visibility) && !visibility.include?(resolved.visibility)
         result.push resolved
       end
       result
     end
 
     # @param pin [Pin::MethodAlias, Pin::Base]
-    # @return [Pin::BaseMethod]
+    # @return [Pin::Method]
     def resolve_method_alias pin
       return pin if !pin.is_a?(Pin::MethodAlias) || @method_alias_stack.include?(pin.path)
       @method_alias_stack.push pin.path
       origin = get_method_stack(pin.full_context.namespace, pin.original, scope: pin.scope).first
       @method_alias_stack.pop
       return pin if origin.nil?
-      Pin::Method.new(
+      args = {
         location: pin.location,
         closure: pin.closure,
         name: pin.name,
         comments: origin.comments,
         scope: origin.scope,
         visibility: origin.visibility,
-        parameters: origin.parameters
-      )
+        parameters: origin.parameters,
+        attribute: origin.attribute?
+      }
+      Pin::Method.new **args
     end
   end
 end

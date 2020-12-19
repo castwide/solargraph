@@ -15,18 +15,27 @@ module Solargraph
     @@conventions = Set.new
 
     # @param convention [Class<Convention::Base>]
-    # @return [Convention::Base]
+    # @return [void]
     def self.register convention
       @@conventions.add convention.new
     end
 
-    # @param source [Source]
+    # @param source_map [SourceMap]
     # @return [Environ]
-    def self.for(source)
+    def self.for_local(source_map)
       result = Environ.new
-      return result if source.filename.nil? || source.filename.empty?
       @@conventions.each do |conv|
-        result.merge conv.environ if conv.match?(source)
+        result.merge conv.local(source_map)
+      end
+      result
+    end
+
+    # @param yard_map [YardMap]
+    # @return [Environ]
+    def self.for_global(yard_map)
+      result = Environ.new
+      @@conventions.each do |conv|
+        result.merge conv.global(yard_map)
       end
       result
     end

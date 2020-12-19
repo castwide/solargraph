@@ -1,24 +1,22 @@
 # frozen_string_literal: true
 
 module Solargraph
-  module Pin
-    module YardPin
-      class Namespace < Pin::Namespace
-        include YardMixin
+  class YardMap
+    class Mapper
+      module ToConstant
+        extend YardMap::Helpers
 
-        def initialize code_object, spec, closure = nil
+        def self.make code_object, closure = nil, spec = nil
           closure ||= Solargraph::Pin::Namespace.new(
             name: code_object.namespace.to_s,
-            closure: Pin::ROOT_PIN,
             gates: [code_object.namespace.to_s]
           )
-          super(
+          Pin::Constant.new(
             location: object_location(code_object, spec),
+            closure: closure,
             name: code_object.name.to_s,
             comments: code_object.docstring ? code_object.docstring.all.to_s : '',
-            type: code_object.is_a?(YARD::CodeObjects::ClassObject) ? :class : :module,
-            visibility: code_object.visibility,
-            closure: closure
+            visibility: code_object.visibility
           )
         end
       end

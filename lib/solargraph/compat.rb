@@ -7,3 +7,17 @@ unless Hash.method_defined?(:transform_values)
     end
   end
 end
+
+unless Array.method_defined?(:sum)
+  class Array
+    def sum &block
+      inject(0) do |s, x|
+        if block
+          s + block.call(x)
+        else
+          s + x
+        end
+      end
+    end
+  end
+end

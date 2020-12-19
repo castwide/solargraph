@@ -205,6 +205,36 @@ e = d # inline
     expect(source.folding_ranges.first.start.line).to eq(4)
   end
 
+  it 'folds multiline arrays' do
+    source = Solargraph::Source.load_string(%(
+      a = 1
+      b = 2
+      c = 3
+      d = [
+        one,
+        two,
+        three
+      ]
+    ))
+    expect(source.folding_ranges).to be_one
+    expect(source.folding_ranges.first.start.line).to eq(4)
+  end
+
+  it 'folds multiline hashes' do
+    source = Solargraph::Source.load_string(%(
+      a = 1
+      b = 2
+      c = 3
+      d = {
+        one: 1,
+        two: 2,
+        three: 3
+      }
+    ))
+    expect(source.folding_ranges).to be_one
+    expect(source.folding_ranges.first.start.line).to eq(4)
+  end
+
   it "returns unsynchronized sources for started synchronizations" do
     source1 = Solargraph::Source.load_string('x = 1', 'test.rb')
     source2 = source1.start_synchronize Solargraph::Source::Updater.new(

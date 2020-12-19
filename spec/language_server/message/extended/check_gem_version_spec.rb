@@ -50,4 +50,24 @@ describe Solargraph::LanguageServer::Message::Extended::CheckGemVersion do
       host.receive action
     }.not_to raise_error
   end
+
+  it 'uses bundler' do
+    host = Solargraph::LanguageServer::Host.new
+    host.configure({'useBundler' => true})
+    message = Solargraph::LanguageServer::Message::Extended::CheckGemVersion.new(host, {}, current: Gem::Version.new('0.0.1'))
+    message.process
+    response = nil
+    reader = Solargraph::LanguageServer::Transport::DataReader.new
+    reader.set_message_handler do |data|
+      response = data
+    end
+    reader.receive host.flush
+    expect {
+      action = {
+        "id" => response['id'],
+        "result" => response['params']['actions'].first
+      }
+      host.receive action
+    }.not_to raise_error
+  end
 end

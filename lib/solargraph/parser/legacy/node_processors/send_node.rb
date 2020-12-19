@@ -10,20 +10,7 @@ module Solargraph
           def process
             if node.children[0].nil?
               if [:private, :public, :protected].include?(node.children[1])
-                if (node.children.length > 2)
-                  node.children[2..-1].each do |child|
-                    next unless child.is_a?(AST::Node) && (child.type == :sym || child.type == :str)
-                    name = child.children[0].to_s
-                    matches = pins.select{ |pin| pin.is_a?(Pin::BaseMethod) && pin.name == name && pin.namespace == region.closure.full_context.namespace && pin.context.scope == (region.scope || :instance)}
-                    matches.each do |pin|
-                      # @todo Smelly instance variable access
-                      pin.instance_variable_set(:@visibility, node.children[1])
-                    end
-                  end
-                else
-                  # @todo Smelly instance variable access
-                  region.instance_variable_set(:@visibility, node.children[1])
-                end
+                process_visibility
               elsif node.children[1] == :module_function
                 process_module_function
               elsif [:attr_reader, :attr_writer, :attr_accessor].include?(node.children[1])
@@ -55,32 +42,57 @@ module Solargraph
           private
 
           # @return [void]
+          def process_visibility
+            if (node.children.length > 2)
+              node.children[2..-1].each do |child|
+                if child.is_a?(AST::Node) && (child.type == :sym || child.type == :str)
+                  name = child.children[0].to_s
+                  matches = pins.select{ |pin| pin.is_a?(Pin::Method) && pin.name == name && pin.namespace == region.closure.full_context.namespace && pin.context.scope == (region.scope || :instance)}
+                  matches.each do |pin|
+                    # @todo Smelly instance variable access
+                    pin.instance_variable_set(:@visibility, node.children[1])
+                  end
+                else
+                  process_children region.update(visibility: node.children[1])
+                end
+              end
+            else
+              # @todo Smelly instance variable access
+              region.instance_variable_set(:@visibility, node.children[1])
+            end
+          end
+
+          # @return [void]
           def process_attribute
             node.children[2..-1].each do |a|
               loc = get_node_location(node)
               clos = region.closure
               cmnt = comments_for(node)
               if node.children[1] == :attr_reader || node.children[1] == :attr_accessor
-                pins.push Solargraph::Pin::Attribute.new(
+                pins.push Solargraph::Pin::Method.new(
                   location: loc,
                   closure: clos,
                   name: a.children[0].to_s,
                   comments: cmnt,
-                  access: :reader,
                   scope: region.scope || :instance,
-                  visibility: region.visibility
+                  visibility: region.visibility,
+                  attribute: true
                 )
               end
               if node.children[1] == :attr_writer || node.children[1] == :attr_accessor
-                pins.push Solargraph::Pin::Attribute.new(
+                pins.push Solargraph::Pin::Method.new(
                   location: loc,
                   closure: clos,
                   name: "#{a.children[0]}=",
                   comments: cmnt,
-                  access: :writer,
                   scope: region.scope || :instance,
-                  visibility: region.visibility
+                  visibility: region.visibility,
+                  attribute: true
                 )
+                pins.last.parameters.push Pin::Parameter.new(name: 'value', decl: :arg, closure: pins.last)
+                if pins.last.return_type.defined?
+                  pins.last.docstring.add_tag YARD::Tags::Tag.new(:param, '', pins.last.return_type.to_s.split(', '), 'value')
+                end
               end
             end
           end
@@ -90,7 +102,8 @@ module Solargraph
             if node.children[2].is_a?(AST::Node) && node.children[2].type == :const
               cp = region.closure
               node.children[2..-1].each do |i|
-                pins.push Pin::Reference::Include.new(
+                type = region.scope == :class ? Pin::Reference::Extend : Pin::Reference::Include
+                pins.push type.new(
                   location: get_node_location(i),
                   closure: cp,
                   name: unpack_name(i)
@@ -156,7 +169,7 @@ module Solargraph
             elsif node.children[2].type == :sym || node.children[2].type == :str
               node.children[2..-1].each do |x|
                 cn = x.children[0].to_s
-                ref = pins.select{|p| [Solargraph::Pin::Method, Solargraph::Pin::Attribute].include?(p.class) && p.namespace == region.closure.full_context.namespace && p.name == cn}.first
+                ref = pins.select{ |p| p.is_a?(Pin::Method) && p.namespace == region.closure.full_context.namespace && p.name == cn }.first
                 unless ref.nil?
                   pins.delete ref
                   mm = Solargraph::Pin::Method.new(
@@ -228,7 +241,7 @@ module Solargraph
           # @return [Boolean]
           def process_private_class_method
             if node.children[2].type == :sym || node.children[2].type == :str
-              ref = pins.select{|p| [Solargraph::Pin::Method, Solargraph::Pin::Attribute].include?(p.class) && p.namespace == region.closure.full_context.namespace && p.name == node.children[2].children[0].to_s}.first
+              ref = pins.select { |p| p.is_a?(Pin::Method) && p.namespace == region.closure.full_context.namespace && p.name == node.children[2].children[0].to_s }.first
               # HACK: Smelly instance variable access
               ref.instance_variable_set(:@visibility, :private) unless ref.nil?
               false

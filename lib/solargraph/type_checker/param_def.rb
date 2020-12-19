@@ -20,7 +20,7 @@ module Solargraph
       class << self
         # Get an array of ParamDefs from a method pin.
         #
-        # @param pin [Solargraph::Pin::BaseMethod]
+        # @param pin [Solargraph::Pin::Method]
         # @return [Array<ParamDef>]
         def from pin
           result = []
