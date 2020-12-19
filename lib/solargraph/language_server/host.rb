@@ -525,7 +525,7 @@ module Solargraph
       # @param line [Integer]
       # @param column [Integer]
       # @param strip [Boolean] Strip special characters from variable names
-      # @param local [Boolean] If true, search current file only
+      # @param only [Boolean] If true, search current file only
       # @return [Array<Solargraph::Range>]
       def references_from uri, line, column, strip: true, only: false
         library = library_for(uri)
