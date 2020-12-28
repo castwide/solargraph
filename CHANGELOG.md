@@ -1,5 +1,6 @@
-## 0.40.1
+## 0.40.1 - December 28, 2020
 - Use temp directory for RuboCop formatting (#397)
+- NodeMethods reads splatted hashes (#396)
 
 ## 0.40.0 - December 14, 2020
 - Fix alias behavior
