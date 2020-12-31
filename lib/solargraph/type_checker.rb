@@ -413,24 +413,28 @@ module Solargraph
       end
       settled_kwargs = 0
       unless unchecked.empty?
-        kwargs = convert_hash(unchecked.last.node)
-        if pin.parameters.any? { |param| [:kwarg, :kwoptarg].include?(param.decl) || param.kwrestarg? }
-          if kwargs.empty?
-            add_params += 1
-          else
-            unchecked.pop
-            pin.parameters.each do |param|
-              next unless param.keyword?
-              if kwargs.key?(param.name.to_sym)
-                kwargs.delete param.name.to_sym
-                settled_kwargs += 1
-              elsif param.decl == :kwarg
-                return [Problem.new(location, "Missing keyword argument #{param.name} to #{pin.path}")]
+        if node?(unchecked.last.node) && splatted_call?(unchecked.last.node)
+          settled_kwargs = pin.parameters.count(&:keyword?)
+        else
+          kwargs = convert_hash(unchecked.last.node)
+          if pin.parameters.any? { |param| [:kwarg, :kwoptarg].include?(param.decl) || param.kwrestarg? }
+            if kwargs.empty?
+              add_params += 1
+            else
+              unchecked.pop
+              pin.parameters.each do |param|
+                next unless param.keyword?
+                if kwargs.key?(param.name.to_sym)
+                  kwargs.delete param.name.to_sym
+                  settled_kwargs += 1
+                elsif param.decl == :kwarg
+                  return [Problem.new(location, "Missing keyword argument #{param.name} to #{pin.path}")]
+                end
               end
-            end
-            kwargs.clear if pin.parameters.any?(&:kwrestarg?)
-            unless kwargs.empty?
-              return [Problem.new(location, "Unrecognized keyword argument #{kwargs.keys.first} to #{pin.path}")]
+              kwargs.clear if pin.parameters.any?(&:kwrestarg?)
+              unless kwargs.empty?
+                return [Problem.new(location, "Unrecognized keyword argument #{kwargs.keys.first} to #{pin.path}")]
+              end
             end
           end
         end

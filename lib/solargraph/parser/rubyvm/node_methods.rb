@@ -106,11 +106,18 @@ module Solargraph
         end
 
         def splatted_hash? node
+          splatted_node?(node) && node.children[0].children[1].type == :HASH
+        end
+
+        def splatted_node? node
           node?(node.children[0]) &&
             [:ARRAY, :LIST].include?(node.children[0].type) &&
             node.children[0].children[0].nil? &&
-            node?(node.children[0].children[1]) &&
-            node.children[0].children[1].type == :HASH
+            node?(node.children[0].children[1])
+        end
+
+        def splatted_call? node
+          splatted_node?(node) && node.children[0].children[1].type != :HASH
         end
 
         def node? node

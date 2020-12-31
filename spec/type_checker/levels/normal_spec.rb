@@ -720,5 +720,22 @@ describe Solargraph::TypeChecker do
       ))
       expect(checker.problems).to be_empty
     end
+
+    it 'reports splatted kwargs with missing arguments' do
+      checker = type_checker(%(
+        def xxx(from:, to:); end
+        xxx(**{from: 1})
+      ))
+      expect(checker.problems).to be_one
+    end
+
+    it 'ignores splatted kwargs' do
+      checker = type_checker(%(
+        def xxx(from:, to:); end
+        params = {from: 1, to: 2}
+        xxx(**params)
+      ))
+      expect(checker.problems).to be_empty
+    end
   end
 end
