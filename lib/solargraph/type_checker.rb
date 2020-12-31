@@ -413,7 +413,7 @@ module Solargraph
       end
       settled_kwargs = 0
       unless unchecked.empty?
-        if node?(unchecked.last.node) && splatted_call?(unchecked.last.node)
+        if Parser.is_ast_node?(unchecked.last.node) && splatted_call?(unchecked.last.node)
           settled_kwargs = pin.parameters.count(&:keyword?)
         else
           kwargs = convert_hash(unchecked.last.node)
