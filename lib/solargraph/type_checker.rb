@@ -334,6 +334,8 @@ module Solargraph
       result
     end
 
+    # @param [Pin::Method]
+    # @return [Hash]
     def param_hash(pin)
       tags = pin.docstring.tags(:param)
       return {} if tags.empty?
@@ -346,6 +348,7 @@ module Solargraph
     end
 
     # @param [Array<Pin::Method>]
+    # @return [Hash]
     def first_param_hash(pins)
       pins.each do |pin|
         result = param_hash(pin)
