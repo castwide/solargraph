@@ -26,7 +26,7 @@ Gem::Specification.new do |s|
   s.add_runtime_dependency 'jaro_winkler', '~> 1.5'
   s.add_runtime_dependency 'kramdown', '~> 2.3'
   s.add_runtime_dependency 'kramdown-parser-gfm', '~> 1.1'
-  s.add_runtime_dependency 'parser', '~> 2.3'
+  s.add_runtime_dependency 'parser', '~> 3.0'
   s.add_runtime_dependency 'reverse_markdown', '>= 1.0.5', '< 3'
   s.add_runtime_dependency 'rubocop', '>= 0.52'
   s.add_runtime_dependency 'thor', '~> 1.0'
