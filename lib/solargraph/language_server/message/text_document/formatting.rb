@@ -41,14 +41,26 @@ module Solargraph
           end
 
           def cli_args file, config
-            [
+            args = [
               config['cops'] == 'all' ? '--auto-correct-all' : '--auto-correct',
               '--cache', 'false',
               '--format', 'Solargraph::LanguageServer::Message::' \
                           'TextDocument::Formatting::BlankRubocopFormatter',
-              config['extra_args'],
-              file
-            ].flatten
+            ]
+
+            ['except', 'only'].each do |arg|
+              cops = cop_list(config[arg])
+              args += ["--#{arg}", cops] if cops
+            end
+
+            args += config['extra_args'] if config['extra_args']
+            args + [file]
+          end
+
+          def cop_list(value)
+            value = value.join(',') if value.respond_to?(:join)
+            return nil if value == '' || !value.is_a?(String)
+            value
           end
 
           # @param original [String]

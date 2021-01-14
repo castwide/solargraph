@@ -154,6 +154,8 @@ module Solargraph
           'formatter' => {
             'rubocop' => {
               'cops' => 'safe',
+              'except' => [],
+              'only' => [],
               'extra_args' =>[]
             }
           },
