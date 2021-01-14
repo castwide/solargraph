@@ -152,8 +152,10 @@ module Solargraph
           'domains' => [],
           'reporters' => %w[rubocop require_not_found],
           'formatter' => {
-            'cops' => 'safe',
-            'extra_args' => []
+            'rubocop' => {
+              'cops' => 'safe',
+              'extra_args' =>[]
+            }
           },
           'require_paths' => [],
           'plugins' => [],

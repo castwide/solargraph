@@ -15,7 +15,7 @@ module Solargraph
 
           def process
             file_uri = params['textDocument']['uri']
-            config = host.formatter_config(file_uri)
+            config = config_for(file_uri)
             original = host.read_text(file_uri)
             args = cli_args(file_uri, config)
 
@@ -32,6 +32,13 @@ module Solargraph
           end
 
           private
+
+          def config_for(file_uri)
+            conf = host.formatter_config(file_uri)
+            return {} unless conf.is_a?(Hash)
+
+            conf['rubocop'] || {}
+          end
 
           def cli_args file, config
             [
