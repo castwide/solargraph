@@ -1,3 +1,7 @@
+## 0.40.2 - January 18, 2021
+- Type checker ignores splatted calls in arity (#396)
+- Allow Parser 3.0 (#400)
+
 ## 0.40.1 - December 28, 2020
 - Use temp directory for RuboCop formatting (#397)
 - NodeMethods reads splatted hashes (#396)
