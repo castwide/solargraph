@@ -13,30 +13,11 @@ module Solargraph
       # @param code [String]
       # @return [Array(Array<String>, Array<String>)]
       def generate_options filename, code
-        args = ['-f', 'j']
-        rubocop_file = find_rubocop_file(filename)
-        args.push('-c', fix_drive_letter(rubocop_file)) unless rubocop_file.nil?
-        args.push filename
+        args = ['-f', 'j', filename]
         base_options = RuboCop::Options.new
         options, paths = base_options.parse(args)
         options[:stdin] = code
         [options, paths]
-      end
-
-      # Find a RuboCop configuration file in a file's directory tree.
-      #
-      # @param filename [String]
-      # @return [String, nil]
-      def find_rubocop_file filename
-        return nil unless File.exist?(filename)
-        filename = File.realpath(filename)
-        dir = File.dirname(filename)
-        until File.dirname(dir) == dir
-          here = File.join(dir, '.rubocop.yml')
-          return here if File.exist?(here)
-          dir = File.dirname(dir)
-        end
-        nil
       end
 
       # RuboCop internally uses capitalized drive letters for Windows paths,

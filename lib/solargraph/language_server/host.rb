@@ -494,6 +494,11 @@ module Solargraph
         library.read_text(filename)
       end
 
+      def formatter_config uri
+        library = library_for(uri)
+        library.workspace.config.formatter
+      end
+
       # @param uri [String]
       # @param line [Integer]
       # @param column [Integer]

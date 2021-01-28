@@ -1,6 +1,6 @@
 describe Solargraph::LanguageServer::Message::TextDocument::Formatting do
   it 'gracefully handles empty files' do
-    host = double(:Host, read_text: '')
+    host = double(:Host, read_text: '', formatter_config: {})
     request = {
       'params' => {
           'textDocument' => {
