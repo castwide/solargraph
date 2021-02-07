@@ -310,10 +310,8 @@ module Solargraph
                 result.push Problem.new(location, "Wrong argument type for #{pin.path}: #{par.name} expected #{ptype}, received #{argtype}")
               end
             end
-          else
-            if par.decl == :kwarg
-              result.push Problem.new(location, "Call to #{pin.path} is missing keyword argument #{par.name}")
-            end
+          elsif par.decl == :kwarg
+            result.push Problem.new(location, "Call to #{pin.path} is missing keyword argument #{par.name}")
           end
         end
       end

@@ -1,3 +1,9 @@
+## 0.40.3 - February 7, 2021
+- Simplify and allow to configure rubocop formatter (#403)
+- Type checker shows tag in param type errors (#398)
+- Handle bare private_constant (#408)
+- Type checker handles splatted variables (#396)
+
 ## 0.40.2 - January 18, 2021
 - Type checker ignores splatted calls in arity (#396)
 - Allow Parser 3.0 (#400)

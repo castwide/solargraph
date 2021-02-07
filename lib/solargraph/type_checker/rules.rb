@@ -1,12 +1,16 @@
+# frozen_string_literal: true
+
 module Solargraph
   class TypeChecker
+    # Definitions of type checking rules to be performed at various levels
+    #
     class Rules
       LEVELS = {
         normal: 0,
         typed: 1,
         strict: 2,
         strong: 3
-      }
+      }.freeze
 
       # @return [Symbol]
       attr_reader :level

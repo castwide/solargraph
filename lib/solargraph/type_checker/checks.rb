@@ -1,5 +1,9 @@
+# frozen_string_literal: true
+
 module Solargraph
   class TypeChecker
+    # Helper methods for performing type checks
+    #
     module Checks
       module_function
 
@@ -62,7 +66,7 @@ module Solargraph
       # @param inferred [ComplexType]
       # @return [Boolean]
       def duck_types_match? api_map, expected, inferred
-        raise ArgumentError, "Expected type must be duck type" unless expected.duck_type?
+        raise ArgumentError, 'Expected type must be duck type' unless expected.duck_type?
         expected.each do |exp|
           next unless exp.duck_type?
           quack = exp.to_s[1..-1]
