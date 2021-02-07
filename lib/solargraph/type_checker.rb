@@ -129,10 +129,10 @@ module Solargraph
           end
         end
       end
-      params.each_pair do |name, tag|
-        type = tag.qualify(api_map, pin.full_context.namespace)
+      params.each_pair do |name, data|
+        type = data[:qualified]
         if type.undefined?
-          result.push Problem.new(pin.location, "Unresolved type #{tag} for #{name} param on #{pin.path}", pin: pin)
+          result.push Problem.new(pin.location, "Unresolved type #{data[:tagged]} for #{name} param on #{pin.path}", pin: pin)
         end
       end
       result
@@ -266,12 +266,12 @@ module Solargraph
                 result.concat kwarg_problems_for argchain, api_map, block_pin, locals, location, pin, params, idx
                 break
               else
-                ptype = params[par.name]
+                ptype = params.key?(par.name) ? params[par.name][:qualified] : ComplexType::UNDEFINED
                 if ptype.nil?
                   # @todo Some level (strong, I guess) should require the param here
                 else
                   argtype = argchain.infer(api_map, block_pin, locals)
-                  if argtype.defined? && ptype && !any_types_match?(api_map, ptype, argtype)
+                  if argtype.defined? && ptype.defined? && !any_types_match?(api_map, ptype, argtype)
                     result.push Problem.new(location, "Wrong argument type for #{pin.path}: #{par.name} expected #{ptype}, received #{argtype}")
                   end
                 end
@@ -299,10 +299,12 @@ module Solargraph
           result.concat kwrestarg_problems_for(api_map, block_pin, locals, location, pin, params, kwargs)
         else
           if argchain
-            ptype = params[par.name]
-            if ptype.nil?
+            data = params[par.name]
+            if data.nil?
               # @todo Some level (strong, I guess) should require the param here
             else
+              ptype = data[:qualified]
+              next if ptype.undefined?
               argtype = argchain.infer(api_map, block_pin, locals)
               if argtype.defined? && ptype && !any_types_match?(api_map, ptype, argtype)
                 result.push Problem.new(location, "Wrong argument type for #{pin.path}: #{par.name} expected #{ptype}, received #{argtype}")
@@ -321,14 +323,11 @@ module Solargraph
     def kwrestarg_problems_for(api_map, block_pin, locals, location, pin, params, kwargs)
       result = []
       kwargs.each_pair do |pname, argchain|
-        ptype = params[pname.to_s]
-        if ptype.nil?
-          # Probably nothing to do here. All of these args should be optional.
-        else
-          argtype = argchain.infer(api_map, block_pin, locals)
-          if argtype.defined? && ptype && !any_types_match?(api_map, ptype, argtype)
-            result.push Problem.new(location, "Wrong argument type for #{pin.path}: #{pname} expected #{ptype}, received #{argtype}")
-          end
+        next unless params.key?(pname.to_s)
+        ptype = params[pname.to_s][:qualified]
+        argtype = argchain.infer(api_map, block_pin, locals)
+        if argtype.defined? && ptype && !any_types_match?(api_map, ptype, argtype)
+          result.push Problem.new(location, "Wrong argument type for #{pin.path}: #{pname} expected #{ptype}, received #{argtype}")
         end
       end
       result
@@ -342,7 +341,10 @@ module Solargraph
       result = {}
       tags.each do |tag|
         next if tag.types.nil? || tag.types.empty?
-        result[tag.name.to_s] = Solargraph::ComplexType.try_parse(*tag.types).qualify(api_map, pin.full_context.namespace)
+        result[tag.name.to_s] = {
+          tagged: tag.types.join(', '),
+          qualified: Solargraph::ComplexType.try_parse(*tag.types).qualify(api_map, pin.full_context.namespace)
+        }
       end
       result
     end

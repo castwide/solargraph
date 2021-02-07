@@ -285,5 +285,15 @@ describe Solargraph::TypeChecker do
       expect(checker.problems).to be_one
       expect(checker.problems.first.message).to include('does not match inferred type')
     end
+
+    it 'reports undefined param tags' do
+      checker = type_checker(%(
+        # @param bar [UndefinedClass]
+        def foo(bar)
+        end
+      ))
+      expect(checker.problems).to be_one
+      expect(checker.problems.first.message).to include('Unresolved type UndefinedClass')
+    end
   end
 end
