@@ -452,6 +452,9 @@ module Solargraph
         if unchecked.length == req + opt + 1 && unchecked.last.links.last.is_a?(Source::Chain::BlockVariable)
           return []
         end
+        if req + add_params + 1 == unchecked.length && splatted_call?(unchecked.last.node) && (pin.parameters.map(&:decl) & [:kwarg, :kwoptarg, :kwrestarg]).any?
+          return []
+        end
         return [Problem.new(location, "Too many arguments to #{pin.path}")]
       elsif unchecked.length < req - settled_kwargs && (arguments.empty? || !arguments.last.splat?)
         return [Problem.new(location, "Not enough arguments to #{pin.path}")]
