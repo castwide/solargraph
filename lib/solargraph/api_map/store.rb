@@ -238,11 +238,16 @@ module Solargraph
         pins_by_class(Pin::Reference::Override).each do |ovr|
           pin = get_path_pins(ovr.name).first
           next if pin.nil?
+          new_pin = if pin.path.end_with?('#initialize')
+            get_path_pins(pin.path.sub(/#initialize/, '.new')).first
+          end
           (ovr.tags.map(&:tag_name) + ovr.delete).uniq.each do |tag|
             pin.docstring.delete_tags tag.to_sym
+            new_pin.docstring.delete_tags tag.to_sym if new_pin
           end
           ovr.tags.each do |tag|
             pin.docstring.add_tag(tag)
+            new_pin.docstring.add_tag(tag) if new_pin
           end
         end
       end
