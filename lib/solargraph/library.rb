@@ -20,8 +20,7 @@ module Solargraph
     def initialize workspace = Solargraph::Workspace.new, name = nil
       @workspace = workspace
       @name = name
-      api_map.catalog bench
-      @synchronized = true
+      @synchronized = false
       @catalog_mutex = Mutex.new
     end
 
@@ -158,6 +157,9 @@ module Solargraph
       position = Position.new(line, column)
       cursor = Source::Cursor.new(read(filename), position)
       api_map.clip(cursor).complete
+    rescue FileNotFoundError
+      Solargraph.logger.debug "#{filename} is not cataloged in the ApiMap"
+      SourceMap::Completion.new([], Range.from_to(line, column, line, column))
     end
 
     # Get definition suggestions for the expression at the specified file and
