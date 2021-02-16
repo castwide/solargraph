@@ -157,9 +157,8 @@ module Solargraph
       position = Position.new(line, column)
       cursor = Source::Cursor.new(read(filename), position)
       api_map.clip(cursor).complete
-    rescue FileNotFoundError
-      Solargraph.logger.debug "#{filename} is not cataloged in the ApiMap"
-      SourceMap::Completion.new([], Range.from_to(line, column, line, column))
+    rescue FileNotFoundError => e
+      handle_file_not_found filename, e
     end
 
     # Get definition suggestions for the expression at the specified file and
@@ -188,6 +187,8 @@ module Solargraph
       else
         api_map.clip(cursor).define.map { |pin| pin.realize(api_map) }
       end
+    rescue FileNotFoundError => e
+      handle_file_not_found(filename, e)
     end
 
     # Get signature suggestions for the method at the specified file and
@@ -423,6 +424,15 @@ module Solargraph
       return @current if @current && @current.filename == filename
       raise FileNotFoundError, "File not found: #{filename}" unless workspace.has_file?(filename)
       workspace.source(filename)
+    end
+
+    def handle_file_not_found filename, error
+      if workspace.source(filename)
+        Solargraph.logger.debug "#{filename} is not cataloged in the ApiMap"
+        nil
+      else
+        raise error
+      end
     end
   end
 end
