@@ -419,35 +419,33 @@ describe Solargraph::Library do
 
   context 'unsynchronized' do
     let(:library) { Solargraph::Library.load File.absolute_path(File.join('spec', 'fixtures', 'workspace')) }
+    let(:good_file) { File.join(library.workspace.directory, 'lib', 'thing.rb') }
+    let(:bad_file) { File.join(library.workspace.directory, 'lib', 'not_a_thing.rb') }
 
     describe 'Library#completions_at' do
       it 'gracefully handles unmapped sources' do
-        file = File.join(library.workspace.directory, 'lib', 'thing.rb')
         expect {
-          library.completions_at(file, 0, 0)
+          library.completions_at(good_file, 0, 0)
         }.not_to raise_error
       end
 
       it 'raises errors for nonexistent sources' do
-        file = File.join(library.workspace.directory, 'lib', 'not_a_thing.rb')
         expect {
-          library.completions_at(file, 0, 0)
+          library.completions_at(bad_file, 0, 0)
         }.to raise_error(Solargraph::FileNotFoundError)
       end
     end
 
     describe 'Library#definitions_at' do
       it 'gracefully handles unmapped sources' do
-        file = File.join(library.workspace.directory, 'lib', 'thing.rb')
         expect {
-          library.definitions_at(file, 0, 0)
+          library.definitions_at(good_file, 0, 0)
         }.not_to raise_error
       end
 
       it 'raises errors for nonexistent sources' do
-        file = File.join(library.workspace.directory, 'lib', 'not_a_thing.rb')
         expect {
-          library.definitions_at(file, 0, 0)
+          library.definitions_at(bad_file, 0, 0)
         }.to raise_error(Solargraph::FileNotFoundError)
       end
     end
