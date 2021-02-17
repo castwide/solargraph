@@ -175,7 +175,7 @@ module Solargraph
       synced
     end
 
-    # @param position [Position]
+    # @param position [Position, Array(Integer, Integer)]
     # @return [Source::Cursor]
     def cursor_at position
       Cursor.new(self, position)
