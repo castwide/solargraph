@@ -1,3 +1,8 @@
+## 0.40.4 - March 3, 2021
+- Fix optarg and blockarg ordering
+- Override specialization for #initialize
+- Find definitions with cursor after double colon
+
 ## 0.40.3 - February 7, 2021
 - Simplify and allow to configure rubocop formatter (#403)
 - Type checker shows tag in param type errors (#398)

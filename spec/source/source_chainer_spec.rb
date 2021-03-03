@@ -235,4 +235,16 @@ describe Solargraph::Source::SourceChainer do
     expect(chain.links.first).to be_a(Solargraph::Source::Chain::Literal)
     expect(chain.links.last).to be_undefined
   end
+
+  it 'detects whole constant with cursor at double colon' do
+    source = Solargraph::Source.load_string(%(
+      class Outer
+        class Inner
+        end
+      end
+      Outer::Inner.new
+    ), 'test.rb')
+    chain = Solargraph::Source::SourceChainer.chain(source, Solargraph::Position.new(5, 13))
+    expect(chain.links.last.word).to eq('Outer::Inner')
+  end
 end

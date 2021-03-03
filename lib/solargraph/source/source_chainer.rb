@@ -64,7 +64,7 @@ module Solargraph
           elsif end_of_phrase.strip == '::'
             chain.links.push Chain::UNDEFINED_CONSTANT
           end
-        elsif chain.links.last.is_a?(Source::Chain::Constant) && end_of_phrase.strip == '::'
+        elsif chain.links.last.is_a?(Source::Chain::Constant) && end_of_phrase.strip == '::' && !source.code[Position.to_offset(source.code, position)].match?(/[a-z]/i)
           chain.links.push Source::Chain::UNDEFINED_CONSTANT
         end
         chain
