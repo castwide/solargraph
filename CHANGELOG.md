@@ -1,5 +1,6 @@
-## 0.40.4
+## 0.40.4 - March 3, 2021
 - Fix optarg and blockarg ordering
+- Override specialization for #initialize
 - Find definitions with cursor after double colon
 
 ## 0.40.3 - February 7, 2021
