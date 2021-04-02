@@ -41,6 +41,8 @@ module Solargraph
           end
 
           def cli_args file, config
+            file = file.gsub(/^file:\/\//, '')
+
             args = [
               config['cops'] == 'all' ? '--auto-correct-all' : '--auto-correct',
               '--cache', 'false',
