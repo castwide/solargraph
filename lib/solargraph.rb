@@ -9,13 +9,14 @@ require 'solargraph/version'
 # static analysis, and language server libraries.
 #
 module Solargraph
-  class InvalidOffsetError <      RangeError;    end
-  class DiagnosticsError <        RuntimeError;  end
-  class FileNotFoundError <       RuntimeError;  end
-  class SourceNotAvailableError < StandardError; end
-  class ComplexTypeError        < StandardError; end
-  class WorkspaceTooLargeError <  RuntimeError;  end
-  class BundleNotFoundError <     StandardError; end
+  class InvalidOffsetError         < RangeError;    end
+  class DiagnosticsError           < RuntimeError;  end
+  class FileNotFoundError          < RuntimeError;  end
+  class SourceNotAvailableError    < StandardError; end
+  class ComplexTypeError           < StandardError; end
+  class WorkspaceTooLargeError     < RuntimeError;  end
+  class BundleNotFoundError        < StandardError; end
+  class InvalidRubocopVersionError < RuntimeError;  end
 
   autoload :Position,         'solargraph/position'
   autoload :Range,            'solargraph/range'

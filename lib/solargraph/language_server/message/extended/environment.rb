@@ -1,8 +1,5 @@
 # frozen_string_literal: true
 
-# Make sure the environment page can report RuboCop's version
-require 'rubocop'
-
 module Solargraph
   module LanguageServer
     module Message
@@ -12,6 +9,9 @@ module Solargraph
         #
         class Environment < Base
           def process
+            # Make sure the environment page can report RuboCop's version
+            require 'rubocop'
+
             page = Solargraph::Page.new(host.options['viewsPath'])
             content = page.render('environment', layout: true, locals: { config: host.options, folders: host.folders })
             set_result(
