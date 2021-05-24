@@ -1,6 +1,7 @@
 ## 0.40.5
 - Chain constant at last double colon with more than two nested namespaces
 - Fill Integer#times return type (#440)
+- Validate included modules in type checks (#424)
 
 ## 0.40.4 - March 3, 2021
 - Fix optarg and blockarg ordering
