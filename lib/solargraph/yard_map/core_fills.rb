@@ -111,6 +111,7 @@ module Solargraph
 @param y [Numeric]
 @return [Numeric]
         )),
+        Override.method_return('Integer#times', 'Enumerator', delete: [:overload]),
 
         Override.method_return('Kernel#puts', 'nil'),
 

@@ -295,5 +295,32 @@ describe Solargraph::TypeChecker do
       expect(checker.problems).to be_one
       expect(checker.problems.first.message).to include('Unresolved type UndefinedClass')
     end
+
+    it 'validates included modules in types' do
+      checker = type_checker(%(
+        module Interface
+        end
+        class Host
+          include Interface
+        end
+        # @type [Interface]
+        host = Host.new
+      ))
+      puts checker.problems.map(&:message)
+      expect(checker.problems).to be_empty
+    end
+
+    it 'invalidates modules not included in types' do
+      checker = type_checker(%(
+        module Interface
+        end
+        class Host
+        end
+        # @type [Interface]
+        host = Host.new
+      ))
+      puts checker.problems.map(&:message)
+      expect(checker.problems).to be_one
+    end
   end
 end

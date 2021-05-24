@@ -531,6 +531,15 @@ module Solargraph
       @yard_map ||= YardMap.new
     end
 
+    # Check if the host class includes the specified module.
+    #
+    # @param host [String] The class
+    # @param mod [String] The module
+    # @return [Boolean]
+    def type_include?(host, mod)
+      store.get_includes(host).include?(mod)
+    end
+
     private
 
     # @return [Array<String>]
