@@ -33,7 +33,9 @@ module Solargraph
     # @param pins [Array<Pin::Base>]
     # @return [self]
     def index pins
-      catalog Bench.new(pins: pins)
+      library = Library.new
+      library.pins.concat pins
+      catalog library
       self
     end
 
@@ -42,71 +44,35 @@ module Solargraph
     # @param source [Source]
     # @return [self]
     def map source
-      catalog Bench.new(opened: [source])
+      library = Library.new
+      library.attach source
+      catalog library
       self
     end
 
-    # @param name [String]
-    # @return [YARD::Tags::MacroDirective, nil]
-    def named_macro name
-      store.named_macros[name]
-    end
-
-    # Catalog a bench.
+    # Catalog a library.
     #
-    # @param bench [Bench]
-    # @return [self]
-    def catalog bench
-      new_map_hash = {}
-      # Bench always needs to be merged if it adds or removes sources
-      merged = (bench.sources.length == source_map_hash.values.length)
-      bench.sources.each do |source|
-        if source_map_hash.key?(source.filename)
-          if source_map_hash[source.filename].code == source.code &&
-             source_map_hash[source.filename].source.synchronized? &&
-             source.synchronized?
-            new_map_hash[source.filename] = source_map_hash[source.filename]
-          elsif !source.synchronized?
-            new_map_hash[source.filename] = source_map_hash[source.filename]
-            # @todo Smelly instance variable access
-            new_map_hash[source.filename].instance_variable_set(:@source, source)
-          else
-            map = Solargraph::SourceMap.map(source)
-            if source_map_hash[source.filename].try_merge!(map)
-              new_map_hash[source.filename] = source_map_hash[source.filename]
-            else
-              new_map_hash[source.filename] = map
-              merged = false
-            end
-          end
-        else
-          map = Solargraph::SourceMap.map(source)
-          new_map_hash[source.filename] = map
-          merged = false
-        end
-      end
-      return self if bench.pins.empty? && @store && merged
+    # @param library [Library]
+    def catalog library
+      new_map_hash = library.source_map_hash
       implicit.clear
-      pins = []
+      pins = library.pins.clone
       reqs = Set.new
       # @param map [SourceMap]
       new_map_hash.each_value do |map|
         pins.concat map.pins
         reqs.merge map.requires.map(&:name)
+        implicit.merge map.environ
       end
-      pins.concat bench.pins
-      reqs.merge bench.workspace.config.required
+      reqs.merge library.workspace.config.required
       @required = reqs
-      bench.sources.each do |src|
-        implicit.merge new_map_hash[src.filename].environ
-      end
-      # implicit.merge Convention.for_global(self)
+      implicit.merge Convention.for_global(self)
       local_path_hash.clear
-      unless bench.workspace.require_paths.empty?
+      unless library.workspace.require_paths.empty?
         file_keys = new_map_hash.keys
-        workspace_path = Pathname.new(bench.workspace.directory)
+        workspace_path = Pathname.new(library.workspace.directory)
         reqs.delete_if do |r|
-          bench.workspace.require_paths.any? do |base|
+          library.workspace.require_paths.any? do |base|
             pn = workspace_path.join(base, "#{r}.rb").to_s
             if file_keys.include? pn
               local_path_hash[r] = pn
@@ -118,19 +84,25 @@ module Solargraph
         end
       end
       reqs.merge implicit.requires
-      br = reqs.include?('bundler/require') ? require_from_bundle(bench.workspace.directory) : {}
+      br = reqs.include?('bundler/require') ? require_from_bundle(library.workspace.directory) : {}
       reqs.merge br.keys
-      yard_map.change(reqs.to_a, br, bench.workspace.gemnames)
+      yard_map.change(reqs.to_a, br, library.workspace.gemnames)
       new_store = Store.new(yard_map.pins + implicit.pins + pins)
       @cache.clear
       @source_map_hash = new_map_hash
       @store = new_store
       @unresolved_requires = yard_map.unresolved_requires
       workspace_filenames.clear
-      workspace_filenames.concat bench.workspace.filenames
+      workspace_filenames.concat library.workspace.filenames
       @rebindable_method_names = nil
       store.block_pins.each { |blk| blk.rebind(self) }
       self
+    end
+
+    # @param name [String]
+    # @return [YARD::Tags::MacroDirective, nil]
+    def named_macro name
+      store.named_macros[name]
     end
 
     def required
@@ -173,7 +145,10 @@ module Solargraph
     def self.load directory
       api_map = new
       workspace = Solargraph::Workspace.new(directory)
-      api_map.catalog Bench.new(workspace: workspace)
+      # api_map.catalog Bench.new(workspace: workspace)
+      library = Library.new(workspace)
+      library.map!
+      api_map.catalog library
       api_map
     end
 

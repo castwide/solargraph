@@ -2,6 +2,7 @@
 
 require 'observer'
 require 'set'
+require 'securerandom'
 
 module Solargraph
   module LanguageServer
@@ -277,6 +278,7 @@ module Solargraph
         begin
           lib = Solargraph::Library.load(path, name)
           libraries.push lib
+          async_library_map lib
         rescue WorkspaceTooLargeError => e
           send_notification 'window/showMessage', {
             'type' => Solargraph::LanguageServer::MessageTypes::WARNING,
@@ -740,6 +742,50 @@ module Solargraph
 
       def prepare_rename?
         client_capabilities['rename'] && client_capabilities['rename']['prepareSupport']
+      end
+
+      # @param library [Library]
+      # @return [void]
+      def async_library_map library
+        return if library.mapped?
+        # Thread.new do
+          uuid = SecureRandom.uuid
+          total = library.workspace.sources.length
+          # @todo This needs to work with clients that don't support workDoneProgress
+          # send_request 'window/workDoneProgress/create', {
+          #   token: uuid
+          # } do |response|
+            # send_notification '$/progress', {
+            #   token: uuid,
+            #   value: {
+            #     kind: 'begin',
+            #     title: "Mapping workspace",
+            #     message: "0/#{total} files",
+            #     cancellable: false,
+            #     percentage: 0
+            #   }
+            # }
+            while result = library.next_map
+              # send_notification '$/progress', {
+              #   token: uuid,
+              #   value: {
+              #     kind: 'report',
+              #     cancellable: false,
+              #     message: "#{library.source_map_hash.keys.length}/#{total} files",
+              #     percentage: ((library.source_map_hash.keys.length.to_f / total.to_f) * 100).to_i
+              #   }
+              # }
+            end
+            library.catalog
+            # send_notification '$/progress', {
+            #   token: uuid,
+            #   value: {
+            #     kind: 'end',
+            #     message: 'Mapping complete'
+            #   }
+            # }
+          # end
+        # end
       end
     end
   end
