@@ -781,15 +781,18 @@ module Solargraph
             }
           }
         end
-        while result = library.next_map
+        pct = 0
+        while library.next_map
           if uuid
+            cur = ((library.source_map_hash.keys.length.to_f / total.to_f) * 100).to_i
+            pct = cur if cur > pct
             send_notification '$/progress', {
               token: uuid,
               value: {
                 kind: 'report',
                 cancellable: false,
                 message: "#{library.source_map_hash.keys.length}/#{total} files",
-                percentage: ((library.source_map_hash.keys.length.to_f / total.to_f) * 100).to_i
+                percentage: pct
               }
             }
           end
