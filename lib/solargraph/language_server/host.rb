@@ -746,7 +746,6 @@ module Solargraph
 
       def client_supports_progress?
         client_capabilities['window'] && client_capabilities['window']['workDoneProgress']
-        false
       end
 
       # @param library [Library]
