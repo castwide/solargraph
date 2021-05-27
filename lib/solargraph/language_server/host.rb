@@ -754,9 +754,8 @@ module Solargraph
       def async_library_map library
         return if library.mapped?
         # Thread.new do
-          uuid = SecureRandom.uuid
-          total = library.workspace.sources.length
           if client_supports_progress?
+            uuid = SecureRandom.uuid
             send_request 'window/workDoneProgress/create', {
               token: uuid
             } do |response|
@@ -769,6 +768,7 @@ module Solargraph
       end
 
       def do_async_library_map library, uuid = nil
+        total = library.workspace.sources.length
         if uuid
           send_notification '$/progress', {
             token: uuid,
