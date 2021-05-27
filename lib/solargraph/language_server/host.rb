@@ -744,6 +744,11 @@ module Solargraph
         client_capabilities['rename'] && client_capabilities['rename']['prepareSupport']
       end
 
+      def client_supports_progress?
+        client_capabilities['window'] && client_capabilities['window']['workDoneProgress']
+        false
+      end
+
       # @param library [Library]
       # @return [void]
       def async_library_map library
@@ -751,41 +756,54 @@ module Solargraph
         # Thread.new do
           uuid = SecureRandom.uuid
           total = library.workspace.sources.length
-          # @todo This needs to work with clients that don't support workDoneProgress
-          # send_request 'window/workDoneProgress/create', {
-          #   token: uuid
-          # } do |response|
-            # send_notification '$/progress', {
-            #   token: uuid,
-            #   value: {
-            #     kind: 'begin',
-            #     title: "Mapping workspace",
-            #     message: "0/#{total} files",
-            #     cancellable: false,
-            #     percentage: 0
-            #   }
-            # }
-            while result = library.next_map
-              # send_notification '$/progress', {
-              #   token: uuid,
-              #   value: {
-              #     kind: 'report',
-              #     cancellable: false,
-              #     message: "#{library.source_map_hash.keys.length}/#{total} files",
-              #     percentage: ((library.source_map_hash.keys.length.to_f / total.to_f) * 100).to_i
-              #   }
-              # }
+          if client_supports_progress?
+            send_request 'window/workDoneProgress/create', {
+              token: uuid
+            } do |response|
+              do_async_library_map library, response.nil? ? uuid : nil
             end
-            library.catalog
-            # send_notification '$/progress', {
-            #   token: uuid,
-            #   value: {
-            #     kind: 'end',
-            #     message: 'Mapping complete'
-            #   }
-            # }
-          # end
+          else
+            do_async_library_map library
+          end
         # end
+      end
+
+      def do_async_library_map library, uuid = nil
+        if uuid
+          send_notification '$/progress', {
+            token: uuid,
+            value: {
+              kind: 'begin',
+              title: "Mapping workspace",
+              message: "0/#{total} files",
+              cancellable: false,
+              percentage: 0
+            }
+          }
+        end
+        while result = library.next_map
+          if uuid
+            send_notification '$/progress', {
+              token: uuid,
+              value: {
+                kind: 'report',
+                cancellable: false,
+                message: "#{library.source_map_hash.keys.length}/#{total} files",
+                percentage: ((library.source_map_hash.keys.length.to_f / total.to_f) * 100).to_i
+              }
+            }
+          end
+        end
+        library.catalog
+        if uuid
+          send_notification '$/progress', {
+            token: uuid,
+            value: {
+              kind: 'end',
+              message: 'Mapping complete'
+            }
+          }
+        end
       end
     end
   end
