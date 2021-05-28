@@ -265,14 +265,12 @@ module Solargraph
     # @param query [String]
     # @return [Array<YARD::CodeObjects::Base>]
     def document query
-      catalog
       api_map.document query
     end
 
     # @param query [String]
     # @return [Array<String>]
     def search query
-      catalog
       api_map.search query
     end
 
@@ -281,7 +279,6 @@ module Solargraph
     # @param query [String]
     # @return [Array<Pin::Base>]
     def query_symbols query
-      catalog
       api_map.query_symbols query
     end
 
@@ -300,7 +297,6 @@ module Solargraph
     # @param path [String]
     # @return [Array<Solargraph::Pin::Base>]
     def path_pins path
-      catalog
       api_map.get_path_suggestions(path)
     end
 
@@ -327,7 +323,6 @@ module Solargraph
       #   be an option to do so.
       #
       return [] unless open?(filename)
-      catalog
       result = []
       source = read(filename)
       repargs = {}
