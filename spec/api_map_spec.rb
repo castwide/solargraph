@@ -3,7 +3,6 @@ require 'tmpdir'
 describe Solargraph::ApiMap do
   before :all do
     @api_map = Solargraph::ApiMap.new
-    @api_map.catalog Solargraph::Library.new
   end
 
   it "returns core methods" do
@@ -269,14 +268,11 @@ describe Solargraph::ApiMap do
 
   it "catalogs changes" do
     workspace = Solargraph::Workspace.new
-    s1 = Solargraph::Source.load_string('class Foo; end')
-    library = Solargraph::Library.new(workspace)
-    library.attach s1
-    @api_map.catalog(library)
+    s1 = Solargraph::SourceMap.load_string('class Foo; end')
+    @api_map.catalog(Solargraph::Bench.new source_maps: [s1])
     expect(@api_map.get_path_pins('Foo')).not_to be_empty
-    s2 = Solargraph::Source.load_string('class Bar; end')
-    library.attach s2
-    @api_map.catalog(library)
+    s2 = Solargraph::SourceMap.load_string('class Bar; end')
+    @api_map.catalog(Solargraph::Bench.new source_maps: [s2])
     expect(@api_map.get_path_pins('Foo')).to be_empty
     expect(@api_map.get_path_pins('Bar')).not_to be_empty
   end
@@ -369,18 +365,14 @@ describe Solargraph::ApiMap do
   end
 
   it "catalogs requires" do
-    source1 = Solargraph::Source.load_string(%(
+    source1 = Solargraph::SourceMap.load_string(%(
       class Foo; end
     ), 'lib/foo.rb')
-    source2 = Solargraph::Source.load_string(%(
+    source2 = Solargraph::SourceMap.load_string(%(
       require 'foo'
       require 'invalid'
     ), 'app.rb')
-    # bundle = Solargraph::Bench.new(opened: [source1, source2])
-    library = Solargraph::Library.new(Solargraph::Workspace.new)
-    library.merge source1
-    library.merge source2
-    @api_map.catalog library
+    @api_map.catalog Solargraph::Bench.new(source_maps: [source1, source2], load_paths: ['lib'])
     expect(@api_map.unresolved_requires).to eq(['invalid'])
   end
 
@@ -458,21 +450,18 @@ describe Solargraph::ApiMap do
   end
 
   it "detects method aliases with origins in other sources" do
-    source1 = Solargraph::Source.load_string(%(
+    source1 = Solargraph::SourceMap.load_string(%(
       class Sup
         # @return [String]
         def foo; end
       end
     ), 'source1.rb')
-    source2 = Solargraph::Source.load_string(%(
+    source2 = Solargraph::SourceMap.load_string(%(
       class Sub < Sup
         alias bar foo
       end
     ), 'source2.rb')
-    library = Solargraph::Library.new
-    library.merge source1
-    library.merge source2
-    @api_map.catalog library
+    @api_map.catalog Solargraph::Bench.new(source_maps: [source1, source2])
     pin = @api_map.get_path_pins('Sub#bar').first
     expect(pin).not_to be_nil
     expect(pin.return_type.tag).to eq('String')

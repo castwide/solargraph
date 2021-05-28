@@ -33,9 +33,12 @@ module Solargraph
     # @param pins [Array<Pin::Base>]
     # @return [self]
     def index pins
-      library = Library.new
-      library.pins.concat pins
-      catalog library
+      # @todo This implementation is incomplete. It should probably create a
+      #   Bench.
+      @source_map_hash = {}
+      implicit.clear
+      cache.clear
+      @store = Store.new(yard_map.pins + pins)
       self
     end
 
@@ -44,56 +47,48 @@ module Solargraph
     # @param source [Source]
     # @return [self]
     def map source
-      library = Library.new
-      library.attach source
-      catalog library
+      map = Solargraph::SourceMap.map(source)
+      catalog Bench.new(source_maps: [map])
       self
     end
 
-    # Catalog a library.
+    # Catalog a bench.
     #
-    # @param library [Library]
-    def catalog library
-      new_map_hash = library.source_map_hash
+    # @param bench [Bench]
+    def catalog bench
       implicit.clear
-      pins = library.pins.clone
-      reqs = Set.new
-      # @param map [SourceMap]
-      new_map_hash.each_value do |map|
+      @cache.clear
+      @source_map_hash = bench.source_maps.to_h { |s| [s.filename, s] }
+      pins = []
+      @required = Set.new
+      local_path_hash.clear
+      source_map_hash.each_value do |map|
         pins.concat map.pins
-        reqs.merge map.requires.map(&:name)
+        map.requires.each do |r|
+          found = bench.load_paths.find { |p| }
+        end
+        @required.merge map.requires.map(&:name)
         implicit.merge map.environ
       end
-      reqs.merge library.workspace.config.required
-      @required = reqs
-      implicit.merge Convention.for_global(self)
-      local_path_hash.clear
-      unless library.workspace.require_paths.empty?
-        file_keys = new_map_hash.keys
-        workspace_path = Pathname.new(library.workspace.directory)
-        reqs.delete_if do |r|
-          library.workspace.require_paths.any? do |base|
-            pn = workspace_path.join(base, "#{r}.rb").to_s
-            if file_keys.include? pn
-              local_path_hash[r] = pn
-              true
-            else
-              false
-            end
-          end
+      @required.merge implicit.requires
+      # @todo Handle the requires
+      external_requires = []
+      @required.each do |req|
+        result = bench.load_paths.find do |path|
+          full = Pathname.new(path).join("#{req}.rb").to_s
+          @source_map_hash.key?(full)
+        end
+        if result
+          local_path_hash[req] = Pathname.new(result).join("#{req}.rb").to_s
+        else
+          external_requires.push req unless result
         end
       end
-      reqs.merge implicit.requires
-      br = reqs.include?('bundler/require') ? require_from_bundle(library.workspace.directory) : {}
-      reqs.merge br.keys
-      yard_map.change(reqs.to_a, br, library.workspace.gemnames)
-      new_store = Store.new(yard_map.pins + implicit.pins + pins)
-      @cache.clear
-      @source_map_hash = new_map_hash
-      @store = new_store
+      br = @required.include?('bundler/require') ? bench.gem_specs.to_h { |gs| [gs.name, gs] } : {}
+      @required.merge br.keys
+      yard_map.change(external_requires, br, bench.gemnames)
+      @store = Store.new(yard_map.pins + implicit.pins + pins)
       @unresolved_requires = yard_map.unresolved_requires
-      workspace_filenames.clear
-      workspace_filenames.concat library.workspace.filenames
       @rebindable_method_names = nil
       store.block_pins.each { |blk| blk.rebind(self) }
       self
@@ -148,7 +143,7 @@ module Solargraph
       # api_map.catalog Bench.new(workspace: workspace)
       library = Library.new(workspace)
       library.map!
-      api_map.catalog library
+      api_map.catalog library.bench
       api_map
     end
 
@@ -528,7 +523,9 @@ module Solargraph
     attr_reader :source_map_hash
 
     # @return [ApiMap::Store]
-    attr_reader :store
+    def store
+      @store ||= Store.new
+    end
 
     # @return [Solargraph::ApiMap::Cache]
     attr_reader :cache

@@ -1,30 +1,19 @@
 # frozen_string_literal: true
 
 module Solargraph
-  # An aggregation of a workspace and additional sources to be cataloged in an
-  # ApiMap.
+  # A container of source maps and gem specs to be cataloged in an ApiMap.
   #
   class Bench
-    # @return [Workspace]
-    attr_reader :workspace
+    attr_reader :source_maps
 
-    # @return [Array<Source>]
-    attr_reader :opened
+    attr_reader :load_paths
 
-    # @return [Array<Pin::Base>]
-    attr_reader :pins
+    attr_reader :gemnames
 
-    # @param workspace [Workspace]
-    # @param opened [Array<Source>]
-    def initialize workspace: Workspace.new, opened: [], pins: []
-      @workspace = workspace
-      @opened = opened
-      @pins = pins
-    end
-
-    # @return [Array<Source>]
-    def sources
-      @sources ||= (opened + workspace.sources).uniq(&:filename)
+    def initialize source_maps: [], load_paths: [], gemnames: []
+      @source_maps = source_maps.to_set
+      @load_paths = load_paths.to_set
+      @gemnames = gemnames.to_set
     end
   end
 end

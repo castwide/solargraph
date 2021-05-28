@@ -111,7 +111,6 @@ module Solargraph
       mutex.synchronize do
         next if File.directory?(filename) || !File.exist?(filename)
         next unless contain?(filename) || open?(filename) || workspace.would_merge?(filename)
-        @synchronized = false
         source = Solargraph::Source.load_string(File.read(filename), filename)
         workspace.merge(source)
         maybe_map source
@@ -305,6 +304,10 @@ module Solargraph
       api_map.get_path_suggestions(path)
     end
 
+    def source_maps
+      source_map_hash.values
+    end
+
     # Get the current text of a file in the library.
     #
     # @param filename [String]
@@ -355,10 +358,18 @@ module Solargraph
       mutex.synchronize do
         break if synchronized?
         logger.info "Cataloging #{workspace.directory.empty? ? 'generic workspace' : workspace.directory}"
-        api_map.catalog self
+        api_map.catalog bench
         @synchronized = true
         logger.info "Catalog complete (#{api_map.source_maps.length} files, #{api_map.pins.length} pins)" if logger.info?
       end
+    end
+
+    def bench
+      Bench.new(
+        source_maps: source_map_hash.values,
+        load_paths: workspace.require_paths,
+        gemnames: workspace.gemnames
+      )
     end
 
     # Get an array of foldable ranges for the specified file.
@@ -479,7 +490,7 @@ module Solargraph
       else
         source_map_hash[source.filename] = Solargraph::SourceMap.map(source)
         @synchronized = false
-      end  
+      end
     end
   end
 end
