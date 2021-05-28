@@ -46,13 +46,14 @@ module Solargraph
     # @return [void]
     def attach source
       mutex.synchronize do
-        if @current
-          source_map_hash.delete @current.filename unless workspace.has_file?(@current.filename)
+        if @current && @current.filename != source.filename && source_map_hash.key?(@current.filename) && !workspace.has_file?(@current.filename)
+          source_map_hash.delete @current.filename
+          @synchronized = false
         end
         @current = source
         maybe_map @current
+        api_map.catalog bench unless synchronized?
       end
-      catalog
     end
 
     # True if the specified file is currently attached.
@@ -360,8 +361,10 @@ module Solargraph
     end
 
     def bench
+      source_maps = @current ? [@current] : []
+      source_maps.concat source_map_hash.values
       Bench.new(
-        source_maps: source_map_hash.values,
+        source_maps: source_maps,
         load_paths: workspace.require_paths,
         gemnames: workspace.gemnames
       )
