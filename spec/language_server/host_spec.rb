@@ -163,12 +163,12 @@ describe Solargraph::LanguageServer::Host do
               'character' => 0
             }
           },
-          'text' => ';'
+          'text' => '; x = "x"'
         }
       ]
     }
-    expect(host.synchronizing?).to be(true)
     host.change params
+    expect(host.synchronizing?).to be(true)
   end
 
   it "responds with empty diagnostics for unopened files" do
