@@ -11,8 +11,6 @@ module Solargraph
         class Formatting < Base
           include Solargraph::Diagnostics::RubocopHelpers
 
-          class BlankRubocopFormatter < ::RuboCop::Formatter::BaseFormatter; end
-
           def process
             file_uri = params['textDocument']['uri']
             config = config_for(file_uri)
@@ -21,10 +19,12 @@ module Solargraph
 
             options, paths = RuboCop::Options.new.parse(args)
             options[:stdin] = original
-            redirect_stdout do
+            corrections = redirect_stdout do
               RuboCop::Runner.new(options, RuboCop::ConfigStore.new).run(paths)
             end
             result = options[:stdin]
+
+            log_corrections(corrections)
 
             format original, result
           rescue RuboCop::ValidationError, RuboCop::ConfigNotFoundError => e
@@ -32,6 +32,17 @@ module Solargraph
           end
 
           private
+
+          def log_corrections(corrections)
+            corrections = corrections&.strip
+            return if corrections&.empty?
+
+            Solargraph.logger.info('Formatting result:')
+            corrections.each_line do |line|
+              next if line.strip.empty?
+              Solargraph.logger.info(line.strip)
+            end
+          end
 
           def config_for(file_uri)
             conf = host.formatter_config(file_uri)
@@ -43,9 +54,7 @@ module Solargraph
           def cli_args file, config
             args = [
               config['cops'] == 'all' ? '--auto-correct-all' : '--auto-correct',
-              '--cache', 'false',
-              '--format', 'Solargraph::LanguageServer::Message::' \
-                          'TextDocument::Formatting::BlankRubocopFormatter',
+              '--cache', 'false', '--format', 'emacs'
             ]
 
             ['except', 'only'].each do |arg|
