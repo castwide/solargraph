@@ -60,14 +60,6 @@ describe Solargraph::Source::Cursor do
     expect(source.at(cur.range)).to eq('bar')
   end
 
-  # @todo This test might not apply anymore. The cursor uses a new recipient
-  #   detection method based on nodes and chains.
-  # it "detects recipients" do
-  #   source = Solargraph::Source.load_string('a(1); b')
-  #   cur = described_class.new(source, Solargraph::Position.new(0, 2))
-  #   expect(cur.recipient.word).to eq('a')
-  # end
-
   it "generates chains" do
     source = Solargraph::Source.load_string('foo.bar(1,2).baz{}')
     cur = described_class.new(source, Solargraph::Position.new(0, 18))

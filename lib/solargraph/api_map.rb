@@ -71,7 +71,6 @@ module Solargraph
         implicit.merge map.environ
       end
       @required.merge implicit.requires
-      # @todo Handle the requires
       external_requires = []
       @required.each do |req|
         result = bench.load_paths.find do |path|
