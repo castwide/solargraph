@@ -193,7 +193,7 @@ module Solargraph
       def diagnose uri
         if sources.include?(uri)
           library = library_for(uri)
-          if library.synchronized?
+          if library.mapped? && library.synchronized?
             logger.info "Diagnosing #{uri}"
             begin
               results = library.diagnose uri_to_file(uri)
@@ -633,6 +633,7 @@ module Solargraph
 
       # @return [void]
       def catalog
+        return unless libraries.all?(&:mapped?)
         libraries.each(&:catalog)
       end
 
