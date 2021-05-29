@@ -419,8 +419,12 @@ module Solargraph
       mutex.synchronize do
         @synchronized = false
         src = workspace.sources.find { |s| !source_map_hash.key?(s.filename) }
-        Logging.logger.debug "Mapping #{src.filename}"
-        source_map_hash[src.filename] = Solargraph::SourceMap.map(src)
+        if src
+          Logging.logger.debug "Mapping #{src.filename}"
+          source_map_hash[src.filename] = Solargraph::SourceMap.map(src)
+        else
+          false
+        end
       end
     end
 
