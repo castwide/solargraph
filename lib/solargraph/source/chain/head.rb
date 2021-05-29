@@ -13,22 +13,6 @@ module Solargraph
           # return super_pins(api_map, name_pin) if word == 'super'
           []
         end
-
-        # @todo This is temporary. Chain heads need to handle arguments to
-        #   `super`.
-        # def arguments
-        #   []
-        # end
-
-        private
-
-        # # @param api_map [ApiMap]
-        # # @param name_pin [Pin::Base]
-        # # @return [Array<Pin::Base>]
-        # def super_pins api_map, name_pin
-        #   pins = api_map.get_method_stack(name_pin.namespace, name_pin.name, scope: name_pin.scope)
-        #   pins.reject{|p| p.path == name_pin.path}
-        # end
       end
     end
   end

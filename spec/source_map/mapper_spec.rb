@@ -795,19 +795,6 @@ describe Solargraph::SourceMap::Mapper do
     expect(Solargraph::Parser.is_ast_node?(pin.assignment)).to be(true)
   end
 
-  # @todo This might not be relevant if ApiMap is always responsible for
-  #   method aliases.
-  # it "maps alias methods to attributes" do
-  #   smap = Solargraph::SourceMap.load_string(%(
-  #     class MyClass
-  #       attr_accessor :foo
-  #       alias_method :bar, :foo
-  #     end
-  #   ))
-  #   pin = smap.pins.select{|p| p.path == 'MyClass#bar'}.first
-  #   expect(pin).to be_a(Solargraph::Pin::Attribute)
-  # end
-
   it "defers resolution of distant alias_method aliases" do
     smap = Solargraph::SourceMap.load_string(%(
       class MyClass

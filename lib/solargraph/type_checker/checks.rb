@@ -75,7 +75,7 @@ module Solargraph
         true
       end
 
-      # @param type [ComplexType]
+      # @param type [ComplexType::UniqueType]
       # @return [String]
       def fuzz type
         if type.parameters?
@@ -86,13 +86,13 @@ module Solargraph
       end
 
       # @param api_map [ApiMap]
-      # @param cls1 [ComplexType]
-      # @param cls2 [ComplexType]
+      # @param cls1 [ComplexType::UniqueType]
+      # @param cls2 [ComplexType::UniqueType]
       # @return [Boolean]
       def either_way?(api_map, cls1, cls2)
         f1 = fuzz(cls1)
         f2 = fuzz(cls2)
-        api_map.super_and_sub?(f1, f2) || api_map.super_and_sub?(f2, f1)
+        api_map.type_include?(f1, f2) || api_map.super_and_sub?(f1, f2) || api_map.super_and_sub?(f2, f1)
       end
     end
   end

@@ -33,7 +33,12 @@ module Solargraph
     # @param pins [Array<Pin::Base>]
     # @return [self]
     def index pins
-      catalog Bench.new(pins: pins)
+      # @todo This implementation is incomplete. It should probably create a
+      #   Bench.
+      @source_map_hash = {}
+      implicit.clear
+      cache.clear
+      @store = Store.new(yard_map.pins + pins)
       self
     end
 
@@ -42,7 +47,49 @@ module Solargraph
     # @param source [Source]
     # @return [self]
     def map source
-      catalog Bench.new(opened: [source])
+      map = Solargraph::SourceMap.map(source)
+      catalog Bench.new(source_maps: [map])
+      self
+    end
+
+    # Catalog a bench.
+    #
+    # @param bench [Bench]
+    def catalog bench
+      implicit.clear
+      @cache.clear
+      @source_map_hash = bench.source_maps.map { |s| [s.filename, s] }.to_h
+      pins = []
+      @required = Set.new
+      local_path_hash.clear
+      source_map_hash.each_value do |map|
+        pins.concat map.pins
+        map.requires.each do |r|
+          found = bench.load_paths.find { |p| }
+        end
+        @required.merge map.requires.map(&:name)
+        implicit.merge map.environ
+      end
+      @required.merge implicit.requires
+      external_requires = []
+      @required.each do |req|
+        result = bench.load_paths.find do |path|
+          full = Pathname.new(path).join("#{req}.rb").to_s
+          @source_map_hash.key?(full)
+        end
+        if result
+          local_path_hash[req] = Pathname.new(result).join("#{req}.rb").to_s
+        else
+          external_requires.push req unless result
+        end
+      end
+      br = @required.include?('bundler/require') ? bench.gem_specs.to_h { |gs| [gs.name, gs] } : {}
+      @required.merge br.keys
+      yard_map.change(external_requires, br, bench.gemnames)
+      @store = Store.new(yard_map.pins + implicit.pins + pins)
+      @unresolved_requires = yard_map.unresolved_requires
+      @rebindable_method_names = nil
+      store.block_pins.each { |blk| blk.rebind(self) }
       self
     end
 
@@ -50,87 +97,6 @@ module Solargraph
     # @return [YARD::Tags::MacroDirective, nil]
     def named_macro name
       store.named_macros[name]
-    end
-
-    # Catalog a bench.
-    #
-    # @param bench [Bench]
-    # @return [self]
-    def catalog bench
-      new_map_hash = {}
-      # Bench always needs to be merged if it adds or removes sources
-      merged = (bench.sources.length == source_map_hash.values.length)
-      bench.sources.each do |source|
-        if source_map_hash.key?(source.filename)
-          if source_map_hash[source.filename].code == source.code &&
-             source_map_hash[source.filename].source.synchronized? &&
-             source.synchronized?
-            new_map_hash[source.filename] = source_map_hash[source.filename]
-          elsif !source.synchronized?
-            new_map_hash[source.filename] = source_map_hash[source.filename]
-            # @todo Smelly instance variable access
-            new_map_hash[source.filename].instance_variable_set(:@source, source)
-          else
-            map = Solargraph::SourceMap.map(source)
-            if source_map_hash[source.filename].try_merge!(map)
-              new_map_hash[source.filename] = source_map_hash[source.filename]
-            else
-              new_map_hash[source.filename] = map
-              merged = false
-            end
-          end
-        else
-          map = Solargraph::SourceMap.map(source)
-          new_map_hash[source.filename] = map
-          merged = false
-        end
-      end
-      return self if bench.pins.empty? && @store && merged
-      implicit.clear
-      pins = []
-      reqs = Set.new
-      # @param map [SourceMap]
-      new_map_hash.each_value do |map|
-        pins.concat map.pins
-        reqs.merge map.requires.map(&:name)
-      end
-      pins.concat bench.pins
-      reqs.merge bench.workspace.config.required
-      @required = reqs
-      bench.sources.each do |src|
-        implicit.merge new_map_hash[src.filename].environ
-      end
-      # implicit.merge Convention.for_global(self)
-      local_path_hash.clear
-      unless bench.workspace.require_paths.empty?
-        file_keys = new_map_hash.keys
-        workspace_path = Pathname.new(bench.workspace.directory)
-        reqs.delete_if do |r|
-          bench.workspace.require_paths.any? do |base|
-            pn = workspace_path.join(base, "#{r}.rb").to_s
-            if file_keys.include? pn
-              local_path_hash[r] = pn
-              true
-            else
-              false
-            end
-          end
-        end
-      end
-      reqs.merge implicit.requires
-      br = reqs.include?('bundler/require') ? require_from_bundle(bench.workspace.directory) : {}
-      reqs.merge br.keys
-      yard_map.change(reqs.to_a, br, bench.workspace.gemnames)
-      new_store = Store.new(yard_map.pins + implicit.pins + pins)
-      @cache.clear
-      @source_map_hash = new_map_hash
-      @store = new_store
-      @unresolved_requires = yard_map.unresolved_requires
-      workspace_filenames.clear
-      workspace_filenames.concat bench.workspace.filenames
-      @rebindable_method_names = nil
-      store.block_pins.each { |blk| blk.rebind(self) }
-      self
     end
 
     def required
@@ -173,7 +139,10 @@ module Solargraph
     def self.load directory
       api_map = new
       workspace = Solargraph::Workspace.new(directory)
-      api_map.catalog Bench.new(workspace: workspace)
+      # api_map.catalog Bench.new(workspace: workspace)
+      library = Library.new(workspace)
+      library.map!
+      api_map.catalog library.bench
       api_map
     end
 
@@ -531,6 +500,15 @@ module Solargraph
       @yard_map ||= YardMap.new
     end
 
+    # Check if the host class includes the specified module.
+    #
+    # @param host [String] The class
+    # @param mod [String] The module
+    # @return [Boolean]
+    def type_include?(host, mod)
+      store.get_includes(host).include?(mod)
+    end
+
     private
 
     # @return [Array<String>]
@@ -544,7 +522,9 @@ module Solargraph
     attr_reader :source_map_hash
 
     # @return [ApiMap::Store]
-    attr_reader :store
+    def store
+      @store ||= Store.new
+    end
 
     # @return [Solargraph::ApiMap::Cache]
     attr_reader :cache

@@ -5,8 +5,7 @@ describe Solargraph::LanguageServer::Host do
     host = Solargraph::LanguageServer::Host.new
     Dir.mktmpdir do |dir|
       host.prepare (dir)
-      # @todo Change this test or get rid of it. The library is private now.
-      expect(host.send(:libraries).first).not_to be(nil)
+      expect(host.libraries.first).not_to be(nil)
     end
   end
 
@@ -163,12 +162,12 @@ describe Solargraph::LanguageServer::Host do
               'character' => 0
             }
           },
-          'text' => ';'
+          'text' => '; x = "x"'
         }
       ]
     }
-    expect(host.synchronizing?).to be(true)
     host.change params
+    expect(host.synchronizing?).to be(true)
   end
 
   it "responds with empty diagnostics for unopened files" do

@@ -109,7 +109,6 @@ module Solargraph
         end
 
         def node_to_argchains node
-          # @todo Process array, splat, argscat
           return [] unless Parser.is_ast_node?(node)
           if [:ZARRAY, :ARRAY, :LIST].include?(node.type)
             node.children[0..-2].map { |c| NodeChainer.chain(c) }

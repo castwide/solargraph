@@ -1,3 +1,12 @@
+## 0.41.0
+- Chain constant at last double colon with more than two nested namespaces
+- Fill Integer#times return type (#440)
+- Validate included modules in type checks (#424)
+- Faster language server initialization
+  - Server response to initialize is near immediate
+  - Workspace is mapped in a background thread
+  - Supported clients report mapping progress
+
 ## 0.40.4 - March 3, 2021
 - Fix optarg and blockarg ordering
 - Override specialization for #initialize
