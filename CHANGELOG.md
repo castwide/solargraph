@@ -1,4 +1,4 @@
-## 0.41.0
+## 0.41.0 - May 30, 2021
 - Chain constant at last double colon with more than two nested namespaces
 - Fill Integer#times return type (#440)
 - Validate included modules in type checks (#424)
@@ -6,6 +6,10 @@
   - Server response to initialize is near immediate
   - Workspace is mapped in a background thread
   - Supported clients report mapping progress
+- Log RuboCop corrections at info level (#426)
+- Allow configuring the version of RuboCop to require (#430)
+- Fix source of diagnostic (#434)
+- Fix file argument in RuboCop (#435)
 
 ## 0.40.4 - March 3, 2021
 - Fix optarg and blockarg ordering
