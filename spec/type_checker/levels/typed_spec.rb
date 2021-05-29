@@ -306,7 +306,6 @@ describe Solargraph::TypeChecker do
         # @type [Interface]
         host = Host.new
       ))
-      puts checker.problems.map(&:message)
       expect(checker.problems).to be_empty
     end
 
@@ -319,7 +318,6 @@ describe Solargraph::TypeChecker do
         # @type [Interface]
         host = Host.new
       ))
-      puts checker.problems.map(&:message)
       expect(checker.problems).to be_one
     end
   end
