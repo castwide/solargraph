@@ -1,6 +1,5 @@
 # frozen_string_literal: true
 
-require 'rubocop'
 require 'securerandom'
 require 'tmpdir'
 
@@ -17,6 +16,7 @@ module Solargraph
             original = host.read_text(file_uri)
             args = cli_args(file_uri, config)
 
+            require_rubocop(config['version'])
             options, paths = RuboCop::Options.new.parse(args)
             options[:stdin] = original
             corrections = redirect_stdout do
@@ -55,7 +55,8 @@ module Solargraph
             file = UriHelpers.uri_to_file(file_uri)
             args = [
               config['cops'] == 'all' ? '--auto-correct-all' : '--auto-correct',
-              '--cache', 'false', '--format', 'emacs'
+              '--cache', 'false',
+              '--format', formatter_class(config).name,
             ]
 
             ['except', 'only'].each do |arg|
@@ -65,6 +66,16 @@ module Solargraph
 
             args += config['extra_args'] if config['extra_args']
             args + [file]
+          end
+
+          def formatter_class(config)
+            if self.class.const_defined?('BlankRubocopFormatter')
+              BlankRubocopFormatter
+            else
+              require_rubocop(config['version'])
+              klass = Class.new(::RuboCop::Formatter::BaseFormatter)
+              self.class.const_set 'BlankRubocopFormatter', klass
+            end
           end
 
           def cop_list(value)

@@ -79,6 +79,21 @@ Run `bundle install` and use `bundle exec yard gems` to generate the documentati
 
 In order to make sure you're using the correct dependencies, you can start the language server with Bundler. In VS Code, there's a `solargraph.useBundler` option. Other clients will vary, but the command you probably want to run is `bundle exec solargraph socket` or `bundle exec solargraph stdio`.
 
+### Rubocop Version
+
+If you have multiple versions of [`rubocop`](https://rubygems.org/gems/rubocop) installed and you would like to choose a version other than the latest to use, this specific version can be configured.
+
+In `.solargraph.yml`:
+
+```yaml
+---
+reporters:
+- rubocop:version=0.61.0  # diagnostics
+formatter:
+  rubocop:
+    version: 0.61.0       # formatting
+```
+
 ### Integrating Other Editors
 
 The [language server protocol](https://microsoft.github.io/language-server-protocol/specification) is the recommended way for integrating Solargraph into editors and IDEs. Clients can connect using either stdio or TCP. Language client developers should refer to [https://solargraph.org/guides/language-server](https://solargraph.org/guides/language-server).
