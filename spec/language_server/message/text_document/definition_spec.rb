@@ -2,6 +2,7 @@ describe Solargraph::LanguageServer::Message::TextDocument::Definition do
   it 'finds definitions of methods' do
     host = Solargraph::LanguageServer::Host.new
     host.prepare('spec/fixtures/workspace')
+    sleep 0.1 until host.libraries.all?(&:mapped?)
     host.catalog
     message = Solargraph::LanguageServer::Message::TextDocument::Definition.new(host, {
       'params' => {
@@ -22,6 +23,7 @@ describe Solargraph::LanguageServer::Message::TextDocument::Definition do
     path = File.absolute_path('spec/fixtures/workspace')
     host = Solargraph::LanguageServer::Host.new
     host.prepare(path)
+    sleep 0.1 until host.libraries.all?(&:mapped?)
     host.catalog
     message = Solargraph::LanguageServer::Message::TextDocument::Definition.new(host, {
       'params' => {

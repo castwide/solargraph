@@ -752,7 +752,7 @@ module Solargraph
       # @return [void]
       def async_library_map library
         return if library.mapped?
-        # Thread.new do
+        Thread.new do
           if client_supports_progress?
             uuid = SecureRandom.uuid
             send_request 'window/workDoneProgress/create', {
@@ -763,7 +763,7 @@ module Solargraph
           else
             do_async_library_map library
           end
-        # end
+        end
       end
 
       def do_async_library_map library, uuid = nil
@@ -781,22 +781,24 @@ module Solargraph
           }
         end
         pct = 0
+        mod = 10
         while library.next_map
-          if uuid
-            cur = ((library.source_map_hash.keys.length.to_f / total.to_f) * 100).to_i
-            pct = cur if cur > pct
-            send_notification '$/progress', {
-              token: uuid,
-              value: {
-                kind: 'report',
-                cancellable: false,
-                message: "#{library.source_map_hash.keys.length}/#{total} files",
-                percentage: pct
+          cur = ((library.source_map_hash.keys.length.to_f / total.to_f) * 100).to_i
+          if cur > pct && cur % mod == 0
+            pct = cur
+            if uuid
+              send_notification '$/progress', {
+                token: uuid,
+                value: {
+                  kind: 'report',
+                  cancellable: false,
+                  message: "#{library.source_map_hash.keys.length}/#{total} files",
+                  percentage: pct
+                }
               }
-            }
+            end
           end
         end
-        library.catalog
         if uuid
           send_notification '$/progress', {
             token: uuid,
