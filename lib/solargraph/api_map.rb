@@ -58,7 +58,7 @@ module Solargraph
     def catalog bench
       implicit.clear
       @cache.clear
-      @source_map_hash = bench.source_maps.to_h { |s| [s.filename, s] }
+      @source_map_hash = bench.source_maps.map { |s| [s.filename, s] }.to_h
       pins = []
       @required = Set.new
       local_path_hash.clear
