@@ -57,7 +57,8 @@ module Solargraph
           range: offense_range(off).to_hash,
           # 1 = Error, 2 = Warning, 3 = Information, 4 = Hint
           severity: SEVERITIES[off['severity']],
-          source: off['cop_name'],
+          source: 'rubocop',
+          code: off['cop_name'],
           message: off['message'].gsub(/^#{off['cop_name']}\:/, '')
         }
       end

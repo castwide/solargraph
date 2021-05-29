@@ -51,7 +51,8 @@ module Solargraph
             conf['rubocop'] || {}
           end
 
-          def cli_args file, config
+          def cli_args file_uri, config
+            file = UriHelpers.uri_to_file(file_uri)
             args = [
               config['cops'] == 'all' ? '--auto-correct-all' : '--auto-correct',
               '--cache', 'false', '--format', 'emacs'
