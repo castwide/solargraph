@@ -64,9 +64,6 @@ module Solargraph
       local_path_hash.clear
       source_map_hash.each_value do |map|
         pins.concat map.pins
-        map.requires.each do |r|
-          found = bench.load_paths.find { |p| }
-        end
         @required.merge map.requires.map(&:name)
         implicit.merge map.environ
       end
