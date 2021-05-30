@@ -170,9 +170,10 @@ module Solargraph
       # @param globs [Array<String>]
       # @return [Array<String>]
       def process_globs globs
-        result = []
-        globs.each do |glob|
-          result.concat Dir[File.join directory, glob].map{ |f| f.gsub(/\\/, '/') }
+        result = globs.flat_map do |glob|
+          Dir[File.join directory, glob]
+            .map{ |f| f.gsub(/\\/, '/') }
+            .select { |f| File.file?(f) }
         end
         result
       end

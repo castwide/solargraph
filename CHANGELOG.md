@@ -10,6 +10,7 @@
 - Allow configuring the version of RuboCop to require (#430)
 - Fix source of diagnostic (#434)
 - Fix file argument in RuboCop (#435)
+- Config ignores directories with .rb extension (#423)
 
 ## 0.40.4 - March 3, 2021
 - Fix optarg and blockarg ordering
