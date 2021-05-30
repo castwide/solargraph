@@ -1,6 +1,6 @@
 unless Hash.method_defined?(:transform_keys)
   class Hash
-    def transform_values &block
+    def transform_keys &block
       each_pair do |k, v|
         self[block.call(k)] = v
       end
