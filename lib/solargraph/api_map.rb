@@ -80,7 +80,7 @@ module Solargraph
           external_requires.push req unless result
         end
       end
-      br = @required.include?('bundler/require') ? bench.gem_specs.to_h { |gs| [gs.name, gs] } : {}
+      br = @required.include?('bundler/require') ? bench.gemnames.to_h { |gs| [gs.name, gs] } : {}
       @required.merge br.keys
       yard_map.change(external_requires, br, bench.gemnames)
       @store = Store.new(yard_map.pins + implicit.pins + pins)
