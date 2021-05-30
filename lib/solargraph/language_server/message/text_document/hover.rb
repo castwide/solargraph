@@ -17,7 +17,7 @@ module Solargraph
               if !this_link.nil? && this_link != last_link
                 parts.push this_link
               end
-              parts.push pin.detail.gsub(':', '\\:') unless pin.is_a?(Pin::Namespace) || pin.detail.nil?
+              parts.push "`" + pin.detail.gsub(':', '\\:') + "`" unless pin.is_a?(Pin::Namespace) || pin.detail.nil?
               parts.push pin.documentation unless pin.documentation.nil? || pin.documentation.empty?
               unless parts.empty?
                 data = parts.join("\n\n")
