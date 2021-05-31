@@ -1,3 +1,6 @@
+## 0.41.1 - May 31, 2021
+- ApiMap handles required bundles (#443)
+
 ## 0.41.0 - May 30, 2021
 - Chain constant at last double colon with more than two nested namespaces
 - Fill Integer#times return type (#440)

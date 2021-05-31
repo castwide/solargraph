@@ -366,7 +366,8 @@ module Solargraph
       Bench.new(
         source_maps: source_maps,
         load_paths: workspace.require_paths,
-        gemnames: workspace.gemnames
+        gemnames: workspace.gemnames,
+        directory: workspace.directory
       )
     end
 
