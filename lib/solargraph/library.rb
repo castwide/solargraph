@@ -326,6 +326,7 @@ module Solargraph
       return [] unless open?(filename)
       result = []
       source = read(filename)
+      catalog
       repargs = {}
       workspace.config.reporters.each do |line|
         if line == 'all!'
@@ -366,7 +367,7 @@ module Solargraph
       Bench.new(
         source_maps: source_maps,
         load_paths: workspace.require_paths,
-        gemnames: workspace.gemnames,
+        source_gems: workspace.gemnames,
         directory: workspace.directory
       )
     end

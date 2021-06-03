@@ -20,6 +20,8 @@ module Solargraph
     autoload :Helpers,     'solargraph/yard_map/helpers'
     autoload :ToMethod,    'solargraph/yard_map/to_method'
 
+    include ApiMap::BundlerMethods
+
     CoreDocs.require_minimum
 
     def stdlib_paths
@@ -37,33 +39,16 @@ module Solargraph
       end
     end
 
-    # @return [Array<String>]
-    attr_reader :required
-
     # @return [Boolean]
     attr_writer :with_dependencies
 
-    # A hash of gem names and the version numbers to include in the map.
-    #
-    # @return [Hash{String => String}]
-    attr_reader :gemset
-
-    # @param required [Array<String>]
-    # @param gemset [Hash{String => String}]
+    # @param required [Array<String>, Set<String>]
+    # @param directory [String]
+    # @param source_gems [Array<String>. Set<String>]
     # @param with_dependencies [Boolean]
-    def initialize(required: [], gemset: {}, with_dependencies: true)
-      # HACK: YardMap needs its own copy of this array
-      @required = required.clone
-      # HACK: Hardcoded YAML handling
-      @required.push 'psych' if @required.include?('yaml')
+    def initialize(required: [], directory: '', source_gems: [], with_dependencies: true)
       @with_dependencies = with_dependencies
-      @gem_paths = {}
-      @stdlib_namespaces = []
-      @gemset = gemset
-      @source_gems = []
-      process_requires
-      yardocs.uniq!
-      @pin_select_cache = {}
+      change required.to_set, directory, source_gems.to_set
     end
 
     # @return [Array<Solargraph::Pin::Base>]
@@ -76,25 +61,24 @@ module Solargraph
       @with_dependencies
     end
 
-    # @param new_requires [Array<String>]
-    # @param new_gemset [Hash{String => String}]
+    # @param new_requires [Set<String>] Required paths to use for loading gems
+    # @param new_directory [String] The workspace directory
+    # @param new_source_gems [Set<String>] Gems under local development (i.e., part of the workspace)
     # @return [Boolean]
-    def change new_requires, new_gemset, source_gems = []
+    def change new_requires, new_directory, new_source_gems
+      return false if new_requires == base_required && new_directory == @directory && new_source_gems == @source_gems
+      @gem_paths = {}
+      base_required.replace new_requires
+      required.replace new_requires
       # HACK: Hardcoded YAML handling
-      new_requires.push 'psych' if new_requires.include?('yaml')
-      if new_requires.uniq.sort == required.uniq.sort && new_gemset == gemset && @source_gems.uniq.sort == source_gems.uniq.sort
-        false
-      else
-        required.clear
-        required.concat new_requires
-        @gemset = new_gemset
-        @source_gems = source_gems
-        process_requires
-        @rebindable_method_names = nil
-        @pin_class_hash = nil
-        @pin_select_cache = {}
-        true
-      end
+      required.add 'psych' if new_requires.include?('yaml')
+      @source_gems = new_source_gems
+      @directory = directory
+      process_requires
+      @rebindable_method_names = nil
+      @pin_class_hash = nil
+      @pin_select_cache = {}
+      true
     end
 
     # @return [Set<String>]
@@ -109,6 +93,11 @@ module Solargraph
     # @return [Array<String>]
     def yardocs
       @yardocs ||= []
+    end
+
+    # @return [Set<String>]
+    def required
+      @required ||= Set.new
     end
 
     # @return [Array<String>]
@@ -163,7 +152,15 @@ module Solargraph
       @stdlib_pins ||= []
     end
 
+    def base_required
+      @base_required ||= Set.new
+    end
+
     private
+
+    def directory
+      @directory ||= ''
+    end
 
     # @return [YardMap::Cache]
     def cache
@@ -193,6 +190,11 @@ module Solargraph
 
     # @return [void]
     def process_requires
+      @gemset = if required.include?('bundler/require')
+        require_from_bundle(directory)
+      else
+        {}
+      end
       pins.replace core_pins
       unresolved_requires.clear
       stdlib_pins.clear

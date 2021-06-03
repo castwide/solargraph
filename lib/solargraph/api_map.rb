@@ -17,7 +17,6 @@ module Solargraph
     autoload :BundlerMethods, 'solargraph/api_map/bundler_methods'
 
     include SourceToYard
-    include BundlerMethods
 
     # @return [Array<String>]
     attr_reader :unresolved_requires
@@ -68,21 +67,24 @@ module Solargraph
         implicit.merge map.environ
       end
       @required.merge implicit.requires
-      external_requires = []
-      @required.each do |req|
-        result = bench.load_paths.find do |path|
-          full = Pathname.new(path).join("#{req}.rb").to_s
-          @source_map_hash.key?(full)
+      if @previous_required != @required
+        @previous_required = @required
+        external_requires = Set.new
+        @required.each do |req|
+          result = bench.load_paths.find do |path|
+            full = Pathname.new(path).join("#{req}.rb").to_s
+            @source_map_hash.key?(full)
+          end
+          if result
+            local_path_hash[req] = Pathname.new(result).join("#{req}.rb").to_s
+          else
+            external_requires.add req unless result
+          end
         end
-        if result
-          local_path_hash[req] = Pathname.new(result).join("#{req}.rb").to_s
-        else
-          external_requires.push req unless result
-        end
+      else
+        external_requires = yard_map.base_required
       end
-      br = @required.include?('bundler/require') ? require_from_bundle(bench.directory) : {}
-      @required.merge br.keys
-      yard_map.change(external_requires, br, bench.gemnames)
+      yard_map.change(external_requires, bench.directory, bench.source_gems)
       @store = Store.new(yard_map.pins + implicit.pins + pins)
       @unresolved_requires = yard_map.unresolved_requires
       @rebindable_method_names = nil

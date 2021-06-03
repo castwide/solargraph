@@ -1,4 +1,5 @@
 require 'tmpdir'
+require 'set'
 
 describe Solargraph::YardMap do
   it "finds stdlib require paths" do
@@ -8,19 +9,19 @@ describe Solargraph::YardMap do
 
   it "removes requires on change" do
     yard_map = Solargraph::YardMap.new(required: ['set'])
-    expect(yard_map.change([], {})).to be(true)
+    expect(yard_map.change([], '', [])).to be(true)
     expect(yard_map.pins.map(&:path)).not_to include('Set#add')
   end
 
   it "detects unchanged require paths" do
     yard_map = Solargraph::YardMap.new(required: ['set'])
-    expect(yard_map.change(['set'], {})).to be(false)
+    expect(yard_map.change(['set'].to_set, '', [].to_set)).to be(false)
   end
 
   it "keeps cached pins on change" do
     yard_map = Solargraph::YardMap.new(required: ['set'])
     pin1 = yard_map.path_pin('Set#add')
-    yard_map.change(['set', 'json'], {})
+    yard_map.change(['set', 'json'], '', [])
     pin2 = yard_map.path_pin('Set#add')
     expect(pin1).to be(pin2)
   end

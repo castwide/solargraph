@@ -13,18 +13,18 @@ module Solargraph
     attr_reader :load_paths
 
     # @return [Set<String>]
-    attr_reader :gemnames
+    attr_reader :source_gems
 
     # @return [String]
     attr_reader :directory
 
     # @param source_maps [Array<SourceMap>, Set<SourceMap>]
     # @param load_paths [Array<String>, Set<String>]
-    # @param gemnames [Array<String>, Set<String>]
-    def initialize source_maps: [], load_paths: [], gemnames: [], directory: ''
+    # @param source_gems [Array<String>, Set<String>]
+    def initialize source_maps: [], load_paths: [], source_gems: [], directory: ''
       @source_maps = source_maps.to_set
       @load_paths = load_paths.to_set
-      @gemnames = gemnames.to_set
+      @source_gems = source_gems.to_set
       @directory = directory
     end
   end
