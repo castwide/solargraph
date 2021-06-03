@@ -59,31 +59,12 @@ module Solargraph
       @cache.clear
       @source_map_hash = bench.source_maps.map { |s| [s.filename, s] }.to_h
       pins = []
-      @required = Set.new
-      local_path_hash.clear
+      pins = bench.source_maps.map(&:pins).flatten
+      external_requires = bench.external_requires
       source_map_hash.each_value do |map|
-        pins.concat map.pins
-        @required.merge map.requires.map(&:name)
         implicit.merge map.environ
       end
-      @required.merge implicit.requires
-      if @previous_required != @required
-        @previous_required = @required
-        external_requires = Set.new
-        @required.each do |req|
-          result = bench.load_paths.find do |path|
-            full = Pathname.new(path).join("#{req}.rb").to_s
-            @source_map_hash.key?(full)
-          end
-          if result
-            local_path_hash[req] = Pathname.new(result).join("#{req}.rb").to_s
-          else
-            external_requires.add req unless result
-          end
-        end
-      else
-        external_requires = yard_map.base_required
-      end
+      external_requires.merge implicit.requires
       yard_map.change(external_requires, bench.directory, bench.source_gems)
       @store = Store.new(yard_map.pins + implicit.pins + pins)
       @unresolved_requires = yard_map.unresolved_requires
@@ -463,20 +444,6 @@ module Solargraph
     # @param filename [String]
     def workspaced? filename
       workspace_filenames.include?(filename)
-    end
-
-    # @param location [Location]
-    # @return [Location]
-    def require_reference_at location
-      map = source_map(location.filename)
-      pin = map.requires.select { |p| p.location.range.contain?(location.range.start) }.first
-      return nil if pin.nil?
-      if local_path_hash.key?(pin.name)
-        return Location.new(local_path_hash[pin.name], Solargraph::Range.from_to(0, 0, 0, 0))
-      end
-      yard_map.require_reference(pin.name)
-    rescue FileNotFoundError
-      nil
     end
 
     # Check if a class is a superclass of another class.

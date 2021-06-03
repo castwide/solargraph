@@ -48,6 +48,8 @@ module Solargraph
       mutex.synchronize do
         if @current && @current.filename != source.filename && source_map_hash.key?(@current.filename) && !workspace.has_file?(@current.filename)
           source_map_hash.delete @current.filename
+          source_map_external_require_hash.delete @current.filename
+          @external_requires = nil
           @synchronized = false
         end
         @current = source
@@ -252,7 +254,18 @@ module Solargraph
     end
 
     def locate_ref location
-      api_map.require_reference_at location
+      map = source_map_hash[location.filename]
+      return if map.nil?
+      pin = map.requires.select { |p| p.location.range.contain?(location.range.start) }.first
+      return nil if pin.nil?
+      workspace.require_paths.each do |path|
+        full = Pathname.new(path).join("#{pin.name}.rb").to_s
+        next unless source_map_hash.key?(full)
+        return Location.new(full, Solargraph::Range.from_to(0, 0, 0, 0))
+      end
+      api_map.yard_map.require_reference(pin.name)
+    rescue FileNotFoundError
+      nil
     end
 
     # Get an array of pins that match a path.
@@ -362,10 +375,10 @@ module Solargraph
     end
 
     def bench
-      source_maps = @current ? [@current] : []
-      source_maps.concat source_map_hash.values
+      # source_maps = @current ? [@current] : []
+      # source_maps.concat source_map_hash.values
       Bench.new(
-        source_maps: source_maps,
+        source_maps: source_map_hash.values,
         load_paths: workspace.require_paths,
         source_gems: workspace.gemnames,
         directory: workspace.directory
@@ -424,6 +437,8 @@ module Solargraph
         if src
           Logging.logger.debug "Mapping #{src.filename}"
           source_map_hash[src.filename] = Solargraph::SourceMap.map(src)
+          find_external_requires(source_map_hash[src.filename])
+          source_map_hash[src.filename]
         else
           false
         end
@@ -433,6 +448,7 @@ module Solargraph
     def map!
       workspace.sources.each do |src|
         source_map_hash[src.filename] = Solargraph::SourceMap.map(src)
+        find_external_requires(source_map_hash[src.filename])
       end
       self
     end
@@ -441,7 +457,28 @@ module Solargraph
       @pins ||= []
     end
 
+    def external_requires
+      @external_requires ||= source_map_external_require_hash.values.flatten.to_set
+    end
+
     private
+
+    def source_map_external_require_hash
+      @source_map_external_require_hash ||= {}
+    end
+
+    # @param source_map [SourceMap]
+    def find_external_requires source_map
+      new_set = source_map.requires.map(&:name).to_set
+      # return if new_set == source_map_external_require_hash[source_map.filename]
+      source_map_external_require_hash[source_map.filename] = new_set.reject do |path|
+        workspace.require_paths.any? do |base|
+          full = Pathname.new(base).join("#{path}.rb").to_s
+          workspace.filenames.include?(full)
+        end
+      end.to_set
+      @external_requires = nil
+    end
 
     # @return [Mutex]
     def mutex
@@ -485,6 +522,7 @@ module Solargraph
           new_map = Solargraph::SourceMap.map(source)
           unless source_map_hash[source.filename].try_merge!(new_map)
             source_map_hash[source.filename] = new_map
+            find_external_requires(source_map_hash[source.filename])
             @synchronized = false
           end
         else
@@ -493,6 +531,7 @@ module Solargraph
         end
       else
         source_map_hash[source.filename] = Solargraph::SourceMap.map(source)
+        find_external_requires(source_map_hash[source.filename])
         @synchronized = false
       end
     end
