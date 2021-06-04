@@ -1,3 +1,6 @@
+## 0.41.2
+- Rescue InvalidOffset in async diagnosis
+
 ## 0.41.1 - May 31, 2021
 - ApiMap handles required bundles (#443)
 
