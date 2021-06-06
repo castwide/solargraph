@@ -58,7 +58,6 @@ module Solargraph
       implicit.clear
       @cache.clear
       @source_map_hash = bench.source_maps.map { |s| [s.filename, s] }.to_h
-      pins = []
       pins = bench.source_maps.map(&:pins).flatten
       external_requires = bench.external_requires
       source_map_hash.each_value do |map|
@@ -86,11 +85,6 @@ module Solargraph
     # @return [Environ]
     def implicit
       @implicit ||= Environ.new
-    end
-
-    # @return [Hash{String => String}]
-    def local_path_hash
-      @local_paths ||= {}
     end
 
     # @param filename [String]
@@ -439,13 +433,6 @@ module Solargraph
       source_map_hash.keys.include?(filename)
     end
 
-    # True if the specified file is included in the workspace.
-    #
-    # @param filename [String]
-    def workspaced? filename
-      workspace_filenames.include?(filename)
-    end
-
     # Check if a class is a superclass of another class.
     #
     # @param sup [String] The superclass
@@ -476,11 +463,6 @@ module Solargraph
     end
 
     private
-
-    # @return [Array<String>]
-    def workspace_filenames
-      @workspace_filenames ||= []
-    end
 
     # A hash of source maps with filename keys.
     #
