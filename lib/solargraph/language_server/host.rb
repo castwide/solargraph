@@ -165,8 +165,6 @@ module Solargraph
       # @return [void]
       def open_from_disk uri
         sources.open_from_disk(uri)
-        library = library_for(uri)
-        # library.open_from_disk uri_to_file(uri)
         diagnoser.schedule uri
       end
 
@@ -787,7 +785,7 @@ module Solargraph
           next unless uuid
           cur = ((library.source_map_hash.keys.length.to_f / total.to_f) * 100).to_i
           if cur > pct && cur % mod == 0
-          pct = cur
+            pct = cur
             send_notification '$/progress', {
               token: uuid,
               value: {
