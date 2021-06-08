@@ -372,7 +372,7 @@ describe Solargraph::ApiMap do
       require 'foo'
       require 'invalid'
     ), 'app.rb')
-    @api_map.catalog Solargraph::Bench.new(source_maps: [source1, source2], load_paths: ['lib'])
+    @api_map.catalog Solargraph::Bench.new(source_maps: [source1, source2], external_requires: ['invalid'])
     expect(@api_map.unresolved_requires).to eq(['invalid'])
   end
 

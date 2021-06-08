@@ -18,6 +18,7 @@ module Solargraph
 
     # @return [Array<String>]
     attr_reader :gemnames
+    alias source_gems gemnames
 
     # @param directory [String]
     # @param config [Config, nil]

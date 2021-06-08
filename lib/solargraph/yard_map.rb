@@ -44,7 +44,7 @@ module Solargraph
 
     # @param required [Array<String>, Set<String>]
     # @param directory [String]
-    # @param source_gems [Array<String>. Set<String>]
+    # @param source_gems [Array<String>, Set<String>]
     # @param with_dependencies [Boolean]
     def initialize(required: [], directory: '', source_gems: [], with_dependencies: true)
       @with_dependencies = with_dependencies

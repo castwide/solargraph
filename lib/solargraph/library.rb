@@ -375,13 +375,10 @@ module Solargraph
     end
 
     def bench
-      # source_maps = @current ? [@current] : []
-      # source_maps.concat source_map_hash.values
       Bench.new(
         source_maps: source_map_hash.values,
-        load_paths: workspace.require_paths,
-        source_gems: workspace.gemnames,
-        directory: workspace.directory
+        workspace: workspace,
+        external_requires: external_requires
       )
     end
 
@@ -476,7 +473,7 @@ module Solargraph
           full = Pathname.new(base).join("#{path}.rb").to_s
           workspace.filenames.include?(full)
         end
-      end.to_set
+      end
       @external_requires = nil
     end
 
