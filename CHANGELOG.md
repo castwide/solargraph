@@ -1,4 +1,4 @@
-## 0.41.2
+## 0.41.2 - June 9, 2021
 - Rescue InvalidOffset in async diagnosis
 - Remove erroneous escaping from Hover
 
