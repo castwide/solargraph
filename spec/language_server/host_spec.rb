@@ -232,6 +232,29 @@ describe Solargraph::LanguageServer::Host do
     end
   end
 
+  it 'repairs simple breaking changes without incremental sync' do
+    file = '/test.rb'
+    uri = Solargraph::LanguageServer::UriHelpers.file_to_uri(file)
+    host = Solargraph::LanguageServer::Host.new
+    host.prepare ''
+    host.open uri, 'Foo::Bar', 1
+    sleep 0.1 until host.libraries.all?(&:mapped?)
+    host.change({
+      "textDocument" => {
+        "uri" => uri,
+        'version' => 2
+      },
+      "contentChanges" => [
+        {
+          "text" => "Foo::Bar."
+        }
+      ]
+    })
+    source = host.sources.find(uri).finish_synchronize
+    # @todo Smelly private variable access
+    expect(source.send(:repaired)).to eq('Foo::Bar ')
+  end
+
   describe "Workspace variations" do
     before :each do
       @host = Solargraph::LanguageServer::Host.new

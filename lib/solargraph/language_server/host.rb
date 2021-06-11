@@ -1,8 +1,9 @@
 # frozen_string_literal: true
 
+require 'diff/lcs'
 require 'observer'
-require 'set'
 require 'securerandom'
+require 'set'
 
 module Solargraph
   module LanguageServer
@@ -670,7 +671,8 @@ module Solargraph
       # @return [Source::Updater]
       def generate_updater params
         changes = []
-        params['contentChanges'].each do |chng|
+        params['contentChanges'].each do |recvd|
+          chng = check_diff(params['textDocument']['uri'], recvd)
           changes.push Solargraph::Source::Change.new(
             (chng['range'].nil? ? 
               nil :
@@ -684,6 +686,36 @@ module Solargraph
           params['textDocument']['version'],
           changes
         )
+      end
+
+      # @param uri [String]
+      # @param change [Hash]
+      # @return [Hash]
+      def check_diff uri, change
+        return change if change['range']
+        source = sources.find(uri)
+        return change if source.code.length + 1 != change['text'].length
+        diffs = Diff::LCS.diff(source.code, change['text'])
+        return change if diffs.length.zero? || diffs.length > 1 || diffs.first.length > 1
+        # @type [Diff::LCS::Change]
+        diff = diffs.first.first
+        return change unless diff.adding? && ['.', ':'].include?(diff.element)
+        position = Solargraph::Position.from_offset(source.code, diff.position)
+        {
+          'range' => {
+            'start' => {
+              'line' => position.line,
+              'character' => position.character
+            },
+            'end' => {
+              'line' => position.line,
+              'character' => position.character
+            }
+          },
+          'text' => diff.element
+        }
+      rescue Solargraph::FileNotFoundError
+        change
       end
 
       # @return [Hash]
