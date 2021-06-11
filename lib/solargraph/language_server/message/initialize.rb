@@ -51,6 +51,7 @@ module Solargraph
         end
 
         def static_completion
+          return {} unless host.options['completion']
           {
             completionProvider: {
               resolveProvider: true,
@@ -84,18 +85,21 @@ module Solargraph
         end
 
         def static_hover
+          return {} unless host.options['hover']
           {
             hoverProvider: true
           }
         end
 
         def static_document_formatting
+          return {} unless host.options['formatting']
           {
             documentFormattingProvider: true
           }
         end
 
         def static_document_symbols
+          return {} unless host.options['symbols']
           {
             documentSymbolProvider: true
           }
@@ -108,6 +112,7 @@ module Solargraph
         end
 
         def static_definitions
+          return {} unless host.options['definitions']
           {
             definitionProvider: true
           }
@@ -120,12 +125,14 @@ module Solargraph
         end
 
         def static_references
+          return {} unless host.options['references']
           {
             referencesProvider: true
           }
         end
 
         def static_folding_range
+          return {} unless host.options['folding']
           {
             foldingRangeProvider: true
           }
