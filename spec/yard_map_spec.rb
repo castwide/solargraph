@@ -136,4 +136,10 @@ describe Solargraph::YardMap do
     yaml = yard_map.path_pin('YAML')
     expect(yaml.return_type.to_s).to eq('Module<Psych>')
   end
+
+  it 'changes the directory' do
+    yard_map = Solargraph::YardMap.new
+    yard_map.change [], '/my/directory', []
+    expect(yard_map.directory).to eq('/my/directory')
+  end
 end

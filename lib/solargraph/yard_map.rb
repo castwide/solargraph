@@ -156,11 +156,11 @@ module Solargraph
       @base_required ||= Set.new
     end
 
-    private
-
     def directory
       @directory ||= ''
     end
+
+    private
 
     # @return [YardMap::Cache]
     def cache
