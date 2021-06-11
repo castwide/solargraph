@@ -1,3 +1,6 @@
+## 0.42.1 - June 11, 2021
+- YardMap#change sets new directory (#445)
+
 ## 0.42.0 - June 11, 2021
 - Improve YardMap efficiency
 - Bench includes Workspace for cataloging

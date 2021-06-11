@@ -73,7 +73,7 @@ module Solargraph
       # HACK: Hardcoded YAML handling
       required.add 'psych' if new_requires.include?('yaml')
       @source_gems = new_source_gems
-      @directory = directory
+      @directory = new_directory
       process_requires
       @rebindable_method_names = nil
       @pin_class_hash = nil
