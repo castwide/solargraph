@@ -4,6 +4,7 @@
 - Initialize confirms static features from options (#436)
 - Enable simple repairs without incremental sync (#416)
 - Discard unrecognized client responses
+- Notify on use of closest match for core (#390)
 
 ## 0.41.2 - June 9, 2021
 - Rescue InvalidOffset in async diagnosis
