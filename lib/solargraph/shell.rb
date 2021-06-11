@@ -76,12 +76,12 @@ module Solargraph
       ver = version || Solargraph::YardMap::CoreDocs.best_download
       if RUBY_VERSION != ver
         puts "Documentation for #{RUBY_VERSION} is not available. Reverting to closest match..."
-      else
-        puts "Downloading docs for #{ver}..."
       end
+      puts "Downloading docs for #{ver}..."
       Solargraph::YardMap::CoreDocs.download ver
       # Clear cached documentation if it exists
       FileUtils.rm_rf Dir.glob(File.join(Solargraph::YardMap::CoreDocs.cache_dir, ver, '*.ser'))
+      puts "Download complete."
     rescue ArgumentError => e
       STDERR.puts "ERROR: #{e.message}"
       STDERR.puts "Run `solargraph available-cores` for a list."
