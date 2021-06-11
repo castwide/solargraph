@@ -8,15 +8,12 @@ rvm:
   - jruby-head
 matrix:
   include:
-    - rvm: 2.4
-      os: osx
-    - rvm: 2.6
-      os: osx
     - rvm: 2.7
+      os: osx
+    - rvm: 3.0
       os: osx
   allow_failures:
     - rvm: jruby-head
-    - rvm: 3.0
 before_install:
 - gem update --system
 - gem install bundler
