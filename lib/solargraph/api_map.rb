@@ -64,6 +64,7 @@ module Solargraph
         implicit.merge map.environ
       end
       external_requires.merge implicit.requires
+      external_requires.merge bench.workspace.config.required
       yard_map.change(external_requires, bench.workspace.directory, bench.workspace.source_gems)
       @store = Store.new(yard_map.pins + implicit.pins + pins)
       @unresolved_requires = yard_map.unresolved_requires
