@@ -46,7 +46,7 @@ module Solargraph
     # @return [void]
     def attach source
       mutex.synchronize do
-        if @current && @current.filename != source.filename && source_map_hash.key?(@current.filename) && !workspace.has_file?(@current.filename)
+        if @current && (!source || @current.filename != source.filename) && source_map_hash.key?(@current.filename) && !workspace.has_file?(@current.filename)
           source_map_hash.delete @current.filename
           source_map_external_require_hash.delete @current.filename
           @external_requires = nil
@@ -511,6 +511,7 @@ module Solargraph
     end
 
     def maybe_map source
+      return unless source
       if source_map_hash.key?(source.filename)
         return if source_map_hash[source.filename].code == source.code && 
           source_map_hash[source.filename].source.synchronized? &&
