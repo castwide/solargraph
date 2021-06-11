@@ -10,8 +10,6 @@ matrix:
   include:
     - rvm: 2.7
       os: osx
-    - rvm: 3.0
-      os: osx
   allow_failures:
     - rvm: jruby-head
 before_install:
