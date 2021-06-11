@@ -1,5 +1,5 @@
-Layout/EndOfLine:
-  EnforcedStyle: lf
+AllCops:
+  NewCops: enable
 Style/MethodDefParentheses:
   Enabled: false
 Layout/EmptyLineAfterGuardClause:
