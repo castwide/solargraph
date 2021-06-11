@@ -3,6 +3,7 @@
 - Bench includes Workspace for cataloging
 - Initialize confirms static features from options (#436)
 - Enable simple repairs without incremental sync (#416)
+- Discard unrecognized client responses
 
 ## 0.41.2 - June 9, 2021
 - Rescue InvalidOffset in async diagnosis

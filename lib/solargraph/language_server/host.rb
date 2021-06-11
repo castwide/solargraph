@@ -108,9 +108,12 @@ module Solargraph
           end
           message
         elsif request['id']
-          # @todo What if the id is invalid?
-          requests[request['id']].process(request['result'])
-          requests.delete request['id']
+          if requests[request['id']]
+            requests[request['id']].process(request['result'])
+            requests.delete request['id']
+          else
+            logger.warn "Discarding client response to unrecognized message #{request['id']}"
+          end
         else
           logger.warn "Invalid message received."
           logger.debug request
