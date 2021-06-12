@@ -42,9 +42,7 @@ module Solargraph
         # @return [void]
         def process request
           message = @host.receive(request)
-          message.send_response
-          # tmp = @host.flush
-          # write tmp unless tmp.empty?
+          message && message.send_response
         end
 
         def shutdown

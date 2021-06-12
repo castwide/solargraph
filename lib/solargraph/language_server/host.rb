@@ -113,6 +113,7 @@ module Solargraph
             requests.delete request['id']
           else
             logger.warn "Discarding client response to unrecognized message #{request['id']}"
+            nil
           end
         else
           logger.warn "Invalid message received."
