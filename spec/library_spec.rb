@@ -417,6 +417,22 @@ describe Solargraph::Library do
     expect(bar_alias.symbol_kind).to eq(Solargraph::LanguageServer::SymbolKinds::METHOD)
   end
 
+  it 'detaches current source with nil' do
+    library = Solargraph::Library.new
+    source = Solargraph::Source.load_string(%(
+      class Example
+        attr_reader :foo
+        def bar; end
+
+        alias foo_alias foo
+        alias bar_alias bar
+      end
+    ), 'test.rb')
+    library.attach source
+    library.attach nil
+    expect(library.current).to be_nil
+  end
+
   context 'unsynchronized' do
     let(:library) { Solargraph::Library.load File.absolute_path(File.join('spec', 'fixtures', 'workspace')) }
     let(:good_file) { File.join(library.workspace.directory, 'lib', 'thing.rb') }
