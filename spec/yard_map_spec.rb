@@ -4,7 +4,8 @@ require 'set'
 describe Solargraph::YardMap do
   it "finds stdlib require paths" do
     yard_map = Solargraph::YardMap.new(required: ['set'])
-    expect(yard_map.pins.map(&:path)).to include('Set#add')
+    pin = yard_map.path_pin('Set#add')
+    expect(pin).to be
   end
 
   it "removes requires on change" do
