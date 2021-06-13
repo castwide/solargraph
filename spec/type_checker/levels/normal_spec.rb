@@ -749,5 +749,21 @@ describe Solargraph::TypeChecker do
       ))
       expect(checker.problems).to be_empty
     end
+
+    it 'differentiates local variables from methods' do
+      checker = type_checker(%(
+        class Example
+          def foo(bar)
+            'lol'
+          end
+          def baz
+            [].each do |foo|
+              foo.bar
+            end
+          end
+        end
+      ))
+      expect(checker.problems).to be_empty
+    end
   end
 end

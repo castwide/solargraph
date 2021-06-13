@@ -21,8 +21,9 @@ module Solargraph
 
       # @param other_loc [Location]
       def visible_at?(other_closure, other_loc)
-        return false if location.filename != other_loc.filename || other_closure.path != closure.path
-        presence.include?(other_loc.range.start)
+        return true if location.filename == other_loc.filename &&
+          presence.include?(other_loc.range.start) &&
+          match_named_closure(other_closure, closure)
       end
 
       private
@@ -37,6 +38,17 @@ module Solargraph
         #   something else.
         tag1 == tag2 ||
           (['', 'Class<>'].include?(tag1) && ['', 'Class<>'].include?(tag2))
+      end
+
+      def match_named_closure needle, haystack
+        return true if needle == haystack
+        cursor = haystack
+        until cursor.nil?
+          return true if needle.path == cursor.path
+          return false if cursor.path && !cursor.path.empty?
+          cursor = cursor.closure
+        end
+        false
       end
     end
   end
