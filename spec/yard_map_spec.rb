@@ -1,5 +1,6 @@
-require 'tmpdir'
+require 'open3'
 require 'set'
+require 'tmpdir'
 
 describe Solargraph::YardMap do
   before :all do
@@ -41,8 +42,10 @@ describe Solargraph::YardMap do
   it "collects pins from gems" do
     # Assuming the parser gem exists because it's a Solargraph dependency
     yard_map = Solargraph::YardMap.new(required: ['parser'])
-    expect(yard_map.pins.map(&:path)).to include('Parser')
-    expect(yard_map.pins.map(&:path)).to include('Parser::AST')
+    parser = yard_map.path_pin('Parser')
+    expect(parser).to be
+    ast = yard_map.path_pin('Parser::AST')
+    expect(ast).to be
   end
 
   it "tracks unresolved requires" do
@@ -96,16 +99,20 @@ describe Solargraph::YardMap do
     # Assuming the parser gem exists because it's a Solargraph dependency
     yard_map = Solargraph::YardMap.new(required: ['parser'])
     expect(yard_map.with_dependencies?).to eq(true)
-    expect(yard_map.pins.map(&:path)).to include('Parser')
-    expect(yard_map.pins.map(&:path)).to include('AST')
+    parser = yard_map.path_pin('Parser')
+    expect(parser).to be
+    ast = yard_map.path_pin('AST')
+    expect(ast).to be
   end
 
   it "excludes gem dependencies based on attribute" do
     # Assuming the parser gem exists because it's a Solargraph dependency
     yard_map = Solargraph::YardMap.new(required: ['parser'], with_dependencies: false)
     expect(yard_map.with_dependencies?).to eq(false)
-    expect(yard_map.pins.map(&:path)).to include('Parser')
-    expect(yard_map.pins.map(&:path)).not_to include('AST')
+    parser = yard_map.path_pin('Parser')
+    expect(parser).to be
+    ast = yard_map.path_pin('AST')
+    expect(ast).to be_nil
   end
 
   it 'finds require paths in gems' do
