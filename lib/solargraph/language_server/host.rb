@@ -31,7 +31,7 @@ module Solargraph
         @cancel = []
         @buffer = String.new
         @stopped = true
-        @next_request_id = 0
+        @next_request_id = 1
         @dynamic_capabilities = Set.new
         @registered_capabilities = Set.new
       end
