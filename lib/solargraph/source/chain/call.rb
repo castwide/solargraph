@@ -77,6 +77,7 @@ module Solargraph
               end
               if match
                 type = extra_return_type(ol, context)
+                break if type
                 type = ComplexType.try_parse(*ol.tag(:return).types).self_to(context.to_s).qualify(api_map, context.namespace) if ol.has_tag?(:return) && ol.tag(:return).types && !ol.tag(:return).types.empty? && (type.nil? || type.undefined?)
                 type ||= ComplexType::UNDEFINED
               end
@@ -170,8 +171,8 @@ module Solargraph
         # @param context [ComplexType]
         # @return [ComplexType]
         def extra_return_type docstring, context
-          if docstring.has_tag?(:return_single_parameter) && context.subtypes.one?
-            return context.subtypes.first
+          if docstring.has_tag?(:return_single_parameter) #&& context.subtypes.one?
+            return context.subtypes.first || ComplexType::UNDEFINED
           elsif docstring.has_tag?(:return_value_parameter) && context.value_types.one?
             return context.value_types.first
           end
