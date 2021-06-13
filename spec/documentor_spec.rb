@@ -5,21 +5,19 @@ describe Solargraph::Documentor do
   # @todo Skipping Bundler-related tests on JRuby
   next if RUBY_PLATFORM == 'java'
 
-  # Build the Gemfile.lock in specs so Travis jobs use the correct version of
-  # Bundler (e.g., Ruby 2.1 uses Bundler 1)
   before :all do
-    Dir.chdir 'spec/fixtures/workspace' do
+    Dir.chdir 'spec/fixtures/workspace-with-gemfile' do
       o, e, s = Open3.capture3('bundle', 'install')
       raise RuntimeError, e unless s.success?
     end
   end
 
   after :all do
-    File.unlink 'spec/fixtures/workspace/Gemfile.lock'
+    File.unlink 'spec/fixtures/workspace-with-gemfile/Gemfile.lock'
   end
 
   it 'returns gemsets for directories with bundles' do
-    gemset = Solargraph::Documentor.specs_from_bundle('spec/fixtures/workspace')
+    gemset = Solargraph::Documentor.specs_from_bundle('spec/fixtures/workspace-with-gemfile')
     expect(gemset.keys).to eq(['backport', 'bundler'])
   end
 
@@ -32,7 +30,7 @@ describe Solargraph::Documentor do
   end
 
   it 'documents bundles' do
-    result = Solargraph::Documentor.new('spec/fixtures/workspace', rebuild: true).document
+    result = Solargraph::Documentor.new('spec/fixtures/workspace-with-gemfile', rebuild: true).document
     expect(result).to be(true)
   end
 

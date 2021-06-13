@@ -190,11 +190,8 @@ module Solargraph
 
     # @return [void]
     def process_requires
-      @gemset = if required.include?('bundler/require')
-        require_from_bundle(directory)
-      else
-        {}
-      end
+      @gemset = process_gemsets
+      required.merge @gemset.keys if required.include?('bundler/require')
       pins.replace core_pins
       unresolved_requires.clear
       stdlib_pins.clear
@@ -252,6 +249,11 @@ module Solargraph
         pin.instance_variable_set(:@return_type, ComplexType.parse('Module<Psych>')) unless pin.nil?
       end
       pins.concat environ.pins
+    end
+
+    def process_gemsets
+      return {} if directory.empty? || !File.file?(File.join(directory, 'Gemfile'))
+      require_from_bundle(directory)
     end
 
     # @param spec [Gem::Specification]

@@ -2,6 +2,17 @@ require 'tmpdir'
 require 'set'
 
 describe Solargraph::YardMap do
+  before :all do
+    Dir.chdir 'spec/fixtures/workspace-with-gemfile' do
+      o, e, s = Open3.capture3('bundle', 'install')
+      raise RuntimeError, e unless s.success?
+    end
+  end
+
+  after :all do
+    File.unlink 'spec/fixtures/workspace-with-gemfile/Gemfile.lock'
+  end
+
   it "finds stdlib require paths" do
     yard_map = Solargraph::YardMap.new(required: ['set'])
     pin = yard_map.path_pin('Set#add')
@@ -142,5 +153,12 @@ describe Solargraph::YardMap do
     yard_map = Solargraph::YardMap.new
     yard_map.change [], '/my/directory', []
     expect(yard_map.directory).to eq('/my/directory')
+  end
+
+  it 'adds automatically imported gems to YardMap' do
+    yard_map = Solargraph::YardMap.new
+    yard_map.change(['bundler/require'].to_set, 'spec/fixtures/workspace-with-gemfile', Set.new)
+    pin = yard_map.path_pin('Backport')
+    expect(pin).to be
   end
 end
