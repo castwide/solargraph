@@ -3,7 +3,7 @@
 require 'set'
 
 module Solargraph
-  # A container of source maps and gem specs to be cataloged in an ApiMap.
+  # A container of source maps and workspace data to be cataloged in an ApiMap.
   #
   class Bench
     # @return [Set<SourceMap>]
