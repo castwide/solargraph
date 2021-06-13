@@ -84,4 +84,16 @@ describe Solargraph::SourceMap do
     pin2 = map1.pins.select{|p| p.location.range.contain?(pos2)}.first
     expect(pin1).to eq(pin2)
   end
+
+  it 'scopes local variables correctly from root def blocks' do
+    map = Solargraph::SourceMap.load_string(%(
+      x = 'string'
+      def foo
+        x
+      end
+    ), 'test.rb')
+    loc = Solargraph::Location.new('test.rb', Solargraph::Range.from_to(3, 9, 3, 9))
+    locals = map.locals_at(loc)
+    expect(locals).to be_empty
+  end
 end

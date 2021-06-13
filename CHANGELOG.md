@@ -2,6 +2,7 @@
 - Improve download-core command output
 - Ignore missing requests to client responses
 - Add automatically required gems to YardMap
+- Use closures to identify local variables
 
 ## 0.42.1 - June 11, 2021
 - YardMap#change sets new directory (#445)

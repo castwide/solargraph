@@ -20,8 +20,8 @@ module Solargraph
       end
 
       # @param other_loc [Location]
-      def visible_at?(other_loc)
-        return false if location.filename != other_loc.filename
+      def visible_at?(other_closure, other_loc)
+        return false if location.filename != other_loc.filename || other_closure.path != closure.path
         presence.include?(other_loc.range.start)
       end
 

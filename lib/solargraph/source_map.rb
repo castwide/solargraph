@@ -131,7 +131,8 @@ module Solargraph
     # @return [Array<Pin::LocalVariable>]
     def locals_at(location)
       return [] if location.filename != filename
-      locals.select { |pin| pin.visible_at?(location) }
+      closure = locate_named_path_pin(location.range.start.line, location.range.start.character)
+      locals.select { |pin| pin.visible_at?(closure, location) }
     end
 
     class << self
