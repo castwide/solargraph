@@ -1,3 +1,6 @@
+## 0.42.3 - June 14, 2021
+- Require 'pathname' for Library
+
 ## 0.42.2 - June 14, 2021
 - Improve download-core command output
 - Ignore missing requests to client responses
