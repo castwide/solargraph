@@ -1,4 +1,4 @@
-## 0.42.2
+## 0.42.2 - June 14, 2021
 - Improve download-core command output
 - Ignore missing requests to client responses
 - Add automatically required gems to YardMap
