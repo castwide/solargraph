@@ -50,17 +50,9 @@ module Solargraph
         @node, @comments = Solargraph::Parser.parse_with_comments(@code, filename)
         @parsed = true
       rescue Parser::SyntaxError, EncodingError => e
-        # @todo 100% whitespace results in a nil node, so there's no reason to parse it.
-        #   We still need to determine whether the resulting node should be nil or a dummy
-        #   node with a location that encompasses the range.
-        # @node, @comments = Source.parse_with_comments(@code.gsub(/[^\s]/, ' '), filename)
         @node = nil
         @comments = {}
         @parsed = false
-      # rescue Exception => e
-      #   Solargraph.logger.warn "[#{e.class}] #{e.message}"
-      #   Solargraph.logger.warn e.backtrace.join("\n")
-      #   raise "Error parsing #{filename || '(source)'}: [#{e.class}] #{e.message}"
       ensure
         @code.freeze
       end

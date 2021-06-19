@@ -4,9 +4,6 @@ module Solargraph
   module Parser
     module NodeProcessor
       class Base
-        # @todo The base node processor should not include legacy node methods
-        # include Legacy::NodeMethods
-
         # @return [Parser::AST::Node]
         attr_reader :node
 
