@@ -6,19 +6,15 @@ module Solargraph
   # A Ruby file that has been parsed into an AST.
   #
   class Source
-    # autoload :FlawedBuilder, 'solargraph/source/flawed_builder'
     autoload :Updater,       'solargraph/source/updater'
     autoload :Change,        'solargraph/source/change'
     autoload :Mapper,        'solargraph/source/mapper'
-    # autoload :NodeMethods,   'solargraph/source/node_methods'
     autoload :EncodingFixes, 'solargraph/source/encoding_fixes'
     autoload :Cursor,        'solargraph/source/cursor'
     autoload :Chain,         'solargraph/source/chain'
     autoload :SourceChainer, 'solargraph/source/source_chainer'
-    # autoload :NodeChainer,   'solargraph/source/node_chainer'
 
     include EncodingFixes
-    # include NodeMethods
 
     # @return [String]
     attr_reader :filename
