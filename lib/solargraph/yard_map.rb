@@ -288,9 +288,6 @@ module Solargraph
     # @return [Array<Pin::Base>]
     def process_yardoc y, spec = nil
       return [] if y.nil?
-      size = Dir.glob(File.join(y, '**', '*'))
-        .map{ |f| File.size(f) }
-        .inject(:+)
       if spec
         ser = File.join(CoreDocs.cache_dir, 'gems', "#{spec.name}-#{spec.version}.ser")
         if File.file?(ser)
@@ -299,19 +296,24 @@ module Solargraph
           dump = file.read
           file.close
           begin
-            return Marshal.load(dump)
+            result = Marshal.load(dump)
+            return result unless result.nil? || result.empty?
+            Solargraph.logger.warn "Empty cache for #{spec.name} #{spec.version}. Reloading"
           rescue StandardError => e
             Solargraph.logger.warn "Error loading pin cache: [#{e.class}] #{e.message}"
             File.unlink ser
           end
         end
       end
+      size = Dir.glob(File.join(y, '**', '*'))
+        .map{ |f| File.size(f) }
+        .inject(:+)
       if !size.nil? && size > 20_000_000
         Solargraph::Logging.logger.warn "Yardoc at #{y} is too large to process (#{size} bytes)"
         return []
       end
+      Solargraph.logger.info "Loading #{spec.name} #{spec.version} from #{y}"
       load_yardoc y
-      Solargraph.logger.info "Loading #{spec.name} #{spec.version} from yardoc"
       result = Mapper.new(YARD::Registry.all, spec).map
       if spec
         ser = File.join(CoreDocs.cache_dir, 'gems', "#{spec.name}-#{spec.version}.ser")
