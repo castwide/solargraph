@@ -183,7 +183,7 @@ module Solargraph
           end
         end
       end
-      result.concat config.require_paths.map{|p| File.join(directory, p)}
+      result.concat(config.require_paths.map { |p| File.join(directory, p) })
       result.push File.join(directory, 'lib') if result.empty?
       result
     end
