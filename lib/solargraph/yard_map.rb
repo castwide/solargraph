@@ -437,5 +437,3 @@ module Solargraph
 end
 
 Solargraph::YardMap::CoreDocs.require_minimum
-# Change YARD log IO to avoid sending unexpected messages to STDOUT
-YARD::Logger.instance.io = File.new(File::NULL, 'w')
