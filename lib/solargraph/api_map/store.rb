@@ -5,10 +5,10 @@ require 'set'
 module Solargraph
   class ApiMap
     class Store
-      # @return [Array<Solargraph::Pin::Base>]
+      # @return [Enumerable<Solargraph::Pin::Base>]
       attr_reader :pins
 
-      # @param pins [Array<Solargraph::Pin::Base>]
+      # @param pins [Enumerable<Solargraph::Pin::Base>]
       def initialize pins = []
         @pins = pins
         index
@@ -16,7 +16,7 @@ module Solargraph
 
       # @param fqns [String]
       # @param visibility [Array<Symbol>]
-      # @return [Array<Solargraph::Pin::Base>]
+      # @return [Enumerable<Solargraph::Pin::Base>]
       def get_constants fqns, visibility = [:public]
         namespace_children(fqns).select { |pin|
           !pin.name.empty? && (pin.is_a?(Pin::Namespace) || pin.is_a?(Pin::Constant)) && visibility.include?(pin.visibility)
@@ -26,7 +26,7 @@ module Solargraph
       # @param fqns [String]
       # @param scope [Symbol]
       # @param visibility [Array<Symbol>]
-      # @return [Array<Solargraph::Pin::Base>]
+      # @return [Enumerable<Solargraph::Pin::Base>]
       def get_methods fqns, scope: :instance, visibility: [:public]
         namespace_children(fqns).select do |pin|
           pin.is_a?(Pin::Method) && pin.scope == scope && visibility.include?(pin.visibility)
@@ -61,14 +61,14 @@ module Solargraph
       end
 
       # @param path [String]
-      # @return [Array<Solargraph::Pin::Base>]
+      # @return [Enumerable<Solargraph::Pin::Base>]
       def get_path_pins path
         path_pin_hash[path] || []
       end
 
       # @param fqns [String]
       # @param scope [Symbol] :class or :instance
-      # @return [Array<Solargraph::Pin::Base>]
+      # @return [Enumerable<Solargraph::Pin::Base>]
       def get_instance_variables(fqns, scope = :instance)
         all_instance_variables.select { |pin|
           pin.binder.namespace == fqns && pin.binder.scope == scope
@@ -76,12 +76,12 @@ module Solargraph
       end
 
       # @param fqns [String]
-      # @return [Array<Solargraph::Pin::Base>]
+      # @return [Enumerable<Solargraph::Pin::Base>]
       def get_class_variables(fqns)
         namespace_children(fqns).select{|pin| pin.is_a?(Pin::ClassVariable)}
       end
 
-      # @return [Array<Solargraph::Pin::Base>]
+      # @return [Enumerable<Solargraph::Pin::Base>]
       def get_symbols
         symbols.uniq(&:name)
       end
@@ -97,12 +97,12 @@ module Solargraph
         @namespaces ||= Set.new
       end
 
-      # @return [Array<Solargraph::Pin::Base>]
+      # @return [Enumerable<Solargraph::Pin::Base>]
       def namespace_pins
         pins_by_class(Solargraph::Pin::Namespace)
       end
 
-      # @return [Array<Solargraph::Pin::Method>]
+      # @return [Enumerable<Solargraph::Pin::Method>]
       def method_pins
         pins_by_class(Solargraph::Pin::Method)
       end
@@ -131,7 +131,7 @@ module Solargraph
         end
       end
 
-      # @return [Array<Pin::Block>]
+      # @return [Enumerable<Pin::Block>]
       def block_pins
         pins_by_class(Pin::Block)
       end
@@ -142,9 +142,9 @@ module Solargraph
       end
 
       # @param klass [Class]
-      # @return [Array<Solargraph::Pin::Base>]
+      # @return [Enumerable<Solargraph::Pin::Base>]
       def pins_by_class klass
-        @pin_select_cache[klass] ||= @pin_class_hash.select { |key, _| key <= klass }.values.flatten
+        @pin_select_cache[klass] ||= @pin_class_hash.each_with_object(Set.new) { |(key, o), n| n.merge(o) if key <= klass }
       end
 
       private
@@ -171,7 +171,7 @@ module Solargraph
         end
       end
 
-      # @return [Array<Solargraph::Pin::Symbol>]
+      # @return [Enumerable<Solargraph::Pin::Symbol>]
       def symbols
         pins_by_class(Pin::Symbol)
       end
@@ -193,7 +193,7 @@ module Solargraph
       end
 
       # @param name [String]
-      # @return [Array<Solargraph::Pin::Base>]
+      # @return [Enumerable<Solargraph::Pin::Base>]
       def namespace_children name
         namespace_map[name] || []
       end
@@ -216,8 +216,8 @@ module Solargraph
         set = pins.to_set
         @pin_class_hash = set.classify(&:class).transform_values(&:to_a)
         @pin_select_cache = {}
-        @namespace_map = set.classify(&:namespace).transform_values(&:to_a)
-        @path_pin_hash = set.classify(&:path).transform_values(&:to_a)
+        @namespace_map = set.classify(&:namespace)
+        @path_pin_hash = set.classify(&:path)
         @namespaces = @path_pin_hash.keys.compact.to_set
         pins_by_class(Pin::Reference::Include).each do |pin|
           include_references[pin.namespace] ||= []
