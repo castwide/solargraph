@@ -72,9 +72,12 @@ module Solargraph
 
       # @return [String]
       def namespace
-        @namespace ||= 'Object' if duck_type?
-        @namespace ||= 'NilClass' if nil_type?
-        @namespace ||= (name == 'Class' || name == 'Module') && !subtypes.empty? ? subtypes.first.name : name
+        # if priority higher than ||=, old implements cause unnecessary check
+        @namespace ||= lambda do
+          return 'Object' if duck_type?
+          return 'NilClass' if nil_type?
+          return (name == 'Class' || name == 'Module') && !subtypes.empty? ? subtypes.first.name : name
+        end.call
       end
 
       # @return [Symbol] :class or :instance
