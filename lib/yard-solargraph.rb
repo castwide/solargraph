@@ -2,6 +2,9 @@
 
 require 'yard'
 
+# Change YARD log IO to avoid sending unexpected messages to STDOUT
+YARD::Logger.instance.io = File.new(File::NULL, 'w')
+
 module Solargraph
   # A placeholder for the @!domain directive. It doesn't need to do anything
   # for yardocs. It's only used for Solargraph API maps.
