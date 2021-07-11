@@ -1,3 +1,8 @@
+## 0.42.4
+- Yardoc cache handling
+- Fix required_paths when gemspec is used (#451)
+- fix: yard stdout may break language client (#454)
+
 ## 0.42.3 - June 14, 2021
 - Require 'pathname' for Library
 
