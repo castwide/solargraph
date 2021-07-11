@@ -522,6 +522,11 @@ module Solargraph
         library.completions_at uri_to_file(uri), line, column
       end
 
+      # @return [Bool] if has pending completion request
+      def has_pending_completions?
+        message_worker.messages.reverse_each.any? { |req| req['method'] == 'textDocument/completion' }
+      end
+
       # @param uri [String]
       # @param line [Integer]
       # @param column [Integer]
