@@ -12,10 +12,12 @@ module Solargraph
     # safety for multi-threaded transports.
     #
     class Host
-      autoload :Diagnoser, 'solargraph/language_server/host/diagnoser'
-      autoload :Cataloger, 'solargraph/language_server/host/cataloger'
-      autoload :Sources,   'solargraph/language_server/host/sources'
-      autoload :Dispatch,  'solargraph/language_server/host/dispatch'
+      autoload :Diagnoser,     'solargraph/language_server/host/diagnoser'
+      autoload :Cataloger,     'solargraph/language_server/host/cataloger'
+      autoload :Sources,       'solargraph/language_server/host/sources'
+      autoload :Dispatch,      'solargraph/language_server/host/dispatch'
+      autoload :MessageWorker, 'solargraph/language_server/host/message_worker'
+
 
       include UriHelpers
       include Logging
@@ -45,6 +47,7 @@ module Solargraph
         diagnoser.start
         cataloger.start
         sources.start
+        message_worker.start
       end
 
       # Update the configuration options with the provided hash.
@@ -89,8 +92,13 @@ module Solargraph
         @cancel_semaphore.synchronize { @cancel.delete id }
       end
 
+      # called by adapter, to handle the request
+      def process request
+        message_worker.queue(request)
+      end
+
       # Start processing a request from the client. After the message is
-      # processed, the transport is responsible for sending the response.
+      # processed, caller is responsible for sending the response.
       #
       # @param request [Hash] The contents of the message.
       # @return [Solargraph::LanguageServer::Message::Base] The message handler.
@@ -451,6 +459,7 @@ module Solargraph
       def stop
         return if @stopped
         @stopped = true
+        message_worker.stop
         cataloger.stop
         diagnoser.stop
         sources.stop
@@ -645,6 +654,11 @@ module Solargraph
       end
 
       private
+
+      # @return [MessageWorker]
+      def message_worker
+        @message_worker ||= MessageWorker.new(self)
+      end
 
       # @return [Diagnoser]
       def diagnoser
