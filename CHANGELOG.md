@@ -1,4 +1,7 @@
-## 0.42.4
+## 0.42.5
+- Correct arity checks when restarg precedes arg (#418)
+
+## 0.42.4 - July 11, 2021
 - Yardoc cache handling
 - Fix required_paths when gemspec is used (#451)
 - fix: yard stdout may break language client (#454)
