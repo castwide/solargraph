@@ -56,7 +56,7 @@ module Solargraph
         end
         @current = source
         maybe_map @current
-        api_map.catalog bench unless synchronized?
+        catalog_inlock
       end
     end
 
@@ -368,12 +368,16 @@ module Solargraph
     # @return [void]
     def catalog
       mutex.synchronize do
-        break if synchronized?
+        catalog_inlock
+      end
+    end
+
+    private def catalog_inlock
+        return if synchronized?
         logger.info "Cataloging #{workspace.directory.empty? ? 'generic workspace' : workspace.directory}"
         api_map.catalog bench
         @synchronized = true
         logger.info "Catalog complete (#{api_map.source_maps.length} files, #{api_map.pins.length} pins)" if logger.info?
-      end
     end
 
     def bench

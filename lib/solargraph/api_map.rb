@@ -138,7 +138,7 @@ module Solargraph
 
     # An array of pins based on Ruby keywords (`if`, `end`, etc.).
     #
-    # @return [Array<Solargraph::Pin::Keyword>]
+    # @return [Enumerable<Solargraph::Pin::Keyword>]
     def keyword_pins
       store.pins_by_class(Pin::Keyword)
     end
