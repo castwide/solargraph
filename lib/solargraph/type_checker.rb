@@ -148,6 +148,7 @@ module Solargraph
       all_variables.each do |pin|
         if pin.return_type.defined?
           declared = pin.typify(api_map)
+          next if declared.duck_type?
           if declared.defined?
             if rules.validate_tags?
               inferred = pin.probe(api_map)

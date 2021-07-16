@@ -320,5 +320,14 @@ describe Solargraph::TypeChecker do
       ))
       expect(checker.problems).to be_one
     end
+
+    it 'validates duck type params' do
+      checker = type_checker(%(
+        # @param bar [#to_s]
+        def foo(bar)
+        end
+      ))
+      expect(checker.problems).to be_empty
+    end
   end
 end
