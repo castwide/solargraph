@@ -1,5 +1,7 @@
-## 0.42.5
+## 0.43.0
 - Correct arity checks when restarg precedes arg (#418)
+- Improve the performance of catalog by 4 times (#457)
+- Type checker validates duck type variables and params (#453)
 
 ## 0.42.4 - July 11, 2021
 - Yardoc cache handling
