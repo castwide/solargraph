@@ -37,7 +37,8 @@ module Solargraph
       @source_map_hash = {}
       implicit.clear
       cache.clear
-      @store = Store.new(yard_map.pins + pins)
+      # @store = Store.new(yard_map.pins + pins)
+      @store = Store.new(rbs_map.pins + pins)
       self
     end
 
@@ -55,6 +56,7 @@ module Solargraph
     #
     # @param bench [Bench]
     def catalog bench
+      STDERR.puts "Start catalog"
       implicit.clear
       @cache.clear
       @source_map_hash = bench.source_maps.map { |s| [s.filename, s] }.to_h
@@ -65,11 +67,14 @@ module Solargraph
       end
       external_requires.merge implicit.requires
       external_requires.merge bench.workspace.config.required
-      yard_map.change(external_requires, bench.workspace.directory, bench.workspace.source_gems)
-      @store = Store.new(yard_map.pins + implicit.pins + pins)
-      @unresolved_requires = yard_map.unresolved_requires
+      # yard_map.change(external_requires, bench.workspace.directory, bench.workspace.source_gems)
+      # @store = Store.new(yard_map.pins + implicit.pins + pins)
+      @store = Store.new(rbs_map.pins + implicit.pins + pins)
+      # @unresolved_requires = yard_map.unresolved_requires
+      @unresolved_requires = []
       @rebindable_method_names = nil
       store.block_pins.each { |blk| blk.rebind(self) }
+      STDERR.puts "Finish catalog"
       self
     end
 
@@ -127,13 +132,14 @@ module Solargraph
     end
 
     def rebindable_method_names
-      @rebindable_method_names ||= begin
-        result = yard_map.rebindable_method_names
-        source_maps.each do |map|
-          result.merge map.rebindable_method_names
-        end
-        result
-      end
+      # @rebindable_method_names ||= begin
+      #   result = yard_map.rebindable_method_names
+      #   source_maps.each do |map|
+      #     result.merge map.rebindable_method_names
+      #   end
+      #   result
+      # end
+      @rebindable_method_names ||= [].to_set
     end
 
     # An array of pins based on Ruby keywords (`if`, `end`, etc.).
@@ -450,8 +456,12 @@ module Solargraph
     end
 
     # @return [YardMap]
-    def yard_map
-      @yard_map ||= YardMap.new
+    # def yard_map
+    #   @yard_map ||= YardMap.new
+    # end
+
+    def rbs_map
+      @rbs_map ||= RbsMap.new
     end
 
     # Check if the host class includes the specified module.
