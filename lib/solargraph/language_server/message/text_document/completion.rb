@@ -6,6 +6,8 @@ module Solargraph
       module TextDocument
         class Completion < Base
           def process
+            return set_error(ErrorCodes::REQUEST_CANCELLED, "cancelled by so many request") if host.has_pending_completions?
+
             line = params['position']['line']
             col = params['position']['character']
             begin
