@@ -20,7 +20,7 @@ module Solargraph
     autoload :Helpers,     'solargraph/yard_map/helpers'
     autoload :ToMethod,    'solargraph/yard_map/to_method'
 
-    include ApiMap::BundlerMethods
+    # include ApiMap::BundlerMethods
 
     CoreDocs.require_minimum
 

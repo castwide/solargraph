@@ -21,11 +21,14 @@ module Solargraph
     # @return [Array<String>]
     attr_reader :unresolved_requires
 
+    @@rbs_map = RbsMap.new
+
     # @param pins [Array<Solargraph::Pin::Base>]
     def initialize pins: []
       @source_map_hash = {}
       @cache = Cache.new
       @method_alias_stack = []
+      @rbs_map = @@rbs_map
       index pins
     end
 
@@ -37,8 +40,7 @@ module Solargraph
       @source_map_hash = {}
       implicit.clear
       cache.clear
-      # @store = Store.new(yard_map.pins + pins)
-      @store = Store.new(rbs_map.pins + pins)
+      @store = Store.new(@@rbs_map.pins + YardMap::CoreFills::ALL + pins)
       self
     end
 
@@ -56,7 +58,6 @@ module Solargraph
     #
     # @param bench [Bench]
     def catalog bench
-      STDERR.puts "Start catalog"
       implicit.clear
       @cache.clear
       @source_map_hash = bench.source_maps.map { |s| [s.filename, s] }.to_h
@@ -69,12 +70,12 @@ module Solargraph
       external_requires.merge bench.workspace.config.required
       # yard_map.change(external_requires, bench.workspace.directory, bench.workspace.source_gems)
       # @store = Store.new(yard_map.pins + implicit.pins + pins)
-      @store = Store.new(rbs_map.pins + implicit.pins + pins)
+      @rbs_map = RbsMap.new(external_requires) if @rbs_map.libraries != external_requires
+      @store = Store.new(@rbs_map.pins + YardMap::CoreFills::ALL + implicit.pins + pins)
       # @unresolved_requires = yard_map.unresolved_requires
-      @unresolved_requires = []
+      @unresolved_requires = @rbs_map.unresolved_libraries
       @rebindable_method_names = nil
       store.block_pins.each { |blk| blk.rebind(self) }
-      STDERR.puts "Finish catalog"
       self
     end
 
@@ -459,10 +460,6 @@ module Solargraph
     # def yard_map
     #   @yard_map ||= YardMap.new
     # end
-
-    def rbs_map
-      @rbs_map ||= RbsMap.new
-    end
 
     # Check if the host class includes the specified module.
     #

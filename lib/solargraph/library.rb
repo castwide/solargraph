@@ -265,7 +265,7 @@ module Solargraph
         next unless source_map_hash.key?(full)
         return Location.new(full, Solargraph::Range.from_to(0, 0, 0, 0))
       end
-      api_map.yard_map.require_reference(pin.name)
+      # api_map.yard_map.require_reference(pin.name)
     rescue FileNotFoundError
       nil
     end
