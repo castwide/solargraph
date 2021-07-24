@@ -146,23 +146,22 @@ module Solargraph
         comments: decl.comment&.string,
         scope: decl.instance? ? :instance : :class
       )
-      pins.push pin
       # @todo This needs to be more robust. There will probably need to be a
       #   Pin::Method#definitions array of some kind of MethodDefinition object.
       if decl.types.length > 1
         pin.parameters.push Solargraph::Pin::Parameter.new(decl: :restarg, name: 'args', closure: pin)
-      else
-        decl.types.first.type.required_positionals.each do |name, param|
-          pin.parameters.push Solargraph::Pin::Parameter.new(decl: :arg, name: name.to_s, closure: pin)
+      elsif decl.types.length > 0
+        decl.types.first.type.required_positionals.each do |param|
+          pin.parameters.push Solargraph::Pin::Parameter.new(decl: :arg, name: param.name.to_s, closure: pin)
         end
-        decl.types.first.type.optional_positionals.each do |name, param|
-          pin.parameters.push Solargraph::Pin::Parameter.new(decl: :optarg, name: name.to_s, closure: pin)
+        decl.types.first.type.optional_positionals.each do |param|
+          pin.parameters.push Solargraph::Pin::Parameter.new(decl: :optarg, name: param.name.to_s, closure: pin)
         end
         if decl.types.first.type.rest_positionals
           pin.parameters.push Solargraph::Pin::Parameter.new(decl: :restarg, name: decl.types.first.type.rest_positionals.name.to_s, closure: pin)
         end
-        decl.types.first.type.trailing_positionals.each do |name, param|
-          pin.parameters.push Solargraph::Pin::Parameter.new(decl: :arg, name: name.to_s, closure: pin)
+        decl.types.first.type.trailing_positionals.each do |param|
+          pin.parameters.push Solargraph::Pin::Parameter.new(decl: :arg, name: param.name.to_s, closure: pin)
         end
         decl.types.first.type.required_keywords.each do |name, param|
           pin.parameters.push Solargraph::Pin::Parameter.new(decl: :kwarg, name: name.to_s, closure: pin)
@@ -177,6 +176,21 @@ module Solargraph
       decl.types.each do |type|
         pin.docstring.add_tag(YARD::Tags::Tag.new(:return, '', method_type_to_tag(type)))
       end
+      if pin.name == 'initialize' and pin.scope == :instance
+        pins.push Solargraph::Pin::Method.new(
+          location: pin.location,
+          closure: pin.closure,
+          name: 'new',
+          comments: pin.comments,
+          scope: :class,
+          parameters: pin.parameters
+        )
+        # @todo Smelly instance variable access.
+        pins.last.instance_variable_set(:@return_type, ComplexType::SELF)
+        pin.instance_variable_set(:@visibility, :private)
+        pin.instance_variable_set(:@return_type, ComplexType::VOID)
+      end
+      pins.push pin
     end
 
     def include_to_pin decl, closure

@@ -32,11 +32,11 @@ module Solargraph
       def full
         case decl
         when :optarg
-          "#{name} = #{asgn_code}"
+          "#{name} = #{asgn_code || '?'}"
         when :kwarg
           "#{name}:"
         when :kwoptarg
-          "#{name}: #{asgn_code}"
+          "#{name}: #{asgn_code || '?'}"
         when :restarg
           "*#{name}"
         when :kwrestarg
