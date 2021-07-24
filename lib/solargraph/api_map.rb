@@ -31,10 +31,6 @@ module Solargraph
       index pins
     end
 
-    def stdlib_maps
-      @stdlib_maps ||= []
-    end
-
     # @param pins [Array<Pin::Base>]
     # @return [self]
     def index pins
@@ -73,10 +69,10 @@ module Solargraph
       external_requires.merge bench.workspace.config.required
       # yard_map.change(external_requires, bench.workspace.directory, bench.workspace.source_gems)
       # @store = Store.new(yard_map.pins + implicit.pins + pins)
-      @stdlib_maps = external_requires.map { |r| RbsMap::StdlibMap.load(r) }
-      @store = Store.new(@@core_map.pins + YardMap::CoreFills::ALL + @stdlib_maps.flat_map(&:pins) + implicit.pins + pins)
+      @rbs_maps = external_requires.map { |r| RbsMap.load(r) }
+      @store = Store.new(@@core_map.pins + YardMap::CoreFills::ALL + @rbs_maps.flat_map(&:pins) + implicit.pins + pins)
       # @unresolved_requires = yard_map.unresolved_requires
-      @unresolved_requires = @stdlib_maps.reject(&:resolved?).map(&:library)
+      @unresolved_requires = @rbs_maps.reject(&:resolved?).map(&:library)
       @rebindable_method_names = nil
       store.block_pins.each { |blk| blk.rebind(self) }
       self
