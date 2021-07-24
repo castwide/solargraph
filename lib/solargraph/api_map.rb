@@ -21,15 +21,18 @@ module Solargraph
     # @return [Array<String>]
     attr_reader :unresolved_requires
 
-    @@rbs_map = RbsMap.new
+    @@core_map = RbsMap::CoreMap.new
 
     # @param pins [Array<Solargraph::Pin::Base>]
     def initialize pins: []
       @source_map_hash = {}
       @cache = Cache.new
       @method_alias_stack = []
-      @rbs_map = @@rbs_map
       index pins
+    end
+
+    def stdlib_maps
+      @stdlib_maps ||= []
     end
 
     # @param pins [Array<Pin::Base>]
@@ -40,7 +43,7 @@ module Solargraph
       @source_map_hash = {}
       implicit.clear
       cache.clear
-      @store = Store.new(@@rbs_map.pins + YardMap::CoreFills::ALL + pins)
+      @store = Store.new(@@core_map.pins + YardMap::CoreFills::ALL + pins)
       self
     end
 
@@ -70,10 +73,10 @@ module Solargraph
       external_requires.merge bench.workspace.config.required
       # yard_map.change(external_requires, bench.workspace.directory, bench.workspace.source_gems)
       # @store = Store.new(yard_map.pins + implicit.pins + pins)
-      @rbs_map = RbsMap.new(external_requires) if @rbs_map.libraries != external_requires
-      @store = Store.new(@rbs_map.pins + YardMap::CoreFills::ALL + implicit.pins + pins)
+      @stdlib_maps = external_requires.map { |r| RbsMap::StdlibMap.load(r) }
+      @store = Store.new(@@core_map.pins + YardMap::CoreFills::ALL + @stdlib_maps.map(&:pins).flatten + implicit.pins + pins)
       # @unresolved_requires = yard_map.unresolved_requires
-      @unresolved_requires = @rbs_map.unresolved_libraries
+      @unresolved_requires = @stdlib_maps.reject(&:resolved?).map(&:library)
       @rebindable_method_names = nil
       store.block_pins.each { |blk| blk.rebind(self) }
       self
