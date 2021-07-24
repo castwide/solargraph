@@ -99,9 +99,25 @@ module Solargraph
             result.push Chain::BlockVariable.new("&#{n.children[1].children[0].to_s}")
           else
             lit = infer_literal_node_type(n)
-            result.push (lit ? Chain::Literal.new(lit) : Chain::Link.new)
+            if lit
+              if lit == '::Hash'
+                result.push Chain::Hash.new(lit, hash_is_splatted?(n))
+              else
+                result.push Chain::Literal.new(lit)
+              end
+            else
+              result.push Chain::Link.new
+            end
+            # result.push (lit ? Chain::Literal.new(lit) : Chain::Link.new)
           end
           result
+        end
+
+        def hash_is_splatted? node
+          return false unless Parser.is_ast_node?(node.children[0]) && node.children[0].type == :LIST
+          list = node.children[0].children
+          eol = list.index(&:nil?)
+          eol && Parser.is_ast_node?(list[eol + 1])
         end
 
         def block_passed? node
