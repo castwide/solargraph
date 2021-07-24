@@ -15,7 +15,7 @@ module Solargraph
     def initialize library
       @library = library
       loader = RBS::EnvironmentLoader.new(core_root: nil)
-      @resolved = add_library loader, library
+      add_library loader, library
       return unless resolved?
       # @type [RBS::Environment]
       environment = RBS::Environment.from_loader(loader).resolve_type_names
@@ -33,7 +33,7 @@ module Solargraph
     private
 
     def add_library loader, library
-      if loader.has_library?(library: library, version: nil)
+      @resolved = if loader.has_library?(library: library, version: nil)
         loader.add library: library
         true
       else
