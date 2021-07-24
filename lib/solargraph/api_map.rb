@@ -74,7 +74,7 @@ module Solargraph
       # yard_map.change(external_requires, bench.workspace.directory, bench.workspace.source_gems)
       # @store = Store.new(yard_map.pins + implicit.pins + pins)
       @stdlib_maps = external_requires.map { |r| RbsMap::StdlibMap.load(r) }
-      @store = Store.new(@@core_map.pins + YardMap::CoreFills::ALL + @stdlib_maps.map(&:pins).flatten + implicit.pins + pins)
+      @store = Store.new(@@core_map.pins + YardMap::CoreFills::ALL + @stdlib_maps.flat_map(&:pins) + implicit.pins + pins)
       # @unresolved_requires = yard_map.unresolved_requires
       @unresolved_requires = @stdlib_maps.reject(&:resolved?).map(&:library)
       @rebindable_method_names = nil
