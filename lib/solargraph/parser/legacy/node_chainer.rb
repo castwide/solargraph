@@ -102,11 +102,24 @@ module Solargraph
             result.concat generate_links(n.children[0])
           elsif n.type == :block_pass
             result.push Chain::BlockVariable.new("&#{n.children[0].children[0].to_s}")
+          elsif n.type == :hash
+            result.push Chain::Hash.new('::Hash', hash_is_splatted?(n))
           else
             lit = infer_literal_node_type(n)
-            result.push (lit ? Chain::Literal.new(lit) : Chain::Link.new)
+            # if lit == '::Hash'
+            #   result.push Chain::Hash.new(lit, hash_is_splatted?(n))
+            # else
+              result.push (lit ? Chain::Literal.new(lit) : Chain::Link.new)
+            # end
           end
           result
+        end
+
+        def hash_is_splatted? node
+          return false unless Parser.is_ast_node?(node) && node.type == :hash
+          return false unless Parser.is_ast_node?(node.children.last) && node.children.last.type == :kwsplat
+          return false if Parser.is_ast_node?(node.children.last.children[0]) && node.children.last.children[0].type == :hash
+          true
         end
 
         def block_passed? node

@@ -417,7 +417,7 @@ module Solargraph
       end
       settled_kwargs = 0
       unless unchecked.empty?
-        if Parser.is_ast_node?(unchecked.last.node) && splatted_call?(unchecked.last.node)
+        if any_splatted_call?(unchecked.map(&:node))
           settled_kwargs = pin.parameters.count(&:keyword?)
         else
           kwargs = convert_hash(unchecked.last.node)
@@ -432,6 +432,7 @@ module Solargraph
                   kwargs.delete param.name.to_sym
                   settled_kwargs += 1
                 elsif param.decl == :kwarg
+                  return [] if arguments.last.links.last.is_a?(Solargraph::Source::Chain::Hash) && arguments.last.links.last.splatted?
                   return [Problem.new(location, "Missing keyword argument #{param.name} to #{pin.path}")]
                 end
               end
@@ -451,12 +452,17 @@ module Solargraph
         if unchecked.length == req + opt + 1 && unchecked.last.links.last.is_a?(Source::Chain::BlockVariable)
           return []
         end
-        if req + add_params + 1 == unchecked.length && splatted_call?(unchecked.last.node) && (pin.parameters.map(&:decl) & [:kwarg, :kwoptarg, :kwrestarg]).any?
+        if req + add_params + 1 == unchecked.length && any_splatted_call?(unchecked.map(&:node)) && (pin.parameters.map(&:decl) & [:kwarg, :kwoptarg, :kwrestarg]).any?
           return []
         end
+        return [] if arguments.length - req == pin.parameters.select { |p| [:optarg, :kwoptarg].include?(p.decl) }.length
         return [Problem.new(location, "Too many arguments to #{pin.path}")]
-      elsif unchecked.length < req - settled_kwargs && (arguments.empty? || !arguments.last.splat?)
-        return [Problem.new(location, "Not enough arguments to #{pin.path}")]
+      elsif unchecked.length < req - settled_kwargs && (arguments.empty? || (!arguments.last.splat? && !arguments.last.links.last.is_a?(Solargraph::Source::Chain::Hash)))
+        # HACK: Kernel#raise signature is incorrect in Ruby 2.7 core docs.
+        # See https://github.com/castwide/solargraph/issues/418
+        unless arguments.empty? && pin.path == 'Kernel#raise'
+          return [Problem.new(location, "Not enough arguments to #{pin.path}")]
+        end
       end
       []
     end

@@ -97,8 +97,10 @@ module Solargraph
         end
 
         def convert_hash node
-          return {} unless Parser.is_ast_node?(node) && node.type == :hash
-          return convert_hash(node.children[0].children[0]) if splatted_hash?(node)
+          return {} unless Parser.is_ast_node?(node)
+          return convert_hash(node.children[0]) if node.type == :kwsplat
+          return convert_hash(node.children[0]) if Parser.is_ast_node?(node.children[0]) && node.children[0].type == :kwsplat
+          return {} unless node.type == :hash
           result = {}
           node.children.each do |pair|
             result[pair.children[0].children[0]] = Solargraph::Parser.chain(pair.children[1])
@@ -124,7 +126,12 @@ module Solargraph
         end
 
         def splatted_call? node
+          return false unless Parser.is_ast_node?(node)
           Parser.is_ast_node?(node.children[0]) && node.children[0].type == :kwsplat && node.children[0].children[0].type != :hash
+        end
+
+        def any_splatted_call?(nodes)
+          nodes.any? { |n| splatted_call?(n) }
         end
 
         # @todo Temporarily here for testing. Move to Solargraph::Parser.
