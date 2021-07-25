@@ -14,7 +14,7 @@ module Solargraph
         @pins ||= []
       end
 
-      module_function
+      private
 
       def convert_decl_to_pin decl, closure
         case decl
