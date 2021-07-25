@@ -173,8 +173,14 @@ module Solargraph
         )
       end
   
+      RBS_TO_YARD_TYPE = {
+        'bool' => 'Boolean',
+        'string' => 'String'
+      }
+
       def method_type_to_tag type
-        "#{type.type.return_type}"
+        str = "#{type.type.return_type}"
+        RBS_TO_YARD_TYPE[str] || str
       end
   
       def other_type_to_tag type
@@ -183,7 +189,7 @@ module Solargraph
         elsif type.is_a?(RBS::Types::Bases::Any)
           nil
         elsif type.is_a?(RBS::Types::Bases::Bool)
-          'boolean'
+          'Boolean'
         elsif type.is_a?(RBS::Types::Tuple)
           # @todo Figure this out
           nil
@@ -194,7 +200,7 @@ module Solargraph
           # @todo Figure this out
           nil
         else
-          type.name.relative!.to_s
+          RBS_TO_YARD_TYPE[type.name.relative!.to_s] || type.name.relative!.to_s
         end
       end  
     end
