@@ -47,6 +47,10 @@ module Solargraph
           attr_accessor_to_pin(member, closure)
         when RBS::AST::Members::Include
           include_to_pin(member, closure)
+        when RBS::AST::Members::Prepend
+          prepend_to_pin(member, closure)
+        when RBS::AST::Members::Extend
+          extend_to_pin(member, closure)
         when RBS::AST::Members::Alias
           alias_to_pin(member, closure)
         when RBS::AST::Members::Public
@@ -204,6 +208,20 @@ module Solargraph
         )
       end
   
+      def prepend_to_pin decl, closure
+        pins.push Solargraph::Pin::Reference::Prepend.new(
+          name: decl.name.relative!.to_s,
+          closure: closure
+        )
+      end
+
+      def extend_to_pin decl, closure
+        pins.push Solargraph::Pin::Reference::Extend.new(
+          name: decl.name.relative!.to_s,
+          closure: closure
+        )
+      end
+
       def alias_to_pin decl, closure
         pins.push Solargraph::Pin::MethodAlias.new(
           name: decl.new_name.to_s,
