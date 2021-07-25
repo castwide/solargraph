@@ -39,6 +39,12 @@ module Solargraph
         case member
         when RBS::AST::Members::MethodDefinition
           method_def_to_pin(member, closure)
+        when RBS::AST::Members::AttrReader
+          attr_reader_to_pin(member, closure)
+        when RBS::AST::Members::AttrWriter
+          attr_writer_to_pin(member, closure)
+        when RBS::AST::Members::AttrAccessor
+          attr_accessor_to_pin(member, closure)
         when RBS::AST::Members::Include
           include_to_pin(member, closure)
         when RBS::AST::Members::Alias
@@ -111,6 +117,11 @@ module Solargraph
           comments: decl.comment&.string,
           scope: decl.instance? ? :instance : :class
         )
+        update_pin_data(decl, pin)
+        pins.push pin
+      end
+  
+      def update_pin_data decl, pin
         # @todo This needs to be more robust. There will probably need to be a
         #   Pin::Method#definitions array of some kind of MethodDefinition object.
         if decl.types.length > 1
@@ -155,9 +166,37 @@ module Solargraph
           pin.instance_variable_set(:@visibility, :private)
           pin.instance_variable_set(:@return_type, ComplexType::VOID)
         end
+      end
+
+      def attr_reader_to_pin(decl, closure)
+        pin = Solargraph::Pin::Method.new(
+          name: decl.name.to_s,
+          closure: closure,
+          comments: decl.comment&.string,
+          scope: :instance,
+          attribute: true
+        )
+        pin.docstring.add_tag(YARD::Tags::Tag.new(:return, '', other_type_to_tag(decl.type)))
         pins.push pin
       end
-  
+
+      def attr_writer_to_pin(decl, closure)
+        pin = Solargraph::Pin::Method.new(
+          name: "#{decl.name.to_s}=",
+          closure: closure,
+          comments: decl.comment&.string,
+          scope: :instance,
+          attribute: true
+        )
+        pin.docstring.add_tag(YARD::Tags::Tag.new(:return, '', other_type_to_tag(decl.type)))
+        pins.push pin
+      end
+
+      def attr_accessor_to_pin(decl, closure)
+        attr_reader_to_pin(decl, closure)
+        attr_writer_to_pin(decl, closure)
+      end
+
       def include_to_pin decl, closure
         pins.push Solargraph::Pin::Reference::Include.new(
           name: decl.name.relative!.to_s,
@@ -185,7 +224,7 @@ module Solargraph
   
       def other_type_to_tag type
         if type.is_a?(RBS::Types::Optional)
-          "#{type.type.name.relative!}, nil"
+          "#{other_type_to_tag(type.type)}, nil"
         elsif type.is_a?(RBS::Types::Bases::Any)
           nil
         elsif type.is_a?(RBS::Types::Bases::Bool)
@@ -199,8 +238,10 @@ module Solargraph
         elsif type.is_a?(RBS::Types::Union)
           # @todo Figure this out
           nil
-        else
+        elsif type.respond_to?(:name) && type.name.respond_to?(:relative!)
           RBS_TO_YARD_TYPE[type.name.relative!.to_s] || type.name.relative!.to_s
+        else
+          nil
         end
       end  
     end
