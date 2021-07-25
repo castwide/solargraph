@@ -765,5 +765,15 @@ describe Solargraph::TypeChecker do
       ))
       expect(checker.problems).to be_empty
     end
+
+    it 'allows Kernel#raise without arguments' do
+      # This is necessary because the core docs erroneously define the
+      # signature as `Kernel#raise(*, _)`
+      # See https://github.com/castwide/solargraph/issues/418
+      checker = type_checker(%(
+        raise
+      ))
+      expect(checker.problems).to be_empty
+    end
   end
 end

@@ -456,7 +456,11 @@ module Solargraph
         end
         return [Problem.new(location, "Too many arguments to #{pin.path}")]
       elsif unchecked.length < req - settled_kwargs && (arguments.empty? || !arguments.last.splat?)
-        return [Problem.new(location, "Not enough arguments to #{pin.path}")]
+        # HACK: Kernel#raise signature is incorrect in Ruby 2.7 core docs.
+        # See https://github.com/castwide/solargraph/issues/418
+        unless arguments.empty? && pin.path == 'Kernel#raise'
+          return [Problem.new(location, "Not enough arguments to #{pin.path}")]
+        end
       end
       []
     end
