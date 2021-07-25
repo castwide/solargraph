@@ -4,6 +4,7 @@
 - Type checker validates duck type variables and params (#453)
 - Kernel#raise exception type checker
 - Pin::Base#inspect includes path
+- Fix arity with combined restargs and kwrestargs (#396)
 
 ## 0.42.4 - July 11, 2021
 - Yardoc cache handling

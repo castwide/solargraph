@@ -432,6 +432,7 @@ module Solargraph
                   kwargs.delete param.name.to_sym
                   settled_kwargs += 1
                 elsif param.decl == :kwarg
+                  return [] if arguments.last.links.last.is_a?(Solargraph::Source::Chain::Hash) && arguments.last.links.last.splatted?
                   return [Problem.new(location, "Missing keyword argument #{param.name} to #{pin.path}")]
                 end
               end
