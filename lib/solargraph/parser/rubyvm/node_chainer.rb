@@ -118,7 +118,7 @@ module Solargraph
         def hash_is_splatted? node
           return false unless Parser.is_ast_node?(node.children[0]) && node.children[0].type == :LIST
           list = node.children[0].children
-          eol = list.index(&:nil?)
+          eol = list.rindex(&:nil?)
           eol && Parser.is_ast_node?(list[eol + 1])
         end
 
