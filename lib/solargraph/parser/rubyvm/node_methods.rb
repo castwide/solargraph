@@ -117,7 +117,12 @@ module Solargraph
         end
 
         def splatted_call? node
+          return false unless Parser.is_ast_node?(node)
           splatted_node?(node) && node.children[0].children[1].type != :HASH
+        end
+
+        def any_splatted_call?(nodes)
+          nodes.any? { |n| splatted_call?(n) }
         end
 
         def node? node

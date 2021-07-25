@@ -261,4 +261,12 @@ describe Solargraph::Source::SourceChainer do
     chain = Solargraph::Source::SourceChainer.chain(source, Solargraph::Position.new(7, 21))
     expect(chain.links.last.word).to eq('Outer::Inner1::Inner2')
   end
+
+  it 'chains combined optargs and kwoptargs' do
+    source = Solargraph::Source.load_string(%(
+      foo(*optargs, **kwargs)
+    ), 'test.rb')
+    chain = Solargraph::Source::SourceChainer.chain(source, Solargraph::Position.new(1, 7))
+    expect(chain.links.last.arguments.length).to eq(2)
+  end
 end

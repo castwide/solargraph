@@ -127,6 +127,10 @@ module Solargraph
           Parser.is_ast_node?(node.children[0]) && node.children[0].type == :kwsplat && node.children[0].children[0].type != :hash
         end
 
+        def any_splatted_call?(nodes)
+          nodes.any? { |n| splatted_call?(n) }
+        end
+
         # @todo Temporarily here for testing. Move to Solargraph::Parser.
         def call_nodes_from node
           return [] unless node.is_a?(::Parser::AST::Node)

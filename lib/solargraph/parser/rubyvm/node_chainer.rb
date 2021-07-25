@@ -97,6 +97,8 @@ module Solargraph
             result.concat generate_links(n.children[0])
           elsif n.type == :BLOCK_PASS
             result.push Chain::BlockVariable.new("&#{n.children[1].children[0].to_s}")
+          elsif n.type == :HASH
+            result.push Chain::Hash.new('::Hash', hash_is_splatted?(n))
           else
             lit = infer_literal_node_type(n)
             if lit
@@ -130,6 +132,9 @@ module Solargraph
             node.children[0..-2].map { |c| NodeChainer.chain(c) }
           elsif node.type == :SPLAT
             [NodeChainer.chain(node)]
+          elsif node.type == :ARGSPUSH
+            result = node_to_argchains(node.children[0])
+            result.push NodeChainer.chain(node.children[1]) if Parser.is_ast_node?(node.children[1])
           elsif node.type == :ARGSCAT
             result = node.children[0].children[0..-2].map { |c| NodeChainer.chain(c) }
             result.push NodeChainer.chain(node.children[1])

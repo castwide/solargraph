@@ -775,5 +775,33 @@ describe Solargraph::TypeChecker do
       ))
       expect(checker.problems).to be_empty
     end
+
+    it 'handles mixed splats' do
+      checker = type_checker(%(
+        class Foo
+          def self.make(arg, *args, **kwargs)
+            new([1, 2], *args, **kwargs)
+          end
+        
+          def initialize(timeframe, scope = nil, now: Time.now)
+          end
+        end
+      ))
+      expect(checker.problems).to be_empty
+    end
+
+    it 'handles kwrestargs passed to methods without kwsplats' do
+      checker = type_checker(%(
+        def foo(arg1:, arg2:, arg3:, arg4: false)
+        end
+        
+        foo(
+          arg1: val1,
+          arg2: val2,
+          **kwparams
+        )
+      ))
+      expect(checker.problems).to be_empty
+    end
   end
 end
