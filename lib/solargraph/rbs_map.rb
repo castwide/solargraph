@@ -8,10 +8,12 @@ module Solargraph
 
     include Conversions
 
+    # @type [Hash{String => RbsMap}]
     @@rbs_maps_hash = {}
 
     attr_reader :library
 
+    # @param library [String]
     def initialize library
       @library = library
       loader = RBS::EnvironmentLoader.new(core_root: nil)
@@ -26,6 +28,7 @@ module Solargraph
       @resolved
     end
 
+    # @param library [String]
     def self.load library
       @@rbs_maps_hash[library] ||= RbsMap.new(library)
     end

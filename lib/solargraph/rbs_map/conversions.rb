@@ -4,6 +4,7 @@ module Solargraph
       class Context
         attr_reader :visibility
   
+        # @param visibility [Symbol]
         def initialize visibility = :public
           @visibility = visibility
         end
