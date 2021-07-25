@@ -132,14 +132,14 @@ module Solargraph
     end
 
     def rebindable_method_names
-      # @rebindable_method_names ||= begin
-      #   result = yard_map.rebindable_method_names
-      #   source_maps.each do |map|
-      #     result.merge map.rebindable_method_names
-      #   end
-      #   result
-      # end
-      @rebindable_method_names ||= [].to_set
+      @rebindable_method_names ||= begin
+        # result = yard_map.rebindable_method_names
+        result = ['instance_eval', 'instance_exec', 'class_eval', 'class_exec', 'module_eval', 'module_exec'].to_set
+        source_maps.each do |map|
+          result.merge map.rebindable_method_names
+        end
+        result
+      end
     end
 
     # An array of pins based on Ruby keywords (`if`, `end`, etc.).
