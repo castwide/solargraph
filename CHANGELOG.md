@@ -1,7 +1,9 @@
-## 0.43.0
+## 0.43.0 - July 25, 2021
 - Correct arity checks when restarg precedes arg (#418)
 - Improve the performance of catalog by 4 times (#457)
 - Type checker validates duck type variables and params (#453)
+- Kernel#raise exception type checker
+- Pin::Base#inspect includes path
 
 ## 0.42.4 - July 11, 2021
 - Yardoc cache handling
