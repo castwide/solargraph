@@ -54,6 +54,8 @@ module Solargraph
           extend_to_pin(member, closure)
         when RBS::AST::Members::Alias
           alias_to_pin(member, closure)
+        when RBS::AST::Members::InstanceVariable
+          ivar_to_pin(member, closure)
         when RBS::AST::Members::Public
           return Context.new(visibility: :public)
         when RBS::AST::Members::Private
@@ -202,6 +204,16 @@ module Solargraph
         attr_writer_to_pin(decl, closure)
       end
 
+      def ivar_to_pin(decl, closure)
+        pin = Solargraph::Pin::InstanceVariable.new(
+          name: decl.name.to_s,
+          closure: closure,
+          comments: decl.comment&.string
+        )
+        pin.docstring.add_tag(YARD::Tags::Tag.new(:type, '', other_type_to_tag(decl.type)))
+        pins.push pin
+      end
+
       def include_to_pin decl, closure
         pins.push Solargraph::Pin::Reference::Include.new(
           name: decl.name.relative!.to_s,
@@ -233,7 +245,9 @@ module Solargraph
   
       RBS_TO_YARD_TYPE = {
         'bool' => 'Boolean',
-        'string' => 'String'
+        'string' => 'String',
+        'untyped' => '',
+        'NilClass' => 'nil'
       }
 
       def method_type_to_tag type
