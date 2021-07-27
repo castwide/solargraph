@@ -46,6 +46,10 @@ module Solargraph
         tag
       end
 
+      def to_rbs
+        "#{namespace}#{parameters? ? "[#{subtypes.map { |s| s.to_rbs }.join(', ')}]" : ''}"
+      end
+  
       def self_to dst
         return self unless selfy?
         new_name = (@name == 'self' ? dst : @name)

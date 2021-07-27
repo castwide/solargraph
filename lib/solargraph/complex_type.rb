@@ -30,6 +30,12 @@ module Solargraph
       @items.first
     end
 
+    def to_rbs
+      ((@items.length > 1 ? '(' : '') + @items.map do |item|
+        "#{item.namespace}#{item.parameters? ? "[#{item.subtypes.map { |s| s.to_rbs }.join(', ')}]" : ''}"
+      end.join(' | ') + (@items.length > 1 ? ')' : '')).gsub(/undefined/, 'untyped')
+    end
+
     def map &block
       @items.map &block
     end
