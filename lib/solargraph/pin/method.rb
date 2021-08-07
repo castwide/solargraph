@@ -18,6 +18,9 @@ module Solargraph
 
       # @param visibility [::Symbol] :public, :protected, or :private
       # @param explicit [Boolean]
+      # @param parameters [Array<Pin::Parameter>]
+      # @param node [Parser::AST::Node, RubyVM::AbstractSyntaxTree::Node]
+      # @param attribute [Boolean]
       def initialize visibility: :public, explicit: true, parameters: [], node: nil, attribute: false, **splat
         super(**splat)
         @visibility = visibility
@@ -42,6 +45,15 @@ module Solargraph
 
       def return_type
         @return_type ||= generate_complex_type
+      end
+
+      # @return [Array<Signature>]
+      def signatures
+        @signatures ||= begin
+          result = overloads.map { |meth| Signature.new(meth.parameters, meth.return_type) }
+          result.push Signature.new(parameters, return_type) if result.empty?
+          result
+        end
       end
 
       def path
