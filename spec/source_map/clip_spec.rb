@@ -357,11 +357,11 @@ describe Solargraph::SourceMap::Clip do
   end
 
   it "handles missing type annotations in @type tags" do
-    source = Solargraph::Source.load_string(%(
+    source = Solargraph::Source.load_string('
       # Note the type is `String` instead of `[String]`
       # @type String
       x = foo_bar
-    ), 'test.rb')
+    ', 'test.rb')
     api_map = Solargraph::ApiMap.new
     api_map.map source
     clip = api_map.clip_at('test.rb', Solargraph::Position.new(3, 7))
