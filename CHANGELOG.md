@@ -1,3 +1,6 @@
+## 0.43.1
+- Complete nested namespaces in open gates
+
 ## 0.43.0 - July 25, 2021
 - Correct arity checks when restarg precedes arg (#418)
 - Improve the performance of catalog by 4 times (#457)
