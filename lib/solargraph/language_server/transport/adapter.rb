@@ -41,8 +41,7 @@ module Solargraph
         # @param request [String]
         # @return [void]
         def process request
-          message = @host.receive(request)
-          message && message.send_response
+          @host.process(request)
         end
 
         def shutdown
