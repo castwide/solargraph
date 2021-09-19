@@ -307,6 +307,6 @@ y = 1 #foo
 
   it 'handles long squiggly heredocs' do
     source = Solargraph::Source.load('spec/fixtures/long_squiggly_heredoc.rb')
-    expect(source.string_ranges).to be_one
+    expect(source.string_ranges).not_to be_empty
   end
 end
