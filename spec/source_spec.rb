@@ -304,4 +304,9 @@ y = 1 #foo
     expect(comments).to include('included')
     expect(comments).not_to include('ignored')
   end
+
+  it 'handles long squiggly heredocs' do
+    source = Solargraph::Source.load('spec/fixtures/long_squiggly_heredoc.rb')
+    expect(source.string_ranges).to be_one
+  end
 end
