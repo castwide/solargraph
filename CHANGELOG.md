@@ -1,5 +1,6 @@
 ## 0.43.1
 - Complete nested namespaces in open gates
+- SourceMap::Mapper reports filename for encoding errors (#474)
 
 ## 0.43.0 - July 25, 2021
 - Correct arity checks when restarg precedes arg (#418)
