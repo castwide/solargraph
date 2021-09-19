@@ -34,7 +34,8 @@ Plug-ins and extensions are available for the following editors:
     * GitHub: https://github.com/autozimu/LanguageClient-neovim
 
 * **Emacs**
-    * GitHub: https://github.com/guskovd/emacs-solargraph
+    * GitHub: `eglot.el`, https://github.com/joaotavora/eglot
+    * GitHub: `lsp-mode.el`, https://github.com/emacs-lsp/lsp-mode
 
 * **Eclipse**
     * Plugin: https://marketplace.eclipse.org/content/ruby-solargraph
