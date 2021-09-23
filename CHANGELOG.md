@@ -1,4 +1,7 @@
-## 0.43.1
+## 0.43.2 - September 23, 2021
+- Synchronize server requests (#461)
+
+## 0.43.1 - September 20, 2021
 - Complete nested namespaces in open gates
 - SourceMap::Mapper reports filename for encoding errors (#474)
 - Handle request on a specific thread, and cancel completion when there has newer completion request (#459)

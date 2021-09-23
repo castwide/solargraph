@@ -29,7 +29,7 @@ module Solargraph
       def initialize
         @cancel_semaphore = Mutex.new
         @buffer_semaphore = Mutex.new
-        @register_semaphore = Mutex.new
+        @request_mutex = Mutex.new
         @cancel = []
         @buffer = String.new
         @stopped = true
@@ -92,7 +92,9 @@ module Solargraph
         @cancel_semaphore.synchronize { @cancel.delete id }
       end
 
-      # called by adapter, to handle the request
+      # Called by adapter, to handle the request
+      # @param request [Hash]
+      # @return [void]
       def process request
         message_worker.queue(request)
       end
@@ -363,19 +365,21 @@ module Solargraph
       # @yieldparam [Hash] The result sent by the client
       # @return [void]
       def send_request method, params, &block
-        message = {
-          jsonrpc: "2.0",
-          method: method,
-          params: params,
-          id: @next_request_id
-        }
-        json = message.to_json
-        requests[@next_request_id] = Request.new(@next_request_id, &block)
-        envelope = "Content-Length: #{json.bytesize}\r\n\r\n#{json}"
-        queue envelope
-        @next_request_id += 1
-        logger.info "Server sent #{method}"
-        logger.debug params
+        @request_mutex.synchronize do
+          message = {
+            jsonrpc: "2.0",
+            method: method,
+            params: params,
+            id: @next_request_id
+          }
+          json = message.to_json
+          requests[@next_request_id] = Request.new(@next_request_id, &block)
+          envelope = "Content-Length: #{json.bytesize}\r\n\r\n#{json}"
+          queue envelope
+          @next_request_id += 1
+          logger.info "Server sent #{method}"
+          logger.debug params
+        end
       end
 
       # Register the methods as capabilities with the client.
@@ -386,20 +390,16 @@ module Solargraph
       # @return [void]
       def register_capabilities methods
         logger.debug "Registering capabilities: #{methods}"
-        registrations = methods.select{|m| can_register?(m) and !registered?(m)}.map { |m|
+        registrations = methods.select { |m| can_register?(m) and !registered?(m) }.map do |m|
           @registered_capabilities.add m
           {
             id: m,
             method: m,
             registerOptions: dynamic_capability_options[m]
           }
-        }
-        return if registrations.empty?
-        @register_semaphore.synchronize do
-          send_request 'client/registerCapability', {
-            registrations: registrations
-          }
         end
+        return if registrations.empty?
+        send_request 'client/registerCapability', { registrations: registrations }
       end
 
       # Unregister the methods with the client.
@@ -418,11 +418,7 @@ module Solargraph
           }
         }
         return if unregisterations.empty?
-        @register_semaphore.synchronize do
-          send_request 'client/unregisterCapability', {
-            unregisterations: unregisterations
-          }
-        end
+        send_request 'client/unregisterCapability', { unregisterations: unregisterations }
       end
 
       # Flag a method as available for dynamic registration.
@@ -430,9 +426,7 @@ module Solargraph
       # @param method [String] The method name, e.g., 'textDocument/completion'
       # @return [void]
       def allow_registration method
-        @register_semaphore.synchronize do
-          @dynamic_capabilities.add method
-        end
+        @dynamic_capabilities.add method
       end
 
       # True if the specified LSP method can be dynamically registered.

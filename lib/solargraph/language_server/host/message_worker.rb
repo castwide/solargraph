@@ -23,16 +23,18 @@ module Solargraph
         def stopped?
           @stopped
         end
+
         def stop
           @stopped = true
         end
 
-        # @param message the message should be handle. will pass back to Host#receive
+        # @param message [Hash] The message should be handle. will pass back to Host#receive
+        # @return [void]
         def queue(message)
-          @mutex.synchronize {
+          @mutex.synchronize do
             messages.push(message)
             @resource.signal
-          }
+          end
         end
 
         def start
@@ -42,13 +44,14 @@ module Solargraph
             tick until stopped?
           end
         end
+
         def tick
-          message = @mutex.synchronize {
+          message = @mutex.synchronize do
             @resource.wait(@mutex) if messages.empty?
             messages.shift
-          }
-          message = @host.receive(message)
-          message && message.send_response
+          end
+          handler = @host.receive(message)
+          handler && handler.send_response
         end
       end
     end
