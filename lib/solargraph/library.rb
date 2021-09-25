@@ -518,6 +518,7 @@ module Solargraph
 
     def maybe_map source
       return unless source
+      return unless @current == source || workspace.has_file?(source.filename)
       if source_map_hash.key?(source.filename)
         return if source_map_hash[source.filename].code == source.code && 
           source_map_hash[source.filename].source.synchronized? &&

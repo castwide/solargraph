@@ -2,7 +2,7 @@
     Namespace:
 </h2>
 <p>
-    <a href="command:solargraph._openDocument?<%= CGI.escape "\"solargraph:/document?query=#{object.namespace}\"" %>"><%= object.namespace %></a>
+    <a href="solargraph:/document?query=<%= CGI.escape object.namespace.path %>"><%= object.namespace %></a>
 </p>
 <h2>
     Overview:

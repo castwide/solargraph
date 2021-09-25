@@ -12,10 +12,12 @@ module Solargraph
     # safety for multi-threaded transports.
     #
     class Host
-      autoload :Diagnoser, 'solargraph/language_server/host/diagnoser'
-      autoload :Cataloger, 'solargraph/language_server/host/cataloger'
-      autoload :Sources,   'solargraph/language_server/host/sources'
-      autoload :Dispatch,  'solargraph/language_server/host/dispatch'
+      autoload :Diagnoser,     'solargraph/language_server/host/diagnoser'
+      autoload :Cataloger,     'solargraph/language_server/host/cataloger'
+      autoload :Sources,       'solargraph/language_server/host/sources'
+      autoload :Dispatch,      'solargraph/language_server/host/dispatch'
+      autoload :MessageWorker, 'solargraph/language_server/host/message_worker'
+
 
       include UriHelpers
       include Logging
@@ -27,7 +29,7 @@ module Solargraph
       def initialize
         @cancel_semaphore = Mutex.new
         @buffer_semaphore = Mutex.new
-        @register_semaphore = Mutex.new
+        @request_mutex = Mutex.new
         @cancel = []
         @buffer = String.new
         @stopped = true
@@ -45,6 +47,7 @@ module Solargraph
         diagnoser.start
         cataloger.start
         sources.start
+        message_worker.start
       end
 
       # Update the configuration options with the provided hash.
@@ -89,8 +92,15 @@ module Solargraph
         @cancel_semaphore.synchronize { @cancel.delete id }
       end
 
+      # Called by adapter, to handle the request
+      # @param request [Hash]
+      # @return [void]
+      def process request
+        message_worker.queue(request)
+      end
+
       # Start processing a request from the client. After the message is
-      # processed, the transport is responsible for sending the response.
+      # processed, caller is responsible for sending the response.
       #
       # @param request [Hash] The contents of the message.
       # @return [Solargraph::LanguageServer::Message::Base] The message handler.
@@ -355,19 +365,21 @@ module Solargraph
       # @yieldparam [Hash] The result sent by the client
       # @return [void]
       def send_request method, params, &block
-        message = {
-          jsonrpc: "2.0",
-          method: method,
-          params: params,
-          id: @next_request_id
-        }
-        json = message.to_json
-        requests[@next_request_id] = Request.new(@next_request_id, &block)
-        envelope = "Content-Length: #{json.bytesize}\r\n\r\n#{json}"
-        queue envelope
-        @next_request_id += 1
-        logger.info "Server sent #{method}"
-        logger.debug params
+        @request_mutex.synchronize do
+          message = {
+            jsonrpc: "2.0",
+            method: method,
+            params: params,
+            id: @next_request_id
+          }
+          json = message.to_json
+          requests[@next_request_id] = Request.new(@next_request_id, &block)
+          envelope = "Content-Length: #{json.bytesize}\r\n\r\n#{json}"
+          queue envelope
+          @next_request_id += 1
+          logger.info "Server sent #{method}"
+          logger.debug params
+        end
       end
 
       # Register the methods as capabilities with the client.
@@ -378,20 +390,16 @@ module Solargraph
       # @return [void]
       def register_capabilities methods
         logger.debug "Registering capabilities: #{methods}"
-        registrations = methods.select{|m| can_register?(m) and !registered?(m)}.map { |m|
+        registrations = methods.select { |m| can_register?(m) and !registered?(m) }.map do |m|
           @registered_capabilities.add m
           {
             id: m,
             method: m,
             registerOptions: dynamic_capability_options[m]
           }
-        }
-        return if registrations.empty?
-        @register_semaphore.synchronize do
-          send_request 'client/registerCapability', {
-            registrations: registrations
-          }
         end
+        return if registrations.empty?
+        send_request 'client/registerCapability', { registrations: registrations }
       end
 
       # Unregister the methods with the client.
@@ -410,11 +418,7 @@ module Solargraph
           }
         }
         return if unregisterations.empty?
-        @register_semaphore.synchronize do
-          send_request 'client/unregisterCapability', {
-            unregisterations: unregisterations
-          }
-        end
+        send_request 'client/unregisterCapability', { unregisterations: unregisterations }
       end
 
       # Flag a method as available for dynamic registration.
@@ -422,9 +426,7 @@ module Solargraph
       # @param method [String] The method name, e.g., 'textDocument/completion'
       # @return [void]
       def allow_registration method
-        @register_semaphore.synchronize do
-          @dynamic_capabilities.add method
-        end
+        @dynamic_capabilities.add method
       end
 
       # True if the specified LSP method can be dynamically registered.
@@ -451,6 +453,7 @@ module Solargraph
       def stop
         return if @stopped
         @stopped = true
+        message_worker.stop
         cataloger.stop
         diagnoser.stop
         sources.stop
@@ -511,6 +514,11 @@ module Solargraph
       def completions_at uri, line, column
         library = library_for(uri)
         library.completions_at uri_to_file(uri), line, column
+      end
+
+      # @return [Bool] if has pending completion request
+      def has_pending_completions?
+        message_worker.messages.reverse_each.any? { |req| req['method'] == 'textDocument/completion' }
       end
 
       # @param uri [String]
@@ -645,6 +653,11 @@ module Solargraph
       end
 
       private
+
+      # @return [MessageWorker]
+      def message_worker
+        @message_worker ||= MessageWorker.new(self)
+      end
 
       # @return [Diagnoser]
       def diagnoser

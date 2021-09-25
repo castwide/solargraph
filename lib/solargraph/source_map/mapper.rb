@@ -204,6 +204,8 @@ module Solargraph
           com_pos = Position.new(line + 1 - comments.lines.length, 0)
           process_comment(src_pos, com_pos, comments)
         end
+      rescue StandardError => e
+        raise e.class, "Error processing comment directives in #{@filename}: #{e.message}"
       end
     end
   end

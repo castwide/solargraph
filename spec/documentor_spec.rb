@@ -5,17 +5,6 @@ describe Solargraph::Documentor do
   # @todo Skipping Bundler-related tests on JRuby
   next if RUBY_PLATFORM == 'java'
 
-  before :all do
-    Dir.chdir 'spec/fixtures/workspace-with-gemfile' do
-      o, e, s = Open3.capture3('bundle', 'install')
-      raise RuntimeError, e unless s.success?
-    end
-  end
-
-  after :all do
-    File.unlink 'spec/fixtures/workspace-with-gemfile/Gemfile.lock'
-  end
-
   it 'returns gemsets for directories with bundles' do
     gemset = Solargraph::Documentor.specs_from_bundle('spec/fixtures/workspace-with-gemfile')
     expect(gemset.keys).to eq(['backport', 'bundler'])

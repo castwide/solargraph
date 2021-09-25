@@ -10,6 +10,8 @@ module Solargraph
   # stdlib, and gems.
   #
   class YardMap
+    class NoYardocError < StandardError; end
+
     autoload :Cache,       'solargraph/yard_map/cache'
     autoload :CoreDocs,    'solargraph/yard_map/core_docs'
     autoload :CoreGen,     'solargraph/yard_map/core_gen'
@@ -224,7 +226,7 @@ module Solargraph
             result.concat process_yardoc yd, spec
             result.concat add_gem_dependencies(spec) if with_dependencies?
           end
-        rescue Gem::LoadError => e
+        rescue Gem::LoadError, NoYardocError => e
           base = r.split('/').first
           next if from_std.include?(base)
           from_std.push base
@@ -299,6 +301,7 @@ module Solargraph
             result = Marshal.load(dump)
             return result unless result.nil? || result.empty?
             Solargraph.logger.warn "Empty cache for #{spec.name} #{spec.version}. Reloading"
+            File.unlink ser
           rescue StandardError => e
             Solargraph.logger.warn "Error loading pin cache: [#{e.class}] #{e.message}"
             File.unlink ser
@@ -315,6 +318,7 @@ module Solargraph
       Solargraph.logger.info "Loading #{spec.name} #{spec.version} from #{y}"
       load_yardoc y
       result = Mapper.new(YARD::Registry.all, spec).map
+      raise NoYardocError, "Yardoc at #{y} is empty" if result.empty?
       if spec
         ser = File.join(CoreDocs.cache_dir, 'gems', "#{spec.name}-#{spec.version}.ser")
         file = File.open(ser, 'wb')

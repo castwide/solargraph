@@ -2,7 +2,7 @@ require 'ripper'
 
 module Solargraph
   module Parser
-    class CommentRipper < Ripper::SexpBuilder
+    class CommentRipper < Ripper::SexpBuilderPP
       def initialize src, filename = '(ripper)', lineno = 0
         super
         @buffer = src

@@ -3,17 +3,6 @@ require 'set'
 require 'tmpdir'
 
 describe Solargraph::YardMap do
-  before :all do
-    Dir.chdir 'spec/fixtures/workspace-with-gemfile' do
-      o, e, s = Open3.capture3('bundle', 'install')
-      raise RuntimeError, e unless s.success?
-    end
-  end
-
-  after :all do
-    File.unlink 'spec/fixtures/workspace-with-gemfile/Gemfile.lock'
-  end
-
   it "finds stdlib require paths" do
     yard_map = Solargraph::YardMap.new(required: ['set'])
     pin = yard_map.path_pin('Set#add')

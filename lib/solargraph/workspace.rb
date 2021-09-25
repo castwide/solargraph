@@ -1,5 +1,8 @@
 # frozen_string_literal: true
 
+require 'open3'
+require 'rubygems'
+
 module Solargraph
   # A workspace consists of the files in a project's directory and the
   # project's configuration. It provides a Source for each file to be used
@@ -168,19 +171,20 @@ module Solargraph
         # HACK: Evaluating gemspec files violates the goal of not running
         #   workspace code, but this is how Gem::Specification.load does it
         #   anyway.
-        Dir.chdir base do
+        cmd = ['ruby', '-e', "require 'rubygems'; require 'json'; spec = eval(File.read('#{file}'), TOPLEVEL_BINDING, '#{file}'); return unless Gem::Specification === spec; puts({name: spec.name, paths: spec.require_paths}.to_json)"]
+        o, e, s = Open3.capture3(*cmd)
+        if s.success?
           begin
-            # @type [Gem::Specification]
-            spec = eval(File.read(file), TOPLEVEL_BINDING, file)
-            next unless Gem::Specification === spec
-            @gemnames.push spec.name
-            result.concat(spec.require_paths.map { |path| File.join(base, path) })
-          rescue RuntimeError, ScriptError, Errno::ENOENT => e
-            # Don't die if we have an error during eval-ing a gem spec.
-            # Concat the default lib directory instead.
+            hash = o && !o.empty? ? JSON.parse(o.split("\n").last) : {}
+            next if hash.empty?
+            @gemnames.push hash['name']
+            result.concat(hash['paths'].map { |path| File.join(base, path) })
+          rescue StandardError => e
             Solargraph.logger.warn "Error reading #{file}: [#{e.class}] #{e.message}"
-            result.push File.join(base, 'lib')
           end
+        else
+          Solargraph.logger.warn "Error reading #{file}"
+          Solargraph.logger.warn e
         end
       end
       result.concat(config.require_paths.map { |p| File.join(directory, p) })
