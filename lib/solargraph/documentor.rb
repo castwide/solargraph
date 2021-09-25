@@ -59,18 +59,16 @@ module Solargraph
     # @return [Hash]
     def self.specs_from_bundle directory
       Solargraph.with_clean_env do
-        Dir.chdir directory do
-          cmd = [
-            'bundle', 'exec', 'ruby', '-e',
-            "require 'bundler'; require 'json'; puts Bundler.definition.specs_for([:default]).map { |spec| [spec.name, spec.version] }.to_h.to_json"
-          ]
-          o, e, s = Open3.capture3(*cmd)
-          if s.success?
-            o && !o.empty? ? JSON.parse(o.split("\n").last) : {}
-          else
-            Solargraph.logger.warn e
-            raise BundleNotFoundError, "Failed to load gems from bundle at #{directory}"
-          end
+        cmd = [
+          'ruby', '-e',
+          "require 'bundler'; require 'json'; Dir.chdir('#{directory}') { puts Bundler.definition.specs_for([:default]).map { |spec| [spec.name, spec.version] }.to_h.to_json }"
+        ]
+        o, e, s = Open3.capture3(*cmd)
+        if s.success?
+          o && !o.empty? ? JSON.parse(o.split("\n").last) : {}
+        else
+          Solargraph.logger.warn e
+          raise BundleNotFoundError, "Failed to load gems from bundle at #{directory}"
         end
       end
     end
