@@ -1,3 +1,6 @@
+## 0.43.4
+- Allow opening parenthesis, space, and comma when using Diff::LCS (#465)
+
 ## 0.43.3 - September 25, 2021
 - Avoid Dir.chdir in Bundler processes (#481)
 - Check stdlib for gems with empty yardocs

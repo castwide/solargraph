@@ -18,7 +18,6 @@ module Solargraph
       autoload :Dispatch,      'solargraph/language_server/host/dispatch'
       autoload :MessageWorker, 'solargraph/language_server/host/message_worker'
 
-
       include UriHelpers
       include Logging
       include Dispatch
@@ -716,7 +715,7 @@ module Solargraph
         return change if diffs.length.zero? || diffs.length > 1 || diffs.first.length > 1
         # @type [Diff::LCS::Change]
         diff = diffs.first.first
-        return change unless diff.adding? && ['.', ':'].include?(diff.element)
+        return change unless diff.adding? && ['.', ':', '(', ',', ' '].include?(diff.element)
         position = Solargraph::Position.from_offset(source.code, diff.position)
         {
           'range' => {
