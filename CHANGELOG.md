@@ -1,6 +1,7 @@
 ## 0.43.3 - September 25, 2021
 - Avoid Dir.chdir in Bundler processes (#481)
 - Check stdlib for gems with empty yardocs
+- Library#maybe_map checks for source in workspace
 
 ## 0.43.2 - September 23, 2021
 - Synchronize server requests (#461)
