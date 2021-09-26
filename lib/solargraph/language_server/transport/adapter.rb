@@ -41,10 +41,7 @@ module Solargraph
         # @param request [String]
         # @return [void]
         def process request
-          message = @host.receive(request)
-          message.send_response
-          # tmp = @host.flush
-          # write tmp unless tmp.empty?
+          @host.process(request)
         end
 
         def shutdown

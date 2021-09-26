@@ -62,7 +62,15 @@ module Solargraph
           end
           current = mutex.synchronize { queue.shift }
           return if queue.include?(current)
-          host.diagnose current
+          begin
+            host.diagnose current
+          rescue InvalidOffsetError
+            # @todo This error can occur when the Source is out of sync with
+            #   with the ApiMap. It's probably not the best way to handle it,
+            #   but it's quick and easy.
+            Logging.logger.warn "Deferring diagnosis due to invalid offset: #{current}"
+            mutex.synchronize { queue.push current }
+          end
         end
 
         private

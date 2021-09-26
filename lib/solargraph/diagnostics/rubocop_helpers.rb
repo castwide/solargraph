@@ -7,36 +7,35 @@ module Solargraph
     module RubocopHelpers
       module_function
 
+      # Requires a specific version of rubocop, or the latest installed version
+      # if _version_ is `nil`.
+      #
+      # @param version [String]
+      # @raise [InvalidRubocopVersionError] if _version_ is not installed
+      def require_rubocop(version = nil)
+        begin
+          gem_path = Gem::Specification.find_by_name('rubocop', version).full_gem_path
+          gem_lib_path = File.join(gem_path, 'lib')
+          $LOAD_PATH.unshift(gem_lib_path) unless $LOAD_PATH.include?(gem_lib_path)
+        rescue Gem::MissingSpecVersionError => e
+          raise InvalidRubocopVersionError,
+                "could not find '#{e.name}' (#{e.requirement}) - "\
+                "did find: [#{e.specs.map { |s| s.version.version }.join(', ')}]"
+        end
+        require 'rubocop'
+      end
+
       # Generate command-line options for the specified filename and code.
       #
       # @param filename [String]
       # @param code [String]
       # @return [Array(Array<String>, Array<String>)]
       def generate_options filename, code
-        args = ['-f', 'j']
-        rubocop_file = find_rubocop_file(filename)
-        args.push('-c', fix_drive_letter(rubocop_file)) unless rubocop_file.nil?
-        args.push filename
+        args = ['-f', 'j', filename]
         base_options = RuboCop::Options.new
         options, paths = base_options.parse(args)
         options[:stdin] = code
         [options, paths]
-      end
-
-      # Find a RuboCop configuration file in a file's directory tree.
-      #
-      # @param filename [String]
-      # @return [String, nil]
-      def find_rubocop_file filename
-        return nil unless File.exist?(filename)
-        filename = File.realpath(filename)
-        dir = File.dirname(filename)
-        until File.dirname(dir) == dir
-          here = File.join(dir, '.rubocop.yml')
-          return here if File.exist?(here)
-          dir = File.dirname(dir)
-        end
-        nil
       end
 
       # RuboCop internally uses capitalized drive letters for Windows paths,

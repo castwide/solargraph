@@ -226,7 +226,7 @@ module Solargraph
 
           # @return [void]
           def process_private_constant
-            # @todo Bare `private_constant` causes an error
+            return unless Parser.is_ast_node?(node.children.last)
             node.children.last.children[0..-2].each do |child|
               if [:LIT, :STR].include?(child.type)
                 cn = child.children[0].to_s

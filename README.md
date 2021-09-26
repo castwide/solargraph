@@ -34,7 +34,8 @@ Plug-ins and extensions are available for the following editors:
     * GitHub: https://github.com/autozimu/LanguageClient-neovim
 
 * **Emacs**
-    * GitHub: https://github.com/guskovd/emacs-solargraph
+    * GitHub: `eglot.el`, https://github.com/joaotavora/eglot
+    * GitHub: `lsp-mode.el`, https://github.com/emacs-lsp/lsp-mode
 
 * **Eclipse**
     * Plugin: https://marketplace.eclipse.org/content/ruby-solargraph
@@ -78,6 +79,21 @@ In the Gemfile:
 Run `bundle install` and use `bundle exec yard gems` to generate the documentation. This process documents cached or vendored gems, or even gems that are installed from a local path.
 
 In order to make sure you're using the correct dependencies, you can start the language server with Bundler. In VS Code, there's a `solargraph.useBundler` option. Other clients will vary, but the command you probably want to run is `bundle exec solargraph socket` or `bundle exec solargraph stdio`.
+
+### Rubocop Version
+
+If you have multiple versions of [`rubocop`](https://rubygems.org/gems/rubocop) installed and you would like to choose a version other than the latest to use, this specific version can be configured.
+
+In `.solargraph.yml`:
+
+```yaml
+---
+reporters:
+- rubocop:version=0.61.0  # diagnostics
+formatter:
+  rubocop:
+    version: 0.61.0       # formatting
+```
 
 ### Integrating Other Editors
 

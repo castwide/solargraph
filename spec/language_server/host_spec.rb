@@ -5,8 +5,7 @@ describe Solargraph::LanguageServer::Host do
     host = Solargraph::LanguageServer::Host.new
     Dir.mktmpdir do |dir|
       host.prepare (dir)
-      # @todo Change this test or get rid of it. The library is private now.
-      expect(host.send(:libraries).first).not_to be(nil)
+      expect(host.libraries.first).not_to be(nil)
     end
   end
 
@@ -88,6 +87,7 @@ describe Solargraph::LanguageServer::Host do
     allow(library).to receive(:diagnose).and_raise(Solargraph::DiagnosticsError)
     allow(library).to receive(:contain?).and_return(true)
     allow(library).to receive(:synchronized?).and_return(true)
+    allow(library).to receive(:mapped?).and_return(true)
     allow(library).to receive(:attach)
     allow(library).to receive(:merge)
     allow(library).to receive(:catalog)
@@ -163,12 +163,12 @@ describe Solargraph::LanguageServer::Host do
               'character' => 0
             }
           },
-          'text' => ';'
+          'text' => '; x = "x"'
         }
       ]
     }
-    expect(host.synchronizing?).to be(true)
     host.change params
+    expect(host.synchronizing?).to be(true)
   end
 
   it "responds with empty diagnostics for unopened files" do
@@ -230,6 +230,29 @@ describe Solargraph::LanguageServer::Host do
       # expect(host.libraries.first).to be_synchronized
       # expect(host.libraries.first.contain?(file)).to be(false)
     end
+  end
+
+  it 'repairs simple breaking changes without incremental sync' do
+    file = '/test.rb'
+    uri = Solargraph::LanguageServer::UriHelpers.file_to_uri(file)
+    host = Solargraph::LanguageServer::Host.new
+    host.prepare ''
+    host.open uri, 'Foo::Bar', 1
+    sleep 0.1 until host.libraries.all?(&:mapped?)
+    host.change({
+      "textDocument" => {
+        "uri" => uri,
+        'version' => 2
+      },
+      "contentChanges" => [
+        {
+          "text" => "Foo::Bar."
+        }
+      ]
+    })
+    source = host.sources.find(uri).finish_synchronize
+    # @todo Smelly private variable access
+    expect(source.send(:repaired)).to eq('Foo::Bar ')
   end
 
   describe "Workspace variations" do

@@ -1,26 +1,29 @@
+require 'open3'
+require 'set'
 require 'tmpdir'
 
 describe Solargraph::YardMap do
   it "finds stdlib require paths" do
     yard_map = Solargraph::YardMap.new(required: ['set'])
-    expect(yard_map.pins.map(&:path)).to include('Set#add')
+    pin = yard_map.path_pin('Set#add')
+    expect(pin).to be
   end
 
   it "removes requires on change" do
     yard_map = Solargraph::YardMap.new(required: ['set'])
-    expect(yard_map.change([], {})).to be(true)
+    expect(yard_map.change([], '', [])).to be(true)
     expect(yard_map.pins.map(&:path)).not_to include('Set#add')
   end
 
   it "detects unchanged require paths" do
     yard_map = Solargraph::YardMap.new(required: ['set'])
-    expect(yard_map.change(['set'], {})).to be(false)
+    expect(yard_map.change(['set'].to_set, '', [].to_set)).to be(false)
   end
 
   it "keeps cached pins on change" do
     yard_map = Solargraph::YardMap.new(required: ['set'])
     pin1 = yard_map.path_pin('Set#add')
-    yard_map.change(['set', 'json'], {})
+    yard_map.change(['set', 'json'], '', [])
     pin2 = yard_map.path_pin('Set#add')
     expect(pin1).to be(pin2)
   end
@@ -28,8 +31,10 @@ describe Solargraph::YardMap do
   it "collects pins from gems" do
     # Assuming the parser gem exists because it's a Solargraph dependency
     yard_map = Solargraph::YardMap.new(required: ['parser'])
-    expect(yard_map.pins.map(&:path)).to include('Parser')
-    expect(yard_map.pins.map(&:path)).to include('Parser::AST')
+    parser = yard_map.path_pin('Parser')
+    expect(parser).to be
+    ast = yard_map.path_pin('Parser::AST')
+    expect(ast).to be
   end
 
   it "tracks unresolved requires" do
@@ -83,16 +88,20 @@ describe Solargraph::YardMap do
     # Assuming the parser gem exists because it's a Solargraph dependency
     yard_map = Solargraph::YardMap.new(required: ['parser'])
     expect(yard_map.with_dependencies?).to eq(true)
-    expect(yard_map.pins.map(&:path)).to include('Parser')
-    expect(yard_map.pins.map(&:path)).to include('AST')
+    parser = yard_map.path_pin('Parser')
+    expect(parser).to be
+    ast = yard_map.path_pin('AST')
+    expect(ast).to be
   end
 
   it "excludes gem dependencies based on attribute" do
     # Assuming the parser gem exists because it's a Solargraph dependency
     yard_map = Solargraph::YardMap.new(required: ['parser'], with_dependencies: false)
     expect(yard_map.with_dependencies?).to eq(false)
-    expect(yard_map.pins.map(&:path)).to include('Parser')
-    expect(yard_map.pins.map(&:path)).not_to include('AST')
+    parser = yard_map.path_pin('Parser')
+    expect(parser).to be
+    ast = yard_map.path_pin('AST')
+    expect(ast).to be_nil
   end
 
   it 'finds require paths in gems' do
@@ -134,5 +143,18 @@ describe Solargraph::YardMap do
     yard_map = Solargraph::YardMap.new(required: ['yaml'])
     yaml = yard_map.path_pin('YAML')
     expect(yaml.return_type.to_s).to eq('Module<Psych>')
+  end
+
+  it 'changes the directory' do
+    yard_map = Solargraph::YardMap.new
+    yard_map.change [], '/my/directory', []
+    expect(yard_map.directory).to eq('/my/directory')
+  end
+
+  it 'adds automatically imported gems to YardMap' do
+    yard_map = Solargraph::YardMap.new
+    yard_map.change(['bundler/require'].to_set, 'spec/fixtures/workspace-with-gemfile', Set.new)
+    pin = yard_map.path_pin('Backport')
+    expect(pin).to be
   end
 end

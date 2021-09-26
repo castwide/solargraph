@@ -32,10 +32,13 @@ describe Solargraph::TypeChecker do
       # @todo This test uses kramdown-parser-gfm because it's a gem dependency known to
       #   lack typed methods. A better test wouldn't depend on the state of
       #   vendored code.
-      checker = type_checker(%(
+      source_map = Solargraph::SourceMap.load_string(%(
         require 'kramdown-parser-gfm'
         Kramdown::Parser::GFM.undefined_call
-      ))
+      ), 'test.rb')
+      api_map = Solargraph::ApiMap.new
+      api_map.catalog Solargraph::Bench.new(source_maps: [source_map], external_requires: ['kramdown-parser-gfm'])
+      checker = Solargraph::TypeChecker.new('test.rb', api_map: api_map, level: :strict)
       expect(checker.problems).to be_empty
     end
 
@@ -432,6 +435,31 @@ describe Solargraph::TypeChecker do
       ))
       expect(checker.problems).to be_one
       expect(checker.problems.first.message).to include('Unresolved constant')
+    end
+
+    it 'validates included modules in types' do
+      checker = type_checker(%(
+        module Interface
+        end
+        class Host
+          include Interface
+        end
+        # @type [Interface]
+        host = Host.new
+      ))
+      expect(checker.problems).to be_empty
+    end
+
+    it 'invalidates modules not included in types' do
+      checker = type_checker(%(
+        module Interface
+        end
+        class Host
+        end
+        # @type [Interface]
+        host = Host.new
+      ))
+      expect(checker.problems).to be_one
     end
   end
 end

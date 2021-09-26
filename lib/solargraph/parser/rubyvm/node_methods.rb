@@ -106,11 +106,23 @@ module Solargraph
         end
 
         def splatted_hash? node
+          splatted_node?(node) && node.children[0].children[1].type == :HASH
+        end
+
+        def splatted_node? node
           node?(node.children[0]) &&
-            node.children[0].type == :ARRAY &&
+            [:ARRAY, :LIST].include?(node.children[0].type) &&
             node.children[0].children[0].nil? &&
-            node?(node.children[0].children[1]) &&
-            node.children[0].children[1].type == :HASH
+            node?(node.children[0].children[1])
+        end
+
+        def splatted_call? node
+          return false unless Parser.is_ast_node?(node)
+          splatted_node?(node) && node.children[0].children[1].type != :HASH
+        end
+
+        def any_splatted_call?(nodes)
+          nodes.any? { |n| splatted_call?(n) }
         end
 
         def node? node
@@ -130,6 +142,7 @@ module Solargraph
           protected
 
           def synchronized_find_recipient_node cursor
+            return repaired_find_recipient_node(cursor) if cursor.source.repaired? && cursor.source.code[cursor.offset - 1] == '('
             source = cursor.source
             position = cursor.position
             offset = cursor.offset
@@ -152,6 +165,12 @@ module Solargraph
               end
             end
             nil
+          end
+
+          def repaired_find_recipient_node cursor
+            cursor = cursor.source.cursor_at([cursor.position.line, cursor.position.column - 1])
+            node = cursor.source.tree_at(cursor.position.line, cursor.position.column).first
+            return node if node && [:FCALL, :VCALL, :CALL].include?(node.type)
           end
 
           def unsynchronized_find_recipient_node cursor

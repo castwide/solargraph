@@ -720,5 +720,88 @@ describe Solargraph::TypeChecker do
       ))
       expect(checker.problems).to be_empty
     end
+
+    it 'reports splatted kwargs with missing arguments' do
+      checker = type_checker(%(
+        def xxx(from:, to:); end
+        xxx(**{from: 1})
+      ))
+      expect(checker.problems).to be_one
+    end
+
+    it 'ignores splatted kwargs' do
+      checker = type_checker(%(
+        def xxx(from:, to:); end
+        params = {from: 1, to: 2}
+        xxx(**params)
+      ))
+      expect(checker.problems).to be_empty
+    end
+
+    it 'recognizes splatted kwargs' do
+      checker = type_checker(%(
+        def xxx(from: nil, to: nil)
+        end
+
+        params = {from: 1, to: 2}
+
+        xxx(**params)
+      ))
+      expect(checker.problems).to be_empty
+    end
+
+    it 'differentiates local variables from methods' do
+      checker = type_checker(%(
+        class Example
+          def foo(bar)
+            'lol'
+          end
+          def baz
+            [].each do |foo|
+              foo.bar
+            end
+          end
+        end
+      ))
+      expect(checker.problems).to be_empty
+    end
+
+    it 'allows Kernel#raise without arguments' do
+      # This is necessary because the core docs erroneously define the
+      # signature as `Kernel#raise(*, _)`
+      # See https://github.com/castwide/solargraph/issues/418
+      checker = type_checker(%(
+        raise
+      ))
+      expect(checker.problems).to be_empty
+    end
+
+    it 'handles mixed splats' do
+      checker = type_checker(%(
+        class Foo
+          def self.make(arg, *args, **kwargs)
+            new([1, 2], *args, **kwargs)
+          end
+        
+          def initialize(timeframe, scope = nil, now: Time.now)
+          end
+        end
+      ))
+      expect(checker.problems).to be_empty
+    end
+
+    it 'handles kwrestargs passed to methods without kwsplats' do
+      checker = type_checker(%(
+        def foo(arg1:, arg2:, arg3:, arg4: false)
+        end
+        
+        foo(
+          arg1: val1,
+          arg2: val2,
+          **kwparams
+        )
+      ))
+      expect(checker.problems).to be_empty
+    end
   end
 end

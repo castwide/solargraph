@@ -6,19 +6,15 @@ module Solargraph
   # A Ruby file that has been parsed into an AST.
   #
   class Source
-    # autoload :FlawedBuilder, 'solargraph/source/flawed_builder'
     autoload :Updater,       'solargraph/source/updater'
     autoload :Change,        'solargraph/source/change'
     autoload :Mapper,        'solargraph/source/mapper'
-    # autoload :NodeMethods,   'solargraph/source/node_methods'
     autoload :EncodingFixes, 'solargraph/source/encoding_fixes'
     autoload :Cursor,        'solargraph/source/cursor'
     autoload :Chain,         'solargraph/source/chain'
     autoload :SourceChainer, 'solargraph/source/source_chainer'
-    # autoload :NodeChainer,   'solargraph/source/node_chainer'
 
     include EncodingFixes
-    # include NodeMethods
 
     # @return [String]
     attr_reader :filename
@@ -50,17 +46,9 @@ module Solargraph
         @node, @comments = Solargraph::Parser.parse_with_comments(@code, filename)
         @parsed = true
       rescue Parser::SyntaxError, EncodingError => e
-        # @todo 100% whitespace results in a nil node, so there's no reason to parse it.
-        #   We still need to determine whether the resulting node should be nil or a dummy
-        #   node with a location that encompasses the range.
-        # @node, @comments = Source.parse_with_comments(@code.gsub(/[^\s]/, ' '), filename)
         @node = nil
         @comments = {}
         @parsed = false
-      # rescue Exception => e
-      #   Solargraph.logger.warn "[#{e.class}] #{e.message}"
-      #   Solargraph.logger.warn e.backtrace.join("\n")
-      #   raise "Error parsing #{filename || '(source)'}: [#{e.class}] #{e.message}"
       ensure
         @code.freeze
       end
@@ -175,7 +163,7 @@ module Solargraph
       synced
     end
 
-    # @param position [Position]
+    # @param position [Position, Array(Integer, Integer)]
     # @return [Source::Cursor]
     def cursor_at position
       Cursor.new(self, position)

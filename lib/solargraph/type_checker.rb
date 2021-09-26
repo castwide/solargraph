@@ -95,7 +95,7 @@ module Solargraph
           result.push Problem.new(pin.location, "Untyped method #{pin.path} could not be inferred")
         end
       elsif rules.validate_tags?
-        unless pin.node.nil? || declared.void? || macro_pin?(pin) || abstract?(pin)
+        unless pin.node.nil? || declared.void? || virtual_pin?(pin) || abstract?(pin)
           inferred = pin.probe(api_map).self_to(pin.full_context.namespace)
           if inferred.undefined?
             unless rules.ignore_all_undefined? || external?(pin)
@@ -111,7 +111,7 @@ module Solargraph
       result
     end
 
-    def macro_pin? pin
+    def virtual_pin? pin
       pin.location && source_map.source.comment_at?(pin.location.range.ending)
     end
 
@@ -129,10 +129,10 @@ module Solargraph
           end
         end
       end
-      params.each_pair do |name, tag|
-        type = tag.qualify(api_map, pin.full_context.namespace)
+      params.each_pair do |name, data|
+        type = data[:qualified]
         if type.undefined?
-          result.push Problem.new(pin.location, "Unresolved type #{tag} for #{name} param on #{pin.path}", pin: pin)
+          result.push Problem.new(pin.location, "Unresolved type #{data[:tagged]} for #{name} param on #{pin.path}", pin: pin)
         end
       end
       result
@@ -148,6 +148,7 @@ module Solargraph
       all_variables.each do |pin|
         if pin.return_type.defined?
           declared = pin.typify(api_map)
+          next if declared.duck_type?
           if declared.defined?
             if rules.validate_tags?
               inferred = pin.probe(api_map)
@@ -266,12 +267,12 @@ module Solargraph
                 result.concat kwarg_problems_for argchain, api_map, block_pin, locals, location, pin, params, idx
                 break
               else
-                ptype = params[par.name]
+                ptype = params.key?(par.name) ? params[par.name][:qualified] : ComplexType::UNDEFINED
                 if ptype.nil?
                   # @todo Some level (strong, I guess) should require the param here
                 else
                   argtype = argchain.infer(api_map, block_pin, locals)
-                  if argtype.defined? && ptype && !any_types_match?(api_map, ptype, argtype)
+                  if argtype.defined? && ptype.defined? && !any_types_match?(api_map, ptype, argtype)
                     result.push Problem.new(location, "Wrong argument type for #{pin.path}: #{par.name} expected #{ptype}, received #{argtype}")
                   end
                 end
@@ -299,19 +300,19 @@ module Solargraph
           result.concat kwrestarg_problems_for(api_map, block_pin, locals, location, pin, params, kwargs)
         else
           if argchain
-            ptype = params[par.name]
-            if ptype.nil?
+            data = params[par.name]
+            if data.nil?
               # @todo Some level (strong, I guess) should require the param here
             else
+              ptype = data[:qualified]
+              next if ptype.undefined?
               argtype = argchain.infer(api_map, block_pin, locals)
               if argtype.defined? && ptype && !any_types_match?(api_map, ptype, argtype)
                 result.push Problem.new(location, "Wrong argument type for #{pin.path}: #{par.name} expected #{ptype}, received #{argtype}")
               end
             end
-          else
-            if par.decl == :kwarg
-              result.push Problem.new(location, "Call to #{pin.path} is missing keyword argument #{par.name}")
-            end
+          elsif par.decl == :kwarg
+            result.push Problem.new(location, "Call to #{pin.path} is missing keyword argument #{par.name}")
           end
         end
       end
@@ -321,31 +322,34 @@ module Solargraph
     def kwrestarg_problems_for(api_map, block_pin, locals, location, pin, params, kwargs)
       result = []
       kwargs.each_pair do |pname, argchain|
-        ptype = params[pname.to_s]
-        if ptype.nil?
-          # Probably nothing to do here. All of these args should be optional.
-        else
-          argtype = argchain.infer(api_map, block_pin, locals)
-          if argtype.defined? && ptype && !any_types_match?(api_map, ptype, argtype)
-            result.push Problem.new(location, "Wrong argument type for #{pin.path}: #{pname} expected #{ptype}, received #{argtype}")
-          end
+        next unless params.key?(pname.to_s)
+        ptype = params[pname.to_s][:qualified]
+        argtype = argchain.infer(api_map, block_pin, locals)
+        if argtype.defined? && ptype && !any_types_match?(api_map, ptype, argtype)
+          result.push Problem.new(location, "Wrong argument type for #{pin.path}: #{pname} expected #{ptype}, received #{argtype}")
         end
       end
       result
     end
 
+    # @param [Pin::Method]
+    # @return [Hash]
     def param_hash(pin)
       tags = pin.docstring.tags(:param)
       return {} if tags.empty?
       result = {}
       tags.each do |tag|
         next if tag.types.nil? || tag.types.empty?
-        result[tag.name.to_s] = Solargraph::ComplexType.try_parse(*tag.types).qualify(api_map, pin.full_context.namespace)
+        result[tag.name.to_s] = {
+          tagged: tag.types.join(', '),
+          qualified: Solargraph::ComplexType.try_parse(*tag.types).qualify(api_map, pin.full_context.namespace)
+        }
       end
       result
     end
 
     # @param [Array<Pin::Method>]
+    # @return [Hash]
     def first_param_hash(pins)
       pins.each do |pin|
         result = param_hash(pin)
@@ -413,24 +417,29 @@ module Solargraph
       end
       settled_kwargs = 0
       unless unchecked.empty?
-        kwargs = convert_hash(unchecked.last.node)
-        if pin.parameters.any? { |param| [:kwarg, :kwoptarg].include?(param.decl) || param.kwrestarg? }
-          if kwargs.empty?
-            add_params += 1
-          else
-            unchecked.pop
-            pin.parameters.each do |param|
-              next unless param.keyword?
-              if kwargs.key?(param.name.to_sym)
-                kwargs.delete param.name.to_sym
-                settled_kwargs += 1
-              elsif param.decl == :kwarg
-                return [Problem.new(location, "Missing keyword argument #{param.name} to #{pin.path}")]
+        if any_splatted_call?(unchecked.map(&:node))
+          settled_kwargs = pin.parameters.count(&:keyword?)
+        else
+          kwargs = convert_hash(unchecked.last.node)
+          if pin.parameters.any? { |param| [:kwarg, :kwoptarg].include?(param.decl) || param.kwrestarg? }
+            if kwargs.empty?
+              add_params += 1
+            else
+              unchecked.pop
+              pin.parameters.each do |param|
+                next unless param.keyword?
+                if kwargs.key?(param.name.to_sym)
+                  kwargs.delete param.name.to_sym
+                  settled_kwargs += 1
+                elsif param.decl == :kwarg
+                  return [] if arguments.last.links.last.is_a?(Solargraph::Source::Chain::Hash) && arguments.last.links.last.splatted?
+                  return [Problem.new(location, "Missing keyword argument #{param.name} to #{pin.path}")]
+                end
               end
-            end
-            kwargs.clear if pin.parameters.any?(&:kwrestarg?)
-            unless kwargs.empty?
-              return [Problem.new(location, "Unrecognized keyword argument #{kwargs.keys.first} to #{pin.path}")]
+              kwargs.clear if pin.parameters.any?(&:kwrestarg?)
+              unless kwargs.empty?
+                return [Problem.new(location, "Unrecognized keyword argument #{kwargs.keys.first} to #{pin.path}")]
+              end
             end
           end
         end
@@ -443,9 +452,17 @@ module Solargraph
         if unchecked.length == req + opt + 1 && unchecked.last.links.last.is_a?(Source::Chain::BlockVariable)
           return []
         end
+        if req + add_params + 1 == unchecked.length && any_splatted_call?(unchecked.map(&:node)) && (pin.parameters.map(&:decl) & [:kwarg, :kwoptarg, :kwrestarg]).any?
+          return []
+        end
+        return [] if arguments.length - req == pin.parameters.select { |p| [:optarg, :kwoptarg].include?(p.decl) }.length
         return [Problem.new(location, "Too many arguments to #{pin.path}")]
-      elsif unchecked.length < req - settled_kwargs && (arguments.empty? || !arguments.last.splat?)
-        return [Problem.new(location, "Not enough arguments to #{pin.path}")]
+      elsif unchecked.length < req - settled_kwargs && (arguments.empty? || (!arguments.last.splat? && !arguments.last.links.last.is_a?(Solargraph::Source::Chain::Hash)))
+        # HACK: Kernel#raise signature is incorrect in Ruby 2.7 core docs.
+        # See https://github.com/castwide/solargraph/issues/418
+        unless arguments.empty? && pin.path == 'Kernel#raise'
+          return [Problem.new(location, "Not enough arguments to #{pin.path}")]
+        end
       end
       []
     end

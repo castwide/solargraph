@@ -1,5 +1,9 @@
+# frozen_string_literal: true
+
 module Solargraph
   class TypeChecker
+    # Helper methods for performing type checks
+    #
     module Checks
       module_function
 
@@ -62,7 +66,7 @@ module Solargraph
       # @param inferred [ComplexType]
       # @return [Boolean]
       def duck_types_match? api_map, expected, inferred
-        raise ArgumentError, "Expected type must be duck type" unless expected.duck_type?
+        raise ArgumentError, 'Expected type must be duck type' unless expected.duck_type?
         expected.each do |exp|
           next unless exp.duck_type?
           quack = exp.to_s[1..-1]
@@ -71,7 +75,7 @@ module Solargraph
         true
       end
 
-      # @param type [ComplexType]
+      # @param type [ComplexType::UniqueType]
       # @return [String]
       def fuzz type
         if type.parameters?
@@ -82,13 +86,13 @@ module Solargraph
       end
 
       # @param api_map [ApiMap]
-      # @param cls1 [ComplexType]
-      # @param cls2 [ComplexType]
+      # @param cls1 [ComplexType::UniqueType]
+      # @param cls2 [ComplexType::UniqueType]
       # @return [Boolean]
       def either_way?(api_map, cls1, cls2)
         f1 = fuzz(cls1)
         f2 = fuzz(cls2)
-        api_map.super_and_sub?(f1, f2) || api_map.super_and_sub?(f2, f1)
+        api_map.type_include?(f1, f2) || api_map.super_and_sub?(f1, f2) || api_map.super_and_sub?(f2, f1)
       end
     end
   end

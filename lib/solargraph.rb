@@ -9,13 +9,14 @@ require 'solargraph/version'
 # static analysis, and language server libraries.
 #
 module Solargraph
-  class InvalidOffsetError <      RangeError;    end
-  class DiagnosticsError <        RuntimeError;  end
-  class FileNotFoundError <       RuntimeError;  end
-  class SourceNotAvailableError < StandardError; end
-  class ComplexTypeError        < StandardError; end
-  class WorkspaceTooLargeError <  RuntimeError;  end
-  class BundleNotFoundError <     StandardError; end
+  class InvalidOffsetError         < RangeError;    end
+  class DiagnosticsError           < RuntimeError;  end
+  class FileNotFoundError          < RuntimeError;  end
+  class SourceNotAvailableError    < StandardError; end
+  class ComplexTypeError           < StandardError; end
+  class WorkspaceTooLargeError     < RuntimeError;  end
+  class BundleNotFoundError        < StandardError; end
+  class InvalidRubocopVersionError < RuntimeError;  end
 
   autoload :Position,         'solargraph/position'
   autoload :Range,            'solargraph/range'
@@ -56,6 +57,7 @@ module Solargraph
   # A helper method that runs Bundler.with_unbundled_env or falls back to
   # Bundler.with_clean_env for earlier versions of Bundler.
   #
+  # @return [void]
   def self.with_clean_env &block
     meth = if Bundler.respond_to?(:with_unbundled_env)
       :with_unbundled_env

@@ -5,8 +5,10 @@ describe Solargraph::Diagnostics::RequireNotFound do
       require 'not_valid'
     ), 'file.rb')
 
+    @source_map = Solargraph::SourceMap.map(@source)
+
     @api_map = Solargraph::ApiMap.new
-    @api_map.map @source
+    @api_map.catalog Solargraph::Bench.new(source_maps: [@source_map], external_requires: ['not_valid'])
   end
 
   it "reports unresolved requires" do

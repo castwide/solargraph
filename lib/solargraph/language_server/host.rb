@@ -1,6 +1,8 @@
 # frozen_string_literal: true
 
+require 'diff/lcs'
 require 'observer'
+require 'securerandom'
 require 'set'
 
 module Solargraph
@@ -10,10 +12,11 @@ module Solargraph
     # safety for multi-threaded transports.
     #
     class Host
-      autoload :Diagnoser, 'solargraph/language_server/host/diagnoser'
-      autoload :Cataloger, 'solargraph/language_server/host/cataloger'
-      autoload :Sources,   'solargraph/language_server/host/sources'
-      autoload :Dispatch,  'solargraph/language_server/host/dispatch'
+      autoload :Diagnoser,     'solargraph/language_server/host/diagnoser'
+      autoload :Cataloger,     'solargraph/language_server/host/cataloger'
+      autoload :Sources,       'solargraph/language_server/host/sources'
+      autoload :Dispatch,      'solargraph/language_server/host/dispatch'
+      autoload :MessageWorker, 'solargraph/language_server/host/message_worker'
 
       include UriHelpers
       include Logging
@@ -25,11 +28,11 @@ module Solargraph
       def initialize
         @cancel_semaphore = Mutex.new
         @buffer_semaphore = Mutex.new
-        @register_semaphore = Mutex.new
+        @request_mutex = Mutex.new
         @cancel = []
         @buffer = String.new
         @stopped = true
-        @next_request_id = 0
+        @next_request_id = 1
         @dynamic_capabilities = Set.new
         @registered_capabilities = Set.new
       end
@@ -43,6 +46,7 @@ module Solargraph
         diagnoser.start
         cataloger.start
         sources.start
+        message_worker.start
       end
 
       # Update the configuration options with the provided hash.
@@ -87,8 +91,15 @@ module Solargraph
         @cancel_semaphore.synchronize { @cancel.delete id }
       end
 
+      # Called by adapter, to handle the request
+      # @param request [Hash]
+      # @return [void]
+      def process request
+        message_worker.queue(request)
+      end
+
       # Start processing a request from the client. After the message is
-      # processed, the transport is responsible for sending the response.
+      # processed, caller is responsible for sending the response.
       #
       # @param request [Hash] The contents of the message.
       # @return [Solargraph::LanguageServer::Message::Base] The message handler.
@@ -106,9 +117,13 @@ module Solargraph
           end
           message
         elsif request['id']
-          # @todo What if the id is invalid?
-          requests[request['id']].process(request['result'])
-          requests.delete request['id']
+          if requests[request['id']]
+            requests[request['id']].process(request['result'])
+            requests.delete request['id']
+          else
+            logger.warn "Discarding client response to unrecognized message #{request['id']}"
+            nil
+          end
         else
           logger.warn "Invalid message received."
           logger.debug request
@@ -164,8 +179,6 @@ module Solargraph
       # @return [void]
       def open_from_disk uri
         sources.open_from_disk(uri)
-        library = library_for(uri)
-        # library.open_from_disk uri_to_file(uri)
         diagnoser.schedule uri
       end
 
@@ -192,7 +205,7 @@ module Solargraph
       def diagnose uri
         if sources.include?(uri)
           library = library_for(uri)
-          if library.synchronized?
+          if library.mapped? && library.synchronized?
             logger.info "Diagnosing #{uri}"
             begin
               results = library.diagnose uri_to_file(uri)
@@ -277,6 +290,7 @@ module Solargraph
         begin
           lib = Solargraph::Library.load(path, name)
           libraries.push lib
+          async_library_map lib
         rescue WorkspaceTooLargeError => e
           send_notification 'window/showMessage', {
             'type' => Solargraph::LanguageServer::MessageTypes::WARNING,
@@ -350,19 +364,21 @@ module Solargraph
       # @yieldparam [Hash] The result sent by the client
       # @return [void]
       def send_request method, params, &block
-        message = {
-          jsonrpc: "2.0",
-          method: method,
-          params: params,
-          id: @next_request_id
-        }
-        json = message.to_json
-        requests[@next_request_id] = Request.new(@next_request_id, &block)
-        envelope = "Content-Length: #{json.bytesize}\r\n\r\n#{json}"
-        queue envelope
-        @next_request_id += 1
-        logger.info "Server sent #{method}"
-        logger.debug params
+        @request_mutex.synchronize do
+          message = {
+            jsonrpc: "2.0",
+            method: method,
+            params: params,
+            id: @next_request_id
+          }
+          json = message.to_json
+          requests[@next_request_id] = Request.new(@next_request_id, &block)
+          envelope = "Content-Length: #{json.bytesize}\r\n\r\n#{json}"
+          queue envelope
+          @next_request_id += 1
+          logger.info "Server sent #{method}"
+          logger.debug params
+        end
       end
 
       # Register the methods as capabilities with the client.
@@ -373,20 +389,16 @@ module Solargraph
       # @return [void]
       def register_capabilities methods
         logger.debug "Registering capabilities: #{methods}"
-        registrations = methods.select{|m| can_register?(m) and !registered?(m)}.map { |m|
+        registrations = methods.select { |m| can_register?(m) and !registered?(m) }.map do |m|
           @registered_capabilities.add m
           {
             id: m,
             method: m,
             registerOptions: dynamic_capability_options[m]
           }
-        }
-        return if registrations.empty?
-        @register_semaphore.synchronize do
-          send_request 'client/registerCapability', {
-            registrations: registrations
-          }
         end
+        return if registrations.empty?
+        send_request 'client/registerCapability', { registrations: registrations }
       end
 
       # Unregister the methods with the client.
@@ -405,11 +417,7 @@ module Solargraph
           }
         }
         return if unregisterations.empty?
-        @register_semaphore.synchronize do
-          send_request 'client/unregisterCapability', {
-            unregisterations: unregisterations
-          }
-        end
+        send_request 'client/unregisterCapability', { unregisterations: unregisterations }
       end
 
       # Flag a method as available for dynamic registration.
@@ -417,9 +425,7 @@ module Solargraph
       # @param method [String] The method name, e.g., 'textDocument/completion'
       # @return [void]
       def allow_registration method
-        @register_semaphore.synchronize do
-          @dynamic_capabilities.add method
-        end
+        @dynamic_capabilities.add method
       end
 
       # True if the specified LSP method can be dynamically registered.
@@ -446,6 +452,7 @@ module Solargraph
       def stop
         return if @stopped
         @stopped = true
+        message_worker.stop
         cataloger.stop
         diagnoser.stop
         sources.stop
@@ -494,6 +501,11 @@ module Solargraph
         library.read_text(filename)
       end
 
+      def formatter_config uri
+        library = library_for(uri)
+        library.workspace.config.formatter
+      end
+
       # @param uri [String]
       # @param line [Integer]
       # @param column [Integer]
@@ -501,6 +513,11 @@ module Solargraph
       def completions_at uri, line, column
         library = library_for(uri)
         library.completions_at uri_to_file(uri), line, column
+      end
+
+      # @return [Bool] if has pending completion request
+      def has_pending_completions?
+        message_worker.messages.reverse_each.any? { |req| req['method'] == 'textDocument/completion' }
       end
 
       # @param uri [String]
@@ -628,6 +645,7 @@ module Solargraph
 
       # @return [void]
       def catalog
+        return unless libraries.all?(&:mapped?)
         libraries.each(&:catalog)
       end
 
@@ -636,6 +654,11 @@ module Solargraph
       end
 
       private
+
+      # @return [MessageWorker]
+      def message_worker
+        @message_worker ||= MessageWorker.new(self)
+      end
 
       # @return [Diagnoser]
       def diagnoser
@@ -666,7 +689,8 @@ module Solargraph
       # @return [Source::Updater]
       def generate_updater params
         changes = []
-        params['contentChanges'].each do |chng|
+        params['contentChanges'].each do |recvd|
+          chng = check_diff(params['textDocument']['uri'], recvd)
           changes.push Solargraph::Source::Change.new(
             (chng['range'].nil? ? 
               nil :
@@ -680,6 +704,36 @@ module Solargraph
           params['textDocument']['version'],
           changes
         )
+      end
+
+      # @param uri [String]
+      # @param change [Hash]
+      # @return [Hash]
+      def check_diff uri, change
+        return change if change['range']
+        source = sources.find(uri)
+        return change if source.code.length + 1 != change['text'].length
+        diffs = Diff::LCS.diff(source.code, change['text'])
+        return change if diffs.length.zero? || diffs.length > 1 || diffs.first.length > 1
+        # @type [Diff::LCS::Change]
+        diff = diffs.first.first
+        return change unless diff.adding? && ['.', ':', '(', ',', ' '].include?(diff.element)
+        position = Solargraph::Position.from_offset(source.code, diff.position)
+        {
+          'range' => {
+            'start' => {
+              'line' => position.line,
+              'character' => position.character
+            },
+            'end' => {
+              'line' => position.line,
+              'character' => position.character
+            }
+          },
+          'text' => diff.element
+        }
+      rescue Solargraph::FileNotFoundError
+        change
       end
 
       # @return [Hash]
@@ -740,6 +794,71 @@ module Solargraph
 
       def prepare_rename?
         client_capabilities['rename'] && client_capabilities['rename']['prepareSupport']
+      end
+
+      def client_supports_progress?
+        client_capabilities['window'] && client_capabilities['window']['workDoneProgress']
+      end
+
+      # @param library [Library]
+      # @return [void]
+      def async_library_map library
+        return if library.mapped?
+        Thread.new do
+          if client_supports_progress?
+            uuid = SecureRandom.uuid
+            send_request 'window/workDoneProgress/create', {
+              token: uuid
+            } do |response|
+              do_async_library_map library, response.nil? ? uuid : nil
+            end
+          else
+            do_async_library_map library
+          end
+        end
+      end
+
+      def do_async_library_map library, uuid = nil
+        total = library.workspace.sources.length
+        if uuid
+          send_notification '$/progress', {
+            token: uuid,
+            value: {
+              kind: 'begin',
+              title: "Mapping workspace",
+              message: "0/#{total} files",
+              cancellable: false,
+              percentage: 0
+            }
+          }
+        end
+        pct = 0
+        mod = 10
+        while library.next_map
+          next unless uuid
+          cur = ((library.source_map_hash.keys.length.to_f / total.to_f) * 100).to_i
+          if cur > pct && cur % mod == 0
+            pct = cur
+            send_notification '$/progress', {
+              token: uuid,
+              value: {
+                kind: 'report',
+                cancellable: false,
+                message: "#{library.source_map_hash.keys.length}/#{total} files",
+                percentage: pct
+              }
+            }
+          end
+        end
+        if uuid
+          send_notification '$/progress', {
+            token: uuid,
+            value: {
+              kind: 'end',
+              message: 'Mapping complete'
+            }
+          }
+        end
       end
     end
   end

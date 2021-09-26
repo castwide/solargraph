@@ -1,5 +1,5 @@
-Layout/EndOfLine:
-  EnforcedStyle: lf
+AllCops:
+  NewCops: enable
 Style/MethodDefParentheses:
   Enabled: false
 Layout/EmptyLineAfterGuardClause:
@@ -10,6 +10,8 @@ Lint/RaiseException:
   Enabled: true
 Lint/StructNewOverride:
   Enabled: true
+Metrics/MethodLength:
+  Max: 25
 Style/ExponentialNotation:
   Enabled: true
 Style/HashEachMethods:
@@ -18,4 +20,3 @@ Style/HashTransformKeys:
   Enabled: true
 Style/HashTransformValues:
   Enabled: true
-

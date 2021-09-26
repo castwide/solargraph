@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require 'pathname'
+
 module Solargraph
   # A Library handles coordination between a Workspace and an ApiMap.
   #
@@ -20,9 +22,7 @@ module Solargraph
     def initialize workspace = Solargraph::Workspace.new, name = nil
       @workspace = workspace
       @name = name
-      api_map.catalog bench
-      @synchronized = true
-      @catalog_mutex = Mutex.new
+      @synchronized = false
     end
 
     def inspect
@@ -48,9 +48,15 @@ module Solargraph
     # @return [void]
     def attach source
       mutex.synchronize do
-        @synchronized = (@current == source) if synchronized?
+        if @current && (!source || @current.filename != source.filename) && source_map_hash.key?(@current.filename) && !workspace.has_file?(@current.filename)
+          source_map_hash.delete @current.filename
+          source_map_external_require_hash.delete @current.filename
+          @external_requires = nil
+          @synchronized = false
+        end
         @current = source
-        catalog
+        maybe_map @current
+        catalog_inlock
       end
     end
 
@@ -110,9 +116,9 @@ module Solargraph
       mutex.synchronize do
         next if File.directory?(filename) || !File.exist?(filename)
         next unless contain?(filename) || open?(filename) || workspace.would_merge?(filename)
-        @synchronized = false
         source = Solargraph::Source.load_string(File.read(filename), filename)
         workspace.merge(source)
+        maybe_map source
         result = true
       end
       result
@@ -158,6 +164,8 @@ module Solargraph
       position = Position.new(line, column)
       cursor = Source::Cursor.new(read(filename), position)
       api_map.clip(cursor).complete
+    rescue FileNotFoundError => e
+      handle_file_not_found filename, e
     end
 
     # Get definition suggestions for the expression at the specified file and
@@ -186,6 +194,8 @@ module Solargraph
       else
         api_map.clip(cursor).define.map { |pin| pin.realize(api_map) }
       end
+    rescue FileNotFoundError => e
+      handle_file_not_found(filename, e)
     end
 
     # Get signature suggestions for the method at the specified file and
@@ -251,7 +261,18 @@ module Solargraph
     end
 
     def locate_ref location
-      api_map.require_reference_at location
+      map = source_map_hash[location.filename]
+      return if map.nil?
+      pin = map.requires.select { |p| p.location.range.contain?(location.range.start) }.first
+      return nil if pin.nil?
+      workspace.require_paths.each do |path|
+        full = Pathname.new(path).join("#{pin.name}.rb").to_s
+        next unless source_map_hash.key?(full)
+        return Location.new(full, Solargraph::Range.from_to(0, 0, 0, 0))
+      end
+      api_map.yard_map.require_reference(pin.name)
+    rescue FileNotFoundError
+      nil
     end
 
     # Get an array of pins that match a path.
@@ -265,14 +286,12 @@ module Solargraph
     # @param query [String]
     # @return [Array<YARD::CodeObjects::Base>]
     def document query
-      catalog
       api_map.document query
     end
 
     # @param query [String]
     # @return [Array<String>]
     def search query
-      catalog
       api_map.search query
     end
 
@@ -281,7 +300,6 @@ module Solargraph
     # @param query [String]
     # @return [Array<Pin::Base>]
     def query_symbols query
-      catalog
       api_map.query_symbols query
     end
 
@@ -300,8 +318,11 @@ module Solargraph
     # @param path [String]
     # @return [Array<Solargraph::Pin::Base>]
     def path_pins path
-      catalog
       api_map.get_path_suggestions(path)
+    end
+
+    def source_maps
+      source_map_hash.values
     end
 
     # Get the current text of a file in the library.
@@ -323,9 +344,9 @@ module Solargraph
       #   be an option to do so.
       #
       return [] unless open?(filename)
-      catalog
       result = []
       source = read(filename)
+      catalog
       repargs = {}
       workspace.config.reporters.each do |line|
         if line == 'all!'
@@ -335,7 +356,7 @@ module Solargraph
         else
           args = line.split(':').map(&:strip)
           name = args.shift
-            reporter = Diagnostics.reporter(name)
+          reporter = Diagnostics.reporter(name)
           raise DiagnosticsError, "Diagnostics reporter #{name} does not exist" if reporter.nil?
           repargs[reporter] ||= []
           repargs[reporter].concat args
@@ -351,13 +372,25 @@ module Solargraph
     #
     # @return [void]
     def catalog
-      @catalog_mutex.synchronize do
-        break if synchronized?
+      mutex.synchronize do
+        catalog_inlock
+      end
+    end
+
+    private def catalog_inlock
+        return if synchronized?
         logger.info "Cataloging #{workspace.directory.empty? ? 'generic workspace' : workspace.directory}"
         api_map.catalog bench
         @synchronized = true
         logger.info "Catalog complete (#{api_map.source_maps.length} files, #{api_map.pins.length} pins)" if logger.info?
-      end
+    end
+
+    def bench
+      Bench.new(
+        source_maps: source_map_hash.values,
+        workspace: workspace,
+        external_requires: external_requires
+      )
     end
 
     # Get an array of foldable ranges for the specified file.
@@ -386,15 +419,74 @@ module Solargraph
     # @param source [Source]
     # @return [Boolean] True if the source was merged into the workspace.
     def merge source
+      Logging.logger.debug "Merging source: #{source.filename}"
       result = false
       mutex.synchronize do
         result = workspace.merge(source)
-        @synchronized = !result if synchronized?
+        maybe_map source
       end
+      # catalog
       result
     end
 
+    def source_map_hash
+      @source_map_hash ||= {}
+    end
+
+    def mapped?
+      (workspace.filenames - source_map_hash.keys).empty?
+    end
+
+    def next_map
+      return false if mapped?
+      mutex.synchronize do
+        @synchronized = false
+        src = workspace.sources.find { |s| !source_map_hash.key?(s.filename) }
+        if src
+          Logging.logger.debug "Mapping #{src.filename}"
+          source_map_hash[src.filename] = Solargraph::SourceMap.map(src)
+          find_external_requires(source_map_hash[src.filename])
+          source_map_hash[src.filename]
+        else
+          false
+        end
+      end
+    end
+
+    def map!
+      workspace.sources.each do |src|
+        source_map_hash[src.filename] = Solargraph::SourceMap.map(src)
+        find_external_requires(source_map_hash[src.filename])
+      end
+      self
+    end
+
+    def pins
+      @pins ||= []
+    end
+
+    def external_requires
+      @external_requires ||= source_map_external_require_hash.values.flatten.to_set
+    end
+
     private
+
+    def source_map_external_require_hash
+      @source_map_external_require_hash ||= {}
+    end
+
+    # @param source_map [SourceMap]
+    def find_external_requires source_map
+      new_set = source_map.requires.map(&:name).to_set
+      # return if new_set == source_map_external_require_hash[source_map.filename]
+      source_map_external_require_hash[source_map.filename] = new_set.reject do |path|
+        workspace.require_paths.any? do |base|
+          full = Pathname.new(base).join("#{path}.rb").to_s
+          workspace.filenames.include?(full)
+        end
+      end
+      @external_requires = nil
+    end
 
     # @return [Mutex]
     def mutex
@@ -404,14 +496,6 @@ module Solargraph
     # @return [ApiMap]
     def api_map
       @api_map ||= Solargraph::ApiMap.new
-    end
-
-    # @return [Bench]
-    def bench
-      Bench.new(
-        workspace: workspace,
-        opened: @current ? [@current] : []
-      )
     end
 
     # Get the source for an open file or create a new source if the file
@@ -426,6 +510,40 @@ module Solargraph
       return @current if @current && @current.filename == filename
       raise FileNotFoundError, "File not found: #{filename}" unless workspace.has_file?(filename)
       workspace.source(filename)
+    end
+
+    def handle_file_not_found filename, error
+      if workspace.source(filename)
+        Solargraph.logger.debug "#{filename} is not cataloged in the ApiMap"
+        nil
+      else
+        raise error
+      end
+    end
+
+    def maybe_map source
+      return unless source
+      return unless @current == source || workspace.has_file?(source.filename)
+      if source_map_hash.key?(source.filename)
+        return if source_map_hash[source.filename].code == source.code && 
+          source_map_hash[source.filename].source.synchronized? &&
+          source.synchronized?
+        if source.synchronized?
+          new_map = Solargraph::SourceMap.map(source)
+          unless source_map_hash[source.filename].try_merge!(new_map)
+            source_map_hash[source.filename] = new_map
+            find_external_requires(source_map_hash[source.filename])
+            @synchronized = false
+          end
+        else
+          # @todo Smelly instance variable access
+          source_map_hash[source.filename].instance_variable_set(:@source, source)
+        end
+      else
+        source_map_hash[source.filename] = Solargraph::SourceMap.map(source)
+        find_external_requires(source_map_hash[source.filename])
+        @synchronized = false
+      end
     end
   end
 end

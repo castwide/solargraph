@@ -268,11 +268,11 @@ describe Solargraph::ApiMap do
 
   it "catalogs changes" do
     workspace = Solargraph::Workspace.new
-    s1 = Solargraph::Source.load_string('class Foo; end')
-    @api_map.catalog(Solargraph::Bench.new(workspace: workspace, opened: [s1]))
+    s1 = Solargraph::SourceMap.load_string('class Foo; end')
+    @api_map.catalog(Solargraph::Bench.new source_maps: [s1])
     expect(@api_map.get_path_pins('Foo')).not_to be_empty
-    s2 = Solargraph::Source.load_string('class Bar; end')
-    @api_map.catalog(Solargraph::Bench.new(workspace: workspace, opened: [s2]))
+    s2 = Solargraph::SourceMap.load_string('class Bar; end')
+    @api_map.catalog(Solargraph::Bench.new source_maps: [s2])
     expect(@api_map.get_path_pins('Foo')).to be_empty
     expect(@api_map.get_path_pins('Bar')).not_to be_empty
   end
@@ -308,10 +308,9 @@ describe Solargraph::ApiMap do
         end
       end
       )
-      api_map = Solargraph::ApiMap.new
       source = Solargraph::Source.load_string(code)
-      api_map.map source
-      pins = api_map.get_methods('Foo::Sub')
+      @api_map.map source
+      pins = @api_map.get_methods('Foo::Sub')
       paths = pins.map(&:path)
       expect(paths).to include('Foo::Sub#bar')
       expect(paths).to include('Sup#bar')
@@ -326,16 +325,15 @@ describe Solargraph::ApiMap do
       class Sub < Sup; end
       class Sub2 < Sub; end
     )
-    api_map = Solargraph::ApiMap.new
     source = Solargraph::Source.load_string(code)
-    api_map.map source
-    pins = api_map.get_complex_type_methods(Solargraph::ComplexType.parse('Sub'), 'Sub')
+    @api_map.map source
+    pins = @api_map.get_complex_type_methods(Solargraph::ComplexType.parse('Sub'), 'Sub')
     expect(pins.map(&:path)).to include('Sup#bar')
-    pins = api_map.get_complex_type_methods(Solargraph::ComplexType.parse('Sub2'), 'Sub2')
+    pins = @api_map.get_complex_type_methods(Solargraph::ComplexType.parse('Sub2'), 'Sub2')
     expect(pins.map(&:path)).to include('Sup#bar')
-    pins = api_map.get_complex_type_methods(Solargraph::ComplexType.parse('Sup'), 'Sub')
+    pins = @api_map.get_complex_type_methods(Solargraph::ComplexType.parse('Sup'), 'Sub')
     expect(pins.map(&:path)).to include('Sup#bar')
-    pins = api_map.get_complex_type_methods(Solargraph::ComplexType.parse('Sup'), 'Sub2')
+    pins = @api_map.get_complex_type_methods(Solargraph::ComplexType.parse('Sup'), 'Sub2')
     expect(pins.map(&:path)).to include('Sup#bar')
   end
 
@@ -344,11 +342,10 @@ describe Solargraph::ApiMap do
       class Sub < Sup; end
       class Sub2 < Sub; end
     )
-    api_map = Solargraph::ApiMap.new
     source = Solargraph::Source.load_string(code)
-    api_map.map source
+    @api_map.map source
     expect {
-      api_map.get_complex_type_methods(Solargraph::ComplexType.parse('Sub'), 'Sub2')
+      @api_map.get_complex_type_methods(Solargraph::ComplexType.parse('Sub'), 'Sub2')
     }.not_to raise_error
   end
 
@@ -359,27 +356,24 @@ describe Solargraph::ApiMap do
         private_constant :Bar
       end
     )
-    api_map = Solargraph::ApiMap.new
     source = Solargraph::Source.load_string(code)
-    api_map.map source
-    pins = api_map.get_constants('Foo', '')
+    @api_map.map source
+    pins = @api_map.get_constants('Foo', '')
     expect(pins.map(&:path)).not_to include('Bar')
-    pins = api_map.get_constants('Foo', 'Foo')
+    pins = @api_map.get_constants('Foo', 'Foo')
     expect(pins.map(&:path)).to include('Foo::Bar')
   end
 
   it "catalogs requires" do
-    api_map = Solargraph::ApiMap.new
-    source1 = Solargraph::Source.load_string(%(
+    source1 = Solargraph::SourceMap.load_string(%(
       class Foo; end
     ), 'lib/foo.rb')
-    source2 = Solargraph::Source.load_string(%(
+    source2 = Solargraph::SourceMap.load_string(%(
       require 'foo'
       require 'invalid'
     ), 'app.rb')
-    bundle = Solargraph::Bench.new(opened: [source1, source2])
-    api_map.catalog bundle
-    expect(api_map.unresolved_requires).to eq(['invalid'])
+    @api_map.catalog Solargraph::Bench.new(source_maps: [source1, source2], external_requires: ['invalid'])
+    expect(@api_map.unresolved_requires).to eq(['invalid'])
   end
 
   it "gets instance variables from superclasses" do
@@ -391,9 +385,8 @@ describe Solargraph::ApiMap do
       end
       class Sub < Sup; end
     ))
-    api_map = Solargraph::ApiMap.new
-    api_map.map source
-    pins = api_map.get_instance_variable_pins('Sub')
+    @api_map.map source
+    pins = @api_map.get_instance_variable_pins('Sub')
     expect(pins.map(&:name)).to include('@foo')
   end
 
@@ -406,9 +399,8 @@ describe Solargraph::ApiMap do
         extend Mixin
       end
     ))
-    api_map = Solargraph::ApiMap.new
-    api_map.map source
-    pins = api_map.get_methods('Sup', scope: :class)
+    @api_map.map source
+    pins = @api_map.get_methods('Sup', scope: :class)
     expect(pins.map(&:path)).to include('Mixin#bar')
   end
 
@@ -426,9 +418,8 @@ describe Solargraph::ApiMap do
         include Mixin
       end
     ))
-    api_map = Solargraph::ApiMap.new
-    api_map.map source
-    pins = api_map.get_constants('Container')
+    @api_map.map source
+    pins = @api_map.get_constants('Container')
     expect(pins.map(&:path)).to include('Mixin::FOO')
   end
 
@@ -439,9 +430,8 @@ describe Solargraph::ApiMap do
         class AAA; end
       end
     ))
-    api_map = Solargraph::ApiMap.new
-    api_map.map source
-    pins = api_map.get_constants('Foo', '')
+    @api_map.map source
+    pins = @api_map.get_constants('Foo', '')
     expect(pins.length).to eq(2)
     expect(pins[0].name).to eq('AAA')
     expect(pins[1].name).to eq('AAB')
@@ -453,29 +443,26 @@ describe Solargraph::ApiMap do
       end
       sum1()
     ), 'test.rb')
-    api_map = Solargraph::ApiMap.new
-    api_map.map source
-    pins = api_map.get_method_stack('', 'sum1')
+    @api_map.map source
+    pins = @api_map.get_method_stack('', 'sum1')
     expect(pins.length).to eq(1)
     expect(pins.map(&:name)).to include('sum1')
   end
 
   it "detects method aliases with origins in other sources" do
-    source1 = Solargraph::Source.load_string(%(
+    source1 = Solargraph::SourceMap.load_string(%(
       class Sup
         # @return [String]
         def foo; end
       end
     ), 'source1.rb')
-    source2 = Solargraph::Source.load_string(%(
+    source2 = Solargraph::SourceMap.load_string(%(
       class Sub < Sup
         alias bar foo
       end
     ), 'source2.rb')
-    api_map = Solargraph::ApiMap.new
-    bundle = Solargraph::Bench.new(opened: [source1, source2])
-    api_map.catalog bundle
-    pin = api_map.get_path_pins('Sub#bar').first
+    @api_map.catalog Solargraph::Bench.new(source_maps: [source1, source2])
+    pin = @api_map.get_path_pins('Sub#bar').first
     expect(pin).not_to be_nil
     expect(pin.return_type.tag).to eq('String')
   end
@@ -489,68 +476,9 @@ describe Solargraph::ApiMap do
         extend MyModule
       end
       ), 'test.rb')
-    api_map = Solargraph::ApiMap.new
-    api_map.map source
-    pins = api_map.get_methods('MyClass', scope: :class)
+    @api_map.map source
+    pins = @api_map.get_methods('MyClass', scope: :class)
     expect(pins.map(&:path)).to include('MyModule#foo')
-  end
-
-  it "merges source maps" do
-    source1 = Solargraph::Source.load_string(%(
-      class Foo
-        def bar
-        end
-      end
-    ))
-    source2 = Solargraph::Source.load_string(%(
-      class Foo
-        def bar
-          puts 'hello'
-        end
-      end
-    ))
-    api_map = Solargraph::ApiMap.new
-    api_map.map source1
-    first = api_map.source_map(nil)
-    api_map.map source2
-    second = api_map.source_map(nil)
-    expect(first).to eq(second)
-  end
-
-  it "catalogs unsynchronized sources without rebuilding" do
-    # @todo This spec determines whether the ApiMap merged without rebuilding
-    #   by inspecting the internal #store attribute. See if there's a better
-    #   way.
-    source1 = Solargraph::Source.load_string(%(
-      class Foo
-        def bar; end
-      end
-      f
-    ), 'test.rb')
-    api_map = Solargraph::ApiMap.new
-    api_map.map source1
-    store1 = api_map.send(:store)
-    # This update should require a rebuild after it's synchronized because it
-    # adds a local variable pin to the source map
-    source2 = source1.start_synchronize Solargraph::Source::Updater.new(
-      'test.rb',
-      2,
-      [
-        Solargraph::Source::Change.new(
-          Solargraph::Range.from_to(4, 7, 4, 7),
-          'oo = Foo.new'
-        )
-      ]
-    )
-    api_map.map source2
-    store2 = api_map.send(:store)
-    # The unsynchronized source does not rebuild the store
-    expect(store1).to be(store2)
-    source3 = source2.finish_synchronize
-    api_map.map source3
-    store3 = api_map.send(:store)
-    # The synchronized source rebuilds the store
-    expect(store3).not_to be(store2)
   end
 
   it "qualifies namespaces from includes" do
@@ -562,9 +490,8 @@ describe Solargraph::ApiMap do
         include Foo
       end
     ))
-    api_map = Solargraph::ApiMap.new
-    api_map.map source
-    fqns = api_map.qualify('Bar', 'Includer')
+    @api_map.map source
+    fqns = @api_map.qualify('Bar', 'Includer')
     expect(fqns).to eq('Foo::Bar')
   end
 
@@ -580,9 +507,8 @@ describe Solargraph::ApiMap do
         end
       end
     ))
-    api_map = Solargraph::ApiMap.new
-    api_map.map source
-    fqns = api_map.qualify('Bar', 'Foo::Includer')
+    @api_map.map source
+    fqns = @api_map.qualify('Bar', 'Foo::Includer')
     expect(fqns).to eq('Foo::Bar')
   end
 
@@ -599,9 +525,8 @@ describe Solargraph::ApiMap do
       include A
       B::C
     ), 'test.rb')
-    api_map = Solargraph::ApiMap.new
-    api_map.map source
-    fqns = api_map.qualify('B::C', '')
+    @api_map.map source
+    fqns = @api_map.qualify('B::C', '')
     expect(fqns).to eq('A::B::C')
   end
 
@@ -614,9 +539,8 @@ describe Solargraph::ApiMap do
         end
       end
     ))
-    api_map = Solargraph::ApiMap.new
-    api_map.map source
-    paths = api_map.get_methods('Foo::Bar').map(&:path)
+    @api_map.map source
+    paths = @api_map.get_methods('Foo::Bar').map(&:path)
     expect(paths).to include('Foo::Bar#baz')
   end
 
@@ -628,9 +552,8 @@ describe Solargraph::ApiMap do
         alias baz bar
       end
     ))
-    api_map = Solargraph::ApiMap.new
-    api_map.map source
-    pins = api_map.get_methods('Foo', visibility: [:public, :private])
+    @api_map.map source
+    pins = @api_map.get_methods('Foo', visibility: [:public, :private])
     baz = pins.select { |pin| pin.name == 'baz' }.first
     expect(baz.visibility).to be(:private)
   end
@@ -643,9 +566,8 @@ describe Solargraph::ApiMap do
 
       class Baz < Foo; end
     ))
-    api_map = Solargraph::ApiMap.new
-    api_map.map source
-    pins = api_map.get_constants('Baz')
+    @api_map.map source
+    pins = @api_map.get_constants('Baz')
     expect(pins.map(&:path)).to include('Foo::Bar')
   end
 
@@ -655,9 +577,8 @@ describe Solargraph::ApiMap do
       class Bar; end
       class Bar::Foo < Foo; end
     ))
-    api_map = Solargraph::ApiMap.new
-    api_map.map source
-    expect(api_map.super_and_sub?('Foo', 'Bar::Foo')).to be(true)
+    @api_map.map source
+    expect(@api_map.super_and_sub?('Foo', 'Bar::Foo')).to be(true)
   end
 
   it 'adds prepended methods to the ancestor tree' do
@@ -674,9 +595,8 @@ describe Solargraph::ApiMap do
         def foo; end
       end
     ))
-    api_map = Solargraph::ApiMap.new
-    api_map.map source
-    pins = api_map.get_method_stack('Container', 'foo')
+    @api_map.map source
+    pins = @api_map.get_method_stack('Container', 'foo')
     paths = pins.map(&:path)
     expect(paths).to eq(['Prepended#foo', 'Container#foo', 'Included#foo'])
   end
@@ -690,9 +610,8 @@ describe Solargraph::ApiMap do
         prepend Prepended
       end
     ))
-    api_map = Solargraph::ApiMap.new
-    api_map.map source
-    pins = api_map.get_constants('Container')
+    @api_map.map source
+    pins = @api_map.get_constants('Container')
     paths = pins.map(&:path)
     expect(paths).to eq(['Prepended::PRE_CONST'])
   end
@@ -714,9 +633,8 @@ describe Solargraph::ApiMap do
 
       @var3 = 3
     ), 'test.rb')
-    api_map = Solargraph::ApiMap.new
-    api_map.map source
-    vars = api_map.get_instance_variable_pins('Container')
+    @api_map.map source
+    vars = @api_map.get_instance_variable_pins('Container')
     names = vars.map(&:name)
     expect(names).to include('@var1')
     expect(names).to include('@var2')
@@ -735,9 +653,8 @@ describe Solargraph::ApiMap do
         end
       end
     ))
-    api_map = Solargraph::ApiMap.new
-    api_map.map source
-    pins = api_map.get_methods('Example', scope: :class)
+    @api_map.map source
+    pins = @api_map.get_methods('Example', scope: :class)
     expect(pins.map(&:name)).to include('foo')
   end
 
@@ -753,8 +670,9 @@ describe Solargraph::ApiMap do
         alias baz foo
       end
     )).pins
-    api_map = Solargraph::ApiMap.new(pins: yard_pins + source_pins)
-    baz = api_map.get_method_stack('Foo', 'baz').first
+    # api_map = Solargraph::ApiMap.new(pins: yard_pins + source_pins)
+    @api_map.index yard_pins + source_pins
+    baz = @api_map.get_method_stack('Foo', 'baz').first
     expect(baz).to be_a(Solargraph::Pin::Method)
     expect(baz.path).to eq('Foo#baz')
   end

@@ -1,6 +1,5 @@
 # frozen_string_literal: true
 
-require 'rubocop'
 require 'stringio'
 
 module Solargraph
@@ -23,6 +22,7 @@ module Solargraph
       # @param _api_map [Solargraph::ApiMap]
       # @return [Array<Hash>]
       def diagnose source, _api_map
+        require_rubocop(rubocop_version)
         options, paths = generate_options(source.filename, source.code)
         store = RuboCop::ConfigStore.new
         runner = RuboCop::Runner.new(options, store)
@@ -35,6 +35,13 @@ module Solargraph
       end
 
       private
+
+      # Extracts the rubocop version from _args_
+      #
+      # @return [String]
+      def rubocop_version
+        args.find { |a| a =~ /version=/ }.to_s.split('=').last
+      end
 
       # @param resp [Hash]
       # @return [Array<Hash>]
@@ -57,7 +64,8 @@ module Solargraph
           range: offense_range(off).to_hash,
           # 1 = Error, 2 = Warning, 3 = Information, 4 = Hint
           severity: SEVERITIES[off['severity']],
-          source: off['cop_name'],
+          source: 'rubocop',
+          code: off['cop_name'],
           message: off['message'].gsub(/^#{off['cop_name']}\:/, '')
         }
       end

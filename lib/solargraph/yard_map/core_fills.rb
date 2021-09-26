@@ -82,6 +82,18 @@ module Solargraph
         Override.method_return('Class#allocate', 'self'),
         Override.method_return('Class.allocate', 'Class<Object>'),
 
+        Override.from_comment('Enumerable#detect', %(
+@overload detect(&block)
+  @return_single_parameter
+@overload detect()
+  @return [Enumerator]
+        )),
+        Override.from_comment('Enumerable#find', %(
+@overload find(&block)
+  @return_single_parameter
+@overload find()
+  @return [Enumerator]
+        )),
         Override.method_return('Enumerable#select', 'self'),
 
         Override.method_return('File.absolute_path', 'String'),
@@ -110,6 +122,12 @@ module Solargraph
         Override.from_comment('Integer#+', %(
 @param y [Numeric]
 @return [Numeric]
+        )),
+        Override.from_comment('Integer#times', %(
+@overload times(&block)
+  @return [Integer]
+@overload times()
+  @return [Enumerator]
         )),
 
         Override.method_return('Kernel#puts', 'nil'),

@@ -103,6 +103,31 @@ module Solargraph
           en = Position.new(node.loc.last_line, node.loc.last_column)
           Range.new(st, en)
         end
+
+        def string_ranges node
+          return [] unless is_ast_node?(node)
+          result = []
+          if node.type == :str
+            result.push Range.from_node(node)
+          elsif node.type == :dstr
+            here = Range.from_node(node)
+            there = Range.from_node(node.children[1])
+            result.push Range.new(here.start, there.start)
+          end
+          node.children.each do |child|
+            result.concat string_ranges(child)
+          end
+          if node.type == :dstr && node.children.last.nil?
+            # result.push Range.new(result.last.ending, result.last.ending)
+            last = node.children[-2]
+            unless last.nil?
+              rng = Range.from_node(last)
+              pos = Position.new(rng.ending.line, rng.ending.column - 1)
+              result.push Range.new(pos, pos)
+            end
+          end
+          result
+        end  
       end
     end
   end

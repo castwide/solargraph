@@ -10,6 +10,8 @@ module Solargraph
   # stdlib, and gems.
   #
   class YardMap
+    class NoYardocError < StandardError; end
+
     autoload :Cache,       'solargraph/yard_map/cache'
     autoload :CoreDocs,    'solargraph/yard_map/core_docs'
     autoload :CoreGen,     'solargraph/yard_map/core_gen'
@@ -19,6 +21,8 @@ module Solargraph
     autoload :StdlibFills, 'solargraph/yard_map/stdlib_fills'
     autoload :Helpers,     'solargraph/yard_map/helpers'
     autoload :ToMethod,    'solargraph/yard_map/to_method'
+
+    include ApiMap::BundlerMethods
 
     CoreDocs.require_minimum
 
@@ -37,33 +41,16 @@ module Solargraph
       end
     end
 
-    # @return [Array<String>]
-    attr_reader :required
-
     # @return [Boolean]
     attr_writer :with_dependencies
 
-    # A hash of gem names and the version numbers to include in the map.
-    #
-    # @return [Hash{String => String}]
-    attr_reader :gemset
-
-    # @param required [Array<String>]
-    # @param gemset [Hash{String => String}]
+    # @param required [Array<String>, Set<String>]
+    # @param directory [String]
+    # @param source_gems [Array<String>, Set<String>]
     # @param with_dependencies [Boolean]
-    def initialize(required: [], gemset: {}, with_dependencies: true)
-      # HACK: YardMap needs its own copy of this array
-      @required = required.clone
-      # HACK: Hardcoded YAML handling
-      @required.push 'psych' if @required.include?('yaml')
+    def initialize(required: [], directory: '', source_gems: [], with_dependencies: true)
       @with_dependencies = with_dependencies
-      @gem_paths = {}
-      @stdlib_namespaces = []
-      @gemset = gemset
-      @source_gems = []
-      process_requires
-      yardocs.uniq!
-      @pin_select_cache = {}
+      change required.to_set, directory, source_gems.to_set
     end
 
     # @return [Array<Solargraph::Pin::Base>]
@@ -76,25 +63,24 @@ module Solargraph
       @with_dependencies
     end
 
-    # @param new_requires [Array<String>]
-    # @param new_gemset [Hash{String => String}]
+    # @param new_requires [Set<String>] Required paths to use for loading gems
+    # @param new_directory [String] The workspace directory
+    # @param new_source_gems [Set<String>] Gems under local development (i.e., part of the workspace)
     # @return [Boolean]
-    def change new_requires, new_gemset, source_gems = []
+    def change new_requires, new_directory, new_source_gems
+      return false if new_requires == base_required && new_directory == @directory && new_source_gems == @source_gems
+      @gem_paths = {}
+      base_required.replace new_requires
+      required.replace new_requires
       # HACK: Hardcoded YAML handling
-      new_requires.push 'psych' if new_requires.include?('yaml')
-      if new_requires.uniq.sort == required.uniq.sort && new_gemset == gemset && @source_gems.uniq.sort == source_gems.uniq.sort
-        false
-      else
-        required.clear
-        required.concat new_requires
-        @gemset = new_gemset
-        @source_gems = source_gems
-        process_requires
-        @rebindable_method_names = nil
-        @pin_class_hash = nil
-        @pin_select_cache = {}
-        true
-      end
+      required.add 'psych' if new_requires.include?('yaml')
+      @source_gems = new_source_gems
+      @directory = new_directory
+      process_requires
+      @rebindable_method_names = nil
+      @pin_class_hash = nil
+      @pin_select_cache = {}
+      true
     end
 
     # @return [Set<String>]
@@ -109,6 +95,11 @@ module Solargraph
     # @return [Array<String>]
     def yardocs
       @yardocs ||= []
+    end
+
+    # @return [Set<String>]
+    def required
+      @required ||= Set.new
     end
 
     # @return [Array<String>]
@@ -163,6 +154,14 @@ module Solargraph
       @stdlib_pins ||= []
     end
 
+    def base_required
+      @base_required ||= Set.new
+    end
+
+    def directory
+      @directory ||= ''
+    end
+
     private
 
     # @return [YardMap::Cache]
@@ -193,6 +192,8 @@ module Solargraph
 
     # @return [void]
     def process_requires
+      @gemset = process_gemsets
+      required.merge @gemset.keys if required.include?('bundler/require')
       pins.replace core_pins
       unresolved_requires.clear
       stdlib_pins.clear
@@ -225,7 +226,7 @@ module Solargraph
             result.concat process_yardoc yd, spec
             result.concat add_gem_dependencies(spec) if with_dependencies?
           end
-        rescue Gem::LoadError => e
+        rescue Gem::LoadError, NoYardocError => e
           base = r.split('/').first
           next if from_std.include?(base)
           from_std.push base
@@ -250,6 +251,11 @@ module Solargraph
         pin.instance_variable_set(:@return_type, ComplexType.parse('Module<Psych>')) unless pin.nil?
       end
       pins.concat environ.pins
+    end
+
+    def process_gemsets
+      return {} if directory.empty? || !File.file?(File.join(directory, 'Gemfile'))
+      require_from_bundle(directory)
     end
 
     # @param spec [Gem::Specification]
@@ -284,9 +290,6 @@ module Solargraph
     # @return [Array<Pin::Base>]
     def process_yardoc y, spec = nil
       return [] if y.nil?
-      size = Dir.glob(File.join(y, '**', '*'))
-        .map{ |f| File.size(f) }
-        .inject(:+)
       if spec
         ser = File.join(CoreDocs.cache_dir, 'gems', "#{spec.name}-#{spec.version}.ser")
         if File.file?(ser)
@@ -295,20 +298,27 @@ module Solargraph
           dump = file.read
           file.close
           begin
-            return Marshal.load(dump)
+            result = Marshal.load(dump)
+            return result unless result.nil? || result.empty?
+            Solargraph.logger.warn "Empty cache for #{spec.name} #{spec.version}. Reloading"
+            File.unlink ser
           rescue StandardError => e
             Solargraph.logger.warn "Error loading pin cache: [#{e.class}] #{e.message}"
             File.unlink ser
           end
         end
       end
+      size = Dir.glob(File.join(y, '**', '*'))
+        .map{ |f| File.size(f) }
+        .inject(:+)
       if !size.nil? && size > 20_000_000
         Solargraph::Logging.logger.warn "Yardoc at #{y} is too large to process (#{size} bytes)"
         return []
       end
+      Solargraph.logger.info "Loading #{spec.name} #{spec.version} from #{y}"
       load_yardoc y
-      Solargraph.logger.info "Loading #{spec.name} #{spec.version} from yardoc"
       result = Mapper.new(YARD::Registry.all, spec).map
+      raise NoYardocError, "Yardoc at #{y} is empty" if result.empty?
       if spec
         ser = File.join(CoreDocs.cache_dir, 'gems', "#{spec.name}-#{spec.version}.ser")
         file = File.open(ser, 'wb')
@@ -431,5 +441,3 @@ module Solargraph
 end
 
 Solargraph::YardMap::CoreDocs.require_minimum
-# Change YARD log IO to avoid sending unexpected messages to STDOUT
-YARD::Logger.instance.io = File.new(File::NULL, 'w')

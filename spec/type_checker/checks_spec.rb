@@ -54,8 +54,9 @@ describe Solargraph::TypeChecker::Checks do
 
   it 'fuzzy matches sets with parameters' do
     source = Solargraph::Source.load_string("require 'set'")
+    source_map = Solargraph::SourceMap.map(source)
     api_map = Solargraph::ApiMap.new
-    api_map.map source
+    api_map.catalog Solargraph::Bench.new(source_maps: [source_map], external_requires: ['set'])
     exp = Solargraph::ComplexType.parse('Set')
     inf = Solargraph::ComplexType.parse('Set<String>')
     match = Solargraph::TypeChecker::Checks.types_match?(api_map, exp, inf)

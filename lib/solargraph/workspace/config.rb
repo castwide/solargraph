@@ -85,6 +85,13 @@ module Solargraph
         raw_data['reporters']
       end
 
+      # A hash of options supported by the formatter
+      #
+      # @return [Hash]
+      def formatter
+        raw_data['formatter']
+      end
+
       # An array of plugins to require.
       #
       # @return [Array<String>]
@@ -144,6 +151,14 @@ module Solargraph
           'require' => [],
           'domains' => [],
           'reporters' => %w[rubocop require_not_found],
+          'formatter' => {
+            'rubocop' => {
+              'cops' => 'safe',
+              'except' => [],
+              'only' => [],
+              'extra_args' =>[]
+            }
+          },
           'require_paths' => [],
           'plugins' => [],
           'max_files' => MAX_FILES
@@ -155,9 +170,10 @@ module Solargraph
       # @param globs [Array<String>]
       # @return [Array<String>]
       def process_globs globs
-        result = []
-        globs.each do |glob|
-          result.concat Dir[File.join directory, glob].map{ |f| f.gsub(/\\/, '/') }
+        result = globs.flat_map do |glob|
+          Dir[File.join directory, glob]
+            .map{ |f| f.gsub(/\\/, '/') }
+            .select { |f| File.file?(f) }
         end
         result
       end

@@ -7,7 +7,7 @@ module Solargraph
     #
     class TypeCheck < Base
       def diagnose source, api_map
-        return [] unless args.include?('always') || api_map.workspaced?(source.filename)
+        # return [] unless args.include?('always') || api_map.workspaced?(source.filename)
         severity = Diagnostics::Severities::ERROR
         level = (args.reverse.find { |a| ['normal', 'typed', 'strict', 'strong'].include?(a) }) || :normal
         checker = Solargraph::TypeChecker.new(source.filename, api_map: api_map, level: level.to_sym)

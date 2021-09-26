@@ -71,11 +71,6 @@ module Solargraph
           pos = Solargraph::Position.new(comment_position.line + line_num - 1, comment_position.column)
           process_directive(source_position, pos, d)
           last_line = line_num + 1
-          # @todo The below call assumes the topmost comment line. The above
-          #   process occasionally emits incorrect comment positions due to
-          #   blank lines in comment blocks, but at least it processes all the
-          #   directives.
-          # process_directive(source_position, comment_position, d)
         end
       end
 
@@ -209,6 +204,8 @@ module Solargraph
           com_pos = Position.new(line + 1 - comments.lines.length, 0)
           process_comment(src_pos, com_pos, comments)
         end
+      rescue StandardError => e
+        raise e.class, "Error processing comment directives in #{@filename}: #{e.message}"
       end
     end
   end

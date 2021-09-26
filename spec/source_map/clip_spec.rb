@@ -357,11 +357,11 @@ describe Solargraph::SourceMap::Clip do
   end
 
   it "handles missing type annotations in @type tags" do
-    source = Solargraph::Source.load_string(%(
+    source = Solargraph::Source.load_string('
       # Note the type is `String` instead of `[String]`
       # @type String
       x = foo_bar
-    ), 'test.rb')
+    ', 'test.rb')
     api_map = Solargraph::ApiMap.new
     api_map.map source
     clip = api_map.clip_at('test.rb', Solargraph::Position.new(3, 7))
@@ -1366,5 +1366,33 @@ describe Solargraph::SourceMap::Clip do
     api_map.map source
     clip = api_map.clip_at('test.rb', [4, 31])
     expect(clip.complete.pins.map(&:path)).to include('TaggedExample')
+  end
+
+  it 'completes first of nested namespaces' do
+    source = Solargraph::Source.load_string(%(
+      module Foo; end
+      module Foo::Bar; end
+      module Foo
+        class Bar::Baz; end
+      end
+      Foo::Bar::Baz
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new.map(source)
+    names = api_map.clip_at('test.rb', [6, 12]).complete.pins.map(&:name)
+    expect(names).to eq(['Bar'])
+  end
+
+  it 'completes subsequent nested namespaces' do
+    source = Solargraph::Source.load_string(%(
+      module Foo; end
+      module Foo::Bar; end
+      module Foo
+        class Bar::Baz; end
+      end
+      Foo::Bar::Baz
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new.map(source)
+    names = api_map.clip_at('test.rb', [6, 17]).complete.pins.map(&:name)
+    expect(names).to eq(['Baz'])
   end
 end

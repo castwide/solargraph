@@ -1,30 +1,27 @@
 # frozen_string_literal: true
 
+require 'set'
+
 module Solargraph
-  # An aggregation of a workspace and additional sources to be cataloged in an
-  # ApiMap.
+  # A container of source maps and workspace data to be cataloged in an ApiMap.
   #
   class Bench
+    # @return [Set<SourceMap>]
+    attr_reader :source_maps
+
     # @return [Workspace]
     attr_reader :workspace
 
-    # @return [Array<Source>]
-    attr_reader :opened
+    # @return [Set<String>]
+    attr_reader :external_requires
 
-    # @return [Array<Pin::Base>]
-    attr_reader :pins
-
+    # @param source_maps [Array<SourceMap>, Set<SourceMap>]
     # @param workspace [Workspace]
-    # @param opened [Array<Source>]
-    def initialize workspace: Workspace.new, opened: [], pins: []
+    # @param external_requires [Array<String>, Set<String>]
+    def initialize source_maps: [], workspace: Workspace.new, external_requires: []
+      @source_maps = source_maps.to_set
       @workspace = workspace
-      @opened = opened
-      @pins = pins
-    end
-
-    # @return [Array<Source>]
-    def sources
-      @sources ||= (opened + workspace.sources).uniq(&:filename)
+      @external_requires = external_requires.to_set
     end
   end
 end

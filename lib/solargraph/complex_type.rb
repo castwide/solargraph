@@ -51,6 +51,10 @@ module Solargraph
     def select &block
       @items.select &block
     end
+    def namespace
+      # cache this attr for high frequency call
+      @namespace ||= method_missing(:namespace).to_s
+    end
 
     def method_missing name, *args, &block
       return if @items.first.nil?

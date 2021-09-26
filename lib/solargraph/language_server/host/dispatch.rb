@@ -41,7 +41,8 @@ module Solargraph
           result = explicit_library_for(uri) ||
             implicit_library_for(uri) ||
             generic_library_for(uri)
-          result.attach sources.find(uri) if sources.include?(uri)
+          # previous library for already call attach. avoid call twice
+          # result.attach sources.find(uri) if sources.include?(uri)
           result
         end
 
@@ -82,7 +83,6 @@ module Solargraph
           libraries.each do |lib|
             if filename.start_with?(lib.workspace.directory)
               lib.attach sources.find(uri)
-              lib.catalog
               return lib
             end
           end
@@ -98,7 +98,6 @@ module Solargraph
         # @return [Library]
         def generic_library_for uri
           generic_library.attach sources.find(uri)
-          generic_library.catalog
           generic_library
         end
 

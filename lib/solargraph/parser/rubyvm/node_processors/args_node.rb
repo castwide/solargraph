@@ -32,7 +32,6 @@ module Solargraph
                   region.closure.parameters.push locals.last
                 end
               end
-              # @todo Optional args, keyword args, etc.
               if node.children[6]
                 locals.push Solargraph::Pin::Parameter.new(
                   location: region.closure.location,
@@ -55,19 +54,19 @@ module Solargraph
                 )
                 region.closure.parameters.push locals.last
               end
-              if node.children.last
-                locals.push Solargraph::Pin::Parameter.new(
-                  location: region.closure.location,
-                  closure: region.closure,
-                  comments: comments_for(node),
-                  name: node.children.last.to_s,
-                  presence: region.closure.location.range,
-                  decl: :blockarg
-                )
-                region.closure.parameters.push locals.last
-              end
             end
             process_children
+            if node.children.last
+              locals.push Solargraph::Pin::Parameter.new(
+                location: region.closure.location,
+                closure: region.closure,
+                comments: comments_for(node),
+                name: node.children.last.to_s,
+                presence: region.closure.location.range,
+                decl: :blockarg
+              )
+              region.closure.parameters.push locals.last
+            end
           end
 
           private
