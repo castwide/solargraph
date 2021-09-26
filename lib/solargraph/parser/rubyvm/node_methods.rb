@@ -141,43 +141,45 @@ module Solargraph
         class << self
           protected
 
+          # @param cursor [Source::Cursor]
+          # @return [RubyVM::AbstractSyntaxTree::Node, nil]
           def synchronized_find_recipient_node cursor
-            return repaired_find_recipient_node(cursor) if cursor.source.repaired? && cursor.source.code[cursor.offset - 1] == '('
+            cursor = maybe_adjust_cursor(cursor)
             source = cursor.source
             position = cursor.position
             offset = cursor.offset
             tree = source.tree_at(position.line, position.column)
-            tree.shift while tree.first && [:FCALL, :VCALL, :CALL].include?(tree.first.type) && !source.code_for(tree.first).strip.end_with?(')')
+              .select { |n| [:FCALL, :VCALL, :CALL].include?(n.type) }
+            unless source.repaired?
+              tree.shift while tree.first && !source.code_for(tree.first).strip.end_with?(')')
+            end
+            return tree.first if source.repaired? || source.code[0..offset-1] =~ /\(\s*$/
             tree.each do |node|
-              if [:FCALL, :VCALL, :CALL].include?(node.type)
-                args = node.children.find { |c| Parser.is_ast_node?(c) && [:ARRAY, :ZARRAY, :LIST].include?(c.type) }
-                if args
-                  match = source.code[0..offset-1].match(/,[^\)]*\z/)
-                  rng = Solargraph::Range.from_node(args)
-                  if match
-                    rng = Solargraph::Range.new(rng.start, position)
-                  end
-                  return node if rng.contain?(position)
-                elsif source.code[0..offset-1] =~ /\(\s*$/
-                  break  unless source.code_for(node).strip.end_with?(')')
-                  return node
+              args = node.children.find { |c| Parser.is_ast_node?(c) && [:ARRAY, :ZARRAY, :LIST].include?(c.type) }
+              if args
+                match = source.code[0..offset-1].match(/,[^\)]*\z/)
+                rng = Solargraph::Range.from_node(args)
+                if match
+                  rng = Solargraph::Range.new(rng.start, position)
                 end
+                return node if rng.contain?(position)
               end
             end
             nil
           end
 
-          def repaired_find_recipient_node cursor
-            cursor = cursor.source.cursor_at([cursor.position.line, cursor.position.column - 1])
-            node = cursor.source.tree_at(cursor.position.line, cursor.position.column).first
-            return node if node && [:FCALL, :VCALL, :CALL].include?(node.type)
+          # @param cursor [Source::Cursor]
+          # @return [Source::Cursor]
+          def maybe_adjust_cursor cursor
+            return cursor unless (cursor.source.repaired? && cursor.source.code[cursor.offset - 1] == '(') || [',', ' '].include?(cursor.source.code[cursor.offset - 1])
+            cursor.source.cursor_at([cursor.position.line, cursor.position.column - 1])
           end
 
           def unsynchronized_find_recipient_node cursor
             source = cursor.source
             position = cursor.position
             offset = cursor.offset
-            if source.code[0..offset-1] =~ /\([A-Zaz0-9_\s]*\z$/ #&& source.code[offset] == ')'
+            if source.code[0..offset-1] =~ /\([A-Zaz0-9_\s]*\z$/
               tree = source.tree_at(position.line, position.column - 1)
               if tree.first && [:FCALL, :VCALL, :CALL].include?(tree.first.type)
                 return tree.first
