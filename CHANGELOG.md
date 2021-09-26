@@ -1,5 +1,7 @@
-## 0.43.4
+## 0.44.0 - September 27, 2021
 - Allow opening parenthesis, space, and comma when using Diff::LCS (#465)
+- Support textDocument/documentHighlight
+- Library#references_from performs shallow matches
 
 ## 0.43.3 - September 25, 2021
 - Avoid Dir.chdir in Bundler processes (#481)
