@@ -178,6 +178,7 @@ module Solargraph
 
         # @param cursor [Solargraph::Source::Cursor]
         def find_recipient_node cursor
+          return repaired_find_recipient_node(cursor) if cursor.source.repaired? && cursor.source.code[cursor.offset - 1] == '('
           source = cursor.source
           position = cursor.position
           offset = cursor.offset
@@ -208,6 +209,12 @@ module Solargraph
             prev = node
           end
           nil
+        end
+
+        def repaired_find_recipient_node cursor
+          cursor = cursor.source.cursor_at([cursor.position.line, cursor.position.column - 1])
+          node = cursor.source.tree_at(cursor.position.line, cursor.position.column).first
+          return node if node && node.type == :send
         end
 
         module DeepInference
