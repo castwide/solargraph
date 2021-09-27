@@ -43,7 +43,13 @@ module Solargraph
       # @return [ComplexType]
       def infer
         result = cursor.chain.infer(api_map, block, locals)
+        if result.tag == 'Class'
+          # HACK: Exception to return Object from Class#new
+          dfn = cursor.chain.define(api_map, block, locals).first
+          return ComplexType.try_parse('Object') if dfn && dfn.path == 'Class#new'
+        end
         return result unless result.tag == 'self'
+        puts "Base tag is #{cursor.chain.base.infer.tag}"
         ComplexType.try_parse(cursor.chain.base.infer(api_map, block, locals).namespace)
       end
 

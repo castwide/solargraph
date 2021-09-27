@@ -17,6 +17,7 @@ module Solargraph
       private
 
       def convert_decl_to_pin decl, closure
+        cursor = pins.length
         case decl
         when RBS::AST::Declarations::Class
           class_decl_to_pin decl
@@ -28,6 +29,17 @@ module Solargraph
           module_decl_to_pin decl
         when RBS::AST::Declarations::Constant
           constant_decl_to_pin decl
+        end
+        pins[cursor..-1].each do |pin|
+          next unless pin.is_a?(Pin::Namespace) && pin.type == :class
+          next if pins.any? { |p| p.path == "#{pin.path}.new"}
+          pins.push Solargraph::Pin::Method.new(
+            location: nil,
+            closure: pin.closure,
+            name: 'new',
+            comments: pin.comments,
+            scope: :class
+          )
         end
       end
   
