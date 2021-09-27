@@ -24,6 +24,8 @@ module Solargraph
         @code = source.code
         @comments = source.comments
         @pins, @locals = Parser.map(source)
+        @pins.each { |p| p.source = :code }
+        @locals.each { |l| l.source = :code }
         process_comment_directives
         [@pins, @locals]
       # rescue Exception => e

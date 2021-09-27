@@ -364,8 +364,10 @@ module Solargraph
       pin.location && api_map.bundled?(pin.location.filename)
     end
 
+    # True if the pin is either internal (part of the workspace) or from the core/stdlib
     def internal_or_core? pin
-      internal?(pin) || api_map.yard_map.core_pins.include?(pin) || api_map.yard_map.stdlib_pins.include?(pin)
+      # @todo RBS pins are not necessarily core/stdlib pins
+      internal?(pin) || pin.source == :rbs
     end
 
     # @param pin [Pin::Base]

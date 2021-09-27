@@ -39,7 +39,7 @@ module Solargraph
       @source_map_hash = {}
       implicit.clear
       cache.clear
-      @store = Store.new(@@core_map.pins + YardMap::CoreFills::ALL + pins)
+      @store = Store.new(@@core_map.pins + pins)
       self
     end
 
@@ -67,15 +67,22 @@ module Solargraph
       end
       external_requires.merge implicit.requires
       external_requires.merge bench.workspace.config.required
-      # yard_map.change(external_requires, bench.workspace.directory, bench.workspace.source_gems)
-      # @store = Store.new(yard_map.pins + implicit.pins + pins)
       @rbs_maps = external_requires.map { |r| RbsMap.load(r) }
-      @store = Store.new(@@core_map.pins + YardMap::CoreFills::ALL + @rbs_maps.flat_map(&:pins) + implicit.pins + pins)
-      # @unresolved_requires = yard_map.unresolved_requires
-      @unresolved_requires = @rbs_maps.reject(&:resolved?).map(&:library)
+      unresolved_requires = @rbs_maps.reject(&:resolved?).map(&:library)
+      yard_map.change(unresolved_requires, bench.workspace.directory, bench.workspace.source_gems)
+      @store = Store.new(@@core_map.pins + @rbs_maps.flat_map(&:pins) + yard_map.pins + implicit.pins + pins)
+      @unresolved_requires = yard_map.unresolved_requires
       @rebindable_method_names = nil
       store.block_pins.each { |blk| blk.rebind(self) }
       self
+    end
+
+    def core_pins
+      @@core_map.pins
+    end
+
+    def yard_map
+      @yard_map ||= YardMap.new
     end
 
     # @param name [String]

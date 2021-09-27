@@ -31,6 +31,7 @@ module Solargraph
           constant_decl_to_pin decl
         end
         pins[cursor..-1].each do |pin|
+          pin.source = :rbs
           next unless pin.is_a?(Pin::Namespace) && pin.type == :class
           next if pins.any? { |p| p.path == "#{pin.path}.new"}
           pins.push Solargraph::Pin::Method.new(
