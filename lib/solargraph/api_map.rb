@@ -67,7 +67,7 @@ module Solargraph
       end
       external_requires.merge implicit.requires
       external_requires.merge bench.workspace.config.required
-      @rbs_maps = external_requires.map { |r| RbsMap.load(r) }
+      @rbs_maps = external_requires.map { |r| load_rbs_map(r) }
       unresolved_requires = @rbs_maps.reject(&:resolved?).map(&:library)
       yard_map.change(unresolved_requires, bench.workspace.directory, bench.workspace.source_gems)
       @store = Store.new(@@core_map.pins + @rbs_maps.flat_map(&:pins) + yard_map.pins + implicit.pins + pins)
@@ -482,6 +482,14 @@ module Solargraph
     #
     # @return [Hash{String => SourceMap}]
     attr_reader :source_map_hash
+
+    # @param library [String]
+    # @return [RbsMap]
+    def load_rbs_map library
+      map = RbsMap.load(library)
+      return map if map.resolved?
+      RbsMap::StdlibMap.load(library)
+    end
 
     # @return [ApiMap::Store]
     def store

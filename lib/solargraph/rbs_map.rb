@@ -4,7 +4,8 @@ require 'set'
 module Solargraph
   class RbsMap
     autoload :Conversions, 'solargraph/rbs_map/conversions'
-    autoload :CoreMap, 'solargraph/rbs_map/core_map'
+    autoload :CoreMap,     'solargraph/rbs_map/core_map'
+    autoload :StdlibMap,   'solargraph/rbs_map/stdlib_map'
 
     include Conversions
 
@@ -16,7 +17,7 @@ module Solargraph
     # @param library [String]
     def initialize library
       @library = library
-      loader = RBS::EnvironmentLoader.new(core_root: nil)
+      loader = RBS::EnvironmentLoader.new(core_root: nil, repository: repository)
       add_library loader, library
       return unless resolved?
       # @type [RBS::Environment]
@@ -37,8 +38,13 @@ module Solargraph
     end
 
     # @param library [String]
+    # @return [RbsMap]
     def self.load library
       @@rbs_maps_hash[library] ||= RbsMap.new(library)
+    end
+
+    def repository
+      @repository ||= RBS::Repository.new(no_stdlib: true)
     end
 
     private
@@ -46,11 +52,16 @@ module Solargraph
     def add_library loader, library
       @resolved = if loader.has_library?(library: library, version: nil)
         loader.add library: library
+        Solargraph.logger.info "#{short_name} successfully loaded library #{library}"
         true
       else
-        Solargraph.logger.warn "RBS mapper rejected unknown library #{library}"
+        Solargraph.logger.info "#{short_name} failed to load library #{library}"
         false
       end  
+    end
+
+    def short_name
+      self.class.name.split('::').last
     end
   end
 end

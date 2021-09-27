@@ -10,6 +10,10 @@ module Solargraph
         environment.declarations.each { |decl| convert_decl_to_pin(decl, Solargraph::Pin::ROOT_PIN) }
         pins.concat YardMap::CoreFills::ALL
       end
+
+      def self.new
+        @@cache ||= super
+      end
     end
   end
 end
