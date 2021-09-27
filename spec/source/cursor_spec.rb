@@ -20,7 +20,7 @@ describe Solargraph::Source::Cursor do
     expect(cursor).not_to be_comment
   end
 
-  it "detects arguments" do
+  it "detects arguments inside parentheses" do
     source = Solargraph::Source.load_string('a(1); b')
     cur = described_class.new(source, Solargraph::Position.new(0,2))
     expect(cur).to be_argument
@@ -32,6 +32,15 @@ describe Solargraph::Source::Cursor do
     expect(cur).not_to be_argument
     cur = described_class.new(source, Solargraph::Position.new(0,7))
     expect(cur).not_to be_argument
+  end
+
+  it 'detects arguments at opening parentheses' do
+    source = Solargraph::Source.load_string('String.new', 'test.rb')
+    change = Solargraph::Source::Change.new(Solargraph::Range.from_to(0, 10, 0, 10) ,'(')
+    updater = Solargraph::Source::Updater.new('test.rb', 1, [change])
+    source = source.synchronize(updater)
+    cursor = source.cursor_at([0, 11])
+    expect(cursor).to be_argument
   end
 
   it "detects class variables" do

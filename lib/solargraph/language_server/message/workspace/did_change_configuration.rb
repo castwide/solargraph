@@ -22,6 +22,7 @@ module Solargraph::LanguageServer::Message::Workspace
       (host.options['definitions'] ? y : n).push('textDocument/definition')
       (host.options['references'] ? y : n).push('textDocument/references')
       (host.options['folding'] ? y : n).push('textDocument/folding')
+      (host.options['highlights'] ? y : n).push('textDocument/documentHighlight')
       host.register_capabilities y
       host.unregister_capabilities n
     end

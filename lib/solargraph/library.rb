@@ -216,33 +216,35 @@ module Solargraph
     # @param line [Integer]
     # @param column [Integer]
     # @param strip [Boolean] Strip special characters from variable names
+    # @param only [Boolean] Search for references in the current file only
     # @return [Array<Solargraph::Range>]
     # @todo Take a Location instead of filename/line/column
-    def references_from filename, line, column, strip: false
+    def references_from filename, line, column, strip: false, only: false
       cursor = api_map.cursor_at(filename, Position.new(line, column))
       clip = api_map.clip(cursor)
-      pins = clip.define
-      return [] if pins.empty?
+      pin = clip.define.first
+      return [] unless pin
       result = []
-      pins.uniq.each do |pin|
-        (workspace.sources + (@current ? [@current] : [])).uniq(&:filename).each do |source|
-          found = source.references(pin.name)
-          found.select! do |loc|
-            referenced = definitions_at(loc.filename, loc.range.ending.line, loc.range.ending.character)
-            # HACK: The additional location comparison is necessary because
-            # Clip#define can return proxies for parameter pins
-            referenced.any? { |r| r == pin || r.location == pin.location }
-          end
-          # HACK: for language clients that exclude special characters from the start of variable names
-          if strip && match = cursor.word.match(/^[^a-z0-9_]+/i)
-            found.map! do |loc|
-              Solargraph::Location.new(loc.filename, Solargraph::Range.from_to(loc.range.start.line, loc.range.start.column + match[0].length, loc.range.ending.line, loc.range.ending.column))
-            end
-          end
-          result.concat(found.sort do |a, b|
-            a.range.start.line <=> b.range.start.line
-          end)
+      files = if only
+        [api_map.source_map(filename)]
+      else
+        (workspace.sources + (@current ? [@current] : []))
+      end
+      files.uniq(&:filename).each do |source|
+        found = source.references(pin.name)
+        found.select! do |loc|
+          referenced = definitions_at(loc.filename, loc.range.ending.line, loc.range.ending.character).first
+          referenced && referenced.path == pin.path
         end
+        # HACK: for language clients that exclude special characters from the start of variable names
+        if strip && match = cursor.word.match(/^[^a-z0-9_]+/i)
+          found.map! do |loc|
+            Solargraph::Location.new(loc.filename, Solargraph::Range.from_to(loc.range.start.line, loc.range.start.column + match[0].length, loc.range.ending.line, loc.range.ending.column))
+          end
+        end
+        result.concat(found.sort do |a, b|
+          a.range.start.line <=> b.range.start.line
+        end)
       end
       result.uniq
     end

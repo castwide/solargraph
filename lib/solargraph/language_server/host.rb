@@ -18,7 +18,6 @@ module Solargraph
       autoload :Dispatch,      'solargraph/language_server/host/dispatch'
       autoload :MessageWorker, 'solargraph/language_server/host/message_worker'
 
-
       include UriHelpers
       include Logging
       include Dispatch
@@ -543,10 +542,11 @@ module Solargraph
       # @param line [Integer]
       # @param column [Integer]
       # @param strip [Boolean] Strip special characters from variable names
+      # @param only [Boolean] If true, search current file only
       # @return [Array<Solargraph::Range>]
-      def references_from uri, line, column, strip: true
+      def references_from uri, line, column, strip: true, only: false
         library = library_for(uri)
-        library.references_from(uri_to_file(uri), line, column, strip: strip)
+        library.references_from(uri_to_file(uri), line, column, strip: strip, only: only)
       end
 
       # @param query [String]
@@ -632,6 +632,7 @@ module Solargraph
           'diagnostics' => false,
           'formatting' => false,
           'folding' => true,
+          'highlights' => true,
           'logLevel' => 'warn'
         }
       end
@@ -716,7 +717,7 @@ module Solargraph
         return change if diffs.length.zero? || diffs.length > 1 || diffs.first.length > 1
         # @type [Diff::LCS::Change]
         diff = diffs.first.first
-        return change unless diff.adding? && ['.', ':'].include?(diff.element)
+        return change unless diff.adding? && ['.', ':', '(', ',', ' '].include?(diff.element)
         position = Solargraph::Position.from_offset(source.code, diff.position)
         {
           'range' => {
@@ -784,6 +785,9 @@ module Solargraph
           },
           'textDocument/codeAction' => {
             codeActionProvider: true
+          },
+          'textDocument/documentHighlight' => {
+            documentHighlightProvider: true
           }
         }
       end

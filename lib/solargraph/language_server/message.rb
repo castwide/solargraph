@@ -73,7 +73,8 @@ module Solargraph
       register 'textDocument/rename',                 TextDocument::Rename
       register 'textDocument/prepareRename',          TextDocument::PrepareRename
       register 'textDocument/foldingRange',           TextDocument::FoldingRange
-      register 'textDocument/codeAction',             TextDocument::CodeAction
+      # register 'textDocument/codeAction',             TextDocument::CodeAction
+      register 'textDocument/documentHighlight',      TextDocument::DocumentHighlight
       register 'workspace/didChangeWatchedFiles',     Workspace::DidChangeWatchedFiles
       register 'workspace/didChangeConfiguration',    Workspace::DidChangeConfiguration
       register 'workspace/didChangeWorkspaceFolders', Workspace::DidChangeWorkspaceFolders

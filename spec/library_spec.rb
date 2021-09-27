@@ -200,6 +200,25 @@ describe Solargraph::Library do
     end
   end
 
+  it 'rejects new references from different classes' do
+    workspace = Solargraph::Workspace.new('*')
+    library = Solargraph::Library.new(workspace)
+    source = Solargraph::Source.load_string(%(
+      class Foo
+        def bar
+        end
+      end
+      Foo.new
+      Array.new
+    ), 'test.rb')
+    library.merge source
+    library.catalog
+    foo_new_locs = library.references_from('test.rb', 5, 10)
+    expect(foo_new_locs).to eq([Solargraph::Location.new('test.rb', Solargraph::Range.from_to(5, 10, 5, 13))])
+    obj_new_locs = library.references_from('test.rb', 6, 12)
+    expect(obj_new_locs).to eq([Solargraph::Location.new('test.rb', Solargraph::Range.from_to(6, 12, 6, 15))])
+  end
+
   it "searches the core for queries" do
     library = Solargraph::Library.new
     result = library.search('String')
