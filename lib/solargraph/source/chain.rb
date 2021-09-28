@@ -103,8 +103,8 @@ module Solargraph
         @splat
       end
 
-      def nil_safe?
-        links.any? { |l| l.is_a?(QCall) }
+      def nullable?
+        links.any?(&:nullable?)
       end
 
       private
@@ -156,7 +156,7 @@ module Solargraph
       # @param type [ComplexType]
       def maybe_nil type
         return type if type.undefined? || type.void? || type.nullable?
-        return type unless nil_safe?
+        return type unless nullable?
         ComplexType.try_parse("#{type}, nil")
       end
     end
