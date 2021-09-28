@@ -155,10 +155,9 @@ module Solargraph
 
       # @param type [ComplexType]
       def maybe_nil type
+        return type if type.undefined? || type.void? || type.nullable?
         return type unless nil_safe?
-        return type if type.undefined? || type.void?
-        return type if type.nullable?
-        ComplexType.try_parse("#{type.tag}, nil")
+        ComplexType.try_parse("#{type}, nil")
       end
     end
   end
