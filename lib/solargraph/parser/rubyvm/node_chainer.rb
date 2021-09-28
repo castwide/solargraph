@@ -60,6 +60,11 @@ module Solargraph
               result.concat generate_links(c)
             end
             result.push Chain::Call.new(n.children[-2].to_s, node_to_argchains(n.children.last), @in_block > 0 || block_passed?(n))
+          elsif n.type == :QCALL
+            n.children[0..-3].each do |c|
+              result.concat generate_links(c)
+            end
+            result.push Chain::QCall.new(n.children[-2].to_s, node_to_argchains(n.children.last), @in_block > 0 || block_passed?(n))
           elsif n.type == :ATTRASGN
             result.concat generate_links(n.children[0])
             result.push Chain::Call.new(n.children[1].to_s, node_to_argchains(n.children[2]), @in_block > 0 || block_passed?(n))

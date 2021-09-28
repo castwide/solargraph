@@ -11,6 +11,7 @@ module Solargraph
     class Chain
       autoload :Link,             'solargraph/source/chain/link'
       autoload :Call,             'solargraph/source/chain/call'
+      autoload :QCall,            'solargraph/source/chain/q_call'
       autoload :Variable,         'solargraph/source/chain/variable'
       autoload :ClassVariable,    'solargraph/source/chain/class_variable'
       autoload :Constant,         'solargraph/source/chain/constant'
@@ -76,7 +77,8 @@ module Solargraph
       # @return [ComplexType]
       def infer api_map, name_pin, locals
         pins = define(api_map, name_pin, locals)
-        infer_first_defined(pins, links.last.last_context, api_map)
+        type = infer_first_defined(pins, links.last.last_context, api_map)
+        maybe_nil(type)
       end
 
       # @return [Boolean]
@@ -99,6 +101,10 @@ module Solargraph
 
       def splat?
         @splat
+      end
+
+      def nil_safe?
+        links.any? { |l| l.is_a?(QCall) }
       end
 
       private
@@ -145,6 +151,14 @@ module Solargraph
         end
         return type if context.nil? || context.return_type.undefined?
         type.self_to(context.return_type.namespace)
+      end
+
+      # @param type [ComplexType]
+      def maybe_nil type
+        return type unless nil_safe?
+        return type if type.undefined? || type.void?
+        return type if type.nullable?
+        ComplexType.try_parse("#{type.tag}, nil")
       end
     end
   end

@@ -319,4 +319,14 @@ describe Solargraph::Source::Chain do
     type = pin.probe(api_map)
     expect(type.tag).to eq('String')
   end
+
+  it 'recognizes nil safe navigation' do
+    source = Solargraph::Source.load_string(%(
+      String.new&.strip
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new.map(source)
+    chain = Solargraph::Source::SourceChainer.chain(source, Solargraph::Position.new(1, 18))
+    tag = chain.infer(api_map, Solargraph::Pin::ROOT_PIN, [])
+    expect(tag.to_s).to eq('String, nil')
+  end
 end
