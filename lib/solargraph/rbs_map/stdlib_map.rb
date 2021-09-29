@@ -7,6 +7,16 @@ module Solargraph
       # @type [Hash{String => RbsMap}]
       @@stdlib_maps_hash = {}
 
+      def initialize library
+        cache = Cache.load('stdlib', "#{library}.ser")
+        if cache
+          pins.replace cache
+        else
+          super
+          Cache.save('stdlib', "#{library}.ser", pins)
+        end
+      end
+
       # @param library [String]
       # @return [StdlibMap]
       def self.load library

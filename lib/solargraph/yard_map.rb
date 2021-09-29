@@ -255,22 +255,8 @@ module Solargraph
     def process_yardoc y, spec = nil
       return [] if y.nil?
       if spec
-        ser = File.join(CoreDocs.cache_dir, 'gems', "#{spec.name}-#{spec.version}.ser")
-        if File.file?(ser)
-          Solargraph.logger.info "Loading #{spec.name} #{spec.version} from cache"
-          file = File.open(ser, 'rb')
-          dump = file.read
-          file.close
-          begin
-            result = Marshal.load(dump)
-            return result unless result.nil? || result.empty?
-            Solargraph.logger.warn "Empty cache for #{spec.name} #{spec.version}. Reloading"
-            File.unlink ser
-          rescue StandardError => e
-            Solargraph.logger.warn "Error loading pin cache: [#{e.class}] #{e.message}"
-            File.unlink ser
-          end
-        end
+        cache = Solargraph::Cache.load('gems', "#{spec.name}-#{spec.version}.ser")
+        return cache if cache
       end
       size = Dir.glob(File.join(y, '**', '*'))
         .map{ |f| File.size(f) }
@@ -284,10 +270,7 @@ module Solargraph
       result = Mapper.new(YARD::Registry.all, spec).map
       raise NoYardocError, "Yardoc at #{y} is empty" if result.empty?
       if spec
-        ser = File.join(CoreDocs.cache_dir, 'gems', "#{spec.name}-#{spec.version}.ser")
-        file = File.open(ser, 'wb')
-        file.write Marshal.dump(result)
-        file.close
+        Solargraph::Cache.save 'gems', "#{spec.name}-#{spec.version}.ser", result
       end
       result
     end
