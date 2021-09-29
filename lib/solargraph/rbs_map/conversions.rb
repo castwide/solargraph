@@ -131,14 +131,26 @@ module Solargraph
   
       # @param decl [RBS::AST::Members::MethodDefinition]
       def method_def_to_pin decl, closure
-        pin = Solargraph::Pin::Method.new(
-          name: decl.name.to_s,
-          closure: closure,
-          comments: decl.comment&.string,
-          scope: decl.instance? ? :instance : :class
-        )
-        update_pin_data(decl, pin)
-        pins.push pin
+        if decl.instance?
+          pin = Solargraph::Pin::Method.new(
+            name: decl.name.to_s,
+            closure: closure,
+            comments: decl.comment&.string,
+            scope: :instance
+          )
+          update_pin_data(decl, pin)
+          pins.push pin
+        end
+        if decl.singleton?
+          pin = Solargraph::Pin::Method.new(
+            name: decl.name.to_s,
+            closure: closure,
+            comments: decl.comment&.string,
+            scope: :class
+          )
+          update_pin_data(decl, pin)
+          pins.push pin
+        end
       end
   
       def update_pin_data decl, pin
