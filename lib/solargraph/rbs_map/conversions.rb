@@ -16,6 +16,10 @@ module Solargraph
 
       private
 
+      def type_aliases
+        @type_aliases ||= {}
+      end
+
       def convert_decl_to_pin decl, closure
         cursor = pins.length
         case decl
@@ -24,7 +28,7 @@ module Solargraph
         when RBS::AST::Declarations::Interface
           STDERR.puts "Skipping interface #{decl.name.relative!}"
         when RBS::AST::Declarations::Alias
-          STDERR.puts "Skipping alias #{decl.name.relative!}"
+          type_aliases[decl.name.to_s] = decl
         when RBS::AST::Declarations::Module
           module_decl_to_pin decl
         when RBS::AST::Declarations::Constant
@@ -276,30 +280,32 @@ module Solargraph
       }
 
       def method_type_to_tag type
-        str = "#{type.type.return_type}"
-        RBS_TO_YARD_TYPE[str] || str
+        if type_aliases.key?(type.type.return_type.to_s)
+          other_type_to_tag(type_aliases[type.type.return_type.to_s].type)
+        else
+          str = "#{type.type.return_type}"
+          RBS_TO_YARD_TYPE[str] || str
+        end
       end
   
       def other_type_to_tag type
         if type.is_a?(RBS::Types::Optional)
           "#{other_type_to_tag(type.type)}, nil"
         elsif type.is_a?(RBS::Types::Bases::Any)
-          nil
+          # @todo Not sure what to do with Any yet
+          'BasicObject'
         elsif type.is_a?(RBS::Types::Bases::Bool)
           'Boolean'
         elsif type.is_a?(RBS::Types::Tuple)
-          # @todo Figure this out
-          nil
+          "Array(#{type.types.map { |t| other_type_to_tag(t) }.join(', ')})"
         elsif type.is_a?(RBS::Types::Literal)
-          # @todo Figure this out
-          nil
+          type.literal
         elsif type.is_a?(RBS::Types::Union)
-          # @todo Figure this out
-          nil
+          type.types.map { |t| other_type_to_tag(t) }.join(', ')
         elsif type.respond_to?(:name) && type.name.respond_to?(:relative!)
           RBS_TO_YARD_TYPE[type.name.relative!.to_s] || type.name.relative!.to_s
         else
-          nil
+          'undefined'
         end
       end  
     end
