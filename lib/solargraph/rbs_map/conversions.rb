@@ -81,7 +81,7 @@ module Solargraph
         when RBS::AST::Declarations::Base
           convert_decl_to_pin(member, closure)
         else
-          STDERR.puts "Skipping member #{member.class}"
+          Solargraph.logger.warn "Skipping member #{member.class}"
         end
         context
       end
@@ -327,7 +327,7 @@ module Solargraph
         elsif type.is_a?(RBS::Types::Bases::Nil)
           'nil'
         else
-          STDERR.puts "Nope: #{type.class} #{type}"
+          Solargraph.logger.warn "Unrecognized RBS type: #{type.class} #{type}"
           'undefined'
         end
       end
