@@ -324,6 +324,8 @@ module Solargraph
         elsif type.is_a?(RBS::Types::Record)
           # @todo Better record support
           'Hash'
+        elsif type.is_a?(RBS::Types::Bases::Nil)
+          'nil'
         else
           STDERR.puts "Nope: #{type.class} #{type}"
           'undefined'
