@@ -304,7 +304,11 @@ module Solargraph
           type.types.map { |t| other_type_to_tag(t) }.join(', ')
         elsif type.respond_to?(:name) && type.name.respond_to?(:relative!)
           RBS_TO_YARD_TYPE[type.name.relative!.to_s] || type.name.relative!.to_s
+        elsif type.is_a?(RBS::Types::Record)
+          # @todo Better record support
+          'Hash'
         else
+          STDERR.puts "Nope: #{type.class} #{type}"
           'undefined'
         end
       end
