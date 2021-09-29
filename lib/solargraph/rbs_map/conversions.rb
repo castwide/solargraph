@@ -20,6 +20,9 @@ module Solargraph
         @type_aliases ||= {}
       end
 
+      # @param decl [RBS::AST::Declarations::Base]
+      # @param closure [Pin::Closure]
+      # @return [void]
       def convert_decl_to_pin decl, closure
         cursor = pins.length
         case decl
@@ -87,6 +90,7 @@ module Solargraph
       end
   
       # @param decl [RBS::AST::Declarations::Class]
+      # @return [void]
       def class_decl_to_pin decl
         class_pin = Solargraph::Pin::Namespace.new(
           type: :class,
@@ -105,9 +109,10 @@ module Solargraph
       end
   
       # @param decl [RBS::AST::Declarations::Interface]
+      # @return [void]
       def interface_decl_to_pin decl
         class_pin = Solargraph::Pin::Namespace.new(
-          type: :class,
+          type: :module,
           name: decl.name.relative!.to_s,
           closure: Solargraph::Pin::ROOT_PIN,
           comments: decl.comment&.string,
@@ -120,6 +125,8 @@ module Solargraph
         convert_members_to_pin decl, class_pin
       end
 
+      # @param decl [RBS::AST::Declarations::Module]
+      # @return [void]
       def module_decl_to_pin decl
         module_pin = Solargraph::Pin::Namespace.new(
           type: :module,
@@ -132,6 +139,7 @@ module Solargraph
       end
   
       # @param decl [RBS::AST::Declarations::Constant]
+      # @return [void]
       def constant_decl_to_pin decl
         parts = decl.name.relative!.to_s.split('::')
         if parts.length > 1
@@ -151,6 +159,8 @@ module Solargraph
       end
   
       # @param decl [RBS::AST::Members::MethodDefinition]
+      # @param closure [Pin::Closure]
+      # @return [void]
       def method_def_to_pin decl, closure
         if decl.instance?
           pin = Solargraph::Pin::Method.new(
@@ -304,7 +314,8 @@ module Solargraph
           RBS_TO_YARD_TYPE[str] || str
         end
       end
-  
+
+      # @return [String]
       def other_type_to_tag type
         if type.is_a?(RBS::Types::Optional)
           "#{other_type_to_tag(type.type)}, nil"
