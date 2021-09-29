@@ -462,11 +462,6 @@ module Solargraph
       false
     end
 
-    # @return [YardMap]
-    # def yard_map
-    #   @yard_map ||= YardMap.new
-    # end
-
     # Check if the host class includes the specified module.
     #
     # @param host [String] The class
@@ -486,8 +481,8 @@ module Solargraph
     # @param library [String]
     # @return [RbsMap]
     def load_rbs_map library
-      map = RbsMap.load(library)
-      return map if map.resolved?
+      # map = RbsMap.load(library)
+      # return map if map.resolved?
       RbsMap::StdlibMap.load(library)
     end
 

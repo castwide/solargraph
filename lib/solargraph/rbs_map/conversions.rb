@@ -307,7 +307,7 @@ module Solargraph
         else
           'undefined'
         end
-      end  
+      end
     end
   end
 end
