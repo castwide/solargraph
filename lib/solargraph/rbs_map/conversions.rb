@@ -26,7 +26,8 @@ module Solargraph
         when RBS::AST::Declarations::Class
           class_decl_to_pin decl
         when RBS::AST::Declarations::Interface
-          STDERR.puts "Skipping interface #{decl.name.relative!}"
+          # STDERR.puts "Skipping interface #{decl.name.relative!}"
+          interface_decl_to_pin decl
         when RBS::AST::Declarations::Alias
           type_aliases[decl.name.to_s] = decl
         when RBS::AST::Declarations::Module
@@ -94,7 +95,7 @@ module Solargraph
           comments: decl.comment&.string
         )
         pins.push class_pin
-        unless decl.super_class.nil?
+        if decl.super_class
           pins.push Solargraph::Pin::Reference::Superclass.new(
             closure: class_pin,
             name: decl.super_class.name.relative!.to_s
@@ -103,6 +104,22 @@ module Solargraph
         convert_members_to_pin decl, class_pin
       end
   
+      # @param decl [RBS::AST::Declarations::Interface]
+      def interface_decl_to_pin decl
+        class_pin = Solargraph::Pin::Namespace.new(
+          type: :class,
+          name: decl.name.relative!.to_s,
+          closure: Solargraph::Pin::ROOT_PIN,
+          comments: decl.comment&.string,
+          # HACK: Using :hidden to keep interfaces from appearing in
+          # autocompletion
+          visibility: :hidden
+        )
+        class_pin.docstring.add_tag(YARD::Tags::Tag.new(:abstract, '(RBS interface)'))
+        pins.push class_pin
+        convert_members_to_pin decl, class_pin
+      end
+
       def module_decl_to_pin decl
         module_pin = Solargraph::Pin::Namespace.new(
           type: :module,
