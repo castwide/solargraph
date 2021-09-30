@@ -88,7 +88,7 @@ module Solargraph
         end
         context
       end
-  
+
       # @param decl [RBS::AST::Declarations::Class]
       # @return [void]
       def class_decl_to_pin decl
