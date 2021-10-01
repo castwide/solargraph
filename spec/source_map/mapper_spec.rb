@@ -1469,4 +1469,43 @@ describe Solargraph::SourceMap::Mapper do
     expect(map.first_pin('Foo#baz').visibility).to be(:private)
     expect(map.first_pin('Foo#quz').visibility).to be(:public)
   end
+
+  it 'encloses class_eval calls in receivers' do
+    map = Solargraph::SourceMap.load_string(%(
+      class Foo
+      end
+
+      class Bar
+        Foo.class_eval do
+          def foobaz; end
+        end
+
+        class_eval do
+          def barbaz; end
+        end
+      end
+    ))
+    paths = map.pins.map(&:path)
+    expect(paths).to include('Foo#foobaz')
+    expect(paths).to include('Bar#barbaz')
+  end
+
+  it 'sends local variables to remote class_eval receivers' do
+    map = Solargraph::SourceMap.load_string(%(
+      class Bar; end
+      class Foo
+        lvar = 'lvar'
+        Bar.class_eval do
+          def barbaz; end
+        end
+      end
+    ), 'test.rb')
+    locals = map.locals_at(
+      Solargraph::Location.new(
+        'test.rb',
+        Solargraph::Range.from_to(5, 0, 5, 0)
+      )
+    ).map(&:name)
+    expect(locals).to eq(['lvar'])
+  end
 end
