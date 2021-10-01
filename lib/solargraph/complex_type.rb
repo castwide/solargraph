@@ -93,6 +93,10 @@ module Solargraph
       ComplexType.parse(*result.map(&:tag))
     end
 
+    def nullable?
+      @items.any?(&:nil_type?)
+    end
+
     private
 
     # @todo This is a quick and dirty hack that forces `self` keywords

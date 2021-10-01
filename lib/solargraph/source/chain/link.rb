@@ -51,6 +51,10 @@ module Solargraph
           clone.mark_head(false)
         end
 
+        def nullable?
+          false
+        end
+
         protected
 
         # Mark whether this link is the head of a chain

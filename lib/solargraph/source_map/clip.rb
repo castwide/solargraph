@@ -59,11 +59,7 @@ module Solargraph
       #
       # @return [Array<Solargraph::Pin::Base>]
       def locals
-        loc_pos = context_pin.location.range.contain?(cursor.position) ? cursor.position : context_pin.location.range.ending
-        adj_pos = Position.new(loc_pos.line, (loc_pos.column.zero? ? 0 : loc_pos.column - 1))
-        @locals ||= source_map.locals.select { |pin|
-          pin.visible_from?(block, adj_pos)
-        }.reverse
+        @locals ||= source_map.locals_at(location)
       end
 
       def gates
@@ -96,6 +92,10 @@ module Solargraph
       # @return [SourceMap]
       def source_map
         @source_map ||= api_map.source_map(cursor.filename)
+      end
+
+      def location
+        Location.new(source_map.filename, Solargraph::Range.new(cursor.position, cursor.position))
       end
 
       # @return [Solargraph::Pin::Base]
