@@ -18,19 +18,7 @@ module Solargraph
         true
       end
 
-      # @param other [Pin::Base] The caller's block
-      # @param position [Position, Array(Integer, Integer)] The caller's position
-      # @return [Boolean]
-      def visible_from?(other, position)
-        position = Position.normalize(position)
-        other.filename == filename &&
-          match_tags(other.full_context.tag, full_context.tag) &&
-          (other == closure ||
-            (closure.location.range.contain?(other.location.range.start) && closure.location.range.contain?(other.location.range.ending))
-          ) &&
-          presence.contain?(position)
-      end
-
+      # @param other_closure [Pin::Closure]
       # @param other_loc [Location]
       def visible_at?(other_closure, other_loc)
         return true if location.filename == other_loc.filename &&
