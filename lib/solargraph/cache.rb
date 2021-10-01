@@ -16,7 +16,9 @@ module Solargraph
       #
       # @return [String]
       def work_dir
-        File.join(base_dir, "ruby-#{RUBY_VERSION}", "solargraph-#{Solargraph::VERSION}")
+        # The directory is not stored in a variable so it can be overridden
+        # in specs.
+        File.join(base_dir, "ruby-#{RUBY_VERSION}", "rbs-#{RBS::VERSION}", "solargraph-#{Solargraph::VERSION}")
       end
 
       # @return [Array<Solargraph::Pin::Base>]
