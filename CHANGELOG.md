@@ -1,3 +1,7 @@
+## 0.44.1
+- Chain nil safety navigation operator (#420)
+- Update closure and context for class_eval receiver (#487)
+
 ## 0.44.0 - September 27, 2021
 - Allow opening parenthesis, space, and comma when using Diff::LCS (#465)
 - Support textDocument/documentHighlight
