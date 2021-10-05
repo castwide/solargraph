@@ -111,6 +111,21 @@ describe Protocol do
     expect(@protocol.host.open?('file:///file.rb')).to be(true)
   end
 
+  it 'handles textDocument/documentHighlight' do
+    @protocol.request 'textDocument/documentHighlight', {
+      'textDocument' => {
+        'uri' => 'file:///file.rb'
+      },
+      'position' => {
+        'line' => 1,
+        'character' => 17
+      }
+    }
+    response = @protocol.response
+    # Two references to Foo: the class definition and the Foo.new call
+    expect(response['result'].length).to eq(2)
+  end
+
   it "handles textDocument/didChange" do
     @protocol.request 'textDocument/didChange', {
       'textDocument' => {
