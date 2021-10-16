@@ -3,7 +3,7 @@ module Solargraph
     class Signature
       # @return [Array<Parameter>]
       attr_reader :parameters
-      
+
       # @return [ComplexType]
       attr_reader :return_type
 
