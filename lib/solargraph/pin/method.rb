@@ -138,18 +138,41 @@ module Solargraph
                 location: location,
                 closure: self,
                 comments: tag.docstring.all.to_s,
-                name: src.first,
+                name: clean_param(src.first),
                 presence: location ? location.range : nil,
-                decl: :arg,
+                decl: select_decl(src.first, src.last),
                 return_type: param_type_from_name(tag, src.first)
               )
             end,
             ComplexType.try_parse(*tag.docstring.tags(:return).flat_map(&:types))
           )
         end
+        @overloads
       end
 
       private
+
+      def select_decl name, asgn
+        if name.start_with?('**')
+          :kwrestarg
+        elsif name.start_with?('*')
+          :restarg
+        elsif name.start_with?('&')
+          :blockarg
+        elsif name.end_with?(':') && asgn
+          :kwoptarg
+        elsif name.end_with?(':')
+          :kwarg
+        elsif asgn
+          :optarg
+        else
+          :arg
+        end
+      end
+
+      def clean_param name
+        name.gsub(/[*&:]/, '')
+      end
 
       # @param tag [YARD::Tags::OverloadTag]
       def param_type_from_name(tag, name)

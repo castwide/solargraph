@@ -58,17 +58,15 @@ module Solargraph
               # next if ol.parameters.last && ol.parameters.last.first.start_with?('&') && ol.parameters.last.last.nil? && !with_block?
               match = true
               arguments.each_with_index do |arg, idx|
-                achain = arguments[idx]
-                next if achain.nil?
                 param = ol.parameters[idx]
                 if param.nil?
-                  match = false unless ol.parameters.last && ol.parameters.last.restarg?
+                  match = false unless ol.parameters.any?(&:restarg?)
                   break
                 end
-                atype = achain.infer(api_map, Pin::ProxyType.anonymous(context), locals)
+                atype = arg.infer(api_map, Pin::ProxyType.anonymous(context), locals)
                 # @todo Weak type comparison
                 # unless atype.tag == param.return_type.tag || api_map.super_and_sub?(param.return_type.tag, atype.tag)
-                unless atype.name == param.return_type.name || api_map.super_and_sub?(param.return_type.name, atype.name)
+                unless param.return_type.undefined? || atype.name == param.return_type.name || api_map.super_and_sub?(param.return_type.name, atype.name)
                   match = false
                   break
                 end
