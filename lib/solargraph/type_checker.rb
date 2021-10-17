@@ -405,16 +405,12 @@ module Solargraph
     end
 
     def arity_problems_for pin, arguments, location
-      if pin.source == :rbs
-        results = pin.signatures.map do |sig|
-          r = parameterized_arity_problems_for(pin, sig.parameters, arguments, location)
-          return [] if r.empty?
-          r
-        end
-        results.first
-      else
-        parameterized_arity_problems_for(pin, pin.parameters, arguments, location)
+      results = pin.signatures.map do |sig|
+        r = parameterized_arity_problems_for(pin, sig.parameters, arguments, location)
+        return [] if r.empty?
+        r
       end
+      results.first
     end
 
     def parameterized_arity_problems_for(pin, parameters, arguments, location)
