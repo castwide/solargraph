@@ -21,13 +21,14 @@ module Solargraph
       # @param parameters [Array<Pin::Parameter>]
       # @param node [Parser::AST::Node, RubyVM::AbstractSyntaxTree::Node]
       # @param attribute [Boolean]
-      def initialize visibility: :public, explicit: true, parameters: [], node: nil, attribute: false, **splat
+      def initialize visibility: :public, explicit: true, parameters: [], node: nil, attribute: false, signatures: nil, **splat
         super(**splat)
         @visibility = visibility
         @explicit = explicit
         @parameters = parameters
         @node = node
         @attribute = attribute
+        @signatures = signatures
       end
 
       # @return [Array<String>]
@@ -44,14 +45,14 @@ module Solargraph
       end
 
       def return_type
-        @return_type ||= generate_complex_type
+        @return_type ||= ComplexType.try_parse(*signatures.map(&:return_type).map(&:to_s))
       end
 
       # @return [Array<Signature>]
       def signatures
         @signatures ||= begin
           result = overloads.map { |meth| Signature.new(meth.parameters, meth.return_type) }
-          result.push Signature.new(parameters, return_type) if result.empty?
+          result.push Signature.new(parameters, generate_complex_type)
           result
         end
       end
@@ -131,26 +132,31 @@ module Solargraph
       # @return [Array<Pin::Method>]
       def overloads
         @overloads ||= docstring.tags(:overload).map do |tag|
-          Solargraph::Pin::Method.new(
-            name: name,
-            closure: self,
-            # args: tag.parameters.map(&:first),
-            parameters: tag.parameters.map do |src|
+          Pin::Signature.new(
+            tag.parameters.map do |src|
               Pin::Parameter.new(
                 location: location,
                 closure: self,
                 comments: tag.docstring.all.to_s,
                 name: src.first,
                 presence: location ? location.range : nil,
-                decl: :arg
+                decl: :arg,
+                return_type: param_type_from_name(tag, src.first)
               )
             end,
-            comments: tag.docstring.all.to_s
+            ComplexType.try_parse(*tag.docstring.tags(:return).flat_map(&:types))
           )
         end
       end
 
       private
+
+      # @param tag [YARD::Tags::OverloadTag]
+      def param_type_from_name(tag, name)
+        param = tag.tags(:param).select { |t| t.name == name }.first
+        return ComplexType::UNDEFINED unless param
+        ComplexType.try_parse(*param.types)
+      end
 
       # @return [ComplexType]
       def generate_complex_type

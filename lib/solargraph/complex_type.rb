@@ -161,7 +161,7 @@ module Solargraph
                 next
               else
                 point_stack -= 1
-                subtype_string += char if point_stack == 0
+                subtype_string += char
                 raise ComplexTypeError, "Invalid close in type #{type_string}" if point_stack < 0
               end
               next

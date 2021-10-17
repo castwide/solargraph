@@ -122,10 +122,12 @@ module Solargraph
       params = first_param_hash(stack)
       result = []
       if rules.require_type_tags?
-        pin.parameters.each do |par|
-          break if par.decl == :restarg || par.decl == :kwrestarg || par.decl == :blockarg
-          unless params[par.name]
-            result.push Problem.new(pin.location, "Missing @param tag for #{par.name} on #{pin.path}", pin: pin)
+        pin.signatures.each do |sig|
+          sig.parameters.each do |par|
+            break if par.decl == :restarg || par.decl == :kwrestarg || par.decl == :blockarg
+            unless params[par.name]
+              result.push Problem.new(pin.location, "Missing @param tag for #{par.name} on #{pin.path}", pin: pin)
+            end
           end
         end
       end
@@ -256,7 +258,7 @@ module Solargraph
           end
           break unless rules.validate_calls?
           params = first_param_hash(pins)
-          pin.parameters.each_with_index do |par, idx|
+          pin.signatures.first.parameters.each_with_index do |par, idx|
             argchain = base.links.last.arguments[idx]
             if argchain.nil? && par.decl == :arg
               result.push Problem.new(location, "Not enough arguments to #{pin.path}")

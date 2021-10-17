@@ -20,6 +20,7 @@ module Solargraph
             comments: comments,
             scope: scope || code_object.scope,
             visibility: visibility || code_object.visibility,
+            # @todo Might need to convert overloads to signatures
             parameters: get_parameters(code_object, location, comments),
             explicit: code_object.is_explicit?
           )

@@ -11,6 +11,6 @@ describe Solargraph::RbsMap::StdlibMap do
     #   on how StdLibFills will be handled going forward.
     rbs_map = Solargraph::RbsMap::StdlibMap.load('pathname')
     pin = rbs_map.path_pin('Pathname#join')
-    expect(pin.return_type.tag).to eq('Pathname')
+    expect(pin.signatures.first.return_type.tag).to eq('Pathname')
   end
 end

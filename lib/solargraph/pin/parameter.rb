@@ -7,10 +7,11 @@ module Solargraph
 
       attr_reader :asgn_code
 
-      def initialize decl: :arg, asgn_code: nil, **splat
+      def initialize decl: :arg, asgn_code: nil, return_type: nil, **splat
         super(**splat)
         @asgn_code = asgn_code
         @decl = decl
+        @return_type = return_type
       end
 
       def keyword?
@@ -27,6 +28,10 @@ module Solargraph
 
       def rest?
         decl == :restarg || decl == :kwrestarg
+      end
+
+      def block?
+        [:block, :blockarg].include?(decl)
       end
 
       def full

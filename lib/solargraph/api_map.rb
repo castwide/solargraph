@@ -688,7 +688,7 @@ module Solargraph
         comments: origin.comments,
         scope: origin.scope,
         visibility: origin.visibility,
-        parameters: origin.parameters,
+        signatures: origin.signatures,
         attribute: origin.attribute?
       }
       Pin::Method.new **args

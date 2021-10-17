@@ -49,23 +49,23 @@ module Solargraph
         # @return [Array<Pin::Base>]
         def inferred_pins pins, api_map, context, locals
           result = pins.map do |p|
-            overloads = p.docstring.tags(:overload)
+            next p unless p.is_a?(Pin::Method)
+            overloads = p.signatures
             # next p if overloads.empty?
             type = ComplexType::UNDEFINED
-            # @param [YARD::Tags::OverloadTag]
             overloads.each do |ol|
-              next unless arguments_match(arguments, ol.parameters)
-              next if ol.parameters.last && ol.parameters.last.first.start_with?('&') && ol.parameters.last.last.nil? && !with_block?
+              next unless arguments_match(arguments, ol)
+              # next if ol.parameters.last && ol.parameters.last.first.start_with?('&') && ol.parameters.last.last.nil? && !with_block?
               match = true
               arguments.each_with_index do |arg, idx|
                 achain = arguments[idx]
                 next if achain.nil?
                 param = ol.parameters[idx]
                 if param.nil?
-                  match = false unless ol.parameters.last && ol.parameters.last.first.start_with?('*')
+                  match = false unless ol.parameters.last && ol.parameters.last.restarg?
                   break
                 end
-                par = ol.tags(:param).select { |pp| pp.name == param.first }.first
+                par = p.docstring.tags(:param).select { |pp| pp.name == param.name }.first
                 next if par.nil? || par.types.nil? || par.types.empty?
                 atype = achain.infer(api_map, Pin::ProxyType.anonymous(context), locals)
                 other = ComplexType.try_parse(*par.types)
@@ -76,9 +76,9 @@ module Solargraph
                 end
               end
               if match
-                type = extra_return_type(ol, context)
+                type = extra_return_type(p.docstring, context)
                 break if type
-                type = ComplexType.try_parse(*ol.tag(:return).types).self_to(context.to_s).qualify(api_map, context.namespace) if ol.has_tag?(:return) && ol.tag(:return).types && !ol.tag(:return).types.empty? && (type.nil? || type.undefined?)
+                type = with_params(ol.return_type.self_to(context.to_s), context).qualify(api_map, context.namespace) if ol.return_type.defined?
                 type ||= ComplexType::UNDEFINED
               end
               break if type.defined?
@@ -107,9 +107,13 @@ module Solargraph
             p
           end
           result.map do |pin|
-            next pin if pin.return_type.undefined?
-            selfy = pin.return_type.self_to(context.tag)
-            selfy == pin.return_type ? pin : pin.proxy(selfy)
+            if pin.path == 'Class#new' && context.tag != 'Class'
+              pin.proxy(ComplexType.try_parse(context.namespace))
+            else
+              next pin if pin.return_type.undefined?
+              selfy = pin.return_type.self_to(context.tag)
+              selfy == pin.return_type ? pin : pin.proxy(selfy)
+            end
           end
         end
 
@@ -180,14 +184,15 @@ module Solargraph
         end
 
         # @param arguments [Array<Chain>]
-        # @param parameters [Array<String>]
+        # @param signature [Pin::Signature]
         # @return [Boolean]
-        def arguments_match arguments, parameters
+        def arguments_match arguments, signature
+          parameters = signature.parameters
           argcount = arguments.length
-          # argcount -= 1 if !arguments.empty? && arguments.last.links.first.word.start_with?('&')
           parcount = parameters.length
-          parcount -= 1 if !parameters.empty? && parameters.last.first.start_with?('&')
-          return false if argcount < parcount && !(argcount == parcount - 1 && parameters.last.first.start_with?('*'))
+          parcount -= 1 if !parameters.empty? && parameters.last.block?
+          return false if signature.block? && !with_block?
+          return false if argcount < parcount && !(argcount == parcount - 1 && parameters.last.restarg?)
           true
         end
 
@@ -197,6 +202,13 @@ module Solargraph
         def super_pins api_map, name_pin
           pins = api_map.get_method_stack(name_pin.namespace, name_pin.name, scope: name_pin.scope)
           pins.reject{|p| p.path == name_pin.path}
+        end
+
+        # @param type [ComplexType]
+        # @param context [ComplexType]
+        def with_params type, context
+          return type unless type.to_s.include?('$')
+          ComplexType.try_parse(type.to_s.gsub('$', context.value_types.map(&:tag).join(', ')).gsub('<>', ''))
         end
       end
     end
