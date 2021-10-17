@@ -65,12 +65,10 @@ module Solargraph
                   match = false unless ol.parameters.last && ol.parameters.last.restarg?
                   break
                 end
-                par = p.docstring.tags(:param).select { |pp| pp.name == param.name }.first
-                next if par.nil? || par.types.nil? || par.types.empty?
                 atype = achain.infer(api_map, Pin::ProxyType.anonymous(context), locals)
-                other = ComplexType.try_parse(*par.types)
                 # @todo Weak type comparison
-                unless atype.tag == other.tag || api_map.super_and_sub?(other.tag, atype.tag)
+                # unless atype.tag == param.return_type.tag || api_map.super_and_sub?(param.return_type.tag, atype.tag)
+                unless atype.name == param.return_type.name || api_map.super_and_sub?(param.return_type.name, atype.name)
                   match = false
                   break
                 end

@@ -42,19 +42,19 @@ module Solargraph
 @overload select()
   @return [Enumerator]
         )),
-        Override.from_comment('Array#[]', %(
-@overload [](range)
-  @param range [Range]
-  @return [self]
-@overload [](num1, num2)
-  @param num1 [Integer]
-  @param num2 [Integer]
-  @return [self]
-@overload [](num)
-  @param num [Integer]
-  @return_single_parameter
-@return_single_parameter
-        )),
+#         Override.from_comment('Array#[]', %(
+# @overload [](range)
+#   @param range [Range]
+#   @return [self]
+# @overload [](num1, num2)
+#   @param num1 [Integer]
+#   @param num2 [Integer]
+#   @return [self]
+# @overload [](num)
+#   @param num [Integer]
+#   @return_single_parameter
+# @return_single_parameter
+#         )),
         Override.from_comment('Array#first', %(
 @overload first(num)
   @param num [Integer]

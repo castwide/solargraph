@@ -872,9 +872,9 @@ describe Solargraph::SourceMap::Clip do
     map = Solargraph::ApiMap.new
     map.map source
     clip = map.clip_at('test.rb', Solargraph::Position.new(3, 15))
-    expect(clip.infer.to_s).to eq('Array<String>')
+    expect(clip.infer.to_s).to eq('Array<String>, nil')
     clip = map.clip_at('test.rb', Solargraph::Position.new(4, 15))
-    expect(clip.infer.to_s).to eq('Array<String>')
+    expect(clip.infer.to_s).to eq('Array<String>, nil')
     clip = map.clip_at('test.rb', Solargraph::Position.new(5, 15))
     expect(clip.infer.to_s).to eq('String')
   end

@@ -224,7 +224,7 @@ module Solargraph
       def parts_of_function type, pin
         parameters = []
         type.type.required_positionals.each do |param|
-          parameters.push Solargraph::Pin::Parameter.new(decl: :arg, name: param.name.to_s, closure: pin, return_type: other_type_to_tag(param.type))
+          parameters.push Solargraph::Pin::Parameter.new(decl: :arg, name: param.name.to_s, closure: pin, return_type: ComplexType.try_parse(other_type_to_tag(param.type)))
         end
         type.type.optional_positionals.each do |param|
           parameters.push Solargraph::Pin::Parameter.new(decl: :optarg, name: param.name.to_s, closure: pin)
@@ -319,6 +319,7 @@ module Solargraph
       RBS_TO_YARD_TYPE = {
         'bool' => 'Boolean',
         'string' => 'String',
+        'int' => 'Integer',
         'untyped' => '',
         'NilClass' => 'nil'
       }
