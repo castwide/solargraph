@@ -51,8 +51,11 @@ module Solargraph
       # @return [Array<Signature>]
       def signatures
         @signatures ||= begin
-          result = overloads.map { |meth| Signature.new(meth.parameters, meth.return_type) }
-          result.push Signature.new(parameters, generate_complex_type)
+          top_type = generate_complex_type
+          result = []
+          result.push Signature.new(parameters, top_type) if top_type.defined?
+          result.concat(overloads.map { |meth| Signature.new(meth.parameters, meth.return_type) })
+          result.push Signature.new(parameters, top_type) if result.empty?
           result
         end
       end
@@ -71,6 +74,16 @@ module Solargraph
         detail.strip!
         return nil if detail.empty?
         detail
+      end
+
+      # @return [Array<Hash>]
+      def signature_help
+        @signature_help ||= signatures.map do |sig|
+          {
+            label: name + '(' + sig.parameters.map(&:full).join(', ') + ')',
+            documentation: documentation
+          }
+        end
       end
 
       def path

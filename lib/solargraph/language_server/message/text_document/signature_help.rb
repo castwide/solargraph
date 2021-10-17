@@ -9,13 +9,8 @@ module Solargraph
             line = params['position']['line']
             col = params['position']['character']
             suggestions = host.signatures_at(params['textDocument']['uri'], line, col)
-            info = []
-            suggestions.each do |pin|
-              info.concat pin.overloads.map(&:signature_help)
-              info.push pin.signature_help
-            end
             set_result({
-              signatures: info
+              signatures: suggestions.flat_map { |pin| pin.signature_help }
             })
           rescue FileNotFoundError => e
             Logging.logger.warn "[#{e.class}] #{e.message}"

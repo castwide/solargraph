@@ -34,12 +34,9 @@ module Solargraph
         end
       end
 
-      # @return [Hash]
+      # @return [Array<Hash>]
       def signature_help
-        @signature_help ||= {
-          label: name + '(' + parameters.map(&:full).join(', ') + ')',
-          documentation: documentation
-        }
+        []
       end
 
       # @return [String]
