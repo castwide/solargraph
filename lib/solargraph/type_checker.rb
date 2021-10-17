@@ -404,11 +404,23 @@ module Solargraph
       true
     end
 
+    def arity_problems_for pin, arguments, location
+      if pin.source == :rbs
+        results = pin.signatures.map do |sig|
+          parameterized_arity_problems_for(pin, sig.parameters, arguments, location)
+        end
+        return [] if results.all?(&:empty?)
+        [results.flatten.first]
+      else
+        parameterized_arity_problems_for(pin, pin.parameters, arguments, location)
+      end
+    end
+
     # @param pin [Pin::Method]
-    def arity_problems_for(pin, arguments, location)
+    def parameterized_arity_problems_for(pin, parameters, arguments, location)
       return [] unless pin.explicit?
-      return [] if pin.parameters.empty? && arguments.empty?
-      if pin.parameters.empty?
+      return [] if parameters.empty? && arguments.empty?
+      if parameters.empty?
         # Functions tagged param_tuple accepts two arguments (e.g., Hash#[]=)
         return [] if pin.docstring.tag(:param_tuple) && arguments.length == 2
         return [] if arguments.length == 1 && arguments.last.links.last.is_a?(Source::Chain::BlockVariable)
@@ -416,21 +428,21 @@ module Solargraph
       end
       unchecked = arguments.clone
       add_params = 0
-      if unchecked.empty? && pin.parameters.any? { |param| param.decl == :kwarg }
+      if unchecked.empty? && parameters.any? { |param| param.decl == :kwarg }
         return [Problem.new(location, "Missing keyword arguments to #{pin.path}")]
       end
       settled_kwargs = 0
       unless unchecked.empty?
         if any_splatted_call?(unchecked.map(&:node))
-          settled_kwargs = pin.parameters.count(&:keyword?)
+          settled_kwargs = parameters.count(&:keyword?)
         else
           kwargs = convert_hash(unchecked.last.node)
-          if pin.parameters.any? { |param| [:kwarg, :kwoptarg].include?(param.decl) || param.kwrestarg? }
+          if parameters.any? { |param| [:kwarg, :kwoptarg].include?(param.decl) || param.kwrestarg? }
             if kwargs.empty?
               add_params += 1
             else
               unchecked.pop
-              pin.parameters.each do |param|
+              parameters.each do |param|
                 next unless param.keyword?
                 if kwargs.key?(param.name.to_sym)
                   kwargs.delete param.name.to_sym
@@ -440,7 +452,7 @@ module Solargraph
                   return [Problem.new(location, "Missing keyword argument #{param.name} to #{pin.path}")]
                 end
               end
-              kwargs.clear if pin.parameters.any?(&:kwrestarg?)
+              kwargs.clear if parameters.any?(&:kwrestarg?)
               unless kwargs.empty?
                 return [Problem.new(location, "Unrecognized keyword argument #{kwargs.keys.first} to #{pin.path}")]
               end
@@ -450,16 +462,16 @@ module Solargraph
       end
       req = required_param_count(pin)
       if req + add_params < unchecked.length
-        return [] if pin.parameters.any?(&:rest?)
+        return [] if parameters.any?(&:rest?)
         opt = optional_param_count(pin)
         return [] if unchecked.length <= req + opt
         if unchecked.length == req + opt + 1 && unchecked.last.links.last.is_a?(Source::Chain::BlockVariable)
           return []
         end
-        if req + add_params + 1 == unchecked.length && any_splatted_call?(unchecked.map(&:node)) && (pin.parameters.map(&:decl) & [:kwarg, :kwoptarg, :kwrestarg]).any?
+        if req + add_params + 1 == unchecked.length && any_splatted_call?(unchecked.map(&:node)) && (parameters.map(&:decl) & [:kwarg, :kwoptarg, :kwrestarg]).any?
           return []
         end
-        return [] if arguments.length - req == pin.parameters.select { |p| [:optarg, :kwoptarg].include?(p.decl) }.length
+        return [] if arguments.length - req == parameters.select { |p| [:optarg, :kwoptarg].include?(p.decl) }.length
         return [Problem.new(location, "Too many arguments to #{pin.path}")]
       elsif unchecked.length < req - settled_kwargs && (arguments.empty? || (!arguments.last.splat? && !arguments.last.links.last.is_a?(Solargraph::Source::Chain::Hash)))
         # HACK: Kernel#raise signature is incorrect in Ruby 2.7 core docs.
