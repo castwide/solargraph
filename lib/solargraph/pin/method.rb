@@ -57,6 +57,22 @@ module Solargraph
         end
       end
 
+      # @return [String]
+      def detail
+        # This property is not cached in an instance variable because it can
+        # change when pins get proxied.
+        detail = String.new
+        detail += if signatures.length > 1
+          "(*) "
+        else
+          "(#{signatures.first.parameters.map(&:full).join(', ')}) " unless signatures.first.parameters.empty?
+        end.to_s
+        detail += "=#{probed? ? '~' : (proxied? ? '^' : '>')} #{return_type.to_s}" unless return_type.undefined?
+        detail.strip!
+        return nil if detail.empty?
+        detail
+      end
+
       def path
         @path ||= "#{namespace}#{(scope == :instance ? '#' : '.')}#{name}"
       end
