@@ -58,7 +58,7 @@ module Solargraph
       else
         Solargraph.logger.info "#{short_name} failed to load library #{library}"
         false
-      end  
+      end
     end
 
     def short_name

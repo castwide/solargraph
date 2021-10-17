@@ -295,7 +295,7 @@ module Solargraph
     def kwarg_problems_for argchain, api_map, block_pin, locals, location, pin, params, first
       result = []
       kwargs = convert_hash(argchain.node)
-      pin.parameters[first..-1].each_with_index do |par, cur|
+      pin.signatures.first.parameters[first..-1].each_with_index do |par, cur|
         idx = first + cur
         argchain = kwargs[par.name.to_sym]
         if par.decl == :kwrestarg || (par.decl == :optarg && idx == pin.parameters.length - 1 && par.asgn_code == '{}')
