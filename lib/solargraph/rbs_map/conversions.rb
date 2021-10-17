@@ -162,15 +162,15 @@ module Solargraph
       # @param closure [Pin::Closure]
       # @return [void]
       def method_def_to_pin decl, closure
-        signatures = method_def_to_sigs(decl, closure)
         if decl.instance?
           pin = Solargraph::Pin::Method.new(
             name: decl.name.to_s,
             closure: closure,
             comments: decl.comment&.string,
             scope: :instance,
-            signatures: signatures
+            signatures: []
           )
+          pin.signatures.concat method_def_to_sigs(decl, pin)
           pins.push pin
           if pin.name == 'initialize'
             pins.push Solargraph::Pin::Method.new(
@@ -179,11 +179,10 @@ module Solargraph
               name: 'new',
               comments: pin.comments,
               scope: :class,
-              signatures: signatures
+              signatures: pin.signatures
             )
-            # @todo Smelly instance variable access.
             pins.last.signatures.replace(
-              signatures.map do |p|
+              pin.signatures.map do |p|
                 Pin::Signature.new(
                   p.parameters,
                   ComplexType::SELF
@@ -201,9 +200,9 @@ module Solargraph
             closure: closure,
             comments: decl.comment&.string,
             scope: :class,
-            signatures: signatures
+            signatures: []
           )
-          # update_pin_data(decl, pin)
+          pin.signatures.push method_def_to_sigs(decl, pin)
           pins.push pin
         end
       end
