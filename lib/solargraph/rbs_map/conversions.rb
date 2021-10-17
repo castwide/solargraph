@@ -202,7 +202,7 @@ module Solargraph
             scope: :class,
             signatures: []
           )
-          pin.signatures.push method_def_to_sigs(decl, pin)
+          pin.signatures.concat method_def_to_sigs(decl, pin)
           pins.push pin
         end
       end
