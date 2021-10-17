@@ -407,16 +407,16 @@ module Solargraph
     def arity_problems_for pin, arguments, location
       if pin.source == :rbs
         results = pin.signatures.map do |sig|
-          parameterized_arity_problems_for(pin, sig.parameters, arguments, location)
+          r = parameterized_arity_problems_for(pin, sig.parameters, arguments, location)
+          return [] if r.empty?
+          r
         end
-        return [] if results.all?(&:empty?)
-        [results.flatten.first]
+        results.first
       else
         parameterized_arity_problems_for(pin, pin.parameters, arguments, location)
       end
     end
 
-    # @param pin [Pin::Method]
     def parameterized_arity_problems_for(pin, parameters, arguments, location)
       return [] unless pin.explicit?
       return [] if parameters.empty? && arguments.empty?
@@ -460,7 +460,7 @@ module Solargraph
           end
         end
       end
-      req = required_param_count(pin)
+      req = required_param_count(parameters)
       if req + add_params < unchecked.length
         return [] if parameters.any?(&:rest?)
         opt = optional_param_count(pin)
@@ -483,9 +483,8 @@ module Solargraph
       []
     end
 
-    # @param pin [Pin::Method]
-    def required_param_count(pin)
-      pin.parameters.sum { |param| %i[arg kwarg].include?(param.decl) ? 1 : 0 }
+    def required_param_count(parameters)
+      parameters.sum { |param| %i[arg kwarg].include?(param.decl) ? 1 : 0 }
     end
 
     # @param pin [Pin::Method]
