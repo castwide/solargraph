@@ -13,7 +13,7 @@ module Solargraph
           )
           location = object_location(code_object, spec)
           comments = code_object.docstring ? code_object.docstring.all.to_s : ''
-          Pin::Method.new(
+          pin = Pin::Method.new(
             location: location,
             closure: closure,
             name: name || code_object.name.to_s,
@@ -21,9 +21,11 @@ module Solargraph
             scope: scope || code_object.scope,
             visibility: visibility || code_object.visibility,
             # @todo Might need to convert overloads to signatures
-            parameters: get_parameters(code_object, location, comments),
+            parameters: [],
             explicit: code_object.is_explicit?
           )
+          pin.parameters.concat get_parameters(code_object, location, comments, pin)
+          pin
         end
 
         class << self
@@ -31,7 +33,7 @@ module Solargraph
 
           # @param code_object [YARD::CodeObjects::Base]
           # @return [Array<Solargraph::Pin::Parameter>]
-          def get_parameters code_object, location, comments
+          def get_parameters code_object, location, comments, pin
             return [] unless code_object.is_a?(YARD::CodeObjects::MethodObject)
             # HACK: Skip `nil` and `self` parameters that are sometimes emitted
             # for methods defined in C
@@ -39,7 +41,7 @@ module Solargraph
             code_object.parameters.select { |a| a[0] && a[0] != 'self' }.map do |a|
               Solargraph::Pin::Parameter.new(
                 location: location,
-                closure: self,
+                closure: pin,
                 comments: comments,
                 name: arg_name(a),
                 presence: nil,
