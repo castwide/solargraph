@@ -463,7 +463,7 @@ module Solargraph
       req = required_param_count(parameters)
       if req + add_params < unchecked.length
         return [] if parameters.any?(&:rest?)
-        opt = optional_param_count(pin)
+        opt = optional_param_count(parameters)
         return [] if unchecked.length <= req + opt
         if unchecked.length == req + opt + 1 && unchecked.last.links.last.is_a?(Source::Chain::BlockVariable)
           return []
@@ -488,13 +488,8 @@ module Solargraph
     end
 
     # @param pin [Pin::Method]
-    def optional_param_count(pin)
-      count = 0
-      pin.parameters.each do |param|
-        next unless param.decl == :optarg
-        count += 1
-      end
-      count
+    def optional_param_count(parameters)
+      parameters.select { |p| p.decl == :optarg }.length
     end
 
     def abstract? pin
