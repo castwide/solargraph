@@ -539,6 +539,34 @@ describe Solargraph::SourceMap::Clip do
     expect(clip.complete.pins.map(&:path)).to include('String#upcase')
   end
 
+  it "completes instance variable methods in define_method blocks" do
+    source = Solargraph::Source.load_string(%(
+      class Foo
+        def initialize
+          @foo = ''
+          define_method(:test3) { @foo._ } # only handle Module#define_method, other pin is ignored..
+        end
+        define_method(:test) do
+          @foo._
+        end
+      end
+      Foo.define_method(:test2) do
+        @foo._
+        define_method(:test4) { @foo._ } # only handle Module#define_method, other pin is ignored..
+      end
+      Foo.class_eval do
+        define_method(:test5) { @foo._ }
+      end
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new
+    api_map.map source
+    [[4, 39], [7, 15], [11, 13], [12, 37], [15, 37]].each do |loc|
+      clip = api_map.clip_at('test.rb', loc)
+      paths = clip.complete.pins.map(&:path)
+      expect(paths).to include('String#upcase'), -> { %(expected #{paths} at #{loc} to include "String#upcase") }
+    end
+  end
+
   it 'infers class instance variable types in rebound blocks' do
     source = Solargraph::Source.load_string(%(
       class Foo

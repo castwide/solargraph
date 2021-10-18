@@ -44,15 +44,24 @@ module Solargraph
         return nil unless api_map.rebindable_method_names.include?(word)
         chain = Parser.chain(receiver, location.filename)
         locals = api_map.source_map(location.filename).locals_at(location)
-        if ['instance_eval', 'instance_exec', 'class_eval', 'class_exec', 'module_eval', 'module_exec'].include?(chain.links.last.word)
+        links_last_word = chain.links.last.word
+        if %w[instance_eval instance_exec class_eval class_exec module_eval module_exec].include?(links_last_word)
           return chain.base.infer(api_map, self, locals)
-        else
-          receiver_pin = chain.define(api_map, self, locals).first
-          if receiver_pin && receiver_pin.docstring
-            ys = receiver_pin.docstring.tag(:yieldself)
-            if ys && ys.types && !ys.types.empty?
-              return ComplexType.try_parse(*ys.types).qualify(api_map, receiver_pin.context.namespace)
-            end
+        end
+        if 'define_method' == links_last_word and chain.define(api_map, self, locals).first&.path == 'Module#define_method' # change class type to instance type
+          if chain.links.size > 1 # Class.define_method
+            ty = chain.base.infer(api_map, self, locals)
+            return Solargraph::ComplexType.parse(ty.namespace)
+          else # define_method without self
+            return Solargraph::ComplexType.parse(closure.binder.namespace)
+          end
+        end
+        # other case without early return, read block yieldself tags
+        receiver_pin = chain.define(api_map, self, locals).first
+        if receiver_pin && receiver_pin.docstring
+          ys = receiver_pin.docstring.tag(:yieldself)
+          if ys && ys.types && !ys.types.empty?
+            return ComplexType.try_parse(*ys.types).qualify(api_map, receiver_pin.context.namespace)
           end
         end
         nil

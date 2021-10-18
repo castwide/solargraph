@@ -88,7 +88,7 @@ module Solargraph
       @rebindable_method_names ||= pins_by_class(Pin::Method)
         .select { |pin| pin.comments && pin.comments.include?('@yieldself') }
         .map(&:name)
-        .concat(['instance_eval', 'instance_exec', 'class_eval', 'class_exec', 'module_eval', 'module_exec'])
+        .concat(['instance_eval', 'instance_exec', 'class_eval', 'class_exec', 'module_eval', 'module_exec', 'define_method'])
         .to_set
     end
 
