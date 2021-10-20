@@ -80,7 +80,7 @@ module Solargraph
               end
             end
           end
-          sections.map(&:to_s).join
+          sections.map(&:to_s).join.strip
         end
       end
 
