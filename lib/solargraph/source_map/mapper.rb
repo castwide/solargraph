@@ -169,7 +169,7 @@ module Solargraph
             # @todo Handle parser errors in !parse directives
           end
         when 'domain'
-          namespace = closure_at(source_position)
+          namespace = closure_at(source_position) || Pin::ROOT_PIN
           namespace.domains.concat directive.tag.types unless directive.tag.types.nil?
         when 'override'
           pins.push Pin::Reference::Override.new(location, directive.tag.name, docstring.tags)
