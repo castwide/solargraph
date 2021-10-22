@@ -42,7 +42,6 @@ module Solargraph
       @version = version
       @domains = []
       begin
-        # @node, @comments = Source.parse_with_comments(@code, filename)
         @node, @comments = Solargraph::Parser.parse_with_comments(@code, filename)
         @parsed = true
       rescue Parser::SyntaxError, EncodingError => e
@@ -336,7 +335,6 @@ module Solargraph
     # @param parent [Symbol]
     # @return [void]
     def inner_folding_ranges top, result = [], parent = nil
-      # return unless top.is_a?(::Parser::AST::Node)
       return unless Parser.is_ast_node?(top)
       if FOLDING_NODE_TYPES.include?(top.type)
         # @todo Smelly exception for hash's first-level array in RubyVM
@@ -433,7 +431,6 @@ module Solargraph
     # @return [void]
     def inner_tree_at node, position, stack
       return if node.nil?
-      # here = Range.from_to(node.loc.expression.line, node.loc.expression.column, node.loc.expression.last_line, node.loc.expression.last_column)
       here = Range.from_node(node)
       if here.contain?(position) || colonized(here, position, node)
         stack.unshift node
