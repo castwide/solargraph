@@ -1,6 +1,7 @@
-## 0.44.1
+## 0.44.1 - November 18, 2021
 - Chain nil safety navigation operator (#420)
 - Update closure and context for class_eval receiver (#487)
+- SourceMap::Mapper handles invalid byte sequences (#474)
 
 ## 0.44.0 - September 27, 2021
 - Allow opening parenthesis, space, and comma when using Diff::LCS (#465)

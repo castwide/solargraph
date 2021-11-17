@@ -1,1 +1,2 @@
-# ©
+# @!method foo()
+# 	@return [String] ©

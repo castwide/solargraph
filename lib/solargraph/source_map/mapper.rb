@@ -61,7 +61,7 @@ module Solargraph
       end
 
       def process_comment source_position, comment_position, comment
-        return unless comment =~ MACRO_REGEXP
+        return unless comment.encode('UTF-8', invalid: :replace, replace: '?') =~ MACRO_REGEXP
         cmnt = remove_inline_comment_hashes(comment)
         parse = Solargraph::Source.parse_docstring(cmnt)
         last_line = 0
@@ -182,7 +182,7 @@ module Solargraph
         started = false
         comment.lines.each { |l|
           # Trim the comment and minimum leading whitespace
-          p = l.gsub(/^#/, '')
+          p = l.encode('UTF-8', invalid: :replace, replace: '?').gsub(/^#/, '')
           if num.nil? && !p.strip.empty?
             num = p.index(/[^ ]/)
             started = true
@@ -197,7 +197,7 @@ module Solargraph
 
       # @return [void]
       def process_comment_directives
-        return unless @code =~ MACRO_REGEXP
+        return unless @code.encode('UTF-8', invalid: :replace, replace: '?') =~ MACRO_REGEXP
         code_lines = @code.lines
         @source.associated_comments.each do |line, comments|
           src_pos = line ? Position.new(line, code_lines[line].to_s.chomp.index(/[^\s]/) || 0) : Position.new(code_lines.length, 0)

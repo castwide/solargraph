@@ -1508,4 +1508,10 @@ describe Solargraph::SourceMap::Mapper do
     ).map(&:name)
     expect(locals).to eq(['lvar'])
   end
+
+  it 'handles invalid byte sequences' do
+    expect {
+      Solargraph::SourceMap.load('spec/fixtures/invalid_byte.rb')
+  }.not_to raise_error
+  end
 end
