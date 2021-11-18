@@ -2,6 +2,8 @@
 - Chain nil safety navigation operator (#420)
 - Update closure and context for class_eval receiver (#487)
 - SourceMap::Mapper handles invalid byte sequences (#474)
+- Special handle var= references, which may use as var = (have space) (#498)
+- Rebind define_method to self (#494)
 
 ## 0.44.0 - September 27, 2021
 - Allow opening parenthesis, space, and comma when using Diff::LCS (#465)
