@@ -96,4 +96,17 @@ describe Solargraph::SourceMap do
     locals = map.locals_at(loc)
     expect(locals).to be_empty
   end
+
+  it 'scopes local variables correctly in class_eval blocks' do
+    map = Solargraph::SourceMap.load_string(%(
+      class Foo; end
+      x = 'y'
+      Foo.class_eval do
+        foo = :bar
+        etc
+      end
+    ), 'test.rb')
+    locals = map.locals_at(Solargraph::Location.new('test.rb', Solargraph::Range.from_to(5, 0, 5, 0))).map(&:name)
+    expect(locals).to eq(['x', 'foo'])
+  end
 end

@@ -1,3 +1,6 @@
+## 0.44.2
+- Scope local variables in class_eval blocks (#503)
+
 ## 0.44.1 - November 18, 2021
 - Chain nil safety navigation operator (#420)
 - Update closure and context for class_eval receiver (#487)

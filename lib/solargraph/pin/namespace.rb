@@ -9,8 +9,8 @@ module Solargraph
       # @return [::Symbol] :class or :module
       attr_reader :type
 
-      # @param type [Symbol] :class or :module
-      # @param visibility [Symbol] :public or :private
+      # @param type [::Symbol] :class or :module
+      # @param visibility [::Symbol] :public or :private
       # @param gates [Array<String>]
       def initialize type: :class, visibility: :public, gates: [''], **splat
         # super(location, namespace, name, comments)

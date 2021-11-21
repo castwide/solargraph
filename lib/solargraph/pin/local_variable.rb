@@ -41,7 +41,7 @@ module Solargraph
       end
 
       def match_named_closure needle, haystack
-        return true if needle == haystack
+        return true if needle == haystack || haystack.is_a?(Pin::Block)
         cursor = haystack
         until cursor.nil?
           return true if needle.path == cursor.path
