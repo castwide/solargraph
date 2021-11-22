@@ -48,10 +48,16 @@ module Solargraph
         end
 
         def references source, name
+          if name.end_with?("=")
+            reg = /#{Regexp.escape name[0..-2]}\s*=/
+            extract_offset = ->(code, offset) { reg.match(code, offset).offset(0) }
+          else
+            extract_offset = ->(code, offset) { [soff = code.index(name, offset), soff + name.length] }
+          end
           inner_node_references(name, source.node).map do |n|
-            offset = Position.to_offset(source.code, NodeMethods.get_node_start_position(n))
-            soff = source.code.index(name, offset)
-            eoff = soff + name.length
+            rng = Range.from_node(n)
+            offset = Position.to_offset(source.code, rng.start)
+            soff, eoff = extract_offset[source.code, offset]
             Location.new(
               source.filename,
               Range.new(
