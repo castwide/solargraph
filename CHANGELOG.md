@@ -1,5 +1,6 @@
 ## 0.44.2
 - Scope local variables in class_eval blocks (#503)
+- Fix invalid UTF-8 in node comments (#504)
 
 ## 0.44.1 - November 18, 2021
 - Chain nil safety navigation operator (#420)

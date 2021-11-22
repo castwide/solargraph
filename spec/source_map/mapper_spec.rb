@@ -1512,6 +1512,12 @@ describe Solargraph::SourceMap::Mapper do
   it 'handles invalid byte sequences' do
     expect {
       Solargraph::SourceMap.load('spec/fixtures/invalid_byte.rb')
-  }.not_to raise_error
+    }.not_to raise_error
+  end
+
+  it 'handles invalid byte sequences in stringified node comments' do
+    expect {
+      Solargraph::SourceMap.load('spec/fixtures/invalid_node_comment.rb')
+    }.not_to raise_error
   end
 end
