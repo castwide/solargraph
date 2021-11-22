@@ -29,16 +29,6 @@ module Solargraph
           NodeProcessor.process(source.node, Region.new(source: source))
         end
 
-        # def returns_from node
-        #   return [] unless Parser.is_ast_node?(node)
-        #   if node.type == :SCOPE
-        #     # node.children.select { |n| n.is_a?(RubyVM::AbstractSyntaxTree::Node) }.map { |n| DeepInference.get_return_nodes(n) }.flatten
-        #     DeepInference.get_return_nodes(node.children[2])
-        #   else
-        #     DeepInference.get_return_nodes(node)
-        #   end
-        # end
-
         def references source, name
           if name.end_with?("=")
             reg = /#{Regexp.escape name[0..-2]}\s*=/
