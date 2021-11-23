@@ -1,4 +1,4 @@
-## 0.44.2
+## 0.44.2 - November 23, 2021
 - Scope local variables in class_eval blocks (#503)
 - Fix invalid UTF-8 in node comments (#504)
 
