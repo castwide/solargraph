@@ -35,7 +35,7 @@ Gem::Specification.new do |s|
   s.add_runtime_dependency 'tilt', '~> 2.0'
   s.add_runtime_dependency 'yard', '~> 0.9', '>= 0.9.24'
 
-  s.add_development_dependency 'pry', '~> 0.11.3'
+  s.add_development_dependency 'pry'
   s.add_development_dependency 'public_suffix', '~> 3.1'
   s.add_development_dependency 'rspec', '~> 3.5', '>= 3.5.0'
   s.add_development_dependency 'simplecov', '~> 0.14'

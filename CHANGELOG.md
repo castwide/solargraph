@@ -1,6 +1,13 @@
-## 0.44.1
+## 0.44.2 - November 23, 2021
+- Scope local variables in class_eval blocks (#503)
+- Fix invalid UTF-8 in node comments (#504)
+
+## 0.44.1 - November 18, 2021
 - Chain nil safety navigation operator (#420)
 - Update closure and context for class_eval receiver (#487)
+- SourceMap::Mapper handles invalid byte sequences (#474)
+- Special handle var= references, which may use as var = (have space) (#498)
+- Rebind define_method to self (#494)
 
 ## 0.44.0 - September 27, 2021
 - Allow opening parenthesis, space, and comma when using Diff::LCS (#465)

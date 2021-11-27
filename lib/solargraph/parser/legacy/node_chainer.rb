@@ -71,6 +71,23 @@ module Solargraph
             else
               raise "No idea what to do with #{n}"
             end
+          elsif n.type == :csend
+            if n.children[0].is_a?(::Parser::AST::Node)
+              result.concat generate_links(n.children[0])
+              args = []
+              n.children[2..-1].each do |c|
+                args.push NodeChainer.chain(c)
+              end
+              result.push Chain::QCall.new(n.children[1].to_s, args, @in_block > 0 || block_passed?(n))
+            elsif n.children[0].nil?
+              args = []
+              n.children[2..-1].each do |c|
+                args.push NodeChainer.chain(c)
+              end
+              result.push Chain::QCall.new(n.children[1].to_s, args, @in_block > 0 || block_passed?(n))
+            else
+              raise "No idea what to do with #{n}"
+            end
           elsif n.type == :self
             result.push Chain::Head.new('self')
           elsif n.type == :zsuper

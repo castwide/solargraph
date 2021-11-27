@@ -111,8 +111,12 @@ describe Solargraph::Source do
       class Foo
         def bar
         end
+        def bar=
+        end
       end
-      Foo.new.bar
+      foo = Foo.new
+      foo.bar
+      foo.bar = 1
     ))
     foos = source.references('Foo')
     foobacks = foos.map{|f| source.at(f.range)}
@@ -120,6 +124,9 @@ describe Solargraph::Source do
     bars = source.references('bar')
     barbacks = bars.map{|b| source.at(b.range)}
     expect(barbacks).to eq(['bar', 'bar'])
+    assign_bars = source.references('bar=')
+    assign_barbacks = assign_bars.map{|b| source.at(b.range)}
+    expect(assign_barbacks).to eq(['bar=', 'bar ='])
   end
 
   it "allows escape sequences incompatible with UTF-8" do
