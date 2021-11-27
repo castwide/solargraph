@@ -49,7 +49,6 @@ module Solargraph
           return ComplexType.try_parse('Object') if dfn && dfn.path == 'Class#new'
         end
         return result unless result.tag == 'self'
-        puts "Base tag is #{cursor.chain.base.infer.tag}"
         ComplexType.try_parse(cursor.chain.base.infer(api_map, block, locals).namespace)
       end
 
