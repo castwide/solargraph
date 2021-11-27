@@ -214,7 +214,6 @@ module Solargraph
           if @source_gems.include?(spec.name)
             next
           end
-          next if @gem_paths.key?(spec.name)
           yd = yardoc_file_for_spec(spec)
           # YARD detects gems for certain libraries that do not have a yardoc
           # but exist in the stdlib. `fileutils` is an example. Treat those
