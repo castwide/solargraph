@@ -141,7 +141,7 @@ module Solargraph
     def rebindable_method_names
       @rebindable_method_names ||= begin
         # result = yard_map.rebindable_method_names
-        result = ['instance_eval', 'instance_exec', 'class_eval', 'class_exec', 'module_eval', 'module_exec'].to_set
+        result = ['instance_eval', 'instance_exec', 'class_eval', 'class_exec', 'module_eval', 'module_exec', 'define_method'].to_set
         source_maps.each do |map|
           result.merge map.rebindable_method_names
         end
