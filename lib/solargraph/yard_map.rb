@@ -343,7 +343,9 @@ module Solargraph
     # @param path [String]
     # @return [Gem::Specification]
     def spec_for_require path
-      spec = Gem::Specification.find_by_path(path) || Gem::Specification.find_by_name(path.split('/').first)
+      name = path.split('/').first
+      spec = Gem::Specification.find_by_name(name, @gemset[name])
+
       # Avoid loading the spec again if it's going to be skipped anyway
       return spec if @source_gems.include?(spec.name)
       # Avoid loading the spec again if it's already the correct version
