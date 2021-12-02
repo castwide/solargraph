@@ -145,10 +145,7 @@ module Solargraph
         # meths.shift # Ignore the first one
         meths.each do |meth|
           found = nil
-          params = meth.docstring.tags(:param)
-          if params.empty?
-            params = see_reference(docstring, api_map)
-          end
+          params = meth.docstring.tags(:param) + see_reference(docstring, api_map)
           params.each do |p|
             next unless p.name == name
             found = p
