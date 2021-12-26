@@ -461,5 +461,19 @@ describe Solargraph::TypeChecker do
       ))
       expect(checker.problems).to be_one
     end
+
+    it 'ignores method aliases' do
+      checker = type_checker(%(
+        class Foo
+          # @return [String]
+          def bar
+            'bar'
+          end
+          alias baz bar
+        end
+      ))
+      puts checker.problems.map(&:message)
+      expect(checker.problems).to be_empty
+    end
   end
 end

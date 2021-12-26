@@ -84,6 +84,7 @@ module Solargraph
     # @param pin [Pin::Method]
     # @return [Array<Problem>]
     def method_return_type_problems_for pin
+      return [] if pin.is_a?(Pin::MethodAlias)
       result = []
       declared = pin.typify(api_map).self_to(pin.full_context.namespace)
       if declared.undefined?
