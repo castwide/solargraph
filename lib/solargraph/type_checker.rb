@@ -84,12 +84,13 @@ module Solargraph
     # @param pin [Pin::Method]
     # @return [Array<Problem>]
     def method_return_type_problems_for pin
+      return [] if pin.is_a?(Pin::MethodAlias)
       result = []
       declared = pin.typify(api_map).self_to(pin.full_context.namespace)
       if declared.undefined?
         if pin.return_type.undefined? && rules.require_type_tags?
           result.push Problem.new(pin.location, "Missing @return tag for #{pin.path}", pin: pin)
-        elsif pin.return_type.defined?
+        elsif pin.return_type.defined? && !resolved_constant?(pin)
           result.push Problem.new(pin.location, "Unresolved return type #{pin.return_type} for #{pin.path}", pin: pin)
         elsif rules.must_tag_or_infer? && pin.probe(api_map).undefined?
           result.push Problem.new(pin.location, "Untyped method #{pin.path} could not be inferred")
@@ -109,6 +110,15 @@ module Solargraph
         end
       end
       result
+    end
+
+    # @todo This is not optimal. A better solution would probably be to mix
+    #   namespace alias into types at the ApiMap level.
+    #
+    # @param pin [Pin::Base]
+    # @return [Boolean]
+    def resolved_constant? pin
+      api_map.get_constants('', pin.binder.tag).any? { |pin| pin.name == pin.return_type.namespace && ['Class', 'Module'].include?(pin.return_type.name) }
     end
 
     def virtual_pin? pin

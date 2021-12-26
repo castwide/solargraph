@@ -153,15 +153,16 @@ describe Solargraph::Pin::Parameter do
         # @param bla [String]
         def bar(bla)
         end
+        # @param qux [Integer]
         # @param (see Foo#bar)
-        def baz(bla)
+        def baz(qux, bla)
           bla._
         end
       end
     ), 'test.rb')
     api_map = Solargraph::ApiMap.new
     api_map.map source
-    clip = api_map.clip_at('test.rb', [7, 14])
+    clip = api_map.clip_at('test.rb', [8, 14])
     paths = clip.complete.pins.map(&:path)
     expect(paths).to include('String#upcase')
   end
