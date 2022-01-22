@@ -1,3 +1,8 @@
+## 0.44.3 - January 22, 2022
+- TypeChecker validates aliased namespaces (#497)
+- Always use reference YARD tags when resolving param types (#515) (#516)
+- Skip method aliases in strict type checking
+
 ## 0.44.2 - November 23, 2021
 - Scope local variables in class_eval blocks (#503)
 - Fix invalid UTF-8 in node comments (#504)
