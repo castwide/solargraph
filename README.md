@@ -31,7 +31,8 @@ Plug-ins and extensions are available for the following editors:
     * GitHub: https://github.com/castwide/atom-solargraph
 
 * **Vim**
-    * GitHub: https://github.com/autozimu/LanguageClient-neovim
+    * GitHub: `LanguageClient-neovim`, https://github.com/autozimu/LanguageClient-neovim
+    * GitHub: `coc`, https://github.com/neoclide/coc-solargraph
 
 * **Emacs**
     * GitHub: `eglot.el`, https://github.com/joaotavora/eglot

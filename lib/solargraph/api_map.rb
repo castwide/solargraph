@@ -255,7 +255,7 @@ module Solargraph
         implicit.domains.each do |domain|
           type = ComplexType.try_parse(domain)
           next if type.undefined?
-          result.concat inner_get_methods(type.name, type.scope, [:public], deep, skip)
+          result.concat inner_get_methods(type.name, type.scope, visibility, deep, skip)
         end
         result.concat inner_get_methods(fqns, :class, visibility, deep, skip)
         result.concat inner_get_methods(fqns, :instance, visibility, deep, skip)
@@ -525,7 +525,7 @@ module Solargraph
         end
         store.domains(fqns).each do |d|
           dt = ComplexType.try_parse(d)
-          result.concat inner_get_methods(dt.namespace, dt.scope, [:public], deep, skip)
+          result.concat inner_get_methods(dt.namespace, dt.scope, visibility, deep, skip)
         end
       end
       result
