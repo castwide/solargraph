@@ -33,6 +33,7 @@ Plug-ins and extensions are available for the following editors:
 * **Vim**
     * GitHub: `LanguageClient-neovim`, https://github.com/autozimu/LanguageClient-neovim
     * GitHub: `coc`, https://github.com/neoclide/coc-solargraph
+    * GitHub: `Vim-EasyComplete`, https://github.com/jayli/vim-easycomplete
 
 * **Emacs**
     * GitHub: `eglot.el`, https://github.com/joaotavora/eglot
