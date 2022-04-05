@@ -13,3 +13,4 @@ The following people and organizations provide funding or other resources. [Beco
 - Emily Strickland
 - Tom de Grunt
 - Akira Yamada
+- Erlend Finvåg
