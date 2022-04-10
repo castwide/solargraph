@@ -49,7 +49,7 @@ Solargraph is capable of providing code completion and documentation for gems th
 
 When editing code, a `require` call that references a gem will pull the documentation into the code maps and include the gem's API in code completion and intellisense.
 
-If your project automatically requires bundled gems (e.g., `require 'bundler/require'`), Solargraph will add all of the Gemfile's default dependecies to the map.
+If your project automatically requires bundled gems (e.g., `require 'bundler/require'`), Solargraph will add all of the Gemfile's default dependencies to the map.
 
 ### Type Checking
 
