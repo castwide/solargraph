@@ -14,3 +14,4 @@ The following people and organizations provide funding or other resources. [Beco
 - Tom de Grunt
 - Akira Yamada
 - Erlend Finvåg
+- Matt Massicotte
