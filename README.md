@@ -43,6 +43,10 @@ Plug-ins and extensions are available for the following editors:
     * Plugin: https://marketplace.eclipse.org/content/ruby-solargraph
     * GitHub: https://github.com/PyvesB/eclipse-solargraph
 
+### Configuration
+
+Solargraph's behavior can be controlled via optional [configuration](https://solargraph.org/guides/configuration) files. The highest priority file is a `.solargraph.yml` file at the root of the project. If not present, any global configuration at `~/.config/solargraph/config.yml` will apply. The path to the global configuration can be overridden with the `SOLARGRAPH_GLOBAL_CONFIG` environment variable.
+
 ### Gem Support
 
 Solargraph is capable of providing code completion and documentation for gems that have YARD documentation. You can make sure your gems are documented by running `yard gems` from the command line. (YARD is included as one of Solargraph's gem dependencies. The first time you run it might take a while if you have a lot of gems installed).
