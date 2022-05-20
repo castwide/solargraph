@@ -418,6 +418,7 @@ module Solargraph
         # Functions tagged param_tuple accepts two arguments (e.g., Hash#[]=)
         return [] if pin.docstring.tag(:param_tuple) && arguments.length == 2
         return [] if arguments.length == 1 && arguments.last.links.last.is_a?(Source::Chain::BlockVariable)
+        return [] if arguments.length == 2 && arguments.last.links.last.is_a?(Source::Chain::Hash)
         return [Problem.new(location, "Too many arguments to #{pin.path}")]
       end
       unchecked = arguments.clone
