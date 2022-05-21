@@ -101,6 +101,7 @@ module Solargraph
         Override.method_return('File.dirname', 'String'),
         Override.method_return('File.extname', 'String'),
         Override.method_return('File.join', 'String'),
+        Override.method_return('File.open', 'File'),
 
         Override.from_comment('Float#+', %(
 @param y [Numeric]
