@@ -183,6 +183,8 @@ module Solargraph
       )
 
       PINS = [
+        # HACK: Extending Hash is not accurate to the implementation, but
+        # accurate enough to the behavior
         Pin::Reference::Extend.new(closure: Pin::Namespace.new(name: 'ENV'), name: 'Hash'),
         Pin::Reference::Superclass.new(closure: Pin::Namespace.new(name: 'File'), name: 'IO'),
         Pin::Reference::Superclass.new(closure: Pin::Namespace.new(name: 'Integer'), name: 'Numeric'),
