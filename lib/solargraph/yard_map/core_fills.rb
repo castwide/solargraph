@@ -183,6 +183,7 @@ module Solargraph
       )
 
       PINS = [
+        Pin::Reference::Extend.new(closure: Pin::Namespace.new(name: 'ENV'), name: 'Hash'),
         Pin::Reference::Superclass.new(closure: Pin::Namespace.new(name: 'File'), name: 'IO'),
         Pin::Reference::Superclass.new(closure: Pin::Namespace.new(name: 'Integer'), name: 'Numeric'),
         Pin::Reference::Superclass.new(closure: Pin::Namespace.new(name: 'Float'), name: 'Numeric')
