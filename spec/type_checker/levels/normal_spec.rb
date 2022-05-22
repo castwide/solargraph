@@ -561,6 +561,19 @@ describe Solargraph::TypeChecker do
       expect(checker.problems.first.message).to include('Not enough arguments')
     end
 
+    it 'checks overloads for valid arity' do
+      checker = type_checker(%[
+        class Foo
+          # @overload bar(one, two)
+          def bar
+          end
+        end
+
+        Foo.new.bar(1, 2)
+      ])
+      expect(checker.problems).to be_empty
+    end
+
     it 'assumes restarg for `args` parameters in core' do
       checker = type_checker(%(
         File.join('foo', 'bar')

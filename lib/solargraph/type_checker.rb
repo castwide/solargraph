@@ -412,6 +412,15 @@ module Solargraph
 
     # @param pin [Pin::Method]
     def arity_problems_for(pin, arguments, location)
+      (pin.overloads + [pin]).map do |p|
+        result = pin_arity_problems_for(p, arguments, location)
+        return [] if result.empty?
+        result
+      end.flatten.uniq(&:message)
+    end
+
+    # @param pin [Pin::Method]
+    def pin_arity_problems_for(pin, arguments, location)
       return [] unless pin.explicit?
       return [] if pin.parameters.empty? && arguments.empty?
       if pin.parameters.empty?
