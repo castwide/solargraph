@@ -121,9 +121,11 @@ module Solargraph
           if node.type == :STR
             result.push Range.from_node(node)
           elsif node.type == :DSTR
+            puts "First node: #{node.to_sexp}"
+            puts "Second node: #{node.children[1]}"
             here = Range.from_node(node)
             there = Range.from_node(node.children[1])
-            result.push Range.new(here.start, there.start)
+            result.push Range.new(here.start, there&.start || here.ending)
           end
           node.children.each do |child|
             result.concat string_ranges(child)
