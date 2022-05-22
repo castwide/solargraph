@@ -6,8 +6,11 @@ describe Solargraph::ApiMap::BundlerMethods do
   next if RUBY_PLATFORM == 'java'
 
   it 'finds default gems from bundler/require' do
-    result = Solargraph::ApiMap::BundlerMethods.require_from_bundle('spec/fixtures/workspace-with-gemfile')
-    expect(result.keys).to eq(['backport', 'bundler'])
+    Dir.mktmpdir do |tmp|
+      FileUtils.cp_r 'spec/fixtures/workspace-with-gemfile', tmp
+      result = Solargraph::ApiMap::BundlerMethods.require_from_bundle("#{tmp}/workspace-with-gemfile")
+      expect(result.keys).to eq(['backport', 'bundler'])
+    end
   end
 
   it 'does not raise an error without a bundle' do

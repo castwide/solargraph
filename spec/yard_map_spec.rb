@@ -1,4 +1,4 @@
-require 'open3'
+require 'FileUtils'
 require 'set'
 require 'tmpdir'
 
@@ -152,9 +152,12 @@ describe Solargraph::YardMap do
   end
 
   it 'adds automatically imported gems to YardMap' do
-    yard_map = Solargraph::YardMap.new
-    yard_map.change(['bundler/require'].to_set, 'spec/fixtures/workspace-with-gemfile', Set.new)
-    pin = yard_map.path_pin('Backport')
-    expect(pin).to be
+    Dir.mktmpdir do |tmp|
+      FileUtils.cp_r 'spec/fixtures/workspace-with-gemfile', tmp
+      yard_map = Solargraph::YardMap.new
+      yard_map.change(['bundler/require'].to_set, "#{tmp}/workspace-with-gemfile", Set.new)
+      pin = yard_map.path_pin('Backport')
+      expect(pin).to be
+    end
   end
 end

@@ -1,13 +1,16 @@
 require 'tmpdir'
-require 'open3'
+require 'fileutils'
 
 describe Solargraph::Documentor do
   # @todo Skipping Bundler-related tests on JRuby
   next if RUBY_PLATFORM == 'java'
 
   it 'returns gemsets for directories with bundles' do
-    gemset = Solargraph::Documentor.specs_from_bundle('spec/fixtures/workspace-with-gemfile')
-    expect(gemset.keys).to eq(['backport', 'bundler'])
+    Dir.mktmpdir do |tmp|
+      FileUtils.cp_r 'spec/fixtures/workspace-with-gemfile', tmp
+      gemset = Solargraph::Documentor.specs_from_bundle("#{tmp}/workspace-with-gemfile")
+      expect(gemset.keys).to eq(['backport', 'bundler'])
+    end
   end
 
   it 'raises errors for directories without bundles' do
@@ -19,8 +22,11 @@ describe Solargraph::Documentor do
   end
 
   it 'documents bundles' do
-    result = Solargraph::Documentor.new('spec/fixtures/workspace-with-gemfile', rebuild: true).document
-    expect(result).to be(true)
+    Dir.mktmpdir do |tmp|
+      FileUtils.cp_r 'spec/fixtures/workspace-with-gemfile', tmp
+      result = Solargraph::Documentor.new("#{tmp}/workspace-with-gemfile", rebuild: true).document
+      expect(result).to be(true)
+    end
   end
 
   it 'reports failures to document bundles' do
