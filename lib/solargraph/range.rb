@@ -69,7 +69,7 @@ module Solargraph
         if node.is_a?(RubyVM::AbstractSyntaxTree::Node)
           Solargraph::Range.from_to(node.first_lineno - 1, node.first_column, node.last_lineno - 1, node.last_column)
         end
-      elsif node.loc && node.loc.expression
+      elsif node&.loc && node.loc.expression
         from_expr(node.loc.expression)
       end
     end

@@ -115,16 +115,11 @@ module Solargraph
           result = []
           if node.type == :str
             result.push Range.from_node(node)
-          elsif node.type == :dstr
-            here = Range.from_node(node)
-            there = Range.from_node(node.children[1])
-            result.push Range.new(here.start, there.start)
           end
           node.children.each do |child|
             result.concat string_ranges(child)
           end
           if node.type == :dstr && node.children.last.nil?
-            # result.push Range.new(result.last.ending, result.last.ending)
             last = node.children[-2]
             unless last.nil?
               rng = Range.from_node(last)
