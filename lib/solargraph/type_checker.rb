@@ -412,7 +412,7 @@ module Solargraph
 
     # @param pin [Pin::Method]
     def arity_problems_for(pin, arguments, location)
-      (pin.overloads + [pin]).map do |p|
+      ([pin] + pin.overloads).map do |p|
         result = pin_arity_problems_for(p, arguments, location)
         return [] if result.empty?
         result
