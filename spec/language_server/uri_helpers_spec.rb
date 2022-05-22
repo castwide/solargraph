@@ -10,4 +10,28 @@ describe Solargraph::LanguageServer::UriHelpers do
     uri = Solargraph::LanguageServer::UriHelpers.file_to_uri(file)
     expect(uri).to end_with('a%20file')
   end
+
+  it 'removes file:// prefix' do
+    uri = 'file:///dev_tools/'
+    file = Solargraph::LanguageServer::UriHelpers.uri_to_file(uri)
+    expect(file).to eq('/dev_tools/')
+  end
+
+  it 'removes file: prefix' do
+    uri = 'file:/dev_tools/'
+    file = Solargraph::LanguageServer::UriHelpers.uri_to_file(uri)
+    expect(file).to eq('/dev_tools/')
+  end
+
+  it 'removes file:/// prefix when a drive is specified' do
+    uri = 'file:///Z:/dev_tools/'
+    file = Solargraph::LanguageServer::UriHelpers.uri_to_file(uri)
+    expect(file).to eq('Z:/dev_tools/')
+  end
+
+  it 'removes file:/ prefix when a drive is specified' do
+    uri = 'file:/Z:/dev_tools/'
+    file = Solargraph::LanguageServer::UriHelpers.uri_to_file(uri)
+    expect(file).to eq('Z:/dev_tools/')
+  end
 end
