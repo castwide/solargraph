@@ -1424,7 +1424,7 @@ describe Solargraph::SourceMap::Clip do
     expect(names).to eq(['Baz'])
   end
 
-  it 'complete all methods from union types' do
+  it 'completes all methods from union types' do
     source = Solargraph::Source.load_string(%(
       class Thing
         # @return [String, Array]
@@ -1435,10 +1435,10 @@ describe Solargraph::SourceMap::Clip do
     ), 'test.rb')
     api_map = Solargraph::ApiMap.new.map(source)
 
-    string_names = api_map.clip_at('test.rb', [6, 22]).complete.pins.map(&:name)
-    expect(string_names).to eq(["upcase", "upcase!", "upto"])
-
     array_names = api_map.clip_at('test.rb', [5, 22]).complete.pins.map(&:name)
     expect(array_names).to eq(["any?"])
+
+    string_names = api_map.clip_at('test.rb', [6, 22]).complete.pins.map(&:name)
+    expect(string_names).to eq(["upcase", "upcase!", "upto"])
   end
 end
