@@ -34,6 +34,7 @@ jobs:
       with:
         ruby-version: ${{ matrix.ruby-version }}
         bundler-cache: false
+    - run: bundle install
     - name: Set up yardocs
       run: bundle exec yard gems
     - name: Run tests
