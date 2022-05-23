@@ -33,7 +33,7 @@ jobs:
       uses: ruby/setup-ruby@2b019609e2b0f1ea1a2bc8ca11cb82ab46ada124
       with:
         ruby-version: ${{ matrix.ruby-version }}
-        bundler-cache: true # runs 'bundle install' and caches installed gems automatically
+        bundler-cache: false
     - name: Set up yardocs
       run: bundle exec yard gems
     - name: Run tests
