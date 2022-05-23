@@ -1,5 +1,7 @@
 # Solargraph
 
+[![RSpec](https://github.com/castwide/solargraph/actions/workflows/rspec.yml/badge.svg)](https://github.com/castwide/solargraph/actions/workflows/rspec.yml)
+
 ## A Ruby Language Server
 
 Solargraph provides a comprehensive suite of tools for Ruby programming: intellisense, diagnostics, inline documentation, and type checking.
