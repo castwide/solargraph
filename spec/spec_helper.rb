@@ -3,7 +3,7 @@ require 'webmock/rspec'
 WebMock.disable_net_connect!(allow_localhost: true)
 unless ENV['SIMPLECOV_DISABLED']
   require 'simplecov'
-  SimpleCov.start unless ENV['SIMPLECOV_DISABLED']
+  SimpleCov.start
 end
 require 'solargraph'
 # Suppress logger output in specs (if possible)
