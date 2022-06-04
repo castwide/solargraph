@@ -237,7 +237,7 @@ module Solargraph
             base = base.base
           end
           closest = found.typify(api_map) if found
-          if !found || (closest.defined? && internal_or_core?(found))
+          if !found || found.is_a?(Pin::BaseVariable) || (closest.defined? && internal_or_core?(found))
             unless ignored_pins.include?(found)
               result.push Problem.new(location, "Unresolved call to #{missing.links.last.word}")
               @marked_ranges.push rng
