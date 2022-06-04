@@ -1,3 +1,7 @@
+## 0.46.0
+- Ignore typecheck errors with @sg-ignore tag (#419)
+- Strict checks report undefined method calls on variables (#553)
+
 ## 0.45.0 - May 23, 2022
 - Basic support for RSpec #describe and #it
 - fix: domain can complete private method (#490)
