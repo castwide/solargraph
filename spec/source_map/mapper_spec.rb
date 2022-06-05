@@ -189,7 +189,7 @@ describe Solargraph::SourceMap::Mapper do
     expect(pin.return_type.tag).to eq('String')
   end
 
-  it "processes private directives attached to methods" do
+  it "processes private visibility directives attached to methods" do
     map = Solargraph::SourceMap.load_string(%(
       class Foo
         # @!visibility private
@@ -200,7 +200,7 @@ describe Solargraph::SourceMap::Mapper do
     expect(map.pins.map(&:visibility).all? { |v| v == :private }).to eq(true)
   end
 
-  it "processes protected directives attached to methods" do
+  it "processes protected visibility directives attached to methods" do
     map = Solargraph::SourceMap.load_string(%(
       class Foo
         # @!visibility protected
@@ -211,7 +211,7 @@ describe Solargraph::SourceMap::Mapper do
     expect(map.pins.map(&:visibility).all? { |v| v == :protected }).to eq(true)
   end
 
-  it "processes public directives attached to methods" do
+  it "processes public visibility directives attached to methods" do
     map = Solargraph::SourceMap.load_string(%(
       class Foo
         # @!visibility public
