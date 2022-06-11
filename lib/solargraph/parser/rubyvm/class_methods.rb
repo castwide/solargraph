@@ -87,7 +87,7 @@ module Solargraph
         end
 
         def infer_literal_node_type node
-          # NodeMethods.infer_literal_node_type node
+          NodeMethods.infer_literal_node_type node
         end
 
         def version
