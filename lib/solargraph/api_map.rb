@@ -383,9 +383,10 @@ module Solargraph
     # @param query [String]
     # @return [Array<Pin::Base>]
     def query_symbols query
-      result = []
-      source_map_hash.each_value { |s| result.concat s.query_symbols(query) }
-      result
+      Pin::Search.new(
+        source_map_hash.values.flat_map(&:document_symbols),
+        query
+      ).results
     end
 
     # @param location [Solargraph::Location]
