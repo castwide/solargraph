@@ -37,16 +37,10 @@ module Solargraph
         return @pins if @query.nil? || @query.empty?
         @pins.map do |pin|
           match = [fuzzy_string_match(pin.path, @query), fuzzy_string_match(pin.name, @query)].max
-          Result.new(match, pin) if match > 0.6
+          Result.new(match, pin) if match > 0.7
         end
           .compact
-          .sort do |a, b|
-            if a.match == b.match
-              a.pin.path <=> b.pin.path
-            else
-              b.match <=> a.match
-            end
-          end
+          .sort { |a, b| b.match <=> a.match }
           .map(&:pin)
       end
 
@@ -54,7 +48,8 @@ module Solargraph
       # @param str2 [String]
       # @return [Float]
       def fuzzy_string_match str1, str2
-        JaroWinkler.distance(str1, str2)
+        return (1.0 + (str2.length.to_f / str1.length.to_f)) if str1.downcase.include?(str2.downcase)
+        JaroWinkler.distance(str1, str2, ignore_case: true)
       end
     end
   end

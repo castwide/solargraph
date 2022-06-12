@@ -7,7 +7,7 @@ describe Solargraph::Pin::Search do
       Solargraph::Pin::Method.new(name: 'foo_bar', closure: example_class)
     ]
     search = Solargraph::Pin::Search.new(pins, 'example')
-    expect(search.results.map(&:path)).to eq(['Example'])
+    expect(search.results).to eq(pins)
   end
 
   it 'returns ordered matches on names' do

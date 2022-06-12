@@ -8,7 +8,7 @@ class Solargraph::LanguageServer::Message::Workspace::WorkspaceSymbol < Solargra
     info = pins.map do |pin|
       uri = file_to_uri(pin.location.filename)
       {
-        name: pin.name,
+        name: pin.path,
         containerName: pin.namespace,
         kind: pin.symbol_kind,
         location: {
