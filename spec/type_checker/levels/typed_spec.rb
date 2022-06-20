@@ -329,5 +329,16 @@ describe Solargraph::TypeChecker do
       ))
       expect(checker.problems).to be_empty
     end
+
+    it 'ignores return type errors in methods tagged @sg-ignore' do
+      checker = type_checker(%(
+        # @sg-ignore
+        # @return [String]
+        def foo
+          100
+        end
+      ))
+      expect(checker.problems).to be_empty
+    end
   end
 end

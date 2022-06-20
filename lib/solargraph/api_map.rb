@@ -268,7 +268,7 @@ module Solargraph
         implicit.domains.each do |domain|
           type = ComplexType.try_parse(domain)
           next if type.undefined?
-          result.concat inner_get_methods(type.name, type.scope, [:public], deep, skip)
+          result.concat inner_get_methods(type.name, type.scope, visibility, deep, skip)
         end
         result.concat inner_get_methods(fqns, :class, visibility, deep, skip)
         result.concat inner_get_methods(fqns, :instance, visibility, deep, skip)
@@ -396,9 +396,10 @@ module Solargraph
     # @param query [String]
     # @return [Array<Pin::Base>]
     def query_symbols query
-      result = []
-      source_map_hash.each_value { |s| result.concat s.query_symbols(query) }
-      result
+      Pin::Search.new(
+        source_map_hash.values.flat_map(&:document_symbols),
+        query
+      ).results
     end
 
     # @param location [Solargraph::Location]
@@ -541,7 +542,7 @@ module Solargraph
         end
         store.domains(fqns).each do |d|
           dt = ComplexType.try_parse(d)
-          result.concat inner_get_methods(dt.namespace, dt.scope, [:public], deep, skip)
+          result.concat inner_get_methods(dt.namespace, dt.scope, visibility, deep, skip)
         end
       end
       result

@@ -1,6 +1,5 @@
 # frozen_string_literal: true
 
-require 'jaro_winkler'
 require 'yard'
 require 'yard-solargraph'
 require 'set'
@@ -76,8 +75,7 @@ module Solargraph
     # @param query [String]
     # @return [Array<Pin::Base>]
     def query_symbols query
-      return document_symbols if query && query.empty?
-      document_symbols.select{ |pin| fuzzy_string_match(pin.path, query) || fuzzy_string_match(pin.name, query) }
+      Pin::Search.new(document_symbols, query).results
     end
 
     # @param position [Position]
@@ -177,13 +175,6 @@ module Solargraph
       end
       # Assuming the root pin is always valid
       found || pins.first
-    end
-
-    # @param str1 [String]
-    # @param str2 [String]
-    # @return [Boolean]
-    def fuzzy_string_match str1, str2
-      JaroWinkler.distance(str1, str2) > 0.6
     end
   end
 end

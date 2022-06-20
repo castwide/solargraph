@@ -475,5 +475,33 @@ describe Solargraph::TypeChecker do
       puts checker.problems.map(&:message)
       expect(checker.problems).to be_empty
     end
+
+    it 'reports unknown method calls on local variables' do
+      checker = type_checker(%(
+        s = ''
+        s.not_a_method
+      ))
+      expect(checker.problems).to be_one
+    end
+
+    it 'reports unknown method calls on instance variables' do
+      checker = type_checker(%(
+        class Foo
+          def bar
+            @string = 'string'
+            @string.not_a_method
+            @string.upcase
+          end
+        end
+      ))
+      expect(checker.problems).to be_one
+    end
+
+    it 'reports unknown method calls on constants' do
+      checker = type_checker(%(
+        String.not_a_method
+      ))
+      expect(checker.problems).to be_one
+    end
   end
 end

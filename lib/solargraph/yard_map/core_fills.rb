@@ -101,6 +101,7 @@ module Solargraph
         Override.method_return('File.dirname', 'String'),
         Override.method_return('File.extname', 'String'),
         Override.method_return('File.join', 'String'),
+        Override.method_return('File.open', 'File'),
 
         Override.from_comment('Float#+', %(
 @param y [Numeric]
@@ -110,14 +111,15 @@ module Solargraph
         Override.from_comment('Hash#[]', %(
 @return_value_parameter
         )),
-
         # @todo This override isn't robust enough. It needs to allow for
         #   parameterized Hash types, e.g., [Hash{Symbol => String}].
         Override.from_comment('Hash#[]=', %(
 @param_tuple
         )),
-
         Override.method_return('Hash#merge', 'Hash'),
+        Override.from_comment('Hash#store', %{
+@overload store(key, value)
+        }),
 
         Override.from_comment('Integer#+', %(
 @param y [Numeric]
@@ -182,6 +184,9 @@ module Solargraph
       )
 
       PINS = [
+        # HACK: Extending Hash is not accurate to the implementation, but
+        # accurate enough to the behavior
+        Pin::Reference::Extend.new(closure: Pin::Namespace.new(name: 'ENV'), name: 'Hash'),
         Pin::Reference::Superclass.new(closure: Pin::Namespace.new(name: 'File'), name: 'IO'),
         Pin::Reference::Superclass.new(closure: Pin::Namespace.new(name: 'Integer'), name: 'Numeric'),
         Pin::Reference::Superclass.new(closure: Pin::Namespace.new(name: 'Float'), name: 'Numeric')

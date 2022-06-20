@@ -61,8 +61,8 @@ module Solargraph
   #
   # @return [void]
   def self.with_clean_env &block
-    meth = if Bundler.respond_to?(:with_unbundled_env)
-      :with_unbundled_env
+    meth = if Bundler.respond_to?(:with_original_env)
+      :with_original_env
     else
       :with_clean_env
     end

@@ -3,8 +3,10 @@
 module Solargraph
   module Pin
     class Parameter < LocalVariable
+      # @return [Symbol]
       attr_reader :decl
 
+      # @return [String]
       attr_reader :asgn_code
 
       def initialize decl: :arg, asgn_code: nil, return_type: nil, **splat
@@ -94,10 +96,6 @@ module Solargraph
       def try_merge! pin
         return false unless super && closure == pin.closure
         true
-      end
-
-      def probe api_map
-        typify api_map
       end
 
       private

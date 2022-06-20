@@ -316,4 +316,11 @@ y = 1 #foo
     source = Solargraph::Source.load('spec/fixtures/long_squiggly_heredoc.rb')
     expect(source.string_ranges).not_to be_empty
   end
+
+  it 'handles string array substitutions' do
+    source = Solargraph::Source.load_string(
+      '%W[array of words #{\'with a substitution\'}]'
+    )
+    expect(source.string_ranges.length).to eq(4)
+  end
 end

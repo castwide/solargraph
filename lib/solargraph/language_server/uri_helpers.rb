@@ -14,7 +14,7 @@ module Solargraph
       # @param uri [String]
       # @return [String]
       def uri_to_file uri
-        decode(uri).sub(/^file\:\/\//, '').sub(/^\/([a-z]\:)/i, '\1')
+        decode(uri).sub(/^file\:(?:\/\/)?/, '').sub(/^\/([a-z]\:)/i, '\1')
       end
 
       # Convert a file path to a URI.

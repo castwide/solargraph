@@ -45,6 +45,7 @@ module Solargraph
       register :IASGN,      Rubyvm::NodeProcessors::IvasgnNode
       register :CVASGN,     Rubyvm::NodeProcessors::CvasgnNode
       register :LASGN,      Rubyvm::NodeProcessors::LvasgnNode
+      register :DASGN,      Rubyvm::NodeProcessors::LvasgnNode
       register :DASGN_CURR, Rubyvm::NodeProcessors::LvasgnNode
       register :GASGN,      Rubyvm::NodeProcessors::GvasgnNode
       register :CDECL,      Rubyvm::NodeProcessors::CasgnNode

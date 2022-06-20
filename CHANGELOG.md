@@ -1,3 +1,24 @@
+## 0.46.0
+- Ignore typecheck errors with @sg-ignore tag (#419)
+- Strict checks report undefined method calls on variables (#553)
+- Infer type from method arguments (#554)
+
+## 0.45.0 - May 23, 2022
+- Basic support for RSpec #describe and #it
+- fix: domain can complete private method (#490)
+- Update README.md (#533)
+- Doc: update readme.md for add solargraph support (#536)
+- Process DASGN node in Ruby 3
+- File.open core fill
+- replace with_unbundled_env with with_original_env (#489)
+- Require specific version of gem (#509)
+- Support URIs prefixed with single slashed file scheme (#529)
+- Fix typo in README.md (#549)
+- details on config behavior (#556)
+- Consider overloads in arity checks
+- ENV core fill for Hash-like methods (#537)
+- Fix string ranges with substitutions (#463)
+
 ## 0.44.3 - January 22, 2022
 - TypeChecker validates aliased namespaces (#497)
 - Always use reference YARD tags when resolving param types (#515) (#516)

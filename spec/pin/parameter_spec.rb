@@ -269,4 +269,112 @@ describe Solargraph::Pin::Parameter do
     type = pin.typify(api_map)
     expect(type.tag).to eq('String')
   end
+
+  context 'for instance methods' do
+    it 'infers types from optarg values' do
+      source = Solargraph::Source.load_string(%(
+        class Example
+          def foo bar = 'bar'
+          end
+        end
+      ), 'test.rb')
+      api_map = Solargraph::ApiMap.new
+      api_map.map(source)
+      pin = api_map.source_map('test.rb').locals.first
+      type = pin.probe(api_map)
+      expect(type.name).to eq('String')
+    end
+
+    it 'infers types from kwoptarg values' do
+      source = Solargraph::Source.load_string(%(
+        class Example
+          def foo bar: 'bar'
+          end
+        end
+      ), 'test.rb')
+      api_map = Solargraph::ApiMap.new
+      api_map.map(source)
+      pin = api_map.source_map('test.rb').locals.first
+      type = pin.probe(api_map)
+      expect(type.name).to eq('String')
+    end
+  end
+
+  context 'for class methods' do
+    it 'infers types from optarg values' do
+      source = Solargraph::Source.load_string(%(
+        class Example
+          def self.foo bar = 'bar'
+          end
+        end
+      ), 'test.rb')
+      api_map = Solargraph::ApiMap.new
+      api_map.map(source)
+      pin = api_map.source_map('test.rb').locals.first
+      type = pin.probe(api_map)
+      expect(type.name).to eq('String')
+    end
+
+    it 'infers types from kwoptarg values' do
+      source = Solargraph::Source.load_string(%(
+        class Example
+          def self.foo bar: 'bar'
+          end
+        end
+      ), 'test.rb')
+      api_map = Solargraph::ApiMap.new
+      api_map.map(source)
+      pin = api_map.source_map('test.rb').locals.first
+      type = pin.probe(api_map)
+      expect(type.name).to eq('String')
+    end
+
+    it 'infers types from kwoptarg code' do
+      source = Solargraph::Source.load_string(%(
+        class Example
+          def self.foo bar: Hash.new
+          end
+        end
+      ), 'test.rb')
+      api_map = Solargraph::ApiMap.new
+      api_map.map(source)
+      pin = api_map.source_map('test.rb').locals.first
+      type = pin.probe(api_map)
+      expect(type.name).to eq('Hash')
+    end
+  end
+
+  context 'for singleton methods' do
+    it 'infers types from optarg values' do
+      source = Solargraph::Source.load_string(%(
+        class Example
+          class << self
+            def self.foo bar = 'bar'
+            end
+          end
+        end
+      ), 'test.rb')
+      api_map = Solargraph::ApiMap.new
+      api_map.map(source)
+      pin = api_map.source_map('test.rb').locals.first
+      type = pin.probe(api_map)
+      expect(type.name).to eq('String')
+    end
+
+    it 'infers types from kwoptarg values' do
+      source = Solargraph::Source.load_string(%(
+        class Example
+          class << self
+            def self.foo bar: 'bar'
+            end
+          end
+        end
+      ), 'test.rb')
+      api_map = Solargraph::ApiMap.new
+      api_map.map(source)
+      pin = api_map.source_map('test.rb').locals.first
+      type = pin.probe(api_map)
+      expect(type.name).to eq('String')
+    end
+  end
 end

@@ -40,10 +40,12 @@ module Solargraph
     # @return [Array<Problem>]
     def problems
       @problems ||= begin
-        method_tag_problems
-          .concat variable_type_tag_problems
-          .concat const_problems
-          .concat call_problems
+        without_ignored(
+          method_tag_problems
+            .concat variable_type_tag_problems
+            .concat const_problems
+            .concat call_problems
+        )
       end
     end
 
@@ -237,7 +239,7 @@ module Solargraph
             base = base.base
           end
           closest = found.typify(api_map) if found
-          if !found || (closest.defined? && internal_or_core?(found))
+          if !found || found.is_a?(Pin::BaseVariable) || (closest.defined? && internal_or_core?(found))
             unless ignored_pins.include?(found)
               result.push Problem.new(location, "Unresolved call to #{missing.links.last.word}")
               @marked_ranges.push rng
@@ -521,6 +523,13 @@ module Solargraph
       args.push Solargraph::Parser.chain_string('{}') if with_opts
       args.push Solargraph::Parser.chain_string('&') if with_block
       args
+    end
+
+    def without_ignored problems
+      problems.reject do |problem|
+        node = source_map.source.node_at(problem.location.range.start.line, problem.location.range.start.column)
+        source_map.source.comments_for(node)&.include?('@sg-ignore')
+      end
     end
   end
 end
