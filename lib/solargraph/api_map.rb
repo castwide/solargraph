@@ -21,6 +21,9 @@ module Solargraph
     # @return [Array<String>]
     attr_reader :unresolved_requires
 
+    # @return [Array<String>]
+    attr_reader :missing_docs
+
     # @param pins [Array<Solargraph::Pin::Base>]
     def initialize pins: []
       @source_map_hash = {}
@@ -68,6 +71,7 @@ module Solargraph
       yard_map.change(external_requires, bench.workspace.directory, bench.workspace.source_gems)
       @store = Store.new(yard_map.pins + implicit.pins + pins)
       @unresolved_requires = yard_map.unresolved_requires
+      @missing_docs = yard_map.missing_docs
       @rebindable_method_names = nil
       store.block_pins.each { |blk| blk.rebind(self) }
       self

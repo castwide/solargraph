@@ -43,6 +43,12 @@ describe Solargraph::YardMap do
     expect(yard_map.unresolved_requires).not_to include('set')
   end
 
+  it "tracks missing documentation" do
+    yard_map = Solargraph::YardMap.new(required: ['set', 'not_valid'])
+    expect(yard_map.requires_missing_documentation).to include('not_valid')
+    expect(yard_map.requires_missing_documentation).not_to include('set')
+  end
+
   it "ignores duplicate requires" do
     # Assuming the parser gem exists because it's a Solargraph dependency
     yard_map = Solargraph::YardMap.new(required: ['parser', 'parser'])
