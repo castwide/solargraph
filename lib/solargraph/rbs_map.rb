@@ -52,6 +52,9 @@ module Solargraph
 
     private
 
+    # @param loader [RBS::EnvironmentLoader]
+    # @param library [String]
+    # @return [Boolean] true if adding the library succeeded
     def add_library loader, library
       @resolved = if loader.has_library?(library: library, version: nil)
         loader.add library: library
