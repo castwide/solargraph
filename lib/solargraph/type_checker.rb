@@ -120,7 +120,12 @@ module Solargraph
     # @param pin [Pin::Base]
     # @return [Boolean]
     def resolved_constant? pin
-      api_map.get_constants('', pin.binder.tag).any? { |pin| pin.name == pin.return_type.namespace && ['Class', 'Module'].include?(pin.return_type.name) }
+      api_map.get_constants('', pin.binder.tag)
+        .select { |p| p.name == pin.return_type.namespace }
+        .any? do |p|
+          inferred = p.infer(api_map)
+          ['Class', 'Module'].include?(inferred.name)
+        end
     end
 
     def virtual_pin? pin

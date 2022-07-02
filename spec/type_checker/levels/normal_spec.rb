@@ -168,6 +168,15 @@ describe Solargraph::TypeChecker do
       expect(checker.problems.first.message).to include('Unresolved')
     end
 
+    it 'reports unresolved return tags in root namespace' do
+      checker = type_checker(%(
+        # @return [UnknownClass]
+        def bar; end
+      ))
+      expect(checker.problems).to be_one
+      expect(checker.problems.first.message).to include('Unresolved')
+    end
+
     it 'validates existing type tags' do
       checker = type_checker(%(
         # @type [Integer]
