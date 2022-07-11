@@ -107,6 +107,11 @@ module Solargraph
       @unresolved_requires ||= []
     end
 
+    # @return [Array<String>]
+    def missing_docs
+      @missing_docs ||= []
+    end
+
     # @param y [String]
     # @return [YARD::Registry]
     def load_yardoc y
@@ -196,10 +201,11 @@ module Solargraph
       required.merge @gemset.keys if required.include?('bundler/require')
       pins.replace core_pins
       unresolved_requires.clear
+      missing_docs.clear
       stdlib_pins.clear
       environ = Convention.for_global(self)
       done = []
-      from_std = []
+      already_errored = []
       (required + environ.requires).each do |r|
         next if r.nil? || r.empty? || done.include?(r)
         done.push r
@@ -219,24 +225,18 @@ module Solargraph
           # YARD detects gems for certain libraries that do not have a yardoc
           # but exist in the stdlib. `fileutils` is an example. Treat those
           # cases as errors and check the stdlib yardoc.
-          raise Gem::LoadError if yd.nil?
+          if yd.nil?
+            process_error(r, result, already_errored, nil)
+            next
+          end
           @gem_paths[spec.name] = spec.full_gem_path
           unless yardocs.include?(yd)
             yardocs.unshift yd
             result.concat process_yardoc yd, spec
             result.concat add_gem_dependencies(spec) if with_dependencies?
           end
-        rescue Gem::LoadError, NoYardocError => e
-          base = r.split('/').first
-          next if from_std.include?(base)
-          from_std.push base
-          stdtmp = load_stdlib_pins(base)
-          if stdtmp.empty?
-            unresolved_requires.push r
-          else
-            stdlib_pins.concat stdtmp
-            result.concat stdtmp
-          end
+        rescue Gem::LoadError, NoYardocError
+          process_error(r, result, already_errored)
         end
         result.delete_if(&:nil?)
         unless result.empty?
@@ -251,6 +251,21 @@ module Solargraph
         pin.instance_variable_set(:@return_type, ComplexType.parse('Module<Psych>')) unless pin.nil?
       end
       pins.concat environ.pins
+    end
+
+    def process_error(req, result, already_errored, yd = 1)
+      base = req.split('/').first
+      return if already_errored.include?(base)
+      already_errored.push base
+      stdtmp = load_stdlib_pins(base)
+      if yd.nil?
+        missing_docs.push req
+      elsif stdtmp.empty?
+        unresolved_requires.push req
+      else
+        stdlib_pins.concat stdtmp
+        result.concat stdtmp
+      end
     end
 
     def process_gemsets
@@ -270,7 +285,7 @@ module Solargraph
           @gem_paths[depspec.name] = depspec.full_gem_path
           gy = yardoc_file_for_spec(depspec)
           if gy.nil?
-            unresolved_requires.push dep.name
+            missing_docs.push dep.name
           else
             next if yardocs.include?(gy)
             yardocs.unshift gy
