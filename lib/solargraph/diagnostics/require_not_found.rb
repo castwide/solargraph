@@ -33,7 +33,7 @@ module Solargraph
           range: location.range.to_hash,
           severity: Diagnostics::Severities::WARNING,
           source: 'RequireNotFound',
-          message: "Yard docs missing for #{path}"
+          message: "YARD docs not found for #{path}"
         }
       end
 
