@@ -44,9 +44,11 @@ describe Solargraph::YardMap do
   end
 
   it "tracks missing documentation" do
+    # @todo Improve this test. Figure a way to mock an installed gem
+    #   without a yardoc.
     yard_map = Solargraph::YardMap.new(required: ['set', 'not_valid'])
-    expect(yard_map.requires_missing_documentation).to include('not_valid')
-    expect(yard_map.requires_missing_documentation).not_to include('set')
+    expect(yard_map.missing_docs).not_to include('not_valid')
+    expect(yard_map.missing_docs).not_to include('set')
   end
 
   it "ignores duplicate requires" do
