@@ -2,6 +2,7 @@
 - Ignore typecheck errors with @sg-ignore tag (#419)
 - Strict checks report undefined method calls on variables (#553)
 - Infer type from method arguments (#554)
+- Return nil value for empty hover contents (#543)
 
 ## 0.45.0 - May 23, 2022
 - Basic support for RSpec #describe and #it
