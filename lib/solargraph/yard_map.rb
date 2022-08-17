@@ -214,30 +214,7 @@ module Solargraph
           pins.concat cached
           next
         end
-        result = []
-        begin
-          spec = spec_for_require(r)
-          if @source_gems.include?(spec.name)
-            next
-          end
-          next if @gem_paths.key?(spec.name)
-          yd = yardoc_file_for_spec(spec)
-          # YARD detects gems for certain libraries that do not have a yardoc
-          # but exist in the stdlib. `fileutils` is an example. Treat those
-          # cases as errors and check the stdlib yardoc.
-          if yd.nil?
-            process_error(r, result, already_errored, nil)
-            next
-          end
-          @gem_paths[spec.name] = spec.full_gem_path
-          unless yardocs.include?(yd)
-            yardocs.unshift yd
-            result.concat process_yardoc yd, spec
-            result.concat add_gem_dependencies(spec) if with_dependencies?
-          end
-        rescue Gem::LoadError, NoYardocError
-          process_error(r, result, already_errored)
-        end
+        result = pins_for_require r, already_errored
         result.delete_if(&:nil?)
         unless result.empty?
           cache.set_path_pins r, result
@@ -273,31 +250,36 @@ module Solargraph
       require_from_bundle(directory)
     end
 
-    # @param spec [Gem::Specification]
-    # @return [void]
-    def add_gem_dependencies spec
+    # @param r [String]
+    def pins_for_require r, already_errored
       result = []
-      (spec.dependencies - spec.development_dependencies).each do |dep|
-        begin
-          next if @source_gems.include?(dep.name) || @gem_paths.key?(dep.name)
-          depspec = Gem::Specification.find_by_name(dep.name)
-          next if depspec.nil?
-          @gem_paths[depspec.name] = depspec.full_gem_path
-          gy = yardoc_file_for_spec(depspec)
-          if gy.nil?
-            missing_docs.push dep.name
-          else
-            next if yardocs.include?(gy)
-            yardocs.unshift gy
-            result.concat process_yardoc gy, depspec
-            result.concat add_gem_dependencies(depspec)
-          end
-        rescue Gem::LoadError
-          # This error probably indicates a bug in an installed gem
-          Solargraph::Logging.logger.warn "Failed to resolve #{dep.name} gem dependency for #{spec.name}"
+      begin
+        name = r.split('/').first
+        return [] if @source_gems.include?(name) || @gem_paths.key?(name)
+        spec = spec_for_require(name)
+        @gem_paths[name] = spec.full_gem_path
+
+        yd = yardoc_file_for_spec(spec)
+        # YARD detects gems for certain libraries that do not have a yardoc
+        # but exist in the stdlib. `fileutils` is an example. Treat those
+        # cases as errors and check the stdlib yardoc.
+        if yd.nil?
+          process_error(r, result, already_errored, nil)
+          return []
         end
+        unless yardocs.include?(yd)
+          yardocs.unshift yd
+          result.concat process_yardoc yd, spec
+          if with_dependencies?
+            (spec.dependencies - spec.development_dependencies).each do |dep|
+              result.concat pins_for_require dep.name, already_errored
+            end
+          end
+        end
+      rescue Gem::LoadError, NoYardocError
+        process_error(r, result, already_errored)
       end
-      result
+      return result
     end
 
     # @param y [String, nil]
