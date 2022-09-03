@@ -1,4 +1,4 @@
-## 0.46.0
+## 0.46.0 - August 22, 2022
 - Ignore typecheck errors with @sg-ignore tag (#419)
 - Strict checks report undefined method calls on variables (#553)
 - Infer type from method arguments (#554)

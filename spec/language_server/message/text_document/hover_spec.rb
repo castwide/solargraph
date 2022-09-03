@@ -10,7 +10,7 @@ describe Solargraph::LanguageServer::Message::TextDocument::Hover do
           'uri' => 'file://spec/fixtures/workspace/lib/other.rb'
         },
         'position' => {
-          'line' => 1,
+          'line' => 5,
           'character' => 0
         }
       }
