@@ -14,5 +14,4 @@ The following people and organizations provide funding or other resources. [Beco
 - Akira Yamada
 - Erlend Finvåg
 - Matt Massicotte
-- Hasan Kumar
 - Oscar Rivas
