@@ -16,6 +16,6 @@ describe Solargraph::LanguageServer::Message::TextDocument::Hover do
       }
     })
     message.process
-    expect(message.result[:contents][:value]).to be_nil
+    expect(message.result).to be_nil
   end
 end

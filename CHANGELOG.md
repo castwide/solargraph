@@ -1,5 +1,6 @@
 ## 0.47.0
--  Completion candidates for union types (#507)
+- Completion candidates for union types (#507)
+- Nullify Hover object instead of contents value (#583)
 
 ## 0.46.0 - August 22, 2022
 - Ignore typecheck errors with @sg-ignore tag (#419)
