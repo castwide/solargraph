@@ -360,7 +360,7 @@ module Solargraph
       skip = nil
       comments.lines.each { |l|
         # Trim the comment and minimum leading whitespace
-        p = l.encode('UTF-8', invalid: :replace, replace: '?').gsub(/^#+/, '')
+        p = l.force_encoding('UTF-8').encode('UTF-8', invalid: :replace, replace: '?').gsub(/^#+/, '')
         if p.strip.empty?
           next unless started
           ctxt.concat p
