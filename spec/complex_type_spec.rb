@@ -259,4 +259,9 @@ describe Solargraph::ComplexType do
     qual = type.qualify(api_map)
     expect(qual.tag).to eq('nil')
   end
+
+  it 'parses a complex subtype' do
+    type = Solargraph::ComplexType.parse('Array<self>').self_to('Foo<String>')
+    expect(type.tag).to eq('Array<Foo<String>>')
+  end
 end
