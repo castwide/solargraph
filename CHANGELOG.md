@@ -1,6 +1,9 @@
 ## 0.47.0
 - Completion candidates for union types (#507)
 - Nullify Hover object instead of contents value (#583)
+-  Mapping workspace stuck in 0 (#587)
+-  Fix parsing of nested subtypes (#589)
+-  Update YARD tags on Pin::Block methods (#588)
 
 ## 0.46.0 - August 22, 2022
 - Ignore typecheck errors with @sg-ignore tag (#419)
