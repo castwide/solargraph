@@ -197,7 +197,7 @@ describe Solargraph::SourceMap::Mapper do
         end
       end
     ))
-    expect(map.pins.map(&:visibility).all? { |v| v == :private }).to eq(true)
+    expect(map.first_pin('Foo#bar').visibility).to be(:private)
   end
 
   it "processes protected visibility directives attached to methods" do
@@ -208,7 +208,7 @@ describe Solargraph::SourceMap::Mapper do
         end
       end
     ))
-    expect(map.pins.map(&:visibility).all? { |v| v == :protected }).to eq(true)
+    expect(map.first_pin('Foo#bar').visibility).to be(:protected)
   end
 
   it "processes public visibility directives attached to methods" do
@@ -219,9 +219,44 @@ describe Solargraph::SourceMap::Mapper do
         end
       end
     ))
-    expect(map.pins.map(&:visibility).all? { |v| v == :public }).to eq(true)
+    expect(map.first_pin('Foo#bar').visibility).to be(:public)
   end
 
+  it "does not process attached visibility directives on other methods" do
+    map = Solargraph::SourceMap.load_string(%(
+      class Example
+        # @!visibility private
+        def method1; end
+
+        def method2; end
+      end
+    ))
+    method1 = map.first_pin('Example#method1')
+    expect(method1.visibility).to be(:private)
+    method2 = map.first_pin('Example#method2')
+    expect(method2.visibility).to be(:public)
+  end
+
+  it "processes class-wide private visibility directives" do
+    map = Solargraph::SourceMap.load_string(%(
+      class Example
+        # @!visibility private
+
+        def method1; end
+
+        def method2; end
+
+        # @!visibility public
+        def method3; end
+      end
+    ))
+    method1 = map.first_pin('Example#method1')
+    expect(method1.visibility).to be(:private)
+    method2 = map.first_pin('Example#method2')
+    expect(method2.visibility).to be(:private)
+    method3 = map.first_pin('Example#method3')
+    expect(method3.visibility).to be(:public)
+  end
 
   it "processes attribute directives at class endings" do
     map = Solargraph::SourceMap.load_string(%(

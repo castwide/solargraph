@@ -56,8 +56,10 @@ module Solargraph
         @pins ||= []
       end
 
+      # @param position [Solargraph::Position]
+      # @return [Solargraph::Pin::Closure]
       def closure_at(position)
-        @pins.select{|pin| pin.is_a?(Pin::Closure) and pin.location.range.contain?(position)}.last
+        pins.select{|pin| pin.is_a?(Pin::Closure) and pin.location.range.contain?(position)}.last
       end
 
       def process_comment source_position, comment_position, comment
@@ -150,18 +152,22 @@ module Solargraph
         when 'visibility'
           begin
             kind = directive.tag.text&.to_sym
-            return unless kind == :private || kind == :protected
+            return unless [:private, :protected, :public].include?(kind)
 
             name = directive.tag.name
-            namespace = closure_at(source_position) || @pins.first
-            if namespace.location.range.start.line < comment_position.line
-              namespace = closure_at(comment_position)
+            closure = closure_at(source_position) || @pins.first
+            if closure.location.range.start.line < comment_position.line
+              closure = closure_at(comment_position)
             end
-
-            matches = pins.select{ |pin| pin.is_a?(Pin::Method) && pin.name == name && pin.namespace == namespace && pin.context.scope == namespace.is_a?(Pin::Singleton) ? :class : :instance }
-            matches.each do |pin|
+            if closure.is_a?(Pin::Method) && no_empty_lines?(comment_position.line, source_position.line)
               # @todo Smelly instance variable access
-              pin.instance_variable_set(:@visibility, kind)
+              closure.instance_variable_set(:@visibility, kind)
+            else
+              matches = pins.select{ |pin| pin.is_a?(Pin::Method) && pin.name == name && pin.namespace == namespace && pin.context.scope == namespace.is_a?(Pin::Singleton) ? :class : :instance }
+              matches.each do |pin|
+                # @todo Smelly instance variable access
+                pin.instance_variable_set(:@visibility, kind)
+              end
             end
           end
         when 'parse'
@@ -191,6 +197,10 @@ module Solargraph
         when 'override'
           pins.push Pin::Reference::Override.new(location, directive.tag.name, docstring.tags)
         end
+      end
+
+      def no_empty_lines?(line1, line2)
+        @code.lines[line1..line2].none? { |line| line.strip.empty? }
       end
 
       def remove_inline_comment_hashes comment
