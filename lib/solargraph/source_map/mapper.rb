@@ -12,7 +12,7 @@ module Solargraph
 
       private_class_method :new
 
-      MACRO_REGEXP = /(@\!method|@\!attribute|@\!domain|@\!macro|@\!parse|@\!override)/.freeze
+      MACRO_REGEXP = /(@\!method|@\!attribute|@\!visibility|@\!domain|@\!macro|@\!parse|@\!override)/.freeze
 
       # Generate the data.
       #
@@ -145,6 +145,23 @@ module Solargraph
             pins.last.parameters.push Pin::Parameter.new(name: 'value', decl: :arg, closure: pins.last)
             if pins.last.return_type.defined?
               pins.last.docstring.add_tag YARD::Tags::Tag.new(:param, '', pins.last.return_type.to_s.split(', '), 'value')
+            end
+          end
+        when 'visibility'
+          begin
+            kind = directive.tag.text&.to_sym
+            return unless kind == :private || kind == :protected
+
+            name = directive.tag.name
+            namespace = closure_at(source_position) || @pins.first
+            if namespace.location.range.start.line < comment_position.line
+              namespace = closure_at(comment_position)
+            end
+
+            matches = pins.select{ |pin| pin.is_a?(Pin::Method) && pin.name == name && pin.namespace == namespace && pin.context.scope == namespace.is_a?(Pin::Singleton) ? :class : :instance }
+            matches.each do |pin|
+              # @todo Smelly instance variable access
+              pin.instance_variable_set(:@visibility, kind)
             end
           end
         when 'parse'

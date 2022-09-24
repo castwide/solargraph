@@ -72,6 +72,32 @@ describe Solargraph::ApiMap do
     expect(pins.map(&:path)).not_to include('Foo#bar')
   end
 
+  it "checks method pin private visibility set by yard directive" do
+    map = Solargraph::SourceMap.load_string(%(
+      class Foo
+        # @!visibility private
+        def bar
+        end
+      end
+    ))
+    @api_map.index map.pins
+    pins = @api_map.get_methods('Foo')
+    expect(pins.map(&:path)).not_to include('Foo#bar')
+  end
+
+  it "checks method pin protected visibility set by yard directive" do
+    map = Solargraph::SourceMap.load_string(%(
+      class Foo
+        # @!visibility protected
+        def bar
+        end
+      end
+    ))
+    @api_map.index map.pins
+    pins = @api_map.get_methods('Foo')
+    expect(pins.map(&:path)).not_to include('Foo#bar')
+  end
+
   it "finds nested namespaces" do
     map = Solargraph::SourceMap.load_string(%(
       module Foo
