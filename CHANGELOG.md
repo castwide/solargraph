@@ -1,3 +1,6 @@
+## 0.47.1 - September 27, 2022
+- Remove debug code from release (#600)
+
 ## 0.47.0 - September 25, 2022
 - Completion candidates for union types (#507)
 - Nullify Hover object instead of contents value (#583)
