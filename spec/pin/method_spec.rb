@@ -177,6 +177,18 @@ describe Solargraph::Pin::Method do
     expect(overload.docstring.tag(:param).types).to eq(['Integer'])
   end
 
+  it 'processes overload tags with restargs' do
+    pin = Solargraph::Pin::Method.new(name: 'foo', comments: %<
+@overload foo(*bar)
+@overload foo(**bar)
+    >)
+    expect(pin.overloads.length).to eq(2)
+    restarg_overload = pin.overloads.first
+    kwrestarg_overload = pin.overloads.last
+    expect(restarg_overload.parameters.first.decl).to eq(:restarg)
+    expect(kwrestarg_overload.parameters.first.decl).to eq(:kwrestarg)
+  end
+
   it 'infers from nil return nodes' do
     source = Solargraph::Source.load_string(%(
       class Foo
