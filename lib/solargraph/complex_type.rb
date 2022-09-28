@@ -74,6 +74,10 @@ module Solargraph
       @items.all? &block
     end
 
+    def any? &block
+      @items.any? &block
+    end
+
     def selfy?
       @items.any?(&:selfy?)
     end

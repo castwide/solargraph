@@ -503,5 +503,37 @@ describe Solargraph::TypeChecker do
       ))
       expect(checker.problems).to be_one
     end
+
+    it 'validates inferred parameter types with complex tags' do
+      checker = type_checker(%(
+        # @param foo [Numeric, nil] a foo
+        def test(foo: nil)
+          foo
+        end
+      ))
+      expect(checker.problems).to be_empty
+    end
+
+    it 'validates inferred return types with complex tags' do
+      checker = type_checker(%(
+        # @param foo [Numeric, nil] a foo
+        # @return [Numeric, nil]
+        def test(foo: nil)
+          foo
+        end
+      ))
+      expect(checker.problems).to be_empty
+    end
+
+    it 'reports inferred return types missing from complex tags' do
+      checker = type_checker(%(
+        # @return [Numeric, nil]
+        def test
+          'string'
+        end
+      ))
+      expect(checker.problems).to be_one
+      expect(checker.problems.first.message).to include('does not match inferred type')
+    end
   end
 end
