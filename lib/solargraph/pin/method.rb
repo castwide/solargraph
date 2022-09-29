@@ -248,9 +248,9 @@ module Solargraph
       # @return [Array(String, Symbol)]
       def parse_overload_param(name)
         if name.start_with?('**')
-          [name[2..], :kwrestarg]
+          [name[2..-1], :kwrestarg]
         elsif name.start_with?('*')
-          [name[1..], :restarg]
+          [name[1..-1], :restarg]
         else
           [name, :arg]
         end
