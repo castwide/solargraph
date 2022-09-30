@@ -89,7 +89,7 @@ module Solargraph
           Position.new(off['location']['start_line'], 0)
         else
           Position.new(
-            off['location']['start_line'] - 1, off['location']['last_column']
+            off['location']['start_line'] - 1, off['location']['last_column'] - 1
           )
         end
       end

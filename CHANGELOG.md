@@ -1,3 +1,7 @@
+## 0.47.2 - September 30, 2022
+- Fix complex type inference (#578)
+- Off-by-one diagnostic (#595)
+
 ## 0.47.1 - September 27, 2022
 - Remove debug code from release (#600)
 
