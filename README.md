@@ -32,6 +32,11 @@ Plug-ins and extensions are available for the following editors:
     * Package: https://atom.io/packages/ruby-solargraph
     * GitHub: https://github.com/castwide/atom-solargraph
 
+* **Sublime Text**
+    * Extension: https://packagecontrol.io/packages/LSP
+    * GitHub: https://github.com/sublimelsp/LSP
+    * Instructions: https://lsp.sublimetext.io/language_servers/#solargraph
+
 * **Vim**
     * GitHub: `LanguageClient-neovim`, https://github.com/autozimu/LanguageClient-neovim
     * GitHub: `coc`, https://github.com/neoclide/coc-solargraph
