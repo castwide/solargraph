@@ -129,11 +129,14 @@ module Solargraph
       end
 
       def self.find_file obj
-        if obj.respond_to?(:in_files) && !obj.in_files.empty?
-          [obj.in_files.first.to_s.sub(/^file /, ''), obj.line]
+        file = if obj.respond_to?(:in_files) && !obj.in_files.empty?
+          obj.in_files.first
         else
-          [obj.file, obj.line]
+          obj.file
         end
+
+        file = file.to_s.sub(/^file /, '') unless file.nil?
+        [file, obj.line]
       end
     end
   end
