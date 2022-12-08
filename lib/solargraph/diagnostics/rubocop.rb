@@ -11,6 +11,7 @@ module Solargraph
 
       # Conversion of RuboCop severity names to LSP constants
       SEVERITIES = {
+        'info' => Severities::HINT,
         'refactor' => Severities::HINT,
         'convention' => Severities::INFORMATION,
         'warning' => Severities::WARNING,
