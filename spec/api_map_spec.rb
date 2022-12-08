@@ -684,6 +684,44 @@ describe Solargraph::ApiMap do
     expect(pins.map(&:name)).to include('foo')
   end
 
+  it 'finds class methods in class << Example' do
+    source = Solargraph::Source.load_string(%(
+      class << Example = Class.new
+        def foo; end
+      end
+      class Example
+        class << Example
+          def bar; end
+        end
+      end
+    ))
+    @api_map.map source
+    pins = @api_map.get_methods('Example', scope: :class).select do |pin|
+      pin.namespace == 'Example'
+    end
+    expect(pins.map(&:name).sort).to eq(['bar', 'foo'])
+  end
+
+  it 'finds class methods in nested class << Example' do
+    source = Solargraph::Source.load_string(%(
+      module Container
+        class << Example = Class.new
+          def foo; end
+        end
+        class Example
+          class << Example
+            def bar; end
+          end
+        end
+      end
+    ))
+    @api_map.map source
+    pins = @api_map.get_methods('Container::Example', scope: :class).select do |pin|
+      pin.namespace == 'Container::Example'
+    end
+    expect(pins.map(&:name).sort).to eq(['bar', 'foo'])
+  end
+
   it 'resolves aliases for YARD methods' do
     dir = File.absolute_path(File.join('spec', 'fixtures', 'yard_map'))
     yard_pins = Dir.chdir dir do
