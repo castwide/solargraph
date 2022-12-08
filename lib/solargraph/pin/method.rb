@@ -124,13 +124,14 @@ module Solargraph
             closure: self,
             # args: tag.parameters.map(&:first),
             parameters: tag.parameters.map do |src|
+              name, decl = parse_overload_param(src.first)
               Pin::Parameter.new(
                 location: location,
                 closure: self,
                 comments: tag.docstring.all.to_s,
-                name: src.first,
+                name: name,
                 presence: location ? location.range : nil,
-                decl: :arg
+                decl: decl
               )
             end,
             comments: tag.docstring.all.to_s
@@ -240,6 +241,21 @@ module Solargraph
         return ComplexType::UNDEFINED if types.empty?
         ComplexType.try_parse(*types.map(&:tag).uniq)
       end
+
+      # When YARD parses an overload tag, it includes rest modifiers in the parameters names.
+      #
+      # @param arg [String]
+      # @return [Array(String, Symbol)]
+      def parse_overload_param(name)
+        if name.start_with?('**')
+          [name[2..-1], :kwrestarg]
+        elsif name.start_with?('*')
+          [name[1..-1], :restarg]
+        else
+          [name, :arg]
+        end
+      end
+
     end
   end
 end
