@@ -23,6 +23,9 @@ module Solargraph
 
     @@core_map = RbsMap::CoreMap.new
 
+    # @return [Array<String>]
+    attr_reader :missing_docs
+
     # @param pins [Array<Solargraph::Pin::Base>]
     def initialize pins: []
       @source_map_hash = {}
@@ -72,6 +75,7 @@ module Solargraph
       yard_map.change(unresolved_requires, bench.workspace.directory, bench.workspace.source_gems)
       @store = Store.new(@@core_map.pins + @rbs_maps.flat_map(&:pins) + yard_map.pins + implicit.pins + pins)
       @unresolved_requires = yard_map.unresolved_requires
+      @missing_docs = yard_map.missing_docs
       @rebindable_method_names = nil
       store.block_pins.each { |blk| blk.rebind(self) }
       self
@@ -294,33 +298,33 @@ module Solargraph
     #   type = Solargraph::ComplexType.parse('String')
     #   api_map.get_complex_type_methods(type)
     #
-    # @param type [Solargraph::ComplexType] The complex type of the namespace
+    # @param complex_type [Solargraph::ComplexType] The complex type of the namespace
     # @param context [String] The context from which the type is referenced
     # @param internal [Boolean] True to include private methods
     # @return [Array<Solargraph::Pin::Base>]
-    def get_complex_type_methods type, context = '', internal = false
+    def get_complex_type_methods complex_type, context = '', internal = false
       # This method does not qualify the complex type's namespace because
       # it can cause conflicts between similar names, e.g., `Foo` vs.
       # `Other::Foo`. It still takes a context argument to determine whether
       # protected and private methods are visible.
-      return [] if type.undefined? || type.void?
-      result = []
-      if type.duck_type?
-        type.select(&:duck_type?).each do |t|
-          result.push Pin::DuckMethod.new(name: t.tag[1..-1])
-        end
-        result.concat get_methods('Object')
-      else
-        unless type.nil? || type.name == 'void'
-          visibility = [:public]
-          if type.namespace == context || super_and_sub?(type.namespace, context)
-            visibility.push :protected
-            visibility.push :private if internal
+      return [] if complex_type.undefined? || complex_type.void?
+      result = Set.new
+      complex_type.each do |type|
+        if type.duck_type?
+          result.add Pin::DuckMethod.new(name: type.to_s[1..-1])
+          result.merge get_methods('Object')
+        else
+          unless type.nil? || type.name == 'void'
+            visibility = [:public]
+            if type.namespace == context || super_and_sub?(type.namespace, context)
+              visibility.push :protected
+              visibility.push :private if internal
+            end
+            result.merge get_methods(type.namespace, scope: type.scope, visibility: visibility)
           end
-          result.concat get_methods(type.namespace, scope: type.scope, visibility: visibility)
         end
       end
-      result
+      result.to_a
     end
 
     # Get a stack of method pins for a method name in a namespace. The order

@@ -1,7 +1,23 @@
-## 0.46.0
+## 0.47.2 - September 30, 2022
+- Fix complex type inference (#578)
+- Off-by-one diagnostic (#595)
+
+## 0.47.1 - September 27, 2022
+- Remove debug code from release (#600)
+
+## 0.47.0 - September 25, 2022
+- Completion candidates for union types (#507)
+- Nullify Hover object instead of contents value (#583)
+- Mapping workspace stuck in 0 (#587)
+- Fix parsing of nested subtypes (#589)
+- Update YARD tags on Pin::Block methods (#588)
+- @!visibility directive support (#566)
+
+## 0.46.0 - August 22, 2022
 - Ignore typecheck errors with @sg-ignore tag (#419)
 - Strict checks report undefined method calls on variables (#553)
 - Infer type from method arguments (#554)
+- Return nil value for empty hover contents (#543)
 
 ## 0.45.0 - May 23, 2022
 - Basic support for RSpec #describe and #it

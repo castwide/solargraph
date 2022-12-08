@@ -62,6 +62,19 @@ module Solargraph
       end
 
       # @param api_map [ApiMap]
+      # @param inferred [ComplexType]
+      # @param expected [ComplexType]
+      # @return [Boolean]
+      def all_types_match? api_map, inferred, expected
+        return duck_types_match?(api_map, expected, inferred) if expected.duck_type?
+        inferred.each do |inf|
+          next if inf.duck_type?
+          return false unless expected.any? { |exp| exp == inf || either_way?(api_map, inf, exp) }
+        end
+        true
+      end
+
+      # @param api_map [ApiMap]
       # @param expected [ComplexType]
       # @param inferred [ComplexType]
       # @return [Boolean]

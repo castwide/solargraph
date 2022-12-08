@@ -36,6 +36,14 @@ describe Solargraph::YardMap do
     expect(yard_map.unresolved_requires).to include('not_valid')
   end
 
+  it "tracks missing documentation" do
+    # @todo Improve this test. Figure a way to mock an installed gem
+    #   without a yardoc.
+    yard_map = Solargraph::YardMap.new(required: ['set', 'not_valid'])
+    expect(yard_map.missing_docs).not_to include('not_valid')
+    expect(yard_map.missing_docs).not_to include('set')
+  end
+
   it "ignores duplicate requires" do
     # Assuming the parser gem exists because it's a Solargraph dependency
     yard_map = Solargraph::YardMap.new(required: ['parser', 'parser'])

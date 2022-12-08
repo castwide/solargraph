@@ -91,6 +91,11 @@ module Solargraph
       @unresolved_requires ||= []
     end
 
+    # @return [Array<String>]
+    def missing_docs
+      @missing_docs ||= []
+    end
+
     # @param y [String]
     # @return [YARD::Registry]
     def load_yardoc y
@@ -170,9 +175,10 @@ module Solargraph
       required.merge @gemset.keys if required.include?('bundler/require')
       pins.clear
       unresolved_requires.clear
+      missing_docs.clear
       environ = Convention.for_global(self)
       done = []
-      from_std = []
+      already_errored = []
       (required + environ.requires).each do |r|
         next if r.nil? || r.empty? || done.include?(r)
         done.push r
@@ -181,27 +187,7 @@ module Solargraph
           pins.concat cached
           next
         end
-        result = []
-        begin
-          spec = spec_for_require(r)
-          if @source_gems.include?(spec.name)
-            next
-          end
-          next if @gem_paths.key?(spec.name)
-          yd = yardoc_file_for_spec(spec)
-          # YARD detects gems for certain libraries that do not have a yardoc
-          # but exist in the stdlib. `fileutils` is an example. Treat those
-          # cases as errors and check the stdlib yardoc.
-          raise Gem::LoadError if yd.nil?
-          @gem_paths[spec.name] = spec.full_gem_path
-          unless yardocs.include?(yd)
-            yardocs.unshift yd
-            result.concat process_yardoc yd, spec
-            result.concat add_gem_dependencies(spec) if with_dependencies?
-          end
-        rescue Gem::LoadError, NoYardocError => e
-          unresolved_requires.push r
-        end
+        result = pins_for_require r, already_errored
         result.delete_if(&:nil?)
         unless result.empty?
           cache.set_path_pins r, result
@@ -217,36 +203,52 @@ module Solargraph
       pins.concat environ.pins
     end
 
+    def process_error(req, result, already_errored, yd = 1)
+      base = req.split('/').first
+      return if already_errored.include?(base)
+      already_errored.push base
+      if yd.nil?
+        missing_docs.push req
+      else
+        unresolved_requires.push req
+      end
+    end
+
     def process_gemsets
       return {} if directory.empty? || !File.file?(File.join(directory, 'Gemfile'))
       require_from_bundle(directory)
     end
 
-    # @param spec [Gem::Specification]
-    # @return [void]
-    def add_gem_dependencies spec
+    # @param r [String]
+    def pins_for_require r, already_errored
       result = []
-      (spec.dependencies - spec.development_dependencies).each do |dep|
-        begin
-          next if @source_gems.include?(dep.name) || @gem_paths.key?(dep.name)
-          depspec = Gem::Specification.find_by_name(dep.name)
-          next if depspec.nil?
-          @gem_paths[depspec.name] = depspec.full_gem_path
-          gy = yardoc_file_for_spec(depspec)
-          if gy.nil?
-            unresolved_requires.push dep.name
-          else
-            next if yardocs.include?(gy)
-            yardocs.unshift gy
-            result.concat process_yardoc gy, depspec
-            result.concat add_gem_dependencies(depspec)
-          end
-        rescue Gem::LoadError
-          # This error probably indicates a bug in an installed gem
-          Solargraph::Logging.logger.warn "Failed to resolve #{dep.name} gem dependency for #{spec.name}"
+      begin
+        name = r.split('/').first
+        return [] if @source_gems.include?(name) || @gem_paths.key?(name)
+        spec = spec_for_require(name)
+        @gem_paths[name] = spec.full_gem_path
+
+        yd = yardoc_file_for_spec(spec)
+        # YARD detects gems for certain libraries that do not have a yardoc
+        # but exist in the stdlib. `fileutils` is an example. Treat those
+        # cases as errors and check the stdlib yardoc.
+        if yd.nil?
+          process_error(r, result, already_errored, nil)
+          return []
         end
+        unless yardocs.include?(yd)
+          yardocs.unshift yd
+          result.concat process_yardoc yd, spec
+          if with_dependencies?
+            (spec.dependencies - spec.development_dependencies).each do |dep|
+              result.concat pins_for_require dep.name, already_errored
+            end
+          end
+        end
+      rescue Gem::LoadError, NoYardocError
+        process_error(r, result, already_errored)
       end
-      result
+      return result
     end
 
     # @param y [String, nil]

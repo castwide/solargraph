@@ -105,7 +105,7 @@ module Solargraph
               result.push Problem.new(pin.location, "#{pin.path} return type could not be inferred", pin: pin)
             end
           else
-            unless (rules.rank > 1 ? types_match?(api_map, declared, inferred) : any_types_match?(api_map, declared, inferred))
+            unless (rules.rank > 1 ? all_types_match?(api_map, inferred, declared) : any_types_match?(api_map, declared, inferred))
               result.push Problem.new(pin.location, "Declared return type #{declared} does not match inferred type #{inferred} for #{pin.path}", pin: pin)
             end
           end
@@ -120,7 +120,12 @@ module Solargraph
     # @param pin [Pin::Base]
     # @return [Boolean]
     def resolved_constant? pin
-      api_map.get_constants('', pin.binder.tag).any? { |pin| pin.name == pin.return_type.namespace && ['Class', 'Module'].include?(pin.return_type.name) }
+      api_map.get_constants('', pin.binder.tag)
+        .select { |p| p.name == pin.return_type.namespace }
+        .any? do |p|
+          inferred = p.infer(api_map)
+          ['Class', 'Module'].include?(inferred.name)
+        end
     end
 
     def virtual_pin? pin
@@ -174,7 +179,7 @@ module Solargraph
                   result.push Problem.new(pin.location, "Variable type could not be inferred for #{pin.name}", pin: pin)
                 end
               else
-                unless (rules.rank > 1 ? types_match?(api_map, declared, inferred) : any_types_match?(api_map, declared, inferred))
+                unless any_types_match?(api_map, declared, inferred)
                   result.push Problem.new(pin.location, "Declared type #{declared} does not match inferred type #{inferred} for variable #{pin.name}", pin: pin)
                 end
               end

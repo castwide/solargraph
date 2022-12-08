@@ -72,6 +72,32 @@ describe Solargraph::ApiMap do
     expect(pins.map(&:path)).not_to include('Foo#bar')
   end
 
+  it "checks method pin private visibility set by yard directive" do
+    map = Solargraph::SourceMap.load_string(%(
+      class Foo
+        # @!visibility private
+        def bar
+        end
+      end
+    ))
+    @api_map.index map.pins
+    pins = @api_map.get_methods('Foo')
+    expect(pins.map(&:path)).not_to include('Foo#bar')
+  end
+
+  it "checks method pin protected visibility set by yard directive" do
+    map = Solargraph::SourceMap.load_string(%(
+      class Foo
+        # @!visibility protected
+        def bar
+        end
+      end
+    ))
+    @api_map.index map.pins
+    pins = @api_map.get_methods('Foo')
+    expect(pins.map(&:path)).not_to include('Foo#bar')
+  end
+
   it "finds nested namespaces" do
     map = Solargraph::SourceMap.load_string(%(
       module Foo
@@ -656,6 +682,44 @@ describe Solargraph::ApiMap do
     @api_map.map source
     pins = @api_map.get_methods('Example', scope: :class)
     expect(pins.map(&:name)).to include('foo')
+  end
+
+  it 'finds class methods in class << Example' do
+    source = Solargraph::Source.load_string(%(
+      class << Example = Class.new
+        def foo; end
+      end
+      class Example
+        class << Example
+          def bar; end
+        end
+      end
+    ))
+    @api_map.map source
+    pins = @api_map.get_methods('Example', scope: :class).select do |pin|
+      pin.namespace == 'Example'
+    end
+    expect(pins.map(&:name).sort).to eq(['bar', 'foo'])
+  end
+
+  it 'finds class methods in nested class << Example' do
+    source = Solargraph::Source.load_string(%(
+      module Container
+        class << Example = Class.new
+          def foo; end
+        end
+        class Example
+          class << Example
+            def bar; end
+          end
+        end
+      end
+    ))
+    @api_map.map source
+    pins = @api_map.get_methods('Container::Example', scope: :class).select do |pin|
+      pin.namespace == 'Container::Example'
+    end
+    expect(pins.map(&:name).sort).to eq(['bar', 'foo'])
   end
 
   it 'resolves aliases for YARD methods' do

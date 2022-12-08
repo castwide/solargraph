@@ -27,15 +27,27 @@ module Solargraph
               last_link = this_link unless this_link.nil?
             end
             set_result(
-              contents: {
-                kind: 'markdown',
-                value: contents.join("\n\n")
-              }
+              contents_or_nil(contents)
             )
           rescue FileNotFoundError => e
             Logging.logger.warn "[#{e.class}] #{e.message}"
             Logging.logger.warn e.backtrace.join("\n")
             set_result nil
+          end
+
+          private
+
+          def contents_or_nil contents
+            stripped = contents
+              .map(&:strip)
+              .reject { |c| c.empty? }
+            return nil if stripped.empty?
+            {
+              contents: {
+                kind: 'markdown',
+                value: stripped.join("\n\n")
+              }
+            }
           end
         end
       end

@@ -11,6 +11,7 @@ module Solargraph
 
       # Conversion of RuboCop severity names to LSP constants
       SEVERITIES = {
+        'info' => Severities::HINT,
         'refactor' => Severities::HINT,
         'convention' => Severities::INFORMATION,
         'warning' => Severities::WARNING,
@@ -31,7 +32,7 @@ module Solargraph
       rescue RuboCop::ValidationError, RuboCop::ConfigNotFoundError => e
         raise DiagnosticsError, "Error in RuboCop configuration: #{e.message}"
       rescue JSON::ParserError
-        raise DiagnosticsError, 'RuboCop returned invalid data'
+        raise DiagnosticsError, "RuboCop returned invalid data: #{e.message}"
       end
 
       private
@@ -89,7 +90,7 @@ module Solargraph
           Position.new(off['location']['start_line'], 0)
         else
           Position.new(
-            off['location']['start_line'] - 1, off['location']['last_column']
+            off['location']['start_line'] - 1, off['location']['last_column'] - 1
           )
         end
       end

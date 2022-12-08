@@ -80,6 +80,10 @@ module Solargraph
       @items.all? &block
     end
 
+    def any? &block
+      @items.any? &block
+    end
+
     def selfy?
       @items.any?(&:selfy?)
     end
@@ -160,9 +164,9 @@ module Solargraph
                 subtype_string.clear
                 next
               else
+                raise ComplexTypeError, "Invalid close in type #{type_string}" if point_stack == 0
                 point_stack -= 1
                 subtype_string += char
-                raise ComplexTypeError, "Invalid close in type #{type_string}" if point_stack < 0
               end
               next
             elsif char == '{'

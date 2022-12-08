@@ -77,4 +77,16 @@ describe 'Node processor (generic)' do
     ext = map.pins.select { |pin| pin.is_a?(Solargraph::Pin::Reference::Extend) }.first
     expect(ext.name).to eq('Extender')
   end
+
+  it 'maps nested constant assignments' do
+    map = Solargraph::SourceMap.load_string(%(
+      Foo = Class.new
+      Foo::BAR = Object.new
+    ))
+    # @type [Solargraph::Pin::Constant]
+    pin = map.first_pin('Foo::BAR')
+    expect(pin).to be_a(Solargraph::Pin::Constant)
+    expect(pin.assignment.to_sexp).to include(':Object')
+    expect(pin.assignment.to_sexp).to include(':new')
+  end
 end

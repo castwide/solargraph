@@ -2,6 +2,7 @@
 
 require 'open3'
 require 'rubygems'
+require 'json'
 
 module Solargraph
   # A workspace consists of the files in a project's directory and the
