@@ -114,9 +114,9 @@ describe Solargraph::Source do
         def bar=
         end
       end
-      foo = Foo.new
-      foo.bar
-      foo.bar = 1
+      𐐀 = Foo.new # unicode name to test offset
+      𐐀.bar
+      𐐀.bar = 1
     ))
     foos = source.references('Foo')
     foobacks = foos.map{|f| source.at(f.range)}
