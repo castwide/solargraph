@@ -125,6 +125,13 @@ module Solargraph
           Solargraph::ComplexType.parse(fqns)
         end
       end
+
+      # @yieldparam [UniqueType]
+      # @return [Enumerator<UniqueType>]
+      def each_unique_type &block
+        return enum_for(__method__) unless block_given?
+        yield self
+      end
     end
   end
 end

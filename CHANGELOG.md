@@ -1,3 +1,14 @@
+## 0.48.0 - December 19, 2022
+- Add Sublime Text to README (#604)
+- Map nested constant assignments
+- Handle rest/kwrest modifiers on overload arguments (#601)
+- Make rubocop info severity Severity::HINT (#576)
+- Process non-self singleton classes (#581)
+- Fix nest gemspec dependency (#599)
+- Strip 'file ' prefix from all filenames in RdocToYard (#585)
+- Show why rubocop fails (#605)
+- Link solargraph-rails (#611)
+
 ## 0.47.2 - September 30, 2022
 - Fix complex type inference (#578)
 - Off-by-one diagnostic (#595)

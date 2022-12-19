@@ -46,6 +46,16 @@ module Solargraph
       @items.each &block
     end
 
+    # @yieldparam [UniqueType]
+    # @return [Enumerator<UniqueType>]
+    def each_unique_type &block
+      return enum_for(__method__) unless block_given?
+
+      @items.each do |item|
+        item.each_unique_type &block
+      end
+    end
+
     def length
       @items.length
     end
