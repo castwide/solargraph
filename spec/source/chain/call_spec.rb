@@ -71,8 +71,27 @@ describe Solargraph::Source::Chain::Call do
 
   it 'infers types from union type' do
     source = Solargraph::Source.load_string(%(
+      # @type [String, Float]
+      list = string_or_float
+      list.upcase
+      list.ceil
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new
+    api_map.map source
+
+    chain = Solargraph::Source::SourceChainer.chain(source, Solargraph::Position.new(3, 11))
+    type = chain.infer(api_map, Solargraph::Pin::ROOT_PIN, api_map.source_map('test.rb').locals)
+    expect(type.tag).to eq('String')
+
+    chain = Solargraph::Source::SourceChainer.chain(source, Solargraph::Position.new(4, 11))
+    type = chain.infer(api_map, Solargraph::Pin::ROOT_PIN, api_map.source_map('test.rb').locals)
+    expect(type.tag).to eq('Integer')
+  end
+
+  it 'infers parameterized types from union type' do
+    source = Solargraph::Source.load_string(%(
       # @type [String, Array<Integer>]
-      list = array_or_strings
+      list = string_or_integer
       list.upcase
       list.each
     ), 'test.rb')
@@ -85,6 +104,7 @@ describe Solargraph::Source::Chain::Call do
 
     chain = Solargraph::Source::SourceChainer.chain(source, Solargraph::Position.new(4, 11))
     type = chain.infer(api_map, Solargraph::Pin::ROOT_PIN, api_map.source_map('test.rb').locals)
-    expect(type.tag).to eq('Array')
+    # @todo It would be more accurate to return `Enumerator<Array<Integer>>` here
+    expect(type.tag).to eq('Enumerator<String, Array<Integer>>')
   end
 end
