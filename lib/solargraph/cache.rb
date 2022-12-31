@@ -42,6 +42,10 @@ module Solargraph
         File.write file, ser, mode: 'wb'
         true
       end
+
+      def clear
+        FileUtils.rm_rf base_dir, secure: true
+      end
     end
   end
 end

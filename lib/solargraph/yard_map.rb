@@ -13,8 +13,6 @@ module Solargraph
     class NoYardocError < StandardError; end
 
     autoload :Cache,       'solargraph/yard_map/cache'
-    autoload :CoreDocs,    'solargraph/yard_map/core_docs'
-    autoload :CoreGen,     'solargraph/yard_map/core_gen'
     autoload :Mapper,      'solargraph/yard_map/mapper'
     autoload :RdocToYard,  'solargraph/yard_map/rdoc_to_yard'
     autoload :CoreFills,   'solargraph/yard_map/core_fills'
@@ -280,13 +278,7 @@ module Solargraph
     # @param spec [Gem::Specification]
     # @return [String]
     def yardoc_file_for_spec spec
-      cache_dir = File.join(Solargraph::YardMap::CoreDocs.cache_dir, 'gems', "#{spec.name}-#{spec.version}", 'yardoc')
-      if File.exist?(cache_dir)
-        Solargraph.logger.info "Using cached documentation for #{spec.name} at #{cache_dir}"
-        cache_dir
-      else
-        YARD::Registry.yardoc_file_for_gem(spec.name, "= #{spec.version}")
-      end
+      YARD::Registry.yardoc_file_for_gem(spec.name, "= #{spec.version}")
     end
 
     # @param path [String]
@@ -307,6 +299,5 @@ module Solargraph
       end
       spec
     end
-
   end
 end

@@ -2,7 +2,6 @@
 
 Encoding.default_external = 'UTF-8'
 
-require 'solargraph/compat'
 require 'solargraph/version'
 
 # The top-level namespace for the Solargraph code mapping, documentation,
@@ -45,7 +44,6 @@ module Solargraph
   autoload :Cache,            'solargraph/cache'
 
   dir = File.dirname(__FILE__)
-  YARDOC_PATH = File.realpath(File.join(dir, '..', 'yardoc'))
   YARD_EXTENSION_FILE = File.join(dir, 'yard-solargraph.rb')
   VIEWS_PATH = File.join(dir, 'solargraph', 'views')
 

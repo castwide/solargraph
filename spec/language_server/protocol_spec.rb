@@ -474,35 +474,6 @@ describe Protocol do
     # expect(response['result'].first['newText']).to include('def barbaz(parameter); end')
   end
 
-  it "handles $/solargraph/downloadCore" do
-    stub_request(:get, "https://solargraph.org/download/versions.json").
-      with(
-        headers: {
-      'Accept'=>'*/*',
-      'Accept-Encoding'=>'gzip;q=1.0,deflate;q=0.6,identity;q=0.3',
-      'Host'=>'solargraph.org',
-      'User-Agent'=>'Ruby'
-      }).
-      to_return(status: 200, body: {
-        status: 'ok',
-        cores: ['2.2.2']
-      }.to_json, headers: {})
-
-    stub_request(:get, "https://solargraph.org/download/2.2.2.tar.gz").
-      with(
-        headers: {
-       'Accept'=>'*/*',
-       'Accept-Encoding'=>'gzip;q=1.0,deflate;q=0.6,identity;q=0.3',
-       'Host'=>'solargraph.org',
-       'User-Agent'=>'Ruby'
-        }).
-      to_return(status: 200, body: File.read_binary("yardoc/2.2.2.tar.gz"), headers: {})
-
-    @protocol.request '$/solargraph/downloadCore', {}
-    response = @protocol.response
-    expect(response['error']).to be_nil
-  end
-
   it "handles MethodNotFound errors" do
     @protocol.request 'notamethod', {}
     response = @protocol.response
