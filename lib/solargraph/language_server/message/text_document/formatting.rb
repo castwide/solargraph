@@ -54,7 +54,7 @@ module Solargraph
           def cli_args file_uri, config
             file = UriHelpers.uri_to_file(file_uri)
             args = [
-              config['cops'] == 'all' ? '--auto-correct-all' : '--auto-correct',
+              config['cops'] == 'all' ? '--autocorrect-all' : '--autocorrect',
               '--cache', 'false',
               '--format', formatter_class(config).name,
             ]
