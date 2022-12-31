@@ -23,6 +23,7 @@ module Solargraph
       # @param _api_map [Solargraph::ApiMap]
       # @return [Array<Hash>]
       def diagnose source, _api_map
+        @source = source
         require_rubocop(rubocop_version)
         options, paths = generate_options(source.filename, source.code)
         store = RuboCop::ConfigStore.new
@@ -89,8 +90,17 @@ module Solargraph
         if off['location']['start_line'] != off['location']['last_line']
           Position.new(off['location']['start_line'], 0)
         else
+          start_line = off['location']['start_line'] - 1
+          last_column = off['location']['last_column']
+          line = @source.code.lines[start_line]
+          col_off = if line.nil? || line.empty?
+            1
+          else
+            0
+          end
+
           Position.new(
-            off['location']['start_line'] - 1, off['location']['last_column'] - 1
+            start_line, last_column - col_off
           )
         end
       end

@@ -24,9 +24,9 @@ module Solargraph
       # @return [Symbol]
       attr_accessor :source
 
-      # @param location [Solargraph::Location]
+      # @param location [Solargraph::Location, nil]
       # @param kind [Integer]
-      # @param closure [Solargraph::Pin::Closure]
+      # @param closure [Solargraph::Pin::Closure, nil]
       # @param name [String]
       # @param comments [String]
       def initialize location: nil, closure: nil, name: '', comments: ''
