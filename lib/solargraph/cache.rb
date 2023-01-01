@@ -21,7 +21,7 @@ module Solargraph
         File.join(base_dir, "ruby-#{RUBY_VERSION}", "rbs-#{RBS::VERSION}", "solargraph-#{Solargraph::VERSION}")
       end
 
-      # @return [Array<Solargraph::Pin::Base>]
+      # @return [Array<Solargraph::Pin::Base>, nil]
       def load *path
         file = File.join(work_dir, *path)
         return nil unless File.file?(file)
