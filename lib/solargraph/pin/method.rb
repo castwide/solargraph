@@ -21,7 +21,7 @@ module Solargraph
       # @param parameters [Array<Pin::Parameter>]
       # @param node [Parser::AST::Node, RubyVM::AbstractSyntaxTree::Node]
       # @param attribute [Boolean]
-      def initialize visibility: :public, explicit: true, parameters: [], node: nil, attribute: false, signatures: nil, **splat
+      def initialize visibility: :public, explicit: true, parameters: [], node: nil, attribute: false, signatures: nil, anon_splat: false, **splat
         super(**splat)
         @visibility = visibility
         @explicit = explicit
@@ -29,6 +29,7 @@ module Solargraph
         @node = node
         @attribute = attribute
         @signatures = signatures
+        @anon_splat = anon_splat
       end
 
       # @return [Array<String>]
@@ -180,6 +181,10 @@ module Solargraph
         @overloads
       end
 
+      def anon_splat?
+        @anon_splat
+      end
+
       private
 
       def select_decl name, asgn
@@ -325,7 +330,6 @@ module Solargraph
           [name, :arg]
         end
       end
-
     end
   end
 end

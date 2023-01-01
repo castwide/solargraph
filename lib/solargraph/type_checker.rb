@@ -275,34 +275,44 @@ module Solargraph
           end
           break unless rules.validate_calls?
           params = first_param_hash(pins)
-          pin.signatures.first.parameters.each_with_index do |par, idx|
-            argchain = base.links.last.arguments[idx]
-            if argchain.nil? && par.decl == :arg
-              result.push Problem.new(location, "Not enough arguments to #{pin.path}")
-              break
-            end
-            if argchain
-              if par.decl != :arg
-                result.concat kwarg_problems_for argchain, api_map, block_pin, locals, location, pin, params, idx
-                break
-              else
-                ptype = params.key?(par.name) ? params[par.name][:qualified] : ComplexType::UNDEFINED
-                if ptype.nil?
-                  # @todo Some level (strong, I guess) should require the param here
+
+          all_errors = []
+          pin.signatures.sort { |sig| sig.parameters.length }.each do |sig|
+            errors = []
+            sig.parameters.each_with_index do |par, idx|
+              argchain = base.links.last.arguments[idx]
+              if argchain.nil? && par.decl == :arg
+                errors.push Problem.new(location, "Not enough arguments to #{pin.path}")
+                next
+              end
+              if argchain
+                if par.decl != :arg
+                  errors.concat kwarg_problems_for argchain, api_map, block_pin, locals, location, pin, params, idx
+                  next
                 else
-                  argtype = argchain.infer(api_map, block_pin, locals)
-                  if argtype.defined? && ptype.defined? && !any_types_match?(api_map, ptype, argtype)
-                    result.push Problem.new(location, "Wrong argument type for #{pin.path}: #{par.name} expected #{ptype}, received #{argtype}")
+                  ptype = params.key?(par.name) ? params[par.name][:qualified] : ComplexType::UNDEFINED
+                  if ptype.nil?
+                    # @todo Some level (strong, I guess) should require the param here
+                  else
+                    argtype = argchain.infer(api_map, block_pin, locals)
+                    if argtype.defined? && ptype.defined? && !any_types_match?(api_map, ptype, argtype)
+                      errors.push Problem.new(location, "Wrong argument type for #{pin.path}: #{par.name} expected #{ptype}, received #{argtype}")
+                      next
+                    end
                   end
                 end
+              elsif par.decl == :kwarg
+                errors.push Problem.new(location, "Call to #{pin.path} is missing keyword argument #{par.name}")
+                next
               end
-            elsif par.rest?
-              next
-            elsif par.decl == :kwarg
-              result.push Problem.new(location, "Call to #{pin.path} is missing keyword argument #{par.name}")
+            end
+            if errors.empty?
+              all_errors.clear
               break
             end
+            all_errors.concat errors
           end
+          result.concat all_errors
         end
         base = base.base
       end
@@ -433,6 +443,7 @@ module Solargraph
     def parameterized_arity_problems_for(pin, parameters, arguments, location)
       return [] unless pin.explicit?
       return [] if parameters.empty? && arguments.empty?
+      return [] if pin.anon_splat?
       if parameters.empty?
         # Functions tagged param_tuple accepts two arguments (e.g., Hash#[]=)
         return [] if pin.docstring.tag(:param_tuple) && arguments.length == 2

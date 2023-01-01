@@ -235,10 +235,10 @@ module Solargraph
         type.type.trailing_positionals.each do |param|
           parameters.push Solargraph::Pin::Parameter.new(decl: :arg, name: param.name.to_s, closure: pin)
         end
-        type.type.required_keywords.each do |name, param|
+        type.type.required_keywords.each do |name, _param|
           parameters.push Solargraph::Pin::Parameter.new(decl: :kwarg, name: name.to_s, closure: pin)
         end
-        type.type.optional_keywords.each do |name, param|
+        type.type.optional_keywords.each do |name, _param|
           parameters.push Solargraph::Pin::Parameter.new(decl: :kwoptarg, name: name.to_s, closure: pin)
         end
         if type.type.rest_keywords
