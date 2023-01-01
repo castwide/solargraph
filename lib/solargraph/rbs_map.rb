@@ -8,6 +8,7 @@ module Solargraph
     autoload :Conversions, 'solargraph/rbs_map/conversions'
     autoload :CoreMap,     'solargraph/rbs_map/core_map'
     autoload :CoreFills,   'solargraph/rbs_map/core_fills'
+    autoload :CoreSigns,   'solargraph/rbs_map/core_signs'
     autoload :StdlibMap,   'solargraph/rbs_map/stdlib_map'
 
     include Conversions
