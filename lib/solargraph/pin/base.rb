@@ -21,7 +21,7 @@ module Solargraph
       # @return [String]
       attr_reader :path
 
-      # @return [Symbol]
+      # @return [::Symbol]
       attr_accessor :source
 
       # @param location [Solargraph::Location, nil]
