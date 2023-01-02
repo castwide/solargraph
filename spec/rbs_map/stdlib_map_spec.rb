@@ -13,4 +13,10 @@ describe Solargraph::RbsMap::StdlibMap do
     pin = rbs_map.path_pin('Pathname#join')
     expect(pin.signatures.first.return_type.tag).to eq('Pathname')
   end
+
+  it 'maps YAML' do
+    rbs_map = Solargraph::RbsMap::StdlibMap.load('yaml')
+    pin = rbs_map.path_pin('YAML')
+    expect(pin).to be_a(Solargraph::Pin::Namespace)
+  end
 end
