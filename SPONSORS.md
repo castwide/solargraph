@@ -15,3 +15,4 @@ The following people and organizations provide funding or other resources. [Beco
 - Erlend Finvåg
 - Matt Massicotte
 - Oscar Rivas
+- Yutaka Tachibana
