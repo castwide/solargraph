@@ -1,3 +1,11 @@
+## 0.49.0 = January 2, 2022
+- Better union type handling
+- First version of RBS support
+- Dependency updates
+- Update RuboCop config options
+- RBS core and stdlib mapping
+- Anonymous splats and multisig arity
+
 ## 0.48.0 - December 19, 2022
 - Add Sublime Text to README (#604)
 - Map nested constant assignments
