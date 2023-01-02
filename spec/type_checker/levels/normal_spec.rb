@@ -838,5 +838,23 @@ describe Solargraph::TypeChecker do
       ))
       expect(checker.problems).to be_empty
     end
+
+    it 'accepts anonymous splats for instance methods' do
+      checker = type_checker(%(
+        def foo(*); end
+        foo('bar')
+      ))
+      expect(checker.problems).to be_empty
+    end
+
+    it 'accepts anonymous splats for class methods' do
+      checker = type_checker(%(
+        class Foo
+          def self.foo(*); end
+        end
+        Foo.foo('bar')
+      ))
+      expect(checker.problems).to be_empty
+    end
   end
 end

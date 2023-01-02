@@ -173,8 +173,8 @@ describe Solargraph::Pin::Method do
     >)
     expect(pin.overloads.length).to eq(1)
     overload = pin.overloads.first
+    expect(overload.parameters.first.return_type.tag).to eq('Integer')
     expect(overload.return_type.tag).to eq('String')
-    expect(overload.docstring.tag(:param).types).to eq(['Integer'])
   end
 
   it 'processes overload tags with restargs' do

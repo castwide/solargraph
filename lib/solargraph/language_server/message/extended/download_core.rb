@@ -10,11 +10,7 @@ module Solargraph
         #
         class DownloadCore < Base
           def process
-            ver = Solargraph::YardMap::CoreDocs.best_download
-            Solargraph::YardMap::CoreDocs.download ver
-            host.show_message "Downloaded documentation for Ruby #{ver}.", LanguageServer::MessageTypes::INFO
-          rescue StandardError => e
-            host.show_message "An error occurred while downloading documentation: [#{e.class}] #{e.message}", LanguageServer::MessageTypes::ERROR
+            host.show_message "Downloading cores is deprecated. Solargraph currently uses RBS for core and stdlib documentation", LanguageServer::MessageTypes::INFO
           end
         end
       end

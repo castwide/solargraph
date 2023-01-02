@@ -9,10 +9,11 @@ module Solargraph
       # @return [String]
       attr_reader :asgn_code
 
-      def initialize decl: :arg, asgn_code: nil, **splat
+      def initialize decl: :arg, asgn_code: nil, return_type: nil, **splat
         super(**splat)
         @asgn_code = asgn_code
         @decl = decl
+        @return_type = return_type
       end
 
       def keyword?
@@ -31,14 +32,18 @@ module Solargraph
         decl == :restarg || decl == :kwrestarg
       end
 
+      def block?
+        [:block, :blockarg].include?(decl)
+      end
+
       def full
         case decl
         when :optarg
-          "#{name} = #{asgn_code}"
+          "#{name} = #{asgn_code || '?'}"
         when :kwarg
           "#{name}:"
         when :kwoptarg
-          "#{name}: #{asgn_code}"
+          "#{name}: #{asgn_code || '?'}"
         when :restarg
           "*#{name}"
         when :kwrestarg

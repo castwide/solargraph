@@ -329,4 +329,14 @@ describe Solargraph::Source::Chain do
     tag = chain.infer(api_map, Solargraph::Pin::ROOT_PIN, [])
     expect(tag.to_s).to eq('String, nil')
   end
+
+  it 'infers Class<self> from Object#class' do
+    source = Solargraph::Source.load_string(%(
+      String.new.class
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new.map(source)
+    chain = Solargraph::Source::SourceChainer.chain(source, Solargraph::Position.new(1, 17))
+    tag = chain.infer(api_map, Solargraph::Pin::ROOT_PIN, [])
+    expect(tag.to_s).to eq('Class<String>')
+  end
 end

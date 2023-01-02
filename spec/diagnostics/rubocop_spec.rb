@@ -30,7 +30,6 @@ describe Solargraph::Diagnostics::Rubocop do
     rubocop = Solargraph::Diagnostics::Rubocop.new
     results = rubocop.diagnose(source, nil)
 
-    puts results.inspect
     expect(results).to be_one
     expect(results.first[:range][:start][:line]).to eq(2)
     expect(results.first[:range][:start][:character]).to eq(0)

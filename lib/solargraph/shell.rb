@@ -71,43 +71,47 @@ module Solargraph
       STDOUT.puts "Configuration file initialized."
     end
 
-    desc 'download-core [VERSION]', 'Download core documentation'
-    def download_core version = nil
-      ver = version || Solargraph::YardMap::CoreDocs.best_download
-      if RUBY_VERSION != ver
-        puts "Documentation for #{RUBY_VERSION} is not available. Reverting to closest match..."
-      end
-      puts "Downloading docs for #{ver}..."
-      Solargraph::YardMap::CoreDocs.download ver
-      # Clear cached documentation if it exists
-      FileUtils.rm_rf Dir.glob(File.join(Solargraph::YardMap::CoreDocs.cache_dir, ver, '*.ser'))
-      puts "Download complete."
-    rescue ArgumentError => e
-      STDERR.puts "ERROR: #{e.message}"
-      STDERR.puts "Run `solargraph available-cores` for a list."
-      exit 1
+    desc 'download-core [VERSION]', 'Download core documentation [deprecated]'
+    long_desc %(
+      The `download-core` command is deprecated. Current versions of Solargraph
+      use RBS for core and stdlib documentation.
+    )
+    # @deprecated
+    def download_core _version = nil
+      puts 'The `download-core` command is deprecated.'
+      puts 'Current versions of Solargraph use RBS for core and stdlib documentation.'
     end
 
-    desc 'list-cores', 'List the local documentation versions'
+    desc 'list-cores', 'List the local documentation versions [deprecated]'
+    long_desc %(
+      The `list-cores` command is deprecated. Current versions of Solargraph use
+      RBS for core and stdlib documentation.
+    )
+    # @deprecated
     def list_cores
-      puts Solargraph::YardMap::CoreDocs.versions.join("\n")
+      puts 'The `list-cores` command is deprecated.'
+      puts 'Current versions of Solargraph use RBS for core and stdlib documentation.'
     end
 
-    desc 'available-cores', 'List available documentation versions'
+    desc 'available-cores', 'List available documentation versions [deprecated]'
+    long_desc %(
+      The `available-cores` command is deprecated. Current versions of Solargraph
+      use RBS for core and stdlib documentation.
+    )
+    # @deprecated
     def available_cores
-      puts Solargraph::YardMap::CoreDocs.available.join("\n")
+      puts 'The `available-cores` command is deprecated.'
+      puts 'Current versions of Solargraph use RBS for core and stdlib documentation.'
     end
 
     desc 'clear', 'Delete all cached documentation'
     long_desc %(
       This command will delete all core and gem documentation from the cache.
-      You can also delete specific gem caches with the `uncache` command or
-      update documentation for specific Ruby versions with the `download-core`
-      command.
     )
+    # @deprecated
     def clear
       puts "Deleting the cached documentation"
-      Solargraph::YardMap::CoreDocs.clear
+      Solargraph::Cache.clear
     end
     map 'clear-cache' => :clear
     map 'clear-cores' => :clear
@@ -191,18 +195,22 @@ module Solargraph
       puts "Scanned #{directory} (#{api_map.pins.length} pins) in #{time.real} seconds."
     end
 
-    desc 'bundle', 'Generate documentation for bundled gems'
+    desc 'bundle', 'Generate documentation for bundled gems [deprecated]'
+    long_desc %(
+      The `bundle` command is deprecated. Solargraph currently uses RBS instead.
+    )
     option :directory, type: :string, aliases: :d, desc: 'The workspace directory', default: '.'
     option :rebuild, type: :boolean, aliases: :r, desc: 'Rebuild existing documentation', default: false
     def bundle
-      Documentor.new(options[:directory], rebuild: options[:rebuild], out: STDOUT).document
+      puts 'The `bundle` command is deprecated. Solargraph currently uses RBS instead.'
     end
 
-    desc 'rdoc GEM [VERSION]', 'Use RDoc to cache documentation'
-    def rdoc gem, version = '>= 0'
-      spec = Gem::Specification.find_by_name(gem, version)
-      puts "Caching #{spec.name} #{spec.version} from RDoc"
-      Solargraph::YardMap::RdocToYard.run(spec)
+    desc 'rdoc GEM [VERSION]', 'Use RDoc to cache documentation [deprecated]'
+    long_desc %(
+      The `rdoc` command is deprecated. Solargraph currently uses RBS instead.
+    )
+    def rdoc _gem, _version = '>= 0'
+      puts 'The `rdoc` command is deprecated. Solargraph currently uses RBS instead.'
     end
 
     private

@@ -3,12 +3,6 @@ require 'set'
 require 'tmpdir'
 
 describe Solargraph::YardMap do
-  it "finds stdlib require paths" do
-    yard_map = Solargraph::YardMap.new(required: ['set'])
-    pin = yard_map.path_pin('Set#add')
-    expect(pin).to be
-  end
-
   it "removes requires on change" do
     yard_map = Solargraph::YardMap.new(required: ['set'])
     expect(yard_map.change([], '', [])).to be(true)
@@ -38,9 +32,8 @@ describe Solargraph::YardMap do
   end
 
   it "tracks unresolved requires" do
-    yard_map = Solargraph::YardMap.new(required: ['set', 'not_valid'])
+    yard_map = Solargraph::YardMap.new(required: ['not_valid'])
     expect(yard_map.unresolved_requires).to include('not_valid')
-    expect(yard_map.unresolved_requires).not_to include('set')
   end
 
   it "tracks missing documentation" do
@@ -125,29 +118,9 @@ describe Solargraph::YardMap do
     expect(location).to be_nil
   end
 
-  it 'maps core Errno classes' do
-    yard_map = Solargraph::YardMap.new
-    store = Solargraph::ApiMap::Store.new(yard_map.pins)
-    Errno.constants.each do |const|
-      pin = store.get_path_pins("Errno::#{const}").first
-      expect(pin).to be_a(Solargraph::Pin::Namespace)
-      superclass = store.get_superclass(pin.path)
-      expect(superclass).to eq('SystemCallError')
-    end
-  end
-
-  it 'adds overrides' do
-    # Pathname is a stdlib component that doesn't have method return types in
-    # the yardocs. This test makes sure that YardMap injects overrides from
-    # StdlibFills.
-    yard_map = Solargraph::YardMap.new(required: ['pathname'])
-    pin = yard_map.path_pin('Pathname#join')
-    expect(pin.return_type.tag).to eq('Pathname')
-  end
-
   it 'maps YAML to Psych' do
-    # @todo This breaks in Ruby 2.7
-    next if RUBY_VERSION =~ /^2\.7\./
+    # @todo This breaks in Ruby 2.7+
+    next if RUBY_VERSION =~ /^2\.7\./ || RUBY_VERSION =~ /^3\./
     yard_map = Solargraph::YardMap.new(required: ['yaml'])
     yaml = yard_map.path_pin('YAML')
     expect(yaml.return_type.to_s).to eq('Module<Psych>')

@@ -21,14 +21,6 @@ describe Solargraph::Documentor do
     end
   end
 
-  it 'documents bundles' do
-    Dir.mktmpdir do |tmp|
-      FileUtils.cp_r 'spec/fixtures/workspace-with-gemfile', tmp
-      result = Solargraph::Documentor.new("#{tmp}/workspace-with-gemfile", rebuild: true).document
-      expect(result).to be(true)
-    end
-  end
-
   it 'reports failures to document bundles' do
     Dir.mktmpdir do |tmp|
       result = Solargraph::Documentor.new(tmp, rebuild: true).document

@@ -18,13 +18,18 @@ module Solargraph
 
       # @param visibility [::Symbol] :public, :protected, or :private
       # @param explicit [Boolean]
-      def initialize visibility: :public, explicit: true, parameters: [], node: nil, attribute: false, **splat
+      # @param parameters [Array<Pin::Parameter>]
+      # @param node [Parser::AST::Node, RubyVM::AbstractSyntaxTree::Node]
+      # @param attribute [Boolean]
+      def initialize visibility: :public, explicit: true, parameters: [], node: nil, attribute: false, signatures: nil, anon_splat: false, **splat
         super(**splat)
         @visibility = visibility
         @explicit = explicit
         @parameters = parameters
         @node = node
         @attribute = attribute
+        @signatures = signatures
+        @anon_splat = anon_splat
       end
 
       # @return [Array<String>]
@@ -41,7 +46,45 @@ module Solargraph
       end
 
       def return_type
-        @return_type ||= generate_complex_type
+        @return_type ||= ComplexType.try_parse(*signatures.map(&:return_type).map(&:to_s))
+      end
+
+      # @return [Array<Signature>]
+      def signatures
+        @signatures ||= begin
+          top_type = generate_complex_type
+          result = []
+          result.push Signature.new(parameters, top_type) if top_type.defined?
+          result.concat(overloads.map { |meth| Signature.new(meth.parameters, meth.return_type) })
+          result.push Signature.new(parameters, top_type) if result.empty?
+          result
+        end
+      end
+
+      # @return [String]
+      def detail
+        # This property is not cached in an instance variable because it can
+        # change when pins get proxied.
+        detail = String.new
+        detail += if signatures.length > 1
+          "(*) "
+        else
+          "(#{signatures.first.parameters.map(&:full).join(', ')}) " unless signatures.first.parameters.empty?
+        end.to_s
+        detail += "=#{probed? ? '~' : (proxied? ? '^' : '>')} #{return_type.to_s}" unless return_type.undefined?
+        detail.strip!
+        return nil if detail.empty?
+        detail
+      end
+
+      # @return [Array<Hash>]
+      def signature_help
+        @signature_help ||= signatures.map do |sig|
+          {
+            label: name + '(' + sig.parameters.map(&:full).join(', ') + ')',
+            documentation: documentation
+          }
+        end
       end
 
       def path
@@ -119,27 +162,59 @@ module Solargraph
       # @return [Array<Pin::Method>]
       def overloads
         @overloads ||= docstring.tags(:overload).map do |tag|
-          Solargraph::Pin::Method.new(
-            name: name,
-            closure: self,
-            # args: tag.parameters.map(&:first),
-            parameters: tag.parameters.map do |src|
+          Pin::Signature.new(
+            tag.parameters.map do |src|
               name, decl = parse_overload_param(src.first)
               Pin::Parameter.new(
                 location: location,
                 closure: self,
                 comments: tag.docstring.all.to_s,
                 name: name,
+                decl: decl,
                 presence: location ? location.range : nil,
-                decl: decl
+                return_type: param_type_from_name(tag, src.first)
               )
             end,
-            comments: tag.docstring.all.to_s
+            ComplexType.try_parse(*tag.docstring.tags(:return).flat_map(&:types))
           )
         end
+        @overloads
+      end
+
+      def anon_splat?
+        @anon_splat
       end
 
       private
+
+      def select_decl name, asgn
+        if name.start_with?('**')
+          :kwrestarg
+        elsif name.start_with?('*')
+          :restarg
+        elsif name.start_with?('&')
+          :blockarg
+        elsif name.end_with?(':') && asgn
+          :kwoptarg
+        elsif name.end_with?(':')
+          :kwarg
+        elsif asgn
+          :optarg
+        else
+          :arg
+        end
+      end
+
+      def clean_param name
+        name.gsub(/[*&:]/, '')
+      end
+
+      # @param tag [YARD::Tags::OverloadTag]
+      def param_type_from_name(tag, name)
+        param = tag.tags(:param).select { |t| t.name == name }.first
+        return ComplexType::UNDEFINED unless param
+        ComplexType.try_parse(*param.types)
+      end
 
       # @return [ComplexType]
       def generate_complex_type
@@ -255,7 +330,6 @@ module Solargraph
           [name, :arg]
         end
       end
-
     end
   end
 end

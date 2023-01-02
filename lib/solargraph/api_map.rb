@@ -21,6 +21,8 @@ module Solargraph
     # @return [Array<String>]
     attr_reader :unresolved_requires
 
+    @@core_map = RbsMap::CoreMap.new
+
     # @return [Array<String>]
     attr_reader :missing_docs
 
@@ -40,7 +42,7 @@ module Solargraph
       @source_map_hash = {}
       implicit.clear
       cache.clear
-      @store = Store.new(yard_map.pins + pins)
+      @store = Store.new(@@core_map.pins + pins)
       self
     end
 
@@ -68,13 +70,23 @@ module Solargraph
       end
       external_requires.merge implicit.requires
       external_requires.merge bench.workspace.config.required
-      yard_map.change(external_requires, bench.workspace.directory, bench.workspace.source_gems)
-      @store = Store.new(yard_map.pins + implicit.pins + pins)
+      @rbs_maps = external_requires.map { |r| load_rbs_map(r) }
+      unresolved_requires = @rbs_maps.reject(&:resolved?).map(&:library)
+      yard_map.change(unresolved_requires, bench.workspace.directory, bench.workspace.source_gems)
+      @store = Store.new(@@core_map.pins + @rbs_maps.flat_map(&:pins) + yard_map.pins + implicit.pins + pins)
       @unresolved_requires = yard_map.unresolved_requires
       @missing_docs = yard_map.missing_docs
       @rebindable_method_names = nil
       store.block_pins.each { |blk| blk.rebind(self) }
       self
+    end
+
+    def core_pins
+      @@core_map.pins
+    end
+
+    def yard_map
+      @yard_map ||= YardMap.new
     end
 
     # @param name [String]
@@ -132,7 +144,8 @@ module Solargraph
 
     def rebindable_method_names
       @rebindable_method_names ||= begin
-        result = yard_map.rebindable_method_names
+        # result = yard_map.rebindable_method_names
+        result = ['instance_eval', 'instance_exec', 'class_eval', 'class_exec', 'module_eval', 'module_exec', 'define_method'].to_set
         source_maps.each do |map|
           result.merge map.rebindable_method_names
         end
@@ -454,11 +467,6 @@ module Solargraph
       false
     end
 
-    # @return [YardMap]
-    def yard_map
-      @yard_map ||= YardMap.new
-    end
-
     # Check if the host class includes the specified module.
     #
     # @param host [String] The class
@@ -474,6 +482,14 @@ module Solargraph
     #
     # @return [Hash{String => SourceMap}]
     attr_reader :source_map_hash
+
+    # @param library [String]
+    # @return [RbsMap]
+    def load_rbs_map library
+      # map = RbsMap.load(library)
+      # return map if map.resolved?
+      RbsMap::StdlibMap.load(library)
+    end
 
     # @return [ApiMap::Store]
     def store
@@ -677,7 +693,7 @@ module Solargraph
         comments: origin.comments,
         scope: origin.scope,
         visibility: origin.visibility,
-        parameters: origin.parameters,
+        signatures: origin.signatures,
         attribute: origin.attribute?
       }
       Pin::Method.new **args

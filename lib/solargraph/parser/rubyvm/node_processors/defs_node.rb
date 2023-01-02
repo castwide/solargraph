@@ -11,6 +11,8 @@ module Solargraph
             s_visi = region.visibility
             s_visi = :public if region.scope != :class
             loc = get_node_location(node)
+            anon_splat = node_has_anon_splat?
+
             if node.children[0].is_a?(RubyVM::AbstractSyntaxTree::Node) && node.children[0].type == :SELF
               closure = region.closure
             else
@@ -26,7 +28,8 @@ module Solargraph
                 comments: comments_for(node),
                 scope: :class,
                 visibility: :public,
-                node: node
+                node: node,
+                anon_splat: anon_splat
               )
               pins.push Solargraph::Pin::Method.new(
                 location: loc,
@@ -35,7 +38,8 @@ module Solargraph
                 comments: comments_for(node),
                 scope: :instance,
                 visibility: :private,
-                node: node
+                node: node,
+                anon_splat: anon_splat
               )
             else
               pins.push Solargraph::Pin::Method.new(
@@ -45,10 +49,17 @@ module Solargraph
                 comments: comments_for(node),
                 scope: :class,
                 visibility: s_visi,
-                node: node
+                node: node,
+                anon_splat: anon_splat
               )
             end
             process_children region.update(closure: pins.last, scope: :class)
+          end
+
+          private
+
+          def node_has_anon_splat?
+            node.children[2]&.children&.first == [nil]
           end
         end
       end

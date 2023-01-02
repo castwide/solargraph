@@ -614,7 +614,7 @@ describe Solargraph::SourceMap::Clip do
     expect(clip.infer.tag).to eq('Class')
   end
 
-  it 'infers Object from Class#new' do
+  it 'infers BasicObject from Class#new' do
     source = Solargraph::Source.load_string(%(
       cls = Class.new
       cls.new
@@ -622,17 +622,17 @@ describe Solargraph::SourceMap::Clip do
     api_map = Solargraph::ApiMap.new
     api_map.map source
     clip = api_map.clip_at('test.rb', [2, 11])
-    expect(clip.infer.tag).to eq('Object')
+    expect(clip.infer.tag).to eq('BasicObject')
   end
 
-  it 'infers Object from Class.new.new' do
+  it 'infers BasicObject from Class.new.new' do
     source = Solargraph::Source.load_string(%(
       Class.new.new
     ), 'test.rb')
     api_map = Solargraph::ApiMap.new
     api_map.map source
     clip = api_map.clip_at('test.rb', [1, 17])
-    expect(clip.infer.tag).to eq('Object')
+    expect(clip.infer.tag).to eq('BasicObject')
   end
 
   it 'completes class instance variables in the namespace' do
@@ -900,9 +900,9 @@ describe Solargraph::SourceMap::Clip do
     map = Solargraph::ApiMap.new
     map.map source
     clip = map.clip_at('test.rb', Solargraph::Position.new(3, 15))
-    expect(clip.infer.to_s).to eq('Array<String>')
+    expect(clip.infer.to_s).to eq('Array<String>, nil')
     clip = map.clip_at('test.rb', Solargraph::Position.new(4, 15))
-    expect(clip.infer.to_s).to eq('Array<String>')
+    expect(clip.infer.to_s).to eq('Array<String>, nil')
     clip = map.clip_at('test.rb', Solargraph::Position.new(5, 15))
     expect(clip.infer.to_s).to eq('String')
   end
@@ -927,8 +927,10 @@ describe Solargraph::SourceMap::Clip do
     expect(clip.infer.to_s).to eq('String')
     clip = api_map.clip_at('test.rb', [8, 14])
     expect(clip.infer.to_s).to eq('String')
-    clip = api_map.clip_at('test.rb', [9, 14])
-    expect(clip.infer.tag).to eq('nil')
+    # @todo This assertion might be invalid, given that the signature expects
+    #   at least one argument
+    # clip = api_map.clip_at('test.rb', [9, 14])
+    # expect(clip.infer.tag).to eq('nil')
   end
 
   it 'follows scope gates' do
