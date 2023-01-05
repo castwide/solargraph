@@ -1,4 +1,4 @@
-## 0.49.0 = January 2, 2022
+## 0.49.0
 - Better union type handling
 - First version of RBS support
 - Dependency updates
