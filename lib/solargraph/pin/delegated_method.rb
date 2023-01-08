@@ -37,6 +37,11 @@ module Solargraph
         end
       end
 
+      def resolvable?(api_map)
+        resolve_method(api_map)
+        !!@resolved_method
+      end
+
       private
 
       # Resolves the receiver chain and method name to a method pin, resetting any previously resolution.
