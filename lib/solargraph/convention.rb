@@ -11,6 +11,7 @@ module Solargraph
     autoload :Gemfile, 'solargraph/convention/gemfile'
     autoload :Rspec,   'solargraph/convention/rspec'
     autoload :Gemspec, 'solargraph/convention/gemspec'
+    autoload :Rakefile, 'solargraph/convention/rakefile'
 
     @@conventions = Set.new
 
@@ -43,5 +44,6 @@ module Solargraph
     register Gemfile
     register Gemspec
     register Rspec
+    register Rakefile
   end
 end
