@@ -35,10 +35,11 @@ module Solargraph
           ))
       end
 
-      RETURN_VALUE_PARAMETERS = [
-        Override.from_comment('Hash#[]', %(
-@return_value_parameter
-        ))
+      CLASS_RETURN_TYPES = [
+        Override.method_return('Class#new', 'self'),
+        Override.method_return('Class.new', 'Class<BasicObject>'),
+        Override.method_return('Class#allocate', 'self'),
+        Override.method_return('Class.allocate', 'Class<BasicObject>'),
       ]
 
       # HACK: Add Errno exception classes
@@ -50,7 +51,7 @@ module Solargraph
       end
       ERRNOS = errnos
 
-      ALL = KEYWORDS + YIELDPARAMS + YIELDPARAM_SINGLE_PARAMETERS + RETURN_VALUE_PARAMETERS + ERRNOS
+      ALL = KEYWORDS + YIELDPARAMS + YIELDPARAM_SINGLE_PARAMETERS + CLASS_RETURN_TYPES + ERRNOS
     end
   end
 end

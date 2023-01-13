@@ -856,5 +856,14 @@ describe Solargraph::TypeChecker do
       ))
       expect(checker.problems).to be_empty
     end
+
+    it 'accepts Hash#[] calls for parameterized Hash types' do
+      checker = type_checker(%(
+        # @type [Hash{String => String}]
+        x = {}
+        x['arg']
+      ))
+      expect(checker.problems).to be_empty
+    end
   end
 end

@@ -8,6 +8,8 @@ module Solargraph
     class UniqueType
       include TypeMethods
 
+      attr_reader :all_params
+
       # Create a UniqueType with the specified name and an optional substring.
       # The substring is the parameter section of a parametrized type, e.g.,
       # for the type `Array<String>`, the name is `Array` and the substring is
@@ -27,6 +29,7 @@ module Solargraph
         @tag = @name + substring
         @key_types = []
         @subtypes = []
+        @all_params = []
         return unless parameters?
         if @substring.start_with?('<(') && @substring.end_with?(')>')
           subs = ComplexType.parse(substring[2..-3], partial: true)
@@ -40,6 +43,8 @@ module Solargraph
         else
           @subtypes.concat subs
         end
+        @all_params.concat @key_types
+        @all_params.concat @subtypes
       end
 
       def to_s
@@ -50,6 +55,54 @@ module Solargraph
         "#{namespace}#{parameters? ? "[#{subtypes.map { |s| s.to_rbs }.join(', ')}]" : ''}"
       end
   
+      def parameterized?
+        name == 'param' || all_params.any?(&:parameterized?)
+      end
+
+      def resolve_parameters definitions, context
+        new_name = if name == 'param'
+          idx = definitions.parameters.index(subtypes.first.name)
+          return ComplexType::UNDEFINED if idx.nil?
+          param_type = context.return_type.all_params[idx]
+          return ComplexType::UNDEFINED unless param_type
+          param_type.to_s
+        else
+          name
+        end
+        new_key_types = if name != 'param'
+          @key_types.map { |t| t.resolve_parameters(definitions, context) }.select(&:defined?)
+        else
+          []
+        end
+        new_subtypes = if name != 'param'
+          @subtypes.map { |t| t.resolve_parameters(definitions, context) }.select(&:defined?)
+        else
+          []
+        end
+        if name != 'param' && !(new_key_types.empty? && new_subtypes.empty?)
+          if hash_parameters?
+            UniqueType.new(new_name, "{#{new_key_types.join(', ')} => #{new_subtypes.join(', ')}}")
+          elsif parameters?
+            if @substring.start_with?'<('
+              UniqueType.new(new_name, "<(#{new_subtypes.join(', ')})>")
+            else
+              UniqueType.new(new_name, "<#{new_subtypes.join(', ')}>")
+            end
+          else
+            UniqueType.new(new_name)
+          end
+        else
+          UniqueType.new(new_name)
+        end
+
+        # idx = definitions.parameters.index(subtypes.first.name)
+        # STDERR.puts "Index: #{idx}"
+        # return ComplexType::UNDEFINED if idx.nil?
+        # param_type = context.return_type.all_params[idx]
+        # return ComplexType::UNDEFINED unless param_type
+        # ComplexType.try_parse(param_type.to_s)
+      end
+
       def self_to dst
         return self unless selfy?
         new_name = (@name == 'self' ? dst : @name)

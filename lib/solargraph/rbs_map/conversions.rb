@@ -97,7 +97,8 @@ module Solargraph
           type: :class,
           name: decl.name.relative!.to_s,
           closure: Solargraph::Pin::ROOT_PIN,
-          comments: decl.comment&.string
+          comments: decl.comment&.string,
+          parameters: decl.type_params.map(&:name).map(&:to_s)
         )
         pins.push class_pin
         if decl.super_class
@@ -223,25 +224,33 @@ module Solargraph
 
       def parts_of_function type, pin
         parameters = []
+        arg_num = -1
         type.type.required_positionals.each do |param|
-          parameters.push Solargraph::Pin::Parameter.new(decl: :arg, name: param.name.to_s, closure: pin, return_type: ComplexType.try_parse(other_type_to_tag(param.type)))
+          name = param.name ? param.name.to_s : "arg#{arg_num += 1}"
+          parameters.push Solargraph::Pin::Parameter.new(decl: :arg, name: name, closure: pin, return_type: ComplexType.try_parse(other_type_to_tag(param.type)))
         end
         type.type.optional_positionals.each do |param|
-          parameters.push Solargraph::Pin::Parameter.new(decl: :optarg, name: param.name.to_s, closure: pin)
+          name = param.name ? param.name.to_s : "arg#{arg_num += 1}"
+          parameters.push Solargraph::Pin::Parameter.new(decl: :optarg, name: name, closure: pin)
         end
         if type.type.rest_positionals
-          parameters.push Solargraph::Pin::Parameter.new(decl: :restarg, name: type.type.rest_positionals.name.to_s, closure: pin)
+          name = type.type.rest_positionals.name ? type.type.rest_positionals.name.to_s : "arg#{arg_num += 1}"
+          parameters.push Solargraph::Pin::Parameter.new(decl: :restarg, name: name, closure: pin)
         end
         type.type.trailing_positionals.each do |param|
-          parameters.push Solargraph::Pin::Parameter.new(decl: :arg, name: param.name.to_s, closure: pin)
+          name = param.name ? param.name.to_s : "arg#{arg_num += 1}"
+          parameters.push Solargraph::Pin::Parameter.new(decl: :arg, name: name, closure: pin)
         end
-        type.type.required_keywords.each do |name, _param|
-          parameters.push Solargraph::Pin::Parameter.new(decl: :kwarg, name: name.to_s, closure: pin)
+        type.type.required_keywords.each do |orig, _param|
+          name = orig ? orig.to_s : "arg#{arg_num += 1}"
+          parameters.push Solargraph::Pin::Parameter.new(decl: :kwarg, name: name, closure: pin)
         end
-        type.type.optional_keywords.each do |name, _param|
-          parameters.push Solargraph::Pin::Parameter.new(decl: :kwoptarg, name: name.to_s, closure: pin)
+        type.type.optional_keywords.each do |orig, _param|
+          name = orig ? orig.to_s : "arg#{arg_num += 1}"
+          parameters.push Solargraph::Pin::Parameter.new(decl: :kwoptarg, name: name, closure: pin)
         end
         if type.type.rest_keywords
+          name = type.type.rest_keywords.name ? type.type.rest_keywords.name.to_s : "arg#{arg_num += 1}"
           parameters.push Solargraph::Pin::Parameter.new(decl: :kwrestarg, name: type.type.rest_keywords.name.to_s, closure: pin)
         end
         return_type = ComplexType.try_parse(method_type_to_tag(type))
@@ -357,7 +366,7 @@ module Solargraph
         elsif type.is_a?(RBS::Types::Bases::Void)
           'void'
         elsif type.is_a?(RBS::Types::Variable)
-          "$"
+          "param<#{type.name}>"
         elsif type.is_a?(RBS::Types::ClassInstance) #&& !type.args.empty?
           base = RBS_TO_YARD_TYPE[type.name.relative!.to_s] || type.name.relative!.to_s
           params = type.args.map { |a| other_type_to_tag(a) }.reject { |t| t == 'undefined' }

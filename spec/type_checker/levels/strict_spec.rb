@@ -300,6 +300,7 @@ describe Solargraph::TypeChecker do
         h['foo'] = 'bar'
         h[100] = []
       ))
+      puts checker.problems.map(&:message)
       expect(checker.problems).to be_empty
     end
 

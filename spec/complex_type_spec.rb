@@ -264,4 +264,14 @@ describe Solargraph::ComplexType do
     type = Solargraph::ComplexType.parse('Array<self>').self_to('Foo<String>')
     expect(type.tag).to eq('Array<Foo<String>>')
   end
+
+  it 'recognizes param types' do
+    type = Solargraph::ComplexType.parse('param<Variable>')
+    expect(type).to be_parameterized
+  end
+
+  it 'recognizes parameterized parameters' do
+    type = Solargraph::ComplexType.parse('Object<param<Variable>>')
+    expect(type).to be_parameterized
+  end
 end

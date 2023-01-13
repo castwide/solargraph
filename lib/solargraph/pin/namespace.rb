@@ -9,10 +9,12 @@ module Solargraph
       # @return [::Symbol] :class or :module
       attr_reader :type
 
+      attr_reader :parameters
+
       # @param type [::Symbol] :class or :module
       # @param visibility [::Symbol] :public or :private
       # @param gates [Array<String>]
-      def initialize type: :class, visibility: :public, gates: [''], **splat
+      def initialize type: :class, visibility: :public, gates: [''], parameters: [], **splat
         # super(location, namespace, name, comments)
         super(**splat)
         @type = type
@@ -36,6 +38,7 @@ module Solargraph
           @closure = Pin::Namespace.new(name: closure_name, gates: [parts.join('::')])
           @context = nil
         end
+        @parameters = parameters
       end
 
       def namespace

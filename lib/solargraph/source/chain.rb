@@ -63,11 +63,11 @@ module Solargraph
         working_pin = name_pin
         links[0..-2].each do |link|
           pins = link.resolve(api_map, working_pin, locals)
-          type = infer_first_defined(pins, working_pin, api_map)
+          type = infer_first_defined(pins, working_pin, api_map, locals)
           return [] if type.undefined?
           working_pin = Pin::ProxyType.anonymous(type)
         end
-        links.last.last_context = working_pin
+        links.last.last_context = name_pin
         links.last.resolve(api_map, working_pin, locals)
       end
 
@@ -76,8 +76,12 @@ module Solargraph
       # @param locals [Array<Pin::Base>]
       # @return [ComplexType]
       def infer api_map, name_pin, locals
+        from_here = base.infer(api_map, name_pin, locals) unless links.length == 1
+        if from_here
+          name_pin = name_pin.proxy(from_here)
+        end
         pins = define(api_map, name_pin, locals)
-        type = infer_first_defined(pins, links.last.last_context, api_map)
+        type = infer_first_defined(pins, links.last.last_context, api_map, locals)
         maybe_nil(type)
       end
 
@@ -110,9 +114,10 @@ module Solargraph
       private
 
       # @param pins [Array<Pin::Base>]
+      # @param context [Pin::Base]
       # @param api_map [ApiMap]
       # @return [ComplexType]
-      def infer_first_defined pins, context, api_map
+      def infer_first_defined pins, context, api_map, locals
         possibles = []
         pins.each do |pin|
           # Avoid infinite recursion
@@ -121,8 +126,18 @@ module Solargraph
           type = pin.typify(api_map)
           @@inference_stack.pop
           if type.defined?
-            possibles.push type
-            break if pin.is_a?(Pin::Method)
+            if type.parameterized?
+              type = type.resolve_parameters(pin.closure, context)
+              # idx = pin.closure.parameters.index(type.subtypes.first.name)
+              # next if idx.nil?
+              # param_type = context.return_type.all_params[idx]
+              # next unless param_type
+              # type = ComplexType.try_parse(param_type.to_s)
+            end
+            if type.defined?
+              possibles.push type
+              break if pin.is_a?(Pin::Method)
+            end
           end
         end
         if possibles.empty?

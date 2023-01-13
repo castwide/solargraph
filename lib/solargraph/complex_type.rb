@@ -91,11 +91,20 @@ module Solargraph
     end
 
     def any? &block
-      @items.any? &block
+      @items.compact.any? &block
     end
 
     def selfy?
       @items.any?(&:selfy?)
+    end
+
+    def parameterized?
+      any?(&:parameterized?)
+    end
+
+    def resolve_parameters definitions, context
+      result = @items.map { |i| i.resolve_parameters(definitions, context) }
+      ComplexType.parse(*result.map(&:tag))
     end
 
     # @param dst [String]
@@ -109,6 +118,10 @@ module Solargraph
 
     def nullable?
       @items.any?(&:nil_type?)
+    end
+
+    def all_params
+      @items.first.all_params || []
     end
 
     private
