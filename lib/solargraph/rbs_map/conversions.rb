@@ -156,7 +156,9 @@ module Solargraph
           closure: closure,
           comments: decl.comment&.string
         )
-        pin.docstring.add_tag(YARD::Tags::Tag.new(:return, '', other_type_to_tag(decl.type)))
+        tag = other_type_to_tag(decl.type)
+        # @todo Class or Module?
+        pin.docstring.add_tag(YARD::Tags::Tag.new(:return, '', "Class<#{tag}>"))
         pins.push pin
       end
 

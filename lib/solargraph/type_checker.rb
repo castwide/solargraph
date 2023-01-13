@@ -120,12 +120,10 @@ module Solargraph
     # @param pin [Pin::Base]
     # @return [Boolean]
     def resolved_constant? pin
-      api_map.get_constants('', pin.binder.tag)
+      return true if pin.typify(api_map).defined?
+      api_map.get_constants('', *pin.closure.gates)
         .select { |p| p.name == pin.return_type.namespace }
-        .any? do |p|
-          inferred = p.infer(api_map)
-          ['Class', 'Module'].include?(inferred.name)
-        end
+        .any? { |p| p.infer(api_map).defined? }
     end
 
     def virtual_pin? pin
@@ -186,7 +184,7 @@ module Solargraph
             elsif declared_externally?(pin)
               ignored_pins.push pin
             end
-          elsif !pin.is_a?(Pin::Parameter)
+          elsif !pin.is_a?(Pin::Parameter) && !resolved_constant?(pin)
             result.push Problem.new(pin.location, "Unresolved type #{pin.return_type} for variable #{pin.name}", pin: pin)
           end
         else
