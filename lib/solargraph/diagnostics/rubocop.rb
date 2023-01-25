@@ -32,7 +32,7 @@ module Solargraph
         make_array JSON.parse(result)
       rescue RuboCop::ValidationError, RuboCop::ConfigNotFoundError => e
         raise DiagnosticsError, "Error in RuboCop configuration: #{e.message}"
-      rescue JSON::ParserError
+      rescue JSON::ParserError => e
         raise DiagnosticsError, "RuboCop returned invalid data: #{e.message}"
       end
 
