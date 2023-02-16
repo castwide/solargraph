@@ -29,6 +29,9 @@ module Solargraph
         store = RuboCop::ConfigStore.new
         runner = RuboCop::Runner.new(options, store)
         result = redirect_stdout{ runner.run(paths) }
+        
+        return [] if result.empty?
+        
         make_array JSON.parse(result)
       rescue RuboCop::ValidationError, RuboCop::ConfigNotFoundError => e
         raise DiagnosticsError, "Error in RuboCop configuration: #{e.message}"
