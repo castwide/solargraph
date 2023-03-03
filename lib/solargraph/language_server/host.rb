@@ -130,35 +130,39 @@ module Solargraph
         end
       end
 
-      # Respond to a notification that a file was created in the workspace.
-      # The libraries will determine whether the file should be merged; see
+      # Respond to a notification that files were created in the workspace.
+      # The libraries will determine whether the files should be merged; see
       # Solargraph::Library#create_from_disk.
       #
-      # @param uri [String] The file uri.
-      # @return [Boolean] True if a library accepted the file.
-      def create uri
-        filename = uri_to_file(uri)
+      # @param uris [Array<String>] The URIs of the files.
+      # @return [Boolean] True if at least one library accepted at least one file.
+      def create *uris
+        filenames = uris.map { |uri| uri_to_file(uri) }
         result = false
         libraries.each do |lib|
-          result = true if lib.create_from_disk(filename)
+          result = true if lib.create_from_disk(*filenames)
         end
-        diagnoser.schedule uri if open?(uri)
+        uris.each do |uri|
+          diagnoser.schedule uri if open?(uri)
+        end
         result
       end
 
-      # Delete the specified file from the library.
+      # Delete the specified files from the library.
       #
-      # @param uri [String] The file uri.
+      # @param uris [Array<String>] The file uris.
       # @return [void]
-      def delete uri
-        filename = uri_to_file(uri)
+      def delete *uris
+        filenames = uris.map { |uri| uri_to_file(uri) }
         libraries.each do |lib|
-          lib.delete(filename)
+          lib.delete(*filenames)
         end
-        send_notification "textDocument/publishDiagnostics", {
-          uri: uri,
-          diagnostics: []
-        }
+        uris.each do |uri|
+          send_notification "textDocument/publishDiagnostics", {
+            uri: uri,
+            diagnostics: []
+          }
+        end
       end
 
       # Open the specified file in the library.
@@ -692,7 +696,7 @@ module Solargraph
         params['contentChanges'].each do |recvd|
           chng = check_diff(params['textDocument']['uri'], recvd)
           changes.push Solargraph::Source::Change.new(
-            (chng['range'].nil? ? 
+            (chng['range'].nil? ?
               nil :
               Solargraph::Range.from_to(chng['range']['start']['line'], chng['range']['start']['character'], chng['range']['end']['line'], chng['range']['end']['character'])
             ),

@@ -106,36 +106,37 @@ module Solargraph
       result
     end
 
-    # Create a file source from a file on disk. The file is ignored if it is
+    # Create file sources from files on disk. A file is ignored if it is
     # neither open in the library nor included in the workspace.
     #
-    # @param filename [String]
-    # @return [Boolean] True if the file was added to the workspace.
-    def create_from_disk filename
+    # @param filenames [Array<String>]
+    # @return [Boolean] True if at least one file was added to the workspace.
+    def create_from_disk *filenames
       result = false
       mutex.synchronize do
-        next if File.directory?(filename) || !File.exist?(filename)
-        next unless contain?(filename) || open?(filename) || workspace.would_merge?(filename)
-        source = Solargraph::Source.load_string(File.read(filename), filename)
-        workspace.merge(source)
-        maybe_map source
-        result = true
+        sources = filenames
+          .reject { |filename| File.directory?(filename) || !File.exist?(filename) }
+          .map { |filename| Solargraph::Source.load_string(File.read(filename), filename) }
+        result = workspace.merge(*sources)
+        sources.each { |source| maybe_map source }
       end
       result
     end
 
-    # Delete a file from the library. Deleting a file will make it unavailable
+    # Delete files from the library. Deleting a file will make it unavailable
     # for checkout and optionally remove it from the workspace unless the
     # workspace configuration determines that it should still exist.
     #
-    # @param filename [String]
-    # @return [Boolean] True if the file was deleted
-    def delete filename
-      detach filename
+    # @param filenames [Array<String>]
+    # @return [Boolean] True if any file was deleted
+    def delete *filenames
       result = false
-      mutex.synchronize do
-        result = workspace.remove(filename)
-        @synchronized = !result if synchronized?
+      filenames.each do |filename|
+        detach filename
+        mutex.synchronize do
+          result ||= workspace.remove(filename)
+          @synchronized = !result if synchronized?
+        end
       end
       result
     end
@@ -522,7 +523,7 @@ module Solargraph
       return unless source
       return unless @current == source || workspace.has_file?(source.filename)
       if source_map_hash.key?(source.filename)
-        return if source_map_hash[source.filename].code == source.code && 
+        return if source_map_hash[source.filename].code == source.code &&
           source_map_hash[source.filename].source.synchronized? &&
           source.synchronized?
         if source.synchronized?
