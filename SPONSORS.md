@@ -10,9 +10,6 @@ The following people and organizations provide funding or other resources. [Beco
 
 ## Named Sponsors
 
-- Tom de Grunt
 - Akira Yamada
-- Erlend Finvåg
-- Matt Massicotte
-- Oscar Rivas
+- Joel Drapper
 - Yutaka Tachibana
