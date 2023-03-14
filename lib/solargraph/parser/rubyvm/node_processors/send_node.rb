@@ -227,7 +227,7 @@ module Solargraph
           # @return [void]
           def process_private_constant
             arr = node.children[1]
-            return unless Parser.is_ast_node?(arr) && arr.type == :ARRAY
+            return unless Parser.is_ast_node?(arr) && [:ARRAY, :LIST].include?(arr.type)
 
             arr.children.compact.each do |child|
               if [:LIT, :STR].include?(child.type)
