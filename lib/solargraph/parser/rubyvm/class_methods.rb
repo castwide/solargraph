@@ -1,4 +1,5 @@
 require 'solargraph/parser/rubyvm/node_processors'
+require 'solargraph/parser/rubyvm/node_wrapper'
 
 module Solargraph
   module Parser
@@ -7,8 +8,10 @@ module Solargraph
         # @param code [String]
         # @param filename [String]
         # @return [Array(Parser::AST::Node, Array<Parser::Source::Comment>)]
+        # @sg-ignore
         def parse_with_comments code, filename = nil
           node = RubyVM::AbstractSyntaxTree.parse(code).children[2]
+          node &&= RubyVM::AbstractSyntaxTree::NodeWrapper.from(node, code.lines)
           comments = CommentRipper.new(code).parse
           [node, comments]
         rescue ::SyntaxError => e
@@ -19,8 +22,10 @@ module Solargraph
         # @param filename [String, nil]
         # @param line [Integer]
         # @return [Parser::AST::Node]
+        # @sg-ignore
         def parse code, filename = nil, line = 0
-          RubyVM::AbstractSyntaxTree.parse(code).children[2]
+          node = RubyVM::AbstractSyntaxTree.parse(code).children[2]
+          node and RubyVM::AbstractSyntaxTree::NodeWrapper.from(node, code.lines)
         rescue ::SyntaxError => e
           raise Parser::SyntaxError, e.message
         end
