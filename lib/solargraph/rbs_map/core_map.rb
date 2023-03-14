@@ -1,5 +1,9 @@
+# frozen_string_literal: true
+
 module Solargraph
   class RbsMap
+    # Ruby core pins
+    #
     class CoreMap
       include Conversions
 

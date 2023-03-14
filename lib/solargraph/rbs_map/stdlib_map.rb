@@ -1,12 +1,17 @@
+# frozen_string_literal: true
+
 require 'rbs'
 require 'set'
 
 module Solargraph
   class RbsMap
+    # Ruby stdlib pins
+    #
     class StdlibMap < RbsMap
       # @type [Hash{String => RbsMap}]
-      @@stdlib_maps_hash = {}
+      @stdlib_maps_hash = {}
 
+      # @param library [String]
       def initialize library
         cache = Cache.load('stdlib', "#{library}.ser")
         if cache
@@ -20,7 +25,7 @@ module Solargraph
       # @param library [String]
       # @return [StdlibMap]
       def self.load library
-        @@stdlib_maps_hash[library] ||= StdlibMap.new(library)
+        @stdlib_maps_hash[library] ||= StdlibMap.new(library)
       end
 
       def repository

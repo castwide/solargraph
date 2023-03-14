@@ -10,7 +10,7 @@ module Solargraph
       # Requires a specific version of rubocop, or the latest installed version
       # if _version_ is `nil`.
       #
-      # @param version [String]
+      # @param version [String, nil]
       # @raise [InvalidRubocopVersionError] if _version_ is not installed
       def require_rubocop(version = nil)
         begin

@@ -1,5 +1,9 @@
+# frozen_string_literal: true
+
 module Solargraph
   class RbsMap
+    # Override pins to fill gaps in RbsMap::CoreMap coverage
+    #
     module CoreFills
       Override = Pin::Reference::Override
 

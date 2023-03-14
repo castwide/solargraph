@@ -1,6 +1,14 @@
+# frozen_string_literal: true
+
 module Solargraph
   class RbsMap
+    # Functions for converting RBS declarations to Solargraph pins
+    #
     module Conversions
+      # A container for tracking the current context of the RBS conversion
+      # process, e.g., what visibility is declared for methods in the current
+      # scope
+      #
       class Context
         attr_reader :visibility
 

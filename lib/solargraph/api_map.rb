@@ -204,7 +204,7 @@ module Solargraph
     #
     # @param namespace [String, nil] The namespace to match
     # @param context [String] The context to search
-    # @return [String]
+    # @return [String, nil]
     def qualify namespace, context = ''
       return namespace if ['self', nil].include?(namespace)
       cached = cache.get_qualified_namespace(namespace, context)
