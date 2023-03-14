@@ -46,24 +46,21 @@ module Solargraph
     #
     # @param source [Solargraph::Source]
     # @return [Boolean] True if the source was added to the workspace
-    def merge source
-      unless directory == '*' || source_hash.key?(source.filename)
+    def merge *sources
+      unless directory == '*' || sources.all? { |source| source_hash.key?(source.filename) }
         # Reload the config to determine if a new source should be included
         @config = Solargraph::Workspace::Config.new(directory)
-        return false unless config.calculated.include?(source.filename)
       end
-      source_hash[source.filename] = source
-      true
-    end
 
-    # Determine whether a file would be merged into the workspace.
-    #
-    # @param filename [String]
-    # @return [Boolean]
-    def would_merge? filename
-      return true if directory == '*' || source_hash.include?(filename)
-      @config = Solargraph::Workspace::Config.new(directory)
-      config.calculated.include?(filename)
+      includes_any = false
+      sources.each do |source|
+        if directory == "*" || config.calculated.include?(source.filename)
+          source_hash[source.filename] = source
+          includes_any = true
+        end
+      end
+
+      includes_any
     end
 
     # Remove a source from the workspace. The source will not be removed if
