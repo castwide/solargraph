@@ -226,8 +226,10 @@ module Solargraph
 
           # @return [void]
           def process_private_constant
-            return unless Parser.is_ast_node?(node.children.last)
-            node.children.last.children[0..-2].each do |child|
+            arr = node.children[1]
+            return unless Parser.is_ast_node?(arr) && arr.type == :ARRAY
+
+            arr.children.compact.each do |child|
               if [:LIT, :STR].include?(child.type)
                 cn = child.children[0].to_s
                 ref = pins.select{|p| [Solargraph::Pin::Namespace, Solargraph::Pin::Constant].include?(p.class) && p.namespace == region.closure.full_context.namespace && p.name == cn}.first
