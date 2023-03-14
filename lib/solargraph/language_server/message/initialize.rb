@@ -25,6 +25,8 @@ module Solargraph
               }
             }
           }
+          # FIXME: lsp default is utf-16, may have different position
+          result[:capabilities][:positionEncoding] = "utf-32" if params.dig("capabilities", "general", "positionEncodings")&.include?("utf-32")
           result[:capabilities].merge! static_completion unless dynamic_registration_for?('textDocument', 'completion')
           result[:capabilities].merge! static_signature_help unless dynamic_registration_for?('textDocument', 'signatureHelp')
           # result[:capabilities].merge! static_on_type_formatting unless dynamic_registration_for?('textDocument', 'onTypeFormatting')
