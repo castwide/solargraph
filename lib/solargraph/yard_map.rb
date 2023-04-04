@@ -220,7 +220,7 @@ module Solargraph
       result = []
       begin
         name = r.split('/').first
-        return [] if @source_gems.include?(name) || @gem_paths.key?(name)
+        return [] if name.empty? || @source_gems.include?(name) || @gem_paths.key?(name)
         spec = spec_for_require(name)
         @gem_paths[name] = spec.full_gem_path
 
