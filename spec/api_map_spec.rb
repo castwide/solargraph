@@ -607,6 +607,15 @@ describe Solargraph::ApiMap do
     expect(@api_map.super_and_sub?('Foo', 'Bar::Foo')).to be(true)
   end
 
+  it 'avoids circular references in super_and_sub? tests' do
+    source = Solargraph::Source.load_string(%(
+      class Foo < Bar; end
+      class Bar < Bar; end
+    ))
+    @api_map.map source
+    expect(@api_map.super_and_sub?('Foo', 'Bar')).to be(false)
+  end
+
   it 'adds prepended methods to the ancestor tree' do
     source = Solargraph::Source.load_string(%(
       module Prepended

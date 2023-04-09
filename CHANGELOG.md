@@ -1,10 +1,11 @@
-## 0.49.0
+## 0.49.0 - April 9, 2023
 - Better union type handling
 - First version of RBS support
 - Dependency updates
 - Update RuboCop config options
 - RBS core and stdlib mapping
 - Anonymous splats and multisig arity
+- Infinite loop when checking if a class is a superclass (#641)
 
 ## 0.48.0 - December 19, 2022
 - Add Sublime Text to README (#604)

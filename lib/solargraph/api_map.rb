@@ -460,8 +460,10 @@ module Solargraph
     def super_and_sub?(sup, sub)
       fqsup = qualify(sup)
       cls = qualify(sub)
-      until fqsup.nil? || cls.nil?
+      tested = []
+      until fqsup.nil? || cls.nil? || tested.include?(cls)
         return true if cls == fqsup
+        tested.push cls
         cls = qualify_superclass(cls)
       end
       false
