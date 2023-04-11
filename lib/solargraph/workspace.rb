@@ -32,6 +32,7 @@ module Solargraph
       load_sources
       @gemnames = []
       @require_paths = generate_require_paths
+      setup_load_paths
       require_plugins
     end
 
@@ -207,6 +208,11 @@ module Solargraph
           Solargraph.logger.warn "Failed to load plugin '#{plugin}'"
         end
       end
+    end
+
+    def setup_load_paths
+      # Make files available to require calls in for example rubocop
+      $LOAD_PATH.unshift *@require_paths
     end
   end
 end
