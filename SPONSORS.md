@@ -7,9 +7,11 @@ The following people and organizations provide funding or other resources. [Beco
 ## Linked Sponsors
 
 - **[Calyptix Security](https://www.calyptix.com/)**
+- **[Lightward](https://lightward.com)**
 
 ## Named Sponsors
 
 - Akira Yamada
 - Joel Drapper
 - Yutaka Tachibana
+- ArityWolf
