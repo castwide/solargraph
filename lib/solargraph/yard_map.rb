@@ -288,7 +288,7 @@ module Solargraph
       # Avoid loading the spec again if it's going to be skipped anyway
       return spec if @source_gems.include?(spec.name)
       # Avoid loading the spec again if it's already the correct version
-      if @gemset[spec.name] && @gemset[spec.name] != spec.version
+      if @gemset[spec.name] && spec.version != @gemset[spec.name]
         begin
           return Gem::Specification.find_by_name(spec.name, "= #{@gemset[spec.name]}")
         rescue Gem::LoadError
