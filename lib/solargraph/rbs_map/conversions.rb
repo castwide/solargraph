@@ -40,7 +40,7 @@ module Solargraph
         when RBS::AST::Declarations::Interface
           # STDERR.puts "Skipping interface #{decl.name.relative!}"
           interface_decl_to_pin decl
-        when RBS::AST::Declarations::Alias
+        when RBS::AST::Declarations::TypeAlias
           type_aliases[decl.name.to_s] = decl
         when RBS::AST::Declarations::Module
           module_decl_to_pin decl
@@ -222,12 +222,12 @@ module Solargraph
       # @param decl [RBS::AST::Members::MethodDefinition]
       # @param pin [Pin::Method]
       def method_def_to_sigs decl, pin
-        decl.types.map do |type|
-          parameters, return_type = parts_of_function(type, pin)
-          block = if type.block
-            Pin::Signature.new(*parts_of_function(type.block, pin))
+        decl.overloads.map do |overload|
+          parameters, return_type = parts_of_function(overload.method_type, pin)
+          block = if overload.method_type.block
+                    Pin::Signature.new(*parts_of_function(overload.method_type.block, pin))
           end
-          return_type = ComplexType.try_parse(method_type_to_tag(type))
+          return_type = ComplexType.try_parse(method_type_to_tag(overload.method_type))
           Pin::Signature.new(parameters, return_type, block)
         end
       end
