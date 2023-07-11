@@ -211,7 +211,7 @@ module Solargraph
         started = false
         comment.lines.each { |l|
           # Trim the comment and minimum leading whitespace
-          p = l.encode('UTF-8', invalid: :replace, replace: '?').gsub(/^#/, '')
+          p = l.encode('UTF-8', invalid: :replace, replace: '?').gsub(/^#+/, '')
           if num.nil? && !p.strip.empty?
             num = p.index(/[^ ]/)
             started = true
