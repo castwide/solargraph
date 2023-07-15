@@ -12,6 +12,6 @@ The following people and organizations provide funding or other resources. [Beco
 ## Named Sponsors
 
 - Akira Yamada
+- Jesus Castello
 - Joel Drapper
-- Yutaka Tachibana
-- ArityWolf
+- Spencer
