@@ -169,7 +169,7 @@ module Solargraph
           paren_stack = 0
           base = String.new
           subtype_string = String.new
-          type_string.each_char do |char|
+          type_string&.each_char do |char|
             if char == '='
               #raise ComplexTypeError, "Invalid = in type #{type_string}" unless curly_stack > 0
             elsif char == '<'
