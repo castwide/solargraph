@@ -28,10 +28,6 @@ Plug-ins and extensions are available for the following editors:
     * Extension: https://marketplace.visualstudio.com/items?itemName=castwide.solargraph
     * GitHub: https://github.com/castwide/vscode-solargraph
 
-* **Atom**
-    * Package: https://atom.io/packages/ruby-solargraph
-    * GitHub: https://github.com/castwide/atom-solargraph
-
 * **Sublime Text**
     * Extension: https://packagecontrol.io/packages/LSP
     * GitHub: https://github.com/sublimelsp/LSP
