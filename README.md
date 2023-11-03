@@ -71,6 +71,8 @@ As of version 0.33.0, Solargraph includes a [type checker](https://github.com/ca
 
 ### Updating Core Documentation
 
+As of version 0.49.0, Solargraph uses [rbs](https://github.com/ruby/rbs) for core and stdlib documentation. The following only applies to prior versions.
+
 The Solargraph gem ships with documentation for Ruby 2.2.2. You can download documentation for other Ruby versions from the command line.
 
     $ solargraph list-cores      # List the installed documentation versions
