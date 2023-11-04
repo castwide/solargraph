@@ -108,7 +108,6 @@ module Solargraph
     long_desc %(
       This command will delete all core and gem documentation from the cache.
     )
-    # @deprecated
     def clear
       puts "Deleting the cached documentation"
       Solargraph::Cache.clear
