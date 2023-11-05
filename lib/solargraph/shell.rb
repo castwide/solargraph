@@ -215,7 +215,7 @@ module Solargraph
       puts 'The `bundle` command is deprecated. Solargraph currently uses RBS instead.'
     end
 
-    desc 'rdoc GEM [VERSION]', 'Use RDoc to cache documentation [deprecated]'
+    desc 'rdoc GEM [VERSION]', 'Use RDoc to cache documentation [deprecated]', hide: true
     long_desc %(
       The `rdoc` command is deprecated. Solargraph currently uses RBS instead.
     )
