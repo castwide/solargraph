@@ -71,7 +71,7 @@ module Solargraph
       STDOUT.puts "Configuration file initialized."
     end
 
-    desc 'download-core [VERSION]', 'Download core documentation [deprecated]'
+    desc 'download-core [VERSION]', 'Download core documentation [deprecated]', hide: true
     long_desc %(
       The `download-core` command is deprecated. Current versions of Solargraph
       use RBS for core and stdlib documentation.
@@ -82,7 +82,7 @@ module Solargraph
       puts 'Current versions of Solargraph use RBS for core and stdlib documentation.'
     end
 
-    desc 'list-cores', 'List the local documentation versions [deprecated]'
+    desc 'list-cores', 'List the local documentation versions [deprecated]', hide: true
     long_desc %(
       The `list-cores` command is deprecated. Current versions of Solargraph use
       RBS for core and stdlib documentation.
@@ -93,7 +93,7 @@ module Solargraph
       puts 'Current versions of Solargraph use RBS for core and stdlib documentation.'
     end
 
-    desc 'available-cores', 'List available documentation versions [deprecated]'
+    desc 'available-cores', 'List available documentation versions [deprecated]', hide: true
     long_desc %(
       The `available-cores` command is deprecated. Current versions of Solargraph
       use RBS for core and stdlib documentation.
