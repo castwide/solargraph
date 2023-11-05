@@ -194,6 +194,17 @@ module Solargraph
       puts "Scanned #{directory} (#{api_map.pins.length} pins) in #{time.real} seconds."
     end
 
+    desc 'list', 'List the files in the workspace and the total count'
+    option :count, type: :boolean, aliases: :c, desc: 'Display the file count only', default: false
+    option :directory, type: :string, aliases: :d, desc: 'The directory to read', default: '.'
+    def list
+      workspace = Solargraph::Workspace.new(options[:directory])
+      unless options[:count]
+        workspace.filenames.each { |f| puts f }
+      end
+      puts "#{workspace.filenames.length} files total."
+    end
+
     desc 'bundle', 'Generate documentation for bundled gems [deprecated]'
     long_desc %(
       The `bundle` command is deprecated. Solargraph currently uses RBS instead.
