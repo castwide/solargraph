@@ -16,7 +16,10 @@ Gem::Specification.new do |s|
   s.homepage    = 'https://solargraph.org'
   s.license     = 'MIT'
   s.executables = ['solargraph']
-  s.metadata["funding_uri"] = "https://www.patreon.com/castwide"
+  s.metadata["funding_uri"]     = "https://www.patreon.com/castwide"
+  s.metadata["bug_tracker_uri"] = "https://github.com/castwide/solargraph/issues"
+  s.metadata["changelog_uri"]   = "https://github.com/castwide/solargraph/blob/master/CHANGELOG.md"
+  s.metadata["source_code_uri"] = "https://github.com/castwide/solargraph"
 
   s.required_ruby_version = '>= 2.6'
 

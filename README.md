@@ -28,10 +28,6 @@ Plug-ins and extensions are available for the following editors:
     * Extension: https://marketplace.visualstudio.com/items?itemName=castwide.solargraph
     * GitHub: https://github.com/castwide/vscode-solargraph
 
-* **Atom**
-    * Package: https://atom.io/packages/ruby-solargraph
-    * GitHub: https://github.com/castwide/atom-solargraph
-
 * **Sublime Text**
     * Extension: https://packagecontrol.io/packages/LSP
     * GitHub: https://github.com/sublimelsp/LSP
@@ -70,6 +66,8 @@ If your project automatically requires bundled gems (e.g., `require 'bundler/req
 As of version 0.33.0, Solargraph includes a [type checker](https://github.com/castwide/solargraph/issues/192) that uses a combination of YARD tags and code analysis to report missing type definitions. In strict mode, it performs type inference to determine whether the tags match the types it detects from code.
 
 ### Updating Core Documentation
+
+As of version 0.49.0, Solargraph uses [rbs](https://github.com/ruby/rbs) for core and stdlib documentation. The following only applies to prior versions.
 
 The Solargraph gem ships with documentation for Ruby 2.2.2. You can download documentation for other Ruby versions from the command line.
 
