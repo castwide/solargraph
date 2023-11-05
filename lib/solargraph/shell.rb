@@ -205,7 +205,7 @@ module Solargraph
       puts "#{workspace.filenames.length} files total."
     end
 
-    desc 'bundle', 'Generate documentation for bundled gems [deprecated]'
+    desc 'bundle', 'Generate documentation for bundled gems [deprecated]', hide: true
     long_desc %(
       The `bundle` command is deprecated. Solargraph currently uses RBS instead.
     )
