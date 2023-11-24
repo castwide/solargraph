@@ -12,7 +12,7 @@ module Solargraph
 
       private_class_method :new
 
-      MACRO_REGEXP = /(@\!method|@\!attribute|@\!visibility|@\!domain|@\!macro|@\!parse|@\!override)/.freeze
+      DIRECTIVE_REGEXP = /(@\!method|@\!attribute|@\!visibility|@\!domain|@\!macro|@\!parse|@\!override)/.freeze
 
       # Generate the data.
       #
@@ -65,7 +65,7 @@ module Solargraph
       end
 
       def process_comment source_position, comment_position, comment
-        return unless comment.encode('UTF-8', invalid: :replace, replace: '?') =~ MACRO_REGEXP
+        return unless comment.encode('UTF-8', invalid: :replace, replace: '?') =~ DIRECTIVE_REGEXP
         cmnt = remove_inline_comment_hashes(comment)
         parse = Solargraph::Source.parse_docstring(cmnt)
         last_line = 0
@@ -198,6 +198,8 @@ module Solargraph
           namespace.domains.concat directive.tag.types unless directive.tag.types.nil?
         when 'override'
           pins.push Pin::Reference::Override.new(location, directive.tag.name, docstring.tags)
+        when 'macro'
+          # @todo Handle macros
         end
       end
 
@@ -226,7 +228,7 @@ module Solargraph
 
       # @return [void]
       def process_comment_directives
-        return unless @code.encode('UTF-8', invalid: :replace, replace: '?') =~ MACRO_REGEXP
+        return unless @code.encode('UTF-8', invalid: :replace, replace: '?') =~ DIRECTIVE_REGEXP
         code_lines = @code.lines
         @source.associated_comments.each do |line, comments|
           src_pos = line ? Position.new(line, code_lines[line].to_s.chomp.index(/[^\s]/) || 0) : Position.new(code_lines.length, 0)
