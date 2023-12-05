@@ -113,7 +113,7 @@ module Solargraph
       return self unless selfy?
       red = reduce_class(dst)
       result = @items.map { |i| i.self_to red }
-      ComplexType.parse(*result.map(&:tag))
+      ComplexType.parse(*result.map(&:to_s))
     end
 
     def nullable?
