@@ -1,3 +1,23 @@
+## 0.50.0 - December 5, 2023
+- Remove .travis.yml as its not longer used (#627)
+- Fix empty string case when processing requires (#644)
+- Fix scope() method call on wrong object (#670)
+- Parse comments that start with multiple hashes (#667)
+- Use XDG_CACHE_HOME if it exists (#664)
+- Add rbs mention to readme (#693)
+- Remove Atom from the readme (#692)
+- Add more metadata to the gemspec (#691)
+- Do not deprecate clear command
+- Library#locate_ref returns nil for unresolved requires (#675)
+- Hide deprecated commands
+- List command
+- Fixes (or ignores) ffi crash (#676)
+- increase sleep time on cataloger (#677)
+- YardMap ignores absolute paths (#678)
+- Clarify macros vs. directives
+- Infer complex types from method calls
+- Default cache uses XDG_CACHE_HOME default (#664)
+
 ## 0.49.0 - April 9, 2023
 - Better union type handling
 - First version of RBS support
