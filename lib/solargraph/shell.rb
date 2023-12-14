@@ -173,25 +173,24 @@ module Solargraph
     option :directory, type: :string, aliases: :d, desc: 'The workspace directory', default: '.'
     option :verbose, type: :boolean, aliases: :v, desc: 'Verbose output', default: false
     def scan
-      require 'benchmark'
       directory = File.realpath(options[:directory])
       api_map = nil
-      time = Benchmark.measure {
-        api_map = Solargraph::ApiMap.load(directory)
-        api_map.pins.each do |pin|
-          begin
-            puts pin_description(pin) if options[:verbose]
-            pin.typify api_map
-            pin.probe api_map
-          rescue StandardError => e
-            STDERR.puts "Error testing #{pin_description(pin)} #{pin.location ? "at #{pin.location.filename}:#{pin.location.range.start.line + 1}" : ''}"
-            STDERR.puts "[#{e.class}]: #{e.message}"
-            STDERR.puts e.backtrace.join("\n")
-            exit 1
-          end
+      time_start = Process.clock_gettime(Process::CLOCK_MONOTONIC)
+      api_map = Solargraph::ApiMap.load(directory)
+      api_map.pins.each do |pin|
+        begin
+          puts pin_description(pin) if options[:verbose]
+          pin.typify api_map
+          pin.probe api_map
+        rescue StandardError => e
+          STDERR.puts "Error testing #{pin_description(pin)} #{pin.location ? "at #{pin.location.filename}:#{pin.location.range.start.line + 1}" : ''}"
+          STDERR.puts "[#{e.class}]: #{e.message}"
+          STDERR.puts e.backtrace.join("\n")
+          exit 1
         end
-      }
-      puts "Scanned #{directory} (#{api_map.pins.length} pins) in #{time.real} seconds."
+      end
+      elapsed_time = Process.clock_gettime(Process::CLOCK_MONOTONIC) - time_start
+      puts "Scanned #{directory} (#{api_map.pins.length} pins) in #{elapsed_time} seconds."
     end
 
     desc 'list', 'List the files in the workspace and the total count'
