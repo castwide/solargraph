@@ -9,7 +9,7 @@ module Solargraph
       def base_dir
         # The directory is not stored in a variable so it can be overridden
         # in specs.
-        ENV['SOLARGRAPH_CACHE'] ||
+        ENV['SOLARGRAPH_CACHE'] or
           ENV['XDG_CACHE_HOME'] ? File.join(ENV['XDG_CACHE_HOME'], 'solargraph') :
           File.join(Dir.home, '.cache', 'solargraph')
       end
