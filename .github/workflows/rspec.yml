@@ -35,7 +35,7 @@ jobs:
         ruby-version: ${{ matrix.ruby-version }}
         bundler-cache: false
     - name: Select bundler
-      if: startsWith(matrix.ruby-version, '2')
+      if: ${{ startsWith(matrix.ruby-version, '2') }}
       run: gem install bundler -v 2.4.22
     - name: Install gems
       run: bundle install
