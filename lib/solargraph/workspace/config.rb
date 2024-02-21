@@ -19,7 +19,7 @@ module Solargraph
 
       # @param directory [String]
       def initialize directory = ''
-        @directory = directory
+        @directory = File.absolute_path(directory)
         @raw_data = config_data
         included
         excluded
@@ -42,7 +42,8 @@ module Solargraph
       end
 
       def allow? filename
-        filename.start_with?(directory) && 
+        filename = File.absolute_path(filename, directory)
+        filename.start_with?(directory) &&
           !excluded.include?(filename) &&
           excluded_directories.none? { |d| filename.start_with?(d) }
       end
@@ -171,7 +172,7 @@ module Solargraph
       # @return [Array<String>]
       def process_globs globs
         result = globs.flat_map do |glob|
-          Dir[File.join directory, glob]
+          Dir[File.absolute_path(glob, directory)]
             .map{ |f| f.gsub(/\\/, '/') }
             .select { |f| File.file?(f) }
         end
@@ -186,7 +187,7 @@ module Solargraph
       def process_exclusions globs
         remainder = globs.select do |glob|
           if glob_is_directory?(glob)
-            exdir = File.join(directory, glob_to_directory(glob))
+            exdir = File.absolute_path(glob_to_directory(glob), directory)
             included.delete_if { |file| file.start_with?(exdir) }
             false
           else
@@ -224,7 +225,7 @@ module Solargraph
       def excluded_directories
         @raw_data['exclude']
           .select { |g| glob_is_directory?(g) }
-          .map { |g| File.join(directory, glob_to_directory(g)) }
+          .map { |g| File.absolute_path(glob_to_directory(g), directory) }
       end
     end
   end

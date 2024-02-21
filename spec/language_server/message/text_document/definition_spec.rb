@@ -4,10 +4,12 @@ describe Solargraph::LanguageServer::Message::TextDocument::Definition do
     host.prepare('spec/fixtures/workspace')
     sleep 0.1 until host.libraries.all?(&:mapped?)
     host.catalog
+    file_uri = Solargraph::LanguageServer::UriHelpers.file_to_uri(File.absolute_path('spec/fixtures/workspace/lib/other.rb'))
+    other_uri = Solargraph::LanguageServer::UriHelpers.file_to_uri(File.absolute_path('spec/fixtures/workspace/lib/thing.rb'))
     message = Solargraph::LanguageServer::Message::TextDocument::Definition.new(host, {
       'params' => {
         'textDocument' => {
-          'uri' => 'file://spec/fixtures/workspace/lib/other.rb'
+          'uri' => file_uri
         },
         'position' => {
           'line' => 4,
@@ -16,7 +18,7 @@ describe Solargraph::LanguageServer::Message::TextDocument::Definition do
       }
     })
     message.process
-    expect(message.result.first[:uri]).to eq('file://spec/fixtures/workspace/lib/thing.rb')
+    expect(message.result.first[:uri]).to eq(other_uri)
   end
 
   it 'finds definitions of require paths' do
