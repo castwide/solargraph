@@ -12,6 +12,7 @@ module Solargraph
     autoload :Method,           'solargraph/pin/method'
     autoload :Signature,        'solargraph/pin/signature'
     autoload :MethodAlias,      'solargraph/pin/method_alias'
+    autoload :DelegatedMethod,  'solargraph/pin/delegated_method'
     autoload :BaseVariable,     'solargraph/pin/base_variable'
     autoload :InstanceVariable, 'solargraph/pin/instance_variable'
     autoload :ClassVariable,    'solargraph/pin/class_variable'
