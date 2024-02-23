@@ -24,7 +24,6 @@ Gem::Specification.new do |s|
   s.required_ruby_version = '>= 2.6'
 
   s.add_runtime_dependency 'backport', '~> 1.2'
-  s.add_runtime_dependency 'benchmark'
   s.add_runtime_dependency 'bundler', '~> 2.0'
   s.add_runtime_dependency 'diff-lcs', '~> 1.4'
   s.add_runtime_dependency 'e2mmap'
