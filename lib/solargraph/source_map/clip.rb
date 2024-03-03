@@ -17,6 +17,7 @@ module Solargraph
       def define
         return [] if cursor.comment? || cursor.chain.literal?
         result = cursor.chain.define(api_map, block, locals)
+        result.concat file_global_methods
         result.concat((source_map.pins + source_map.locals).select{ |p| p.name == cursor.word && p.location.range.contain?(cursor.position) }) if result.empty?
         result
       end
@@ -214,6 +215,7 @@ module Solargraph
               return package_completions(api_map.get_global_variable_pins)
             end
             result.concat locals
+            result.concat file_global_methods unless block.binder.namespace.empty?
             result.concat api_map.get_constants(context_pin.context.namespace, *gates)
             result.concat api_map.get_methods(block.binder.namespace, scope: block.binder.scope, visibility: [:public, :private, :protected])
             result.concat api_map.get_methods('Kernel')
@@ -223,6 +225,13 @@ module Solargraph
           end
         end
         package_completions(result)
+      end
+
+      def file_global_methods
+        return [] if cursor.word.empty?
+        source_map.pins.select do |pin|
+          pin.is_a?(Pin::Method) && pin.namespace == '' && pin.name.start_with?(cursor.word)
+        end
       end
     end
   end

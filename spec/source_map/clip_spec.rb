@@ -1478,4 +1478,22 @@ describe Solargraph::SourceMap::Clip do
     string_names = api_map.clip_at('test.rb', [6, 22]).complete.pins.map(&:name)
     expect(string_names).to eq(["upcase", "upcase!", "upto"])
   end
+
+  it 'completes global methods defined in top level scope inside class when referenced inside a namespace' do
+    source = Solargraph::Source.load_string(%(
+      def some_method;end
+
+      class Thing
+        def foo
+          some_
+        end
+      end
+      some_
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new.map(source)
+    pin_names = api_map.clip_at('test.rb', [5, 15]).complete.pins.map(&:name)
+    expect(pin_names).to eq(["some_method"])
+    pin_names = api_map.clip_at('test.rb', [8, 5]).complete.pins.map(&:name)
+    expect(pin_names).to include("some_method")
+  end
 end
