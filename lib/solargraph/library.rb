@@ -258,6 +258,10 @@ module Solargraph
       api_map.locate_pins(location).map { |pin| pin.realize(api_map) }
     end
 
+    # Match a require reference to a file.
+    #
+    # @param location [Location]
+    # @return [Location, nil]
     def locate_ref location
       map = source_map_hash[location.filename]
       return if map.nil?
@@ -268,7 +272,7 @@ module Solargraph
         next unless source_map_hash.key?(full)
         return Location.new(full, Solargraph::Range.from_to(0, 0, 0, 0))
       end
-      # api_map.yard_map.require_reference(pin.name)
+      nil
     rescue FileNotFoundError
       nil
     end

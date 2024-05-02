@@ -113,7 +113,7 @@ module Solargraph
       return self unless selfy?
       red = reduce_class(dst)
       result = @items.map { |i| i.self_to red }
-      ComplexType.parse(*result.map(&:tag))
+      ComplexType.parse(*result.map(&:to_s))
     end
 
     def nullable?
@@ -169,7 +169,7 @@ module Solargraph
           paren_stack = 0
           base = String.new
           subtype_string = String.new
-          type_string.each_char do |char|
+          type_string&.each_char do |char|
             if char == '='
               #raise ComplexTypeError, "Invalid = in type #{type_string}" unless curly_stack > 0
             elsif char == '<'

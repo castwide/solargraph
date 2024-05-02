@@ -633,7 +633,7 @@ module Solargraph
           'rename' => true,
           'references' => true,
           'autoformat' => false,
-          'diagnostics' => false,
+          'diagnostics' => true,
           'formatting' => false,
           'folding' => true,
           'highlights' => true,

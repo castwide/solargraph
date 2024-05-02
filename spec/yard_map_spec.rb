@@ -133,4 +133,14 @@ describe Solargraph::YardMap do
       expect(pin).to be
     end
   end
+
+  it 'ignores workspace requires starting with `/`' do
+    yard_map = Solargraph::YardMap.new
+    yard_map.change(['/'].to_set, "", [].to_set)
+  end
+
+  it 'ignores require references starting with `/`' do
+    yard_map = Solargraph::YardMap.new
+    yard_map.require_reference('/')
+  end
 end

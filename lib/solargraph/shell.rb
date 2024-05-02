@@ -71,7 +71,7 @@ module Solargraph
       STDOUT.puts "Configuration file initialized."
     end
 
-    desc 'download-core [VERSION]', 'Download core documentation [deprecated]'
+    desc 'download-core [VERSION]', 'Download core documentation [deprecated]', hide: true
     long_desc %(
       The `download-core` command is deprecated. Current versions of Solargraph
       use RBS for core and stdlib documentation.
@@ -82,7 +82,7 @@ module Solargraph
       puts 'Current versions of Solargraph use RBS for core and stdlib documentation.'
     end
 
-    desc 'list-cores', 'List the local documentation versions [deprecated]'
+    desc 'list-cores', 'List the local documentation versions [deprecated]', hide: true
     long_desc %(
       The `list-cores` command is deprecated. Current versions of Solargraph use
       RBS for core and stdlib documentation.
@@ -93,7 +93,7 @@ module Solargraph
       puts 'Current versions of Solargraph use RBS for core and stdlib documentation.'
     end
 
-    desc 'available-cores', 'List available documentation versions [deprecated]'
+    desc 'available-cores', 'List available documentation versions [deprecated]', hide: true
     long_desc %(
       The `available-cores` command is deprecated. Current versions of Solargraph
       use RBS for core and stdlib documentation.
@@ -108,7 +108,6 @@ module Solargraph
     long_desc %(
       This command will delete all core and gem documentation from the cache.
     )
-    # @deprecated
     def clear
       puts "Deleting the cached documentation"
       Solargraph::Cache.clear
@@ -195,7 +194,18 @@ module Solargraph
       puts "Scanned #{directory} (#{api_map.pins.length} pins) in #{time.real} seconds."
     end
 
-    desc 'bundle', 'Generate documentation for bundled gems [deprecated]'
+    desc 'list', 'List the files in the workspace and the total count'
+    option :count, type: :boolean, aliases: :c, desc: 'Display the file count only', default: false
+    option :directory, type: :string, aliases: :d, desc: 'The directory to read', default: '.'
+    def list
+      workspace = Solargraph::Workspace.new(options[:directory])
+      unless options[:count]
+        workspace.filenames.each { |f| puts f }
+      end
+      puts "#{workspace.filenames.length} files total."
+    end
+
+    desc 'bundle', 'Generate documentation for bundled gems [deprecated]', hide: true
     long_desc %(
       The `bundle` command is deprecated. Solargraph currently uses RBS instead.
     )
@@ -205,7 +215,7 @@ module Solargraph
       puts 'The `bundle` command is deprecated. Solargraph currently uses RBS instead.'
     end
 
-    desc 'rdoc GEM [VERSION]', 'Use RDoc to cache documentation [deprecated]'
+    desc 'rdoc GEM [VERSION]', 'Use RDoc to cache documentation [deprecated]', hide: true
     long_desc %(
       The `rdoc` command is deprecated. Solargraph currently uses RBS instead.
     )

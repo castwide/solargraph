@@ -1589,4 +1589,20 @@ describe Solargraph::SourceMap::Mapper do
       Solargraph::SourceMap.load('spec/fixtures/invalid_node_comment.rb')
     }.not_to raise_error
   end
+
+  it 'parses method directives that start with multiple hashes' do
+    source = %(
+      module Bar
+        ##
+        # @!method foobar()
+        #   @return [String]
+        define_method :foobar do
+          "foobar"
+        end
+      end
+    )
+    map = Solargraph::SourceMap.load_string(source)
+    pin = map.first_pin('Bar#foobar')
+    expect(pin.path).to eq('Bar#foobar')
+  end
 end

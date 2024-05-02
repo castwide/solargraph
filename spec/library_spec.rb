@@ -452,6 +452,17 @@ describe Solargraph::Library do
     expect(library.current).to be_nil
   end
 
+  describe '#locate_ref' do
+    it 'returns nil without a matching reference location' do
+      workspace = File.absolute_path(File.join('spec', 'fixtures', 'workspace'))
+      library = Solargraph::Library.load(workspace)
+      library.map!
+      location = Solargraph::Location.new(File.join(workspace, 'app.rb'), Solargraph::Range.from_to(0, 8, 0, 8))
+      found = library.locate_ref(location)
+      expect(found).to be_nil
+    end
+  end
+
   context 'unsynchronized' do
     let(:library) { Solargraph::Library.load File.absolute_path(File.join('spec', 'fixtures', 'workspace')) }
     let(:good_file) { File.join(library.workspace.directory, 'lib', 'thing.rb') }
