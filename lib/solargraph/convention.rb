@@ -9,7 +9,6 @@ module Solargraph
   module Convention
     autoload :Base,    'solargraph/convention/base'
     autoload :Gemfile, 'solargraph/convention/gemfile'
-    autoload :Rspec,   'solargraph/convention/rspec'
     autoload :Gemspec, 'solargraph/convention/gemspec'
     autoload :Rakefile, 'solargraph/convention/rakefile'
 
@@ -43,7 +42,6 @@ module Solargraph
 
     register Gemfile
     register Gemspec
-    register Rspec
     register Rakefile
   end
 end
