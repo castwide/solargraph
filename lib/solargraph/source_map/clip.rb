@@ -21,6 +21,11 @@ module Solargraph
         result
       end
 
+      # @return [Array<Pin::Base>]
+      def types
+        infer.namespaces.map { |namespace| api_map.get_path_pins(namespace) }.flatten
+      end
+
       # @return [Completion]
       def complete
         return package_completions([]) if !source_map.source.parsed? || cursor.string?
