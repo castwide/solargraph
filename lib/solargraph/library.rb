@@ -267,10 +267,15 @@ module Solargraph
       return if map.nil?
       pin = map.requires.select { |p| p.location.range.contain?(location.range.start) }.first
       return nil if pin.nil?
+      return_if_match = proc do |full|
+        if source_map_hash.key?(full)
+          return Location.new(full, Solargraph::Range.from_to(0, 0, 0, 0))
+        end
+      end
       workspace.require_paths.each do |path|
-        full = Pathname.new(path).join("#{pin.name}.rb").to_s
-        next unless source_map_hash.key?(full)
-        return Location.new(full, Solargraph::Range.from_to(0, 0, 0, 0))
+        full = File.join path, pin.name
+        return_if_match.(full)
+        return_if_match.(full << ".rb")
       end
       nil
     rescue FileNotFoundError
@@ -481,10 +486,12 @@ module Solargraph
     def find_external_requires source_map
       new_set = source_map.requires.map(&:name).to_set
       # return if new_set == source_map_external_require_hash[source_map.filename]
+      _filenames = nil
+      filenames = ->{ _filenames ||= workspace.filenames.to_set }
       source_map_external_require_hash[source_map.filename] = new_set.reject do |path|
         workspace.require_paths.any? do |base|
-          full = Pathname.new(base).join("#{path}.rb").to_s
-          workspace.filenames.include?(full)
+          full = File.join(base, path)
+          filenames[].include?(full) or filenames[].include?(full << ".rb")
         end
       end
       @external_requires = nil

@@ -120,8 +120,9 @@ module Solargraph
       # @type [Gem::Specification]
       spec = spec_for_require(path)
       spec.full_require_paths.each do |rp|
-        file = File.join(rp, "#{path}.rb")
-        next unless File.file?(file)
+        file = File.join(rp, path)
+        file = [file, file + ".rb"].find { |file| File.file?(file) }
+        next unless file
         return Solargraph::Location.new(file, Solargraph::Range.from_to(0, 0, 0, 0))
       end
       nil
