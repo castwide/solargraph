@@ -20,6 +20,49 @@ describe Solargraph::SourceMap do
     expect(map.query_symbols("bazqux")).to eq(map.document_symbols.select{ |pin_namespace| pin_namespace.name == "baz_qux" })
   end
 
+  it 'returns all pins, except for references as document symbols' do
+    map = Solargraph::SourceMap.load_string(%(
+      class FooBar
+        require 'foo'
+        include SomeModule
+        extend SomeOtherModule
+
+        def baz_qux; end
+      end
+    ), 'test.rb')
+
+    expect(map.document_symbols.map(&:path)).to eq(['FooBar', 'FooBar#baz_qux'])
+    expect(map.document_symbols.map(&:class)).not_to include(an_instance_of(Solargraph::Pin::Reference))
+  end
+
+  it 'includes convention pins in document symbols' do
+    dummy_convention = Class.new(Solargraph::Convention::Base) do
+      def local(source_map)
+        source_map.document_symbols # call memoized method
+
+        Solargraph::Environ.new(
+          pins: [
+            Solargraph::Pin::Method.new(
+              closure: Solargraph::Pin::Namespace.new(name: 'FooBar', type: :class),
+              name: 'baz_convention',
+              scope: :instance
+            )
+          ]
+        )
+      end
+    end
+
+    Solargraph::Convention.register dummy_convention
+
+    map = Solargraph::SourceMap.load_string(%(
+      class FooBar
+        def baz_qux; end
+      end
+    ), 'test.rb')
+
+    expect(map.document_symbols.map(&:path)).to include('FooBar#baz_convention')
+  end
+
   it "locates block pins" do
     map = Solargraph::SourceMap.load_string(%(
       class Foo
