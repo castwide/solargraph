@@ -254,6 +254,11 @@ module Solargraph
       result
     end
 
+    # @param chain [Solargraph::Source::Chain]
+    # @param api_map [Solargraph::ApiMap]
+    # @param block_pin [Solargraph::Pin::Base]
+    # @param locals [Array<Solargraph::Pin::Base>]
+    # @param location [Solargraph::Location]
     def argument_problems_for chain, api_map, block_pin, locals, location
       result = []
       base = chain
@@ -279,9 +284,14 @@ module Solargraph
             errors = []
             sig.parameters.each_with_index do |par, idx|
               argchain = base.links.last.arguments[idx]
-              if argchain.nil? && par.decl == :arg
-                errors.push Problem.new(location, "Not enough arguments to #{pin.path}")
-                next
+              if argchain.nil?
+                if par.decl == :arg
+                  errors.push Problem.new(location, "Not enough arguments to #{pin.path}")
+                  next
+                else
+                  last = base.links.last.arguments.last
+                  argchain = last if last && last.node.type == :kwsplat
+                end
               end
               if argchain
                 if par.decl != :arg
