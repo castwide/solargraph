@@ -290,7 +290,7 @@ module Solargraph
                   next
                 else
                   last = base.links.last.arguments.last
-                  argchain = last if last && last.node.type == :kwsplat
+                  argchain = last if last && [:kwsplat, :HASH].include?(last.node.type)
                 end
               end
               if argchain
