@@ -4,6 +4,18 @@ describe Solargraph::TypeChecker do
       Solargraph::TypeChecker.load_string(code, 'test.rb', :strict)
     end
 
+    it 'complains on @!parse blocks too' do
+      checker = type_checker(%(
+      # @!parse
+      #   class Foo
+      #     # @return [Bar]
+      #     def baz; end
+      #   end
+      ))
+      expect(checker.problems).to be_one
+      expect(checker.problems.first.message).to include('Unresolved return type Bar for Foo#baz')
+    end
+
     it 'ignores method calls with inferred types' do
       checker = type_checker(%(
         String.new.upcase
