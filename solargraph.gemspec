@@ -43,6 +43,7 @@ Gem::Specification.new do |s|
 
   s.add_development_dependency 'pry'
   s.add_development_dependency 'public_suffix', '~> 3.1'
+  s.add_development_dependency 'rake', '~> 13.2'
   s.add_development_dependency 'rspec', '~> 3.5'
   s.add_development_dependency 'simplecov', '~> 0.14'
   s.add_development_dependency 'webmock', '~> 3.6'
