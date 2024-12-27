@@ -49,7 +49,7 @@ module Solargraph
       # @return [Float]
       def fuzzy_string_match str1, str2
         return (1.0 + (str2.length.to_f / str1.length.to_f)) if str1.downcase.include?(str2.downcase)
-        JaroWinkler.distance(str1, str2, ignore_case: true)
+        JaroWinkler.similarity(str1, str2, ignore_case: true)
       end
     end
   end
