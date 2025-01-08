@@ -1,3 +1,7 @@
+## 0.50.1
+- Resolve self in yieldself tags
+- Include absolute paths in config (#674)
+
 ## 0.50.0 - December 5, 2023
 - Remove .travis.yml as its not longer used (#627)
 - Fix empty string case when processing requires (#644)

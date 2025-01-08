@@ -432,7 +432,7 @@ describe Solargraph::ApiMap do
 
   it "loads workspaces from directories" do
     api_map = Solargraph::ApiMap.load('spec/fixtures/workspace')
-    expect(api_map.source_map('spec/fixtures/workspace/app.rb')).to be_a(Solargraph::SourceMap)
+    expect(api_map.source_map(File.absolute_path('spec/fixtures/workspace/app.rb'))).to be_a(Solargraph::SourceMap)
   end
 
   it "finds constants from included modules" do

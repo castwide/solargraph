@@ -10,7 +10,7 @@ module Solargraph
         # The directory is not stored in a variable so it can be overridden
         # in specs.
         ENV['SOLARGRAPH_CACHE'] ||
-          ENV['XDG_CACHE_HOME'] ? File.join(ENV['XDG_CACHE_HOME'], 'solargraph') :
+          (ENV['XDG_CACHE_HOME'] ? File.join(ENV['XDG_CACHE_HOME'], 'solargraph') : nil) ||
           File.join(Dir.home, '.cache', 'solargraph')
       end
 
