@@ -34,7 +34,7 @@ Gem::Specification.new do |s|
   s.add_runtime_dependency 'observer', '~> 0.1'
   s.add_runtime_dependency 'ostruct', '~> 0.6'
   s.add_runtime_dependency 'parser', '~> 3.0'
-  s.add_runtime_dependency 'rbs', '~> 2.0'
+  s.add_runtime_dependency 'rbs', '~> 3.0'
   s.add_runtime_dependency 'reverse_markdown', '~> 2.0'
   s.add_runtime_dependency 'rubocop', '~> 1.38'
   s.add_runtime_dependency 'thor', '~> 1.0'
