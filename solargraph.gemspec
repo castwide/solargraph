@@ -27,7 +27,6 @@ Gem::Specification.new do |s|
   s.add_runtime_dependency 'benchmark'
   s.add_runtime_dependency 'bundler', '~> 2.0'
   s.add_runtime_dependency 'diff-lcs', '~> 1.4'
-  s.add_runtime_dependency 'e2mmap'
   s.add_runtime_dependency 'jaro_winkler', '~> 1.6'
   s.add_runtime_dependency 'kramdown', '~> 2.3'
   s.add_runtime_dependency 'kramdown-parser-gfm', '~> 1.1'
