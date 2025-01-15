@@ -233,6 +233,8 @@ module Solargraph
       end
 
       def parts_of_function type, pin
+        return [[Solargraph::Pin::Parameter.new(decl: :restarg, name: 'arg', closure: pin)], ComplexType.try_parse(method_type_to_tag(type))] if defined?(RBS::Types::UntypedFunction) && type.type.is_a?(RBS::Types::UntypedFunction)
+
         parameters = []
         arg_num = -1
         type.type.required_positionals.each do |param|
