@@ -30,6 +30,7 @@ module Solargraph
       @pins = pins
       @locals = locals
       environ.merge Convention.for_local(self) unless filename.nil?
+      self.convention_pins = environ.pins
       @pin_class_hash = pins.to_set.classify(&:class).transform_values(&:to_a)
       @pin_select_cache = {}
     end
@@ -65,11 +66,12 @@ module Solargraph
       @environ ||= Environ.new
     end
 
+    # all pins except Solargraph::Pin::Reference::Reference
     # @return [Array<Pin::Base>]
     def document_symbols
-      @document_symbols ||= pins.select { |pin|
+      @document_symbols ||= (pins + convention_pins).select do |pin|
         pin.path && !pin.path.empty?
-      }
+      end
     end
 
     # @param query [String]
@@ -158,6 +160,17 @@ module Solargraph
     end
 
     private
+
+    # @return [Array<Pin::Base>]
+    def convention_pins
+      @convention_pins || []
+    end
+
+    def convention_pins=(pins)
+      # unmemoizing the document_symbols in case it was called from any of convnetions
+      @document_symbols = nil
+      @convention_pins = pins
+    end
 
     # @param line [Integer]
     # @param character [Integer]

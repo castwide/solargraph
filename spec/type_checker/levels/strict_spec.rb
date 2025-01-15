@@ -300,7 +300,6 @@ describe Solargraph::TypeChecker do
         h['foo'] = 'bar'
         h[100] = []
       ))
-      puts checker.problems.map(&:message)
       expect(checker.problems).to be_empty
     end
 
@@ -520,7 +519,6 @@ describe Solargraph::TypeChecker do
           alias baz bar
         end
       ))
-      puts checker.problems.map(&:message)
       expect(checker.problems).to be_empty
     end
 

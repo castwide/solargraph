@@ -98,7 +98,7 @@ module Solargraph
             result.concat generate_links(n.children.last)
           elsif n.type == :OR
             result.push Chain::Or.new([NodeChainer.chain(n.children[0], @filename), NodeChainer.chain(n.children[1], @filename)])
-          elsif n.type == :begin
+          elsif n.type == :BEGIN
             result.concat generate_links(n.children[0])
           elsif n.type == :BLOCK_PASS
             result.push Chain::BlockVariable.new("&#{n.children[1].children[0].to_s}")
