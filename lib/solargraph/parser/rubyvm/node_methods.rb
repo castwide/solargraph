@@ -36,6 +36,8 @@ module Solargraph
             "::#{node.children.first.class.to_s}"
           when :DSTR
             "::String"
+          when :INTEGER
+            '::Integer'
           when :ARRAY, :ZARRAY, :LIST, :ZLIST
             '::Array'
           when :HASH
