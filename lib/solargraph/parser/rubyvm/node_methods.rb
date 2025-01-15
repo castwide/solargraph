@@ -32,7 +32,7 @@ module Solargraph
         def infer_literal_node_type node
           return nil unless Parser.is_ast_node?(node)
           case node.type
-          when :LIT, :STR
+          when :LIT, :STR, :SYM
             "::#{node.children.first.class.to_s}"
           when :DSTR
             "::String"
