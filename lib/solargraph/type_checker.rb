@@ -254,6 +254,11 @@ module Solargraph
       result
     end
 
+    # @param chain [Solargraph::Source::Chain]
+    # @param api_map [Solargraph::ApiMap]
+    # @param block_pin [Solargraph::Pin::Base]
+    # @param locals [Array<Solargraph::Pin::Base>]
+    # @param location [Solargraph::Location]
     def argument_problems_for chain, api_map, block_pin, locals, location
       result = []
       base = chain
@@ -279,9 +284,14 @@ module Solargraph
             errors = []
             sig.parameters.each_with_index do |par, idx|
               argchain = base.links.last.arguments[idx]
-              if argchain.nil? && par.decl == :arg
-                errors.push Problem.new(location, "Not enough arguments to #{pin.path}")
-                next
+              if argchain.nil?
+                if par.decl == :arg
+                  errors.push Problem.new(location, "Not enough arguments to #{pin.path}")
+                  next
+                else
+                  last = base.links.last.arguments.last
+                  argchain = last if last && [:kwsplat, :HASH].include?(last.node.type)
+                end
               end
               if argchain
                 if par.decl != :arg
@@ -317,30 +327,29 @@ module Solargraph
       result
     end
 
-    def kwarg_problems_for argchain, api_map, block_pin, locals, location, pin, params, first
+    def kwarg_problems_for argchain, api_map, block_pin, locals, location, pin, params, idx
       result = []
       kwargs = convert_hash(argchain.node)
-      pin.signatures.first.parameters[first..-1].each_with_index do |par, cur|
-        idx = first + cur
-        argchain = kwargs[par.name.to_sym]
-        if par.decl == :kwrestarg || (par.decl == :optarg && idx == pin.parameters.length - 1 && par.asgn_code == '{}')
-          result.concat kwrestarg_problems_for(api_map, block_pin, locals, location, pin, params, kwargs)
-        else
-          if argchain
-            data = params[par.name]
-            if data.nil?
-              # @todo Some level (strong, I guess) should require the param here
-            else
-              ptype = data[:qualified]
-              next if ptype.undefined?
+      par = pin.signatures.first.parameters[idx]
+      argchain = kwargs[par.name.to_sym]
+      if par.decl == :kwrestarg || (par.decl == :optarg && idx == pin.parameters.length - 1 && par.asgn_code == '{}')
+        result.concat kwrestarg_problems_for(api_map, block_pin, locals, location, pin, params, kwargs)
+      else
+        if argchain
+          data = params[par.name]
+          if data.nil?
+          # @todo Some level (strong, I guess) should require the param here
+          else
+            ptype = data[:qualified]
+            unless ptype.undefined?
               argtype = argchain.infer(api_map, block_pin, locals)
               if argtype.defined? && ptype && !any_types_match?(api_map, ptype, argtype)
                 result.push Problem.new(location, "Wrong argument type for #{pin.path}: #{par.name} expected #{ptype}, received #{argtype}")
               end
             end
-          elsif par.decl == :kwarg
-            result.push Problem.new(location, "Call to #{pin.path} is missing keyword argument #{par.name}")
           end
+        elsif par.decl == :kwarg
+          result.push Problem.new(location, "Call to #{pin.path} is missing keyword argument #{par.name}")
         end
       end
       result
