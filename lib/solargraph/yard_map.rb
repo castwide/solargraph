@@ -220,9 +220,11 @@ module Solargraph
       result = []
       begin
         name = r.split('/').first.to_s
-        return [] if name.empty? || @source_gems.include?(name) || @gem_paths.key?(name)
-        spec = spec_for_require(name)
-        @gem_paths[name] = spec.full_gem_path
+        return [] if name.empty?
+
+        spec = spec_for_require(r)
+        return [] if @source_gems.include?(spec.name) || @gem_paths.key?(spec.name)
+        @gem_paths[spec.name] = spec.full_gem_path
 
         yd = yardoc_file_for_spec(spec)
         # YARD detects gems for certain libraries that do not have a yardoc
@@ -282,8 +284,14 @@ module Solargraph
     # @param path [String]
     # @return [Gem::Specification]
     def spec_for_require path
-      name = path.split('/').first.to_s
-      spec = Gem::Specification.find_by_name(name, @gemset[name])
+      relatives = path.split('/')
+      spec = nil
+      while spec.nil? && !relatives.empty?
+        name = relatives.join('-')
+        spec = Gem::Specification.find_by_name(name, @gemset[name])
+        relatives.pop
+      end
+      raise Gem::LoadError if spec.nil?
 
       # Avoid loading the spec again if it's going to be skipped anyway
       return spec if @source_gems.include?(spec.name)
