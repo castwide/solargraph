@@ -551,7 +551,7 @@ module Solargraph
     def without_ignored problems
       problems.reject do |problem|
         node = source_map.source.node_at(problem.location.range.start.line, problem.location.range.start.column)
-        source_map.source.comments_for(node)&.include?('@sg-ignore')
+        node && source_map.source.comments_for(node)&.include?('@sg-ignore')
       end
     end
   end
