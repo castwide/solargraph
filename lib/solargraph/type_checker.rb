@@ -290,7 +290,7 @@ module Solargraph
                   next
                 else
                   last = base.links.last.arguments.last
-                  argchain = last if last && [:kwsplat, :HASH].include?(last.node.type)
+                  argchain = last if last && [:kwsplat, :hash].include?(last.node.type)
                 end
               end
               if argchain
@@ -338,7 +338,7 @@ module Solargraph
         if argchain
           data = params[par.name]
           if data.nil?
-          # @todo Some level (strong, I guess) should require the param here
+            # @todo Some level (strong, I guess) should require the param here
           else
             ptype = data[:qualified]
             unless ptype.undefined?
