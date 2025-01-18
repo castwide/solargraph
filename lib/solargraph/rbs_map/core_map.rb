@@ -12,7 +12,7 @@ module Solargraph
         if cache
           pins.replace cache
         else
-          loader = RBS::EnvironmentLoader.new(repository: RBS::Repository.new(no_stdlib: true))
+          loader = RBS::EnvironmentLoader.new(repository: RBS::Repository.new(no_stdlib: false))
           environment = RBS::Environment.from_loader(loader).resolve_type_names
           environment.declarations.each { |decl| convert_decl_to_pin(decl, Solargraph::Pin::ROOT_PIN) }
           pins.concat RbsMap::CoreFills::ALL

@@ -22,7 +22,7 @@ module Solargraph
                 locals.push Solargraph::Pin::LocalVariable.new(
                   location: loc,
                   closure: region.closure,
-                  name: node.children[1].children.first.children.first.to_s,
+                  name: node.children[1].children.first.to_s,
                   comments: "@type [#{types.join(',')}]",
                   presence: presence
                 )
@@ -34,9 +34,15 @@ module Solargraph
           private
 
           def exception_variable?
-            Parser.is_ast_node?(node.children[1]) &&
-              Parser.is_ast_node?(node.children[1].children.first) &&
-              node.children[1].children.first.type == :LASGN
+            if RUBY_VERSION =~ /^3\.4\./
+              Parser.is_ast_node?(node.children[1]) &&
+                # Parser.is_ast_node?(node.children[1].children.first) &&
+                node.children[1].type == :LASGN
+            else
+              Parser.is_ast_node?(node.children[1]) &&
+                Parser.is_ast_node?(node.children[1].children.first) &&
+                node.children[1].children.first.type == :LASGN
+            end
           end
         end
       end

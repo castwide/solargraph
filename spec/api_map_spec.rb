@@ -5,17 +5,17 @@ describe Solargraph::ApiMap do
     @api_map = Solargraph::ApiMap.new
   end
 
-  it "returns core methods" do
+  it 'returns core methods' do
     pins = @api_map.get_methods('String')
     expect(pins.map(&:path)).to include('String#upcase')
   end
 
-  it "returns core classes" do
+  it 'returns core classes' do
     pins = @api_map.get_constants('')
     expect(pins.map(&:path)).to include('String')
   end
 
-  it "indexes pins" do
+  it 'indexes pins' do
     map = Solargraph::SourceMap.load_string(%(
       class Foo
         def bar
@@ -28,7 +28,7 @@ describe Solargraph::ApiMap do
     expect(pins.first.path).to eq('Foo#bar')
   end
 
-  it "finds methods from included modules" do
+  it 'finds methods from included modules' do
     map = Solargraph::SourceMap.load_string(%(
       module Mixin
         def mix_method
@@ -45,7 +45,7 @@ describe Solargraph::ApiMap do
     expect(pins.map(&:path)).to include('Mixin#mix_method')
   end
 
-  it "finds methods from superclasses" do
+  it 'finds methods from superclasses' do
     map = Solargraph::SourceMap.load_string(%(
       class Sup
         def sup_method
@@ -59,7 +59,7 @@ describe Solargraph::ApiMap do
     expect(pins.map(&:path)).to include('Sup#sup_method')
   end
 
-  it "checks method pin visibility" do
+  it 'checks method pin visibility' do
     map = Solargraph::SourceMap.load_string(%(
       class Foo
         private
@@ -72,7 +72,7 @@ describe Solargraph::ApiMap do
     expect(pins.map(&:path)).not_to include('Foo#bar')
   end
 
-  it "checks method pin private visibility set by yard directive" do
+  it 'checks method pin private visibility set by yard directive' do
     map = Solargraph::SourceMap.load_string(%(
       class Foo
         # @!visibility private
@@ -85,7 +85,7 @@ describe Solargraph::ApiMap do
     expect(pins.map(&:path)).not_to include('Foo#bar')
   end
 
-  it "checks method pin protected visibility set by yard directive" do
+  it 'checks method pin protected visibility set by yard directive' do
     map = Solargraph::SourceMap.load_string(%(
       class Foo
         # @!visibility protected
@@ -98,7 +98,7 @@ describe Solargraph::ApiMap do
     expect(pins.map(&:path)).not_to include('Foo#bar')
   end
 
-  it "finds nested namespaces" do
+  it 'finds nested namespaces' do
     map = Solargraph::SourceMap.load_string(%(
       module Foo
         class Bar
@@ -114,7 +114,7 @@ describe Solargraph::ApiMap do
     expect(paths).to include('Foo::Baz')
   end
 
-  it "finds nested namespaces within a context" do
+  it 'finds nested namespaces within a context' do
     map = Solargraph::SourceMap.load_string(%(
       module Foo
         class Bar
@@ -129,7 +129,7 @@ describe Solargraph::ApiMap do
     expect(pins.map(&:path)).to include('Foo::Bar::BAR_CONSTANT')
   end
 
-  it "checks constant visibility" do
+  it 'checks constant visibility' do
     map = Solargraph::SourceMap.load_string(%(
       module Foo
         FOO_CONSTANT = 'foo'
@@ -143,27 +143,27 @@ describe Solargraph::ApiMap do
     expect(pins.map(&:path)).to include('Foo::FOO_CONSTANT')
   end
 
-  it "includes Kernel methods in the root namespace" do
+  it 'includes Kernel methods in the root namespace' do
     @api_map.index []
     pins = @api_map.get_methods('')
     expect(pins.map(&:path)).to include('Kernel#puts')
   end
 
-  it "gets instance methods for complex types" do
+  it 'gets instance methods for complex types' do
     @api_map.index []
     type = Solargraph::ComplexType.parse('String')
     pins = @api_map.get_complex_type_methods(type)
     expect(pins.map(&:path)).to include('String#upcase')
   end
 
-  it "gets class methods for complex types" do
+  it 'gets class methods for complex types' do
     @api_map.index []
     type = Solargraph::ComplexType.parse('Class<String>')
     pins = @api_map.get_complex_type_methods(type)
     expect(pins.map(&:path)).to include('String.try_convert')
   end
 
-  it "checks visibility of complex type methods" do
+  it 'checks visibility of complex type methods' do
     map = Solargraph::SourceMap.load_string(%(
       class Foo
         private
@@ -184,7 +184,7 @@ describe Solargraph::ApiMap do
     expect(pins.map(&:path)).to include('Foo#priv')
   end
 
-  it "finds methods for duck types" do
+  it 'finds methods for duck types' do
     @api_map.index []
     type = Solargraph::ComplexType.parse('#foo, #bar')
     pins = @api_map.get_complex_type_methods(type)
@@ -192,21 +192,21 @@ describe Solargraph::ApiMap do
     expect(pins.map(&:name)).to include('bar')
   end
 
-  it "adds Object instance methods to duck types" do
+  it 'adds Object instance methods to duck types' do
     api_map = Solargraph::ApiMap.new
     type = Solargraph::ComplexType.parse('#foo')
     pins = api_map.get_complex_type_methods(type)
-    expect(pins.any?{|p| p.namespace == 'Object'}).to be(true)
+    expect(pins.any? { |p| p.namespace == 'BasicObject' }).to be(true)
   end
 
-  it "finds methods for parametrized class types" do
+  it 'finds methods for parametrized class types' do
     @api_map.index []
     type = Solargraph::ComplexType.parse('Class<String>')
     pins = @api_map.get_complex_type_methods(type)
     expect(pins.map(&:path)).to include('String.try_convert')
   end
 
-  it "finds stacks of methods" do
+  it 'finds stacks of methods' do
     map = Solargraph::SourceMap.load_string(%(
       module Mixin
         def meth; end
@@ -224,14 +224,14 @@ describe Solargraph::ApiMap do
     expect(pins.map(&:path)).to eq(['Bar#meth', 'Foo#meth', 'Mixin#meth'])
   end
 
-  it "finds symbols" do
+  it 'finds symbols' do
     map = Solargraph::SourceMap.load_string('sym = :sym')
     @api_map.index map.pins
     pins = @api_map.get_symbols
     expect(pins.map(&:name)).to include(':sym')
   end
 
-  it "finds instance variables" do
+  it 'finds instance variables' do
     map = Solargraph::SourceMap.load_string(%(
       class Foo
         @cvar = ''
@@ -249,7 +249,7 @@ describe Solargraph::ApiMap do
     expect(pins.map(&:name)).to include('@cvar')
   end
 
-  it "finds class variables" do
+  it 'finds class variables' do
     map = Solargraph::SourceMap.load_string(%(
       class Foo
         @@cvar = make_value
@@ -260,14 +260,14 @@ describe Solargraph::ApiMap do
     expect(pins.map(&:name)).to include('@@cvar')
   end
 
-  it "finds global variables" do
+  it 'finds global variables' do
     map = Solargraph::SourceMap.load_string('$foo = []')
     @api_map.index map.pins
     pins = @api_map.get_global_variable_pins
     expect(pins.map(&:name)).to include('$foo')
   end
 
-  it "generates clips" do
+  it 'generates clips' do
     source = Solargraph::Source.load_string(%(
       class Foo
         def bar; end
@@ -279,31 +279,31 @@ describe Solargraph::ApiMap do
     expect(clip).to be_a(Solargraph::SourceMap::Clip)
   end
 
-  it "searches the Ruby core" do
+  it 'searches the Ruby core' do
     @api_map.index []
     results = @api_map.search('Array#len')
     expect(results).to include('Array#length')
   end
 
-  it "documents the Ruby core" do
+  it 'documents the Ruby core' do
     @api_map.index []
     docs = @api_map.document('Array')
     expect(docs).not_to be_empty
     expect(docs.map(&:path).uniq).to eq(['Array'])
   end
 
-  it "catalogs changes" do
-    workspace = Solargraph::Workspace.new
+  it 'catalogs changes' do
+    Solargraph::Workspace.new
     s1 = Solargraph::SourceMap.load_string('class Foo; end')
-    @api_map.catalog(Solargraph::Bench.new source_maps: [s1])
+    @api_map.catalog(Solargraph::Bench.new(source_maps: [s1]))
     expect(@api_map.get_path_pins('Foo')).not_to be_empty
     s2 = Solargraph::SourceMap.load_string('class Bar; end')
-    @api_map.catalog(Solargraph::Bench.new source_maps: [s2])
+    @api_map.catalog(Solargraph::Bench.new(source_maps: [s2]))
     expect(@api_map.get_path_pins('Foo')).to be_empty
     expect(@api_map.get_path_pins('Bar')).not_to be_empty
   end
 
-  it "checks attribute visibility" do
+  it 'checks attribute visibility' do
     source = Solargraph::Source.load_string(%(
       class Foo
         attr_reader :public_attr
@@ -322,7 +322,7 @@ describe Solargraph::ApiMap do
     expect(paths).to include('Foo#private_attr')
   end
 
-  it "resolves superclasses qualified with leading colons" do
+  it 'resolves superclasses qualified with leading colons' do
     code = %(
       class Sup
         def bar; end
@@ -334,15 +334,15 @@ describe Solargraph::ApiMap do
         end
       end
       )
-      source = Solargraph::Source.load_string(code)
-      @api_map.map source
-      pins = @api_map.get_methods('Foo::Sub')
-      paths = pins.map(&:path)
-      expect(paths).to include('Foo::Sub#bar')
-      expect(paths).to include('Sup#bar')
+    source = Solargraph::Source.load_string(code)
+    @api_map.map source
+    pins = @api_map.get_methods('Foo::Sub')
+    paths = pins.map(&:path)
+    expect(paths).to include('Foo::Sub#bar')
+    expect(paths).to include('Sup#bar')
   end
 
-  it "finds protected methods for complex types" do
+  it 'finds protected methods for complex types' do
     code = %(
       class Sup
         protected
@@ -363,19 +363,19 @@ describe Solargraph::ApiMap do
     expect(pins.map(&:path)).to include('Sup#bar')
   end
 
-  it "ignores undefined superclasses when finding complex type methods" do
+  it 'ignores undefined superclasses when finding complex type methods' do
     code = %(
       class Sub < Sup; end
       class Sub2 < Sub; end
     )
     source = Solargraph::Source.load_string(code)
     @api_map.map source
-    expect {
+    expect do
       @api_map.get_complex_type_methods(Solargraph::ComplexType.parse('Sub'), 'Sub2')
-    }.not_to raise_error
+    end.not_to raise_error
   end
 
-  it "detects private constants according to context" do
+  it 'detects private constants according to context' do
     code = %(
       class Foo
         class Bar; end
@@ -390,7 +390,7 @@ describe Solargraph::ApiMap do
     expect(pins.map(&:path)).to include('Foo::Bar')
   end
 
-  it "catalogs requires" do
+  it 'catalogs requires' do
     source1 = Solargraph::SourceMap.load_string(%(
       class Foo; end
     ), 'lib/foo.rb')
@@ -402,7 +402,7 @@ describe Solargraph::ApiMap do
     expect(@api_map.unresolved_requires).to eq(['invalid'])
   end
 
-  it "gets instance variables from superclasses" do
+  it 'gets instance variables from superclasses' do
     source = Solargraph::Source.load_string(%(
       class Sup
         def foo
@@ -416,7 +416,7 @@ describe Solargraph::ApiMap do
     expect(pins.map(&:name)).to include('@foo')
   end
 
-  it "gets methods from extended modules" do
+  it 'gets methods from extended modules' do
     source = Solargraph::Source.load_string(%(
       module Mixin
         def bar; end
@@ -430,12 +430,12 @@ describe Solargraph::ApiMap do
     expect(pins.map(&:path)).to include('Mixin#bar')
   end
 
-  it "loads workspaces from directories" do
+  it 'loads workspaces from directories' do
     api_map = Solargraph::ApiMap.load('spec/fixtures/workspace')
     expect(api_map.source_map(File.absolute_path('spec/fixtures/workspace/app.rb'))).to be_a(Solargraph::SourceMap)
   end
 
-  it "finds constants from included modules" do
+  it 'finds constants from included modules' do
     source = Solargraph::Source.load_string(%(
       module Mixin
         FOO = 'foo'
@@ -449,7 +449,7 @@ describe Solargraph::ApiMap do
     expect(pins.map(&:path)).to include('Mixin::FOO')
   end
 
-  it "sorts constants by name" do
+  it 'sorts constants by name' do
     source = Solargraph::Source.load_string(%(
       module Foo
         AAB = 'aaa'
@@ -463,7 +463,7 @@ describe Solargraph::ApiMap do
     expect(pins[1].name).to eq('AAB')
   end
 
-  it "returns one pin for root methods" do
+  it 'returns one pin for root methods' do
     source = Solargraph::Source.load_string(%(
       def sum1(a, b)
       end
@@ -475,7 +475,7 @@ describe Solargraph::ApiMap do
     expect(pins.map(&:name)).to include('sum1')
   end
 
-  it "detects method aliases with origins in other sources" do
+  it 'detects method aliases with origins in other sources' do
     source1 = Solargraph::SourceMap.load_string(%(
       class Sup
         # @return [String]
@@ -493,7 +493,7 @@ describe Solargraph::ApiMap do
     expect(pin.return_type.tag).to eq('String')
   end
 
-  it "finds extended module methods" do
+  it 'finds extended module methods' do
     source = Solargraph::Source.load_string(%(
       module MyModule
         def foo; end
@@ -507,7 +507,7 @@ describe Solargraph::ApiMap do
     expect(pins.map(&:path)).to include('MyModule#foo')
   end
 
-  it "qualifies namespaces from includes" do
+  it 'qualifies namespaces from includes' do
     source = Solargraph::Source.load_string(%(
       module Foo
         class Bar; end
@@ -521,7 +521,7 @@ describe Solargraph::ApiMap do
     expect(fqns).to eq('Foo::Bar')
   end
 
-  it "qualifies namespaces with conflicting includes" do
+  it 'qualifies namespaces with conflicting includes' do
     source = Solargraph::Source.load_string(%(
       module Bar; end
       module Foo
@@ -538,7 +538,7 @@ describe Solargraph::ApiMap do
     expect(fqns).to eq('Foo::Bar')
   end
 
-  it "qualifies namespaces from root includes" do
+  it 'qualifies namespaces from root includes' do
     source = Solargraph::Source.load_string(%(
       module A
         module B
@@ -579,7 +579,7 @@ describe Solargraph::ApiMap do
       end
     ))
     @api_map.map source
-    pins = @api_map.get_methods('Foo', visibility: [:public, :private])
+    pins = @api_map.get_methods('Foo', visibility: %i[public private])
     baz = pins.select { |pin| pin.name == 'baz' }.first
     expect(baz.visibility).to be(:private)
   end
@@ -708,7 +708,7 @@ describe Solargraph::ApiMap do
     pins = @api_map.get_methods('Example', scope: :class).select do |pin|
       pin.namespace == 'Example'
     end
-    expect(pins.map(&:name).sort).to eq(['bar', 'foo'])
+    expect(pins.map(&:name).sort).to eq(%w[bar foo])
   end
 
   it 'finds class methods in nested class << Example' do
@@ -728,7 +728,7 @@ describe Solargraph::ApiMap do
     pins = @api_map.get_methods('Container::Example', scope: :class).select do |pin|
       pin.namespace == 'Container::Example'
     end
-    expect(pins.map(&:name).sort).to eq(['bar', 'foo'])
+    expect(pins.map(&:name).sort).to eq(%w[bar foo])
   end
 
   it 'resolves aliases for YARD methods' do

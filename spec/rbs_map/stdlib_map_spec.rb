@@ -17,6 +17,6 @@ describe Solargraph::RbsMap::StdlibMap do
   it 'maps YAML' do
     rbs_map = Solargraph::RbsMap::StdlibMap.load('yaml')
     pin = rbs_map.path_pin('YAML')
-    expect(pin).to be_a(Solargraph::Pin::Namespace)
+    expect(pin).to be_a(Solargraph::Pin::Base)
   end
 end

@@ -58,6 +58,7 @@ module Solargraph
       register :FOR,        Rubyvm::NodeProcessors::BlockNode
       register :OP_ASGN_OR, Rubyvm::NodeProcessors::OrasgnNode
       register :LIT,        Rubyvm::NodeProcessors::LitNode
+      register :SYM,        Rubyvm::NodeProcessors::LitNode
     end
   end
 end

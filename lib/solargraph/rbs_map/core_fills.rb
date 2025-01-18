@@ -15,6 +15,11 @@ module Solargraph
         'then', 'true', 'undef', 'unless', 'until', 'when', 'while', 'yield'
       ].map { |k| Pin::Keyword.new(k) }
 
+      MISSING = [
+        Solargraph::Pin::Method.new(name: 'tap', scope: :instance, closure: Solargraph::Pin::Namespace.new(name: 'Object')),
+        Solargraph::Pin::Method.new(name: 'class', scope: :instance, closure: Solargraph::Pin::Namespace.new(name: 'Object'), comments: '@return [Class<self>]')
+      ]
+
       YIELDPARAMS = [
         Override.from_comment('Object#tap', %(
 @return [self]
@@ -55,7 +60,8 @@ module Solargraph
       end
       ERRNOS = errnos
 
-      ALL = KEYWORDS + YIELDPARAMS + YIELDPARAM_SINGLE_PARAMETERS + CLASS_RETURN_TYPES + ERRNOS
+      ALL = KEYWORDS + MISSING + YIELDPARAMS + YIELDPARAM_SINGLE_PARAMETERS + CLASS_RETURN_TYPES + ERRNOS
     end
   end
 end
+
