@@ -97,7 +97,7 @@ module Solargraph
     def create filename, text
       result = false
       mutex.synchronize do
-        next unless contain?(filename) || open?(filename) || workspace.would_merge?(filename)
+        next unless contain?(filename) || open?(filename)
         @synchronized = false
         source = Solargraph::Source.load_string(text, filename)
         workspace.merge(source)
