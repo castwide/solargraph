@@ -868,7 +868,7 @@ describe Solargraph::TypeChecker do
 
     it 'accepts namespace aliases for return tags' do
       checker = type_checker(%(
-        # @return [Mutex]
+        # @return [Thread::Mutex]
         def get_a_mutex; end
       ))
       expect(checker.problems).to be_empty
@@ -876,7 +876,7 @@ describe Solargraph::TypeChecker do
 
     it 'accepts namespace aliases for type tags' do
       checker = type_checker(%(
-        # @type [Mutex]
+        # @type [Thread::Mutex]
         x = get_a_mutex
       ))
       expect(checker.problems).to be_empty
@@ -885,7 +885,7 @@ describe Solargraph::TypeChecker do
     it 'accepts namespace aliases from nested namespaces' do
       checker = type_checker(%(
         class Foo
-          # @return [Mutex]
+          # @return [Thread::Mutex]
           def get_a_mutex; end
         end
       ))

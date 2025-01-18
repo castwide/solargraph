@@ -12,4 +12,5 @@ The following people and organizations provide funding or other resources. [Beco
 
 - Akira Yamada
 - Joel Drapper
-- Yutaka Tachibana
+- Spencer
+- Vince Broz

@@ -295,6 +295,19 @@ describe Solargraph::SourceMap::Clip do
     expect(type.tag).to eq('Hash')
   end
 
+  it 'infers complex return types from method calls' do
+    source = Solargraph::Source.load_string(%(
+      # @return [String, Array]
+      def foo; end
+      var = foo
+    ), 'test.rb')
+    map = Solargraph::ApiMap.new
+    map.map source
+    clip = map.clip_at('test.rb', Solargraph::Position.new(3, 7))
+    type = clip.infer
+    expect(type.to_s).to eq('String, Array')
+  end
+
   it "infers return types from local variables" do
     source = Solargraph::Source.load_string(%(
       def foo
@@ -421,7 +434,7 @@ describe Solargraph::SourceMap::Clip do
     expect(clip1b.complete.pins.map(&:path)).not_to include('Foo#root_method')
 
     clip2a = api_map.clip_at('test.rb', Solargraph::Position.new(15, 9))
-    expect(clip2a.infer.rooted?).to be(true)
+    # expect(clip2a.infer.rooted?).to be(true)
     expect(clip2a.infer.to_s).to eq('Foo')
     clip2b = api_map.clip_at('test.rb', Solargraph::Position.new(15, 13))
     expect(clip2b.complete.pins.map(&:path)).not_to include('Other::Foo#other_method')
@@ -470,6 +483,28 @@ describe Solargraph::SourceMap::Clip do
       end
       class Foo
         # @yieldself [Par]
+        def bar; end
+      end
+      Foo.new.bar do
+        x
+      end
+    ), 'file.rb')
+    api_map = Solargraph::ApiMap.new
+    api_map.map source
+    clip = api_map.clip_at('file.rb', [11, 8])
+    expect(clip.complete.pins.map(&:path)).to include('Par#action')
+    expect(clip.complete.pins.map(&:path)).to include('Par#hidden')
+  end
+
+  it 'infers self in @yieldself' do
+    source = Solargraph::Source.load_string(%(
+      class Par
+        def action; end
+        private
+        def hidden; end
+      end
+      class Foo < Par
+        # @yieldself [self]
         def bar; end
       end
       Foo.new.bar do

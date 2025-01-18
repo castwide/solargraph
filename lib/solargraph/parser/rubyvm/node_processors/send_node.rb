@@ -43,7 +43,7 @@ module Solargraph
             if node.type == :FCALL && Parser.is_ast_node?(node.children.last)
               node.children.last.children[0..-2].each do |child|
                 # next unless child.is_a?(AST::Node) && (child.type == :sym || child.type == :str)
-                if child.type == :LIT || child.type == :STR
+                if child.type == :LIT || child.type == :STR || child.type == :SYM
                   name = child.children[0].to_s
                   matches = pins.select{ |pin| pin.is_a?(Pin::Method) && pin.name == name && pin.namespace == region.closure.full_context.namespace && pin.context.scope == (region.scope || :instance)}
                   matches.each do |pin|
@@ -175,7 +175,7 @@ module Solargraph
               NodeProcessor.process node.children.last.children[0], region.update(visibility: :module_function), pins, locals
             else
               node.children.last.children[0..-2].each do |x|
-                next unless [:LIT, :STR].include?(x.type)
+                next unless [:LIT, :STR, :SYM].include?(x.type)
                 cn = x.children[0].to_s
                 ref = pins.select { |p| p.is_a?(Pin::Method) && p.namespace == region.closure.full_context.namespace && p.name == cn }.first
                 unless ref.nil?

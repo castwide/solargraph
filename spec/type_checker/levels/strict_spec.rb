@@ -4,6 +4,18 @@ describe Solargraph::TypeChecker do
       Solargraph::TypeChecker.load_string(code, 'test.rb', :strict)
     end
 
+    it 'complains on @!parse blocks too' do
+      checker = type_checker(%(
+      # @!parse
+      #   class Foo
+      #     # @return [Bar]
+      #     def baz; end
+      #   end
+      ))
+      expect(checker.problems).to be_one
+      expect(checker.problems.first.message).to include('Unresolved return type Bar for Foo#baz')
+    end
+
     it 'ignores method calls with inferred types' do
       checker = type_checker(%(
         String.new.upcase
@@ -300,7 +312,6 @@ describe Solargraph::TypeChecker do
         h['foo'] = 'bar'
         h[100] = []
       ))
-      puts checker.problems.map(&:message)
       expect(checker.problems).to be_empty
     end
 
@@ -374,6 +385,53 @@ describe Solargraph::TypeChecker do
       ))
       expect(checker.problems).to be_one
       expect(checker.problems.first.message).to include('Not enough arguments')
+    end
+
+    it 'reports solo missing kwarg' do
+      checker = type_checker(%(
+        class Foo
+          def bar(baz:)
+          end
+        end
+        Foo.new.bar
+      ))
+      expect(checker.problems).to be_one
+      expect(checker.problems.first.message).to include('Missing keyword arguments')
+    end
+
+    it 'reports not enough kwargs' do
+      checker = type_checker(%(
+        class Foo
+          def bar(foo:, baz:)
+          end
+        end
+        Foo.new.bar(foo: 100)
+      ))
+      expect(checker.problems).to be_one
+      expect(checker.problems.first.message).to include('Missing keyword argument')
+      expect(checker.problems.first.message).to include('baz')
+    end
+
+    it 'accepts passed kwargs' do
+      checker = type_checker(%(
+        class Foo
+          def bar(baz:)
+          end
+        end
+        Foo.new.bar(baz: 123)
+      ))
+      expect(checker.problems).to be_empty
+    end
+
+    it 'accepts multiple passed kwargs' do
+      checker = type_checker(%(
+        class Foo
+          def bar(baz:, bing:)
+          end
+        end
+        Foo.new.bar(baz: 123, bing: 456)
+      ))
+      expect(checker.problems).to be_empty
     end
 
     it 'requires strict return tags' do
@@ -473,7 +531,6 @@ describe Solargraph::TypeChecker do
           alias baz bar
         end
       ))
-      puts checker.problems.map(&:message)
       expect(checker.problems).to be_empty
     end
 

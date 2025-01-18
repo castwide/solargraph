@@ -56,7 +56,7 @@ module Solargraph
           end
         end
         return ComplexType::UNDEFINED if types.empty?
-        ComplexType.try_parse(*types.map(&:tag))
+        ComplexType.try_parse(*types.map(&:to_s))
       end
 
       def == other
