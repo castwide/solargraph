@@ -1,6 +1,17 @@
-## 0.50.1
+## 0.51.0 - January 19, 2025
 - Resolve self in yieldself tags
 - Include absolute paths in config (#674)
+- Enable diagnostics by default
+- Fix cache resolution (#704)
+- Modify rubocop option for rubocop < 1.30 (#665)
+- Include absolute paths in config (#674)
+- Enable diagnostics by default
+- Remove RSpec convention (#716)
+- Include convention pins in document_symbols (#724)
+- Remove e2mmap dependency (#699)
+- Update rbs to 3.0
+- Relax reverse_markdown dependency (#729)
+- Fix Ruby 3.4 and move all parsing to whitequark (#739)
 
 ## 0.50.0 - December 5, 2023
 - Remove .travis.yml as its not longer used (#627)
