@@ -264,7 +264,10 @@ module Solargraph
       base = chain
       until base.links.length == 1 && base.undefined?
         pins = base.define(api_map, block_pin, locals)
-        if pins.first.is_a?(Pin::Method)
+
+        if pins.first.is_a?(Pin::DelegatedMethod) && !pins.first.resolvable?(api_map)
+          # Do nothing, as we can't find the actual method implementation
+        elsif pins.first.is_a?(Pin::Method)
           # @type [Pin::Method]
           pin = pins.first
           ap = if base.links.last.is_a?(Solargraph::Source::Chain::ZSuper)
@@ -551,7 +554,7 @@ module Solargraph
     def without_ignored problems
       problems.reject do |problem|
         node = source_map.source.node_at(problem.location.range.start.line, problem.location.range.start.column)
-        source_map.source.comments_for(node)&.include?('@sg-ignore')
+        node && source_map.source.comments_for(node)&.include?('@sg-ignore')
       end
     end
   end

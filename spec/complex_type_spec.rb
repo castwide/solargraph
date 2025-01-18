@@ -59,6 +59,9 @@ describe Solargraph::ComplexType do
     expect(types.length).to eq(1)
     expect(types.first.namespace).to eq('Foo')
     expect(types.first.scope).to eq(:class)
+    multiple_types = Solargraph::ComplexType.parse 'Module<Foo>, Class<Bar>, String, nil'
+    expect(multiple_types.length).to eq(4)
+    expect(multiple_types.namespaces).to eq(['Foo', 'Bar', 'String', 'NilClass'])
   end
 
   it "identifies duck types" do

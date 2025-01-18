@@ -130,6 +130,11 @@ module Solargraph
           end
           @documentation += "\n\n" unless @documentation.empty?
           @documentation += "Visibility: #{visibility}"
+          example_tags = docstring.tags(:example)
+          unless example_tags.empty?
+            @documentation += "\n\nExamples:\n\n"
+            @documentation += example_tags.map(&:text).join("\n")
+          end
         end
         @documentation.to_s
       end

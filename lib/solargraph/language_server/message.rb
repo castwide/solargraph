@@ -66,6 +66,7 @@ module Solargraph
       register 'textDocument/didClose',               TextDocument::DidClose
       register 'textDocument/hover',                  TextDocument::Hover
       register 'textDocument/definition',             TextDocument::Definition
+      register 'textDocument/typeDefinition',         TextDocument::TypeDefinition
       register 'textDocument/formatting',             TextDocument::Formatting
       register 'textDocument/onTypeFormatting',       TextDocument::OnTypeFormatting
       register 'textDocument/documentSymbol',         TextDocument::DocumentSymbol

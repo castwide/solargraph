@@ -275,6 +275,17 @@ describe Solargraph::Pin::Method do
     expect(pin.documentation).to include('the foo text string')
   end
 
+  it 'includes @example text in documentation' do
+    pin = Solargraph::Pin::Method.new(
+      name: 'foo',
+      comments: %(
+@example
+  foo
+      )
+    )
+    expect(pin.documentation).to include('foo')
+  end
+
   context 'as attribute' do
     it "is a kind of attribute/property" do
       source = Solargraph::Source.load_string(%(

@@ -819,6 +819,34 @@ describe Solargraph::SourceMap::Clip do
     expect(clip.complete.pins.map(&:path)).to include('Bar#bar_method')
   end
 
+  it 'finds inferred type definitions' do
+    source = Solargraph::Source.load_string(%(
+      class OtherNamespace::MyClass; end
+      module SomeNamespace
+        class Foo
+          # @return [self]
+          def self.make; end
+        end
+        class Bar < Foo
+          # @return [Class<Foo>, Bar, OtherNamespace::MyClass]
+          def foo_method;end
+
+          def bar_method
+            local_variable = Foo.new
+            other_variable = local_variable
+          end
+        end
+      end
+      SomeNamespace::Bar.make.foo_method
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new
+    api_map.map source
+    clip = api_map.clip_at('test.rb', [13, 33])
+    expect(clip.types.map(&:path)).to eq(['SomeNamespace::Foo']) # other_variable
+    clip = api_map.clip_at('test.rb', [17, 33])
+    expect(clip.types.map(&:path)).to eq(['SomeNamespace::Foo', 'SomeNamespace::Bar', 'OtherNamespace::MyClass'])
+  end
+
   it 'infers Hash value types' do
     source = Solargraph::Source.load_string(%(
       # @type [Hash{String => File}]
@@ -1477,5 +1505,23 @@ describe Solargraph::SourceMap::Clip do
 
     string_names = api_map.clip_at('test.rb', [6, 22]).complete.pins.map(&:name)
     expect(string_names).to eq(["upcase", "upcase!", "upto"])
+  end
+
+  it 'completes global methods defined in top level scope inside class when referenced inside a namespace' do
+    source = Solargraph::Source.load_string(%(
+      def some_method;end
+
+      class Thing
+        def foo
+          some_
+        end
+      end
+      some_
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new.map(source)
+    pin_names = api_map.clip_at('test.rb', [5, 15]).complete.pins.map(&:name)
+    expect(pin_names).to eq(["some_method"])
+    pin_names = api_map.clip_at('test.rb', [8, 5]).complete.pins.map(&:name)
+    expect(pin_names).to include("some_method")
   end
 end

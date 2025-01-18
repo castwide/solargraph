@@ -97,7 +97,7 @@ module Solargraph
     def create filename, text
       result = false
       mutex.synchronize do
-        next unless contain?(filename) || open?(filename) || workspace.would_merge?(filename)
+        next unless contain?(filename) || open?(filename)
         @synchronized = false
         source = Solargraph::Source.load_string(text, filename)
         workspace.merge(source)
@@ -197,6 +197,22 @@ module Solargraph
       end
     rescue FileNotFoundError => e
       handle_file_not_found(filename, e)
+    end
+
+    # Get type definition suggestions for the expression at the specified file and
+    # location.
+    #
+    # @param filename [String] The file to analyze
+    # @param line [Integer] The zero-based line number
+    # @param column [Integer] The zero-based column number
+    # @return [Array<Solargraph::Pin::Base>]
+    # @todo Take filename/position instead of filename/line/column
+    def type_definitions_at filename, line, column
+      position = Position.new(line, column)
+      cursor = Source::Cursor.new(read(filename), position)
+      api_map.clip(cursor).types
+    rescue FileNotFoundError => e
+      handle_file_not_found filename, e
     end
 
     # Get signature suggestions for the method at the specified file and

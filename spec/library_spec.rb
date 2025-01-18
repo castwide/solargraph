@@ -39,6 +39,22 @@ describe Solargraph::Library do
     expect(paths).to include('Foo#bar')
   end
 
+  it "gets type definitions from a file" do
+    library = Solargraph::Library.new
+    src = Solargraph::Source.load_string %(
+      class Bar; end
+      class Foo
+        # @return [Bar]
+        def self.bar
+        end
+      end
+      Foo.bar
+    ), 'file.rb', 0
+    library.attach src
+    paths = library.type_definitions_at('file.rb', 7, 13).map(&:path)
+    expect(paths).to include('Bar')
+  end
+
   it "signifies method arguments" do
     library = Solargraph::Library.new
     src = Solargraph::Source.load_string %(
