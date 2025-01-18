@@ -537,6 +537,15 @@ module Solargraph
       # @param line [Integer]
       # @param column [Integer]
       # @return [Array<Solargraph::Pin::Base>]
+      def type_definitions_at uri, line, column
+        library = library_for(uri)
+        library.type_definitions_at(uri_to_file(uri), line, column)
+      end
+
+      # @param uri [String]
+      # @param line [Integer]
+      # @param column [Integer]
+      # @return [Array<Solargraph::Pin::Base>]
       def signatures_at uri, line, column
         library = library_for(uri)
         library.signatures_at(uri_to_file(uri), line, column)
@@ -630,6 +639,7 @@ module Solargraph
           'hover' => true,
           'symbols' => true,
           'definitions' => true,
+          'typeDefinitions' => true,
           'rename' => true,
           'references' => true,
           'autoformat' => false,

@@ -1,4 +1,4 @@
 class Thing
-  def do_thing
-  end
+  # @return [Something]
+  def do_thing; end
 end

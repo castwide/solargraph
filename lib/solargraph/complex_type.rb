@@ -67,9 +67,16 @@ module Solargraph
     def select &block
       @items.select &block
     end
+
+    # @return [String]
     def namespace
       # cache this attr for high frequency call
       @namespace ||= method_missing(:namespace).to_s
+    end
+
+    # @return [Array<String>]
+    def namespaces
+      @items.map(&:namespace)
     end
 
     def method_missing name, *args, &block

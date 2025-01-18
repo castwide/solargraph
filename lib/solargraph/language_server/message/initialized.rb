@@ -13,6 +13,7 @@ module Solargraph
             textDocument/formatting
             textDocument/documentSymbol
             textDocument/definition
+            textDocument/typeDefinition
             textDocument/references
             textDocument/rename
             textDocument/prepareRename

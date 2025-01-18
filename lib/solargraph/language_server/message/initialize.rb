@@ -34,6 +34,7 @@ module Solargraph
           result[:capabilities].merge! static_document_formatting unless dynamic_registration_for?('textDocument', 'formatting')
           result[:capabilities].merge! static_document_symbols unless dynamic_registration_for?('textDocument', 'documentSymbol')
           result[:capabilities].merge! static_definitions unless dynamic_registration_for?('textDocument', 'definition')
+          result[:capabilities].merge! static_type_definitions unless dynamic_registration_for?('textDocument', 'typeDefinition')
           result[:capabilities].merge! static_rename unless dynamic_registration_for?('textDocument', 'rename')
           result[:capabilities].merge! static_references unless dynamic_registration_for?('textDocument', 'references')
           result[:capabilities].merge! static_workspace_symbols unless dynamic_registration_for?('workspace', 'symbol')
@@ -116,6 +117,13 @@ module Solargraph
 
         def static_definitions
           return {} unless host.options['definitions']
+          {
+            definitionProvider: true
+          }
+        end
+
+        def static_type_definitions
+          return {} unless host.options['type_definitions']
           {
             definitionProvider: true
           }

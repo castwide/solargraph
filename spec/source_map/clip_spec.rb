@@ -819,6 +819,34 @@ describe Solargraph::SourceMap::Clip do
     expect(clip.complete.pins.map(&:path)).to include('Bar#bar_method')
   end
 
+  it 'finds inferred type definitions' do
+    source = Solargraph::Source.load_string(%(
+      class OtherNamespace::MyClass; end
+      module SomeNamespace
+        class Foo
+          # @return [self]
+          def self.make; end
+        end
+        class Bar < Foo
+          # @return [Class<Foo>, Bar, OtherNamespace::MyClass]
+          def foo_method;end
+
+          def bar_method
+            local_variable = Foo.new
+            other_variable = local_variable
+          end
+        end
+      end
+      SomeNamespace::Bar.make.foo_method
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new
+    api_map.map source
+    clip = api_map.clip_at('test.rb', [13, 33])
+    expect(clip.types.map(&:path)).to eq(['SomeNamespace::Foo']) # other_variable
+    clip = api_map.clip_at('test.rb', [17, 33])
+    expect(clip.types.map(&:path)).to eq(['SomeNamespace::Foo', 'SomeNamespace::Bar', 'OtherNamespace::MyClass'])
+  end
+
   it 'infers Hash value types' do
     source = Solargraph::Source.load_string(%(
       # @type [Hash{String => File}]
