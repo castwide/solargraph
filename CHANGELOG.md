@@ -1,3 +1,6 @@
+## 0.51.1
+- Format example code
+
 ## 0.51.0 - January 19, 2025
 - Resolve self in yieldself tags
 - Include absolute paths in config (#674)

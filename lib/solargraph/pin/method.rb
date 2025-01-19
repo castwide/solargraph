@@ -130,11 +130,7 @@ module Solargraph
           end
           @documentation += "\n\n" unless @documentation.empty?
           @documentation += "Visibility: #{visibility}"
-          example_tags = docstring.tags(:example)
-          unless example_tags.empty?
-            @documentation += "\n\nExamples:\n\n"
-            @documentation += example_tags.map(&:text).join("\n")
-          end
+          concat_example_tags
         end
         @documentation.to_s
       end
@@ -334,6 +330,18 @@ module Solargraph
         else
           [name, :arg]
         end
+      end
+
+      def concat_example_tags
+        example_tags = docstring.tags(:example)
+        return if example_tags.empty?
+        @documentation += "\n\nExamples:\n\n```ruby\n"
+        @documentation += example_tags.map do |tag|
+          (tag.name ? "# #{tag.name}\n" : '') +
+            "#{tag.text}\n"
+        end
+        .join("\n")
+        .concat("```\n")
       end
     end
   end
