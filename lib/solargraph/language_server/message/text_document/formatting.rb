@@ -17,17 +17,17 @@ module Solargraph
             args = cli_args(file_uri, config)
 
             require_rubocop(config['version'])
-            options, paths = RuboCop::Options.new.parse(args)
+            options, paths = ::RuboCop::Options.new.parse(args)
             options[:stdin] = original
             corrections = redirect_stdout do
-              RuboCop::Runner.new(options, RuboCop::ConfigStore.new).run(paths)
+              ::RuboCop::Runner.new(options, ::RuboCop::ConfigStore.new).run(paths)
             end
             result = options[:stdin]
 
             log_corrections(corrections)
 
             format original, result
-          rescue RuboCop::ValidationError, RuboCop::ConfigNotFoundError => e
+          rescue ::RuboCop::ValidationError, ::RuboCop::ConfigNotFoundError => e
             set_error(Solargraph::LanguageServer::ErrorCodes::INTERNAL_ERROR, "[#{e.class}] #{e.message}")
           end
 
