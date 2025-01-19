@@ -12,6 +12,9 @@
 - Update rbs to 3.0
 - Relax reverse_markdown dependency (#729)
 - Fix Ruby 3.4 and move all parsing to whitequark (#739)
+- Add Pin::DelegatedMethod (#602)
+- Complete global methods from a file inside namespaces (#714)
+- gemspec dashes and required path slashes (#697)
 
 ## 0.50.0 - December 5, 2023
 - Remove .travis.yml as its not longer used (#627)
