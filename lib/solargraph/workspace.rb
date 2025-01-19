@@ -104,7 +104,8 @@ module Solargraph
     # @return [Boolean]
     def would_require? path
       require_paths.each do |rp|
-        return true if File.exist?(File.join(rp, "#{path}.rb"))
+        full = File.join rp, path
+        return true if File.exist?(full) or File.exist?(full << ".rb")
       end
       false
     end
