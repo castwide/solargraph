@@ -20,6 +20,7 @@ Gem::Specification.new do |s|
   s.metadata["bug_tracker_uri"] = "https://github.com/castwide/solargraph/issues"
   s.metadata["changelog_uri"]   = "https://github.com/castwide/solargraph/blob/master/CHANGELOG.md"
   s.metadata["source_code_uri"] = "https://github.com/castwide/solargraph"
+  s.metadata["rubygems_mfa_required"] = "true"
 
   s.required_ruby_version = '>= 2.6'
 
