@@ -63,7 +63,12 @@ module Solargraph
         if receiver_pin && receiver_pin.docstring
           ys = receiver_pin.docstring.tag(:yieldself)
           if ys && ys.types && !ys.types.empty?
-            return ComplexType.try_parse(*ys.types).qualify(api_map, receiver_pin.context.namespace).self_to(receiver_pin.full_context.namespace)
+            target = if chain.links.first.is_a?(Source::Chain::Constant)
+              receiver_pin.full_context.namespace
+            else
+              full_context.namespace
+            end
+            return ComplexType.try_parse(*ys.types).qualify(api_map, receiver_pin.context.namespace).self_to(target)
           end
         end
         nil

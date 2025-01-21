@@ -518,6 +518,26 @@ describe Solargraph::SourceMap::Clip do
     expect(clip.complete.pins.map(&:path)).to include('Par#hidden')
   end
 
+  it 'processes @yieldself from blocks in class method calls' do
+    source = Solargraph::Source.load_string(%(
+      class Par
+        # @yieldself [self]
+        def self.process; end
+      end
+      class Sub < Par
+        def local; end
+
+        process do
+          loc
+        end
+      end
+    ), 'file.rb')
+    api_map = Solargraph::ApiMap.new
+    api_map.map source
+    clip = api_map.clip_at('file.rb', [9, 12])
+    expect(clip.complete.pins.map(&:path)).to include('Sub#local')
+  end
+
   it "processes @yieldpublic tags in completions" do
     source = Solargraph::Source.load_string(%(
       class Par
