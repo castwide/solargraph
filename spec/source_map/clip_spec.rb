@@ -1,11 +1,11 @@
 describe Solargraph::SourceMap::Clip do
   let(:api_map) { Solargraph::ApiMap.new }
 
-  it "completes constants" do
+  it 'completes constants' do
     orig = Solargraph::Source.load_string('File')
     updater = Solargraph::Source::Updater.new(nil, 1, [
-      Solargraph::Source::Change.new(Solargraph::Range.from_to(0, 4, 0, 4), '::')
-    ])
+                                                Solargraph::Source::Change.new(Solargraph::Range.from_to(0, 4, 0, 4), '::')
+                                              ])
     source = orig.synchronize(updater)
     api_map.map source
     cursor = source.cursor_at(Solargraph::Position.new(0, 6))
@@ -14,7 +14,7 @@ describe Solargraph::SourceMap::Clip do
     expect(comp.pins.map(&:path)).to include('File::SEPARATOR')
   end
 
-  it "completes class variables" do
+  it 'completes class variables' do
     source = Solargraph::Source.load_string('@@foo = 1; @@f', 'test.rb')
     api_map.map source
     cursor = source.cursor_at(Solargraph::Position.new(0, 13))
@@ -55,7 +55,7 @@ describe Solargraph::SourceMap::Clip do
     expect(clip.complete.pins).to be_empty
   end
 
-  it "completes instance variables" do
+  it 'completes instance variables' do
     source = Solargraph::Source.load_string('@foo = 1; @f', 'test.rb')
     api_map.map source
     clip = api_map.clip_at('test.rb', Solargraph::Position.new(0, 11))
@@ -63,7 +63,7 @@ describe Solargraph::SourceMap::Clip do
     expect(comp.pins.map(&:name)).to include('@foo')
   end
 
-  it "completes global variables" do
+  it 'completes global variables' do
     source = Solargraph::Source.load_string('$foo = 1; $f', 'test.rb')
     api_map.map source
     clip = api_map.clip_at('test.rb', Solargraph::Position.new(0, 11))
@@ -71,7 +71,7 @@ describe Solargraph::SourceMap::Clip do
     expect(comp.pins.map(&:name)).to include('$foo')
   end
 
-  it "completes symbols" do
+  it 'completes symbols' do
     source = Solargraph::Source.load_string('$foo = :foo; :f', 'test.rb')
     api_map.map source
     clip = api_map.clip_at('test.rb', Solargraph::Position.new(0, 15))
@@ -79,7 +79,7 @@ describe Solargraph::SourceMap::Clip do
     expect(comp.pins.map(&:name)).to include(':foo')
   end
 
-  it "completes core constants and methods" do
+  it 'completes core constants and methods' do
     source = Solargraph::Source.load_string('')
     api_map.map source
     cursor = source.cursor_at(Solargraph::Position.new(0, 6))
@@ -90,7 +90,7 @@ describe Solargraph::SourceMap::Clip do
     expect(paths).to include('Kernel#puts')
   end
 
-  it "defines core constants" do
+  it 'defines core constants' do
     source = Solargraph::Source.load_string('String')
     api_map.map source
     cursor = source.cursor_at(Solargraph::Position.new(0, 0))
@@ -99,7 +99,7 @@ describe Solargraph::SourceMap::Clip do
     expect(pins.map(&:path)).to include('String')
   end
 
-  it "signifies core methods" do
+  it 'signifies core methods' do
     source = Solargraph::Source.load_string('File.dirname()')
     api_map.map source
     cursor = source.cursor_at(Solargraph::Position.new(0, 13))
@@ -108,7 +108,7 @@ describe Solargraph::SourceMap::Clip do
     expect(pins.map(&:path)).to include('File.dirname')
   end
 
-  it "detects local variables" do
+  it 'detects local variables' do
     source = Solargraph::Source.load_string(%(
       x = '123'
       x
@@ -119,7 +119,7 @@ describe Solargraph::SourceMap::Clip do
     expect(clip.locals.map(&:name)).to include('x')
   end
 
-  it "detects local variables passed into blocks" do
+  it 'detects local variables passed into blocks' do
     source = Solargraph::Source.load_string(%(
       x = '123'
       y = x.split
@@ -133,7 +133,7 @@ describe Solargraph::SourceMap::Clip do
     expect(clip.locals.map(&:name)).to include('x')
   end
 
-  it "ignores local variables assigned after blocks" do
+  it 'ignores local variables assigned after blocks' do
     source = Solargraph::Source.load_string(%(
       x = []
       x.each do |y|
@@ -147,7 +147,7 @@ describe Solargraph::SourceMap::Clip do
     expect(clip.locals.map(&:name)).not_to include('z')
   end
 
-  it "puts local variables first in completion results" do
+  it 'puts local variables first in completion results' do
     source = Solargraph::Source.load_string(%(
       def p2
       end
@@ -162,7 +162,7 @@ describe Solargraph::SourceMap::Clip do
     expect(pins.first.name).to eq('p1')
   end
 
-  it "completes constants only for leading double colons" do
+  it 'completes constants only for leading double colons' do
     source = Solargraph::Source.load_string(%(
       ::_
     ))
@@ -170,10 +170,10 @@ describe Solargraph::SourceMap::Clip do
     cursor = source.cursor_at(Solargraph::Position.new(1, 8))
     clip = described_class.new(api_map, cursor)
     pins = clip.complete.pins
-    expect(pins.all?{ |p| p.is_a?(Solargraph::Pin::Namespace) || p.is_a?(Solargraph::Pin::Constant) }).to be(true)
+    expect(pins.all? { |p| p.is_a?(Solargraph::Pin::Namespace) || p.is_a?(Solargraph::Pin::Constant) }).to be(true)
   end
 
-  it "completes partially completed constants" do
+  it 'completes partially completed constants' do
     source = Solargraph::Source.load_string(%(
       class Foo; end
       F
@@ -185,7 +185,7 @@ describe Solargraph::SourceMap::Clip do
     expect(pins.map(&:path)).to include('Foo')
   end
 
-  it "completes partially completed inner constants" do
+  it 'completes partially completed inner constants' do
     source = Solargraph::Source.load_string(%(
       class Foo
         class Bar; end
@@ -200,7 +200,7 @@ describe Solargraph::SourceMap::Clip do
     expect(pins.map(&:path)).to include('Foo::Bar')
   end
 
-  it "completes unstarted inner constants" do
+  it 'completes unstarted inner constants' do
     source = Solargraph::Source.load_string(%(
       class Foo
         class Bar; end
@@ -216,7 +216,7 @@ describe Solargraph::SourceMap::Clip do
     expect(pins.map(&:path)).to include('Foo::Bar')
   end
 
-  it "does not define arbitrary comments" do
+  it 'does not define arbitrary comments' do
     source = Solargraph::Source.load_string(%(
       class Foo
         attr_reader :bar
@@ -230,7 +230,7 @@ describe Solargraph::SourceMap::Clip do
     expect(clip.define).to be_empty
   end
 
-  it "infers types from named macros" do
+  it 'infers types from named macros' do
     source = Solargraph::Source.load_string(%(
       # @!macro firstarg
       #   @return [$1]
@@ -247,7 +247,7 @@ describe Solargraph::SourceMap::Clip do
     expect(clip.infer.tag).to eq('String')
   end
 
-  it "infers method types from return nodes" do
+  it 'infers method types from return nodes' do
     source = Solargraph::Source.load_string(%(
       def foo
         String.new(from_object)
@@ -261,7 +261,7 @@ describe Solargraph::SourceMap::Clip do
     expect(type.tag).to eq('String')
   end
 
-  it "infers multiple method types from return nodes" do
+  it 'infers multiple method types from return nodes' do
     source = Solargraph::Source.load_string(%(
       def foo
         if x
@@ -279,7 +279,7 @@ describe Solargraph::SourceMap::Clip do
     expect(type.to_s).to eq('String, Integer')
   end
 
-  it "infers return types from method calls" do
+  it 'infers return types from method calls' do
     source = Solargraph::Source.load_string(%(
       # @return [Hash]
       def foo(arg); end
@@ -308,7 +308,7 @@ describe Solargraph::SourceMap::Clip do
     expect(type.to_s).to eq('String, Array')
   end
 
-  it "infers return types from local variables" do
+  it 'infers return types from local variables' do
     source = Solargraph::Source.load_string(%(
       def foo
         x = 1
@@ -324,7 +324,7 @@ describe Solargraph::SourceMap::Clip do
     expect(type.tag).to eq('Integer')
   end
 
-  it "infers return types from instance variables" do
+  it 'infers return types from instance variables' do
     source = Solargraph::Source.load_string(%(
       def foo
         @foo ||= {}
@@ -341,7 +341,7 @@ describe Solargraph::SourceMap::Clip do
     expect(type.tag).to eq('Hash')
   end
 
-  it "infers implicit return types from singleton methods" do
+  it 'infers implicit return types from singleton methods' do
     source = Solargraph::Source.load_string(%(
       class Foo
         def self.bar
@@ -357,7 +357,7 @@ describe Solargraph::SourceMap::Clip do
     expect(type.tag).to eq('String')
   end
 
-  it "infers nil for empty methods" do
+  it 'infers nil for empty methods' do
     source = Solargraph::Source.load_string(%(
       def foo; end
       foo
@@ -369,7 +369,7 @@ describe Solargraph::SourceMap::Clip do
     expect(type.tag).to eq('nil')
   end
 
-  it "handles missing type annotations in @type tags" do
+  it 'handles missing type annotations in @type tags' do
     source = Solargraph::Source.load_string('
       # Note the type is `String` instead of `[String]`
       # @type String
@@ -378,12 +378,12 @@ describe Solargraph::SourceMap::Clip do
     api_map = Solargraph::ApiMap.new
     api_map.map source
     clip = api_map.clip_at('test.rb', Solargraph::Position.new(3, 7))
-    expect {
+    expect do
       expect(clip.infer).to be_undefined
-    }.not_to raise_error
+    end.not_to raise_error
   end
 
-  it "completes unfinished constant chains with trailing nodes" do
+  it 'completes unfinished constant chains with trailing nodes' do
     # The variable assignment at the end of the constant reference gets parsed
     # as part of the constant chain, e.g., `Foo::Bar::baz`
     orig = Solargraph::Source.load_string(%(
@@ -397,15 +397,15 @@ describe Solargraph::SourceMap::Clip do
     ), 'test.rb')
     api_map = Solargraph::ApiMap.new
     updater = Solargraph::Source::Updater.new('test.rb', 1, [
-      Solargraph::Source::Change.new(Solargraph::Range.from_to(6, 14, 6, 14), '::')
-    ])
+                                                Solargraph::Source::Change.new(Solargraph::Range.from_to(6, 14, 6, 14), '::')
+                                              ])
     source = orig.synchronize(updater)
     api_map.map source
     clip = api_map.clip_at('test.rb', Solargraph::Position.new(6, 16))
     expect(clip.complete.pins.map(&:path)).to eq(['Foo::Bar::Baz'])
   end
 
-  it "resolves conflicts between namespaces names" do
+  it 'resolves conflicts between namespaces names' do
     source = Solargraph::Source.load_string(%(
       class Foo
         def root_method; end
@@ -441,7 +441,7 @@ describe Solargraph::SourceMap::Clip do
     expect(clip2b.complete.pins.map(&:path)).to include('Foo#root_method')
   end
 
-  it "completes methods based on visibility and context" do
+  it 'completes methods based on visibility and context' do
     source = Solargraph::Source.load_string(%(
       class Foo
         protected
@@ -474,7 +474,7 @@ describe Solargraph::SourceMap::Clip do
     expect(paths3).not_to include('Foo#priv_method')
   end
 
-  it "processes @yieldself tags in completions" do
+  it 'processes @yieldself tags in completions' do
     source = Solargraph::Source.load_string(%(
       class Par
         def action; end
@@ -483,28 +483,6 @@ describe Solargraph::SourceMap::Clip do
       end
       class Foo
         # @yieldself [Par]
-        def bar; end
-      end
-      Foo.new.bar do
-        x
-      end
-    ), 'file.rb')
-    api_map = Solargraph::ApiMap.new
-    api_map.map source
-    clip = api_map.clip_at('file.rb', [11, 8])
-    expect(clip.complete.pins.map(&:path)).to include('Par#action')
-    expect(clip.complete.pins.map(&:path)).to include('Par#hidden')
-  end
-
-  it 'infers self in @yieldself' do
-    source = Solargraph::Source.load_string(%(
-      class Par
-        def action; end
-        private
-        def hidden; end
-      end
-      class Foo < Par
-        # @yieldself [self]
         def bar; end
       end
       Foo.new.bar do
@@ -538,7 +516,30 @@ describe Solargraph::SourceMap::Clip do
     expect(clip.complete.pins.map(&:path)).to include('Sub#local')
   end
 
-  it "processes @yieldpublic tags in completions" do
+  it 'processes @yieldself in variable contexts' do
+    source = Solargraph::Source.load_string(%(
+      class Par
+        def action; end
+        private
+        def hidden; end
+      end
+      class Foo
+        # @yieldself [Par]
+        def bar; end
+      end
+      foo = Foo.new
+      foo.bar do
+        x
+      end
+    ), 'file.rb')
+    api_map = Solargraph::ApiMap.new
+    api_map.map source
+    clip = api_map.clip_at('file.rb', [12, 8])
+    expect(clip.complete.pins.map(&:path)).to include('Par#action')
+    expect(clip.complete.pins.map(&:path)).to include('Par#hidden')
+  end
+
+  it 'processes @yieldpublic tags in completions' do
     source = Solargraph::Source.load_string(%(
       class Par
         def action; end
@@ -560,7 +561,7 @@ describe Solargraph::SourceMap::Clip do
     expect(clip.complete.pins.map(&:path)).not_to include('Par#hidden')
   end
 
-  it "infers instance variable types in rebound blocks" do
+  it 'infers instance variable types in rebound blocks' do
     source = Solargraph::Source.load_string(%(
       class Foo
         def initialize
@@ -577,7 +578,7 @@ describe Solargraph::SourceMap::Clip do
     expect(clip.infer.tag).to eq('String')
   end
 
-  it "completes instance variable methods in rebound blocks" do
+  it 'completes instance variable methods in rebound blocks' do
     source = Solargraph::Source.load_string(%(
       class Foo
         def initialize
@@ -594,7 +595,7 @@ describe Solargraph::SourceMap::Clip do
     expect(clip.complete.pins.map(&:path)).to include('String#upcase')
   end
 
-  it "completes instance variable methods in define_method blocks" do
+  it 'completes instance variable methods in define_method blocks' do
     source = Solargraph::Source.load_string(%(
       class Foo
         def initialize
@@ -637,7 +638,7 @@ describe Solargraph::SourceMap::Clip do
     expect(clip.infer.tag).to eq('String')
   end
 
-  it "completes extended class methods" do
+  it 'completes extended class methods' do
     source = Solargraph::Source.load_string(%(
       module Extender
         def foobar; end
@@ -891,7 +892,7 @@ describe Solargraph::SourceMap::Clip do
     api_map.map source
     clip = api_map.clip_at('test.rb', [3, 10])
     type = clip.infer
-    expect(type.tag).to eq('Foo')    
+    expect(type.tag).to eq('Foo')
   end
 
   it 'infers deep variables' do
@@ -901,7 +902,7 @@ describe Solargraph::SourceMap::Clip do
     100.times do |index|
       code += "v#{index + 1} = v#{index}\n"
     end
-    code += "v100"
+    code += 'v100'
     source = Solargraph::Source.load_string(code, 'test.rb')
     api_map = Solargraph::ApiMap.new
     api_map.map source
@@ -1069,11 +1070,11 @@ describe Solargraph::SourceMap::Clip do
       nums = '1,2,3'.split(',')
     ), 'test.rb')
     updater = Solargraph::Source::Updater.new('test.rb', 1, [
-      Solargraph::Source::Change.new(
-        Solargraph::Range.from_to(1, 31, 1, 31),
-        '.'
-      )
-    ])
+                                                Solargraph::Source::Change.new(
+                                                  Solargraph::Range.from_to(1, 31, 1, 31),
+                                                  '.'
+                                                )
+                                              ])
     updated = source.start_synchronize(updater)
     api_map = Solargraph::ApiMap.new
     api_map.map updated
@@ -1103,8 +1104,8 @@ describe Solargraph::SourceMap::Clip do
     api_map = Solargraph::ApiMap.new
     api_map.map source
     updater = Solargraph::Source::Updater.new('test.rb', 1, [
-      Solargraph::Source::Change.new(Solargraph::Range.from_to(2, 6, 2, 6), 'x.')
-    ])
+                                                Solargraph::Source::Change.new(Solargraph::Range.from_to(2, 6, 2, 6), 'x.')
+                                              ])
     updated = source.start_synchronize(updater)
     api_map.map updated
     clip = api_map.clip_at('test.rb', [2, 8])
@@ -1191,7 +1192,7 @@ describe Solargraph::SourceMap::Clip do
     api_map = Solargraph::ApiMap.new
     api_map.map source
     clip = api_map.clip_at('test.rb', [6, 6])
-    expect(clip.infer.tag).to eq('Array<String>')    
+    expect(clip.infer.tag).to eq('Array<String>')
   end
 
   it 'excludes local variables from chained call resolution' do
@@ -1521,10 +1522,10 @@ describe Solargraph::SourceMap::Clip do
     api_map = Solargraph::ApiMap.new.map(source)
 
     array_names = api_map.clip_at('test.rb', [5, 22]).complete.pins.map(&:name)
-    expect(array_names).to eq(["any?"])
+    expect(array_names).to eq(['any?'])
 
     string_names = api_map.clip_at('test.rb', [6, 22]).complete.pins.map(&:name)
-    expect(string_names).to eq(["upcase", "upcase!", "upto"])
+    expect(string_names).to eq(['upcase', 'upcase!', 'upto'])
   end
 
   it 'completes global methods defined in top level scope inside class when referenced inside a namespace' do
@@ -1540,8 +1541,8 @@ describe Solargraph::SourceMap::Clip do
     ), 'test.rb')
     api_map = Solargraph::ApiMap.new.map(source)
     pin_names = api_map.clip_at('test.rb', [5, 15]).complete.pins.map(&:name)
-    expect(pin_names).to eq(["some_method"])
+    expect(pin_names).to eq(['some_method'])
     pin_names = api_map.clip_at('test.rb', [8, 5]).complete.pins.map(&:name)
-    expect(pin_names).to include("some_method")
+    expect(pin_names).to include('some_method')
   end
 end

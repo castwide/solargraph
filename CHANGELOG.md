@@ -1,5 +1,6 @@
 ## 0.51.1
 - Format example code
+- Block infers yieldself from chain
 
 ## 0.51.0 - January 19, 2025
 - Resolve self in yieldself tags
