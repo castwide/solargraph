@@ -1,4 +1,4 @@
-## 0.51.1
+## 0.51.1 - January 23, 2025
 - Format example code
 - Block infers yieldself from chain
 
