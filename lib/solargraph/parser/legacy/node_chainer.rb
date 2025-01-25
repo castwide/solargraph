@@ -118,7 +118,15 @@ module Solargraph
           elsif [:begin, :kwbegin].include?(n.type)
             result.concat generate_links(n.children[0])
           elsif n.type == :block_pass
-            result.push Chain::BlockVariable.new("&#{n.children[0].children[0].to_s}")
+            block_variable_name_node = n.children[0]
+            if block_variable_name_node.nil?
+              # anonymous block forwarding (e.g., "&")
+              # added in Ruby 3.1 - https://bugs.ruby-lang.org/issues/11256
+              result.push Chain::BlockVariable.new(nil)
+            else
+              result.push Chain::BlockVariable.new("&#{block_variable_name_node.children[0].to_s}")
+            end
+
           elsif n.type == :hash
             result.push Chain::Hash.new('::Hash', hash_is_splatted?(n))
           else

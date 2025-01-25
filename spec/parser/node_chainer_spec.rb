@@ -111,4 +111,16 @@ describe 'NodeChainer' do
     chain = Solargraph::Parser.chain(source.node)
     expect(chain.links.first.arguments.length).to eq(2)
   end
+
+  it 'tracks anonymous block forwarding' do
+    source = Solargraph::Source.load_string(%(
+      def foo(&)
+        bar(&)
+      end
+    ))
+    anonymous_block_pass = source.node.children[2].children[2]
+    chain = Solargraph::Parser.chain(anonymous_block_pass)
+    block_variable_node = chain.links.first
+    expect(block_variable_node.word).to be_nil
+  end
 end
