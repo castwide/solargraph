@@ -496,6 +496,20 @@ describe Solargraph::TypeChecker do
       expect(checker.problems.first.message).to include('Not enough arguments')
     end
 
+    it 'ignores three dots' do
+      checker = type_checker(%(
+        class Foo
+          def initialize(arg); end
+        end
+        class Bar < Foo
+          def initialize(...)
+            super
+          end
+        end
+      ))
+      expect(checker.problems).to be_empty
+    end
+
     it 'accepts kwargs with explicit blockargs' do
       checker = type_checker(%(
         def foo(bar:, &block); end

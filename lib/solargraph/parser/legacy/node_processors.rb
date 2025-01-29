@@ -28,27 +28,28 @@ module Solargraph
     end
 
     module NodeProcessor
-      register :source,  Legacy::NodeProcessors::BeginNode
-      register :begin,   Legacy::NodeProcessors::BeginNode
-      register :kwbegin, Legacy::NodeProcessors::BeginNode
-      register :rescue,  Legacy::NodeProcessors::BeginNode
-      register :resbody, Legacy::NodeProcessors::ResbodyNode
-      register :def,     Legacy::NodeProcessors::DefNode
-      register :defs,    Legacy::NodeProcessors::DefsNode
-      register :send,    Legacy::NodeProcessors::SendNode
-      register :class,   Legacy::NodeProcessors::NamespaceNode
-      register :module,  Legacy::NodeProcessors::NamespaceNode
-      register :sclass,  Legacy::NodeProcessors::SclassNode
-      register :ivasgn,  Legacy::NodeProcessors::IvasgnNode
-      register :cvasgn,  Legacy::NodeProcessors::CvasgnNode
-      register :lvasgn,  Legacy::NodeProcessors::LvasgnNode
-      register :gvasgn,  Legacy::NodeProcessors::GvasgnNode
-      register :casgn,   Legacy::NodeProcessors::CasgnNode
-      register :alias,   Legacy::NodeProcessors::AliasNode
-      register :args,    Legacy::NodeProcessors::ArgsNode
-      register :block,   Legacy::NodeProcessors::BlockNode
-      register :or_asgn, Legacy::NodeProcessors::OrasgnNode
-      register :sym,     Legacy::NodeProcessors::SymNode
+      register :source,       Legacy::NodeProcessors::BeginNode
+      register :begin,        Legacy::NodeProcessors::BeginNode
+      register :kwbegin,      Legacy::NodeProcessors::BeginNode
+      register :rescue,       Legacy::NodeProcessors::BeginNode
+      register :resbody,      Legacy::NodeProcessors::ResbodyNode
+      register :def,          Legacy::NodeProcessors::DefNode
+      register :defs,         Legacy::NodeProcessors::DefsNode
+      register :send,         Legacy::NodeProcessors::SendNode
+      register :class,        Legacy::NodeProcessors::NamespaceNode
+      register :module,       Legacy::NodeProcessors::NamespaceNode
+      register :sclass,       Legacy::NodeProcessors::SclassNode
+      register :ivasgn,       Legacy::NodeProcessors::IvasgnNode
+      register :cvasgn,       Legacy::NodeProcessors::CvasgnNode
+      register :lvasgn,       Legacy::NodeProcessors::LvasgnNode
+      register :gvasgn,       Legacy::NodeProcessors::GvasgnNode
+      register :casgn,        Legacy::NodeProcessors::CasgnNode
+      register :alias,        Legacy::NodeProcessors::AliasNode
+      register :args,         Legacy::NodeProcessors::ArgsNode
+      register :forward_args, Legacy::NodeProcessors::ArgsNode
+      register :block,        Legacy::NodeProcessors::BlockNode
+      register :or_asgn,      Legacy::NodeProcessors::OrasgnNode
+      register :sym,          Legacy::NodeProcessors::SymNode
     end
   end
 end

@@ -126,16 +126,11 @@ module Solargraph
             else
               result.push Chain::BlockVariable.new("&#{block_variable_name_node.children[0].to_s}")
             end
-
           elsif n.type == :hash
             result.push Chain::Hash.new('::Hash', hash_is_splatted?(n))
           else
             lit = infer_literal_node_type(n)
-            # if lit == '::Hash'
-            #   result.push Chain::Hash.new(lit, hash_is_splatted?(n))
-            # else
-              result.push (lit ? Chain::Literal.new(lit) : Chain::Link.new)
-            # end
+            result.push (lit ? Chain::Literal.new(lit) : Chain::Link.new)
           end
           result
         end
