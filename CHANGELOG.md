@@ -12,6 +12,7 @@
 - Enable diagnostics by default
 - Remove RSpec convention (#716)
 - Include convention pins in document_symbols (#724)
+- Implement Go To Type Definition (#717)
 - Remove e2mmap dependency (#699)
 - Update rbs to 3.0
 - Relax reverse_markdown dependency (#729)
