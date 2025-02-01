@@ -217,7 +217,7 @@ module Solargraph
       end
 
       def identity
-        @identity ||= "#{closure.context.namespace}|#{name}"
+        @identity ||= "#{closure.path}|#{name}"
       end
 
       def inspect

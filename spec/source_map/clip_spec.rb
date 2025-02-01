@@ -1545,4 +1545,22 @@ describe Solargraph::SourceMap::Clip do
     pin_names = api_map.clip_at('test.rb', [8, 5]).complete.pins.map(&:name)
     expect(pin_names).to include('some_method')
   end
+
+  it 'resolves name conflicts in pin identities' do
+    source = Solargraph::Source.load_string(%(
+      class A
+        def x
+          "string"
+        end
+      end
+
+      a = A.new
+      x = a.x
+      x
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new.map(source)
+    clip = api_map.clip_at('test.rb', [9, 7])
+    type = clip.infer
+    expect(type.tag).to eq('String')
+  end
 end

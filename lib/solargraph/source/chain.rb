@@ -122,6 +122,7 @@ module Solargraph
         pins.each do |pin|
           # Avoid infinite recursion
           next if @@inference_stack.include?(pin.identity)
+
           @@inference_stack.push pin.identity
           type = pin.typify(api_map)
           @@inference_stack.pop
@@ -143,10 +144,12 @@ module Solargraph
         if possibles.empty?
           # Limit method inference recursion
           return ComplexType::UNDEFINED if @@inference_depth >= 10 && pins.first.is_a?(Pin::Method)
+
           @@inference_depth += 1
           pins.each do |pin|
             # Avoid infinite recursion
             next if @@inference_stack.include?(pin.identity)
+
             @@inference_stack.push pin.identity
             type = pin.probe(api_map)
             @@inference_stack.pop

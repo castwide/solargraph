@@ -1,3 +1,6 @@
+## 0.51.3
+- Chains resolve identical names with different contexts (#679)
+
 ## 0.51.2 - February 1, 2025
 - Fix exception from parser when anonymous block forwarding is used (#740)
 - Parameterized Object types
