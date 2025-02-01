@@ -284,6 +284,18 @@ describe Solargraph::Pin::Method do
       )
     )
     expect(pin.documentation).to include('foo')
+    expect(pin.documentation).not_to include('#')
+  end
+
+  it 'includes @example names' do
+    pin = Solargraph::Pin::Method.new(
+      name: 'foo',
+      comments: %(
+@example Call foo
+  foo
+      )
+    )
+    expect(pin.documentation).to include('# Call foo')
   end
 
   context 'as attribute' do

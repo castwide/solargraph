@@ -1,3 +1,8 @@
+## 0.51.2 - February 1, 2025
+- Fix exception from parser when anonymous block forwarding is used (#740)
+- Parameterized Object types
+- Remove extraneous comment from method examples
+
 ## 0.51.1 - January 23, 2025
 - Format example code
 - Block infers yieldself from chain

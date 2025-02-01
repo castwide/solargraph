@@ -337,7 +337,7 @@ module Solargraph
         return if example_tags.empty?
         @documentation += "\n\nExamples:\n\n```ruby\n"
         @documentation += example_tags.map do |tag|
-          (tag.name ? "# #{tag.name}\n" : '') +
+          (tag.name && !tag.name.empty? ? "# #{tag.name}\n" : '') +
             "#{tag.text}\n"
         end
         .join("\n")
