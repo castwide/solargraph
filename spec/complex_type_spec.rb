@@ -286,4 +286,18 @@ describe Solargraph::ComplexType do
     result = type.qualify(api_map)
     expect(result.tag).to eq('String')
   end
+
+  it 'resolves generic parameters' do
+    api_map = Solargraph::ApiMap.new
+    return_type = Solargraph::ComplexType.parse('Array<param<GenericTypeParam>>')
+    generic_class = Solargraph::Pin::Namespace.new(name: 'Foo', comments: '@param GenericTypeParam')
+    called_method = Solargraph::Pin::Method.new(
+      location: Solargraph::Location.new('file:///foo.rb', Solargraph::Range.from_to(0, 0, 0, 0)),
+      closure: generic_class,
+      name: 'bar',
+      comments: '@return [Foo<String>]'
+    )
+    type = return_type.resolve_parameters(generic_class, called_method)
+    expect(type.tag).to eq('Array<String>')
+  end
 end

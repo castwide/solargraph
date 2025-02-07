@@ -59,6 +59,9 @@ module Solargraph
         name == 'param' || all_params.any?(&:parameterized?)
       end
 
+      # @param definitions [Pin::Namespace]
+      # @param context [Pin::Base]
+      # @return [UniqueType]
       def resolve_parameters definitions, context
         new_name = if name == 'param'
           idx = definitions.parameters.index(subtypes.first.name)
