@@ -129,7 +129,7 @@ module Solargraph
           @@inference_stack.pop
           if type.defined?
             if type.parameterized?
-              type = type.resolve_parameters(pin.closure, context)
+              type = type.resolve_parameters(pin.closure, context.return_type)
               # idx = pin.closure.parameters.index(type.subtypes.first.name)
               # next if idx.nil?
               # param_type = context.return_type.all_params[idx]

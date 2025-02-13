@@ -13,6 +13,32 @@ describe Solargraph::Pin::Parameter do
     expect(clip.infer.tag).to eq('Array')
   end
 
+  it 'infers generic parameterized types' do
+    source = Solargraph::Source.load_string(%(
+      # @param GenericTypeParam
+      class Foo
+        # @return [Foo<String>]
+        def self.bar
+        end
+
+        # @yieldparam [param<GenericTypeParam>]
+        def baz
+        end
+      end
+
+      Foo.bar.baz do |yielded_parameter|
+        yielded_parameter.down
+      end
+    ), 'file.rb')
+    api_map = Solargraph::ApiMap.new
+    api_map.map source
+    clip = api_map.clip_at('file.rb', Solargraph::Position.new(13, 10))
+    expect(clip.infer.tag).to eq('String')
+    clip = api_map.clip_at('file.rb', Solargraph::Position.new(13, 27))
+    pins = clip.complete.pins
+    expect(pins.map(&:path)).to include('String#downcase')
+  end
+
   it "detects block parameter return types from core methods" do
     api_map = Solargraph::ApiMap.new
     source = Solargraph::Source.load_string(%(

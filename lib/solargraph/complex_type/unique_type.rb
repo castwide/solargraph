@@ -60,25 +60,25 @@ module Solargraph
       end
 
       # @param definitions [Pin::Namespace]
-      # @param context [Pin::Base]
+      # @param context_type [ComplexType]
       # @return [UniqueType]
-      def resolve_parameters definitions, context
+      def resolve_parameters definitions, context_type
         new_name = if name == 'param'
           idx = definitions.parameters.index(subtypes.first.name)
           return ComplexType::UNDEFINED if idx.nil?
-          param_type = context.return_type.all_params[idx]
+          param_type = context_type.all_params[idx]
           return ComplexType::UNDEFINED unless param_type
           param_type.to_s
         else
           name
         end
         new_key_types = if name != 'param'
-          @key_types.map { |t| t.resolve_parameters(definitions, context) }.select(&:defined?)
+          @key_types.map { |t| t.resolve_parameters(definitions, context_type) }.select(&:defined?)
         else
           []
         end
         new_subtypes = if name != 'param'
-          @subtypes.map { |t| t.resolve_parameters(definitions, context) }.select(&:defined?)
+          @subtypes.map { |t| t.resolve_parameters(definitions, context_type) }.select(&:defined?)
         else
           []
         end

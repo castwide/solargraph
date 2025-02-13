@@ -297,7 +297,7 @@ describe Solargraph::ComplexType do
       name: 'bar',
       comments: '@return [Foo<String>]'
     )
-    type = return_type.resolve_parameters(generic_class, called_method)
+    type = return_type.resolve_parameters(generic_class, called_method.return_type)
     expect(type.tag).to eq('Array<String>')
   end
 end
