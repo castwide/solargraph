@@ -26,4 +26,9 @@ describe Solargraph::Pin::Namespace do
     expect(pin.name).to eq('Baz')
     expect(pin.path).to eq('Foo::Bar::Baz')
   end
+
+  it 'uses @param tags as generic type parameters' do
+    pin = Solargraph::Pin::Namespace.new(name: 'Foo', comments: '@param GenericType')
+    expect(pin.parameters).to eq(['GenericType'])
+  end
 end

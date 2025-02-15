@@ -110,8 +110,11 @@ module Solargraph
       any?(&:parameterized?)
     end
 
-    def resolve_parameters definitions, context
-      result = @items.map { |i| i.resolve_parameters(definitions, context) }
+    # @param definitions [Pin::Namespace]
+    # @param context_type [ComplexType]
+    # @return [ComplexType]
+    def resolve_parameters definitions, context_type
+      result = @items.map { |i| i.resolve_parameters(definitions, context_type) }
       ComplexType.parse(*result.map(&:tag))
     end
 
