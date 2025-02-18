@@ -23,6 +23,7 @@ module Solargraph
       autoload :BlockVariable,    'solargraph/source/chain/block_variable'
       autoload :ZSuper,           'solargraph/source/chain/z_super'
       autoload :Hash,             'solargraph/source/chain/hash'
+      autoload :Array,            'solargraph/source/chain/array'
 
       @@inference_stack = []
       @@inference_depth = 0
