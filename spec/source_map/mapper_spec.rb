@@ -106,11 +106,23 @@ describe Solargraph::SourceMap::Mapper do
       class Foo
         # @!method bar(baz)
         #   @return [String]
+        # @!method bing(bazzle = 'anchor')
+        #   @return [String]
+        # @!method bravo(charlie = :delta)
+        #   @return [String]
         make_bar_attr
+        make_bing_attr
+        make_bravo_attr
       end
     ))
     pin = map.first_pin('Foo#bar')
     expect(pin.parameter_names).to eq(['baz'])
+    expect(pin.return_type.tag).to eq('String')
+    pin = map.first_pin('Foo#bing')
+    expect(pin.parameter_names).to eq(['bazzle'])
+    expect(pin.return_type.tag).to eq('String')
+    pin = map.first_pin('Foo#bravo')
+    expect(pin.parameter_names).to eq(['charlie'])
     expect(pin.return_type.tag).to eq('String')
   end
 
