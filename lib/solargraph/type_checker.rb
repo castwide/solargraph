@@ -91,7 +91,12 @@ module Solargraph
       declared = pin.typify(api_map).self_to(pin.full_context.namespace)
       if declared.undefined?
         if pin.return_type.undefined? && rules.require_type_tags?
-          result.push Problem.new(pin.location, "Missing @return tag for #{pin.path}", pin: pin)
+          if pin.attribute?
+            inferred = pin.probe(api_map).self_to(pin.full_context.namespace)
+            result.push Problem.new(pin.location, "Missing @return tag for #{pin.path}", pin: pin) unless inferred.defined?
+          else
+            result.push Problem.new(pin.location, "Missing @return tag for #{pin.path}", pin: pin)
+          end
         elsif pin.return_type.defined? && !resolved_constant?(pin)
           result.push Problem.new(pin.location, "Unresolved return type #{pin.return_type} for #{pin.path}", pin: pin)
         elsif rules.must_tag_or_infer? && pin.probe(api_map).undefined?
@@ -141,7 +146,14 @@ module Solargraph
           sig.parameters.each do |par|
             break if par.decl == :restarg || par.decl == :kwrestarg || par.decl == :blockarg
             unless params[par.name]
-              result.push Problem.new(pin.location, "Missing @param tag for #{par.name} on #{pin.path}", pin: pin)
+              if pin.attribute?
+                inferred = pin.probe(api_map).self_to(pin.full_context.namespace)
+                if inferred.undefined?
+                  result.push Problem.new(pin.location, "Missing @param tag for #{par.name} on #{pin.path}", pin: pin)
+                end
+              else
+                result.push Problem.new(pin.location, "Missing @param tag for #{par.name} on #{pin.path}", pin: pin)
+              end
             end
           end
         end
