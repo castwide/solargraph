@@ -244,9 +244,11 @@ module Solargraph
                 node.children[1..-1].each do |cc|
                   if cc.nil?
                     result.push NIL_NODE
-                  else
-                    result.concat reduce_to_value_nodes(cc.children[1..-2]) unless cc.children.length < 1
+                  elsif cc.type == :when
                     result.concat reduce_to_value_nodes([cc.children.last])
+                  else
+                    # else clause in case
+                    result.concat reduce_to_value_nodes([cc])
                   end
                 end
               else

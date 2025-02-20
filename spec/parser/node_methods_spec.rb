@@ -91,14 +91,25 @@ describe Solargraph::Parser::NodeMethods do
   it 'handles return nodes from case statements with else' do
     node = Solargraph::Parser.parse(%(
       case x
-      when 100
+      when 100, 125
         true
-      else
+      when 500
+        73
+      when 23
         false
+      when 12
+        nil
+      else
+        if 1 == 2
+          false
+        else
+          true
+        end
       end
     ))
     returns = Solargraph::Parser::NodeMethods.returns_from(node)
-    expect(returns.length).to eq(2)
+    expect(returns.length).to eq(6)
+    expect(returns.map(&:to_s)).to eq(['(true)', '(int 73)', '(false)', '(nil)', '(false)', '(true)'])
   end
 
   it 'handles return nodes from case statements with boolean conditions' do
