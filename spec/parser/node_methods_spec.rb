@@ -36,6 +36,21 @@ describe Solargraph::Parser::NodeMethods do
     expect(Solargraph::Parser::NodeMethods.infer_literal_node_type(ast)).to eq '::Symbol'
   end
 
+  it "infers double quoted symbols" do
+    ast = Solargraph::Parser.parse(':"symbol"')
+    expect(Solargraph::Parser::NodeMethods.infer_literal_node_type(ast)).to eq '::Symbol'
+  end
+
+  it "infers interpolated double quoted symbols" do
+    ast = Solargraph::Parser.parse(':"#{Object}"')
+    expect(Solargraph::Parser::NodeMethods.infer_literal_node_type(ast)).to eq '::Symbol'
+  end
+
+  it "infers single quoted symbols" do
+    ast = Solargraph::Parser.parse(":'symbol'")
+    expect(Solargraph::Parser::NodeMethods.infer_literal_node_type(ast)).to eq '::Symbol'
+  end
+
   it 'infers literal booleans' do
     true_ast = Solargraph::Parser.parse("true")
     expect(Solargraph::Parser::NodeMethods.infer_literal_node_type(true_ast)).to eq '::Boolean'

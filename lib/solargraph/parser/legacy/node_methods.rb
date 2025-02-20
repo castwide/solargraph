@@ -48,7 +48,7 @@ module Solargraph
             return '::Integer'
           elsif node.type == :float
             return '::Float'
-          elsif node.type == :sym
+          elsif node.type == :sym || node.type == :dsym
             return '::Symbol'
           elsif node.type == :regexp
             return '::Regexp'
