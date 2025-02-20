@@ -29,6 +29,7 @@ module Solargraph
         # @param locals [Array<Pin::Base>]
         def resolve api_map, name_pin, locals
           return super_pins(api_map, name_pin) if word == 'super'
+          return yield_pins(api_map, name_pin) if word == 'yield'
           found = if head?
             locals.select { |p| p.name == word }
           else
@@ -201,6 +202,16 @@ module Solargraph
         def super_pins api_map, name_pin
           pins = api_map.get_method_stack(name_pin.namespace, name_pin.name, scope: name_pin.context.scope)
           pins.reject{|p| p.path == name_pin.path}
+        end
+
+        # @param api_map [ApiMap]
+        # @param name_pin [Pin::Base]
+        # @return [Array<Pin::Base>]
+        def yield_pins api_map, name_pin
+          method_pin = api_map.get_method_stack(name_pin.namespace, name_pin.name, scope: name_pin.context.scope).first
+          return [] if method_pin.nil?
+
+          method_pin.signatures.map(&:block).compact
         end
 
         # @param type [ComplexType]

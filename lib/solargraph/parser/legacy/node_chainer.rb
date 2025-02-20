@@ -95,6 +95,9 @@ module Solargraph
           elsif n.type == :super
             args = n.children.map { |c| NodeChainer.chain(c) }
             result.push Chain::Call.new('super', args, @in_block > 0 || block_passed?(n))
+          elsif n.type == :yield
+            args = n.children.map { |c| NodeChainer.chain(c) }
+            result.push Chain::Call.new('yield', args, @in_block > 0 || block_passed?(n))
           elsif n.type == :const
             const = unpack_name(n)
             result.push Chain::Constant.new(const)

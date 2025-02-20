@@ -44,6 +44,40 @@ describe Solargraph::Source::Chain::Call do
     expect(type.tag).to eq('Integer')
   end
 
+  it "infers return types based on yield call and @yieldreturn" do
+    api_map = Solargraph::ApiMap.new
+    source = Solargraph::Source.load_string(%(
+      class Foo
+        # @yieldreturn [Integer]
+        def my_method(&block)
+          yield
+        end
+      end
+      Foo.new.my_method))
+    api_map.map source
+    chain = Solargraph::Source::SourceChainer.chain(source, Solargraph::Position.new(7, 14))
+    locals = api_map.source_map(nil).locals
+    type = chain.infer(api_map, Solargraph::Pin::ROOT_PIN, locals)
+    expect(type.tag).to eq('Integer')
+  end
+
+  it "infers return types based only on yield call and @yieldreturn" do
+    api_map = Solargraph::ApiMap.new
+    source = Solargraph::Source.load_string(%(
+      class Foo
+        # @yieldreturn [Integer]
+        def my_method(&block)
+          yield
+        end
+      end
+      Foo.new.my_method { "foo" }))
+    api_map.map source
+    chain = Solargraph::Source::SourceChainer.chain(source, Solargraph::Position.new(7, 32))
+    locals = api_map.source_map(nil).locals
+    type = chain.infer(api_map, Solargraph::Pin::ROOT_PIN, locals)
+    expect(type.tag).to eq('Integer')
+  end
+
   it "adds virtual constructors for <Class>.new calls with conflicting return types" do
     api_map = Solargraph::ApiMap.new
     source = Solargraph::Source.load_string(%(
@@ -87,6 +121,61 @@ describe Solargraph::Source::Chain::Call do
     chain = Solargraph::Source::SourceChainer.chain(source, Solargraph::Position.new(3, 11))
     type = chain.infer(api_map, Solargraph::Pin::ROOT_PIN, api_map.source_map('test.rb').locals)
     expect(type.tag).to eq('Array<String>')
+  end
+
+  it 'infers constant return types via returns, ignoring blocks' do
+    source = Solargraph::Source.load_string(%(
+      def yielder(&blk)
+        "foo"
+      end
+
+      yielder do
+        123
+      end
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new
+    api_map.map source
+    chain = Solargraph::Source::SourceChainer.chain(source, Solargraph::Position.new(7, 8))
+    type = chain.infer(api_map, Solargraph::Pin::ROOT_PIN, api_map.source_map('test.rb').locals)
+    expect(type.tag).to eq('String')
+  end
+
+  it 'infers method return types' do
+    source = Solargraph::Source.load_string(%(
+      def bar
+        123
+      end
+
+      def baz
+        bar
+      end
+
+      baz
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new
+    api_map.map source
+    chain = Solargraph::Source::SourceChainer.chain(source, Solargraph::Position.new(9, 9))
+    type = chain.infer(api_map, Solargraph::Pin::ROOT_PIN, api_map.source_map('test.rb').locals)
+    expect(type.tag).to eq('Integer')
+  end
+
+  it 'infers method return types with unused blocks' do
+    source = Solargraph::Source.load_string(%(
+      def bar
+        123
+      end
+
+      def baz(&block)
+        bar
+      end
+
+      baz { "foo" }
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new
+    api_map.map source
+    chain = Solargraph::Source::SourceChainer.chain(source, Solargraph::Position.new(9, 9))
+    type = chain.infer(api_map, Solargraph::Pin::ROOT_PIN, api_map.source_map('test.rb').locals)
+    expect(type.tag).to eq('Integer')
   end
 
   it 'infers types from union type' do

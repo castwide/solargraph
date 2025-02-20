@@ -49,14 +49,45 @@ module Solargraph
         @return_type ||= ComplexType.try_parse(*signatures.map(&:return_type).map(&:to_s))
       end
 
+      # @return [Signature]
+      def generate_signature(parameters, return_type)
+        block = nil
+        yieldparam_tags = docstring.tags(:yieldparam)
+        yieldreturn_tags = docstring.tags(:yieldreturn)
+        needs_block_param_signature =
+          parameters.last&.block? || !yieldreturn_tags.empty? || !yieldparam_tags.empty?
+        if needs_block_param_signature
+          yield_parameters = yieldparam_tags.map do |p|
+            name = p.name
+            decl = :arg
+            if name
+              decl = select_decl(name, false)
+              name = clean_param(name)
+            end
+            Pin::Parameter.new(
+              location: location,
+              closure: self,
+              comments: p.text,
+              name: name,
+              decl: decl,
+              presence: location ? location.range : nil,
+              return_type: ComplexType.try_parse(*p.types)
+            )
+          end
+          yield_return_type = ComplexType.try_parse(*yieldreturn_tags.flat_map(&:types))
+          block = Signature.new(yield_parameters, yield_return_type)
+        end
+        Signature.new(parameters, return_type, block)
+      end
+
       # @return [Array<Signature>]
       def signatures
         @signatures ||= begin
           top_type = generate_complex_type
           result = []
-          result.push Signature.new(parameters, top_type) if top_type.defined?
-          result.concat(overloads.map { |meth| Signature.new(meth.parameters, meth.return_type) })
-          result.push Signature.new(parameters, top_type) if result.empty?
+          result.push generate_signature(parameters, top_type) if top_type.defined?
+          result.concat(overloads.map { |meth| generate_signature(meth.parameters, meth.return_type) }) unless overloads.empty?
+          result.push generate_signature(parameters, top_type) if result.empty?
           result
         end
       end
@@ -111,6 +142,32 @@ module Solargraph
               l = "* #{p.name}"
               l += " [#{escape_brackets(p.types.join(', '))}]" unless p.types.nil? or p.types.empty?
               l += " #{p.text}"
+              lines.push l
+            end
+            @documentation += lines.join("\n")
+          end
+          yieldparam_tags = docstring.tags(:yieldparam)
+          unless yieldparam_tags.nil? or yieldparam_tags.empty?
+            @documentation += "\n\n" unless @documentation.empty?
+            @documentation += "Block Params:\n"
+            lines = []
+            yieldparam_tags.each do |p|
+              l = "* #{p.name}"
+              l += " [#{escape_brackets(p.types.join(', '))}]" unless p.types.nil? or p.types.empty?
+              l += " #{p.text}"
+              lines.push l
+            end
+            @documentation += lines.join("\n")
+          end
+          yieldreturn_tags = docstring.tags(:yieldreturn)
+          unless yieldreturn_tags.empty?
+            @documentation += "\n\n" unless @documentation.empty?
+            @documentation += "Block Returns:\n"
+            lines = []
+            yieldreturn_tags.each do |r|
+              l = "*"
+              l += " [#{escape_brackets(r.types.join(', '))}]" unless r.types.nil? or r.types.empty?
+              l += " #{r.text}"
               lines.push l
             end
             @documentation += lines.join("\n")
