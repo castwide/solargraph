@@ -10,9 +10,9 @@ module Solargraph
     autoload :TypeMethods, 'solargraph/complex_type/type_methods'
     autoload :UniqueType,  'solargraph/complex_type/unique_type'
 
-    # @param types [Array<UniqueType>]
+    # @param types [Array<[UniqueType, ComplexType]>]
     def initialize types = [UniqueType::UNDEFINED]
-      @items = types.uniq(&:to_s)
+      @items = types.flat_map(&:items).uniq(&:to_s)
     end
 
     # @param api_map [ApiMap]
@@ -132,9 +132,9 @@ module Solargraph
       @items.first.all_params || []
     end
 
-    protected
-
     attr_reader :items
+
+    protected
 
     def reduce_object
       return self if name != 'Object' || subtypes.empty?

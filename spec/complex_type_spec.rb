@@ -47,6 +47,16 @@ describe Solargraph::ComplexType do
     expect(types.first.scope).to eq(:instance)
   end
 
+  it "identify rooted types" do
+    types = Solargraph::ComplexType.parse '::Array'
+    expect(types.map(&:rooted?)).to eq([true])
+  end
+
+  it "identify unrooted types" do
+    types = Solargraph::ComplexType.parse 'Array'
+    expect(types.map(&:rooted?)).to eq([false])
+  end
+
   it "detects namespace and scope for classes with subtypes" do
     types = Solargraph::ComplexType.parse 'Class<String>'
     expect(types.length).to eq(1)

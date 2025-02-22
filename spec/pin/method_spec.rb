@@ -40,6 +40,27 @@ describe Solargraph::Pin::Method do
     expect(pin.documentation).to include('description2')
   end
 
+  it "tracks rooted status in return types" do
+    source = Solargraph::Source.new(<<~COMMENTS)
+      class Foo; end
+      module Bar
+        class Foo; end
+        class Baz
+          # @return [::Foo]
+          def bing; end
+          # @return [Foo]
+          def bazzle; end
+        end
+      end
+    COMMENTS
+    map = Solargraph::SourceMap.map(source)
+    bazzle = map.pins.select{|pin| pin.path == 'Bar::Baz#bazzle'}.first
+    expect(bazzle.return_type.rooted?).to eq(false)
+    bing = map.pins.select{|pin| pin.path == 'Bar::Baz#bing'}.first
+    expect(bing.return_type.rooted?).to eq(true)
+  end
+
+
   it "detects return types from tags" do
     pin = Solargraph::Pin::Method.new(comments: '@return [Hash]')
     expect(pin.return_type.tag).to eq('Hash')

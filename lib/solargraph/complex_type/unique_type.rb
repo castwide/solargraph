@@ -51,10 +51,14 @@ module Solargraph
         tag
       end
 
+      def items
+        [self]
+      end
+
       def to_rbs
         "#{namespace}#{parameters? ? "[#{subtypes.map { |s| s.to_rbs }.join(', ')}]" : ''}"
       end
-  
+
       def parameterized?
         name == 'param' || all_params.any?(&:parameterized?)
       end
@@ -124,7 +128,7 @@ module Solargraph
       def selfy?
         @name == 'self' || @key_types.any?(&:selfy?) || @subtypes.any?(&:selfy?)
       end
-  
+
       UNDEFINED = UniqueType.new('undefined')
       BOOLEAN = UniqueType.new('Boolean')
     end

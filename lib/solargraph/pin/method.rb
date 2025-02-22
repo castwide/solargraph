@@ -46,7 +46,7 @@ module Solargraph
       end
 
       def return_type
-        @return_type ||= ComplexType.try_parse(*signatures.map(&:return_type).map(&:to_s))
+        @return_type ||= ComplexType.new(signatures.map(&:return_type).flat_map(&:items))
       end
 
       # @return [Array<Signature>]
