@@ -140,6 +140,32 @@ describe Solargraph::Source::Chain do
     }.not_to raise_error
   end
 
+  it "pulls types from multiple lines of code" do
+    source = Solargraph::Source.load_string(%(
+      123
+      'abc'
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new
+    api_map.map source
+    chain = Solargraph::Source::SourceChainer.chain(source, Solargraph::Position.new(2, 11))
+    type = chain.infer(api_map, Solargraph::Pin::ROOT_PIN, [])
+    expect(type.to_s).to eq('String')
+  end
+
+  it "uses last line of a begin expression as return type" do
+    source = Solargraph::Source.load_string(%(
+      begin
+        123
+        'abc'
+      end
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new
+    api_map.map source
+    chain = Solargraph::Source::SourceChainer.chain(source, Solargraph::Position.new(4, 9))
+    type = chain.infer(api_map, Solargraph::Pin::ROOT_PIN, [])
+    expect(type.to_s).to eq('String')
+  end
+
   it "matches constants on complete symbols" do
     source = Solargraph::Source.load_string(%(
       class Correct; end
