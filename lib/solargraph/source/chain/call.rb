@@ -11,7 +11,7 @@ module Solargraph
         attr_reader :arguments
 
         # @param word [String]
-        # @param arguments [Array<Chain>]
+        # @param arguments [::Array<Chain>]
         # @param with_block [Boolean] True if the chain is inside a block
         # @param head [Boolean] True if the call is the start of its chain
         def initialize word, arguments = [], with_block = false
@@ -197,7 +197,7 @@ module Solargraph
 
         # @param api_map [ApiMap]
         # @param name_pin [Pin::Base]
-        # @return [Array<Pin::Base>]
+        # @return [::Array<Pin::Base>]
         def super_pins api_map, name_pin
           pins = api_map.get_method_stack(name_pin.namespace, name_pin.name, scope: name_pin.context.scope)
           pins.reject{|p| p.path == name_pin.path}

@@ -12,7 +12,7 @@ module Solargraph
       # to a method pin on that type.
       #
       # @param resolved_method [Method] an already resolved method pin.
-      # @param receiver [Source::Chain] the source code used to resolve the receiver for this delegated method.
+      # @param receiver [Source::Chain, nil] the source code used to resolve the receiver for this delegated method.
       # @param receiver_method_name [String] the method name that will be called on the receiver (defaults to :name).
       def initialize(method: nil, receiver: nil, name: method&.name, receiver_method_name: name, **splat)
         raise ArgumentError, 'either :method or :receiver is required' if (method && receiver) || (!method && !receiver)

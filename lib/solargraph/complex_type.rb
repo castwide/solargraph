@@ -42,7 +42,7 @@ module Solargraph
     end
 
     # @yieldparam [UniqueType]
-    # @return [Array]
+    # @return [Enumerator<UniqueType>]
     def each &block
       @items.each &block
     end

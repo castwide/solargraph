@@ -42,6 +42,7 @@ module Solargraph
         result
       end
 
+      # @return [Hash{Integer => String}]
       def parse
         @comments = {}
         super

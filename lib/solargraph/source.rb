@@ -33,7 +33,7 @@ module Solargraph
     attr_reader :version
 
     # @param code [String]
-    # @param filename [String]
+    # @param filename [String, nil]
     # @param version [Integer]
     def initialize code, filename = nil, version = 0
       @code = normalize(code)
@@ -332,7 +332,7 @@ module Solargraph
 
     # @param top [Parser::AST::Node]
     # @param result [Array<Range>]
-    # @param parent [Symbol]
+    # @param parent [Symbol, nil]
     # @return [void]
     def inner_folding_ranges top, result = [], parent = nil
       return unless Parser.is_ast_node?(top)
@@ -503,7 +503,7 @@ module Solargraph
       end
 
       # @param code [String]
-      # @param filename [String]
+      # @param filename [String, nil]
       # @param version [Integer]
       # @return [Solargraph::Source]
       def load_string code, filename = nil, version = 0
