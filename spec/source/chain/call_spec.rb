@@ -180,7 +180,7 @@ describe Solargraph::Source::Chain::Call do
 
   it 'infers generic parameterized types' do
     source = Solargraph::Source.load_string(%(
-      # @param GenericTypeParam
+      # @generic GenericTypeParam
       class Foo
         # @return [Foo<String>]
         def self.bar

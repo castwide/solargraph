@@ -290,7 +290,7 @@ describe Solargraph::ComplexType do
   it 'resolves generic parameters' do
     api_map = Solargraph::ApiMap.new
     return_type = Solargraph::ComplexType.parse('Array<param<GenericTypeParam>>')
-    generic_class = Solargraph::Pin::Namespace.new(name: 'Foo', comments: '@param GenericTypeParam')
+    generic_class = Solargraph::Pin::Namespace.new(name: 'Foo', comments: '@generic GenericTypeParam')
     called_method = Solargraph::Pin::Method.new(
       location: Solargraph::Location.new('file:///foo.rb', Solargraph::Range.from_to(0, 0, 0, 0)),
       closure: generic_class,

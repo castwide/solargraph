@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require 'yard-solargraph'
+
 module Solargraph
   module Pin
     class Namespace < Closure
@@ -92,7 +94,7 @@ module Solargraph
 
       # @return [Array<String>]
       def parameters
-        @parameters ||= docstring.tags(:param).map(&:name)
+        @parameters ||= docstring.tags(:generic).map(&:name)
       end
     end
   end
