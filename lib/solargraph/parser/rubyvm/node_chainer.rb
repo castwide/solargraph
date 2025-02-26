@@ -106,7 +106,7 @@ module Solargraph
             result.push Chain::Hash.new('::Hash', hash_is_splatted?(n))
           elsif n.type == :ARRAY
             chained_children = n.children[0..-2].map { |c| NodeChainer.chain(c) }
-            result.push Source::Chain::Array.new(lit, chained_children)
+            result.push Source::Chain::Array.new(chained_children)
           else
             lit = infer_literal_node_type(n)
             if lit
