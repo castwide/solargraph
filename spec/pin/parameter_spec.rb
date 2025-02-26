@@ -13,7 +13,7 @@ describe Solargraph::Pin::Parameter do
     expect(clip.infer.tag).to eq('Array')
   end
 
-  it 'infers generic parameterized types' do
+  it 'infers generic types' do
     source = Solargraph::Source.load_string(%(
       # @generic GenericTypeParam
       class Foo

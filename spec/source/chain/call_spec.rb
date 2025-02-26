@@ -110,7 +110,7 @@ describe Solargraph::Source::Chain::Call do
     expect(type.tag).to eq('String')
   end
 
-  it 'infers parameterized types' do
+  it 'infers generic types' do
     source = Solargraph::Source.load_string(%(
       # @type [Array<String>]
       list = array_of_strings
@@ -178,7 +178,7 @@ describe Solargraph::Source::Chain::Call do
     expect(type.tag).to eq('Integer')
   end
 
-  it 'infers generic parameterized types' do
+  it 'infers generic types' do
     source = Solargraph::Source.load_string(%(
       # @generic GenericTypeParam
       class Foo
@@ -223,7 +223,7 @@ describe Solargraph::Source::Chain::Call do
     expect(type.tag).to eq('Integer')
   end
 
-  it 'infers parameterized types from union type' do
+  it 'infers generic types from union type' do
     source = Solargraph::Source.load_string(%(
       # @type [String, Array<Integer>]
       list = string_or_integer

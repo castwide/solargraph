@@ -414,7 +414,7 @@ describe Solargraph::TypeChecker do
       expect(checker.problems).to be_empty
     end
 
-    it 'ignores parameterized blocks' do
+    it 'ignores blocks with parameters' do
       checker = type_checker(%(
         class Foo
           def bar &block
@@ -871,7 +871,7 @@ describe Solargraph::TypeChecker do
       expect(checker.problems).to be_empty
     end
 
-    it 'accepts Hash#[] calls for parameterized Hash types' do
+    it 'accepts Hash#[] calls for generic Hash types' do
       checker = type_checker(%(
         # @type [Hash{String => String}]
         x = {}

@@ -122,7 +122,7 @@ describe Solargraph::TypeChecker do
       expect(checker.problems).to be_empty
     end
 
-    it 'validates parameterized return types with unparameterized arrays' do
+    it 'validates generic return types with non-generic arrays' do
       checker = type_checker(%(
         class Foo
           # @return [Array<String>]
@@ -134,7 +134,7 @@ describe Solargraph::TypeChecker do
       expect(checker.problems).to be_empty
     end
 
-    it 'validates parameterized return types with unparameterized hashes' do
+    it 'validates generic return types with non-generic hashes' do
       checker = type_checker(%(
         class Foo
           # @return [Hash{String => Integer}]
@@ -176,7 +176,7 @@ describe Solargraph::TypeChecker do
       # expect(checker.problems.first.message).to include('does not match inferred type')
     end
 
-    it 'validates parameterized subclasses of return types' do
+    it 'validates generic subclasses of return types' do
       checker = type_checker(%(
         class Sup; end
         class Sub < Sup
