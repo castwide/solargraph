@@ -55,31 +55,34 @@ module Solargraph
         "#{namespace}#{parameters? ? "[#{subtypes.map { |s| s.to_rbs }.join(', ')}]" : ''}"
       end
   
-      def parameterized?
-        name == 'param' || all_params.any?(&:parameterized?)
+      def generic?
+        name == GENERIC_TAG_NAME || all_params.any?(&:generic?)
       end
 
-      def resolve_parameters definitions, context
-        new_name = if name == 'param'
-          idx = definitions.parameters.index(subtypes.first.name)
+      # @param definitions [Pin::Namespace]
+      # @param context_type [ComplexType]
+      # @return [UniqueType]
+      def resolve_generics definitions, context_type
+        new_name = if name == GENERIC_TAG_NAME
+          idx = definitions.generics.index(subtypes.first.name)
           return ComplexType::UNDEFINED if idx.nil?
-          param_type = context.return_type.all_params[idx]
+          param_type = context_type.all_params[idx]
           return ComplexType::UNDEFINED unless param_type
           param_type.to_s
         else
           name
         end
-        new_key_types = if name != 'param'
-          @key_types.map { |t| t.resolve_parameters(definitions, context) }.select(&:defined?)
+        new_key_types = if name != GENERIC_TAG_NAME
+          @key_types.map { |t| t.resolve_generics(definitions, context_type) }.select(&:defined?)
         else
           []
         end
-        new_subtypes = if name != 'param'
-          @subtypes.map { |t| t.resolve_parameters(definitions, context) }.select(&:defined?)
+        new_subtypes = if name != GENERIC_TAG_NAME
+          @subtypes.map { |t| t.resolve_generics(definitions, context_type) }.select(&:defined?)
         else
           []
         end
-        if name != 'param' && !(new_key_types.empty? && new_subtypes.empty?)
+        if name != GENERIC_TAG_NAME && !(new_key_types.empty? && new_subtypes.empty?)
           if hash_parameters?
             UniqueType.new(new_name, "{#{new_key_types.join(', ')} => #{new_subtypes.join(', ')}}")
           elsif parameters?

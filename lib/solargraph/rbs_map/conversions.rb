@@ -113,7 +113,7 @@ module Solargraph
           name: decl.name.relative!.to_s,
           closure: Solargraph::Pin::ROOT_PIN,
           comments: decl.comment&.string,
-          parameters: decl.type_params.map(&:name).map(&:to_s)
+          generics: decl.type_params.map(&:name).map(&:to_s)
         )
         pins.push class_pin
         if decl.super_class
@@ -407,7 +407,7 @@ module Solargraph
         elsif type.is_a?(RBS::Types::Bases::Void)
           'void'
         elsif type.is_a?(RBS::Types::Variable)
-          "param<#{type.name}>"
+          "#{Solargraph::ComplexType::GENERIC_TAG_NAME}<#{type.name}>"
         elsif type.is_a?(RBS::Types::ClassInstance) #&& !type.args.empty?
           base = RBS_TO_YARD_TYPE[type.name.relative!.to_s] || type.name.relative!.to_s
           params = type.args.map { |a| other_type_to_tag(a) }.reject { |t| t == 'undefined' }

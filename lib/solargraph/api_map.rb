@@ -199,6 +199,13 @@ module Solargraph
       result
     end
 
+    # @param namespace [String]
+    # @param context [String]
+    # @return [Array<Pin::Namespace>]
+    def get_namespace_pins namespace, context
+      store.fqns_pins(qualify(namespace, context))
+    end
+
     # Get a fully qualified namespace name. This method will start the search
     # in the specified context until it finds a match for the name.
     #

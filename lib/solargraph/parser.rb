@@ -19,6 +19,8 @@ module Solargraph
 
     selected = rubyvm? ? Rubyvm : Legacy
     # include selected
+    # @!parse
+    #   extend Solargraph::Parser::Legacy::ClassMethods
     extend selected::ClassMethods
 
     NodeMethods = (rubyvm? ? Rubyvm::NodeMethods : Legacy::NodeMethods)
