@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require 'rbs'
+
 module Solargraph
   class RbsMap
     # Functions for converting RBS declarations to Solargraph pins
@@ -47,6 +49,10 @@ module Solargraph
           module_decl_to_pin decl
         when RBS::AST::Declarations::Constant
           constant_decl_to_pin decl
+        when RBS::AST::Declarations::ClassAlias
+          class_alias_decl_to_pin decl
+        else
+          Solargraph.logger.info "Skipping declaration #{decl.class}"
         end
         pins[cursor..-1].each do |pin|
           pin.source = :rbs
@@ -149,10 +155,13 @@ module Solargraph
         convert_members_to_pin decl, module_pin
       end
 
-      # @param decl [RBS::AST::Declarations::Constant]
-      # @return [void]
-      def constant_decl_to_pin decl
-        parts = decl.name.relative!.to_s.split('::')
+      # @param name [String]
+      # @param tag [String]
+      # @param comments [String]
+      #
+      # @return [Solargraph::Pin::Constant]
+      def create_constant(name, tag, comments)
+        parts = name.split('::')
         if parts.length > 1
           name = parts.last
           closure = pins.select { |pin| pin && pin.path == parts[0..-2].join('::') }.first
@@ -160,15 +169,31 @@ module Solargraph
           name = parts.first
           closure = Solargraph::Pin::ROOT_PIN
         end
-        pin = Solargraph::Pin::Constant.new(
+        constant_pin = Solargraph::Pin::Constant.new(
           name: name,
           closure: closure,
-          comments: decl.comment&.string
+          comments: comments
         )
-        tag = other_type_to_tag(decl.type)
         # @todo Class or Module?
-        pin.docstring.add_tag(YARD::Tags::Tag.new(:return, '', "Class<#{tag}>"))
-        pins.push pin
+        constant_pin.docstring.add_tag(YARD::Tags::Tag.new(:return, '', "Class<#{tag}>"))
+        constant_pin
+      end
+
+      # @param decl [RBS::AST::Declarations::ClassAlias]
+      # @return [void]
+      def class_alias_decl_to_pin decl
+        # See https://www.rubydoc.info/gems/rbs/3.4.3/RBS/AST/Declarations/ClassAlias
+        new_name = decl.new_name.relative!.to_s
+        old_name = decl.old_name.relative!.to_s
+
+        pins.push create_constant(new_name, old_name, decl.comment&.string)
+      end
+
+      # @param decl [RBS::AST::Declarations::Constant]
+      # @return [void]
+      def constant_decl_to_pin decl
+        tag = other_type_to_tag(decl.type)
+        pins.push create_constant(decl.name.relative!.to_s, tag, decl.comment&.string)
       end
 
       # @param decl [RBS::AST::Members::MethodDefinition]
