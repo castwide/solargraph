@@ -21,7 +21,7 @@ describe Solargraph::Pin::Parameter do
         def self.bar
         end
 
-        # @yieldparam [param<GenericTypeParam>]
+        # @yieldparam [generic<GenericTypeParam>]
         def baz
         end
       end

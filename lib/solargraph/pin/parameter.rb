@@ -137,7 +137,7 @@ module Solargraph
                 yield_type = ComplexType.try_parse(yps[index].types.first)
                 if yield_type.parameterized? && receiver_type.defined?
                   namespace_pin = api_map.get_namespace_pins(meth.namespace, closure.namespace).first
-                  return yield_type.resolve_parameters(namespace_pin, receiver_type)
+                  return yield_type.resolve_generics(namespace_pin, receiver_type)
                 else
                   return yield_type.self_to(chain.base.infer(api_map, closure, locals).namespace).qualify(api_map, meth.context.namespace)
                 end

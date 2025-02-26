@@ -186,7 +186,7 @@ describe Solargraph::Source::Chain::Call do
         def self.bar
         end
 
-        # @return [Array<param<GenericTypeParam>>]
+        # @return [Array<generic<GenericTypeParam>>]
         def baz
         end
       end
