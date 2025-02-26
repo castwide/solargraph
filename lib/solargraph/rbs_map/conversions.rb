@@ -113,7 +113,7 @@ module Solargraph
           name: decl.name.relative!.to_s,
           closure: Solargraph::Pin::ROOT_PIN,
           comments: decl.comment&.string,
-          parameters: decl.type_params.map(&:name).map(&:to_s)
+          generics: decl.type_params.map(&:name).map(&:to_s)
         )
         pins.push class_pin
         if decl.super_class
