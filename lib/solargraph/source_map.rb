@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 require 'yard'
-require 'yard-solargraph'
+require 'solargraph/yard_tags'
 require 'set'
 
 module Solargraph
