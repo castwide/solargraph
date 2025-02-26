@@ -206,7 +206,7 @@ module Solargraph
 
         # @param api_map [ApiMap]
         # @param name_pin [Pin::Base]
-        # @return [Array<Pin::Base>]
+        # @return [::Array<Pin::Base>]
         def yield_pins api_map, name_pin
           method_pin = api_map.get_method_stack(name_pin.namespace, name_pin.name, scope: name_pin.context.scope).first
           return [] if method_pin.nil?

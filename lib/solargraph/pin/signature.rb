@@ -12,7 +12,7 @@ module Solargraph
 
       # @param parameters [Array<Parameter>]
       # @param return_type [ComplexType]
-      # @param block [Signature]
+      # @param block [Signature, nil]
       def initialize parameters, return_type, block = nil
         @parameters = parameters
         @return_type = return_type
