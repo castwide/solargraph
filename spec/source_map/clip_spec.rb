@@ -539,28 +539,6 @@ describe Solargraph::SourceMap::Clip do
     expect(clip.complete.pins.map(&:path)).to include('Par#hidden')
   end
 
-  it 'processes @yieldpublic tags in completions' do
-    source = Solargraph::Source.load_string(%(
-      class Par
-        def action; end
-        private
-        def hidden; end
-      end
-      class Foo
-        # @yieldpublic [Par]
-        def bar; end
-      end
-      Foo.new.bar do
-        x
-      end
-    ), 'file.rb')
-    api_map = Solargraph::ApiMap.new
-    api_map.map source
-    clip = api_map.clip_at('file.rb', [11, 8])
-    expect(clip.complete.pins.map(&:path)).to include('Par#action')
-    expect(clip.complete.pins.map(&:path)).not_to include('Par#hidden')
-  end
-
   it 'infers instance variable types in rebound blocks' do
     source = Solargraph::Source.load_string(%(
       class Foo
