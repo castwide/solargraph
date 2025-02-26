@@ -11,7 +11,7 @@ module Solargraph
         Chain = Source::Chain
 
         # @param node [Parser::AST::Node]
-        # @param filename [String]
+        # @param filename [String, nil]
         def initialize node, filename = nil, in_block = false
           @node = node
           @filename = filename
@@ -26,7 +26,7 @@ module Solargraph
 
         class << self
           # @param node [Parser::AST::Node]
-          # @param filename [String]
+          # @param filename [String, nil]
           # @return [Source::Chain]
           def chain node, filename = nil, in_block = false
             NodeChainer.new(node, filename, in_block).chain

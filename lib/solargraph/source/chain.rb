@@ -31,12 +31,12 @@ module Solargraph
       UNDEFINED_CALL = Chain::Call.new('<undefined>')
       UNDEFINED_CONSTANT = Chain::Constant.new('<undefined>')
 
-      # @return [Array<Source::Chain::Link>]
+      # @return [::Array<Source::Chain::Link>]
       attr_reader :links
 
       attr_reader :node
 
-      # @param links [Array<Chain::Link>]
+      # @param links [::Array<Chain::Link>]
       def initialize links, node = nil, splat = false
         @links = links.clone
         @links.push UNDEFINED_CALL if @links.empty?
@@ -58,7 +58,7 @@ module Solargraph
       # @param api_map [ApiMap]
       # @param name_pin [Pin::Base]
       # @param locals [Array<Pin::Base>]
-      # @return [Array<Pin::Base>]
+      # @return [::Array<Pin::Base>]
       def define api_map, name_pin, locals
         return [] if undefined?
         working_pin = name_pin

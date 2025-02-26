@@ -22,7 +22,7 @@ module Solargraph
     attr_reader :api_map
 
     # @param filename [String]
-    # @param api_map [ApiMap]
+    # @param api_map [ApiMap, nil]
     # @param level [Symbol]
     def initialize filename, api_map: nil, level: :normal
       @filename = filename

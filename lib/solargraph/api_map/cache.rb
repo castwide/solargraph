@@ -4,6 +4,7 @@ module Solargraph
   class ApiMap
     class Cache
       def initialize
+        # @type [Hash{Array => Array<Pin::Method>}]
         @methods = {}
         @constants = {}
         @qualified_namespaces = {}
@@ -15,6 +16,7 @@ module Solargraph
         @methods[[fqns, scope, visibility.sort, deep]]
       end
 
+      # @return [Array<Pin::Method>]
       def set_methods fqns, scope, visibility, deep, value
         @methods[[fqns, scope, visibility.sort, deep]] = value
       end

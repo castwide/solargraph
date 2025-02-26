@@ -25,6 +25,7 @@ module Solargraph
 
       private
 
+      # @return Hash{String => RBS::AST::Declarations::TypeAlias}
       def type_aliases
         @type_aliases ||= {}
       end
@@ -329,6 +330,7 @@ module Solargraph
         )
       end
 
+      # @param decl [RBS::AST::Members::Alias]
       def alias_to_pin decl, closure
         pins.push Solargraph::Pin::MethodAlias.new(
           name: decl.new_name.to_s,
@@ -345,6 +347,8 @@ module Solargraph
         'NilClass' => 'nil'
       }
 
+      # @param type [RBS::AST::Members::MethodDefinition::Overload]
+      # @return [String]
       def method_type_to_tag type
         if type_aliases.key?(type.type.return_type.to_s)
           other_type_to_tag(type_aliases[type.type.return_type.to_s].type)

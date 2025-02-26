@@ -56,8 +56,6 @@ module Solargraph
 
   # A helper method that runs Bundler.with_unbundled_env or falls back to
   # Bundler.with_clean_env for earlier versions of Bundler.
-  #
-  # @return [void]
   def self.with_clean_env &block
     meth = if Bundler.respond_to?(:with_original_env)
       :with_original_env
