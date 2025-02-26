@@ -135,7 +135,7 @@ module Solargraph
               yps = meth.docstring.tags(:yieldparam)
               unless yps[index].nil? or yps[index].types.nil? or yps[index].types.empty?
                 yield_type = ComplexType.try_parse(yps[index].types.first)
-                if yield_type.parameterized? && receiver_type.defined?
+                if yield_type.generic? && receiver_type.defined?
                   namespace_pin = api_map.get_namespace_pins(meth.namespace, closure.namespace).first
                   return yield_type.resolve_generics(namespace_pin, receiver_type)
                 else

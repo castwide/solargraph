@@ -270,12 +270,12 @@ describe Solargraph::ComplexType do
 
   it 'recognizes param types' do
     type = Solargraph::ComplexType.parse('generic<Variable>')
-    expect(type).to be_parameterized
+    expect(type).to be_generic
   end
 
   it 'recognizes parameterized parameters' do
     type = Solargraph::ComplexType.parse('Object<generic<Variable>>')
-    expect(type).to be_parameterized
+    expect(type).to be_generic
   end
 
   it 'reduces objects' do

@@ -55,8 +55,8 @@ module Solargraph
         "#{namespace}#{parameters? ? "[#{subtypes.map { |s| s.to_rbs }.join(', ')}]" : ''}"
       end
   
-      def parameterized?
-        name == GENERIC_TAG_NAME || all_params.any?(&:parameterized?)
+      def generic?
+        name == GENERIC_TAG_NAME || all_params.any?(&:generic?)
       end
 
       # @param definitions [Pin::Namespace]

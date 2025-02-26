@@ -107,8 +107,8 @@ module Solargraph
       @items.any?(&:selfy?)
     end
 
-    def parameterized?
-      any?(&:parameterized?)
+    def generic?
+      any?(&:generic?)
     end
 
     # @param definitions [Pin::Namespace]
