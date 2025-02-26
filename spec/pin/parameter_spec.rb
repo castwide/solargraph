@@ -39,6 +39,29 @@ describe Solargraph::Pin::Parameter do
     expect(pins.map(&:path)).to include('String#downcase')
   end
 
+  it 'gracefully handles missing generic parameters' do
+    source = Solargraph::Source.load_string(%(
+      # @generic GenericTypeParam
+      class Foo
+        # @return [Foo<String>]
+        def self.bar
+        end
+
+        # @yieldparam [generic]
+        def baz
+        end
+      end
+
+      Foo.bar.baz do |yielded_parameter|
+        yielded_parameter.down
+      end
+    ), 'file.rb')
+    api_map = Solargraph::ApiMap.new
+    api_map.map source
+    clip = api_map.clip_at('file.rb', Solargraph::Position.new(13, 10))
+    expect(clip.infer.tag).to eq('undefined')
+  end
+
   it "detects block parameter return types from core methods" do
     api_map = Solargraph::ApiMap.new
     source = Solargraph::Source.load_string(%(

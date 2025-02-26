@@ -64,7 +64,7 @@ module Solargraph
       # @return [UniqueType]
       def resolve_generics definitions, context_type
         new_name = if name == GENERIC_TAG_NAME
-          idx = definitions.generics.index(subtypes.first.name)
+          idx = definitions.generics.index(subtypes.first&.name)
           return ComplexType::UNDEFINED if idx.nil?
           param_type = context_type.all_params[idx]
           return ComplexType::UNDEFINED unless param_type
