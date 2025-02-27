@@ -130,11 +130,6 @@ module Solargraph
           if type.defined?
             if type.generic?
               type = type.resolve_generics(pin.closure, context.return_type)
-              # idx = pin.closure.parameters.index(type.subtypes.first.name)
-              # next if idx.nil?
-              # param_type = context.return_type.all_params[idx]
-              # next unless param_type
-              # type = ComplexType.try_parse(param_type.to_s)
             end
             if type.defined?
               possibles.push type

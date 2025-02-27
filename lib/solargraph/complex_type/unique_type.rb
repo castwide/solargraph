@@ -54,7 +54,7 @@ module Solargraph
       def to_rbs
         "#{namespace}#{parameters? ? "[#{subtypes.map { |s| s.to_rbs }.join(', ')}]" : ''}"
       end
-  
+
       def generic?
         name == GENERIC_TAG_NAME || all_params.any?(&:generic?)
       end

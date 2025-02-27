@@ -16,8 +16,10 @@ module Solargraph
       ].map { |k| Pin::Keyword.new(k) }
 
       MISSING = [
-        Solargraph::Pin::Method.new(name: 'tap', scope: :instance, closure: Solargraph::Pin::Namespace.new(name: 'Object')),
-        Solargraph::Pin::Method.new(name: 'class', scope: :instance, closure: Solargraph::Pin::Namespace.new(name: 'Object'), comments: '@return [Class<self>]')
+        Solargraph::Pin::Method.new(name: 'tap', scope: :instance,
+                                    closure: Solargraph::Pin::Namespace.new(name: 'Object')),
+        Solargraph::Pin::Method.new(name: 'class', scope: :instance,
+                                    closure: Solargraph::Pin::Namespace.new(name: 'Object'), comments: '@return [Class<self>]')
       ]
 
       YIELDPARAMS = [
@@ -27,7 +29,7 @@ module Solargraph
         )),
         Override.from_comment('String#each_line', %(
 @yieldparam [String]
-        )),
+        ))
       ]
 
       methods_with_yieldparam_subtypes = %w[
@@ -39,16 +41,17 @@ module Solargraph
       ]
 
       YIELDPARAM_SINGLE_PARAMETERS = methods_with_yieldparam_subtypes.map do |path|
-        Override.from_comment(path, %(
-@yieldparam_single_parameter
-          ))
+        Override.from_comment(path, <<~DOC
+          @yieldparam [generic<Elem>]
+        DOC
+        )
       end
 
       CLASS_RETURN_TYPES = [
         Override.method_return('Class#new', 'self'),
         Override.method_return('Class.new', 'Class<BasicObject>'),
         Override.method_return('Class#allocate', 'self'),
-        Override.method_return('Class.allocate', 'Class<BasicObject>'),
+        Override.method_return('Class.allocate', 'Class<BasicObject>')
       ]
 
       # HACK: Add Errno exception classes
@@ -64,4 +67,3 @@ module Solargraph
     end
   end
 end
-
