@@ -41,7 +41,7 @@ module Solargraph
 
     def rebindable_method_names
       @rebindable_method_names ||= pins_by_class(Pin::Method)
-        .select { |pin| pin.comments && pin.comments.include?('@yieldself') }
+        .select { |pin| pin.comments && pin.comments.include?('@yieldreceiver') }
         .map(&:name)
         .to_set
     end

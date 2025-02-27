@@ -8,10 +8,10 @@
 
 ## 0.51.1 - January 23, 2025
 - Format example code
-- Block infers yieldself from chain
+- Block infers yieldreceiver from chain
 
 ## 0.51.0 - January 19, 2025
-- Resolve self in yieldself tags
+- Resolve self in yieldreceiver tags
 - Include absolute paths in config (#674)
 - Enable diagnostics by default
 - Fix cache resolution (#704)
@@ -600,7 +600,7 @@
 ## 0.31.2 - January 27, 2019
 - Use YARD documentation rules to associate directives with namespaces
 - Handle non-unique pin locations in completionItem/resolve
-- Clip#complete handles @yieldself and @yieldpublic contexts
+- Clip#complete handles @yieldreceiver and @yieldpublic contexts
 - Host::Dispatch filters library updates (castwide/vscode-solargraph#99)
 - Qualify included namespaces (#148)
 
@@ -956,7 +956,7 @@
 
 ## 0.17.0 - February 1, 2018
 - Support Solargraph configurations in workspace folders.
-- Use @yieldself tag to change block contexts.
+- Use @yieldreceiver tag to change block contexts.
 - Handle whitespace in signatures.
 - Convert 'self' when inferring signature types.
 - Handle bare periods without signatures.
@@ -999,7 +999,7 @@
 - Map pins to code objects.
 - Infer return types from domain (DSL) methods.
 - Fixed visibility and results for superclasses.
-- Experimental @yieldself tag.
+- Experimental @yieldreceiver tag.
 - Improved syntax error handling in Source.fix.
 - Gem ships with Ruby 2.2.2 yardocs.
 - Experimental plugin architecture and Runtime plugin.
