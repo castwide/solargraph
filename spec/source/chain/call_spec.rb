@@ -140,6 +140,45 @@ describe Solargraph::Source::Chain::Call do
     expect(type.tag).to eq('String')
   end
 
+  it 'infers generic parameterized types through module inclusion' do
+    source = Solargraph::Source.load_string(%(
+      # @generic GenericTypeParam
+      module Foo
+        # @return [Array<generic<GenericTypeParam>>]
+        def baz
+        end
+      end
+
+      class Baz
+        # @return [Baz<String>]
+        def self.bar
+        end
+
+        include Foo
+      end
+
+      Baz.bar.baz
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new
+    api_map.map source
+    chain = Solargraph::Source::SourceChainer.chain(source, Solargraph::Position.new(16, 15))
+    type = chain.infer(api_map, Solargraph::Pin::ROOT_PIN, api_map.source_map('test.rb').locals)
+    expect(type.tag).to eq('Array<String>')
+  end
+
+  it 'infers generic parameterized types through module inclusion via RBS definition of module' do
+    source = Solargraph::Source.load_string(%(
+      foo = ['bar'].to_set
+
+      foo
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new
+    api_map.map source
+    chain = Solargraph::Source::SourceChainer.chain(source, Solargraph::Position.new(3, 9))
+    type = chain.infer(api_map, Solargraph::Pin::ROOT_PIN, api_map.source_map('test.rb').locals)
+    expect(type.tag).to eq('Set<String>')
+  end
+
   it 'infers method return types' do
     source = Solargraph::Source.load_string(%(
       def bar
