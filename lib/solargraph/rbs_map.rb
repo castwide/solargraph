@@ -57,7 +57,7 @@ module Solargraph
     # @return [Boolean] true if adding the library succeeded
     def add_library loader, library
       @resolved = if loader.has_library?(library: library, version: nil)
-        loader.add library: library
+        loader.add library: library, version: nil
         Solargraph.logger.info "#{short_name} successfully loaded library #{library}"
         true
       else
