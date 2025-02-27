@@ -128,9 +128,10 @@ module Solargraph
       return true if pin.typify(api_map).defined?
       api_map.get_constants('', *pin.closure.gates)
         .select { |p| p.name == pin.return_type.namespace }
-        .any? { |p| p.infer(api_map).defined? }
+        .any? { |p| p.typify(api_map).defined? }
     end
 
+    # @param pin [Pin::Base]
     def virtual_pin? pin
       pin.location && source_map.source.comment_at?(pin.location.range.ending)
     end
