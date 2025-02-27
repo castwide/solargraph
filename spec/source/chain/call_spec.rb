@@ -144,7 +144,7 @@ describe Solargraph::Source::Chain::Call do
     source = Solargraph::Source.load_string(%(
       # @generic GenericTypeParam
       module Foo
-        # @return [Array<param<GenericTypeParam>>]
+        # @return [Array<generic<GenericTypeParam>>]
         def baz
         end
       end
