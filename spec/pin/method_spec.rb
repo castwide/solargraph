@@ -26,10 +26,12 @@ describe Solargraph::Pin::Method do
   end
 
   it "includes param tags in documentation" do
-    comments = %(
+    # Yard wants to be handed data without comment markers or leading
+    # whitespace, so we use <<~
+    comments = <<~COMMENTS
       @param one [First] description1
       @param two [Second] description2
-    )
+    COMMENTS
     # pin = source.pins.select{|pin| pin.path == 'Foo#bar'}.first
     pin = Solargraph::Pin::Method.new(comments: comments)
     expect(pin.documentation).to include('one')
@@ -60,6 +62,29 @@ describe Solargraph::Pin::Method do
     expect(bing.return_type.rooted?).to eq(true)
   end
 
+  it "includes yieldparam tags in documentation" do
+    comments = <<~COMMENTS
+      @yieldparam one [First] description1
+      @yieldparam two [Second] description2
+    COMMENTS
+    # pin = source.pins.select{|pin| pin.path == 'Foo#bar'}.first
+    pin = Solargraph::Pin::Method.new(comments: comments)
+    expect(pin.documentation).to include('[First]')
+    expect(pin.documentation).to include('description1')
+    expect(pin.documentation).to include('two')
+    expect(pin.documentation).to include('[Second]')
+    expect(pin.documentation).to include('description2')
+  end
+
+  it "includes yieldreturn tag in documentation" do
+    comments = <<~COMMENTS
+      @yieldreturn [YRet] yretdescription
+      @return [String]
+    COMMENTS
+    pin = Solargraph::Pin::Method.new(comments: comments)
+    expect(pin.documentation).to include('YRet')
+    expect(pin.documentation).to include('yretdescription')
+  end
 
   it "detects return types from tags" do
     pin = Solargraph::Pin::Method.new(comments: '@return [Hash]')

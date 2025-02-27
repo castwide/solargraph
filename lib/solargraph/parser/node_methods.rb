@@ -27,6 +27,7 @@ module Solargraph
         raise NotImplementedError
       end
 
+      # @return [Source::Chain]
       def chain node, filename = nil, in_block = false
         raise NotImplementedError
       end

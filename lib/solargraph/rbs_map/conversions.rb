@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require 'rbs'
+
 module Solargraph
   class RbsMap
     # Functions for converting RBS declarations to Solargraph pins
@@ -25,15 +27,42 @@ module Solargraph
 
       private
 
+      # @return Hash{String => RBS::AST::Declarations::TypeAlias}
       def type_aliases
         @type_aliases ||= {}
+      end
+
+      # @param loader [RBS::EnvironmentLoader]
+      # @return [void]
+      def load_environment_to_pins(loader)
+        environment = RBS::Environment.from_loader(loader).resolve_type_names
+        cursor = pins.length
+        environment.declarations.each { |decl| convert_decl_to_pin(decl, Solargraph::Pin::ROOT_PIN) }
+        added_pins = pins[cursor..-1]
+        add_back_implicit_pins(added_pins)
+      end
+
+      # @param added_pins [Range<Pin>]
+      # @return [void]
+      def add_back_implicit_pins(added_pins)
+        added_pins.each do |pin|
+          pin.source = :rbs
+          next unless pin.is_a?(Pin::Namespace) && pin.type == :class
+          next if pins.any? { |p| p.path == "#{pin.path}.new"}
+          pins.push Solargraph::Pin::Method.new(
+                      location: nil,
+                      closure: pin,
+                      name: 'new',
+                      comments: pin.comments,
+                      scope: :class
+          )
+        end
       end
 
       # @param decl [RBS::AST::Declarations::Base]
       # @param closure [Pin::Closure]
       # @return [void]
       def convert_decl_to_pin decl, closure
-        cursor = pins.length
         case decl
         when RBS::AST::Declarations::Class
           class_decl_to_pin decl
@@ -46,18 +75,10 @@ module Solargraph
           module_decl_to_pin decl
         when RBS::AST::Declarations::Constant
           constant_decl_to_pin decl
-        end
-        pins[cursor..-1].each do |pin|
-          pin.source = :rbs
-          next unless pin.is_a?(Pin::Namespace) && pin.type == :class
-          next if pins.any? { |p| p.path == "#{pin.path}.new"}
-          pins.push Solargraph::Pin::Method.new(
-            location: nil,
-            closure: pin.closure,
-            name: 'new',
-            comments: pin.comments,
-            scope: :class
-          )
+        when RBS::AST::Declarations::ClassAlias
+          class_alias_decl_to_pin decl
+        else
+          Solargraph.logger.info "Skipping declaration #{decl.class}"
         end
       end
 
@@ -106,7 +127,7 @@ module Solargraph
           name: decl.name.relative!.to_s,
           closure: Solargraph::Pin::ROOT_PIN,
           comments: decl.comment&.string,
-          parameters: decl.type_params.map(&:name).map(&:to_s)
+          generics: decl.type_params.map(&:name).map(&:to_s)
         )
         pins.push class_pin
         if decl.super_class
@@ -142,16 +163,20 @@ module Solargraph
           type: :module,
           name: decl.name.relative!.to_s,
           closure: Solargraph::Pin::ROOT_PIN,
-          comments: decl.comment&.string
+          comments: decl.comment&.string,
+          generics: decl.type_params.map(&:name).map(&:to_s),
         )
         pins.push module_pin
         convert_members_to_pin decl, module_pin
       end
 
-      # @param decl [RBS::AST::Declarations::Constant]
-      # @return [void]
-      def constant_decl_to_pin decl
-        parts = decl.name.relative!.to_s.split('::')
+      # @param name [String]
+      # @param tag [String]
+      # @param comments [String]
+      #
+      # @return [Solargraph::Pin::Constant]
+      def create_constant(name, tag, comments)
+        parts = name.split('::')
         if parts.length > 1
           name = parts.last
           closure = pins.select { |pin| pin && pin.path == parts[0..-2].join('::') }.first
@@ -159,15 +184,31 @@ module Solargraph
           name = parts.first
           closure = Solargraph::Pin::ROOT_PIN
         end
-        pin = Solargraph::Pin::Constant.new(
+        constant_pin = Solargraph::Pin::Constant.new(
           name: name,
           closure: closure,
-          comments: decl.comment&.string
+          comments: comments
         )
-        tag = other_type_to_tag(decl.type)
         # @todo Class or Module?
-        pin.docstring.add_tag(YARD::Tags::Tag.new(:return, '', "Class<#{tag}>"))
-        pins.push pin
+        constant_pin.docstring.add_tag(YARD::Tags::Tag.new(:return, '', "Class<#{tag}>"))
+        constant_pin
+      end
+
+      # @param decl [RBS::AST::Declarations::ClassAlias]
+      # @return [void]
+      def class_alias_decl_to_pin decl
+        # See https://www.rubydoc.info/gems/rbs/3.4.3/RBS/AST/Declarations/ClassAlias
+        new_name = decl.new_name.relative!.to_s
+        old_name = decl.old_name.relative!.to_s
+
+        pins.push create_constant(new_name, old_name, decl.comment&.string)
+      end
+
+      # @param decl [RBS::AST::Declarations::Constant]
+      # @return [void]
+      def constant_decl_to_pin decl
+        tag = other_type_to_tag(decl.type)
+        pins.push create_constant(decl.name.relative!.to_s, tag, decl.comment&.string)
       end
 
       # @param decl [RBS::AST::Members::MethodDefinition]
@@ -243,7 +284,8 @@ module Solargraph
         end
         type.type.optional_positionals.each do |param|
           name = param.name ? param.name.to_s : "arg#{arg_num += 1}"
-          parameters.push Solargraph::Pin::Parameter.new(decl: :optarg, name: name, closure: pin)
+          parameters.push Solargraph::Pin::Parameter.new(decl: :optarg, name: name, closure: pin,
+                                                         return_type: ComplexType.try_parse(other_type_to_tag(param.type)))
         end
         if type.type.rest_positionals
           name = type.type.rest_positionals.name ? type.type.rest_positionals.name.to_s : "arg#{arg_num += 1}"
@@ -253,13 +295,15 @@ module Solargraph
           name = param.name ? param.name.to_s : "arg#{arg_num += 1}"
           parameters.push Solargraph::Pin::Parameter.new(decl: :arg, name: name, closure: pin)
         end
-        type.type.required_keywords.each do |orig, _param|
+        type.type.required_keywords.each do |orig, param|
           name = orig ? orig.to_s : "arg#{arg_num += 1}"
-          parameters.push Solargraph::Pin::Parameter.new(decl: :kwarg, name: name, closure: pin)
+          parameters.push Solargraph::Pin::Parameter.new(decl: :kwarg, name: name, closure: pin,
+                                                         return_type: ComplexType.try_parse(other_type_to_tag(param.type)))
         end
-        type.type.optional_keywords.each do |orig, _param|
+        type.type.optional_keywords.each do |orig, param|
           name = orig ? orig.to_s : "arg#{arg_num += 1}"
-          parameters.push Solargraph::Pin::Parameter.new(decl: :kwoptarg, name: name, closure: pin)
+          parameters.push Solargraph::Pin::Parameter.new(decl: :kwoptarg, name: name, closure: pin,
+                                                         return_type: ComplexType.try_parse(other_type_to_tag(param.type)))
         end
         if type.type.rest_keywords
           name = type.type.rest_keywords.name ? type.type.rest_keywords.name.to_s : "arg#{arg_num += 1}"
@@ -329,6 +373,7 @@ module Solargraph
         )
       end
 
+      # @param decl [RBS::AST::Members::Alias]
       def alias_to_pin decl, closure
         pins.push Solargraph::Pin::MethodAlias.new(
           name: decl.new_name.to_s,
@@ -345,6 +390,8 @@ module Solargraph
         'NilClass' => 'nil'
       }
 
+      # @param type [RBS::AST::Members::MethodDefinition::Overload]
+      # @return [String]
       def method_type_to_tag type
         if type_aliases.key?(type.type.return_type.to_s)
           other_type_to_tag(type_aliases[type.type.return_type.to_s].type)
@@ -378,7 +425,7 @@ module Solargraph
         elsif type.is_a?(RBS::Types::Bases::Void)
           'void'
         elsif type.is_a?(RBS::Types::Variable)
-          "param<#{type.name}>"
+          "#{Solargraph::ComplexType::GENERIC_TAG_NAME}<#{type.name}>"
         elsif type.is_a?(RBS::Types::ClassInstance) #&& !type.args.empty?
           base = RBS_TO_YARD_TYPE[type.name.relative!.to_s] || type.name.relative!.to_s
           params = type.args.map { |a| other_type_to_tag(a) }.reject { |t| t == 'undefined' }

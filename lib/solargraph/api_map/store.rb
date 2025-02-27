@@ -147,8 +147,6 @@ module Solargraph
         @pin_select_cache[klass] ||= @pin_class_hash.each_with_object(Set.new) { |(key, o), n| n.merge(o) if key <= klass }
       end
 
-      private
-
       # @param fqns [String]
       # @return [Array<Solargraph::Pin::Namespace>]
       def fqns_pins fqns
@@ -163,6 +161,8 @@ module Solargraph
         end
         fqns_pins_map[[base, name]]
       end
+
+      private
 
       def fqns_pins_map
         @fqns_pins_map ||= Hash.new do |h, (base, name)|

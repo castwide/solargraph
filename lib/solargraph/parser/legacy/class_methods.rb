@@ -5,7 +5,7 @@ module Solargraph
     module Legacy
       module ClassMethods
         # @param code [String]
-        # @param filename [String]
+        # @param filename [String, nil]
         # @return [Array(Parser::AST::Node, Array<Parser::Source::Comment>)]
         def parse_with_comments code, filename = nil
           buffer = ::Parser::Source::Buffer.new(filename, 0)
@@ -128,7 +128,7 @@ module Solargraph
             end
           end
           result
-        end  
+        end
       end
     end
   end

@@ -44,6 +44,40 @@ describe Solargraph::Source::Chain::Call do
     expect(type.tag).to eq('Integer')
   end
 
+  it "infers return types based on yield call and @yieldreturn" do
+    api_map = Solargraph::ApiMap.new
+    source = Solargraph::Source.load_string(%(
+      class Foo
+        # @yieldreturn [Integer]
+        def my_method(&block)
+          yield
+        end
+      end
+      Foo.new.my_method))
+    api_map.map source
+    chain = Solargraph::Source::SourceChainer.chain(source, Solargraph::Position.new(7, 14))
+    locals = api_map.source_map(nil).locals
+    type = chain.infer(api_map, Solargraph::Pin::ROOT_PIN, locals)
+    expect(type.tag).to eq('Integer')
+  end
+
+  it "infers return types based only on yield call and @yieldreturn" do
+    api_map = Solargraph::ApiMap.new
+    source = Solargraph::Source.load_string(%(
+      class Foo
+        # @yieldreturn [Integer]
+        def my_method(&block)
+          yield
+        end
+      end
+      Foo.new.my_method { "foo" }))
+    api_map.map source
+    chain = Solargraph::Source::SourceChainer.chain(source, Solargraph::Position.new(7, 32))
+    locals = api_map.source_map(nil).locals
+    type = chain.infer(api_map, Solargraph::Pin::ROOT_PIN, locals)
+    expect(type.tag).to eq('Integer')
+  end
+
   it "adds virtual constructors for <Class>.new calls with conflicting return types" do
     api_map = Solargraph::ApiMap.new
     source = Solargraph::Source.load_string(%(
@@ -76,7 +110,7 @@ describe Solargraph::Source::Chain::Call do
     expect(type.tag).to eq('String')
   end
 
-  it 'infers parameterized types' do
+  it 'infers generic types' do
     source = Solargraph::Source.load_string(%(
       # @type [Array<String>]
       list = array_of_strings
@@ -87,6 +121,126 @@ describe Solargraph::Source::Chain::Call do
     chain = Solargraph::Source::SourceChainer.chain(source, Solargraph::Position.new(3, 11))
     type = chain.infer(api_map, Solargraph::Pin::ROOT_PIN, api_map.source_map('test.rb').locals)
     expect(type.tag).to eq('Array<String>')
+  end
+
+  it 'infers constant return types via returns, ignoring blocks' do
+    source = Solargraph::Source.load_string(%(
+      def yielder(&blk)
+        "foo"
+      end
+
+      yielder do
+        123
+      end
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new
+    api_map.map source
+    chain = Solargraph::Source::SourceChainer.chain(source, Solargraph::Position.new(7, 8))
+    type = chain.infer(api_map, Solargraph::Pin::ROOT_PIN, api_map.source_map('test.rb').locals)
+    expect(type.tag).to eq('String')
+  end
+
+  it 'infers generic parameterized types through module inclusion' do
+    source = Solargraph::Source.load_string(%(
+      # @generic GenericTypeParam
+      module Foo
+        # @return [Array<generic<GenericTypeParam>>]
+        def baz
+        end
+      end
+
+      class Baz
+        # @return [Baz<String>]
+        def self.bar
+        end
+
+        include Foo
+      end
+
+      Baz.bar.baz
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new
+    api_map.map source
+    chain = Solargraph::Source::SourceChainer.chain(source, Solargraph::Position.new(16, 15))
+    type = chain.infer(api_map, Solargraph::Pin::ROOT_PIN, api_map.source_map('test.rb').locals)
+    expect(type.tag).to eq('Array<String>')
+  end
+
+  it 'infers generic parameterized types through module inclusion via RBS definition of module' do
+    source = Solargraph::Source.load_string(%(
+      foo = ['bar'].to_set
+
+      foo
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new
+    api_map.map source
+    chain = Solargraph::Source::SourceChainer.chain(source, Solargraph::Position.new(3, 9))
+    type = chain.infer(api_map, Solargraph::Pin::ROOT_PIN, api_map.source_map('test.rb').locals)
+    expect(type.tag).to eq('Set<String>')
+  end
+
+  it 'infers method return types' do
+    source = Solargraph::Source.load_string(%(
+      def bar
+        123
+      end
+
+      def baz
+        bar
+      end
+
+      baz
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new
+    api_map.map source
+    chain = Solargraph::Source::SourceChainer.chain(source, Solargraph::Position.new(9, 9))
+    type = chain.infer(api_map, Solargraph::Pin::ROOT_PIN, api_map.source_map('test.rb').locals)
+    expect(type.tag).to eq('Integer')
+  end
+
+  it 'infers method return types with unused blocks' do
+    source = Solargraph::Source.load_string(%(
+      def bar
+        123
+      end
+
+      def baz(&block)
+        bar
+      end
+
+      baz { "foo" }
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new
+    api_map.map source
+    chain = Solargraph::Source::SourceChainer.chain(source, Solargraph::Position.new(9, 9))
+    type = chain.infer(api_map, Solargraph::Pin::ROOT_PIN, api_map.source_map('test.rb').locals)
+    expect(type.tag).to eq('Integer')
+  end
+
+  it 'infers generic types' do
+    source = Solargraph::Source.load_string(%(
+      # @generic GenericTypeParam
+      class Foo
+        # @return [Foo<String>]
+        def self.bar
+        end
+
+        # @return [Array<generic<GenericTypeParam>>]
+        def baz
+        end
+      end
+
+      Foo.bar.baz
+      Foo.bar.baz.first
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new
+    api_map.map source
+    chain = Solargraph::Source::SourceChainer.chain(source, Solargraph::Position.new(12, 15))
+    type = chain.infer(api_map, Solargraph::Pin::ROOT_PIN, api_map.source_map('test.rb').locals)
+    expect(type.tag).to eq('Array<String>')
+    chain = Solargraph::Source::SourceChainer.chain(source, Solargraph::Position.new(13, 20))
+    type = chain.infer(api_map, Solargraph::Pin::ROOT_PIN, api_map.source_map('test.rb').locals)
+    expect(type.tag).to eq('String')
   end
 
   it 'infers types from union type' do
@@ -108,7 +262,7 @@ describe Solargraph::Source::Chain::Call do
     expect(type.tag).to eq('Integer')
   end
 
-  it 'infers parameterized types from union type' do
+  it 'infers generic types from union type' do
     source = Solargraph::Source.load_string(%(
       # @type [String, Array<Integer>]
       list = string_or_integer

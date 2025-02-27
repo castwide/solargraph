@@ -371,7 +371,7 @@ describe Solargraph::Library do
     expect(pins.map(&:path)).to include('Tagged::Example')
   end
 
-  it 'defines parameterized YARD tags' do
+  it 'defines generic YARD tags' do
     library = Solargraph::Library.new
     source = Solargraph::Source.load_string(%(
       class TaggedExample; end

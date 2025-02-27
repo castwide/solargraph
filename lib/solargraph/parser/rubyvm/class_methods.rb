@@ -6,9 +6,8 @@ module Solargraph
     module Rubyvm
       module ClassMethods
         # @param code [String]
-        # @param filename [String]
+        # @param filename [String, nil]
         # @return [Array(Parser::AST::Node, Array<Parser::Source::Comment>)]
-        # @sg-ignore
         def parse_with_comments code, filename = nil
           node = RubyVM::AbstractSyntaxTree.parse(code).children[2]
           node &&= RubyVM::AbstractSyntaxTree::NodeWrapper.from(node, code.lines)
@@ -22,7 +21,6 @@ module Solargraph
         # @param filename [String, nil]
         # @param line [Integer]
         # @return [Parser::AST::Node]
-        # @sg-ignore
         def parse code, filename = nil, line = 0
           node = RubyVM::AbstractSyntaxTree.parse(code).children[2]
           node and RubyVM::AbstractSyntaxTree::NodeWrapper.from(node, code.lines)

@@ -111,7 +111,7 @@ describe Solargraph::TypeChecker::Checks do
     expect(match).to be(true)
   end
 
-  it 'validates parameterized classes with expected Class' do
+  it 'validates generic classes with expected Class' do
     api_map = Solargraph::ApiMap.new
     exp = Solargraph::ComplexType.parse('Class<String>')
     inf = Solargraph::ComplexType.parse('Class')

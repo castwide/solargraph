@@ -56,7 +56,7 @@ module Solargraph
     end
 
     # @param directory [String]
-    # @return [Hash]
+    # @return [Hash{String => BasicObject}]
     def self.specs_from_bundle directory
       Solargraph.with_clean_env do
         cmd = [

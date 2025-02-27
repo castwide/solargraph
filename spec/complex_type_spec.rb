@@ -279,13 +279,13 @@ describe Solargraph::ComplexType do
   end
 
   it 'recognizes param types' do
-    type = Solargraph::ComplexType.parse('param<Variable>')
-    expect(type).to be_parameterized
+    type = Solargraph::ComplexType.parse('generic<Variable>')
+    expect(type).to be_generic
   end
 
-  it 'recognizes parameterized parameters' do
-    type = Solargraph::ComplexType.parse('Object<param<Variable>>')
-    expect(type).to be_parameterized
+  it 'recognizes generic parameters' do
+    type = Solargraph::ComplexType.parse('Object<generic<Variable>>')
+    expect(type).to be_generic
   end
 
   it 'reduces objects' do
@@ -295,5 +295,19 @@ describe Solargraph::ComplexType do
     expect(type.tag).to eq('Object<String>')
     result = type.qualify(api_map)
     expect(result.tag).to eq('String')
+  end
+
+  it 'resolves generic parameters' do
+    api_map = Solargraph::ApiMap.new
+    return_type = Solargraph::ComplexType.parse('Array<generic<GenericTypeParam>>')
+    generic_class = Solargraph::Pin::Namespace.new(name: 'Foo', comments: '@generic GenericTypeParam')
+    called_method = Solargraph::Pin::Method.new(
+      location: Solargraph::Location.new('file:///foo.rb', Solargraph::Range.from_to(0, 0, 0, 0)),
+      closure: generic_class,
+      name: 'bar',
+      comments: '@return [Foo<String>]'
+    )
+    type = return_type.resolve_generics(generic_class, called_method.return_type)
+    expect(type.tag).to eq('Array<String>')
   end
 end

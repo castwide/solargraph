@@ -4,6 +4,7 @@ module Solargraph
   # A container for type data based on YARD type tags.
   #
   class ComplexType
+    GENERIC_TAG_NAME = 'generic'.freeze
     # @!parse
     #   include TypeMethods
 
@@ -42,7 +43,7 @@ module Solargraph
     end
 
     # @yieldparam [UniqueType]
-    # @return [Array]
+    # @return [Enumerator<UniqueType>]
     def each &block
       @items.each &block
     end
@@ -106,12 +107,15 @@ module Solargraph
       @items.any?(&:selfy?)
     end
 
-    def parameterized?
-      any?(&:parameterized?)
+    def generic?
+      any?(&:generic?)
     end
 
-    def resolve_parameters definitions, context
-      result = @items.map { |i| i.resolve_parameters(definitions, context) }
+    # @param definitions [Pin::Namespace]
+    # @param context_type [ComplexType]
+    # @return [ComplexType]
+    def resolve_generics definitions, context_type
+      result = @items.map { |i| i.resolve_generics(definitions, context_type) }
       ComplexType.parse(*result.map(&:tag))
     end
 

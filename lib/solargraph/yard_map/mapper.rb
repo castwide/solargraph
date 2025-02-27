@@ -8,7 +8,7 @@ module Solargraph
       autoload :ToConstant, 'solargraph/yard_map/mapper/to_constant'
 
       # @param code_objects [Array<YARD::CodeObjects::Base>]
-      # @param spec [Gem::Specification]
+      # @param spec [Gem::Specification, nil]
       def initialize code_objects, spec = nil
         @code_objects = code_objects
         @spec = spec

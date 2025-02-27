@@ -31,12 +31,12 @@ module Solargraph
       UNDEFINED_CALL = Chain::Call.new('<undefined>')
       UNDEFINED_CONSTANT = Chain::Constant.new('<undefined>')
 
-      # @return [Array<Source::Chain::Link>]
+      # @return [::Array<Source::Chain::Link>]
       attr_reader :links
 
       attr_reader :node
 
-      # @param links [Array<Chain::Link>]
+      # @param links [::Array<Chain::Link>]
       def initialize links, node = nil, splat = false
         @links = links.clone
         @links.push UNDEFINED_CALL if @links.empty?
@@ -58,7 +58,7 @@ module Solargraph
       # @param api_map [ApiMap]
       # @param name_pin [Pin::Base]
       # @param locals [Array<Pin::Base>]
-      # @return [Array<Pin::Base>]
+      # @return [::Array<Pin::Base>]
       def define api_map, name_pin, locals
         return [] if undefined?
         working_pin = name_pin
@@ -128,8 +128,8 @@ module Solargraph
           type = pin.typify(api_map)
           @@inference_stack.pop
           if type.defined?
-            if type.parameterized?
-              type = type.resolve_parameters(pin.closure, context)
+            if type.generic?
+              type = type.resolve_generics(pin.closure, context.return_type)
               # idx = pin.closure.parameters.index(type.subtypes.first.name)
               # next if idx.nil?
               # param_type = context.return_type.all_params[idx]

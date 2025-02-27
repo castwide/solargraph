@@ -101,7 +101,7 @@ module Solargraph
       # @param context [String] The namespace from which to resolve names
       # @return [ComplexType] The generated ComplexType
       def qualify api_map, context = ''
-        return self if name == 'param'
+        return self if name == GENERIC_TAG_NAME
         return ComplexType.new([self]) if duck_type? || void? || undefined?
         recon = (rooted? ? '' : context)
         fqns = api_map.qualify(name, recon)

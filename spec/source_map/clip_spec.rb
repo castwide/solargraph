@@ -1452,7 +1452,7 @@ describe Solargraph::SourceMap::Clip do
     expect(clip.complete.pins.map(&:path)).to include('TaggedExample')
   end
 
-  it 'completes parameterized YARD tags' do
+  it 'completes generic YARD tags' do
     source = Solargraph::Source.load_string(%(
       class TaggedExample
       end

@@ -137,7 +137,7 @@ module Solargraph
       api_map
     end
 
-    # @return [Array<Solargraph::Pin::Base>]
+    # @return [Enumerable<Solargraph::Pin::Base>]
     def pins
       store.pins
     end
@@ -199,6 +199,13 @@ module Solargraph
       result
     end
 
+    # @param namespace [String]
+    # @param context [String]
+    # @return [Array<Pin::Namespace>]
+    def get_namespace_pins namespace, context
+      store.fqns_pins(qualify(namespace, context))
+    end
+
     # Get a fully qualified namespace name. This method will start the search
     # in the specified context until it finds a match for the name.
     #
@@ -245,12 +252,12 @@ module Solargraph
       prefer_non_nil_variables(store.get_class_variables(namespace))
     end
 
-    # @return [Array<Solargraph::Pin::Base>]
+    # @return [Enumerable<Solargraph::Pin::Base>]
     def get_symbols
       store.get_symbols
     end
 
-    # @return [Array<Solargraph::Pin::GlobalVariable>]
+    # @return [Enumerable<Solargraph::Pin::GlobalVariable>]
     def get_global_variable_pins
       store.pins_by_class(Pin::GlobalVariable)
     end

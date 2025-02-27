@@ -145,7 +145,7 @@ module Solargraph
       @cache ||= YardMap::Cache.new
     end
 
-    # @return [Hash]
+    # @return [Hash{Class<Pin::Base> => Array<Pin::Base>}]
     def pin_class_hash
       @pin_class_hash ||= pins.to_set.classify(&:class).transform_values(&:to_a)
     end
