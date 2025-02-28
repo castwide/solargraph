@@ -47,6 +47,8 @@ module Solargraph
           elsif source.parsed? && source.repaired? && end_of_phrase == '.'
             node, parent = source.tree_at(fixed_position.line, fixed_position.column)[0..2]
             node = Parser.parse(fixed_phrase) if node.nil?
+          elsif source.repaired?
+            node = Parser.parse(fixed_phrase)
           else
             node, parent = source.tree_at(fixed_position.line, fixed_position.column)[0..2] unless source.error_ranges.any?{|r| r.nil? || r.include?(fixed_position)}
             # Exception for positions that chain literal nodes in unsynchronized sources

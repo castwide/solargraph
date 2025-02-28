@@ -306,4 +306,24 @@ describe Solargraph::Source::SourceChainer do
     type = chain.infer(api_map, Solargraph::Pin::ROOT_PIN, api_map.source_map('test.rb').locals)
     expect(type.tag).to eq('Array<String>')
   end
+
+  it 'extracts correct node from repaired source' do
+    source = Solargraph::Source.load_string(%(
+        # @return [Array<String>]
+        def strings; end
+
+        strings.each do |str|
+          
+        end
+    ), 'test.rb')
+    updater = Solargraph::Source::Updater.new('test.rb', 1, [
+      Solargraph::Source::Change.new(Solargraph::Range.from_to(5, 10, 5, 10), 'if s')
+    ])
+    updated = source.synchronize(updater)
+    api_map = Solargraph::ApiMap.new
+    api_map.map updated
+    chain = Solargraph::Source::SourceChainer.chain(updated, Solargraph::Position.new(5, 14))
+    expect(chain.node.type).to be(:send)
+    expect(chain.node.children[1]).to be(:s)
+  end
 end
