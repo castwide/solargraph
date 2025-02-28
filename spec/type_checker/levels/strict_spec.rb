@@ -623,7 +623,6 @@ describe Solargraph::TypeChecker do
           end
         end
       ))
-      puts checker.problems.inspect
       expect(checker.problems).to be_one
     end
   end

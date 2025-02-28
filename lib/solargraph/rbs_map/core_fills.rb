@@ -48,10 +48,7 @@ module Solargraph
       end
 
       CLASS_RETURN_TYPES = [
-        Override.method_return('Class#new', 'self'),
-        Override.method_return('Class.new', 'Class<BasicObject>'),
         Override.method_return('Class#allocate', 'self'),
-        Override.method_return('Class.allocate', 'Class<BasicObject>')
       ]
 
       # HACK: Add Errno exception classes
