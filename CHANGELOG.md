@@ -1,5 +1,22 @@
-## 0.51.3
+## 0.52.0 - February 28, 2025
 - Chains resolve identical names with different contexts (#679)
+- Handle symbol tags in method tag values (#744)
+- Infer more specific Array types when possible (#745)
+- Handle interpolated symbol literals (#747)
+- Handle combined conditions, else clauses in case statements (#746)
+- fix: support find require xxx.rb in local workspace. (#722)
+- Don't require redundant attribute @return and @param tags (#748)
+- Use @yieldreturn tags for type inference (#749)
+- Fix type annotations identified at 'typed' level (#750)
+- Support RBS class aliases (#751)
+- Better support for generics via Class @param tags (#743)
+- Generic module support through RBS (#757)
+- Fix inference of begin expression types (#754)
+- Add argument to satisfy typechecker on which signature to use (#755)
+- Fix RBS ingestion implicit initializer issues, missing param types (#756)
+- Validate zsuper arity
+- Use yard-solargraph plugin (#759)
+- Add missing RBS types
 
 ## 0.51.2 - February 1, 2025
 - Fix exception from parser when anonymous block forwarding is used (#740)
