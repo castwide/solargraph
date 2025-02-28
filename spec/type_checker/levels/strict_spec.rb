@@ -593,5 +593,38 @@ describe Solargraph::TypeChecker do
       expect(checker.problems).to be_one
       expect(checker.problems.first.message).to include('does not match inferred type')
     end
+
+    it 'validates zsuper arity' do
+      checker = type_checker(%(
+        class Foo
+          def meth(param_foo)
+          end
+        end
+
+        class Bar < Foo
+          def meth(param_bar)
+            super
+          end
+        end
+      ))
+      expect(checker.problems).to be_empty
+    end
+
+    it 'reports unmatched zsuper arity' do
+      checker = type_checker(%(
+        class Foo
+          def meth(param1, param2)
+          end
+        end
+
+        class Bar < Foo
+          def meth(param1)
+            super
+          end
+        end
+      ))
+      puts checker.problems.inspect
+      expect(checker.problems).to be_one
+    end
   end
 end

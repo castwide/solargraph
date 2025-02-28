@@ -291,7 +291,8 @@ module Solargraph
             result.concat ap
             break
           end
-          break unless rules.validate_calls?
+          break if !rules.validate_calls? || base.links.first.is_a?(Solargraph::Source::Chain::ZSuper)
+
           params = first_param_hash(pins)
 
           all_errors = []
