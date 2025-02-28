@@ -85,6 +85,7 @@ module Solargraph
         @generics ||= docstring.tags(:generic).map(&:name)
       end
 
+      # @return [::Array<Signature>]
       def signatures
         @signatures ||= begin
           top_type = generate_complex_type
