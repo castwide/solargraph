@@ -431,10 +431,18 @@ module Solargraph
           params = type.args.map { |a| other_type_to_tag(a) }.reject { |t| t == 'undefined' }
           return base if params.empty?
           "#{base}<#{params.join(', ')}>"
+        elsif type.is_a?(RBS::Types::Bases::Instance)
+          'self'
+        elsif type.is_a?(RBS::Types::Bases::Top) || type.is_a?(RBS::Types::Bases::Bottom)
+          'self'
+        elsif type.is_a?(RBS::Types::Intersection)
+          type.types.map { |member| other_type_to_tag(member) }.join(', ')
+        elsif type.is_a?(RBS::Types::Proc)
+          'Proc'
         elsif type.respond_to?(:name) && type.name.respond_to?(:relative!)
           RBS_TO_YARD_TYPE[type.name.relative!.to_s] || type.name.relative!.to_s
         else
-          Solargraph.logger.warn "Unrecognized RBS type: #{type.class} #{type}"
+          Solargraph.logger.warn "Unrecognized RBS type: #{type.class} at #{type.location}"
           'undefined'
         end
       end

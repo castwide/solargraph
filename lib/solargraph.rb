@@ -2,6 +2,8 @@
 
 Encoding.default_external = 'UTF-8'
 
+require 'yard-solargraph'
+require 'solargraph/yard_tags'
 require 'solargraph/version'
 
 # The top-level namespace for the Solargraph code mapping, documentation,
@@ -44,7 +46,6 @@ module Solargraph
   autoload :Cache,            'solargraph/cache'
 
   dir = File.dirname(__FILE__)
-  YARD_EXTENSION_FILE = File.join(dir, 'yard-solargraph.rb')
   VIEWS_PATH = File.join(dir, 'solargraph', 'views')
 
   # A convenience method for Solargraph::Logging.logger.

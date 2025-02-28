@@ -76,27 +76,12 @@ module Solargraph
                 end
               end
               if match
-                type = extra_return_type(p.docstring, context)
-                break if type
                 type = with_params(ol.return_type.self_to(context.to_s), context).qualify(api_map, context.namespace) if ol.return_type.defined?
                 type ||= ComplexType::UNDEFINED
               end
               break if type.defined?
             end
             next p.proxy(type) if type.defined?
-            type = extra_return_type(p.docstring, context)
-            if type
-              next Solargraph::Pin::Method.new(
-                location: p.location,
-                closure: p.closure,
-                name: p.name,
-                comments: "@return [#{context.subtypes.first.to_s}]",
-                scope: p.scope,
-                visibility: p.visibility,
-                parameters: p.parameters,
-                node: p.node
-              )
-            end
             if p.is_a?(Pin::Method) && !p.macros.empty?
               result = process_macro(p, api_map, context, locals)
               next result unless result.return_type.undefined?
@@ -169,18 +154,6 @@ module Solargraph
             return Pin::ProxyType.anonymous(ComplexType.try_parse(*tag.types))
           end
           Pin::ProxyType.anonymous(ComplexType::UNDEFINED)
-        end
-
-        # @param docstring [YARD::Docstring]
-        # @param context [ComplexType]
-        # @return [ComplexType]
-        def extra_return_type docstring, context
-          if docstring.has_tag?(:return_single_parameter) #&& context.subtypes.one?
-            return context.subtypes.first || ComplexType::UNDEFINED
-          elsif docstring.has_tag?(:return_value_parameter) && context.value_types.one?
-            return context.value_types.first
-          end
-          nil
         end
 
         # @param arguments [Array<Chain>]

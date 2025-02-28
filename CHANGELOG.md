@@ -1,5 +1,22 @@
-## 0.51.3
+## 0.52.0 - February 28, 2025
 - Chains resolve identical names with different contexts (#679)
+- Handle symbol tags in method tag values (#744)
+- Infer more specific Array types when possible (#745)
+- Handle interpolated symbol literals (#747)
+- Handle combined conditions, else clauses in case statements (#746)
+- fix: support find require xxx.rb in local workspace. (#722)
+- Don't require redundant attribute @return and @param tags (#748)
+- Use @yieldreturn tags for type inference (#749)
+- Fix type annotations identified at 'typed' level (#750)
+- Support RBS class aliases (#751)
+- Better support for generics via Class @param tags (#743)
+- Generic module support through RBS (#757)
+- Fix inference of begin expression types (#754)
+- Add argument to satisfy typechecker on which signature to use (#755)
+- Fix RBS ingestion implicit initializer issues, missing param types (#756)
+- Validate zsuper arity
+- Use yard-solargraph plugin (#759)
+- Add missing RBS types
 
 ## 0.51.2 - February 1, 2025
 - Fix exception from parser when anonymous block forwarding is used (#740)
@@ -8,10 +25,10 @@
 
 ## 0.51.1 - January 23, 2025
 - Format example code
-- Block infers yieldself from chain
+- Block infers yieldreceiver from chain
 
 ## 0.51.0 - January 19, 2025
-- Resolve self in yieldself tags
+- Resolve self in yieldreceiver tags
 - Include absolute paths in config (#674)
 - Enable diagnostics by default
 - Fix cache resolution (#704)
@@ -600,7 +617,7 @@
 ## 0.31.2 - January 27, 2019
 - Use YARD documentation rules to associate directives with namespaces
 - Handle non-unique pin locations in completionItem/resolve
-- Clip#complete handles @yieldself and @yieldpublic contexts
+- Clip#complete handles @yieldreceiver and @yieldpublic contexts
 - Host::Dispatch filters library updates (castwide/vscode-solargraph#99)
 - Qualify included namespaces (#148)
 
@@ -956,7 +973,7 @@
 
 ## 0.17.0 - February 1, 2018
 - Support Solargraph configurations in workspace folders.
-- Use @yieldself tag to change block contexts.
+- Use @yieldreceiver tag to change block contexts.
 - Handle whitespace in signatures.
 - Convert 'self' when inferring signature types.
 - Handle bare periods without signatures.
@@ -999,7 +1016,7 @@
 - Map pins to code objects.
 - Infer return types from domain (DSL) methods.
 - Fixed visibility and results for superclasses.
-- Experimental @yieldself tag.
+- Experimental @yieldreceiver tag.
 - Improved syntax error handling in Source.fix.
 - Gem ships with Ruby 2.2.2 yardocs.
 - Experimental plugin architecture and Runtime plugin.
