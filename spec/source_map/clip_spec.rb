@@ -474,7 +474,7 @@ describe Solargraph::SourceMap::Clip do
     expect(paths3).not_to include('Foo#priv_method')
   end
 
-  it 'processes @yieldself tags in completions' do
+  it 'processes @yieldreceiver tags in completions' do
     source = Solargraph::Source.load_string(%(
       class Par
         def action; end
@@ -482,7 +482,7 @@ describe Solargraph::SourceMap::Clip do
         def hidden; end
       end
       class Foo
-        # @yieldself [Par]
+        # @yieldreceiver [Par]
         def bar; end
       end
       Foo.new.bar do
@@ -496,10 +496,10 @@ describe Solargraph::SourceMap::Clip do
     expect(clip.complete.pins.map(&:path)).to include('Par#hidden')
   end
 
-  it 'processes @yieldself from blocks in class method calls' do
+  it 'processes @yieldreceiver from blocks in class method calls' do
     source = Solargraph::Source.load_string(%(
       class Par
-        # @yieldself [self]
+        # @yieldreceiver [self]
         def self.process; end
       end
       class Sub < Par
@@ -516,7 +516,7 @@ describe Solargraph::SourceMap::Clip do
     expect(clip.complete.pins.map(&:path)).to include('Sub#local')
   end
 
-  it 'processes @yieldself in variable contexts' do
+  it 'processes @yieldreceiver in variable contexts' do
     source = Solargraph::Source.load_string(%(
       class Par
         def action; end
@@ -524,7 +524,7 @@ describe Solargraph::SourceMap::Clip do
         def hidden; end
       end
       class Foo
-        # @yieldself [Par]
+        # @yieldreceiver [Par]
         def bar; end
       end
       foo = Foo.new
@@ -537,28 +537,6 @@ describe Solargraph::SourceMap::Clip do
     clip = api_map.clip_at('file.rb', [12, 8])
     expect(clip.complete.pins.map(&:path)).to include('Par#action')
     expect(clip.complete.pins.map(&:path)).to include('Par#hidden')
-  end
-
-  it 'processes @yieldpublic tags in completions' do
-    source = Solargraph::Source.load_string(%(
-      class Par
-        def action; end
-        private
-        def hidden; end
-      end
-      class Foo
-        # @yieldpublic [Par]
-        def bar; end
-      end
-      Foo.new.bar do
-        x
-      end
-    ), 'file.rb')
-    api_map = Solargraph::ApiMap.new
-    api_map.map source
-    clip = api_map.clip_at('file.rb', [11, 8])
-    expect(clip.complete.pins.map(&:path)).to include('Par#action')
-    expect(clip.complete.pins.map(&:path)).not_to include('Par#hidden')
   end
 
   it 'infers instance variable types in rebound blocks' do
@@ -746,7 +724,7 @@ describe Solargraph::SourceMap::Clip do
       end
 
       class MyClass
-        # @yieldself [InnerClass]
+        # @yieldreceiver [InnerClass]
         def my_method
           @my_method ||= 'mines'
         end

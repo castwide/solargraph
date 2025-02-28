@@ -1,2 +1,2 @@
 lib/**/*.rb
--e lib/yard-solargraph.rb
+--plugin yard-solargraph

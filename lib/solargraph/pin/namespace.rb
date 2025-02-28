@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-require 'yard-solargraph'
+require 'solargraph/yard_tags'
 
 module Solargraph
   module Pin
