@@ -51,6 +51,7 @@ module Solargraph
 
     class << self
       # @param filename [String]
+      # @param level [Symbol]
       # @return [self]
       def load filename, level = :normal
         source = Solargraph::Source.load(filename)
@@ -61,6 +62,7 @@ module Solargraph
 
       # @param code [String]
       # @param filename [String, nil]
+      # @param level [Symbol]
       # @return [self]
       def load_string code, filename = nil, level = :normal
         source = Solargraph::Source.load_string(code, filename)
@@ -131,6 +133,7 @@ module Solargraph
         .any? { |p| p.infer(api_map).defined? }
     end
 
+    # @param pin [Pin::Base]
     def virtual_pin? pin
       pin.location && source_map.source.comment_at?(pin.location.range.ending)
     end
@@ -158,7 +161,11 @@ module Solargraph
           end
         end
       end
+      # @todo Should be able to probe type of name and data here
+      # @param name [String]
+      # @param data [Hash{Symbol => BasicObject}]
       params.each_pair do |name, data|
+        # @type [Pin::Base]
         type = data[:qualified]
         if type.undefined?
           result.push Problem.new(pin.location, "Unresolved type #{data[:tagged]} for #{name} param on #{pin.path}", pin: pin)
@@ -167,6 +174,7 @@ module Solargraph
       result
     end
 
+    # @return [Array<Pin::Base>]
     def ignored_pins
       @ignored_pins ||= []
     end
@@ -214,6 +222,7 @@ module Solargraph
       source_map.pins_by_class(Pin::BaseVariable) + source_map.locals.select { |pin| pin.is_a?(Pin::LocalVariable) }
     end
 
+    # @return [Array<Problem>]
     def const_problems
       return [] unless rules.validate_consts?
       result = []
@@ -232,6 +241,7 @@ module Solargraph
       result
     end
 
+    # @return [Array<Problem>]
     def call_problems
       result = []
       Solargraph::Parser::NodeMethods.call_nodes_from(source_map.source.node).each do |call|
@@ -271,6 +281,7 @@ module Solargraph
     # @param block_pin [Solargraph::Pin::Base]
     # @param locals [Array<Solargraph::Pin::Base>]
     # @param location [Solargraph::Location]
+    # @return [Array<Problem>]
     def argument_problems_for chain, api_map, block_pin, locals, location
       result = []
       base = chain
@@ -297,6 +308,9 @@ module Solargraph
           all_errors = []
           pin.signatures.sort { |sig| sig.parameters.length }.each do |sig|
             errors = []
+            # @todo these should be able to be probed
+            # @param par [Parameter]
+            # @param idx [Integer]
             sig.parameters.each_with_index do |par, idx|
               argchain = base.links.last.arguments[idx]
               if argchain.nil?
@@ -384,7 +398,7 @@ module Solargraph
     end
 
     # @param [Pin::Method]
-    # @return [Hash]
+    # @return [Hash{String => Hash{Symbol => BaseObject}}]
     def param_hash(pin)
       tags = pin.docstring.tags(:param)
       return {} if tags.empty?
@@ -399,10 +413,12 @@ module Solargraph
       result
     end
 
-    # @param [Array<Pin::Method>]
-    # @return [Hash]
+    # @param pins [Array<Pin::Method>]
+    # @return [Hash{String => Hash{Symbol => BasicObject}}]
     def first_param_hash(pins)
       pins.each do |pin|
+        # @todo this assignment from parametric use of Hash should not lose its generic
+        # @type [Hash{String => Hash{Symbol => BasicObject}]
         result = param_hash(pin)
         return result unless result.empty?
       end
@@ -563,6 +579,8 @@ module Solargraph
       args
     end
 
+    # @param problems [Array<Problem>]
+    # @return [Array<Problem>]
     def without_ignored problems
       problems.reject do |problem|
         node = source_map.source.node_at(problem.location.range.start.line, problem.location.range.start.column)

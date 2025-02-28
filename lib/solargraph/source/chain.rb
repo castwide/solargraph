@@ -36,7 +36,9 @@ module Solargraph
 
       attr_reader :node
 
+      # @param node [Parser::AST::Node, nil]
       # @param links [::Array<Chain::Link>]
+      # @param splat [Boolean]
       def initialize links, node = nil, splat = false
         @links = links.clone
         @links.push UNDEFINED_CALL if @links.empty?
@@ -57,7 +59,8 @@ module Solargraph
 
       # @param api_map [ApiMap]
       # @param name_pin [Pin::Base]
-      # @param locals [Array<Pin::Base>]
+      # @param locals [::Array<Pin::LocalVariable>]
+      #
       # @return [::Array<Pin::Base>]
       def define api_map, name_pin, locals
         return [] if undefined?
@@ -114,12 +117,16 @@ module Solargraph
 
       private
 
-      # @param pins [Array<Pin::Base>]
+      # @param pins [::Array<Pin::ProxyType>] Potential types returned by define()
       # @param context [Pin::Base]
       # @param api_map [ApiMap]
+      # @param locals [::Array<Pin::Base>]
       # @return [ComplexType]
       def infer_first_defined pins, context, api_map, locals
         possibles = []
+        # @todo this param tag shouldn't be needed to probe the type
+        # @todo ...but given it is needed, typecheck should complain that it is needed
+        # @param pin [Pin::Base]
         pins.each do |pin|
           # Avoid infinite recursion
           next if @@inference_stack.include?(pin.identity)
@@ -129,6 +136,9 @@ module Solargraph
           @@inference_stack.pop
           if type.defined?
             if type.generic?
+              # @todo even at strong, no typechecking complaint
+              #   happens when a [Pin::Base,nil] is passed into a method
+              #   that accepts only [Pin::Namespace] as an argument
               type = type.resolve_generics(pin.closure, context.return_type)
               # idx = pin.closure.parameters.index(type.subtypes.first.name)
               # next if idx.nil?
@@ -147,6 +157,7 @@ module Solargraph
           return ComplexType::UNDEFINED if @@inference_depth >= 10 && pins.first.is_a?(Pin::Method)
 
           @@inference_depth += 1
+          # @param pin [Pin::Base]
           pins.each do |pin|
             # Avoid infinite recursion
             next if @@inference_stack.include?(pin.identity)
@@ -173,6 +184,7 @@ module Solargraph
       end
 
       # @param type [ComplexType]
+      # @return [ComplexType]
       def maybe_nil type
         return type if type.undefined? || type.void? || type.nullable?
         return type unless nullable?

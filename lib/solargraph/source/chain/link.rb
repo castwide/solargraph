@@ -7,8 +7,10 @@ module Solargraph
         # @return [String]
         attr_reader :word
 
+        # @return [Pin::Base]
         attr_accessor :last_context
 
+        # @param word [String]
         def initialize word = '<undefined>'
           @word = word
         end
@@ -23,7 +25,7 @@ module Solargraph
 
         # @param api_map [ApiMap]
         # @param name_pin [Pin::Base]
-        # @param locals [Array<Pin::Base>]
+        # @param locals [::Array<Pin::Base>]
         # @return [::Array<Pin::Base>]
         def resolve api_map, name_pin, locals
           []

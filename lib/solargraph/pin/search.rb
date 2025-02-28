@@ -18,21 +18,21 @@ module Solargraph
         end
       end
 
-      # @param pins [Array<Pin::Base>]
+      # @param pins [::Array<Pin::Base>]
       # @param query [String]
       def initialize pins, query
         @pins = pins
         @query = query
       end
 
-      # @return [Array<Pin::Base>]
+      # @return [::Array<Pin::Base>]
       def results
         @results ||= do_query
       end
 
       private
 
-      # @return [Array<Pin::Base>]
+      # @return [::Array<Pin::Base>]
       def do_query
         return @pins if @query.nil? || @query.empty?
         @pins.map do |pin|

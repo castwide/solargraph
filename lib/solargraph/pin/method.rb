@@ -7,7 +7,7 @@ module Solargraph
     class Method < Closure
       include Solargraph::Parser::NodeMethods
 
-      # @return [Array<Pin::Parameter>]
+      # @return [::Array<Pin::Parameter>]
       attr_reader :parameters
 
       # @return [::Symbol] :public, :private, or :protected
@@ -18,7 +18,7 @@ module Solargraph
 
       # @param visibility [::Symbol] :public, :protected, or :private
       # @param explicit [Boolean]
-      # @param parameters [Array<Pin::Parameter>]
+      # @param parameters [::Array<Pin::Parameter>]
       # @param node [Parser::AST::Node, RubyVM::AbstractSyntaxTree::Node, nil]
       # @param attribute [Boolean]
       def initialize visibility: :public, explicit: true, parameters: [], node: nil, attribute: false, signatures: nil, anon_splat: false, **splat
@@ -32,7 +32,7 @@ module Solargraph
         @anon_splat = anon_splat
       end
 
-      # @return [Array<String>]
+      # @return [::Array<String>]
       def parameter_names
         @parameter_names ||= parameters.map(&:name)
       end
@@ -108,7 +108,7 @@ module Solargraph
         detail
       end
 
-      # @return [Array<Hash>]
+      # @return [::Array<Hash>]
       def signature_help
         @signature_help ||= signatures.map do |sig|
           {
@@ -217,7 +217,7 @@ module Solargraph
         true
       end
 
-      # @return [Array<Pin::Method>]
+      # @return [::Array<Pin::Method>]
       def overloads
         @overloads ||= docstring.tags(:overload).map do |tag|
           Pin::Signature.new(
@@ -378,7 +378,7 @@ module Solargraph
       # When YARD parses an overload tag, it includes rest modifiers in the parameters names.
       #
       # @param arg [String]
-      # @return [Array(String, Symbol)]
+      # @return [::Array(String, Symbol)]
       def parse_overload_param(name)
         if name.start_with?('**')
           [name[2..-1], :kwrestarg]

@@ -34,7 +34,7 @@ module Solargraph
         end
       end
 
-      # @return [Array<Hash>]
+      # @return [::Array<Hash>]
       def signature_help
         []
       end

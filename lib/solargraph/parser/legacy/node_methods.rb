@@ -298,6 +298,8 @@ module Solargraph
               result
             end
 
+            # @param nodes [Enumerable<Parser::AST::Node, BaseObject>]
+            # @return [Array<Parser::AST::Node>]
             def reduce_to_value_nodes nodes
               result = []
               nodes.each do |node|

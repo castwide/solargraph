@@ -15,7 +15,7 @@ module Solargraph
           end
         end
 
-        # @return [Array<Library>]
+        # @return [::Array<Library>]
         def libraries
           @libraries ||= []
         end

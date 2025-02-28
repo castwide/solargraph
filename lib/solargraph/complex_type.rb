@@ -13,6 +13,8 @@ module Solargraph
 
     # @param types [Array<[UniqueType, ComplexType]>]
     def initialize types = [UniqueType::UNDEFINED]
+      # @todo @items here should not need an annotation
+      # @type [Array<UniqueType>]
       @items = types.flat_map(&:items).uniq(&:to_s)
     end
 
@@ -28,16 +30,20 @@ module Solargraph
       ComplexType.new(types).reduce_object
     end
 
+    # @return [UniqueType]
     def first
       @items.first
     end
 
+    # @return [String]
     def to_rbs
       ((@items.length > 1 ? '(' : '') + @items.map do |item|
         "#{item.namespace}#{item.parameters? ? "[#{item.subtypes.map { |s| s.to_rbs }.join(', ')}]" : ''}"
       end.join(' | ') + (@items.length > 1 ? ')' : '')).gsub(/undefined/, 'untyped')
     end
 
+    # @yieldparam [UniqueType]
+    # @return [Array]
     def map &block
       @items.map &block
     end
@@ -58,14 +64,18 @@ module Solargraph
       end
     end
 
+    # @return [Integer]
     def length
       @items.length
     end
 
+    # @param index [Integer]
+    # @return [UniqueType]
     def [](index)
       @items[index]
     end
 
+    # @return [Array<UniqueType>]
     def select &block
       @items.select &block
     end
@@ -132,6 +142,7 @@ module Solargraph
       @items.any?(&:nil_type?)
     end
 
+    # @return [Array<ComplexType>]
     def all_params
       @items.first.all_params || []
     end
@@ -140,9 +151,14 @@ module Solargraph
 
     protected
 
+    # @return [ComplexType]
     def reduce_object
       return self if name != 'Object' || subtypes.empty?
       ComplexType.try_parse(reduce_class(subtypes.join(', ')))
+    end
+
+    def bottom?
+      @items.all?(&:bot?)
     end
 
     private
@@ -175,8 +191,9 @@ module Solargraph
       #
       # @param *strings [Array<String>] The type definitions to parse
       # @param partial [Boolean] True if the string is part of a another type
-      # @return [ComplexType, Array, nil]
+      # @return [ComplexType, Array<UniqueType>] Array if partial is true
       def parse *strings, partial: false
+        # @type [Hash{Array<String> => ComplexType}]
         @cache ||= {}
         unless partial
           cached = @cache[strings]
@@ -271,5 +288,6 @@ module Solargraph
     NIL = ComplexType.parse('nil')
     SELF = ComplexType.parse('self')
     BOOLEAN = ComplexType.parse('Boolean')
+    BOT = ComplexType.parse('bot')
   end
 end

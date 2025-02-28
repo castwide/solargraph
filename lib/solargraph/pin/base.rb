@@ -103,13 +103,13 @@ module Solargraph
         @docstring ||= Solargraph::Source.parse_docstring('').to_docstring
       end
 
-      # @return [Array<YARD::Tags::Directive>]
+      # @return [::Array<YARD::Tags::Directive>]
       def directives
         parse_comments unless defined?(@directives)
         @directives
       end
 
-      # @return [Array<YARD::Tags::MacroDirective>]
+      # @return [::Array<YARD::Tags::MacroDirective>]
       def macros
         @macros ||= collect_macros
       end
@@ -266,8 +266,8 @@ module Solargraph
         true
       end
 
-      # @param dir1 [Array<YARD::Tags::Directive>]
-      # @param dir2 [Array<YARD::Tags::Directive>]
+      # @param dir1 [::Array<YARD::Tags::Directive>]
+      # @param dir2 [::Array<YARD::Tags::Directive>]
       # @return [Boolean]
       def compare_directives dir1, dir2
         return false if dir1.length != dir2.length
@@ -288,7 +288,7 @@ module Solargraph
           tag1.types == tag2.types
       end
 
-      # @return [Array<YARD::Tags::Handlers::Directive>]
+      # @return [::Array<YARD::Tags::Handlers::Directive>]
       def collect_macros
         return [] unless maybe_directives?
         parse = Solargraph::Source.parse_docstring(comments)
