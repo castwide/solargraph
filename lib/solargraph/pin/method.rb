@@ -19,13 +19,15 @@ module Solargraph
       # @param visibility [::Symbol] :public, :protected, or :private
       # @param explicit [Boolean]
       # @param parameters [Array<Pin::Parameter>]
+      # @param generics [::Array<Pin::Parameter>, nil]
       # @param node [Parser::AST::Node, RubyVM::AbstractSyntaxTree::Node, nil]
       # @param attribute [Boolean]
-      def initialize visibility: :public, explicit: true, parameters: [], node: nil, attribute: false, signatures: nil, anon_splat: false, **splat
+      def initialize visibility: :public, explicit: true, parameters: [], generics: nil, node: nil, attribute: false, signatures: nil, anon_splat: false, **splat
         super(**splat)
         @visibility = visibility
         @explicit = explicit
         @parameters = parameters
+        @generics = generics
         @node = node
         @attribute = attribute
         @signatures = signatures
