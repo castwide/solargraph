@@ -58,10 +58,10 @@ module Solargraph
             return Solargraph::ComplexType.parse(closure.binder.namespace)
           end
         end
-        # other case without early return, read block yieldself tags
+        # other case without early return, read block yieldreceiver tags
         receiver_pin = chain.define(api_map, self, locals).first
         if receiver_pin && receiver_pin.docstring
-          ys = receiver_pin.docstring.tag(:yieldself)
+          ys = receiver_pin.docstring.tag(:yieldreceiver)
           if ys && ys.types && !ys.types.empty?
             target = if chain.links.first.is_a?(Source::Chain::Constant)
               receiver_pin.full_context.namespace

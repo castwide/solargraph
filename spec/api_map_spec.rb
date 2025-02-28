@@ -651,10 +651,10 @@ describe Solargraph::ApiMap do
     expect(paths).to eq(['Prepended::PRE_CONST'])
   end
 
-  it 'finds instance variables in yieldself blocks' do
+  it 'finds instance variables in yieldreceiver blocks' do
     source = Solargraph::Source.load_string(%(
       module Container
-        # @yieldself [Container]
+        # @yieldreceiver [Container]
         def self.inside &block; end
       end
 

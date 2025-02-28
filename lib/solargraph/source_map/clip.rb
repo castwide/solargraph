@@ -115,21 +115,6 @@ module Solargraph
         @context_pin ||= source_map.locate_named_path_pin(cursor.node_position.line, cursor.node_position.character)
       end
 
-      # @return [Array<Pin::Base>]
-      def yielded_self_pins
-        return [] unless block.is_a?(Pin::Block) && block.receiver
-        chain = Parser.chain(block.receiver, source_map.source.filename)
-        receiver_pin = chain.define(api_map, context_pin, locals).first
-        return [] if receiver_pin.nil?
-        result = []
-        ys = receiver_pin.docstring.tag(:yieldpublic)
-        unless ys.nil? || ys.types.empty?
-          ysct = ComplexType.try_parse(*ys.types).qualify(api_map, receiver_pin.context.namespace)
-          result.concat api_map.get_complex_type_methods(ysct, '', false)
-        end
-        result
-      end
-
       # @return [Array<Pin::KeywordParam]
       def complete_keyword_parameters
         return [] unless cursor.argument? && cursor.chain.links.one? && cursor.word =~ /^[a-z0-9_]*:?$/
@@ -226,7 +211,6 @@ module Solargraph
             result.concat api_map.get_methods('Kernel')
             # result.concat ApiMap.keywords
             result.concat api_map.keyword_pins.to_a
-            result.concat yielded_self_pins
           end
         end
         package_completions(result)
