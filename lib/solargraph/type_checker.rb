@@ -292,7 +292,8 @@ module Solargraph
             result.concat ap
             break
           end
-          break unless rules.validate_calls?
+          break if !rules.validate_calls? || base.links.first.is_a?(Solargraph::Source::Chain::ZSuper)
+
           params = first_param_hash(pins)
 
           all_errors = []
@@ -468,8 +469,6 @@ module Solargraph
       return [] if parameters.empty? && arguments.empty?
       return [] if pin.anon_splat?
       if parameters.empty?
-        # Functions tagged param_tuple accepts two arguments (e.g., Hash#[]=)
-        return [] if pin.docstring.tag(:param_tuple) && arguments.length == 2
         return [] if arguments.length == 1 && arguments.last.links.last.is_a?(Source::Chain::BlockVariable)
         return [Problem.new(location, "Too many arguments to #{pin.path}")]
       end

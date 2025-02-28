@@ -14,7 +14,7 @@ module Solargraph
         else
           loader = RBS::EnvironmentLoader.new(repository: RBS::Repository.new(no_stdlib: false))
           environment = RBS::Environment.from_loader(loader).resolve_type_names
-          environment.declarations.each { |decl| convert_decl_to_pin(decl, Solargraph::Pin::ROOT_PIN) }
+          load_environment_to_pins(loader)
           pins.concat RbsMap::CoreFills::ALL
           processed = ApiMap::Store.new(pins).pins.reject { |p| p.is_a?(Solargraph::Pin::Reference::Override) }
           pins.replace processed

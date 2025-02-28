@@ -125,22 +125,14 @@ module Solargraph
           meths = chain.define(api_map, closure, locals)
           receiver_type = chain.base.infer(api_map, closure, locals)
           meths.each do |meth|
-            if meth.docstring.has_tag?(:yieldparam_single_parameter)
-              type = chain.base.infer(api_map, closure, locals)
-              if type.defined? && !type.subtypes.empty?
-                bmeth = chain.base.define(api_map, closure, locals).first
-                return type.subtypes.first.qualify(api_map, bmeth.context.namespace)
-              end
-            else
-              yps = meth.docstring.tags(:yieldparam)
-              unless yps[index].nil? or yps[index].types.nil? or yps[index].types.empty?
-                yield_type = ComplexType.try_parse(yps[index].types.first)
-                if yield_type.generic? && receiver_type.defined?
-                  namespace_pin = api_map.get_namespace_pins(meth.namespace, closure.namespace).first
-                  return yield_type.resolve_generics(namespace_pin, receiver_type)
-                else
-                  return yield_type.self_to(chain.base.infer(api_map, closure, locals).namespace).qualify(api_map, meth.context.namespace)
-                end
+            yps = meth.docstring.tags(:yieldparam)
+            unless yps[index].nil? or yps[index].types.nil? or yps[index].types.empty?
+              yield_type = ComplexType.try_parse(yps[index].types.first)
+              if yield_type.generic? && receiver_type.defined?
+                namespace_pin = api_map.get_namespace_pins(meth.namespace, closure.namespace).first
+                return yield_type.resolve_generics(namespace_pin, receiver_type)
+              else
+                return yield_type.self_to(chain.base.infer(api_map, closure, locals).namespace).qualify(api_map, meth.context.namespace)
               end
             end
           end

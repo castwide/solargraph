@@ -24,8 +24,7 @@ module Solargraph
       loader = RBS::EnvironmentLoader.new(core_root: nil, repository: repository)
       add_library loader, library
       return unless resolved?
-      environment = RBS::Environment.from_loader(loader).resolve_type_names
-      environment.declarations.each { |decl| convert_decl_to_pin(decl, Solargraph::Pin::ROOT_PIN) }
+      load_environment_to_pins(loader)
     end
 
     def path_pin path
@@ -57,7 +56,7 @@ module Solargraph
     # @return [Boolean] true if adding the library succeeded
     def add_library loader, library
       @resolved = if loader.has_library?(library: library, version: nil)
-        loader.add library: library
+        loader.add library: library, version: nil
         Solargraph.logger.info "#{short_name} successfully loaded library #{library}"
         true
       else

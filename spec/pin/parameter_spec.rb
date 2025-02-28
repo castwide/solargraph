@@ -293,9 +293,8 @@ describe Solargraph::Pin::Parameter do
     expect(pin.documentation).not_to include('The bar method')
   end
 
-  it "typifies from yieldparam_single_parameter" do
-    # This test depends on the fact that Array#each has a
-    # yieldparam_single_parameter tag.
+  it "typifies from generic yieldparams" do
+    # This test depends on the fact that Array#each has a generic yieldparam.
     source = Solargraph::Source.load_string(%(
       # @return [Array<String>]
       def list_strings; end
@@ -313,6 +312,7 @@ describe Solargraph::Pin::Parameter do
     ), 'test.rb')
     api_map = Solargraph::ApiMap.new
     api_map.map source
+    pin = api_map.get_path_pins('Array#each').first
     clip = api_map.clip_at('test.rb', [10, 23])
     pin = clip.define.first
     type = pin.typify(api_map)

@@ -32,11 +32,37 @@ module Solargraph
         @type_aliases ||= {}
       end
 
+      # @param loader [RBS::EnvironmentLoader]
+      # @return [void]
+      def load_environment_to_pins(loader)
+        environment = RBS::Environment.from_loader(loader).resolve_type_names
+        cursor = pins.length
+        environment.declarations.each { |decl| convert_decl_to_pin(decl, Solargraph::Pin::ROOT_PIN) }
+        added_pins = pins[cursor..-1]
+        add_back_implicit_pins(added_pins)
+      end
+
+      # @param added_pins [Range<Pin>]
+      # @return [void]
+      def add_back_implicit_pins(added_pins)
+        added_pins.each do |pin|
+          pin.source = :rbs
+          next unless pin.is_a?(Pin::Namespace) && pin.type == :class
+          next if pins.any? { |p| p.path == "#{pin.path}.new"}
+          pins.push Solargraph::Pin::Method.new(
+                      location: nil,
+                      closure: pin,
+                      name: 'new',
+                      comments: pin.comments,
+                      scope: :class
+          )
+        end
+      end
+
       # @param decl [RBS::AST::Declarations::Base]
       # @param closure [Pin::Closure]
       # @return [void]
       def convert_decl_to_pin decl, closure
-        cursor = pins.length
         case decl
         when RBS::AST::Declarations::Class
           class_decl_to_pin decl
@@ -53,18 +79,6 @@ module Solargraph
           class_alias_decl_to_pin decl
         else
           Solargraph.logger.info "Skipping declaration #{decl.class}"
-        end
-        pins[cursor..-1].each do |pin|
-          pin.source = :rbs
-          next unless pin.is_a?(Pin::Namespace) && pin.type == :class
-          next if pins.any? { |p| p.path == "#{pin.path}.new"}
-          pins.push Solargraph::Pin::Method.new(
-            location: nil,
-            closure: pin.closure,
-            name: 'new',
-            comments: pin.comments,
-            scope: :class
-          )
         end
       end
 
@@ -270,7 +284,8 @@ module Solargraph
         end
         type.type.optional_positionals.each do |param|
           name = param.name ? param.name.to_s : "arg#{arg_num += 1}"
-          parameters.push Solargraph::Pin::Parameter.new(decl: :optarg, name: name, closure: pin)
+          parameters.push Solargraph::Pin::Parameter.new(decl: :optarg, name: name, closure: pin,
+                                                         return_type: ComplexType.try_parse(other_type_to_tag(param.type)))
         end
         if type.type.rest_positionals
           name = type.type.rest_positionals.name ? type.type.rest_positionals.name.to_s : "arg#{arg_num += 1}"
@@ -280,13 +295,15 @@ module Solargraph
           name = param.name ? param.name.to_s : "arg#{arg_num += 1}"
           parameters.push Solargraph::Pin::Parameter.new(decl: :arg, name: name, closure: pin)
         end
-        type.type.required_keywords.each do |orig, _param|
+        type.type.required_keywords.each do |orig, param|
           name = orig ? orig.to_s : "arg#{arg_num += 1}"
-          parameters.push Solargraph::Pin::Parameter.new(decl: :kwarg, name: name, closure: pin)
+          parameters.push Solargraph::Pin::Parameter.new(decl: :kwarg, name: name, closure: pin,
+                                                         return_type: ComplexType.try_parse(other_type_to_tag(param.type)))
         end
-        type.type.optional_keywords.each do |orig, _param|
+        type.type.optional_keywords.each do |orig, param|
           name = orig ? orig.to_s : "arg#{arg_num += 1}"
-          parameters.push Solargraph::Pin::Parameter.new(decl: :kwoptarg, name: name, closure: pin)
+          parameters.push Solargraph::Pin::Parameter.new(decl: :kwoptarg, name: name, closure: pin,
+                                                         return_type: ComplexType.try_parse(other_type_to_tag(param.type)))
         end
         if type.type.rest_keywords
           name = type.type.rest_keywords.name ? type.type.rest_keywords.name.to_s : "arg#{arg_num += 1}"
@@ -414,10 +431,18 @@ module Solargraph
           params = type.args.map { |a| other_type_to_tag(a) }.reject { |t| t == 'undefined' }
           return base if params.empty?
           "#{base}<#{params.join(', ')}>"
+        elsif type.is_a?(RBS::Types::Bases::Instance)
+          'self'
+        elsif type.is_a?(RBS::Types::Bases::Top) || type.is_a?(RBS::Types::Bases::Bottom)
+          'self'
+        elsif type.is_a?(RBS::Types::Intersection)
+          type.types.map { |member| other_type_to_tag(member) }.join(', ')
+        elsif type.is_a?(RBS::Types::Proc)
+          'Proc'
         elsif type.respond_to?(:name) && type.name.respond_to?(:relative!)
           RBS_TO_YARD_TYPE[type.name.relative!.to_s] || type.name.relative!.to_s
         else
-          Solargraph.logger.warn "Unrecognized RBS type: #{type.class} #{type}"
+          Solargraph.logger.warn "Unrecognized RBS type: #{type.class} at #{type.location}"
           'undefined'
         end
       end
