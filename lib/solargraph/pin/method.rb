@@ -80,7 +80,11 @@ module Solargraph
         Signature.new(parameters, return_type, block)
       end
 
-      # @return [Array<Signature>]
+      # @return [::Array<String>]
+      def generics
+        @generics ||= docstring.tags(:generic).map(&:name)
+      end
+
       def signatures
         @signatures ||= begin
           top_type = generate_complex_type
