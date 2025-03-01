@@ -215,13 +215,19 @@ module Solargraph
       # @param closure [Pin::Closure]
       # @return [void]
       def method_def_to_pin decl, closure
+        # there may be edge cases here around different signatures
+        # having different type params / orders - we may need to match
+        # this data model and have generics live in signatures to
+        # handle those correctly
+        generics = decl.overloads.map(&:method_type).flat_map(&:type_params).map(&:name).map(&:to_s).uniq
         if decl.instance?
           pin = Solargraph::Pin::Method.new(
             name: decl.name.to_s,
             closure: closure,
             comments: decl.comment&.string,
             scope: :instance,
-            signatures: []
+            signatures: [],
+            generics: generics,
           )
           pin.signatures.concat method_def_to_sigs(decl, pin)
           pins.push pin
@@ -253,7 +259,8 @@ module Solargraph
             closure: closure,
             comments: decl.comment&.string,
             scope: :class,
-            signatures: []
+            signatures: [],
+            generics: generics,
           )
           pin.signatures.concat method_def_to_sigs(decl, pin)
           pins.push pin

@@ -365,4 +365,20 @@ describe Solargraph::Source::Chain do
     tag = chain.infer(api_map, Solargraph::Pin::ROOT_PIN, [])
     expect(tag.to_s).to eq('Class<String>')
   end
+
+  it 'gracefully handles requests for type of generic method in chain' do
+    source = Solargraph::Source.load_string(%(
+      # @generic T
+      # @param x [generic<T>]
+      # @return [generic<T>]}
+      def foo(x); x; end
+      foo('string')
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new.map(source)
+    chain = Solargraph::Source::SourceChainer.chain(source, Solargraph::Position.new(5, 7))
+    expect { chain.infer(api_map, Solargraph::Pin::ROOT_PIN, []) }.not_to raise_error
+    # @todo get this to also return a defined type
+    # type = chain.infer(api_map, Solargraph::Pin::ROOT_PIN, [])
+    # expect(type.to_s).to eq('String')
+  end
 end
