@@ -163,8 +163,8 @@ module Solargraph
 
       # @param heredoc [YARD::Docstring]
       # @param api_map [ApiMap]
-      # @param skip [Array]
-      # @return [Array<YARD::Tags::Tag>]
+      # @param skip [::Array]
+      # @return [::Array<YARD::Tags::Tag>]
       def see_reference heredoc, api_map, skip = []
         heredoc.ref_tags.each do |ref|
           next unless ref.tag_name == 'param' && ref.owner
@@ -176,8 +176,8 @@ module Solargraph
 
       # @param ref [String]
       # @param api_map [ApiMap]
-      # @param skip [Array]
-      # @return [Array<YARD::Tags::Tag>, nil]
+      # @param skip [::Array]
+      # @return [::Array<YARD::Tags::Tag>, nil]
       def resolve_reference ref, api_map, skip
         return nil if skip.include?(ref)
         skip.push ref

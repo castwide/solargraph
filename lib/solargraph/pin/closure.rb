@@ -26,7 +26,7 @@ module Solargraph
         @binder || context
       end
 
-      # @return [Array<String>]
+      # @return [::Array<String>]
       def gates
         # @todo This check might not be necessary. There should always be a
         #   root pin

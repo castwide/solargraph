@@ -8,7 +8,7 @@ module Solargraph
       # @return [Parser::AST::Node]
       attr_reader :receiver
 
-      # @param args [Array<Parameter>]
+      # @param args [::Array<Parameter>]
       def initialize receiver: nil, args: [], context: nil, **splat
         super(**splat)
         @receiver = receiver
@@ -26,12 +26,12 @@ module Solargraph
         @binder || closure.binder
       end
 
-      # @return [Array<Parameter>]
+      # @return [::Array<Parameter>]
       def parameters
         @parameters ||= []
       end
 
-      # @return [Array<String>]
+      # @return [::Array<String>]
       def parameter_names
         @parameter_names ||= parameters.map(&:name)
       end

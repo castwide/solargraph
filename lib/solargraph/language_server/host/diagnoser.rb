@@ -81,7 +81,7 @@ module Solargraph
         # @return [Mutex]
         attr_reader :mutex
 
-        # @return [Array]
+        # @return [::Array]
         attr_reader :queue
       end
     end

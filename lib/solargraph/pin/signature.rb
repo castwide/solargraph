@@ -1,7 +1,7 @@
 module Solargraph
   module Pin
     class Signature < Base
-      # @return [Array<Parameter>]
+      # @return [::Array<Parameter>]
       attr_reader :parameters
 
       # @return [ComplexType]

@@ -4,10 +4,10 @@ module Solargraph
   module Pin
     class Reference
       class Override < Reference
-        # @return [Array<YARD::Tags::Tag>]
+        # @return [::Array<YARD::Tags::Tag>]
         attr_reader :tags
 
-        # @return [Array<Symbol>]
+        # @return [::Array<Symbol>]
         attr_reader :delete
 
         def initialize location, name, tags, delete = []

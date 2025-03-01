@@ -27,18 +27,27 @@ module Solargraph
         end
         @substring = substring
         @tag = @name + substring
+        # @type [Array<ComplexType>]
         @key_types = []
+        # @type [Array<ComplexType>]
         @subtypes = []
+        # @type [Array<ComplexType>]
         @all_params = []
         return unless parameters?
-        if @substring.start_with?('<(') && @substring.end_with?(')>')
-          subs = ComplexType.parse(substring[2..-3], partial: true)
-        else
-          subs = ComplexType.parse(substring[1..-2], partial: true)
-        end
+        # @todo we should be able to probe the type of 'subs' without
+        #   hoisting the definition outside of the if statement
+        subs = if @substring.start_with?('<(') && @substring.end_with?(')>')
+                 ComplexType.parse(substring[2..-3], partial: true)
+               else
+                 ComplexType.parse(substring[1..-2], partial: true)
+               end
         if hash_parameters?
           raise ComplexTypeError, "Bad hash type" unless !subs.is_a?(ComplexType) and subs.length == 2 and !subs[0].is_a?(UniqueType) and !subs[1].is_a?(UniqueType)
+          # @todo should be able to resolve map; both types have it
+          #   with same return type
+          # @sg-ignore
           @key_types.concat subs[0].map { |u| ComplexType.new([u]) }
+          # @sg-ignore
           @subtypes.concat subs[1].map { |u| ComplexType.new([u]) }
         else
           @subtypes.concat subs
@@ -51,10 +60,12 @@ module Solargraph
         tag
       end
 
+      # @return [Array<UniqueType>]
       def items
         [self]
       end
 
+      # @return [String]
       def to_rbs
         "#{namespace}#{parameters? ? "[#{subtypes.map { |s| s.to_rbs }.join(', ')}]" : ''}"
       end
@@ -63,9 +74,14 @@ module Solargraph
         name == GENERIC_TAG_NAME || all_params.any?(&:generic?)
       end
 
-      # @param definitions [Pin::Namespace]
-      # @param context_type [ComplexType]
-      # @return [UniqueType]
+
+      # Probe the concrete type for each of the generic type
+      # parameters used in this type, and return a new type if
+      # possible.
+      #
+      # @param definitions [Pin::Namespace, Pin::Method] The module/class/method which uses generic types
+      # @param context_type [ComplexType] The receiver type
+      # @return [UniqueType, ComplexType]
       def resolve_generics definitions, context_type
         new_name = if name == GENERIC_TAG_NAME
           idx = definitions.generics.index(subtypes.first&.name)
@@ -110,6 +126,8 @@ module Solargraph
         # ComplexType.try_parse(param_type.to_s)
       end
 
+      # @param dst [String]
+      # @return [UniqueType]
       def self_to dst
         return self unless selfy?
         new_name = (@name == 'self' ? dst : @name)

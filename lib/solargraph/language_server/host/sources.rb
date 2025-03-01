@@ -146,7 +146,7 @@ module Solargraph
 
         # An array of source URIs that are waiting to finish synchronizing.
         #
-        # @return [Array<String>]
+        # @return [::Array<String>]
         def queue
           @queue ||= []
         end

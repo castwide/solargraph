@@ -15,7 +15,7 @@ module Solargraph
 
       # @param type [::Symbol] :class or :module
       # @param visibility [::Symbol] :public or :private
-      # @param gates [Array<String>]
+      # @param gates [::Array<String>]
       def initialize type: :class, visibility: :public, gates: [''], generics: nil, **splat
         # super(location, namespace, name, comments)
         super(**splat)
@@ -92,7 +92,7 @@ module Solargraph
         end
       end
 
-      # @return [Array<String>]
+      # @return [::Array<String>]
       def generics
         @generics ||= docstring.tags(:generic).map(&:name)
       end
