@@ -440,8 +440,16 @@ module Solargraph
           "#{base}<#{params.join(', ')}>"
         elsif type.is_a?(RBS::Types::Bases::Instance)
           'self'
-        elsif type.is_a?(RBS::Types::Bases::Top) || type.is_a?(RBS::Types::Bases::Bottom)
-          'self'
+        elsif type.is_a?(RBS::Types::Bases::Top)
+          # top is the most super superclass
+          'BasicObject'
+        elsif type.is_a?(RBS::Types::Bases::Bottom)
+          # bottom is used in contexts where nothing will ever return
+          # - e.g., it could be the return type of 'exit()' or 'raise'
+          #
+          # @todo define a specific bottom type and use it to
+          #   determine dead code
+          'undefined'
         elsif type.is_a?(RBS::Types::Intersection)
           type.types.map { |member| other_type_to_tag(member) }.join(', ')
         elsif type.is_a?(RBS::Types::Proc)
