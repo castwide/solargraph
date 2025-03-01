@@ -400,5 +400,40 @@ describe Solargraph::Pin::Method do
       expect(pin.typify(api_map)).to be_undefined
       expect(pin.probe(api_map).tag).to eq('String')
     end
+
+    it 'infers return types from begin rescue block' do
+      source = Solargraph::Source.load_string(%(
+        class Foo
+          def bar
+            begin
+              'abc'
+            rescue
+              1
+            end
+          end
+        end
+      ))
+      api_map = Solargraph::ApiMap.new
+      api_map.map source
+      pin = api_map.get_path_pins('Foo#bar').first
+      expect(pin.typify(api_map)).to be_undefined
+      expect(pin.probe(api_map).items.map(&:tag)).to eq(['String', 'Integer'])
+    end
+
+    it 'infers return types from compound statements in conditionals' do
+      source = Solargraph::Source.load_string(%(
+        class Foo
+          def bar
+            return :bing if bing
+            baz ? begin; nil; return 12.0 if something_else; 'abc'; end : 123
+          end
+        end
+      ))
+      api_map = Solargraph::ApiMap.new
+      api_map.map source
+      pin = api_map.get_path_pins('Foo#bar').first
+      expect(pin.typify(api_map)).to be_undefined
+      expect(pin.probe(api_map).items.map(&:tag)).to eq(['Symbol', 'Float', 'String', 'Integer'])
+    end
   end
 end

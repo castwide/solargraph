@@ -100,6 +100,8 @@ module Solargraph
           parser.version
         end
 
+        # @param node [BasicObject]
+        # @return [Boolean]
         def is_ast_node? node
           node.is_a?(::Parser::AST::Node)
         end
