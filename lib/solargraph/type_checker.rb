@@ -329,7 +329,7 @@ module Solargraph
               end
               if argchain
                 if par.decl != :arg
-                  errors.concat kwarg_problems_for argchain, api_map, block_pin, locals, location, pin, params, idx
+                  errors.concat kwarg_problems_for sig, argchain, api_map, block_pin, locals, location, pin, params, idx
                   next
                 else
                   ptype = params.key?(par.name) ? params[par.name][:qualified] : ComplexType::UNDEFINED
@@ -361,10 +361,21 @@ module Solargraph
       result
     end
 
-    def kwarg_problems_for argchain, api_map, block_pin, locals, location, pin, params, idx
+    # @param sig [Pin::Signature]
+    # @param argchain [Source::Chain]
+    # @param api_map [ApiMap]
+    # @param block_pin [Pin::Block]
+    # @param locals [Array<Pin::LocalVariable>]
+    # @param location [Location]
+    # @param pin [Pin::Method]
+    # @param params [Hash{String => [nil, Hash]}]
+    # @param idx [Integer]
+    #
+    # @return [Array<Problem>]
+    def kwarg_problems_for sig, argchain, api_map, block_pin, locals, location, pin, params, idx
       result = []
       kwargs = convert_hash(argchain.node)
-      par = pin.signatures.first.parameters[idx]
+      par = sig.parameters[idx]
       argchain = kwargs[par.name.to_sym]
       if par.decl == :kwrestarg || (par.decl == :optarg && idx == pin.parameters.length - 1 && par.asgn_code == '{}')
         result.concat kwrestarg_problems_for(api_map, block_pin, locals, location, pin, params, kwargs)
@@ -552,6 +563,7 @@ module Solargraph
       parameters.sum { |param| %i[arg kwarg].include?(param.decl) ? 1 : 0 }
     end
 
+    # @param parameters [Enumerable<Pin::Parameter>]
     # @param pin [Pin::Method]
     def optional_param_count(parameters)
       parameters.select { |p| p.decl == :optarg }.length
