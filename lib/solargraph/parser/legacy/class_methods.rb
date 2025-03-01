@@ -43,6 +43,8 @@ module Solargraph
           NodeProcessor.process(source.node, Region.new(source: source))
         end
 
+        # @param node [Parser::AST::Node]
+        # @return [Array<Parser::AST::Node>]
         def returns_from node
           NodeMethods.returns_from(node)
         end

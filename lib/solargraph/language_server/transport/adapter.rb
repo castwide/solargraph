@@ -38,7 +38,7 @@ module Solargraph
 
         private
 
-        # @param request [String]
+        # @param request [Hash]
         # @return [void]
         def process request
           @host.process(request)

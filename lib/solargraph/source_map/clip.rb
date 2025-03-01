@@ -13,7 +13,7 @@ module Solargraph
         @cursor = cursor
       end
 
-      # @return [Array<Pin::Base>]
+      # @return [Array<Pin::Base>] Relevant pins for infering the type of the Cursor's position
       def define
         return [] if cursor.comment? || cursor.chain.literal?
         result = cursor.chain.define(api_map, block, locals)
@@ -62,7 +62,7 @@ module Solargraph
       # position. Locals can be local variables, method parameters, or block
       # parameters. The array starts with the nearest local pin.
       #
-      # @return [Array<Solargraph::Pin::Base>]
+      # @return [::Array<Solargraph::Pin::Base>]
       def locals
         @locals ||= source_map.locals_at(location)
       end
@@ -103,7 +103,7 @@ module Solargraph
         Location.new(source_map.filename, Solargraph::Range.new(cursor.position, cursor.position))
       end
 
-      # @return [Solargraph::Pin::Base]
+      # @return [Solargraph::Pin::Closure]
       def block
         @block ||= source_map.locate_block_pin(cursor.node_position.line, cursor.node_position.character)
       end

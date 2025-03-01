@@ -6,6 +6,7 @@ module Solargraph
       def initialize
         # @type [Hash{Array => Array<Pin::Method>}]
         @methods = {}
+        # @type [Hash{Array<(Pin::Namespace, Pin::Namespace))> => Array<Pin::Base>}]
         @constants = {}
         @qualified_namespaces = {}
         @receiver_definitions = {}
@@ -26,19 +27,29 @@ module Solargraph
         @constants[[namespace, context]]
       end
 
+      # @param namespace [Pin::Namespace]
+      # @param context [Pin::Namespace]
+      # @param value [Array<Pin::Base>]
+      # @return [void]
       def set_constants namespace, context, value
         @constants[[namespace, context]] = value
       end
 
+      # @param name [String]
+      # @param context [Pin::Namespace]
       # @return [String]
       def get_qualified_namespace name, context
         @qualified_namespaces[[name, context]]
       end
 
+      # @param name [String]
+      # @param context [Pin::Namespace]
+      # @return [void]
       def set_qualified_namespace name, context, value
         @qualified_namespaces[[name, context]] = value
       end
 
+      # @param path [String]
       def receiver_defined? path
         @receiver_definitions.key? path
       end
@@ -48,6 +59,7 @@ module Solargraph
         @receiver_definitions[path]
       end
 
+      # @return [void]
       def set_receiver_definition path, pin
         @receiver_definitions[path] = pin
       end

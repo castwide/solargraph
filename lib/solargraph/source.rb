@@ -250,7 +250,7 @@ module Solargraph
     end
 
     # @param node [Parser::AST::Node]
-    # @return [String]
+    # @return [String, nil]
     def comments_for node
       rng = Range.from_node(node)
       stringified_comments[rng.start.line] ||= begin
