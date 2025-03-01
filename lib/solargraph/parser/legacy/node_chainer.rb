@@ -26,6 +26,7 @@ module Solargraph
         class << self
           # @param node [Parser::AST::Node]
           # @param filename [String, nil]
+          # @param in_block [Boolean]
           # @return [Source::Chain]
           def chain node, filename = nil, in_block = false
             NodeChainer.new(node, filename, in_block).chain

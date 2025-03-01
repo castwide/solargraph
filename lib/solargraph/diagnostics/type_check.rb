@@ -6,6 +6,7 @@ module Solargraph
     # parameters, and invalid param tags.
     #
     class TypeCheck < Base
+      # @return [Array<Hash>]
       def diagnose source, api_map
         # return [] unless args.include?('always') || api_map.workspaced?(source.filename)
         severity = Diagnostics::Severities::ERROR

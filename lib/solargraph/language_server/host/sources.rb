@@ -72,6 +72,7 @@ module Solargraph
           open_source_hash[uri] = source
         end
 
+        # @param uri [String]
         def open_from_disk uri
           source = Solargraph::Source.load(UriHelpers.uri_to_file(uri))
           open_source_hash[uri] = source

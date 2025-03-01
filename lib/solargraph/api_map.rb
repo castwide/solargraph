@@ -596,6 +596,7 @@ module Solargraph
       qualify namespace, context.split('::')[0..-2].join('::')
     end
 
+    # @param fqsub [String]
     def qualify_superclass fqsub
       sup = store.get_superclass(fqsub)
       return nil if sup.nil?
@@ -659,7 +660,7 @@ module Solargraph
 
     # Sort an array of pins to put nil or undefined variables last.
     #
-    # @param pins [Array<Solargraph::Pin::Base>]
+    # @param pins [Enumerable<Solargraph::Pin::Base>]
     # @return [Array<Solargraph::Pin::Base>]
     def prefer_non_nil_variables pins
       result = []
@@ -674,8 +675,8 @@ module Solargraph
       result + nil_pins
     end
 
-    # @param pins [Array<Pin::Base>]
-    # @param visibility [Array<Symbol>]
+    # @param pins [Enumerable<Pin::Base>]
+    # @param visibility [Enumerable<Symbol>]
     # @return [Array<Pin::Base>]
     def resolve_method_aliases pins, visibility = [:public, :private, :protected]
       result = []

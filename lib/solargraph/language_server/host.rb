@@ -59,7 +59,7 @@ module Solargraph
         logger.level = LOG_LEVELS[options['logLevel']] || DEFAULT_LOG_LEVEL
       end
 
-      # @return [Hash]
+      # @return [Hash{String => [Boolean, String]}]
       def options
         @options ||= default_configuration
       end
@@ -632,7 +632,7 @@ module Solargraph
         requests.keys
       end
 
-      # @return [Hash{String => Object}]
+      # @return [Hash{String => [Boolean,String]}]
       def default_configuration
         {
           'completion' => true,

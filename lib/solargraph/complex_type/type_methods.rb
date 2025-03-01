@@ -80,7 +80,7 @@ module Solargraph
         end.call
       end
 
-      # @return [Symbol] :class or :instance
+      # @return [::Symbol] :class or :instance
       def scope
         @scope ||= :instance if duck_type? || nil_type?
         @scope ||= (name == 'Class' || name == 'Module') && !subtypes.empty? ? :class : :instance
