@@ -59,6 +59,7 @@ module Solargraph
     # Catalog a bench.
     #
     # @param bench [Bench]
+    # @return [self]
     def catalog bench
       implicit.clear
       @cache.clear
@@ -81,10 +82,12 @@ module Solargraph
       self
     end
 
+    # @return [Array<Pin::Base>]
     def core_pins
       @@core_map.pins
     end
 
+    # @return [YardMap]
     def yard_map
       @yard_map ||= YardMap.new
     end
@@ -95,6 +98,7 @@ module Solargraph
       store.named_macros[name]
     end
 
+    # @return [Set<String>]
     def required
       @required ||= Set.new
     end
@@ -137,11 +141,12 @@ module Solargraph
       api_map
     end
 
-    # @return [Enumerable<Solargraph::Pin::Base>]
+    # @return [Array<Solargraph::Pin::Base>]
     def pins
       store.pins
     end
 
+    # @return [Set<String>]
     def rebindable_method_names
       @rebindable_method_names ||= begin
         # result = yard_map.rebindable_method_names
@@ -247,7 +252,7 @@ module Solargraph
     # Get an array of class variable pins for a namespace.
     #
     # @param namespace [String] A fully qualified namespace
-    # @return [Array<Solargraph::Pin::ClassVariable>]
+    # @return [Enumerable<Solargraph::Pin::ClassVariable>]
     def get_class_variable_pins(namespace)
       prefer_non_nil_variables(store.get_class_variables(namespace))
     end
@@ -355,7 +360,7 @@ module Solargraph
     # @deprecated Use #get_path_pins instead.
     #
     # @param path [String] The path to find
-    # @return [Array<Solargraph::Pin::Base>]
+    # @return [Enumerable<Solargraph::Pin::Base>]
     def get_path_suggestions path
       return [] if path.nil?
       resolve_method_aliases store.get_path_pins(path)
@@ -364,7 +369,7 @@ module Solargraph
     # Get an array of pins that match the specified path.
     #
     # @param path [String]
-    # @return [Array<Pin::Base>]
+    # @return [Enumerable<Pin::Base>]
     def get_path_pins path
       get_path_suggestions(path)
     end
@@ -597,6 +602,7 @@ module Solargraph
     end
 
     # @param fqsub [String]
+    # @return [String, nil]
     def qualify_superclass fqsub
       sup = store.get_superclass(fqsub)
       return nil if sup.nil?
@@ -661,7 +667,8 @@ module Solargraph
     # Sort an array of pins to put nil or undefined variables last.
     #
     # @param pins [Enumerable<Solargraph::Pin::Base>]
-    # @return [Array<Solargraph::Pin::Base>]
+    # @return [Enumerable<Solargraph::Pin::Base>]
+    # @return [Enumerable<Solargraph::Pin::Base>]
     def prefer_non_nil_variables pins
       result = []
       nil_pins = []

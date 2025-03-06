@@ -27,7 +27,7 @@ module Solargraph
 
       private
 
-      # @return Hash{String => RBS::AST::Declarations::TypeAlias}
+      # @return [Hash{String => RBS::AST::Declarations::TypeAlias}]
       def type_aliases
         @type_aliases ||= {}
       end
@@ -42,7 +42,7 @@ module Solargraph
         add_back_implicit_pins(added_pins)
       end
 
-      # @param added_pins [Range<Pin>]
+      # @param added_pins [::Enumerable<Pin>]
       # @return [void]
       def add_back_implicit_pins(added_pins)
         added_pins.each do |pin|
@@ -82,11 +82,18 @@ module Solargraph
         end
       end
 
+      # @param decl [RBS::AST::Declarations::Module, RBS::AST::Declarations::Class, RBS::AST::Declarations::Interface]
+      # @param closure [Pin::Namespace]
+      # @return [void]
       def convert_members_to_pin decl, closure
         context = Context.new
         decl.members.each { |m| context = convert_member_to_pin(m, closure, context) }
       end
 
+      # @param member [RBS::AST::Members::Base,RBS::AST::Declarations::Base]
+      # @param closure [Pin::Namespace]
+      # @param context [Context]
+      # @return [void]
       def convert_member_to_pin member, closure, context
         case member
         when RBS::AST::Members::MethodDefinition
@@ -114,7 +121,7 @@ module Solargraph
         when RBS::AST::Declarations::Base
           convert_decl_to_pin(member, closure)
         else
-          Solargraph.logger.warn "Skipping member #{member.class}"
+          Solargraph.logger.warn "Skipping member type #{member.class}"
         end
         context
       end
@@ -269,6 +276,7 @@ module Solargraph
 
       # @param decl [RBS::AST::Members::MethodDefinition]
       # @param pin [Pin::Method]
+      # @return [void]
       def method_def_to_sigs decl, pin
         decl.overloads.map do |overload|
           parameters, return_type = parts_of_function(overload.method_type, pin)
@@ -280,6 +288,9 @@ module Solargraph
         end
       end
 
+      # @param type [RBS::MethodType,RBS::Types::Block]
+      # @param pin [Pin::Method]
+      # @return [Array<Array<Pin::Parameter>, ComplexType>]
       def parts_of_function type, pin
         return [[Solargraph::Pin::Parameter.new(decl: :restarg, name: 'arg', closure: pin)], ComplexType.try_parse(method_type_to_tag(type))] if defined?(RBS::Types::UntypedFunction) && type.type.is_a?(RBS::Types::UntypedFunction)
 
@@ -320,6 +331,9 @@ module Solargraph
         [parameters, return_type]
       end
 
+      # @param decl [RBS::AST::Members::AttrReader,RBS::AST::Members::AttrAccessor]
+      # @param closure [Pin::Namespace]
+      # @return [void]
       def attr_reader_to_pin(decl, closure)
         pin = Solargraph::Pin::Method.new(
           name: decl.name.to_s,
@@ -332,6 +346,9 @@ module Solargraph
         pins.push pin
       end
 
+      # @param decl [RBS::AST::Members::AttrWriter, RBS::AST::Members::AttrAccessor]
+      # @param closure [Pin::Namespace]
+      # @return [void]
       def attr_writer_to_pin(decl, closure)
         pin = Solargraph::Pin::Method.new(
           name: "#{decl.name.to_s}=",
@@ -344,11 +361,17 @@ module Solargraph
         pins.push pin
       end
 
+      # @param decl [RBS::AST::Members::AttrAccessor]
+      # @param closure [Pin::Namespace]
+      # @return [void]
       def attr_accessor_to_pin(decl, closure)
         attr_reader_to_pin(decl, closure)
         attr_writer_to_pin(decl, closure)
       end
 
+      # @param decl [RBS::AST::Members::InstanceVariable]
+      # @param closure [Pin::Namespace]
+      # @return [void]
       def ivar_to_pin(decl, closure)
         pin = Solargraph::Pin::InstanceVariable.new(
           name: decl.name.to_s,
@@ -359,6 +382,9 @@ module Solargraph
         pins.push pin
       end
 
+      # @param decl [RBS::AST::Members::Include]
+      # @param closure [Pin::Namespace]
+      # @return [void]
       def include_to_pin decl, closure
         pins.push Solargraph::Pin::Reference::Include.new(
           name: decl.name.relative!.to_s,
@@ -366,6 +392,9 @@ module Solargraph
         )
       end
 
+      # @param decl [RBS::AST::Members::Prepend]
+      # @param closure [Pin::Namespace]
+      # @return [void]
       def prepend_to_pin decl, closure
         pins.push Solargraph::Pin::Reference::Prepend.new(
           name: decl.name.relative!.to_s,
@@ -373,6 +402,9 @@ module Solargraph
         )
       end
 
+      # @param decl [RBS::AST::Members::Extend]
+      # @param closure [Pin::Namespace]
+      # @return [void]
       def extend_to_pin decl, closure
         pins.push Solargraph::Pin::Reference::Extend.new(
           name: decl.name.relative!.to_s,
@@ -381,6 +413,8 @@ module Solargraph
       end
 
       # @param decl [RBS::AST::Members::Alias]
+      # @param closure [Pin::Namespace]
+      # @return [void]
       def alias_to_pin decl, closure
         pins.push Solargraph::Pin::MethodAlias.new(
           name: decl.new_name.to_s,
@@ -397,7 +431,7 @@ module Solargraph
         'NilClass' => 'nil'
       }
 
-      # @param type [RBS::AST::Members::MethodDefinition::Overload]
+      # @param type [RBS::MethodType]
       # @return [String]
       def method_type_to_tag type
         if type_aliases.key?(type.type.return_type.to_s)
@@ -407,6 +441,7 @@ module Solargraph
         end
       end
 
+      # @param type [Object]
       # @return [String]
       def other_type_to_tag type
         if type.is_a?(RBS::Types::Optional)
