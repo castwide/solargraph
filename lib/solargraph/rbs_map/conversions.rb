@@ -68,7 +68,7 @@ module Solargraph
           class_decl_to_pin decl
         when RBS::AST::Declarations::Interface
           # STDERR.puts "Skipping interface #{decl.name.relative!}"
-          interface_decl_to_pin decl
+          interface_decl_to_pin decl, closure
         when RBS::AST::Declarations::TypeAlias
           type_aliases[decl.name.to_s] = decl
         when RBS::AST::Declarations::Module
@@ -82,7 +82,28 @@ module Solargraph
         end
       end
 
-      def convert_members_to_pin decl, closure
+      # @param decl [RBS::AST::Declarations::Module]
+      # @param module_pin [Pin::Namespace]
+      # @return [void]
+      def convert_self_types_to_pins decl, module_pin
+        decl.self_types.each { |self_type| context = convert_self_type_to_pins(self_type, module_pin) }
+      end
+
+      # @param decl [RBS::AST::Declarations::Module::Self]
+      # @param closure [Pin::Namespace]
+      def convert_self_type_to_pins decl, closure
+        include_pin = Solargraph::Pin::Reference::Include.new(
+          name: decl.name.relative!.to_s,
+          location: rbs_location_to_location(decl.location),
+          closure: closure
+        )
+        pins.push include_pin
+      end
+
+      # @param decl [RBS::AST::Declarations::Module,RBS::AST::Declarations::Class,RBS::AST::Declarations::Interface]
+      # @param closure [Pin::Namespace]
+      # @return [void]
+      def convert_members_to_pins decl, closure
         context = Context.new
         decl.members.each { |m| context = convert_member_to_pin(m, closure, context) }
       end
@@ -136,12 +157,12 @@ module Solargraph
             name: decl.super_class.name.relative!.to_s
           )
         end
-        convert_members_to_pin decl, class_pin
+        convert_members_to_pins decl, class_pin
       end
 
       # @param decl [RBS::AST::Declarations::Interface]
       # @return [void]
-      def interface_decl_to_pin decl
+      def interface_decl_to_pin decl, closure
         class_pin = Solargraph::Pin::Namespace.new(
           type: :module,
           name: decl.name.relative!.to_s,
@@ -153,7 +174,7 @@ module Solargraph
         )
         class_pin.docstring.add_tag(YARD::Tags::Tag.new(:abstract, '(RBS interface)'))
         pins.push class_pin
-        convert_members_to_pin decl, class_pin
+        convert_members_to_pins decl, class_pin
       end
 
       # @param decl [RBS::AST::Declarations::Module]
@@ -167,7 +188,8 @@ module Solargraph
           generics: decl.type_params.map(&:name).map(&:to_s),
         )
         pins.push module_pin
-        convert_members_to_pin decl, module_pin
+        convert_self_types_to_pins decl, module_pin
+        convert_members_to_pins decl, module_pin
       end
 
       # @param name [String]
@@ -278,6 +300,17 @@ module Solargraph
           return_type = ComplexType.try_parse(method_type_to_tag(overload.method_type))
           Pin::Signature.new(parameters, return_type, block)
         end
+      end
+
+      # @param location [RBS::Location, nil]
+      # @return [Solargraph::Location, nil]
+      def rbs_location_to_location(location)
+        return nil if location&.name.nil?
+
+        start_pos = Position.new(location.start_line - 1, location.start_column)
+        end_pos = Position.new(location.end_line - 1, location.end_column)
+        range = Range.new(start_pos, end_pos)
+        Location.new(location.name, range)
       end
 
       def parts_of_function type, pin
