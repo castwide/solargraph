@@ -43,6 +43,7 @@ module Solargraph
           end
         end
 
+        # @param uri [String]
         # @return [void]
         def add_uri(uri)
           queue.push(uri)
@@ -72,6 +73,8 @@ module Solargraph
           open_source_hash[uri] = source
         end
 
+        # @param uri [String]
+        # @return [void]
         def open_from_disk uri
           source = Solargraph::Source.load(UriHelpers.uri_to_file(uri))
           open_source_hash[uri] = source
@@ -109,7 +112,7 @@ module Solargraph
         # @raise [FileNotFoundError] if the URI does not match an open source.
         #
         # @param uri [String]
-        # @return [Sources]
+        # @return [Solargraph::Source]
         def find uri
           open_source_hash[uri] || raise(Solargraph::FileNotFoundError, "Host could not find #{uri}")
         end
@@ -136,7 +139,7 @@ module Solargraph
 
         private
 
-        # @return [Hash]
+        # @return [Hash{String => Solargraph::Source}]
         def open_source_hash
           @open_source_hash ||= {}
         end

@@ -25,6 +25,7 @@ module Solargraph
       }
     end
 
+    # @param other [BasicObject]
     def == other
       return false unless other.is_a?(Location)
       filename == other.filename and range == other.range

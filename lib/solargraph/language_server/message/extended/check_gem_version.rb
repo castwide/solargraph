@@ -2,6 +2,12 @@
 
 require 'rubygems'
 
+# @todo PR the RBS gem to add this
+# @!parse
+#   module ::Gem
+#    class SpecFetcher; end
+#   end
+
 module Solargraph
   module LanguageServer
     module Message
@@ -11,16 +17,23 @@ module Solargraph
         # is true, notify the client when the gem is up to date.
         #
         class CheckGemVersion < Base
+          # @return [Gem::SpecFetcher]
           def self.fetcher
             @fetcher ||= Gem::SpecFetcher.new
           end
 
+          # @param obj [Gem::SpecFetcher]
+          # @return [Gem::SpecFetcher]
           def self.fetcher= obj
             @fetcher = obj
           end
 
           GEM_ZERO = Gem::Version.new('0.0.0')
 
+          # @param host [Solargraph::LanguageServer::Host]
+          # @param request [Hash]
+          # @param current [Gem::Version]
+          # @param available [Gem::Version, nil]
           def initialize host, request, current: Gem::Version.new(Solargraph::VERSION), available: nil
             super(host, request)
             @current = current

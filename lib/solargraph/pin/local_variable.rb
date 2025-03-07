@@ -21,7 +21,7 @@ module Solargraph
       # @param other_closure [Pin::Closure]
       # @param other_loc [Location]
       def visible_at?(other_closure, other_loc)
-        return true if location.filename == other_loc.filename &&
+        location.filename == other_loc.filename &&
           presence.include?(other_loc.range.start) &&
           match_named_closure(other_closure, closure)
       end

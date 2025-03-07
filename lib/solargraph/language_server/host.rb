@@ -59,7 +59,7 @@ module Solargraph
         logger.level = LOG_LEVELS[options['logLevel']] || DEFAULT_LOG_LEVEL
       end
 
-      # @return [Hash]
+      # @return [Hash{String => [Boolean, String]}]
       def options
         @options ||= default_configuration
       end
@@ -102,7 +102,7 @@ module Solargraph
       # processed, caller is responsible for sending the response.
       #
       # @param request [Hash] The contents of the message.
-      # @return [Solargraph::LanguageServer::Message::Base] The message handler.
+      # @return [Solargraph::LanguageServer::Message::Base, nil] The message handler.
       def receive request
         if request['method']
           logger.info "Server received #{request['method']}"
@@ -127,6 +127,7 @@ module Solargraph
         else
           logger.warn "Invalid message received."
           logger.debug request
+          nil
         end
       end
 
@@ -632,7 +633,7 @@ module Solargraph
         requests.keys
       end
 
-      # @return [Hash{String => Object}]
+      # @return [Hash{String => [Boolean,String]}]
       def default_configuration
         {
           'completion' => true,

@@ -17,6 +17,7 @@ module Solargraph
       false
     end
 
+    # @type [Module<Rubyvm>, Module<Legacy>]
     selected = rubyvm? ? Rubyvm : Legacy
     # include selected
     # @!parse

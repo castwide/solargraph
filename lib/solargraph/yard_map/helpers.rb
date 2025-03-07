@@ -4,7 +4,7 @@ module Solargraph
       module_function
 
       # @param code_object [YARD::CodeObjects::Base]
-      # @param spec [Gem::Specification]
+      # @param spec [Gem::Specification, nil]
       # @return [Solargraph::Location, nil]
       def object_location code_object, spec
         return nil if spec.nil? || code_object.nil? || code_object.file.nil? || code_object.line.nil?

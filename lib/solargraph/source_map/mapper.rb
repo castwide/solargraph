@@ -64,6 +64,10 @@ module Solargraph
         pins.select{|pin| pin.is_a?(Pin::Closure) and pin.location.range.contain?(position)}.last
       end
 
+      # @param source_position [Position]
+      # @param comment_position [Position]
+      # @param comment [String]
+      # @return [void]
       def process_comment source_position, comment_position, comment
         return unless comment.encode('UTF-8', invalid: :replace, replace: '?') =~ DIRECTIVE_REGEXP
         cmnt = remove_inline_comment_hashes(comment)
@@ -79,6 +83,8 @@ module Solargraph
       end
 
       # @param comment [String]
+      # @param tag [String]
+      # @param start [Integer]
       # @return [Integer]
       def find_directive_line_number comment, tag, start
         # Avoid overruning the index
@@ -204,10 +210,14 @@ module Solargraph
         end
       end
 
+      # @param line1 [Integer]
+      # @param line2 [Integer]
       def no_empty_lines?(line1, line2)
         @code.lines[line1..line2].none? { |line| line.strip.empty? }
       end
 
+      # @param comment [String]
+      # @return [String]
       def remove_inline_comment_hashes comment
         ctxt = ''
         num = nil

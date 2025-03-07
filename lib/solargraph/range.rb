@@ -63,7 +63,7 @@ module Solargraph
     # Get a range from a node.
     #
     # @param node [RubyVM::AbstractSyntaxTree::Node, Parser::AST::Node]
-    # @return [Range]
+    # @return [Range, nil]
     def self.from_node node
       if Parser.rubyvm? && node.is_a?(RubyVM::AbstractSyntaxTree::Node)
         Solargraph::Range.from_to(node.first_lineno - 1, node.first_column, node.last_lineno - 1, node.last_column)

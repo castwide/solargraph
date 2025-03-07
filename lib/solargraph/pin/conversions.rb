@@ -39,7 +39,7 @@ module Solargraph
         []
       end
 
-      # @return [String]
+      # @return [String, nil]
       def detail
         # This property is not cached in an instance variable because it can
         # change when pins get proxied.
@@ -73,7 +73,7 @@ module Solargraph
 
       private
 
-      # @return [String]
+      # @return [String, nil]
       def generate_link
         this_path = path || return_type.tag
         return nil if this_path == 'undefined'

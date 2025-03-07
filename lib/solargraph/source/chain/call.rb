@@ -26,7 +26,7 @@ module Solargraph
 
         # @param api_map [ApiMap]
         # @param name_pin [Pin::Base]
-        # @param locals [::Array<Pin::Base>]
+        # @param locals [::Array<Pin::LocalVariable>]
         def resolve api_map, name_pin, locals
           return super_pins(api_map, name_pin) if word == 'super'
           return yield_pins(api_map, name_pin) if word == 'yield'
@@ -46,10 +46,10 @@ module Solargraph
 
         private
 
-        # @param pins [::Array<Pin::Base>]
+        # @param pins [::Enumerable<Pin::Base>]
         # @param api_map [ApiMap]
         # @param context [ComplexType]
-        # @param locals [Pin::LocalVariable]
+        # @param locals [::Array<Pin::LocalVariable>]
         # @return [::Array<Pin::Base>]
         def inferred_pins pins, api_map, context, locals
           result = pins.map do |p|
@@ -102,10 +102,10 @@ module Solargraph
           end
         end
 
-        # @param pin [Pin::Method]
+        # @param pin [Pin::Base]
         # @param api_map [ApiMap]
         # @param context [ComplexType]
-        # @param locals [Pin::Base]
+        # @param locals [Enumerable<Pin::Base>]
         # @return [Pin::Base]
         def process_macro pin, api_map, context, locals
           pin.macros.each do |macro|
@@ -115,10 +115,10 @@ module Solargraph
           Pin::ProxyType.anonymous(ComplexType::UNDEFINED)
         end
 
-        # @param pin [Pin::Method]
+        # @param pin [Pin::LocalVariable]
         # @param api_map [ApiMap]
         # @param context [ComplexType]
-        # @param locals [Pin::Base]
+        # @param locals [Enumerable<Pin::Base>]
         # @return [Pin::ProxyType]
         def process_directive pin, api_map, context, locals
           pin.directives.each do |dir|
@@ -130,11 +130,11 @@ module Solargraph
           Pin::ProxyType.anonymous ComplexType::UNDEFINED
         end
 
-        # @param pin [Pin]
+        # @param pin [Pin::Base]
         # @param macro [YARD::Tags::MacroDirective]
         # @param api_map [ApiMap]
         # @param context [ComplexType]
-        # @param locals [::Array<Pin::Base>]
+        # @param locals [Enumerable<Pin::Base>]
         # @return [Pin::ProxyType]
         def inner_process_macro pin, macro, api_map, context, locals
           vals = arguments.map{ |c| Pin::ProxyType.anonymous(c.infer(api_map, pin, locals)) }
@@ -158,11 +158,11 @@ module Solargraph
 
         # @param docstring [YARD::Docstring]
         # @param context [ComplexType]
-        # @return [ComplexType]
+        # @return [ComplexType, nil]
         def extra_return_type docstring, context
-          if docstring.has_tag?(:return_single_parameter) #&& context.subtypes.one?
+          if docstring.has_tag?('return_single_parameter') #&& context.subtypes.one?
             return context.subtypes.first || ComplexType::UNDEFINED
-          elsif docstring.has_tag?(:return_value_parameter) && context.value_types.one?
+          elsif docstring.has_tag?('return_value_parameter') && context.value_types.one?
             return context.value_types.first
           end
           nil
@@ -201,6 +201,7 @@ module Solargraph
 
         # @param type [ComplexType]
         # @param context [ComplexType]
+        # @return [ComplexType]
         def with_params type, context
           return type unless type.to_s.include?('$')
           ComplexType.try_parse(type.to_s.gsub('$', context.value_types.map(&:tag).join(', ')).gsub('<>', ''))

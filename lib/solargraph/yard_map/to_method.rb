@@ -7,6 +7,8 @@ module Solargraph
         module_function
 
         # @param code_object [YARD::CodeObjects::Base]
+        # @param location [Solargraph::Location]
+        # @param comments [String]
         # @return [Array<Solargraph::Pin::Parameter>]
         def get_parameters code_object, location, comments
           return [] unless code_object.is_a?(YARD::CodeObjects::MethodObject)
@@ -26,7 +28,7 @@ module Solargraph
           end
         end
 
-        # @param a [Array]
+        # @param a [Array<String>]
         # @return [String]
         def arg_name a
           a[0].gsub(/[^a-z0-9_]/i, '')
@@ -56,6 +58,13 @@ module Solargraph
       # extend YardMixin
       extend Helpers
 
+      # @param code_object [YARD::CodeObjects::Base]
+      # @param name [String, nil]
+      # @param scope [Symbol, nil]
+      # @param visibility [Symbol, nil]
+      # @param closure [Solargraph::Pin::Base, nil]
+      # @param spec [Solargraph::Pin::Base, nil]
+      # @return [Solargraph::Pin::Method]
       def make code_object, name = nil, scope = nil, visibility = nil, closure = nil, spec = nil
         closure ||= Solargraph::Pin::Namespace.new(
           name: code_object.namespace.to_s,

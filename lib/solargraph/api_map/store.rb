@@ -5,7 +5,7 @@ require 'set'
 module Solargraph
   class ApiMap
     class Store
-      # @return [Enumerable<Solargraph::Pin::Base>]
+      # @return [Array<Solargraph::Pin::Base>]
       attr_reader :pins
 
       # @param pins [Enumerable<Solargraph::Pin::Base>]
@@ -61,7 +61,7 @@ module Solargraph
       end
 
       # @param path [String]
-      # @return [Enumerable<Solargraph::Pin::Base>]
+      # @return [Array<Solargraph::Pin::Base>]
       def get_path_pins path
         path_pin_hash[path] || []
       end
@@ -117,7 +117,7 @@ module Solargraph
         result
       end
 
-      # @return [Hash]
+      # @return [Hash{String => YARD::Tags::MacroDirective}]
       def named_macros
         @named_macros ||= begin
           result = {}
@@ -164,6 +164,7 @@ module Solargraph
 
       private
 
+      # @return [Hash{Array(String, String) => Array<Pin::Namespace>}]
       def fqns_pins_map
         @fqns_pins_map ||= Hash.new do |h, (base, name)|
           value = namespace_children(base).select { |pin| pin.name == name && pin.is_a?(Pin::Namespace) }
@@ -176,18 +177,22 @@ module Solargraph
         pins_by_class(Pin::Symbol)
       end
 
+      # @return [Hash{String => Enumerable<String>}]
       def superclass_references
         @superclass_references ||= {}
       end
 
+      # @return [Hash{String => Array<String>}]
       def include_references
         @include_references ||= {}
       end
 
+      # @return [Hash{String => Array<String>}]
       def prepend_references
         @prepend_references ||= {}
       end
 
+      # @return [Hash{String => Array<String>}]
       def extend_references
         @extend_references ||= {}
       end
@@ -203,10 +208,12 @@ module Solargraph
         @namespace_map ||= {}
       end
 
+      # @return [Enumerable<Pin::InstanceVariable>]
       def all_instance_variables
         pins_by_class(Pin::InstanceVariable)
       end
 
+      # @return [Hash{String => Array<Pin::Base>}]
       def path_pin_hash
         @path_pin_hash ||= {}
       end
@@ -215,6 +222,7 @@ module Solargraph
       def index
         set = pins.to_set
         @pin_class_hash = set.classify(&:class).transform_values(&:to_a)
+        # @type [Hash{Class => Enumerable<Solargraph::Pin::Base>}]
         @pin_select_cache = {}
         @namespace_map = set.classify(&:namespace)
         @path_pin_hash = set.classify(&:path)
@@ -256,6 +264,9 @@ module Solargraph
         end
       end
 
+      # @param pin [Pin::Base]
+      # @param tag [String]
+      # @return [void]
       def redefine_return_type pin, tag
         return unless pin && tag.tag_name == 'return'
         pin.instance_variable_set(:@return_type, ComplexType.try_parse(tag.type))

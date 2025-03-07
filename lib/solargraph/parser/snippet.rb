@@ -1,7 +1,9 @@
 module Solargraph
   module Parser
     class Snippet
+      # @return [Range]
       attr_reader :range
+      # @return [String]
       attr_reader :text
 
       def initialize range, text

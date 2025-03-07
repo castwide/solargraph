@@ -411,7 +411,7 @@ describe Solargraph::Parser::NodeMethods do
           def super_with_block
             super { |record| }
           end
-        end        
+        end
       ))
       calls = Solargraph::Parser::NodeMethods.call_nodes_from(source.node)
       expect(calls).to be_one

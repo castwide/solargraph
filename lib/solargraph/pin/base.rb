@@ -25,7 +25,6 @@ module Solargraph
       attr_accessor :source
 
       # @param location [Solargraph::Location, nil]
-      # @param kind [Integer]
       # @param closure [Solargraph::Pin::Closure, nil]
       # @param name [String]
       # @param comments [String]

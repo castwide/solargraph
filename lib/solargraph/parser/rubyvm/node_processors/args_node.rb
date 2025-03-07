@@ -71,6 +71,8 @@ module Solargraph
 
           private
 
+          # @param var [Parser::AST::Node, Object]
+          # @return [String]
           def extract_name var
             if Parser.is_ast_node?(var)
               var.children[0].to_s

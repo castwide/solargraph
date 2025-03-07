@@ -6,6 +6,13 @@ module Solargraph
       module ToMethod
         extend YardMap::Helpers
 
+        # @param code_object [YARD::CodeObjects::Base]
+        # @param name [String, nil]
+        # @param scope [Symbol, nil]
+        # @param visibility [Symbol, nil]
+        # @param closure [Solargraph::Pin::Namespace, nil]
+        # @param spec [Gem::Specification, nil]
+        # @return [Solargraph::Pin::Method]
         def self.make code_object, name = nil, scope = nil, visibility = nil, closure = nil, spec = nil
           closure ||= Solargraph::Pin::Namespace.new(
             name: code_object.namespace.to_s,
