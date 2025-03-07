@@ -285,7 +285,7 @@ module Solargraph
     end
 
     # @param path [String]
-    # @return [Gem::Specification]
+    # @return [Gem::Specification, nil]
     def spec_for_require path
       relatives = path.split('/')
       spec = nil
