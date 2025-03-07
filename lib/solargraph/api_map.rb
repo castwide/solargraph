@@ -668,7 +668,6 @@ module Solargraph
     #
     # @param pins [Enumerable<Solargraph::Pin::Base>]
     # @return [Enumerable<Solargraph::Pin::Base>]
-    # @return [Enumerable<Solargraph::Pin::Base>]
     def prefer_non_nil_variables pins
       result = []
       nil_pins = []
