@@ -102,7 +102,7 @@ module Solargraph
       # processed, caller is responsible for sending the response.
       #
       # @param request [Hash] The contents of the message.
-      # @return [Solargraph::LanguageServer::Message::Base] The message handler.
+      # @return [Solargraph::LanguageServer::Message::Base, nil] The message handler.
       def receive request
         if request['method']
           logger.info "Server received #{request['method']}"
@@ -127,6 +127,7 @@ module Solargraph
         else
           logger.warn "Invalid message received."
           logger.debug request
+          nil
         end
       end
 

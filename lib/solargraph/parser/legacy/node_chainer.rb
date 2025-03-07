@@ -11,6 +11,7 @@ module Solargraph
 
         # @param node [Parser::AST::Node]
         # @param filename [String, nil]
+        # @param in_block [Boolean]
         def initialize node, filename = nil, in_block = false
           @node = node
           @filename = filename
@@ -141,6 +142,7 @@ module Solargraph
           result
         end
 
+        # @param node [Parser::AST::Node]
         def hash_is_splatted? node
           return false unless Parser.is_ast_node?(node) && node.type == :hash
           return false unless Parser.is_ast_node?(node.children.last) && node.children.last.type == :kwsplat
@@ -148,6 +150,7 @@ module Solargraph
           true
         end
 
+        # @param node [Parser::AST::Node]
         def block_passed? node
           node.children.last.is_a?(::Parser::AST::Node) && node.children.last.type == :block_pass
         end

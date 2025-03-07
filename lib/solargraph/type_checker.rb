@@ -169,7 +169,7 @@ module Solargraph
       # @param name [String]
       # @param data [Hash{Symbol => BasicObject}]
       params.each_pair do |name, data|
-        # @type [Pin::Base]
+        # @type [ComplexType]
         type = data[:qualified]
         if type.undefined?
           result.push Problem.new(pin.location, "Unresolved type #{data[:tagged]} for #{name} param on #{pin.path}", pin: pin)
@@ -389,6 +389,14 @@ module Solargraph
       result
     end
 
+    # @param api_map [ApiMap]
+    # @param block_pin [Pin::Block]
+    # @param locals [Array<Pin::LocalVariable>]
+    # @param location [Location]
+    # @param pin [Pin::Method]
+    # @param params [Hash{String => [nil, Hash]}]
+    # @param kwargs [Hash{Symbol => Source::Chain}]
+    # @return [Array<Problem>]
     def kwrestarg_problems_for(api_map, block_pin, locals, location, pin, params, kwargs)
       result = []
       kwargs.each_pair do |pname, argchain|
@@ -402,7 +410,7 @@ module Solargraph
       result
     end
 
-    # @param [Pin::Method]
+    # @param pin [Pin::Method]
     # @return [Hash{String => Hash{Symbol => BaseObject}}]
     def param_hash(pin)
       tags = pin.docstring.tags(:param)
@@ -437,6 +445,7 @@ module Solargraph
     end
 
     # True if the pin is either internal (part of the workspace) or from the core/stdlib
+    # @param pin [Pin::Base]
     def internal_or_core? pin
       # @todo RBS pins are not necessarily core/stdlib pins
       internal?(pin) || pin.source == :rbs
@@ -447,6 +456,7 @@ module Solargraph
       !internal? pin
     end
 
+    # @param pin [Pin::Base]
     def declared_externally? pin
       return true if pin.assignment.nil?
       chain = Solargraph::Parser.chain(pin.assignment, filename)
@@ -474,6 +484,10 @@ module Solargraph
       true
     end
 
+    # @param pin [Pin::Base]
+    # @param arguments [Array<Source::Chain>]
+    # @param location [Location]
+    # @return [Array<Problem>]
     def arity_problems_for pin, arguments, location
       results = pin.signatures.map do |sig|
         r = parameterized_arity_problems_for(pin, sig.parameters, arguments, location)
@@ -483,6 +497,11 @@ module Solargraph
       results.first
     end
 
+    # @param pin [Pin::Method]
+    # @param parameters [Array<Pin::Parameter>]
+    # @param arguments [Array<Source::Chain>]
+    # @param location [Location]
+    # @return [Array<Problem>]
     def parameterized_arity_problems_for(pin, parameters, arguments, location)
       return [] unless pin.explicit?
       return [] if parameters.empty? && arguments.empty?
@@ -548,20 +567,29 @@ module Solargraph
       []
     end
 
+    # @param parameters [Enumerable<Pin::Parameter>]
+    # @todo need to use generic types in method to choose correct
+    #   signature and generate Integer as return type
+    # @sg-ignore
+    # @return [Integer]
     def required_param_count(parameters)
       parameters.sum { |param| %i[arg kwarg].include?(param.decl) ? 1 : 0 }
     end
 
     # @param pin [Pin::Method]
+    # @return [Integer]
     def optional_param_count(parameters)
       parameters.select { |p| p.decl == :optarg }.length
     end
 
+    # @param pin [Pin::Method]
     def abstract? pin
-      pin.docstring.has_tag?(:abstract) ||
-        (pin.closure && pin.closure.docstring.has_tag?(:abstract))
+      pin.docstring.has_tag?('abstract') ||
+        (pin.closure && pin.closure.docstring.has_tag?('abstract'))
     end
 
+    # @param pin [Pin::Base]
+    # @return [Array<Source::Chain>]
     def fake_args_for(pin)
       args = []
       with_opts = false

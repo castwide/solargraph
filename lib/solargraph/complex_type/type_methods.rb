@@ -99,7 +99,7 @@ module Solargraph
       #
       # @param api_map [ApiMap] The ApiMap that performs qualification
       # @param context [String] The namespace from which to resolve names
-      # @return [ComplexType] The generated ComplexType
+      # @return [ComplexType, UniqueType] The generated ComplexType
       def qualify api_map, context = ''
         return self if name == GENERIC_TAG_NAME
         return ComplexType.new([self]) if duck_type? || void? || undefined?
