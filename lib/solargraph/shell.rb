@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require 'thor'
+require 'yard'
 
 module Solargraph
   class Shell < Thor
@@ -9,6 +10,7 @@ module Solargraph
     map %w[--version -v] => :version
 
     desc "--version, -v", "Print the version"
+    # @return [void]
     def version
       puts Solargraph::VERSION
     end
@@ -16,6 +18,7 @@ module Solargraph
     desc 'socket', 'Run a Solargraph socket server'
     option :host, type: :string, aliases: :h, desc: 'The server host', default: '127.0.0.1'
     option :port, type: :numeric, aliases: :p, desc: 'The server port', default: 7658
+    # @return [void]
     def socket
       require 'backport'
       port = options[:port]
@@ -33,6 +36,7 @@ module Solargraph
     end
 
     desc 'stdio', 'Run a Solargraph stdio server'
+    # @return [void]
     def stdio
       require 'backport'
       Backport.run do
@@ -49,6 +53,8 @@ module Solargraph
 
     desc 'config [DIRECTORY]', 'Create or overwrite a default configuration file'
     option :extensions, type: :boolean, aliases: :e, desc: 'Add installed extensions', default: true
+    # @param directory [String]
+    # @return [void]
     def config(directory = '.')
       matches = []
       if options[:extensions]
@@ -76,6 +82,8 @@ module Solargraph
       The `download-core` command is deprecated. Current versions of Solargraph
       use RBS for core and stdlib documentation.
     )
+    # @param _version [String, nil]
+    # @return [void]
     # @deprecated
     def download_core _version = nil
       puts 'The `download-core` command is deprecated.'
@@ -87,6 +95,7 @@ module Solargraph
       The `list-cores` command is deprecated. Current versions of Solargraph use
       RBS for core and stdlib documentation.
     )
+    # @return [void]
     # @deprecated
     def list_cores
       puts 'The `list-cores` command is deprecated.'
@@ -98,6 +107,7 @@ module Solargraph
       The `available-cores` command is deprecated. Current versions of Solargraph
       use RBS for core and stdlib documentation.
     )
+    # @return [void]
     # @deprecated
     def available_cores
       puts 'The `available-cores` command is deprecated.'
@@ -108,6 +118,7 @@ module Solargraph
     long_desc %(
       This command will delete all core and gem documentation from the cache.
     )
+    # @return [void]
     def clear
       puts "Deleting the cached documentation"
       Solargraph::Cache.clear
@@ -116,6 +127,7 @@ module Solargraph
     map 'clear-cores' => :clear
 
     desc 'uncache GEM [...GEM]', "Delete cached gem documentation"
+    # @return [void]
     def uncache *gems
       raise ArgumentError, 'No gems specified.' if gems.empty?
       gems.each do |gem|
@@ -127,6 +139,7 @@ module Solargraph
     end
 
     desc 'reporters', 'Get a list of diagnostics reporters'
+    # @return [void]
     def reporters
       puts Solargraph::Diagnostics.reporters
     end
@@ -140,6 +153,7 @@ module Solargraph
     )
     option :level, type: :string, aliases: [:mode, :m, :l], desc: 'Type checking level', default: 'normal'
     option :directory, type: :string, aliases: :d, desc: 'The workspace directory', default: '.'
+    # @return [void]
     def typecheck *files
       directory = File.realpath(options[:directory])
       api_map = Solargraph::ApiMap.load(directory)
@@ -172,6 +186,7 @@ module Solargraph
     )
     option :directory, type: :string, aliases: :d, desc: 'The workspace directory', default: '.'
     option :verbose, type: :boolean, aliases: :v, desc: 'Verbose output', default: false
+    # @return [void]
     def scan
       require 'benchmark'
       directory = File.realpath(options[:directory])
@@ -197,6 +212,7 @@ module Solargraph
     desc 'list', 'List the files in the workspace and the total count'
     option :count, type: :boolean, aliases: :c, desc: 'Display the file count only', default: false
     option :directory, type: :string, aliases: :d, desc: 'The directory to read', default: '.'
+    # @return [void]
     def list
       workspace = Solargraph::Workspace.new(options[:directory])
       unless options[:count]
@@ -211,6 +227,7 @@ module Solargraph
     )
     option :directory, type: :string, aliases: :d, desc: 'The workspace directory', default: '.'
     option :rebuild, type: :boolean, aliases: :r, desc: 'Rebuild existing documentation', default: false
+    # @return [void]
     def bundle
       puts 'The `bundle` command is deprecated. Solargraph currently uses RBS instead.'
     end
@@ -219,6 +236,9 @@ module Solargraph
     long_desc %(
       The `rdoc` command is deprecated. Solargraph currently uses RBS instead.
     )
+    # @param _gem [String]
+    # @param _version  [String]
+    # @return [void]
     def rdoc _gem, _version = '>= 0'
       puts 'The `rdoc` command is deprecated. Solargraph currently uses RBS instead.'
     end
