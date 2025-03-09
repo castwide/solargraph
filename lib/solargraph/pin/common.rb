@@ -6,7 +6,7 @@ module Solargraph
       # @return [Location]
       attr_reader :location
 
-      # @return [Pin::Base, nil]
+      # @return [Pin::Closure, nil]
       attr_reader :closure
 
       # @return [String]

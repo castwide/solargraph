@@ -100,7 +100,7 @@ module Solargraph
 
       private
 
-      # @return [YARD::Tags::Tag]
+      # @return [YARD::Tags::Tag, nil]
       def param_tag
         found = nil
         params = closure.docstring.tags(:param)
