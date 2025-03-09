@@ -441,7 +441,7 @@ module Solargraph
         end
       end
 
-      # @param type [Object]
+      # @param type [RBS::Types::Bases::Base]
       # @return [String]
       def other_type_to_tag type
         if type.is_a?(RBS::Types::Optional)
