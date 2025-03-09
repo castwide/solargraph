@@ -362,7 +362,7 @@ module Solargraph
         result = []
         has_nil = false
         return ComplexType::NIL if method_body_node.nil?
-        returns_from(method_body_node).each do |n|
+        returns_from_method_body(method_body_node).each do |n|
           if n.nil? || [:NIL, :nil].include?(n.type)
             has_nil = true
             next

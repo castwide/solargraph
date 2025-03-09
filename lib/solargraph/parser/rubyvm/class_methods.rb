@@ -20,7 +20,7 @@ module Solargraph
         # @param code [String]
         # @param filename [String, nil]
         # @param line [Integer]
-        # @return [Parser::AST::Node]
+        # @return [RubyVM::AbstractSyntaxTree::NodeWrapper, nil]
         def parse code, filename = nil, line = 0
           node = RubyVM::AbstractSyntaxTree.parse(code).children[2]
           node and RubyVM::AbstractSyntaxTree::NodeWrapper.from(node, code.lines)
