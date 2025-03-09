@@ -77,8 +77,12 @@ module Solargraph
           constant_decl_to_pin decl
         when RBS::AST::Declarations::ClassAlias
           class_alias_decl_to_pin decl
+        when RBS::AST::Declarations::ModuleAlias
+          module_alias_decl_to_pin decl
+        when RBS::AST::Declarations::Global
+          global_decl_to_pin decl
         else
-          Solargraph.logger.info "Skipping declaration #{decl.class}"
+          Solargraph.logger.warn "Skipping declaration #{decl.class}"
         end
       end
 
@@ -112,6 +116,10 @@ module Solargraph
           extend_to_pin(member, closure)
         when RBS::AST::Members::Alias
           alias_to_pin(member, closure)
+        when RBS::AST::Members::ClassInstanceVariable
+          civar_to_pin(member, closure)
+        when RBS::AST::Members::ClassVariable
+          cvar_to_pin(member, closure)
         when RBS::AST::Members::InstanceVariable
           ivar_to_pin(member, closure)
         when RBS::AST::Members::Public
@@ -147,6 +155,7 @@ module Solargraph
       end
 
       # @param decl [RBS::AST::Declarations::Interface]
+      # @param closure [Pin::Closure]
       # @return [void]
       def interface_decl_to_pin decl
         class_pin = Solargraph::Pin::Namespace.new(
@@ -180,9 +189,10 @@ module Solargraph
       # @param name [String]
       # @param tag [String]
       # @param comments [String]
+      # @param type [Symbol] :class or :module
       #
       # @return [Solargraph::Pin::Constant]
-      def create_constant(name, tag, comments)
+      def create_constant(name, tag, comments, type)
         parts = name.split('::')
         if parts.length > 1
           name = parts.last
@@ -196,8 +206,15 @@ module Solargraph
           closure: closure,
           comments: comments
         )
-        # @todo Class or Module?
-        constant_pin.docstring.add_tag(YARD::Tags::Tag.new(:return, '', "Class<#{tag}>"))
+        tag = if type == :class
+                "Class<#{tag}>"
+              elsif type == :module
+                "Module<#{tag}>"
+              else
+                Solargraph.logger.warn "Unrecognized constant type: #{type.inspect}"
+                "Class<#{tag}>"
+              end
+        constant_pin.docstring.add_tag(YARD::Tags::Tag.new(:return, '', tag))
         constant_pin
       end
 
@@ -208,14 +225,40 @@ module Solargraph
         new_name = decl.new_name.relative!.to_s
         old_name = decl.old_name.relative!.to_s
 
-        pins.push create_constant(new_name, old_name, decl.comment&.string)
+        pins.push create_constant(new_name, old_name, decl.comment&.string, :class)
+      end
+
+      # @param decl [RBS::AST::Declarations::ModuleAlias]
+      # @return [void]
+      def module_alias_decl_to_pin decl
+        # See https://www.rubydoc.info/gems/rbs/3.4.3/RBS/AST/Declarations/ModuleAlias
+        new_name = decl.new_name.relative!.to_s
+        old_name = decl.old_name.relative!.to_s
+
+        pins.push create_constant(new_name, old_name, decl.comment&.string, :module)
       end
 
       # @param decl [RBS::AST::Declarations::Constant]
       # @return [void]
       def constant_decl_to_pin decl
         tag = other_type_to_tag(decl.type)
-        pins.push create_constant(decl.name.relative!.to_s, tag, decl.comment&.string)
+        # @todo Class or Module?
+        pins.push create_constant(decl.name.relative!.to_s, tag, decl.comment&.string, :class)
+      end
+
+      # @param decl [RBS::AST::Declarations::Global]
+      # @return [void]
+      def global_decl_to_pin decl
+        closure = Solargraph::Pin::ROOT_PIN
+        name = decl.name.to_s
+        tag = other_type_to_tag(decl.type)
+        pin = Solargraph::Pin::GlobalVariable.new(
+          name: name,
+          closure: closure,
+          comments: decl.comment&.string,
+        )
+        pin.docstring.add_tag(YARD::Tags::Tag.new(:type, '', tag))
+        pins.push pin
       end
 
       # @param decl [RBS::AST::Members::MethodDefinition]
@@ -375,6 +418,34 @@ module Solargraph
       def ivar_to_pin(decl, closure)
         pin = Solargraph::Pin::InstanceVariable.new(
           name: decl.name.to_s,
+          closure: closure,
+          comments: decl.comment&.string
+        )
+        pin.docstring.add_tag(YARD::Tags::Tag.new(:type, '', other_type_to_tag(decl.type)))
+        pins.push pin
+      end
+
+      # @param decl [RBS::AST::Members::ClassVariable]
+      # @param closure [Pin::Namespace]
+      # @return [void]
+      def cvar_to_pin(decl, closure)
+        name = decl.name.to_s
+        pin = Solargraph::Pin::ClassVariable.new(
+          name: name,
+          closure: closure,
+          comments: decl.comment&.string
+        )
+        pin.docstring.add_tag(YARD::Tags::Tag.new(:type, '', other_type_to_tag(decl.type)))
+        pins.push pin
+      end
+
+      # @param decl [RBS::AST::Members::ClassInstanceVariable]
+      # @param closure [Pin::Namespace]
+      # @return [void]
+      def civar_to_pin(decl, closure)
+        name = decl.name.to_s
+        pin = Solargraph::Pin::InstanceVariable.new(
+          name: name,
           closure: closure,
           comments: decl.comment&.string
         )
