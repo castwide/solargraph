@@ -16,6 +16,7 @@ module Solargraph
       # @param type [::Symbol] :class or :module
       # @param visibility [::Symbol] :public or :private
       # @param gates [::Array<String>]
+      # @param generics [::Array<Pin::Parameter>, nil]
       def initialize type: :class, visibility: :public, gates: [''], generics: nil, **splat
         # super(location, namespace, name, comments)
         super(**splat)

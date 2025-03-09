@@ -128,10 +128,13 @@ module Solargraph
         Position.line_char_to_offset(@source.code, line, column)
       end
 
+      # @return [Integer]
       def signature_data
         @signature_data ||= get_signature_data_at(offset)
       end
 
+      # @param index [Integer]
+      # @return [Integer]
       def get_signature_data_at index
         brackets = 0
         squares = 0

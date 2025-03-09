@@ -22,6 +22,8 @@ module Solargraph
       # @param generics [::Array<Pin::Parameter>, nil]
       # @param node [Parser::AST::Node, RubyVM::AbstractSyntaxTree::Node, nil]
       # @param attribute [Boolean]
+      # @param signatures [::Array<Signature>, nil]
+      # @param anon_splat [Boolean]
       def initialize visibility: :public, explicit: true, parameters: [], generics: nil, node: nil, attribute: false, signatures: nil, anon_splat: false, **splat
         super(**splat)
         @visibility = visibility
@@ -51,6 +53,8 @@ module Solargraph
         @return_type ||= ComplexType.new(signatures.map(&:return_type).flat_map(&:items))
       end
 
+      # @param parameters [::Array<Parameter>]
+      # @param return_type [ComplexType]
       # @return [Signature]
       def generate_signature(parameters, return_type)
         block = nil
@@ -99,7 +103,7 @@ module Solargraph
         end
       end
 
-      # @return [String]
+      # @return [String, nil]
       def detail
         # This property is not cached in an instance variable because it can
         # change when pins get proxied.
@@ -252,6 +256,10 @@ module Solargraph
 
       private
 
+      # @param name [String]
+      # @param asgn [Boolean]
+      #
+      # @return [::Symbol]
       def select_decl name, asgn
         if name.start_with?('**')
           :kwrestarg
@@ -270,11 +278,16 @@ module Solargraph
         end
       end
 
+      # @param name [String]
+      # @return [String]
       def clean_param name
         name.gsub(/[*&:]/, '')
       end
 
       # @param tag [YARD::Tags::OverloadTag]
+      # @param name [String]
+      #
+      # @return [ComplexType]
       def param_type_from_name(tag, name)
         param = tag.tags(:param).select { |t| t.name == name }.first
         return ComplexType::UNDEFINED unless param
@@ -314,7 +327,7 @@ module Solargraph
 
       # @param ref [String]
       # @param api_map [ApiMap]
-      # @return [ComplexType]
+      # @return [ComplexType, nil]
       def resolve_reference ref, api_map
         parts = ref.split(/[\.#]/)
         if parts.first.empty? || parts.one?
@@ -369,6 +382,8 @@ module Solargraph
         ComplexType.try_parse(*result.map(&:tag).uniq)
       end
 
+      # @param [ApiMap] api_map
+      # @return [ComplexType]
       def infer_from_iv api_map
         types = []
         varname = "@#{name.gsub(/=$/, '')}"
@@ -384,8 +399,8 @@ module Solargraph
 
       # When YARD parses an overload tag, it includes rest modifiers in the parameters names.
       #
-      # @param arg [String]
-      # @return [::Array(String, Symbol)]
+      # @param name [String]
+      # @return [::Array(String, ::Symbol)]
       def parse_overload_param(name)
         if name.start_with?('**')
           [name[2..-1], :kwrestarg]
@@ -396,6 +411,7 @@ module Solargraph
         end
       end
 
+      # @return [void]
       def concat_example_tags
         example_tags = docstring.tags(:example)
         return if example_tags.empty?

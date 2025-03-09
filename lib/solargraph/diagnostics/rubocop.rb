@@ -29,9 +29,9 @@ module Solargraph
         store = RuboCop::ConfigStore.new
         runner = RuboCop::Runner.new(options, store)
         result = redirect_stdout{ runner.run(paths) }
-        
+
         return [] if result.empty?
-        
+
         make_array JSON.parse(result)
       rescue RuboCop::ValidationError, RuboCop::ConfigNotFoundError => e
         raise DiagnosticsError, "Error in RuboCop configuration: #{e.message}"
@@ -94,6 +94,7 @@ module Solargraph
           Position.new(off['location']['start_line'], 0)
         else
           start_line = off['location']['start_line'] - 1
+          # @type [Integer]
           last_column = off['location']['last_column']
           line = @source.code.lines[start_line]
           col_off = if line.nil? || line.empty?

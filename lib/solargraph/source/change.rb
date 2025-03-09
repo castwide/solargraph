@@ -69,6 +69,9 @@ module Solargraph
 
       private
 
+      # @param text [String]
+      # @param insert [String]
+      # @return [String]
       def commit text, insert
         start_offset = Position.to_offset(text, range.start)
         end_offset = Position.to_offset(text, range.ending)
