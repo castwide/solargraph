@@ -401,6 +401,23 @@ describe Solargraph::Pin::Method do
       expect(pin.probe(api_map).tag).to eq('String')
     end
 
+    it 'infers return types from method rescue block' do
+      source = Solargraph::Source.load_string(%(
+        class Foo
+          def bar
+            'abc'
+          rescue
+            1
+          end
+        end
+      ))
+      api_map = Solargraph::ApiMap.new
+      api_map.map source
+      pin = api_map.get_path_pins('Foo#bar').first
+      expect(pin.typify(api_map)).to be_undefined
+      expect(pin.probe(api_map).items.map(&:tag)).to eq(['String', 'Integer'])
+    end
+
     it 'infers return types from begin rescue block' do
       source = Solargraph::Source.load_string(%(
         class Foo

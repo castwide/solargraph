@@ -318,7 +318,8 @@ module Solargraph
             CONDITIONAL_ALL_BUT_FIRST = [:if, :unless]
             CONDITIONAL_ALL = [:or]
             ONLY_ONE_CHILD = [:return]
-            COMPOUND_STATEMENTS = [:begin, :kwbegin, :resbody]
+            FIRST_TWO_CHILDREN = [:rescue]
+            COMPOUND_STATEMENTS = [:begin, :kwbegin]
             SKIPPABLE = [:def, :defs, :class, :sclass, :module]
             FUNCTION_VALUE = [:block]
             CASE_STATEMENT = [:case]
@@ -366,6 +367,8 @@ module Solargraph
                 result.concat reduce_to_value_nodes(node.children)
               elsif ONLY_ONE_CHILD.include?(node.type)
                 result.concat reduce_to_value_nodes([node.children[0]])
+              elsif FIRST_TWO_CHILDREN.include?(node.type)
+                result.concat reduce_to_value_nodes([node.children[0], node.children[1]])
               elsif FUNCTION_VALUE.include?(node.type)
                 # the block itself is a first class value that could be returned
                 result.push node
@@ -384,6 +387,8 @@ module Solargraph
                     result.concat reduce_to_value_nodes([cc])
                   end
                 end
+              elsif node.type == :resbody
+                result.concat reduce_to_value_nodes([node.children[2]])
               else
                 result.push node
               end
@@ -414,10 +419,10 @@ module Solargraph
                   result.concat from_value_position_statement(node.children[0])
                   # rescue statements
                   result.concat from_value_position_statement(node.children[1])
-                elsif node.type == :resbody
-                  result.concat from_value_position_statement(node.children[2])
                 elsif SKIPPABLE.include?(node.type)
                   next
+                elsif node.type == :resbody
+                  result.concat reduce_to_value_nodes([node.children[2]])
                 elsif node.type == :return
                   result.concat reduce_to_value_nodes([node.children[0]])
                   # Return here because the rest of the code is
@@ -478,6 +483,8 @@ module Solargraph
                   result.concat reduce_to_value_nodes(node.children)
                 elsif node.type == :block
                   result.concat explicit_return_values_from_compound_statement(node.children[2])
+                elsif node.type == :resbody
+                  result.concat reduce_to_value_nodes([node.children[2]])
                 else
                   result.push node
                 end
