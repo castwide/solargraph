@@ -25,7 +25,7 @@ module Solargraph
 
     # @param required [Array<String>, Set<String>]
     # @param directory [String]
-    # @param source_gems [Array<String>, Set<String>]
+    # @param source_gems [Enumerable<String>]
     # @param with_dependencies [Boolean]
     def initialize(required: [], directory: '', source_gems: [], with_dependencies: true)
       @with_dependencies = with_dependencies
@@ -42,9 +42,9 @@ module Solargraph
       @with_dependencies
     end
 
-    # @param new_requires [Set<String>] Required paths to use for loading gems
+    # @param new_requires [Enumerable<String>] Required paths to use for loading gems
     # @param new_directory [String] The workspace directory
-    # @param new_source_gems [Set<String>] Gems under local development (i.e., part of the workspace)
+    # @param new_source_gems [Enumerable<String>] Gems under local development (i.e., part of the workspace)
     # @return [Boolean]
     def change new_requires, new_directory, new_source_gems
       return false if new_requires == base_required && new_directory == @directory && new_source_gems == @source_gems
@@ -277,7 +277,7 @@ module Solargraph
     end
 
     # @param path [String]
-    # @return [Gem::Specification]
+    # @return [Gem::Specification, nil]
     def spec_for_require path
       relatives = path.split('/')
       spec = nil

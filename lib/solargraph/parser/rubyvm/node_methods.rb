@@ -51,6 +51,8 @@ module Solargraph
           end
         end
 
+        # @param node [Parser::AST::Node]
+        # @return [Array<Parser::AST::Node]
         def returns_from node
           return [] unless Parser.is_ast_node?(node)
           if node.type == :SCOPE

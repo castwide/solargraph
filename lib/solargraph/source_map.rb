@@ -35,10 +35,13 @@ module Solargraph
       @pin_select_cache = {}
     end
 
+    # @param klass [Class]
+    # @return [Array<Pin::Base>]
     def pins_by_class klass
       @pin_select_cache[klass] ||= @pin_class_hash.select { |key, _| key <= klass }.values.flatten
     end
 
+    # @return [Set<String>]
     def rebindable_method_names
       @rebindable_method_names ||= pins_by_class(Pin::Method)
         .select { |pin| pin.comments && pin.comments.include?('@yieldreceiver') }
@@ -99,10 +102,16 @@ module Solargraph
       (pins + locals).select { |pin| pin.location == location }
     end
 
+    # @param line [Integer]
+    # @param character [Integer]
+    # @return [Pin::Method,Pin::Namespace]
     def locate_named_path_pin line, character
       _locate_pin line, character, Pin::Namespace, Pin::Method
     end
 
+    # @param line [Integer]
+    # @param character [Integer]
+    # @return [Pin::Namespace,Pin::Method,Pin::Block]
     def locate_block_pin line, character
       _locate_pin line, character, Pin::Namespace, Pin::Method, Pin::Block
     end
@@ -166,6 +175,8 @@ module Solargraph
       @convention_pins || []
     end
 
+    # @param pins [Array<Pin::Base>]
+    # @return [Array<Pin::Base>]
     def convention_pins=(pins)
       # unmemoizing the document_symbols in case it was called from any of convnetions
       @document_symbols = nil
@@ -175,7 +186,7 @@ module Solargraph
     # @param line [Integer]
     # @param character [Integer]
     # @param klasses [Array<Class>]
-    # @return [Pin::Base]
+    # @return [Pin::Base, nil]
     def _locate_pin line, character, *klasses
       position = Position.new(line, character)
       found = nil
