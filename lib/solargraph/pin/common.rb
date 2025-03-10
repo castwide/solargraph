@@ -46,6 +46,10 @@ module Solargraph
         @path ||= name.empty? ? context.namespace : "#{context.namespace}::#{name}"
       end
 
+      protected
+
+      attr_writer :context
+
       private
 
       # @return [ComplexType]
@@ -56,7 +60,7 @@ module Solargraph
             return here.return_type
           elsif here.is_a?(Pin::Method)
             if here.scope == :instance
-              return ComplexType.try_parse(here.context.namespace)
+              return ComplexType.try_parse(here.context.tag)
             else
               return here.context
             end

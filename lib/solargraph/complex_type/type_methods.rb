@@ -80,6 +80,12 @@ module Solargraph
         end.call
       end
 
+      # @return [String]
+      def rooted_namespace
+        return namespace unless rooted?
+        "::#{namespace}"
+      end
+
       # @return [::Symbol] :class or :instance
       def scope
         @scope ||= :instance if duck_type? || nil_type?

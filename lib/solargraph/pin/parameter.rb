@@ -125,9 +125,19 @@ module Solargraph
           meths = chain.define(api_map, closure, locals)
           receiver_type = chain.base.infer(api_map, closure, locals)
           meths.each do |meth|
-            yps = meth.docstring.tags(:yieldparam)
-            unless yps[index].nil? or yps[index].types.nil? or yps[index].types.empty?
-              yield_type = ComplexType.try_parse(yps[index].types.first)
+            block_signature = meth.block
+            if block_signature
+              yield_type = block_signature.parameters[index]&.return_type
+            else
+              # @todo move the yieldparam tag parsing logic into the
+              #   creation of Method pins so we don't need this else
+              #   statement
+              yps = meth.docstring.tags(:yieldparam)
+              unless yps[index].nil? or yps[index].types.nil? or yps[index].types.empty?
+                yield_type = ComplexType.try_parse(yps[index].types.first)
+              end
+            end
+            unless yield_type.nil?
               if yield_type.generic? && receiver_type.defined?
                 namespace_pin = api_map.get_namespace_pins(meth.namespace, closure.namespace).first
                 return yield_type.resolve_generics(namespace_pin, receiver_type)
@@ -143,7 +153,7 @@ module Solargraph
       # @param api_map [ApiMap]
       # @return [ComplexType]
       def typify_method_param api_map
-        meths = api_map.get_method_stack(closure.full_context.namespace, closure.name, scope: closure.scope)
+        meths = api_map.get_method_stack(closure.full_context.tag, closure.name, scope: closure.scope)
         # meths.shift # Ignore the first one
         meths.each do |meth|
           found = nil

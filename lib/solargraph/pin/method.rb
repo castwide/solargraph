@@ -19,21 +19,49 @@ module Solargraph
       # @param visibility [::Symbol] :public, :protected, or :private
       # @param explicit [Boolean]
       # @param parameters [::Array<Pin::Parameter>]
+      # @param block [Pin::Signature, nil, ::Symbol]
       # @param generics [::Array<Pin::Parameter>, nil]
       # @param node [Parser::AST::Node, RubyVM::AbstractSyntaxTree::Node, nil]
       # @param attribute [Boolean]
       # @param signatures [::Array<Signature>, nil]
       # @param anon_splat [Boolean]
-      def initialize visibility: :public, explicit: true, parameters: [], generics: nil, node: nil, attribute: false, signatures: nil, anon_splat: false, **splat
+      def initialize visibility: :public, explicit: true, parameters: [], block: :undefined, generics: nil, node: nil, attribute: false, signatures: nil, anon_splat: false, **splat
         super(**splat)
         @visibility = visibility
         @explicit = explicit
         @parameters = parameters
+        @block = block
         @generics = generics
         @node = node
         @attribute = attribute
         @signatures = signatures
         @anon_splat = anon_splat
+      end
+
+      # Probe the concrete type for each of the generic type
+      # parameters used in this method, and return a new method pin if
+      # possible.
+      #
+      # @param definitions [Pin::Namespace] The module/class which uses generic types
+      # @param context_type [ComplexType] The receiver type, including the parameters
+      #   we want to substitute into 'definitions'
+      # @return [self]
+      def resolve_generics definitions, context_type
+        m = super
+        m.signatures = m.signatures.map do |sig|
+          sig.resolve_generics(definitions, context_type)
+        end
+        m.parameters = m.parameters.map do |param|
+          param.resolve_generics(definitions, context_type)
+        end
+        m.block = block&.resolve_generics(definitions, context_type)
+        m
+      end
+
+      # @return [Pin::Signature, nil]
+      def block
+        return @block unless @block == :undefined
+        @block = signatures.first.block
       end
 
       # @return [::Array<String>]
@@ -253,6 +281,14 @@ module Solargraph
       def anon_splat?
         @anon_splat
       end
+
+      protected
+
+      attr_writer :block
+
+      attr_writer :parameters
+
+      attr_writer :signatures
 
       private
 

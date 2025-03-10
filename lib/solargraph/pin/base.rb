@@ -40,6 +40,20 @@ module Solargraph
         @comments ||= ''
       end
 
+      # Determine the concrete type for each of the generic type
+      # parameters used in this method based on the parameters passed
+      # into the its class and return a new method pin.
+      #
+      # @param definitions [Pin::Namespace] The module/class which uses generic types
+      # @param context_type [ComplexType] The receiver type
+      # @return [self]
+      def resolve_generics definitions, context_type
+        rt = @return_type.resolve_generics(definitions, context_type) if @return_type
+        pin = proxy rt
+        pin.context = context_type
+        pin
+      end
+
       # @return [String, nil]
       def filename
         return nil if location.nil?
