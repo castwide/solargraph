@@ -504,7 +504,7 @@ module Solargraph
     #
     # @return [Boolean]
     def type_include?(host_ns, module_ns)
-      store.get_includes(host_ns).map { ComplexType.parse(_1).name }.include?(module_ns)
+      store.get_includes(host_ns).map { |inc_tag| ComplexType.parse(inc_tag).name }.include?(module_ns)
     end
 
     private
