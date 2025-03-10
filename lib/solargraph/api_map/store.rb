@@ -218,6 +218,26 @@ module Solargraph
         @path_pin_hash ||= {}
       end
 
+      # Add references to a map
+      #
+      # @param h [Hash{String => Pin:Base}]
+      # @param reference_pin [Pin::Reference]
+      #
+      # @return [void]
+      def store_parametric_reference(h, reference_pin)
+        referenced_ns = reference_pin.name
+        referenced_tag_params = reference_pin.generic_values
+        referenced_tag = referenced_ns +
+                         if referenced_tag_params && referenced_tag_params.length > 0
+                           "<" + referenced_tag_params.join(', ') + ">"
+                         else
+                           ''
+                         end
+        referencing_ns = reference_pin.namespace
+        h[referencing_ns] ||= []
+        h[referencing_ns].push referenced_tag
+      end
+
       # @return [void]
       def index
         set = pins.to_set
@@ -228,9 +248,13 @@ module Solargraph
         @path_pin_hash = set.classify(&:path)
         @namespaces = @path_pin_hash.keys.compact.to_set
         pins_by_class(Pin::Reference::Include).each do |pin|
-          include_references[pin.namespace] ||= []
-          include_references[pin.namespace].push pin.name
+          store_parametric_reference(include_references, pin)
         end
+        # @todo move the rest of these reference pins over to use
+        #   generic types, adding rbs_map/conversions.rb code to
+        #   populate type parameters and adding related specs ensuring
+        #   the generics get resolved, along with any api_map.rb
+        #   changes needed in
         pins_by_class(Pin::Reference::Prepend).each do |pin|
           prepend_references[pin.namespace] ||= []
           prepend_references[pin.namespace].push pin.name
