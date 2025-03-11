@@ -130,10 +130,12 @@ module Solargraph
       nil
     end
 
+    # @return [Set]
     def base_required
       @base_required ||= Set.new
     end
 
+    # @return [String]
     def directory
       @directory ||= ''
     end
@@ -202,6 +204,11 @@ module Solargraph
       pins.concat environ.pins
     end
 
+    # @param req [String]
+    # @param result [Array]
+    # @param already_errored [Array]
+    # @param yd [Integer]
+    # @return [void]
     def process_error(req, result, already_errored, yd = 1)
       base = req.split('/').first
       return if already_errored.include?(base)

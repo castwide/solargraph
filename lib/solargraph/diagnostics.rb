@@ -33,7 +33,7 @@ module Solargraph
       # Find a reporter by name.
       #
       # @param name [String] The name with which the reporter was registered
-      # @return [Class<Solargraph::Diagnostics::Base>]
+      # @return [Class<Solargraph::Diagnostics::Base>, nil]
       def reporter name
         reporter_hash[name]
       end
