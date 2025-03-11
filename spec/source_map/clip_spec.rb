@@ -1541,4 +1541,16 @@ describe Solargraph::SourceMap::Clip do
     type = clip.infer
     expect(type.tag).to eq('String')
   end
+
+  it 'preserves duplicated types in tuple' do
+    source = Solargraph::Source.load_string(%(
+      # @type [Array(Array(Symbol, String, Array(Integer, Integer)))]
+      a = 123
+      a
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new.map(source)
+    clip = api_map.clip_at('test.rb', [3, 6])
+    type = clip.infer
+    expect(type.to_s).to eq('Array(Array(Symbol, String, Array(Integer, Integer)))')
+  end
 end
