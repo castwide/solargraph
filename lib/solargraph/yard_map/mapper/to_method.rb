@@ -58,7 +58,7 @@ module Solargraph
             end
           end
 
-          # @param a [Array]
+          # @param a [Array<String>]
           # @return [String]
           def arg_name a
             a[0].gsub(/[^a-z0-9_]/i, '')

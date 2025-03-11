@@ -40,7 +40,7 @@ module Solargraph
 
       private
 
-      # @return [Hash]
+      # @return [Hash{String => Class<Solargraph::Diagnostics::Base>}]
       def reporter_hash
         @reporter_hash ||= {}
       end
