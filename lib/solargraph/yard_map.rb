@@ -93,7 +93,7 @@ module Solargraph
     end
 
     # @param y [String]
-    # @return [YARD::Registry]
+    # @return [YARD::Registry, nil]
     def load_yardoc y
       if y.is_a?(Array)
         YARD::Registry.load y, true
@@ -115,7 +115,7 @@ module Solargraph
     # Get the location of a file referenced by a require path.
     #
     # @param path [String]
-    # @return [Location]
+    # @return [Location, nil]
     def require_reference path
       # @type [Gem::Specification]
       spec = spec_for_require(path)

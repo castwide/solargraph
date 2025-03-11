@@ -664,6 +664,7 @@ module Solargraph
         libraries.each(&:catalog)
       end
 
+      # @return [Hash{String => BasicObject}]
       def client_capabilities
         @client_capabilities ||= {}
       end

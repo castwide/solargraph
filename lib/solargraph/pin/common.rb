@@ -19,7 +19,7 @@ module Solargraph
         @return_type ||= ComplexType::UNDEFINED
       end
 
-      # @return [ComplexType]
+      # @return [ComplexType, Array<UniqueType>]
       def context
         # Get the static context from the nearest namespace
         @context ||= find_context
