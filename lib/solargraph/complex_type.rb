@@ -219,6 +219,9 @@ module Solargraph
                 raise ComplexTypeError, "Invalid hash thing" unless key_types.nil?
                 # types.push ComplexType.new([UniqueType.new(base[0..-2].strip)])
                 types.push UniqueType.new(base[0..-2].strip)
+                # @todo this should either expand key_type's type
+                #   automatically or complain about not being
+                #   compatible with key_type's type in type checking
                 key_types = types
                 types = []
                 base.clear

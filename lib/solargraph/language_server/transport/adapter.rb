@@ -8,6 +8,16 @@ module Solargraph
       # A common module for running language servers in Backport.
       #
       module Adapter
+        # @abstract
+        # Write the change to the specified text.
+        #
+        # @param text [String] The text to be changed.
+        # @return [String] The updated text.
+        def write text
+          raise NotImplementedError
+        end
+
+        # @return [void]
         def opening
           @host = Solargraph::LanguageServer::Host.new
           @host.add_observer self
@@ -23,6 +33,7 @@ module Solargraph
         end
 
         # @param data [String]
+        # @return [void]
         def receiving data
           @data_reader.receive data
         end
