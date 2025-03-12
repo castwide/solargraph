@@ -521,6 +521,18 @@ describe Solargraph::ApiMap do
     expect(fqns).to eq('Foo::Bar')
   end
 
+  it 'handles multiple type parameters without losing cache coherence' do
+    tag = @api_map.qualify('Array<String>')
+    expect(tag).to eq('Array<String>')
+    tag = @api_map.qualify('Array<Integer>')
+    expect(tag).to eq('Array<Integer>')
+  end
+
+  it 'handles multiple type parameters without losing cache coherence' do
+    tag = @api_map.qualify('Hash{Integer => String}')
+    expect(tag).to eq('Hash{Integer => String}')
+  end
+
   it 'qualifies namespaces with conflicting includes' do
     source = Solargraph::Source.load_string(%(
       module Bar; end

@@ -211,37 +211,48 @@ module Solargraph
       store.fqns_pins(qualify(namespace, context))
     end
 
-    # Determine fully qualified namespace for a tag. This method will
-    # start the search in the specified context until it finds a match
-    # for the name.
+    # Determine fully qualified tag for a given tag used inside the
+    # definition of another tag ("context"). This method will start
+    # the search in the specified context until it finds a match for
+    # the tag.
     #
-    # Does not recurse into qualifying the type parameters.
+    # Does not recurse into qualifying the type parameters, but
+    # returns any which were passed in unchanged.
     #
     # @param tag [String, nil] The namespace to
     #   match, complete with generic parameters set to appropriate
     #   values if available
-    # @param context_tag [String] The context to search
+    # @param context_tag [String] The context in which the tag was
+    #   referenced; start from here to resolve the name
     # @return [String, nil] fully qualified tag
     def qualify tag, context_tag = ''
       return tag if ['self', nil].include?(tag)
-      # remove type parameters
       context_type = ComplexType.parse(context_tag)
-      context = context_type.rooted_namespace
       type = ComplexType.parse(tag)
-      namespace = type.rooted_namespace
-      cached = cache.get_qualified_namespace(namespace, context)
+      fqns = qualify_namespace(type.rooted_namespace, context_type.rooted_namespace)
+      return nil if fqns.nil?
+      fqns + type.substring
+    end
+
+    # Determine fully qualified namespace for a given namespace used
+    # inside the definition of another tag ("context"). This method
+    # will start the search in the specified context until it finds a
+    # match for the namespace.
+    #
+    # @param namespace [String, nil] The namespace to
+    #   match
+    # @param context_tag [String] The context namespace in which the
+    #   tag was referenced; start from here to resolve the name
+    # @return [String, nil] fully qualified namespace
+    def qualify_namespace(namespace, context_namespace = '')
+      cached = cache.get_qualified_namespace(namespace, context_namespace)
       return cached.clone unless cached.nil?
-      result = if tag.start_with?('::')
+      result = if namespace.start_with?('::')
                  inner_qualify(namespace[2..-1], '', Set.new)
                else
-                 inner_qualify(namespace, context, Set.new)
+                 inner_qualify(namespace, context_namespace, Set.new)
                end
-      result = if type.all_params.empty?
-        result
-      else
-        result + "<" + type.all_params.map(&:to_s).join(", ") + ">"
-      end
-      cache.set_qualified_namespace(namespace, context, result)
+      cache.set_qualified_namespace(namespace, context_namespace, result)
       result
     end
 
