@@ -315,7 +315,7 @@ module Solargraph
         #    statements in value positions.
         module DeepInference
           class << self
-            CONDITIONAL_ALL_BUT_FIRST = [:if, :unless]
+            CONDITIONAL_ALL_BUT_FIRST = [:if, :unless, :or_asgn]
             CONDITIONAL_ALL = [:or]
             ONLY_ONE_CHILD = [:return]
             FIRST_TWO_CHILDREN = [:rescue]
