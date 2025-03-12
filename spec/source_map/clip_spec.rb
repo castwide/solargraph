@@ -1541,4 +1541,30 @@ describe Solargraph::SourceMap::Clip do
     type = clip.infer
     expect(type.tag).to eq('String')
   end
+
+  it 'picks correct overload in Hash#transform_values!' do
+    source = Solargraph::Source.load_string(%(
+      # @param t [Hash{String => Integer}]
+      # @return [Hash{String => Integer}]
+      def bar(t)
+        a = t.transform_values! { |i| i + 3 }
+        a
+      end
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new.map(source)
+    clip = api_map.clip_at('test.rb', [5, 8])
+    type = clip.infer
+    expect(type.to_s).to eq('Hash{String => Integer}')
+  end
+
+  it 'picks correct overload in Enumerable#max_by' do
+    source = Solargraph::Source.load_string(%(
+      a = [1, 2, 3].max_by(&:abs)
+      a
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new.map(source)
+    clip = api_map.clip_at('test.rb', [2, 6])
+    type = clip.infer
+    expect(type.to_s).to eq('Integer, nil')
+  end
 end
