@@ -8,14 +8,19 @@ module Solargraph
       # A common module for running language servers in Backport.
       #
       module Adapter
-        # @abstract
-        # Write the change to the specified text.
+        # This runs in the context of Backport::Adapter, which
+        # provides write() - but if we didn't hide this behind a parse
+        # tag, it would override the one in the class.
         #
-        # @param text [String] The text to be changed.
-        # @return [String] The updated text.
-        def write text
-          raise NotImplementedError
-        end
+        # @!parse
+        #   # @abstract
+        #   # Write the change to the specified text.
+        #   #
+        #   # @param text [String] The text to be changed.
+        #   # @return [String] The updated text.
+        #   def write text
+        #     raise NotImplementedError
+        #   end
 
         # @return [void]
         def opening
