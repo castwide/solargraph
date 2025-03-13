@@ -14,7 +14,7 @@ module Solargraph
           File.join(Dir.home, '.cache', 'solargraph')
       end
 
-      # The working directory for the current Ruby and Solargraph versions.
+      # The working directory for the current Ruby, RBS, and Solargraph versions.
       #
       # @return [String]
       def work_dir
@@ -23,10 +23,21 @@ module Solargraph
         File.join(base_dir, "ruby-#{RUBY_VERSION}", "rbs-#{RBS::VERSION}", "solargraph-#{Solargraph::VERSION}")
       end
 
+      # Append the given path to the current cache directory (`work_dir`).
+      #
+      # @example
+      #   Cache.join('date-3.4.1.ser')
+      #
+      # @param path [Array<String>]
+      # @return [String]
+      def join *path
+        File.join(work_dir, *path)
+      end
+
       # @param path [Array<String>]
       # @return [Array<Solargraph::Pin::Base>, nil]
       def load *path
-        file = File.join(work_dir, *path)
+        file = join(*path)
         return nil unless File.file?(file)
         Marshal.load(File.read(file, mode: 'rb'))
       rescue StandardError => e

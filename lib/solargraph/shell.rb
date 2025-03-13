@@ -232,6 +232,33 @@ module Solargraph
       puts 'The `bundle` command is deprecated. Solargraph currently uses RBS instead.'
     end
 
+    desc 'gems', 'Generate documentation for installed gems'
+    option :rebuild, type: :boolean, desc: 'Rebuild existing documentation', default: false
+    def gems *names
+      if names.empty?
+        Gem::Specification.to_a.each do |spec|
+          next unless options.rebuild || !Yardoc.cached?(spec)
+
+          puts "Processing gem: #{spec.name} #{spec.version}"
+          pins = GemPins.build(spec)
+          Cache.save("#{spec.name}-#{spec.version}.ser", pins)
+        end
+      else
+        names.each do |name|
+          spec = Gem::Specification.find_by_name(name)
+          if spec
+            next unless options.rebuild || !Yardoc.cached?(spec)
+
+            puts "Processing gem: #{spec.name} #{spec.version}"
+            pins = GemPins.build(spec)
+            Cache.save("#{spec.name}-#{spec.version}.ser", pins)
+          else
+            warn "Gem '#{name}' not found"
+          end
+        end
+      end
+    end
+
     desc 'rdoc GEM [VERSION]', 'Use RDoc to cache documentation [deprecated]', hide: true
     long_desc %(
       The `rdoc` command is deprecated. Solargraph currently uses RBS instead.
@@ -239,6 +266,7 @@ module Solargraph
     # @param _gem [String]
     # @param _version  [String]
     # @return [void]
+    # @deprecated
     def rdoc _gem, _version = '>= 0'
       puts 'The `rdoc` command is deprecated. Solargraph currently uses RBS instead.'
     end

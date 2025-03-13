@@ -249,39 +249,32 @@ module Solargraph
       rescue Gem::LoadError, NoYardocError
         process_error(r, result, already_errored)
       end
-      return result
+      result
     end
 
     # @param y [String, nil]
     # @param spec [Gem::Specification, nil]
     # @return [Array<Pin::Base>]
     def process_yardoc y, spec = nil
-      return [] if y.nil?
-      if spec
-        cache = Solargraph::Cache.load('gems', "#{spec.name}-#{spec.version}.ser")
-        return cache if cache
-      end
-      size = Dir.glob(File.join(y, '**', '*'))
-        .map{ |f| File.size(f) }
-        .inject(:+)
-      if !size.nil? && size > 20_000_000
-        Solargraph::Logging.logger.warn "Yardoc at #{y} is too large to process (#{size} bytes)"
-        return []
-      end
-      Solargraph.logger.info "Loading #{spec.name} #{spec.version} from #{y}"
-      load_yardoc y
-      result = Mapper.new(YARD::Registry.all, spec).map
-      raise NoYardocError, "Yardoc at #{y} is empty" if result.empty?
-      if spec
-        Solargraph::Cache.save 'gems', "#{spec.name}-#{spec.version}.ser", result
-      end
-      result
+      return unless spec
+
+      # cache = Solargraph::Cache.load('gems', "#{spec.name}-#{spec.version}.ser")
+      # return cache if cache
+
+      # @todo The language server should handle yardoc generation in parallel
+      #   to avoid lag during initialization.
+      Yardoc.build(spec) unless Yardoc.cached?(spec)
+
+      load_yardoc Yardoc.path_for(spec)
+      # result = Mapper.new(YARD::Registry.all, spec).map
+      # Solargraph::Cache.save 'gems', "#{spec.name}-#{spec.version}.ser", result
+      Mapper.new(YARD::Registry.all, spec).map
     end
 
     # @param spec [Gem::Specification]
     # @return [String]
     def yardoc_file_for_spec spec
-      YARD::Registry.yardoc_file_for_gem(spec.name, "= #{spec.version}")
+      File.join(Solargraph::Cache.work_dir, 'gems', "#{spec.name}-#{spec.version}.yardoc")
     end
 
     # @param path [String]

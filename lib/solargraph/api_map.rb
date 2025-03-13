@@ -71,10 +71,10 @@ module Solargraph
       end
       external_requires.merge implicit.requires
       external_requires.merge bench.workspace.config.required
-      @rbs_maps = external_requires.map { |r| load_rbs_map(r) }
-      unresolved_requires = @rbs_maps.reject(&:resolved?).map(&:library)
+      stdlib_maps = external_requires.map { |r| load_stdlib_map(r) }
+      unresolved_requires = stdlib_maps.reject(&:resolved?).map(&:library)
       yard_map.change(unresolved_requires, bench.workspace.directory, bench.workspace.source_gems)
-      @store = Store.new(@@core_map.pins + @rbs_maps.flat_map(&:pins) + yard_map.pins + implicit.pins + pins)
+      @store = Store.new(@@core_map.pins + stdlib_maps.flat_map(&:pins) + yard_map.pins + implicit.pins + pins)
       @unresolved_requires = yard_map.unresolved_requires
       @missing_docs = yard_map.missing_docs
       @rebindable_method_names = nil
@@ -527,9 +527,7 @@ module Solargraph
 
     # @param library [String]
     # @return [RbsMap]
-    def load_rbs_map library
-      # map = RbsMap.load(library)
-      # return map if map.resolved?
+    def load_stdlib_map library
       RbsMap::StdlibMap.load(library)
     end
 
