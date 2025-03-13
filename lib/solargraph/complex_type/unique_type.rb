@@ -106,8 +106,10 @@ module Solargraph
           if hash_parameters?
             UniqueType.new(new_name, "{#{new_key_types.join(', ')} => #{new_subtypes.join(', ')}}")
           elsif parameters?
-            if @substring.start_with?'<('
+            if @substring.start_with?('<(')
               UniqueType.new(new_name, "<(#{new_subtypes.join(', ')})>")
+            elsif @substring.start_with?('(')
+              UniqueType.new(new_name, "(#{new_subtypes.join(', ')})")
             else
               UniqueType.new(new_name, "<#{new_subtypes.join(', ')}>")
             end
