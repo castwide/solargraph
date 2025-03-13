@@ -13,10 +13,6 @@ module Solargraph
       Dir.chdir gemspec.gem_dir do
         `yardoc --db #{path_for(gemspec)} --no-output --plugin solargraph`
       end
-      # rbs_map = RbsMap.new(gemspec.name)
-      # methods = rbs_map.pins.select { |pin| pin.is_a?(Pin::Method) }
-      # puts methods.map(&:path)
-      # puts "RBS has #{rbs_map.pins.length} pins"
     end
 
     # @param gemspec [Gem::Specification]
