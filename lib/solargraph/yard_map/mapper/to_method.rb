@@ -39,6 +39,9 @@ module Solargraph
           private
 
           # @param code_object [YARD::CodeObjects::Base]
+          # @param location [Location],
+          # @param comments [String]
+          # @param pin [Pin::Base]
           # @return [Array<Solargraph::Pin::Parameter>]
           def get_parameters code_object, location, comments, pin
             return [] unless code_object.is_a?(YARD::CodeObjects::MethodObject)
@@ -58,7 +61,7 @@ module Solargraph
             end
           end
 
-          # @param a [Array]
+          # @param a [Array<String>]
           # @return [String]
           def arg_name a
             a[0].gsub(/[^a-z0-9_]/i, '')

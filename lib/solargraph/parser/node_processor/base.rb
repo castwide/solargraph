@@ -19,6 +19,7 @@ module Solargraph
         # @param node [Parser::AST::Node]
         # @param region [Region]
         # @param pins [Array<Pin::Base>]
+        # @param locals [Array<Pin::LocalVariable>]
         def initialize node, region, pins, locals
           @node = node
           @region = region
@@ -54,20 +55,28 @@ module Solargraph
           Location.new(region.filename, range)
         end
 
+        # @param node [Parser::AST::Node]
+        # @return [String, nil]
         def comments_for(node)
           region.source.comments_for(node)
         end
 
+        # @param position [Solargraph::Position]
+        # @return [Pin::Base, nil]
         def named_path_pin position
           pins.select{|pin| pin.is_a?(Pin::Closure) && pin.path && !pin.path.empty? && pin.location.range.contain?(position)}.last
         end
 
         # @todo Candidate for deprecation
+        # @param position [Solargraph::Position]
+        # @return [Pin::Closure, nil]
         def block_pin position
           pins.select{|pin| pin.is_a?(Pin::Closure) && pin.location.range.contain?(position)}.last
         end
 
         # @todo Candidate for deprecation
+        # @param position [Solargraph::Position]
+        # @return [Pin::Closure, nil]
         def closure_pin position
           pins.select{|pin| pin.is_a?(Pin::Closure) && pin.location.range.contain?(position)}.last
         end

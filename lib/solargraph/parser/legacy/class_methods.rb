@@ -1,4 +1,5 @@
 require 'parser/current'
+require 'parser/source/buffer'
 
 module Solargraph
   module Parser

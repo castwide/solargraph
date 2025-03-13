@@ -3,6 +3,9 @@ require 'ripper'
 module Solargraph
   module Parser
     class CommentRipper < Ripper::SexpBuilderPP
+      # @param src [String]
+      # @param filename [String]
+      # @param lineno [Integer]
       def initialize src, filename = '(ripper)', lineno = 0
         super
         @buffer = src

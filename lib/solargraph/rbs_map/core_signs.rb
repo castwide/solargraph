@@ -8,6 +8,8 @@ module Solargraph
 
         attr_reader :return_type
 
+        # @param parameters [Array<Hash>]
+        # @param return_type [String]
         def initialize parameters, return_type
           @parameters = parameters
           @return_type = return_type
