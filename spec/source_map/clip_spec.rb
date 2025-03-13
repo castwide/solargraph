@@ -1075,10 +1075,7 @@ describe Solargraph::SourceMap::Clip do
   end
 
   it 'completes from repaired sources with missing nodes' do
-    source = Solargraph::Source.load_string(%(
-      x = []
-      
-    ), 'test.rb')
+    source = Solargraph::Source.load_string("\n      x = []\n      ", 'test.rb')
     api_map = Solargraph::ApiMap.new
     api_map.map source
     updater = Solargraph::Source::Updater.new('test.rb', 1, [
