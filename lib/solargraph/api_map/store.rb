@@ -26,7 +26,7 @@ module Solargraph
       # @param fqns [String]
       # @param scope [Symbol]
       # @param visibility [Array<Symbol>]
-      # @return [Enumerable<Solargraph::Pin::Base>]
+      # @return [Enumerable<Solargraph::Pin::Method>]
       def get_methods fqns, scope: :instance, visibility: [:public]
         namespace_children(fqns).select do |pin|
           pin.is_a?(Pin::Method) && pin.scope == scope && visibility.include?(pin.visibility)
@@ -203,7 +203,7 @@ module Solargraph
         namespace_map[name] || []
       end
 
-      # @return [Hash]
+      # @return [Hash{String => Enumerable<Pin::Base>}
       def namespace_map
         @namespace_map ||= {}
       end

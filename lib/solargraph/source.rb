@@ -414,7 +414,7 @@ module Solargraph
       result
     end
 
-    # @param n [Parser::AST::Node]
+    # @param n [Parser::AST::Node, nil]
     # @return [Array<Parser::AST::Node>]
     def string_nodes_in n
       result = []
@@ -428,7 +428,7 @@ module Solargraph
       result
     end
 
-    # @param node [Parser::AST::Node]
+    # @param node [Parser::AST::Node, nil]
     # @param position [Position]
     # @param stack [Array<Parser::AST::Node>]
     # @return [void]
@@ -467,7 +467,7 @@ module Solargraph
       @code = val
     end
 
-    # @return [Parser::AST::Node]
+    # @return [Parser::AST::Node, nil]
     attr_writer :node
 
     # @return [Array<Range>]
