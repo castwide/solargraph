@@ -69,6 +69,7 @@ module Solargraph
         (type == :class ? LanguageServer::SymbolKinds::CLASS : LanguageServer::SymbolKinds::MODULE)
       end
 
+      # @return [String]
       def path
         @path ||= (namespace.empty? ? '' : "#{namespace}::") + name
       end

@@ -8,7 +8,7 @@ module Solargraph
           include Legacy::NodeMethods
 
           def process
-            if node.children[1]
+            if node.children[1] # Exception local variable name
               here = get_node_start_position(node.children[1])
               presence = Range.new(here, region.closure.location.range.ending)
               loc = get_node_location(node.children[1])

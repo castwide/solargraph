@@ -91,7 +91,7 @@ module Solargraph
     end
 
     # @param y [String]
-    # @return [YARD::Registry]
+    # @return [YARD::Registry, nil]
     def load_yardoc y
       if y.is_a?(Array)
         YARD::Registry.load y, true
@@ -113,7 +113,7 @@ module Solargraph
     # Get the location of a file referenced by a require path.
     #
     # @param path [String]
-    # @return [Location]
+    # @return [Location, nil]
     def require_reference path
       # @type [Gem::Specification]
       spec = spec_for_require(path)
@@ -128,10 +128,12 @@ module Solargraph
       nil
     end
 
+    # @return [Set]
     def base_required
       @base_required ||= Set.new
     end
 
+    # @return [String]
     def directory
       @directory ||= ''
     end
@@ -150,6 +152,7 @@ module Solargraph
       @pin_class_hash ||= pins.to_set.classify(&:class).transform_values(&:to_a)
     end
 
+    # @param klass [Class<Pin::Base>]
     # @return [Array<Pin::Base>]
     def pins_by_class klass
       @pin_select_cache[klass] ||= pin_class_hash.select { |key, _| key <= klass }.values.flatten
@@ -194,6 +197,11 @@ module Solargraph
       pins.concat environ.pins
     end
 
+    # @param req [String]
+    # @param result [Array]
+    # @param already_errored [Array]
+    # @param yd [Integer]
+    # @return [void]
     def process_error(req, result, already_errored, yd = 1)
       base = req.split('/').first
       return if already_errored.include?(base)

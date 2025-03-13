@@ -101,7 +101,7 @@ module Solargraph
       # Start processing a request from the client. After the message is
       # processed, caller is responsible for sending the response.
       #
-      # @param request [Hash] The contents of the message.
+      # @param request [Hash{String => unspecified}] The contents of the message.
       # @return [Solargraph::LanguageServer::Message::Base, nil] The message handler.
       def receive request
         if request['method']
@@ -506,6 +506,8 @@ module Solargraph
         library.read_text(filename)
       end
 
+      # @param uri [String]
+      # @return [Hash]
       def formatter_config uri
         library = library_for(uri)
         library.workspace.config.formatter
@@ -664,6 +666,7 @@ module Solargraph
         libraries.each(&:catalog)
       end
 
+      # @return [Hash{String => BasicObject}]
       def client_capabilities
         @client_capabilities ||= {}
       end
@@ -688,7 +691,7 @@ module Solargraph
       # A hash of client requests by ID. The host uses this to keep track of
       # pending responses.
       #
-      # @return [Hash{Integer => Hash}]
+      # @return [Hash{Integer => Solargraph::LanguageServer::Host}]
       def requests
         @requests ||= {}
       end
@@ -833,6 +836,9 @@ module Solargraph
         end
       end
 
+      # @param library [Library]
+      # @param uuid [String, nil]
+      # @return [void]
       def do_async_library_map library, uuid = nil
         total = library.workspace.sources.length
         if uuid

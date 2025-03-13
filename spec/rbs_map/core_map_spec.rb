@@ -34,4 +34,18 @@ describe Solargraph::RbsMap::CoreMap do
     stderr_pin = stderr_pins.first
     expect(stderr_pin.return_type.to_s).to eq('IO')
   end
+    
+  it 'understands implied Enumerator#each method' do
+    api_map = Solargraph::ApiMap.new
+    methods = api_map.get_methods('Enumerable')
+    each_pins = methods.select{|pin| pin.path.end_with?('#each')}
+    # expect this to come from the _Each implied interface ("self
+    # type") defined in the RBS
+    expect(each_pins.map(&:path)).to eq(["_Each#each"])
+    expect(each_pins.map(&:class)).to eq([Solargraph::Pin::Method])
+    each_pin = each_pins.first
+    expect(each_pin.signatures.length).to eq(1)
+    signature = each_pin.signatures.first
+    expect(signature.block.return_type.to_s).to eq('void')
+  end
 end

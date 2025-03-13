@@ -16,6 +16,7 @@ module Solargraph
         # client.
         #
         # @yieldparam [Hash] The message received from the client
+        # @return [void]
         def set_message_handler &block
           @message_handler = block
         end
@@ -26,6 +27,7 @@ module Solargraph
         # will be buffered and subsequent data will be appended to the buffer.
         #
         # @param data [String]
+        # @return [void]
         def receive data
           data.each_char do |char|
             @buffer.concat char
