@@ -4,6 +4,16 @@ describe Solargraph::TypeChecker do
       Solargraph::TypeChecker.load_string(code, 'test.rb', :strict)
     end
 
+    it 'handles compatible interfaces with self types on call' do
+      checker = type_checker(%(
+        # @param a [Enumerable<String>]
+        def bar(a); end
+
+        bar(['a'])
+      ))
+      expect(checker.problems).to be_empty
+    end
+
     it 'complains on @!parse blocks too' do
       checker = type_checker(%(
       # @!parse
@@ -459,6 +469,15 @@ describe Solargraph::TypeChecker do
         end
       ))
       expect(checker.problems).to be_empty
+    end
+
+    it 'Can infer through ||= with a begin+end' do
+      checker = type_checker(%(
+        def recipient
+          @recipient ||= true ? "foo" : "bar"
+        end
+      ))
+      expect(checker.problems.map(&:message)).to be_empty
     end
 
     it 'validates kwoptargs without arguments' do

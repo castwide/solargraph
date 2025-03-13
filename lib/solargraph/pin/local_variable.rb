@@ -6,12 +6,16 @@ module Solargraph
       # @return [Range]
       attr_reader :presence
 
+      # @param assignment [AST::Node, nil]
+      # @param presence [Range, nil]
+      # @param splat [Hash]
       def initialize assignment: nil, presence: nil, **splat
         super(**splat)
         @assignment = assignment
         @presence = presence
       end
 
+      # @param pin [self]
       def try_merge! pin
         return false unless super
         @presence = pin.presence
@@ -40,6 +44,9 @@ module Solargraph
           (['', 'Class<>'].include?(tag1) && ['', 'Class<>'].include?(tag2))
       end
 
+      # @param needle [Pin::Base]
+      # @param haystack [Pin::Base]
+      # @return [Boolean]
       def match_named_closure needle, haystack
         return true if needle == haystack || haystack.is_a?(Pin::Block)
         cursor = haystack

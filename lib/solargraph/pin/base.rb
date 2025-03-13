@@ -215,6 +215,7 @@ module Solargraph
         result
       end
 
+      # @return [String]
       def identity
         @identity ||= "#{closure.path}|#{name}"
       end

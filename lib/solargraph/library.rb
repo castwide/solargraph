@@ -159,7 +159,7 @@ module Solargraph
     # @param filename [String] The file to analyze
     # @param line [Integer] The zero-based line number
     # @param column [Integer] The zero-based column number
-    # @return [SourceMap::Completion]
+    # @return [SourceMap::Completion, nil]
     # @todo Take a Location instead of filename/line/column
     def completions_at filename, line, column
       position = Position.new(line, column)
@@ -175,7 +175,7 @@ module Solargraph
     # @param filename [String] The file to analyze
     # @param line [Integer] The zero-based line number
     # @param column [Integer] The zero-based column number
-    # @return [Array<Solargraph::Pin::Base>]
+    # @return [Array<Solargraph::Pin::Base>, nil]
     # @todo Take filename/position instead of filename/line/column
     def definitions_at filename, line, column
       position = Position.new(line, column)
@@ -205,7 +205,7 @@ module Solargraph
     # @param filename [String] The file to analyze
     # @param line [Integer] The zero-based line number
     # @param column [Integer] The zero-based column number
-    # @return [Array<Solargraph::Pin::Base>]
+    # @return [Array<Solargraph::Pin::Base>, nil]
     # @todo Take filename/position instead of filename/line/column
     def type_definitions_at filename, line, column
       position = Position.new(line, column)
@@ -283,6 +283,7 @@ module Solargraph
       return if map.nil?
       pin = map.requires.select { |p| p.location.range.contain?(location.range.start) }.first
       return nil if pin.nil?
+      # @param full [String]
       return_if_match = proc do |full|
         if source_map_hash.key?(full)
           return Location.new(full, Solargraph::Range.from_to(0, 0, 0, 0))
@@ -547,9 +548,9 @@ module Solargraph
       workspace.source(filename)
     end
 
-    # @return [void]
     # @param filename [String]
     # @param error [FileNotFoundError]
+    # @return [nil]
     def handle_file_not_found filename, error
       if workspace.source(filename)
         Solargraph.logger.debug "#{filename} is not cataloged in the ApiMap"
