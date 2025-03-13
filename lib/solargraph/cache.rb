@@ -23,6 +23,7 @@ module Solargraph
         File.join(base_dir, "ruby-#{RUBY_VERSION}", "rbs-#{RBS::VERSION}", "solargraph-#{Solargraph::VERSION}")
       end
 
+      # @param path [Array<String>]
       # @return [Array<Solargraph::Pin::Base>, nil]
       def load *path
         file = File.join(work_dir, *path)
@@ -45,6 +46,7 @@ module Solargraph
         true
       end
 
+      # @return [void]
       def clear
         FileUtils.rm_rf base_dir, secure: true
       end

@@ -3,14 +3,17 @@
 module Solargraph
   module Pin
     class InstanceVariable < BaseVariable
+      # @return [ComplexType]
       def binder
         closure.binder
       end
 
+      # @return [::Symbol]
       def scope
         closure.binder.scope
       end
 
+      # @return [ComplexType]
       def context
         @context ||= begin
           result = super
@@ -22,6 +25,7 @@ module Solargraph
         end
       end
 
+      # @param other [InstanceVariable]
       def nearly? other
         super && binder == other.binder
       end

@@ -1542,10 +1542,56 @@ describe Solargraph::SourceMap::Clip do
     expect(type.tag).to eq('String')
   end
 
-  # pending https://github.com/castwide/solargraph/pull/769
-  xit 'infers yield parameters from self type defined methods in RBS' do
+  it 'infers overloads based on required parameters from Enumerable' do
+    source = Solargraph::Source.load_string(%(
+      # @return [Enumerable<String>]
+      def foo; end
+
+      a = foo.first
+      a
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new.map(source)
+    clip = api_map.clip_at('test.rb', [5, 6])
+    type = clip.infer
+    expect(type.tag).to eq('String')
+  end
+
+  it 'infers overloads based on required parameters from Hash' do
+    source = Solargraph::Source.load_string(%(
+      # @return [Hash{String => Enumerable<String>}]
+      def foo; end
+
+      a = foo['bar']
+      a
+      b = a.first
+      b
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new.map(source)
+    clip = api_map.clip_at('test.rb', [5, 6])
+    type = clip.infer
+    expect(type.to_s).to eq('Enumerable<String>')
+    clip = api_map.clip_at('test.rb', [7, 6])
+    type = clip.infer
+    expect(type.to_s).to eq('String, nil')
+  end
+
+  it 'infers yield parameters from self type defined methods in RBS' do
     source = Solargraph::Source.load_string(%(
       # @type [Enumerable<String>]
+      a = ['a', 'b', 'c']
+      a.each do |s|
+        s
+      end
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new.map(source)
+    clip = api_map.clip_at('test.rb', [4, 8])
+    type = clip.infer
+    expect(type.to_s).to eq('String')
+  end
+
+  it 'infers yield parameters from defined methods in RBS' do
+    source = Solargraph::Source.load_string(%(
+      # @type [Array<String>]
       a = ['a', 'b', 'c']
       a.each do |s|
         s

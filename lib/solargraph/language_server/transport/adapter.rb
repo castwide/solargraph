@@ -8,6 +8,7 @@ module Solargraph
       # A common module for running language servers in Backport.
       #
       module Adapter
+        # @return [void]
         def opening
           @host = Solargraph::LanguageServer::Host.new
           @host.add_observer self
@@ -18,6 +19,7 @@ module Solargraph
           end
         end
 
+        # @return [void]
         def closing
           @host.stop
         end
@@ -27,6 +29,7 @@ module Solargraph
           @data_reader.receive data
         end
 
+        # @return [void]
         def update
           if @host.stopped?
             shutdown
@@ -44,6 +47,7 @@ module Solargraph
           @host.process(request)
         end
 
+        # @return [void]
         def shutdown
           Backport.stop unless @host.options['transport'] == 'external'
         end
