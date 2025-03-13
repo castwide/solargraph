@@ -461,6 +461,15 @@ describe Solargraph::TypeChecker do
       expect(checker.problems).to be_empty
     end
 
+    it 'Can infer through ||= with a begin+end' do
+      checker = type_checker(%(
+        def recipient
+          @recipient ||= true ? "foo" : "bar"
+        end
+      ))
+      expect(checker.problems.map(&:message)).to be_empty
+    end
+
     it 'validates kwoptargs without arguments' do
       checker = type_checker(%(
         class Foo
