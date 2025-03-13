@@ -286,6 +286,14 @@ describe Solargraph::TypeChecker do
       expect(checker.problems.first.message).to include('does not match inferred type')
     end
 
+    it 'handles mixin types with self types on init' do
+      checker = type_checker(%(
+        # @param a [Enumerable<String>]
+        def bar(a = ['a']); end
+      ))
+      expect(checker.problems).to be_empty
+    end
+
     it 'reports undefined param tags' do
       checker = type_checker(%(
         # @param bar [UndefinedClass]

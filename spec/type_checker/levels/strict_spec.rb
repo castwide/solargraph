@@ -4,6 +4,16 @@ describe Solargraph::TypeChecker do
       Solargraph::TypeChecker.load_string(code, 'test.rb', :strict)
     end
 
+    it 'handles compatible interfaces with self types on call' do
+      checker = type_checker(%(
+        # @param a [Enumerable<String>]
+        def bar(a); end
+
+        bar(['a'])
+      ))
+      expect(checker.problems).to be_empty
+    end
+
     it 'complains on @!parse blocks too' do
       checker = type_checker(%(
       # @!parse
