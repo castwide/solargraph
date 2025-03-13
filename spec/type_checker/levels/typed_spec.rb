@@ -348,5 +348,29 @@ describe Solargraph::TypeChecker do
       ))
       expect(checker.problems).to be_empty
     end
+
+    it 'validates constuctor arities when overridden by subtype' do
+      checker = type_checker(%(
+        class Foo
+          # @param a [Integer]
+          def initialize(a); end
+        end
+        class Bar < Foo; end
+        Bar.new
+      ))
+      expect(checker.problems.map(&:message)).to eq(['Not enough arguments to Foo.new'])
+    end
+
+    it 'validates constuctor arities when not overridden by subtype' do
+      checker = type_checker(%(
+        class Foo
+          # @param a [Integer]
+          def initialize(a); end
+        end
+        class Bar < Foo; end
+        Bar.new(1)
+      ))
+      expect(checker.problems).to be_empty
+    end
   end
 end
