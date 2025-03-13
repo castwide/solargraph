@@ -117,7 +117,7 @@ module Solargraph
 
       private
 
-      # @param pins [::Array<Pin::ProxyType>] Potential types returned by define()
+      # @param pins [::Array<Pin::Base>]
       # @param context [Pin::Base]
       # @param api_map [ApiMap]
       # @param locals [::Enumerable<Pin::LocalVariable>]

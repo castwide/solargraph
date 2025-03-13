@@ -6,6 +6,7 @@ module Solargraph
       # @return [::Symbol] :class or :instance
       attr_reader :scope
 
+      # @param scope [::Symbol] :class or :instance
       def initialize scope: :class, **splat
         super(**splat)
         @scope = scope

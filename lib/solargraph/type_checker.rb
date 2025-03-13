@@ -495,7 +495,7 @@ module Solargraph
       true
     end
 
-    # @param pin [Pin::Base]
+    # @param pin [Pin::Method]
     # @param arguments [Array<Source::Chain>]
     # @param location [Location]
     # @return [Array<Problem>]

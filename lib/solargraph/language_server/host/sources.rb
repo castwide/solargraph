@@ -86,7 +86,7 @@ module Solargraph
         #
         # @param uri [String]
         # @param updater [Source::Updater]
-        # @return [Source]
+        # @return [void]
         def update uri, updater
           src = find(uri)
           mutex.synchronize { open_source_hash[uri] = src.synchronize(updater) }

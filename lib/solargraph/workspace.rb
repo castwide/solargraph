@@ -200,6 +200,7 @@ module Solargraph
       config.require_paths.map{|p| File.join(directory, p)}
     end
 
+    # @return [void]
     def require_plugins
       config.plugins.each do |plugin|
         begin
