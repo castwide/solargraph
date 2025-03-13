@@ -39,7 +39,7 @@ module Solargraph
       def probe api_map
         return ComplexType::UNDEFINED if @assignment.nil?
         types = []
-        returns_from(@assignment).each do |node|
+        value_position_nodes_only(@assignment).each do |node|
           # Nil nodes may not have a location
           if node.nil? || node.type == :NIL || node.type == :nil
             types.push ComplexType::NIL

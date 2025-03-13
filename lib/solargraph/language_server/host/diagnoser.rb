@@ -38,7 +38,7 @@ module Solargraph
 
         # Start the diagnosis thread.
         #
-        # @return [self]
+        # @return [self, nil]
         def start
           return unless @stopped
           @stopped = false

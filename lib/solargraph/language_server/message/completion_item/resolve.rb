@@ -38,6 +38,8 @@ module Solargraph
             }
           end
 
+          # @param pins [Array<Pin::Base>]
+          # @return [String]
           def join_docs pins
             result = []
             last_link = nil

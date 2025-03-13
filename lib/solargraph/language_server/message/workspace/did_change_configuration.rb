@@ -12,7 +12,9 @@ module Solargraph::LanguageServer::Message::Workspace
     private
 
     def register_from_options
+      # @type [Array<String>]
       y = []
+      # @type [Array<String>]
       n = []
       (host.options['completion'] ? y : n).push('textDocument/completion')
       (host.options['hover'] ? y : n).push('textDocument/hover', 'textDocument/signatureHelp')

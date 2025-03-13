@@ -27,10 +27,14 @@ module Solargraph
       load_environment_to_pins(loader)
     end
 
+    # @param path [String]
+    # @return [Pin::Base, nil]
     def path_pin path
       pins.find { |p| p.path == path }
     end
 
+    # @param path [String]
+    # @return [Array<Pin::Base>]
     def path_pins path
       pins.select { |p| p.path == path }
     end
@@ -45,6 +49,7 @@ module Solargraph
       @@rbs_maps_hash[library] ||= RbsMap.new(library)
     end
 
+    # @return [RBS::Repository]
     def repository
       @repository ||= RBS::Repository.new(no_stdlib: true)
     end
@@ -65,6 +70,7 @@ module Solargraph
       end
     end
 
+    # @return [String]
     def short_name
       self.class.name.split('::').last
     end

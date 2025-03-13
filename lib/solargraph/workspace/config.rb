@@ -14,7 +14,7 @@ module Solargraph
       # @return [String]
       attr_reader :directory
 
-      # @return [Hash]
+      # @return [Hash{String => BasicObject}]
       attr_reader :raw_data
 
       # @param directory [String]

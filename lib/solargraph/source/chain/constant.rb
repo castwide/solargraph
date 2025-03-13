@@ -20,7 +20,7 @@ module Solargraph
           parts = base.split('::')
           gates.each do |gate|
             type = deep_constant_type(gate, api_map)
-            # Use deep inference to resolve root 
+            # Use deep inference to resolve root
             parts[0..-2].each do |sym|
               pins = api_map.get_constants('', type.namespace).select{ |pin| pin.name == sym }
               type = first_pin_type(pins, api_map)
@@ -35,6 +35,8 @@ module Solargraph
 
         private
 
+        # @param pin [Pin::Base]
+        # @return [::Array<String>]
         def crawl_gates pin
           clos = pin
           until clos.nil?
@@ -48,6 +50,9 @@ module Solargraph
           ['']
         end
 
+        # @param pins [::Array<Pin::Base>]
+        # @param api_map [ApiMap]
+        # @return [ComplexType]
         def first_pin_type(pins, api_map)
           type = ComplexType::UNDEFINED
           pins.each do |pin|
@@ -59,6 +64,9 @@ module Solargraph
           type
         end
 
+        # @param gate [String]
+        # @param api_map [ApiMap]
+        # @return [ComplexType]
         def deep_constant_type(gate, api_map)
           type = ComplexType::ROOT
           return type if gate == ''
