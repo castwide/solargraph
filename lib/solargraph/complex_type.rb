@@ -121,7 +121,7 @@ module Solargraph
       any?(&:generic?)
     end
 
-    # @param definitions [Pin::Namespace]
+    # @param definitions [Pin::Namespace, Pin::Method]
     # @param context_type [ComplexType]
     # @return [ComplexType]
     def resolve_generics definitions, context_type

@@ -213,6 +213,7 @@ module Solargraph
       end
     end
 
+    # @return [::Array<Range>]
     def string_ranges
       @string_ranges ||= Parser.string_ranges(node)
     end
@@ -250,7 +251,7 @@ module Solargraph
     end
 
     # @param node [Parser::AST::Node]
-    # @return [String]
+    # @return [String, nil]
     def comments_for node
       rng = Range.from_node(node)
       stringified_comments[rng.start.line] ||= begin
@@ -301,7 +302,7 @@ module Solargraph
 
     # Get a hash of comments grouped by the line numbers of the associated code.
     #
-    # @return [Hash{Integer => Array<Parser::Source::Comment>}]
+    # @return [Hash{Integer => String}]
     def associated_comments
       @associated_comments ||= begin
         result = {}
@@ -323,6 +324,8 @@ module Solargraph
 
     private
 
+    # @param line [Integer]
+    # @return [Integer]
     def first_not_empty_from line
       cursor = line
       cursor += 1 while cursor < code_lines.length && code_lines[cursor].strip.empty?
@@ -411,7 +414,7 @@ module Solargraph
       result
     end
 
-    # @param n [Parser::AST::Node]
+    # @param n [Parser::AST::Node, nil]
     # @return [Array<Parser::AST::Node>]
     def string_nodes_in n
       result = []
@@ -425,7 +428,7 @@ module Solargraph
       result
     end
 
-    # @param node [Parser::AST::Node]
+    # @param node [Parser::AST::Node, nil]
     # @param position [Position]
     # @param stack [Array<Parser::AST::Node>]
     # @return [void]
@@ -464,7 +467,7 @@ module Solargraph
       @code = val
     end
 
-    # @return [Parser::AST::Node]
+    # @return [Parser::AST::Node, nil]
     attr_writer :node
 
     # @return [Array<Range>]
@@ -476,7 +479,7 @@ module Solargraph
     # @return [Boolean]
     attr_writer :parsed
 
-    # @return [Array<Parser::Source::Comment>]
+    # @return [Hash{Integer => String}
     attr_writer :comments
 
     # @return [Boolean]

@@ -25,7 +25,7 @@ module Solargraph
 
     # @param required [Array<String>, Set<String>]
     # @param directory [String]
-    # @param source_gems [Array<String>, Set<String>]
+    # @param source_gems [Enumerable<String>]
     # @param with_dependencies [Boolean]
     def initialize(required: [], directory: '', source_gems: [], with_dependencies: true)
       @with_dependencies = with_dependencies
@@ -42,9 +42,9 @@ module Solargraph
       @with_dependencies
     end
 
-    # @param new_requires [Set<String>] Required paths to use for loading gems
+    # @param new_requires [Enumerable<String>] Required paths to use for loading gems
     # @param new_directory [String] The workspace directory
-    # @param new_source_gems [Set<String>] Gems under local development (i.e., part of the workspace)
+    # @param new_source_gems [Enumerable<String>] Gems under local development (i.e., part of the workspace)
     # @return [Boolean]
     def change new_requires, new_directory, new_source_gems
       return false if new_requires == base_required && new_directory == @directory && new_source_gems == @source_gems
@@ -93,7 +93,7 @@ module Solargraph
     end
 
     # @param y [String]
-    # @return [YARD::Registry]
+    # @return [YARD::Registry, nil]
     def load_yardoc y
       if y.is_a?(Array)
         YARD::Registry.load y, true
@@ -115,7 +115,7 @@ module Solargraph
     # Get the location of a file referenced by a require path.
     #
     # @param path [String]
-    # @return [Location]
+    # @return [Location, nil]
     def require_reference path
       # @type [Gem::Specification]
       spec = spec_for_require(path)
@@ -130,10 +130,12 @@ module Solargraph
       nil
     end
 
+    # @return [Set]
     def base_required
       @base_required ||= Set.new
     end
 
+    # @return [String]
     def directory
       @directory ||= ''
     end
@@ -152,6 +154,7 @@ module Solargraph
       @pin_class_hash ||= pins.to_set.classify(&:class).transform_values(&:to_a)
     end
 
+    # @param klass [Class<Pin::Base>]
     # @return [Array<Pin::Base>]
     def pins_by_class klass
       @pin_select_cache[klass] ||= pin_class_hash.select { |key, _| key <= klass }.values.flatten
@@ -202,6 +205,11 @@ module Solargraph
       pins.concat environ.pins
     end
 
+    # @param req [String]
+    # @param result [Array]
+    # @param already_errored [Array]
+    # @param yd [Integer]
+    # @return [void]
     def process_error(req, result, already_errored, yd = 1)
       base = req.split('/').first
       return if already_errored.include?(base)
@@ -285,7 +293,7 @@ module Solargraph
     end
 
     # @param path [String]
-    # @return [Gem::Specification]
+    # @return [Gem::Specification, nil]
     def spec_for_require path
       relatives = path.split('/')
       spec = nil

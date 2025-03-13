@@ -59,7 +59,7 @@ module Solargraph
 
       # @param api_map [ApiMap]
       # @param name_pin [Pin::Base]
-      # @param locals [::Array<Pin::LocalVariable>]
+      # @param locals [::Enumerable<Pin::LocalVariable>]
       #
       # @return [::Array<Pin::Base>]
       def define api_map, name_pin, locals
@@ -77,7 +77,7 @@ module Solargraph
 
       # @param api_map [ApiMap]
       # @param name_pin [Pin::Base]
-      # @param locals [Array<Pin::Base>]
+      # @param locals [::Enumerable<Pin::LocalVariable>]
       # @return [ComplexType]
       def infer api_map, name_pin, locals
         from_here = base.infer(api_map, name_pin, locals) unless links.length == 1
@@ -117,10 +117,10 @@ module Solargraph
 
       private
 
-      # @param pins [::Array<Pin::ProxyType>] Potential types returned by define()
+      # @param pins [::Array<Pin::Base>]
       # @param context [Pin::Base]
       # @param api_map [ApiMap]
-      # @param locals [::Array<Pin::Base>]
+      # @param locals [::Enumerable<Pin::LocalVariable>]
       # @return [ComplexType]
       def infer_first_defined pins, context, api_map, locals
         possibles = []

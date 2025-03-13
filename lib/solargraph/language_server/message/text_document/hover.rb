@@ -37,6 +37,8 @@ module Solargraph
 
           private
 
+          # @param contents [Array<String>]
+          # @return [Hash{Symbol => Hash{Symbol => String}}, nil]
           def contents_or_nil contents
             stripped = contents
               .map(&:strip)

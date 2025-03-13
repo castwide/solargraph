@@ -13,7 +13,7 @@ module Solargraph
         @cursor = cursor
       end
 
-      # @return [Array<Pin::Base>]
+      # @return [Array<Pin::Base>] Relevant pins for infering the type of the Cursor's position
       def define
         return [] if cursor.comment? || cursor.chain.literal?
         result = cursor.chain.define(api_map, block, locals)
@@ -62,11 +62,12 @@ module Solargraph
       # position. Locals can be local variables, method parameters, or block
       # parameters. The array starts with the nearest local pin.
       #
-      # @return [Array<Solargraph::Pin::Base>]
+      # @return [::Array<Solargraph::Pin::Base>]
       def locals
         @locals ||= source_map.locals_at(location)
       end
 
+      # @return [::Array<String>]
       def gates
         block.gates
       end
@@ -99,11 +100,12 @@ module Solargraph
         @source_map ||= api_map.source_map(cursor.filename)
       end
 
+      # @return [Location]
       def location
         Location.new(source_map.filename, Solargraph::Range.new(cursor.position, cursor.position))
       end
 
-      # @return [Solargraph::Pin::Base]
+      # @return [Solargraph::Pin::Closure]
       def block
         @block ||= source_map.locate_block_pin(cursor.node_position.line, cursor.node_position.character)
       end
@@ -115,7 +117,7 @@ module Solargraph
         @context_pin ||= source_map.locate_named_path_pin(cursor.node_position.line, cursor.node_position.character)
       end
 
-      # @return [Array<Pin::KeywordParam]
+      # @return [Array<Pin::KeywordParam>]
       def complete_keyword_parameters
         return [] unless cursor.argument? && cursor.chain.links.one? && cursor.word =~ /^[a-z0-9_]*:?$/
         pins = signify
@@ -139,7 +141,7 @@ module Solargraph
         result
       end
 
-      # @param result [Array<Pin::Base>]
+      # @param result [Enumerable<Pin::Base>]
       # @return [Completion]
       def package_completions result
         frag_start = cursor.start_of_word.to_s.downcase
@@ -150,6 +152,7 @@ module Solargraph
         Completion.new(filtered, cursor.range)
       end
 
+      # @return [Completion]
       def tag_complete
         result = []
         match = source_map.code[0..cursor.offset-1].match(/[\[<, ]([a-z0-9_:]*)\z/i)
@@ -168,6 +171,7 @@ module Solargraph
         package_completions(result)
       end
 
+      # @return [Completion]
       def code_complete
         result = []
         result.concat complete_keyword_parameters
@@ -216,6 +220,7 @@ module Solargraph
         package_completions(result)
       end
 
+      # @return [Array<Pin::Base>]
       def file_global_methods
         return [] if cursor.word.empty?
         source_map.pins.select do |pin|

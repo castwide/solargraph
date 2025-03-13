@@ -6,6 +6,13 @@ module Solargraph
       module ToMethod
         extend YardMap::Helpers
 
+        # @param code_object [YARD::CodeObjects::Base]
+        # @param name [String, nil]
+        # @param scope [Symbol, nil]
+        # @param visibility [Symbol, nil]
+        # @param closure [Solargraph::Pin::Namespace, nil]
+        # @param spec [Gem::Specification, nil]
+        # @return [Solargraph::Pin::Method]
         def self.make code_object, name = nil, scope = nil, visibility = nil, closure = nil, spec = nil
           closure ||= Solargraph::Pin::Namespace.new(
             name: code_object.namespace.to_s,
@@ -32,6 +39,9 @@ module Solargraph
           private
 
           # @param code_object [YARD::CodeObjects::Base]
+          # @param location [Location],
+          # @param comments [String]
+          # @param pin [Pin::Base]
           # @return [Array<Solargraph::Pin::Parameter>]
           def get_parameters code_object, location, comments, pin
             return [] unless code_object.is_a?(YARD::CodeObjects::MethodObject)
@@ -51,7 +61,7 @@ module Solargraph
             end
           end
 
-          # @param a [Array]
+          # @param a [Array<String>]
           # @return [String]
           def arg_name a
             a[0].gsub(/[^a-z0-9_]/i, '')

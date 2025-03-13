@@ -29,7 +29,7 @@ module Solargraph
           end
 
           # @param text [String]
-          # @return [Hash{Symbol => String}]
+          # @return [Hash{Symbol => String}, nil]
           def markup_content text
             return nil if text.strip.empty?
             {
@@ -38,6 +38,8 @@ module Solargraph
             }
           end
 
+          # @param pins [Array<Pin::Base>]
+          # @return [String]
           def join_docs pins
             result = []
             last_link = nil

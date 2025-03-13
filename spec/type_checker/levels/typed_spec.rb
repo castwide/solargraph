@@ -286,6 +286,14 @@ describe Solargraph::TypeChecker do
       expect(checker.problems.first.message).to include('does not match inferred type')
     end
 
+    it 'handles mixin types with self types on init' do
+      checker = type_checker(%(
+        # @param a [Enumerable<String>]
+        def bar(a = ['a']); end
+      ))
+      expect(checker.problems).to be_empty
+    end
+
     it 'reports undefined param tags' do
       checker = type_checker(%(
         # @param bar [UndefinedClass]
@@ -337,6 +345,30 @@ describe Solargraph::TypeChecker do
         def foo
           100
         end
+      ))
+      expect(checker.problems).to be_empty
+    end
+
+    it 'validates constuctor arities when overridden by subtype' do
+      checker = type_checker(%(
+        class Foo
+          # @param a [Integer]
+          def initialize(a); end
+        end
+        class Bar < Foo; end
+        Bar.new
+      ))
+      expect(checker.problems.map(&:message)).to eq(['Not enough arguments to Foo.new'])
+    end
+
+    it 'validates constuctor arities when not overridden by subtype' do
+      checker = type_checker(%(
+        class Foo
+          # @param a [Integer]
+          def initialize(a); end
+        end
+        class Bar < Foo; end
+        Bar.new(1)
       ))
       expect(checker.problems).to be_empty
     end

@@ -29,6 +29,7 @@ module Solargraph
 
           private
 
+          # @return [void]
           def forward
             loc = get_node_location(node)
             locals.push Solargraph::Pin::Parameter.new(
@@ -40,6 +41,8 @@ module Solargraph
             region.closure.parameters.push locals.last
           end
 
+          # @param node [AST::Node]
+          # @return [Symbol]
           def get_decl node
             node.type
           end

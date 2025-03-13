@@ -159,7 +159,7 @@ module Solargraph
     # @param filename [String] The file to analyze
     # @param line [Integer] The zero-based line number
     # @param column [Integer] The zero-based column number
-    # @return [SourceMap::Completion]
+    # @return [SourceMap::Completion, nil]
     # @todo Take a Location instead of filename/line/column
     def completions_at filename, line, column
       position = Position.new(line, column)
@@ -175,7 +175,7 @@ module Solargraph
     # @param filename [String] The file to analyze
     # @param line [Integer] The zero-based line number
     # @param column [Integer] The zero-based column number
-    # @return [Array<Solargraph::Pin::Base>]
+    # @return [Array<Solargraph::Pin::Base>, nil]
     # @todo Take filename/position instead of filename/line/column
     def definitions_at filename, line, column
       position = Position.new(line, column)
@@ -205,7 +205,7 @@ module Solargraph
     # @param filename [String] The file to analyze
     # @param line [Integer] The zero-based line number
     # @param column [Integer] The zero-based column number
-    # @return [Array<Solargraph::Pin::Base>]
+    # @return [Array<Solargraph::Pin::Base>, nil]
     # @todo Take filename/position instead of filename/line/column
     def type_definitions_at filename, line, column
       position = Position.new(line, column)
@@ -283,6 +283,7 @@ module Solargraph
       return if map.nil?
       pin = map.requires.select { |p| p.location.range.contain?(location.range.start) }.first
       return nil if pin.nil?
+      # @param full [String]
       return_if_match = proc do |full|
         if source_map_hash.key?(full)
           return Location.new(full, Solargraph::Range.from_to(0, 0, 0, 0))
@@ -301,7 +302,7 @@ module Solargraph
     # Get an array of pins that match a path.
     #
     # @param path [String]
-    # @return [Array<Solargraph::Pin::Base>]
+    # @return [Enumerable<Solargraph::Pin::Base>]
     def get_path_pins path
       api_map.get_path_suggestions(path)
     end
@@ -339,11 +340,12 @@ module Solargraph
     end
 
     # @param path [String]
-    # @return [Array<Solargraph::Pin::Base>]
+    # @return [Enumerable<Solargraph::Pin::Base>]
     def path_pins path
       api_map.get_path_suggestions(path)
     end
 
+    # @return [Array<SourceMap>]
     def source_maps
       source_map_hash.values
     end
@@ -400,6 +402,7 @@ module Solargraph
       end
     end
 
+    # @return [void]
     private def catalog_inlock
         return if synchronized?
         logger.info "Cataloging #{workspace.directory.empty? ? 'generic workspace' : workspace.directory}"
@@ -408,6 +411,7 @@ module Solargraph
         logger.info "Catalog complete (#{api_map.source_maps.length} files, #{api_map.pins.length} pins)" if logger.info?
     end
 
+    # @return [Bench]
     def bench
       Bench.new(
         source_maps: source_map_hash.values,
@@ -452,6 +456,7 @@ module Solargraph
       result
     end
 
+    # @return [Hash{String => SourceMap}]
     def source_map_hash
       @source_map_hash ||= {}
     end
@@ -460,6 +465,7 @@ module Solargraph
       (workspace.filenames - source_map_hash.keys).empty?
     end
 
+    # @return [SourceMap, Boolean]
     def next_map
       return false if mapped?
       mutex.synchronize do
@@ -476,6 +482,7 @@ module Solargraph
       end
     end
 
+    # @return [self]
     def map!
       workspace.sources.each do |src|
         source_map_hash[src.filename] = Solargraph::SourceMap.map(src)
@@ -484,21 +491,25 @@ module Solargraph
       self
     end
 
+    # @return [Array<Solargraph::Pin::Base>]
     def pins
       @pins ||= []
     end
 
+    # @return [Set<String>]
     def external_requires
       @external_requires ||= source_map_external_require_hash.values.flatten.to_set
     end
 
     private
 
+    # @return [Hash{String => Set<String>}]
     def source_map_external_require_hash
       @source_map_external_require_hash ||= {}
     end
 
     # @param source_map [SourceMap]
+    # @return [void]
     def find_external_requires source_map
       new_set = source_map.requires.map(&:name).to_set
       # return if new_set == source_map_external_require_hash[source_map.filename]
@@ -537,6 +548,9 @@ module Solargraph
       workspace.source(filename)
     end
 
+    # @param filename [String]
+    # @param error [FileNotFoundError]
+    # @return [nil]
     def handle_file_not_found filename, error
       if workspace.source(filename)
         Solargraph.logger.debug "#{filename} is not cataloged in the ApiMap"
@@ -546,6 +560,8 @@ module Solargraph
       end
     end
 
+    # @param source [Source]
+    # @return [void]
     def maybe_map source
       return unless source
       return unless @current == source || workspace.has_file?(source.filename)

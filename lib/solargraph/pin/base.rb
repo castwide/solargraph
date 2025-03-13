@@ -25,7 +25,6 @@ module Solargraph
       attr_accessor :source
 
       # @param location [Solargraph::Location, nil]
-      # @param kind [Integer]
       # @param closure [Solargraph::Pin::Closure, nil]
       # @param name [String]
       # @param comments [String]
@@ -216,6 +215,7 @@ module Solargraph
         result
       end
 
+      # @return [String]
       def identity
         @identity ||= "#{closure.path}|#{name}"
       end

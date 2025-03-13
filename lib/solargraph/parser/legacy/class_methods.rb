@@ -1,4 +1,5 @@
 require 'parser/current'
+require 'parser/source/buffer'
 
 module Solargraph
   module Parser
@@ -6,7 +7,7 @@ module Solargraph
       module ClassMethods
         # @param code [String]
         # @param filename [String, nil]
-        # @return [Array(Parser::AST::Node, Array<Parser::Source::Comment>)]
+        # @return [Array(Parser::AST::Node, Hash{Integer => String})]
         def parse_with_comments code, filename = nil
           buffer = ::Parser::Source::Buffer.new(filename, 0)
           buffer.source = code
@@ -39,19 +40,30 @@ module Solargraph
           parser
         end
 
+        # @param source [Source]
+        # @return [Array(Array<Pin::Base>, Array<Pin::Base>)]
         def map source
           NodeProcessor.process(source.node, Region.new(source: source))
         end
 
+        # @param node [Parser::AST::Node]
+        # @return [Array<Parser::AST::Node>]
         def returns_from node
           NodeMethods.returns_from(node)
         end
 
+        # @param source [Source]
+        # @param name [String]
+        # @return [Array<Location>]
         def references source, name
           if name.end_with?("=")
             reg = /#{Regexp.escape name[0..-2]}\s*=/
+            # @param code [String]
+            # @param offset [Integer]
             extract_offset = ->(code, offset) { reg.match(code, offset).offset(0) }
           else
+            # @param code [String]
+            # @param offset [Integer]
             extract_offset = ->(code, offset) { [soff = code.index(name, offset), soff + name.length] }
           end
           inner_node_references(name, source.node).map do |n|
@@ -80,18 +92,23 @@ module Solargraph
           result
         end
 
+        # @return [Source::Chain]
         def chain *args
           NodeChainer.chain *args
         end
 
+        # @return [Source::Chain]
         def chain_string *args
           NodeChainer.load_string *args
         end
 
+        # @return [Array(Array<Pin::Base>, Array<Pin::Base>)]
         def process_node *args
           Solargraph::Parser::NodeProcessor.process *args
         end
 
+        # @param node [Parser::AST::Node]
+        # @return [String, nil]
         def infer_literal_node_type node
           NodeMethods.infer_literal_node_type node
         end
@@ -100,16 +117,22 @@ module Solargraph
           parser.version
         end
 
+        # @param node [BasicObject]
+        # @return [Boolean]
         def is_ast_node? node
           node.is_a?(::Parser::AST::Node)
         end
 
+        # @param node [Parser::AST::Node]
+        # @return [Range]
         def node_range node
           st = Position.new(node.loc.line, node.loc.column)
           en = Position.new(node.loc.last_line, node.loc.last_column)
           Range.new(st, en)
         end
 
+        # @param node [Parser::AST::Node]
+        # @return [Array<Range>]
         def string_ranges node
           return [] unless is_ast_node?(node)
           result = []

@@ -29,9 +29,9 @@ module Solargraph
         store = RuboCop::ConfigStore.new
         runner = RuboCop::Runner.new(options, store)
         result = redirect_stdout{ runner.run(paths) }
-        
+
         return [] if result.empty?
-        
+
         make_array JSON.parse(result)
       rescue RuboCop::ValidationError, RuboCop::ConfigNotFoundError => e
         raise DiagnosticsError, "Error in RuboCop configuration: #{e.message}"
@@ -48,7 +48,7 @@ module Solargraph
         args.find { |a| a =~ /version=/ }.to_s.split('=').last
       end
 
-      # @param resp [Hash]
+      # @param resp [Hash{String => Hash{String => Array<Hash{String => undefined}>}}]
       # @return [Array<Hash>]
       def make_array resp
         diagnostics = []
@@ -62,8 +62,8 @@ module Solargraph
 
       # Convert a RuboCop offense to an LSP diagnostic
       #
-      # @param off [Hash] Offense received from Rubocop
-      # @return [Hash] LSP diagnostic
+      # @param off [Hash{String => unknown}] Offense received from Rubocop
+      # @return [Hash{Symbol => Hash, String, Integer}] LSP diagnostic
       def offense_to_diagnostic off
         {
           range: offense_range(off).to_hash,
@@ -81,19 +81,20 @@ module Solargraph
         Range.new(offense_start_position(off), offense_ending_position(off))
       end
 
-      # @param off [Hash]
+      # @param off [Hash{String => Hash{String => Integer}}]
       # @return [Position]
       def offense_start_position off
         Position.new(off['location']['start_line'] - 1, off['location']['start_column'] - 1)
       end
 
-      # @param off [Hash]
+      # @param off [Hash{String => Hash{String => Integer}}]
       # @return [Position]
       def offense_ending_position off
         if off['location']['start_line'] != off['location']['last_line']
           Position.new(off['location']['start_line'], 0)
         else
           start_line = off['location']['start_line'] - 1
+          # @type [Integer]
           last_column = off['location']['last_column']
           line = @source.code.lines[start_line]
           col_off = if line.nil? || line.empty?

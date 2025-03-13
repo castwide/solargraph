@@ -14,7 +14,7 @@ module Solargraph
       # @return [String]
       attr_reader :directory
 
-      # @return [Hash]
+      # @return [Hash{String => BasicObject}]
       attr_reader :raw_data
 
       # @param directory [String]
@@ -41,6 +41,7 @@ module Solargraph
         @excluded ||= process_exclusions(@raw_data['exclude'])
       end
 
+      # @param filename [String]
       def allow? filename
         filename = File.absolute_path(filename, directory)
         filename.start_with?(directory) &&
@@ -111,7 +112,7 @@ module Solargraph
 
       # @return [String]
       def global_config_path
-        ENV['SOLARGRAPH_GLOBAL_CONFIG'] || 
+        ENV['SOLARGRAPH_GLOBAL_CONFIG'] ||
           File.join(Dir.home, '.config', 'solargraph', 'config.yml')
       end
 
@@ -121,7 +122,7 @@ module Solargraph
         File.join(@directory, '.solargraph.yml')
       end
 
-      # @return [Hash]
+      # @return [Hash{String => Array, Hash, Integer}]
       def config_data
         workspace_config = read_config(workspace_config_path)
         global_config = read_config(global_config_path)
@@ -136,15 +137,15 @@ module Solargraph
 
       # Read a .solargraph yaml config
       #
-      # @param directory [String]
-      # @return [Hash, nil]
+      # @param config_path [String]
+      # @return [Hash{String => Array, Hash, Integer}, nil]
       def read_config config_path = ''
         return nil if config_path.empty?
         return nil unless File.file?(config_path)
         YAML.safe_load(File.read(config_path))
       end
 
-      # @return [Hash]
+      # @return [Hash{String => Array, Hash, Integer}]
       def default_config
         {
           'include' => ['**/*.rb'],
@@ -222,6 +223,7 @@ module Solargraph
         glob.gsub(/(\/\*|\/\*\*\/\*\*?)$/, '')
       end
 
+      # @return [Array<String>]
       def excluded_directories
         @raw_data['exclude']
           .select { |g| glob_is_directory?(g) }
