@@ -16,8 +16,6 @@ module Solargraph
     autoload :Store,          'solargraph/api_map/store'
     autoload :BundlerMethods, 'solargraph/api_map/bundler_methods'
 
-    include SourceToYard
-
     # @return [Array<String>]
     attr_reader :unresolved_requires
 
@@ -402,15 +400,9 @@ module Solargraph
     # @param query [String] The text to match
     # @return [Array<String>]
     def search query
-      rake_yard(store)
-      found = []
-      code_object_paths.each do |k|
-        if (found.empty? || (query.include?('.') || query.include?('#')) || !(k.include?('.') || k.include?('#'))) &&
-           k.downcase.include?(query.downcase)
-          found.push k
-        end
-      end
-      found
+      pins.map(&:path)
+          .compact
+          .select { |path| path.downcase.include?(query.downcase) }
     end
 
     # Get YARD documentation for the specified path.
@@ -418,13 +410,13 @@ module Solargraph
     # @example
     #   api_map.document('String#split')
     #
+    # @todo This method is likely superfluous. Calling get_path_pins directly
+    #   should be sufficient.
+    #
     # @param path [String] The path to find
-    # @return [Array<YARD::CodeObjects::Base>]
+    # @return [Enumerable<Pin::Base>]
     def document path
-      rake_yard(store)
-      docs = []
-      docs.push code_object_at(path) unless code_object_at(path).nil?
-      docs
+      get_path_pins(path)
     end
 
     # Get an array of all symbols in the workspace that match the query.
