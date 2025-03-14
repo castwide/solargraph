@@ -51,7 +51,7 @@ module Solargraph
       @pins = []
       @uncached_gemspecs = []
       gemspecs.each do |gemspec|
-        cache_file = "#{gemspec.name}-#{gemspec.version}.ser"
+        cache_file = File.join('gems', "#{gemspec.name}-#{gemspec.version}.ser")
         if Cache.exist?(cache_file)
           @pins.concat Cache.load(cache_file)
         else

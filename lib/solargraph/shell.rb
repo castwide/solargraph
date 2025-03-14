@@ -241,7 +241,7 @@ module Solargraph
 
           puts "Processing gem: #{spec.name} #{spec.version}"
           pins = GemPins.build(spec)
-          Cache.save("#{spec.name}-#{spec.version}.ser", pins)
+          Cache.save('gems', "#{spec.name}-#{spec.version}.ser", pins)
         end
       else
         names.each do |name|
