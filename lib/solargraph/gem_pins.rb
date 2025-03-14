@@ -7,9 +7,9 @@ module Solargraph
     module_function
 
     def build(gemspec)
-      Yardoc.build(gemspec) unless Yardoc.cached?(gemspec)
-      Yardoc.load!(gemspec)
-      yard_pins = YardMap::Mapper.new(YARD::Registry.all, gemspec).map
+      Yardoc.cache(gemspec) unless Yardoc.cached?(gemspec)
+      yardoc = Yardoc.load!(gemspec)
+      yard_pins = YardMap::Mapper.new(yardoc, gemspec).map
       rbs_map = RbsMap.from_gemspec(gemspec)
       yard_pins.map do |yard|
         next yard unless yard.is_a?(Pin::Method)

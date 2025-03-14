@@ -64,10 +64,6 @@ module Solargraph
     # @return [Gem::Specification, nil]
     def resolve_path_to_gemspec path
       gemspec = Gem::Specification.find_by_path(path)
-      resolve_gemspec_to_dependency(gemspec)
-    end
-
-    def resolve_gemspec_to_dependency gemspec
       return gemspec if dependencies.empty? || gemspec.nil?
 
       if dependency_map.key?(gemspec.name)
