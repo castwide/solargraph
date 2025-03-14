@@ -134,6 +134,23 @@ module Solargraph
       api_map
     end
 
+    # Create an ApiMap with a workspace in the specified directory and cache
+    # any missing gems.
+    #
+    # @param directory [String]
+    # @return [ApiMap]
+    def self.load_with_cache directory
+      api_map = load(directory)
+      return api_map if api_map.uncached_gemspecs.empty?
+
+      api_map.uncached_gemspecs.each do |gemspec|
+        puts "Caching #{gemspec.name} #{gemspec.version}..."
+        pins = GemPins.build(gemspec)
+        Solargraph::Cache.save('gems', "#{gemspec.name}-#{gemspec.version}.ser", pins)
+      end
+      load(directory)
+    end
+
     # @return [Array<Solargraph::Pin::Base>]
     def pins
       store.pins
