@@ -12,12 +12,12 @@ module Solargraph
     # @param gemspec [Gem::Specification]
     # @return [String] The path to the cached yardoc.
     def cache(gemspec)
-      return path_for(gemspec) if cached?(gemspec)
+      path = path_for(gemspec)
+      return path if cached?(gemspec)
 
       Solargraph.logger.info "Caching yardoc for #{gemspec.name} #{gemspec.version}"
-      path = path_for(gemspec)
       Dir.chdir gemspec.gem_dir do
-        `yardoc --db #{path_for(gemspec)} --no-output --plugin solargraph`
+        `yardoc --db #{path} --no-output --plugin solargraph`
       end
       path
     end

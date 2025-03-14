@@ -13,16 +13,21 @@ describe Solargraph::YardMap::Mapper do
   end
 
   it 'marks explicit methods' do
-    # Using rspec because it's a known dependency
-    map = Solargraph::YardMap.new(required: ['rspec'])
-    pin = map.path_pin('RSpec::Matchers#be_truthy')
+    # Using rspec-expectations because it's a known dependency
+    rspec = Gem::Specification.find_by_name('rspec-expectations')
+    Solargraph::Yardoc.cache(rspec)
+    Solargraph::Yardoc.load!(rspec)
+    pins = Solargraph::YardMap::Mapper.new(YARD::Registry.all).map
+    pin = pins.find { |pin| pin.path == 'RSpec::Matchers#be_truthy' }
     expect(pin.explicit?).to be(true)
   end
 
   it 'marks non-explicit methods' do
-    # Using rspec because it's a known dependency
-    map = Solargraph::YardMap.new(required: ['rspec'])
-    pin = map.path_pin('RSpec::Matchers#expect')
+    # Using rspec-expectations because it's a known dependency
+    rspec = Gem::Specification.find_by_name('rspec-expectations')
+    Solargraph::Yardoc.load!(rspec)
+    pins = Solargraph::YardMap::Mapper.new(YARD::Registry.all).map
+    pin = pins.find { |pin| pin.path == 'RSpec::Matchers#expect' }
     expect(pin.explicit?).to be(false)
   end
 end
