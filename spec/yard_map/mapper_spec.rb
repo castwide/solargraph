@@ -30,4 +30,37 @@ describe Solargraph::YardMap::Mapper do
     pin = pins.find { |pin| pin.path == 'RSpec::Matchers#expect' }
     expect(pin.explicit?).to be(false)
   end
+
+  it 'adds superclass references' do
+    # Asssuming the yard gem exists because it's a known dependency
+    gemspec = Gem::Specification.find_by_name('yard')
+    Solargraph::Yardoc.cache(gemspec)
+    pins = Solargraph::YardMap::Mapper.new(Solargraph::Yardoc.load!(gemspec)).map
+    pin = pins.find do |pin|
+      pin.is_a?(Solargraph::Pin::Reference::Superclass) && pin.name == 'YARD::CodeObjects::NamespaceObject'
+    end
+    expect(pin.closure.path).to eq('YARD::CodeObjects::ClassObject')
+  end
+
+  it 'adds include references' do
+    # Asssuming the ast gem exists because it's a known dependency
+    gemspec = Gem::Specification.find_by_name('ast')
+    Solargraph::Yardoc.cache(gemspec)
+    pins = Solargraph::YardMap::Mapper.new(Solargraph::Yardoc.load!(gemspec)).map
+    inc= pins.find do |pin|
+      pin.is_a?(Solargraph::Pin::Reference::Include) && pin.name == 'AST::Processor::Mixin' && pin.closure.path == 'AST::Processor'
+    end
+    expect(inc).to be_a(Solargraph::Pin::Reference::Include)
+  end
+
+  it 'adds extend references' do
+    # Asssuming the yard gem exists because it's a known dependency
+    gemspec = Gem::Specification.find_by_name('yard')
+    Solargraph::Yardoc.cache(gemspec)
+    pins = Solargraph::YardMap::Mapper.new(Solargraph::Yardoc.load!(gemspec)).map
+    ext = pins.find do |pin|
+      pin.is_a?(Solargraph::Pin::Reference::Extend) && pin.name == 'Enumerable' && pin.closure.path == 'YARD::Registry'
+    end
+    expect(ext).to be_a(Solargraph::Pin::Reference::Extend)
+  end
 end
