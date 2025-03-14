@@ -404,11 +404,16 @@ module Solargraph
 
     # @return [void]
     private def catalog_inlock
-        return if synchronized?
-        logger.info "Cataloging #{workspace.directory.empty? ? 'generic workspace' : workspace.directory}"
-        api_map.catalog bench
-        @synchronized = true
-        logger.info "Catalog complete (#{api_map.source_maps.length} files, #{api_map.pins.length} pins)" if logger.info?
+      return if synchronized?
+
+      logger.info "Cataloging #{workspace.directory.empty? ? 'generic workspace' : workspace.directory}"
+      api_map.catalog bench
+      @synchronized = true
+      logger.info "Catalog complete (#{api_map.source_maps.length} files, #{api_map.pins.length} pins)" if logger.info?
+      return if api_map.uncached_gemspecs.empty?
+
+      logger.info "#{api_map.uncached_gemspecs.length} uncached gemspecs"
+      cache_next_gemspec
     end
 
     # @return [Bench]
@@ -583,6 +588,20 @@ module Solargraph
       else
         source_map_hash[source.filename] = Solargraph::SourceMap.map(source)
         find_external_requires(source_map_hash[source.filename])
+        @synchronized = false
+      end
+    end
+
+    def cache_next_gemspec
+      return if api_map.uncached_gemspecs.empty?
+
+      spec = api_map.uncached_gemspecs.first
+      logger.info "Caching #{spec.name} #{spec.version}"
+      Thread.new do
+        pid = Process.spawn('solargraph', 'cache', spec.name, spec.version.to_s)
+        Process.detach pid
+        Process.wait(pid)
+        logger.info "Cached #{spec.name} #{spec.version}"
         @synchronized = false
       end
     end

@@ -64,7 +64,7 @@ module Solargraph
       if Cache.exist?(cache_file)
         @pins.concat Cache.load(cache_file)
       else
-        Solargraph.logger.info "No pin cache for #{gemspec.name} #{gemspec.version}"
+        Solargraph.logger.debug "No pin cache for #{gemspec.name} #{gemspec.version}"
         @uncached_gemspecs.push gemspec if gemspec
       end
     end

@@ -67,13 +67,17 @@ module Solargraph
         implicit.merge map.environ
       end
       unresolved_requires = (bench.external_requires + implicit.requires + bench.workspace.config.required).uniq
-      doc_map = DocMap.new(unresolved_requires, []) # @todo Implement gem dependencies
-      @store = Store.new(@@core_map.pins + doc_map.pins + implicit.pins + pins)
-      @unresolved_requires = doc_map.unresolved_requires
+      @doc_map = DocMap.new(unresolved_requires, []) # @todo Implement gem dependencies
+      @store = Store.new(@@core_map.pins + @doc_map.pins + implicit.pins + pins)
+      @unresolved_requires = @doc_map.unresolved_requires
       @missing_docs = [] # @todo Implement missing docs
       @rebindable_method_names = nil
       store.block_pins.each { |blk| blk.rebind(self) }
       self
+    end
+
+    def uncached_gemspecs
+      @doc_map.uncached_gemspecs
     end
 
     # @return [Array<Pin::Base>]
@@ -506,12 +510,6 @@ module Solargraph
     #
     # @return [Hash{String => SourceMap}]
     attr_reader :source_map_hash
-
-    # @param library [String]
-    # @return [RbsMap]
-    def load_stdlib_map library
-      RbsMap::StdlibMap.load(library)
-    end
 
     # @return [ApiMap::Store]
     def store

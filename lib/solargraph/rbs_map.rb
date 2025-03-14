@@ -72,7 +72,7 @@ module Solargraph
         Solargraph.logger.info "#{short_name} successfully loaded library #{library}"
         true
       else
-        Solargraph.logger.info "#{short_name} failed to load library #{library}"
+        Solargraph.logger.debug "#{short_name} failed to load library #{library}"
         false
       end
     end
