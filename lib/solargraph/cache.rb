@@ -1,4 +1,5 @@
 require 'fileutils'
+require 'rbs'
 
 module Solargraph
   module Cache
@@ -44,6 +45,10 @@ module Solargraph
         Solargraph.logger.warn "Failed to load cached file #{file}: [#{e.class}] #{e.message}"
         FileUtils.rm_f file
         nil
+      end
+
+      def exist? *path
+        File.file? join(*path)
       end
 
       # @return [Boolean]
