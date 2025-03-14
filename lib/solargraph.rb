@@ -29,6 +29,7 @@ module Solargraph
   autoload :Yardoc,           'solargraph/yardoc'
   autoload :YardMap,          'solargraph/yard_map'
   autoload :Pin,              'solargraph/pin'
+  autoload :DocMap,           'solargraph/doc_map'
   autoload :ServerMethods,    'solargraph/server_methods'
   autoload :LanguageServer,   'solargraph/language_server'
   autoload :Workspace,        'solargraph/workspace'
