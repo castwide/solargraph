@@ -73,10 +73,10 @@ module Solargraph
       external_requires.merge bench.workspace.config.required
       stdlib_maps = external_requires.map { |r| load_stdlib_map(r) }
       unresolved_requires = stdlib_maps.reject(&:resolved?).map(&:library)
-      yard_map.change(unresolved_requires, bench.workspace.directory, bench.workspace.source_gems)
-      @store = Store.new(@@core_map.pins + stdlib_maps.flat_map(&:pins) + yard_map.pins + implicit.pins + pins)
-      @unresolved_requires = yard_map.unresolved_requires
-      @missing_docs = yard_map.missing_docs
+      doc_map = DocMap.new(unresolved_requires, []) # @todo Implement gem dependencies
+      @store = Store.new(@@core_map.pins + stdlib_maps.flat_map(&:pins) + doc_map.pins + implicit.pins + pins)
+      @unresolved_requires = doc_map.unresolved_requires
+      @missing_docs = [] # @todo Implement missing docs
       @rebindable_method_names = nil
       store.block_pins.each { |blk| blk.rebind(self) }
       self
@@ -85,11 +85,6 @@ module Solargraph
     # @return [Array<Pin::Base>]
     def core_pins
       @@core_map.pins
-    end
-
-    # @return [YardMap]
-    def yard_map
-      @yard_map ||= YardMap.new
     end
 
     # @param name [String]
@@ -149,7 +144,6 @@ module Solargraph
     # @return [Set<String>]
     def rebindable_method_names
       @rebindable_method_names ||= begin
-        # result = yard_map.rebindable_method_names
         result = ['instance_eval', 'instance_exec', 'class_eval', 'class_exec', 'module_eval', 'module_exec', 'define_method'].to_set
         source_maps.each do |map|
           result.merge map.rebindable_method_names
