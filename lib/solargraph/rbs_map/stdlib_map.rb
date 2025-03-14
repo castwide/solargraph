@@ -18,9 +18,6 @@ module Solargraph
           pins.replace cache
         else
           super
-          if library == 'yaml'
-            pins.push Solargraph::Pin::Constant.new(name: 'YAML', comments: '@return [Module<Psych>]', closure: Pin::ROOT_PIN)
-          end
           Cache.save('stdlib', "#{library}.ser", pins)
         end
       end
