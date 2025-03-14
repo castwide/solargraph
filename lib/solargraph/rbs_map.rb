@@ -46,7 +46,7 @@ module Solargraph
     end
 
     def repository
-      @repository ||= RBS::Repository.new(no_stdlib: true)
+      @repository ||= RBS::Repository.new(no_stdlib: false)
     end
 
     # @param library [String]

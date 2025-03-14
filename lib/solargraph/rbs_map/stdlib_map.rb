@@ -28,10 +28,6 @@ module Solargraph
       def self.load library
         @stdlib_maps_hash[library] ||= StdlibMap.new(library)
       end
-
-      def repository
-        @repository ||= RBS::Repository.new
-      end
     end
   end
 end
