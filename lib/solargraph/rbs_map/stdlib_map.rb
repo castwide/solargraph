@@ -16,6 +16,7 @@ module Solargraph
         cache = Cache.load('stdlib', "#{library}.ser")
         if cache
           pins.replace cache
+          @resolved = true
         else
           super
           Cache.save('stdlib', "#{library}.ser", pins)

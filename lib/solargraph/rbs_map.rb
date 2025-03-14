@@ -46,9 +46,7 @@ module Solargraph
     end
 
     def repository
-      @repository ||= RBS::Repository.new(no_stdlib: false).tap do |repo|
-        # repo.add(Pathname.new(@collection)) if @collection
-      end
+      @repository ||= RBS::Repository.new(no_stdlib: true)
     end
 
     # @param library [String]
