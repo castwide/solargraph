@@ -308,7 +308,7 @@ module Solargraph
     end
 
     # @param query [String]
-    # @return [Array<YARD::CodeObjects::Base>]
+    # @return [Enumerable<YARD::CodeObjects::Base>]
     def document query
       api_map.document query
     end
@@ -409,9 +409,7 @@ module Solargraph
       logger.info "Cataloging #{workspace.directory.empty? ? 'generic workspace' : workspace.directory}"
       api_map.catalog bench
       @synchronized = true
-      logger.info "Catalog complete (#{api_map.source_maps.length} files, #{api_map.pins.length} pins)" if logger.info?
-      return if api_map.uncached_gemspecs.empty?
-
+      logger.info "Catalog complete (#{api_map.source_maps.length} files, #{api_map.pins.length} pins)"
       logger.info "#{api_map.uncached_gemspecs.length} uncached gemspecs"
       cache_next_gemspec
     end
@@ -593,16 +591,19 @@ module Solargraph
     end
 
     def cache_next_gemspec
-      return if api_map.uncached_gemspecs.empty?
-
       spec = api_map.uncached_gemspecs.first
+      return unless spec
+
       logger.info "Caching #{spec.name} #{spec.version}"
       Thread.new do
         pid = Process.spawn('solargraph', 'cache', spec.name, spec.version.to_s)
-        Process.detach pid
         Process.wait(pid)
         logger.info "Cached #{spec.name} #{spec.version}"
         @synchronized = false
+      rescue Errno::EINVAL => e
+        @synchronized = false
+      rescue StandardError => e
+        Solargraph.logger.warn "Error caching gemspec: [#{e.class}] #{e.message}"
       end
     end
   end
