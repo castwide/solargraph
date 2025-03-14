@@ -50,15 +50,31 @@ module Solargraph
     def generate
       @pins = []
       @uncached_gemspecs = []
-      gemspecs.each do |gemspec|
-        cache_file = File.join('gems', "#{gemspec.name}-#{gemspec.version}.ser")
-        if Cache.exist?(cache_file)
-          @pins.concat Cache.load(cache_file)
+      required_gem_map.each do |name, gemspec|
+        if gemspec
+          try_rbs_map gemspec
         else
-          Solargraph.logger.debug "No pin cache for #{gemspec.name} #{gemspec.version}"
-          @uncached_gemspecs.push gemspec
+          try_stdlib_map name
         end
       end
+    end
+
+    def try_rbs_map gemspec
+      cache_file = File.join('gems', "#{gemspec.name}-#{gemspec.version}.ser")
+      if Cache.exist?(cache_file)
+        @pins.concat Cache.load(cache_file)
+      else
+        Solargraph.logger.info "No pin cache for #{gemspec.name} #{gemspec.version}"
+        @uncached_gemspecs.push gemspec if gemspec
+      end
+    end
+
+    def try_stdlib_map name
+      map = RbsMap::StdlibMap.new(name)
+      return unless map.resolved?
+
+      Solargraph.logger.info "Loading stdlib pins for #{name}"
+      @pins.concat map.pins
     end
 
     # @param path [String]

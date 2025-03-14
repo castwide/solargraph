@@ -63,16 +63,12 @@ module Solargraph
       @cache.clear
       @source_map_hash = bench.source_maps.map { |s| [s.filename, s] }.to_h
       pins = bench.source_maps.map(&:pins).flatten
-      external_requires = bench.external_requires
       source_map_hash.each_value do |map|
         implicit.merge map.environ
       end
-      external_requires.merge implicit.requires
-      external_requires.merge bench.workspace.config.required
-      stdlib_maps = external_requires.map { |r| load_stdlib_map(r) }
-      unresolved_requires = stdlib_maps.reject(&:resolved?).map(&:library).compact
+      unresolved_requires = (bench.external_requires + implicit.requires + bench.workspace.config.required).uniq
       doc_map = DocMap.new(unresolved_requires, []) # @todo Implement gem dependencies
-      @store = Store.new(@@core_map.pins + stdlib_maps.flat_map(&:pins) + doc_map.pins + implicit.pins + pins)
+      @store = Store.new(@@core_map.pins + doc_map.pins + implicit.pins + pins)
       @unresolved_requires = doc_map.unresolved_requires
       @missing_docs = [] # @todo Implement missing docs
       @rebindable_method_names = nil

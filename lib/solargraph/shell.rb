@@ -232,7 +232,7 @@ module Solargraph
       puts 'The `bundle` command is deprecated. Solargraph currently uses RBS instead.'
     end
 
-    desc 'gems', 'Generate documentation for installed gems'
+    desc 'gems', 'Cache documentation for installed gems'
     option :rebuild, type: :boolean, desc: 'Rebuild existing documentation', default: false
     def gems *names
       if names.empty?
