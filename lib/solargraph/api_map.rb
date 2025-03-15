@@ -144,7 +144,7 @@ module Solargraph
       return api_map if api_map.uncached_gemspecs.empty?
 
       api_map.uncached_gemspecs.each do |gemspec|
-        puts "Caching #{gemspec.name} #{gemspec.version}..."
+        Solargraph.logger.info "Caching #{gemspec.name} #{gemspec.version}..."
         pins = GemPins.build(gemspec)
         Solargraph::Cache.save('gems', "#{gemspec.name}-#{gemspec.version}.ser", pins)
       end
