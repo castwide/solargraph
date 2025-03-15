@@ -19,6 +19,24 @@ module Solargraph
         @block = block
       end
 
+      def generics
+        @generics ||= [].freeze
+      end
+
+      # @return [String]
+      def to_rbs
+        @rbs ||= rbs_generics + '(' + parameters.map { |param| param.to_rbs }.join(', ') + ') ' + (block.nil? ? '' : '{ ' + block.to_rbs + ' } ') + '-> ' + return_type.to_rbs
+      end
+
+      # @return [String]
+      def rbs_generics
+        if generics.empty?
+          return ''
+        else
+          return '[' + generics.map { |gen| gen.to_s }.join(', ') + '] '
+        end
+      end
+
       # Probe the concrete type for each of the generic type
       # parameters used in this method, and return a new method pin if
       # possible.
