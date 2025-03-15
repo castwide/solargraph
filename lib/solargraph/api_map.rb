@@ -588,7 +588,7 @@ module Solargraph
             # @todo perform the same translation in the other areas
             #  here after adding a spec and handling things correctly
             #  in ApiMap::Store and RbsMap::Conversions
-            resolved_include_type = ComplexType.parse(rooted_include_tag).resolve_generics(namespace_pin, rooted_type)
+            resolved_include_type = ComplexType.parse(rooted_include_tag).resolve_generics_by_index(namespace_pin.generics, rooted_type)
             methods = inner_get_methods(resolved_include_type.tag, scope, visibility, deep, skip, true)
             result.concat methods
           end
