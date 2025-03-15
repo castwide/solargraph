@@ -7,6 +7,8 @@ module Solargraph
       # issues in literal strings.
       #
       class FlawedBuilder < ::Parser::Builders::Default
+        # @param token [::Parser::AST::Node]
+        # @return [String]
         def string_value(token)
           value(token)
         end
