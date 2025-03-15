@@ -50,7 +50,7 @@ module Solargraph
           next unless pin.is_a?(Pin::Namespace) && pin.type == :class
           next if pins.any? { |p| p.path == "#{pin.path}.new"}
           pins.push Solargraph::Pin::Method.new(
-                      location: nil,
+                      type_location: nil,
                       closure: pin,
                       name: 'new',
                       comments: pin.comments,
@@ -95,10 +95,11 @@ module Solargraph
 
       # @param decl [RBS::AST::Declarations::Module::Self]
       # @param closure [Pin::Namespace]
+      # @return [void]
       def convert_self_type_to_pins decl, closure
         include_pin = Solargraph::Pin::Reference::Include.new(
           name: decl.name.relative!.to_s,
-          location: rbs_location_to_location(decl.location),
+          type_location: location_decl_to_pin_location(decl.location),
           closure: closure
         )
         pins.push include_pin
@@ -160,6 +161,7 @@ module Solargraph
           name: decl.name.relative!.to_s,
           closure: Solargraph::Pin::ROOT_PIN,
           comments: decl.comment&.string,
+          type_location: location_decl_to_pin_location(decl.location),
           # @todo some type parameters in core/stdlib have default
           #   values; Solargraph doesn't support that yet as so these
           #   get treated as undefined if not specified
@@ -168,6 +170,7 @@ module Solargraph
         pins.push class_pin
         if decl.super_class
           pins.push Solargraph::Pin::Reference::Superclass.new(
+            type_location: location_decl_to_pin_location(decl.super_class.location),
             closure: class_pin,
             name: decl.super_class.name.relative!.to_s
           )
@@ -181,6 +184,7 @@ module Solargraph
       def interface_decl_to_pin decl, closure
         class_pin = Solargraph::Pin::Namespace.new(
           type: :module,
+          type_location: location_decl_to_pin_location(decl.location),
           name: decl.name.relative!.to_s,
           closure: Solargraph::Pin::ROOT_PIN,
           comments: decl.comment&.string,
@@ -200,6 +204,7 @@ module Solargraph
         module_pin = Solargraph::Pin::Namespace.new(
           type: :module,
           name: decl.name.relative!.to_s,
+          type_location: location_decl_to_pin_location(decl.location),
           closure: Solargraph::Pin::ROOT_PIN,
           comments: decl.comment&.string,
           generics: decl.type_params.map(&:name).map(&:to_s),
@@ -212,10 +217,12 @@ module Solargraph
       # @param name [String]
       # @param tag [String]
       # @param comments [String]
+      # @param decl [RBS::AST::Declarations::ClassAlias, RBS::AST::Declarations::Constant, RBS::AST::Declarations::ModuleAlias]
       # @param type [Symbol] :class or :module
       #
       # @return [Solargraph::Pin::Constant]
-      def create_constant(name, tag, comments, type)
+      def create_constant(name, tag, comments, decl, type)
+        comments = decl.comment&.string
         parts = name.split('::')
         if parts.length > 1
           name = parts.last
@@ -227,6 +234,7 @@ module Solargraph
         constant_pin = Solargraph::Pin::Constant.new(
           name: name,
           closure: closure,
+          type_location: location_decl_to_pin_location(decl.location),
           comments: comments
         )
         tag = if type == :class
@@ -248,7 +256,7 @@ module Solargraph
         new_name = decl.new_name.relative!.to_s
         old_name = decl.old_name.relative!.to_s
 
-        pins.push create_constant(new_name, old_name, decl.comment&.string, :class)
+        pins.push create_constant(new_name, old_name, decl.comment&.string, decl, :class)
       end
 
       # @param decl [RBS::AST::Declarations::ModuleAlias]
@@ -258,7 +266,7 @@ module Solargraph
         new_name = decl.new_name.relative!.to_s
         old_name = decl.old_name.relative!.to_s
 
-        pins.push create_constant(new_name, old_name, decl.comment&.string, :module)
+        pins.push create_constant(new_name, old_name, decl.comment&.string, decl, :module)
       end
 
       # @param decl [RBS::AST::Declarations::Constant]
@@ -266,7 +274,7 @@ module Solargraph
       def constant_decl_to_pin decl
         tag = other_type_to_tag(decl.type)
         # @todo Class or Module?
-        pins.push create_constant(decl.name.relative!.to_s, tag, decl.comment&.string, :class)
+        pins.push create_constant(decl.name.relative!.to_s, tag, decl.comment&.string, decl, :class)
       end
 
       # @param decl [RBS::AST::Declarations::Global]
@@ -297,6 +305,7 @@ module Solargraph
           pin = Solargraph::Pin::Method.new(
             name: decl.name.to_s,
             closure: closure,
+            type_location: location_decl_to_pin_location(decl.location),
             comments: decl.comment&.string,
             scope: :instance,
             signatures: [],
@@ -306,7 +315,7 @@ module Solargraph
           pins.push pin
           if pin.name == 'initialize'
             pins.push Solargraph::Pin::Method.new(
-              location: pin.location,
+              type_location: pin.location,
               closure: pin.closure,
               name: 'new',
               comments: pin.comments,
@@ -331,6 +340,7 @@ module Solargraph
             name: decl.name.to_s,
             closure: closure,
             comments: decl.comment&.string,
+            type_location: location_decl_to_pin_location(decl.location),
             scope: :class,
             signatures: [],
             generics: generics,
@@ -356,7 +366,7 @@ module Solargraph
 
       # @param location [RBS::Location, nil]
       # @return [Solargraph::Location, nil]
-      def rbs_location_to_location(location)
+      def location_decl_to_pin_location(location)
         return nil if location&.name.nil?
 
         start_pos = Position.new(location.start_line - 1, location.start_column)
@@ -414,6 +424,7 @@ module Solargraph
       def attr_reader_to_pin(decl, closure)
         pin = Solargraph::Pin::Method.new(
           name: decl.name.to_s,
+          type_location: location_decl_to_pin_location(decl.location),
           closure: closure,
           comments: decl.comment&.string,
           scope: :instance,
@@ -429,6 +440,7 @@ module Solargraph
       def attr_writer_to_pin(decl, closure)
         pin = Solargraph::Pin::Method.new(
           name: "#{decl.name.to_s}=",
+          type_location: location_decl_to_pin_location(decl.location),
           closure: closure,
           comments: decl.comment&.string,
           scope: :instance,
@@ -453,6 +465,7 @@ module Solargraph
         pin = Solargraph::Pin::InstanceVariable.new(
           name: decl.name.to_s,
           closure: closure,
+          type_location: location_decl_to_pin_location(decl.location),
           comments: decl.comment&.string
         )
         pin.docstring.add_tag(YARD::Tags::Tag.new(:type, '', other_type_to_tag(decl.type)))
@@ -495,6 +508,7 @@ module Solargraph
         generic_values = type.all_params.map(&:to_s)
         pins.push Solargraph::Pin::Reference::Include.new(
           name: decl.name.relative!.to_s,
+          type_location: location_decl_to_pin_location(decl.location),
           generic_values: generic_values,
           closure: closure
         )
@@ -506,6 +520,7 @@ module Solargraph
       def prepend_to_pin decl, closure
         pins.push Solargraph::Pin::Reference::Prepend.new(
           name: decl.name.relative!.to_s,
+          type_location: location_decl_to_pin_location(decl.location),
           closure: closure
         )
       end
@@ -516,6 +531,7 @@ module Solargraph
       def extend_to_pin decl, closure
         pins.push Solargraph::Pin::Reference::Extend.new(
           name: decl.name.relative!.to_s,
+          type_location: location_decl_to_pin_location(decl.location),
           closure: closure
         )
       end
@@ -526,6 +542,7 @@ module Solargraph
       def alias_to_pin decl, closure
         pins.push Solargraph::Pin::MethodAlias.new(
           name: decl.new_name.to_s,
+          type_location: location_decl_to_pin_location(decl.location),
           original: decl.old_name.to_s,
           closure: closure
         )
