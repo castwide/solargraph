@@ -5,7 +5,35 @@ require 'cgi'
 module Solargraph
   module Pin
     # @todo Move this stuff. It should be the responsibility of the language server.
+    # @todo abstract methods below should be verified to be overridden
+    #   by type checker when mixin included by non-abstract class
     module Conversions
+      # @!parse
+      #   include Documenting
+      #   include Common
+
+      # @return [Integer]
+      # @abstract
+      def completion_item_kind
+        raise NotImplementedError
+      end
+
+      # @abstract
+      # @return [Boolean]
+      def deprecated?
+        raise NotImplementedError
+      end
+
+      # @abstract
+      def probed?
+        raise NotImplementedError
+      end
+
+      # @abstract
+      def proxied?
+        raise NotImplementedError
+      end
+
       # @return [Hash]
       def completion_item
         @completion_item ||= {
@@ -57,12 +85,14 @@ module Solargraph
         @link_documentation ||= generate_link
       end
 
+      # @return [String, nil]
       def text_documentation
         this_path = path || return_type.tag
         return nil if this_path == 'undefined'
         escape_brackets this_path
       end
 
+      # @return [void]
       def reset_conversions
         @completion_item = nil
         @resolve_completion_item = nil

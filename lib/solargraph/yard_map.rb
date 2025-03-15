@@ -51,8 +51,6 @@ module Solargraph
       @gem_paths = {}
       base_required.replace new_requires
       required.replace new_requires
-      # HACK: Hardcoded YAML handling
-      required.add 'psych' if new_requires.include?('yaml')
       @source_gems = new_source_gems
       @directory = new_directory
       process_requires
@@ -195,12 +193,6 @@ module Solargraph
           cache.set_path_pins r, result
           pins.concat result
         end
-      end
-      if required.include?('yaml') && required.include?('psych')
-        # HACK: Hardcoded YAML handling
-        # @todo Why can't this be handled with an override or a virtual pin?
-        pin = path_pin('YAML')
-        pin.instance_variable_set(:@return_type, ComplexType.parse('Module<Psych>')) unless pin.nil?
       end
       pins.concat environ.pins
     end
