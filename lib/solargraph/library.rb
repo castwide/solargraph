@@ -590,6 +590,7 @@ module Solargraph
       end
     end
 
+    # @return [void]
     def cache_next_gemspec
       spec = api_map.uncached_gemspecs.first
       return unless spec

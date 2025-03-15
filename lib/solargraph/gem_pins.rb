@@ -6,6 +6,8 @@ module Solargraph
   module GemPins
     module_function
 
+    # @param gemspec [Gem::Specification]
+    # @return [Array<Pin::Base>]
     def build(gemspec)
       Yardoc.cache(gemspec) unless Yardoc.cached?(gemspec)
       yardoc = Yardoc.load!(gemspec)
