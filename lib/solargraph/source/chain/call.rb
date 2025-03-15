@@ -57,17 +57,30 @@ module Solargraph
             overloads = p.signatures
             # next p if overloads.empty?
             type = ComplexType::UNDEFINED
-            overloads.each do |ol|
+            # start with overloads that require blocks; if we are
+            # passing a block, we want to find a signature that will
+            # use it.
+            sorted_overloads = overloads.sort { |ol| ol.block? ? -1 : 1 }
+            sorted_overloads.each do |ol|
               next unless arguments_match(arguments, ol)
-              # next if ol.parameters.last && ol.parameters.last.first.start_with?('&') && ol.parameters.last.last.nil? && !with_block?
               match = true
               arguments.each_with_index do |arg, idx|
                 param = ol.parameters[idx]
+                atype = nil
                 if param.nil?
-                  match = false unless ol.parameters.any?(&:restarg?)
+                  last_arg = idx == arguments.length - 1
+                  match = if ol.parameters.any?(&:restarg?)
+                            true
+                          elsif last_arg && ol.block?
+                            # block argument that isn't declared as an arg as well
+                            atype ||= arg.infer(api_map, Pin::ProxyType.anonymous(context), locals)
+                            atype.namespace == 'Proc'
+                          else
+                            false
+                          end
                   break
                 end
-                atype = arg.infer(api_map, Pin::ProxyType.anonymous(context), locals)
+                atype ||= arg.infer(api_map, Pin::ProxyType.anonymous(context), locals)
                 # @todo Weak type comparison
                 # unless atype.tag == param.return_type.tag || api_map.super_and_sub?(param.return_type.tag, atype.tag)
                 unless param.return_type.undefined? || atype.name == param.return_type.name || api_map.super_and_sub?(param.return_type.name, atype.name)
