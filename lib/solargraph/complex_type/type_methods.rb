@@ -2,8 +2,13 @@
 
 module Solargraph
   class ComplexType
-    # Methods for accessing type data.
+    # Methods for accessing type data available from
+    # both ComplexType and UniqueType.
     #
+    # @abstract This mixin relies on these instance variables:
+    #   @name: String
+    #   @subtypes: Array<ComplexType>
+    #   @rooted: boolish
     module TypeMethods
       # @return [String]
       attr_reader :name
@@ -24,8 +29,7 @@ module Solargraph
 
       # @return [Boolean]
       def nil_type?
-        @nil_type = (name.casecmp('nil') == 0) if @nil_type.nil?
-        @nil_type
+        @nil_type ||= (name.casecmp('nil') == 0)
       end
 
       # @return [Boolean]
@@ -80,12 +84,19 @@ module Solargraph
         end.call
       end
 
+      # @return [String]
+      def rooted_namespace
+        return namespace unless rooted?
+        "::#{namespace}"
+      end
+
       # @return [::Symbol] :class or :instance
       def scope
         @scope ||= :instance if duck_type? || nil_type?
         @scope ||= (name == 'Class' || name == 'Module') && !subtypes.empty? ? :class : :instance
       end
 
+      # @param other [Object]
       def == other
         return false unless self.class == other.class
         tag == other.tag
@@ -99,7 +110,7 @@ module Solargraph
       #
       # @param api_map [ApiMap] The ApiMap that performs qualification
       # @param context [String] The namespace from which to resolve names
-      # @return [ComplexType, UniqueType] The generated ComplexType
+      # @return [self, ComplexType, UniqueType] The generated ComplexType
       def qualify api_map, context = ''
         return self if name == GENERIC_TAG_NAME
         return ComplexType.new([self]) if duck_type? || void? || undefined?
@@ -110,13 +121,16 @@ module Solargraph
           return UniqueType::UNDEFINED
         end
         fqns = "::#{fqns}" # Ensure the resulting complex type is rooted
-        ltypes = key_types.map { |t| t.qualify api_map, context }.uniq
-        rtypes = value_types.map { |t| t.qualify api_map, context }.uniq
+        all_ltypes = key_types.map { |t| t.qualify api_map, context }.uniq
+        all_rtypes = value_types.map { |t| t.qualify api_map, context }
         if list_parameters?
+          rtypes = all_rtypes.uniq
           Solargraph::ComplexType.parse("#{fqns}<#{rtypes.map(&:tag).join(', ')}>")
         elsif fixed_parameters?
-          Solargraph::ComplexType.parse("#{fqns}(#{rtypes.map(&:tag).join(', ')})")
+          Solargraph::ComplexType.parse("#{fqns}(#{all_rtypes.map(&:tag).join(', ')})")
         elsif hash_parameters?
+          ltypes = all_ltypes.uniq
+          rtypes = all_rtypes.uniq
           Solargraph::ComplexType.parse("#{fqns}{#{ltypes.map(&:tag).join(', ')} => #{rtypes.map(&:tag).join(', ')}}")
         else
           Solargraph::ComplexType.parse(fqns)

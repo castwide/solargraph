@@ -8,6 +8,16 @@ module Solargraph
       # A common module for running language servers in Backport.
       #
       module Adapter
+        # This runs in the context of Backport::Adapter, which
+        # provides write() - but if we didn't hide this behind a parse
+        # tag, it would override the one in the class.
+        #
+        # @!method write(text)
+        #   @abstract
+        #   Write the change to the specified text.
+        #   @param text [String] The text to be changed.
+        #   @return [String] The updated text.
+
         # @return [void]
         def opening
           @host = Solargraph::LanguageServer::Host.new
@@ -25,6 +35,7 @@ module Solargraph
         end
 
         # @param data [String]
+        # @return [void]
         def receiving data
           @data_reader.receive data
         end

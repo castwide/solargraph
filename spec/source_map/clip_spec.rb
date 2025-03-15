@@ -23,6 +23,15 @@ describe Solargraph::SourceMap::Clip do
     expect(comp.pins.map(&:name)).to include('@@foo')
   end
 
+  it 'completes class instance variables' do
+    source = Solargraph::Source.load_string('class Foo; @foo = 1; @f; end', 'test.rb')
+    api_map.map source
+    cursor = source.cursor_at(Solargraph::Position.new(0, 22))
+    clip = described_class.new(api_map, cursor)
+    comp = clip.complete
+    expect(comp.pins.map(&:name)).to include('@foo')
+  end
+
   it 'completes class variables in open scopes' do
     source = Solargraph::Source.load_string(%(
       class Foo
@@ -36,6 +45,21 @@ describe Solargraph::SourceMap::Clip do
     pins = clip.complete.pins
     expect(pins.length).to eq(1)
     expect(pins.first.name).to eq('@@bar')
+  end
+
+  it 'completes class instance variables in open scopes' do
+    source = Solargraph::Source.load_string(%(
+      class Foo
+        @bar = 'bar'
+        @b
+      end
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new
+    api_map.map source
+    clip = api_map.clip_at('test.rb', [3, 10])
+    pins = clip.complete.pins
+    expect(pins.length).to eq(1)
+    expect(pins.first.name).to eq('@bar')
   end
 
   it 'uses scope gates to detect class variables' do
@@ -53,6 +77,23 @@ describe Solargraph::SourceMap::Clip do
     api_map.map source
     clip = api_map.clip_at('test.rb', [6, 13])
     expect(clip.complete.pins).to be_empty
+  end
+
+  it 'uses scope gates to detect class instance variables' do
+    source = Solargraph::Source.load_string(%(
+      class Foo
+        @foo = 'foo'
+      end
+      class Bar
+        Foo.class_eval do
+          @f
+        end
+      end
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new
+    api_map.map source
+    clip = api_map.clip_at('test.rb', [6, 12])
+    expect(clip.complete.pins.map(&:name)).to eq (['@foo'])
   end
 
   it 'completes instance variables' do
@@ -1075,10 +1116,7 @@ describe Solargraph::SourceMap::Clip do
   end
 
   it 'completes from repaired sources with missing nodes' do
-    source = Solargraph::Source.load_string(%(
-      x = []
-      
-    ), 'test.rb')
+    source = Solargraph::Source.load_string("\n      x = []\n      ", 'test.rb')
     api_map = Solargraph::ApiMap.new
     api_map.map source
     updater = Solargraph::Source::Updater.new('test.rb', 1, [
@@ -1542,6 +1580,18 @@ describe Solargraph::SourceMap::Clip do
     expect(type.tag).to eq('String')
   end
 
+  it 'preserves duplicated types in tuple' do
+    source = Solargraph::Source.load_string(%(
+      # @type [Array(Array(Symbol, String, Array(Integer, Integer)))]
+      a = 123
+      a
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new.map(source)
+    clip = api_map.clip_at('test.rb', [3, 6])
+    type = clip.infer
+    expect(type.to_s).to eq('Array(Array(Symbol, String, Array(Integer, Integer)))')
+  end
+
   it 'infers overloads based on required parameters from Enumerable' do
     source = Solargraph::Source.load_string(%(
       # @return [Enumerable<String>]
@@ -1575,6 +1625,20 @@ describe Solargraph::SourceMap::Clip do
     expect(type.to_s).to eq('String, nil')
   end
 
+  it 'infers yield parameters from self type defined methods in RBS' do
+    source = Solargraph::Source.load_string(%(
+      # @type [Enumerable<String>]
+      a = ['a', 'b', 'c']
+      a.each do |s|
+        s
+      end
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new.map(source)
+    clip = api_map.clip_at('test.rb', [4, 8])
+    type = clip.infer
+    expect(type.to_s).to eq('String')
+  end
+
   it 'infers yield parameters from defined methods in RBS' do
     source = Solargraph::Source.load_string(%(
       # @type [Array<String>]
@@ -1587,5 +1651,17 @@ describe Solargraph::SourceMap::Clip do
     clip = api_map.clip_at('test.rb', [4, 8])
     type = clip.infer
     expect(type.to_s).to eq('String')
+  end
+
+  it 'infers Object<self> from Class.new in core classes' do
+    # Correct inference of Class.new depends on CoreFills, but we're testing
+    # it here because it should eventually work from the core RBS alone.
+    source = Solargraph::Source.load_string(%(
+      Gem::Specification.new
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new.map(source)
+    clip = api_map.clip_at('test.rb', [1, 28])
+    type = clip.infer
+    expect(type.to_s).to eq('Gem::Specification')
   end
 end
