@@ -2,8 +2,13 @@
 
 module Solargraph
   class ComplexType
-    # Methods for accessing type data.
+    # Methods for accessing type data available from
+    # both ComplexType and UniqueType.
     #
+    # @abstract This mixin relies on these instance variables:
+    #   @name: String
+    #   @subtypes: Array<ComplexType>
+    #   @rooted: boolish
     module TypeMethods
       # @return [String]
       attr_reader :name
@@ -24,8 +29,7 @@ module Solargraph
 
       # @return [Boolean]
       def nil_type?
-        @nil_type = (name.casecmp('nil') == 0) if @nil_type.nil?
-        @nil_type
+        @nil_type ||= (name.casecmp('nil') == 0)
       end
 
       # @return [Boolean]
@@ -92,6 +96,7 @@ module Solargraph
         @scope ||= (name == 'Class' || name == 'Module') && !subtypes.empty? ? :class : :instance
       end
 
+      # @param other [Object]
       def == other
         return false unless self.class == other.class
         tag == other.tag
@@ -105,7 +110,7 @@ module Solargraph
       #
       # @param api_map [ApiMap] The ApiMap that performs qualification
       # @param context [String] The namespace from which to resolve names
-      # @return [ComplexType, UniqueType] The generated ComplexType
+      # @return [self, ComplexType, UniqueType] The generated ComplexType
       def qualify api_map, context = ''
         return self if name == GENERIC_TAG_NAME
         return ComplexType.new([self]) if duck_type? || void? || undefined?
