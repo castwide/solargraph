@@ -1,3 +1,5 @@
+require 'nokogiri'
+
 module ReverseMarkdown
   module Converters
     class Dd < Base
