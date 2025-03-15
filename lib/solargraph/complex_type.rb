@@ -241,7 +241,7 @@ module Solargraph
               paren_stack += 1
             elsif char == ')'
               paren_stack -= 1
-              subtype_string += char if paren_stack == 0
+              subtype_string += char
               raise ComplexTypeError, "Invalid close in type #{type_string}" if paren_stack < 0
               next
             elsif char == ',' && point_stack == 0 && curly_stack == 0 && paren_stack == 0

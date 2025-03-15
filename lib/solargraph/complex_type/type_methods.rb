@@ -116,13 +116,16 @@ module Solargraph
           return UniqueType::UNDEFINED
         end
         fqns = "::#{fqns}" # Ensure the resulting complex type is rooted
-        ltypes = key_types.map { |t| t.qualify api_map, context }.uniq
-        rtypes = value_types.map { |t| t.qualify api_map, context }.uniq
+        all_ltypes = key_types.map { |t| t.qualify api_map, context }.uniq
+        all_rtypes = value_types.map { |t| t.qualify api_map, context }
         if list_parameters?
+          rtypes = all_rtypes.uniq
           Solargraph::ComplexType.parse("#{fqns}<#{rtypes.map(&:tag).join(', ')}>")
         elsif fixed_parameters?
-          Solargraph::ComplexType.parse("#{fqns}(#{rtypes.map(&:tag).join(', ')})")
+          Solargraph::ComplexType.parse("#{fqns}(#{all_rtypes.map(&:tag).join(', ')})")
         elsif hash_parameters?
+          ltypes = all_ltypes.uniq
+          rtypes = all_rtypes.uniq
           Solargraph::ComplexType.parse("#{fqns}{#{ltypes.map(&:tag).join(', ')} => #{rtypes.map(&:tag).join(', ')}}")
         else
           Solargraph::ComplexType.parse(fqns)

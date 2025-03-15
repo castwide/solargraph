@@ -310,4 +310,23 @@ describe Solargraph::ComplexType do
     type = return_type.resolve_generics(generic_class, called_method.return_type)
     expect(type.tag).to eq('Array<String>')
   end
+
+  it 'parses tuples of tuples' do
+    api_map = Solargraph::ApiMap.new
+    type = Solargraph::ComplexType.parse('Array(Array(String), String)')
+    expect(type.tag).to eq('Array(Array(String), String)')
+  end
+
+  it 'parses tuples of tuples with same type twice in a row' do
+    api_map = Solargraph::ApiMap.new
+    type = Solargraph::ComplexType.parse('Array(Symbol, String, Array(Integer, Integer))')
+    expect(type.to_s).to eq('Array(Symbol, String, Array(Integer, Integer))')
+  end
+
+  it 'qualifies tuples of tuples with same type twice in a row' do
+    api_map = Solargraph::ApiMap.new
+    type = Solargraph::ComplexType.parse('Array(Symbol, String, Array(Integer, Integer))')
+    type = type.qualify(api_map)
+    expect(type.to_s).to eq('Array(Symbol, String, Array(Integer, Integer))')
+  end
 end
