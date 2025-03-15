@@ -54,6 +54,7 @@ module Solargraph
             params['workspaceFolders']
         end
 
+        # @return [Hash{Symbol => undefined}]
         def static_completion
           return {} unless host.options['completion']
           {
@@ -64,6 +65,7 @@ module Solargraph
           }
         end
 
+        # @return [Hash{Symbol => BasicObject}]
         def static_code_action
           {
             codeActionProvider: true,
@@ -71,6 +73,7 @@ module Solargraph
           }
         end
 
+        # @return [Hash{Symbol => BasicObject}]
         def static_signature_help
           {
             signatureHelpProvider: {

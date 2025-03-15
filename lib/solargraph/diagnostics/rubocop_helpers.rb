@@ -12,6 +12,7 @@ module Solargraph
       #
       # @param version [String, nil]
       # @raise [InvalidRubocopVersionError] if _version_ is not installed
+      # @return [void]
       def require_rubocop(version = nil)
         begin
           gem_path = Gem::Specification.find_by_name('rubocop', version).full_gem_path

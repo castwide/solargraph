@@ -14,6 +14,9 @@ module Solargraph
       activejob activemodel activerecord activestorage activesupport railties
     ]
 
+    # @param directory [String]
+    # @param rebuild [Boolean]
+    # @param out [IO]
     def initialize directory, rebuild: false, out: File.new(File::NULL, 'w')
       @directory = directory
       @rebuild = rebuild
