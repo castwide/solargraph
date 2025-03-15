@@ -68,6 +68,7 @@ module Solargraph
       # @return [String]
       def to_rbs
         "#{namespace}#{parameters? ? "[#{subtypes.map { |s| s.to_rbs }.join(', ')}]" : ''}"
+      # "
       end
 
       def generic?
@@ -83,67 +84,61 @@ module Solargraph
       # @param context_type [ComplexType] The receiver type
       # @return [UniqueType, ComplexType]
       def resolve_generics definitions, context_type
-        new_name = if name == GENERIC_TAG_NAME
+        if name == GENERIC_TAG_NAME
           idx = definitions.generics.index(subtypes.first&.name)
           return ComplexType::UNDEFINED if idx.nil?
           param_type = context_type.all_params[idx]
           return ComplexType::UNDEFINED unless param_type
-          param_type.to_s
-        else
-          name
+          new_name = param_type.to_s
         end
-        new_key_types = if name != GENERIC_TAG_NAME
-          @key_types.map { |t| t.resolve_generics(definitions, context_type) }.select(&:defined?)
-        else
-          []
+        return UniqueType.new(new_name) if name == GENERIC_TAG_NAME
+        transform(name) do |t|
+          new_type = t.resolve_generics(definitions, context_type)
+          new_type if new_type.defined?
         end
-        new_subtypes = if name != GENERIC_TAG_NAME
-          @subtypes.map { |t| t.resolve_generics(definitions, context_type) }.select(&:defined?)
-        else
-          []
-        end
-        if name != GENERIC_TAG_NAME && !(new_key_types.empty? && new_subtypes.empty?)
-          if hash_parameters?
-            UniqueType.new(new_name, "{#{new_key_types.join(', ')} => #{new_subtypes.join(', ')}}")
-          elsif parameters?
-            if @substring.start_with?'<('
-              UniqueType.new(new_name, "<(#{new_subtypes.join(', ')})>")
-            else
-              UniqueType.new(new_name, "<#{new_subtypes.join(', ')}>")
-            end
-          else
-            UniqueType.new(new_name)
-          end
-        else
-          UniqueType.new(new_name)
-        end
-
-        # idx = definitions.parameters.index(subtypes.first.name)
-        # STDERR.puts "Index: #{idx}"
-        # return ComplexType::UNDEFINED if idx.nil?
-        # param_type = context.return_type.all_params[idx]
-        # return ComplexType::UNDEFINED unless param_type
-        # ComplexType.try_parse(param_type.to_s)
       end
 
+      # @param new_name [String]
+      # @yieldparam t [ComplexType]
+      # @yieldreturn [ComplexType]
+      # @return [UniqueType, nil]
+      def transform(new_name, &transform_type)
+        new_key_types = @key_types.map { |t| transform_type.yield t }.compact
+        new_subtypes = @subtypes.map { |t| transform_type.yield t }.compact
+
+        return UniqueType.new(new_name) if new_key_types.empty? && new_subtypes.empty?
+
+        if hash_parameters?
+          UniqueType.new(new_name, "{#{new_key_types.join(', ')} => #{new_subtypes.join(', ')}}")
+        elsif @substring.start_with?('<(')
+          # @todo This clause is probably wrong, and if so, fixing it
+          #    will be some level of breaking change.  Probably best
+          #    handled before real tuple support is rolled out and
+          #    folks start relying on it more.
+          #
+          #   (String) is a one element tuple in https://yardoc.org/types
+          #   <String> is an array of zero or more Strings in https://yardoc.org/types
+          #   Array<(String)> could be an Array of one-element tuples or a
+          #     one element tuple.  https://yardoc.org/types treats it
+          #     as the former.
+          #   Array<(String), Integer> is not ambiguous if we accept
+          #     (String) as a tuple type, but not currently understood
+          #     by Solargraph.
+          UniqueType.new(new_name, "<(#{new_subtypes.join(', ')})>")
+        elsif fixed_parameters?
+          UniqueType.new(new_name, "(#{new_subtypes.join(', ')})")
+        else
+          UniqueType.new(new_name, "<#{new_subtypes.join(', ')}>")
+        end
+      end
+
+      # Transform references to the 'self' type to the specified concrete namespace
       # @param dst [String]
       # @return [UniqueType]
       def self_to dst
         return self unless selfy?
         new_name = (@name == 'self' ? dst : @name)
-        new_key_types = @key_types.map { |t| t.self_to dst }
-        new_subtypes = @subtypes.map { |t| t.self_to dst }
-        if hash_parameters?
-          UniqueType.new(new_name, "{#{new_key_types.join(', ')} => #{new_subtypes.join(', ')}}")
-        elsif parameters?
-          if @substring.start_with?'<('
-            UniqueType.new(new_name, "<(#{new_subtypes.join(', ')})>")
-          else
-            UniqueType.new(new_name, "<#{new_subtypes.join(', ')}>")
-          end
-        else
-          UniqueType.new(new_name)
-        end
+        transform(new_name) { |t| t.self_to dst }
       end
 
       def selfy?

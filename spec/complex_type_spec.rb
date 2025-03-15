@@ -311,6 +311,34 @@ describe Solargraph::ComplexType do
     expect(type.tag).to eq('Array<String>')
   end
 
+  it 'resolves generic parameters on a tuple using ()' do
+    api_map = Solargraph::ApiMap.new
+    return_type = Solargraph::ComplexType.parse('Array(generic<GenericTypeParam1>, generic<GenericTypeParam2>)')
+    generic_class = Solargraph::Pin::Namespace.new(name: 'Foo', comments: "@generic GenericTypeParam1\n@generic GenericTypeParam2")
+    called_method = Solargraph::Pin::Method.new(
+      location: Solargraph::Location.new('file:///foo.rb', Solargraph::Range.from_to(0, 0, 0, 0)),
+      closure: generic_class,
+      name: 'bar',
+      comments: '@return [Foo<String, Integer>]'
+    )
+    type = return_type.resolve_generics(generic_class, called_method.return_type)
+    expect(type.tag).to eq('Array(String, Integer)')
+  end
+
+  it 'resolves generic parameters on a tuple using <()>' do
+    api_map = Solargraph::ApiMap.new
+    return_type = Solargraph::ComplexType.parse('Array<(generic<GenericTypeParam1>, generic<GenericTypeParam2>)>')
+    generic_class = Solargraph::Pin::Namespace.new(name: 'Foo', comments: "@generic GenericTypeParam1\n@generic GenericTypeParam2")
+    called_method = Solargraph::Pin::Method.new(
+      location: Solargraph::Location.new('file:///foo.rb', Solargraph::Range.from_to(0, 0, 0, 0)),
+      closure: generic_class,
+      name: 'bar',
+      comments: '@return [Foo<String, Integer>]'
+    )
+    type = return_type.resolve_generics(generic_class, called_method.return_type)
+    expect(type.tag).to eq('Array<(String, Integer)>')
+  end
+
   it 'parses tuples of tuples' do
     api_map = Solargraph::ApiMap.new
     type = Solargraph::ComplexType.parse('Array(Array(String), String)')
