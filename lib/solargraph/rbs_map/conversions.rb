@@ -160,6 +160,9 @@ module Solargraph
           name: decl.name.relative!.to_s,
           closure: Solargraph::Pin::ROOT_PIN,
           comments: decl.comment&.string,
+          # @todo some type parameters in core/stdlib have default
+          #   values; Solargraph doesn't support that yet as so these
+          #   get treated as undefined if not specified
           generics: decl.type_params.map(&:name).map(&:to_s)
         )
         pins.push class_pin
@@ -181,6 +184,7 @@ module Solargraph
           name: decl.name.relative!.to_s,
           closure: Solargraph::Pin::ROOT_PIN,
           comments: decl.comment&.string,
+          generics: decl.type_params.map(&:name).map(&:to_s),
           # HACK: Using :hidden to keep interfaces from appearing in
           # autocompletion
           visibility: :hidden
@@ -487,8 +491,11 @@ module Solargraph
       # @param closure [Pin::Namespace]
       # @return [void]
       def include_to_pin decl, closure
+        type = generic_type(decl.name, decl.args)
+        generic_values = type.all_params.map(&:to_s)
         pins.push Solargraph::Pin::Reference::Include.new(
           name: decl.name.relative!.to_s,
+          generic_values: generic_values,
           closure: closure
         )
       end
@@ -542,6 +549,33 @@ module Solargraph
         end
       end
 
+      # @param type_name [RBS::TypeName]
+      # @param type_args [Enumerable<RBS::Types::Bases::Base>]
+      # @return [ComplexType]
+      def generic_type(type_name, type_args)
+        base = RBS_TO_YARD_TYPE[type_name.relative!.to_s] || type_name.relative!.to_s
+        params = type_args.map { |a| other_type_to_tag(a) }.reject { |t| t == 'undefined' }
+        params_str = params.empty? ? '' : "<#{params.join(', ')}>"
+        type_string = "#{base}#{params_str}"
+        begin
+          ComplexType.parse(type_string)
+        rescue
+          # @todo Tuples of tuples aren't yet handled by the parser, and that appears in a few
+          #   minor cases in the core/stdlib rbs:
+          #   [WARN] Internal error parsing Array<Array(Integer, Symbol, String, Array(Integer, Integer, Integer, Integer))> from RBS
+          #   [WARN] Internal error parsing Array<Array(Array(Integer, Integer), Symbol, String, Ripper::Lexer::State)> from RBS
+          Solargraph.logger.info "Internal error parsing #{type_string} from RBS; treating as non-generic"
+          ComplexType.parse(base)
+        end
+      end
+
+      # @param type_name [RBS::TypeName]
+      # @param type_args [Enumerable<RBS::Types::Bases::Base>]
+      # @return [String]
+      def generic_type_tag(type_name, type_args)
+        generic_type(type_name, type_args).tag
+      end
+
       # @param type [RBS::Types::Bases::Base]
       # @return [String]
       def other_type_to_tag type
@@ -570,10 +604,7 @@ module Solargraph
         elsif type.is_a?(RBS::Types::Variable)
           "#{Solargraph::ComplexType::GENERIC_TAG_NAME}<#{type.name}>"
         elsif type.is_a?(RBS::Types::ClassInstance) #&& !type.args.empty?
-          base = RBS_TO_YARD_TYPE[type.name.relative!.to_s] || type.name.relative!.to_s
-          params = type.args.map { |a| other_type_to_tag(a) }.reject { |t| t == 'undefined' }
-          return base if params.empty?
-          "#{base}<#{params.join(', ')}>"
+          generic_type_tag(type.name, type.args)
         elsif type.is_a?(RBS::Types::Bases::Instance)
           'self'
         elsif type.is_a?(RBS::Types::Bases::Top)

@@ -1613,6 +1613,20 @@ describe Solargraph::SourceMap::Clip do
     expect(type.to_s).to eq('String, nil')
   end
 
+  it 'infers yield parameters from self type defined methods in RBS' do
+    source = Solargraph::Source.load_string(%(
+      # @type [Enumerable<String>]
+      a = ['a', 'b', 'c']
+      a.each do |s|
+        s
+      end
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new.map(source)
+    clip = api_map.clip_at('test.rb', [4, 8])
+    type = clip.infer
+    expect(type.to_s).to eq('String')
+  end
+
   it 'infers yield parameters from defined methods in RBS' do
     source = Solargraph::Source.load_string(%(
       # @type [Array<String>]
