@@ -12,15 +12,11 @@ module Solargraph
         # provides write() - but if we didn't hide this behind a parse
         # tag, it would override the one in the class.
         #
-        # @!parse
-        #   # @abstract
-        #   # Write the change to the specified text.
-        #   #
-        #   # @param text [String] The text to be changed.
-        #   # @return [String] The updated text.
-        #   def write text
-        #     raise NotImplementedError
-        #   end
+        # @!method write(text)
+        #   @abstract
+        #   Write the change to the specified text.
+        #   @param text [String] The text to be changed.
+        #   @return [String] The updated text.
 
         # @return [void]
         def opening
