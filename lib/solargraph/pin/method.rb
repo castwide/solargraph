@@ -20,18 +20,17 @@ module Solargraph
       # @param explicit [Boolean]
       # @param parameters [::Array<Pin::Parameter>]
       # @param block [Pin::Signature, nil, ::Symbol]
-      # @param generics [::Array<Pin::Parameter>, nil]
       # @param node [Parser::AST::Node, RubyVM::AbstractSyntaxTree::Node, nil]
       # @param attribute [Boolean]
       # @param signatures [::Array<Signature>, nil]
       # @param anon_splat [Boolean]
-      def initialize visibility: :public, explicit: true, parameters: [], block: :undefined, generics: nil, node: nil, attribute: false, signatures: nil, anon_splat: false, **splat
+      # @param return_type [ComplexType, nil]
+      def initialize visibility: :public, explicit: true, parameters: [], block: :undefined, node: nil, attribute: false, signatures: nil, anon_splat: false, return_type: nil, **splat
         super(**splat)
         @visibility = visibility
         @explicit = explicit
         @parameters = parameters
         @block = block
-        @generics = generics
         @node = node
         @attribute = attribute
         @signatures = signatures
@@ -112,11 +111,6 @@ module Solargraph
           block = Signature.new(yield_parameters, yield_return_type)
         end
         Signature.new(parameters, return_type, block)
-      end
-
-      # @return [::Array<String>]
-      def generics
-        @generics ||= docstring.tags(:generic).map(&:name)
       end
 
       # @return [::Array<Signature>]

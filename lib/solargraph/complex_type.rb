@@ -30,6 +30,15 @@ module Solargraph
       ComplexType.new(types).reduce_object
     end
 
+    # @param context_type [UniqueType, nil]
+    # @param resolved_generic_values [Hash{String => ComplexType}] Added to as types are encountered or resolved
+    # @return [self]
+    # TODO is 'context' the right word here?  Maybe 'concrete'?  Maybe 'resolved'?
+    def resolve_generics_from_context context_type, resolved_generic_values = {}
+      return self unless generic?
+      ComplexType.new(@items.map { |i| i.resolve_generics_from_context(context_type, resolved_generic_values) })
+    end
+
     # @return [UniqueType]
     def first
       @items.first
@@ -40,6 +49,7 @@ module Solargraph
       ((@items.length > 1 ? '(' : '') + @items.map do |item|
         "#{item.namespace}#{item.parameters? ? "[#{item.subtypes.map { |s| s.to_rbs }.join(', ')}]" : ''}"
       end.join(' | ') + (@items.length > 1 ? ')' : '')).gsub(/undefined/, 'untyped')
+      # "
     end
 
     # @yieldparam [UniqueType]
@@ -67,6 +77,11 @@ module Solargraph
     # @return [Integer]
     def length
       @items.length
+    end
+
+    # @return [Array<UniqueType>]
+    def to_a
+      @items
     end
 
     # @param index [Integer]

@@ -68,12 +68,40 @@ module Solargraph
       # @return [String]
       def to_rbs
         "#{namespace}#{parameters? ? "[#{subtypes.map { |s| s.to_rbs }.join(', ')}]" : ''}"
+        # "
       end
 
       def generic?
         name == GENERIC_TAG_NAME || all_params.any?(&:generic?)
       end
 
+
+      # @param context_type [UniqueType, nil]
+      # @param resolved_generic_values [Hash{String => ComplexType}] Added to as types are encountered or resolved
+      # @return [UniqueType, ComplexType]
+      # TODO: Maybe break this into three functions - one that adds to resolved_generic_values, one that applies changes, and one that runs those two until no more can be completed?
+      def resolve_generics_from_context context_type, resolved_generic_values
+        return self unless generic?
+
+        new_binding = false
+        if name == GENERIC_TAG_NAME
+          type_param = subtypes.first&.name
+          unless context_type.nil? || !resolved_generic_values[type_param].nil?
+            new_binding = true
+            resolved_generic_values[type_param] = context_type
+          end
+          if new_binding
+            resolved_generic_values.transform_values! do |complex_type|
+              complex_type.resolve_generics_from_context(nil, resolved_generic_values)
+            end
+          end
+          resolved_generic_values[type_param] || self
+        else
+          transform(name) do |t|
+            t.resolve_generics_from_context(nil, resolved_generic_values)
+          end
+        end
+      end
 
       # Probe the concrete type for each of the generic type
       # parameters used in this type, and return a new type if
@@ -85,7 +113,7 @@ module Solargraph
       def resolve_generics definitions, context_type
         new_name = if name == GENERIC_TAG_NAME
           idx = definitions.generics.index(subtypes.first&.name)
-          return ComplexType::UNDEFINED if idx.nil?
+          return self if idx.nil?
           param_type = context_type.all_params[idx]
           return ComplexType::UNDEFINED unless param_type
           param_type.to_s
@@ -124,6 +152,52 @@ module Solargraph
         # param_type = context.return_type.all_params[idx]
         # return ComplexType::UNDEFINED unless param_type
         # ComplexType.try_parse(param_type.to_s)
+      end
+
+      # @yieldparam t [self]
+      # @yieldreturn [self]
+      # @return [Array<self>]
+      def map &block
+        [block.yield(self)]
+      end
+
+      # @return [Array<UniqueType>]
+      def to_a
+        [self]
+      end
+
+      # @param new_name [String]
+      # @yieldparam t [UniqueType]
+      # @yieldreturn [UniqueType]
+      # @return [UniqueType, nil]
+      def transform(new_name, &transform_type)
+        new_key_types = @key_types.flat_map { |ct| ct.map { |ut| transform_type.yield ut } }.compact
+        new_subtypes = @subtypes.flat_map { |ct| ct.map { |ut| transform_type.yield ut } }.compact
+
+        return UniqueType.new(new_name) if new_key_types.empty? && new_subtypes.empty?
+
+        if hash_parameters?
+          UniqueType.new(new_name, "{#{new_key_types.join(', ')} => #{new_subtypes.join(', ')}}")
+        elsif @substring.start_with?('<(')
+          # @todo This clause is probably wrong, and if so, fixing it
+          #    will be some level of breaking change.  Probably best
+          #    handled before real tuple support is rolled out and
+          #    folks start relying on it more.
+          #
+          #   (String) is a one element tuple in https://yardoc.org/types
+          #   <String> is an array of zero or more Strings in https://yardoc.org/types
+          #   Array<(String)> could be an Array of one-element tuples or a
+          #     one element tuple.  https://yardoc.org/types treats it
+          #     as the former.
+          #   Array<(String), Integer> is not ambiguous if we accept
+          #     (String) as a tuple type, but not currently understood
+          #     by Solargraph.
+          UniqueType.new(new_name, "<(#{new_subtypes.join(', ')})>")
+        elsif fixed_parameters?
+          UniqueType.new(new_name, "(#{new_subtypes.join(', ')})")
+        else
+          UniqueType.new(new_name, "<#{new_subtypes.join(', ')}>")
+        end
       end
 
       # @param dst [String]
