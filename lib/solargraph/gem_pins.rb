@@ -3,15 +3,18 @@
 require 'rbs'
 
 module Solargraph
+  # A utility for building gem pins from a combination of YARD and RBS
+  # documentation.
+  #
   module GemPins
-    module_function
-
+    # Build an array of pins from a gem specification. The process starts with
+    # YARD, enhances the resulting pins with RBS definitions, and appends RBS
+    # pins that don't exist in the YARD mapping.
+    #
     # @param gemspec [Gem::Specification]
     # @return [Array<Pin::Base>]
-    def build(gemspec)
-      Yardoc.cache(gemspec) unless Yardoc.cached?(gemspec)
-      yardoc = Yardoc.load!(gemspec)
-      yard_pins = YardMap::Mapper.new(yardoc, gemspec).map
+    def self.build(gemspec)
+      yard_pins = build_yard_pins(gemspec)
       rbs_map = RbsMap.from_gemspec(gemspec)
       in_yard = Set.new
       combined = yard_pins.map do |yard|
@@ -40,6 +43,14 @@ module Solargraph
 
     class << self
       private
+
+      # @param gemspec [Gem::Specification]
+      # @return [Array<Pin::Base>]
+      def build_yard_pins(gemspec)
+        Yardoc.cache(gemspec) unless Yardoc.cached?(gemspec)
+        yardoc = Yardoc.load!(gemspec)
+        YardMap::Mapper.new(yardoc, gemspec).map  
+      end
 
       # Select the first defined type.
       #
