@@ -25,7 +25,8 @@ module Solargraph
       # @param attribute [Boolean]
       # @param signatures [::Array<Signature>, nil]
       # @param anon_splat [Boolean]
-      def initialize visibility: :public, explicit: true, parameters: [], block: :undefined, generics: nil, node: nil, attribute: false, signatures: nil, anon_splat: false, **splat
+      # @param return_type [ComplexType, nil]
+      def initialize visibility: :public, explicit: true, parameters: [], block: :undefined, generics: nil, node: nil, attribute: false, signatures: nil, anon_splat: false, return_type: nil, **splat
         super(**splat)
         @visibility = visibility
         @explicit = explicit
@@ -36,6 +37,7 @@ module Solargraph
         @attribute = attribute
         @signatures = signatures
         @anon_splat = anon_splat
+        @return_type = return_type
       end
 
       # Probe the concrete type for each of the generic type

@@ -16,8 +16,6 @@ module Solargraph
     autoload :Store,          'solargraph/api_map/store'
     autoload :BundlerMethods, 'solargraph/api_map/bundler_methods'
 
-    include SourceToYard
-
     # @return [Array<String>]
     attr_reader :unresolved_requires
 
@@ -65,31 +63,26 @@ module Solargraph
       @cache.clear
       @source_map_hash = bench.source_maps.map { |s| [s.filename, s] }.to_h
       pins = bench.source_maps.map(&:pins).flatten
-      external_requires = bench.external_requires
       source_map_hash.each_value do |map|
         implicit.merge map.environ
       end
-      external_requires.merge implicit.requires
-      external_requires.merge bench.workspace.config.required
-      @rbs_maps = external_requires.map { |r| load_rbs_map(r) }
-      unresolved_requires = @rbs_maps.reject(&:resolved?).map(&:library)
-      yard_map.change(unresolved_requires, bench.workspace.directory, bench.workspace.source_gems)
-      @store = Store.new(@@core_map.pins + @rbs_maps.flat_map(&:pins) + yard_map.pins + implicit.pins + pins)
-      @unresolved_requires = yard_map.unresolved_requires
-      @missing_docs = yard_map.missing_docs
+      unresolved_requires = (bench.external_requires + implicit.requires + bench.workspace.config.required).uniq
+      @doc_map = DocMap.new(unresolved_requires, []) # @todo Implement gem dependencies
+      @store = Store.new(@@core_map.pins + @doc_map.pins + implicit.pins + pins)
+      @unresolved_requires = @doc_map.unresolved_requires
+      @missing_docs = [] # @todo Implement missing docs
       @rebindable_method_names = nil
       store.block_pins.each { |blk| blk.rebind(self) }
       self
     end
 
+    def uncached_gemspecs
+      @doc_map.uncached_gemspecs
+    end
+
     # @return [Array<Pin::Base>]
     def core_pins
       @@core_map.pins
-    end
-
-    # @return [YardMap]
-    def yard_map
-      @yard_map ||= YardMap.new
     end
 
     # @param name [String]
@@ -141,6 +134,23 @@ module Solargraph
       api_map
     end
 
+    # Create an ApiMap with a workspace in the specified directory and cache
+    # any missing gems.
+    #
+    # @param directory [String]
+    # @return [ApiMap]
+    def self.load_with_cache directory
+      api_map = load(directory)
+      return api_map if api_map.uncached_gemspecs.empty?
+
+      api_map.uncached_gemspecs.each do |gemspec|
+        puts "Caching #{gemspec.name} #{gemspec.version}..."
+        pins = GemPins.build(gemspec)
+        Solargraph::Cache.save('gems', "#{gemspec.name}-#{gemspec.version}.ser", pins)
+      end
+      load(directory)
+    end
+
     # @return [Array<Solargraph::Pin::Base>]
     def pins
       store.pins
@@ -149,7 +159,6 @@ module Solargraph
     # @return [Set<String>]
     def rebindable_method_names
       @rebindable_method_names ||= begin
-        # result = yard_map.rebindable_method_names
         result = ['instance_eval', 'instance_exec', 'class_eval', 'class_exec', 'module_eval', 'module_exec', 'define_method'].to_set
         source_maps.each do |map|
           result.merge map.rebindable_method_names
@@ -408,15 +417,9 @@ module Solargraph
     # @param query [String] The text to match
     # @return [Array<String>]
     def search query
-      rake_yard(store)
-      found = []
-      code_object_paths.each do |k|
-        if (found.empty? || (query.include?('.') || query.include?('#')) || !(k.include?('.') || k.include?('#'))) &&
-           k.downcase.include?(query.downcase)
-          found.push k
-        end
-      end
-      found
+      pins.map(&:path)
+          .compact
+          .select { |path| path.downcase.include?(query.downcase) }
     end
 
     # Get YARD documentation for the specified path.
@@ -424,13 +427,13 @@ module Solargraph
     # @example
     #   api_map.document('String#split')
     #
+    # @todo This method is likely superfluous. Calling get_path_pins directly
+    #   should be sufficient.
+    #
     # @param path [String] The path to find
-    # @return [Array<YARD::CodeObjects::Base>]
+    # @return [Enumerable<Pin::Base>]
     def document path
-      rake_yard(store)
-      docs = []
-      docs.push code_object_at(path) unless code_object_at(path).nil?
-      docs
+      get_path_pins(path)
     end
 
     # Get an array of all symbols in the workspace that match the query.
@@ -524,14 +527,6 @@ module Solargraph
     #
     # @return [Hash{String => SourceMap}]
     attr_reader :source_map_hash
-
-    # @param library [String]
-    # @return [RbsMap]
-    def load_rbs_map library
-      # map = RbsMap.load(library)
-      # return map if map.resolved?
-      RbsMap::StdlibMap.load(library)
-    end
 
     # @return [ApiMap::Store]
     def store
