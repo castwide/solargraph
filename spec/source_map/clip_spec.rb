@@ -1652,4 +1652,16 @@ describe Solargraph::SourceMap::Clip do
     type = clip.infer
     expect(type.to_s).to eq('String')
   end
+
+  it 'infers Object<self> from Class.new in core classes' do
+    # Correct inference of Class.new depends on CoreFills, but we're testing
+    # it here because it should eventually work from the core RBS alone.
+    source = Solargraph::Source.load_string(%(
+      Gem::Specification.new
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new.map(source)
+    clip = api_map.clip_at('test.rb', [1, 28])
+    type = clip.infer
+    expect(type.to_s).to eq('Gem::Specification')
+  end
 end
