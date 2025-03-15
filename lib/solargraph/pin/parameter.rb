@@ -140,7 +140,7 @@ module Solargraph
             unless yield_type.nil?
               if yield_type.generic? && receiver_type.defined?
                 namespace_pin = api_map.get_namespace_pins(meth.namespace, closure.namespace).first
-                return yield_type.resolve_generics(namespace_pin, receiver_type)
+                return yield_type.resolve_generics_by_index(namespace_pin.generics, receiver_type)
               else
                 return yield_type.self_to(chain.base.infer(api_map, closure, locals).namespace).qualify(api_map, meth.context.namespace)
               end

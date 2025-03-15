@@ -47,8 +47,9 @@ module Solargraph
       # @param definitions [Pin::Namespace] The module/class which uses generic types
       # @param context_type [ComplexType] The receiver type
       # @return [self]
+      # TODO: Probably also rename these, eh?
       def resolve_generics definitions, context_type
-        rt = @return_type.resolve_generics(definitions, context_type) if @return_type
+        rt = @return_type.resolve_generics_by_index(definitions.generics, context_type) if @return_type
         pin = proxy rt
         pin.context = context_type
         pin

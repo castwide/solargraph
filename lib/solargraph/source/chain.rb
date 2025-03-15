@@ -139,7 +139,7 @@ module Solargraph
               # @todo even at strong, no typechecking complaint
               #   happens when a [Pin::Base,nil] is passed into a method
               #   that accepts only [Pin::Namespace] as an argument
-              type = type.resolve_generics(pin.closure, context.return_type)
+              type = type.resolve_generics_by_index(pin.closure.generics, context.return_type)
             end
             if type.defined?
               possibles.push type

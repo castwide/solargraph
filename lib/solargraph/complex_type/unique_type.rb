@@ -79,12 +79,13 @@ module Solargraph
       # parameters used in this type, and return a new type if
       # possible.
       #
-      # @param definitions [Pin::Namespace, Pin::Method] The module/class/method which uses generic types
+      # @param generics [::Array<String>] The names of the available
+      #   generics, in type parameter order
       # @param context_type [ComplexType] The receiver type
       # @return [UniqueType, ComplexType]
-      def resolve_generics definitions, context_type
+      def resolve_generics_by_index generics, context_type
         new_name = if name == GENERIC_TAG_NAME
-          idx = definitions.generics.index(subtypes.first&.name)
+          idx = generics.index(subtypes.first&.name)
           return ComplexType::UNDEFINED if idx.nil?
           param_type = context_type.all_params[idx]
           return ComplexType::UNDEFINED unless param_type
@@ -93,12 +94,12 @@ module Solargraph
           name
         end
         new_key_types = if name != GENERIC_TAG_NAME
-          @key_types.map { |t| t.resolve_generics(definitions, context_type) }.select(&:defined?)
+          @key_types.map { |t| t.resolve_generics_by_index(generics, context_type) }.select(&:defined?)
         else
           []
         end
         new_subtypes = if name != GENERIC_TAG_NAME
-          @subtypes.map { |t| t.resolve_generics(definitions, context_type) }.select(&:defined?)
+          @subtypes.map { |t| t.resolve_generics_by_index(generics, context_type) }.select(&:defined?)
         else
           []
         end

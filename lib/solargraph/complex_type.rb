@@ -121,11 +121,11 @@ module Solargraph
       any?(&:generic?)
     end
 
-    # @param definitions [Pin::Namespace, Pin::Method]
+    # @param generics [Array<String>]
     # @param context_type [ComplexType]
     # @return [ComplexType]
-    def resolve_generics definitions, context_type
-      result = @items.map { |i| i.resolve_generics(definitions, context_type) }
+    def resolve_generics_by_index generics, context_type
+      result = @items.map { |i| i.resolve_generics_by_index(generics, context_type) }
       ComplexType.parse(*result.map(&:tag))
     end
 
