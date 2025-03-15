@@ -1,8 +1,7 @@
 module Solargraph
   module Parser
     autoload :CommentRipper, 'solargraph/parser/comment_ripper'
-    autoload :Legacy, 'solargraph/parser/legacy'
-    autoload :Rubyvm, 'solargraph/parser/rubyvm'
+    autoload :ParserGem, 'solargraph/parser/parser_gem'
     autoload :Region, 'solargraph/parser/region'
     autoload :NodeProcessor, 'solargraph/parser/node_processor'
     autoload :Snippet, 'solargraph/parser/snippet'
@@ -10,21 +9,12 @@ module Solargraph
     class SyntaxError < StandardError
     end
 
-    # True if the parser can use RubyVM.
-    #
     def self.rubyvm?
-      # !!defined?(RubyVM::AbstractSyntaxTree)
       false
     end
 
-    # @type [Module<Rubyvm>, Module<Legacy>]
-    selected = rubyvm? ? Rubyvm : Legacy
-    # include selected
-    # @!parse
-    #   extend Solargraph::Parser::Legacy::ClassMethods
-    extend selected::ClassMethods
+    extend ParserGem::ClassMethods
 
-    # @type [Module<Rubyvm::NodeMethods>, Module<Legacy::NodeMethods>]
-    NodeMethods = (rubyvm? ? Rubyvm::NodeMethods : Legacy::NodeMethods)
+    NodeMethods = ParserGem::NodeMethods
   end
 end

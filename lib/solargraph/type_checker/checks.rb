@@ -51,8 +51,13 @@ module Solargraph
       # @return [Boolean]
       def any_types_match? api_map, expected, inferred
         return duck_types_match?(api_map, expected, inferred) if expected.duck_type?
+        # walk through the union expected type and see if any members
+        # of the union match the inferred type
         expected.each do |exp|
           next if exp.duck_type?
+          # @todo: there should be a level of typechecking where all
+          #   unique types in the inferred must match one of the
+          #   expected unique types
           inferred.each do |inf|
             # return true if exp == inf || api_map.super_and_sub?(fuzz(inf), fuzz(exp))
             return true if exp == inf || either_way?(api_map, inf, exp)
@@ -103,9 +108,12 @@ module Solargraph
       # @param cls2 [ComplexType::UniqueType]
       # @return [Boolean]
       def either_way?(api_map, cls1, cls2)
-        f1 = fuzz(cls1)
-        f2 = fuzz(cls2)
+        # @todo there should be a level of typechecking which uses the
+        #   full tag with parameters to determine compatibility
+        f1 = cls1.name
+        f2 = cls2.name
         api_map.type_include?(f1, f2) || api_map.super_and_sub?(f1, f2) || api_map.super_and_sub?(f2, f1)
+        # api_map.type_include?(f1, f2) || api_map.super_and_sub?(f1, f2) || api_map.super_and_sub?(f2, f1)
       end
     end
   end

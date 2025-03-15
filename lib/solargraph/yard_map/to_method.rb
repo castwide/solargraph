@@ -54,9 +54,7 @@ module Solargraph
       end
       private_constant :InnerMethods
 
-      # include YardMixin
-      # extend YardMixin
-      extend Helpers
+      include Helpers
 
       # @param code_object [YARD::CodeObjects::Base]
       # @param name [String, nil]

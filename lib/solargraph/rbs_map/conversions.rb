@@ -77,8 +77,12 @@ module Solargraph
           constant_decl_to_pin decl
         when RBS::AST::Declarations::ClassAlias
           class_alias_decl_to_pin decl
+        when RBS::AST::Declarations::ModuleAlias
+          module_alias_decl_to_pin decl
+        when RBS::AST::Declarations::Global
+          global_decl_to_pin decl
         else
-          Solargraph.logger.info "Skipping declaration #{decl.class}"
+          Solargraph.logger.warn "Skipping declaration #{decl.class}"
         end
       end
 
@@ -130,6 +134,10 @@ module Solargraph
           extend_to_pin(member, closure)
         when RBS::AST::Members::Alias
           alias_to_pin(member, closure)
+        when RBS::AST::Members::ClassInstanceVariable
+          civar_to_pin(member, closure)
+        when RBS::AST::Members::ClassVariable
+          cvar_to_pin(member, closure)
         when RBS::AST::Members::InstanceVariable
           ivar_to_pin(member, closure)
         when RBS::AST::Members::Public
@@ -152,6 +160,9 @@ module Solargraph
           name: decl.name.relative!.to_s,
           closure: Solargraph::Pin::ROOT_PIN,
           comments: decl.comment&.string,
+          # @todo some type parameters in core/stdlib have default
+          #   values; Solargraph doesn't support that yet as so these
+          #   get treated as undefined if not specified
           generics: decl.type_params.map(&:name).map(&:to_s)
         )
         pins.push class_pin
@@ -165,6 +176,7 @@ module Solargraph
       end
 
       # @param decl [RBS::AST::Declarations::Interface]
+      # @param closure [Pin::Closure]
       # @return [void]
       def interface_decl_to_pin decl, closure
         class_pin = Solargraph::Pin::Namespace.new(
@@ -172,6 +184,7 @@ module Solargraph
           name: decl.name.relative!.to_s,
           closure: Solargraph::Pin::ROOT_PIN,
           comments: decl.comment&.string,
+          generics: decl.type_params.map(&:name).map(&:to_s),
           # HACK: Using :hidden to keep interfaces from appearing in
           # autocompletion
           visibility: :hidden
@@ -199,9 +212,10 @@ module Solargraph
       # @param name [String]
       # @param tag [String]
       # @param comments [String]
+      # @param type [Symbol] :class or :module
       #
       # @return [Solargraph::Pin::Constant]
-      def create_constant(name, tag, comments)
+      def create_constant(name, tag, comments, type)
         parts = name.split('::')
         if parts.length > 1
           name = parts.last
@@ -215,8 +229,15 @@ module Solargraph
           closure: closure,
           comments: comments
         )
-        # @todo Class or Module?
-        constant_pin.docstring.add_tag(YARD::Tags::Tag.new(:return, '', "Class<#{tag}>"))
+        tag = if type == :class
+                "Class<#{tag}>"
+              elsif type == :module
+                "Module<#{tag}>"
+              else
+                Solargraph.logger.warn "Unrecognized constant type: #{type.inspect}"
+                "Class<#{tag}>"
+              end
+        constant_pin.docstring.add_tag(YARD::Tags::Tag.new(:return, '', tag))
         constant_pin
       end
 
@@ -227,14 +248,40 @@ module Solargraph
         new_name = decl.new_name.relative!.to_s
         old_name = decl.old_name.relative!.to_s
 
-        pins.push create_constant(new_name, old_name, decl.comment&.string)
+        pins.push create_constant(new_name, old_name, decl.comment&.string, :class)
+      end
+
+      # @param decl [RBS::AST::Declarations::ModuleAlias]
+      # @return [void]
+      def module_alias_decl_to_pin decl
+        # See https://www.rubydoc.info/gems/rbs/3.4.3/RBS/AST/Declarations/ModuleAlias
+        new_name = decl.new_name.relative!.to_s
+        old_name = decl.old_name.relative!.to_s
+
+        pins.push create_constant(new_name, old_name, decl.comment&.string, :module)
       end
 
       # @param decl [RBS::AST::Declarations::Constant]
       # @return [void]
       def constant_decl_to_pin decl
         tag = other_type_to_tag(decl.type)
-        pins.push create_constant(decl.name.relative!.to_s, tag, decl.comment&.string)
+        # @todo Class or Module?
+        pins.push create_constant(decl.name.relative!.to_s, tag, decl.comment&.string, :class)
+      end
+
+      # @param decl [RBS::AST::Declarations::Global]
+      # @return [void]
+      def global_decl_to_pin decl
+        closure = Solargraph::Pin::ROOT_PIN
+        name = decl.name.to_s
+        tag = other_type_to_tag(decl.type)
+        pin = Solargraph::Pin::GlobalVariable.new(
+          name: name,
+          closure: closure,
+          comments: decl.comment&.string,
+        )
+        pin.docstring.add_tag(YARD::Tags::Tag.new(:type, '', tag))
+        pins.push pin
       end
 
       # @param decl [RBS::AST::Members::MethodDefinition]
@@ -412,12 +459,43 @@ module Solargraph
         pins.push pin
       end
 
+      # @param decl [RBS::AST::Members::ClassVariable]
+      # @param closure [Pin::Namespace]
+      # @return [void]
+      def cvar_to_pin(decl, closure)
+        name = decl.name.to_s
+        pin = Solargraph::Pin::ClassVariable.new(
+          name: name,
+          closure: closure,
+          comments: decl.comment&.string
+        )
+        pin.docstring.add_tag(YARD::Tags::Tag.new(:type, '', other_type_to_tag(decl.type)))
+        pins.push pin
+      end
+
+      # @param decl [RBS::AST::Members::ClassInstanceVariable]
+      # @param closure [Pin::Namespace]
+      # @return [void]
+      def civar_to_pin(decl, closure)
+        name = decl.name.to_s
+        pin = Solargraph::Pin::InstanceVariable.new(
+          name: name,
+          closure: closure,
+          comments: decl.comment&.string
+        )
+        pin.docstring.add_tag(YARD::Tags::Tag.new(:type, '', other_type_to_tag(decl.type)))
+        pins.push pin
+      end
+
       # @param decl [RBS::AST::Members::Include]
       # @param closure [Pin::Namespace]
       # @return [void]
       def include_to_pin decl, closure
+        type = generic_type(decl.name, decl.args)
+        generic_values = type.all_params.map(&:to_s)
         pins.push Solargraph::Pin::Reference::Include.new(
           name: decl.name.relative!.to_s,
+          generic_values: generic_values,
           closure: closure
         )
       end
@@ -471,6 +549,33 @@ module Solargraph
         end
       end
 
+      # @param type_name [RBS::TypeName]
+      # @param type_args [Enumerable<RBS::Types::Bases::Base>]
+      # @return [ComplexType]
+      def generic_type(type_name, type_args)
+        base = RBS_TO_YARD_TYPE[type_name.relative!.to_s] || type_name.relative!.to_s
+        params = type_args.map { |a| other_type_to_tag(a) }.reject { |t| t == 'undefined' }
+        params_str = params.empty? ? '' : "<#{params.join(', ')}>"
+        type_string = "#{base}#{params_str}"
+        begin
+          ComplexType.parse(type_string)
+        rescue
+          # @todo Tuples of tuples aren't yet handled by the parser, and that appears in a few
+          #   minor cases in the core/stdlib rbs:
+          #   [WARN] Internal error parsing Array<Array(Integer, Symbol, String, Array(Integer, Integer, Integer, Integer))> from RBS
+          #   [WARN] Internal error parsing Array<Array(Array(Integer, Integer), Symbol, String, Ripper::Lexer::State)> from RBS
+          Solargraph.logger.info "Internal error parsing #{type_string} from RBS; treating as non-generic"
+          ComplexType.parse(base)
+        end
+      end
+
+      # @param type_name [RBS::TypeName]
+      # @param type_args [Enumerable<RBS::Types::Bases::Base>]
+      # @return [String]
+      def generic_type_tag(type_name, type_args)
+        generic_type(type_name, type_args).tag
+      end
+
       # @param type [RBS::Types::Bases::Base]
       # @return [String]
       def other_type_to_tag type
@@ -499,10 +604,7 @@ module Solargraph
         elsif type.is_a?(RBS::Types::Variable)
           "#{Solargraph::ComplexType::GENERIC_TAG_NAME}<#{type.name}>"
         elsif type.is_a?(RBS::Types::ClassInstance) #&& !type.args.empty?
-          base = RBS_TO_YARD_TYPE[type.name.relative!.to_s] || type.name.relative!.to_s
-          params = type.args.map { |a| other_type_to_tag(a) }.reject { |t| t == 'undefined' }
-          return base if params.empty?
-          "#{base}<#{params.join(', ')}>"
+          generic_type_tag(type.name, type.args)
         elsif type.is_a?(RBS::Types::Bases::Instance)
           'self'
         elsif type.is_a?(RBS::Types::Bases::Top)

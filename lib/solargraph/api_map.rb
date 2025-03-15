@@ -211,22 +211,48 @@ module Solargraph
       store.fqns_pins(qualify(namespace, context))
     end
 
-    # Get a fully qualified namespace name. This method will start the search
-    # in the specified context until it finds a match for the name.
+    # Determine fully qualified tag for a given tag used inside the
+    # definition of another tag ("context"). This method will start
+    # the search in the specified context until it finds a match for
+    # the tag.
     #
-    # @param namespace [String, nil] The namespace to match
-    # @param context [String] The context to search
-    # @return [String, nil]
-    def qualify namespace, context = ''
-      return namespace if ['self', nil].include?(namespace)
-      cached = cache.get_qualified_namespace(namespace, context)
+    # Does not recurse into qualifying the type parameters, but
+    # returns any which were passed in unchanged.
+    #
+    # @param tag [String, nil] The namespace to
+    #   match, complete with generic parameters set to appropriate
+    #   values if available
+    # @param context_tag [String] The context in which the tag was
+    #   referenced; start from here to resolve the name
+    # @return [String, nil] fully qualified tag
+    def qualify tag, context_tag = ''
+      return tag if ['self', nil].include?(tag)
+      context_type = ComplexType.parse(context_tag)
+      type = ComplexType.parse(tag)
+      fqns = qualify_namespace(type.rooted_namespace, context_type.rooted_namespace)
+      return nil if fqns.nil?
+      fqns + type.substring
+    end
+
+    # Determine fully qualified namespace for a given namespace used
+    # inside the definition of another tag ("context"). This method
+    # will start the search in the specified context until it finds a
+    # match for the namespace.
+    #
+    # @param namespace [String, nil] The namespace to
+    #   match
+    # @param context_tag [String] The context namespace in which the
+    #   tag was referenced; start from here to resolve the name
+    # @return [String, nil] fully qualified namespace
+    def qualify_namespace(namespace, context_namespace = '')
+      cached = cache.get_qualified_namespace(namespace, context_namespace)
       return cached.clone unless cached.nil?
       result = if namespace.start_with?('::')
                  inner_qualify(namespace[2..-1], '', Set.new)
                else
-                 inner_qualify(namespace, context, Set.new)
+                 inner_qualify(namespace, context_namespace, Set.new)
                end
-      cache.set_qualified_namespace(namespace, context, result)
+      cache.set_qualified_namespace(namespace, context_namespace, result)
       result
     end
 
@@ -269,32 +295,32 @@ module Solargraph
 
     # Get an array of methods available in a particular context.
     #
-    # @param fqns [String] The fully qualified namespace to search for methods
+    # @param rooted_tag [String] The fully qualified namespace to search for methods
     # @param scope [Symbol] :class or :instance
     # @param visibility [Array<Symbol>] :public, :protected, and/or :private
     # @param deep [Boolean] True to include superclasses, mixins, etc.
     # @return [Array<Solargraph::Pin::Method>]
-    def get_methods fqns, scope: :instance, visibility: [:public], deep: true
-      cached = cache.get_methods(fqns, scope, visibility, deep)
+    def get_methods rooted_tag, scope: :instance, visibility: [:public], deep: true
+      cached = cache.get_methods(rooted_tag, scope, visibility, deep)
       return cached.clone unless cached.nil?
       result = []
       skip = Set.new
-      if fqns == ''
+      if rooted_tag == ''
         # @todo Implement domains
         implicit.domains.each do |domain|
           type = ComplexType.try_parse(domain)
           next if type.undefined?
           result.concat inner_get_methods(type.name, type.scope, visibility, deep, skip)
         end
-        result.concat inner_get_methods(fqns, :class, visibility, deep, skip)
-        result.concat inner_get_methods(fqns, :instance, visibility, deep, skip)
+        result.concat inner_get_methods(rooted_tag, :class, visibility, deep, skip)
+        result.concat inner_get_methods(rooted_tag, :instance, visibility, deep, skip)
         result.concat inner_get_methods('Kernel', :instance, visibility, deep, skip)
       else
-        result.concat inner_get_methods(fqns, scope, visibility, deep, skip)
+        result.concat inner_get_methods(rooted_tag, scope, visibility, deep, skip)
         result.concat inner_get_methods('Kernel', :instance, [:public], deep, skip) if visibility.include?(:private)
       end
       resolved = resolve_method_aliases(result, visibility)
-      cache.set_methods(fqns, scope, visibility, deep, resolved)
+      cache.set_methods(rooted_tag, scope, visibility, deep, resolved)
       resolved
     end
 
@@ -332,27 +358,27 @@ module Solargraph
               visibility.push :protected
               visibility.push :private if internal
             end
-            result.merge get_methods(type.namespace, scope: type.scope, visibility: visibility)
+            result.merge get_methods(type.tag, scope: type.scope, visibility: visibility)
           end
         end
       end
       result.to_a
     end
 
-    # Get a stack of method pins for a method name in a namespace. The order
-    # of the pins corresponds to the ancestry chain, with highest precedence
-    # first.
+    # Get a stack of method pins for a method name in a potentially
+    # parameterized namespace. The order of the pins corresponds to
+    # the ancestry chain, with highest precedence first.
     #
     # @example
     #   api_map.get_method_stack('Subclass', 'method_name')
     #     #=> [ <Subclass#method_name pin>, <Superclass#method_name pin> ]
     #
-    # @param fqns [String]
-    # @param name [String]
+    # @param rooted_tag [String] Parameterized namespace, fully qualified
+    # @param name [String] Method name to look up
     # @param scope [Symbol] :instance or :class
     # @return [Array<Solargraph::Pin::Method>]
-    def get_method_stack fqns, name, scope: :instance
-      get_methods(fqns, scope: scope, visibility: [:private, :protected, :public]).select { |p| p.name == name }
+    def get_method_stack rooted_tag, name, scope: :instance
+      get_methods(rooted_tag, scope: scope, visibility: [:private, :protected, :public]).select { |p| p.name == name }
     end
 
     # Get an array of all suggestions that match the specified path.
@@ -481,13 +507,15 @@ module Solargraph
       false
     end
 
-    # Check if the host class includes the specified module.
+    # Check if the host class includes the specified module, ignoring
+    # type parameters used.
     #
-    # @param host [String] The class
-    # @param mod [String] The module
+    # @param host_ns [String] The class namesapce (no type parameters)
+    # @param module_ns [String] The module namespace (no type parameters)
+    #
     # @return [Boolean]
-    def type_include?(host, mod)
-      store.get_includes(host).include?(mod)
+    def type_include?(host_ns, module_ns)
+      store.get_includes(host_ns).map { |inc_tag| ComplexType.parse(inc_tag).name }.include?(module_ns)
     end
 
     private
@@ -513,14 +541,18 @@ module Solargraph
     # @return [Solargraph::ApiMap::Cache]
     attr_reader :cache
 
-    # @param fqns [String] A fully qualified namespace
+    # @param rooted_tag [String] A fully qualified namespace, with
+    #   generic parameter values if applicable
     # @param scope [Symbol] :class or :instance
     # @param visibility [Array<Symbol>] :public, :protected, and/or :private
     # @param deep [Boolean]
     # @param skip [Set<String>]
     # @param no_core [Boolean] Skip core classes if true
     # @return [Array<Pin::Base>]
-    def inner_get_methods fqns, scope, visibility, deep, skip, no_core = false
+    def inner_get_methods rooted_tag, scope, visibility, deep, skip, no_core = false
+      rooted_type = ComplexType.parse(rooted_tag)
+      fqns = rooted_type.namespace
+      fqns_generic_params = rooted_type.all_params
       return [] if no_core && fqns =~ /^(Object|BasicObject|Class|Module|Kernel)$/
       reqstr = "#{fqns}|#{scope}|#{visibility.sort}|#{deep}"
       return [] if skip.include?(reqstr)
@@ -532,12 +564,33 @@ module Solargraph
           result.concat inner_get_methods(fqim, scope, visibility, deep, skip, true) unless fqim.nil?
         end
       end
-      result.concat store.get_methods(fqns, scope: scope, visibility: visibility).sort{ |a, b| a.name <=> b.name }
+      # Store#get_methods doesn't know about full tags, just
+      # namespaces; resolving the generics in the method pins is this
+      # class' responsibility
+      raw_methods = store.get_methods(fqns, scope: scope, visibility: visibility).sort{ |a, b| a.name <=> b.name }
+      namespace_pin = store.get_path_pins(fqns).select{|p| p.is_a?(Pin::Namespace)}.first
+      methods = if rooted_tag != fqns
+                  methods = raw_methods.map do |method_pin|
+                    method_pin.resolve_generics(namespace_pin, rooted_type)
+                  end
+                else
+                  raw_methods
+                end
+      result.concat methods
       if deep
         if scope == :instance
-          store.get_includes(fqns).reverse.each do |im|
-            fqim = qualify(im, fqns)
-            result.concat inner_get_methods(fqim, scope, visibility, deep, skip, true) unless fqim.nil?
+          store.get_includes(fqns).reverse.each do |include_tag|
+            rooted_include_tag = qualify(include_tag, rooted_tag)
+            # Ensure the types returned by the included methods are
+            # relative to the generics passed to the include.  e.g.,
+            # Foo<String> might include Enumerable<String>
+            #
+            # @todo perform the same translation in the other areas
+            #  here after adding a spec and handling things correctly
+            #  in ApiMap::Store and RbsMap::Conversions
+            resolved_include_type = ComplexType.parse(rooted_include_tag).resolve_generics(namespace_pin, rooted_type)
+            methods = inner_get_methods(resolved_include_type.tag, scope, visibility, deep, skip, true)
+            result.concat methods
           end
           fqsc = qualify_superclass(fqns)
           unless fqsc.nil?
@@ -612,11 +665,12 @@ module Solargraph
       qualify(sup, parts.join('::'))
     end
 
-    # @param name [String]
-    # @param root [String]
-    # @param skip [Set<String>]
-    # @return [String, nil]
+    # @param name [String] Namespace to fully qualify
+    # @param root [String] The context to search
+    # @param skip [Set<String>] Contexts already searched
+    # @return [String, nil] Fully qualified ("rooted") namespace
     def inner_qualify name, root, skip
+      return name if name == ComplexType::GENERIC_TAG_NAME
       return nil if name.nil?
       return nil if skip.include?(root)
       skip.add root
@@ -699,7 +753,7 @@ module Solargraph
     def resolve_method_alias pin
       return pin if !pin.is_a?(Pin::MethodAlias) || @method_alias_stack.include?(pin.path)
       @method_alias_stack.push pin.path
-      origin = get_method_stack(pin.full_context.namespace, pin.original, scope: pin.scope).first
+      origin = get_method_stack(pin.full_context.tag, pin.original, scope: pin.scope).first
       @method_alias_stack.pop
       return pin if origin.nil?
       args = {
