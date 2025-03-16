@@ -87,6 +87,7 @@ module Solargraph
         block = nil
         yieldparam_tags = docstring.tags(:yieldparam)
         yieldreturn_tags = docstring.tags(:yieldreturn)
+        generics = docstring.tags(:generic).map(&:name)
         needs_block_param_signature =
           parameters.last&.block? || !yieldreturn_tags.empty? || !yieldparam_tags.empty?
         if needs_block_param_signature
@@ -108,9 +109,9 @@ module Solargraph
             )
           end
           yield_return_type = ComplexType.try_parse(*yieldreturn_tags.flat_map(&:types))
-          block = Signature.new(yield_parameters, yield_return_type)
+          block = Signature.new(generics, yield_parameters, yield_return_type)
         end
-        Signature.new(parameters, return_type, block)
+        Signature.new(generics, parameters, return_type, block)
       end
 
       # @return [::Array<Signature>]
@@ -254,6 +255,7 @@ module Solargraph
       def overloads
         @overloads ||= docstring.tags(:overload).map do |tag|
           Pin::Signature.new(
+            generics,
             tag.parameters.map do |src|
               name, decl = parse_overload_param(src.first)
               Pin::Parameter.new(

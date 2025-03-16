@@ -10,10 +10,17 @@ module Solargraph
       # @return [self]
       attr_reader :block
 
+      # @return [Array<String>]
+      attr_reader :generics
+
+      # @param generics [Array<String>]
       # @param parameters [Array<Parameter>]
       # @param return_type [ComplexType]
       # @param block [Signature, nil]
-      def initialize parameters, return_type, block = nil
+      def initialize generics, parameters, return_type, block = nil
+        raise "Must be provided" if return_type.nil? # TODO remove
+        raise "Must be correct" unless return_type.instance_of? ComplexType # TODO remove
+        @generics = generics
         @parameters = parameters
         @return_type = return_type
         @block = block
