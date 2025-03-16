@@ -18,6 +18,7 @@ module Solargraph
       # @param return_type [ComplexType]
       # @param block [Signature, nil]
       def initialize generics, parameters, return_type, block = nil
+        raise "Must be provided" if generics.nil? # TODO remove
         raise "Must be provided" if return_type.nil? # TODO remove
         raise "Must be correct" unless return_type.instance_of? ComplexType # TODO remove
         @generics = generics
@@ -33,6 +34,7 @@ module Solargraph
       # @param definitions [Pin::Namespace] The module/class which uses generic types
       # @param context_type [ComplexType] The receiver type, including the parameters
       #   we want to substitute into 'definitions'
+      # TODO probably refactor to use transform_types
       # @return [self]
       def resolve_generics definitions, context_type
         signature = super
@@ -40,8 +42,36 @@ module Solargraph
           param.resolve_generics(definitions, context_type)
         end
         signature.block = block.resolve_generics(definitions, context_type) if signature.block?
-        signature.return_type = return_type.resolve_generics(definitions, context_type)
         signature
+      end
+
+      # @yieldparam [ComplexType]
+      # @yieldreturn [ComplexType]
+      # @return [self]
+      def transform_types(&transform)
+        # @todo 'super' alone should work here I think, but doesn't typecheck at level typed
+        signature = super(&transform)
+        signature.parameters = signature.parameters.map do |param|
+          param.transform_types(&transform)
+        end
+        signature.block = block.transform_types(&transform) if signature.block?
+        signature
+      end
+
+      # @return [self]
+      def erase_generics
+        # @param type [ComplexType::UniqueType]
+        transform_types do |type|
+          if type.name == ComplexType::GENERIC_TAG_NAME
+            if type.all_params.length == 1 && generics.include?(type.all_params.first.to_s)
+              ComplexType::UNDEFINED
+            else
+              type
+            end
+          else
+            type
+          end
+        end
       end
 
       # @param arg_types [Array<ComplexType>, nil]
@@ -89,7 +119,10 @@ module Solargraph
                                                 yield_arg_types,
                                                 yield_return_type_context,
                                                 resolved_generic_values)
-        return new_pin if last_resolved_generic_values == resolved_generic_values
+        if last_resolved_generic_values == resolved_generic_values
+          # erase anything unresolved
+          return new_pin.erase_generics
+        end
         new_pin.resolve_generics_from_context_until_complete(arg_types,
                                                              return_type_context,
                                                              yield_arg_types,

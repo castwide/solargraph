@@ -63,6 +63,7 @@ module Solargraph
           current = mutex.synchronize { queue.shift }
           return if queue.include?(current)
           begin
+            # TODO: (strict) diagnoser.rb:66 - Wrong argument type for Solargraph::LanguageServer::Host#diagnose: uri expected String, received generic<X>
             host.diagnose current
           rescue InvalidOffsetError
             # @todo This error can occur when the Source is out of sync with

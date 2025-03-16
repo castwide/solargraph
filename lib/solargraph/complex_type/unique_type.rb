@@ -134,7 +134,7 @@ module Solargraph
           if hash_parameters?
             UniqueType.new(new_name, "{#{new_key_types.join(', ')} => #{new_subtypes.join(', ')}}")
           elsif parameters?
-            if @substring.start_with?'<('
+            if @substring.start_with?('<(')
               UniqueType.new(new_name, "<(#{new_subtypes.join(', ')})>")
             else
               UniqueType.new(new_name, "<#{new_subtypes.join(', ')}>")
@@ -166,11 +166,13 @@ module Solargraph
         [self]
       end
 
-      # @param new_name [String]
+      # @param new_name [String, nil]
       # @yieldparam t [UniqueType]
       # @yieldreturn [UniqueType]
       # @return [UniqueType, nil]
-      def transform(new_name, &transform_type)
+      # TODO does new_name need to exist here?  or another method?
+      def transform(new_name = nil, &transform_type)
+        new_name ||= name
         new_key_types = @key_types.flat_map { |ct| ct.map { |ut| transform_type.yield ut } }.compact
         new_subtypes = @subtypes.flat_map { |ct| ct.map { |ut| transform_type.yield ut } }.compact
 

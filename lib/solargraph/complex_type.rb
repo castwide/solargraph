@@ -136,6 +136,14 @@ module Solargraph
       any?(&:generic?)
     end
 
+    # @param new_name [String, nil]
+    # @yieldparam t [UniqueType]
+    # @yieldreturn [UniqueType]
+    # @return [ComplexType]
+    def transform(new_name = nil, &transform_type)
+      ComplexType.new(map { |ut| ut.transform(new_name, &transform_type) })
+    end
+
     # @param definitions [Pin::Namespace, Pin::Method]
     # @param context_type [ComplexType]
     # @return [ComplexType]

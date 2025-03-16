@@ -50,6 +50,7 @@ module Solargraph
             @resource.wait(@mutex) if messages.empty?
             messages.shift
           end
+          # TODO: (strict) Wrong argument type for Solargraph::LanguageServer::Host#receive: request expected Hash{String => undefined}, received generic<X>
           handler = @host.receive(message)
           handler && handler.send_response
         end
