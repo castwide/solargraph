@@ -21,7 +21,7 @@ Gem::Specification.new do |s|
   s.metadata["changelog_uri"]   = "https://github.com/castwide/solargraph/blob/master/CHANGELOG.md"
   s.metadata["source_code_uri"] = "https://github.com/castwide/solargraph"
 
-  s.required_ruby_version = '>= 2.6'
+  s.required_ruby_version = '>= 3.0'
 
   s.add_runtime_dependency 'backport', '~> 1.2'
   s.add_runtime_dependency 'benchmark'
@@ -34,7 +34,7 @@ Gem::Specification.new do |s|
   s.add_runtime_dependency 'observer', '~> 0.1'
   s.add_runtime_dependency 'ostruct', '~> 0.6'
   s.add_runtime_dependency 'parser', '~> 3.0'
-  s.add_runtime_dependency 'rbs', '~> 3.0'
+  s.add_runtime_dependency 'rbs', '~> 3.3'
   s.add_runtime_dependency 'reverse_markdown', '>= 2.0', '< 4'
   s.add_runtime_dependency 'rubocop', '~> 1.38'
   s.add_runtime_dependency 'thor', '~> 1.0'
