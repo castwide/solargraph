@@ -123,9 +123,9 @@ module Solargraph
         end
 
         def static_type_definitions
-          return {} unless host.options['type_definitions']
+          return {} unless host.options['typeDefinitions']
           {
-            definitionProvider: true
+            typeDefinitionProvider: true
           }
         end
 
