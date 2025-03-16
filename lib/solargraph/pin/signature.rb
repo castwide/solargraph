@@ -27,24 +27,6 @@ module Solargraph
         @block = block
       end
 
-      # Probe the concrete type for each of the generic type
-      # parameters used in this method, and return a new method pin if
-      # possible.
-      #
-      # @param definitions [Pin::Namespace] The module/class which uses generic types
-      # @param context_type [ComplexType] The receiver type, including the parameters
-      #   we want to substitute into 'definitions'
-      # TODO probably refactor to use transform_types
-      # @return [self]
-      def resolve_generics definitions, context_type
-        signature = super
-        signature.parameters = signature.parameters.map do |param|
-          param.resolve_generics(definitions, context_type)
-        end
-        signature.block = block.resolve_generics(definitions, context_type) if signature.block?
-        signature
-      end
-
       # @yieldparam [ComplexType]
       # @yieldreturn [ComplexType]
       # @return [self]

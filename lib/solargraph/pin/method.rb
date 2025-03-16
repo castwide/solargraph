@@ -37,23 +37,16 @@ module Solargraph
         @anon_splat = anon_splat
       end
 
-      # Probe the concrete type for each of the generic type
-      # parameters used in this method, and return a new method pin if
-      # possible.
-      #
-      # @param definitions [Pin::Namespace] The module/class which uses generic types
-      # @param context_type [ComplexType] The receiver type, including the parameters
-      #   we want to substitute into 'definitions'
-      # @return [self]
-      def resolve_generics definitions, context_type
-        m = super
+      def transform_types(&transform)
+        # @todo 'super' alone should work here I think, but doesn't typecheck at level typed
+        m = super(&transform)
         m.signatures = m.signatures.map do |sig|
-          sig.resolve_generics(definitions, context_type)
+          sig.transform_types(&transform)
         end
         m.parameters = m.parameters.map do |param|
-          param.resolve_generics(definitions, context_type)
+          param.transform_types(&transform)
         end
-        m.block = block&.resolve_generics(definitions, context_type)
+        m.block = block&.transform_types(&transform)
         m
       end
 

@@ -70,10 +70,7 @@ module Solargraph
       # @param context_type [ComplexType] The receiver type
       # @return [self]
       def resolve_generics definitions, context_type
-        rt = @return_type.resolve_generics(definitions, context_type) if @return_type
-        pin = proxy rt
-        pin.context = context_type
-        pin
+        transform_types { |t| t.resolve_generics(definitions, context_type) if t }
       end
 
       # @return [String, nil]
