@@ -31,6 +31,10 @@ module Solargraph
           []
         end
 
+        def inspect
+          "#{self.class} #{word}"
+        end
+
         def head?
           @head ||= false
         end

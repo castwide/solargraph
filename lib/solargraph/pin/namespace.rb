@@ -44,6 +44,14 @@ module Solargraph
         @generics = generics
       end
 
+      def to_rbs
+        "#{@type.to_s} #{generics_as_rbs}#{return_type.to_rbs}"
+      end
+
+      def desc
+        to_rbs
+      end
+
       def namespace
         context.namespace
       end

@@ -76,8 +76,12 @@ module Solargraph
 
       # @return [String]
       def to_rbs
-        "#{rbs_namespace}#{parameters? ? "[#{subtypes.map { |s| s.to_rbs }.join(', ')}]" : ''}"
-        # "
+        "#{rbs_namepace}#{parameters_as_rbs}"
+      end
+
+      # @return [String]
+      def parameters_as_rbs
+        parameters? ? "[#{all_params.map { |s| s.to_rbs }.join(', ')}]" : ''
       end
 
       def generic?
