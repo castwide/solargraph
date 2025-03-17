@@ -56,34 +56,22 @@ module Solargraph
           elsif n.type == :send
             if n.children[0].is_a?(::Parser::AST::Node)
               result.concat generate_links(n.children[0])
-              args = []
-              n.children[2..-1].each do |c|
-                args.push NodeChainer.chain(c, @filename, n)
-              end
-              result.push Chain::Call.new(n.children[1].to_s, args, passed_block(n))
+              result.push Chain::Call.new(n.children[1].to_s, node_args(n), passed_block(n))
             elsif n.children[0].nil?
               args = []
               n.children[2..-1].each do |c|
                 args.push NodeChainer.chain(c, @filename, n)
               end
-              result.push Chain::Call.new(n.children[1].to_s, args, passed_block(n))
+              result.push Chain::Call.new(n.children[1].to_s, node_args(n), passed_block(n))
             else
               raise "No idea what to do with #{n}"
             end
           elsif n.type == :csend
             if n.children[0].is_a?(::Parser::AST::Node)
               result.concat generate_links(n.children[0])
-              args = []
-              n.children[2..-1].each do |c|
-                args.push NodeChainer.chain(c, @filename, n)
-              end
-              result.push Chain::QCall.new(n.children[1].to_s, args)
+              result.push Chain::QCall.new(n.children[1].to_s, node_args(n))
             elsif n.children[0].nil?
-              args = []
-              n.children[2..-1].each do |c|
-                args.push NodeChainer.chain(c, @filename, n)
-              end
-              result.push Chain::QCall.new(n.children[1].to_s, args)
+              result.push Chain::QCall.new(n.children[1].to_s, node_args(n))
             else
               raise "No idea what to do with #{n}"
             end
@@ -152,15 +140,16 @@ module Solargraph
           true
         end
 
-        # @param node [Parser::AST::Node]
-        def block_passed? node
-          node.children.last.is_a?(::Parser::AST::Node) && node.children.last.type == :block_pass
-        end
-
         def passed_block node
-          return unless node == @node && [:block, :block_pass].include?(@parent&.type)
+          return unless node == @node && @parent&.type == :block
 
           NodeChainer.chain(@parent.children[2], @filename)
+        end
+
+        def node_args node
+          node.children[2..-1].map do |child|
+            NodeChainer.chain(child, @filename, node)
+          end
         end
       end
     end
