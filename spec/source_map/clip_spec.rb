@@ -1751,4 +1751,18 @@ describe Solargraph::SourceMap::Clip do
     type = clip.infer
     expect(type.to_s).to eq('undefined')
   end
+
+  it 'erases unresolvable method generics' do
+    source = Solargraph::Source.load_string(%(
+      # @generic T
+      # @return [generic<T>] but I forgot to annotate the block parameters
+      def bad_passthrough; yield; end
+
+      a = bad_passthrough { 123 }
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new.map(source)
+    clip = api_map.clip_at('test.rb', [5, 6])
+    type = clip.infer
+    expect(type.to_s).to eq('undefined')
+  end
 end

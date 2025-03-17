@@ -47,6 +47,21 @@ module Solargraph
           param.transform_types(&transform)
         end
         m.block = block&.transform_types(&transform)
+        m.signature_help = nil
+        m.documentation = nil
+        m
+      end
+
+      # @param signature [Pin::Signature]
+      # TODO try changing @return to just Pin::Method...
+      # @return [Solargraph::Pin::Method]
+      def with_single_signature(signature)
+        m = proxy signature.return_type
+        m.signature_help = nil
+        m.documentation = nil
+        m.parameters = []
+        m.block = nil
+        m.signatures = [signature]
         m
       end
 
@@ -278,6 +293,10 @@ module Solargraph
       attr_writer :parameters
 
       attr_writer :signatures
+
+      attr_writer :signature_help
+
+      attr_writer :documentation
 
       private
 

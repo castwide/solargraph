@@ -18,9 +18,6 @@ module Solargraph
       # @param return_type [ComplexType]
       # @param block [Signature, nil]
       def initialize generics, parameters, return_type, block = nil
-        raise "Must be provided" if generics.nil? # TODO remove
-        raise "Must be provided" if return_type.nil? # TODO remove
-        raise "Must be correct" unless return_type.instance_of? ComplexType # TODO remove
         @generics = generics
         @parameters = parameters
         @return_type = return_type
@@ -38,23 +35,6 @@ module Solargraph
         end
         signature.block = block.transform_types(&transform) if signature.block?
         signature
-      end
-
-      # TODO: Move to Base, accept an allowlist of types to erase
-      # @return [self]
-      def erase_generics
-        # @param type [ComplexType::UniqueType]
-        transform_types do |type|
-          if type.name == ComplexType::GENERIC_TAG_NAME
-            if type.all_params.length == 1 && generics.include?(type.all_params.first.to_s)
-              ComplexType::UNDEFINED
-            else
-              type
-            end
-          else
-            type
-          end
-        end
       end
 
       # @param arg_types [Array<ComplexType>, nil]
@@ -104,7 +84,7 @@ module Solargraph
                                                 resolved_generic_values:)
         if last_resolved_generic_values == resolved_generic_values
           # erase anything unresolved
-          return new_pin.erase_generics
+          return new_pin.erase_generics(generics)
         end
         new_pin.resolve_generics_from_context_until_complete(arg_types,
                                                              return_type_context,

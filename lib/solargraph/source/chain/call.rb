@@ -102,8 +102,9 @@ module Solargraph
               end
               break if type.defined?
             end
-            next p.proxy(type) if type.defined?
-            if p.is_a?(Pin::Method) && !p.macros.empty?
+            # p = p.with_single_signature(new_signature_pin) unless new_signature_pin.nil? TODO get tests passing with this line enabled
+            next p.proxy(type) if type.defined? # TODO what does the proxy() do here?
+            if !p.macros.empty?
               result = process_macro(p, api_map, context, locals)
               next result unless result.return_type.undefined?
             elsif !p.directives.empty?
