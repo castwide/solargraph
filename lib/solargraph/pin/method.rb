@@ -59,8 +59,14 @@ module Solargraph
         m = proxy signature.return_type
         m.signature_help = nil
         m.documentation = nil
-        m.parameters = []
-        m.block = nil
+        # @todo populating the single parameters/return_type/block
+        #   arguments here seems to be needed for some specs to pass,
+        #   even though we have a signature with the same information.
+        #   Is this a problem for RBS-populated methods, which don't
+        #   populate these three?
+        m.parameters = signature.parameters
+        m.return_type = signature.return_type
+        m.block = signature.block
         m.signatures = [signature]
         m
       end

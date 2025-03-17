@@ -64,6 +64,7 @@ module Solargraph
             # reject it regardless
 
             sorted_overloads = overloads.sort { |ol| ol.block? ? -1 : 1 }
+            new_signature_pin = nil
             sorted_overloads.each do |ol|
               next unless arity_matches?(arguments, ol)
               match = true
@@ -102,7 +103,7 @@ module Solargraph
               end
               break if type.defined?
             end
-            # p = p.with_single_signature(new_signature_pin) unless new_signature_pin.nil? TODO get tests passing with this line enabled
+            p = p.with_single_signature(new_signature_pin) unless new_signature_pin.nil?
             next p.proxy(type) if type.defined? # TODO what does the proxy() do here?
             if !p.macros.empty?
               result = process_macro(p, api_map, context, locals)
