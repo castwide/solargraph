@@ -72,19 +72,7 @@ module Solargraph
       # @return [self]
       def erase_generics(generics_to_erase)
         return self if generics_to_erase.empty?
-        # @param type [ComplexType::UniqueType]
-        out = transform_types do |type|
-          if type.name == ComplexType::GENERIC_TAG_NAME
-            if type.all_params.length == 1 && generics_to_erase.include?(type.all_params.first.to_s)
-              ComplexType::UNDEFINED
-            else
-              type
-            end
-          else
-            type
-          end
-        end
-        out
+        transform_types { |t| t.erase_generics(generics_to_erase) }
       end
 
       # @return [String, nil]
