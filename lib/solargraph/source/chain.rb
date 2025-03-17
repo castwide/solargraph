@@ -169,14 +169,20 @@ module Solargraph
           @@inference_depth -= 1
         end
         return ComplexType::UNDEFINED if possibles.empty?
-        type = if possibles.length > 1
-          sorted = possibles.map { |t| t.rooted? ? "::#{t}" : t.to_s }.sort { |a, _| a == 'nil' ? 1 : 0 }
-          ComplexType.parse(*sorted)
+
+        if possibles.first.map(&:name).include?('Enumerator') && links.last&.arguments&.first&.links&.first.is_a?(BlockSymbol)
+          ComplexType.parse(possibles.first.items.find { |sub| sub.name != 'Enumerator' }.to_s)
         else
-          ComplexType.parse(possibles.map(&:to_s).join(', '))
+          type = if possibles.length > 1
+            sorted = possibles.map { |t| t.rooted? ? "::#{t}" : t.to_s }.sort { |a, _| a == 'nil' ? 1 : 0 }
+            ComplexType.parse(*sorted)
+          else
+            ComplexType.parse(possibles.map(&:to_s).join(', '))
+          end
+          return type if context.nil? || context.return_type.undefined?
+
+          type.self_to(context.return_type.tag)
         end
-        return type if context.nil? || context.return_type.undefined?
-        type.self_to(context.return_type.tag)
       end
 
       # @param type [ComplexType]
