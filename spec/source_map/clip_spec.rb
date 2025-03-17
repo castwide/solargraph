@@ -1735,4 +1735,20 @@ describe Solargraph::SourceMap::Clip do
     type = clip.infer
     expect(type.to_s).to eq('Set<Integer>')
   end
+
+  it 'erases unresolvable class generics' do
+    source = Solargraph::Source.load_string(%(
+      # @generic T
+      class Foo
+        # @return [generic<T>]
+        def bar; baz; end
+      end
+      a = Foo.new.bar
+      a
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new.map(source)
+    clip = api_map.clip_at('test.rb', [7, 6])
+    type = clip.infer
+    expect(type.to_s).to eq('undefined')
+  end
 end

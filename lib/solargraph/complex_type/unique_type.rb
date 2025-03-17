@@ -81,11 +81,12 @@ module Solargraph
       # @return [UniqueType, ComplexType]
       # TODO: Maybe break this into three functions - one that adds to resolved_generic_values, one that applies changes, and one that runs those two until no more can be completed?
       def resolve_generics_from_context context_type, resolved_generic_values
-        return self unless generic?
+        transform(name) do |t|
+          next t unless t.name == GENERIC_TAG_NAME
 
-        new_binding = false
-        if name == GENERIC_TAG_NAME
-          type_param = subtypes.first&.name
+          new_binding = false
+
+          type_param = t.subtypes.first&.name
           unless context_type.nil? || !resolved_generic_values[type_param].nil?
             new_binding = true
             resolved_generic_values[type_param] = context_type
@@ -95,11 +96,7 @@ module Solargraph
               complex_type.resolve_generics_from_context(nil, resolved_generic_values)
             end
           end
-          resolved_generic_values[type_param] || self
-        else
-          transform(name) do |t|
-            t.resolve_generics_from_context(nil, resolved_generic_values)
-          end
+          resolved_generic_values[type_param] || t
         end
       end
 
@@ -111,47 +108,17 @@ module Solargraph
       # @param context_type [ComplexType] The receiver type
       # @return [UniqueType, ComplexType]
       def resolve_generics definitions, context_type
-        new_name = if name == GENERIC_TAG_NAME
-          idx = definitions.generics.index(subtypes.first&.name)
-          return self if idx.nil?
-          param_type = context_type.all_params[idx]
-          return ComplexType::UNDEFINED unless param_type
-          param_type.to_s
-        else
-          name
-        end
-        new_key_types = if name != GENERIC_TAG_NAME
-          @key_types.map { |t| t.resolve_generics(definitions, context_type) }.select(&:defined?)
-        else
-          []
-        end
-        new_subtypes = if name != GENERIC_TAG_NAME
-          @subtypes.map { |t| t.resolve_generics(definitions, context_type) }.select(&:defined?)
-        else
-          []
-        end
-        if name != GENERIC_TAG_NAME && !(new_key_types.empty? && new_subtypes.empty?)
-          if hash_parameters?
-            UniqueType.new(new_name, "{#{new_key_types.join(', ')} => #{new_subtypes.join(', ')}}")
-          elsif parameters?
-            if @substring.start_with?('<(')
-              UniqueType.new(new_name, "<(#{new_subtypes.join(', ')})>")
-            else
-              UniqueType.new(new_name, "<#{new_subtypes.join(', ')}>")
-            end
-          else
-            UniqueType.new(new_name)
-          end
-        else
-          UniqueType.new(new_name)
-        end
+        return self if definitions.generics.empty?
 
-        # idx = definitions.parameters.index(subtypes.first.name)
-        # STDERR.puts "Index: #{idx}"
-        # return ComplexType::UNDEFINED if idx.nil?
-        # param_type = context.return_type.all_params[idx]
-        # return ComplexType::UNDEFINED unless param_type
-        # ComplexType.try_parse(param_type.to_s)
+        transform(name) do |t|
+          if t.name == GENERIC_TAG_NAME
+            idx = definitions.generics.index(t.subtypes.first&.name)
+            next t if idx.nil?
+            context_type.all_params[idx] || ComplexType::UNDEFINED
+          else
+            t
+          end
+        end
       end
 
       # @yieldparam t [self]
@@ -167,18 +134,19 @@ module Solargraph
       end
 
       # @param new_name [String, nil]
-      # @yieldparam t [UniqueType]
-      # @yieldreturn [UniqueType]
-      # @return [UniqueType, nil]
-      # TODO does new_name need to exist here?  or another method?
-      def transform(new_name = nil, &transform_type)
+      # @param new_key_types [Enumerable<UniqueType>, nil]
+      # @param new_subtypes [Enumerable<UniqueType>, nil]
+      # @return [self]
+      def recreate(new_name: nil, new_key_types: nil, new_subtypes: nil)
         new_name ||= name
-        new_key_types = @key_types.flat_map { |ct| ct.map { |ut| transform_type.yield ut } }.compact
-        new_subtypes = @subtypes.flat_map { |ct| ct.map { |ut| transform_type.yield ut } }.compact
-
-        return UniqueType.new(new_name) if new_key_types.empty? && new_subtypes.empty?
-
-        if hash_parameters?
+        new_key_types ||= @key_types
+        new_subtypes ||= @subtypes
+        if new_key_types.none?(&:defined?) && new_subtypes.none?(&:defined?)
+          # if all subtypes are undefined, erase down to the non-parametric type
+          UniqueType.new(new_name)
+        elsif new_key_types.empty? && new_subtypes.empty?
+          UniqueType.new(new_name)
+        elsif hash_parameters?
           UniqueType.new(new_name, "{#{new_key_types.join(', ')} => #{new_subtypes.join(', ')}}")
         elsif @substring.start_with?('<(')
           # @todo This clause is probably wrong, and if so, fixing it
@@ -202,23 +170,26 @@ module Solargraph
         end
       end
 
+      # Apply the given transformation to each subtype and then finally to this type
+      #
+      # @param new_name [String, nil]
+      # @yieldparam t [UniqueType]
+      # @yieldreturn [UniqueType]
+      # @return [UniqueType, nil]
+      def transform(new_name = nil, &transform_type)
+        new_key_types = @key_types.flat_map { |ct| ct.map { |ut| ut.transform(&transform_type) } }.compact
+        new_subtypes = @subtypes.flat_map { |ct| ct.map { |ut| ut.transform(&transform_type) } }.compact
+        new_type = recreate(new_name: new_name || name, new_key_types:, new_subtypes:)
+        yield new_type
+      end
+
+      # Transform references to the 'self' type to the specified concrete namespace
       # @param dst [String]
       # @return [UniqueType]
       def self_to dst
-        return self unless selfy?
-        new_name = (@name == 'self' ? dst : @name)
-        new_key_types = @key_types.map { |t| t.self_to dst }
-        new_subtypes = @subtypes.map { |t| t.self_to dst }
-        if hash_parameters?
-          UniqueType.new(new_name, "{#{new_key_types.join(', ')} => #{new_subtypes.join(', ')}}")
-        elsif parameters?
-          if @substring.start_with?'<('
-            UniqueType.new(new_name, "<(#{new_subtypes.join(', ')})>")
-          else
-            UniqueType.new(new_name, "<#{new_subtypes.join(', ')}>")
-          end
-        else
-          UniqueType.new(new_name)
+        transform do |t|
+          next t if t.name != 'self'
+          recreate(new_name: dst, new_key_types: [], new_subtypes: [])
         end
       end
 
