@@ -128,7 +128,11 @@ module Solargraph
               # added in Ruby 3.1 - https://bugs.ruby-lang.org/issues/11256
               result.push Chain::BlockVariable.new(nil)
             else
-              result.push Chain::BlockVariable.new("&#{block_variable_name_node.children[0].to_s}")
+              if block_variable_name_node.type == :sym
+                result.push Chain::BlockSymbol.new("#{block_variable_name_node.children[0].to_s}")
+              else
+                result.push Chain::BlockVariable.new("&#{block_variable_name_node.children[0].to_s}")
+              end
             end
           elsif n.type == :hash
             result.push Chain::Hash.new('::Hash', hash_is_splatted?(n))
