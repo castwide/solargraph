@@ -1774,7 +1774,7 @@ describe Solargraph::SourceMap::Clip do
     api_map = Solargraph::ApiMap.new.map(source)
     clip = api_map.clip_at('test.rb', [2, 13])
     type = clip.infer
-    expect(type.to_s).to eq('Integer')
+    expect(type.to_s).to eq('Integer, nil')
   end
 
   it 'infers block-pass symbols with variant yields' do

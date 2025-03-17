@@ -170,8 +170,9 @@ module Solargraph
         end
         return ComplexType::UNDEFINED if possibles.empty?
 
-        if possibles.first.map(&:name).include?('Enumerator') && links.last.is_a?(Call) && links.last&.arguments&.first&.links&.first.is_a?(BlockSymbol)
-          ComplexType.parse(possibles.first.items.find { |sub| sub.name != 'Enumerator' }.to_s)
+        type = if possibles.length > 1
+          sorted = possibles.map { |t| t.rooted? ? "::#{t}" : t.to_s }.sort { |a, _| a == 'nil' ? 1 : 0 }
+          ComplexType.parse(*sorted)
         else
           type = if possibles.length > 1
             sorted = possibles.map { |t| t.rooted? ? "::#{t}" : t.to_s }.sort { |a, _| a == 'nil' ? 1 : 0 }
