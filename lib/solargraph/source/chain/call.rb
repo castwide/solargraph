@@ -96,7 +96,7 @@ module Solargraph
                 end
               end
               if match
-                new_signature_pin = ol.resolve_generics_from_context_until_complete(atypes)
+                new_signature_pin = ol.resolve_generics_from_context_until_complete(ol.generics, atypes)
                 new_return_type = new_signature_pin.return_type
                 type = with_params(new_return_type.self_to(context.to_s), context).qualify(api_map, context.namespace) if new_return_type.defined?
                 type ||= ComplexType::UNDEFINED

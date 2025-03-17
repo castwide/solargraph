@@ -53,8 +53,7 @@ module Solargraph
       end
 
       # @param signature [Pin::Signature]
-      # TODO try changing @return to just Pin::Method...
-      # @return [Solargraph::Pin::Method]
+      # @return [Pin::Method]
       def with_single_signature(signature)
         m = proxy signature.return_type
         m.signature_help = nil

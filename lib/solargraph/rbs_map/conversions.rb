@@ -314,7 +314,6 @@ module Solargraph
               scope: :class,
               signatures: pin.signatures
             )
-            # TODO: document this
             pins.last.signatures.replace(
               pin.signatures.map do |p|
                 Pin::Signature.new(

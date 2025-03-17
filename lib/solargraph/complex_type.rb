@@ -30,13 +30,15 @@ module Solargraph
       ComplexType.new(types).reduce_object
     end
 
+    # @param generics_to_resolve [Enumerable<String>]]
     # @param context_type [UniqueType, nil]
     # @param resolved_generic_values [Hash{String => ComplexType}] Added to as types are encountered or resolved
     # @return [self]
     # TODO is 'context' the right word here?  Maybe 'concrete'?  Maybe 'resolved'?
-    def resolve_generics_from_context context_type, resolved_generic_values: {}
+    def resolve_generics_from_context generics_to_resolve, context_type, resolved_generic_values: {}
       return self unless generic?
-      ComplexType.new(@items.map { |i| i.resolve_generics_from_context(context_type, resolved_generic_values: resolved_generic_values) })
+
+      ComplexType.new(@items.map { |i| i.resolve_generics_from_context(generics_to_resolve, context_type, resolved_generic_values: resolved_generic_values) })
     end
 
     # @return [UniqueType]

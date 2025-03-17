@@ -37,6 +37,7 @@ module Solargraph
         signature
       end
 
+      # @param generics_to_resolve [Enumerable<String>]
       # @param arg_types [Array<ComplexType>, nil]
       # @param return_type_context [ComplexType, nil]
       # @param yield_arg_types [Array<ComplexType>, nil]
@@ -44,26 +45,30 @@ module Solargraph
       # @param context [ComplexType, nil]
       # @param resolved_generic_values [Hash{String => ComplexType}]
       # @return [self]
-      def resolve_generics_from_context(arg_types = nil,
+      def resolve_generics_from_context(generics_to_resolve,
+                                        arg_types = nil,
                                         return_type_context = nil,
                                         yield_arg_types = nil,
                                         yield_return_type_context = nil,
                                         resolved_generic_values: {})
-        signature = super(return_type_context, resolved_generic_values: resolved_generic_values)
+        signature = super(generics_to_resolve, return_type_context, resolved_generic_values: resolved_generic_values)
         signature.parameters = signature.parameters.each_with_index.map do |param, i|
           if arg_types.nil?
             param.dup
           else
-            param.resolve_generics_from_context(arg_types[i],
+            param.resolve_generics_from_context(generics_to_resolve,
+                                                arg_types[i],
                                                 resolved_generic_values: resolved_generic_values)
           end
         end
-        signature.block = block.resolve_generics_from_context(yield_arg_types,
+        signature.block = block.resolve_generics_from_context(generics_to_resolve,
+                                                              yield_arg_types,
                                                               yield_return_type_context,
                                                               resolved_generic_values: resolved_generic_values) if signature.block?
         signature
       end
 
+      # @param generics_to_resolve [Enumerable<String>]
       # @param arg_types [Array<ComplexType>, nil]
       # @param return_type_context [ComplexType, nil]
       # @param yield_arg_types [Array<ComplexType>, nil]
@@ -72,24 +77,33 @@ module Solargraph
       # @param resolved_generic_values [Hash{String => ComplexType}]
       # @return [self]
       # TODO: See note in UniqueType and match interface
-      # TODO: This doesn't currently limit its resolution to the generics defined on the method.
-      # TODO: Worth looking into what the RBS spec says if anything about generics - is there a resolution algorithm specified?  What do steep and sorbet do?
-      def resolve_generics_from_context_until_complete(arg_types,
+      def resolve_generics_from_context_until_complete(generics_to_resolve,
+                                                       arg_types = nil,
                                                        return_type_context = nil,
                                                        yield_arg_types = nil,
                                                        yield_return_type_context = nil,
                                                        resolved_generic_values: {})
+        # See
+        # https://github.com/soutaro/steep/tree/master/lib/steep/type_inference
+        # and
+        # https://github.com/sorbet/sorbet/blob/master/infer/inference.cc
+        # for other implementations
+
+        return self if self.generics.empty?
+
         last_resolved_generic_values = resolved_generic_values.dup
-        new_pin = resolve_generics_from_context(arg_types,
+        new_pin = resolve_generics_from_context(generics_to_resolve,
+                                                arg_types,
                                                 return_type_context,
                                                 yield_arg_types,
                                                 yield_return_type_context,
                                                 resolved_generic_values: resolved_generic_values)
         if last_resolved_generic_values == resolved_generic_values
           # erase anything unresolved
-          return new_pin.erase_generics(generics)
+          return new_pin.erase_generics(self.generics)
         end
-        new_pin.resolve_generics_from_context_until_complete(arg_types,
+        new_pin.resolve_generics_from_context_until_complete(generics_to_resolve,
+                                                             arg_types,
                                                              return_type_context,
                                                              yield_arg_types,
                                                              yield_return_type_context,
