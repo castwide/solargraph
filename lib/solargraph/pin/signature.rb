@@ -68,13 +68,13 @@ module Solargraph
                                         return_type_context = nil,
                                         yield_arg_types = nil,
                                         yield_return_type_context = nil,
-                                        resolved_generic_values = {})
-        signature = super(return_type_context, resolved_generic_values)
+                                        resolved_generic_values: {})
+        signature = super(return_type_context, resolved_generic_values:)
         signature.parameters = signature.parameters.each_with_index.map do |param, i|
           if arg_types.nil?
             param.dup
           else
-            param.resolve_generics_from_context(arg_types[i], resolved_generic_values)
+            param.resolve_generics_from_context(arg_types[i], resolved_generic_values:)
           end
         end
         signature.block = block.resolve_generics_from_context(yield_arg_types, yield_return_type_context, resolved_generic_values) if signature.block?
@@ -95,13 +95,13 @@ module Solargraph
                                                        return_type_context = nil,
                                                        yield_arg_types = nil,
                                                        yield_return_type_context = nil,
-                                                       resolved_generic_values = {})
+                                                       resolved_generic_values: {})
         last_resolved_generic_values = resolved_generic_values.dup
         new_pin = resolve_generics_from_context(arg_types,
                                                 return_type_context,
                                                 yield_arg_types,
                                                 yield_return_type_context,
-                                                resolved_generic_values)
+                                                resolved_generic_values:)
         if last_resolved_generic_values == resolved_generic_values
           # erase anything unresolved
           return new_pin.erase_generics
@@ -110,7 +110,7 @@ module Solargraph
                                                              return_type_context,
                                                              yield_arg_types,
                                                              yield_return_type_context,
-                                                             resolved_generic_values)
+                                                             resolved_generic_values:)
       end
 
       def identity

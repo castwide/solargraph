@@ -80,7 +80,7 @@ module Solargraph
       # @param resolved_generic_values [Hash{String => ComplexType}] Added to as types are encountered or resolved
       # @return [UniqueType, ComplexType]
       # TODO: Maybe break this into three functions - one that adds to resolved_generic_values, one that applies changes, and one that runs those two until no more can be completed?
-      def resolve_generics_from_context context_type, resolved_generic_values
+      def resolve_generics_from_context context_type, resolved_generic_values: {}
         transform(name) do |t|
           next t unless t.name == GENERIC_TAG_NAME
 
@@ -93,7 +93,7 @@ module Solargraph
           end
           if new_binding
             resolved_generic_values.transform_values! do |complex_type|
-              complex_type.resolve_generics_from_context(nil, resolved_generic_values)
+              complex_type.resolve_generics_from_context(nil, resolved_generic_values:)
             end
           end
           resolved_generic_values[type_param] || t

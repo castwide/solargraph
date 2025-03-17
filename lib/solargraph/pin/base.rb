@@ -44,8 +44,8 @@ module Solargraph
       # @param context [ComplexType]
       # @param resolved_generic_values [Hash{String => ComplexType}]
       # @return [self]
-      def resolve_generics_from_context(return_type_context = nil, resolved_generic_values = {})
-        proxy return_type.resolve_generics_from_context(return_type_context, resolved_generic_values)
+      def resolve_generics_from_context(return_type_context = nil, resolved_generic_values: {})
+        proxy return_type.resolve_generics_from_context(return_type_context, resolved_generic_values:)
       end
 
       # @yieldparam [ComplexType]
