@@ -38,7 +38,7 @@ module Solargraph
           return inferred_pins(found, api_map, name_pin.context, locals) unless found.empty?
           # @param [ComplexType::UniqueType]
           pins = name_pin.binder.each_unique_type.flat_map do |context|
-            c = context.namespace # TODO make this a tag
+            c = context.namespace
             api_map.get_method_stack(c, word, scope: context.scope)
           end
           return [] if pins.empty?
@@ -104,7 +104,7 @@ module Solargraph
               break if type.defined?
             end
             p = p.with_single_signature(new_signature_pin) unless new_signature_pin.nil?
-            next p.proxy(type) if type.defined? # TODO what does the proxy() do here?
+            next p.proxy(type) if type.defined?
             if !p.macros.empty?
               result = process_macro(p, api_map, context, locals)
               next result unless result.return_type.undefined?

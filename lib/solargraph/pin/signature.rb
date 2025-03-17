@@ -76,7 +76,6 @@ module Solargraph
       # @param context [ComplexType, nil]
       # @param resolved_generic_values [Hash{String => ComplexType}]
       # @return [self]
-      # TODO: See note in UniqueType and match interface
       def resolve_generics_from_context_until_complete(generics_to_resolve,
                                                        arg_types = nil,
                                                        return_type_context = nil,
