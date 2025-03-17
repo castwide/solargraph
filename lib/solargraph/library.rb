@@ -465,7 +465,6 @@ module Solargraph
       (workspace.filenames - source_map_hash.keys).empty?
     end
 
-    # TODO: (strict) Declared return type Solargraph::SourceMap, Boolean does not match inferred type Boolean, generic<X> for Solargraph::Library#next_map
     # @return [SourceMap, Boolean]
     def next_map
       return false if mapped?
