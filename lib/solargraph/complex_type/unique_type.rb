@@ -76,7 +76,7 @@ module Solargraph
 
       # @return [String]
       def to_rbs
-        "#{rbs_namepace}#{parameters_as_rbs}"
+        "#{rbs_namespace}#{parameters_as_rbs}"
       end
 
       # @return [String]
