@@ -15,12 +15,10 @@ module Solargraph
 
         # @param word [String]
         # @param arguments [::Array<Chain>]
-        # @param with_block [Boolean] True if the chain is inside a block
         # @param block [Chain, nil]
-        def initialize word, arguments = [], with_block = false, block = nil
+        def initialize word, arguments = [], block = nil
           @word = word
           @arguments = arguments
-          @with_block = with_block
           @block = block
           fix_block_pass
         end

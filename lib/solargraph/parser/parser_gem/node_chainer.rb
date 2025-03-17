@@ -16,8 +16,6 @@ module Solargraph
           @node = node
           @filename = filename
           @parent = parent
-          @in_block = parent&.type == :block ? 1 : 0
-          # @in_block = in_block ? 1 : 0
         end
 
         # @return [Source::Chain]
@@ -54,9 +52,7 @@ module Solargraph
           return generate_links(n.children[0]) if n.type == :splat
           result = []
           if n.type == :block
-            @in_block += 1
             result.concat NodeChainer.chain(n.children[0], @filename, n).links
-            @in_block -= 1
           elsif n.type == :send
             if n.children[0].is_a?(::Parser::AST::Node)
               result.concat generate_links(n.children[0])
@@ -64,13 +60,13 @@ module Solargraph
               n.children[2..-1].each do |c|
                 args.push NodeChainer.chain(c, @filename, n)
               end
-              result.push Chain::Call.new(n.children[1].to_s, args, @in_block > 0 || block_passed?(n), passed_block(n))
+              result.push Chain::Call.new(n.children[1].to_s, args, passed_block(n))
             elsif n.children[0].nil?
               args = []
               n.children[2..-1].each do |c|
                 args.push NodeChainer.chain(c, @filename, n)
               end
-              result.push Chain::Call.new(n.children[1].to_s, args, @in_block > 0 || block_passed?(n), passed_block(n))
+              result.push Chain::Call.new(n.children[1].to_s, args, passed_block(n))
             else
               raise "No idea what to do with #{n}"
             end
@@ -81,26 +77,26 @@ module Solargraph
               n.children[2..-1].each do |c|
                 args.push NodeChainer.chain(c, @filename, n)
               end
-              result.push Chain::QCall.new(n.children[1].to_s, args, @in_block > 0 || block_passed?(n))
+              result.push Chain::QCall.new(n.children[1].to_s, args)
             elsif n.children[0].nil?
               args = []
               n.children[2..-1].each do |c|
                 args.push NodeChainer.chain(c, @filename, n)
               end
-              result.push Chain::QCall.new(n.children[1].to_s, args, @in_block > 0 || block_passed?(n))
+              result.push Chain::QCall.new(n.children[1].to_s, args)
             else
               raise "No idea what to do with #{n}"
             end
           elsif n.type == :self
             result.push Chain::Head.new('self')
           elsif n.type == :zsuper
-            result.push Chain::ZSuper.new('super', @in_block > 0 || block_passed?(n))
+            result.push Chain::ZSuper.new('super')
           elsif n.type == :super
             args = n.children.map { |c| NodeChainer.chain(c, @filename, n) }
-            result.push Chain::Call.new('super', args, @in_block > 0 || block_passed?(n))
+            result.push Chain::Call.new('super', args)
           elsif n.type == :yield
             args = n.children.map { |c| NodeChainer.chain(c, @filename, n) }
-            result.push Chain::Call.new('yield', args, @in_block > 0 || block_passed?(n))
+            result.push Chain::Call.new('yield', args)
           elsif n.type == :const
             const = unpack_name(n)
             result.push Chain::Constant.new(const)
