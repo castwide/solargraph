@@ -40,6 +40,7 @@ module Solargraph
         signature
       end
 
+      # TODO: Move to Base, accept an allowlist of types to erase
       # @return [self]
       def erase_generics
         # @param type [ComplexType::UniqueType]

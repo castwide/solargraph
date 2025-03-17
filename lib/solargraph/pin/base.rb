@@ -40,26 +40,19 @@ module Solargraph
         @comments ||= ''
       end
 
-      # @param return_type_context [ComplexType]
+      # @param return_type_context [ComplexType, nil]
       # @param context [ComplexType]
       # @param resolved_generic_values [Hash{String => ComplexType}]
       # @return [self]
-      def resolve_generics_from_context(return_type_context, resolved_generic_values = {})
-        rt = return_type.resolve_generics_from_context(return_type_context, resolved_generic_values)
-        pin = proxy(rt || @return_type) # TODO why the ||?
-        # TODO Do I want proxy() or dup() here and below?  What is proxy() for?
-        # TODO What does pin.context get used for?
-        pin.context = return_type_context
-        pin
+      def resolve_generics_from_context(return_type_context = nil, resolved_generic_values = {})
+        proxy return_type.resolve_generics_from_context(return_type_context, resolved_generic_values)
       end
 
       # @yieldparam [ComplexType]
       # @yieldreturn [ComplexType]
       # @return [self]
       def transform_types(&transform)
-        rt = return_type.transform(&transform)
-        pin = proxy rt
-        pin
+        proxy return_type.transform(&transform)
       end
 
       # Determine the concrete type for each of the generic type
