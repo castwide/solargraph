@@ -11,11 +11,13 @@ module Solargraph
 
         # @param node [Parser::AST::Node]
         # @param filename [String, nil]
-        # @param in_block [Boolean]
-        def initialize node, filename = nil, in_block = false
+        # @param parent [Parser::AST::Node, nil]
+        def initialize node, filename = nil, parent = nil
           @node = node
           @filename = filename
-          @in_block = in_block ? 1 : 0
+          @parent = parent
+          @in_block = parent&.type == :block ? 1 : 0
+          # @in_block = in_block ? 1 : 0
         end
 
         # @return [Source::Chain]
@@ -27,10 +29,10 @@ module Solargraph
         class << self
           # @param node [Parser::AST::Node]
           # @param filename [String, nil]
-          # @param in_block [Boolean]
+          # @param parent [Parser::AST::Node, nil]
           # @return [Source::Chain]
-          def chain node, filename = nil, in_block = false
-            NodeChainer.new(node, filename, in_block).chain
+          def chain node, filename = nil, parent = nil
+            NodeChainer.new(node, filename, parent).chain
           end
 
           # @param code [String]
@@ -53,22 +55,22 @@ module Solargraph
           result = []
           if n.type == :block
             @in_block += 1
-            result.concat generate_links(n.children[0])
+            result.concat NodeChainer.chain(n.children[0], @filename, n).links
             @in_block -= 1
           elsif n.type == :send
             if n.children[0].is_a?(::Parser::AST::Node)
               result.concat generate_links(n.children[0])
               args = []
               n.children[2..-1].each do |c|
-                args.push NodeChainer.chain(c)
+                args.push NodeChainer.chain(c, @filename, n)
               end
-              result.push Chain::Call.new(n.children[1].to_s, args, @in_block > 0 || block_passed?(n))
+              result.push Chain::Call.new(n.children[1].to_s, args, @in_block > 0 || block_passed?(n), passed_block(n))
             elsif n.children[0].nil?
               args = []
               n.children[2..-1].each do |c|
-                args.push NodeChainer.chain(c)
+                args.push NodeChainer.chain(c, @filename, n)
               end
-              result.push Chain::Call.new(n.children[1].to_s, args, @in_block > 0 || block_passed?(n))
+              result.push Chain::Call.new(n.children[1].to_s, args, @in_block > 0 || block_passed?(n), passed_block(n))
             else
               raise "No idea what to do with #{n}"
             end
@@ -77,13 +79,13 @@ module Solargraph
               result.concat generate_links(n.children[0])
               args = []
               n.children[2..-1].each do |c|
-                args.push NodeChainer.chain(c)
+                args.push NodeChainer.chain(c, @filename, n)
               end
               result.push Chain::QCall.new(n.children[1].to_s, args, @in_block > 0 || block_passed?(n))
             elsif n.children[0].nil?
               args = []
               n.children[2..-1].each do |c|
-                args.push NodeChainer.chain(c)
+                args.push NodeChainer.chain(c, @filename, n)
               end
               result.push Chain::QCall.new(n.children[1].to_s, args, @in_block > 0 || block_passed?(n))
             else
@@ -94,10 +96,10 @@ module Solargraph
           elsif n.type == :zsuper
             result.push Chain::ZSuper.new('super', @in_block > 0 || block_passed?(n))
           elsif n.type == :super
-            args = n.children.map { |c| NodeChainer.chain(c) }
+            args = n.children.map { |c| NodeChainer.chain(c, @filename, n) }
             result.push Chain::Call.new('super', args, @in_block > 0 || block_passed?(n))
           elsif n.type == :yield
-            args = n.children.map { |c| NodeChainer.chain(c) }
+            args = n.children.map { |c| NodeChainer.chain(c, @filename, n) }
             result.push Chain::Call.new('yield', args, @in_block > 0 || block_passed?(n))
           elsif n.type == :const
             const = unpack_name(n)
@@ -118,7 +120,7 @@ module Solargraph
           elsif n.type == :and
             result.concat generate_links(n.children.last)
           elsif n.type == :or
-            result.push Chain::Or.new([NodeChainer.chain(n.children[0], @filename), NodeChainer.chain(n.children[1], @filename)])
+            result.push Chain::Or.new([NodeChainer.chain(n.children[0], @filename, n), NodeChainer.chain(n.children[1], @filename, n)])
           elsif [:begin, :kwbegin].include?(n.type)
             result.concat generate_links(n.children.last)
           elsif n.type == :block_pass
@@ -157,6 +159,12 @@ module Solargraph
         # @param node [Parser::AST::Node]
         def block_passed? node
           node.children.last.is_a?(::Parser::AST::Node) && node.children.last.type == :block_pass
+        end
+
+        def passed_block node
+          return unless node == @node && [:block, :block_pass].include?(@parent&.type)
+
+          NodeChainer.chain(@parent.children[2], @filename)
         end
       end
     end
