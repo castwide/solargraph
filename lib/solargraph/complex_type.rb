@@ -36,7 +36,7 @@ module Solargraph
     # TODO is 'context' the right word here?  Maybe 'concrete'?  Maybe 'resolved'?
     def resolve_generics_from_context context_type, resolved_generic_values: {}
       return self unless generic?
-      ComplexType.new(@items.map { |i| i.resolve_generics_from_context(context_type, resolved_generic_values:) })
+      ComplexType.new(@items.map { |i| i.resolve_generics_from_context(context_type, resolved_generic_values: resolved_generic_values) })
     end
 
     # @return [UniqueType]

@@ -93,7 +93,7 @@ module Solargraph
           end
           if new_binding
             resolved_generic_values.transform_values! do |complex_type|
-              complex_type.resolve_generics_from_context(nil, resolved_generic_values:)
+              complex_type.resolve_generics_from_context(nil, resolved_generic_values: resolved_generic_values)
             end
           end
           resolved_generic_values[type_param] || t
@@ -179,7 +179,7 @@ module Solargraph
       def transform(new_name = nil, &transform_type)
         new_key_types = @key_types.flat_map { |ct| ct.map { |ut| ut.transform(&transform_type) } }.compact
         new_subtypes = @subtypes.flat_map { |ct| ct.map { |ut| ut.transform(&transform_type) } }.compact
-        new_type = recreate(new_name: new_name || name, new_key_types:, new_subtypes:)
+        new_type = recreate(new_name: new_name || name, new_key_types: new_key_types, new_subtypes: new_subtypes)
         yield new_type
       end
 

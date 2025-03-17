@@ -322,7 +322,7 @@ describe Solargraph::ComplexType do
 
       it "resolves to #{expected_tag} with updated map #{expected_output_map}" do
         resolved_generic_values = unfrozen_input_map.transform_values { |tag| Solargraph::ComplexType.parse(tag) }
-        resolved_type = unique_type.resolve_generics_from_context(context_type, resolved_generic_values:)
+        resolved_type = unique_type.resolve_generics_from_context(context_type, resolved_generic_values: resolved_generic_values)
         expect(resolved_type.tag).to eq(expected_tag)
         expect(resolved_generic_values.transform_values(&:tag)).to eq(expected_output_map)
       end
