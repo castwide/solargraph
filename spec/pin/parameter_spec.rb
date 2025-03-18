@@ -293,8 +293,8 @@ describe Solargraph::Pin::Parameter do
     expect(pin.documentation).not_to include('The bar method')
   end
 
-  it "typifies from generic yieldparams" do
-    # This test depends on the fact that Array#each has a generic yieldparam.
+  it "typifies from generic yield params" do
+    # This test depends on RBS definitions for Array#each with generic yield params
     source = Solargraph::Source.load_string(%(
       # @return [Array<String>]
       def list_strings; end
