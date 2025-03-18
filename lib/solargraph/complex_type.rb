@@ -91,12 +91,16 @@ module Solargraph
       @items.map(&:namespace)
     end
 
+    # @param name [Symbol]
+    # @return [Object, nil]
     def method_missing name, *args, &block
       return if @items.first.nil?
       return @items.first.send(name, *args, &block) if respond_to_missing?(name)
       super
     end
 
+    # @param name [Symbol]
+    # @param include_private [Boolean]
     def respond_to_missing?(name, include_private = false)
       TypeMethods.public_instance_methods.include?(name) || super
     end

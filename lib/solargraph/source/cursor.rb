@@ -115,6 +115,7 @@ module Solargraph
       end
       alias receiver recipient
 
+      # @return [AST::Node]
       def node
         @node ||= source.node_at(position.line, position.column)
       end
@@ -135,6 +136,7 @@ module Solargraph
         end
       end
 
+      # @return [Parser::AST::Node, nil]
       def recipient_node
         @recipient_node ||= Solargraph::Parser::NodeMethods.find_recipient_node(self)
       end
