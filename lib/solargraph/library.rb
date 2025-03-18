@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require 'pathname'
+require 'set'
 
 module Solargraph
   # A Library handles coordination between a Workspace and an ApiMap.
@@ -590,9 +591,14 @@ module Solargraph
       end
     end
 
+    # @return [Set<Gem::Specification>]
+    def cache_errors
+      @cache_errors ||= Set.new
+    end
+
     # @return [void]
     def cache_next_gemspec
-      spec = api_map.uncached_gemspecs.first
+      spec = api_map.uncached_gemspecs.find { |spec| !cache_errors.include?(spec)}
       return unless spec
 
       logger.info "Caching #{spec.name} #{spec.version}"
@@ -604,7 +610,8 @@ module Solargraph
       rescue Errno::EINVAL => e
         @synchronized = false
       rescue StandardError => e
-        Solargraph.logger.warn "Error caching gemspec: [#{e.class}] #{e.message}"
+        cache_errors.add spec
+        Solargraph.logger.warn "Error caching gemspec #{spec.name} #{spec.version}: [#{e.class}] #{e.message}"
       end
     end
   end
