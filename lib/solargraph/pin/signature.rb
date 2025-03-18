@@ -88,7 +88,7 @@ module Solargraph
         # https://github.com/sorbet/sorbet/blob/master/infer/inference.cc
         # for other implementations
 
-        return self if self.generics.empty?
+        return self if generics_to_resolve.empty?
 
         last_resolved_generic_values = resolved_generic_values.dup
         new_pin = resolve_generics_from_context(generics_to_resolve,
