@@ -33,7 +33,6 @@ module Solargraph
           param.resolve_generics(definitions, context_type)
         end
         signature.block = block.resolve_generics(definitions, context_type) if signature.block?
-        signature.return_type = return_type.resolve_generics(definitions, context_type)
         signature
       end
 
