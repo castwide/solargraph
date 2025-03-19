@@ -34,6 +34,7 @@ Plug-ins and extensions are available for the following editors:
     * Instructions: https://lsp.sublimetext.io/language_servers/#solargraph
 
 * **Vim**
+    * Github: `nvim-lspconfig`, https://github.com/neovim/nvim-lspconfig/blob/master/doc/configs.md#solargraph
     * GitHub: `LanguageClient-neovim`, https://github.com/autozimu/LanguageClient-neovim
     * GitHub: `coc`, https://github.com/neoclide/coc-solargraph
     * GitHub: `Vim-EasyComplete`, https://github.com/jayli/vim-easycomplete
