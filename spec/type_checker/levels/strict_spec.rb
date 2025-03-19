@@ -54,6 +54,9 @@ describe Solargraph::TypeChecker do
       # @todo This test uses kramdown-parser-gfm because it's a gem dependency known to
       #   lack typed methods. A better test wouldn't depend on the state of
       #   vendored code.
+      gemspec = Gem::Specification.find_by_name('kramdown-parser-gfm')
+      pins = Solargraph::GemPins.build(gemspec)
+      Solargraph::Cache.save('gems', "#{gemspec.name}-#{gemspec.version}.ser", pins)  
       source_map = Solargraph::SourceMap.load_string(%(
         require 'kramdown-parser-gfm'
         Kramdown::Parser::GFM.undefined_call

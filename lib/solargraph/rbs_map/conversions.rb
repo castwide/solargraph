@@ -218,10 +218,10 @@ module Solargraph
       # @param tag [String]
       # @param comments [String]
       # @param decl [RBS::AST::Declarations::ClassAlias, RBS::AST::Declarations::Constant, RBS::AST::Declarations::ModuleAlias]
-      # @param type [Symbol] :class or :module
+      # @param base [String, nil] Optional conversion of tag to base<tag>      
       #
       # @return [Solargraph::Pin::Constant]
-      def create_constant(name, tag, comments, decl, type)
+      def create_constant(name, tag, comments, decl, base = nil)
         comments = decl.comment&.string
         parts = name.split('::')
         if parts.length > 1
@@ -237,14 +237,7 @@ module Solargraph
           type_location: location_decl_to_pin_location(decl.location),
           comments: comments
         )
-        tag = if type == :class
-                "Class<#{tag}>"
-              elsif type == :module
-                "Module<#{tag}>"
-              else
-                Solargraph.logger.warn "Unrecognized constant type: #{type.inspect}"
-                "Class<#{tag}>"
-              end
+        tag = "#{base}<#{tag}>" if base
         constant_pin.docstring.add_tag(YARD::Tags::Tag.new(:return, '', tag))
         constant_pin
       end
@@ -256,7 +249,7 @@ module Solargraph
         new_name = decl.new_name.relative!.to_s
         old_name = decl.old_name.relative!.to_s
 
-        pins.push create_constant(new_name, old_name, decl.comment&.string, decl, :class)
+        pins.push create_constant(new_name, old_name, decl.comment&.string, decl, 'Class')
       end
 
       # @param decl [RBS::AST::Declarations::ModuleAlias]
@@ -266,15 +259,14 @@ module Solargraph
         new_name = decl.new_name.relative!.to_s
         old_name = decl.old_name.relative!.to_s
 
-        pins.push create_constant(new_name, old_name, decl.comment&.string, decl, :module)
+        pins.push create_constant(new_name, old_name, decl.comment&.string, decl,  'Module')
       end
 
       # @param decl [RBS::AST::Declarations::Constant]
       # @return [void]
       def constant_decl_to_pin decl
         tag = other_type_to_tag(decl.type)
-        # @todo Class or Module?
-        pins.push create_constant(decl.name.relative!.to_s, tag, decl.comment&.string, decl, :class)
+        pins.push create_constant(decl.name.relative!.to_s, tag, decl.comment&.string, decl)
       end
 
       # @param decl [RBS::AST::Declarations::Global]

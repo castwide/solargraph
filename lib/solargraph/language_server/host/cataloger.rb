@@ -6,6 +6,7 @@ module Solargraph
       # An asynchronous library cataloging handler.
       #
       class Cataloger
+        # @param host [Host]
         def initialize host
           @host = host
           @stopped = true
