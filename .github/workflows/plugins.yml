@@ -29,6 +29,7 @@ jobs:
     - name: Install gems
       run:
         - echo 'gem solargraph-rails' > .Gemfile
+        - echo 'gem solargraph-rspec' >> .Gemfile
         - bundle install
     - name: Configure to use plugins
       run:
