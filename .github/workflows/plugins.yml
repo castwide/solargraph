@@ -20,8 +20,10 @@ jobs:
       with:
         ruby-version: '3.0'
         bundler-cache: false
-    - name: Install tools
-      run: sudo apt-get update -y && sudo apt-get install -y yq
+    - uses: awalsh128/cache-apt-pkgs-action@latest
+      with:
+        packages: yq
+        version: 1.0
     - name: Install gems
       run: |
         echo 'gem "solargraph-rails"' > .Gemfile
@@ -30,8 +32,8 @@ jobs:
     - name: Configure to use plugins
       run: |
         bundle exec solargraph config
-        yq -i '.plugins += "solargraph-rails"' .solargraph.yml
-        yq -i '.plugins += "solargraph-rspec"' .solargraph.yml
+        yq -yi '.plugins += ["solargraph-rails"]' .solargraph.yml
+        yq -yi '.plugins += ["solargraph-rspec]' .solargraph.yml
     - name: Ensure typechecking still works
       run: bundle exec solargraph typecheck --level typed
     - name: Ensure specs still run
