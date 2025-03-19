@@ -10,9 +10,6 @@ module Solargraph
       # @return [self]
       attr_reader :block
 
-      # @return [Array<String>]
-      attr_reader :generics
-
       # @param generics [Array<String>]
       # @param parameters [Array<Parameter>]
       # @param return_type [ComplexType]
@@ -22,6 +19,11 @@ module Solargraph
         @parameters = parameters
         @return_type = return_type
         @block = block
+      end
+
+      # @return [Array<String>]
+      def generics
+        @generics ||= []
       end
 
       # @yieldparam [ComplexType]
