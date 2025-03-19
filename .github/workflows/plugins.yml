@@ -1,0 +1,41 @@
+name: Plugin Backwards Compatibility Tests
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        ruby-version: '3.0'
+
+    steps:
+    - uses: actions/checkout@v3
+    - name: Set up Ruby
+      uses: ruby/setup-ruby@v1
+      with:
+        ruby-version: ${{ matrix.ruby-version }}
+        bundler-cache: false
+    - name: Install tools
+      - sudo apt-get update -y && sudo apt-get install -y yq
+    - name: Install gems
+      run:
+        - echo 'gem solargraph-rails' > .Gemfile
+        - bundle install
+    - name: Configure to use plugins
+      run:
+        - bundle exec solargraph config
+        - yq -i '.plugins += "solargraph-rails"' .solargraph.yml
+        - yq -i '.plugins += "solargraph-rspec"' .solargraph.yml
+    - name: Ensure typechecking still works
+      run: bundle exec solargraph typecheck --level typed
+    - name: Ensure specs still run
+      run: bundle exec rake spec
