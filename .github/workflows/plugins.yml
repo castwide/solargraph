@@ -24,8 +24,8 @@ jobs:
       run: sudo apt-get update -y && sudo apt-get install -y yq
     - name: Install gems
       run: |
-        echo 'gem solargraph-rails' > .Gemfile
-        echo 'gem solargraph-rspec' >> .Gemfile
+        echo 'gem "solargraph-rails"' > .Gemfile
+        echo 'gem "solargraph-rspec"' >> .Gemfile
         bundle install
     - name: Configure to use plugins
       run: |
