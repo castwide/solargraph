@@ -21,8 +21,7 @@ jobs:
         ruby-version: '3.0'
         bundler-cache: false
     - name: Install tools
-      run:
-        - sudo apt-get update -y && sudo apt-get install -y yq
+      run: sudo apt-get update -y && sudo apt-get install -y yq
     - name: Install gems
       run: |
         echo 'gem solargraph-rails' > .Gemfile
