@@ -5,10 +5,13 @@ module Solargraph
     # Methods for accessing type data available from
     # both ComplexType and UniqueType.
     #
-    # @abstract This mixin relies on these instance variables:
-    #   @name: String
-    #   @subtypes: Array<ComplexType>
-    #   @rooted: boolish
+    # @abstract This mixin relies on these -
+    #   instance variables:
+    #     @name: String
+    #     @subtypes: Array<ComplexType>
+    #     @rooted: boolish
+    #   methods:
+    #     transform()
     module TypeMethods
       # @return [String]
       attr_reader :name
@@ -47,6 +50,22 @@ module Solargraph
 
       def undefined?
         name == 'undefined'
+      end
+
+      # @param generics_to_erase [Enumerable<String>]
+      # @return [self]
+      def erase_generics(generics_to_erase)
+        transform do |type|
+          if type.name == ComplexType::GENERIC_TAG_NAME
+            if type.all_params.length == 1 && generics_to_erase.include?(type.all_params.first.to_s)
+              ComplexType::UNDEFINED
+            else
+              type
+            end
+          else
+            type
+          end
+        end
       end
 
       # @return [Boolean]
