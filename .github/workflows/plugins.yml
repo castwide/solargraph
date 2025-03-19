@@ -25,6 +25,7 @@ jobs:
         ruby-version: ${{ matrix.ruby-version }}
         bundler-cache: false
     - name: Install tools
+      run:
       - sudo apt-get update -y && sudo apt-get install -y yq
     - name: Install gems
       run:
