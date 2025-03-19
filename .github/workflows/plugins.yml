@@ -22,17 +22,17 @@ jobs:
         bundler-cache: false
     - name: Install tools
       run:
-      - sudo apt-get update -y && sudo apt-get install -y yq
+        - sudo apt-get update -y && sudo apt-get install -y yq
     - name: Install gems
-      run:
-        - echo 'gem solargraph-rails' > .Gemfile
-        - echo 'gem solargraph-rspec' >> .Gemfile
-        - bundle install
+      run: |
+        echo 'gem solargraph-rails' > .Gemfile
+        echo 'gem solargraph-rspec' >> .Gemfile
+        bundle install
     - name: Configure to use plugins
-      run:
-        - bundle exec solargraph config
-        - yq -i '.plugins += "solargraph-rails"' .solargraph.yml
-        - yq -i '.plugins += "solargraph-rspec"' .solargraph.yml
+      run: |
+        bundle exec solargraph config
+        yq -i '.plugins += "solargraph-rails"' .solargraph.yml
+        yq -i '.plugins += "solargraph-rspec"' .solargraph.yml
     - name: Ensure typechecking still works
       run: bundle exec solargraph typecheck --level typed
     - name: Ensure specs still run
