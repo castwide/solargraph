@@ -33,7 +33,7 @@ jobs:
       run: |
         bundle exec solargraph config
         yq -yi '.plugins += ["solargraph-rails"]' .solargraph.yml
-        yq -yi '.plugins += ["solargraph-rspec]' .solargraph.yml
+        yq -yi '.plugins += ["solargraph-rspec"]' .solargraph.yml
     - name: Ensure typechecking still works
       run: bundle exec solargraph typecheck --level typed
     - name: Ensure specs still run
