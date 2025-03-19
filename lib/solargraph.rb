@@ -26,8 +26,10 @@ module Solargraph
   autoload :Source,           'solargraph/source'
   autoload :SourceMap,        'solargraph/source_map'
   autoload :ApiMap,           'solargraph/api_map'
+  autoload :Yardoc,           'solargraph/yardoc'
   autoload :YardMap,          'solargraph/yard_map'
   autoload :Pin,              'solargraph/pin'
+  autoload :DocMap,           'solargraph/doc_map'
   autoload :ServerMethods,    'solargraph/server_methods'
   autoload :LanguageServer,   'solargraph/language_server'
   autoload :Workspace,        'solargraph/workspace'
@@ -43,6 +45,7 @@ module Solargraph
   autoload :Documentor,       'solargraph/documentor'
   autoload :Parser,           'solargraph/parser'
   autoload :RbsMap,           'solargraph/rbs_map'
+  autoload :GemPins,          'solargraph/gem_pins'
   autoload :Cache,            'solargraph/cache'
 
   dir = File.dirname(__FILE__)

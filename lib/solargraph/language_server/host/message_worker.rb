@@ -16,6 +16,7 @@ module Solargraph
         end
 
         # pending handle messages
+        # @return [Array<Hash>]
         def messages
           @messages ||= []
         end
@@ -24,6 +25,7 @@ module Solargraph
           @stopped
         end
 
+        # @return [void]
         def stop
           @stopped = true
         end
@@ -37,6 +39,7 @@ module Solargraph
           end
         end
 
+        # @return [void]
         def start
           return unless @stopped
           @stopped = false
@@ -45,6 +48,7 @@ module Solargraph
           end
         end
 
+        # @return [void]
         def tick
           message = @mutex.synchronize do
             @resource.wait(@mutex) if messages.empty?

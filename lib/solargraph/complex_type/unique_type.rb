@@ -190,7 +190,7 @@ module Solargraph
       def self_to dst
         transform do |t|
           next t if t.name != 'self'
-          recreate(new_name: dst, new_key_types: [], new_subtypes: [])
+          t.recreate(new_name: dst, new_key_types: [], new_subtypes: [])
         end
       end
 

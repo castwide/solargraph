@@ -35,6 +35,7 @@ module Solargraph
         @attribute = attribute
         @signatures = signatures
         @anon_splat = anon_splat
+        @return_type = return_type
       end
 
       def transform_types(&transform)

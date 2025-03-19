@@ -22,7 +22,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        ruby-version: ['2.6', '2.7', '3.0', '3.1', '3.2', '3.3', '3.4', 'head']
+        ruby-version: ['3.0', '3.1', '3.2', '3.3', '3.4', 'head']
 
     steps:
     - uses: actions/checkout@v3
@@ -33,7 +33,5 @@ jobs:
         bundler-cache: false
     - name: Install gems
       run: bundle install
-    - name: Set up yardocs
-      run: bundle exec yard gems
     - name: Run tests
       run: bundle exec rspec

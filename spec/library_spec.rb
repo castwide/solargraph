@@ -245,7 +245,7 @@ describe Solargraph::Library do
     library = Solargraph::Library.new
     result = library.document('String')
     expect(result).not_to be_empty
-    expect(result.first).to be_a(YARD::CodeObjects::Base)
+    expect(result.first).to be_a(Solargraph::Pin::Base)
   end
 
   it "returns YARD documentation from sources" do
@@ -259,7 +259,7 @@ describe Solargraph::Library do
     library.attach src
     result = library.document('Foo#bar')
     expect(result).not_to be_empty
-    expect(result.first).to be_a(YARD::CodeObjects::Base)
+    expect(result.first).to be_a(Solargraph::Pin::Base)
   end
 
   it "synchronizes sources from updaters" do

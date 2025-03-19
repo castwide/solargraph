@@ -30,7 +30,5 @@ jobs:
         bundler-cache: false
     - name: Install gems
       run: bundle install
-    - name: Set up yardocs
-      run: bundle exec yard gems
     - name: Typecheck self
       run: bundle exec solargraph typecheck --level typed
