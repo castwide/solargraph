@@ -28,6 +28,14 @@ module Solargraph
         decl == :restarg
       end
 
+      def mandatory_positional?
+        decl == :arg
+      end
+
+      def positional?
+        !keyword?
+      end
+
       def rest?
         decl == :restarg || decl == :kwrestarg
       end

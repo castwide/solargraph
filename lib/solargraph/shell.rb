@@ -156,7 +156,9 @@ module Solargraph
     # @return [void]
     def typecheck *files
       directory = File.realpath(options[:directory])
-      api_map = Solargraph::ApiMap.load_with_cache(directory)
+      level = options[:level].to_sym
+      rules = Solargraph::TypeChecker::Rules.new(level)
+      api_map = Solargraph::ApiMap.load_with_cache(directory, loose_unions: rules.loose_unions?)
       if files.empty?
         files = api_map.source_maps.map(&:filename)
       else
@@ -165,7 +167,7 @@ module Solargraph
       probcount = 0
       filecount = 0
       files.each do |file|
-        checker = TypeChecker.new(file, api_map: api_map, level: options[:level].to_sym)
+        checker = TypeChecker.new(file, api_map: api_map, rules: rules, level: level)
         problems = checker.problems
         next if problems.empty?
         problems.sort! { |a, b| a.location.range.start.line <=> b.location.range.start.line }
