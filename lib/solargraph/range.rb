@@ -65,9 +65,7 @@ module Solargraph
     # @param node [Parser::AST::Node]
     # @return [Range, nil]
     def self.from_node node
-      if Parser.rubyvm? && node.is_a?(RubyVM::AbstractSyntaxTree::Node)
-        Solargraph::Range.from_to(node.first_lineno - 1, node.first_column, node.last_lineno - 1, node.last_column)
-      elsif node&.loc && node.loc.expression
+      if node&.loc && node.loc.expression
         from_expr(node.loc.expression)
       end
     end

@@ -9,10 +9,6 @@ module Solargraph
     class SyntaxError < StandardError
     end
 
-    def self.rubyvm?
-      false
-    end
-
     extend ParserGem::ClassMethods
 
     NodeMethods = ParserGem::NodeMethods
