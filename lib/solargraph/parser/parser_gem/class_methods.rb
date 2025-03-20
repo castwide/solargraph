@@ -32,7 +32,7 @@ module Solargraph
           raise Parser::SyntaxError, e.message
         end
 
-        # @return [Parser::Base]
+        # @return [::Parser::Base]
         def parser
           # @todo Consider setting an instance variable. We might not need to
           #   recreate the parser every time we use it.
@@ -115,6 +115,7 @@ module Solargraph
           NodeMethods.infer_literal_node_type node
         end
 
+        # @return [void]
         def version
           parser.version
         end
