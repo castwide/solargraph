@@ -95,6 +95,7 @@ module Solargraph
 
       # @param decl [RBS::AST::Declarations::Module::Self]
       # @param closure [Pin::Namespace]
+      # @return [void]
       def convert_self_type_to_pins decl, closure
         include_pin = Solargraph::Pin::Reference::Include.new(
           name: decl.name.relative!.to_s,
@@ -212,10 +213,10 @@ module Solargraph
       # @param name [String]
       # @param tag [String]
       # @param comments [String]
-      # @param type [Symbol] :class or :module
+      # @param base [String, nil] Optional conversion of tag to base<tag>
       #
       # @return [Solargraph::Pin::Constant]
-      def create_constant(name, tag, comments, type)
+      def create_constant(name, tag, comments, base = nil)
         parts = name.split('::')
         if parts.length > 1
           name = parts.last
@@ -229,14 +230,7 @@ module Solargraph
           closure: closure,
           comments: comments
         )
-        tag = if type == :class
-                "Class<#{tag}>"
-              elsif type == :module
-                "Module<#{tag}>"
-              else
-                Solargraph.logger.warn "Unrecognized constant type: #{type.inspect}"
-                "Class<#{tag}>"
-              end
+        tag = "#{base}<#{tag}>" if base
         constant_pin.docstring.add_tag(YARD::Tags::Tag.new(:return, '', tag))
         constant_pin
       end
@@ -248,7 +242,7 @@ module Solargraph
         new_name = decl.new_name.relative!.to_s
         old_name = decl.old_name.relative!.to_s
 
-        pins.push create_constant(new_name, old_name, decl.comment&.string, :class)
+        pins.push create_constant(new_name, old_name, decl.comment&.string, 'Class')
       end
 
       # @param decl [RBS::AST::Declarations::ModuleAlias]
@@ -258,15 +252,14 @@ module Solargraph
         new_name = decl.new_name.relative!.to_s
         old_name = decl.old_name.relative!.to_s
 
-        pins.push create_constant(new_name, old_name, decl.comment&.string, :module)
+        pins.push create_constant(new_name, old_name, decl.comment&.string, 'Module')
       end
 
       # @param decl [RBS::AST::Declarations::Constant]
       # @return [void]
       def constant_decl_to_pin decl
         tag = other_type_to_tag(decl.type)
-        # @todo Class or Module?
-        pins.push create_constant(decl.name.relative!.to_s, tag, decl.comment&.string, :class)
+        pins.push create_constant(decl.name.relative!.to_s, tag, decl.comment&.string)
       end
 
       # @param decl [RBS::AST::Declarations::Global]
@@ -316,6 +309,7 @@ module Solargraph
             pins.last.signatures.replace(
               pin.signatures.map do |p|
                 Pin::Signature.new(
+                  p.generics,
                   p.parameters,
                   ComplexType::SELF
                 )
@@ -345,12 +339,13 @@ module Solargraph
       # @return [void]
       def method_def_to_sigs decl, pin
         decl.overloads.map do |overload|
+          generics = overload.method_type.type_params.map(&:to_s)
           parameters, return_type = parts_of_function(overload.method_type, pin)
           block = if overload.method_type.block
-                    Pin::Signature.new(*parts_of_function(overload.method_type.block, pin))
+                    Pin::Signature.new(generics, *parts_of_function(overload.method_type.block, pin))
           end
           return_type = ComplexType.try_parse(method_type_to_tag(overload.method_type))
-          Pin::Signature.new(parameters, return_type, block)
+          Pin::Signature.new(generics, parameters, return_type, block)
         end
       end
 

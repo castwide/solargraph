@@ -1690,4 +1690,79 @@ describe Solargraph::SourceMap::Clip do
     type = clip.infer
     expect(type.to_s).to eq('Gem::Specification')
   end
+
+  it 'picks correct overload in Hash#transform_values!' do
+    source = Solargraph::Source.load_string(%(
+      # @param t [Hash{String => Integer}]
+      # @return [Hash{String => Integer}]
+      def bar(t)
+        a = t.transform_values! { |i| i + 3 }
+        a
+      end
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new.map(source)
+    clip = api_map.clip_at('test.rb', [5, 8])
+    type = clip.infer
+    expect(type.to_s).to eq('Hash{String => Integer}')
+  end
+
+  it 'picks correct overload in Enumerable#max_by' do
+    source = Solargraph::Source.load_string(%(
+      a = [1, 2, 3].max_by(&:abs)
+      a
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new.map(source)
+    clip = api_map.clip_at('test.rb', [2, 6])
+    type = clip.infer
+    expect(type.to_s).to eq('Integer, nil')
+  end
+
+  it 'picks correct overload in Hash#each_with_object and resolves return type' do
+    source = Solargraph::Source.load_string(%(
+      # @param klass [Class]
+      # @param pin_class_hash [Hash{String => Class}]
+      def pins_by_class klass, pin_class_hash
+        # @type [Set<Integer>]
+        s = Set.new
+        pin_class_hash.each_with_object(s) { |(key, o), n| n.merge(o) if key <= klass }
+      end
+
+      out = pins_by_class Symbol, {}
+      out
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new.map(source)
+    clip = api_map.clip_at('test.rb', [10, 6])
+    type = clip.infer
+    expect(type.to_s).to eq('Set<Integer>')
+  end
+
+  it 'erases unresolvable class generics' do
+    source = Solargraph::Source.load_string(%(
+      # @generic T
+      class Foo
+        # @return [generic<T>]
+        def bar; baz; end
+      end
+      a = Foo.new.bar
+      a
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new.map(source)
+    clip = api_map.clip_at('test.rb', [7, 6])
+    type = clip.infer
+    expect(type.to_s).to eq('undefined')
+  end
+
+  it 'erases unresolvable method generics' do
+    source = Solargraph::Source.load_string(%(
+      # @generic T
+      # @return [generic<T>] but I forgot to annotate the block parameters
+      def bad_passthrough; yield; end
+
+      a = bad_passthrough { 123 }
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new.map(source)
+    clip = api_map.clip_at('test.rb', [5, 6])
+    type = clip.infer
+    expect(type.to_s).to eq('undefined')
+  end
 end

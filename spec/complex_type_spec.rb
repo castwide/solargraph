@@ -297,7 +297,39 @@ describe Solargraph::ComplexType do
     expect(result.tag).to eq('String')
   end
 
-  it 'resolves generic parameters' do
+  UNIQUE_METHOD_GENERIC_TESTS = [
+    # tag, context_type_tag, unfrozen_input_map, expected_tag, expected_output_map
+    ['String', 'String', {}, 'String', {}],
+    ['generic<A>', 'String', {}, 'String', {'A' => 'String'}],
+    ['generic<A>', 'Array<String>', {}, 'Array<String>', {'A' => 'Array<String>'}],
+    ['generic<A>', 'Array<String>', {'A' => 'String'}, 'String', {'A' => 'String'}],
+    ['generic<A>', 'Array<generic<B>>', {'B' => 'Integer'}, 'Array<Integer>', {'B' => 'Integer', 'A' => 'Array<Integer>'}],
+    # @todo Improve UniqueType#resolve_generics_from_context() to handle this case
+    # ['Array<generic<A>>', 'Array<String>', {}, 'Array<String>', {'A' => 'String'}],
+  ]
+
+  UNIQUE_METHOD_GENERIC_TESTS.each do |tag, context_type_tag, unfrozen_input_map, expected_tag, expected_output_map|
+    context "resolves #{tag} with context #{context_type_tag} and existing resolved generics #{unfrozen_input_map}" do
+      let(:complex_type) { Solargraph::ComplexType.parse(tag) }
+      let(:unique_type) { unique_type = complex_type.first }
+
+      it '#{tag} is a unique type' do
+        expect(complex_type.length).to eq(1)
+      end
+
+      let(:generic_value) { unfrozen_input_map.transform_values! { |tag| Solargraph::ComplexType.parse(tag) } }
+      let(:context_type) { Solargraph::ComplexType.parse(context_type_tag) }
+
+      it "resolves to #{expected_tag} with updated map #{expected_output_map}" do
+        resolved_generic_values = unfrozen_input_map.transform_values { |tag| Solargraph::ComplexType.parse(tag) }
+        resolved_type = unique_type.resolve_generics_from_context(expected_output_map.keys, context_type, resolved_generic_values: resolved_generic_values)
+        expect(resolved_type.tag).to eq(expected_tag)
+        expect(resolved_generic_values.transform_values(&:tag)).to eq(expected_output_map)
+      end
+    end
+  end
+
+  it 'resolves generic namespace parameters' do
     api_map = Solargraph::ApiMap.new
     return_type = Solargraph::ComplexType.parse('Array<generic<GenericTypeParam>>')
     generic_class = Solargraph::Pin::Namespace.new(name: 'Foo', comments: '@generic GenericTypeParam')
@@ -309,6 +341,34 @@ describe Solargraph::ComplexType do
     )
     type = return_type.resolve_generics(generic_class, called_method.return_type)
     expect(type.tag).to eq('Array<String>')
+  end
+
+  it 'resolves generic parameters on a tuple using ()' do
+    api_map = Solargraph::ApiMap.new
+    return_type = Solargraph::ComplexType.parse('Array(generic<GenericTypeParam1>, generic<GenericTypeParam2>)')
+    generic_class = Solargraph::Pin::Namespace.new(name: 'Foo', comments: "@generic GenericTypeParam1\n@generic GenericTypeParam2")
+    called_method = Solargraph::Pin::Method.new(
+      location: Solargraph::Location.new('file:///foo.rb', Solargraph::Range.from_to(0, 0, 0, 0)),
+      closure: generic_class,
+      name: 'bar',
+      comments: '@return [Foo<String, Integer>]'
+    )
+    type = return_type.resolve_generics(generic_class, called_method.return_type)
+    expect(type.tag).to eq('Array(String, Integer)')
+  end
+
+  it 'resolves generic parameters on a tuple using <()>' do
+    api_map = Solargraph::ApiMap.new
+    return_type = Solargraph::ComplexType.parse('Array<(generic<GenericTypeParam1>, generic<GenericTypeParam2>)>')
+    generic_class = Solargraph::Pin::Namespace.new(name: 'Foo', comments: "@generic GenericTypeParam1\n@generic GenericTypeParam2")
+    called_method = Solargraph::Pin::Method.new(
+      location: Solargraph::Location.new('file:///foo.rb', Solargraph::Range.from_to(0, 0, 0, 0)),
+      closure: generic_class,
+      name: 'bar',
+      comments: '@return [Foo<String, Integer>]'
+    )
+    type = return_type.resolve_generics(generic_class, called_method.return_type)
+    expect(type.tag).to eq('Array<(String, Integer)>')
   end
 
   it 'parses tuples of tuples' do

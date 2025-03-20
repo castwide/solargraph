@@ -12,6 +12,7 @@ module Solargraph::LanguageServer::Message::Workspace
     private
 
     def register_from_options
+      Solargraph.logger.debug "Registering capabilities from options: #{host.options.inspect}"
       # @type [Array<String>]
       y = []
       # @type [Array<String>]
@@ -22,6 +23,7 @@ module Solargraph::LanguageServer::Message::Workspace
       (host.options['formatting'] ? y : n).push('textDocument/formatting')
       (host.options['symbols'] ? y : n).push('textDocument/documentSymbol', 'workspace/symbol')
       (host.options['definitions'] ? y : n).push('textDocument/definition')
+      (host.options['typeDefinitions'] ? y : n).push('textDocument/typeDefinition')
       (host.options['references'] ? y : n).push('textDocument/references')
       (host.options['folding'] ? y : n).push('textDocument/folding')
       (host.options['highlights'] ? y : n).push('textDocument/documentHighlight')
