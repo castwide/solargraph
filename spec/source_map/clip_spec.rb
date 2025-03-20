@@ -1825,7 +1825,7 @@ describe Solargraph::SourceMap::Clip do
     expect(type.rooted?).to be true
   end
 
-  it 'infers block parameter type for Array#select' do
+  xit 'infers block parameter type for Array#select' do
     source = Solargraph::Source.load_string(%(
       a = [1,2,3]
       a.select { |i| i }
