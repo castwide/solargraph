@@ -3,7 +3,9 @@
 require 'yard'
 
 module Solargraph
-  # The namespace for pins used in maps.
+  # The namespace for Pins used in SourceMaps.
+  #
+  # Pins represent declarations, from gems, Sources, and the Ruby core.
   #
   module Pin
     autoload :Common,           'solargraph/pin/common'
