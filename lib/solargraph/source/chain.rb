@@ -175,7 +175,7 @@ module Solargraph
           ComplexType.parse(possibles.map(&:to_s).join(', '))
         end
         return type if context.nil? || context.return_type.undefined?
-        type.self_to(context.return_type.namespace)
+        type.self_to(context.return_type.tag)
       end
 
       # @param type [ComplexType]

@@ -7,9 +7,11 @@ module Solargraph
       attr_reader :scope
 
       # @param scope [::Symbol] :class or :instance
-      def initialize scope: :class, **splat
+      # @param generics [::Array<Pin::Parameter>, nil]
+      def initialize scope: :class, generics: nil, **splat
         super(**splat)
         @scope = scope
+        @generics = generics
       end
 
       def context

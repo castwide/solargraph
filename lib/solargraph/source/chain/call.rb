@@ -38,7 +38,7 @@ module Solargraph
           return inferred_pins(found, api_map, name_pin.context, locals) unless found.empty?
           # @param [ComplexType::UniqueType]
           pins = name_pin.binder.each_unique_type.flat_map do |context|
-            api_map.get_method_stack(context.namespace, word, scope: context.scope)
+            api_map.get_method_stack(context.namespace == '' ? '' : context.tag, word, scope: context.scope)
           end
           return [] if pins.empty?
           inferred_pins(pins, api_map, name_pin.context, locals)
@@ -59,11 +59,17 @@ module Solargraph
             type = ComplexType::UNDEFINED
             # start with overloads that require blocks; if we are
             # passing a block, we want to find a signature that will
-            # use it.
+            # use it.  If we didn't pass a block, the logic below will
+            # reject it regardless
+
             sorted_overloads = overloads.sort { |ol| ol.block? ? -1 : 1 }
+            new_signature_pin = nil
             sorted_overloads.each do |ol|
-              next unless arguments_match(arguments, ol)
+              next unless arity_matches?(arguments, ol)
               match = true
+
+              atypes = []
+              block_parameter = nil
               arguments.each_with_index do |arg, idx|
                 param = ol.parameters[idx]
                 atype = nil
@@ -72,30 +78,33 @@ module Solargraph
                   match = if ol.parameters.any?(&:restarg?)
                             true
                           elsif last_arg && ol.block?
-                            # block argument that isn't declared as an arg as well
-                            atype ||= arg.infer(api_map, Pin::ProxyType.anonymous(context), locals)
-                            atype.namespace == 'Proc'
+                            # block argument that isn't declared as an arg as well - let's add that here
+                            atypes[idx] ||= arg.infer(api_map, Pin::ProxyType.anonymous(context), locals)
+                            atypes[idx].namespace == 'Proc'
                           else
                             false
                           end
                   break
                 end
-                atype ||= arg.infer(api_map, Pin::ProxyType.anonymous(context), locals)
+                atype = atypes[idx] ||= arg.infer(api_map, Pin::ProxyType.anonymous(context), locals)
                 # @todo Weak type comparison
                 # unless atype.tag == param.return_type.tag || api_map.super_and_sub?(param.return_type.tag, atype.tag)
-                unless param.return_type.undefined? || atype.name == param.return_type.name || api_map.super_and_sub?(param.return_type.name, atype.name)
+                unless param.return_type.undefined? || atype.name == param.return_type.name || api_map.super_and_sub?(param.return_type.name, atype.name) || param.return_type.generic?
                   match = false
                   break
                 end
               end
               if match
-                type = with_params(ol.return_type.self_to(context.to_s), context).qualify(api_map, context.namespace) if ol.return_type.defined?
+                new_signature_pin = ol.resolve_generics_from_context_until_complete(ol.generics, atypes)
+                new_return_type = new_signature_pin.return_type
+                type = with_params(new_return_type.self_to(context.to_s), context).qualify(api_map, context.namespace) if new_return_type.defined?
                 type ||= ComplexType::UNDEFINED
               end
               break if type.defined?
             end
+            p = p.with_single_signature(new_signature_pin) unless new_signature_pin.nil?
             next p.proxy(type) if type.defined?
-            if p.is_a?(Pin::Method) && !p.macros.empty?
+            if !p.macros.empty?
               result = process_macro(p, api_map, context, locals)
               next result unless result.return_type.undefined?
             elsif !p.directives.empty?
@@ -122,6 +131,12 @@ module Solargraph
         # @return [Pin::Base]
         def process_macro pin, api_map, context, locals
           pin.macros.each do |macro|
+            # @todo 'Wrong argument type for
+            #   Solargraph::Source::Chain::Call#inner_process_macro:
+            #   macro expected YARD::Tags::MacroDirective, received
+            #   generic<Elem>' is because we lose 'rooted' information
+            #   in the 'Chain::Array' class internally, leaving
+            #   ::Array#each shadowed when it shouldn't be.
             result = inner_process_macro(pin, macro, api_map, context, locals)
             return result unless result.return_type.undefined?
           end
@@ -184,7 +199,7 @@ module Solargraph
         # @param arguments [::Array<Chain>]
         # @param signature [Pin::Signature]
         # @return [Boolean]
-        def arguments_match arguments, signature
+        def arity_matches? arguments, signature
           parameters = signature.parameters
           argcount = arguments.length
           parcount = parameters.length

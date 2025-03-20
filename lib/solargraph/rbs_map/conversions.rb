@@ -95,6 +95,7 @@ module Solargraph
 
       # @param decl [RBS::AST::Declarations::Module::Self]
       # @param closure [Pin::Namespace]
+      # @return [void]
       def convert_self_type_to_pins decl, closure
         include_pin = Solargraph::Pin::Reference::Include.new(
           name: decl.name.relative!.to_s,
@@ -308,6 +309,7 @@ module Solargraph
             pins.last.signatures.replace(
               pin.signatures.map do |p|
                 Pin::Signature.new(
+                  p.generics,
                   p.parameters,
                   ComplexType::SELF
                 )
@@ -337,12 +339,13 @@ module Solargraph
       # @return [void]
       def method_def_to_sigs decl, pin
         decl.overloads.map do |overload|
+          generics = overload.method_type.type_params.map(&:to_s)
           parameters, return_type = parts_of_function(overload.method_type, pin)
           block = if overload.method_type.block
-                    Pin::Signature.new(*parts_of_function(overload.method_type.block, pin))
+                    Pin::Signature.new(generics, *parts_of_function(overload.method_type.block, pin))
           end
           return_type = ComplexType.try_parse(method_type_to_tag(overload.method_type))
-          Pin::Signature.new(parameters, return_type, block)
+          Pin::Signature.new(generics, parameters, return_type, block)
         end
       end
 
