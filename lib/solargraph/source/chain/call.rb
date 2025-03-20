@@ -36,9 +36,16 @@ module Solargraph
             []
           end
           return inferred_pins(found, api_map, name_pin.context, locals) unless found.empty?
-          # @param [ComplexType::UniqueType]
-          pins = name_pin.binder.each_unique_type.flat_map do |context|
-            api_map.get_method_stack(context.namespace == '' ? '' : context.tag, word, scope: context.scope)
+          if api_map.loose_unions
+            # fetch methods which ANY of the potential context types provide
+            pins = name_pin.binder.each_unique_type.flat_map do |context|
+              api_map.get_method_stack(context.namespace == '' ? '' : context.to_s, word, scope: context.scope)
+            end
+          else
+            # grab pins which are provided by every potential context type
+            pins = name_pin.binder.each_unique_type.map do |context|
+              api_map.get_method_stack(context.namespace == '' ? '' : context.to_s, word, scope: context.scope)
+            end.reduce(:&)
           end
           return [] if pins.empty?
           inferred_pins(pins, api_map, name_pin.context, locals)
@@ -200,12 +207,9 @@ module Solargraph
         # @param signature [Pin::Signature]
         # @return [Boolean]
         def arity_matches? arguments, signature
-          parameters = signature.parameters
-          argcount = arguments.length
-          parcount = parameters.length
-          parcount -= 1 if !parameters.empty? && parameters.last.block?
           return false if signature.block? && !with_block?
-          return false if argcount < parcount && !(argcount == parcount - 1 && parameters.last.restarg?)
+          mandatory_positional_param_count = signature.parameters.count(&:mandatory_positional?)
+          return false if arguments.count < mandatory_positional_param_count
           true
         end
 
