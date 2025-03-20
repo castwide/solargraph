@@ -280,14 +280,32 @@ describe Solargraph::Parser::NodeMethods do
     expect(rets.length).to eq(1)
   end
 
-  it "handles conditional returns with following code" do
+  xit "short-circuits return node finding after a raise statement in a begin expressiona" do
     node = Solargraph::Parser.parse(%(
-      x = 1
-      return x if foo
+      raise "Error"
       y
     ))
     rets = Solargraph::Parser::NodeMethods.returns_from_method_body(node)
-    # Another implicit else branch. This should have 3 return nodes.
+    expect(rets.length).to eq(0)
+  end
+
+  it "does not short circuit return node finding after a raise statement in a conditional" do
+    node = Solargraph::Parser.parse(%(
+      x = 1
+      raise "Error" if foo
+      y
+    ))
+    rets = Solargraph::Parser::NodeMethods.returns_from_method_body(node)
+    expect(rets.length).to eq(1)
+  end
+
+  it "does not short circuit return node finding after a return statement in a conditional" do
+    node = Solargraph::Parser.parse(%(
+      x = 1
+      return "Error" if foo
+      y
+    ))
+    rets = Solargraph::Parser::NodeMethods.returns_from_method_body(node)
     expect(rets.length).to eq(2)
   end
 
@@ -312,8 +330,8 @@ describe Solargraph::Parser::NodeMethods do
     node = Solargraph::Parser.parse('1 || "2"')
     rets = Solargraph::Parser::NodeMethods.returns_from_method_body(node)
     expect(rets.length).to eq(2)
-    # expect(rets[0].type).to eq(:LIT)
-    # expect(rets[1].type).to eq(:STR)
+    expect(rets[0].type).to eq(:int)
+    expect(rets[1].type).to eq(:str)
   end
 
   it "handles nested 'and' nodes" do
