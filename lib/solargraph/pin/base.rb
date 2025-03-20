@@ -94,7 +94,7 @@ module Solargraph
       end
 
       def to_s
-        name.to_s
+        to_rbs
       end
 
       # @return [Boolean]

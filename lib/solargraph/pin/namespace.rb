@@ -45,7 +45,11 @@ module Solargraph
       end
 
       def desc
-        to_rbs
+        if name.nil?
+          '(top-level)'
+        else
+          to_rbs
+        end
       end
 
       def namespace

@@ -103,6 +103,11 @@ module Solargraph
         end.call
       end
 
+      def desc
+        Module.to_s
+        to_rbs + ' ' + tag
+      end
+
       # @return [String]
       def rooted_namespace
         return namespace unless rooted?
