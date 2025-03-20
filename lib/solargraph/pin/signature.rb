@@ -47,10 +47,6 @@ module Solargraph
       # @param context_type [ComplexType] The receiver type, including the parameters
       #   we want to substitute into 'definitions'
       # @return [Array<String>]
-      def generics
-        @generics ||= []
-      end
-
       # @yieldparam [ComplexType]
       # @yieldreturn [ComplexType]
       # @return [self]
