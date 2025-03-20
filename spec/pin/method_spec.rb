@@ -25,6 +25,18 @@ describe Solargraph::Pin::Method do
     expect(pin.parameter_names).to eq(%w[bar baz])
   end
 
+  it "tracks implicit block parameters when types included" do
+    source = Solargraph::Source.new(%(
+      # @yieldparam bing [Integer]
+      def foo bar:, baz: MyClass.new
+      end
+    ))
+    map = Solargraph::SourceMap.map(source)
+    pin = map.pins.select{|pin| pin.path == '#foo'}.first
+    expect(pin.class).to eq(Solargraph::Pin::Method)
+    expect(pin.signatures.first.block).not_to be_nil
+  end
+
   it "includes param tags in documentation" do
     # Yard wants to be handed data without comment markers or leading
     # whitespace, so we use <<~
@@ -181,6 +193,54 @@ describe Solargraph::Pin::Method do
     pin = api_map.get_path_pins('Foo#bar').first
     type = pin.typify(api_map)
     expect(type.tag).to eq('Hash')
+  end
+
+  it "infers return types from constants" do
+    source = Solargraph::Source.load_string(%(
+      class Foo
+        # @param [String] a
+        def bar(a)
+          123
+        end
+      end
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new
+    api_map.map source
+    pin = api_map.get_path_pins('Foo#bar').first
+    type = pin.probe(api_map)
+    expect(type.tag).to eq('Integer')
+  end
+
+  it "infers return types from other parameters" do
+    source = Solargraph::Source.load_string(%(
+      class Foo
+        # @param [String] a
+        def bar(a)
+          a
+        end
+      end
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new
+    api_map.map source
+    pin = api_map.get_path_pins('Foo#bar').first
+    type = pin.probe(api_map)
+    expect(type.tag).to eq('String')
+  end
+
+  it "infers return types from blocks" do
+    source = Solargraph::Source.load_string(%(
+      class Foo
+        # @yieldreturn [Integer]
+        def bar
+          yield
+        end
+      end
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new
+    api_map.map source
+    pin = api_map.get_path_pins('Foo#bar').first
+    type = pin.probe(api_map)
+    expect(type.tag).to eq('Integer')
   end
 
   it "typifies Booleans" do

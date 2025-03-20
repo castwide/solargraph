@@ -315,6 +315,23 @@ describe Solargraph::Source::Chain::Call do
     expect(type.tag).to eq('String')
   end
 
+  xit 'infers generic return types from block from yield being a return node' do
+    source = Solargraph::Source.load_string(%(
+      def yielder(&blk)
+        yield
+      end
+
+      yielder do
+        123
+      end
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new
+    api_map.map source
+    chain = Solargraph::Source::SourceChainer.chain(source, Solargraph::Position.new(7, 9))
+    type = chain.infer(api_map, Solargraph::Pin::ROOT_PIN, api_map.source_map('test.rb').locals)
+    expect(type.tag).to eq('Integer')
+  end
+
   it 'infers types from union type' do
     source = Solargraph::Source.load_string(%(
       # @type [String, Float]

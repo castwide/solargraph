@@ -65,7 +65,9 @@ describe 'NodeChainer' do
       [] || ''
     ))
     chain = Solargraph::Parser.chain(source.node)
-    expect(chain).to be_defined
+    expect(chain.links.map(&:word)).to eq(['<or>'])
+    or_link = chain.links.first
+    expect(or_link.class).to eq(Solargraph::Source::Chain::Or)
   end
 
   it 'tracks yielded blocks in methods' do
@@ -113,6 +115,21 @@ describe 'NodeChainer' do
     foo_link = chain.links.first
     expect(foo_link.class).to eq(Solargraph::Source::Chain::Call)
     expect(foo_link.arguments).to eq([])
+  end
+
+  it 'tracks complex lhs' do
+    source = Solargraph::Source.load_string(%(
+      foo.bar = 1
+    ))
+    chain = Solargraph::Parser.chain(source.node)
+    expect(chain.links.map(&:word)).to eq(['foo', 'bar='])
+    foo_link, bar_link = chain.links
+    expect(foo_link.class).to eq(Solargraph::Source::Chain::Call)
+    expect(foo_link.arguments).to eq([])
+    expect(bar_link.class).to eq(Solargraph::Source::Chain::Call)
+    expect(bar_link.arguments.map(&:class)).to eq([Solargraph::Source::Chain])
+    argument = bar_link.arguments.first
+    expect(argument.links.map(&:word)).to eq(['<::Integer>'])
   end
 
   it 'tracks mixed block arguments' do
