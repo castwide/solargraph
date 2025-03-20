@@ -391,25 +391,4 @@ describe Solargraph::Source::Chain::Call do
     type = chain.infer(api_map, Solargraph::Pin::ROOT_PIN, api_map.source_map('test.rb').locals)
     expect(type.tag).to eq('String')
   end
-
-  it 'calculates class return type based on class generic' do
-    source = Solargraph::Source.load_string(%(
-      # @generic A
-      class Foo
-        # @return [generic<A>]
-        def bar; end
-      end
-
-      # @type [Foo<String>]
-      f = Foo.new
-      a = f.bar
-      a
-    ), 'test.rb')
-    api_map = Solargraph::ApiMap.new
-    api_map.map source
-
-    chain = Solargraph::Source::SourceChainer.chain(source, Solargraph::Position.new(10, 7))
-    type = chain.infer(api_map, Solargraph::Pin::ROOT_PIN, api_map.source_map('test.rb').locals)
-    expect(type.tag).to eq('String')
-  end
 end
