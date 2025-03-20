@@ -1752,7 +1752,7 @@ describe Solargraph::SourceMap::Clip do
     expect(type.to_s).to eq('Integer, nil')
   end
 
-  xit 'picks correct overload in Hash#each_with_object and resolves return type' do
+  it 'picks correct overload in Hash#each_with_object and resolves return type' do
     source = Solargraph::Source.load_string(%(
       # @param klass [Class]
       # @param pin_class_hash [Hash{String => Class}]

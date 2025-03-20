@@ -351,7 +351,7 @@ describe Solargraph::Source::Chain::Call do
     chain = Solargraph::Source::SourceChainer.chain(source, Solargraph::Position.new(4, 11))
     type = chain.infer(api_map, Solargraph::Pin::ROOT_PIN, api_map.source_map('test.rb').locals)
     # @todo It would be more accurate to return `Enumerator<Array<Integer>>` here
-    expect(type.tag).to eq('Enumerator<String, Array<Integer>>')
+    expect(type.tag).to eq('Enumerator<Integer, String, Array<Integer>>')
   end
 
   it 'calculates class return type based on class generic' do

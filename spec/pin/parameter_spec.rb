@@ -59,7 +59,7 @@ describe Solargraph::Pin::Parameter do
     api_map = Solargraph::ApiMap.new
     api_map.map source
     clip = api_map.clip_at('file.rb', Solargraph::Position.new(13, 10))
-    expect(clip.infer.tag).to eq('undefined')
+    expect(clip.infer.tag).to eq('generic')
   end
 
   it "detects block parameter return types from core methods" do
