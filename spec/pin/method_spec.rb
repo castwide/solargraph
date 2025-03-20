@@ -34,7 +34,15 @@ describe Solargraph::Pin::Method do
     map = Solargraph::SourceMap.map(source)
     pin = map.pins.select{|pin| pin.path == '#foo'}.first
     expect(pin.class).to eq(Solargraph::Pin::Method)
-    expect(pin.signatures.first.block).not_to be_nil
+    method_pin = pin
+    expect(method_pin.signatures.length).to eq(1)
+    method_signature = method_pin.signatures.first
+    expect(method_signature.block).not_to be_nil
+    method_parameters = method_pin.parameters
+    expect(pin.block).not_to be_nil
+    block = pin.block
+    expect(block.parameters.map(&:name)).to eq(['bing'])
+    expect(block.parameters.map(&:return_type).map(&:to_s)).to eq(['Integer'])
   end
 
   it "includes param tags in documentation" do
@@ -79,8 +87,8 @@ describe Solargraph::Pin::Method do
       @yieldparam one [First] description1
       @yieldparam two [Second] description2
     COMMENTS
-    # pin = source.pins.select{|pin| pin.path == 'Foo#bar'}.first
     pin = Solargraph::Pin::Method.new(comments: comments)
+    expect(pin.documentation).to include('one')
     expect(pin.documentation).to include('[First]')
     expect(pin.documentation).to include('description1')
     expect(pin.documentation).to include('two')
@@ -227,7 +235,7 @@ describe Solargraph::Pin::Method do
     expect(type.tag).to eq('String')
   end
 
-  it "infers return types from blocks" do
+  it "infers return types from block return declarations" do
     source = Solargraph::Source.load_string(%(
       class Foo
         # @yieldreturn [Integer]

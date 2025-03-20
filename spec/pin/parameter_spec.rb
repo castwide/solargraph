@@ -133,6 +133,7 @@ describe Solargraph::Pin::Parameter do
     method_signature = method.signatures.first
     block_param = method_signature.parameters.last
     expect(block_param.name).to eq('blk')
+    expect(block_param.return_type).to eq('Proc')
     expect(method_signature.parameters.size).to eq(1)
     block_signature = method_signature.block
     expect(block_signature.return_type.to_s).to eq('Integer')
