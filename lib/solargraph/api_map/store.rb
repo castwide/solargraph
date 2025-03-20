@@ -4,6 +4,9 @@ require 'set'
 
 module Solargraph
   class ApiMap
+    # Queryable collection of Pins representing a Workspace, gems and the Ruby
+    # core.
+    #
     class Store
       # @return [Array<Solargraph::Pin::Base>]
       attr_reader :pins

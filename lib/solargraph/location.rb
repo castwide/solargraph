@@ -1,7 +1,8 @@
 # frozen_string_literal: true
 
 module Solargraph
-  # A section of text identified by its filename and range.
+  # A pointer to a section of source text identified by its filename
+  # and Range.
   #
   class Location
     # @return [String]
