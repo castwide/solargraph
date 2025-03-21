@@ -11,6 +11,7 @@ module Solargraph::LanguageServer::Message::Workspace
 
     private
 
+    # @return [void]
     def register_from_options
       Solargraph.logger.debug "Registering capabilities from options: #{host.options.inspect}"
       # @type [Array<String>]
