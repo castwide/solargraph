@@ -10,18 +10,21 @@ module Solargraph
         # @return [::Array<Chain>]
         attr_reader :arguments
 
+        # @return [Chain, nil]
+        attr_reader :block
+
         # @param word [String]
         # @param arguments [::Array<Chain>]
-        # @param with_block [Boolean] True if the chain is inside a block
-        # @param head [Boolean] True if the call is the start of its chain
-        def initialize word, arguments = [], with_block = false
+        # @param block [Chain, nil]
+        def initialize word, arguments = [], block = nil
           @word = word
           @arguments = arguments
-          @with_block = with_block
+          @block = block
+          fix_block_pass
         end
 
         def with_block?
-          @with_block
+          !!@block
         end
 
         # @param api_map [ApiMap]
@@ -233,6 +236,11 @@ module Solargraph
         def with_params type, context
           return type unless type.to_s.include?('$')
           ComplexType.try_parse(type.to_s.gsub('$', context.value_types.map(&:tag).join(', ')).gsub('<>', ''))
+        end
+
+        def fix_block_pass
+          argument = @arguments.last&.links&.first
+          @block = @arguments.pop if argument.is_a?(BlockSymbol) || argument.is_a?(BlockVariable)
         end
       end
     end
