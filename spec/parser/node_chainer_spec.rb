@@ -127,7 +127,7 @@ describe 'NodeChainer' do
       foo(&:bar)
     ))
     chain = Solargraph::Parser.chain(source.node)
-    arg = chain.links.first.arguments.first.links.first
+    arg = chain.links.first.block.links.first
     expect(arg).to be_a(Solargraph::Source::Chain::BlockSymbol)
   end
 
