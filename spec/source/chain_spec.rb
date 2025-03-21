@@ -210,7 +210,7 @@ describe Solargraph::Source::Chain do
     expect(type.to_s).to eq('Array, String')
   end
 
-  it 'infers Procs from block-pass nodes' do
+  it 'infers undefined from block-pass node with no caller' do
     source = Solargraph::Source.load_string(%(
       x = []
       x.map(&:foo)
@@ -220,9 +220,7 @@ describe Solargraph::Source::Chain do
     node = source.node_at(2, 12)
     chain = Solargraph::Parser.chain(node, 'test.rb')
     pin = chain.define(api_map, Solargraph::Pin::ROOT_PIN, []).first
-    expect(pin.return_type.tag).to eq('Proc')
-    type = chain.infer(api_map, Solargraph::Pin::ROOT_PIN, [])
-    expect(type.tag).to eq('Proc')
+    expect(pin.return_type.tag).to eq('undefined')
   end
 
   it 'infers Boolean from true' do
