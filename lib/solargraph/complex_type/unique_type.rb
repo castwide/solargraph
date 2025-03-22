@@ -77,8 +77,8 @@ module Solargraph
 
       # @return [String]
       def rbs_name
-        if ['', Array].include?(namespace) && fixed_parameters?
-          'tuple'
+        if name == 'undefined'
+          'untyped'
         else
           name
         end
@@ -86,7 +86,18 @@ module Solargraph
 
       # @return [String]
       def to_rbs
-        "#{rbs_name}#{parameters_as_rbs}"
+        if ['Tuple', 'Array'].include?(name) && fixed_parameters?
+          # tuples don't have a name; they're just [foo, bar, baz].
+          if substring == '()'
+            # but there are no zero element tuples, so we go with an array
+            'Array[]'
+          else
+            # already generated surrounded by []
+            parameters_as_rbs
+          end
+        else
+          "#{rbs_name}#{parameters_as_rbs}"
+        end
       end
 
       # @return [String]
