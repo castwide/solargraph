@@ -94,7 +94,7 @@ module Solargraph
       end
 
       def to_s
-        name.to_s
+        to_rbs
       end
 
       # @return [Boolean]
@@ -257,8 +257,26 @@ module Solargraph
         @identity ||= "#{closure.path}|#{name}"
       end
 
+      # @return [String, nil]
+      def to_rbs
+        return_type.to_rbs
+      end
+
+      # @return [String, nil]
+      def desc
+        if path
+          if to_rbs
+            path + ' ' + to_rbs
+          else
+            path
+          end
+        else
+          to_rbs
+        end
+      end
+
       def inspect
-        "#<#{self.class} `#{self.path}` at #{self.location.inspect}>"
+        "#<#{self.class} `#{self.desc}` at #{self.location.inspect}>"
       end
 
       protected

@@ -65,10 +65,33 @@ module Solargraph
         [self]
       end
 
+      def rbs_name
+        if name == 'undefined'
+          'untyped'
+        elsif ['', 'Array'].include?(namespace) && fixed_parameters?
+          'tuple'
+        else
+          name
+        end
+      end
+
+      # @return [String]
+      def rbs_name
+        if ['', Array].include?(namespace) && fixed_parameters?
+          'tuple'
+        else
+          name
+        end
+      end
+
       # @return [String]
       def to_rbs
-        "#{namespace}#{parameters? ? "[#{subtypes.map { |s| s.to_rbs }.join(', ')}]" : ''}"
-        # "
+        "#{rbs_name}#{parameters_as_rbs}"
+      end
+
+      # @return [String]
+      def parameters_as_rbs
+        parameters? ? "[#{all_params.map { |s| s.to_rbs }.join(', ')}]" : ''
       end
 
       def generic?

@@ -166,6 +166,27 @@ module Solargraph
         end
       end
 
+      def desc
+        # ensure the signatures line up when logged
+        if signatures.length > 1
+          "\n#{to_rbs}\n"
+        else
+          to_rbs
+        end
+      end
+
+      def to_rbs
+        return nil if signatures.empty?
+
+        rbs = "def #{name}: #{signatures.first.to_rbs}"
+        signatures[1..].each do |sig|
+          rbs += "\n"
+          rbs += (' ' * (4 + name.length))
+          rbs += "| #{name}: #{sig.to_rbs}"
+        end
+        rbs
+      end
+
       def path
         @path ||= "#{namespace}#{(scope == :instance ? '#' : '.')}#{name}"
       end
