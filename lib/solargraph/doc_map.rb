@@ -81,6 +81,20 @@ module Solargraph
     # @return [Gem::Specification, nil]
     def resolve_path_to_gemspec path
       gemspec = Gem::Specification.find_by_path(path)
+      if gemspec.nil?
+        gem_name_guess = path.split('/').first
+        begin
+          # this can happen when the gem is included via a local path in
+          # a Gemfile; Gem doesn't try to index the paths in that case.
+          #
+          # See if we can make a good guess:
+          potential_gemspec = Gem::Specification.find_by_name(gem_name_guess)
+          file = "lib/#{path}.rb"
+          gemspec = potential_gemspec if potential_gemspec.files.any? { |gemspec_file| file == gemspec_file }
+        rescue Gem::MissingSpecError
+          Solargraph.logger.info "require path #{path} could not be resolved to a gem via find_by_path or guess of #{gem_name_guess}"
+        end
+      end
       return gemspec if dependencies.empty? || gemspec.nil?
 
       if dependency_map.key?(gemspec.name)
