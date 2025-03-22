@@ -119,6 +119,8 @@ module Solargraph
             result.concat generate_links(n.children.last)
           elsif n.type == :or
             result.push Chain::Or.new([NodeChainer.chain(n.children[0], @filename), NodeChainer.chain(n.children[1], @filename)])
+          elsif n.type == :if
+            result.push Chain::If.new([NodeChainer.chain(n.children[1], @filename), NodeChainer.chain(n.children[2], @filename)])
           elsif [:begin, :kwbegin].include?(n.type)
             result.concat generate_links(n.children.last)
           elsif n.type == :block_pass
