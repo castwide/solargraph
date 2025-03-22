@@ -102,6 +102,51 @@ describe Solargraph::Pin::Parameter do
     expect(map.locals.first.return_type.tag).to eq('Set')
   end
 
+  it "gets return types from yieldreturn type tags" do
+    map = Solargraph::SourceMap.load_string(%(
+      require 'set'
+
+      # @yieldparam [Array]
+      # @yieldreturn [Integer]
+      # @return [Integer]
+      def yielder(&blk)
+        blk.yield
+      end
+
+      # @param things [Set]
+      yielder do |things|
+        123
+      end
+    ))
+    expect(map.pins.size).to eq(4)
+    expect(map.pins.map(&:class)).
+      to eq([
+              Solargraph::Pin::Namespace,
+              Solargraph::Pin::Reference::Require,
+              Solargraph::Pin::Method,
+              Solargraph::Pin::Block
+            ])
+
+    method = map.pins[2]
+    expect(method.signatures.size).to eq(1)
+
+    method_signature = method.signatures.first
+    block_param = method_signature.parameters.last
+    expect(block_param.name).to eq('blk')
+    expect(block_param.return_type.to_s).to eq('Proc')
+    expect(method_signature.parameters.size).to eq(1)
+    block_signature = method_signature.block
+    expect(block_signature.return_type.to_s).to eq('Integer')
+    expect(block_signature.parameters.map(&:return_type).map(&:to_s)).to eq(['Array'])
+    expect(method.detail).to eq('(&blk) => Integer')
+    expect(method.documentation).to eq("Block Params:\n*  [Array] \n\nBlock Returns:\n* [Integer] \n\nReturns:\n* [Integer] \n\nVisibility: public")
+    expect(method.return_type.tag).to eq('Integer')
+
+    expect(map.locals.map(&:to_s)).to eq(['blk', 'things'])
+    expect(map.locals.map(&:return_type).map(&:to_s)).to eq(['Proc', 'Set'])
+    expect(map.locals.map(&:decl)).to eq([:blockarg, :arg])
+  end
+
   it "detects near equivalents" do
     map1 = Solargraph::SourceMap.load_string(%(
       strings.each do |foo|
