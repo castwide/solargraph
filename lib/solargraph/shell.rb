@@ -227,7 +227,7 @@ module Solargraph
 
     desc 'bundle', 'Generate documentation for bundled gems [deprecated]', hide: true
     long_desc %(
-      The `bundle` command is deprecated. Solargraph currently uses RBS instead.
+      The `bundle` command is deprecated. Solargraph currently generates documentation as needed.
     )
     option :directory, type: :string, aliases: :d, desc: 'The workspace directory', default: '.'
     option :rebuild, type: :boolean, aliases: :r, desc: 'Rebuild existing documentation', default: false
