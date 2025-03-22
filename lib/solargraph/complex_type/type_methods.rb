@@ -13,6 +13,12 @@ module Solargraph
     #   methods:
     #     transform()
     module TypeMethods
+      # @!method transform(new_name = nil, &transform_type)
+      #   @param new_name [String, nil]
+      #   @yieldparam t [UniqueType]
+      #   @yieldreturn [UniqueType]
+      #   @return [UniqueType, nil]
+
       # @return [String]
       attr_reader :name
 

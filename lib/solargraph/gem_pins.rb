@@ -49,7 +49,7 @@ module Solargraph
       def build_yard_pins(gemspec)
         Yardoc.cache(gemspec) unless Yardoc.cached?(gemspec)
         yardoc = Yardoc.load!(gemspec)
-        YardMap::Mapper.new(yardoc, gemspec).map  
+        YardMap::Mapper.new(yardoc, gemspec).map
       end
 
       # Select the first defined type.

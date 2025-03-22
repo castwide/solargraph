@@ -135,8 +135,8 @@ module Solargraph
       end
 
       # @param new_name [String, nil]
-      # @param new_key_types [Enumerable<UniqueType>, nil]
-      # @param new_subtypes [Enumerable<UniqueType>, nil]
+      # @param new_key_types [Array<UniqueType>, nil]
+      # @param new_subtypes [Array<UniqueType>, nil]
       # @return [self]
       def recreate(new_name: nil, new_key_types: nil, new_subtypes: nil)
         new_name ||= name
@@ -175,8 +175,8 @@ module Solargraph
       #
       # @param new_name [String, nil]
       # @yieldparam t [UniqueType]
-      # @yieldreturn [UniqueType]
-      # @return [UniqueType, nil]
+      # @yieldreturn [self]
+      # @return [self]
       def transform(new_name = nil, &transform_type)
         new_key_types = @key_types.flat_map { |ct| ct.map { |ut| ut.transform(&transform_type) } }.compact
         new_subtypes = @subtypes.flat_map { |ct| ct.map { |ut| ut.transform(&transform_type) } }.compact

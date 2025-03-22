@@ -233,6 +233,9 @@ module Solargraph
     end
 
     desc 'cache', 'Cache a gem', hide: true
+    # @return [void]
+    # @param gem [String]
+    # @param version [String, nil]
     def cache gem, version = nil
       spec = Gem::Specification.find_by_name(gem, version)
       pins = GemPins.build(spec)
@@ -241,6 +244,7 @@ module Solargraph
 
     desc 'gems', 'Cache documentation for installed gems'
     option :rebuild, type: :boolean, desc: 'Rebuild existing documentation', default: false
+    # @return [void]
     def gems *names
       if names.empty?
         Gem::Specification.to_a.each do |spec|
