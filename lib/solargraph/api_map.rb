@@ -117,7 +117,7 @@ module Solargraph
     # @return [SourceMap::Clip]
     def clip_at filename, position
       position = Position.normalize(position)
-      SourceMap::Clip.new(self, cursor_at(filename, position))
+      clip(cursor_at(filename, position))
     end
 
     # Create an ApiMap with a workspace in the specified directory.
@@ -459,7 +459,9 @@ module Solargraph
     # @return [SourceMap::Clip]
     def clip cursor
       raise FileNotFoundError, "ApiMap did not catalog #{cursor.filename}" unless source_map_hash.key?(cursor.filename)
-      SourceMap::Clip.new(self, cursor)
+
+      cache.get_clip(cursor) ||
+        SourceMap::Clip.new(self, cursor).tap { |clip| cache.set_clip(cursor, clip) }
     end
 
     # Get an array of document symbols from a file.

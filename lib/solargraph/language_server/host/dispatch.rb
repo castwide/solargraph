@@ -33,9 +33,9 @@ module Solargraph
         # @return [void]
         def update_libraries uri
           src = sources.find(uri)
-          libraries.each do |lib|
-            lib.merge src if lib.contain?(src.filename)
-          end
+          using = libraries.select { |lib| lib.contain?(src.filename) }
+          using.push generic_library_for(uri) if using.empty?
+          using.each { |lib| lib.merge src }
           diagnoser.schedule uri
         end
 
