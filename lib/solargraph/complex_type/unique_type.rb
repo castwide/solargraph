@@ -65,22 +65,12 @@ module Solargraph
         [self]
       end
 
-      def rbs_name
-        if name == 'undefined'
-          'untyped'
-        elsif ['', 'Array'].include?(namespace) && fixed_parameters?
-          'tuple'
-        else
-          name
-        end
-      end
-
       # @return [String]
       def rbs_name
         if name == 'undefined'
           'untyped'
         else
-          name
+          rooted_name
         end
       end
 
@@ -214,7 +204,7 @@ module Solargraph
       def transform(new_name = nil, &transform_type)
         new_key_types = @key_types.flat_map { |ct| ct.map { |ut| ut.transform(&transform_type) } }.compact
         new_subtypes = @subtypes.flat_map { |ct| ct.map { |ut| ut.transform(&transform_type) } }.compact
-        new_type = recreate(new_name: new_name || name, new_key_types: new_key_types, new_subtypes: new_subtypes)
+        new_type = recreate(new_name: new_name || rooted_name, new_key_types: new_key_types, new_subtypes: new_subtypes)
         yield new_type
       end
 

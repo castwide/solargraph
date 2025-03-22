@@ -56,7 +56,7 @@ describe Solargraph::ComplexType do
   it "identify rooted types" do
     types = Solargraph::ComplexType.parse '::Array'
     expect(types.map(&:rooted?)).to eq([true])
-    # @todo expect(types.to_rbs).to eq('::Array')
+    expect(types.to_rbs).to eq('::Array')
   end
 
   it "identify unrooted types" do
@@ -213,13 +213,14 @@ describe Solargraph::ComplexType do
     expect(qualified.tag).to eq('Class<Foo::Bar>')
     # @todo expect(qualified.rooted_tag).to eq('Class<Foo::Bar>')
     expect(qualified).to be_rooted
-    # @todo expect(qualified.to_rbs).to eq('::Class<::Foo::Bar>')
+    # @todo expect(qualified.to_rbs).to eq('::Class')
   end
 
   it "qualifies types with fixed parameters" do
     original = Solargraph::ComplexType.parse('Array(String, Bar)').first
     expect(original.to_rbs).to eq('[String, Bar]')
     qualified = original.qualify(foo_bar_api_map, 'Foo')
+    expect(qualified).to be_rooted
     expect(qualified.tag).to eq('Array(String, Foo::Bar)')
     # @todo expect(qualified.to_rbs).to eq('[::String, ::Foo::Bar]')
   end
@@ -228,7 +229,7 @@ describe Solargraph::ComplexType do
     original = Solargraph::ComplexType.parse('Hash{String => Bar}').first
     qualified = original.qualify(foo_bar_api_map, 'Foo')
     expect(qualified.tag).to eq('Hash{String => Foo::Bar}')
-    # expect(qualified.to_rbs).to eq('::Hash[::String, ::Foo::Bar]')
+    # @todo expect(qualified.to_rbs).to eq('::Hash[::String, ::Foo::Bar]')
   end
 
   it "returns string representations of the entire type array" do
