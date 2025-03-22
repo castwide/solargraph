@@ -47,10 +47,9 @@ module Solargraph
 
     # @return [String]
     def to_rbs
-      ((@items.length > 1 ? '(' : '') + @items.map do |item|
-         item.to_rbs
-      end.join(' | ') + (@items.length > 1 ? ')' : ''))
-      # "
+      ((@items.length > 1 ? '(' : '') +
+       @items.map(&:to_rbs).join(' | ') +
+       (@items.length > 1 ? ')' : ''))
     end
 
     # @yieldparam [UniqueType]
