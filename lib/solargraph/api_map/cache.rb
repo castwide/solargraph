@@ -12,6 +12,7 @@ module Solargraph
         @qualified_namespaces = {}
         # @type [Hash{String => Pin::Method}]
         @receiver_definitions = {}
+        # @type [Hash{String => SourceMap::Clip}]
         @clips = {}
       end
 
@@ -65,11 +66,6 @@ module Solargraph
       end
 
       # @param path [String]
-      def receiver_defined? path
-        @receiver_definitions.key? path
-      end
-
-      # @param path [String]
       # @return [Pin::Method]
       def get_receiver_definition path
         @receiver_definitions[path]
@@ -96,20 +92,18 @@ module Solargraph
 
       # @return [void]
       def clear
-        @methods.clear
-        @constants.clear
-        @qualified_namespaces.clear
-        @receiver_definitions.clear
-        @clips.clear
+        all_caches.each(&:clear)
       end
 
       # @return [Boolean]
       def empty?
-        @methods.empty? &&
-          @constants.empty? &&
-          @qualified_namespaces.empty? &&
-          @receiver_definitions.empty? &&
-          @clips.empty?
+        all_caches.all?(&:empty?)
+      end
+
+      private
+
+      def all_caches
+        [@methods, @constants, @qualified_namespaces, @receiver_definitions, @clips]
       end
     end
   end
