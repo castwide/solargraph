@@ -7,6 +7,11 @@ module Solargraph
   class Shell < Thor
     include Solargraph::ServerMethods
 
+    # Tell Thor to ensure the process exits with status 1 if any error happens.
+    def self.exit_on_failure?
+      true
+    end
+
     map %w[--version -v] => :version
 
     desc "--version, -v", "Print the version"
