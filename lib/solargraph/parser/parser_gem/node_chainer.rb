@@ -50,6 +50,7 @@ module Solargraph
         def generate_links n
           return [] unless n.is_a?(::Parser::AST::Node)
           return generate_links(n.children[0]) if n.type == :splat
+          # @type [Array<Chain::Link>]
           result = []
           if n.type == :block
             @in_block += 1
