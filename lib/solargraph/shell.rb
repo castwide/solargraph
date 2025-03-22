@@ -131,10 +131,9 @@ module Solargraph
     def uncache *gems
       raise ArgumentError, 'No gems specified.' if gems.empty?
       gems.each do |gem|
-        Dir[File.join(Solargraph::YardMap::CoreDocs.cache_dir, 'gems', "#{gem}-*")].each do |dir|
-          puts "Deleting cache: #{dir}"
-          FileUtils.remove_entry_secure dir
-        end
+        spec = Gem::Specification.find_by_name(gem)
+        Cache.uncache('gems', "#{spec.name}-#{spec.version}.ser")
+        Cache.uncache('gems', "#{spec.name}-#{spec.version}.yardoc")
       end
     end
 
