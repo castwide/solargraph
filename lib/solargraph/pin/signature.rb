@@ -39,13 +39,6 @@ module Solargraph
         end
       end
 
-      # Probe the concrete type for each of the generic type
-      # parameters used in this method, and return a new method pin if
-      # possible.
-      #
-      # @param definitions [Pin::Namespace] The module/class which uses generic types
-      # @param context_type [ComplexType] The receiver type, including the parameters
-      #   we want to substitute into 'definitions'
       # @return [Array<String>]
       # @yieldparam [ComplexType]
       # @yieldreturn [ComplexType]
