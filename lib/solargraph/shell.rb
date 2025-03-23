@@ -225,7 +225,7 @@ module Solargraph
       end
     end
 
-private
+    private
 
     # @param pin [Solargraph::Pin::Base]
     # @return [String]
