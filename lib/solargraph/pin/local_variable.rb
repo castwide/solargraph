@@ -32,7 +32,7 @@ module Solargraph
 
       # @return [String]
       def to_rbs
-        (name || '(anon)') + ' ' + (@return_type&.to_rbs || 'untyped')
+        (name || '(anon)') + ' ' + (return_type&.to_rbs || 'untyped')
       end
 
       private
