@@ -133,7 +133,7 @@ module Solargraph
       # @param context_type [ComplexType] The receiver type
       # @return [UniqueType, ComplexType]
       def resolve_generics definitions, context_type
-        return self if definitions.generics.empty?
+        return self if definitions.nil? || definitions.generics.empty?
 
         transform(name) do |t|
           if t.name == GENERIC_TAG_NAME

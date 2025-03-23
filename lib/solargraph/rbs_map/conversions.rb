@@ -173,6 +173,15 @@ module Solargraph
             name: decl.super_class.name.relative!.to_s
           )
         end
+
+        decl.each_mixin do |mixin|
+          klass = mixin.is_a?(RBS::AST::Members::Include) ? Pin::Reference::Include : Pin::Reference::Extend
+          pins.push klass.new(
+            name: mixin.name.relative!.to_s,
+            location: rbs_location_to_location(mixin.location),
+            closure: class_pin.closure
+          )
+        end
         convert_members_to_pins decl, class_pin
       end
 
@@ -208,6 +217,15 @@ module Solargraph
         pins.push module_pin
         convert_self_types_to_pins decl, module_pin
         convert_members_to_pins decl, module_pin
+
+        decl.each_mixin do |mixin|
+          klass = mixin.is_a?(RBS::AST::Members::Include) ? Pin::Reference::Include : Pin::Reference::Extend
+          pins.push klass.new(
+            name: mixin.name.relative!.to_s,
+            location: rbs_location_to_location(mixin.location),
+            closure: module_pin.closure
+          )
+        end
       end
 
       # @param name [String]
@@ -294,6 +312,8 @@ module Solargraph
             scope: :instance,
             signatures: [],
             generics: generics,
+            # @todo RBS core has unreliable visibility definitions
+            visibility: closure.path == 'Kernel' && Kernel.private_instance_methods(false).include?(decl.name) ? :private : :public
           )
           pin.signatures.concat method_def_to_sigs(decl, pin)
           pins.push pin
