@@ -39,10 +39,6 @@ module Solargraph
       @gems_in_memory ||= {}
     end
 
-    def self.stdlib_in_memory
-      @stdlib_in_memory ||= {}
-    end
-
     private
 
     # @return [Hash{String => Gem::Specification, nil}]
@@ -86,12 +82,10 @@ module Solargraph
     # @param path [String] require path that might be in the RBS stdlib collection
     # @return [void]
     def try_stdlib_map path
-      return if try_stdlib_in_memory(path)
-      map = RbsMap::StdlibMap.new(path)
+      map = RbsMap::StdlibMap.load(path)
       return unless map.resolved?
 
-      Solargraph.logger.info "Loading stdlib pins for #{path}"
-      self.class.stdlib_in_memory[path] = map.pins
+      Solargraph.logger.debug "Loading stdlib pins for #{path}"
       @pins.concat map.pins
     end
 
@@ -102,16 +96,6 @@ module Solargraph
       return false unless gempins
       Solargraph.logger.debug "Found #{gemspec.name} #{gemspec.version} in memory"
       @pins.concat gempins
-      true
-    end
-
-    # @param path [String]
-    # @return [Boolean]
-    def try_stdlib_in_memory path
-      pins = DocMap.stdlib_in_memory[path]
-      return false unless pins
-      Solargraph.logger.debug "Found stdlib #{path} in memory"
-      @pins.concat pins
       true
     end
 
