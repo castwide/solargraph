@@ -10,18 +10,21 @@ module Solargraph
         # @return [::Array<Chain>]
         attr_reader :arguments
 
+        # @return [Chain, nil]
+        attr_reader :block
+
         # @param word [String]
         # @param arguments [::Array<Chain>]
-        # @param with_block [Boolean] True if the chain is inside a block
-        # @param head [Boolean] True if the call is the start of its chain
-        def initialize word, arguments = [], with_block = false
+        # @param block [Chain, nil]
+        def initialize word, arguments = [], block = nil
           @word = word
           @arguments = arguments
-          @with_block = with_block
+          @block = block
+          fix_block_pass
         end
 
         def with_block?
-          @with_block
+          !!@block
         end
 
         # @param api_map [ApiMap]
@@ -74,16 +77,7 @@ module Solargraph
                 param = ol.parameters[idx]
                 atype = nil
                 if param.nil?
-                  last_arg = idx == arguments.length - 1
-                  match = if ol.parameters.any?(&:restarg?)
-                            true
-                          elsif last_arg && ol.block?
-                            # block argument that isn't declared as an arg as well - let's add that here
-                            atypes[idx] ||= arg.infer(api_map, Pin::ProxyType.anonymous(context), locals)
-                            atypes[idx].namespace == 'Proc'
-                          else
-                            false
-                          end
+                  match = ol.parameters.any?(&:restarg?)
                   break
                 end
                 atype = atypes[idx] ||= arg.infer(api_map, Pin::ProxyType.anonymous(context), locals)
@@ -95,10 +89,16 @@ module Solargraph
                 end
               end
               if match
-                new_signature_pin = ol.resolve_generics_from_context_until_complete(ol.generics, atypes)
-                new_return_type = new_signature_pin.return_type
-                type = with_params(new_return_type.self_to(context.to_s), context).qualify(api_map, context.namespace) if new_return_type.defined?
-                type ||= ComplexType::UNDEFINED
+                # @todo Functional but dodgy generic resolution from block inference
+                if block && ol.block && ol.block.return_type.name == 'generic' && ol.return_type.to_s.include?(ol.block.return_type.to_s)
+                  blocktype = block_call_type(api_map, context)
+                  type = ComplexType.parse(ol.return_type.to_s.gsub("generic<#{ol.generics.first}>", blocktype.to_s))
+                else
+                  new_signature_pin = ol.resolve_generics_from_context_until_complete(ol.generics, atypes)
+                  new_return_type = new_signature_pin.return_type
+                  type = with_params(new_return_type.self_to(context.to_s), context).qualify(api_map, context.namespace) if new_return_type.defined?
+                  type ||= ComplexType::UNDEFINED
+                end
               end
               break if type.defined?
             end
@@ -233,6 +233,21 @@ module Solargraph
         def with_params type, context
           return type unless type.to_s.include?('$')
           ComplexType.try_parse(type.to_s.gsub('$', context.value_types.map(&:tag).join(', ')).gsub('<>', ''))
+        end
+
+        def fix_block_pass
+          argument = @arguments.last&.links&.first
+          @block = @arguments.pop if argument.is_a?(BlockSymbol) || argument.is_a?(BlockVariable)
+        end
+
+        def block_call_type(api_map, context)
+          return nil unless with_block?
+
+          # @todo Handle BlockVariable and literal blocks
+          if block.links.first.is_a?(BlockSymbol)
+            callee = api_map.get_path_pins("#{context.subtypes.first}##{block.links.first.word}").first
+            callee&.return_type || ComplexType::UNDEFINED
+          end
         end
       end
     end

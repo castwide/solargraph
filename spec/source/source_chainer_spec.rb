@@ -326,4 +326,14 @@ describe Solargraph::Source::SourceChainer do
     expect(chain.node.type).to be(:send)
     expect(chain.node.children[1]).to be(:s)
   end
+
+  it 'adds blocks to calls' do
+    source = Solargraph::Source.load_string(%(
+      x.y do
+        z
+      end
+    ))
+    chain = Solargraph::Source::SourceChainer.chain(source, [1, 9])
+    expect(chain.links.last.block).to be
+  end
 end
