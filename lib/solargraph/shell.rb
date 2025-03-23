@@ -89,6 +89,16 @@ module Solargraph
     map 'clear-cache' => :clear
     map 'clear-cores' => :clear
 
+    desc 'cache', 'Cache a gem', hide: true
+    # @return [void]
+    # @param gem [String]
+    # @param version [String, nil]
+    def cache gem, version = nil
+      spec = Gem::Specification.find_by_name(gem, version)
+      pins = GemPins.build(spec)
+      Cache.save('gems', "#{spec.name}-#{spec.version}.ser", pins)
+    end
+
     desc 'uncache GEM [...GEM]', "Delete cached gem documentation"
     # @return [void]
     def uncache *gems
