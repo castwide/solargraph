@@ -99,6 +99,7 @@ module Solargraph
 
     # @param gemspec [Gem::Specification]
     # @param version [Gem::Version]
+    # @return [Gem::Specification]
     def change_gemspec_version gemspec, version
       Gem::Specification.find_by_name(gemspec.name, "= #{version}")
     rescue Gem::MissingSpecError
