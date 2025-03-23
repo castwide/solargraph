@@ -550,7 +550,7 @@ module Solargraph
       rooted_type = ComplexType.parse(rooted_tag)
       fqns = rooted_type.namespace
       fqns_generic_params = rooted_type.all_params
-      return [] if no_core && fqns =~ /^(Object|BasicObject|Class|Module|Kernel)$/
+      return [] if no_core && fqns =~ /^(Object|BasicObject|Class|Module)$/
       reqstr = "#{fqns}|#{scope}|#{visibility.sort}|#{deep}"
       return [] if skip.include?(reqstr)
       skip.add reqstr

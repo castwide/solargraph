@@ -145,7 +145,7 @@ describe Solargraph::ApiMap do
 
   it 'includes Kernel methods in the root namespace' do
     @api_map.index []
-    pins = @api_map.get_methods('')
+    pins = @api_map.get_methods('', visibility: [:private])
     expect(pins.map(&:path)).to include('Kernel#puts')
   end
 

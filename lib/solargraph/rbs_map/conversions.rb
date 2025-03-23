@@ -173,6 +173,7 @@ module Solargraph
             name: decl.super_class.name.relative!.to_s
           )
         end
+        add_mixins decl, class_pin.closure
         convert_members_to_pins decl, class_pin
       end
 
@@ -208,6 +209,8 @@ module Solargraph
         pins.push module_pin
         convert_self_types_to_pins decl, module_pin
         convert_members_to_pins decl, module_pin
+
+        add_mixins decl, module_pin.closure
       end
 
       # @param name [String]
@@ -294,6 +297,8 @@ module Solargraph
             scope: :instance,
             signatures: [],
             generics: generics,
+            # @todo RBS core has unreliable visibility definitions
+            visibility: closure.path == 'Kernel' && Kernel.private_instance_methods(false).include?(decl.name) ? :private : :public
           )
           pin.signatures.concat method_def_to_sigs(decl, pin)
           pins.push pin
@@ -621,6 +626,19 @@ module Solargraph
         else
           Solargraph.logger.warn "Unrecognized RBS type: #{type.class} at #{type.location}"
           'undefined'
+        end
+      end
+
+      # @param decl [RBS::AST::Declarations::Class, RBS::AST::Declarations::Module]
+      # @param closure [Pin::Closure]
+      def add_mixins decl, closure
+        decl.each_mixin do |mixin|
+          klass = mixin.is_a?(RBS::AST::Members::Include) ? Pin::Reference::Include : Pin::Reference::Extend
+          pins.push klass.new(
+            name: mixin.name.relative!.to_s,
+            location: rbs_location_to_location(mixin.location),
+            closure: closure
+          )
         end
       end
     end
