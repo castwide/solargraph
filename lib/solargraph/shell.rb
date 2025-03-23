@@ -111,6 +111,34 @@ module Solargraph
       end
     end
 
+    desc 'gems', 'Cache documentation for installed gems'
+    option :rebuild, type: :boolean, desc: 'Rebuild existing documentation', default: false
+    # @return [void]
+    def gems *names
+      if names.empty?
+        Gem::Specification.to_a.each do |spec|
+          next unless options.rebuild || !Yardoc.cached?(spec)
+
+          puts "Processing gem: #{spec.name} #{spec.version}"
+          pins = GemPins.build(spec)
+          Cache.save('gems', "#{spec.name}-#{spec.version}.ser", pins)
+        end
+      else
+        names.each do |name|
+          spec = Gem::Specification.find_by_name(name)
+          if spec
+            next unless options.rebuild || !Yardoc.cached?(spec)
+
+            puts "Processing gem: #{spec.name} #{spec.version}"
+            pins = GemPins.build(spec)
+            Cache.save('gems', "#{spec.name}-#{spec.version}.ser", pins)
+          else
+            warn "Gem '#{name}' not found"
+          end
+        end
+      end
+    end
+
     desc 'reporters', 'Get a list of diagnostics reporters'
     # @return [void]
     def reporters
