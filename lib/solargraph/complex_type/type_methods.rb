@@ -13,6 +13,12 @@ module Solargraph
     #   methods:
     #     transform()
     module TypeMethods
+      # @!method transform(new_name = nil, &transform_type)
+      #   @param new_name [String, nil]
+      #   @yieldparam t [UniqueType]
+      #   @yieldreturn [UniqueType]
+      #   @return [UniqueType, nil]
+
       # @return [String]
       attr_reader :name
 
@@ -107,6 +113,12 @@ module Solargraph
       def rooted_namespace
         return namespace unless rooted?
         "::#{namespace}"
+      end
+
+      # @return [String]
+      def rooted_name
+        return name unless rooted?
+        "::#{name}"
       end
 
       # @return [::Symbol] :class or :instance

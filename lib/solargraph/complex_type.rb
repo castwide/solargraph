@@ -47,10 +47,9 @@ module Solargraph
 
     # @return [String]
     def to_rbs
-      ((@items.length > 1 ? '(' : '') + @items.map do |item|
-        "#{item.namespace}#{item.parameters? ? "[#{item.subtypes.map { |s| s.to_rbs }.join(', ')}]" : ''}"
-      end.join(' | ') + (@items.length > 1 ? ')' : '')).gsub(/undefined/, 'untyped')
-      # "
+      ((@items.length > 1 ? '(' : '') +
+       @items.map(&:to_rbs).join(' | ') +
+       (@items.length > 1 ? ')' : ''))
     end
 
     # @yieldparam [UniqueType]
@@ -66,7 +65,9 @@ module Solargraph
     end
 
     # @yieldparam [UniqueType]
-    # @return [Enumerator<UniqueType>]
+    # @return [void]
+    # @overload each_unique_type()
+    #   @return [Enumerator<UniqueType>]
     def each_unique_type &block
       return enum_for(__method__) unless block_given?
 
@@ -218,8 +219,11 @@ module Solargraph
       #   used internally.
       #
       # @param *strings [Array<String>] The type definitions to parse
-      # @param partial [Boolean] True if the string is part of a another type
-      # @return [ComplexType, Array<UniqueType>] Array if partial is true
+      # @return [ComplexType]
+      # @overload parse(*strings, partial: false)
+      #  @todo Need ability to use a literal true as a type below
+      #  @param partial [Boolean] True if the string is part of a another type
+      #  @return [Array<UniqueType>]
       def parse *strings, partial: false
         # @type [Hash{Array<String> => ComplexType}]
         @cache ||= {}

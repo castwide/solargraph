@@ -30,6 +30,11 @@ module Solargraph
           match_named_closure(other_closure, closure)
       end
 
+      # @return [String]
+      def to_rbs
+        (name || '(anon)') + ' ' + (@return_type&.to_rbs || 'untyped')
+      end
+
       private
 
       # @param tag1 [String]
