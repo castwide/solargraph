@@ -66,7 +66,9 @@ module Solargraph
     end
 
     # @yieldparam [UniqueType]
-    # @return [Enumerator<UniqueType>]
+    # @return [void]
+    # @overload each_unique_type()
+    #   @return [Enumerator<UniqueType>]
     def each_unique_type &block
       return enum_for(__method__) unless block_given?
 
@@ -218,8 +220,11 @@ module Solargraph
       #   used internally.
       #
       # @param *strings [Array<String>] The type definitions to parse
-      # @param partial [Boolean] True if the string is part of a another type
-      # @return [ComplexType, Array<UniqueType>] Array if partial is true
+      # @return [ComplexType]
+      # @overload parse(*strings, partial: false)
+      #  @todo Need ability to use a literal true as a type below
+      #  @param partial [Boolean] True if the string is part of a another type
+      #  @return [Array<UniqueType>]
       def parse *strings, partial: false
         # @type [Hash{Array<String> => ComplexType}]
         @cache ||= {}
