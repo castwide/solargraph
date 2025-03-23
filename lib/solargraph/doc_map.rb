@@ -59,6 +59,8 @@ module Solargraph
       end
     end
 
+    # @param gemspec [Gem::Specification]
+    # @return [void]
     def try_rbs_map gemspec
       cache_file = File.join('gems', "#{gemspec.name}-#{gemspec.version}.ser")
       if Cache.exist?(cache_file)
@@ -69,6 +71,8 @@ module Solargraph
       end
     end
 
+    # @param name [String]
+    # @return [void]
     def try_stdlib_map name
       map = RbsMap::StdlibMap.new(name)
       return unless map.resolved?
@@ -93,6 +97,8 @@ module Solargraph
       end
     end
 
+    # @param gemspec [Gem::Specification]
+    # @param version [Gem::Version]
     def change_gemspec_version gemspec, version
       Gem::Specification.find_by_name(gemspec.name, "= #{version}")
     rescue Gem::MissingSpecError
