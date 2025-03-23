@@ -40,6 +40,24 @@ module Solargraph
         @comments ||= ''
       end
 
+      # @param generics_to_resolve [Enumerable<String>]
+      # @param return_type_context [ComplexType, nil]
+      # @param context [ComplexType]
+      # @param resolved_generic_values [Hash{String => ComplexType}]
+      # @return [self]
+      def resolve_generics_from_context(generics_to_resolve, return_type_context = nil, resolved_generic_values: {})
+        proxy return_type.resolve_generics_from_context(generics_to_resolve,
+                                                        return_type_context,
+                                                        resolved_generic_values: resolved_generic_values)
+      end
+
+      # @yieldparam [ComplexType]
+      # @yieldreturn [ComplexType]
+      # @return [self]
+      def transform_types(&transform)
+        proxy return_type.transform(&transform)
+      end
+
       # Determine the concrete type for each of the generic type
       # parameters used in this method based on the parameters passed
       # into the its class and return a new method pin.
@@ -48,10 +66,15 @@ module Solargraph
       # @param context_type [ComplexType] The receiver type
       # @return [self]
       def resolve_generics definitions, context_type
-        rt = @return_type.resolve_generics(definitions, context_type) if @return_type
-        pin = proxy rt
-        pin.context = context_type
-        pin
+        transformed = transform_types { |t| t.resolve_generics(definitions, context_type) if t }
+        transformed.erase_generics(definitions.generics)
+      end
+
+      # @param generics_to_erase [Enumerable<String>]
+      # @return [self]
+      def erase_generics(generics_to_erase)
+        return self if generics_to_erase.empty?
+        transform_types { |t| t.erase_generics(generics_to_erase) }
       end
 
       # @return [String, nil]
@@ -71,7 +94,7 @@ module Solargraph
       end
 
       def to_s
-        name.to_s
+        to_rbs
       end
 
       # @return [Boolean]
@@ -234,8 +257,26 @@ module Solargraph
         @identity ||= "#{closure.path}|#{name}"
       end
 
+      # @return [String, nil]
+      def to_rbs
+        return_type.to_rbs
+      end
+
+      # @return [String, nil]
+      def desc
+        if path
+          if to_rbs
+            path + ' ' + to_rbs
+          else
+            path
+          end
+        else
+          to_rbs
+        end
+      end
+
       def inspect
-        "#<#{self.class} `#{self.path}` at #{self.location.inspect}>"
+        "#<#{self.class} `#{self.desc}` at #{self.location.inspect}>"
       end
 
       protected

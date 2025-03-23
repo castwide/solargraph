@@ -55,7 +55,7 @@ module Solargraph
           return ComplexType.try_parse('Object') if dfn && dfn.path == 'Class#new'
         end
         return result unless result.tag == 'self'
-        ComplexType.try_parse(cursor.chain.base.infer(api_map, block, locals).namespace)
+        ComplexType.try_parse(cursor.chain.base.infer(api_map, block, locals).tag)
       end
 
       # Get an array of all the locals that are visible from the cursors's

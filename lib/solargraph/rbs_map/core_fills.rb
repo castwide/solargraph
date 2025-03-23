@@ -22,33 +22,11 @@ module Solargraph
                                     closure: Solargraph::Pin::Namespace.new(name: 'Object'), comments: '@return [Class<self>]')
       ]
 
-      YIELDPARAMS = [
-        Override.from_comment('Object#tap', %(
-@return [self]
-@yieldparam [self]
-        )),
-        Override.from_comment('String#each_line', %(
-@yieldparam [String]
-        ))
-      ]
-
-      methods_with_yieldparam_subtypes = %w[
-        Array#each Array#map Array#map! Array#any? Array#all? Array#index
-        Array#keep_if Array#delete_if
-        Enumerable#each_entry Enumerable#map Enumerable#any? Enumerable#all?
-        Enumerable#select Enumerable#reject
-        Set#each
-      ]
-
-      YIELDPARAM_SINGLE_PARAMETERS = methods_with_yieldparam_subtypes.map do |path|
-        Override.from_comment(path, <<~DOC
-          @yieldparam [generic<Elem>]
-        DOC
-        )
-      end
-
       CLASS_RETURN_TYPES = [
+        Override.method_return('Class#new', 'self'),
+        Override.method_return('Class.new', 'Class<BasicObject>'),
         Override.method_return('Class#allocate', 'self'),
+        Override.method_return('Class.allocate', 'Class<BasicObject>')
       ]
 
       # HACK: Add Errno exception classes
@@ -60,7 +38,7 @@ module Solargraph
       end
       ERRNOS = errnos
 
-      ALL = KEYWORDS + MISSING + YIELDPARAMS + YIELDPARAM_SINGLE_PARAMETERS + CLASS_RETURN_TYPES + ERRNOS
+      ALL = KEYWORDS + MISSING + CLASS_RETURN_TYPES + ERRNOS
     end
   end
 end

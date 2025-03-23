@@ -783,6 +783,9 @@ module Solargraph
           'textDocument/definition' => {
             definitionProvider: true
           },
+          'textDocument/typeDefinition' => {
+            typeDefinitionProvider: true
+          },
           'textDocument/references' => {
             referencesProvider: true
           },

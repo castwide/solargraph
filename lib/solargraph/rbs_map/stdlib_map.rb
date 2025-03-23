@@ -16,6 +16,7 @@ module Solargraph
         cache = Cache.load('stdlib', "#{library}.ser")
         if cache
           pins.replace cache
+          @resolved = true
         else
           super
           Cache.save('stdlib', "#{library}.ser", pins)
@@ -26,10 +27,6 @@ module Solargraph
       # @return [StdlibMap]
       def self.load library
         @stdlib_maps_hash[library] ||= StdlibMap.new(library)
-      end
-
-      def repository
-        @repository ||= RBS::Repository.new
       end
     end
   end

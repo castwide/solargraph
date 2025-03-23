@@ -144,7 +144,9 @@ module Solargraph
       # @param klass [Class]
       # @return [Enumerable<Solargraph::Pin::Base>]
       def pins_by_class klass
-        @pin_select_cache[klass] ||= @pin_class_hash.each_with_object(Set.new) { |(key, o), n| n.merge(o) if key <= klass }
+        # @type [Set<Solargraph::Pin::Base>]
+        s = Set.new
+        @pin_select_cache[klass] ||= @pin_class_hash.each_with_object(s) { |(key, o), n| n.merge(o) if key <= klass }
       end
 
       # @param fqns [String]

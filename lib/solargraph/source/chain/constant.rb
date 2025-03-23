@@ -19,6 +19,12 @@ module Solargraph
           end
           parts = base.split('::')
           gates.each do |gate|
+            # @todo 'Wrong argument type for
+            #   Solargraph::Source::Chain::Constant#deep_constant_type:
+            #   gate expected String, received generic<Elem>' is because
+            #   we lose 'rooted' information in the 'Chain::Array' class
+            #   internally, leaving ::Array#each shadowed when it
+            #   shouldn't be.
             type = deep_constant_type(gate, api_map)
             # Use deep inference to resolve root
             parts[0..-2].each do |sym|

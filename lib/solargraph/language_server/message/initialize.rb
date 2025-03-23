@@ -54,6 +54,7 @@ module Solargraph
             params['workspaceFolders']
         end
 
+        # @return [Hash{Symbol => undefined}]
         def static_completion
           return {} unless host.options['completion']
           {
@@ -64,6 +65,7 @@ module Solargraph
           }
         end
 
+        # @return [Hash{Symbol => BasicObject}]
         def static_code_action
           {
             codeActionProvider: true,
@@ -71,6 +73,7 @@ module Solargraph
           }
         end
 
+        # @return [Hash{Symbol => BasicObject}]
         def static_signature_help
           {
             signatureHelpProvider: {
@@ -123,9 +126,9 @@ module Solargraph
         end
 
         def static_type_definitions
-          return {} unless host.options['type_definitions']
+          return {} unless host.options['typeDefinitions']
           {
-            definitionProvider: true
+            typeDefinitionProvider: true
           }
         end
 

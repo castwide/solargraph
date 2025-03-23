@@ -6,6 +6,12 @@ module Solargraph
       # Methods for associating sources with libraries via URIs.
       #
       module Dispatch
+        # @abstract
+        # @return [Host::Diagnoser]
+        def diagnoser
+          raise NotImplementedError, 'Host::Dispatch requires a diagnoser method'
+        end
+
         # @return [Sources]
         def sources
           @sources ||= begin

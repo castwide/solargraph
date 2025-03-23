@@ -29,6 +29,7 @@ module Solargraph
         stubs.map do |stub|
           Pin::Signature.new(
             [],
+            [],
             ComplexType.try_parse(stub.return_type)
           )
         end

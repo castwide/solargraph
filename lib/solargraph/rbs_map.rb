@@ -19,10 +19,12 @@ module Solargraph
     attr_reader :library
 
     # @param library [String]
-    def initialize library
+    def initialize library, version = nil
       @library = library
+      @version = version
+      @collection = nil
       loader = RBS::EnvironmentLoader.new(core_root: nil, repository: repository)
-      add_library loader, library
+      add_library loader, library, version
       return unless resolved?
       load_environment_to_pins(loader)
     end
@@ -43,15 +45,18 @@ module Solargraph
       @resolved
     end
 
+    def repository
+      @repository ||= RBS::Repository.new(no_stdlib: false)
+    end
+
     # @param library [String]
     # @return [RbsMap]
     def self.load library
       @@rbs_maps_hash[library] ||= RbsMap.new(library)
     end
 
-    # @return [RBS::Repository]
-    def repository
-      @repository ||= RBS::Repository.new(no_stdlib: true)
+    def self.from_gemspec(gemspec)
+      RbsMap.new(gemspec.name, gemspec.version)
     end
 
     private
@@ -59,13 +64,13 @@ module Solargraph
     # @param loader [RBS::EnvironmentLoader]
     # @param library [String]
     # @return [Boolean] true if adding the library succeeded
-    def add_library loader, library
-      @resolved = if loader.has_library?(library: library, version: nil)
-        loader.add library: library, version: nil
+    def add_library loader, library, version
+      @resolved = if loader.has_library?(library: library, version: version)
+        loader.add library: library, version: version
         Solargraph.logger.info "#{short_name} successfully loaded library #{library}"
         true
       else
-        Solargraph.logger.info "#{short_name} failed to load library #{library}"
+        Solargraph.logger.debug "#{short_name} failed to load library #{library}"
         false
       end
     end

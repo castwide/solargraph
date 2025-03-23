@@ -10,18 +10,21 @@ module Solargraph
         # @return [::Array<Chain>]
         attr_reader :arguments
 
+        # @return [Chain, nil]
+        attr_reader :block
+
         # @param word [String]
         # @param arguments [::Array<Chain>]
-        # @param with_block [Boolean] True if the chain is inside a block
-        # @param head [Boolean] True if the call is the start of its chain
-        def initialize word, arguments = [], with_block = false
+        # @param block [Chain, nil]
+        def initialize word, arguments = [], block = nil
           @word = word
           @arguments = arguments
-          @with_block = with_block
+          @block = block
+          fix_block_pass
         end
 
         def with_block?
-          @with_block
+          !!@block
         end
 
         # @param api_map [ApiMap]
@@ -38,7 +41,7 @@ module Solargraph
           return inferred_pins(found, api_map, name_pin.context, locals) unless found.empty?
           # @param [ComplexType::UniqueType]
           pins = name_pin.binder.each_unique_type.flat_map do |context|
-            api_map.get_method_stack(context.namespace, word, scope: context.scope)
+            api_map.get_method_stack(context.namespace == '' ? '' : context.tag, word, scope: context.scope)
           end
           return [] if pins.empty?
           inferred_pins(pins, api_map, name_pin.context, locals)
@@ -57,32 +60,51 @@ module Solargraph
             overloads = p.signatures
             # next p if overloads.empty?
             type = ComplexType::UNDEFINED
-            overloads.each do |ol|
-              next unless arguments_match(arguments, ol)
-              # next if ol.parameters.last && ol.parameters.last.first.start_with?('&') && ol.parameters.last.last.nil? && !with_block?
+            # start with overloads that require blocks; if we are
+            # passing a block, we want to find a signature that will
+            # use it.  If we didn't pass a block, the logic below will
+            # reject it regardless
+
+            sorted_overloads = overloads.sort { |ol| ol.block? ? -1 : 1 }
+            new_signature_pin = nil
+            sorted_overloads.each do |ol|
+              next unless arity_matches?(arguments, ol)
               match = true
+
+              atypes = []
+              block_parameter = nil
               arguments.each_with_index do |arg, idx|
                 param = ol.parameters[idx]
+                atype = nil
                 if param.nil?
-                  match = false unless ol.parameters.any?(&:restarg?)
+                  match = ol.parameters.any?(&:restarg?)
                   break
                 end
-                atype = arg.infer(api_map, Pin::ProxyType.anonymous(context), locals)
+                atype = atypes[idx] ||= arg.infer(api_map, Pin::ProxyType.anonymous(context), locals)
                 # @todo Weak type comparison
                 # unless atype.tag == param.return_type.tag || api_map.super_and_sub?(param.return_type.tag, atype.tag)
-                unless param.return_type.undefined? || atype.name == param.return_type.name || api_map.super_and_sub?(param.return_type.name, atype.name)
+                unless param.return_type.undefined? || atype.name == param.return_type.name || api_map.super_and_sub?(param.return_type.name, atype.name) || param.return_type.generic?
                   match = false
                   break
                 end
               end
               if match
-                type = with_params(ol.return_type.self_to(context.to_s), context).qualify(api_map, context.namespace) if ol.return_type.defined?
-                type ||= ComplexType::UNDEFINED
+                # @todo Functional but dodgy generic resolution from block inference
+                if block && ol.block && ol.block.return_type.name == 'generic' && ol.return_type.to_s.include?(ol.block.return_type.to_s)
+                  blocktype = block_call_type(api_map, context)
+                  type = ComplexType.parse(ol.return_type.to_s.gsub("generic<#{ol.generics.first}>", blocktype.to_s))
+                else
+                  new_signature_pin = ol.resolve_generics_from_context_until_complete(ol.generics, atypes)
+                  new_return_type = new_signature_pin.return_type
+                  type = with_params(new_return_type.self_to(context.to_s), context).qualify(api_map, context.namespace) if new_return_type.defined?
+                  type ||= ComplexType::UNDEFINED
+                end
               end
               break if type.defined?
             end
+            p = p.with_single_signature(new_signature_pin) unless new_signature_pin.nil?
             next p.proxy(type) if type.defined?
-            if p.is_a?(Pin::Method) && !p.macros.empty?
+            if !p.macros.empty?
               result = process_macro(p, api_map, context, locals)
               next result unless result.return_type.undefined?
             elsif !p.directives.empty?
@@ -109,6 +131,12 @@ module Solargraph
         # @return [Pin::Base]
         def process_macro pin, api_map, context, locals
           pin.macros.each do |macro|
+            # @todo 'Wrong argument type for
+            #   Solargraph::Source::Chain::Call#inner_process_macro:
+            #   macro expected YARD::Tags::MacroDirective, received
+            #   generic<Elem>' is because we lose 'rooted' information
+            #   in the 'Chain::Array' class internally, leaving
+            #   ::Array#each shadowed when it shouldn't be.
             result = inner_process_macro(pin, macro, api_map, context, locals)
             return result unless result.return_type.undefined?
           end
@@ -171,7 +199,7 @@ module Solargraph
         # @param arguments [::Array<Chain>]
         # @param signature [Pin::Signature]
         # @return [Boolean]
-        def arguments_match arguments, signature
+        def arity_matches? arguments, signature
           parameters = signature.parameters
           argcount = arguments.length
           parcount = parameters.length
@@ -205,6 +233,21 @@ module Solargraph
         def with_params type, context
           return type unless type.to_s.include?('$')
           ComplexType.try_parse(type.to_s.gsub('$', context.value_types.map(&:tag).join(', ')).gsub('<>', ''))
+        end
+
+        def fix_block_pass
+          argument = @arguments.last&.links&.first
+          @block = @arguments.pop if argument.is_a?(BlockSymbol) || argument.is_a?(BlockVariable)
+        end
+
+        def block_call_type(api_map, context)
+          return nil unless with_block?
+
+          # @todo Handle BlockVariable and literal blocks
+          if block.links.first.is_a?(BlockSymbol)
+            callee = api_map.get_path_pins("#{context.subtypes.first}##{block.links.first.word}").first
+            callee&.return_type || ComplexType::UNDEFINED
+          end
         end
       end
     end
