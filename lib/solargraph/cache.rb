@@ -63,6 +63,12 @@ module Solargraph
       end
 
       # @return [void]
+      # @param path [Array<String>]
+      def uncache *path
+        FileUtils.rm_rf File.join(work_dir, *path), secure: true
+      end
+
+      # @return [void]
       def clear
         FileUtils.rm_rf base_dir, secure: true
       end

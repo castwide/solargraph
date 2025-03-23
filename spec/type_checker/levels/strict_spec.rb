@@ -56,7 +56,7 @@ describe Solargraph::TypeChecker do
       #   vendored code.
       gemspec = Gem::Specification.find_by_name('kramdown-parser-gfm')
       pins = Solargraph::GemPins.build(gemspec)
-      Solargraph::Cache.save('gems', "#{gemspec.name}-#{gemspec.version}.ser", pins)  
+      Solargraph::Cache.save('gems', "#{gemspec.name}-#{gemspec.version}.ser", pins)
       source_map = Solargraph::SourceMap.load_string(%(
         require 'kramdown-parser-gfm'
         Kramdown::Parser::GFM.undefined_call
@@ -646,6 +646,20 @@ describe Solargraph::TypeChecker do
         end
       ))
       expect(checker.problems).to be_one
+    end
+
+    xit 'uses nil? to refine type' do
+      checker = type_checker(%(
+        # @sg-ignore
+        # @type [String, nil]
+        foo = bar()
+        if foo.nil?
+          foo.upcase
+        else
+          foo.downcase
+        end
+      ))
+      expect(checker.problems.map(&:message)).to eq(['Unresolved call to upcase'])
     end
   end
 end

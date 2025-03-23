@@ -205,6 +205,32 @@ describe Solargraph::Source::Chain::Call do
     expect(type.tag).to eq('Hash<String, Baz<String>>')
   end
 
+  xit 'infers generic-class method return values through block return values' do
+    source = Solargraph::Source.load_string(%(
+      a = ['bar']
+      # @param item [String]
+      foo = a.to_set.classify do |item|
+       item.class
+      end
+
+      foo
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new
+    api_map.map source
+    chain = Solargraph::Source::SourceChainer.chain(source, Solargraph::Position.new(3, 12))
+    type = chain.infer(api_map, Solargraph::Pin::ROOT_PIN, api_map.source_map('test.rb').locals)
+    expect(type.tag).to eq('Array<String>')
+    chain = Solargraph::Source::SourceChainer.chain(source, Solargraph::Position.new(3, 20))
+    type = chain.infer(api_map, Solargraph::Pin::ROOT_PIN, api_map.source_map('test.rb').locals)
+    expect(type.tag).to eq('Set<String>')
+    chain = Solargraph::Source::SourceChainer.chain(source, Solargraph::Position.new(4, 17))
+    type = chain.infer(api_map, Solargraph::Pin::ROOT_PIN, api_map.source_map('test.rb').locals)
+    expect(type.tag).to eq('Class<String>')
+    chain = Solargraph::Source::SourceChainer.chain(source, Solargraph::Position.new(7, 9))
+    type = chain.infer(api_map, Solargraph::Pin::ROOT_PIN, api_map.source_map('test.rb').locals)
+    expect(type.tag).to eq('Hash{Class<String> => Set<String>}')
+  end
+
   it 'infers method return types' do
     source = Solargraph::Source.load_string(%(
       def bar
@@ -222,6 +248,26 @@ describe Solargraph::Source::Chain::Call do
     chain = Solargraph::Source::SourceChainer.chain(source, Solargraph::Position.new(9, 9))
     type = chain.infer(api_map, Solargraph::Pin::ROOT_PIN, api_map.source_map('test.rb').locals)
     expect(type.tag).to eq('Integer')
+  end
+
+  xit 'infers method return types based on method generic' do
+    source = Solargraph::Source.load_string(%(
+      class Foo
+        # @Generic A
+        # @param x [generic<A>]
+        # @return [generic<A>]
+        def bar(x); end
+      end
+
+      foo = Foo.new
+      a = foo.bar("baz")
+      a
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new
+    api_map.map source
+    chain = Solargraph::Source::SourceChainer.chain(source, Solargraph::Position.new(10, 6))
+    type = chain.infer(api_map, Solargraph::Pin::ROOT_PIN, api_map.source_map('test.rb').locals)
+    expect(type.tag).to eq('String')
   end
 
   it 'infers method return types with unused blocks' do
@@ -269,6 +315,23 @@ describe Solargraph::Source::Chain::Call do
     expect(type.tag).to eq('String')
   end
 
+  xit 'infers generic return types from block from yield being a return node' do
+    source = Solargraph::Source.load_string(%(
+      def yielder(&blk)
+        yield
+      end
+
+      yielder do
+        123
+      end
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new
+    api_map.map source
+    chain = Solargraph::Source::SourceChainer.chain(source, Solargraph::Position.new(7, 9))
+    type = chain.infer(api_map, Solargraph::Pin::ROOT_PIN, api_map.source_map('test.rb').locals)
+    expect(type.tag).to eq('Integer')
+  end
+
   it 'infers types from union type' do
     source = Solargraph::Source.load_string(%(
       # @type [String, Float]
@@ -306,5 +369,26 @@ describe Solargraph::Source::Chain::Call do
     type = chain.infer(api_map, Solargraph::Pin::ROOT_PIN, api_map.source_map('test.rb').locals)
     # @todo It would be more accurate to return `Enumerator<Array<Integer>>` here
     expect(type.tag).to eq('Enumerator<Integer, String, Array<Integer>>')
+  end
+
+  it 'calculates class return type based on class generic' do
+    source = Solargraph::Source.load_string(%(
+      # @generic A
+      class Foo
+        # @return [generic<A>]
+        def bar; end
+      end
+
+      # @type [Foo<String>]
+      f = Foo.new
+      a = f.bar
+      a
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new
+    api_map.map source
+
+    chain = Solargraph::Source::SourceChainer.chain(source, Solargraph::Position.new(10, 7))
+    type = chain.infer(api_map, Solargraph::Pin::ROOT_PIN, api_map.source_map('test.rb').locals)
+    expect(type.tag).to eq('String')
   end
 end
