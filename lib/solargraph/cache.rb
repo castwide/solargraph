@@ -51,15 +51,15 @@ module Solargraph
         File.file? join(*path)
       end
 
-      # @return [Boolean]
+      # @param path [Array<String>]
+      # @param pins [Array<Pin::Base>]
+      # @return [void]
       def save *path, pins
-        return false if pins.empty?
         file = File.join(work_dir, *path)
         base = File.dirname(file)
         FileUtils.mkdir_p base unless File.directory?(base)
         ser = Marshal.dump(pins)
         File.write file, ser, mode: 'wb'
-        true
       end
 
       # @return [void]

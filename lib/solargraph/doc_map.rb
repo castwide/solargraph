@@ -75,7 +75,7 @@ module Solargraph
         @pins.concat gempins
       else
         Solargraph.logger.debug "No pin cache for #{gemspec.name} #{gemspec.version}"
-        @uncached_gemspecs.push gemspec if gemspec
+        @uncached_gemspecs.push gemspec
       end
     end
 
@@ -94,6 +94,7 @@ module Solargraph
     def try_gem_in_memory gemspec
       gempins = DocMap.gems_in_memory[gemspec]
       return false unless gempins
+      Solargraph.logger.info "Found #{gemspec.name} #{gemspec.version} in memory"
       @pins.concat gempins
       true
     end
