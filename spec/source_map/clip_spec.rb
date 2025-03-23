@@ -997,7 +997,20 @@ describe Solargraph::SourceMap::Clip do
     expect(clip.complete.pins.map(&:name)).to include('baz:')
   end
 
-  xit 'infers variable type from ternary operator' do
+  it 'infers unique variable type from ternary operator when used as lvalue' do
+    source = Solargraph::Source.load_string(%(
+      def foo a
+        a = (true ? 'foo' : 'bar') + 'baz'
+        a
+      end
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new
+    api_map.map source
+    clip = api_map.clip_at('test.rb', [3, 8])
+    expect(clip.infer.to_s).to eq('String')
+  end
+
+  it 'infers complex variable type from ternary operator' do
     source = Solargraph::Source.load_string(%(
       def foo a
         type = (a == 123 ? 'foo' : 456)

@@ -21,11 +21,25 @@ module Solargraph
         @block = block
       end
 
-      # @return [Array<String>]
       def generics
-        @generics ||= []
+        @generics ||= [].freeze
       end
 
+      # @return [String]
+      def to_rbs
+        @rbs ||= rbs_generics + '(' + parameters.map { |param| param.to_rbs }.join(', ') + ') ' + (block.nil? ? '' : '{ ' + block.to_rbs + ' } ') + '-> ' + return_type.to_rbs
+      end
+
+      # @return [String]
+      def rbs_generics
+        if generics.empty?
+          return ''
+        else
+          return '[' + generics.map { |gen| gen.to_s }.join(', ') + '] '
+        end
+      end
+
+      # @return [Array<String>]
       # @yieldparam [ComplexType]
       # @yieldreturn [ComplexType]
       # @return [self]
