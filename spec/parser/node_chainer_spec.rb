@@ -137,7 +137,7 @@ describe 'NodeChainer' do
       foo(bar, &baz)
     ))
     chain = Solargraph::Parser.chain(source.node)
-    expect(chain.links.first.arguments.length).to eq(2)
+    expect(chain.links.first.arguments.length).to eq(1)
     expect(chain.links.first).to be_with_block
   end
 
@@ -154,13 +154,13 @@ describe 'NodeChainer' do
     expect(baz_link.arguments).to eq(['<::Integer>'])
   end
 
-  xit 'tracks block-pass symbols' do
+  it 'tracks block-pass symbols' do
     source = Solargraph::Source.load_string(%(
       foo(&:bar)
     ))
     chain = Solargraph::Parser.chain(source.node)
-    expect(chain.links.first.block).to be_a(Solargraph::Source::Chain)
-    expect(chain.links.first.block.links.first).to be_a(Solargraph::Source::Chain::BlockSymbol)
+    arg = chain.links.first.block.links.first
+    expect(arg).to be_a(Solargraph::Source::Chain::BlockSymbol)
   end
 
   # feature added in Ruby 3.1

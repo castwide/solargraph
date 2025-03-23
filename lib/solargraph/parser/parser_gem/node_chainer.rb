@@ -11,11 +11,11 @@ module Solargraph
 
         # @param node [Parser::AST::Node]
         # @param filename [String, nil]
-        # @param in_block [Boolean]
-        def initialize node, filename = nil, in_block = false
+        # @param parent [Parser::AST::Node, nil]
+        def initialize node, filename = nil, parent = nil
           @node = node
           @filename = filename
-          @in_block = in_block ? 1 : 0
+          @parent = parent
         end
 
         # @return [Source::Chain]
@@ -27,10 +27,10 @@ module Solargraph
         class << self
           # @param node [Parser::AST::Node]
           # @param filename [String, nil]
-          # @param in_block [Boolean]
+          # @param parent [Parser::AST::Node, nil]
           # @return [Source::Chain]
-          def chain node, filename = nil, in_block = false
-            NodeChainer.new(node, filename, in_block).chain
+          def chain node, filename = nil, parent = nil
+            NodeChainer.new(node, filename, parent).chain
           end
 
           # @param code [String]
@@ -52,53 +52,39 @@ module Solargraph
           return generate_links(n.children[0]) if n.type == :splat
           result = []
           if n.type == :block
-            @in_block += 1
-            result.concat generate_links(n.children[0])
-            @in_block -= 1
+            result.concat NodeChainer.chain(n.children[0], @filename, n).links
           elsif n.type == :send
             if n.children[0].is_a?(::Parser::AST::Node)
               result.concat generate_links(n.children[0])
-              args = []
-              n.children[2..-1].each do |c|
-                args.push NodeChainer.chain(c)
-              end
-              result.push Chain::Call.new(n.children[1].to_s, args, @in_block > 0 || block_passed?(n))
+              result.push Chain::Call.new(n.children[1].to_s, node_args(n), passed_block(n))
             elsif n.children[0].nil?
               args = []
               n.children[2..-1].each do |c|
-                args.push NodeChainer.chain(c)
+                args.push NodeChainer.chain(c, @filename, n)
               end
-              result.push Chain::Call.new(n.children[1].to_s, args, @in_block > 0 || block_passed?(n))
+              result.push Chain::Call.new(n.children[1].to_s, node_args(n), passed_block(n))
             else
               raise "No idea what to do with #{n}"
             end
           elsif n.type == :csend
             if n.children[0].is_a?(::Parser::AST::Node)
               result.concat generate_links(n.children[0])
-              args = []
-              n.children[2..-1].each do |c|
-                args.push NodeChainer.chain(c)
-              end
-              result.push Chain::QCall.new(n.children[1].to_s, args, @in_block > 0 || block_passed?(n))
+              result.push Chain::QCall.new(n.children[1].to_s, node_args(n))
             elsif n.children[0].nil?
-              args = []
-              n.children[2..-1].each do |c|
-                args.push NodeChainer.chain(c)
-              end
-              result.push Chain::QCall.new(n.children[1].to_s, args, @in_block > 0 || block_passed?(n))
+              result.push Chain::QCall.new(n.children[1].to_s, node_args(n))
             else
               raise "No idea what to do with #{n}"
             end
           elsif n.type == :self
             result.push Chain::Head.new('self')
           elsif n.type == :zsuper
-            result.push Chain::ZSuper.new('super', @in_block > 0 || block_passed?(n))
+            result.push Chain::ZSuper.new('super')
           elsif n.type == :super
-            args = n.children.map { |c| NodeChainer.chain(c) }
-            result.push Chain::Call.new('super', args, @in_block > 0 || block_passed?(n))
+            args = n.children.map { |c| NodeChainer.chain(c, @filename, n) }
+            result.push Chain::Call.new('super', args)
           elsif n.type == :yield
-            args = n.children.map { |c| NodeChainer.chain(c) }
-            result.push Chain::Call.new('yield', args, @in_block > 0 || block_passed?(n))
+            args = n.children.map { |c| NodeChainer.chain(c, @filename, n) }
+            result.push Chain::Call.new('yield', args)
           elsif n.type == :const
             const = unpack_name(n)
             result.push Chain::Constant.new(const)
@@ -118,7 +104,7 @@ module Solargraph
           elsif n.type == :and
             result.concat generate_links(n.children.last)
           elsif n.type == :or
-            result.push Chain::Or.new([NodeChainer.chain(n.children[0], @filename), NodeChainer.chain(n.children[1], @filename)])
+            result.push Chain::Or.new([NodeChainer.chain(n.children[0], @filename, n), NodeChainer.chain(n.children[1], @filename, n)])
           elsif [:begin, :kwbegin].include?(n.type)
             result.concat generate_links(n.children.last)
           elsif n.type == :block_pass
@@ -128,7 +114,11 @@ module Solargraph
               # added in Ruby 3.1 - https://bugs.ruby-lang.org/issues/11256
               result.push Chain::BlockVariable.new(nil)
             else
-              result.push Chain::BlockVariable.new("&#{block_variable_name_node.children[0].to_s}")
+              if block_variable_name_node.type == :sym
+                result.push Chain::BlockSymbol.new("#{block_variable_name_node.children[0].to_s}")
+              else
+                result.push Chain::BlockVariable.new("&#{block_variable_name_node.children[0].to_s}")
+              end
             end
           elsif n.type == :hash
             result.push Chain::Hash.new('::Hash', hash_is_splatted?(n))
@@ -150,9 +140,16 @@ module Solargraph
           true
         end
 
-        # @param node [Parser::AST::Node]
-        def block_passed? node
-          node.children.last.is_a?(::Parser::AST::Node) && node.children.last.type == :block_pass
+        def passed_block node
+          return unless node == @node && @parent&.type == :block
+
+          NodeChainer.chain(@parent.children[2], @filename)
+        end
+
+        def node_args node
+          node.children[2..-1].map do |child|
+            NodeChainer.chain(child, @filename, node)
+          end
         end
       end
     end

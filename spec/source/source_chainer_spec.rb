@@ -218,7 +218,7 @@ describe Solargraph::Source::SourceChainer do
   it "chains from fixed phrases in repaired sources with missing nodes" do
     source = Solargraph::Source.load_string(%(
       x = []
-      
+
     ), 'test.rb')
     updater = Solargraph::Source::Updater.new('test.rb', 1, [
       Solargraph::Source::Change.new(Solargraph::Range.from_to(2, 6, 2, 6), 'x.')
@@ -313,7 +313,7 @@ describe Solargraph::Source::SourceChainer do
         def strings; end
 
         strings.each do |str|
-          
+
         end
     ), 'test.rb')
     updater = Solargraph::Source::Updater.new('test.rb', 1, [
