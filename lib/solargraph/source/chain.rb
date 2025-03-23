@@ -19,6 +19,7 @@ module Solargraph
       autoload :GlobalVariable,   'solargraph/source/chain/global_variable'
       autoload :Literal,          'solargraph/source/chain/literal'
       autoload :Head,             'solargraph/source/chain/head'
+      autoload :If,               'solargraph/source/chain/if'
       autoload :Or,               'solargraph/source/chain/or'
       autoload :BlockVariable,    'solargraph/source/chain/block_variable'
       autoload :BlockSymbol,      'solargraph/source/chain/block_symbol'
