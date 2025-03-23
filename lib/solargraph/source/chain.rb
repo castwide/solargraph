@@ -22,6 +22,7 @@ module Solargraph
       autoload :If,               'solargraph/source/chain/if'
       autoload :Or,               'solargraph/source/chain/or'
       autoload :BlockVariable,    'solargraph/source/chain/block_variable'
+      autoload :BlockSymbol,      'solargraph/source/chain/block_symbol'
       autoload :ZSuper,           'solargraph/source/chain/z_super'
       autoload :Hash,             'solargraph/source/chain/hash'
       autoload :Array,            'solargraph/source/chain/array'
@@ -169,6 +170,7 @@ module Solargraph
           @@inference_depth -= 1
         end
         return ComplexType::UNDEFINED if possibles.empty?
+
         type = if possibles.length > 1
           sorted = possibles.map { |t| t.rooted? ? "::#{t}" : t.to_s }.sort { |a, _| a == 'nil' ? 1 : 0 }
           ComplexType.parse(*sorted)
@@ -176,6 +178,7 @@ module Solargraph
           ComplexType.parse(possibles.map(&:to_s).join(', '))
         end
         return type if context.nil? || context.return_type.undefined?
+
         type.self_to(context.return_type.tag)
       end
 
