@@ -14,7 +14,6 @@ module Solargraph
     autoload :Cache,          'solargraph/api_map/cache'
     autoload :SourceToYard,   'solargraph/api_map/source_to_yard'
     autoload :Store,          'solargraph/api_map/store'
-    autoload :BundlerMethods, 'solargraph/api_map/bundler_methods'
 
     # @return [Array<String>]
     attr_reader :unresolved_requires
