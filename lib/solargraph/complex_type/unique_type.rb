@@ -94,7 +94,17 @@ module Solargraph
 
       # @return [String]
       def to_rbs
-        if ['Tuple', 'Array'].include?(name) && fixed_parameters?
+        if duck_type?
+          'untyped'
+        elsif name == 'Boolean'
+          'bool'
+        elsif name.downcase == 'nil'
+          'nil'
+        elsif name == GENERIC_TAG_NAME
+          all_params.first.name
+        elsif ['Class', 'Module'].include?(name)
+          rbs_name
+        elsif ['Tuple', 'Array'].include?(name) && fixed_parameters?
           # tuples don't have a name; they're just [foo, bar, baz].
           if substring == '()'
             # but there are no zero element tuples, so we go with an array
@@ -113,15 +123,31 @@ module Solargraph
         !all_params.empty?
       end
 
+      # @param types [Array<UniqueType, ComplexType>]
+      # @return [String]
+      def rbs_union(types)
+        if types.length == 1
+          types.first.to_rbs
+        else
+          "(#{types.map(&:to_rbs).join(' | ')})"
+        end
+      end
+
       # @return [String]
       def parameters_as_rbs
-        parameters? ? "[#{all_params.map { |s| s.to_rbs }.join(', ')}]" : ''
+        return '' unless parameters?
+
+        return "[#{all_params.map(&:to_rbs).join(', ')}]" if key_types.empty?
+
+        # handle, e.g., Hash[K, V] case
+        key_types_str = rbs_union(key_types)
+        subtypes_str = rbs_union(subtypes)
+        "[#{key_types_str}, #{subtypes_str}]"
       end
 
       def generic?
         name == GENERIC_TAG_NAME || all_params.any?(&:generic?)
       end
-
 
       # @param generics_to_resolve [Enumerable<String>]
       # @param context_type [UniqueType, nil]
