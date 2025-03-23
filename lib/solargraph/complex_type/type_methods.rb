@@ -115,6 +115,12 @@ module Solargraph
         "::#{namespace}"
       end
 
+      # @return [String]
+      def rooted_name
+        return name unless rooted?
+        "::#{name}"
+      end
+
       # @return [::Symbol] :class or :instance
       def scope
         @scope ||= :instance if duck_type? || nil_type?

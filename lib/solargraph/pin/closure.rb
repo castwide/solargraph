@@ -40,6 +40,13 @@ module Solargraph
       def generics
         @generics ||= docstring.tags(:generic).map(&:name)
       end
+
+      # @return [String]
+      def generics_as_rbs
+        return '' if generics.empty?
+
+        generics.join(', ') + ' '
+      end
     end
   end
 end

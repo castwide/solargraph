@@ -66,9 +66,33 @@ module Solargraph
       end
 
       # @return [String]
+      def rbs_name
+        if name == 'undefined'
+          'untyped'
+        else
+          rooted_name
+        end
+      end
+
+      # @return [String]
       def to_rbs
-        "#{namespace}#{parameters? ? "[#{subtypes.map { |s| s.to_rbs }.join(', ')}]" : ''}"
-        # "
+        if ['Tuple', 'Array'].include?(name) && fixed_parameters?
+          # tuples don't have a name; they're just [foo, bar, baz].
+          if substring == '()'
+            # but there are no zero element tuples, so we go with an array
+            'Array[]'
+          else
+            # already generated surrounded by []
+            parameters_as_rbs
+          end
+        else
+          "#{rbs_name}#{parameters_as_rbs}"
+        end
+      end
+
+      # @return [String]
+      def parameters_as_rbs
+        parameters? ? "[#{all_params.map { |s| s.to_rbs }.join(', ')}]" : ''
       end
 
       def generic?
@@ -180,7 +204,7 @@ module Solargraph
       def transform(new_name = nil, &transform_type)
         new_key_types = @key_types.flat_map { |ct| ct.map { |ut| ut.transform(&transform_type) } }.compact
         new_subtypes = @subtypes.flat_map { |ct| ct.map { |ut| ut.transform(&transform_type) } }.compact
-        new_type = recreate(new_name: new_name || name, new_key_types: new_key_types, new_subtypes: new_subtypes)
+        new_type = recreate(new_name: new_name || rooted_name, new_key_types: new_key_types, new_subtypes: new_subtypes)
         yield new_type
       end
 
