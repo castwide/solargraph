@@ -39,6 +39,10 @@ module Solargraph
       @gems_in_memory ||= {}
     end
 
+    def self.stdlib_in_memory
+      @stdlib_in_memory ||= {}
+    end
+
     private
 
     # @return [Hash{String => Gem::Specification, nil}]
@@ -82,10 +86,12 @@ module Solargraph
     # @param path [String] require path that might be in the RBS stdlib collection
     # @return [void]
     def try_stdlib_map path
+      return if try_stdlib_in_memory(path)
       map = RbsMap::StdlibMap.new(path)
       return unless map.resolved?
 
       Solargraph.logger.info "Loading stdlib pins for #{path}"
+      self.class.stdlib_in_memory[path] = map.pins
       @pins.concat map.pins
     end
 
@@ -96,6 +102,16 @@ module Solargraph
       return false unless gempins
       Solargraph.logger.info "Found #{gemspec.name} #{gemspec.version} in memory"
       @pins.concat gempins
+      true
+    end
+
+    # @param path [String]
+    # @return [Boolean]
+    def try_stdlib_in_memory path
+      pins = DocMap.stdlib_in_memory[path]
+      return false unless pins
+      Solargraph.logger.info "Found stdlib #{path} in memory"
+      @pins.concat pins
       true
     end
 
@@ -134,7 +150,7 @@ module Solargraph
     def change_gemspec_version gemspec, version
       Gem::Specification.find_by_name(gemspec.name, "= #{version}")
     rescue Gem::MissingSpecError
-      Solargraph.logger.warn "Gem #{gemspec.name} version #{version} not found. Using #{gemspec.version} instead"
+      Solargraph.logger.info "Gem #{gemspec.name} version #{version} not found. Using #{gemspec.version} instead"
       gemspec
     end
   end
