@@ -77,43 +77,6 @@ module Solargraph
       STDOUT.puts "Configuration file initialized."
     end
 
-    desc 'download-core [VERSION]', 'Download core documentation [deprecated]', hide: true
-    long_desc %(
-      The `download-core` command is deprecated. Current versions of Solargraph
-      use RBS for core and stdlib documentation.
-    )
-    # @param _version [String, nil]
-    # @return [void]
-    # @deprecated
-    def download_core _version = nil
-      puts 'The `download-core` command is deprecated.'
-      puts 'Current versions of Solargraph use RBS for core and stdlib documentation.'
-    end
-
-    desc 'list-cores', 'List the local documentation versions [deprecated]', hide: true
-    long_desc %(
-      The `list-cores` command is deprecated. Current versions of Solargraph use
-      RBS for core and stdlib documentation.
-    )
-    # @return [void]
-    # @deprecated
-    def list_cores
-      puts 'The `list-cores` command is deprecated.'
-      puts 'Current versions of Solargraph use RBS for core and stdlib documentation.'
-    end
-
-    desc 'available-cores', 'List available documentation versions [deprecated]', hide: true
-    long_desc %(
-      The `available-cores` command is deprecated. Current versions of Solargraph
-      use RBS for core and stdlib documentation.
-    )
-    # @return [void]
-    # @deprecated
-    def available_cores
-      puts 'The `available-cores` command is deprecated.'
-      puts 'Current versions of Solargraph use RBS for core and stdlib documentation.'
-    end
-
     desc 'clear', 'Delete all cached documentation'
     long_desc %(
       This command will delete all core and gem documentation from the cache.
@@ -215,71 +178,8 @@ module Solargraph
     # @return [void]
     def list
       workspace = Solargraph::Workspace.new(options[:directory])
-      unless options[:count]
-        workspace.filenames.each { |f| puts f }
-      end
+      puts workspace.filenames unless options[:count]
       puts "#{workspace.filenames.length} files total."
-    end
-
-    desc 'bundle', 'Generate documentation for bundled gems [deprecated]', hide: true
-    long_desc %(
-      The `bundle` command is deprecated. Solargraph currently uses RBS instead.
-    )
-    option :directory, type: :string, aliases: :d, desc: 'The workspace directory', default: '.'
-    option :rebuild, type: :boolean, aliases: :r, desc: 'Rebuild existing documentation', default: false
-    # @return [void]
-    def bundle
-      puts 'The `bundle` command is deprecated. Solargraph currently uses RBS instead.'
-    end
-
-    desc 'cache', 'Cache a gem', hide: true
-    # @return [void]
-    # @param gem [String]
-    # @param version [String, nil]
-    def cache gem, version = nil
-      spec = Gem::Specification.find_by_name(gem, version)
-      pins = GemPins.build(spec)
-      Cache.save('gems', "#{spec.name}-#{spec.version}.ser", pins)
-    end
-
-    desc 'gems', 'Cache documentation for installed gems'
-    option :rebuild, type: :boolean, desc: 'Rebuild existing documentation', default: false
-    # @return [void]
-    def gems *names
-      if names.empty?
-        Gem::Specification.to_a.each do |spec|
-          next unless options.rebuild || !Yardoc.cached?(spec)
-
-          puts "Processing gem: #{spec.name} #{spec.version}"
-          pins = GemPins.build(spec)
-          Cache.save('gems', "#{spec.name}-#{spec.version}.ser", pins)
-        end
-      else
-        names.each do |name|
-          spec = Gem::Specification.find_by_name(name)
-          if spec
-            next unless options.rebuild || !Yardoc.cached?(spec)
-
-            puts "Processing gem: #{spec.name} #{spec.version}"
-            pins = GemPins.build(spec)
-            Cache.save('gems', "#{spec.name}-#{spec.version}.ser", pins)
-          else
-            warn "Gem '#{name}' not found"
-          end
-        end
-      end
-    end
-
-    desc 'rdoc GEM [VERSION]', 'Use RDoc to cache documentation [deprecated]', hide: true
-    long_desc %(
-      The `rdoc` command is deprecated. Solargraph currently uses RBS instead.
-    )
-    # @param _gem [String]
-    # @param _version  [String]
-    # @return [void]
-    # @deprecated
-    def rdoc _gem, _version = '>= 0'
-      puts 'The `rdoc` command is deprecated. Solargraph currently uses RBS instead.'
     end
 
     private
