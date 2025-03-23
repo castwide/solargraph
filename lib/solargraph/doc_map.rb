@@ -100,7 +100,7 @@ module Solargraph
     def try_gem_in_memory gemspec
       gempins = DocMap.gems_in_memory[gemspec]
       return false unless gempins
-      Solargraph.logger.info "Found #{gemspec.name} #{gemspec.version} in memory"
+      Solargraph.logger.debug "Found #{gemspec.name} #{gemspec.version} in memory"
       @pins.concat gempins
       true
     end
@@ -110,7 +110,7 @@ module Solargraph
     def try_stdlib_in_memory path
       pins = DocMap.stdlib_in_memory[path]
       return false unless pins
-      Solargraph.logger.info "Found stdlib #{path} in memory"
+      Solargraph.logger.debug "Found stdlib #{path} in memory"
       @pins.concat pins
       true
     end
