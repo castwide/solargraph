@@ -113,7 +113,7 @@ module Solargraph
           file = "lib/#{path}.rb"
           gemspec = potential_gemspec if potential_gemspec.files.any? { |gemspec_file| file == gemspec_file }
         rescue Gem::MissingSpecError
-          Solargraph.logger.info "require path #{path} could not be resolved to a gem via find_by_path or guess of #{gem_name_guess}"
+          Solargraph.logger.warn "require path #{path} could not be resolved to a gem via find_by_path or guess of #{gem_name_guess}"
         end
       end
       return gemspec if dependencies.empty? || gemspec.nil?
