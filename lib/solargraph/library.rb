@@ -405,6 +405,7 @@ module Solargraph
 
     # @return [void]
     private def catalog_inlock
+      cache_next_gemspec
       return if synchronized?
 
       logger.info "Cataloging #{workspace.directory.empty? ? 'generic workspace' : workspace.directory}"
@@ -412,7 +413,6 @@ module Solargraph
       @synchronized = true
       logger.info "Catalog complete (#{api_map.source_maps.length} files, #{api_map.pins.length} pins)"
       logger.info "#{api_map.uncached_gemspecs.length} uncached gemspecs"
-      cache_next_gemspec
     end
 
     # @return [Bench]
@@ -598,13 +598,14 @@ module Solargraph
 
     # @return [void]
     def cache_next_gemspec
+      return if @cache_pid || !@synchronized
       spec = api_map.uncached_gemspecs.find { |spec| !cache_errors.include?(spec)}
       return unless spec
 
       logger.info "Caching #{spec.name} #{spec.version}"
       Thread.new do
-        pid = Process.spawn('solargraph', 'cache', spec.name, spec.version.to_s)
-        Process.wait(pid)
+        @cache_pid = Process.spawn('solargraph', 'cache', spec.name, spec.version.to_s)
+        Process.wait(@cache_pid)
         logger.info "Cached #{spec.name} #{spec.version}"
         @synchronized = false
       rescue Errno::EINVAL => e
@@ -612,6 +613,8 @@ module Solargraph
       rescue StandardError => e
         cache_errors.add spec
         Solargraph.logger.warn "Error caching gemspec #{spec.name} #{spec.version}: [#{e.class}] #{e.message}"
+      ensure
+        @cache_pid = nil
       end
     end
   end

@@ -77,7 +77,7 @@ module Solargraph
 
     # @return [::Array<Gem::Specification>]
     def uncached_gemspecs
-      @doc_map.uncached_gemspecs
+      @doc_map&.uncached_gemspecs || []
     end
 
     # @return [Array<Pin::Base>]
