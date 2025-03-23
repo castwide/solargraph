@@ -14,7 +14,6 @@ module Solargraph
     autoload :Cache,          'solargraph/api_map/cache'
     autoload :SourceToYard,   'solargraph/api_map/source_to_yard'
     autoload :Store,          'solargraph/api_map/store'
-    autoload :BundlerMethods, 'solargraph/api_map/bundler_methods'
 
     # @return [Array<String>]
     attr_reader :unresolved_requires
@@ -78,7 +77,7 @@ module Solargraph
 
     # @return [::Array<Gem::Specification>]
     def uncached_gemspecs
-      @doc_map.uncached_gemspecs
+      @doc_map&.uncached_gemspecs || []
     end
 
     # @return [Array<Pin::Base>]
@@ -118,7 +117,7 @@ module Solargraph
     # @return [SourceMap::Clip]
     def clip_at filename, position
       position = Position.normalize(position)
-      SourceMap::Clip.new(self, cursor_at(filename, position))
+      clip(cursor_at(filename, position))
     end
 
     # Create an ApiMap with a workspace in the specified directory.
@@ -460,7 +459,9 @@ module Solargraph
     # @return [SourceMap::Clip]
     def clip cursor
       raise FileNotFoundError, "ApiMap did not catalog #{cursor.filename}" unless source_map_hash.key?(cursor.filename)
-      SourceMap::Clip.new(self, cursor)
+
+      cache.get_clip(cursor) ||
+        SourceMap::Clip.new(self, cursor).tap { |clip| cache.set_clip(cursor, clip) }
     end
 
     # Get an array of document symbols from a file.
@@ -549,7 +550,7 @@ module Solargraph
       rooted_type = ComplexType.parse(rooted_tag)
       fqns = rooted_type.namespace
       fqns_generic_params = rooted_type.all_params
-      return [] if no_core && fqns =~ /^(Object|BasicObject|Class|Module|Kernel)$/
+      return [] if no_core && fqns =~ /^(Object|BasicObject|Class|Module)$/
       reqstr = "#{fqns}|#{scope}|#{visibility.sort}|#{deep}"
       return [] if skip.include?(reqstr)
       skip.add reqstr

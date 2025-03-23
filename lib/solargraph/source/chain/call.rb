@@ -89,16 +89,11 @@ module Solargraph
                 end
               end
               if match
-                # @todo Functional but dodgy generic resolution from block inference
-                if block && ol.block && ol.block.return_type.name == 'generic' && ol.return_type.to_s.include?(ol.block.return_type.to_s)
-                  blocktype = block_call_type(api_map, context)
-                  type = ComplexType.parse(ol.return_type.to_s.gsub("generic<#{ol.generics.first}>", blocktype.to_s))
-                else
-                  new_signature_pin = ol.resolve_generics_from_context_until_complete(ol.generics, atypes)
-                  new_return_type = new_signature_pin.return_type
-                  type = with_params(new_return_type.self_to(context.to_s), context).qualify(api_map, context.namespace) if new_return_type.defined?
-                  type ||= ComplexType::UNDEFINED
-                end
+                blocktype = block_call_type(api_map, context)
+                new_signature_pin = ol.resolve_generics_from_context_until_complete(ol.generics, atypes, nil, nil, blocktype)
+                new_return_type = new_signature_pin.return_type
+                type = with_params(new_return_type.self_to(context.to_s), context).qualify(api_map, context.namespace) if new_return_type.defined?
+                type ||= ComplexType::UNDEFINED
               end
               break if type.defined?
             end
