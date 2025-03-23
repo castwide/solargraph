@@ -36,6 +36,23 @@ module Solargraph
         [:block, :blockarg].include?(decl)
       end
 
+      def to_rbs
+        case decl
+        when :optarg
+          "?#{super}"
+        when :kwarg
+          "#{name}: #{return_type.to_rbs}"
+        when :kwoptarg
+          "#?{name}: #{return_type.to_rbs}"
+        when :restarg
+          "*#{super}"
+        when :kwrestarg
+          "**#{super}"
+        else
+          super
+        end
+      end
+
       def full
         case decl
         when :optarg

@@ -71,6 +71,10 @@ module Solargraph
         true
       end
 
+      def desc
+        "#{to_rbs} = #{assignment&.type.inspect}"
+      end
+
       private
 
       # @return [ComplexType]
