@@ -65,7 +65,9 @@ describe 'NodeChainer' do
       [] || ''
     ))
     chain = Solargraph::Parser.chain(source.node)
-    expect(chain).to be_defined
+    expect(chain.links.map(&:word)).to eq(['<or>'])
+    or_link = chain.links.first
+    expect(or_link.class).to eq(Solargraph::Source::Chain::Or)
   end
 
   it 'tracks yielded blocks in methods' do
@@ -104,6 +106,32 @@ describe 'NodeChainer' do
     expect(chain.links.first.arguments.last).to be_splat
   end
 
+  it 'tracks simple single array assignment' do
+    source = Solargraph::Source.load_string(%(
+      foo = [1, 2]
+    ))
+    chain = Solargraph::Parser.chain(source.node)
+    expect(chain.links.map(&:word)).to eq(['foo'])
+    foo_link = chain.links.first
+    expect(foo_link.class).to eq(Solargraph::Source::Chain::Call)
+    expect(foo_link.arguments).to eq([])
+  end
+
+  it 'tracks complex lhs' do
+    source = Solargraph::Source.load_string(%(
+      foo.bar = 1
+    ))
+    chain = Solargraph::Parser.chain(source.node)
+    expect(chain.links.map(&:word)).to eq(['foo', 'bar='])
+    foo_link, bar_link = chain.links
+    expect(foo_link.class).to eq(Solargraph::Source::Chain::Call)
+    expect(foo_link.arguments).to eq([])
+    expect(bar_link.class).to eq(Solargraph::Source::Chain::Call)
+    expect(bar_link.arguments.map(&:class)).to eq([Solargraph::Source::Chain])
+    argument = bar_link.arguments.first
+    expect(argument.links.map(&:word)).to eq(['<::Integer>'])
+  end
+
   it 'tracks mixed block arguments' do
     source = Solargraph::Source.load_string(%(
       foo(bar, &baz)
@@ -113,13 +141,17 @@ describe 'NodeChainer' do
     expect(chain.links.first).to be_with_block
   end
 
-  it 'tracks block-pass symbols' do
+  xit 'tracks complex multiple assignment' do
     source = Solargraph::Source.load_string(%(
-      foo(&:bar)
+      foo.baz, bar = [1, 2]
     ))
     chain = Solargraph::Parser.chain(source.node)
-    expect(chain.links.first.block).to be_a(Solargraph::Source::Chain)
-    expect(chain.links.first.block.links.first).to be_a(Solargraph::Source::Chain::BlockSymbol)
+    expect(chain.links.map(&:word)).to eq(['foo', 'baz='])
+    foo_link, baz_link = chain.links
+    expect(foo_link.class).to eq(Solargraph::Source::Chain::Call)
+    expect(foo_link.arguments).to eq([])
+    expect(baz_link.class).to eq(Solargraph::Source::Chain::Call)
+    expect(baz_link.arguments).to eq(['<::Integer>'])
   end
 
   it 'tracks block-pass symbols' do

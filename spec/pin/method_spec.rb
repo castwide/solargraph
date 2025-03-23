@@ -25,6 +25,26 @@ describe Solargraph::Pin::Method do
     expect(pin.parameter_names).to eq(%w[bar baz])
   end
 
+  it "tracks implicit block parameters when types included" do
+    source = Solargraph::Source.new(%(
+      # @yieldparam bing [Integer]
+      def foo bar:, baz: MyClass.new
+      end
+    ))
+    map = Solargraph::SourceMap.map(source)
+    pin = map.pins.select{|pin| pin.path == '#foo'}.first
+    expect(pin.class).to eq(Solargraph::Pin::Method)
+    method_pin = pin
+    expect(method_pin.signatures.length).to eq(1)
+    method_signature = method_pin.signatures.first
+    expect(method_signature.block).not_to be_nil
+    method_parameters = method_pin.parameters
+    expect(pin.block).not_to be_nil
+    block = pin.block
+    expect(block.parameters.map(&:name)).to eq(['bing'])
+    expect(block.parameters.map(&:return_type).map(&:to_s)).to eq(['Integer'])
+  end
+
   it "includes param tags in documentation" do
     # Yard wants to be handed data without comment markers or leading
     # whitespace, so we use <<~
@@ -67,8 +87,8 @@ describe Solargraph::Pin::Method do
       @yieldparam one [First] description1
       @yieldparam two [Second] description2
     COMMENTS
-    # pin = source.pins.select{|pin| pin.path == 'Foo#bar'}.first
     pin = Solargraph::Pin::Method.new(comments: comments)
+    expect(pin.documentation).to include('one')
     expect(pin.documentation).to include('[First]')
     expect(pin.documentation).to include('description1')
     expect(pin.documentation).to include('two')
@@ -183,6 +203,54 @@ describe Solargraph::Pin::Method do
     expect(type.tag).to eq('Hash')
   end
 
+  it "infers return types from constants" do
+    source = Solargraph::Source.load_string(%(
+      class Foo
+        # @param [String] a
+        def bar(a)
+          123
+        end
+      end
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new
+    api_map.map source
+    pin = api_map.get_path_pins('Foo#bar').first
+    type = pin.probe(api_map)
+    expect(type.tag).to eq('Integer')
+  end
+
+  it "infers return types from other parameters" do
+    source = Solargraph::Source.load_string(%(
+      class Foo
+        # @param [String] a
+        def bar(a)
+          a
+        end
+      end
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new
+    api_map.map source
+    pin = api_map.get_path_pins('Foo#bar').first
+    type = pin.probe(api_map)
+    expect(type.tag).to eq('String')
+  end
+
+  it "infers return types from block return declarations" do
+    source = Solargraph::Source.load_string(%(
+      class Foo
+        # @yieldreturn [Integer]
+        def bar
+          yield
+        end
+      end
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new
+    api_map.map source
+    pin = api_map.get_path_pins('Foo#bar').first
+    type = pin.probe(api_map)
+    expect(type.tag).to eq('Integer')
+  end
+
   it "typifies Booleans" do
     pin = Solargraph::Pin::Method.new(name: 'foo', comments: '@return [Boolean]', scope: :instance)
     api_map = Solargraph::ApiMap.new
@@ -265,6 +333,54 @@ describe Solargraph::Pin::Method do
     pin = api_map.get_path_pins('Foo#bar').first
     type = pin.probe(api_map)
     expect(type.to_s).to eq('Boolean')
+  end
+
+  it 'infers from assignment chains' do
+    source = Solargraph::Source.load_string(%(
+      class Foo
+        def bar
+          a = 123
+          a
+        end
+      end
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new
+    api_map.map source
+    pin = api_map.get_path_pins('Foo#bar').first
+    type = pin.probe(api_map)
+    expect(type.to_s).to eq('Integer')
+  end
+
+  it 'infers from array dereference' do
+    source = Solargraph::Source.load_string(%(
+      class Foo
+        def bar
+          arr = ['a', 'b']
+          arr[0]
+        end
+      end
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new
+    api_map.map source
+    pin = api_map.get_path_pins('Foo#bar').first
+    type = pin.probe(api_map)
+    expect(type.to_s).to eq('String')
+  end
+
+  xit 'infers from multiple-assignment chains' do
+    source = Solargraph::Source.load_string(%(
+      class Foo
+        def bar
+          a, b = ['a', 'b']
+          b
+        end
+      end
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new
+    api_map.map source
+    pin = api_map.get_path_pins('Foo#bar').first
+    type = pin.probe(api_map)
+    expect(type.to_s).to eq('String')
   end
 
   it 'typifies from super methods' do
