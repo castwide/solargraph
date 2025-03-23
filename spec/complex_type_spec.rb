@@ -13,7 +13,7 @@ describe Solargraph::ComplexType do
     expect(types.length).to eq(2)
     expect(types[0].tag).to eq('String')
     expect(types[1].tag).to eq('Integer')
-    # @todo expect(types.to_rbs).to eq('String | Integer')
+    expect(types.to_rbs).to eq('(String | Integer)')
   end
 
   it "parses multiple types in a string" do
@@ -21,7 +21,7 @@ describe Solargraph::ComplexType do
     expect(types.length).to eq(2)
     expect(types[0].tag).to eq('String')
     expect(types[1].tag).to eq('Integer')
-    # @todo expect(types.to_rbs).to eq('String | Integer')
+    expect(types.to_rbs).to eq('(String | Integer)')
   end
 
   it "parses a subtype" do
@@ -83,7 +83,7 @@ describe Solargraph::ComplexType do
     expect(multiple_types.length).to eq(4)
     expect(multiple_types.namespaces).to eq(['Foo', 'Bar', 'String', 'NilClass'])
     # RBS doesn't support individual module types like this
-    # @todo expect(multiple_types.to_rbs).to eq('Module | Class | String | nil')
+    # @todo expect(multiple_types.to_rbs).to eq('(Module | Class | String | nil)')
   end
 
   it "identifies duck types" do
@@ -175,7 +175,7 @@ describe Solargraph::ComplexType do
     expect(type.hash_parameters?).to eq(true)
     expect(type.key_types.map(&:name)).to eq(['String', 'Symbol'])
     expect(type.value_types.map(&:name)).to eq(['Integer', 'BigDecimal'])
-    # @todo expect(type.to_rbs).to eq('Hash[String | Symbol, Integer | BigDecimal]"')
+    # @todo expect(type.to_rbs).to eq('Hash[(String | Symbol), (Integer | BigDecimal)]"')
   end
 
   it "parses recursive subtypes" do
@@ -211,7 +211,7 @@ describe Solargraph::ComplexType do
     expect(original).not_to be_rooted
     qualified = original.qualify(foo_bar_api_map, 'Foo')
     expect(qualified.tag).to eq('Class<Foo::Bar>')
-    # @todo expect(qualified.rooted_tag).to eq('Class<Foo::Bar>')
+    expect(qualified.rooted_tag).to eq('::Class<::Foo::Bar>')
     expect(qualified).to be_rooted
     # @todo expect(qualified.to_rbs).to eq('::Class')
   end
@@ -222,14 +222,14 @@ describe Solargraph::ComplexType do
     qualified = original.qualify(foo_bar_api_map, 'Foo')
     expect(qualified).to be_rooted
     expect(qualified.tag).to eq('Array(String, Foo::Bar)')
-    # @todo expect(qualified.to_rbs).to eq('[::String, ::Foo::Bar]')
+    expect(qualified.to_rbs).to eq('[::String, ::Foo::Bar]')
   end
 
   it "qualifies types with hash parameters" do
     original = Solargraph::ComplexType.parse('Hash{String => Bar}').first
     qualified = original.qualify(foo_bar_api_map, 'Foo')
     expect(qualified.tag).to eq('Hash{String => Foo::Bar}')
-    # @todo expect(qualified.to_rbs).to eq('::Hash[::String, ::Foo::Bar]')
+    expect(qualified.to_rbs).to eq('::Hash[::String, ::Foo::Bar]')
   end
 
   it "returns string representations of the entire type array" do
@@ -433,6 +433,6 @@ describe Solargraph::ComplexType do
     type = Solargraph::ComplexType.parse('Array(Symbol, String, Array(Integer, Integer))')
     type = type.qualify(api_map)
     expect(type.to_s).to eq('Array(Symbol, String, Array(Integer, Integer))')
-    expect(type.to_rbs).to eq('[Symbol, String, [Integer, Integer]]')
+    expect(type.to_rbs).to eq('[::Symbol, ::String, [::Integer, ::Integer]]')
   end
 end
