@@ -21,6 +21,7 @@ module Solargraph
             pins.push Solargraph::Pin::Block.new(
               location: location,
               closure: parent,
+              node: node,
               receiver: node.children[0],
               comments: comments_for(node),
               scope: region.scope || region.closure.context.scope

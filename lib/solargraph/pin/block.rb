@@ -3,19 +3,22 @@
 module Solargraph
   module Pin
     class Block < Closure
-      # The signature of the method that receives this block.
-      #
       # @return [Parser::AST::Node]
       attr_reader :receiver
 
+      # @return [Parser::AST::Node]
+      attr_reader :node
+
       # @param receiver [Parser::AST::Node, nil]
+      # @param node [Parser::AST::Node, nil]
       # @param context [ComplexType, nil]
       # @param args [::Array<Parameter>]
-      def initialize receiver: nil, args: [], context: nil, **splat
+      def initialize receiver: nil, args: [], context: nil, node: nil, **splat
         super(**splat)
         @receiver = receiver
         @context = context
         @parameters = args
+        @node = node
       end
 
       # @param api_map [ApiMap]
