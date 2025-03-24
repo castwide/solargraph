@@ -230,6 +230,7 @@ module Solargraph
           ComplexType.try_parse(type.to_s.gsub('$', context.value_types.map(&:tag).join(', ')).gsub('<>', ''))
         end
 
+        # @return [void]
         def fix_block_pass
           argument = @arguments.last&.links&.first
           @block = @arguments.pop if argument.is_a?(BlockSymbol) || argument.is_a?(BlockVariable)
