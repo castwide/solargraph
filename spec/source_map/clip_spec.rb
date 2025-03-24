@@ -1897,6 +1897,24 @@ describe Solargraph::SourceMap::Clip do
     # @todo more root-safety to be done - expect(type.rooted?).to be true
   end
 
+  it 'understands pass-through block-using wrapper methods from core RBS' do
+    source = Solargraph::Source.load_string(%(
+      mutex = Thread::Mutex.new
+      foo = 123
+      bar = mutex.synchronize do
+        foo
+      end
+      bar
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new.map(source)
+
+    clip = api_map.clip_at('test.rb', [6, 6])
+    type = clip.infer
+    expect(type.tag).to eq('Integer')
+
+    # @todo more root-safety to be done - expect(type.rooted?).to be true
+  end
+
   xit 'resolves declared tuple types correctly' do
     source = Solargraph::Source.load_string(%(
       # @type [Tuple(String, Integer)]
