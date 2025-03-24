@@ -29,16 +29,7 @@ module Solargraph
         Override.method_return('Class.allocate', 'Class<BasicObject>')
       ]
 
-      # HACK: Add Errno exception classes
-      errno = Solargraph::Pin::Namespace.new(name: 'Errno')
-      errnos = []
-      Errno.constants.each do |const|
-        errnos.push Solargraph::Pin::Namespace.new(type: :class, name: const.to_s, closure: errno)
-        errnos.push Solargraph::Pin::Reference::Superclass.new(closure: errnos.last, name: 'SystemCallError')
-      end
-      ERRNOS = errnos
-
-      ALL = KEYWORDS + MISSING + CLASS_RETURN_TYPES + ERRNOS
+      ALL = KEYWORDS + MISSING + CLASS_RETURN_TYPES
     end
   end
 end
