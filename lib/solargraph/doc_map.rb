@@ -34,6 +34,11 @@ module Solargraph
       @unresolved_requires ||= required_gem_map.select { |_, gemspec| gemspec.nil? }.keys
     end
 
+    # @return [Hash{Gem::Specification => Array[Pin::Base]}]
+    def self.gems_in_memory
+      @gems_in_memory ||= {}
+    end
+
     private
 
     # @return [Hash{String => Gem::Specification, nil}]
@@ -62,23 +67,36 @@ module Solargraph
     # @param gemspec [Gem::Specification]
     # @return [void]
     def try_cache gemspec
+      return if try_gem_in_memory(gemspec)
       cache_file = File.join('gems', "#{gemspec.name}-#{gemspec.version}.ser")
       if Cache.exist?(cache_file)
-        @pins.concat Cache.load(cache_file)
+        gempins = Cache.load(cache_file)
+        self.class.gems_in_memory[gemspec] = gempins
+        @pins.concat gempins
       else
         Solargraph.logger.debug "No pin cache for #{gemspec.name} #{gemspec.version}"
-        @uncached_gemspecs.push gemspec if gemspec
+        @uncached_gemspecs.push gemspec
       end
     end
 
     # @param path [String] require path that might be in the RBS stdlib collection
     # @return [void]
     def try_stdlib_map path
-      map = RbsMap::StdlibMap.new(path)
+      map = RbsMap::StdlibMap.load(path)
       return unless map.resolved?
 
-      Solargraph.logger.info "Loading stdlib pins for #{path}"
+      Solargraph.logger.debug "Loading stdlib pins for #{path}"
       @pins.concat map.pins
+    end
+
+    # @param gemspec [Gem::Specification]
+    # @return [Boolean]
+    def try_gem_in_memory gemspec
+      gempins = DocMap.gems_in_memory[gemspec]
+      return false unless gempins
+      Solargraph.logger.debug "Found #{gemspec.name} #{gemspec.version} in memory"
+      @pins.concat gempins
+      true
     end
 
     # @param path [String]
@@ -96,7 +114,7 @@ module Solargraph
           file = "lib/#{path}.rb"
           gemspec = potential_gemspec if potential_gemspec.files.any? { |gemspec_file| file == gemspec_file }
         rescue Gem::MissingSpecError
-          Solargraph.logger.info "require path #{path} could not be resolved to a gem via find_by_path or guess of #{gem_name_guess}"
+          Solargraph.logger.warn "require path #{path} could not be resolved to a gem via find_by_path or guess of #{gem_name_guess}"
         end
       end
       return gemspec if dependencies.empty? || gemspec.nil?
@@ -116,7 +134,7 @@ module Solargraph
     def change_gemspec_version gemspec, version
       Gem::Specification.find_by_name(gemspec.name, "= #{version}")
     rescue Gem::MissingSpecError
-      Solargraph.logger.warn "Gem #{gemspec.name} version #{version} not found. Using #{gemspec.version} instead"
+      Solargraph.logger.info "Gem #{gemspec.name} version #{version} not found. Using #{gemspec.version} instead"
       gemspec
     end
   end
