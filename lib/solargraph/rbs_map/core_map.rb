@@ -13,10 +13,11 @@ module Solargraph
           pins.replace cache
         else
           loader = RBS::EnvironmentLoader.new(repository: RBS::Repository.new(no_stdlib: false))
-          environment = RBS::Environment.from_loader(loader).resolve_type_names
+          RBS::Environment.from_loader(loader).resolve_type_names
           load_environment_to_pins(loader)
           pins.concat RbsMap::CoreFills::ALL
           processed = ApiMap::Store.new(pins).pins.reject { |p| p.is_a?(Solargraph::Pin::Reference::Override) }
+          processed.each { |pin| pin.source = :rbs }
           pins.replace processed
 
           Cache.save('core.ser', pins)
