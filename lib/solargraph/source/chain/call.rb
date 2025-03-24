@@ -49,7 +49,7 @@ module Solargraph
 
         private
 
-        # @param pins [::Enumerable<Pin::Base>]
+        # @param pins [::Enumerable<Pin::Method>]
         # @param api_map [ApiMap]
         # @param context [ComplexType]
         # @param locals [::Array<Pin::LocalVariable>]
@@ -138,7 +138,7 @@ module Solargraph
           Pin::ProxyType.anonymous(ComplexType::UNDEFINED)
         end
 
-        # @param pin [Pin::LocalVariable]
+        # @param pin [Pin::Method]
         # @param api_map [ApiMap]
         # @param context [ComplexType]
         # @param locals [Enumerable<Pin::Base>]
