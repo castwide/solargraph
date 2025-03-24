@@ -72,10 +72,8 @@ module Solargraph
               match = true
 
               atypes = []
-              block_parameter = nil
               arguments.each_with_index do |arg, idx|
                 param = ol.parameters[idx]
-                atype = nil
                 if param.nil?
                   match = ol.parameters.any?(&:restarg?)
                   break
@@ -235,6 +233,8 @@ module Solargraph
           @block = @arguments.pop if argument.is_a?(BlockSymbol) || argument.is_a?(BlockVariable)
         end
 
+        # @param api_map [ApiMap]
+        # @param context [ComplexType]
         def block_call_type(api_map, context)
           return nil unless with_block?
 
