@@ -240,7 +240,7 @@ module Solargraph
         # @param context [ComplexType]
         # @param block_parameter_types [::Array<ComplexType>]
         # @param locals [::Array<Pin::LocalVariable>]
-        # @return [ComplexType]
+        # @return [ComplexType, nil]
         def block_call_type(api_map, context, block_parameter_types, locals)
           return nil unless with_block?
 
