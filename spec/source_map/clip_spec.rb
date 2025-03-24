@@ -1872,7 +1872,7 @@ describe Solargraph::SourceMap::Clip do
     # @todo more root-safety to be done - expect(type.rooted?).to be true
   end
 
-  xit 'infers type of block argument of map and return value dependent on it' do
+  it 'infers type of block argument of map and return value dependent on it' do
     source = Solargraph::Source.load_string(%(
       def foo
         a = [1,2,3]
