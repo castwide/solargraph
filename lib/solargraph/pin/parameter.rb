@@ -43,7 +43,7 @@ module Solargraph
         when :kwarg
           "#{name}: #{return_type.to_rbs}"
         when :kwoptarg
-          "#?{name}: #{return_type.to_rbs}"
+          "?#{name}: #{return_type.to_rbs}"
         when :restarg
           "*#{super}"
         when :kwrestarg
