@@ -250,7 +250,7 @@ module Solargraph
     #
     # @param namespace [String, nil] The namespace to
     #   match
-    # @param context_tag [String] The context namespace in which the
+    # @param context_namespace [String] The context namespace in which the
     #   tag was referenced; start from here to resolve the name
     # @return [String, nil] fully qualified namespace
     def qualify_namespace(namespace, context_namespace = '')
