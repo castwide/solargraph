@@ -247,8 +247,14 @@ module Solargraph
       # @return [self]
       def transform(new_name = nil, &transform_type)
         raise "Please remove leading :: and set rooted with recreate() instead - #{new_name}" if new_name&.start_with?('::')
-        new_key_types = @key_types.flat_map { |ct| ct.map { |ut| ut.transform(&transform_type) } }.compact
-        new_subtypes = @subtypes.flat_map { |ct| ct.map { |ut| ut.transform(&transform_type) } }.compact
+        if name == ComplexType::GENERIC_TAG_NAME
+          # doesn't make sense to manipulate the name of the generic
+          new_key_types = @key_types
+          new_subtypes = @subtypes
+        else
+          new_key_types = @key_types.flat_map { |ct| ct.items.map { |ut| ut.transform(&transform_type) } }
+          new_subtypes = @subtypes.flat_map { |ct| ct.items.map { |ut| ut.transform(&transform_type) } }
+        end
         new_type = recreate(new_name: new_name || name, new_key_types: new_key_types, new_subtypes: new_subtypes)
         yield new_type
       end
