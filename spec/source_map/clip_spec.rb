@@ -1601,7 +1601,7 @@ describe Solargraph::SourceMap::Clip do
     api_map = Solargraph::ApiMap.new.map(source)
 
     array_names = api_map.clip_at('test.rb', [5, 22]).complete.pins.map(&:name)
-    expect(array_names).to eq(['any?'])
+    expect(array_names).to eq(['ancestors', 'any?'])
 
     string_names = api_map.clip_at('test.rb', [6, 22]).complete.pins.map(&:name)
     expect(string_names).to eq(['upcase', 'upcase!', 'upto'])
@@ -1939,5 +1939,13 @@ describe Solargraph::SourceMap::Clip do
     clip = api_map.clip_at('test.rb', [2, 6])
     type = clip.infer
     expect(type.to_s).to eq('Array(Integer, String)')
+  end
+
+  it 'excludes Kernel singleton methods from chained methods' do
+    source = Solargraph::Source.load_string('[].put', 'test.rb')
+    api_map = Solargraph::ApiMap.new.map(source)
+    clip = api_map.clip_at('test.rb', [0, 6])
+    paths = clip.complete.pins.map(&:path)
+    expect(paths).not_to include('Kernel#puts')
   end
 end
