@@ -1948,4 +1948,11 @@ describe Solargraph::SourceMap::Clip do
     paths = clip.complete.pins.map(&:path)
     expect(paths).not_to include('Kernel#puts')
   end
+
+  it 'infers from Kernel singleton methods' do
+    source = Solargraph::Source.load_string('puts string', 'test.rb')
+    api_map = Solargraph::ApiMap.new.map(source)
+    clip = api_map.clip_at('test.rb', [0, 0])
+    expect(clip.infer.to_s).to eq('nil')
+  end
 end
