@@ -46,6 +46,10 @@ module Solargraph
         !substring.empty?
       end
 
+      def tuple?
+        @tuple_type ||= (name == 'Tuple') || (name == 'Array' && subtypes.length >= 1 && fixed_parameters?)
+      end
+
       def void?
         name == 'void'
       end

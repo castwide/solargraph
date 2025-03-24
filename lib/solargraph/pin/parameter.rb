@@ -136,33 +136,7 @@ module Solargraph
       # @return [ComplexType]
       def typify_block_param api_map
         if closure.is_a?(Pin::Block) && closure.receiver
-          chain = Parser.chain(closure.receiver, filename, closure.node)
-          clip = api_map.clip_at(location.filename, location.range.start)
-          locals = clip.locals - [self]
-          meths = chain.define(api_map, closure, locals)
-          receiver_type = chain.base.infer(api_map, closure, locals)
-          meths.each do |meth|
-            block_signature = meth.block
-            if block_signature
-              yield_type = block_signature.parameters[index]&.return_type
-            else
-              # @todo move the yieldparam tag parsing logic into the
-              #   creation of Method pins so we don't need this else
-              #   statement
-              yps = meth.docstring.tags(:yieldparam)
-              unless yps[index].nil? or yps[index].types.nil? or yps[index].types.empty?
-                yield_type = ComplexType.try_parse(yps[index].types.first)
-              end
-            end
-            unless yield_type.nil?
-              if yield_type.generic? && receiver_type.defined?
-                namespace_pin = api_map.get_namespace_pins(meth.namespace, closure.namespace).first
-                return yield_type.resolve_generics(namespace_pin, receiver_type)
-              else
-                return yield_type.self_to(chain.base.infer(api_map, closure, locals).namespace).qualify(api_map, meth.context.namespace)
-              end
-            end
-          end
+          return closure.typify_parameters(api_map)[index]
         end
         ComplexType::UNDEFINED
       end

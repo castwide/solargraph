@@ -1940,4 +1940,24 @@ describe Solargraph::SourceMap::Clip do
     type = clip.infer
     expect(type.to_s).to eq('Array(Integer, String)')
   end
+
+  it 'resolves block parameter types from Hash#each' do
+    source = Solargraph::Source.load_string(%(
+      # @type [Hash{String => Integer}]
+      h = { 'foo' => 1 }
+      h.each do |s, i|
+        s
+        i
+      end
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new.map(source)
+    clip = api_map.clip_at('test.rb', [4, 8])
+    type = clip.infer
+    expect(type.to_s).to eq('String')
+
+    api_map = Solargraph::ApiMap.new.map(source)
+    clip = api_map.clip_at('test.rb', [5, 8])
+    type = clip.infer
+    expect(type.to_s).to eq('Integer')
+  end
 end
