@@ -237,7 +237,7 @@ module Solargraph
     def qualify tag, context_tag = ''
       return tag if ['self', nil].include?(tag)
       context_type = ComplexType.parse(context_tag)
-      type = ComplexType.parse(tag)
+      type = ComplexType.try_parse(tag)
       fqns = qualify_namespace(type.rooted_namespace, context_type.rooted_namespace)
       return nil if fqns.nil?
       fqns + type.substring

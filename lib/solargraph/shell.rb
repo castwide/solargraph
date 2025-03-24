@@ -2,10 +2,12 @@
 
 require 'thor'
 require 'yard'
+require 'sord'
 
 module Solargraph
   class Shell < Thor
     include Solargraph::ServerMethods
+    include ApiMap::SourceToYard
 
     # Tell Thor to ensure the process exits with status 1 if any error happens.
     def self.exit_on_failure?
@@ -251,6 +253,29 @@ module Solargraph
           end
         end
       end
+    end
+
+    desc 'rbs', 'Generate RBS definitions'
+    option :inference, type: :boolean, desc: 'Enhance definitions with type inference', default: true
+    def rbs
+      api_map = Solargraph::ApiMap.load('.')
+      pins = api_map.source_maps.flat_map(&:pins)
+      store = Solargraph::ApiMap::Store.new(pins)
+      if options[:inference]
+        store.method_pins.each do |pin|
+          if pin.return_type.undefined?
+            type = pin.typify(api_map)
+            type = pin.probe(api_map) if type.undefined?
+            pin.docstring.add_tag YARD::Tags::Tag.new('return', nil, type.items.map(&:to_s))
+            pin.instance_variable_set(:@return_type, type)
+          end
+        end
+      end
+      rake_yard(store)
+      YARD::Registry.save(false, '.yardoc')
+      YARD::Registry.load('.yardoc')
+      FileUtils.mkdir_p('sig')
+      `sord gen sig/solargraph.rbs --rbs --no-regenerate`
     end
 
     private
