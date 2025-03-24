@@ -19,6 +19,7 @@ module Solargraph
           @resolved = true
         else
           super
+          return unless resolved?
           Cache.save('stdlib', "#{library}.ser", pins)
         end
       end

@@ -21,7 +21,8 @@ module Solargraph
     def initialize source_maps: [], workspace: Workspace.new, external_requires: []
       @source_maps = source_maps.to_set
       @workspace = workspace
-      @external_requires = external_requires.to_set
+      @external_requires = external_requires.reject { |path| workspace.would_require?(path) }
+                                            .to_set
     end
   end
 end

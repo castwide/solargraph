@@ -72,10 +72,8 @@ module Solargraph
               match = true
 
               atypes = []
-              block_parameter = nil
               arguments.each_with_index do |arg, idx|
                 param = ol.parameters[idx]
-                atype = nil
                 if param.nil?
                   match = ol.parameters.any?(&:restarg?)
                   break
