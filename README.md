@@ -61,7 +61,9 @@ The RSpec framework is supported via [solargraph-rspec](https://github.com/lekem
 
 ### Gem Support
 
-Solargraph is capable of providing code completion and documentation for gems that have YARD documentation. You can make sure your gems are documented by running `yard gems` from the command line. (YARD is included as one of Solargraph's gem dependencies. The first time you run it might take a while if you have a lot of gems installed).
+**Note: Before version 0.53.0, it was recommended to run `yard gems` periodically or automate it with `yard config` to ensure that Solargraph had access to gem documentation. These steps are no longer necessary. Solargraph maintains its own gem documentation cache independent of the yardocs in your gem installations.**
+
+Solargraph automatically generates code maps from installed gems. You can also manage your cached gem documentation with the `solargraph gems` command.
 
 When editing code, a `require` call that references a gem will pull the documentation into the code maps and include the gem's API in code completion and intellisense.
 
@@ -71,22 +73,11 @@ If your project automatically requires bundled gems (e.g., `require 'bundler/req
 
 As of version 0.33.0, Solargraph includes a [type checker](https://github.com/castwide/solargraph/issues/192) that uses a combination of YARD tags and code analysis to report missing type definitions. In strict mode, it performs type inference to determine whether the tags match the types it detects from code.
 
-### Updating Core Documentation
-
-As of version 0.49.0, Solargraph uses [rbs](https://github.com/ruby/rbs) for core and stdlib documentation. The following only applies to prior versions.
-
-The Solargraph gem ships with documentation for Ruby 2.2.2. You can download documentation for other Ruby versions from the command line.
-
-    $ solargraph list-cores      # List the installed documentation versions
-    $ solargraph available-cores # List the versions available for download
-    $ solargraph download-core   # Install the best match for your Ruby version
-    $ solargraph clear           # Reset the documentation cache
-
 ### The Documentation Cache
 
-Solargraph uses a cache directory to store documentation for the Ruby core and customized documentation for certain gems. The default location is `~/.solargraph/cache`, e.g., `/home/<username>/.solargraph/cache` on Linux or `C:\Users\<username>\.solargraph` on Windows.
+Solargraph uses a cache directory to store documentation for the Ruby core and gems. The default location is `~/.cache/solargraph`, e.g., `/home/<username>/.cache/solargraph` on Linux or `C:\Users\<username>\.cache\solargraph` on Windows.
 
-You can change the location of the cache directory with the `SOLARGRAPH_CACHE` environment variable. This can be useful if you want the cache to comply with the XDG Base Directory Specification.
+You can change the location of the cache directory with the `SOLARGRAPH_CACHE` environment variable.
 
 ### Solargraph and Bundler
 
@@ -96,7 +87,7 @@ In the Gemfile:
 
     gem 'solargraph', group: :development
 
-Run `bundle install` and use `bundle exec yard gems` to generate the documentation. This process documents cached or vendored gems, or even gems that are installed from a local path.
+Run `bundle install` and optionally use `bundle exec solargraph gems` to generate the documentation. This process documents cached or vendored gems, or even gems that are installed from a local path.
 
 In order to make sure you're using the correct dependencies, you can start the language server with Bundler. In VS Code, there's a `solargraph.useBundler` option. Other clients will vary, but the command you probably want to run is `bundle exec solargraph socket` or `bundle exec solargraph stdio`.
 
