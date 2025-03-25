@@ -1,7 +1,5 @@
 # frozen_string_literal: true
 
-require 'rubygems'
-require 'set'
 require 'pathname'
 require 'yard'
 require 'solargraph/yard_tags'

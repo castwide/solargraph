@@ -607,7 +607,6 @@ describe Solargraph::SourceMap::Mapper do
     map = Solargraph::SourceMap.load_string(%(
       require 'set'
     ))
-    # expect(map.requires.map(&:name)).to include('set')
     pin = map.pins.select{|p| p.is_a?(Solargraph::Pin::Reference::Require)}.first
     expect(pin.name).to eq('set')
   end
