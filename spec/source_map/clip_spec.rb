@@ -1893,7 +1893,7 @@ describe Solargraph::SourceMap::Clip do
   xit 'identifies tuple types' do
     source = Solargraph::Source.load_string(%(
       # @type [Array(String, Integer)]
-      a = 123
+      a = foo
       b = a[0]
       b
       c = a[1]
@@ -1930,7 +1930,7 @@ describe Solargraph::SourceMap::Clip do
     expect(type.to_s).to eq('Array<Integer>')
   end
 
-  xit 'infers tuple types from diverse literal arrays' do
+  it 'infers tuple types from diverse literal arrays' do
     source = Solargraph::Source.load_string(%(
       a = [123, 'foo']
       a
@@ -1939,5 +1939,38 @@ describe Solargraph::SourceMap::Clip do
     clip = api_map.clip_at('test.rb', [2, 6])
     type = clip.infer
     expect(type.to_s).to eq('Array(Integer, String)')
+  end
+
+  it 'infers shallow literal diverse arrays into tuples' do
+    source = Solargraph::Source.load_string(%(
+      h = ['foo', 1]
+      h
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new.map(source)
+    clip = api_map.clip_at('test.rb', [2, 6])
+    type = clip.infer
+    expect(type.to_s).to eq('Array(String, Integer)')
+  end
+
+  it 'infers array of identical diverse arrays into tuples' do
+    source = Solargraph::Source.load_string(%(
+      h = [['foo', 1], ['bar', 2]]
+      h
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new.map(source)
+    clip = api_map.clip_at('test.rb', [2, 6])
+    type = clip.infer
+    expect(type.to_s).to eq('Array<Array(String, Integer)>')
+  end
+
+  it 'infers literal diverse array of diverse arrays into tuple of tuples' do
+    source = Solargraph::Source.load_string(%(
+      h = [['foo', 1], ['bar', :baz]]
+      h
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new.map(source)
+    clip = api_map.clip_at('test.rb', [2, 6])
+    type = clip.infer
+    expect(type.to_s).to eq('Array(Array(String, Integer), Array(String, Symbol))')
   end
 end

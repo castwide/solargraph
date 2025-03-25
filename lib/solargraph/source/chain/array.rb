@@ -17,12 +17,14 @@ module Solargraph
         # @param locals [Enumerable<Pin::LocalVariable>]
         def resolve api_map, name_pin, locals
           child_types = @children.map do |child|
-            child.infer(api_map, name_pin, locals).tag
+            child.infer(api_map, name_pin, locals)
           end
-          type = if child_types.uniq.length == 1 && child_types.first != 'undefined'
-                   "::Array<#{child_types.first}>"
+          type = if child_types.length == 0 || child_types.any?(&:undefined?)
+                   "::Array"
+                 elsif child_types.uniq.length == 1
+                   "::Array<#{child_types.first.to_s}>"
                  else
-                   '::Array'
+                   "::Array(#{child_types.map(&:to_s).join(', ')})"
                  end
           [Pin::ProxyType.anonymous(ComplexType.try_parse(type))]
         end
