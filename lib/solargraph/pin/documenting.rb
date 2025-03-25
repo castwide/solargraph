@@ -81,7 +81,11 @@ module Solargraph
       # @param text [String]
       # @return [String]
       def self.normalize_indentation text
-        left = text.lines.map { |line| line.match(/^ +/)&.match(0)&.length || 0 }.min
+        left = text.lines.map do |line|
+          match = line.match(/^ +/)
+          next 0 unless match
+          match[0].length
+        end.min
         return text if left.nil? || left.zero?
         text.lines.map { |line| line[left..] }.join
       end
