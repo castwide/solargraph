@@ -460,8 +460,10 @@ module Solargraph
     def clip cursor
       raise FileNotFoundError, "ApiMap did not catalog #{cursor.filename}" unless source_map_hash.key?(cursor.filename)
 
-      cache.get_clip(cursor) ||
-        SourceMap::Clip.new(self, cursor).tap { |clip| cache.set_clip(cursor, clip) }
+      # @todo Clip caches are disabled pending resolution of a stale cache bug
+      # cache.get_clip(cursor) ||
+      #   SourceMap::Clip.new(self, cursor).tap { |clip| cache.set_clip(cursor, clip) }
+      SourceMap::Clip.new(self, cursor)
     end
 
     # Get an array of document symbols from a file.
