@@ -3,7 +3,6 @@
 require 'diff/lcs'
 require 'observer'
 require 'securerandom'
-require 'set'
 
 module Solargraph
   module LanguageServer

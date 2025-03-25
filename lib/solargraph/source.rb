@@ -8,7 +8,6 @@ module Solargraph
   class Source
     autoload :Updater,       'solargraph/source/updater'
     autoload :Change,        'solargraph/source/change'
-    autoload :Mapper,        'solargraph/source/mapper'
     autoload :EncodingFixes, 'solargraph/source/encoding_fixes'
     autoload :Cursor,        'solargraph/source/cursor'
     autoload :Chain,         'solargraph/source/chain'

@@ -1,6 +1,5 @@
 # frozen_string_literal: true
 
-require 'set'
 
 module Solargraph
   class ApiMap

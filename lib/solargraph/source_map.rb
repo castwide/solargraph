@@ -2,7 +2,6 @@
 
 require 'yard'
 require 'solargraph/yard_tags'
-require 'set'
 
 module Solargraph
   # An index of pins and other ApiMap-related data for a Source.
