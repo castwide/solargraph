@@ -18,7 +18,7 @@ module Solargraph
     # @return [Array<Pin::Base>]
     attr_reader :pins
 
-    # @return [Array<Pin::Base>]
+    # @return [Array<Pin::LocalVariable>]
     attr_reader :locals
 
     # @param source [Source]

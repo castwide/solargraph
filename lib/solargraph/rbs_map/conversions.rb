@@ -332,7 +332,7 @@ module Solargraph
             comments: decl.comment&.string,
             scope: :class,
             signatures: [],
-            generics: generics,
+            generics: generics
           )
           pin.signatures.concat method_def_to_sigs(decl, pin)
           pins.push pin
@@ -631,6 +631,7 @@ module Solargraph
 
       # @param decl [RBS::AST::Declarations::Class, RBS::AST::Declarations::Module]
       # @param closure [Pin::Closure]
+      # @return [void]
       def add_mixins decl, closure
         decl.each_mixin do |mixin|
           klass = mixin.is_a?(RBS::AST::Members::Include) ? Pin::Reference::Include : Pin::Reference::Extend

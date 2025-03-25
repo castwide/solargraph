@@ -115,30 +115,18 @@ module Solargraph
       end
     end
 
-    desc 'gems', 'Cache documentation for installed gems'
+    desc 'gems [GEM[=VERSION]]', 'Cache documentation for installed gems'
     option :rebuild, type: :boolean, desc: 'Rebuild existing documentation', default: false
     # @return [void]
     def gems *names
       if names.empty?
-        Gem::Specification.to_a.each do |spec|
-          next unless options.rebuild || !Yardoc.cached?(spec)
-
-          puts "Processing gem: #{spec.name} #{spec.version}"
-          pins = GemPins.build(spec)
-          Cache.save('gems', "#{spec.name}-#{spec.version}.ser", pins)
-        end
+        Gem::Specification.to_a.each { |spec| do_cache spec }
       else
         names.each do |name|
-          spec = Gem::Specification.find_by_name(name)
-          if spec
-            next unless options.rebuild || !Yardoc.cached?(spec)
-
-            puts "Processing gem: #{spec.name} #{spec.version}"
-            pins = GemPins.build(spec)
-            Cache.save('gems', "#{spec.name}-#{spec.version}.ser", pins)
-          else
-            warn "Gem '#{name}' not found"
-          end
+          spec = Gem::Specification.find_by_name(*name.split('='))
+          do_cache spec
+        rescue Gem::MissingSpecError
+          warn "Gem '#{name}' not found"
         end
       end
     end
@@ -225,34 +213,6 @@ module Solargraph
       puts "#{workspace.filenames.length} files total."
     end
 
-    desc 'gems', 'Cache documentation for installed gems'
-    option :rebuild, type: :boolean, desc: 'Rebuild existing documentation', default: false
-    # @return [void]
-    def gems *names
-      if names.empty?
-        Gem::Specification.to_a.each do |spec|
-          next unless options.rebuild || !Yardoc.cached?(spec)
-
-          puts "Processing gem: #{spec.name} #{spec.version}"
-          pins = GemPins.build(spec)
-          Cache.save('gems', "#{spec.name}-#{spec.version}.ser", pins)
-        end
-      else
-        names.each do |name|
-          spec = Gem::Specification.find_by_name(name)
-          if spec
-            next unless options.rebuild || !Yardoc.cached?(spec)
-
-            puts "Processing gem: #{spec.name} #{spec.version}"
-            pins = GemPins.build(spec)
-            Cache.save('gems', "#{spec.name}-#{spec.version}.ser", pins)
-          else
-            warn "Gem '#{name}' not found"
-          end
-        end
-      end
-    end
-
     private
 
     # @param pin [Solargraph::Pin::Base]
@@ -269,6 +229,19 @@ module Solargraph
       end
       desc += " (#{pin.location.filename} #{pin.location.range.start.line})" if pin.location
       desc
+    end
+
+    # @param gemspec [Gem::Specification]
+    # @return [void]
+    def do_cache gemspec
+      cached = Yardoc.cached?(gemspec)
+      if cached && !options.rebuild
+        puts "Cache already exists for #{gemspec.name} #{gemspec.version}"
+      else
+        puts "#{cached ? 'Rebuilding' : 'Caching'} gem documentation for #{gemspec.name} #{gemspec.version}"
+        pins = GemPins.build(gemspec)
+        Cache.save('gems', "#{gemspec.name}-#{gemspec.version}.ser", pins)
+      end
     end
   end
 end
