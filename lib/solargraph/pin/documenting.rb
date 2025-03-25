@@ -44,10 +44,12 @@ module Solargraph
 
         private
 
+        # @return [String]
         def to_code
           "\n```ruby\n#{Documenting.normalize_indentation(@plaintext)}#{@plaintext.end_with?("\n") ? '' : "\n"}```\n\n"
         end
 
+        # @return [String]
         def to_markdown
           ReverseMarkdown.convert Kramdown::Document.new(@plaintext, input: 'GFM').to_html
         end
