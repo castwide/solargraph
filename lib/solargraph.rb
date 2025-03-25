@@ -42,7 +42,6 @@ module Solargraph
   autoload :TypeChecker,      'solargraph/type_checker'
   autoload :Environ,          'solargraph/environ'
   autoload :Convention,       'solargraph/convention'
-  autoload :Documentor,       'solargraph/documentor'
   autoload :Parser,           'solargraph/parser'
   autoload :RbsMap,           'solargraph/rbs_map'
   autoload :GemPins,          'solargraph/gem_pins'

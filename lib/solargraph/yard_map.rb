@@ -2,7 +2,6 @@
 
 require 'yard'
 require 'solargraph/yard_tags'
-require 'rubygems/package'
 require 'set'
 
 module Solargraph
