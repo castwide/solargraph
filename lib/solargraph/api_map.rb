@@ -1,6 +1,5 @@
 # frozen_string_literal: true
 
-require 'set'
 require 'pathname'
 require 'yard'
 require 'solargraph/yard_tags'
