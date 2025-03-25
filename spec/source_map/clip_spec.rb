@@ -1860,7 +1860,7 @@ describe Solargraph::SourceMap::Clip do
     expect(type.to_s).to eq('Integer')
   end
 
-  xit 'uses return value of block to infer return value of Enumerable#map' do
+  it 'uses simple return value of block to infer return value of Enumerable#map' do
     source = Solargraph::Source.load_string(%(
       a = ['a'].map { 123 }
       a
@@ -1869,7 +1869,50 @@ describe Solargraph::SourceMap::Clip do
     clip = api_map.clip_at('test.rb', [2, 6])
     type = clip.infer
     expect(type.tag).to eq('Array<Integer>')
-    expect(type.rooted?).to be true
+    # @todo more root-safety to be done - expect(type.rooted?).to be true
+  end
+
+  it 'infers type of block argument of map and return value dependent on it' do
+    source = Solargraph::Source.load_string(%(
+      def foo
+        a = [1,2,3]
+        a
+        b = a.map do |i|
+          i
+          i.to_f
+        end
+        b
+      end
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new.map(source)
+
+    clip = api_map.clip_at('test.rb', [5, 10])
+    type = clip.infer
+    expect(type.tag).to eq('Integer')
+
+    clip = api_map.clip_at('test.rb', [7, 8])
+    type = clip.infer
+    expect(type.tag).to eq('Array<Float>')
+
+    # @todo more root-safety to be done - expect(type.rooted?).to be true
+  end
+
+  it 'understands pass-through block-using wrapper methods from core RBS' do
+    source = Solargraph::Source.load_string(%(
+      mutex = Thread::Mutex.new
+      foo = 123
+      bar = mutex.synchronize do
+        foo
+      end
+      bar
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new.map(source)
+
+    clip = api_map.clip_at('test.rb', [6, 6])
+    type = clip.infer
+    expect(type.tag).to eq('Integer')
+
+    # @todo more root-safety to be done - expect(type.rooted?).to be true
   end
 
   xit 'resolves declared tuple types correctly' do
