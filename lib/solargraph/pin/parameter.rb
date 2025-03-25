@@ -10,7 +10,7 @@ module Solargraph
       attr_reader :asgn_code
 
       # @param decl [::Symbol] :arg, :optarg, :kwarg, :kwoptarg, :restarg, :kwrestarg, :block, :blockarg
-      # @param asgn_code [String]
+      # @param asgn_code [String, nil]
       # @param return_type [ComplexType, nil]
       def initialize decl: :arg, asgn_code: nil, return_type: nil, **splat
         super(**splat)
