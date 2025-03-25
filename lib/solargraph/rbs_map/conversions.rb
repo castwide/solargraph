@@ -557,16 +557,7 @@ module Solargraph
         params = type_args.map { |a| other_type_to_tag(a) }.reject { |t| t == 'undefined' }
         params_str = params.empty? ? '' : "<#{params.join(', ')}>"
         type_string = "#{base}#{params_str}"
-        begin
-          ComplexType.parse(type_string)
-        rescue
-          # @todo Tuples of tuples aren't yet handled by the parser, and that appears in a few
-          #   minor cases in the core/stdlib rbs:
-          #   [WARN] Internal error parsing Array<Array(Integer, Symbol, String, Array(Integer, Integer, Integer, Integer))> from RBS
-          #   [WARN] Internal error parsing Array<Array(Array(Integer, Integer), Symbol, String, Ripper::Lexer::State)> from RBS
-          Solargraph.logger.info "Internal error parsing #{type_string} from RBS; treating as non-generic"
-          ComplexType.parse(base)
-        end
+        ComplexType.parse(type_string)
       end
 
       # @param type_name [RBS::TypeName]
