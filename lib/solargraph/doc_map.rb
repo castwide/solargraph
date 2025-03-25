@@ -87,7 +87,8 @@ module Solargraph
         Solargraph.logger.debug "Loading stdlib pins for #{path}"
         @pins.concat map.pins
       else
-        Solargraph.logger.warn "Require path #{path} could not be resolved"
+        # @todo Temporarily ignoring unresolved `require 'set'`
+        Solargraph.logger.warn "Require path #{path} could not be resolved" unless path == 'set'
       end
     end
 
