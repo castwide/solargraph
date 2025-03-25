@@ -511,6 +511,10 @@ module Solargraph
         # HACK: Pass a dummy code object to the parser for plugins that
         # expect it not to be nil
         YARD::Docstring.parser.parse(comments, YARD::CodeObjects::Base.new(:root, 'stub'))
+      rescue StandardError => e
+        Solargraph.logger.info "YARD failed to parse docstring: [#{e.class}] #{e.message}"
+        Solargraph.logger.debug "Unparsed comment: #{comments}"
+        YARD::Docstring.parser
       end
     end
   end
