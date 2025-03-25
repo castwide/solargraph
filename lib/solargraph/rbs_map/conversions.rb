@@ -332,7 +332,7 @@ module Solargraph
             comments: decl.comment&.string,
             scope: :class,
             signatures: [],
-            generics: generics,
+            generics: generics
           )
           pin.signatures.concat method_def_to_sigs(decl, pin)
           pins.push pin
