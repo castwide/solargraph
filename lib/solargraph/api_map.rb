@@ -250,7 +250,7 @@ module Solargraph
     #
     # @param namespace [String, nil] The namespace to
     #   match
-    # @param context_tag [String] The context namespace in which the
+    # @param context_namespace [String] The context namespace in which the
     #   tag was referenced; start from here to resolve the name
     # @return [String, nil] fully qualified namespace
     def qualify_namespace(namespace, context_namespace = '')
@@ -327,6 +327,7 @@ module Solargraph
       else
         result.concat inner_get_methods(rooted_tag, scope, visibility, deep, skip)
         result.concat inner_get_methods('Kernel', :instance, [:public], deep, skip) if visibility.include?(:private)
+        result.concat inner_get_methods('Module', scope, visibility, deep, skip)
       end
       resolved = resolve_method_aliases(result, visibility)
       cache.set_methods(rooted_tag, scope, visibility, deep, resolved)
@@ -460,8 +461,10 @@ module Solargraph
     def clip cursor
       raise FileNotFoundError, "ApiMap did not catalog #{cursor.filename}" unless source_map_hash.key?(cursor.filename)
 
-      cache.get_clip(cursor) ||
-        SourceMap::Clip.new(self, cursor).tap { |clip| cache.set_clip(cursor, clip) }
+      # @todo Clip caches are disabled pending resolution of a stale cache bug
+      # cache.get_clip(cursor) ||
+      #   SourceMap::Clip.new(self, cursor).tap { |clip| cache.set_clip(cursor, clip) }
+      SourceMap::Clip.new(self, cursor)
     end
 
     # Get an array of document symbols from a file.

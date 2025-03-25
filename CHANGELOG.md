@@ -23,6 +23,10 @@
 - Map mixins from RBS (#808)
 - Fix issue with wrong signature selection by call with block node (#815)
 - Keep gem pins in memory (#811)
+- Refactor gems command (#816)
+- Use return type of literal blocks in inference (#818)
+- Insert Module methods (#820)
+- Revise documentation formatting (#823)
 
 ## 0.52.0 - February 28, 2025
 - Chains resolve identical names with different contexts (#679)
