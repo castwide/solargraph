@@ -49,7 +49,7 @@ module Solargraph
 
         private
 
-        # @param pins [::Enumerable<Pin::Base>]
+        # @param pins [::Enumerable<Pin::Method>]
         # @param api_map [ApiMap]
         # @param context [ComplexType]
         # @param locals [::Array<Pin::LocalVariable>]
@@ -136,7 +136,7 @@ module Solargraph
           Pin::ProxyType.anonymous(ComplexType::UNDEFINED)
         end
 
-        # @param pin [Pin::LocalVariable]
+        # @param pin [Pin::Method]
         # @param api_map [ApiMap]
         # @param context [ComplexType]
         # @param locals [Enumerable<Pin::Base>]
@@ -228,6 +228,7 @@ module Solargraph
           ComplexType.try_parse(type.to_s.gsub('$', context.value_types.map(&:tag).join(', ')).gsub('<>', ''))
         end
 
+        # @return [void]
         def fix_block_pass
           argument = @arguments.last&.links&.first
           @block = @arguments.pop if argument.is_a?(BlockSymbol) || argument.is_a?(BlockVariable)
