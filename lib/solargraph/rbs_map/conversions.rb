@@ -173,7 +173,7 @@ module Solargraph
             name: decl.super_class.name.relative!.to_s
           )
         end
-        add_mixins decl, class_pin.closure
+        add_mixins decl, class_pin
         convert_members_to_pins decl, class_pin
       end
 
@@ -621,15 +621,15 @@ module Solargraph
       end
 
       # @param decl [RBS::AST::Declarations::Class, RBS::AST::Declarations::Module]
-      # @param closure [Pin::Closure]
+      # @param closure [Pin::Namespace]
       # @return [void]
-      def add_mixins decl, closure
+      def add_mixins decl, namespace
         decl.each_mixin do |mixin|
           klass = mixin.is_a?(RBS::AST::Members::Include) ? Pin::Reference::Include : Pin::Reference::Extend
           pins.push klass.new(
             name: mixin.name.relative!.to_s,
             location: rbs_location_to_location(mixin.location),
-            closure: closure
+            closure: namespace
           )
         end
       end
