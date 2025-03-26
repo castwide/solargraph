@@ -169,7 +169,7 @@ module Solargraph
       end
 
       def rooted?
-        @rooted
+        @rooted && all_params.all?(&:rooted?)
       end
 
       # @yieldparam [UniqueType]
