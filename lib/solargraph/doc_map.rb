@@ -19,8 +19,8 @@ module Solargraph
     # @param requires [Array<String>]
     # @param dependencies [Array<Gem::Specification>]
     def initialize(requires, dependencies)
-      @requires = requires
-      @dependencies = dependencies
+      @requires = requires.compact
+      @dependencies = dependencies.compact
       generate
     end
 
@@ -105,6 +105,8 @@ module Solargraph
     # @param path [String]
     # @return [Gem::Specification, nil]
     def resolve_path_to_gemspec path
+      return nil if path.empty?
+
       gemspec = Gem::Specification.find_by_path(path)
       if gemspec.nil?
         gem_name_guess = path.split('/').first
