@@ -36,4 +36,12 @@ describe Solargraph::DocMap do
     expect(Solargraph.logger).not_to receive(:warn)
     Solargraph::DocMap.new(['set'], [])
   end
+
+  it 'ignores nil requires' do
+    expect { Solargraph::DocMap.new([nil], []) }.not_to raise_error
+  end
+
+  it 'ignores empty requires' do
+    expect { Solargraph::DocMap.new([''], []) }.not_to raise_error
+  end
 end
