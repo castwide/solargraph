@@ -143,12 +143,16 @@ module Solargraph
           true
         end
 
+        # @param node [Parser::AST::Node]
+        # @return [Source::Chain, nil]
         def passed_block node
           return unless node == @node && @parent&.type == :block
 
           NodeChainer.chain(@parent.children[2], @filename)
         end
 
+        # @param node [Parser::AST::Node]
+        # @return [Array<Source::Chain>]
         def node_args node
           node.children[2..-1].map do |child|
             NodeChainer.chain(child, @filename, node)

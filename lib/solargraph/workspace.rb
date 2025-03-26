@@ -1,7 +1,6 @@
 # frozen_string_literal: true
 
 require 'open3'
-require 'rubygems'
 require 'json'
 
 module Solargraph

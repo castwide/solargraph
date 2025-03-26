@@ -8,7 +8,6 @@ module Solargraph
   class Source
     autoload :Updater,       'solargraph/source/updater'
     autoload :Change,        'solargraph/source/change'
-    autoload :Mapper,        'solargraph/source/mapper'
     autoload :EncodingFixes, 'solargraph/source/encoding_fixes'
     autoload :Cursor,        'solargraph/source/cursor'
     autoload :Chain,         'solargraph/source/chain'
@@ -512,6 +511,10 @@ module Solargraph
         # HACK: Pass a dummy code object to the parser for plugins that
         # expect it not to be nil
         YARD::Docstring.parser.parse(comments, YARD::CodeObjects::Base.new(:root, 'stub'))
+      rescue StandardError => e
+        Solargraph.logger.info "YARD failed to parse docstring: [#{e.class}] #{e.message}"
+        Solargraph.logger.debug "Unparsed comment: #{comments}"
+        YARD::Docstring.parser
       end
     end
   end

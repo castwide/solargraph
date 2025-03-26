@@ -173,7 +173,7 @@ module Solargraph
             name: decl.super_class.name.relative!.to_s
           )
         end
-        add_mixins decl, class_pin.closure
+        add_mixins decl, class_pin
         convert_members_to_pins decl, class_pin
       end
 
@@ -332,7 +332,7 @@ module Solargraph
             comments: decl.comment&.string,
             scope: :class,
             signatures: [],
-            generics: generics,
+            generics: generics
           )
           pin.signatures.concat method_def_to_sigs(decl, pin)
           pins.push pin
@@ -557,16 +557,7 @@ module Solargraph
         params = type_args.map { |a| other_type_to_tag(a) }.reject { |t| t == 'undefined' }
         params_str = params.empty? ? '' : "<#{params.join(', ')}>"
         type_string = "#{base}#{params_str}"
-        begin
-          ComplexType.parse(type_string)
-        rescue
-          # @todo Tuples of tuples aren't yet handled by the parser, and that appears in a few
-          #   minor cases in the core/stdlib rbs:
-          #   [WARN] Internal error parsing Array<Array(Integer, Symbol, String, Array(Integer, Integer, Integer, Integer))> from RBS
-          #   [WARN] Internal error parsing Array<Array(Array(Integer, Integer), Symbol, String, Ripper::Lexer::State)> from RBS
-          Solargraph.logger.info "Internal error parsing #{type_string} from RBS; treating as non-generic"
-          ComplexType.parse(base)
-        end
+        ComplexType.parse(type_string)
       end
 
       # @param type_name [RBS::TypeName]
@@ -630,14 +621,15 @@ module Solargraph
       end
 
       # @param decl [RBS::AST::Declarations::Class, RBS::AST::Declarations::Module]
-      # @param closure [Pin::Closure]
-      def add_mixins decl, closure
+      # @param closure [Pin::Namespace]
+      # @return [void]
+      def add_mixins decl, namespace
         decl.each_mixin do |mixin|
           klass = mixin.is_a?(RBS::AST::Members::Include) ? Pin::Reference::Include : Pin::Reference::Extend
           pins.push klass.new(
             name: mixin.name.relative!.to_s,
             location: rbs_location_to_location(mixin.location),
-            closure: closure
+            closure: namespace
           )
         end
       end

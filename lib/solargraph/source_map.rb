@@ -2,7 +2,6 @@
 
 require 'yard'
 require 'solargraph/yard_tags'
-require 'set'
 
 module Solargraph
   # An index of pins and other ApiMap-related data for a Source.
@@ -18,7 +17,7 @@ module Solargraph
     # @return [Array<Pin::Base>]
     attr_reader :pins
 
-    # @return [Array<Pin::Base>]
+    # @return [Array<Pin::LocalVariable>]
     attr_reader :locals
 
     # @param source [Source]

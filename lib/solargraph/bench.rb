@@ -1,6 +1,5 @@
 # frozen_string_literal: true
 
-require 'set'
 
 module Solargraph
   # A container of source maps and workspace data to be cataloged in an ApiMap.
@@ -22,6 +21,7 @@ module Solargraph
       @source_maps = source_maps.to_set
       @workspace = workspace
       @external_requires = external_requires.reject { |path| workspace.would_require?(path) }
+                                            .compact
                                             .to_set
     end
   end
