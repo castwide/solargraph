@@ -65,7 +65,8 @@ module Solargraph
             # use it.  If we didn't pass a block, the logic below will
             # reject it regardless
 
-            sorted_overloads = overloads.sort { |ol| ol.block? ? -1 : 1 }
+            with_block, without_block = overloads.partition(&:block?)
+            sorted_overloads = with_block + without_block
             new_signature_pin = nil
             sorted_overloads.each do |ol|
               next unless arity_matches?(arguments, ol)
@@ -79,9 +80,10 @@ module Solargraph
                   break
                 end
                 atype = atypes[idx] ||= arg.infer(api_map, Pin::ProxyType.anonymous(context), locals)
+                ptype = param.return_type
                 # @todo Weak type comparison
                 # unless atype.tag == param.return_type.tag || api_map.super_and_sub?(param.return_type.tag, atype.tag)
-                unless param.return_type.undefined? || atype.name == param.return_type.name || api_map.super_and_sub?(param.return_type.name, atype.name) || param.return_type.generic?
+                unless ptype.undefined? || atype.name == ptype.name || api_map.super_and_sub?(ptype.name, atype.name) || ptype.generic?
                   match = false
                   break
                 end

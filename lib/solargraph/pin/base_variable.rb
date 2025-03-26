@@ -59,6 +59,7 @@ module Solargraph
         ComplexType.try_parse(*types.map(&:to_s))
       end
 
+      # @param other [Object]
       def == other
         return false unless super
         assignment == other.assignment

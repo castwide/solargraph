@@ -372,5 +372,23 @@ describe Solargraph::TypeChecker do
       ))
       expect(checker.problems).to be_empty
     end
+
+    it 'matches "supertype" of explicit literal for assignability' do
+      checker = type_checker(%(
+        def nil_assignment?
+         false
+        end
+      ))
+      expect(checker.problems).to be_empty
+    end
+
+    it 'matches "supertype" of inferred literal for assignability' do
+      checker = type_checker(%(
+        def nil_assignment?
+         'foo'.nil? # infers as 'false'
+        end
+      ))
+      expect(checker.problems.map(&:message)).to be_empty
+    end
   end
 end
