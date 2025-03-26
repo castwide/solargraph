@@ -9,6 +9,9 @@ module Solargraph
       # @return [String]
       attr_reader :asgn_code
 
+      # @param decl [::Symbol] :arg, :optarg, :kwarg, :kwoptarg, :restarg, :kwrestarg, :block, :blockarg
+      # @param asgn_code [String, nil]
+      # @param return_type [ComplexType, nil]
       def initialize decl: :arg, asgn_code: nil, return_type: nil, **splat
         super(**splat)
         @asgn_code = asgn_code
@@ -43,7 +46,7 @@ module Solargraph
         when :kwarg
           "#{name}: #{return_type.to_rbs}"
         when :kwoptarg
-          "#?{name}: #{return_type.to_rbs}"
+          "?#{name}: #{return_type.to_rbs}"
         when :restarg
           "*#{super}"
         when :kwrestarg
@@ -53,6 +56,7 @@ module Solargraph
         end
       end
 
+      # @return [String]
       def full
         case decl
         when :optarg

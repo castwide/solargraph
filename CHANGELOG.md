@@ -1,3 +1,7 @@
+## 0.53.1 - March 26, 2025
+- Reject nil requires in live code (#831)
+- RbsMap adds mixins to current namespace (#832)
+
 ## 0.53.0 - March 25, 2025
 - Fix crash on generic methods (#762)
 - Add more type annotations to the codebase (#763 et al.)
@@ -23,6 +27,10 @@
 - Map mixins from RBS (#808)
 - Fix issue with wrong signature selection by call with block node (#815)
 - Keep gem pins in memory (#811)
+- Refactor gems command (#816)
+- Use return type of literal blocks in inference (#818)
+- Insert Module methods (#820)
+- Revise documentation formatting (#823)
 
 ## 0.52.0 - February 28, 2025
 - Chains resolve identical names with different contexts (#679)

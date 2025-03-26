@@ -2,8 +2,6 @@
 
 require 'yard'
 require 'solargraph/yard_tags'
-require 'rubygems/package'
-require 'set'
 
 module Solargraph
   # The YardMap provides access to YARD documentation for the Ruby core, the

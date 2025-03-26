@@ -49,7 +49,7 @@ module Solargraph
 
         private
 
-        # @param pins [::Enumerable<Pin::Base>]
+        # @param pins [::Enumerable<Pin::Method>]
         # @param api_map [ApiMap]
         # @param context [ComplexType]
         # @param locals [::Array<Pin::LocalVariable>]
@@ -87,7 +87,10 @@ module Solargraph
                 end
               end
               if match
-                blocktype = block_call_type(api_map, context)
+                if ol.block && with_block?
+                  block_atypes = ol.block.parameters.map(&:return_type)
+                  blocktype = block_call_type(api_map, context, block_atypes, locals)
+                end
                 new_signature_pin = ol.resolve_generics_from_context_until_complete(ol.generics, atypes, nil, nil, blocktype)
                 new_return_type = new_signature_pin.return_type
                 type = with_params(new_return_type.self_to_type(context), context).qualify(api_map, context.namespace) if new_return_type.defined?
@@ -137,7 +140,7 @@ module Solargraph
           Pin::ProxyType.anonymous(ComplexType::UNDEFINED)
         end
 
-        # @param pin [Pin::LocalVariable]
+        # @param pin [Pin::Method]
         # @param api_map [ApiMap]
         # @param context [ComplexType]
         # @param locals [Enumerable<Pin::Base>]
@@ -229,6 +232,7 @@ module Solargraph
           ComplexType.try_parse(type.to_s.gsub('$', context.value_types.map(&:tag).join(', ')).gsub('<>', ''))
         end
 
+        # @return [void]
         def fix_block_pass
           argument = @arguments.last&.links&.first
           @block = @arguments.pop if argument.is_a?(BlockSymbol) || argument.is_a?(BlockVariable)
@@ -236,13 +240,27 @@ module Solargraph
 
         # @param api_map [ApiMap]
         # @param context [ComplexType]
-        def block_call_type(api_map, context)
+        # @param block_parameter_types [::Array<ComplexType>]
+        # @param locals [::Array<Pin::LocalVariable>]
+        # @return [ComplexType, nil]
+        def block_call_type(api_map, context, block_parameter_types, locals)
           return nil unless with_block?
 
-          # @todo Handle BlockVariable and literal blocks
-          if block.links.first.is_a?(BlockSymbol)
-            callee = api_map.get_path_pins("#{context.subtypes.first}##{block.links.first.word}").first
-            callee&.return_type || ComplexType::UNDEFINED
+          # @todo Handle BlockVariable
+          if block.links.map(&:class) == [BlockSymbol]
+            # Ruby's shorthand for sending the passed in method name
+            # to the first yield parameter with no arguments
+            block_symbol_name = block.links.first.word
+            block_symbol_call_path = "#{block_parameter_types.first}##{block_symbol_name}"
+            callee = api_map.get_path_pins(block_symbol_call_path).first
+            return_type = callee&.return_type
+            # @todo: Figure out why we get unresolved generics at
+            #   this point and need to assume method return types
+            #   based on the generic type
+            return_type ||= api_map.get_path_pins("#{context.subtypes.first}##{block.links.first.word}").first&.return_type
+            return_type || ComplexType::UNDEFINED
+          else
+            block.infer(api_map, Pin::ProxyType.anonymous(context), locals)
           end
         end
       end

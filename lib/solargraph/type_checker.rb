@@ -517,10 +517,6 @@ module Solargraph
       return [] unless pin.explicit?
       return [] if parameters.empty? && arguments.empty?
       return [] if pin.anon_splat?
-      if parameters.empty?
-        return [] if arguments.length == 1 && arguments.last.links.last.is_a?(Source::Chain::BlockVariable)
-        return [Problem.new(location, "Too many arguments to #{pin.path}")]
-      end
       unchecked = arguments.clone
       add_params = 0
       if unchecked.empty? && parameters.any? { |param| param.decl == :kwarg }
@@ -560,9 +556,6 @@ module Solargraph
         return [] if parameters.any?(&:rest?)
         opt = optional_param_count(parameters)
         return [] if unchecked.length <= req + opt
-        if unchecked.length == req + opt + 1 && unchecked.last.links.last.is_a?(Source::Chain::BlockVariable)
-          return []
-        end
         if req + add_params + 1 == unchecked.length && any_splatted_call?(unchecked.map(&:node)) && (parameters.map(&:decl) & [:kwarg, :kwoptarg, :kwrestarg]).any?
           return []
         end

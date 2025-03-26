@@ -1,7 +1,6 @@
 # frozen_string_literal: true
 
 require 'pathname'
-require 'set'
 
 module Solargraph
   # A Library handles coordination between a Workspace and an ApiMap.
