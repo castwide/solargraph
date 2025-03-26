@@ -19,7 +19,7 @@ module Solargraph
     # @param requires [Array<String>]
     # @param dependencies [Array<Gem::Specification>]
     def initialize(requires, dependencies)
-      @requires = requires
+      @requires = requires.compact
       @dependencies = dependencies
       generate
     end

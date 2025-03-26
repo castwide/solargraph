@@ -21,6 +21,7 @@ module Solargraph
       @source_maps = source_maps.to_set
       @workspace = workspace
       @external_requires = external_requires.reject { |path| workspace.would_require?(path) }
+                                            .compact
                                             .to_set
     end
   end
