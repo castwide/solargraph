@@ -1,3 +1,7 @@
+## 0.53.1 - March 26, 2025
+- Reject nil requires in live code (#831)
+- RbsMap adds mixins to current namespace (#832)
+
 ## 0.53.0 - March 25, 2025
 - Fix crash on generic methods (#762)
 - Add more type annotations to the codebase (#763 et al.)
