@@ -83,7 +83,7 @@ module Solargraph
       end
 
       def return_type
-        @return_type ||= ComplexType.try_parse( (type == :class ? 'Class' : 'Module') + "<#{path}>" )
+        @return_type ||= ComplexType.try_parse( (type == :class ? '::Class' : '::Module') + "<::#{path}>")
       end
 
       # @return [Array<String>]

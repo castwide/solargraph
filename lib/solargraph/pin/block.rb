@@ -69,11 +69,11 @@ module Solargraph
           ys = receiver_pin.docstring.tag(:yieldreceiver)
           if ys && ys.types && !ys.types.empty?
             target = if chain.links.first.is_a?(Source::Chain::Constant)
-              receiver_pin.full_context.namespace
+              receiver_pin.full_context
             else
-              full_context.namespace
+              full_context
             end
-            return ComplexType.try_parse(*ys.types).qualify(api_map, receiver_pin.context.namespace).self_to(target)
+            return ComplexType.try_parse(*ys.types).qualify(api_map, receiver_pin.context.namespace).self_to_type(full_context)
           end
         end
         nil

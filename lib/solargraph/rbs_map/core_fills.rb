@@ -19,14 +19,14 @@ module Solargraph
         Solargraph::Pin::Method.new(name: 'tap', scope: :instance,
                                     closure: Solargraph::Pin::Namespace.new(name: 'Object')),
         Solargraph::Pin::Method.new(name: 'class', scope: :instance,
-                                    closure: Solargraph::Pin::Namespace.new(name: 'Object'), comments: '@return [Class<self>]')
+                                    closure: Solargraph::Pin::Namespace.new(name: 'Object'), comments: '@return [::Class<self>]')
       ]
 
       CLASS_RETURN_TYPES = [
         Override.method_return('Class#new', 'self'),
-        Override.method_return('Class.new', 'Class<BasicObject>'),
+        Override.method_return('Class.new', '::Class<BasicObject>'),
         Override.method_return('Class#allocate', 'self'),
-        Override.method_return('Class.allocate', 'Class<BasicObject>')
+        Override.method_return('Class.allocate', '::Class<BasicObject>')
       ]
 
       # HACK: Add Errno exception classes

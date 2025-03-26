@@ -450,7 +450,7 @@ module Solargraph
         end
         result.push ComplexType::NIL if has_nil
         return ComplexType::UNDEFINED if result.empty?
-        ComplexType.try_parse(*result.map(&:tag).uniq)
+        ComplexType.new(result.uniq)
       end
 
       # @param [ApiMap] api_map

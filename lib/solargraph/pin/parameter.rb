@@ -79,11 +79,11 @@ module Solargraph
           @return_type = ComplexType.try_parse(*found.types) unless found.nil? or found.types.nil?
           if @return_type.undefined?
             if decl == :restarg
-              @return_type = ComplexType.try_parse('Array')
+              @return_type = ComplexType.try_parse('::Array')
             elsif decl == :kwrestarg
-              @return_type = ComplexType.try_parse('Hash')
+              @return_type = ComplexType.try_parse('::Hash')
             elsif decl == :blockarg
-              @return_type = ComplexType.try_parse('Proc')
+              @return_type = ComplexType.try_parse('::Proc')
             end
           end
         end
@@ -159,7 +159,7 @@ module Solargraph
                 namespace_pin = api_map.get_namespace_pins(meth.namespace, closure.namespace).first
                 return yield_type.resolve_generics(namespace_pin, receiver_type)
               else
-                return yield_type.self_to(chain.base.infer(api_map, closure, locals).namespace).qualify(api_map, meth.context.namespace)
+                return yield_type.self_to_type(chain.base.infer(api_map, closure, locals)).qualify(api_map, meth.context.namespace)
               end
             end
           end

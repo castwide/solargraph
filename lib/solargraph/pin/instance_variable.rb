@@ -18,9 +18,9 @@ module Solargraph
         @context ||= begin
           result = super
           if scope == :class
-            ComplexType.parse("Class<#{result.namespace}>")
+            ComplexType.parse("::Class<#{result.rooted_namespace}>")
           else
-            ComplexType.parse("#{result.namespace}")
+            ComplexType.parse("#{result.rooted_namespace}")
           end
         end
       end

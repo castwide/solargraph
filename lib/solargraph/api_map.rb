@@ -231,14 +231,15 @@ module Solargraph
     # @param tag [String, nil] The namespace to
     #   match, complete with generic parameters set to appropriate
     #   values if available
-    # @param context_tag [String] The context in which the tag was
-    #   referenced; start from here to resolve the name
+    # @param context_tag [String] The fully qualified context in which
+    #   the tag was referenced; start from here to resolve the name.
+    #   Should not be prefixed with '::'.
     # @return [String, nil] fully qualified tag
     def qualify tag, context_tag = ''
       return tag if ['self', nil].include?(tag)
-      context_type = ComplexType.parse(context_tag)
+      context_type = ComplexType.parse("::#{context_tag}")
       type = ComplexType.parse(tag)
-      fqns = qualify_namespace(type.rooted_namespace, context_type.rooted_namespace)
+      fqns = qualify_namespace(type.rooted_namespace, context_type.namespace)
       return nil if fqns.nil?
       fqns + type.substring
     end
@@ -646,7 +647,7 @@ module Solargraph
 
     # @param namespace [String]
     # @param context [String]
-    # @return [String]
+    # @return [String, nil]
     def qualify_lower namespace, context
       qualify namespace, context.split('::')[0..-2].join('::')
     end
