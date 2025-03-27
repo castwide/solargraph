@@ -47,6 +47,8 @@ module Solargraph
 
         private
 
+        # @todo '?' methods should type like RBS 'boolish' rather than a strict true or false
+        # @sg-ignore
         def support_workspace_folders?
           params['capabilities'] &&
             params['capabilities']['workspace'] &&
