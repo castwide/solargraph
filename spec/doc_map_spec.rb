@@ -44,4 +44,9 @@ describe Solargraph::DocMap do
   it 'ignores empty requires' do
     expect { Solargraph::DocMap.new([''], []) }.not_to raise_error
   end
+
+  it 'collects dependencies' do
+    doc_map = Solargraph::DocMap.new(['rspec'], [])
+    expect(doc_map.dependencies.map(&:name)).to include('rspec-core')
+  end
 end
