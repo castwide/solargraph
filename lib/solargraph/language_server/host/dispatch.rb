@@ -95,6 +95,10 @@ module Solargraph
           nil
         end
 
+        def options
+          @options ||= {}.freeze
+        end
+
         # Get a generic library for the given URI and attach the corresponding
         # source.
         #
@@ -109,7 +113,7 @@ module Solargraph
 
         # @return [Library]
         def generic_library
-          @generic_library ||= Solargraph::Library.new
+          @generic_library ||= Solargraph::Library.new(Solargraph::Workspace.new('', nil, options), nil)
         end
       end
     end

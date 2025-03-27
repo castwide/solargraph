@@ -292,7 +292,8 @@ module Solargraph
         path = ''
         path = normalize_separators(directory) unless directory.nil?
         begin
-          lib = Solargraph::Library.load(path, name)
+          workspace = Solargraph::Workspace.new(path, nil, options)
+          lib = Solargraph::Library.new(workspace, name)
           libraries.push lib
           async_library_map lib
         rescue WorkspaceTooLargeError => e

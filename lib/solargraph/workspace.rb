@@ -25,9 +25,11 @@ module Solargraph
 
     # @param directory [String]
     # @param config [Config, nil]
-    def initialize directory = '', config = nil
+    # @param server [Hash]
+    def initialize directory = '', config = nil, server = {}
       @directory = directory
       @config = config
+      @server = server
       load_sources
       @gemnames = []
       @require_paths = generate_require_paths
@@ -134,7 +136,18 @@ module Solargraph
       source_hash[updater.filename] = source_hash[updater.filename].synchronize(updater)
     end
 
+    # @return [String]
+    def command_path
+      server['commandPath'] || 'solargraph'
+    end
+
     private
+
+    # The language server configuration (or an empty hash if the workspace was
+    # not initialized from a server).
+    #
+    # @return [Hash]
+    attr_reader :server
 
     # @return [Hash{String => Solargraph::Source}]
     def source_hash
