@@ -1998,4 +1998,25 @@ describe Solargraph::SourceMap::Clip do
     clip = api_map.clip_at('test.rb', [0, 0])
     expect(clip.infer.to_s).to eq('nil')
   end
+
+  it 'interprets self type in superclass method return type' do
+    source = Solargraph::Source.load_string(%(
+      class Foo
+        # @return [self]
+        def foo
+          dup
+        end
+      end
+
+      class Bar < Foo
+        def foo
+          a = super()
+          a
+        end
+      end
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new.map(source)
+    clip = api_map.clip_at('test.rb', [11, 10])
+    expect(clip.infer.to_s).to eq('Bar')
+  end
 end
