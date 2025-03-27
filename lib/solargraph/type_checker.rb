@@ -333,6 +333,7 @@ module Solargraph
                   next
                 else
                   ptype = params.key?(par.name) ? params[par.name][:qualified] : ComplexType::UNDEFINED
+                  ptype = ptype.self_to(par.context.namespace)
                   if ptype.nil?
                     # @todo Some level (strong, I guess) should require the param here
                   else

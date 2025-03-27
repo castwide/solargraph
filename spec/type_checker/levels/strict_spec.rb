@@ -661,5 +661,27 @@ describe Solargraph::TypeChecker do
       ))
       expect(checker.problems.map(&:message)).to eq(['Unresolved call to upcase'])
     end
+
+    it 'interprets self references correctly' do
+      checker = type_checker(%(
+        class Bar
+          # @param pin [self]
+          # @return [void]
+          def baz pin; end
+        end
+
+        class Foo
+          # @return [Bar]
+          attr_reader :bing
+
+          # @param other [Foo]
+          # @return [void]
+          def try_merge!(other)
+            bing.baz(other.bing)
+          end
+        end
+      ))
+      expect(checker.problems.map(&:message)).to eq([])
+    end
   end
 end
