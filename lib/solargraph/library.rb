@@ -603,7 +603,7 @@ module Solargraph
 
       logger.info "Caching #{spec.name} #{spec.version}"
       Thread.new do
-        @cache_pid = Process.spawn('solargraph', 'cache', spec.name, spec.version.to_s)
+        @cache_pid = Process.spawn(workspace.command_path, 'cache', spec.name, spec.version.to_s)
         Process.wait(@cache_pid)
         logger.info "Cached #{spec.name} #{spec.version}"
         @synchronized = false
