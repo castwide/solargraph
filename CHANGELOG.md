@@ -1,3 +1,8 @@
+## 0.53.2 - March 27, 2025
+- Fix a self-type-related false-positive in strict typechecking (#834)
+- DocMap fetches gem dependencies (#835)
+- Use configured command path to spawn solargraph processes (#837)
+
 ## 0.53.1 - March 26, 2025
 - Reject nil requires in live code (#831)
 - RbsMap adds mixins to current namespace (#832)
