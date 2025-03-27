@@ -320,8 +320,14 @@ module Solargraph
               argchain = base.links.last.arguments[idx]
               if argchain.nil?
                 if par.decl == :arg
-                  errors.push Problem.new(location, "Not enough arguments to #{pin.path}")
-                  next
+                  last = base.links.last.arguments.last
+                  if last && last.node.type == :splat
+                    argchain = last
+                    next # don't try to apply the type of the splat - unlikely to be specific enough
+                  else
+                    errors.push Problem.new(location, "Not enough arguments to #{pin.path}")
+                    next
+                  end
                 else
                   last = base.links.last.arguments.last
                   argchain = last if last && [:kwsplat, :hash].include?(last.node.type)
@@ -332,6 +338,10 @@ module Solargraph
                   errors.concat kwarg_problems_for sig, argchain, api_map, block_pin, locals, location, pin, params, idx
                   next
                 else
+                  last = base.links.last.arguments.last
+                  if last && last.node.type == :splat
+                    next # don't try to apply the type of the splat - unlikely to be specific enough
+                  end
                   ptype = params.key?(par.name) ? params[par.name][:qualified] : ComplexType::UNDEFINED
                   ptype = ptype.self_to(par.context.namespace)
                   if ptype.nil?
