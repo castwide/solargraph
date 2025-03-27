@@ -56,6 +56,9 @@ module Solargraph
     # @param bench [Bench]
     # @return [self]
     def catalog bench
+      # @todo teach this to load a user-configured RBS directory from
+      #   the workspace so folks can specify their own RBS files as
+      #   fills when needed
       implicit.clear
       @cache.clear
       @source_map_hash = bench.source_maps.map { |s| [s.filename, s] }.to_h

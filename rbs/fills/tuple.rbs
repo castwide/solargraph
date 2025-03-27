@@ -1,0 +1,150 @@
+# <-- liberally borrowed from
+#     https://github.com/ruby/rbs/blob/master/core/array.rbs, which
+#     was generated from
+#     https://github.com/ruby/ruby/blob/master/array.c
+#     -->
+module Solargraph
+  module Fills
+    class Tuple[unchecked out A,
+                unchecked out B = void,
+                unchecked out C = void,
+                unchecked out D = void,
+                unchecked out E = void,
+                unchecked out F = void,
+                unchecked out G = void,
+                unchecked out H = void,
+                unchecked out I = void,
+                unchecked out J = void] < Array[A | B | C | D | E | F | G | H | I | J]
+      # <!--
+      #   rdoc-file=array.c
+      #   - self[index] -> object or nil
+      # -->
+      # Returns elements from `self`; does not modify `self`.
+      #
+      # In brief:
+      #
+      #     a = [:foo, 'bar', 2]
+      #
+      #     # Single argument index: returns one element.
+      #     a[0]     # => :foo          # Zero-based index.
+      #
+      # When a single integer argument `index` is given, returns the element at offset
+      # `index`:
+      #
+      #     a = [:foo, 'bar', 2]
+      #     a[0] # => :foo
+      #     a[2] # => 2
+      #     a # => [:foo, "bar", 2]
+      def []: (0 index) -> A
+            | (1 index) -> B
+            | (2 index) -> C
+            | (3 index) -> D
+            | (4 index) -> E
+            | (5 index) -> F
+            | (6 index) -> G
+            | (7 index) -> H
+            | (8 index) -> I
+            | (9 index) -> J
+            | (0 index) -> K
+            | (int index) -> nil
+
+      # <!--
+      #   rdoc-file=array.c
+      #   - at(index) -> object or nil
+      # -->
+      # Returns the element of `self` specified by the given `index` or `nil` if there
+      # is no such element; `index` must be an [integer-convertible
+      # object](rdoc-ref:implicit_conversion.rdoc@Integer-Convertible+Objects).
+      #
+      # For non-negative `index`, returns the element of `self` at offset `index`:
+      #
+      #     a = [:foo, 'bar', 2]
+      #     a.at(0)   # => :foo
+      #     a.at(2)   # => 2
+      #     a.at(2.0) # => 2
+      #
+      # Related: Array#[]; see also [Methods for
+      # Fetching](rdoc-ref:Array@Methods+for+Fetching).
+      #
+      def at: (0 index) -> A
+            | (1 index) -> B
+            | (2 index) -> C
+            | (3 index) -> D
+            | (4 index) -> E
+            | (5 index) -> F
+            | (6 index) -> G
+            | (7 index) -> H
+            | (8 index) -> I
+            | (9 index) -> J
+            | (int index) -> nil
+
+      # <!--
+      #   rdoc-file=array.c
+      #   - fetch(index) -> element
+      #   - fetch(index, default_value) -> element or default_value
+      #   - fetch(index) {|index| ... } -> element or block_return_value
+      # -->
+      # Returns the element of `self` at offset `index` if `index` is in range;
+      # `index` must be an [integer-convertible
+      # object](rdoc-ref:implicit_conversion.rdoc@Integer-Convertible+Objects).
+      #
+      # With the single argument `index` and no block, returns the element at offset
+      # `index`:
+      #
+      #     a = [:foo, 'bar', 2]
+      #     a.fetch(1)   # => "bar"
+      #     a.fetch(1.1) # => "bar"
+      #
+      # With arguments `index` and `default_value` (which may be any object) and no
+      # block, returns `default_value` if `index` is out-of-range:
+      #
+      #     a = [:foo, 'bar', 2]
+      #     a.fetch(1, nil)  # => "bar"
+      #     a.fetch(3, :foo) # => :foo
+      #
+      # With argument `index` and a block, returns the element at offset `index` if
+      # index is in range (and the block is not called); otherwise calls the block
+      # with index and returns its return value:
+      #
+      #     a = [:foo, 'bar', 2]
+      #     a.fetch(1) {|index| raise 'Cannot happen' } # => "bar"
+      #     a.fetch(50) {|index| "Value for #{index}" } # => "Value for 50"
+      #
+      # Related: see [Methods for Fetching](rdoc-ref:Array@Methods+for+Fetching).
+      #
+      def fetch: (0 index) -> A
+               | (1 index) -> B
+               | (2 index) -> C
+               | (3 index) -> D
+               | (4 index) -> E
+               | (5 index) -> F
+               | (6 index) -> G
+               | (7 index) -> H
+               | (8 index) -> I
+               | (9 index) -> J
+               | (int index) -> void
+               | [T] (0 index, T default) -> A
+               | [T] (1 index, T default) -> B
+               | [T] (2 index, T default) -> C
+               | [T] (3 index, T default) -> D
+               | [T] (4 index, T default) -> E
+               | [T] (5 index, T default) -> F
+               | [T] (6 index, T default) -> G
+               | [T] (7 index, T default) -> H
+               | [T] (8 index, T default) -> I
+               | [T] (9 index, T default) -> J
+               | [T] (int index, T default) -> T
+               | [T] (0 index) { (int index) -> T } -> A
+               | [T] (1 index) { (int index) -> T } -> B
+               | [T] (2 index) { (int index) -> T } -> C
+               | [T] (3 index) { (int index) -> T } -> D
+               | [T] (4 index) { (int index) -> T } -> E
+               | [T] (5 index) { (int index) -> T } -> F
+               | [T] (6 index) { (int index) -> T } -> G
+               | [T] (7 index) { (int index) -> T } -> H
+               | [T] (8 index) { (int index) -> T } -> I
+               | [T] (9 index) { (int index) -> T } -> J
+               | [T] (int index) { (int index) -> T } -> T
+    end
+  end
+end

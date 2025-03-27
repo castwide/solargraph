@@ -1930,22 +1930,158 @@ describe Solargraph::SourceMap::Clip do
     # @todo more root-safety to be done - expect(type.rooted?).to be true
   end
 
-  xit 'resolves declared tuple types correctly' do
+  it 'resolves declared tuple types correctly' do
     source = Solargraph::Source.load_string(%(
-      # @type [Tuple(String, Integer)]
+      # @type [::Solargraph::Fills::Tuple(String, Integer)]
       a = nil
       b = a[0]
       b
       c = a[1]
       c
+      d = a[2]
+      d
     ), 'test.rb')
     api_map = Solargraph::ApiMap.new.map(source)
     clip = api_map.clip_at('test.rb', [4, 6])
     type = clip.infer
     expect(type.to_s).to eq('String')
+
     clip = api_map.clip_at('test.rb', [6, 6])
     type = clip.infer
     expect(type.to_s).to eq('Integer')
+
+    clip = api_map.clip_at('test.rb', [8, 6])
+    type = clip.infer
+    expect(type.to_s).to eq('nil')
+  end
+
+  it 'resolves declared tuple types correctly' do
+    source = Solargraph::Source.load_string(%(
+      # @type [::Solargraph::Fills::Tuple(String, Integer)]
+      a = nil
+      b = a[0]
+      b
+      c = a[1]
+      c
+      d = a[2]
+      d
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new.map(source)
+    clip = api_map.clip_at('test.rb', [4, 6])
+    type = clip.infer
+    expect(type.to_s).to eq('String')
+
+    clip = api_map.clip_at('test.rb', [6, 6])
+    type = clip.infer
+    expect(type.to_s).to eq('Integer')
+
+    clip = api_map.clip_at('test.rb', [8, 6])
+    type = clip.infer
+    expect(type.to_s).to eq('nil')
+  end
+
+  xit 'does not pay attention to method signatures which have been redefind by subclass'
+
+  it 'understands #at for tuples' do
+    source = Solargraph::Source.load_string(%(
+      # @type [::Solargraph::Fills::Tuple(String, Integer)]
+      a = nil
+      b = a.at(0)
+      b
+      c = a.at(1)
+      c
+      d = a.at(2)
+      d
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new.map(source)
+    clip = api_map.clip_at('test.rb', [4, 6])
+    type = clip.infer
+    expect(type.to_s).to eq('String')
+
+    clip = api_map.clip_at('test.rb', [6, 6])
+    type = clip.infer
+    expect(type.to_s).to eq('Integer')
+
+    clip = api_map.clip_at('test.rb', [8, 6])
+    type = clip.infer
+    expect(type.to_s).to eq('nil')
+  end
+
+  it 'understands #fetch for tuples with no default' do
+    source = Solargraph::Source.load_string(%(
+      # @type [::Solargraph::Fills::Tuple(String, Integer)]
+      a = nil
+      b = a.fetch(0)
+      b
+      c = a.fetch(1)
+      c
+      d = a.fetch(2)
+      d
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new.map(source)
+    clip = api_map.clip_at('test.rb', [4, 6])
+    type = clip.infer
+    expect(type.to_s).to eq('String')
+
+    clip = api_map.clip_at('test.rb', [6, 6])
+    type = clip.infer
+    expect(type.to_s).to eq('Integer')
+
+    clip = api_map.clip_at('test.rb', [8, 6])
+    type = clip.infer
+    # @todo this would be better as the bot type, like the 'raise'
+    #   statement that will happen at runtime
+    expect(type.to_s).to eq('void')
+  end
+
+  it 'understands #fetch for tuples with a default' do
+    source = Solargraph::Source.load_string(%(
+      # @type [::Solargraph::Fills::Tuple(String, Integer)]
+      a = nil
+      b = a.fetch(0, :foo)
+      b
+      c = a.fetch(1, :foo)
+      c
+      d = a.fetch(2, :foo)
+      d
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new.map(source)
+    clip = api_map.clip_at('test.rb', [4, 6])
+    type = clip.infer
+    expect(type.to_s).to eq('String')
+
+    clip = api_map.clip_at('test.rb', [6, 6])
+    type = clip.infer
+    expect(type.to_s).to eq('Integer')
+
+    clip = api_map.clip_at('test.rb', [8, 6])
+    type = clip.infer
+    expect(type.to_s).to eq(':foo')
+  end
+
+  it 'understands #fetch for tuples with a block' do
+    source = Solargraph::Source.load_string(%(
+      # @type [::Solargraph::Fills::Tuple(String, Integer)]
+      a = nil
+      b = a.fetch(0) {:foo }
+      b
+      c = a.fetch(1) { :foo }
+      c
+      d = a.fetch(2) { :foo }
+      d
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new.map(source)
+    clip = api_map.clip_at('test.rb', [4, 6])
+    type = clip.infer
+    expect(type.to_s).to eq('String')
+
+    clip = api_map.clip_at('test.rb', [6, 6])
+    type = clip.infer
+    expect(type.to_s).to eq('Integer')
+
+    clip = api_map.clip_at('test.rb', [8, 6])
+    type = clip.infer
+    expect(type.to_s).to eq(':foo')
   end
 
   xit 'dereferences tuple types with [](idx) via literals' do
