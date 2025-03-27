@@ -2084,7 +2084,7 @@ describe Solargraph::SourceMap::Clip do
     expect(type.to_s).to eq(':foo')
   end
 
-  xit 'dereferences tuple types with [](idx) via literals' do
+  it 'dereferences tuple types with [](idx) via literals' do
     source = Solargraph::Source.load_string(%(
       # @type [Array(String, Integer)]
       a = 123
