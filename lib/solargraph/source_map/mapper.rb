@@ -144,7 +144,7 @@ module Solargraph
             )
           end
           if t.nil? || t.include?('w')
-            pins.push Solargraph::Pin::Method.new(
+            method_pin = Solargraph::Pin::Method.new(
               location: location,
               closure: namespace,
               name: "#{directive.tag.name}=",
@@ -153,7 +153,8 @@ module Solargraph
               visibility: :public,
               attribute: true
             )
-            pins.last.parameters.push Pin::Parameter.new(name: 'value', decl: :arg, closure: pins.last)
+            pins.push method_pin
+            method_pin.parameters.push Pin::Parameter.new(name: 'value', decl: :arg, closure: pins.last)
             if pins.last.return_type.defined?
               pins.last.docstring.add_tag YARD::Tags::Tag.new(:param, '', pins.last.return_type.to_s.split(', '), 'value')
             end

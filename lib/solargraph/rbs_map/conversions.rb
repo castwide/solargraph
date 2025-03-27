@@ -303,7 +303,7 @@ module Solargraph
           pin.signatures.concat method_def_to_sigs(decl, pin)
           pins.push pin
           if pin.name == 'initialize'
-            pins.push Solargraph::Pin::Method.new(
+            method_pin = Solargraph::Pin::Method.new(
               location: pin.location,
               closure: pin.closure,
               name: 'new',
@@ -311,7 +311,8 @@ module Solargraph
               scope: :class,
               signatures: pin.signatures
             )
-            pins.last.signatures.replace(
+            pins.push method_pin
+            method_pin.signatures.replace(
               pin.signatures.map do |p|
                 Pin::Signature.new(
                   p.generics,
@@ -621,7 +622,7 @@ module Solargraph
       end
 
       # @param decl [RBS::AST::Declarations::Class, RBS::AST::Declarations::Module]
-      # @param closure [Pin::Namespace]
+      # @param namespace [Pin::Namespace]
       # @return [void]
       def add_mixins decl, namespace
         decl.each_mixin do |mixin|
