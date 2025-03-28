@@ -181,10 +181,6 @@ module Solargraph
           elsif [:super, :zsuper].include?(node.type)
             result.push node
             node.children.each { |child| result.concat call_nodes_from(child) }
-          elsif node.type == :masgn
-            # @todo We're treating a mass assignment as a call node, but the
-            #   type checker still needs the logic to handle it.
-            result.push node
           else
             node.children.each { |child| result.concat call_nodes_from(child) }
           end

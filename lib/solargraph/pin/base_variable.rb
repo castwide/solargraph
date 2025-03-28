@@ -9,10 +9,14 @@ module Solargraph
       # @return [Parser::AST::Node, nil]
       attr_reader :assignment
 
+      attr_accessor :mass_assignment
+
       # @param assignment [Parser::AST::Node, nil]
       def initialize assignment: nil, **splat
         super(**splat)
         @assignment = assignment
+        # @type [nil, ::Array(Parser::AST::Node, Integer)]
+        @mass_assignment = nil
       end
 
       def completion_item_kind
@@ -36,10 +40,12 @@ module Solargraph
         true
       end
 
-      def probe api_map
-        return ComplexType::UNDEFINED if @assignment.nil?
+      # @param parent_node [Parser::AST::Node]
+      # @param api_map [ApiMap]
+      # @return [::Array<ComplexType>]
+      def return_types_from_node(parent_node, api_map)
         types = []
-        value_position_nodes_only(@assignment).each do |node|
+        value_position_nodes_only(parent_node).each do |node|
           # Nil nodes may not have a location
           if node.nil? || node.type == :NIL || node.type == :nil
             types.push ComplexType::NIL
@@ -55,8 +61,31 @@ module Solargraph
             types.push result unless result.undefined?
           end
         end
-        return ComplexType::UNDEFINED if types.empty?
-        ComplexType.try_parse(*types.map(&:to_s))
+        types
+      end
+
+      # @param api_map [ApiMap]
+      # @return [ComplexType]
+      def probe api_map
+        unless @assignment.nil?
+          types = return_types_from_node(@assignment, api_map)
+          return ComplexType.new(types.uniq) unless types.empty?
+        end
+
+        unless @mass_assignment.nil?
+          mass_node, index = @mass_assignment
+          types = return_types_from_node(mass_node, api_map)
+          types.map! do |type|
+            if type.tuple?
+              type.all_params[index]
+            elsif ['::Array', '::Set', '::Enumerable'].include?(type.rooted_name)
+              type.all_params.first
+            end
+          end.compact!
+          return ComplexType.new(types.uniq) unless types.empty?
+        end
+
+        ComplexType::UNDEFINED
       end
 
       def == other
