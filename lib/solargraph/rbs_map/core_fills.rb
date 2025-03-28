@@ -15,15 +15,33 @@ module Solargraph
         'then', 'true', 'undef', 'unless', 'until', 'when', 'while', 'yield'
       ].map { |k| Pin::Keyword.new(k) }
 
-      CLASS_RETURN_TYPES = [
-        Override.method_return('Class#new', 'self'),
-        Override.method_return('Class.new', 'Class<BasicObject>'),
-        Override.method_return('Class#allocate', 'self'),
-        Override.method_return('Class.allocate', 'Class<BasicObject>'),
-        Override.method_return('Kernel#class', 'Class<self>')
+      MISSING = [
+        Solargraph::Pin::Method.new(name: 'tap', scope: :instance,
+                                    closure: Solargraph::Pin::Namespace.new(name: 'Object')),
+        Solargraph::Pin::Method.new(name: 'class', scope: :instance,
+                                    closure: Solargraph::Pin::Namespace.new(name: 'Object'), comments: '@return [Class<self>]')
       ]
 
-      ALL = KEYWORDS + CLASS_RETURN_TYPES
+      OVERRIDES = [
+        Override.from_comment('BasicObject#instance_eval', '@yieldreceiver [self]'),
+        Override.from_comment('BasicObject#instance_exec', '@yieldreceiver [self]'),
+        Override.from_comment('Module#define_method', '@yieldreceiver [Object<self>]'),
+        Override.from_comment('Module#class_eval', '@yieldreceiver [Class<self>]'),
+        Override.from_comment('Module#class_exec', '@yieldreceiver [Class<self>]'),
+        Override.from_comment('Module#module_eval', '@yieldreceiver [Module<self>]'),
+        Override.from_comment('Module#module_exec', '@yieldreceiver [Module<self>]')
+      ]
+
+      # HACK: Add Errno exception classes
+      errno = Solargraph::Pin::Namespace.new(name: 'Errno')
+      errnos = []
+      Errno.constants.each do |const|
+        errnos.push Solargraph::Pin::Namespace.new(type: :class, name: const.to_s, closure: errno)
+        errnos.push Solargraph::Pin::Reference::Superclass.new(closure: errnos.last, name: 'SystemCallError')
+      end
+      ERRNOS = errnos
+
+      ALL = KEYWORDS + MISSING + OVERRIDES + ERRNOS
     end
   end
 end
