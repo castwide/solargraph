@@ -16,9 +16,13 @@ module Solargraph
         # @param node [Parser::AST::Node, Object]
         def initialize type, node
           if node.is_a?(::Parser::AST::Node)
-            @value = node.children.first
-          else
-            @value = node
+            if node.type == :true
+              @value = true
+            elsif node.type == :false
+              @value = false
+            elsif [:int, :sym].include?(node.type)
+              @value = node.children.first
+            end
           end
           @type = type
           @literal_type = ComplexType.try_parse(@value.inspect)

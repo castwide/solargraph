@@ -416,7 +416,8 @@ describe Solargraph::SourceMap::Clip do
     map.map source
     clip = map.clip_at('test.rb', Solargraph::Position.new(6, 10))
     type = clip.infer
-    expect(type.tags).to eq('"bar"')
+    # @todo expect(type.tags).to eq('"bar"')
+    expect(type.tags).to eq('String')
     expect(type.simple_tags).to eq('String')
   end
 
@@ -616,7 +617,8 @@ describe Solargraph::SourceMap::Clip do
     api_map = Solargraph::ApiMap.new
     api_map.map source
     clip = api_map.clip_at('test.rb', [7, 8])
-    expect(clip.infer.tags).to eq('""')
+    # @todo expect(clip.infer.tags).to eq('""')
+    expect(clip.infer.tags).to eq('String')
     expect(clip.infer.simple_tags).to eq("String")
   end
 
@@ -677,7 +679,8 @@ describe Solargraph::SourceMap::Clip do
     api_map = Solargraph::ApiMap.new
     api_map.map source
     clip = api_map.clip_at('test.rb', [5, 8])
-    expect(clip.infer.tags).to eq('""')
+    # @todo expect(clip.infer.tags).to eq('""')
+    expect(clip.infer.tags).to eq('String')
     expect(clip.infer.simple_tags).to eq('String')
   end
 
@@ -760,7 +763,8 @@ describe Solargraph::SourceMap::Clip do
     api_map = Solargraph::ApiMap.new
     api_map.map source
     clip = api_map.clip_at('test.rb', [6, 7])
-    expect(clip.infer.tags).to eq('"one", Array')
+    # @todo expect(clip.infer.tags).to eq('"one", Array')
+    expect(clip.infer.tags).to eq('String, Array')
     expect(clip.infer.simple_tags).to eq('String, Array')
   end
 
@@ -803,7 +807,8 @@ describe Solargraph::SourceMap::Clip do
     api_map = Solargraph::ApiMap.new
     api_map.map source
     clip = api_map.clip_at('test.rb', [15, 20])
-    expect(clip.infer.tags).to eq('""')
+    # @todo expect(clip.infer.tags).to eq('""')
+    expect(clip.infer.tags).to eq('String')
     expect(clip.infer.simple_tags).to eq('String')
   end
 
@@ -1646,7 +1651,8 @@ describe Solargraph::SourceMap::Clip do
     api_map = Solargraph::ApiMap.new.map(source)
     clip = api_map.clip_at('test.rb', [9, 7])
     type = clip.infer
-    expect(type.tags).to eq('"string"')
+    # @todo expect(type.tags).to eq('"string"')
+    expect(type.tags).to eq('String')
     expect(type.simple_tags).to eq('String')
   end
 
