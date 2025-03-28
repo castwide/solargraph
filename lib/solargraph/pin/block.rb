@@ -47,23 +47,19 @@ module Solargraph
       # @return [ComplexType, nil]
       def binder_or_nil api_map
         return nil unless receiver
-        word = receiver.children.find { |c| c.is_a?(::Symbol) }.to_s
+
         chain = Parser.chain(receiver, location.filename)
         locals = api_map.source_map(location.filename).locals_at(location)
-        links_last_word = chain.links.last.word
         receiver_pin = chain.define(api_map, self, locals).first
-        if receiver_pin && receiver_pin.docstring
-          ys = receiver_pin.docstring.tag(:yieldreceiver)
-          if ys && ys.types && !ys.types.empty?
-            target = if chain.base.defined?
-              chain.base.infer(api_map, receiver_pin, locals).to_s
-            else
-              full_context.namespace
-            end
-            return ComplexType.try_parse(*ys.types).qualify(api_map, receiver_pin.context.namespace).self_to(target)
-          end
-        end
-        nil
+        return nil unless receiver_pin
+
+        types = receiver_pin.docstring.tag(:yieldreceiver)&.types
+        return nil unless types&.any?
+
+        target = chain.base.infer(api_map, receiver_pin, locals)
+        target = full_context unless target.defined?
+
+        ComplexType.try_parse(*types).qualify(api_map, receiver_pin.context.namespace).self_to(target.to_s)
       end
     end
   end
