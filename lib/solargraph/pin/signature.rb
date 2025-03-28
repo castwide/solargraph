@@ -1,20 +1,16 @@
 module Solargraph
   module Pin
-    class Signature < Base
-      # @return [::Array<Parameter>]
-      attr_reader :parameters
-
+    class Signature < Closure
       # @return [ComplexType]
       attr_reader :return_type
 
       # @return [self]
       attr_reader :block
 
-      # @param generics [Array<String>]
-      # @param parameters [Array<Parameter>]
       # @param return_type [ComplexType]
       # @param block [Signature, nil]
-      def initialize generics, parameters, return_type, block = nil
+      def initialize return_type:, block: nil, **splat
+        super(**splat)
         @generics = generics
         @parameters = parameters
         @return_type = return_type
@@ -25,20 +21,6 @@ module Solargraph
         @generics ||= [].freeze
       end
 
-      # @return [String]
-      def to_rbs
-        rbs_generics + '(' + parameters.map { |param| param.to_rbs }.join(', ') + ') ' + (block.nil? ? '' : '{ ' + block.to_rbs + ' } ') + '-> ' + return_type.to_rbs
-      end
-
-      # @return [String]
-      def rbs_generics
-        if generics.empty?
-          return ''
-        else
-          return '[' + generics.map { |gen| gen.to_s }.join(', ') + '] '
-        end
-      end
-
       # @return [Array<String>]
       # @yieldparam [ComplexType]
       # @yieldreturn [ComplexType]
@@ -46,9 +28,6 @@ module Solargraph
       def transform_types(&transform)
         # @todo 'super' alone should work here I think, but doesn't typecheck at level typed
         signature = super(&transform)
-        signature.parameters = signature.parameters.map do |param|
-          param.transform_types(&transform)
-        end
         signature.block = block.transform_types(&transform) if signature.block?
         signature
       end
