@@ -28,9 +28,9 @@ module Solargraph
         return super unless stubs
         stubs.map do |stub|
           Pin::Signature.new(
-            [],
-            [],
-            ComplexType.try_parse(stub.return_type)
+            generics: [],
+            parameters: [],
+            return_type: ComplexType.try_parse(stub.return_type)
           )
         end
       end
