@@ -41,7 +41,7 @@ module Solargraph
       end
 
       def to_rbs
-        "#{@type.to_s} #{generics_as_rbs}#{return_type.to_rbs}"
+        "#{@type.to_s} #{return_type.all_params.first.to_rbs}#{rbs_generics}".strip
       end
 
       def desc
