@@ -62,10 +62,12 @@ module Solargraph
             reg = /#{Regexp.escape name[0..-2]}\s*=/
             # @param code [String]
             # @param offset [Integer]
+            # @return [Array(Integer, Integer), Array(nil, nil)]
             extract_offset = ->(code, offset) { reg.match(code, offset).offset(0) }
           else
             # @param code [String]
             # @param offset [Integer]
+            # @return [Array(Integer, Integer), Array(nil, nil)]
             extract_offset = ->(code, offset) { [soff = code.index(name, offset), soff + name.length] }
           end
           inner_node_references(name, source.node).map do |n|

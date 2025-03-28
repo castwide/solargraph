@@ -440,7 +440,7 @@ module Solargraph
     def first_param_hash(pins)
       pins.each do |pin|
         # @todo this assignment from parametric use of Hash should not lose its generic
-        # @type [Hash{String => Hash{Symbol => BasicObject}]
+        # @type [Hash{String => Hash{Symbol => BasicObject}}]
         result = param_hash(pin)
         return result unless result.empty?
       end

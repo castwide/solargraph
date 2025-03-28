@@ -39,6 +39,7 @@ module Solargraph
       @gems_in_memory ||= {}
     end
 
+    # @return [Set<Gem::Specification>]
     def dependencies
       @dependencies ||= (gemspecs.flat_map { |spec| fetch_dependencies(spec) } - gemspecs).to_set
     end
