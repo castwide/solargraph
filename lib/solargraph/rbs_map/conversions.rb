@@ -345,13 +345,12 @@ module Solargraph
       def method_def_to_sigs decl, pin
         decl.overloads.map do |overload|
           generics = overload.method_type.type_params.map(&:to_s)
-          parameters, return_type = parts_of_function(overload.method_type, pin)
+          signature_parameters, signature_return_type = parts_of_function(overload.method_type, pin)
           block = if overload.method_type.block
-                    parameters, return_type = parts_of_function(overload.method_type.block, pin)
-                    Pin::Signature.new(generics: generics, parameters: parameters, return_type: return_type)
+                    block_parameters, block_return_type = parts_of_function(overload.method_type.block, pin)
+                    Pin::Signature.new(generics: generics, parameters: block_parameters, return_type: block_return_type)
                   end
-          return_type = ComplexType.try_parse(method_type_to_tag(overload.method_type))
-          Pin::Signature.new(generics: generics, parameters: parameters, return_type: return_type, block: block)
+          Pin::Signature.new(generics: generics, parameters: signature_parameters, return_type: signature_return_type, block: block)
         end
       end
 
