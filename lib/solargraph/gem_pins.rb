@@ -20,7 +20,7 @@ module Solargraph
       combined = yard_pins.map do |yard|
         in_yard.add yard.path
         next yard unless yard.is_a?(Pin::Method)
-        rbs = rbs_map.path_pin(yard.path)
+        rbs = rbs_map.path_pin(yard.path, Pin::Method)
         next yard unless rbs
         # @todo Could not include: attribute and anon_splat
         # @sg-ignore
