@@ -42,6 +42,7 @@ module Solargraph
         @output
       end
 
+      # @param text [String]
       # @return [String]
       def repair text
         changes.each do |ch|

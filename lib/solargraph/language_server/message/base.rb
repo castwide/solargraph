@@ -16,7 +16,7 @@ module Solargraph
         # @return [String]
         attr_reader :method
 
-        # @return [Hash]
+        # @return [Hash{String => Array, Hash, String}]
         attr_reader :params
 
         # @return [Hash, Array, nil]

@@ -76,6 +76,8 @@ module Solargraph
         end
       end
 
+      # @param text [String]
+      # @return [String]
       def self.strip_html_comments text
         text.gsub(/<!--([\s\S]*?)-->/, '').strip
       end
