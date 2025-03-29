@@ -39,6 +39,6 @@ describe Solargraph::Pin::BaseVariable do
     api_map.map source
     pin = api_map.get_instance_variable_pins('Foo').first
     type = pin.probe(api_map)
-    expect(type.to_s).to eq('Integer, nil')
+    expect(type.simple_tags).to eq('Integer, nil')
   end
 end

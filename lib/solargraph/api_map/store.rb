@@ -38,6 +38,8 @@ module Solargraph
         return superclass_references[fqns].first if superclass_references.key?(fqns)
         return 'Object' if fqns != 'BasicObject' && namespace_exists?(fqns)
         return 'Object' if fqns == 'Boolean'
+        simplified_literal_name = ComplexType.parse("#{fqns}").simplify_literals.name
+        return simplified_literal_name if simplified_literal_name != fqns
         nil
       end
 

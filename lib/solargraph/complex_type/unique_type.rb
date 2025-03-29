@@ -60,6 +60,37 @@ module Solargraph
         tag
       end
 
+      def simplify_literals
+        transform do |t|
+          next t unless t.literal?
+          t.recreate(new_name: t.non_literal_name)
+        end
+      end
+
+      def literal?
+        non_literal_name != name
+      end
+
+      def non_literal_name
+        @non_literal_name ||= determine_non_literal_name
+      end
+
+      def determine_non_literal_name
+        # https://github.com/ruby/rbs/blob/master/docs/syntax.md
+        #
+        # _literal_ ::= _string-literal_
+        #    | _symbol-literal_
+        #    | _integer-literal_
+        #    | `true`
+        #    | `false`
+        return name if name.empty?
+        return 'Boolean' if ['true', 'false'].include?(name)
+        return 'Symbol' if name[0] == ':'
+        return 'String' if ['"', "'", ':'].include?(name[0])
+        return 'Integer' if name.match?(/^-?\d+$/)
+        name
+      end
+
       # @return [Array<UniqueType>]
       def items
         [self]
@@ -69,6 +100,8 @@ module Solargraph
       def rbs_name
         if name == 'undefined'
           'untyped'
+        elsif literal?
+          name
         else
           rooted_name
         end

@@ -44,7 +44,7 @@ describe Solargraph::Source::Chain do
   end
 
   it "recognizes literals" do
-    chain = described_class.new([Solargraph::Source::Chain::Literal.new('String')])
+    chain = described_class.new([Solargraph::Source::Chain::Literal.new('String', nil)])
     expect(chain.literal?).to be(true)
   end
 
@@ -149,7 +149,7 @@ describe Solargraph::Source::Chain do
     api_map.map source
     chain = Solargraph::Source::SourceChainer.chain(source, Solargraph::Position.new(2, 11))
     type = chain.infer(api_map, Solargraph::Pin::ROOT_PIN, [])
-    expect(type.to_s).to eq('String')
+    expect(type.simple_tags).to eq('String')
   end
 
   it "uses last line of a begin expression as return type" do
@@ -163,7 +163,7 @@ describe Solargraph::Source::Chain do
     api_map.map source
     chain = Solargraph::Source::SourceChainer.chain(source, Solargraph::Position.new(4, 9))
     type = chain.infer(api_map, Solargraph::Pin::ROOT_PIN, [])
-    expect(type.to_s).to eq('String')
+    expect(type.simple_tags).to eq('String')
   end
 
   it "matches constants on complete symbols" do
@@ -197,7 +197,7 @@ describe Solargraph::Source::Chain do
     api_map = Solargraph::ApiMap.new
     chain = Solargraph::Parser.chain(source.node)
     type = chain.infer(api_map, Solargraph::Pin::ROOT_PIN, [])
-    expect(type.to_s).to eq('String')
+    expect(type.simple_tags).to eq('String')
   end
 
   it 'infers multiple types from or-nodes' do
@@ -207,7 +207,7 @@ describe Solargraph::Source::Chain do
     api_map = Solargraph::ApiMap.new
     chain = Solargraph::Parser.chain(source.node)
     type = chain.infer(api_map, Solargraph::Pin::ROOT_PIN, [])
-    expect(type.to_s).to eq('Array, String')
+    expect(type.simple_tags).to eq('Array, String')
   end
 
   it 'infers Procs from block-pass nodes' do
@@ -235,7 +235,7 @@ describe Solargraph::Source::Chain do
     # chain = Solargraph::Source::NodeChainer.chain(node, 'test.rb')
     chain = Solargraph::Parser.chain(node, 'test.rb')
     type = chain.infer(api_map, Solargraph::Pin::ROOT_PIN, [])
-    expect(type.tag).to eq('Boolean')
+    expect(type.tag).to eq('true')
   end
 
   it 'infers self from Object#freeze' do
@@ -313,7 +313,7 @@ describe Solargraph::Source::Chain do
     api_map.map source
     chain = Solargraph::Parser.chain(node)
     type = chain.infer(api_map, Solargraph::Pin::ROOT_PIN, [])
-    expect(type.tag).to eq('Symbol')
+    expect(type.simple_tags).to eq('Symbol')
   end
 
   it 'infers Symbol from quoted symbols' do
@@ -323,7 +323,7 @@ describe Solargraph::Source::Chain do
     api_map.map source
     chain = Solargraph::Parser.chain(node)
     type = chain.infer(api_map, Solargraph::Pin::ROOT_PIN, [])
-    expect(type.tag).to eq('Symbol')
+    expect(type.simple_tags).to eq('Symbol')
   end
 
   it 'infers Symbol from interpolated symbols' do
@@ -373,7 +373,7 @@ describe Solargraph::Source::Chain do
     api_map.map source
     pin = api_map.get_path_pins('#foo').first
     type = pin.probe(api_map)
-    expect(type.tag).to eq('String')
+    expect(type.simple_tags).to eq('String')
   end
 
   it 'recognizes nil safe navigation' do

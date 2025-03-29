@@ -137,7 +137,7 @@ describe Solargraph::Source::Chain::Call do
     api_map.map source
     chain = Solargraph::Source::SourceChainer.chain(source, Solargraph::Position.new(7, 8))
     type = chain.infer(api_map, Solargraph::Pin::ROOT_PIN, api_map.source_map('test.rb').locals)
-    expect(type.tag).to eq('String')
+    expect(type.simple_tags).to eq('String')
   end
 
   it 'infers generic parameterized types through module inclusion' do
@@ -247,7 +247,7 @@ describe Solargraph::Source::Chain::Call do
     api_map.map source
     chain = Solargraph::Source::SourceChainer.chain(source, Solargraph::Position.new(9, 9))
     type = chain.infer(api_map, Solargraph::Pin::ROOT_PIN, api_map.source_map('test.rb').locals)
-    expect(type.tag).to eq('Integer')
+    expect(type.simple_tags).to eq('Integer')
   end
 
   xit 'infers method return types based on method generic' do
@@ -286,7 +286,7 @@ describe Solargraph::Source::Chain::Call do
     api_map.map source
     chain = Solargraph::Source::SourceChainer.chain(source, Solargraph::Position.new(9, 9))
     type = chain.infer(api_map, Solargraph::Pin::ROOT_PIN, api_map.source_map('test.rb').locals)
-    expect(type.tag).to eq('Integer')
+    expect(type.simple_tags).to eq('Integer')
   end
 
   it 'infers generic types' do
