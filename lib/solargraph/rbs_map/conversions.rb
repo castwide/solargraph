@@ -38,25 +38,6 @@ module Solargraph
         environment = RBS::Environment.from_loader(loader).resolve_type_names
         cursor = pins.length
         environment.declarations.each { |decl| convert_decl_to_pin(decl, Solargraph::Pin::ROOT_PIN) }
-        added_pins = pins[cursor..-1]
-        add_back_implicit_pins(added_pins)
-      end
-
-      # @param added_pins [::Enumerable<Pin>]
-      # @return [void]
-      def add_back_implicit_pins(added_pins)
-        added_pins.each do |pin|
-          pin.source = :rbs
-          next unless pin.is_a?(Pin::Namespace) && pin.type == :class
-          next if pins.any? { |p| p.path == "#{pin.path}.new"}
-          pins.push Solargraph::Pin::Method.new(
-                      location: nil,
-                      closure: pin,
-                      name: 'new',
-                      comments: pin.comments,
-                      scope: :class
-          )
-        end
       end
 
       # @param decl [RBS::AST::Declarations::Base]
@@ -303,26 +284,8 @@ module Solargraph
           pin.signatures.concat method_def_to_sigs(decl, pin)
           pins.push pin
           if pin.name == 'initialize'
-            pins.push Solargraph::Pin::Method.new(
-              location: pin.location,
-              closure: pin.closure,
-              name: 'new',
-              comments: pin.comments,
-              scope: :class,
-              signatures: pin.signatures
-            )
-            pins.last.signatures.replace(
-              pin.signatures.map do |p|
-                Pin::Signature.new(
-                  p.generics,
-                  p.parameters,
-                  ComplexType::SELF
-                )
-              end
-            )
-            # @todo Is this necessary?
-            # pin.instance_variable_set(:@visibility, :private)
-            # pin.instance_variable_set(:@return_type, ComplexType::VOID)
+            pin.instance_variable_set(:@visibility, :private)
+            pin.instance_variable_set(:@return_type, ComplexType::VOID)
           end
         end
         if decl.singleton?
