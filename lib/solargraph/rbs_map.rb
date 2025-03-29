@@ -7,7 +7,6 @@ module Solargraph
     autoload :Conversions, 'solargraph/rbs_map/conversions'
     autoload :CoreMap,     'solargraph/rbs_map/core_map'
     autoload :CoreFills,   'solargraph/rbs_map/core_fills'
-    autoload :CoreSigns,   'solargraph/rbs_map/core_signs'
     autoload :StdlibMap,   'solargraph/rbs_map/stdlib_map'
 
     include Conversions
@@ -28,10 +27,13 @@ module Solargraph
       load_environment_to_pins(loader)
     end
 
+    # @generic T
     # @param path [String]
-    # @return [Pin::Base, nil]
-    def path_pin path
-      pins.find { |p| p.path == path }
+    # @param klass [Class<generic<T>>]
+    # @return [generic<T>, nil]
+    def path_pin path, klass = Pin::Base
+      pin = pins.find { |p| p.path == path }
+      pin if pin&.is_a?(klass)
     end
 
     # @param path [String]

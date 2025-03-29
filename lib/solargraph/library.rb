@@ -251,7 +251,19 @@ module Solargraph
         found = source.references(pin.name)
         found.select! do |loc|
           referenced = definitions_at(loc.filename, loc.range.ending.line, loc.range.ending.character).first
-          referenced && referenced.path == pin.path
+          referenced&.path == pin.path
+        end
+        if pin.path == 'Class#new'
+          caller = cursor.chain.base.infer(api_map, clip.send(:block), clip.locals).first
+          if caller.defined?
+            found.select! do |loc|
+              clip = api_map.clip_at(loc.filename, loc.range.start)
+              other = clip.send(:cursor).chain.base.infer(api_map, clip.send(:block), clip.locals).first
+              caller == other
+            end
+          else
+            found.clear
+          end
         end
         # HACK: for language clients that exclude special characters from the start of variable names
         if strip && match = cursor.word.match(/^[^a-z0-9_]+/i)
