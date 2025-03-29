@@ -80,4 +80,17 @@ describe Solargraph::RbsMap::CoreMap do
     pins = core_map.pins.select { |pin| pin.is_a?(Solargraph::Pin::Reference::Include) && pin.name == 'Enumerable' }
     expect(pins.map(&:closure).map(&:namespace)).to include('Enumerator')
   end
+
+  it 'ensures Foo#allocate returns Foo' do
+    source = Solargraph::Source.load_string(%(
+      class Foo
+      end
+
+      foo = Foo.allocate
+      foo
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new.map(source)
+    clip = api_map.clip_at('test.rb', [5, 6])
+    expect(clip.infer.to_s).to eq('Foo')
+  end
 end
