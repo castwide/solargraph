@@ -68,7 +68,6 @@ module Solargraph
       @store = Store.new(@@core_map.pins + @doc_map.pins + implicit.pins + pins)
       @unresolved_requires = @doc_map.unresolved_requires
       @missing_docs = [] # @todo Implement missing docs
-      store.block_pins.each { |blk| blk.rebind(self) }
       self
     end
 
