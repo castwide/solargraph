@@ -299,6 +299,14 @@ module Solargraph
           pin = pins.first
           ap = if base.links.last.is_a?(Solargraph::Source::Chain::ZSuper)
             arity_problems_for(pin, fake_args_for(block_pin), location)
+          elsif pin.path == 'Class#new'
+            fqns = if base.links.one?
+              block_pin.namespace
+            else
+              base.base.infer(api_map, block_pin, locals).namespace
+            end
+            init = api_map.get_method_stack(fqns, 'initialize').first
+            init ? arity_problems_for(init, base.links.last.arguments, location) : []
           else
             arity_problems_for(pin, base.links.last.arguments, location)
           end

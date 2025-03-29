@@ -15,30 +15,15 @@ module Solargraph
         'then', 'true', 'undef', 'unless', 'until', 'when', 'while', 'yield'
       ].map { |k| Pin::Keyword.new(k) }
 
-      MISSING = [
-        Solargraph::Pin::Method.new(name: 'tap', scope: :instance,
-                                    closure: Solargraph::Pin::Namespace.new(name: 'Object')),
-        Solargraph::Pin::Method.new(name: 'class', scope: :instance,
-                                    closure: Solargraph::Pin::Namespace.new(name: 'Object'), comments: '@return [Class<self>]')
-      ]
-
       CLASS_RETURN_TYPES = [
         Override.method_return('Class#new', 'self'),
         Override.method_return('Class.new', 'Class<BasicObject>'),
         Override.method_return('Class#allocate', 'self'),
-        Override.method_return('Class.allocate', 'Class<BasicObject>')
+        Override.method_return('Class.allocate', 'Class<BasicObject>'),
+        Override.method_return('Kernel#class', 'Class<self>')
       ]
 
-      # HACK: Add Errno exception classes
-      errno = Solargraph::Pin::Namespace.new(name: 'Errno')
-      errnos = []
-      Errno.constants.each do |const|
-        errnos.push Solargraph::Pin::Namespace.new(type: :class, name: const.to_s, closure: errno)
-        errnos.push Solargraph::Pin::Reference::Superclass.new(closure: errnos.last, name: 'SystemCallError')
-      end
-      ERRNOS = errnos
-
-      ALL = KEYWORDS + MISSING + CLASS_RETURN_TYPES + ERRNOS
+      ALL = KEYWORDS + CLASS_RETURN_TYPES
     end
   end
 end
