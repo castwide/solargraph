@@ -82,7 +82,6 @@ module Solargraph
       # @param locals [::Enumerable<Pin::LocalVariable>]
       # @return [ComplexType]
       def infer api_map, name_pin, locals
-        name_pin.rebind(api_map) if name_pin.is_a?(Pin::Block)
         from_here = base.infer(api_map, name_pin, locals) unless links.length == 1
         if from_here
           name_pin = name_pin.proxy(from_here)
