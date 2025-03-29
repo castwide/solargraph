@@ -22,6 +22,16 @@ describe Solargraph::YardMap::Mapper do
     expect(pin.explicit?).to be(true)
   end
 
+  it 'marks correct return type from Class<T>::new' do
+    # Using parser because it's a known dependency
+    parser = Gem::Specification.find_by_name('stringio')
+    Solargraph::Yardoc.cache(parser)
+    Solargraph::Yardoc.load!(parser)
+    pins = Solargraph::YardMap::Mapper.new(YARD::Registry.all).map
+    pins = pins.select { |pin| pin.path == 'StringIO.new' }
+    expect(pins.map(&:return_type).uniq.map(&:to_s)).to eq(['self'])
+  end
+
   it 'marks non-explicit methods' do
     # Using rspec-expectations because it's a known dependency
     rspec = Gem::Specification.find_by_name('rspec-expectations')
