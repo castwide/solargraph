@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 
+require 'benchmark'
 require 'thor'
 require 'yard'
 
@@ -150,24 +151,28 @@ module Solargraph
     def typecheck *files
       directory = File.realpath(options[:directory])
       api_map = Solargraph::ApiMap.load_with_cache(directory)
+      probcount = 0
       if files.empty?
         files = api_map.source_maps.map(&:filename)
       else
         files.map! { |file| File.realpath(file) }
       end
-      probcount = 0
       filecount = 0
-      files.each do |file|
-        checker = TypeChecker.new(file, api_map: api_map, level: options[:level].to_sym)
-        problems = checker.problems
-        next if problems.empty?
-        problems.sort! { |a, b| a.location.range.start.line <=> b.location.range.start.line }
-        puts problems.map { |prob| "#{prob.location.filename}:#{prob.location.range.start.line + 1} - #{prob.message}" }.join("\n")
-        filecount += 1
-        probcount += problems.length
-      end
+
+      time = Benchmark.measure {
+        files.each do |file|
+          checker = TypeChecker.new(file, api_map: api_map, level: options[:level].to_sym)
+          problems = checker.problems
+          next if problems.empty?
+          problems.sort! { |a, b| a.location.range.start.line <=> b.location.range.start.line }
+          puts problems.map { |prob| "#{prob.location.filename}:#{prob.location.range.start.line + 1} - #{prob.message}" }.join("\n")
+          filecount += 1
+          probcount += problems.length
+        end
+        # "
+      }
+      puts "Typecheck finished in #{time.real} seconds."
       puts "#{probcount} problem#{probcount != 1 ? 's' : ''} found#{files.length != 1 ? " in #{filecount} of #{files.length} files" : ''}."
-      # "
       exit 1 if probcount > 0
     end
 
@@ -182,7 +187,6 @@ module Solargraph
     option :verbose, type: :boolean, aliases: :v, desc: 'Verbose output', default: false
     # @return [void]
     def scan
-      require 'benchmark'
       directory = File.realpath(options[:directory])
       api_map = nil
       time = Benchmark.measure {
