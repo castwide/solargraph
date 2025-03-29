@@ -202,7 +202,7 @@ module Solargraph
       # @param tag [String]
       # @param comments [String]
       # @param decl [RBS::AST::Declarations::ClassAlias, RBS::AST::Declarations::Constant, RBS::AST::Declarations::ModuleAlias]
-      # @param base [String, nil] Optional conversion of tag to base<tag>      
+      # @param base [String, nil] Optional conversion of tag to base<tag>
       #
       # @return [Solargraph::Pin::Constant]
       def create_constant(name, tag, comments, decl, base = nil)
@@ -607,7 +607,7 @@ module Solargraph
           klass = mixin.is_a?(RBS::AST::Members::Include) ? Pin::Reference::Include : Pin::Reference::Extend
           pins.push klass.new(
             name: mixin.name.relative!.to_s,
-            location: rbs_location_to_location(mixin.location),
+            location: location_decl_to_pin_location(mixin.location),
             closure: namespace
           )
         end
