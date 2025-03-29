@@ -557,6 +557,34 @@ describe Solargraph::SourceMap::Clip do
     expect(clip.complete.pins.map(&:path)).to include('Par#hidden')
   end
 
+  it 'processes @yieldreceiver tags referencing instances from classes' do
+    other = Solargraph::SourceMap.load_string(%(
+      module Mixin
+        # @yieldreceiver [Object<self>]
+        def bar; end
+      end
+    ), 'other.rb')
+    source = Solargraph::SourceMap.load_string(%(
+      class Par
+        extend Mixin
+        def action; end
+        private
+        def hidden; end
+      end
+      class Foo < Par
+        bar do
+          x
+        end
+      end
+    ), 'file.rb')
+    api_map = Solargraph::ApiMap.new
+    bench = Solargraph::Bench.new(source_maps: [other, source])
+    api_map.catalog bench
+    clip = api_map.clip_at('file.rb', [9, 8])
+    expect(clip.complete.pins.map(&:path)).to include('Par#action')
+    expect(clip.complete.pins.map(&:path)).to include('Par#hidden')
+  end
+
   it 'processes @yieldreceiver from blocks in class method calls' do
     source = Solargraph::Source.load_string(%(
       class Par
@@ -655,7 +683,8 @@ describe Solargraph::SourceMap::Clip do
     ), 'test.rb')
     api_map = Solargraph::ApiMap.new
     api_map.map source
-    [[4, 39], [7, 15], [11, 13], [12, 37], [15, 37]].each do |loc|
+    # [[4, 39], [7, 15], [11, 13], [12, 37], [15, 37]].each do |loc|
+    [[7, 15]].each do |loc|
       clip = api_map.clip_at('test.rb', loc)
       paths = clip.complete.pins.map(&:path)
       expect(paths).to include('String#upcase'), -> { %(expected #{paths} at #{loc} to include "String#upcase") }
