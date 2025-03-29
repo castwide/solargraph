@@ -400,6 +400,49 @@ describe Solargraph::TypeChecker do
       expect(checker.problems.first.message).to include('Not enough arguments')
     end
 
+    it 'does not attempt to account for splats' do
+      checker = type_checker(%(
+        class Foo
+          def bar(baz, bing)
+          end
+
+          def blah(args)
+             bar *args
+          end
+        end
+      ))
+      expect(checker.problems).to be_empty
+    end
+
+    it 'does not attempt to account for splats in arg counts' do
+      checker = type_checker(%(
+        class Foo
+          def bar(baz, bing)
+          end
+
+          def blah(args)
+             bar *args
+          end
+        end
+      ))
+      expect(checker.problems).to be_empty
+    end
+
+    it 'does not attempt to account for types in splats' do
+      checker = type_checker(%(
+        class Foo
+          # @param baz [Symbol]
+          def bar(baz)
+          end
+
+          def blah(args = [:foo])
+             bar(*args)
+          end
+        end
+      ))
+      expect(checker.problems).to be_empty
+    end
+
     it 'reports solo missing kwarg' do
       checker = type_checker(%(
         class Foo
@@ -660,6 +703,28 @@ describe Solargraph::TypeChecker do
         end
       ))
       expect(checker.problems.map(&:message)).to eq(['Unresolved call to upcase'])
+    end
+
+    it 'interprets self references correctly' do
+      checker = type_checker(%(
+        class Bar
+          # @param pin [self]
+          # @return [void]
+          def baz pin; end
+        end
+
+        class Foo
+          # @return [Bar]
+          attr_reader :bing
+
+          # @param other [Foo]
+          # @return [void]
+          def try_merge!(other)
+            bing.baz(other.bing)
+          end
+        end
+      ))
+      expect(checker.problems.map(&:message)).to eq([])
     end
   end
 end

@@ -8,7 +8,7 @@ module Solargraph
     class UniqueType
       include TypeMethods
 
-      attr_reader :all_params
+      attr_reader :all_params, :subtypes, :key_types
 
       # Create a UniqueType with the specified name and an optional substring.
       # The substring is the parameter section of a parametrized type, e.g.,
@@ -138,13 +138,9 @@ module Solargraph
       # @param resolved_generic_values [Hash{String => ComplexType}] Added to as types are encountered or resolved
       # @return [UniqueType, ComplexType]
       def resolve_generics_from_context generics_to_resolve, context_type, resolved_generic_values: {}
-        transform(name) do |t|
-          next t unless t.name == ComplexType::GENERIC_TAG_NAME
-
-          new_binding = false
-
-          type_param = t.subtypes.first&.name
-          next t unless generics_to_resolve.include? type_param
+        if name == ComplexType::GENERIC_TAG_NAME
+          type_param = subtypes.first&.name
+          return self unless generics_to_resolve.include? type_param
           unless context_type.nil? || !resolved_generic_values[type_param].nil?
             new_binding = true
             resolved_generic_values[type_param] = context_type
@@ -154,7 +150,34 @@ module Solargraph
               complex_type.resolve_generics_from_context(generics_to_resolve, nil, resolved_generic_values: resolved_generic_values)
             end
           end
-          resolved_generic_values[type_param] || t
+          return resolved_generic_values[type_param] || self
+        end
+
+        # @todo typechecking should complain when the method being called has no @yieldparam tag
+        new_key_types = resolve_param_generics_from_context(generics_to_resolve, context_type, resolved_generic_values, &:key_types)
+        new_subtypes = resolve_param_generics_from_context(generics_to_resolve, context_type, resolved_generic_values, &:subtypes)
+        recreate(new_key_types: new_key_types, new_subtypes: new_subtypes)
+      end
+
+      # @param generics_to_resolve [Enumerable<String>]
+      # @param context_type [UniqueType]
+      # @param resolved_generic_values [Hash{String => ComplexType}]
+      # @yieldreturn [Array<ComplexType>]
+      # @return [Array<ComplexType>]
+      def resolve_param_generics_from_context(generics_to_resolve, context_type, resolved_generic_values)
+        types = yield self
+        types.each_with_index.flat_map do |ct, i|
+          ct.items.flat_map do |ut|
+            context_params = yield context_type if context_type
+            if context_params && context_params[i]
+              type_arg = context_params[i]
+              type_arg.map do |new_unique_context_type|
+                ut.resolve_generics_from_context generics_to_resolve, new_unique_context_type, resolved_generic_values: resolved_generic_values
+              end
+            else
+              ut.resolve_generics_from_context generics_to_resolve, nil, resolved_generic_values: resolved_generic_values
+            end
+          end
         end
       end
 

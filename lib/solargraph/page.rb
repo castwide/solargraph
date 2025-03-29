@@ -7,6 +7,12 @@ require 'cgi'
 
 module Solargraph
   class Page
+    # @todo This method directive is necessary because OpenStruct.new confuses
+    #   the typechecker.
+    # @!method self.new(locals, render_method)
+    #   @param locals[Hash]
+    #   @param render_method [Proc]
+    #   @return [Binder]
     class Binder < OpenStruct
       # @param locals [Hash]
       # @param render_method [Proc]
