@@ -61,7 +61,7 @@ module Solargraph
           closure = @namespace_pins[code_object.namespace.to_s]
           if code_object.name == :initialize && code_object.scope == :instance
             # @todo Check the visibility of <Class>.new
-            result.push ToMethod.make(code_object, 'new', :class, :public, closure, @spec)
+            result.push ToMethod.make(code_object, 'new', :class, :public, closure, @spec, ComplexType::SELF)
             result.push ToMethod.make(code_object, 'initialize', :instance, :private, closure, @spec)
           else
             result.push ToMethod.make(code_object, nil, nil, nil, closure, @spec)
