@@ -40,14 +40,6 @@ module Solargraph
       @pin_select_cache[klass] ||= @pin_class_hash.select { |key, _| key <= klass }.values.flatten
     end
 
-    # @return [Set<String>]
-    def rebindable_method_names
-      @rebindable_method_names ||= pins_by_class(Pin::Method)
-        .select { |pin| pin.comments && pin.comments.include?('@yieldreceiver') }
-        .map(&:name)
-        .to_set
-    end
-
     # @return [String]
     def filename
       source.filename

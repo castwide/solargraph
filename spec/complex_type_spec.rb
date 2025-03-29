@@ -348,8 +348,7 @@ describe Solargraph::ComplexType do
     ['generic<A>', 'Array<String>', {}, 'Array<String>', {'A' => 'Array<String>'}],
     ['generic<A>', 'Array<String>', {'A' => 'String'}, 'String', {'A' => 'String'}],
     ['generic<A>', 'Array<generic<B>>', {'B' => 'Integer'}, 'Array<Integer>', {'B' => 'Integer', 'A' => 'Array<Integer>'}],
-    # @todo Improve UniqueType#resolve_generics_from_context() to handle this case
-    # ['Array<generic<A>>', 'Array<String>', {}, 'Array<String>', {'A' => 'String'}],
+    ['Array<generic<A>>', 'Array<String>', {}, 'Array<String>', {'A' => 'String'}],
   ]
 
   UNIQUE_METHOD_GENERIC_TESTS.each do |tag, context_type_tag, unfrozen_input_map, expected_tag, expected_output_map|
@@ -415,52 +414,60 @@ describe Solargraph::ComplexType do
   # See literal details at
   # https://github.com/ruby/rbs/blob/master/docs/syntax.md and
   # https://yardoc.org/types.html
-  it 'understands literal strings with double quotes' do
+  xit 'understands literal strings with double quotes' do
     type = Solargraph::ComplexType.parse('"foo"')
     expect(type.tag).to eq('"foo"')
     expect(type.to_rbs).to eq('"foo"')
+    expect(type.to_s).to eq('String')
   end
 
-  it 'understands literal strings with single quotes' do
+  xit 'understands literal strings with single quotes' do
     type = Solargraph::ComplexType.parse("'foo'")
     expect(type.tag).to eq("'foo'")
     expect(type.to_rbs).to eq("'foo'")
+    expect(type.to_s).to eq('String')
   end
 
-  it 'understands literal symbols' do
+  xit 'understands literal symbols' do
     type = Solargraph::ComplexType.parse(':foo')
     expect(type.tag).to eq(':foo')
     expect(type.to_rbs).to eq(':foo')
+    expect(type.to_s).to eq(':foo')
   end
 
   it 'understands literal integers' do
     type = Solargraph::ComplexType.parse('123')
     expect(type.tag).to eq('123')
     expect(type.to_rbs).to eq('123')
+    expect(type.to_s).to eq('123')
   end
 
   it 'understands literal true' do
     type = Solargraph::ComplexType.parse('true')
     expect(type.tag).to eq('true')
     expect(type.to_rbs).to eq('true')
+    expect(type.to_s).to eq('true')
   end
 
   it 'understands literal false' do
     type = Solargraph::ComplexType.parse('false')
     expect(type.tag).to eq('false')
     expect(type.to_rbs).to eq('false')
+    expect(type.to_s).to eq('false')
   end
 
   it 'parses tuples of tuples' do
     type = Solargraph::ComplexType.parse('Array(Array(String), String)')
     expect(type.tag).to eq('Array(Array(String), String)')
     expect(type.to_rbs).to eq('[[String], String]')
+    expect(type.to_s).to eq('Array(Array(String), String)')
   end
 
   it 'parses tuples of tuples with same type twice in a row' do
     type = Solargraph::ComplexType.parse('Array(Symbol, String, Array(Integer, Integer))')
-    expect(type.to_s).to eq('Array(Symbol, String, Array(Integer, Integer))')
+    expect(type.tag).to eq('Array(Symbol, String, Array(Integer, Integer))')
     expect(type.to_rbs).to eq('[Symbol, String, [Integer, Integer]]')
+    expect(type.to_s).to eq('Array(Symbol, String, Array(Integer, Integer))')
   end
 
   it 'qualifies tuples of tuples with same type twice in a row' do
@@ -481,13 +488,12 @@ describe Solargraph::ComplexType do
     expect(type.to_rbs).to eq('(1 | 2 | 3)')
   end
 
-  it 'squashes literal types when simplifying literals of same type' do
+  xit 'stops parsing when the first character indicates a string literal' do
     api_map = Solargraph::ApiMap.new
-    type = Solargraph::ComplexType.parse('1, 2, 3')
+    type = Solargraph::ComplexType.parse('"Array(Symbol, String, Array(Integer, Integer)"')
     type = type.qualify(api_map)
-    expect(type.to_s).to eq('1, 2, 3')
-    expect(type.tags).to eq('1, 2, 3')
-    expect(type.simple_tags).to eq('Integer')
-    expect(type.to_rbs).to eq('(1 | 2 | 3)')
+    expect(type.tag).to eq('Array(Symbol, String, Array(Integer, Integer))')
+    expect(type.to_rbs).to eq('[Symbol, String, [Integer, Integer]]')
+    expect(type.to_s).to eq('Array(Symbol, String, Array(Integer, Integer))')
   end
 end

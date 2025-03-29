@@ -251,7 +251,19 @@ module Solargraph
         found = source.references(pin.name)
         found.select! do |loc|
           referenced = definitions_at(loc.filename, loc.range.ending.line, loc.range.ending.character).first
-          referenced && referenced.path == pin.path
+          referenced&.path == pin.path
+        end
+        if pin.path == 'Class#new'
+          caller = cursor.chain.base.infer(api_map, clip.send(:block), clip.locals).first
+          if caller.defined?
+            found.select! do |loc|
+              clip = api_map.clip_at(loc.filename, loc.range.start)
+              other = clip.send(:cursor).chain.base.infer(api_map, clip.send(:block), clip.locals).first
+              caller == other
+            end
+          else
+            found.clear
+          end
         end
         # HACK: for language clients that exclude special characters from the start of variable names
         if strip && match = cursor.word.match(/^[^a-z0-9_]+/i)
@@ -603,7 +615,7 @@ module Solargraph
 
       logger.info "Caching #{spec.name} #{spec.version}"
       Thread.new do
-        @cache_pid = Process.spawn('solargraph', 'cache', spec.name, spec.version.to_s)
+        @cache_pid = Process.spawn(workspace.command_path, 'cache', spec.name, spec.version.to_s)
         Process.wait(@cache_pid)
         logger.info "Cached #{spec.name} #{spec.version}"
         @synchronized = false

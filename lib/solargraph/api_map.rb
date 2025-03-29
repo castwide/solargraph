@@ -67,11 +67,10 @@ module Solargraph
         implicit.merge map.environ
       end
       unresolved_requires = (bench.external_requires + implicit.requires + bench.workspace.config.required).uniq
-      @doc_map = DocMap.new(unresolved_requires, []) # @todo Implement gem dependencies
+      @doc_map = DocMap.new(unresolved_requires, []) # @todo Implement gem preferences
       @store = Store.new(@@core_map.pins + @doc_map.pins + implicit.pins + pins)
       @unresolved_requires = @doc_map.unresolved_requires
       @missing_docs = [] # @todo Implement missing docs
-      @rebindable_method_names = nil
       store.block_pins.each { |blk| blk.rebind(self) }
       self
     end
@@ -155,17 +154,6 @@ module Solargraph
     # @return [Array<Solargraph::Pin::Base>]
     def pins
       store.pins
-    end
-
-    # @return [Set<String>]
-    def rebindable_method_names
-      @rebindable_method_names ||= begin
-        result = ['instance_eval', 'instance_exec', 'class_eval', 'class_exec', 'module_eval', 'module_exec', 'define_method'].to_set
-        source_maps.each do |map|
-          result.merge map.rebindable_method_names
-        end
-        result
-      end
     end
 
     # An array of pins based on Ruby keywords (`if`, `end`, etc.).
