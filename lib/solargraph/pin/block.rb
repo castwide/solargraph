@@ -14,10 +14,9 @@ module Solargraph
       # @param context [ComplexType, nil]
       # @param args [::Array<Parameter>]
       def initialize receiver: nil, args: [], context: nil, node: nil, **splat
-        super(**splat)
+        super(**splat, parameters: args)
         @receiver = receiver
         @context = context
-        @parameters = args
         @node = node
       end
 
@@ -29,16 +28,6 @@ module Solargraph
 
       def binder
         @binder || closure.binder
-      end
-
-      # @return [::Array<Parameter>]
-      def parameters
-        @parameters ||= []
-      end
-
-      # @return [::Array<String>]
-      def parameter_names
-        @parameter_names ||= parameters.map(&:name)
       end
 
       private
