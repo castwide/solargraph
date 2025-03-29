@@ -22,11 +22,14 @@ module Solargraph
                                     closure: Solargraph::Pin::Namespace.new(name: 'Object'), comments: '@return [Class<self>]')
       ]
 
-      CLASS_RETURN_TYPES = [
-        Override.method_return('Class#new', 'self'),
-        Override.method_return('Class.new', 'Class<BasicObject>'),
-        Override.method_return('Class#allocate', 'self'),
-        Override.method_return('Class.allocate', 'Class<BasicObject>')
+      OVERRIDES = [
+        Override.from_comment('BasicObject#instance_eval', '@yieldreceiver [self]'),
+        Override.from_comment('BasicObject#instance_exec', '@yieldreceiver [self]'),
+        Override.from_comment('Module#define_method', '@yieldreceiver [Object<self>]'),
+        Override.from_comment('Module#class_eval', '@yieldreceiver [Class<self>]'),
+        Override.from_comment('Module#class_exec', '@yieldreceiver [Class<self>]'),
+        Override.from_comment('Module#module_eval', '@yieldreceiver [Module<self>]'),
+        Override.from_comment('Module#module_exec', '@yieldreceiver [Module<self>]')
       ]
 
       # HACK: Add Errno exception classes
@@ -38,7 +41,7 @@ module Solargraph
       end
       ERRNOS = errnos
 
-      ALL = KEYWORDS + MISSING + CLASS_RETURN_TYPES + ERRNOS
+      ALL = KEYWORDS + MISSING + OVERRIDES + ERRNOS
     end
   end
 end

@@ -1,7 +1,6 @@
 # frozen_string_literal: true
 
 require 'pathname'
-require 'set'
 
 module Solargraph
   # A Library handles coordination between a Workspace and an ApiMap.
@@ -252,7 +251,19 @@ module Solargraph
         found = source.references(pin.name)
         found.select! do |loc|
           referenced = definitions_at(loc.filename, loc.range.ending.line, loc.range.ending.character).first
-          referenced && referenced.path == pin.path
+          referenced&.path == pin.path
+        end
+        if pin.path == 'Class#new'
+          caller = cursor.chain.base.infer(api_map, clip.send(:block), clip.locals).first
+          if caller.defined?
+            found.select! do |loc|
+              clip = api_map.clip_at(loc.filename, loc.range.start)
+              other = clip.send(:cursor).chain.base.infer(api_map, clip.send(:block), clip.locals).first
+              caller == other
+            end
+          else
+            found.clear
+          end
         end
         # HACK: for language clients that exclude special characters from the start of variable names
         if strip && match = cursor.word.match(/^[^a-z0-9_]+/i)
@@ -598,20 +609,24 @@ module Solargraph
 
     # @return [void]
     def cache_next_gemspec
+      return if @cache_pid
       spec = api_map.uncached_gemspecs.find { |spec| !cache_errors.include?(spec)}
       return unless spec
 
       logger.info "Caching #{spec.name} #{spec.version}"
       Thread.new do
-        pid = Process.spawn('solargraph', 'cache', spec.name, spec.version.to_s)
-        Process.wait(pid)
+        @cache_pid = Process.spawn(workspace.command_path, 'cache', spec.name, spec.version.to_s)
+        Process.wait(@cache_pid)
         logger.info "Cached #{spec.name} #{spec.version}"
         @synchronized = false
       rescue Errno::EINVAL => e
+        logger.info "Cached #{spec.name} #{spec.version} with EINVAL"
         @synchronized = false
       rescue StandardError => e
         cache_errors.add spec
         Solargraph.logger.warn "Error caching gemspec #{spec.name} #{spec.version}: [#{e.class}] #{e.message}"
+      ensure
+        @cache_pid = nil
       end
     end
   end

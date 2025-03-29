@@ -50,8 +50,8 @@ module Solargraph
             clip = api_map.clip_at(location.filename, pos)
             # Use the return node for inference. The clip might infer from the
             # first node in a method call instead of the entire call.
-            chain = Parser.chain(node, nil, clip.in_block?)
-            result = chain.infer(api_map, closure, clip.locals)
+            chain = Parser.chain(node, nil, nil)
+            result = chain.infer(api_map, closure, clip.locals).self_to(closure.context.tag)
             types.push result unless result.undefined?
           end
         end
@@ -69,6 +69,10 @@ module Solargraph
         @assignment = pin.assignment
         @return_type = pin.return_type
         true
+      end
+
+      def desc
+        "#{to_rbs} = #{assignment&.type.inspect}"
       end
 
       private

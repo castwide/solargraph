@@ -1,7 +1,5 @@
 # frozen_string_literal: true
 
-require 'rubygems'
-require 'set'
 require 'pathname'
 require 'yard'
 require 'solargraph/yard_tags'
@@ -14,7 +12,6 @@ module Solargraph
     autoload :Cache,          'solargraph/api_map/cache'
     autoload :SourceToYard,   'solargraph/api_map/source_to_yard'
     autoload :Store,          'solargraph/api_map/store'
-    autoload :BundlerMethods, 'solargraph/api_map/bundler_methods'
 
     # @return [Array<String>]
     attr_reader :unresolved_requires
@@ -67,17 +64,17 @@ module Solargraph
         implicit.merge map.environ
       end
       unresolved_requires = (bench.external_requires + implicit.requires + bench.workspace.config.required).uniq
-      @doc_map = DocMap.new(unresolved_requires, []) # @todo Implement gem dependencies
+      @doc_map = DocMap.new(unresolved_requires, []) # @todo Implement gem preferences
       @store = Store.new(@@core_map.pins + @doc_map.pins + implicit.pins + pins)
       @unresolved_requires = @doc_map.unresolved_requires
       @missing_docs = [] # @todo Implement missing docs
-      @rebindable_method_names = nil
       store.block_pins.each { |blk| blk.rebind(self) }
       self
     end
 
+    # @return [::Array<Gem::Specification>]
     def uncached_gemspecs
-      @doc_map.uncached_gemspecs
+      @doc_map&.uncached_gemspecs || []
     end
 
     # @return [Array<Pin::Base>]
@@ -117,7 +114,7 @@ module Solargraph
     # @return [SourceMap::Clip]
     def clip_at filename, position
       position = Position.normalize(position)
-      SourceMap::Clip.new(self, cursor_at(filename, position))
+      clip(cursor_at(filename, position))
     end
 
     # Create an ApiMap with a workspace in the specified directory.
@@ -154,17 +151,6 @@ module Solargraph
     # @return [Array<Solargraph::Pin::Base>]
     def pins
       store.pins
-    end
-
-    # @return [Set<String>]
-    def rebindable_method_names
-      @rebindable_method_names ||= begin
-        result = ['instance_eval', 'instance_exec', 'class_eval', 'class_exec', 'module_eval', 'module_exec', 'define_method'].to_set
-        source_maps.each do |map|
-          result.merge map.rebindable_method_names
-        end
-        result
-      end
     end
 
     # An array of pins based on Ruby keywords (`if`, `end`, etc.).
@@ -250,7 +236,7 @@ module Solargraph
     #
     # @param namespace [String, nil] The namespace to
     #   match
-    # @param context_tag [String] The context namespace in which the
+    # @param context_namespace [String] The context namespace in which the
     #   tag was referenced; start from here to resolve the name
     # @return [String, nil] fully qualified namespace
     def qualify_namespace(namespace, context_namespace = '')
@@ -327,6 +313,7 @@ module Solargraph
       else
         result.concat inner_get_methods(rooted_tag, scope, visibility, deep, skip)
         result.concat inner_get_methods('Kernel', :instance, [:public], deep, skip) if visibility.include?(:private)
+        result.concat inner_get_methods('Module', scope, visibility, deep, skip)
       end
       resolved = resolve_method_aliases(result, visibility)
       cache.set_methods(rooted_tag, scope, visibility, deep, resolved)
@@ -459,6 +446,10 @@ module Solargraph
     # @return [SourceMap::Clip]
     def clip cursor
       raise FileNotFoundError, "ApiMap did not catalog #{cursor.filename}" unless source_map_hash.key?(cursor.filename)
+
+      # @todo Clip caches are disabled pending resolution of a stale cache bug
+      # cache.get_clip(cursor) ||
+      #   SourceMap::Clip.new(self, cursor).tap { |clip| cache.set_clip(cursor, clip) }
       SourceMap::Clip.new(self, cursor)
     end
 
@@ -548,7 +539,7 @@ module Solargraph
       rooted_type = ComplexType.parse(rooted_tag)
       fqns = rooted_type.namespace
       fqns_generic_params = rooted_type.all_params
-      return [] if no_core && fqns =~ /^(Object|BasicObject|Class|Module|Kernel)$/
+      return [] if no_core && fqns =~ /^(Object|BasicObject|Class|Module)$/
       reqstr = "#{fqns}|#{scope}|#{visibility.sort}|#{deep}"
       return [] if skip.include?(reqstr)
       skip.add reqstr

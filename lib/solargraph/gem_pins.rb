@@ -20,7 +20,7 @@ module Solargraph
       combined = yard_pins.map do |yard|
         in_yard.add yard.path
         next yard unless yard.is_a?(Pin::Method)
-        rbs = rbs_map.path_pin(yard.path)
+        rbs = rbs_map.path_pin(yard.path, Pin::Method)
         next yard unless rbs
         # @todo Could not include: attribute and anon_splat
         # @sg-ignore
@@ -49,7 +49,7 @@ module Solargraph
       def build_yard_pins(gemspec)
         Yardoc.cache(gemspec) unless Yardoc.cached?(gemspec)
         yardoc = Yardoc.load!(gemspec)
-        YardMap::Mapper.new(yardoc, gemspec).map  
+        YardMap::Mapper.new(yardoc, gemspec).map
       end
 
       # Select the first defined type.

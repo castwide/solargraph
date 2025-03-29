@@ -8,7 +8,6 @@ module Solargraph
   class Source
     autoload :Updater,       'solargraph/source/updater'
     autoload :Change,        'solargraph/source/change'
-    autoload :Mapper,        'solargraph/source/mapper'
     autoload :EncodingFixes, 'solargraph/source/encoding_fixes'
     autoload :Cursor,        'solargraph/source/cursor'
     autoload :Chain,         'solargraph/source/chain'
@@ -435,21 +434,14 @@ module Solargraph
     def inner_tree_at node, position, stack
       return if node.nil?
       here = Range.from_node(node)
-      if here.contain?(position) || colonized(here, position, node)
+      if here.contain?(position)
         stack.unshift node
         node.children.each do |c|
           next unless Parser.is_ast_node?(c)
-          next if !Parser.rubyvm? && c.loc.expression.nil?
+          next if c.loc.expression.nil?
           inner_tree_at(c, position, stack)
         end
       end
-    end
-
-    def colonized range, position, node
-      node.type == :COLON2 &&
-        range.ending.line == position.line &&
-        range.ending.character == position.character - 2 &&
-        code[Position.to_offset(code, Position.new(position.line, position.character - 2)), 2] == '::'
     end
 
     protected
@@ -519,6 +511,10 @@ module Solargraph
         # HACK: Pass a dummy code object to the parser for plugins that
         # expect it not to be nil
         YARD::Docstring.parser.parse(comments, YARD::CodeObjects::Base.new(:root, 'stub'))
+      rescue StandardError => e
+        Solargraph.logger.info "YARD failed to parse docstring: [#{e.class}] #{e.message}"
+        Solargraph.logger.debug "Unparsed comment: #{comments}"
+        YARD::Docstring.parser
       end
     end
   end

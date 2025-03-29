@@ -8,7 +8,7 @@ module Solargraph
     attr_reader :requires
 
     # @return [Array<Gem::Specification>]
-    attr_reader :dependencies
+    attr_reader :preferences
 
     # @return [Array<Pin::Base>]
     attr_reader :pins
@@ -17,10 +17,10 @@ module Solargraph
     attr_reader :uncached_gemspecs
 
     # @param requires [Array<String>]
-    # @param dependencies [Array<Gem::Specification>]
-    def initialize(requires, dependencies)
-      @requires = requires
-      @dependencies = dependencies
+    # @param preferences [Array<Gem::Specification>]
+    def initialize(requires, preferences)
+      @requires = requires.compact
+      @preferences = preferences.compact
       generate
     end
 
@@ -34,7 +34,30 @@ module Solargraph
       @unresolved_requires ||= required_gem_map.select { |_, gemspec| gemspec.nil? }.keys
     end
 
+    # @return [Hash{Gem::Specification => Array[Pin::Base]}]
+    def self.gems_in_memory
+      @gems_in_memory ||= {}
+    end
+
+    def dependencies
+      @dependencies ||= (gemspecs.flat_map { |spec| fetch_dependencies(spec) } - gemspecs).to_set
+    end
+
     private
+
+    # @return [void]
+    def generate
+      @pins = []
+      @uncached_gemspecs = []
+      required_gem_map.each do |path, gemspec|
+        if gemspec
+          try_cache gemspec
+        else
+          try_stdlib_map path
+        end
+      end
+      dependencies.each { |dep| try_cache dep }
+    end
 
     # @return [Hash{String => Gem::Specification, nil}]
     def required_gem_map
@@ -42,62 +65,107 @@ module Solargraph
     end
 
     # @return [Hash{String => Gem::Specification}]
-    def dependency_map
-      @dependency_map ||= dependencies.to_h { |gemspec| [gemspec.name, gemspec] }
+    def preference_map
+      @preference_map ||= preferences.to_h { |gemspec| [gemspec.name, gemspec] }
     end
 
+    # @param gemspec [Gem::Specification]
     # @return [void]
-    def generate
-      @pins = []
-      @uncached_gemspecs = []
-      required_gem_map.each do |name, gemspec|
-        if gemspec
-          try_rbs_map gemspec
-        else
-          try_stdlib_map name
-        end
-      end
-    end
-
-    def try_rbs_map gemspec
+    def try_cache gemspec
+      return if try_gem_in_memory(gemspec)
       cache_file = File.join('gems', "#{gemspec.name}-#{gemspec.version}.ser")
       if Cache.exist?(cache_file)
-        @pins.concat Cache.load(cache_file)
+        gempins = Cache.load(cache_file)
+        self.class.gems_in_memory[gemspec] = gempins
+        @pins.concat gempins
       else
         Solargraph.logger.debug "No pin cache for #{gemspec.name} #{gemspec.version}"
-        @uncached_gemspecs.push gemspec if gemspec
+        @uncached_gemspecs.push gemspec
       end
     end
 
-    def try_stdlib_map name
-      map = RbsMap::StdlibMap.new(name)
-      return unless map.resolved?
+    # @param path [String] require path that might be in the RBS stdlib collection
+    # @return [void]
+    def try_stdlib_map path
+      map = RbsMap::StdlibMap.load(path)
+      if map.resolved?
+        Solargraph.logger.debug "Loading stdlib pins for #{path}"
+        @pins.concat map.pins
+      else
+        # @todo Temporarily ignoring unresolved `require 'set'`
+        Solargraph.logger.warn "Require path #{path} could not be resolved" unless path == 'set'
+      end
+    end
 
-      Solargraph.logger.info "Loading stdlib pins for #{name}"
-      @pins.concat map.pins
+    # @param gemspec [Gem::Specification]
+    # @return [Boolean]
+    def try_gem_in_memory gemspec
+      gempins = DocMap.gems_in_memory[gemspec]
+      return false unless gempins
+      Solargraph.logger.debug "Found #{gemspec.name} #{gemspec.version} in memory"
+      @pins.concat gempins
+      true
     end
 
     # @param path [String]
     # @return [Gem::Specification, nil]
     def resolve_path_to_gemspec path
+      return nil if path.empty?
+
       gemspec = Gem::Specification.find_by_path(path)
-      return gemspec if dependencies.empty? || gemspec.nil?
-
-      if dependency_map.key?(gemspec.name)
-        return gemspec if gemspec.version == dependency_map[gemspec.name].version
-
-        change_gemspec_version gemspec, dependency_map[by_path.name].version
-      else
-        Solargraph.logger.warn "Gem #{gemspec.name} is not an expected dependency"
-        gemspec
+      if gemspec.nil?
+        gem_name_guess = path.split('/').first
+        begin
+          # this can happen when the gem is included via a local path in
+          # a Gemfile; Gem doesn't try to index the paths in that case.
+          #
+          # See if we can make a good guess:
+          potential_gemspec = Gem::Specification.find_by_name(gem_name_guess)
+          file = "lib/#{path}.rb"
+          gemspec = potential_gemspec if potential_gemspec.files.any? { |gemspec_file| file == gemspec_file }
+        rescue Gem::MissingSpecError
+          Solargraph.logger.debug "Require path #{path} could not be resolved to a gem via find_by_path or guess of #{gem_name_guess}"
+          nil
+        end
       end
+      gemspec_or_preference gemspec
     end
 
+    # @param gemspec [Gem::Specification, nil]
+    # @return [Gem::Specification, nil]
+    def gemspec_or_preference gemspec
+      return gemspec unless gemspec && preference_map.key?(gemspec.name)
+      return gemspec if gemspec.version == preference_map[gemspec.name].version
+
+      change_gemspec_version gemspec, preference_map[by_path.name].version
+    end
+
+    # @param gemspec [Gem::Specification]
+    # @param version [Gem::Version]
+    # @return [Gem::Specification]
     def change_gemspec_version gemspec, version
       Gem::Specification.find_by_name(gemspec.name, "= #{version}")
     rescue Gem::MissingSpecError
-      Solargraph.logger.warn "Gem #{gemspec.name} version #{version} not found. Using #{gemspec.version} instead"
+      Solargraph.logger.info "Gem #{gemspec.name} version #{version} not found. Using #{gemspec.version} instead"
       gemspec
+    end
+
+    # @param gemspec [Gem::Specification]
+    # @return [Array<Gem::Specification>]
+    def fetch_dependencies gemspec
+      only_runtime_dependencies(gemspec).each_with_object(Set.new) do |spec, deps|
+        Solargraph.logger.info "Adding #{spec.name} dependency for #{gemspec.name}"
+        dep = Gem::Specification.find_by_name(spec.name, spec.requirement)
+        deps.merge fetch_dependencies(dep) if deps.add?(dep)
+      rescue Gem::MissingSpecError
+        Solargraph.logger.warn "Gem dependency #{spec.name} #{spec.requirements} for #{gemspec.name} not found."
+      end.to_a
+    end
+
+    # @param gemspec [Gem::Specification]
+    # @return [Array<Gem::Dependency>]
+    def only_runtime_dependencies gemspec
+      gemspec.dependencies - gemspec.development_dependencies
     end
   end
 end

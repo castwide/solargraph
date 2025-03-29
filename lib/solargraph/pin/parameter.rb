@@ -9,6 +9,9 @@ module Solargraph
       # @return [String]
       attr_reader :asgn_code
 
+      # @param decl [::Symbol] :arg, :optarg, :kwarg, :kwoptarg, :restarg, :kwrestarg, :block, :blockarg
+      # @param asgn_code [String, nil]
+      # @param return_type [ComplexType, nil]
       def initialize decl: :arg, asgn_code: nil, return_type: nil, **splat
         super(**splat)
         @asgn_code = asgn_code
@@ -36,6 +39,24 @@ module Solargraph
         [:block, :blockarg].include?(decl)
       end
 
+      def to_rbs
+        case decl
+        when :optarg
+          "?#{super}"
+        when :kwarg
+          "#{name}: #{return_type.to_rbs}"
+        when :kwoptarg
+          "?#{name}: #{return_type.to_rbs}"
+        when :restarg
+          "*#{super}"
+        when :kwrestarg
+          "**#{super}"
+        else
+          super
+        end
+      end
+
+      # @return [String]
       def full
         case decl
         when :optarg
@@ -119,7 +140,7 @@ module Solargraph
       # @return [ComplexType]
       def typify_block_param api_map
         if closure.is_a?(Pin::Block) && closure.receiver
-          chain = Parser.chain(closure.receiver, filename)
+          chain = Parser.chain(closure.receiver, filename, closure.node)
           clip = api_map.clip_at(location.filename, location.range.start)
           locals = clip.locals - [self]
           meths = chain.define(api_map, closure, locals)

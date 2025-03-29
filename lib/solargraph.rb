@@ -2,6 +2,7 @@
 
 Encoding.default_external = 'UTF-8'
 
+require 'set'
 require 'yard-solargraph'
 require 'solargraph/yard_tags'
 require 'solargraph/version'
@@ -42,7 +43,6 @@ module Solargraph
   autoload :TypeChecker,      'solargraph/type_checker'
   autoload :Environ,          'solargraph/environ'
   autoload :Convention,       'solargraph/convention'
-  autoload :Documentor,       'solargraph/documentor'
   autoload :Parser,           'solargraph/parser'
   autoload :RbsMap,           'solargraph/rbs_map'
   autoload :GemPins,          'solargraph/gem_pins'

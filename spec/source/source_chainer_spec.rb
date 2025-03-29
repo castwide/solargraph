@@ -218,7 +218,7 @@ describe Solargraph::Source::SourceChainer do
   it "chains from fixed phrases in repaired sources with missing nodes" do
     source = Solargraph::Source.load_string(%(
       x = []
-      
+
     ), 'test.rb')
     updater = Solargraph::Source::Updater.new('test.rb', 1, [
       Solargraph::Source::Change.new(Solargraph::Range.from_to(2, 6, 2, 6), 'x.')
@@ -313,7 +313,7 @@ describe Solargraph::Source::SourceChainer do
         def strings; end
 
         strings.each do |str|
-          
+
         end
     ), 'test.rb')
     updater = Solargraph::Source::Updater.new('test.rb', 1, [
@@ -325,5 +325,27 @@ describe Solargraph::Source::SourceChainer do
     chain = Solargraph::Source::SourceChainer.chain(updated, Solargraph::Position.new(5, 14))
     expect(chain.node.type).to be(:send)
     expect(chain.node.children[1]).to be(:s)
+  end
+
+  it 'adds blocks to calls' do
+    source = Solargraph::Source.load_string(%(
+      x.y do
+        z
+      end
+    ))
+    chain = Solargraph::Source::SourceChainer.chain(source, Solargraph::Position.new(1, 9))
+    expect(chain.links.map(&:class)).to be
+  end
+
+  xit 'infers specific array type from block sent to Array#map' do
+    source = Solargraph::Source.load_string(%(
+      ['a', 'b'].map { 's' }
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new
+    api_map.map source
+
+    chain = Solargraph::Source::SourceChainer.chain(source, Solargraph::Position.new(1, 20))
+    type = chain.infer(api_map, Solargraph::Pin::ROOT_PIN, api_map.source_map('test.rb').locals)
+    expect(type.tag).to eq('Array<String>')
   end
 end

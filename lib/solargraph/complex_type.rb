@@ -30,6 +30,16 @@ module Solargraph
       ComplexType.new(types).reduce_object
     end
 
+    # @param generics_to_resolve [Enumerable<String>]]
+    # @param context_type [UniqueType, nil]
+    # @param resolved_generic_values [Hash{String => ComplexType}] Added to as types are encountered or resolved
+    # @return [self]
+    def resolve_generics_from_context generics_to_resolve, context_type, resolved_generic_values: {}
+      return self unless generic?
+
+      ComplexType.new(@items.map { |i| i.resolve_generics_from_context(generics_to_resolve, context_type, resolved_generic_values: resolved_generic_values) })
+    end
+
     # @return [UniqueType]
     def first
       @items.first
@@ -37,9 +47,9 @@ module Solargraph
 
     # @return [String]
     def to_rbs
-      ((@items.length > 1 ? '(' : '') + @items.map do |item|
-        "#{item.namespace}#{item.parameters? ? "[#{item.subtypes.map { |s| s.to_rbs }.join(', ')}]" : ''}"
-      end.join(' | ') + (@items.length > 1 ? ')' : '')).gsub(/undefined/, 'untyped')
+      ((@items.length > 1 ? '(' : '') +
+       @items.map(&:to_rbs).join(' | ') +
+       (@items.length > 1 ? ')' : ''))
     end
 
     # @yieldparam [UniqueType]
@@ -55,7 +65,9 @@ module Solargraph
     end
 
     # @yieldparam [UniqueType]
-    # @return [Enumerator<UniqueType>]
+    # @return [void]
+    # @overload each_unique_type()
+    #   @return [Enumerator<UniqueType>]
     def each_unique_type &block
       return enum_for(__method__) unless block_given?
 
@@ -67,6 +79,11 @@ module Solargraph
     # @return [Integer]
     def length
       @items.length
+    end
+
+    # @return [Array<UniqueType>]
+    def to_a
+      @items
     end
 
     # @param index [Integer]
@@ -123,6 +140,14 @@ module Solargraph
 
     def generic?
       any?(&:generic?)
+    end
+
+    # @param new_name [String, nil]
+    # @yieldparam t [UniqueType]
+    # @yieldreturn [UniqueType]
+    # @return [ComplexType]
+    def transform(new_name = nil, &transform_type)
+      ComplexType.new(map { |ut| ut.transform(new_name, &transform_type) })
     end
 
     # @param definitions [Pin::Namespace, Pin::Method]
@@ -194,8 +219,11 @@ module Solargraph
       #   used internally.
       #
       # @param *strings [Array<String>] The type definitions to parse
-      # @param partial [Boolean] True if the string is part of a another type
-      # @return [ComplexType, Array<UniqueType>] Array if partial is true
+      # @return [ComplexType]
+      # @overload parse(*strings, partial: false)
+      #  @todo Need ability to use a literal true as a type below
+      #  @param partial [Boolean] True if the string is part of a another type
+      #  @return [Array<UniqueType>]
       def parse *strings, partial: false
         # @type [Hash{Array<String> => ComplexType}]
         @cache ||= {}

@@ -7,9 +7,11 @@ module Solargraph
       attr_reader :scope
 
       # @param scope [::Symbol] :class or :instance
-      def initialize scope: :class, **splat
+      # @param generics [::Array<Pin::Parameter>, nil]
+      def initialize scope: :class, generics: nil, **splat
         super(**splat)
         @scope = scope
+        @generics = generics
       end
 
       def context
@@ -32,6 +34,18 @@ module Solargraph
         # @todo This check might not be necessary. There should always be a
         #   root pin
         closure ? closure.gates : ['']
+      end
+
+      # @return [::Array<String>]
+      def generics
+        @generics ||= docstring.tags(:generic).map(&:name)
+      end
+
+      # @return [String]
+      def generics_as_rbs
+        return '' if generics.empty?
+
+        generics.join(', ') + ' '
       end
     end
   end

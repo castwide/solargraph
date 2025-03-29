@@ -323,4 +323,10 @@ y = 1 #foo
     )
     expect(source.string_ranges.length).to eq(4)
   end
+
+  it 'handles errors in docstrings' do
+    # YARD has a known problem with empty @overload tags
+    comments = "@overload\n@return [String]"
+    expect { Solargraph::Source.parse_docstring(comments) }.not_to raise_error
+  end
 end

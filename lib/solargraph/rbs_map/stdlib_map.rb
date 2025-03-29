@@ -1,7 +1,6 @@
 # frozen_string_literal: true
 
 require 'rbs'
-require 'set'
 
 module Solargraph
   class RbsMap
@@ -19,6 +18,7 @@ module Solargraph
           @resolved = true
         else
           super
+          return unless resolved?
           Cache.save('stdlib', "#{library}.ser", pins)
         end
       end

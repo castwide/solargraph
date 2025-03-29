@@ -1,6 +1,5 @@
 # frozen_string_literal: true
 
-require 'rubygems'
 
 # @todo PR the RBS gem to add this
 # @!parse

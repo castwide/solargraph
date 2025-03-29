@@ -14,10 +14,10 @@ module Solargraph
 
       class << self
         # @param source [Source]
-        # @param position [Position]
+        # @param position [Position, Array(Integer, Integer)]
         # @return [Source::Chain]
         def chain source, position
-          new(source, position).chain
+          new(source, Solargraph::Position.normalize(position)).chain
         end
       end
 
@@ -41,8 +41,6 @@ module Solargraph
           parent = nil
           if !source.repaired? && source.parsed? && source.synchronized?
             tree = source.tree_at(position.line, position.column)
-            # node, parent = source.tree_at(position.line, position.column)[0..2]
-            tree.shift while tree.length > 1 && tree.first.type == :SCOPE
             node, parent = tree[0..2]
           elsif source.parsed? && source.repaired? && end_of_phrase == '.'
             node, parent = source.tree_at(fixed_position.line, fixed_position.column)[0..2]
@@ -60,7 +58,7 @@ module Solargraph
         end
         return Chain.new([Chain::UNDEFINED_CALL]) if node.nil? || (node.type == :sym && !phrase.start_with?(':'))
         # chain = NodeChainer.chain(node, source.filename, parent && parent.type == :block)
-        chain = Parser.chain(node, source.filename, parent && [:ITER, :block].include?(parent.type))
+        chain = Parser.chain(node, source.filename, parent)
         if source.repaired? || !source.parsed? || !source.synchronized?
           if end_of_phrase.strip == '.'
             chain.links.push Chain::UNDEFINED_CALL

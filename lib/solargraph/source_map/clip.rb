@@ -50,12 +50,12 @@ module Solargraph
       def infer
         result = cursor.chain.infer(api_map, block, locals)
         if result.tag == 'Class'
-          # HACK: Exception to return Object from Class#new
+          # HACK: Exception to return BasicObject from Class#new
           dfn = cursor.chain.define(api_map, block, locals).first
-          return ComplexType.try_parse('Object') if dfn && dfn.path == 'Class#new'
+          return ComplexType.try_parse('BasicObject') if dfn && dfn.path == 'Class#new'
         end
         return result unless result.tag == 'self'
-        ComplexType.try_parse(cursor.chain.base.infer(api_map, block, locals).namespace)
+        ComplexType.try_parse(cursor.chain.base.infer(api_map, block, locals).tag)
       end
 
       # Get an array of all the locals that are visible from the cursors's
@@ -213,7 +213,6 @@ module Solargraph
             result.concat api_map.get_constants(context_pin.context.namespace, *gates)
             result.concat api_map.get_methods(block.binder.namespace, scope: block.binder.scope, visibility: [:public, :private, :protected])
             result.concat api_map.get_methods('Kernel')
-            # result.concat ApiMap.keywords
             result.concat api_map.keyword_pins.to_a
           end
         end

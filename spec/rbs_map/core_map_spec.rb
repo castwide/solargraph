@@ -34,10 +34,10 @@ describe Solargraph::RbsMap::CoreMap do
     stderr_pin = stderr_pins.first
     expect(stderr_pin.return_type.to_s).to eq('IO')
   end
-    
+
   it 'understands implied Enumerator#each method' do
     api_map = Solargraph::ApiMap.new
-    methods = api_map.get_methods('Enumerable')
+    methods = api_map.get_methods('Enumerable<String>')
     each_pins = methods.select{|pin| pin.path.end_with?('#each')}
     # expect this to come from the _Each implied interface ("self
     # type") defined in the RBS
@@ -47,5 +47,37 @@ describe Solargraph::RbsMap::CoreMap do
     expect(each_pin.signatures.length).to eq(1)
     signature = each_pin.signatures.first
     expect(signature.block.return_type.to_s).to eq('void')
+  end
+
+  xit 'populates types in block parameters from generics' do
+    api_map = Solargraph::ApiMap.new
+    methods = api_map.get_methods('Enumerable<String>')
+    each_pins = methods.select{|pin| pin.path.end_with?('#each')}
+    each_pin = each_pins.first
+    signature = each_pin.signatures.first
+    expect(signature.block.parameters.map(&:return_type).map(&:to_s)).to eq(['String'])
+  end
+
+  xit 'understands defaulted type parameters' do
+    # @todo Enumerable#each's' return type not yet supported as _Each<>
+    #   takes two type parameters, the second has a default value,
+    #   Enumerable specifies it, but Solargraph doesn't support type
+    #   parameter default values
+    #
+    api_map = Solargraph::ApiMap.new
+    methods = api_map.get_methods('Enumerable<String>')
+    each_pins = methods.select{|pin| pin.path.end_with?('#each')}
+    each_pin = each_pins.first
+    signature = each_pin.signatures.first
+    expect(signature.return_type.to_s).to eq('Enumerable<String>')
+  end
+
+  it 'applies mixins to the correct namespace' do
+    # @todo This is a simple smoke test to ensure that mixins are applied
+    #   correctly. It would be better to test RbsMap or RbsMap::Conversions
+    #   with an RBS fixture.
+    core_map = Solargraph::RbsMap::CoreMap.new
+    pins = core_map.pins.select { |pin| pin.is_a?(Solargraph::Pin::Reference::Include) && pin.name == 'Enumerable' }
+    expect(pins.map(&:closure).map(&:namespace)).to include('Enumerator')
   end
 end

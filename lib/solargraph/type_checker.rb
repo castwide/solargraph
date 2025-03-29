@@ -299,6 +299,14 @@ module Solargraph
           pin = pins.first
           ap = if base.links.last.is_a?(Solargraph::Source::Chain::ZSuper)
             arity_problems_for(pin, fake_args_for(block_pin), location)
+          elsif pin.path == 'Class#new'
+            fqns = if base.links.one?
+              block_pin.namespace
+            else
+              base.base.infer(api_map, block_pin, locals).namespace
+            end
+            init = api_map.get_method_stack(fqns, 'initialize').first
+            init ? arity_problems_for(init, base.links.last.arguments, location) : []
           else
             arity_problems_for(pin, base.links.last.arguments, location)
           end
@@ -320,8 +328,14 @@ module Solargraph
               argchain = base.links.last.arguments[idx]
               if argchain.nil?
                 if par.decl == :arg
-                  errors.push Problem.new(location, "Not enough arguments to #{pin.path}")
-                  next
+                  last = base.links.last.arguments.last
+                  if last && last.node.type == :splat
+                    argchain = last
+                    next # don't try to apply the type of the splat - unlikely to be specific enough
+                  else
+                    errors.push Problem.new(location, "Not enough arguments to #{pin.path}")
+                    next
+                  end
                 else
                   last = base.links.last.arguments.last
                   argchain = last if last && [:kwsplat, :hash].include?(last.node.type)
@@ -332,7 +346,12 @@ module Solargraph
                   errors.concat kwarg_problems_for sig, argchain, api_map, block_pin, locals, location, pin, params, idx
                   next
                 else
+                  last = base.links.last.arguments.last
+                  if last && last.node.type == :splat
+                    next # don't try to apply the type of the splat - unlikely to be specific enough
+                  end
                   ptype = params.key?(par.name) ? params[par.name][:qualified] : ComplexType::UNDEFINED
+                  ptype = ptype.self_to(par.context.namespace)
                   if ptype.nil?
                     # @todo Some level (strong, I guess) should require the param here
                   else
@@ -517,10 +536,6 @@ module Solargraph
       return [] unless pin.explicit?
       return [] if parameters.empty? && arguments.empty?
       return [] if pin.anon_splat?
-      if parameters.empty?
-        return [] if arguments.length == 1 && arguments.last.links.last.is_a?(Source::Chain::BlockVariable)
-        return [Problem.new(location, "Too many arguments to #{pin.path}")]
-      end
       unchecked = arguments.clone
       add_params = 0
       if unchecked.empty? && parameters.any? { |param| param.decl == :kwarg }
@@ -560,9 +575,6 @@ module Solargraph
         return [] if parameters.any?(&:rest?)
         opt = optional_param_count(parameters)
         return [] if unchecked.length <= req + opt
-        if unchecked.length == req + opt + 1 && unchecked.last.links.last.is_a?(Source::Chain::BlockVariable)
-          return []
-        end
         if req + add_params + 1 == unchecked.length && any_splatted_call?(unchecked.map(&:node)) && (parameters.map(&:decl) & [:kwarg, :kwoptarg, :kwrestarg]).any?
           return []
         end

@@ -1,3 +1,49 @@
+## 0.53.3 - March 29, 2025
+- Remove redundant core fills (#824, #841)
+- Resolve self type in variable assignments (#839)
+- Eliminate splat-related false-alarms in strict typechecking (#840)
+- Dynamic block binding with yieldreceiver (#842)
+- Resolve generics by descending through context type (#847)
+
+## 0.53.2 - March 27, 2025
+- Fix a self-type-related false-positive in strict typechecking (#834)
+- DocMap fetches gem dependencies (#835)
+- Use configured command path to spawn solargraph processes (#837)
+
+## 0.53.1 - March 26, 2025
+- Reject nil requires in live code (#831)
+- RbsMap adds mixins to current namespace (#832)
+
+## 0.53.0 - March 25, 2025
+- Fix crash on generic methods (#762)
+- Add more type annotations to the codebase (#763 et al.)
+- Address remaining typecheck issues at 'typed' level and add CI task (#764)
+- Fix crash during strict typechecking (#766)
+- DeepInference: Fix some bugs, add docs, refactor (#767)
+- Include "self type" methods like Enumerable#each from RBS files (#769)
+- Handle RBS global, module alias, class variable and class instance variable declarations (#770)
+- Add support for generic includes via RBS (#773)
+- Handle parsing tuples of tuples in tags (#775)
+- Retire the RubyVM parser (#776)
+- Improve block handling in signature selection (#780)
+- Require Ruby >= 3 (#791)
+- Cache YARD and RBS (#781)
+  - Language server generates gem documentation in the background
+- Fix bug handling Array(A, B) syntax while resolving generics (#784)
+- Fix typeDefinitions for neovim (#792)
+- Infer block-pass symbols (#793)
+- Add #to_rbs methods to pins, use for better .inspect() output (#789)
+- Remove deprecated commands (#790)
+- Add :if support to NodeChainer for if statements as lvalues (#805)
+- Fix ApiMap::Cache (#806)
+- Map mixins from RBS (#808)
+- Fix issue with wrong signature selection by call with block node (#815)
+- Keep gem pins in memory (#811)
+- Refactor gems command (#816)
+- Use return type of literal blocks in inference (#818)
+- Insert Module methods (#820)
+- Revise documentation formatting (#823)
+
 ## 0.52.0 - February 28, 2025
 - Chains resolve identical names with different contexts (#679)
 - Handle symbol tags in method tag values (#744)
