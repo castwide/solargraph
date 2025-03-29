@@ -24,11 +24,11 @@ module Solargraph
       # @param api_map [ApiMap]
       # @return [void]
       def rebind api_map
-        @binder ||= binder_or_nil(api_map)
+        @rebind ||= maybe_rebind(api_map)
       end
 
       def binder
-        @binder || closure.binder
+        @rebind&.defined? ? @rebind : closure.binder
       end
 
       # @return [::Array<Parameter>]
@@ -44,17 +44,17 @@ module Solargraph
       private
 
       # @param api_map [ApiMap]
-      # @return [ComplexType, nil]
-      def binder_or_nil api_map
-        return nil unless receiver
+      # @return [ComplexType]
+      def maybe_rebind api_map
+        return ComplexType::UNDEFINED unless receiver
 
         chain = Parser.chain(receiver, location.filename)
         locals = api_map.source_map(location.filename).locals_at(location)
         receiver_pin = chain.define(api_map, self, locals).first
-        return nil unless receiver_pin
+        return ComplexType::UNDEFINED unless receiver_pin
 
         types = receiver_pin.docstring.tag(:yieldreceiver)&.types
-        return nil unless types&.any?
+        return ComplexType::UNDEFINED unless types&.any?
 
         target = chain.base.infer(api_map, receiver_pin, locals)
         target = full_context unless target.defined?
