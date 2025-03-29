@@ -12,19 +12,20 @@ module Solargraph
         # @param visibility [Symbol, nil]
         # @param closure [Solargraph::Pin::Namespace, nil]
         # @param spec [Gem::Specification, nil]
-        # @param return_type [ComplexType, nil]
         # @return [Solargraph::Pin::Method]
-        def self.make code_object, name = nil, scope = nil, visibility = nil, closure = nil, spec = nil, return_type = nil
+        def self.make code_object, name = nil, scope = nil, visibility = nil, closure = nil, spec = nil
           closure ||= Solargraph::Pin::Namespace.new(
             name: code_object.namespace.to_s,
             gates: [code_object.namespace.to_s]
           )
           location = object_location(code_object, spec)
+          name ||= code_object.name.to_s
+          return_type = ComplexType::SELF if name == 'new'
           comments = code_object.docstring ? code_object.docstring.all.to_s : ''
           pin = Pin::Method.new(
             location: location,
             closure: closure,
-            name: name || code_object.name.to_s,
+            name: name,
             comments: comments,
             scope: scope || code_object.scope,
             visibility: visibility || code_object.visibility,

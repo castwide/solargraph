@@ -24,12 +24,12 @@ describe Solargraph::YardMap::Mapper do
 
   it 'marks correct return type from Class<T>::new' do
     # Using parser because it's a known dependency
-    parser = Gem::Specification.find_by_name('parser')
+    parser = Gem::Specification.find_by_name('stringio')
     Solargraph::Yardoc.cache(parser)
     Solargraph::Yardoc.load!(parser)
     pins = Solargraph::YardMap::Mapper.new(YARD::Registry.all).map
-    pin = pins.find { |pin| pin.path == 'Parser::Source::Buffer.new' }
-    expect(pin.return_type.to_s).to eq('self')
+    pins = pins.select { |pin| pin.path == 'StringIO.new' }
+    expect(pins.map(&:return_type).uniq.map(&:to_s)).to eq(['self'])
   end
 
   it 'marks non-explicit methods' do
