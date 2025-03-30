@@ -29,6 +29,8 @@ module Solargraph
 
       @@inference_stack = []
       @@inference_depth = 0
+      @@inference_invalidation_key = nil
+      @@inference_cache = {}
 
       UNDEFINED_CALL = Chain::Call.new('<undefined>')
       UNDEFINED_CONSTANT = Chain::Constant.new('<undefined>')
@@ -81,7 +83,25 @@ module Solargraph
       # @param name_pin [Pin::Base]
       # @param locals [::Enumerable<Pin::LocalVariable>]
       # @return [ComplexType]
+      # @sg-ignore
       def infer api_map, name_pin, locals
+        out = nil
+        cached = @@inference_cache[[node, name_pin&.return_type, locals]]
+        return cached if cached && @@inference_invalidation_key == api_map.hash
+        out = infer_uncached api_map, name_pin, locals
+        if @@inference_invalidation_key != api_map.hash
+          @@inference_cache = {}
+          @@inference_invalidation_key = api_map.hash
+        end
+        @@inference_cache[[node, name_pin&.return_type, locals]] = out unless node.nil?
+        out
+      end
+
+      # @param api_map [ApiMap]
+      # @param name_pin [Pin::Base]
+      # @param locals [::Enumerable<Pin::LocalVariable>]
+      # @return [ComplexType]
+      def infer_uncached api_map, name_pin, locals
         from_here = base.infer(api_map, name_pin, locals) unless links.length == 1
         if from_here
           name_pin = name_pin.proxy(from_here)
