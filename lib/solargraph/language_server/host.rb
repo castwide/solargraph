@@ -155,6 +155,7 @@ module Solargraph
       def delete *uris
         filenames = uris.map { |uri| uri_to_file(uri) }
         libraries.each do |lib|
+          lib.delete_observer self
           lib.delete(*filenames)
         end
         uris.each do |uri|
@@ -294,6 +295,7 @@ module Solargraph
         begin
           workspace = Solargraph::Workspace.new(path, nil, options)
           lib = Solargraph::Library.new(workspace, name)
+          lib.add_observer self
           libraries.push lib
           async_library_map lib
         rescue WorkspaceTooLargeError => e
@@ -324,6 +326,7 @@ module Solargraph
         # @param lib [Library]
         libraries.delete_if do |lib|
           next false if lib.workspace.directory != directory
+          lib.delete_observer self
           true
         end
       end

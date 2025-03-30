@@ -7,6 +7,7 @@ module Solargraph
   #
   class Library
     include Logging
+    include Observable
 
     # @return [Solargraph::Workspace]
     attr_reader :workspace
@@ -16,6 +17,9 @@ module Solargraph
 
     # @return [Source, nil]
     attr_reader :current
+
+    # @return [Hash, nil]
+    attr_reader :cache_progress
 
     # @param workspace [Solargraph::Workspace]
     # @param name [String, nil]
@@ -616,6 +620,7 @@ module Solargraph
       logger.info "Caching #{spec.name} #{spec.version}"
       Thread.new do
         @cache_pid = Process.spawn(workspace.command_path, 'cache', spec.name, spec.version.to_s)
+        start_cache_progress spec.name, api_map.uncached_gemspecs.length - cache_errors.length - 1
         Process.wait(@cache_pid)
         logger.info "Cached #{spec.name} #{spec.version}"
         @synchronized = false
@@ -627,7 +632,33 @@ module Solargraph
         Solargraph.logger.warn "Error caching gemspec #{spec.name} #{spec.version}: [#{e.class}] #{e.message}"
       ensure
         @cache_pid = nil
+        end_cache_progress spec.name
       end
+    end
+
+    def start_cache_progress gem_name, pending
+      @cache_progress = {
+        token: SecureRandom.uuid,
+        value: {
+          kind: 'begin',
+          title: 'Caching gems',
+          message: "#{gem_name}#{pending > 0 ? " (+#{pending})" : ''}",
+          cancellable: false,
+          percentage: 0
+        }
+      }
+      changed
+      notify_observers self
+    end
+
+    def end_cache_progress gem_name
+      cache_progress[:value] = {
+        kind: 'end',
+        message: "#{gem_name} cached"
+      }
+      changed
+      notify_observers self
+      @cache_progress = nil
     end
   end
 end

@@ -114,6 +114,19 @@ module Solargraph
         # @return [Library]
         def generic_library
           @generic_library ||= Solargraph::Library.new(Solargraph::Workspace.new('', nil, options), nil)
+                                                  .tap { |lib| lib.add_observer self }
+        end
+
+        def update library
+          return unless library.cache_progress
+
+          if library.cache_progress[:value][:kind] == 'begin'
+            send_request 'window/workDoneProgress/create', { token: library.cache_progress[:token] } do
+              send_notification '$/progress', library.cache_progress
+            end
+          else
+            send_notification '$/progress', library.cache_progress
+          end
         end
       end
     end
