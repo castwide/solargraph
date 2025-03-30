@@ -53,6 +53,10 @@ module Solargraph
         signature
       end
 
+      # Probe the concrete type for each of the generic type
+      # parameters used in this method, and return a new method pin if
+      # possible.
+      #
       # @param generics_to_resolve [Enumerable<String>]
       # @param arg_types [Array<ComplexType>, nil]
       # @param return_type_context [ComplexType, nil]
