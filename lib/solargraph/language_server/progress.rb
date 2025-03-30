@@ -57,7 +57,7 @@ module Solargraph
 
       # @param host [Solargraph::LanguageServer::Host]
       def send host
-        return if finished?
+        return unless host.client_supports_progress? && !finished?
 
         message = build
 
@@ -76,6 +76,8 @@ module Solargraph
         @finished
       end
 
+      private
+
       # @param host [Solargraph::LanguageServer::Host]
       def create host, &block
         return false if created?
@@ -83,8 +85,6 @@ module Solargraph
         host.send_request 'window/workDoneProgress/create', { token: uuid }, &block
         @created = true
       end
-
-      private
 
       def build
         {
