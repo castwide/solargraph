@@ -7,6 +7,10 @@ module Solargraph
     # Progress notification handling for language server hosts.
     #
     class Progress
+      WAITING = :waiting
+      CREATED = :created
+      FINISHED = :finished
+
       # @return [String]
       attr_reader :uuid
 
@@ -22,13 +26,15 @@ module Solargraph
       # @return [Integer]
       attr_reader :percentage
 
+      # @return [Symbol]
+      attr_reader :status
+
       # @param title [String]
       def initialize title
         @title = title
         @uuid = SecureRandom.uuid
-        @created = false
-        @finished = false
         @percentage = 0
+        @status = WAITING
       end
 
       # @param message [String]
@@ -66,14 +72,15 @@ module Solargraph
         else
           create(host) { host.send_notification '$/progress', message }
         end
+        @status = FINISHED if kind == 'end'
       end
 
       def created?
-        @created
+        [CREATED, FINISHED].include?(status)
       end
 
       def finished?
-        @finished
+        status == FINISHED
       end
 
       private
@@ -83,7 +90,7 @@ module Solargraph
         return false if created?
 
         host.send_request 'window/workDoneProgress/create', { token: uuid }, &block
-        @created = true
+        @status = CREATED
       end
 
       def build
