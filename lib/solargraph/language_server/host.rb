@@ -493,6 +493,9 @@ module Solargraph
         end
         if params['data']['path']
           result.concat library.path_pins(params['data']['path'])
+          # @todo This exception is necessary because `Library#path_pins` does
+          #   not perform a namespace method query, so the implicit `.new` pin
+          #   might not exist.
           if result.empty? && params['data']['path'] =~ /\.new$/
             result.concat(library.path_pins(params['data']['path'].sub(/\.new$/, '#initialize')).map do |pin|
               next pin unless pin.name == 'initialize'
