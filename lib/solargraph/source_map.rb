@@ -132,7 +132,14 @@ module Solargraph
     def locals_at(location)
       return [] if location.filename != filename
       closure = locate_named_path_pin(location.range.start.line, location.range.start.character)
-      locals.select { |pin| pin.visible_at?(closure, location) }
+      potential_locals = locals.select { |pin| pin.visible_at?(closure, location) }
+      locals_by_name = potential_locals.group_by(&:name)
+      locals_by_name.transform_values! do |pins|
+        # if we have multiple pins with the same name visible at a
+        # place, we want to choose the one assigned the latest
+        pins.max_by {  |pin| [pin.presence.start.line, pin.presence.start.character] }
+      end
+      locals_by_name.values
     end
 
     class << self
