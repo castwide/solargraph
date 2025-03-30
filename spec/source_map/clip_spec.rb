@@ -1184,7 +1184,7 @@ describe Solargraph::SourceMap::Clip do
 
     clip = api_map.clip_at('test.rb', [7, 17])
     pin = clip.complete.pins.select { |p| p.name == 'new' }.first
-    expect(pin.path).to eq('Class#new')
+    expect(pin.path).to eq('BasicObject.new')
   end
 
   it 'completes clips from repaired sources ending with a period' do
