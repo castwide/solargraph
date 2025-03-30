@@ -358,7 +358,7 @@ describe Solargraph::TypeChecker do
         class Bar < Foo; end
         Bar.new
       ))
-      expect(checker.problems.map(&:message)).to eq(['Not enough arguments to Foo#initialize'])
+      expect(checker.problems.map(&:message)).to eq(['Not enough arguments to Foo.new'])
     end
 
     it 'validates constuctor arities when not overridden by subtype' do

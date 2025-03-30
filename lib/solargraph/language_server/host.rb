@@ -493,6 +493,21 @@ module Solargraph
         end
         if params['data']['path']
           result.concat library.path_pins(params['data']['path'])
+          if result.empty? && params['data']['path'] =~ /\.new$/
+            result.concat(library.path_pins(params['data']['path'].sub(/\.new$/, '#initialize')).map do |pin|
+              next pin unless pin.name == 'initialize'
+
+              Pin::Method.new(
+                name: 'new',
+                scope: :class,
+                location: pin.location,
+                parameters: pin.parameters,
+                return_type: ComplexType.try_parse(params['data']['path']),
+                comments: pin.comments,
+                closure: pin.closure
+              )
+            end)
+          end
         end
         # Selecting by both location and path can result in duplicate pins
         result.uniq { |p| [p.path, p.location] }
