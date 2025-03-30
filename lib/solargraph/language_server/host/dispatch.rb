@@ -118,15 +118,7 @@ module Solargraph
         end
 
         def update library
-          return unless library.cache_progress
-
-          if library.cache_progress[:value][:kind] == 'begin'
-            send_request 'window/workDoneProgress/create', { token: library.cache_progress[:token] } do
-              send_notification '$/progress', library.cache_progress
-            end
-          else
-            send_notification '$/progress', library.cache_progress
-          end
+          library.cache_progress&.send(self)
         end
       end
     end
