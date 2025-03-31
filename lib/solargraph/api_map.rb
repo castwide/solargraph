@@ -29,6 +29,25 @@ module Solargraph
       index pins
     end
 
+    #
+    # This is a mutable object, which is cached in the Chain class -
+    # if you add any fields which change the results of calls (not
+    # just caches), please also change `equality_fields` below.
+    #
+
+    def eql?(other)
+      self.class == other.class &&
+        equality_fields == other.equality_fields
+    end
+
+    def ==(other)
+      self.eql?(other)
+    end
+
+    def hash
+      equality_fields.hash
+    end
+
     # @param pins [Array<Pin::Base>]
     # @return [self]
     def index pins
@@ -69,6 +88,10 @@ module Solargraph
       @unresolved_requires = @doc_map.unresolved_requires
       @missing_docs = [] # @todo Implement missing docs
       self
+    end
+
+    protected def equality_fields
+      [self.class, @source_map_hash, @cache, implicit, @doc_map, @unresolved_requires, @missing_docs]
     end
 
     # @return [::Array<Gem::Specification>]
