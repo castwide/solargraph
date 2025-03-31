@@ -322,9 +322,6 @@ module Solargraph
           all_errors = []
           pin.signatures.sort { |sig| sig.parameters.length }.each do |sig|
             errors = []
-            # @todo these should be able to be probed
-            # @param par [Parameter]
-            # @param idx [Integer]
             sig.parameters.each_with_index do |par, idx|
               argchain = base.links.last.arguments[idx]
               if argchain.nil?
@@ -462,7 +459,7 @@ module Solargraph
     def first_param_hash(pins)
       pins.each do |pin|
         # @todo this assignment from parametric use of Hash should not lose its generic
-        # @type [Hash{String => Hash{Symbol => BasicObject}]
+        # @type [Hash{String => Hash{Symbol => BasicObject}}]
         result = param_hash(pin)
         return result unless result.empty?
       end
