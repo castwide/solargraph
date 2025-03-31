@@ -155,6 +155,7 @@ module Solargraph
       def delete *uris
         filenames = uris.map { |uri| uri_to_file(uri) }
         libraries.each do |lib|
+          lib.delete_observer self
           lib.delete(*filenames)
         end
         uris.each do |uri|
@@ -294,8 +295,9 @@ module Solargraph
         begin
           workspace = Solargraph::Workspace.new(path, nil, options)
           lib = Solargraph::Library.new(workspace, name)
+          lib.add_observer self
           libraries.push lib
-          async_library_map lib
+          library_map lib
         rescue WorkspaceTooLargeError => e
           send_notification 'window/showMessage', {
             'type' => Solargraph::LanguageServer::MessageTypes::WARNING,
@@ -324,6 +326,7 @@ module Solargraph
         # @param lib [Library]
         libraries.delete_if do |lib|
           next false if lib.workspace.directory != directory
+          lib.delete_observer self
           true
         end
       end
@@ -689,6 +692,10 @@ module Solargraph
         @client_capabilities ||= {}
       end
 
+      def client_supports_progress?
+        client_capabilities['window'] && client_capabilities['window']['workDoneProgress']
+      end
+
       private
 
       # @return [MessageWorker]
@@ -835,72 +842,28 @@ module Solargraph
         client_capabilities['rename'] && client_capabilities['rename']['prepareSupport']
       end
 
-      def client_supports_progress?
-        client_capabilities['window'] && client_capabilities['window']['workDoneProgress']
-      end
-
       # @param library [Library]
       # @return [void]
-      def async_library_map library
+      def library_map library
         return if library.mapped?
-        Thread.new do
-          if client_supports_progress?
-            uuid = SecureRandom.uuid
-            send_request 'window/workDoneProgress/create', {
-              token: uuid
-            } do |response|
-              do_async_library_map library, response.nil? ? uuid : nil
-            end
-          else
-            do_async_library_map library
-          end
-        end
+        Thread.new { sync_library_map library }
       end
 
       # @param library [Library]
       # @param uuid [String, nil]
       # @return [void]
-      def do_async_library_map library, uuid = nil
+      def sync_library_map library
         total = library.workspace.sources.length
-        if uuid
-          send_notification '$/progress', {
-            token: uuid,
-            value: {
-              kind: 'begin',
-              title: "Mapping workspace",
-              message: "0/#{total} files",
-              cancellable: false,
-              percentage: 0
-            }
-          }
-        end
-        pct = 0
-        mod = 10
+        progress = Progress.new('Mapping workspace')
+        progress.begin "0/#{total} files", 0
+        progress.send self
         while library.next_map
-          next unless uuid
-          cur = ((library.source_map_hash.keys.length.to_f / total.to_f) * 100).to_i
-          if cur > pct && cur % mod == 0
-            pct = cur
-            send_notification '$/progress', {
-              token: uuid,
-              value: {
-                kind: 'report',
-                cancellable: false,
-                message: "#{library.source_map_hash.keys.length}/#{total} files",
-                percentage: pct
-              }
-            }
-          end
+          pct = ((library.source_map_hash.keys.length.to_f / total.to_f) * 100).to_i
+          progress.report "#{library.source_map_hash.keys.length}/#{total} files", pct
+          progress.send self
         end
-        if uuid
-          send_notification '$/progress', {
-            token: uuid,
-            value: {
-              kind: 'end',
-              message: 'Mapping complete'
-            }
-          }
-        end
+        progress.finish 'done'
+        progress.send self
       end
     end
   end

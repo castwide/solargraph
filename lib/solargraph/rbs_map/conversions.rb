@@ -586,7 +586,7 @@ module Solargraph
       end
 
       # @param decl [RBS::AST::Declarations::Class, RBS::AST::Declarations::Module]
-      # @param closure [Pin::Namespace]
+      # @param namespace [Pin::Namespace]
       # @return [void]
       def add_mixins decl, namespace
         decl.each_mixin do |mixin|

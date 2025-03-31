@@ -337,7 +337,7 @@ describe Solargraph::Source::SourceChainer do
     expect(chain.links.map(&:class)).to be
   end
 
-  xit 'infers specific array type from block sent to Array#map' do
+  it 'infers specific array type from block sent to Array#map' do
     source = Solargraph::Source.load_string(%(
       ['a', 'b'].map { 's' }
     ), 'test.rb')

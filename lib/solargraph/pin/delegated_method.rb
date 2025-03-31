@@ -11,8 +11,9 @@ module Solargraph
       # given closure/scope, and the delegated method will then be resolved
       # to a method pin on that type.
       #
-      # @param resolved_method [Method] an already resolved method pin.
+      # @param method [Method, nil] an already resolved method pin.
       # @param receiver [Source::Chain, nil] the source code used to resolve the receiver for this delegated method.
+      # @param name [String]
       # @param receiver_method_name [String] the method name that will be called on the receiver (defaults to :name).
       def initialize(method: nil, receiver: nil, name: method&.name, receiver_method_name: name, **splat)
         raise ArgumentError, 'either :method or :receiver is required' if (method && receiver) || (!method && !receiver)
@@ -37,6 +38,7 @@ module Solargraph
         end
       end
 
+      # @param api_map [ApiMap]
       def resolvable?(api_map)
         resolve_method(api_map)
         !!@resolved_method
@@ -79,6 +81,7 @@ module Solargraph
       # helper to print a source chain as code, probably not 100% correct.
       #
       # @param chain [Source::Chain]
+      # @return [String]
       def print_chain(chain)
         out = +''
         chain.links.each_with_index do |link, index|
@@ -91,6 +94,7 @@ module Solargraph
           end
           out << link.word
         end
+        out
       end
     end
   end
