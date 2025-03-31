@@ -91,7 +91,7 @@ module Solargraph
     end
 
     protected def equality_fields
-      [self.class, @source_map_hash, @cache, implicit, @doc_map, @unresolved_requires, @missing_docs]
+      [self.class, @source_map_hash, implicit, @doc_map, @unresolved_requires, @missing_docs]
     end
 
     # @return [::Array<Gem::Specification>]
