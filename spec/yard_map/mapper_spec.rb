@@ -22,13 +22,13 @@ describe Solargraph::YardMap::Mapper do
     expect(pin.explicit?).to be(true)
   end
 
-  it 'marks correct return type from StringIO.new' do
-    # Using stringio because it's a known dependency
-    stringio = Gem::Specification.find_by_name('stringio')
-    Solargraph::Yardoc.cache(stringio)
-    Solargraph::Yardoc.load!(stringio)
-    pins = Solargraph::YardMap::Mapper.new(YARD::Registry.all).map
-    pins = pins.select { |pin| pin.path == 'StringIO.new' }
+  it 'marks correct return type from Logger.new' do
+    # Using logger because it's a known dependency
+    logger = Gem::Specification.find_by_name('logger')
+    Solargraph::Yardoc.cache(logger)
+    registry = Solargraph::Yardoc.load!(logger)
+    pins = Solargraph::YardMap::Mapper.new(registry).map
+    pins = pins.select { |pin| pin.path == 'Logger.new' }
     expect(pins.map(&:return_type).uniq.map(&:to_s)).to eq(['self'])
   end
 
