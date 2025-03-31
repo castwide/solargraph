@@ -76,6 +76,7 @@ module Solargraph
         end
       end
 
+      # @return [ComplexType]
       def return_type
         if @return_type.nil?
           @return_type = ComplexType::UNDEFINED
@@ -99,7 +100,9 @@ module Solargraph
       #
       # @return [Integer]
       def index
-        closure.parameter_names.index(name)
+        # @type [Method, Block]
+        method_pin = closure
+        method_pin.parameter_names.index(name)
       end
 
       # @param api_map [ApiMap]
