@@ -1,12 +1,14 @@
 # frozen_string_literal: true
 
 require 'pathname'
+require 'observer'
 
 module Solargraph
   # A Library handles coordination between a Workspace and an ApiMap.
   #
   class Library
     include Logging
+    include Observable
 
     # @return [Solargraph::Workspace]
     attr_reader :workspace
@@ -16,6 +18,9 @@ module Solargraph
 
     # @return [Source, nil]
     attr_reader :current
+
+    # @return [Hash, nil]
+    attr_reader :cache_progress
 
     # @param workspace [Solargraph::Workspace]
     # @param name [String, nil]
@@ -610,24 +615,53 @@ module Solargraph
     # @return [void]
     def cache_next_gemspec
       return if @cache_pid
-      spec = api_map.uncached_gemspecs.find { |spec| !cache_errors.include?(spec)}
-      return unless spec
+      spec = api_map.uncached_gemspecs.find { |spec| !cache_errors.include?(spec) }
+      return end_cache_progress unless spec
 
+      pending = api_map.uncached_gemspecs.length - cache_errors.length - 1
       logger.info "Caching #{spec.name} #{spec.version}"
       Thread.new do
         @cache_pid = Process.spawn(workspace.command_path, 'cache', spec.name, spec.version.to_s)
+        report_cache_progress spec.name, pending
         Process.wait(@cache_pid)
         logger.info "Cached #{spec.name} #{spec.version}"
-        @synchronized = false
-      rescue Errno::EINVAL => e
+      rescue Errno::EINVAL => _e
         logger.info "Cached #{spec.name} #{spec.version} with EINVAL"
-        @synchronized = false
       rescue StandardError => e
         cache_errors.add spec
         Solargraph.logger.warn "Error caching gemspec #{spec.name} #{spec.version}: [#{e.class}] #{e.message}"
       ensure
+        @synchronized = false
         @cache_pid = nil
+        end_cache_progress if pending.zero?
       end
+    end
+
+    def report_cache_progress gem_name, pending
+      @total ||= pending
+      @total = pending if pending > @total
+      finished = @total - pending
+      pct = if @total.zero?
+        0
+      else
+        ((finished.to_f / @total.to_f) * 100).to_i
+      end
+      message = "#{gem_name}#{pending > 0 ? " (+#{pending})" : ''}"
+      if @cache_progress
+        @cache_progress.report(message, pct)
+      else
+        @cache_progress = LanguageServer::Progress.new('Caching gem')
+        @cache_progress.begin(message, pct)
+      end
+      changed
+      notify_observers self
+    end
+
+    def end_cache_progress
+      changed if @cache_progress&.finish('done')
+      notify_observers self
+      @cache_progress = nil
+      @total = nil
     end
   end
 end
