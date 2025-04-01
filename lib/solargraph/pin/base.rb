@@ -24,6 +24,10 @@ module Solargraph
       # @return [::Symbol]
       attr_accessor :source
 
+      def declaration?
+        true
+      end
+
       # @param location [Solargraph::Location, nil]
       # @param closure [Solargraph::Pin::Closure, nil]
       # @param name [String]

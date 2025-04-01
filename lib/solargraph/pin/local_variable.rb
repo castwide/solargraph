@@ -6,13 +6,19 @@ module Solargraph
       # @return [Range]
       attr_reader :presence
 
+      def declaration?
+        @declaration
+      end
+
       # @param assignment [AST::Node, nil]
       # @param presence [Range, nil]
+      # @param declaration [Boolean]
       # @param splat [Hash]
-      def initialize assignment: nil, presence: nil, **splat
+      def initialize assignment: nil, presence: nil, declaration: false, **splat
         super(**splat)
         @assignment = assignment
         @presence = presence
+        @declaration = declaration
       end
 
       # @param pin [self]

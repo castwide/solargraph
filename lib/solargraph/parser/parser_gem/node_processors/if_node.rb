@@ -71,7 +71,8 @@ module Solargraph
               assignment: pin.assignment,
               comments: pin.comments,
               presence: then_presence,
-              return_type: ComplexType.try_parse(isa_type_name)
+              return_type: ComplexType.try_parse(isa_type_name),
+              declaration: true
             )
             locals.push(then_pin)
           end

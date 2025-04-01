@@ -144,6 +144,7 @@ module Solargraph
               type = type.resolve_generics(pin.closure, context.return_type)
             end
             if type.defined?
+              possibles = [] if pin.declaration?
               possibles.push type
               break if pin.is_a?(Pin::Method)
             end
@@ -163,6 +164,7 @@ module Solargraph
             type = pin.probe(api_map)
             @@inference_stack.pop
             if type.defined?
+              possibles = [] if pin.declaration?
               possibles.push type
               break if pin.is_a?(Pin::Method)
             end
