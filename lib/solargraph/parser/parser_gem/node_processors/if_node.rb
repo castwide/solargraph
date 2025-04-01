@@ -59,7 +59,7 @@ module Solargraph
 
             return if then_clause.nil?
 
-            then_presence = Range.new(get_node_start_position(then_clause),
+            then_presence = Range.new(get_node_end_position(conditional_node),
                                       get_node_end_position(then_clause))
             # else_presence = Range.new(get_node_start_position(else_clause), get_node_end_position(else_clause))
             pin = pins.first
