@@ -22,6 +22,27 @@ describe Solargraph::YardMap::Mapper do
     expect(pin.explicit?).to be(true)
   end
 
+  it 'marks correct return type from Logger.new' do
+    # Using logger because it's a known dependency
+    logger = Gem::Specification.find_by_name('logger')
+    Solargraph::Yardoc.cache(logger)
+    registry = Solargraph::Yardoc.load!(logger)
+    pins = Solargraph::YardMap::Mapper.new(registry).map
+    pins = pins.select { |pin| pin.path == 'Logger.new' }
+    expect(pins.map(&:return_type).uniq.map(&:to_s)).to eq(['self'])
+  end
+
+  it 'marks correct return type from RuboCop::Options.new' do
+    # Using rubocop because it's a known dependency
+    rubocop = Gem::Specification.find_by_name('rubocop')
+    Solargraph::Yardoc.cache(rubocop)
+    Solargraph::Yardoc.load!(rubocop)
+    pins = Solargraph::YardMap::Mapper.new(YARD::Registry.all).map
+    pins = pins.select { |pin| pin.path == 'RuboCop::Options.new' }
+    expect(pins.map(&:return_type).uniq.map(&:to_s)).to eq(['self'])
+    expect(pins.flat_map(&:signatures).map(&:return_type).uniq.map(&:to_s)).to eq(['self'])
+  end
+
   it 'marks non-explicit methods' do
     # Using rspec-expectations because it's a known dependency
     rspec = Gem::Specification.find_by_name('rspec-expectations')

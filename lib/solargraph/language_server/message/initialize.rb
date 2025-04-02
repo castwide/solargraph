@@ -47,6 +47,8 @@ module Solargraph
 
         private
 
+        # @todo '?' methods should type like RBS 'boolish' rather than a strict true or false
+        # @sg-ignore
         def support_workspace_folders?
           params['capabilities'] &&
             params['capabilities']['workspace'] &&
@@ -82,6 +84,7 @@ module Solargraph
           }
         end
 
+        # @return [Hash{Symbol => Hash{Symbol => String, Array<String>}}]
         def static_on_type_formatting
           {
             documentOnTypeFormattingProvider: {
@@ -91,6 +94,7 @@ module Solargraph
           }
         end
 
+        # @return [Hash{Symbol => Boolean}]
         def static_hover
           return {} unless host.options['hover']
           {
@@ -98,6 +102,7 @@ module Solargraph
           }
         end
 
+        # @return [Hash{Symbol => Boolean}]
         def static_document_formatting
           return {} unless host.options['formatting']
           {
@@ -105,6 +110,7 @@ module Solargraph
           }
         end
 
+        # @return [Hash{Symbol => Boolean}]
         def static_document_symbols
           return {} unless host.options['symbols']
           {
@@ -112,12 +118,14 @@ module Solargraph
           }
         end
 
+        # @return [Hash{Symbol => Boolean}]
         def static_workspace_symbols
           {
             workspaceSymbolProvider: true
           }
         end
 
+        # @return [Hash{Symbol => Boolean}]
         def static_definitions
           return {} unless host.options['definitions']
           {
@@ -125,6 +133,7 @@ module Solargraph
           }
         end
 
+        # @return [Hash{Symbol => Boolean}]
         def static_type_definitions
           return {} unless host.options['typeDefinitions']
           {
@@ -132,12 +141,15 @@ module Solargraph
           }
         end
 
+        # @return [Hash{Symbol => Hash{Symbol => Boolean}}]
         def static_rename
           {
             renameProvider: {prepareProvider: true}
           }
         end
 
+
+        # @return [Hash{Symbol => Boolean}]
         def static_references
           return {} unless host.options['references']
           {
@@ -145,6 +157,7 @@ module Solargraph
           }
         end
 
+        # @return [Hash{Symbol => Boolean}]
         def static_folding_range
           return {} unless host.options['folding']
           {
@@ -152,6 +165,7 @@ module Solargraph
           }
         end
 
+        # @return [Hash{Symbol => Boolean}]
         def static_highlights
           {
             documentHighlightProvider: true

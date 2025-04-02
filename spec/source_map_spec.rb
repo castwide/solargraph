@@ -152,4 +152,35 @@ describe Solargraph::SourceMap do
     locals = map.locals_at(Solargraph::Location.new('test.rb', Solargraph::Range.from_to(5, 0, 5, 0))).map(&:name)
     expect(locals).to eq(['x', 'foo'])
   end
+
+  it 'updates cached inference when the ApiMap changes' do
+    file1 = Solargraph::SourceMap.load_string(%(
+      def foo
+        ''
+      end
+    ), 'file1.rb')
+    file2 = Solargraph::SourceMap.load_string(%(
+      foo
+    ), 'file2.rb')
+
+    api_map = Solargraph::ApiMap.new
+    bench = Solargraph::Bench.new(source_maps: [file1, file2])
+    api_map.catalog bench
+    clip = api_map.clip_at('file2.rb', [1, 6])
+    expect(clip.infer.to_s).to eq('String')
+    original_api_map_hash = api_map.hash
+    original_source_map_hash = file1.hash
+
+    file1 = Solargraph::SourceMap.load_string(%(
+      def foo
+        []
+      end
+    ), 'file1.rb')
+    bench = Solargraph::Bench.new(source_maps: [file1, file2])
+    api_map.catalog bench
+    clip = api_map.clip_at('file2.rb', [1, 6])
+    expect(file1.hash).not_to eq(original_source_map_hash)
+    expect(api_map.hash).not_to eq(original_api_map_hash)
+    expect(clip.infer.to_s).to eq('Array')
+  end
 end

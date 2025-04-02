@@ -29,6 +29,25 @@ module Solargraph
       index pins
     end
 
+    #
+    # This is a mutable object, which is cached in the Chain class -
+    # if you add any fields which change the results of calls (not
+    # just caches), please also change `equality_fields` below.
+    #
+
+    def eql?(other)
+      self.class == other.class &&
+        equality_fields == other.equality_fields
+    end
+
+    def ==(other)
+      self.eql?(other)
+    end
+
+    def hash
+      equality_fields.hash
+    end
+
     # @param pins [Array<Pin::Base>]
     # @return [self]
     def index pins
@@ -64,12 +83,15 @@ module Solargraph
         implicit.merge map.environ
       end
       unresolved_requires = (bench.external_requires + implicit.requires + bench.workspace.config.required).uniq
-      @doc_map = DocMap.new(unresolved_requires, []) # @todo Implement gem preferences
+      @doc_map = DocMap.new(unresolved_requires, [], bench.workspace.rbs_collection_path) # @todo Implement gem preferences
       @store = Store.new(@@core_map.pins + @doc_map.pins + implicit.pins + pins)
       @unresolved_requires = @doc_map.unresolved_requires
       @missing_docs = [] # @todo Implement missing docs
-      store.block_pins.each { |blk| blk.rebind(self) }
       self
+    end
+
+    protected def equality_fields
+      [self.class, @source_map_hash, implicit, @doc_map, @unresolved_requires, @missing_docs]
     end
 
     # @return [::Array<Gem::Specification>]
@@ -313,6 +335,26 @@ module Solargraph
         result.concat inner_get_methods('Kernel', :instance, visibility, deep, skip)
       else
         result.concat inner_get_methods(rooted_tag, scope, visibility, deep, skip)
+        unless %w[Class Class<Class>].include?(rooted_tag)
+          result.map! do |pin|
+            next pin unless pin.path == 'Class#new'
+            init_pin = get_method_stack(rooted_tag, 'initialize').first
+            next pin unless init_pin
+
+            type = ComplexType.try_parse(ComplexType.try_parse(rooted_tag).namespace)
+            Pin::Method.new(
+              name: 'new',
+              scope: :class,
+              location: init_pin.location,
+              parameters: init_pin.parameters,
+              signatures: init_pin.signatures.map { |sig| sig.proxy(type) },
+              return_type: type,
+              comments: init_pin.comments,
+              closure: init_pin.closure
+            # @todo Hack to force TypeChecker#internal_or_core?
+            ).tap { |pin| pin.source = :rbs }
+          end
+        end
         result.concat inner_get_methods('Kernel', :instance, [:public], deep, skip) if visibility.include?(:private)
         result.concat inner_get_methods('Module', scope, visibility, deep, skip)
       end
@@ -448,9 +490,6 @@ module Solargraph
     def clip cursor
       raise FileNotFoundError, "ApiMap did not catalog #{cursor.filename}" unless source_map_hash.key?(cursor.filename)
 
-      # @todo Clip caches are disabled pending resolution of a stale cache bug
-      # cache.get_clip(cursor) ||
-      #   SourceMap::Clip.new(self, cursor).tap { |clip| cache.set_clip(cursor, clip) }
       SourceMap::Clip.new(self, cursor)
     end
 
@@ -726,23 +765,22 @@ module Solargraph
     # @param visibility [Enumerable<Symbol>]
     # @return [Array<Pin::Base>]
     def resolve_method_aliases pins, visibility = [:public, :private, :protected]
-      result = []
-      pins.each do |pin|
+      pins.map do |pin|
         resolved = resolve_method_alias(pin)
-        next if resolved.respond_to?(:visibility) && !visibility.include?(resolved.visibility)
-        result.push resolved
-      end
-      result
+        next pin if resolved.respond_to?(:visibility) && !visibility.include?(resolved.visibility)
+        resolved
+      end.compact
     end
 
     # @param pin [Pin::MethodAlias, Pin::Base]
     # @return [Pin::Method]
     def resolve_method_alias pin
-      return pin if !pin.is_a?(Pin::MethodAlias) || @method_alias_stack.include?(pin.path)
+      return pin unless pin.is_a?(Pin::MethodAlias)
+      return nil if @method_alias_stack.include?(pin.path)
       @method_alias_stack.push pin.path
       origin = get_method_stack(pin.full_context.tag, pin.original, scope: pin.scope).first
       @method_alias_stack.pop
-      return pin if origin.nil?
+      return nil if origin.nil?
       args = {
         location: pin.location,
         closure: pin.closure,

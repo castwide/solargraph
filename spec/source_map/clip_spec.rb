@@ -1184,7 +1184,7 @@ describe Solargraph::SourceMap::Clip do
 
     clip = api_map.clip_at('test.rb', [7, 17])
     pin = clip.complete.pins.select { |p| p.name == 'new' }.first
-    expect(pin.path).to eq('Class#new')
+    expect(pin.path).to eq('BasicObject.new')
   end
 
   it 'completes clips from repaired sources ending with a period' do
@@ -2032,6 +2032,63 @@ describe Solargraph::SourceMap::Clip do
     clip = api_map.clip_at('test.rb', [2, 6])
     type = clip.infer
     expect(type.to_s).to eq('Array(Integer, String)')
+  end
+
+  it 'resolves block parameter types from Hash#each' do
+    source = Solargraph::Source.load_string(%(
+      # @type [Hash{String => Integer}]
+      h = { 'foo' => 1 }
+      h.each do |s, i|
+        s
+        i
+      end
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new.map(source)
+    clip = api_map.clip_at('test.rb', [4, 8])
+    type = clip.infer
+    expect(type.to_s).to eq('String')
+
+    api_map = Solargraph::ApiMap.new.map(source)
+    clip = api_map.clip_at('test.rb', [5, 8])
+    type = clip.infer
+    expect(type.to_s).to eq('Integer')
+  end
+
+  it 'resolves block parameter types from Array(A, B)#each' do
+    source = Solargraph::Source.load_string(%(
+      # @type [Array<Array(String, Integer)>]
+      h = [['foo', 1], ['bar', 2]]
+      h
+      h.each do |s, i|
+        s
+        i
+      end
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new.map(source)
+    clip = api_map.clip_at('test.rb', [3, 6])
+    type = clip.infer
+    expect(type.to_s).to eq('Array<Array(String, Integer)>')
+
+    api_map = Solargraph::ApiMap.new.map(source)
+    clip = api_map.clip_at('test.rb', [5, 8])
+    type = clip.infer
+    expect(type.to_s).to eq('String')
+
+    api_map = Solargraph::ApiMap.new.map(source)
+    clip = api_map.clip_at('test.rb', [6, 8])
+    type = clip.infer
+    expect(type.to_s).to eq('Integer')
+  end
+
+  xit 'infers literal heterogeneous arrays into tuples' do
+    source = Solargraph::Source.load_string(%(
+      h = [['foo', 1], ['bar', 2]]
+      h
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new.map(source)
+    clip = api_map.clip_at('test.rb', [2, 6])
+    type = clip.infer
+    expect(type.to_s).to eq('Array<Array(String, Integer)>')
   end
 
   it 'excludes Kernel singleton methods from chained methods' do

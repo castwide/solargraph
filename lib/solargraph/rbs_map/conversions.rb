@@ -38,6 +38,8 @@ module Solargraph
         environment = RBS::Environment.from_loader(loader).resolve_type_names
         cursor = pins.length
         environment.declarations.each { |decl| convert_decl_to_pin(decl, Solargraph::Pin::ROOT_PIN) }
+        added_pins = pins[cursor..-1]
+        added_pins.each { |pin| pin.source = :rbs }
       end
 
       # @param decl [RBS::AST::Declarations::Base]
@@ -584,7 +586,7 @@ module Solargraph
       end
 
       # @param decl [RBS::AST::Declarations::Class, RBS::AST::Declarations::Module]
-      # @param closure [Pin::Namespace]
+      # @param namespace [Pin::Namespace]
       # @return [void]
       def add_mixins decl, namespace
         decl.each_mixin do |mixin|
