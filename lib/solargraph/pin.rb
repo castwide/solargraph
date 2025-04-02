@@ -27,7 +27,6 @@ module Solargraph
     autoload :Reference,        'solargraph/pin/reference'
     autoload :Documenting,      'solargraph/pin/documenting'
     autoload :Block,            'solargraph/pin/block'
-    autoload :Localized,        'solargraph/pin/localized'
     autoload :ProxyType,        'solargraph/pin/proxy_type'
     autoload :DuckMethod,       'solargraph/pin/duck_method'
     autoload :Singleton,        'solargraph/pin/singleton'

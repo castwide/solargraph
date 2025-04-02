@@ -1,7 +1,6 @@
 # frozen_string_literal: true
 
 require 'rbs'
-require 'set'
 
 module Solargraph
   class RbsMap

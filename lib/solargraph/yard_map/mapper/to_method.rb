@@ -19,17 +19,20 @@ module Solargraph
             gates: [code_object.namespace.to_s]
           )
           location = object_location(code_object, spec)
+          name ||= code_object.name.to_s
+          return_type = ComplexType::SELF if name == 'new'
           comments = code_object.docstring ? code_object.docstring.all.to_s : ''
           pin = Pin::Method.new(
             location: location,
             closure: closure,
-            name: name || code_object.name.to_s,
+            name: name,
             comments: comments,
             scope: scope || code_object.scope,
             visibility: visibility || code_object.visibility,
             # @todo Might need to convert overloads to signatures
             parameters: [],
-            explicit: code_object.is_explicit?
+            explicit: code_object.is_explicit?,
+            return_type: return_type
           )
           pin.parameters.concat get_parameters(code_object, location, comments, pin)
           pin

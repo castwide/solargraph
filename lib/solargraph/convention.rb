@@ -1,6 +1,5 @@
 # frozen_string_literal: true
 
-require 'set'
 
 module Solargraph
   # Conventions provide a way to modify an ApiMap based on expectations about

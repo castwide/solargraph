@@ -12,7 +12,6 @@ module Solargraph
         autoload :DidSave,           'solargraph/language_server/message/text_document/did_save'
         autoload :Hover,             'solargraph/language_server/message/text_document/hover'
         autoload :SignatureHelp,     'solargraph/language_server/message/text_document/signature_help'
-        autoload :DiagnosticsQueue,  'solargraph/language_server/message/text_document/diagnostics_queue'
         autoload :OnTypeFormatting,  'solargraph/language_server/message/text_document/on_type_formatting'
         autoload :Definition,        'solargraph/language_server/message/text_document/definition'
         autoload :TypeDefinition,    'solargraph/language_server/message/text_document/type_definition'

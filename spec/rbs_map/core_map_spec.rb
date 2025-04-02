@@ -71,4 +71,26 @@ describe Solargraph::RbsMap::CoreMap do
     signature = each_pin.signatures.first
     expect(signature.return_type.to_s).to eq('Enumerable<String>')
   end
+
+  it 'applies mixins to the correct namespace' do
+    # @todo This is a simple smoke test to ensure that mixins are applied
+    #   correctly. It would be better to test RbsMap or RbsMap::Conversions
+    #   with an RBS fixture.
+    core_map = Solargraph::RbsMap::CoreMap.new
+    pins = core_map.pins.select { |pin| pin.is_a?(Solargraph::Pin::Reference::Include) && pin.name == 'Enumerable' }
+    expect(pins.map(&:closure).map(&:namespace)).to include('Enumerator')
+  end
+
+  it 'ensures Foo#allocate returns Foo' do
+    source = Solargraph::Source.load_string(%(
+      class Foo
+      end
+
+      foo = Foo.allocate
+      foo
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new.map(source)
+    clip = api_map.clip_at('test.rb', [5, 6])
+    expect(clip.infer.to_s).to eq('Foo')
+  end
 end

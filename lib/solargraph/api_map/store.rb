@@ -1,6 +1,5 @@
 # frozen_string_literal: true
 
-require 'set'
 
 module Solargraph
   class ApiMap
@@ -141,7 +140,7 @@ module Solargraph
         to_s
       end
 
-      # @param klass [Class]
+      # @param klass [Class<Pin::Base>]
       # @return [Enumerable<Solargraph::Pin::Base>]
       def pins_by_class klass
         # @type [Set<Solargraph::Pin::Base>]
@@ -179,7 +178,7 @@ module Solargraph
         pins_by_class(Pin::Symbol)
       end
 
-      # @return [Hash{String => Enumerable<String>}]
+      # @return [Hash{String => Array<String>}]
       def superclass_references
         @superclass_references ||= {}
       end

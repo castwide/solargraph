@@ -12,7 +12,6 @@ module Solargraph
         autoload :SendNode,      'solargraph/parser/parser_gem/node_processors/send_node'
         autoload :NamespaceNode, 'solargraph/parser/parser_gem/node_processors/namespace_node'
         autoload :SclassNode,    'solargraph/parser/parser_gem/node_processors/sclass_node'
-        autoload :ModuleNode,    'solargraph/parser/parser_gem/node_processors/module_node'
         autoload :IvasgnNode,    'solargraph/parser/parser_gem/node_processors/ivasgn_node'
         autoload :CvasgnNode,    'solargraph/parser/parser_gem/node_processors/cvasgn_node'
         autoload :LvasgnNode,    'solargraph/parser/parser_gem/node_processors/lvasgn_node'
