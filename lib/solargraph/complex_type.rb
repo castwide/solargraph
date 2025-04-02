@@ -86,12 +86,6 @@ module Solargraph
       @items
     end
 
-    
-    
-    
-      @items.map(&:tag).join(', ')
-    end
-
     # @param index [Integer]
     # @return [UniqueType]
     def [](index)
