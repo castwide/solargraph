@@ -1,21 +1,4 @@
 describe Solargraph::SourceMap::Mapper do
-  it "creates `new` pins for `initialize` pins" do
-    source = Solargraph::Source.new(%(
-      class Foo
-        def initialize; end
-      end
-
-      class Foo::Bar
-        def initialize; end
-      end
-    ))
-    map = Solargraph::SourceMap.map(source)
-    foo_pin = map.pins.select{|pin| pin.path == 'Foo.new'}.first
-    expect(foo_pin.return_type.tag).to eq('self')
-    bar_pin = map.pins.select{|pin| pin.path == 'Foo::Bar.new'}.first
-    expect(bar_pin.return_type.tag).to eq('self')
-  end
-
   it "ignores include calls that are not attached to the current namespace" do
     source = Solargraph::Source.new(%(
       class Foo
@@ -637,18 +620,6 @@ describe Solargraph::SourceMap::Mapper do
     ')
     pin = map.first_pin('Foo#initialize')
     expect(pin.visibility).to be(:private)
-  end
-
-  it "creates Class.new methods for Class#initialize" do
-    map = Solargraph::SourceMap.load_string('
-      class Foo
-        def initialize name
-        end
-      end
-    ')
-    pin = map.first_pin('Foo.new')
-    expect(pin).to be_a(Solargraph::Pin::Method)
-    expect(pin.return_type.tag).to eq('self')
   end
 
   it "maps top-level methods" do

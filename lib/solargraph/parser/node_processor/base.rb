@@ -13,7 +13,7 @@ module Solargraph
         # @return [Array<Pin::Base>]
         attr_reader :pins
 
-        # @return [Array<Pin::Base>]
+        # @return [Array<Pin::BaseVariable>]
         attr_reader :locals
 
         # @param node [Parser::AST::Node]
@@ -62,7 +62,7 @@ module Solargraph
         end
 
         # @param position [Solargraph::Position]
-        # @return [Pin::Base, nil]
+        # @return [Pin::Closure, nil]
         def named_path_pin position
           pins.select{|pin| pin.is_a?(Pin::Closure) && pin.path && !pin.path.empty? && pin.location.range.contain?(position)}.last
         end
@@ -71,6 +71,7 @@ module Solargraph
         # @param position [Solargraph::Position]
         # @return [Pin::Closure, nil]
         def block_pin position
+          # @todo determine if this can return a Pin::Block
           pins.select{|pin| pin.is_a?(Pin::Closure) && pin.location.range.contain?(position)}.last
         end
 

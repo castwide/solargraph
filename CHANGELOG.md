@@ -1,3 +1,17 @@
+## 0.53.4 - March 30, 2025
+- [regression] Restore 'Unresolved call' typecheck for stdlib objects (#849)
+- Lazy dynamic rebinding (#851)
+- Restore fill for Class#allocate (#848)
+- [regression] Ensure YardMap gems have return type for Class<T>.new (#850)
+- Create implicit .new pins in namespace method queries (#853)
+
+## 0.53.3 - March 29, 2025
+- Remove redundant core fills (#824, #841)
+- Resolve self type in variable assignments (#839)
+- Eliminate splat-related false-alarms in strict typechecking (#840)
+- Dynamic block binding with yieldreceiver (#842)
+- Resolve generics by descending through context type (#847)
+
 ## 0.53.2 - March 27, 2025
 - Fix a self-type-related false-positive in strict typechecking (#834)
 - DocMap fetches gem dependencies (#835)

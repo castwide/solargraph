@@ -255,6 +255,44 @@ describe Solargraph::LanguageServer::Host do
     expect(source.send(:repaired)).to eq('Foo::Bar ')
   end
 
+  describe '#locate_pins' do
+    it 'locates #initialize for Class#new calls' do
+      code = %(
+        class Example
+          # the initialize method
+          def initialize(foo); end
+        end
+        Foo.new
+      )
+
+      file = '/test.rb'
+      uri = Solargraph::LanguageServer::UriHelpers.file_to_uri(file)
+      host = Solargraph::LanguageServer::Host.new
+      host.prepare ''
+      host.open uri, code, 1
+      sleep 0.1 until host.libraries.all?(&:mapped?)
+      result = host.locate_pins({
+        "data" => {
+          "uri" => uri,
+          "location" => {
+            "range" => {
+              "start" => {
+                "line" => 5,
+                "character" => 12
+              },
+              "end" => {
+                "line" => 5,
+                "character" => 15
+              }
+            }
+          },
+          "path" => "Example.new"
+        }
+      })
+      expect(result.map(&:path)).to include('Example.new')
+    end
+  end
+
   describe "Workspace variations" do
     before :each do
       @host = Solargraph::LanguageServer::Host.new
