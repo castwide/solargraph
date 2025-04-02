@@ -13,7 +13,7 @@ describe Solargraph::ComplexType do
     expect(types.length).to eq(2)
     expect(types[0].tag).to eq('String')
     expect(types[1].tag).to eq('Integer')
-    # @todo expect(types.to_rbs).to eq('String | Integer')
+    expect(types.to_rbs).to eq('(String | Integer)')
   end
 
   it "parses multiple types in a string" do
@@ -21,7 +21,7 @@ describe Solargraph::ComplexType do
     expect(types.length).to eq(2)
     expect(types[0].tag).to eq('String')
     expect(types[1].tag).to eq('Integer')
-    # @todo expect(types.to_rbs).to eq('String | Integer')
+    expect(types.to_rbs).to eq('(String | Integer)')
   end
 
   it "parses a subtype" do
@@ -70,7 +70,7 @@ describe Solargraph::ComplexType do
     expect(types.first.namespace).to eq('String')
     expect(types.first.scope).to eq(:class)
     # RBS doesn't support individual class types like this
-    # @todo expect(types.to_rbs).to eq('Class')
+    expect(types.to_rbs).to eq('Class')
   end
 
   it "detects namespace and scope for modules with subtypes" do
@@ -78,12 +78,12 @@ describe Solargraph::ComplexType do
     expect(types.length).to eq(1)
     expect(types.first.namespace).to eq('Foo')
     expect(types.first.scope).to eq(:class)
-    # @todo expect(types.to_rbs).to eq('Module')
+    expect(types.to_rbs).to eq('Module')
     multiple_types = Solargraph::ComplexType.parse 'Module<Foo>, Class<Bar>, String, nil'
     expect(multiple_types.length).to eq(4)
     expect(multiple_types.namespaces).to eq(['Foo', 'Bar', 'String', 'NilClass'])
     # RBS doesn't support individual module types like this
-    # @todo expect(multiple_types.to_rbs).to eq('Module | Class | String | nil')
+    expect(multiple_types.to_rbs).to eq('(Module | Class | String | nil)')
   end
 
   it "identifies duck types" do
@@ -92,7 +92,7 @@ describe Solargraph::ComplexType do
     expect(types.first.namespace).to eq('Object')
     expect(types.first.scope).to eq(:instance)
     expect(types.first.duck_type?).to be(true)
-    # @todo expect(types.to_rbs).to eq('untyped')
+    expect(types.to_rbs).to eq('untyped')
   end
 
   it "identifies nil types" do
@@ -102,7 +102,7 @@ describe Solargraph::ComplexType do
       expect(types.first.namespace).to eq('NilClass')
       expect(types.first.scope).to eq(:instance)
       expect(types.first.nil_type?).to be(true)
-      # @todo expect(types.to_rbs).to eq('nil')
+      expect(types.to_rbs).to eq('nil')
     end
   end
 
@@ -175,7 +175,7 @@ describe Solargraph::ComplexType do
     expect(type.hash_parameters?).to eq(true)
     expect(type.key_types.map(&:name)).to eq(['String', 'Symbol'])
     expect(type.value_types.map(&:name)).to eq(['Integer', 'BigDecimal'])
-    # @todo expect(type.to_rbs).to eq('Hash[String | Symbol, Integer | BigDecimal]"')
+    expect(type.to_rbs).to eq('Hash[(String | Symbol), (Integer | BigDecimal)]')
   end
 
   it "parses recursive subtypes" do
@@ -211,9 +211,9 @@ describe Solargraph::ComplexType do
     expect(original).not_to be_rooted
     qualified = original.qualify(foo_bar_api_map, 'Foo')
     expect(qualified.tag).to eq('Class<Foo::Bar>')
-    # @todo expect(qualified.rooted_tag).to eq('Class<Foo::Bar>')
+    expect(qualified.rooted_tag).to eq('::Class<::Foo::Bar>')
     expect(qualified).to be_rooted
-    # @todo expect(qualified.to_rbs).to eq('::Class')
+    expect(qualified.to_rbs).to eq('::Class')
   end
 
   it "qualifies types with fixed parameters" do
@@ -222,20 +222,21 @@ describe Solargraph::ComplexType do
     qualified = original.qualify(foo_bar_api_map, 'Foo')
     expect(qualified).to be_rooted
     expect(qualified.tag).to eq('Array(String, Foo::Bar)')
-    # @todo expect(qualified.to_rbs).to eq('[::String, ::Foo::Bar]')
+    expect(qualified.to_rbs).to eq('[::String, ::Foo::Bar]')
   end
 
   it "qualifies types with hash parameters" do
     original = Solargraph::ComplexType.parse('Hash{String => Bar}').first
     qualified = original.qualify(foo_bar_api_map, 'Foo')
     expect(qualified.tag).to eq('Hash{String => Foo::Bar}')
-    # @todo expect(qualified.to_rbs).to eq('::Hash[::String, ::Foo::Bar]')
+    expect(qualified.to_rbs).to eq('::Hash[::String, ::Foo::Bar]')
   end
 
   it "returns string representations of the entire type array" do
     type = Solargraph::ComplexType.parse('String', 'Array<String>')
     expect(type.to_s).to eq('String, Array<String>')
-    # @todo document the scenario that requires the parentheses
+    # we want this surrounded by () so that it can be composed with
+    # other types without worrying about operator precedence
     expect(type.to_rbs).to eq('(String | Array[String])')
   end
 
@@ -255,7 +256,7 @@ describe Solargraph::ComplexType do
     type = Solargraph::ComplexType.parse('Boolean')
     qualified = type.qualify(api_map)
     expect(qualified.tag).to eq('Boolean')
-    # @todo expect(qualified.to_rbs).to eq('bool')
+    expect(qualified.to_rbs).to eq('bool')
   end
 
   it "returns undefined for unqualified types" do
@@ -275,7 +276,7 @@ describe Solargraph::ComplexType do
   it 'reports selfy parameter types' do
     type = Solargraph::ComplexType.parse('Class<self>')
     expect(type).to be_selfy
-    # @todo expect(type.to_rbs).to eq('Class')
+    expect(type.to_rbs).to eq('Class')
   end
 
   it 'resolves self keywords in types' do
@@ -301,7 +302,7 @@ describe Solargraph::ComplexType do
     selfy = Solargraph::ComplexType.parse('Array<(String, Symbol, self)>')
     type = selfy.self_to('Foo')
     expect(type.tag).to eq('Array<(String, Symbol, Foo)>')
-    # @todo expect(type.to_rbs).to eq('Array[[String, Symbol Foo]]')
+    expect(type.to_rbs).to eq('Array[[String, Symbol, Foo]]')
   end
 
   it 'qualifies special types' do
@@ -321,13 +322,13 @@ describe Solargraph::ComplexType do
   it 'recognizes param types' do
     type = Solargraph::ComplexType.parse('generic<Variable>')
     expect(type).to be_generic
-    # @todo expect(type.to_rbs).to eq('Variable')
+    expect(type.to_rbs).to eq('Variable')
   end
 
   it 'recognizes generic parameters' do
     type = Solargraph::ComplexType.parse('Array<generic<Variable>>')
     expect(type).to be_generic
-    # @todo expect(type.to_rbs).to eq('Array[Variable]')
+    expect(type.to_rbs).to eq('Array[Variable]')
   end
 
   it 'reduces objects' do
@@ -338,7 +339,7 @@ describe Solargraph::ComplexType do
     expect(type.to_rbs).to eq('Array[String]')
     result = type.qualify(api_map)
     expect(result.tag).to eq('Array<String>')
-    # @todo expect(result.to_rbs).to eq('::Array[::String]')
+    expect(result.to_rbs).to eq('::Array[::String]')
   end
 
   UNIQUE_METHOD_GENERIC_TESTS = [
@@ -432,6 +433,6 @@ describe Solargraph::ComplexType do
     type = Solargraph::ComplexType.parse('Array(Symbol, String, Array(Integer, Integer))')
     type = type.qualify(api_map)
     expect(type.to_s).to eq('Array(Symbol, String, Array(Integer, Integer))')
-    expect(type.to_rbs).to eq('[Symbol, String, [Integer, Integer]]')
+    expect(type.to_rbs).to eq('[::Symbol, ::String, [::Integer, ::Integer]]')
   end
 end

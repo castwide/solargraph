@@ -17,43 +17,61 @@ module Solargraph
       #
       # @param name [String] The name of the type
       # @param substring [String] The substring of the type
-      def initialize name, substring = ''
+      # @param make_rooted [Boolean, nil]
+      # @return [UniqueType]
+      def self.parse name, substring = '', make_rooted: nil
+        if name.start_with?(':::')
+          raise "Illegal prefix: #{name}"
+        end
         if name.start_with?('::')
-          @name = name[2..-1]
-          @rooted = true
+          name = name[2..-1]
+          rooted = true
         else
-          @name = name
-          @rooted = false
+          rooted = false
         end
-        @substring = substring
-        @tag = @name + substring
+        rooted = make_rooted unless make_rooted.nil?
+
         # @type [Array<ComplexType>]
-        @key_types = []
+        key_types = []
         # @type [Array<ComplexType>]
-        @subtypes = []
-        # @type [Array<ComplexType>]
+        subtypes = []
+        parameters_type = nil
+        unless substring.empty?
+          subs = ComplexType.parse(substring[1..-2], partial: true)
+          parameters_type = PARAMETERS_TYPE_BY_STARTING_TAG.fetch(substring[0])
+          if parameters_type == :hash
+            raise ComplexTypeError, "Bad hash type" unless !subs.is_a?(ComplexType) and subs.length == 2 and !subs[0].is_a?(UniqueType) and !subs[1].is_a?(UniqueType)
+            # @todo should be able to resolve map; both types have it
+            #   with same return type
+            # @sg-ignore
+            key_types.concat(subs[0].map { |u| ComplexType.new([u]) })
+            # @sg-ignore
+            subtypes.concat(subs[1].map { |u| ComplexType.new([u]) })
+          else
+            subtypes.concat subs
+          end
+        end
+        new(name, key_types, subtypes, rooted: rooted, parameters_type: parameters_type)
+      end
+
+      # @param name [String]
+      # @param key_types [Array<ComplexType>]
+      # @param subtypes [Array<ComplexType>]
+      # @param rooted [Boolean]
+      # @param parameters_type [Symbol, nil]
+      def initialize(name, key_types = [], subtypes = [], rooted:, parameters_type: nil)
+        if parameters_type.nil?
+          raise "You must supply parameters_type if you provide parameters" unless key_types.empty? && subtypes.empty?
+        end
+        raise "Please remove leading :: and set rooted instead - #{name}" if name.start_with?('::')
+        @name = name
+        @key_types = key_types
+        @subtypes = subtypes
+        @rooted = rooted
         @all_params = []
-        return unless parameters?
-        # @todo we should be able to probe the type of 'subs' without
-        #   hoisting the definition outside of the if statement
-        subs = if @substring.start_with?('<(') && @substring.end_with?(')>')
-                 ComplexType.parse(substring[2..-3], partial: true)
-               else
-                 ComplexType.parse(substring[1..-2], partial: true)
-               end
-        if hash_parameters?
-          raise ComplexTypeError, "Bad hash type" unless !subs.is_a?(ComplexType) and subs.length == 2 and !subs[0].is_a?(UniqueType) and !subs[1].is_a?(UniqueType)
-          # @todo should be able to resolve map; both types have it
-          #   with same return type
-          # @sg-ignore
-          @key_types.concat subs[0].map { |u| ComplexType.new([u]) }
-          # @sg-ignore
-          @subtypes.concat subs[1].map { |u| ComplexType.new([u]) }
-        else
-          @subtypes.concat subs
-        end
-        @all_params.concat @key_types
-        @all_params.concat @subtypes
+        @all_params.concat key_types
+        @all_params.concat subtypes
+        @parameters_type = parameters_type
       end
 
       def to_s
@@ -76,7 +94,17 @@ module Solargraph
 
       # @return [String]
       def to_rbs
-        if ['Tuple', 'Array'].include?(name) && fixed_parameters?
+        if duck_type?
+          'untyped'
+        elsif name == 'Boolean'
+          'bool'
+        elsif name.downcase == 'nil'
+          'nil'
+        elsif name == GENERIC_TAG_NAME
+          all_params.first.name
+        elsif ['Class', 'Module'].include?(name)
+          rbs_name
+        elsif ['Tuple', 'Array'].include?(name) && fixed_parameters?
           # tuples don't have a name; they're just [foo, bar, baz].
           if substring == '()'
             # but there are no zero element tuples, so we go with an array
@@ -90,15 +118,36 @@ module Solargraph
         end
       end
 
+      # @return [Boolean]
+      def parameters?
+        !all_params.empty?
+      end
+
+      # @param types [Array<UniqueType, ComplexType>]
+      # @return [String]
+      def rbs_union(types)
+        if types.length == 1
+          types.first.to_rbs
+        else
+          "(#{types.map(&:to_rbs).join(' | ')})"
+        end
+      end
+
       # @return [String]
       def parameters_as_rbs
-        parameters? ? "[#{all_params.map { |s| s.to_rbs }.join(', ')}]" : ''
+        return '' unless parameters?
+
+        return "[#{all_params.map(&:to_rbs).join(', ')}]" if key_types.empty?
+
+        # handle, e.g., Hash[K, V] case
+        key_types_str = rbs_union(key_types)
+        subtypes_str = rbs_union(subtypes)
+        "[#{key_types_str}, #{subtypes_str}]"
       end
 
       def generic?
         name == GENERIC_TAG_NAME || all_params.any?(&:generic?)
       end
-
 
       # @param generics_to_resolve [Enumerable<String>]
       # @param context_type [UniqueType, nil]
@@ -182,39 +231,34 @@ module Solargraph
       end
 
       # @param new_name [String, nil]
+      # @param make_rooted [Boolean, nil]
       # @param new_key_types [Array<UniqueType>, nil]
+      # @param rooted [Boolean, nil]
       # @param new_subtypes [Array<UniqueType>, nil]
       # @return [self]
-      def recreate(new_name: nil, new_key_types: nil, new_subtypes: nil)
+      def recreate(new_name: nil, make_rooted: nil, new_key_types: nil, new_subtypes: nil)
+        raise "Please remove leading :: and set rooted instead - #{new_name}" if new_name&.start_with?('::')
         new_name ||= name
         new_key_types ||= @key_types
         new_subtypes ||= @subtypes
-        if new_key_types.none?(&:defined?) && new_subtypes.none?(&:defined?)
-          # if all subtypes are undefined, erase down to the non-parametric type
-          UniqueType.new(new_name)
-        elsif new_key_types.empty? && new_subtypes.empty?
-          UniqueType.new(new_name)
-        elsif hash_parameters?
-          UniqueType.new(new_name, "{#{new_key_types.join(', ')} => #{new_subtypes.join(', ')}}")
-        elsif @substring.start_with?('<(')
-          # @todo This clause is probably wrong, and if so, fixing it
-          #    will be some level of breaking change.  Probably best
-          #    handled before real tuple support is rolled out and
-          #    folks start relying on it more.
-          #
-          #   (String) is a one element tuple in https://yardoc.org/types
-          #   <String> is an array of zero or more Strings in https://yardoc.org/types
-          #   Array<(String)> could be an Array of one-element tuples or a
-          #     one element tuple.  https://yardoc.org/types treats it
-          #     as the former.
-          #   Array<(String), Integer> is not ambiguous if we accept
-          #     (String) as a tuple type, but not currently understood
-          #     by Solargraph.
-          UniqueType.new(new_name, "<(#{new_subtypes.join(', ')})>")
-        elsif fixed_parameters?
-          UniqueType.new(new_name, "(#{new_subtypes.join(', ')})")
-        else
-          UniqueType.new(new_name, "<#{new_subtypes.join(', ')}>")
+        make_rooted = @rooted if make_rooted.nil?
+        UniqueType.new(new_name, new_key_types, new_subtypes, rooted: make_rooted, parameters_type: parameters_type)
+      end
+
+      # @return [String]
+      def rooted_tags
+        rooted_tag
+      end
+
+      # @return [String]
+      def tags
+        tag
+      end
+
+      # @return [self]
+      def force_rooted
+        transform do |t|
+          t.recreate(make_rooted: true)
         end
       end
 
@@ -225,9 +269,16 @@ module Solargraph
       # @yieldreturn [self]
       # @return [self]
       def transform(new_name = nil, &transform_type)
-        new_key_types = @key_types.flat_map { |ct| ct.map { |ut| ut.transform(&transform_type) } }.compact
-        new_subtypes = @subtypes.flat_map { |ct| ct.map { |ut| ut.transform(&transform_type) } }.compact
-        new_type = recreate(new_name: new_name || rooted_name, new_key_types: new_key_types, new_subtypes: new_subtypes)
+        raise "Please remove leading :: and set rooted with recreate() instead - #{new_name}" if new_name&.start_with?('::')
+        if name == ComplexType::GENERIC_TAG_NAME
+          # doesn't make sense to manipulate the name of the generic
+          new_key_types = @key_types
+          new_subtypes = @subtypes
+        else
+          new_key_types = @key_types.flat_map { |ct| ct.items.map { |ut| ut.transform(&transform_type) } }
+          new_subtypes = @subtypes.flat_map { |ct| ct.items.map { |ut| ut.transform(&transform_type) } }
+        end
+        new_type = recreate(new_name: new_name || name, new_key_types: new_key_types, new_subtypes: new_subtypes)
         yield new_type
       end
 
@@ -245,8 +296,8 @@ module Solargraph
         @name == 'self' || @key_types.any?(&:selfy?) || @subtypes.any?(&:selfy?)
       end
 
-      UNDEFINED = UniqueType.new('undefined')
-      BOOLEAN = UniqueType.new('Boolean')
+      UNDEFINED = UniqueType.new('undefined', rooted: false)
+      BOOLEAN = UniqueType.new('Boolean', rooted: true)
     end
   end
 end
