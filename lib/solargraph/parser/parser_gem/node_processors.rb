@@ -17,6 +17,7 @@ module Solargraph
         autoload :LvasgnNode,    'solargraph/parser/parser_gem/node_processors/lvasgn_node'
         autoload :GvasgnNode,    'solargraph/parser/parser_gem/node_processors/gvasgn_node'
         autoload :CasgnNode,     'solargraph/parser/parser_gem/node_processors/casgn_node'
+        autoload :MasgnNode,     'solargraph/parser/parser_gem/node_processors/masgn_node'
         autoload :AliasNode,     'solargraph/parser/parser_gem/node_processors/alias_node'
         autoload :ArgsNode,      'solargraph/parser/parser_gem/node_processors/args_node'
         autoload :BlockNode,     'solargraph/parser/parser_gem/node_processors/block_node'
@@ -43,6 +44,7 @@ module Solargraph
       register :lvasgn,       ParserGem::NodeProcessors::LvasgnNode
       register :gvasgn,       ParserGem::NodeProcessors::GvasgnNode
       register :casgn,        ParserGem::NodeProcessors::CasgnNode
+      register :masgn,        ParserGem::NodeProcessors::MasgnNode
       register :alias,        ParserGem::NodeProcessors::AliasNode
       register :args,         ParserGem::NodeProcessors::ArgsNode
       register :forward_args, ParserGem::NodeProcessors::ArgsNode
