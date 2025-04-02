@@ -59,8 +59,12 @@ module Solargraph
 
             return if then_clause.nil?
 
-            then_presence = Range.new(get_node_end_position(conditional_node),
+            before_then_clause_loc = then_clause.location.expression.adjust(begin_pos: -1)
+            before_then_clause_pos =
+
+            then_presence = Range.new(Position.new(before_then_clause_loc.line, before_then_clause_loc.column),
                                       get_node_end_position(then_clause))
+
             # else_presence = Range.new(get_node_start_position(else_clause), get_node_end_position(else_clause))
             pin = pins.first
             # @todo Create pin#update method
