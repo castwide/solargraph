@@ -70,6 +70,7 @@ module Solargraph
 
           def formatter_class(config)
             if self.class.const_defined?('BlankRubocopFormatter')
+              # @sg-ignore
               BlankRubocopFormatter
             else
               require_rubocop(config['version'])

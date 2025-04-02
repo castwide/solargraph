@@ -29,8 +29,7 @@ describe Solargraph::DocMap do
     expect(doc_map.uncached_gemspecs).to eq([gemspec])
   end
 
-  # @todo This test fails on CI for some reason
-  xit 'does not warn for redundant requires' do
+  it 'does not warn for redundant requires' do
     # Requiring 'set' is unnecessary because it's already included in core. It
     # might make sense to log redundant requires, but a warning is overkill.
     expect(Solargraph.logger).not_to receive(:warn)
@@ -43,5 +42,10 @@ describe Solargraph::DocMap do
 
   it 'ignores empty requires' do
     expect { Solargraph::DocMap.new([''], []) }.not_to raise_error
+  end
+
+  it 'collects dependencies' do
+    doc_map = Solargraph::DocMap.new(['rspec'], [])
+    expect(doc_map.dependencies.map(&:name)).to include('rspec-core')
   end
 end
