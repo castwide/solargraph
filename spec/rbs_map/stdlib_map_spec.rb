@@ -56,4 +56,12 @@ describe Solargraph::RbsMap::StdlibMap do
       expect(['Module<YAML>', 'Module<Psych>']).to include(return_type)
     end
   end
+
+  it 'pins are marked as coming from RBS parsing' do
+    map = Solargraph::RbsMap::StdlibMap.load('yaml')
+    store = Solargraph::ApiMap::Store.new(map.pins)
+    constant_pins = store.get_constants('')
+    pin = constant_pins.first
+    expect(pin.source).to eq(:rbs)
+  end
 end
