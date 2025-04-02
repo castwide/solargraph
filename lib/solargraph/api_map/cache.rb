@@ -78,18 +78,6 @@ module Solargraph
         @receiver_definitions[path] = pin
       end
 
-      # @param cursor [Source::Cursor]
-      # @return [SourceMap::Clip, nil]
-      def get_clip(cursor)
-        @clips["#{cursor.filename}|#{cursor.range.inspect}|#{cursor.node&.to_sexp}"]
-      end
-
-      # @param cursor [Source::Cursor]
-      # @param clip [SourceMap::Clip]
-      def set_clip(cursor, clip)
-        @clips["#{cursor.filename}|#{cursor.range.inspect}|#{cursor.node&.to_sexp}"] = clip
-      end
-
       # @return [void]
       def clear
         all_caches.each(&:clear)
