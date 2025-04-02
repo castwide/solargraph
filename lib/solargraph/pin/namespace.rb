@@ -57,7 +57,7 @@ module Solargraph
       end
 
       def full_context
-        @full_context ||= ComplexType.try_parse("#{type.to_s.capitalize}<#{path}>")
+        @full_context ||= ComplexType.try_parse("::#{type.to_s.capitalize}<#{path}>")
       end
 
       def binder

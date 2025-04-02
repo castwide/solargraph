@@ -465,7 +465,7 @@ module Solargraph
           types.push type if type.defined?
         end
         return ComplexType::UNDEFINED if types.empty?
-        ComplexType.try_parse(*types.map(&:tag).uniq)
+        ComplexType.new(types.uniq)
       end
 
       # When YARD parses an overload tag, it includes rest modifiers in the parameters names.
