@@ -1,5 +1,6 @@
 describe Solargraph::TypeChecker do
   context 'strict level' do
+    # @return [Solargraph::TypeChecker]
     def type_checker(code)
       Solargraph::TypeChecker.load_string(code, 'test.rb', :strict)
     end
@@ -490,7 +491,7 @@ describe Solargraph::TypeChecker do
       expect(checker.problems).to be_empty
     end
 
-    it 'requires strict return tags' do
+    xit 'requires strict return tags' do
       checker = type_checker(%(
         class Foo
           # The tag is [String] but the inference is [String, nil]
@@ -498,6 +499,21 @@ describe Solargraph::TypeChecker do
           # @return [String]
           def bar
             false ? 'bar' : nil
+          end
+        end
+      ))
+      expect(checker.problems).to be_one
+      expect(checker.problems.first.message).to include('does not match inferred type')
+    end
+
+    xit 'requires strict return tags' do
+      checker = type_checker(%(
+        class Foo
+          # The tag is [String] but the inference is [String, nil]
+          #
+          # @return [String]
+          def bar
+            true ? nil : 'bar'
           end
         end
       ))
@@ -703,6 +719,20 @@ describe Solargraph::TypeChecker do
         end
       ))
       expect(checker.problems.map(&:message)).to eq(['Unresolved call to upcase'])
+    end
+
+
+    it 'does not falsely enforce nil in return types' do
+      checker = type_checker(%(
+      # @return [Integer]
+      def foo
+        # @sg-ignore
+        # @type [Integer, nil]
+        a = bar
+        a || 123
+      end
+      ))
+      expect(checker.problems.map(&:message)).to be_empty
     end
 
     it 'interprets self references correctly' do

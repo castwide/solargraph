@@ -90,11 +90,11 @@ module Solargraph
     def method_return_type_problems_for pin
       return [] if pin.is_a?(Pin::MethodAlias)
       result = []
-      declared = pin.typify(api_map).self_to(pin.full_context.namespace)
+      declared = pin.typify(api_map).self_to_type(pin.full_context).qualify(api_map, pin.full_context)
       if declared.undefined?
         if pin.return_type.undefined? && rules.require_type_tags?
           if pin.attribute?
-            inferred = pin.probe(api_map).self_to(pin.full_context.namespace)
+            inferred = pin.probe(api_map).self_to_type(pin.full_context)
             result.push Problem.new(pin.location, "Missing @return tag for #{pin.path}", pin: pin) unless inferred.defined?
           else
             result.push Problem.new(pin.location, "Missing @return tag for #{pin.path}", pin: pin)
@@ -106,14 +106,14 @@ module Solargraph
         end
       elsif rules.validate_tags?
         unless pin.node.nil? || declared.void? || virtual_pin?(pin) || abstract?(pin)
-          inferred = pin.probe(api_map).self_to(pin.full_context.namespace)
+          inferred = pin.probe(api_map).self_to_type(pin.full_context)
           if inferred.undefined?
             unless rules.ignore_all_undefined? || external?(pin)
               result.push Problem.new(pin.location, "#{pin.path} return type could not be inferred", pin: pin)
             end
           else
-            unless (rules.rank > 1 ? all_types_match?(api_map, inferred, declared) : any_types_match?(api_map, declared, inferred))
-              result.push Problem.new(pin.location, "Declared return type #{declared} does not match inferred type #{inferred} for #{pin.path}", pin: pin)
+            unless (rules.require_all_return_types_match_inferred? ? all_types_match?(api_map, inferred, declared) : any_types_match?(api_map, declared, inferred))
+              result.push Problem.new(pin.location, "Declared return type #{declared.rooted_tags} does not match inferred type #{inferred.rooted_tags} for #{pin.path}", pin: pin)
             end
           end
         end
@@ -154,7 +154,7 @@ module Solargraph
             break if par.decl == :restarg || par.decl == :kwrestarg || par.decl == :blockarg
             unless params[par.name]
               if pin.attribute?
-                inferred = pin.probe(api_map).self_to(pin.full_context.namespace)
+                inferred = pin.probe(api_map).self_to_type(pin.full_context)
                 if inferred.undefined?
                   result.push Problem.new(pin.location, "Missing @param tag for #{par.name} on #{pin.path}", pin: pin)
                 end
@@ -349,7 +349,7 @@ module Solargraph
                     next # don't try to apply the type of the splat - unlikely to be specific enough
                   end
                   ptype = params.key?(par.name) ? params[par.name][:qualified] : ComplexType::UNDEFINED
-                  ptype = ptype.self_to(par.context.namespace)
+                  ptype = ptype.self_to_type(par.context)
                   if ptype.nil?
                     # @todo Some level (strong, I guess) should require the param here
                   else

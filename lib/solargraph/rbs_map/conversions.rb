@@ -369,7 +369,9 @@ module Solargraph
           name = type.type.rest_keywords.name ? type.type.rest_keywords.name.to_s : "arg#{arg_num += 1}"
           parameters.push Solargraph::Pin::Parameter.new(decl: :kwrestarg, name: type.type.rest_keywords.name.to_s, closure: pin)
         end
-        return_type = ComplexType.try_parse(method_type_to_tag(type))
+
+        rooted_tag = method_type_to_tag(type)
+        return_type = ComplexType.try_parse(rooted_tag)
         [parameters, return_type]
       end
 
@@ -497,9 +499,9 @@ module Solargraph
       end
 
       RBS_TO_YARD_TYPE = {
-        'bool' => 'Boolean',
-        'string' => 'String',
-        'int' => 'Integer',
+        'bool' => '::Boolean',
+        'string' => '::String',
+        'int' => '::Integer',
         'untyped' => '',
         'NilClass' => 'nil'
       }
@@ -518,7 +520,7 @@ module Solargraph
       # @param type_args [Enumerable<RBS::Types::Bases::Base>]
       # @return [ComplexType]
       def generic_type(type_name, type_args)
-        base = RBS_TO_YARD_TYPE[type_name.relative!.to_s] || type_name.relative!.to_s
+        base = RBS_TO_YARD_TYPE[type_name.relative!.to_s] || ('::' + type_name.relative!.to_s)
         params = type_args.map { |a| other_type_to_tag(a) }.reject { |t| t == 'undefined' }
         params_str = params.empty? ? '' : "<#{params.join(', ')}>"
         type_string = "#{base}#{params_str}"
@@ -529,7 +531,7 @@ module Solargraph
       # @param type_args [Enumerable<RBS::Types::Bases::Base>]
       # @return [String]
       def generic_type_tag(type_name, type_args)
-        generic_type(type_name, type_args).tag
+        generic_type(type_name, type_args).rooted_tags
       end
 
       # @param type [RBS::Types::Bases::Base]
@@ -539,18 +541,18 @@ module Solargraph
           "#{other_type_to_tag(type.type)}, nil"
         elsif type.is_a?(RBS::Types::Bases::Any)
           # @todo Not sure what to do with Any yet
-          'BasicObject'
+          '::BasicObject'
         elsif type.is_a?(RBS::Types::Bases::Bool)
-          'Boolean'
+          '::Boolean'
         elsif type.is_a?(RBS::Types::Tuple)
-          "Array(#{type.types.map { |t| other_type_to_tag(t) }.join(', ')})"
+          "::Array(#{type.types.map { |t| other_type_to_tag(t) }.join(', ')})"
         elsif type.is_a?(RBS::Types::Literal)
           "#{type.literal}"
         elsif type.is_a?(RBS::Types::Union)
           type.types.map { |t| other_type_to_tag(t) }.join(', ')
         elsif type.is_a?(RBS::Types::Record)
           # @todo Better record support
-          'Hash'
+          '::Hash'
         elsif type.is_a?(RBS::Types::Bases::Nil)
           'nil'
         elsif type.is_a?(RBS::Types::Bases::Self)
@@ -565,7 +567,7 @@ module Solargraph
           'self'
         elsif type.is_a?(RBS::Types::Bases::Top)
           # top is the most super superclass
-          'BasicObject'
+          '::BasicObject'
         elsif type.is_a?(RBS::Types::Bases::Bottom)
           # bottom is used in contexts where nothing will ever return
           # - e.g., it could be the return type of 'exit()' or 'raise'
@@ -576,9 +578,9 @@ module Solargraph
         elsif type.is_a?(RBS::Types::Intersection)
           type.types.map { |member| other_type_to_tag(member) }.join(', ')
         elsif type.is_a?(RBS::Types::Proc)
-          'Proc'
+          '::Proc'
         elsif type.respond_to?(:name) && type.name.respond_to?(:relative!)
-          RBS_TO_YARD_TYPE[type.name.relative!.to_s] || type.name.relative!.to_s
+          RBS_TO_YARD_TYPE[type.name.relative!.to_s] || ('::' + type.name.relative!.to_s)
         else
           Solargraph.logger.warn "Unrecognized RBS type: #{type.class} at #{type.location}"
           'undefined'

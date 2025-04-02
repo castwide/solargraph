@@ -253,10 +253,17 @@ describe Solargraph::ComplexType do
 
   it "typifies Booleans" do
     api_map = double(Solargraph::ApiMap, qualify: nil)
-    type = Solargraph::ComplexType.parse('Boolean')
+    type = Solargraph::ComplexType.parse('::Boolean')
     qualified = type.qualify(api_map)
     expect(qualified.tag).to eq('Boolean')
     expect(qualified.to_rbs).to eq('bool')
+  end
+
+  it "does not typify non-rooted Booleans" do
+    api_map = double(Solargraph::ApiMap, qualify: nil)
+    type = Solargraph::ComplexType.parse('Boolean')
+    expect(type.rooted_tag).to eq('Boolean')
+    expect(type.to_rbs).to eq('bool')
   end
 
   it "returns undefined for unqualified types" do
@@ -281,26 +288,26 @@ describe Solargraph::ComplexType do
 
   it 'resolves self keywords in types' do
     selfy = Solargraph::ComplexType.parse('self')
-    type = selfy.self_to('Foo')
+    type = selfy.self_to_type(Solargraph::ComplexType.parse('Foo'))
     expect(type.tag).to eq('Foo')
   end
 
   it 'resolves self keywords in parameter types' do
     selfy = Solargraph::ComplexType.parse('Array<self>')
-    type = selfy.self_to('Foo')
+    type = selfy.self_to_type(Solargraph::ComplexType.parse('Foo'))
     expect(type.tag).to eq('Array<Foo>')
   end
 
   it 'resolves self keywords in hash parameter types' do
     selfy = Solargraph::ComplexType.parse('Hash{String => self}')
-    type = selfy.self_to('Foo')
+    type = selfy.self_to_type(Solargraph::ComplexType.parse('Foo'))
     expect(type.tag).to eq('Hash{String => Foo}')
     expect(type.to_rbs).to eq('Hash[String, Foo]')
   end
 
   it 'resolves self keywords in ordered array types' do
     selfy = Solargraph::ComplexType.parse('Array<(String, Symbol, self)>')
-    type = selfy.self_to('Foo')
+    type = selfy.self_to_type(Solargraph::ComplexType.parse('Foo'))
     expect(type.tag).to eq('Array<(String, Symbol, Foo)>')
     expect(type.to_rbs).to eq('Array[[String, Symbol, Foo]]')
   end
@@ -314,7 +321,7 @@ describe Solargraph::ComplexType do
   end
 
   it 'parses a complex subtype' do
-    type = Solargraph::ComplexType.parse('Array<self>').self_to('Foo<String>')
+    type = Solargraph::ComplexType.parse('Array<self>').self_to_type(Solargraph::ComplexType.parse('Foo<String>'))
     expect(type.tag).to eq('Array<Foo<String>>')
     expect(type.to_rbs).to eq('Array[Foo[String]]')
   end
@@ -334,7 +341,7 @@ describe Solargraph::ComplexType do
   it 'reduces objects' do
     api_map = Solargraph::ApiMap.new
     selfy = Solargraph::ComplexType.parse('Array<self>')
-    type = selfy.self_to('String')
+    type = selfy.self_to_type(Solargraph::ComplexType.parse('String'))
     expect(type.tag).to eq('Array<String>')
     expect(type.to_rbs).to eq('Array[String]')
     result = type.qualify(api_map)

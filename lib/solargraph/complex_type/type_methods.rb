@@ -45,11 +45,6 @@ module Solargraph
         @nil_type ||= (name.casecmp('nil') == 0)
       end
 
-      # @return [Boolean]
-      def parameters?
-        !substring.empty?
-      end
-
       def tuple?
         @tuple_type ||= (name == 'Tuple') || (name == 'Array' && subtypes.length >= 1 && fixed_parameters?)
       end
@@ -178,7 +173,7 @@ module Solargraph
       end
 
       def rooted?
-        @rooted
+        @rooted && all_params.all?(&:rooted?)
       end
 
       # Generate a ComplexType that fully qualifies this type's namespaces.

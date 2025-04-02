@@ -93,7 +93,7 @@ module Solargraph
                 end
                 new_signature_pin = ol.resolve_generics_from_context_until_complete(ol.generics, atypes, nil, nil, blocktype)
                 new_return_type = new_signature_pin.return_type
-                type = with_params(new_return_type.self_to(context.to_s), context).qualify(api_map, context.namespace) if new_return_type.defined?
+                type = with_params(new_return_type.self_to_type(context), context).qualify(api_map, context.namespace) if new_return_type.defined?
                 type ||= ComplexType::UNDEFINED
               end
               break if type.defined?
@@ -111,10 +111,11 @@ module Solargraph
           end
           result.map do |pin|
             if pin.path == 'Class#new' && context.tag != 'Class'
-              pin.proxy(ComplexType.try_parse(context.namespace))
+              reduced_context = context.reduce_class_type
+              pin.proxy(reduced_context)
             else
               next pin if pin.return_type.undefined?
-              selfy = pin.return_type.self_to(context.tag)
+              selfy = pin.return_type.self_to_type(context)
               selfy == pin.return_type ? pin : pin.proxy(selfy)
             end
           end
