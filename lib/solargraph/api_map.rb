@@ -29,6 +29,25 @@ module Solargraph
       index pins
     end
 
+    #
+    # This is a mutable object, which is cached in the Chain class -
+    # if you add any fields which change the results of calls (not
+    # just caches), please also change `equality_fields` below.
+    #
+
+    def eql?(other)
+      self.class == other.class &&
+        equality_fields == other.equality_fields
+    end
+
+    def ==(other)
+      self.eql?(other)
+    end
+
+    def hash
+      equality_fields.hash
+    end
+
     # @param pins [Array<Pin::Base>]
     # @return [self]
     def index pins
@@ -64,11 +83,15 @@ module Solargraph
         implicit.merge map.environ
       end
       unresolved_requires = (bench.external_requires + implicit.requires + bench.workspace.config.required).uniq
-      @doc_map = DocMap.new(unresolved_requires, []) # @todo Implement gem preferences
+      @doc_map = DocMap.new(unresolved_requires, [], bench.workspace.rbs_collection_path) # @todo Implement gem preferences
       @store = Store.new(@@core_map.pins + @doc_map.pins + implicit.pins + pins)
       @unresolved_requires = @doc_map.unresolved_requires
       @missing_docs = [] # @todo Implement missing docs
       self
+    end
+
+    protected def equality_fields
+      [self.class, @source_map_hash, implicit, @doc_map, @unresolved_requires, @missing_docs]
     end
 
     # @return [::Array<Gem::Specification>]
@@ -466,9 +489,6 @@ module Solargraph
     def clip cursor
       raise FileNotFoundError, "ApiMap did not catalog #{cursor.filename}" unless source_map_hash.key?(cursor.filename)
 
-      # @todo Clip caches are disabled pending resolution of a stale cache bug
-      # cache.get_clip(cursor) ||
-      #   SourceMap::Clip.new(self, cursor).tap { |clip| cache.set_clip(cursor, clip) }
       SourceMap::Clip.new(self, cursor)
     end
 
