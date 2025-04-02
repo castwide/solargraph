@@ -292,7 +292,8 @@ module Solargraph
       base = chain
       until base.links.length == 1 && base.undefined?
         last_base_link = base.links.last
-        break unless last_base_link.is_a?(Solargraph::Pin::Closure)
+        break unless last_base_link.is_a?(Solargraph::Source::Chain::Call)
+
         arguments = last_base_link.arguments
 
         pins = base.define(api_map, block_pin, locals)
