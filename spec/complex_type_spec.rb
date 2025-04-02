@@ -356,8 +356,7 @@ describe Solargraph::ComplexType do
     ['generic<A>', 'Array<String>', {}, 'Array<String>', {'A' => 'Array<String>'}],
     ['generic<A>', 'Array<String>', {'A' => 'String'}, 'String', {'A' => 'String'}],
     ['generic<A>', 'Array<generic<B>>', {'B' => 'Integer'}, 'Array<Integer>', {'B' => 'Integer', 'A' => 'Array<Integer>'}],
-    # @todo Improve UniqueType#resolve_generics_from_context() to handle this case
-    # ['Array<generic<A>>', 'Array<String>', {}, 'Array<String>', {'A' => 'String'}],
+    ['Array<generic<A>>', 'Array<String>', {}, 'Array<String>', {'A' => 'String'}],
   ]
 
   UNIQUE_METHOD_GENERIC_TESTS.each do |tag, context_type_tag, unfrozen_input_map, expected_tag, expected_output_map|

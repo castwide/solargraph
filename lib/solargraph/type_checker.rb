@@ -268,6 +268,7 @@ module Solargraph
             base = base.base
           end
           closest = found.typify(api_map) if found
+          # @todo remove the internal_or_core? check at a higher-than-strict level
           if !found || found.is_a?(Pin::BaseVariable) || (closest.defined? && internal_or_core?(found))
             unless closest.generic? || ignored_pins.include?(found)
               result.push Problem.new(location, "Unresolved call to #{missing.links.last.word}")
@@ -299,6 +300,14 @@ module Solargraph
           pin = pins.first
           ap = if base.links.last.is_a?(Solargraph::Source::Chain::ZSuper)
             arity_problems_for(pin, fake_args_for(block_pin), location)
+          elsif pin.path == 'Class#new'
+            fqns = if base.links.one?
+              block_pin.namespace
+            else
+              base.base.infer(api_map, block_pin, locals).namespace
+            end
+            init = api_map.get_method_stack(fqns, 'initialize').first
+            init ? arity_problems_for(init, base.links.last.arguments, location) : []
           else
             arity_problems_for(pin, base.links.last.arguments, location)
           end
@@ -313,15 +322,18 @@ module Solargraph
           all_errors = []
           pin.signatures.sort { |sig| sig.parameters.length }.each do |sig|
             errors = []
-            # @todo these should be able to be probed
-            # @param par [Parameter]
-            # @param idx [Integer]
             sig.parameters.each_with_index do |par, idx|
               argchain = base.links.last.arguments[idx]
               if argchain.nil?
                 if par.decl == :arg
-                  errors.push Problem.new(location, "Not enough arguments to #{pin.path}")
-                  next
+                  last = base.links.last.arguments.last
+                  if last && last.node.type == :splat
+                    argchain = last
+                    next # don't try to apply the type of the splat - unlikely to be specific enough
+                  else
+                    errors.push Problem.new(location, "Not enough arguments to #{pin.path}")
+                    next
+                  end
                 else
                   last = base.links.last.arguments.last
                   argchain = last if last && [:kwsplat, :hash].include?(last.node.type)
@@ -332,7 +344,12 @@ module Solargraph
                   errors.concat kwarg_problems_for sig, argchain, api_map, block_pin, locals, location, pin, params, idx
                   next
                 else
+                  last = base.links.last.arguments.last
+                  if last && last.node.type == :splat
+                    next # don't try to apply the type of the splat - unlikely to be specific enough
+                  end
                   ptype = params.key?(par.name) ? params[par.name][:qualified] : ComplexType::UNDEFINED
+                  ptype = ptype.self_to_type(par.context)
                   if ptype.nil?
                     # @todo Some level (strong, I guess) should require the param here
                   else
@@ -442,7 +459,7 @@ module Solargraph
     def first_param_hash(pins)
       pins.each do |pin|
         # @todo this assignment from parametric use of Hash should not lose its generic
-        # @type [Hash{String => Hash{Symbol => BasicObject}]
+        # @type [Hash{String => Hash{Symbol => BasicObject}}]
         result = param_hash(pin)
         return result unless result.empty?
       end

@@ -11,7 +11,7 @@ module Solargraph
     autoload :TypeMethods, 'solargraph/complex_type/type_methods'
     autoload :UniqueType,  'solargraph/complex_type/unique_type'
 
-    # @param types [Array<[UniqueType, ComplexType]>]
+    # @param types [Array<UniqueType, ComplexType>]
     def initialize types = [UniqueType::UNDEFINED]
       # @todo @items here should not need an annotation
       # @type [Array<UniqueType>]

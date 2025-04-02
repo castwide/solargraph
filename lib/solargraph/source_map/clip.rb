@@ -11,6 +11,7 @@ module Solargraph
       def initialize api_map, cursor
         @api_map = api_map
         @cursor = cursor
+        block.rebind(api_map) if block.is_a?(Pin::Block)
       end
 
       # @return [Array<Pin::Base>] Relevant pins for infering the type of the Cursor's position
@@ -50,9 +51,9 @@ module Solargraph
       def infer
         result = cursor.chain.infer(api_map, block, locals)
         if result.tag == 'Class'
-          # HACK: Exception to return Object from Class#new
+          # HACK: Exception to return BasicObject from Class#new
           dfn = cursor.chain.define(api_map, block, locals).first
-          return ComplexType.try_parse('::Object') if dfn && dfn.path == 'Class#new'
+          return ComplexType.try_parse('::BasicObject') if dfn && dfn.path == 'Class#new'
         end
         return result unless result.tag == 'self'
         cursor.chain.base.infer(api_map, block, locals)

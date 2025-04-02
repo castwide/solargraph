@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 
+require 'pathname'
 require 'rbs'
 
 module Solargraph
@@ -7,7 +8,6 @@ module Solargraph
     autoload :Conversions, 'solargraph/rbs_map/conversions'
     autoload :CoreMap,     'solargraph/rbs_map/core_map'
     autoload :CoreFills,   'solargraph/rbs_map/core_fills'
-    autoload :CoreSigns,   'solargraph/rbs_map/core_signs'
     autoload :StdlibMap,   'solargraph/rbs_map/stdlib_map'
 
     include Conversions
@@ -18,20 +18,26 @@ module Solargraph
     attr_reader :library
 
     # @param library [String]
-    def initialize library, version = nil
+    # @param version [String, nil]
+    # @param directories [Array<Pathname, String>]
+    def initialize library, version = nil, directories: []
       @library = library
       @version = version
       @collection = nil
+      @directories = directories
       loader = RBS::EnvironmentLoader.new(core_root: nil, repository: repository)
       add_library loader, library, version
       return unless resolved?
       load_environment_to_pins(loader)
     end
 
+    # @generic T
     # @param path [String]
-    # @return [Pin::Base, nil]
-    def path_pin path
-      pins.find { |p| p.path == path }
+    # @param klass [Class<generic<T>>]
+    # @return [generic<T>, nil]
+    def path_pin path, klass = Pin::Base
+      pin = pins.find { |p| p.path == path }
+      pin if pin&.is_a?(klass)
     end
 
     # @param path [String]
@@ -45,7 +51,9 @@ module Solargraph
     end
 
     def repository
-      @repository ||= RBS::Repository.new(no_stdlib: false)
+      @repository ||= RBS::Repository.new(no_stdlib: false).tap do |repo|
+        @directories.each { |dir| repo.add(Pathname.new(dir)) }
+      end
     end
 
     # @param library [String]
@@ -69,7 +77,7 @@ module Solargraph
         Solargraph.logger.info "#{short_name} successfully loaded library #{library}"
         true
       else
-        Solargraph.logger.debug "#{short_name} failed to load library #{library}"
+        Solargraph.logger.info "#{short_name} failed to load library #{library}"
         false
       end
     end

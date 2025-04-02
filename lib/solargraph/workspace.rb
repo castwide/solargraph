@@ -25,9 +25,11 @@ module Solargraph
 
     # @param directory [String]
     # @param config [Config, nil]
-    def initialize directory = '', config = nil
+    # @param server [Hash]
+    def initialize directory = '', config = nil, server = {}
       @directory = directory
       @config = config
+      @server = server
       load_sources
       @gemnames = []
       @require_paths = generate_require_paths
@@ -126,6 +128,11 @@ module Solargraph
       end
     end
 
+    # @return [String, nil]
+    def rbs_collection_path
+      @gem_rbs_collection ||= read_rbs_collection_path
+    end
+
     # Synchronize the workspace from the provided updater.
     #
     # @param updater [Source::Updater]
@@ -134,7 +141,18 @@ module Solargraph
       source_hash[updater.filename] = source_hash[updater.filename].synchronize(updater)
     end
 
+    # @return [String]
+    def command_path
+      server['commandPath'] || 'solargraph'
+    end
+
     private
+
+    # The language server configuration (or an empty hash if the workspace was
+    # not initialized from a server).
+    #
+    # @return [Hash]
+    attr_reader :server
 
     # @return [Hash{String => Solargraph::Source}]
     def source_hash
@@ -208,6 +226,14 @@ module Solargraph
           Solargraph.logger.warn "Failed to load plugin '#{plugin}'"
         end
       end
+    end
+
+    # @return [String, nil]
+    def read_rbs_collection_path
+      yaml_file = File.join(directory, 'rbs_collection.yaml')
+      return unless File.file?(yaml_file)
+
+      YAML.load_file(yaml_file)&.fetch('path')
     end
   end
 end
