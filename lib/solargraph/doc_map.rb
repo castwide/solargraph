@@ -18,9 +18,11 @@ module Solargraph
 
     # @param requires [Array<String>]
     # @param preferences [Array<Gem::Specification>]
-    def initialize(requires, preferences)
+    # @param rbs_path [String, Pathname, nil]
+    def initialize(requires, preferences, rbs_path = nil)
       @requires = requires.compact
       @preferences = preferences.compact
+      @rbs_path = rbs_path
       generate
     end
 
@@ -76,7 +78,8 @@ module Solargraph
       return if try_gem_in_memory(gemspec)
       cache_file = File.join('gems', "#{gemspec.name}-#{gemspec.version}.ser")
       if Cache.exist?(cache_file)
-        gempins = Cache.load(cache_file)
+        cached = Cache.load(cache_file)
+        gempins = update_from_collection(gemspec, cached)
         self.class.gems_in_memory[gemspec] = gempins
         @pins.concat gempins
       else
@@ -106,6 +109,17 @@ module Solargraph
       Solargraph.logger.debug "Found #{gemspec.name} #{gemspec.version} in memory"
       @pins.concat gempins
       true
+    end
+
+    def update_from_collection gemspec, gempins
+      return gempins unless @rbs_path && File.directory?(@rbs_path)
+      return gempins if RbsMap.new(gemspec.name, gemspec.version).resolved?
+
+      rbs_map = RbsMap.new(gemspec.name, gemspec.version, directories: [@rbs_path])
+      return gempins unless rbs_map.resolved?
+
+      Solargraph.logger.info "Updating #{gemspec.name} #{gemspec.version} from collection"
+      GemPins.combine(gempins, rbs_map)
     end
 
     # @param path [String]
