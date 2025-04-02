@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 
+require 'pathname'
 require 'rbs'
 
 module Solargraph
@@ -17,10 +18,13 @@ module Solargraph
     attr_reader :library
 
     # @param library [String]
-    def initialize library, version = nil
+    # @param version [String, nil]
+    # @param directories [Array<Pathname, String>]
+    def initialize library, version = nil, directories: []
       @library = library
       @version = version
       @collection = nil
+      @directories = directories
       loader = RBS::EnvironmentLoader.new(core_root: nil, repository: repository)
       add_library loader, library, version
       return unless resolved?
@@ -47,7 +51,9 @@ module Solargraph
     end
 
     def repository
-      @repository ||= RBS::Repository.new(no_stdlib: false)
+      @repository ||= RBS::Repository.new(no_stdlib: false).tap do |repo|
+        @directories.each { |dir| repo.add(Pathname.new(dir)) }
+      end
     end
 
     # @param library [String]
@@ -71,7 +77,7 @@ module Solargraph
         Solargraph.logger.info "#{short_name} successfully loaded library #{library}"
         true
       else
-        Solargraph.logger.debug "#{short_name} failed to load library #{library}"
+        Solargraph.logger.info "#{short_name} failed to load library #{library}"
         false
       end
     end
