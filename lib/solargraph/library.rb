@@ -19,7 +19,7 @@ module Solargraph
     # @return [Source, nil]
     attr_reader :current
 
-    # @return [Hash, nil]
+    # @return [LanguageServer::Progress, nil]
     attr_reader :cache_progress
 
     # @param workspace [Solargraph::Workspace]
@@ -580,7 +580,7 @@ module Solargraph
       end
     end
 
-    # @param source [Source]
+    # @param source [Source, nil]
     # @return [void]
     def maybe_map source
       return unless source
@@ -637,6 +637,9 @@ module Solargraph
       end
     end
 
+    # @param gem_name [String]
+    # @param pending [Integer]
+    # @return [void]
     def report_cache_progress gem_name, pending
       @total ||= pending
       @total = pending if pending > @total
@@ -647,6 +650,7 @@ module Solargraph
         ((finished.to_f / @total.to_f) * 100).to_i
       end
       message = "#{gem_name}#{pending > 0 ? " (+#{pending})" : ''}"
+      # "
       if @cache_progress
         @cache_progress.report(message, pct)
       else
@@ -657,6 +661,7 @@ module Solargraph
       notify_observers self
     end
 
+    # @return [void]
     def end_cache_progress
       changed if @cache_progress&.finish('done')
       notify_observers self
