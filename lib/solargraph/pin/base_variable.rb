@@ -88,6 +88,7 @@ module Solargraph
         ComplexType::UNDEFINED
       end
 
+      # @param other [Object]
       def == other
         return false unless super
         assignment == other.assignment
