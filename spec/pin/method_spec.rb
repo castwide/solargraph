@@ -569,5 +569,10 @@ describe Solargraph::Pin::Method do
       expect(pin.typify(api_map)).to be_undefined
       expect(pin.probe(api_map).items.map(&:tag)).to eq(['Symbol', 'Float', 'String', 'Integer'])
     end
+
+    it 'ignores malformed overload tags' do
+      pin = Solargraph::Pin::Method.new(name: 'example', comments: "@overload\n  @param")
+      expect(pin.overloads).to be_empty
+    end
   end
 end
