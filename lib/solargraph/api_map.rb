@@ -244,10 +244,15 @@ module Solargraph
     # @return [String, nil] fully qualified tag
     def qualify tag, context_tag = ''
       return tag if ['self', nil].include?(tag)
-      context_type = ComplexType.parse(context_tag)
-      type = ComplexType.parse(tag)
+      context_type = ComplexType.try_parse(context_tag)
+      return unless context_type
+
+      type = ComplexType.try_parse(tag)
+      return unless type
+
       fqns = qualify_namespace(type.rooted_namespace, context_type.rooted_namespace)
-      return nil if fqns.nil?
+      return unless fqns
+
       fqns + type.substring
     end
 
