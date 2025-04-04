@@ -250,8 +250,8 @@ describe Solargraph::LanguageServer::Host do
         }
       ]
     })
-    source = host.sources.find(uri).finish_synchronize
-    # @todo Smelly private variable access
+    source = host.sources.find(uri)
+    # @todo Smelly private method access
     expect(source.send(:repaired)).to eq('Foo::Bar ')
   end
 
