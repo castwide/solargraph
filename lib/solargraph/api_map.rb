@@ -156,10 +156,14 @@ module Solargraph
     # Create an ApiMap with a workspace in the specified directory and cache
     # any missing gems.
     #
+    #
+    # @todo IO::NULL is incorrectly inferred to be a String.
+    # @sg-ignore
+    #
     # @param directory [String]
     # @param out [IO] The output stream for messages
     # @return [ApiMap]
-    def self.load_with_cache directory, out = File::NULL
+    def self.load_with_cache directory, out = IO::NULL
       api_map = load(directory)
       return api_map if api_map.uncached_gemspecs.empty?
 
