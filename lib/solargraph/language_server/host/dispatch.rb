@@ -117,6 +117,8 @@ module Solargraph
                                                   .tap { |lib| lib.add_observer self }
         end
 
+        # @param library [Solargraph::Library]
+        # @return [void]
         def update library
           library.cache_progress&.send(self)
         end
