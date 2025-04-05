@@ -157,13 +157,14 @@ module Solargraph
     # any missing gems.
     #
     # @param directory [String]
+    # @param out [IO] The output stream for messages
     # @return [ApiMap]
-    def self.load_with_cache directory
+    def self.load_with_cache directory, out = File::NULL
       api_map = load(directory)
       return api_map if api_map.uncached_gemspecs.empty?
 
       api_map.uncached_gemspecs.each do |gemspec|
-        Solargraph.logger.info "Caching #{gemspec.name} #{gemspec.version}..."
+        out.puts "Caching gem #{gemspec.name} #{gemspec.version}"
         pins = GemPins.build(gemspec)
         Solargraph::Cache.save('gems', "#{gemspec.name}-#{gemspec.version}.ser", pins)
       end
@@ -598,7 +599,7 @@ module Solargraph
       # namespaces; resolving the generics in the method pins is this
       # class' responsibility
       raw_methods = store.get_methods(fqns, scope: scope, visibility: visibility).sort{ |a, b| a.name <=> b.name }
-      namespace_pin = store.get_path_pins(fqns).select{|p| p.is_a?(Pin::Namespace)}.first
+      namespace_pin = store.get_path_pins(fqns).select { |p| p.is_a?(Pin::Namespace) }.first
       methods = if rooted_tag != fqns
                   methods = raw_methods.map do |method_pin|
                     method_pin.resolve_generics(namespace_pin, rooted_type)
