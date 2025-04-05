@@ -85,6 +85,7 @@ module Solargraph
       unresolved_requires = (bench.external_requires + implicit.requires + bench.workspace.config.required).uniq
       @doc_map = DocMap.new(unresolved_requires, [], bench.workspace.rbs_collection_path) # @todo Implement gem preferences
       @store = Store.new(@@core_map.pins + @doc_map.pins + implicit.pins + pins)
+      @store.method_pins.reject { |pin| pin.source == :rbs }.each { |pin| pin.resolve_ref_tag(self) }
       @unresolved_requires = @doc_map.unresolved_requires
       @missing_docs = [] # @todo Implement missing docs
       self
