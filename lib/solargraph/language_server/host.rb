@@ -44,7 +44,6 @@ module Solargraph
         @stopped = false
         diagnoser.start
         cataloger.start
-        sources.start
         message_worker.start
       end
 
@@ -254,7 +253,7 @@ module Solargraph
       # @return [void]
       def change params
         updater = generate_updater(params)
-        sources.async_update params['textDocument']['uri'], updater
+        sources.update params['textDocument']['uri'], updater
         diagnoser.schedule params['textDocument']['uri']
       end
 
@@ -463,7 +462,6 @@ module Solargraph
         message_worker.stop
         cataloger.stop
         diagnoser.stop
-        sources.stop
         changed
         notify_observers
       end
@@ -858,7 +856,7 @@ module Solargraph
         progress.begin "0/#{total} files", 0
         progress.send self
         while library.next_map
-          pct = ((library.source_map_hash.keys.length.to_f / total.to_f) * 100).to_i
+          pct = ((library.source_map_hash.keys.length.to_f / total) * 100).to_i
           progress.report "#{library.source_map_hash.keys.length}/#{total} files", pct
           progress.send self
         end
