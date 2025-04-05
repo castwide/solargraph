@@ -173,6 +173,7 @@ module Solargraph
       }
       puts "Typecheck finished in #{time.real} seconds."
       puts "#{probcount} problem#{probcount != 1 ? 's' : ''} found#{files.length != 1 ? " in #{filecount} of #{files.length} files" : ''}."
+      # "
       exit 1 if probcount > 0
     end
 
