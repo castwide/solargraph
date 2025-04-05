@@ -851,25 +851,6 @@ describe Solargraph::SourceMap::Clip do
     expect(clip.complete.pins.map(&:path)).to include('First::Second::Sub#method2')
   end
 
-  it 'avoids completion inside strings for unsynchronized sources' do
-    source = Solargraph::Source.load_string(%(
-      'one two'
-    ), 'test.rb')
-    api_map = Solargraph::ApiMap.new
-    api_map.map source
-    updater = Solargraph::Source::Updater.new(
-      'test.rb',
-      1,
-      [
-        Solargraph::Source::Change.new(Solargraph::Range.from_to(1, 6, 1, 6), '.')
-      ]
-    )
-    updated = source.start_synchronize(updater)
-    cursor = updated.cursor_at(Solargraph::Position.new(1, 7))
-    clip = api_map.clip(cursor)
-    expect(clip.complete.pins).to be_empty
-  end
-
   it 'resolves self return types to the current scope' do
     source = Solargraph::Source.load_string(%(
       class Foo
@@ -1186,7 +1167,7 @@ describe Solargraph::SourceMap::Clip do
                                                   '.'
                                                 )
                                               ])
-    updated = source.start_synchronize(updater)
+    updated = source.synchronize(updater)
     api_map = Solargraph::ApiMap.new
     api_map.map updated
     clip = api_map.clip_at('test.rb', [1, 32])
@@ -1214,7 +1195,7 @@ describe Solargraph::SourceMap::Clip do
     updater = Solargraph::Source::Updater.new('test.rb', 1, [
                                                 Solargraph::Source::Change.new(Solargraph::Range.from_to(2, 6, 2, 6), 'x.')
                                               ])
-    updated = source.start_synchronize(updater)
+    updated = source.synchronize(updater)
     api_map.map updated
     clip = api_map.clip_at('test.rb', [2, 8])
     expect(clip.complete.pins.first.path).to start_with('Array#')
@@ -1368,7 +1349,7 @@ describe Solargraph::SourceMap::Clip do
         Solargraph::Source::Change.new(Solargraph::Range.from_to(7, 32, 7, 32), ',')
       ]
     )
-    updated = source.start_synchronize(updater)
+    updated = source.synchronize(updater)
     api_map = Solargraph::ApiMap.new
     api_map.map updated
     clip = api_map.clip_at('test.rb', [7, 33])
@@ -1420,7 +1401,7 @@ describe Solargraph::SourceMap::Clip do
         Solargraph::Source::Change.new(Solargraph::Range.from_to(7, 29, 7, 29), '()')
       ]
     )
-    updated = source.start_synchronize(updater)
+    updated = source.synchronize(updater)
     api_map = Solargraph::ApiMap.new
     api_map.map updated
     clip = api_map.clip_at('test.rb', [7, 30])
@@ -1494,7 +1475,7 @@ describe Solargraph::SourceMap::Clip do
         Solargraph::Source::Change.new(Solargraph::Range.from_to(7, 30, 7, 30), 'F')
       ]
     )
-    updated = source.start_synchronize(updater)
+    updated = source.synchronize(updater)
     api_map = Solargraph::ApiMap.new
     api_map.map updated
     clip = api_map.clip_at('test.rb', [7, 31])
