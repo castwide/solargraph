@@ -13,6 +13,7 @@ module Solargraph
         autoload :NamespaceNode, 'solargraph/parser/parser_gem/node_processors/namespace_node'
         autoload :SclassNode,    'solargraph/parser/parser_gem/node_processors/sclass_node'
         autoload :IvasgnNode,    'solargraph/parser/parser_gem/node_processors/ivasgn_node'
+        autoload :IfNode,        'solargraph/parser/parser_gem/node_processors/if_node'
         autoload :CvasgnNode,    'solargraph/parser/parser_gem/node_processors/cvasgn_node'
         autoload :LvasgnNode,    'solargraph/parser/parser_gem/node_processors/lvasgn_node'
         autoload :GvasgnNode,    'solargraph/parser/parser_gem/node_processors/gvasgn_node'
@@ -35,6 +36,7 @@ module Solargraph
       register :resbody,      ParserGem::NodeProcessors::ResbodyNode
       register :def,          ParserGem::NodeProcessors::DefNode
       register :defs,         ParserGem::NodeProcessors::DefsNode
+      register :if,           ParserGem::NodeProcessors::IfNode
       register :send,         ParserGem::NodeProcessors::SendNode
       register :class,        ParserGem::NodeProcessors::NamespaceNode
       register :module,       ParserGem::NodeProcessors::NamespaceNode
