@@ -777,4 +777,11 @@ describe Solargraph::ApiMap do
     expect(baz).to be_a(Solargraph::Pin::Method)
     expect(baz.path).to eq('Foo#baz')
   end
+
+  it 'ignores malformed mixins' do
+    closure = Solargraph::Pin::Namespace.new(name: 'Foo', closure: Solargraph::Pin::ROOT_PIN, type: :class)
+    mixin = Solargraph::Pin::Reference::Include.new(name: 'defined?(DidYouMean::SpellChecker) && defined?(DidYouMean::Correctable)', closure: closure)
+    api_map = Solargraph::ApiMap.new(pins: [closure, mixin])
+    expect(api_map.get_method_stack('Foo', 'foo')).to be_empty
+  end
 end
