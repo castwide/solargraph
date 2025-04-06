@@ -56,9 +56,10 @@ module Solargraph
         source_map_external_require_hash.delete @current.filename
         @external_requires = nil
       end
+      changed = source && (@current&.code != source&.code)
       @current = source
       maybe_map @current
-      catalog
+      catalog if changed
     end
 
     # True if the specified file is currently attached.
@@ -140,8 +141,10 @@ module Solargraph
     # @param filename [String]
     # @return [void]
     def close filename
-      @current = nil if @current && @current.filename == filename
-      catalog
+      return unless @current&.filename == filename
+
+      @current = nil
+      catalog unless workspace.has_file?(filename)
     end
 
     # Get completion suggestions at the specified file and location.
@@ -154,7 +157,7 @@ module Solargraph
     def completions_at filename, line, column
       position = Position.new(line, column)
       cursor = Source::Cursor.new(read(filename), position)
-      api_map.clip(cursor).complete
+      mutex.synchronize { api_map.clip(cursor).complete }
     rescue FileNotFoundError => e
       handle_file_not_found filename, e
     end
@@ -177,13 +180,13 @@ module Solargraph
         rgt = source.code[offset..-1].match(/^([a-z0-9_]*)(:[a-z0-9_:]*)?[\]>, ]/i)
         if lft && rgt
           tag = (lft[1] + rgt[1]).sub(/:+$/, '')
-          clip = api_map.clip(cursor)
+          clip = mutex.synchronize { api_map.clip(cursor) }
           clip.translate tag
         else
           []
         end
       else
-        api_map.clip(cursor).define.map { |pin| pin.realize(api_map) }
+        mutex.synchronize { api_map.clip(cursor).define.map { |pin| pin.realize(api_map) } }
       end
     rescue FileNotFoundError => e
       handle_file_not_found(filename, e)
@@ -200,7 +203,7 @@ module Solargraph
     def type_definitions_at filename, line, column
       position = Position.new(line, column)
       cursor = Source::Cursor.new(read(filename), position)
-      api_map.clip(cursor).types
+      mutex.synchronize { api_map.clip(cursor).types }
     rescue FileNotFoundError => e
       handle_file_not_found filename, e
     end
@@ -216,7 +219,7 @@ module Solargraph
     def signatures_at filename, line, column
       position = Position.new(line, column)
       cursor = Source::Cursor.new(read(filename), position)
-      api_map.clip(cursor).signify
+      mutex.synchronize { api_map.clip(cursor).signify }
     end
 
     # @param filename [String]
@@ -227,8 +230,8 @@ module Solargraph
     # @return [Array<Solargraph::Range>]
     # @todo Take a Location instead of filename/line/column
     def references_from filename, line, column, strip: false, only: false
-      cursor = api_map.cursor_at(filename, Position.new(line, column))
-      clip = api_map.clip(cursor)
+      cursor = Source::Cursor.new(read(filename), [line, column])
+      clip = mutex.synchronize { api_map.clip(cursor) }
       pin = clip.define.first
       return [] unless pin
       result = []
@@ -273,7 +276,7 @@ module Solargraph
     # @param location [Location]
     # @return [Array<Solargraph::Pin::Base>]
     def locate_pins location
-      api_map.locate_pins(location).map { |pin| pin.realize(api_map) }
+      mutex.synchronize { api_map.locate_pins(location).map { |pin| pin.realize(api_map) } }
     end
 
     # Match a require reference to a file.
@@ -306,19 +309,19 @@ module Solargraph
     # @param path [String]
     # @return [Enumerable<Solargraph::Pin::Base>]
     def get_path_pins path
-      api_map.get_path_suggestions(path)
+      mutex.synchronize { api_map.get_path_suggestions(path) }
     end
 
     # @param query [String]
     # @return [Enumerable<YARD::CodeObjects::Base>]
     def document query
-      api_map.document query
+      mutex.synchronize { api_map.document query }
     end
 
     # @param query [String]
     # @return [Array<String>]
     def search query
-      api_map.search query
+      mutex.synchronize { api_map.search query }
     end
 
     # Get an array of all symbols in the workspace that match the query.
@@ -326,7 +329,7 @@ module Solargraph
     # @param query [String]
     # @return [Array<Pin::Base>]
     def query_symbols query
-      api_map.query_symbols query
+      mutex.synchronize { api_map.query_symbols query }
     end
 
     # Get an array of document symbols.
@@ -338,13 +341,13 @@ module Solargraph
     # @param filename [String]
     # @return [Array<Solargraph::Pin::Base>]
     def document_symbols filename
-      api_map.document_symbols(filename)
+      mutex.synchronize { api_map.document_symbols(filename) }
     end
 
     # @param path [String]
     # @return [Enumerable<Solargraph::Pin::Base>]
     def path_pins path
-      api_map.get_path_suggestions(path)
+      mutex.synchronize { api_map.get_path_suggestions(path) }
     end
 
     # @return [Array<SourceMap>]
@@ -373,7 +376,6 @@ module Solargraph
       return [] unless open?(filename)
       result = []
       source = read(filename)
-      catalog
       repargs = {}
       workspace.config.reporters.each do |line|
         if line == 'all!'
@@ -390,7 +392,7 @@ module Solargraph
         end
       end
       repargs.each_pair do |reporter, args|
-        result.concat reporter.new(*args.uniq).diagnose(source, api_map)
+        result.concat reporter.new(*args.uniq).diagnose(source, mutex.synchronize { api_map })
       end
       result
     end
@@ -399,11 +401,16 @@ module Solargraph
     #
     # @return [void]
     def catalog
-      logger.info "Cataloging #{workspace.directory.empty? ? 'generic workspace' : workspace.directory}"
-      api_map.catalog bench
-      logger.info "Catalog complete (#{api_map.source_maps.length} files, #{api_map.pins.length} pins)"
-      logger.info "#{api_map.uncached_gemspecs.length} uncached gemspecs"
-      cache_next_gemspec
+      thread = Thread.new do
+        mutex.synchronize do
+          logger.info "Cataloging #{workspace.directory.empty? ? 'generic workspace' : workspace.directory}"
+          api_map.catalog bench
+          logger.info "Catalog complete (#{api_map.source_maps.length} files, #{api_map.pins.length} pins)"
+          logger.info "#{api_map.uncached_gemspecs.length} uncached gemspecs"
+        end
+        cache_next_gemspec
+      end
+      thread.join unless mutex.owned?
     end
 
     # @return [Bench]
@@ -442,7 +449,6 @@ module Solargraph
     # @return [Boolean] True if the source was merged into the workspace.
     def merge source
       Logging.logger.debug "Merging source: #{source.filename}"
-      result = false
       result = workspace.merge(source)
       maybe_map source
       result
