@@ -83,9 +83,11 @@ module Solargraph
         implicit.merge map.environ
       end
       unresolved_requires = (bench.external_requires + implicit.requires + bench.workspace.config.required).uniq
-      @doc_map = DocMap.new(unresolved_requires, [], bench.workspace.rbs_collection_path) # @todo Implement gem preferences
+      if @unresolved_requires != unresolved_requires
+        @doc_map = DocMap.new(unresolved_requires, [], bench.workspace.rbs_collection_path) # @todo Implement gem preferences
+        @unresolved_requires = unresolved_requires
+      end
       @store = Store.new(@@core_map.pins + @doc_map.pins + implicit.pins + pins)
-      @unresolved_requires = @doc_map.unresolved_requires
       @missing_docs = [] # @todo Implement missing docs
       self
     end
