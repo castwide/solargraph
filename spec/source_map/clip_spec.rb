@@ -2182,8 +2182,7 @@ describe Solargraph::SourceMap::Clip do
     expect(clip.infer.to_s).to eq('Float')
   end
 
-  it 'u
-  tch' do
+  it 'can use strings and symbols to choose a signature' do
     source = Solargraph::Source.load_string(%(
       # @generic A
       # @generic B
