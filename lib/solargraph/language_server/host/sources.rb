@@ -11,54 +11,10 @@ module Solargraph
         include Observable
         include UriHelpers
 
-        def initialize
-          @mutex = Mutex.new
-          @stopped = true
-          @has_uri = ConditionVariable.new
-        end
-
-        def stopped?
-          @stopped
-        end
-
-        # @return [void]
-        def start
-          return unless @stopped
-          @stopped = false
-          Thread.new do
-            tick until stopped?
-          end
-        end
-
-        # @return [void]
-        def tick
-          uri = mutex.synchronize { next_uri }
-
-          return if queue.include?(uri)
-          mutex.synchronize do
-            nxt = open_source_hash[uri].finish_synchronize
-            open_source_hash[uri] = nxt
-            changed
-            notify_observers uri
-          end
-        end
-
         # @param uri [String]
         # @return [void]
         def add_uri(uri)
           queue.push(uri)
-          @has_uri.signal
-        end
-
-        # @return [String]
-        def next_uri
-          @has_uri.wait(mutex) if queue.empty?
-          queue.shift
-        end
-
-        # @return [void]
-        def stop
-          @stopped = true
         end
 
         # Open a source.
@@ -89,20 +45,7 @@ module Solargraph
         # @return [void]
         def update uri, updater
           src = find(uri)
-          mutex.synchronize { open_source_hash[uri] = src.synchronize(updater) }
-          changed
-          notify_observers uri
-        end
-
-        # @param uri [String]
-        # @param updater [Source::Updater]
-        # @return [void]
-        def async_update uri, updater
-          src = find(uri)
-          mutex.synchronize do
-            open_source_hash[uri] = src.start_synchronize(updater)
-            add_uri(uri)
-          end
+          open_source_hash[uri] = src.synchronize(updater)
           changed
           notify_observers uri
         end
@@ -143,9 +86,6 @@ module Solargraph
         def open_source_hash
           @open_source_hash ||= {}
         end
-
-        # @return [Mutex]
-        attr_reader :mutex
 
         # An array of source URIs that are waiting to finish synchronizing.
         #

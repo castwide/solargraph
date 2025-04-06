@@ -291,13 +291,19 @@ module Solargraph
       result = []
       base = chain
       until base.links.length == 1 && base.undefined?
+        last_base_link = base.links.last
+        break unless last_base_link.is_a?(Solargraph::Source::Chain::Call)
+
+        arguments = last_base_link.arguments
+
         pins = base.define(api_map, block_pin, locals)
 
-        if pins.first.is_a?(Pin::DelegatedMethod) && !pins.first.resolvable?(api_map)
+        first_pin = pins.first
+        if first_pin.is_a?(Pin::DelegatedMethod) && !first_pin.resolvable?(api_map)
           # Do nothing, as we can't find the actual method implementation
-        elsif pins.first.is_a?(Pin::Method)
+        elsif first_pin.is_a?(Pin::Method)
           # @type [Pin::Method]
-          pin = pins.first
+          pin = first_pin
           ap = if base.links.last.is_a?(Solargraph::Source::Chain::ZSuper)
             arity_problems_for(pin, fake_args_for(block_pin), location)
           elsif pin.path == 'Class#new'
@@ -307,9 +313,9 @@ module Solargraph
               base.base.infer(api_map, block_pin, locals).namespace
             end
             init = api_map.get_method_stack(fqns, 'initialize').first
-            init ? arity_problems_for(init, base.links.last.arguments, location) : []
+            init ? arity_problems_for(init, arguments, location) : []
           else
-            arity_problems_for(pin, base.links.last.arguments, location)
+            arity_problems_for(pin, arguments, location)
           end
           unless ap.empty?
             result.concat ap
@@ -323,10 +329,10 @@ module Solargraph
           pin.signatures.sort { |sig| sig.parameters.length }.each do |sig|
             errors = []
             sig.parameters.each_with_index do |par, idx|
-              argchain = base.links.last.arguments[idx]
+              argchain = arguments[idx]
               if argchain.nil?
                 if par.decl == :arg
-                  last = base.links.last.arguments.last
+                  last = arguments.last
                   if last && last.node.type == :splat
                     argchain = last
                     next # don't try to apply the type of the splat - unlikely to be specific enough
@@ -335,7 +341,7 @@ module Solargraph
                     next
                   end
                 else
-                  last = base.links.last.arguments.last
+                  last = arguments.last
                   argchain = last if last && [:kwsplat, :hash].include?(last.node.type)
                 end
               end
@@ -344,7 +350,7 @@ module Solargraph
                   errors.concat kwarg_problems_for sig, argchain, api_map, block_pin, locals, location, pin, params, idx
                   next
                 else
-                  last = base.links.last.arguments.last
+                  last = arguments.last
                   if last && last.node.type == :splat
                     next # don't try to apply the type of the splat - unlikely to be specific enough
                   end

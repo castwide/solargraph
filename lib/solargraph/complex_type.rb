@@ -340,7 +340,7 @@ module Solargraph
       def try_parse *strings
         parse *strings
       rescue ComplexTypeError => e
-        Solargraph.logger.info "Error parsing complex type: #{e.message}"
+        Solargraph.logger.info "Error parsing complex type `#{strings.join(', ')}`: #{e.message}"
         ComplexType::UNDEFINED
       end
     end
@@ -353,5 +353,20 @@ module Solargraph
     SELF = ComplexType.parse('self')
     BOOLEAN = ComplexType.parse('::Boolean')
     BOT = ComplexType.parse('bot')
+
+    private
+
+    # @todo This is a quick and dirty hack that forces `self` keywords
+    #   to reference an instance of their class and never the class itself.
+    #   This behavior may change depending on which result is expected
+    #   from YARD conventions. See https://github.com/lsegal/yard/issues/1257
+    # @param dst [String]
+    # @return [String]
+    def reduce_class dst
+      while dst =~ /^(Class|Module)\<(.*?)\>$/
+        dst = dst.sub(/^(Class|Module)\</, '').sub(/\>$/, '')
+      end
+      dst
+    end
   end
 end

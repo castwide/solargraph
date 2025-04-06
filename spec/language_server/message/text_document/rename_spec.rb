@@ -1,9 +1,5 @@
 # frozen_string_literal: true
 
-# @todo These tests use sleep to allow the host time to update the library with
-#   the newly opened file. It might be necessary for messages themselves to
-#   check if the host is still updating. Host#synchronizing? is not reliable,
-#   possibly because the library hasn't been added to the host yet.
 describe Solargraph::LanguageServer::Message::TextDocument::Rename do
   it "renames a symbol" do
     host = Solargraph::LanguageServer::Host.new
@@ -42,9 +38,9 @@ describe Solargraph::LanguageServer::Message::TextDocument::Rename do
       return bar
       end
     	end
-    	), 1)
-      sleep 0.01
-    	rename = Solargraph::LanguageServer::Message::TextDocument::Rename.new(host, {
+
+    ), 1)
+    rename = Solargraph::LanguageServer::Message::TextDocument::Rename.new(host, {
       'id' => 1,
       'method' => 'textDocument/rename',
       'params' => {
@@ -72,9 +68,8 @@ describe Solargraph::LanguageServer::Message::TextDocument::Rename do
       return bar
       end
     	end
-    	), 1)
-      sleep 0.01
-    	rename = Solargraph::LanguageServer::Message::TextDocument::Rename.new(host, {
+    ), 1)
+    rename = Solargraph::LanguageServer::Message::TextDocument::Rename.new(host, {
       'id' => 1,
       'method' => 'textDocument/rename',
       'params' => {
@@ -100,9 +95,8 @@ describe Solargraph::LanguageServer::Message::TextDocument::Rename do
       class Namespace::ExampleClass
       end
       obj = Namespace::ExampleClass.new
-    	), 1)
-      sleep 0.01
-    	rename = Solargraph::LanguageServer::Message::TextDocument::Rename.new(host, {
+    ), 1)
+    rename = Solargraph::LanguageServer::Message::TextDocument::Rename.new(host, {
       'id' => 1,
       'method' => 'textDocument/rename',
       'params' => {
