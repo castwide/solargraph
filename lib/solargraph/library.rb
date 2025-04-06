@@ -98,12 +98,10 @@ module Solargraph
     # @param text [String] The contents of the file
     # @return [Boolean] True if the file was added to the workspace.
     def create filename, text
-      result = false
       return false unless contain?(filename) || open?(filename)
       source = Solargraph::Source.load_string(text, filename)
       workspace.merge(source)
-      result = true
-      result
+      true
     end
 
     # Create file sources from files on disk. A file is ignored if it is
@@ -112,7 +110,6 @@ module Solargraph
     # @param filenames [Array<String>]
     # @return [Boolean] True if at least one file was added to the workspace.
     def create_from_disk *filenames
-      result = false
       sources = filenames
         .reject { |filename| File.directory?(filename) || !File.exist?(filename) }
         .map { |filename| Solargraph::Source.load_string(File.read(filename), filename) }
@@ -416,7 +413,7 @@ module Solargraph
     def catalog
       @threads.delete_if(&:stop?)
       @threads.push(Thread.new do
-        sleep 0.05
+        sleep 0.05 if RUBY_PLATFORM =~ /mingw/
         next unless @threads.last == Thread.current
 
         mutex.synchronize do
@@ -427,7 +424,7 @@ module Solargraph
           cache_next_gemspec
         end
       end)
-      @threads.last.run
+      @threads.last.run if RUBY_PLATFORM =~ /mingw/
     end
 
     # @return [Bench]
