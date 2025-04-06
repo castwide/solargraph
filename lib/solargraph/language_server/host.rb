@@ -12,7 +12,6 @@ module Solargraph
     #
     class Host
       autoload :Diagnoser,     'solargraph/language_server/host/diagnoser'
-      autoload :Cataloger,     'solargraph/language_server/host/cataloger'
       autoload :Sources,       'solargraph/language_server/host/sources'
       autoload :Dispatch,      'solargraph/language_server/host/dispatch'
       autoload :MessageWorker, 'solargraph/language_server/host/message_worker'
