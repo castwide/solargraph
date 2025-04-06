@@ -45,14 +45,14 @@ module Solargraph
       end
 
       # @param node [Parser::AST::Node]
-      def process_conditional(node, if_true, if_false)
-        return unless node.type == :send && node.children[1] == :is_a?
+      def process_conditional(conditional_node, if_true, if_false)
+        return unless conditional_node.type == :send && conditional_node.children[1] == :is_a?
         # Check if conditional node follows this pattern:
         #   s(:send,
         #     s(:send, nil, :foo), :is_a?,
         #     s(:const, nil, :Baz)),
-        isa_receiver = node.children[0]
-        isa_type_name = type_name(node.children[2])
+        isa_receiver = conditional_node.children[0]
+        isa_type_name = type_name(conditional_node.children[2])
         return unless isa_type_name
         # check if isa_receiver looks like this:
         #  s(:send, nil, :foo)
@@ -64,8 +64,10 @@ module Solargraph
         # (lvar :repr)
         variable_name = isa_receiver.children[0].to_s if isa_receiver.type == :lvar
         return if variable_name.nil? || variable_name.empty?
-        pins = locals.select { |pin| pin.name == variable_name }
+        clause_range = Range.from_node(node)
+        pins = locals.select { |pin| pin.name == variable_name && pin.presence.include?(clause_range.start) }
         return unless pins.length == 1
+
         if_true[pins.first] ||= []
         if_true[pins.first] << { type: isa_type_name }
       end
