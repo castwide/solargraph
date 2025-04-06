@@ -2180,6 +2180,27 @@ describe Solargraph::SourceMap::Clip do
     expect(clip.infer.to_s).to eq('Repro')
   end
 
+  it 'uses is_a? in an if-then-else() to refine types' do
+    source = Solargraph::Source.load_string(%(
+      class ReproBase; end
+      class Repro1 < ReproBase; end
+      # @param repr [ReproBase]
+      def verify_repro(repr)
+        if repr.is_a?(Repro1)
+          repr
+        else
+          repr
+        end
+      end
+  ), 'test.rb')
+    api_map = Solargraph::ApiMap.new.map(source)
+    clip = api_map.clip_at('test.rb', [6, 10])
+    expect(clip.infer.to_s).to eq('Repro1')
+
+    clip = api_map.clip_at('test.rb', [8, 10])
+    expect(clip.infer.to_s).to eq('ReproBase')
+  end
+
   it 'uses is_a? in a if-then-elsif-else() to refine types' do
     source = Solargraph::Source.load_string(%(
       class ReproBase; end
@@ -2206,8 +2227,6 @@ describe Solargraph::SourceMap::Clip do
     clip = api_map.clip_at('test.rb', [11, 10])
     expect(clip.infer.to_s).to eq('ReproBase')
   end
-
-  xit 'uses is_a? in an if-then-else() to refine types'
 
   xit 'uses is_a? in a "break unless" statement to refine types' do
     source = Solargraph::Source.load_string(%(
