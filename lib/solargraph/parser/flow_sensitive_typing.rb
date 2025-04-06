@@ -29,6 +29,22 @@ module Solargraph
       # end
 
       # @param node [Parser::AST::Node]
+      def type_name(node)
+        # e.g.,
+        #  s(:const, nil, :Baz)
+        return unless node.type == :const
+        module_node = node.children[0]
+        class_node = node.children[1]
+
+        return class_node.to_s if module_node.nil?
+
+        module_type_name = type_name(module_node)
+        return unless module_type_name
+
+        "#{module_type_name}::#{class_node}"
+      end
+
+      # @param node [Parser::AST::Node]
       def process_conditional(node, if_true, if_false)
         return unless node.type == :send && node.children[1] == :is_a?
         # Check if conditional node follows this pattern:
@@ -36,19 +52,8 @@ module Solargraph
         #     s(:send, nil, :foo), :is_a?,
         #     s(:const, nil, :Baz)),
         isa_receiver = node.children[0]
-        isa_class = node.children[2]
-        return unless isa_class.type == :const
-        # pay attention to above parse tree while writing code
-        isa_module = isa_class.children[0]
-        if isa_module.nil?
-          isa_type_name = isa_class.children[1].to_s
-        else
-          return unless isa_module.type == :const
-          # just handle common cases for now; next step is to
-          # recursively add namespaces at the front
-          return unless isa_module.children[0].nil?
-          isa_type_name = "#{isa_module.children[1]}::#{isa_class.children[1]}"
-        end
+        isa_type_name = type_name(node.children[2])
+        return unless isa_type_name
         # check if isa_receiver looks like this:
         #  s(:send, nil, :foo)
         # and set variable_name to :foo

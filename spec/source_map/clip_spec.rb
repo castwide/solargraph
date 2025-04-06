@@ -2134,7 +2134,7 @@ describe Solargraph::SourceMap::Clip do
     expect(clip.infer.to_s).to eq('ReproBase')
   end
 
-  xit 'uses is_a? in a simple if() to refine types on a double-module-scoped class' do
+  it 'uses is_a? in a simple if() to refine types on a double-module-scoped class' do
     source = Solargraph::Source.load_string(%(
       class ReproBase; end
       module Foo
