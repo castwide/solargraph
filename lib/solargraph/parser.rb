@@ -11,6 +11,11 @@ module Solargraph
 
     ClassMethods = ParserGem::ClassMethods
 
+    # @deprecated
+    Legacy = ParserGem
+
+    ClassMethods = ParserGem::ClassMethods
+
     extend ParserGem::ClassMethods
 
     NodeMethods = ParserGem::NodeMethods
