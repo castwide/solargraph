@@ -9,6 +9,8 @@ module Solargraph
     class SyntaxError < StandardError
     end
 
+    ClassMethods = ParserGem::ClassMethods
+
     extend ParserGem::ClassMethods
 
     NodeMethods = ParserGem::NodeMethods
