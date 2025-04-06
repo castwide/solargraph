@@ -3,15 +3,14 @@ module Solargraph
     class FlowSensitiveTyping
       include Solargraph::Parser::NodeMethods
 
-      # @param node [Parser::AST::Node]
       # @param locals [Array<Solargraph::Pin::BaseVariable>]
-      def initialize(node, locals)
-        @node = node
+      def initialize(locals)
         @locals = locals
       end
 
+      # @param node [Parser::AST::Node]
       # @return [void]
-      def run
+      def run(node)
         process_node(node)
       end
 
@@ -64,8 +63,8 @@ module Solargraph
         # (lvar :repr)
         variable_name = isa_receiver.children[0].to_s if isa_receiver.type == :lvar
         return if variable_name.nil? || variable_name.empty?
-        clause_range = Range.from_node(node)
-        pins = locals.select { |pin| pin.name == variable_name && pin.presence.include?(clause_range.start) }
+        conditional_range = Range.from_node(conditional_node)
+        pins = locals.select { |pin| pin.name == variable_name && pin.presence.include?(conditional_range.start) }
         return unless pins.length == 1
 
         if_true[pins.first] ||= []
@@ -120,7 +119,7 @@ module Solargraph
 
       private
 
-      attr_reader :node, :locals
+      attr_reader :locals
     end
   end
 end

@@ -10,7 +10,7 @@ module Solargraph
           def process
             process_children
 
-            FlowSensitiveTyping.new(node, locals).run
+            FlowSensitiveTyping.new(locals).run(node)
           end
         end
       end
