@@ -138,6 +138,10 @@ module Solargraph
       @items.all?(&:literal?)
     end
 
+    def rooted_tags
+      map(&:rooted_tag).join(', ')
+    end
+
     def all? &block
       @items.all? &block
     end
@@ -163,7 +167,15 @@ module Solargraph
     # @yieldreturn [UniqueType]
     # @return [ComplexType]
     def transform(new_name = nil, &transform_type)
+      raise "Please remove leading :: and set rooted with recreate() instead - #{new_name}" if new_name&.start_with?('::')
       ComplexType.new(map { |ut| ut.transform(new_name, &transform_type) })
+    end
+
+    # @return [self]
+    def force_rooted
+      transform do |t|
+        t.recreate(make_rooted: true)
+      end
     end
 
     # @param definitions [Pin::Namespace, Pin::Method]
@@ -270,7 +282,7 @@ module Solargraph
               elsif base.end_with?('=')
                 raise ComplexTypeError, "Invalid hash thing" unless key_types.nil?
                 # types.push ComplexType.new([UniqueType.new(base[0..-2].strip)])
-                types.push UniqueType.new(base[0..-2].strip)
+                types.push UniqueType.parse(base[0..-2].strip)
                 # @todo this should either expand key_type's type
                 #   automatically or complain about not being
                 #   compatible with key_type's type in type checking
@@ -301,7 +313,7 @@ module Solargraph
               next
             elsif char == ',' && point_stack == 0 && curly_stack == 0 && paren_stack == 0
               # types.push ComplexType.new([UniqueType.new(base.strip, subtype_string.strip)])
-              types.push UniqueType.new(base.strip, subtype_string.strip)
+              types.push UniqueType.parse(base.strip, subtype_string.strip)
               base.clear
               subtype_string.clear
               next
@@ -314,7 +326,7 @@ module Solargraph
           end
           raise ComplexTypeError, "Unclosed subtype in #{type_string}" if point_stack != 0 || curly_stack != 0 || paren_stack != 0
           # types.push ComplexType.new([UniqueType.new(base, subtype_string)])
-          types.push UniqueType.new(base.strip, subtype_string.strip)
+          types.push UniqueType.parse(base.strip, subtype_string.strip)
         end
         unless key_types.nil?
           raise ComplexTypeError, "Invalid use of key/value parameters" unless partial
@@ -338,11 +350,11 @@ module Solargraph
 
     VOID = ComplexType.parse('void')
     UNDEFINED = ComplexType.parse('undefined')
-    SYMBOL = ComplexType.parse('Symbol')
-    ROOT = ComplexType.parse('Class<>')
+    SYMBOL = ComplexType.parse('::Symbol')
+    ROOT = ComplexType.parse('::Class<>')
     NIL = ComplexType.parse('nil')
     SELF = ComplexType.parse('self')
-    BOOLEAN = ComplexType.parse('Boolean')
+    BOOLEAN = ComplexType.parse('::Boolean')
     BOT = ComplexType.parse('bot')
   end
 end
