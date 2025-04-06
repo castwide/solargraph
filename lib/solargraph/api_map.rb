@@ -256,11 +256,9 @@ module Solargraph
       return unless type
       return tag if type.literal?
 
+
       context_type = ComplexType.try_parse(context_tag)
       return unless context_type
-
-      type = ComplexType.try_parse(tag)
-      return unless type
 
       fqns = qualify_namespace(type.rooted_namespace, context_type.rooted_namespace)
       return unless fqns

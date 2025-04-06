@@ -135,7 +135,7 @@ module Solargraph
     end
 
     def literal?
-      @items.all?(&:literal?)
+      @items.any?(&:literal?)
     end
 
     def rooted_tags
