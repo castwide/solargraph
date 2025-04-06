@@ -171,7 +171,7 @@ module Solargraph
     # @return [ComplexType]
     def resolve_generics definitions, context_type
       result = @items.map { |i| i.resolve_generics(definitions, context_type) }
-      ComplexType.parse(*result.map(&:tag))
+      ComplexType.try_parse(*result.map(&:tag))
     end
 
     # @param dst [String]
@@ -180,7 +180,7 @@ module Solargraph
       return self unless selfy?
       red = reduce_class(dst)
       result = @items.map { |i| i.self_to red }
-      ComplexType.parse(*result.map(&:tag))
+      ComplexType.try_parse(*result.map(&:tag))
     end
 
     def nullable?

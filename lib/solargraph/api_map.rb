@@ -604,7 +604,7 @@ module Solargraph
       # class' responsibility
       raw_methods = store.get_methods(fqns, scope: scope, visibility: visibility).sort{ |a, b| a.name <=> b.name }
       namespace_pin = store.get_path_pins(fqns).select { |p| p.is_a?(Pin::Namespace) }.first
-      methods = if rooted_tag != fqns
+      methods = if namespace_pin && rooted_tag != fqns
                   methods = raw_methods.map do |method_pin|
                     method_pin.resolve_generics(namespace_pin, rooted_type)
                   end
