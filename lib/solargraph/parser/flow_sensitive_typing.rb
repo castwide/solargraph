@@ -17,18 +17,18 @@ module Solargraph
 
       def process_node(node)
         return process_if(node) if node.type == :if
-        return process_or(node) if node.type == :or
+        # process_or(node) if node.type == :or
       end
 
-      def process_or(node)
-        lhs = node.children[0]
-        rhs = node.children[1]
-        if_true = {}
-        if_false = {}
-        gather_facts(conditional_node, if_true, if_false)
+      # def process_or(node)
+      #   lhs = node.children[0]
+      #   rhs = node.children[1]
+      #   if_true = {}
+      #   if_false = {}
+      #   gather_facts(conditional_node, if_true, if_false)
+      # end
 
-      end
-
+      # @param node [Parser::AST::Node]
       def process_conditional(node, if_true, if_false)
         return unless node.type == :send && node.children[1] == :is_a?
         # Check if conditional node follows this pattern:
@@ -65,6 +65,7 @@ module Solargraph
         if_true[pins.first] << { type: isa_type_name }
       end
 
+      # @param node [Parser::AST::Node]
       def process_if(node)
         conditional_node = node.children[0]
         then_clause = node.children[1]
