@@ -2576,7 +2576,7 @@ describe Solargraph::SourceMap::Clip do
   ), 'test.rb')
     api_map = Solargraph::ApiMap.new.map(source)
     clip = api_map.clip_at('test.rb', [7, 6])
-    expect(clip.infer.to_s).to eq('Symbol, Integer, nil')
+    expect(clip.infer.to_s).to eq(':foo, 123, nil')
   end
 
   it 'expands type with conditional reassignments' do
@@ -2591,6 +2591,6 @@ describe Solargraph::SourceMap::Clip do
   ), 'test.rb')
     api_map = Solargraph::ApiMap.new.map(source)
     clip = api_map.clip_at('test.rb', [7, 6])
-    expect(clip.infer.to_s).to eq('String, Symbol, Integer')
+    expect(clip.infer.to_s).to eq('String, :foo, 123')
   end
 end
