@@ -252,7 +252,8 @@ module Solargraph
     # @return [String, nil] fully qualified tag
     def qualify tag, context_tag = ''
       return tag if ['Boolean', 'self', nil].include?(tag)
-      type = ComplexType.parse(tag)
+      type = ComplexType.try_parse(tag)
+      return unless type
       return tag if type.literal?
 
       context_type = ComplexType.try_parse(context_tag)
