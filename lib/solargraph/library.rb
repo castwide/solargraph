@@ -56,7 +56,7 @@ module Solargraph
         source_map_external_require_hash.delete @current.filename
         @external_requires = nil
       end
-      changed = source && (@current&.code != source&.code)
+      changed = source && @current != source
       @current = source
       maybe_map @current
       catalog if changed
