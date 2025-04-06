@@ -43,7 +43,6 @@ module Solargraph
         return unless stopped?
         @stopped = false
         diagnoser.start
-        cataloger.start
         message_worker.start
       end
 
@@ -209,7 +208,7 @@ module Solargraph
       def diagnose uri
         if sources.include?(uri)
           library = library_for(uri)
-          if library.mapped? && library.synchronized?
+          if library.mapped?
             logger.info "Diagnosing #{uri}"
             begin
               results = library.diagnose uri_to_file(uri)
@@ -460,7 +459,6 @@ module Solargraph
         return if @stopped
         @stopped = true
         message_worker.stop
-        cataloger.stop
         diagnoser.stop
         changed
         notify_observers
@@ -704,11 +702,6 @@ module Solargraph
       # @return [Diagnoser]
       def diagnoser
         @diagnoser ||= Diagnoser.new(self)
-      end
-
-      # @return [Cataloger]
-      def cataloger
-        @cataloger ||= Cataloger.new(self)
       end
 
       # A hash of client requests by ID. The host uses this to keep track of
