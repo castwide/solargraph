@@ -51,16 +51,14 @@ module Solargraph
     # @param source [Source, nil]
     # @return [void]
     def attach source
-      mutex.synchronize do
-        if @current && (!source || @current.filename != source.filename) && source_map_hash.key?(@current.filename) && !workspace.has_file?(@current.filename)
-          source_map_hash.delete @current.filename
-          source_map_external_require_hash.delete @current.filename
-          @external_requires = nil
-        end
-        @current = source
-        maybe_map @current
-        catalog_inlock
+      if @current && (!source || @current.filename != source.filename) && source_map_hash.key?(@current.filename) && !workspace.has_file?(@current.filename)
+        source_map_hash.delete @current.filename
+        source_map_external_require_hash.delete @current.filename
+        @external_requires = nil
       end
+      @current = source
+      maybe_map @current
+      catalog
     end
 
     # True if the specified file is currently attached.
@@ -99,12 +97,10 @@ module Solargraph
     # @return [Boolean] True if the file was added to the workspace.
     def create filename, text
       result = false
-      mutex.synchronize do
-        next unless contain?(filename) || open?(filename)
-        source = Solargraph::Source.load_string(text, filename)
-        workspace.merge(source)
-        result = true
-      end
+      return false unless contain?(filename) || open?(filename)
+      source = Solargraph::Source.load_string(text, filename)
+      workspace.merge(source)
+      result = true
       result
     end
 
@@ -115,13 +111,11 @@ module Solargraph
     # @return [Boolean] True if at least one file was added to the workspace.
     def create_from_disk *filenames
       result = false
-      mutex.synchronize do
-        sources = filenames
-          .reject { |filename| File.directory?(filename) || !File.exist?(filename) }
-          .map { |filename| Solargraph::Source.load_string(File.read(filename), filename) }
-        result = workspace.merge(*sources)
-        sources.each { |source| maybe_map source }
-      end
+      sources = filenames
+        .reject { |filename| File.directory?(filename) || !File.exist?(filename) }
+        .map { |filename| Solargraph::Source.load_string(File.read(filename), filename) }
+      result = workspace.merge(*sources)
+      sources.each { |source| maybe_map source }
       result
     end
 
@@ -135,9 +129,7 @@ module Solargraph
       result = false
       filenames.each do |filename|
         detach filename
-        mutex.synchronize do
-          result ||= workspace.remove(filename)
-        end
+        result ||= workspace.remove(filename)
       end
       result
     end
@@ -148,10 +140,8 @@ module Solargraph
     # @param filename [String]
     # @return [void]
     def close filename
-      mutex.synchronize do
-        @current = nil if @current && @current.filename == filename
-        catalog
-      end
+      @current = nil if @current && @current.filename == filename
+      catalog
     end
 
     # Get completion suggestions at the specified file and location.
@@ -237,47 +227,45 @@ module Solargraph
     # @return [Array<Solargraph::Range>]
     # @todo Take a Location instead of filename/line/column
     def references_from filename, line, column, strip: false, only: false
-      mutex.synchronize do
-        cursor = api_map.cursor_at(filename, Position.new(line, column))
-        clip = api_map.clip(cursor)
-        pin = clip.define.first
-        return [] unless pin
-        result = []
-        files = if only
-          [api_map.source_map(filename)]
-        else
-          (workspace.sources + (@current ? [@current] : []))
-        end
-        files.uniq(&:filename).each do |source|
-          found = source.references(pin.name)
-          found.select! do |loc|
-            referenced = definitions_at(loc.filename, loc.range.ending.line, loc.range.ending.character).first
-            referenced&.path == pin.path
-          end
-          if pin.path == 'Class#new'
-            caller = cursor.chain.base.infer(api_map, clip.send(:block), clip.locals).first
-            if caller.defined?
-              found.select! do |loc|
-                clip = api_map.clip_at(loc.filename, loc.range.start)
-                other = clip.send(:cursor).chain.base.infer(api_map, clip.send(:block), clip.locals).first
-                caller == other
-              end
-            else
-              found.clear
-            end
-          end
-          # HACK: for language clients that exclude special characters from the start of variable names
-          if strip && match = cursor.word.match(/^[^a-z0-9_]+/i)
-            found.map! do |loc|
-              Solargraph::Location.new(loc.filename, Solargraph::Range.from_to(loc.range.start.line, loc.range.start.column + match[0].length, loc.range.ending.line, loc.range.ending.column))
-            end
-          end
-          result.concat(found.sort do |a, b|
-            a.range.start.line <=> b.range.start.line
-          end)
-        end
-        result.uniq
+      cursor = api_map.cursor_at(filename, Position.new(line, column))
+      clip = api_map.clip(cursor)
+      pin = clip.define.first
+      return [] unless pin
+      result = []
+      files = if only
+        [api_map.source_map(filename)]
+      else
+        (workspace.sources + (@current ? [@current] : []))
       end
+      files.uniq(&:filename).each do |source|
+        found = source.references(pin.name)
+        found.select! do |loc|
+          referenced = definitions_at(loc.filename, loc.range.ending.line, loc.range.ending.character).first
+          referenced&.path == pin.path
+        end
+        if pin.path == 'Class#new'
+          caller = cursor.chain.base.infer(api_map, clip.send(:block), clip.locals).first
+          if caller.defined?
+            found.select! do |loc|
+              clip = api_map.clip_at(loc.filename, loc.range.start)
+              other = clip.send(:cursor).chain.base.infer(api_map, clip.send(:block), clip.locals).first
+              caller == other
+            end
+          else
+            found.clear
+          end
+        end
+        # HACK: for language clients that exclude special characters from the start of variable names
+        if strip && match = cursor.word.match(/^[^a-z0-9_]+/i)
+          found.map! do |loc|
+            Solargraph::Location.new(loc.filename, Solargraph::Range.from_to(loc.range.start.line, loc.range.start.column + match[0].length, loc.range.ending.line, loc.range.ending.column))
+          end
+        end
+        result.concat(found.sort do |a, b|
+          a.range.start.line <=> b.range.start.line
+        end)
+      end
+      result.uniq
     end
 
     # Get the pins at the specified location or nil if the pin does not exist.
@@ -411,15 +399,6 @@ module Solargraph
     #
     # @return [void]
     def catalog
-      mutex.synchronize do
-        catalog_inlock
-      end
-    end
-
-    # @return [void]
-    private def catalog_inlock
-      return if synchronized?
-
       logger.info "Cataloging #{workspace.directory.empty? ? 'generic workspace' : workspace.directory}"
       api_map.catalog bench
       logger.info "Catalog complete (#{api_map.source_maps.length} files, #{api_map.pins.length} pins)"
@@ -464,11 +443,8 @@ module Solargraph
     def merge source
       Logging.logger.debug "Merging source: #{source.filename}"
       result = false
-      mutex.synchronize do
-        result = workspace.merge(source)
-        maybe_map source
-      end
-      # catalog
+      result = workspace.merge(source)
+      maybe_map source
       result
     end
 
@@ -484,16 +460,14 @@ module Solargraph
     # @return [SourceMap, Boolean]
     def next_map
       return false if mapped?
-      mutex.synchronize do
-        src = workspace.sources.find { |s| !source_map_hash.key?(s.filename) }
-        if src
-          Logging.logger.debug "Mapping #{src.filename}"
-          source_map_hash[src.filename] = Solargraph::SourceMap.map(src)
-          find_external_requires(source_map_hash[src.filename])
-          source_map_hash[src.filename]
-        else
-          false
-        end
+      src = workspace.sources.find { |s| !source_map_hash.key?(s.filename) }
+      if src
+        Logging.logger.debug "Mapping #{src.filename}"
+        source_map_hash[src.filename] = Solargraph::SourceMap.map(src)
+        find_external_requires(source_map_hash[src.filename])
+        source_map_hash[src.filename]
+      else
+        false
       end
     end
 
