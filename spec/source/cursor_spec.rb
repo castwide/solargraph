@@ -120,7 +120,7 @@ describe Solargraph::Source::Cursor do
     updater = Solargraph::Source::Updater.new('test.rb', 1, [
       Solargraph::Source::Change.new(Solargraph::Range.from_to(1, 12, 1, 12), '.')
     ])
-    updated = source.start_synchronize(updater)
+    updated = source.synchronize(updater)
     cursor = updated.cursor_at(Solargraph::Position.new(1, 13))
     expect(cursor).to be_string
   end

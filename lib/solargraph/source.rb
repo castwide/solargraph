@@ -92,50 +92,6 @@ module Solargraph
       stack
     end
 
-    # Start synchronizing the source. This method updates the code without
-    # parsing a new AST. The resulting Source object will be marked not
-    # synchronized (#synchronized? == false).
-    #
-    # @param updater [Source::Updater]
-    # @return [Source]
-    def start_synchronize updater
-      raise 'Invalid synchronization' unless updater.filename == filename
-      real_code = updater.write(@code)
-      src = Source.allocate
-      src.filename = filename
-      src.code = real_code
-      src.version = updater.version
-      src.parsed = parsed?
-      src.repaired = updater.repair(@repaired)
-      src.synchronized = false
-      src.node = @node
-      src.comments = @comments
-      src.error_ranges = error_ranges
-      src.last_updater = updater
-      return src.finish_synchronize unless real_code.lines.length == @code.lines.length
-      src
-    end
-
-    # Finish synchronizing a source that was updated via #start_synchronize.
-    # This method returns self if the source is already synchronized. Otherwise
-    # it parses the AST and returns a new synchronized Source.
-    #
-    # @return [Source]
-    def finish_synchronize
-      return self if synchronized?
-      synced = Source.new(@code, filename)
-      if synced.parsed?
-        synced.version = version
-        return synced
-      end
-      synced = Source.new(@repaired, filename)
-      synced.error_ranges.concat (error_ranges + last_updater.changes.map(&:range))
-      synced.code = @code
-      synced.synchronized = true
-      synced.version = version
-      synced
-    end
-
     # Synchronize the Source with an update. This method applies changes to the
     # code, parses the new code's AST, and returns the resulting Source object.
     #
