@@ -235,8 +235,8 @@ module Solargraph
     # @return [Array<Solargraph::Range>]
     # @todo Take a Location instead of filename/line/column
     def references_from filename, line, column, strip: false, only: false
-      cursor = Source::Cursor.new(read(filename), [line, column])
       sync_catalog
+      cursor = Source::Cursor.new(read(filename), [line, column])
       clip = mutex.synchronize { api_map.clip(cursor) }
       pin = clip.define.first
       return [] unless pin
