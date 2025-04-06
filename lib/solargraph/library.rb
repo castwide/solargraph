@@ -27,6 +27,7 @@ module Solargraph
     def initialize workspace = Solargraph::Workspace.new, name = nil
       @workspace = workspace
       @name = name
+      @threads = []
     end
 
     def inspect
@@ -39,7 +40,7 @@ module Solargraph
     #
     # @return [Boolean]
     def synchronized?
-      !mutex.owned?
+      !mutex.locked?
     end
 
     # Attach a source to the library.
@@ -155,6 +156,7 @@ module Solargraph
     # @return [SourceMap::Completion, nil]
     # @todo Take a Location instead of filename/line/column
     def completions_at filename, line, column
+      sync_catalog
       position = Position.new(line, column)
       cursor = Source::Cursor.new(read(filename), position)
       mutex.synchronize { api_map.clip(cursor).complete }
@@ -173,6 +175,7 @@ module Solargraph
     def definitions_at filename, line, column
       position = Position.new(line, column)
       cursor = Source::Cursor.new(read(filename), position)
+      sync_catalog
       if cursor.comment?
         source = read(filename)
         offset = Solargraph::Position.to_offset(source.code, Solargraph::Position.new(line, column))
@@ -203,6 +206,7 @@ module Solargraph
     def type_definitions_at filename, line, column
       position = Position.new(line, column)
       cursor = Source::Cursor.new(read(filename), position)
+      sync_catalog
       mutex.synchronize { api_map.clip(cursor).types }
     rescue FileNotFoundError => e
       handle_file_not_found filename, e
@@ -219,6 +223,7 @@ module Solargraph
     def signatures_at filename, line, column
       position = Position.new(line, column)
       cursor = Source::Cursor.new(read(filename), position)
+      sync_catalog
       mutex.synchronize { api_map.clip(cursor).signify }
     end
 
@@ -231,6 +236,7 @@ module Solargraph
     # @todo Take a Location instead of filename/line/column
     def references_from filename, line, column, strip: false, only: false
       cursor = Source::Cursor.new(read(filename), [line, column])
+      sync_catalog
       clip = mutex.synchronize { api_map.clip(cursor) }
       pin = clip.define.first
       return [] unless pin
@@ -276,6 +282,7 @@ module Solargraph
     # @param location [Location]
     # @return [Array<Solargraph::Pin::Base>]
     def locate_pins location
+      sync_catalog
       mutex.synchronize { api_map.locate_pins(location).map { |pin| pin.realize(api_map) } }
     end
 
@@ -309,18 +316,21 @@ module Solargraph
     # @param path [String]
     # @return [Enumerable<Solargraph::Pin::Base>]
     def get_path_pins path
+      sync_catalog
       mutex.synchronize { api_map.get_path_suggestions(path) }
     end
 
     # @param query [String]
     # @return [Enumerable<YARD::CodeObjects::Base>]
     def document query
+      sync_catalog
       mutex.synchronize { api_map.document query }
     end
 
     # @param query [String]
     # @return [Array<String>]
     def search query
+      sync_catalog
       mutex.synchronize { api_map.search query }
     end
 
@@ -329,6 +339,7 @@ module Solargraph
     # @param query [String]
     # @return [Array<Pin::Base>]
     def query_symbols query
+      sync_catalog
       mutex.synchronize { api_map.query_symbols query }
     end
 
@@ -341,12 +352,14 @@ module Solargraph
     # @param filename [String]
     # @return [Array<Solargraph::Pin::Base>]
     def document_symbols filename
+      sync_catalog
       mutex.synchronize { api_map.document_symbols(filename) }
     end
 
     # @param path [String]
     # @return [Enumerable<Solargraph::Pin::Base>]
     def path_pins path
+      sync_catalog
       mutex.synchronize { api_map.get_path_suggestions(path) }
     end
 
@@ -401,16 +414,20 @@ module Solargraph
     #
     # @return [void]
     def catalog
-      thread = Thread.new do
+      @threads.delete_if(&:stop?)
+      @threads.push(Thread.new do
+        sleep 0.05
+        next unless @threads.last == Thread.current
+
         mutex.synchronize do
           logger.info "Cataloging #{workspace.directory.empty? ? 'generic workspace' : workspace.directory}"
           api_map.catalog bench
           logger.info "Catalog complete (#{api_map.source_maps.length} files, #{api_map.pins.length} pins)"
           logger.info "#{api_map.uncached_gemspecs.length} uncached gemspecs"
+          cache_next_gemspec
         end
-        cache_next_gemspec
-      end
-      thread.join unless mutex.owned?
+      end)
+      @threads.last.run
     end
 
     # @return [Bench]
@@ -639,6 +656,11 @@ module Solargraph
       notify_observers self
       @cache_progress = nil
       @total = nil
+    end
+
+    def sync_catalog
+      @threads.delete_if(&:stop?)
+              .last&.join
     end
   end
 end
