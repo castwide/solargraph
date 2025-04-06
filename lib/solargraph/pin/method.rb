@@ -280,7 +280,9 @@ module Solargraph
 
       # @return [::Array<Pin::Method>]
       def overloads
-        @overloads ||= docstring.tags(:overload).map do |tag|
+        # Ignore overload tags with nil parameters. If it's not an array, the
+        # tag's source is likely malformed.
+        @overloads ||= docstring.tags(:overload).select(&:parameters).map do |tag|
           Pin::Signature.new(
             generics: generics,
             parameters: tag.parameters.map do |src|

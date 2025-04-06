@@ -351,7 +351,7 @@ describe Solargraph::Pin::Method do
     expect(type.to_s).to eq('Integer')
   end
 
-  it 'infers from array dereference' do
+  it 'infers from literal array dereference' do
     source = Solargraph::Source.load_string(%(
       class Foo
         def bar
@@ -367,6 +367,7 @@ describe Solargraph::Pin::Method do
     expect(type.to_s).to eq('String')
   end
 
+  # pending https://github.com/castwide/solargraph/pull/826
   xit 'infers from multiple-assignment chains' do
     source = Solargraph::Source.load_string(%(
       class Foo
@@ -567,6 +568,11 @@ describe Solargraph::Pin::Method do
       pin = api_map.get_path_pins('Foo#bar').first
       expect(pin.typify(api_map)).to be_undefined
       expect(pin.probe(api_map).items.map(&:tag)).to eq(['Symbol', 'Float', 'String', 'Integer'])
+    end
+
+    it 'ignores malformed overload tags' do
+      pin = Solargraph::Pin::Method.new(name: 'example', comments: "@overload\n  @param")
+      expect(pin.overloads).to be_empty
     end
   end
 end

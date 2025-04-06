@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 describe Solargraph::LanguageServer::Message::TextDocument::Rename do
   it "renames a symbol" do
     host = Solargraph::LanguageServer::Host.new
@@ -35,8 +37,8 @@ describe Solargraph::LanguageServer::Message::TextDocument::Rename do
       return bar
       end
     	end
-    	), 1)
-    	rename = Solargraph::LanguageServer::Message::TextDocument::Rename.new(host, {
+    ), 1)
+    rename = Solargraph::LanguageServer::Message::TextDocument::Rename.new(host, {
       'id' => 1,
       'method' => 'textDocument/rename',
       'params' => {
@@ -64,8 +66,8 @@ describe Solargraph::LanguageServer::Message::TextDocument::Rename do
       return bar
       end
     	end
-    	), 1)
-    	rename = Solargraph::LanguageServer::Message::TextDocument::Rename.new(host, {
+    ), 1)
+    rename = Solargraph::LanguageServer::Message::TextDocument::Rename.new(host, {
       'id' => 1,
       'method' => 'textDocument/rename',
       'params' => {
@@ -91,8 +93,8 @@ describe Solargraph::LanguageServer::Message::TextDocument::Rename do
       class Namespace::ExampleClass
       end
       obj = Namespace::ExampleClass.new
-    	), 1)
-    	rename = Solargraph::LanguageServer::Message::TextDocument::Rename.new(host, {
+    ), 1)
+    rename = Solargraph::LanguageServer::Message::TextDocument::Rename.new(host, {
       'id' => 1,
       'method' => 'textDocument/rename',
       'params' => {
