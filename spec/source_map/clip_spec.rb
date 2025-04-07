@@ -2276,6 +2276,29 @@ describe Solargraph::SourceMap::Clip do
     expect(clip.infer.to_s).to eq('Repro')
   end
 
+  it 'uses unless is_a? in a ".each" block to refine types' do
+    source = Solargraph::Source.load_string(%(
+      # @type [Array<Numeric>]
+      arr = [1, 2, 4, 4.5]
+      arr
+      arr.each do |value|
+        value
+        break unless value.is_a? Float
+
+        value
+      end
+  ), 'test.rb')
+    api_map = Solargraph::ApiMap.new.map(source)
+    clip = api_map.clip_at('test.rb', [3, 6])
+    expect(clip.infer.to_s).to eq('Array<Numeric>')
+
+    clip = api_map.clip_at('test.rb', [5, 8])
+    expect(clip.infer.to_s).to eq('Numeric')
+
+    clip = api_map.clip_at('test.rb', [7, 8])
+    expect(clip.infer.to_s).to eq('Float')
+  end
+
   it 'understands compatible reassignments' do
     source = Solargraph::Source.load_string(%(
       class Foo
