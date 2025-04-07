@@ -619,7 +619,8 @@ module Solargraph
         Solargraph.logger.warn "Error caching gemspec #{spec.name} #{spec.version}: [#{e.class}] #{e.message}"
       ensure
         @cache_pid = nil
-        end_cache_progress if pending.zero?
+        end_cache_progress
+        catalog
       end
     end
 
