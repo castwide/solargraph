@@ -429,7 +429,7 @@ describe Solargraph::ComplexType do
     expect(type.to_s).to eq('String')
   end
 
-  xit 'understands literal symbols' do
+  it 'understands literal symbols' do
     type = Solargraph::ComplexType.parse(':foo')
     expect(type.tag).to eq(':foo')
     expect(type.to_rbs).to eq(':foo')
