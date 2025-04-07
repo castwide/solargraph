@@ -73,7 +73,6 @@ module Solargraph
       end
 
       # @param node [Parser::AST::Node]
-      # @return [Array(Hash, Hash)] facts if true, facts if false
       def process_if(if_node)
         #
         # See if we can refine a type based on the result of 'if foo.nil?'
