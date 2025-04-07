@@ -33,8 +33,6 @@ module Solargraph
       @preferences = preferences.compact
       @rbs_path = workspace&.rbs_collection_path
       @environ = Convention.for_global(self)
-      @requires.concat @environ.requires
-      @requires.uniq
       generate_gem_pins
       pins.concat @environ.pins
     end
