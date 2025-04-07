@@ -114,7 +114,7 @@ module Solargraph
         #  s(:send, nil, :foo)
         # and set variable_name to :foo
         if isa_receiver.type == :send && isa_receiver.children[0].nil? && isa_receiver.children[1].is_a?(Symbol)
-          variable_name = isa_receiver.ychildren[1].to_s
+          variable_name = isa_receiver.children[1].to_s
         end
         # or like this:
         # (lvar :repr)
