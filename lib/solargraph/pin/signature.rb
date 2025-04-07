@@ -12,7 +12,6 @@ module Solargraph
       def initialize return_type:, block: nil, **splat
         super(**splat)
         @generics = generics
-        @parameters = parameters
         @return_type = return_type
         @block = block
       end
