@@ -338,6 +338,12 @@ describe Solargraph::ComplexType do
     expect(type.to_rbs).to eq('Array[Variable]')
   end
 
+  it 'recognizes generic parameters of hash parameter types' do
+    type = Solargraph::ComplexType.parse('Hash{generic<Variable> => generic<Other>}')
+    expect(type.tag).to eq('Hash{generic<Variable> => generic<Other>}')
+    expect(type.to_rbs).to eq('Hash[Variable, Other]')
+  end
+
   it 'reduces objects' do
     api_map = Solargraph::ApiMap.new
     selfy = Solargraph::ComplexType.parse('Array<self>')

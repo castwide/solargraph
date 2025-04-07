@@ -40,6 +40,16 @@ module Solargraph
       @pin_select_cache[klass] ||= @pin_class_hash.select { |key, _| key <= klass }.values.flatten
     end
 
+    # A hash representing the state of the source map's API.
+    #
+    # ApiMap#catalog uses this value to determine whether it needs to clear its
+    # cache.
+    #
+    # @return [Integer]
+    def api_hash
+      @api_hash ||= (pins_by_class(Pin::Constant) + pins_by_class(Pin::Namespace).select { |pin| pin.namespace.to_s > '' } + pins_by_class(Pin::Reference) + pins_by_class(Pin::Method).map(&:node)).hash
+    end
+
     # @return [String]
     def filename
       source.filename

@@ -518,13 +518,17 @@ module Solargraph
 
       # @param type_name [RBS::TypeName]
       # @param type_args [Enumerable<RBS::Types::Bases::Base>]
-      # @return [ComplexType]
+      # @return [ComplexType::UniqueType]
       def generic_type(type_name, type_args)
-        base = RBS_TO_YARD_TYPE[type_name.relative!.to_s] || ('::' + type_name.relative!.to_s)
-        params = type_args.map { |a| other_type_to_tag(a) }.reject { |t| t == 'undefined' }
-        params_str = params.empty? ? '' : "<#{params.join(', ')}>"
-        type_string = "#{base}#{params_str}"
-        ComplexType.parse(type_string)
+        base = RBS_TO_YARD_TYPE[type_name.relative!.to_s] || type_name.relative!.to_s
+        params = type_args.map { |a| other_type_to_tag(a) }.reject { |t| t == 'undefined' }.map do |t|
+          ComplexType.try_parse(t)
+        end
+        if base == 'Hash' && params.length == 2
+          ComplexType::UniqueType.new(base, [params.first], [params.last], rooted: true, parameters_type: :hash)
+        else
+          ComplexType::UniqueType.new(base, [], params, rooted: true, parameters_type: :list)
+        end
       end
 
       # @param type_name [RBS::TypeName]
