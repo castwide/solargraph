@@ -20,8 +20,7 @@ module Solargraph
       # @param attribute [Boolean]
       # @param signatures [::Array<Signature>, nil]
       # @param anon_splat [Boolean]
-      # @param return_type [ComplexType, nil]
-      def initialize visibility: :public, explicit: true, block: :undefined, node: nil, attribute: false, signatures: nil, anon_splat: false, return_type: nil, **splat
+      def initialize visibility: :public, explicit: true, block: :undefined, node: nil, attribute: false, signatures: nil, anon_splat: false, **splat
         super(**splat)
         @visibility = visibility
         @explicit = explicit
@@ -30,7 +29,6 @@ module Solargraph
         @attribute = attribute
         @signatures = signatures
         @anon_splat = anon_splat
-        @return_type = return_type
       end
 
       def transform_types(&transform)
