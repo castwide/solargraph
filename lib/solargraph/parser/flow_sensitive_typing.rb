@@ -152,7 +152,7 @@ module Solargraph
       private
 
       def always_breaks?(clause_node)
-        clause_node.type == :break
+        clause_node&.type == :break
       end
 
       attr_reader :locals
