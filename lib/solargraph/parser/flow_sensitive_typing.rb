@@ -9,6 +9,7 @@ module Solargraph
         @enclosing_breakable_pin = enclosing_breakable_pin
       end
 
+      # @param and_node [Parser::AST::Node]
       def process_and(and_node)
         lhs = and_node.children[0]
         rhs = and_node.children[1]
@@ -39,6 +40,7 @@ module Solargraph
         locals.push(new_pin)
       end
 
+      # @return [void]
       def process_facts(facts_by_pin, presences)
         #
         # Add specialized locals for the rest of the block
@@ -53,6 +55,7 @@ module Solargraph
         end
       end
 
+      # @param if_node [Parser::AST::Node]
       def process_if(if_node)
         #
         # See if we can refine a type based on the result of 'if foo.nil?'
@@ -96,6 +99,7 @@ module Solargraph
 
       private
 
+      # @param isa_node [Parser::AST::Node]
       def parse_isa(isa_node)
         return unless isa_node.type == :send && isa_node.children[1] == :is_a?
         # Check if conditional node follows this pattern:
@@ -110,7 +114,7 @@ module Solargraph
         #  s(:send, nil, :foo)
         # and set variable_name to :foo
         if isa_receiver.type == :send && isa_receiver.children[0].nil? && isa_receiver.children[1].is_a?(Symbol)
-          variable_name = isa_receiver.children[1].to_s
+          variable_name = isa_receiver.ychildren[1].to_s
         end
         # or like this:
         # (lvar :repr)
