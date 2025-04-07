@@ -16,6 +16,14 @@ module Solargraph
         @parameter_names ||= parameters.map(&:name)
       end
 
+      def transform_types(&transform)
+        c = super(&transform)
+        c.parameters = c.parameters.map do |param|
+          param.transform_types(&transform)
+        end
+        c
+      end
+
       # @return [String]
       def to_rbs
         rbs_generics + '(' + parameters.map { |param| param.to_rbs }.join(', ') + ') ' + (block.nil? ? '' : '{ ' + block.to_rbs + ' } ') + '-> ' + return_type.to_rbs

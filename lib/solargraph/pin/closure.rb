@@ -14,14 +14,6 @@ module Solargraph
         @generics = generics
       end
 
-      def transform_types(&transform)
-        c = super(&transform)
-        c.parameters = c.parameters.map do |param|
-          param.transform_types(&transform)
-        end
-        c
-      end
-
       def context
         @context ||= begin
           result = super
@@ -60,10 +52,6 @@ module Solargraph
 
         '[' + generics.map { |gen| gen.to_s }.join(', ') + '] '
       end
-
-      protected
-
-      attr_writer :parameters
     end
   end
 end
