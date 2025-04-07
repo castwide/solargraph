@@ -2228,13 +2228,45 @@ describe Solargraph::SourceMap::Clip do
     expect(clip.infer.to_s).to eq('ReproBase')
   end
 
-  it 'uses is_a? in a "break unless" statement to refine types' do
+  it 'uses is_a? in a "break unless" statement in an .each block to refine types' do
     source = Solargraph::Source.load_string(%(
       class ReproBase; end
       class Repro < ReproBase; end
       # @type [Array<ReproBase>]
       foo = bar
       foo.each do |value|
+        break unless value.is_a? Repro
+        value
+      end
+  ), 'test.rb')
+    api_map = Solargraph::ApiMap.new.map(source)
+    clip = api_map.clip_at('test.rb', [7, 8])
+    expect(clip.infer.to_s).to eq('Repro')
+  end
+
+  it 'uses is_a? in a "break unless" statement in an until to refine types' do
+    source = Solargraph::Source.load_string(%(
+      class ReproBase; end
+      class Repro < ReproBase; end
+      # @type [ReproBase]
+      value = bar
+      until is_done()
+        break unless value.is_a? Repro
+        value
+      end
+  ), 'test.rb')
+    api_map = Solargraph::ApiMap.new.map(source)
+    clip = api_map.clip_at('test.rb', [7, 8])
+    expect(clip.infer.to_s).to eq('Repro')
+  end
+
+  it 'uses is_a? in a "break unless" statement in a while to refine types' do
+    source = Solargraph::Source.load_string(%(
+      class ReproBase; end
+      class Repro < ReproBase; end
+      # @type [ReproBase]
+      value = bar
+      while !is_done()
         break unless value.is_a? Repro
         value
       end

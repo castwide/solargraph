@@ -11,8 +11,8 @@ module Solargraph
             process_children
 
             position = get_node_start_position(node)
-            enclosing_block_pin = pins.select{|pin| pin.is_a?(Pin::Block) && pin.location.range.contain?(position)}.last
-            FlowSensitiveTyping.new(locals, enclosing_block_pin).process_if(node)
+            enclosing_breakable_pin = pins.select{|pin| pin.is_a?(Pin::Breakable) && pin.location.range.contain?(position)}.last
+            FlowSensitiveTyping.new(locals, enclosing_breakable_pin).process_if(node)
           end
         end
       end
