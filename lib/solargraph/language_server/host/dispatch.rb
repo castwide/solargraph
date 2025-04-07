@@ -119,8 +119,8 @@ module Solargraph
 
         # @param library [Solargraph::Library]
         # @return [void]
-        def update library
-          library.cache_progress&.send(self)
+        def update progress
+          progress&.send(self)
         end
       end
     end

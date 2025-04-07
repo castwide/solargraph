@@ -601,16 +601,16 @@ module Solargraph
 
     # @return [void]
     def cache_next_gemspec
-      return if @cache_pid
+      return if @cache_progress
       spec = api_map.uncached_gemspecs.find { |spec| !cache_errors.include?(spec) }
       return end_cache_progress unless spec
 
       pending = api_map.uncached_gemspecs.length - cache_errors.length - 1
       logger.info "Caching #{spec.name} #{spec.version}"
       Thread.new do
-        @cache_pid = Process.spawn(workspace.command_path, 'cache', spec.name, spec.version.to_s)
+        cache_pid = Process.spawn(workspace.command_path, 'cache', spec.name, spec.version.to_s)
         report_cache_progress spec.name, pending
-        Process.wait(@cache_pid)
+        Process.wait(cache_pid)
         logger.info "Cached #{spec.name} #{spec.version}"
       rescue Errno::EINVAL => _e
         logger.info "Cached #{spec.name} #{spec.version} with EINVAL"
@@ -618,7 +618,6 @@ module Solargraph
         cache_errors.add spec
         Solargraph.logger.warn "Error caching gemspec #{spec.name} #{spec.version}: [#{e.class}] #{e.message}"
       ensure
-        @cache_pid = nil
         end_cache_progress
         catalog
       end
@@ -642,16 +641,21 @@ module Solargraph
         @cache_progress.report(message, pct)
       else
         @cache_progress = LanguageServer::Progress.new('Caching gem')
+        # If we don't send both a begin and a report, the progress notification
+        # might get stuck in the status bar forever
         @cache_progress.begin(message, pct)
+        changed
+        notify_observers @cache_progress
+        @cache_progress.report(message, pct)
       end
       changed
-      notify_observers self
+      notify_observers @cache_progress
     end
 
     # @return [void]
     def end_cache_progress
       changed if @cache_progress&.finish('done')
-      notify_observers self
+      notify_observers @cache_progress
       @cache_progress = nil
       @total = nil
     end
