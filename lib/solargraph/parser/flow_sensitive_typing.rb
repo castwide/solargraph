@@ -9,15 +9,50 @@ module Solargraph
         @enclosing_breakable_pin = enclosing_breakable_pin
       end
 
-      # def process_or(node)
-      #   lhs = node.children[0]
-      #   rhs = node.children[1]
-      #   if_true = {}
-      #   if_false = {}
-      #   gather_facts(conditional_node, if_true, if_false)
-      # end
+      def process_and(and_node)
+        lhs = and_node.children[0]
+        rhs = and_node.children[1]
+
+        before_rhs_loc = rhs.location.expression.adjust(begin_pos: -1)
+        before_rhs_pos = Position.new(before_rhs_loc.line, before_rhs_loc.column)
+
+        rhs_presence = Range.new(before_rhs_pos,
+                                 get_node_end_position(rhs))
+        if_true = {}
+        if_false = {}
+        process_isa(lhs, if_true, if_false, [rhs_presence])
+      end
 
       # @param if_node [Parser::AST::Node]
+      def add_downcast_local(pin, downcast_type_name, presence)
+        # @todo Create pin#update method
+        new_pin = Solargraph::Pin::LocalVariable.new(
+          location: pin.location,
+          closure: pin.closure,
+          name: pin.name,
+          assignment: pin.assignment,
+          comments: pin.comments,
+          presence: presence,
+          return_type: ComplexType.try_parse(downcast_type_name),
+          declaration: true
+        )
+        locals.push(new_pin)
+      end
+
+      def process_facts(facts_by_pin, presences)
+        #
+        # Add specialized locals for the rest of the block
+        #
+        facts_by_pin.each_pair do |pin, facts|
+          facts.each do |fact|
+            downcast_type_name = fact.fetch(:type)
+            presences.each do |presence|
+              add_downcast_local(pin, downcast_type_name, presence)
+            end
+          end
+        end
+      end
+
       def process_if(if_node)
         #
         # See if we can refine a type based on the result of 'if foo.nil?'
@@ -34,9 +69,14 @@ module Solargraph
         then_clause = if_node.children[1]
         else_clause = if_node.children[2]
 
-        if_true = {}
-        if_false = {}
-        process_conditional(conditional_node, if_true, if_false)
+        true_ranges = []
+        if always_breaks?(else_clause)
+          unless enclosing_breakable_pin.nil?
+            rest_of_breakable_body = Range.new(get_node_end_position(if_node),
+                                                get_node_end_position(enclosing_breakable_pin.node))
+            true_ranges << rest_of_breakable_body
+          end
+        end
 
         unless then_clause.nil?
           #
@@ -44,67 +84,28 @@ module Solargraph
           #
           before_then_clause_loc = then_clause.location.expression.adjust(begin_pos: -1)
           before_then_clause_pos = Position.new(before_then_clause_loc.line, before_then_clause_loc.column)
-          then_presence = Range.new(before_then_clause_pos,
-                                    get_node_end_position(then_clause))
-          if_true.each_pair do |pin, facts|
-            facts.each do |fact|
-              isa_type_name = fact.fetch(:type)
-              # @todo Create pin#update method
-              then_pin = Solargraph::Pin::LocalVariable.new(
-                location: pin.location,
-                closure: pin.closure,
-                name: pin.name,
-                assignment: pin.assignment,
-                comments: pin.comments,
-                presence: then_presence,
-                return_type: ComplexType.try_parse(isa_type_name),
-                declaration: true
-              )
-              locals.push(then_pin)
-            end
-          end
+          true_ranges << Range.new(before_then_clause_pos,
+                                   get_node_end_position(then_clause))
         end
 
-        if always_breaks?(else_clause)
-          unless enclosing_breakable_pin.nil?
-            #
-            # Add specialized locals for the rest of the block
-            #
-            if_true.each_pair do |pin, facts|
-              facts.each do |fact|
-                isa_type_name = fact.fetch(:type)
-                remaining_block_presence = Range.new(get_node_end_position(if_node),
-                                                     get_node_end_position(enclosing_breakable_pin.node))
-                # @todo Create pin#update method
-                remaining_loop_pin = Solargraph::Pin::LocalVariable.new(
-                  location: pin.location,
-                  closure: pin.closure,
-                  name: pin.name,
-                  assignment: pin.assignment,
-                  comments: pin.comments,
-                  presence: remaining_block_presence,
-                  return_type: ComplexType.try_parse(isa_type_name),
-                  declaration: true
-                )
-                locals.push(remaining_loop_pin)
-              end
-            end
-          end
-        end
+        if_true = {}
+        if_false = {}
+        then_presence = nil
+        process_isa(conditional_node, if_true, if_false, true_ranges)
       end
 
       private
 
-      # @param conditional_node [Parser::AST::Node]
-      def process_conditional(conditional_node, if_true, if_false)
-        return unless conditional_node.type == :send && conditional_node.children[1] == :is_a?
+      def parse_isa(isa_node)
+        return unless isa_node.type == :send && isa_node.children[1] == :is_a?
         # Check if conditional node follows this pattern:
         #   s(:send,
         #     s(:send, nil, :foo), :is_a?,
         #     s(:const, nil, :Baz)),
-        isa_receiver = conditional_node.children[0]
-        isa_type_name = type_name(conditional_node.children[2])
+        isa_receiver = isa_node.children[0]
+        isa_type_name = type_name(isa_node.children[2])
         return unless isa_type_name
+
         # check if isa_receiver looks like this:
         #  s(:send, nil, :foo)
         # and set variable_name to :foo
@@ -114,13 +115,28 @@ module Solargraph
         # or like this:
         # (lvar :repr)
         variable_name = isa_receiver.children[0].to_s if isa_receiver.type == :lvar
-        return if variable_name.nil? || variable_name.empty?
-        conditional_range = Range.from_node(conditional_node)
-        pins = locals.select { |pin| pin.name == variable_name && pin.presence.include?(conditional_range.start) }
-        return unless pins.length == 1
+        return unless variable_name
 
-        if_true[pins.first] ||= []
-        if_true[pins.first] << { type: isa_type_name }
+        [isa_type_name, variable_name]
+      end
+
+      def find_local(variable_name, position)
+        pins = locals.select { |pin| pin.name == variable_name && pin.presence.include?(position) }
+        return unless pins.length == 1
+        pins.first
+      end
+
+      def process_isa(isa_node, if_true, if_false, true_presences)
+        isa_type_name, variable_name = parse_isa(isa_node)
+        return if variable_name.nil? || variable_name.empty?
+        isa_position = Range.from_node(isa_node).start
+
+        pin = find_local(variable_name, isa_position)
+        return unless pin
+
+        if_true[pin] ||= []
+        if_true[pin] << { type: isa_type_name }
+        process_facts(if_true, true_presences)
       end
 
       # @param node [Parser::AST::Node]
