@@ -67,6 +67,10 @@ module Solargraph
         path_pin_hash[path] || []
       end
 
+      def cacheable_pins
+        @cacheable_pins ||= pins_by_class(Pin::Namespace) + pins_by_class(Pin::Constant) + pins_by_class(Pin::Method) + pins_by_class(Pin::Reference)
+      end
+
       # @param fqns [String]
       # @param scope [Symbol] :class or :instance
       # @return [Enumerable<Solargraph::Pin::Base>]

@@ -183,7 +183,7 @@ module Solargraph
     # @return [ComplexType]
     def resolve_generics definitions, context_type
       result = @items.map { |i| i.resolve_generics(definitions, context_type) }
-      ComplexType.parse(*result.map(&:tag))
+      ComplexType.try_parse(*result.map(&:tag))
     end
 
     # @param dst [String]
@@ -192,7 +192,7 @@ module Solargraph
       return self unless selfy?
       red = reduce_class(dst)
       result = @items.map { |i| i.self_to red }
-      ComplexType.parse(*result.map(&:tag))
+      ComplexType.try_parse(*result.map(&:tag))
     end
 
     def nullable?
@@ -267,7 +267,7 @@ module Solargraph
               elsif base.end_with?('=')
                 raise ComplexTypeError, "Invalid hash thing" unless key_types.nil?
                 # types.push ComplexType.new([UniqueType.new(base[0..-2].strip)])
-                types.push UniqueType.parse(base[0..-2].strip)
+                types.push UniqueType.parse(base[0..-2].strip, subtype_string)
                 # @todo this should either expand key_type's type
                 #   automatically or complain about not being
                 #   compatible with key_type's type in type checking

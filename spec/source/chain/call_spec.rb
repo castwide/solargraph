@@ -205,7 +205,7 @@ describe Solargraph::Source::Chain::Call do
     expect(type.tag).to eq('Hash<String, Baz<String>>')
   end
 
-  xit 'infers generic-class method return values through block return values' do
+  it 'infers generic-class method return values with self reference through RBS definition' do
     source = Solargraph::Source.load_string(%(
       a = ['bar']
       # @param item [String]

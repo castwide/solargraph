@@ -2455,6 +2455,7 @@ describe Solargraph::SourceMap::Clip do
   ), 'test.rb')
     api_map = Solargraph::ApiMap.new.map(source)
     clip = api_map.clip_at('test.rb', [7, 6])
-    expect(clip.infer.to_s).to eq('String, :foo, 123')
+    # The order of the types can vary between platforms
+    expect(clip.infer.items.map(&:to_s).sort).to eq(["String", :foo, 123])
   end
 end
