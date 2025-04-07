@@ -75,17 +75,23 @@ module Solargraph
     # @param bench [Bench]
     # @return [self]
     def catalog bench
-      implicit.clear
-      @cache.clear
+      old_api_hash = @source_map_hash&.values&.map(&:api_hash)
+      need_to_uncache = (old_api_hash != bench.source_maps.map(&:api_hash))
       @source_map_hash = bench.source_maps.map { |s| [s.filename, s] }.to_h
-      pins = bench.source_maps.map(&:pins).flatten
+      pins = bench.source_maps.flat_map(&:pins).flatten
+      implicit.clear
       source_map_hash.each_value do |map|
         implicit.merge map.environ
       end
-      unresolved_requires = (bench.external_requires + implicit.requires + bench.workspace.config.required).uniq
-      @doc_map = DocMap.new(unresolved_requires, [], bench.workspace.rbs_collection_path) # @todo Implement gem preferences
+      unresolved_requires = (bench.external_requires + implicit.requires + bench.workspace.config.required).to_a.compact.uniq
+      if @unresolved_requires != unresolved_requires || @doc_map&.uncached_gemspecs&.any?
+        @doc_map = DocMap.new(unresolved_requires, [], bench.workspace.rbs_collection_path) # @todo Implement gem preferences
+        @unresolved_requires = unresolved_requires
+        need_to_uncache = true
+      end
       @store = Store.new(@@core_map.pins + @doc_map.pins + implicit.pins + pins)
-      @unresolved_requires = @doc_map.unresolved_requires
+      @cache.clear if need_to_uncache
+
       @missing_docs = [] # @todo Implement missing docs
       self
     end
