@@ -11,7 +11,6 @@ module Solargraph
       # @param block [Signature, nil]
       def initialize return_type:, block: nil, **splat
         super(**splat)
-        @generics = generics
         @return_type = return_type
         @block = block
       end
