@@ -5,9 +5,14 @@ module Solargraph
     class Callable < Closure
       attr_reader :parameters
 
+      # @return [ComplexType]
+      attr_reader :return_type
+
+      # @param return_type [ComplexType]
       # @param parameters [::Array<Pin::Parameter>]
-      def initialize parameters: [], **splat
+      def initialize return_type:, parameters: [], **splat
         super(**splat)
+        @return_type = return_type
         @parameters = parameters
       end
 

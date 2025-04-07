@@ -1,17 +1,12 @@
 module Solargraph
   module Pin
     class Signature < Callable
-      # @return [ComplexType]
-      attr_reader :return_type
-
       # @return [self]
       attr_reader :block
 
-      # @param return_type [ComplexType]
       # @param block [Signature, nil]
-      def initialize return_type:, block: nil, **splat
+      def initialize block: nil, **splat
         super(**splat)
-        @return_type = return_type
         @block = block
       end
 
