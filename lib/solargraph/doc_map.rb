@@ -60,6 +60,7 @@ module Solargraph
         end
       end
       dependencies.each { |dep| try_cache dep }
+      @uncached_gemspecs.uniq!
     end
 
     # @return [Hash{String => Gem::Specification, nil}]
