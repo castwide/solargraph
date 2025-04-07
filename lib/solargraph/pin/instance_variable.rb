@@ -20,7 +20,7 @@ module Solargraph
           if scope == :class
             ComplexType.parse("::Class<#{result.rooted_namespace}>")
           else
-            ComplexType.parse("#{result.rooted_namespace}")
+            result.reduce_class_type
           end
         end
       end
