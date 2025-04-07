@@ -4,8 +4,9 @@ module Solargraph
       include Solargraph::Parser::NodeMethods
 
       # @param locals [Array<Solargraph::Pin::BaseVariable>]
-      def initialize(locals)
+      def initialize(locals, enclosing_block_pin = nil)
         @locals = locals
+        @enclosing_block_pin = enclosing_block_pin
       end
 
       # @param node [Parser::AST::Node]
@@ -72,9 +73,8 @@ module Solargraph
       end
 
       # @param node [Parser::AST::Node]
-      def process_if(node)
-        conditional_node = node.children[0]
-        then_clause = node.children[1]
+      # @return [Array(Hash, Hash)] facts if true, facts if false
+      def process_if(if_node)
         #
         # See if we can refine a type based on the result of 'if foo.nil?'
         #
@@ -86,40 +86,78 @@ module Solargraph
         #   s(:send, nil, :foo),
         #   s(:send, nil, :bar))
         # [4] pry(main)>
+        conditional_node = if_node.children[0]
+        then_clause = if_node.children[1]
+        else_clause = if_node.children[2]
+
         if_true = {}
         if_false = {}
         process_conditional(conditional_node, if_true, if_false)
-        return if if_true.empty? && if_false.empty?
 
-        return if then_clause.nil?
-
-        before_then_clause_loc = then_clause.location.expression.adjust(begin_pos: -1)
-        then_presence = Range.new(Position.new(before_then_clause_loc.line, before_then_clause_loc.column),
-                                  get_node_end_position(then_clause))
-        if_true.each_pair do |pin, facts|
-          facts.each do |fact|
-            isa_type_name = fact.fetch(:type)
-            # @todo Create pin#update method
-            then_pin = Solargraph::Pin::LocalVariable.new(
-              location: pin.location,
-              closure: pin.closure,
-              name: pin.name,
-              assignment: pin.assignment,
-              comments: pin.comments,
-              presence: then_presence,
-              return_type: ComplexType.try_parse(isa_type_name),
-              declaration: true
-            )
-            locals.push(then_pin)
+        unless then_clause.nil?
+          #
+          # Add specialized locals for the then clause range
+          #
+          before_then_clause_loc = then_clause.location.expression.adjust(begin_pos: -1)
+          before_then_clause_pos = Position.new(before_then_clause_loc.line, before_then_clause_loc.column)
+          then_presence = Range.new(before_then_clause_pos,
+                                    get_node_end_position(then_clause))
+          if_true.each_pair do |pin, facts|
+            facts.each do |fact|
+              isa_type_name = fact.fetch(:type)
+              # @todo Create pin#update method
+              then_pin = Solargraph::Pin::LocalVariable.new(
+                location: pin.location,
+                closure: pin.closure,
+                name: pin.name,
+                assignment: pin.assignment,
+                comments: pin.comments,
+                presence: then_presence,
+                return_type: ComplexType.try_parse(isa_type_name),
+                declaration: true
+              )
+              locals.push(then_pin)
+            end
           end
         end
 
-        # else_presence = Range.new(get_node_start_position(else_clause), get_node_end_position(else_clause))
+        if always_breaks?(else_clause)
+          unless enclosing_block_pin.nil? # TODO is break correct?
+            #
+            # Add specialized locals for the rest of the block
+            #
+            if_true.each_pair do |pin, facts|
+              facts.each do |fact|
+                isa_type_name = fact.fetch(:type)
+                remaining_block_presence = Range.new(get_node_end_position(if_node),
+                                                     get_node_end_position(enclosing_block_pin.node))
+                # @todo Create pin#update method
+                remaining_loop_pin = Solargraph::Pin::LocalVariable.new(
+                  location: pin.location,
+                  closure: pin.closure,
+                  name: pin.name,
+                  assignment: pin.assignment,
+                  comments: pin.comments,
+                  presence: remaining_block_presence,
+                  return_type: ComplexType.try_parse(isa_type_name),
+                  declaration: true
+                )
+                locals.push(remaining_loop_pin)
+              end
+            end
+          end
+        end
       end
 
       private
 
+      def always_breaks?(clause_node)
+        clause_node.type == :break
+      end
+
       attr_reader :locals
+
+      attr_reader :enclosing_block_pin
     end
   end
 end

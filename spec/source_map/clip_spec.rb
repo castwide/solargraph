@@ -2228,7 +2228,7 @@ describe Solargraph::SourceMap::Clip do
     expect(clip.infer.to_s).to eq('ReproBase')
   end
 
-  xit 'uses is_a? in a "break unless" statement to refine types' do
+  it 'uses is_a? in a "break unless" statement to refine types' do
     source = Solargraph::Source.load_string(%(
       class ReproBase; end
       class Repro < ReproBase; end

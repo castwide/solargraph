@@ -82,6 +82,13 @@ module Solargraph
       # @abstract
       # @param node [Parser::AST::Node]
       # @return [Position]
+      def get_node_start_position(node)
+        raise NotImplementedError
+      end
+
+      # @abstract
+      # @param node [Parser::AST::Node]
+      # @return [Position]
       def get_node_end_position(node)
         raise NotImplementedError
       end
