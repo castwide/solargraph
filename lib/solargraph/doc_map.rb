@@ -8,6 +8,7 @@ module Solargraph
 
     # @return [Array<String>]
     attr_reader :requires
+    alias required requires
 
     # @return [Array<Gem::Specification>]
     attr_reader :preferences
@@ -21,14 +22,21 @@ module Solargraph
     # @return [Workspace, nil]
     attr_reader :workspace
 
+    # @return [Environ]
+    attr_reader :environ
+
     # @param requires [Array<String>]
     # @param preferences [Array<Gem::Specification>]
     # @param workspace [Workspace, nil]
     def initialize(requires, preferences, workspace = nil)
       @requires = requires.compact
       @preferences = preferences.compact
-      @workspace = workspace
-      generate
+      @rbs_path = workspace&.rbs_collection_path
+      @environ = Convention.for_global(self)
+      @requires.concat @environ.requires
+      @requires.uniq
+      generate_gem_pins
+      pins.concat @environ.pins
     end
 
     # @return [Array<Gem::Specification>]
@@ -54,7 +62,7 @@ module Solargraph
     private
 
     # @return [void]
-    def generate
+    def generate_gem_pins
       @pins = []
       @uncached_gemspecs = []
       required_gems_map.each do |path, gemspecs|
