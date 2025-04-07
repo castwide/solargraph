@@ -44,7 +44,7 @@ module Solargraph
         "#{module_type_name}::#{class_node}"
       end
 
-      # @param node [Parser::AST::Node]
+      # @param conditional_node [Parser::AST::Node]
       def process_conditional(conditional_node, if_true, if_false)
         return unless conditional_node.type == :send && conditional_node.children[1] == :is_a?
         # Check if conditional node follows this pattern:
@@ -72,7 +72,7 @@ module Solargraph
         if_true[pins.first] << { type: isa_type_name }
       end
 
-      # @param node [Parser::AST::Node]
+      # @param if_node [Parser::AST::Node]
       def process_if(if_node)
         #
         # See if we can refine a type based on the result of 'if foo.nil?'
@@ -150,6 +150,8 @@ module Solargraph
 
       private
 
+      # @todo "return type could not be inferred" should not trigger here
+      # @sg-ignore
       def always_breaks?(clause_node)
         clause_node&.type == :break
       end
