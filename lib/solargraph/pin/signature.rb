@@ -1,6 +1,6 @@
 module Solargraph
   module Pin
-    class Signature < Closure
+    class Signature < Callable
       # @return [ComplexType]
       attr_reader :return_type
 

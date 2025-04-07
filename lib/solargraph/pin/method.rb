@@ -4,7 +4,7 @@ module Solargraph
   module Pin
     # The base class for method and attribute pins.
     #
-    class Method < Closure
+    class Method < Callable
       include Solargraph::Parser::NodeMethods
 
       # @return [::Symbol] :public, :private, or :protected
@@ -67,11 +67,6 @@ module Solargraph
       def block
         return @block unless @block == :undefined
         @block = signatures.first.block
-      end
-
-      # @return [::Array<String>]
-      def parameter_names
-        @parameter_names ||= parameters.map(&:name)
       end
 
       def completion_item_kind

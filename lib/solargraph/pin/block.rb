@@ -2,7 +2,7 @@
 
 module Solargraph
   module Pin
-    class Block < Closure
+    class Block < Callable
       # @return [Parser::AST::Node]
       attr_reader :receiver
 

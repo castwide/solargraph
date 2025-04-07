@@ -6,16 +6,12 @@ module Solargraph
       # @return [::Symbol] :class or :instance
       attr_reader :scope
 
-      attr_reader :parameters
-
       # @param scope [::Symbol] :class or :instance
       # @param generics [::Array<Pin::Parameter>, nil]
-      # @param parameters [::Array<Pin::Parameter>]
-      def initialize scope: :class, generics: nil, parameters: [], **splat
+      def initialize scope: :class, generics: nil, **splat
         super(**splat)
         @scope = scope
         @generics = generics
-        @parameters = parameters
       end
 
       def transform_types(&transform)
@@ -24,11 +20,6 @@ module Solargraph
           param.transform_types(&transform)
         end
         c
-      end
-
-      # @return [::Array<String>]
-      def parameter_names
-        @parameter_names ||= parameters.map(&:name)
       end
 
       def context
@@ -60,7 +51,7 @@ module Solargraph
 
       # @return [String]
       def to_rbs
-        rbs_generics + '(' + parameters.map { |param| param.to_rbs }.join(', ') + ') ' + (block.nil? ? '' : '{ ' + block.to_rbs + ' } ') + '-> ' + return_type.to_rbs
+        rbs_generics + return_type.to_rbs
       end
 
       # @return [String]
