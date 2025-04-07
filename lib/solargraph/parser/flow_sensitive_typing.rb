@@ -10,7 +10,7 @@ module Solargraph
       end
 
       # @param and_node [Parser::AST::Node]
-      def process_and(and_node)
+      def process_and(and_node, true_ranges = [])
         lhs = and_node.children[0]
         rhs = and_node.children[1]
 
@@ -19,9 +19,7 @@ module Solargraph
 
         rhs_presence = Range.new(before_rhs_pos,
                                  get_node_end_position(rhs))
-        if_true = {}
-        if_false = {}
-        process_isa(lhs, if_true, if_false, [rhs_presence])
+        process_isa(lhs, true_ranges + [rhs_presence])
       end
 
       # @param if_node [Parser::AST::Node]
@@ -91,10 +89,15 @@ module Solargraph
                                    get_node_end_position(then_clause))
         end
 
-        if_true = {}
-        if_false = {}
-        then_presence = nil
-        process_isa(conditional_node, if_true, if_false, true_ranges)
+        process_conditional(conditional_node, true_ranges)
+      end
+
+      def process_conditional(conditional_node, true_ranges)
+        if conditional_node.type == :send
+          process_isa(conditional_node, true_ranges)
+        elsif conditional_node.type == :and
+          process_and(conditional_node, true_ranges)
+        end
       end
 
       private
@@ -130,7 +133,7 @@ module Solargraph
         pins.first
       end
 
-      def process_isa(isa_node, if_true, if_false, true_presences)
+      def process_isa(isa_node, true_presences)
         isa_type_name, variable_name = parse_isa(isa_node)
         return if variable_name.nil? || variable_name.empty?
         isa_position = Range.from_node(isa_node).start
@@ -138,6 +141,7 @@ module Solargraph
         pin = find_local(variable_name, isa_position)
         return unless pin
 
+        if_true = {}
         if_true[pin] ||= []
         if_true[pin] << { type: isa_type_name }
         process_facts(if_true, true_presences)
