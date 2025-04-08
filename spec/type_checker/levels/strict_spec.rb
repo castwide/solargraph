@@ -756,5 +756,24 @@ describe Solargraph::TypeChecker do
       ))
       expect(checker.problems.map(&:message)).to eq([])
     end
+
+    it "doesn't get confused about rooted types from attr_accessors" do
+      checker = type_checker(%(
+        module Foo
+          class Symbol; end
+          class Bar
+            # @return [::Symbol]
+            attr_accessor :bar
+          end
+       end
+       class Quux
+         def baz
+           bar = Foo::Bar.new
+           bar.bar = :foo
+         end
+       end
+      ))
+      expect(checker.problems).to be_empty
+    end
   end
 end
