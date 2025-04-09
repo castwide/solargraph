@@ -61,13 +61,31 @@ module Solargraph
         @base ||= Chain.new(links[0..-2])
       end
 
-      # @param api_map [ApiMap]
-      # @param name_pin [Pin::Base]
-      # @param locals [::Enumerable<Pin::LocalVariable>]
+      # Determine potential pins returned by this chain of words
       #
-      # @return [::Array<Pin::Base>]
+      # @param api_map [ApiMap]
+      # @param name_pin [Pin::Closure] the surrounding closure pin for
+      #   the statement represented by this chain for type resolution
+      #   and method pin lookup.
+      #
+      #   For method calls (Chain::Call objects) as the first element
+      #   in the chain, 'name_pin.binder' should return the
+      #   ComplexType representing the LHS / "self type" of the call.
+      #
+      # @param locals [::Enumerable<Pin::LocalVariable>] Any local
+      #   variables / method parameters etc visible by the statement
+      #
+      # @return [::Array<Pin::Base>] Pins representing possible return
+      #   types of this method.
       def define api_map, name_pin, locals
         return [] if undefined?
+
+        # working_pin is the surrounding closure pin for the link
+        # being processed, whose #binder method will provide the LHS /
+        # 'self type' of the next link (same as the  #return_type method
+        # --the type of the result so far).
+        #
+        # @todo ProxyType uses 'type' for the binder, but '
         working_pin = name_pin
         links[0..-2].each do |link|
           pins = link.resolve(api_map, working_pin, locals)
@@ -75,12 +93,12 @@ module Solargraph
           return [] if type.undefined?
           working_pin = Pin::ProxyType.anonymous(type)
         end
-        links.last.last_context = name_pin
+        links.last.last_context = working_pin
         links.last.resolve(api_map, working_pin, locals)
       end
 
       # @param api_map [ApiMap]
-      # @param name_pin [Pin::Base]
+      # @param name_pin [Pin::Base] The pin for the closure in which this code runs
       # @param locals [::Enumerable<Pin::LocalVariable>]
       # @return [ComplexType]
       # @sg-ignore
@@ -102,10 +120,6 @@ module Solargraph
       # @param locals [::Enumerable<Pin::LocalVariable>]
       # @return [ComplexType]
       def infer_uncached api_map, name_pin, locals
-        from_here = base.infer(api_map, name_pin, locals) unless links.length == 1
-        if from_here
-          name_pin = name_pin.proxy(from_here)
-        end
         pins = define(api_map, name_pin, locals)
         type = infer_first_defined(pins, links.last.last_context, api_map, locals)
         maybe_nil(type)
@@ -161,7 +175,7 @@ module Solargraph
               # @todo even at strong, no typechecking complaint
               #   happens when a [Pin::Base,nil] is passed into a method
               #   that accepts only [Pin::Namespace] as an argument
-              type = type.resolve_generics(pin.closure, context.return_type)
+              type = type.resolve_generics(pin.closure, context.binder)
             end
             if type.defined?
               possibles.push type

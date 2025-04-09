@@ -3,7 +3,9 @@
 module Solargraph
   class Source
     class Chain
-      class Call < Link
+      class Call < Chain::Link
+        include Solargraph::Parser::NodeMethods
+
         # @return [String]
         attr_reader :word
 
@@ -28,7 +30,7 @@ module Solargraph
         end
 
         # @param api_map [ApiMap]
-        # @param name_pin [Pin::Base]
+        # @param name_pin [Pin::Closure] name_pin.binder should give us the object on which 'word' will be invoked
         # @param locals [::Array<Pin::LocalVariable>]
         def resolve api_map, name_pin, locals
           return super_pins(api_map, name_pin) if word == 'super'
@@ -38,23 +40,23 @@ module Solargraph
           else
             []
           end
-          return inferred_pins(found, api_map, name_pin.context, locals) unless found.empty?
-          # @param [ComplexType::UniqueType]
+          return inferred_pins(found, api_map, name_pin, locals) unless found.empty?
           pins = name_pin.binder.each_unique_type.flat_map do |context|
-            api_map.get_method_stack(context.namespace == '' ? '' : context.tag, word, scope: context.scope)
+            method_context = context.namespace == '' ? '' : context.tag
+            api_map.get_method_stack(method_context, word, scope: context.scope)
           end
           return [] if pins.empty?
-          inferred_pins(pins, api_map, name_pin.context, locals)
+          inferred_pins(pins, api_map, name_pin, locals)
         end
 
         private
 
         # @param pins [::Enumerable<Pin::Method>]
         # @param api_map [ApiMap]
-        # @param context [ComplexType]
+        # @param name_pin [Pin::Base]
         # @param locals [::Array<Pin::LocalVariable>]
         # @return [::Array<Pin::Base>]
-        def inferred_pins pins, api_map, context, locals
+        def inferred_pins pins, api_map, name_pin, locals
           result = pins.map do |p|
             next p unless p.is_a?(Pin::Method)
             overloads = p.signatures
@@ -78,7 +80,8 @@ module Solargraph
                   match = ol.parameters.any?(&:restarg?)
                   break
                 end
-                atype = atypes[idx] ||= arg.infer(api_map, Pin::ProxyType.anonymous(context), locals)
+                atype = atypes[idx] ||= arg.infer(api_map, Pin::ProxyType.anonymous(name_pin.context), locals)
+                ptype = param.return_type
                 # @todo Weak type comparison
                 # unless atype.tag == param.return_type.tag || api_map.super_and_sub?(param.return_type.tag, atype.tag)
                 unless param.return_type.undefined? || atype.name == param.return_type.name || api_map.super_and_sub?(param.return_type.name, atype.name) || param.return_type.generic?
@@ -89,11 +92,16 @@ module Solargraph
               if match
                 if ol.block && with_block?
                   block_atypes = ol.block.parameters.map(&:return_type)
-                  blocktype = block_call_type(api_map, context, block_atypes, locals)
+                  if block.links.map(&:class) == [BlockSymbol]
+                    # like the bar in foo(&:bar)
+                    blocktype = block_symbol_call_type(api_map, name_pin.context, block_atypes, locals)
+                  else
+                    blocktype = block_call_type(api_map, name_pin, locals)
+                  end
                 end
                 new_signature_pin = ol.resolve_generics_from_context_until_complete(ol.generics, atypes, nil, nil, blocktype)
                 new_return_type = new_signature_pin.return_type
-                type = with_params(new_return_type.self_to(context.to_s), context).qualify(api_map, context.namespace) if new_return_type.defined?
+                type = with_params(new_return_type.self_to(name_pin.context.to_s), name_pin.context).qualify(api_map, name_pin.context.namespace) if new_return_type.defined?
                 type ||= ComplexType::UNDEFINED
               end
               break if type.defined?
@@ -101,20 +109,20 @@ module Solargraph
             p = p.with_single_signature(new_signature_pin) unless new_signature_pin.nil?
             next p.proxy(type) if type.defined?
             if !p.macros.empty?
-              result = process_macro(p, api_map, context, locals)
+              result = process_macro(p, api_map, name_pin.context, locals)
               next result unless result.return_type.undefined?
             elsif !p.directives.empty?
-              result = process_directive(p, api_map, context, locals)
+              result = process_directive(p, api_map, name_pin.context, locals)
               next result unless result.return_type.undefined?
             end
             p
           end
           result.map do |pin|
-            if pin.path == 'Class#new' && context.tag != 'Class'
-              pin.proxy(ComplexType.try_parse(context.namespace))
+            if pin.path == 'Class#new' && name_pin.context.tag != 'Class'
+              pin.proxy(ComplexType.try_parse(name_pin.context.namespace))
             else
               next pin if pin.return_type.undefined?
-              selfy = pin.return_type.self_to(context.tag)
+              selfy = pin.return_type.self_to(name_pin.context.tag)
               selfy == pin.return_type ? pin : pin.proxy(selfy)
             end
           end
@@ -242,25 +250,41 @@ module Solargraph
         # @param block_parameter_types [::Array<ComplexType>]
         # @param locals [::Array<Pin::LocalVariable>]
         # @return [ComplexType, nil]
-        def block_call_type(api_map, context, block_parameter_types, locals)
+        def block_symbol_call_type(api_map, context, block_parameter_types, locals)
+          # Ruby's shorthand for sending the passed in method name
+          # to the first yield parameter with no arguments
+          block_symbol_name = block.links.first.word
+          block_symbol_call_path = "#{block_parameter_types.first}##{block_symbol_name}"
+          callee = api_map.get_path_pins(block_symbol_call_path).first
+          return_type = callee&.return_type
+          # @todo: Figure out why we get unresolved generics at
+          #   this point and need to assume method return types
+          #   based on the generic type
+          return_type ||= api_map.get_path_pins("#{context.subtypes.first}##{block.links.first.word}").first&.return_type
+          return_type || ComplexType::UNDEFINED
+        end
+
+        # @param api_map [ApiMap]
+        # @return [Pin::Block, nil]
+        def find_block_pin(api_map)
+          node_location = Solargraph::Location.from_node(block.node)
+          return if  node_location.nil?
+          block_pins = api_map.get_block_pins
+          block_pins.find { |pin| pin.location.contain?(node_location) }
+        end
+
+        # @param api_map [ApiMap]
+        # @param name_pin [Pin::Base]
+        # @param block_parameter_types [::Array<ComplexType>]
+        # @param locals [::Array<Pin::LocalVariable>]
+        # @return [ComplexType, nil]
+        def block_call_type(api_map, name_pin, locals)
           return nil unless with_block?
 
-          # @todo Handle BlockVariable
-          if block.links.map(&:class) == [BlockSymbol]
-            # Ruby's shorthand for sending the passed in method name
-            # to the first yield parameter with no arguments
-            block_symbol_name = block.links.first.word
-            block_symbol_call_path = "#{block_parameter_types.first}##{block_symbol_name}"
-            callee = api_map.get_path_pins(block_symbol_call_path).first
-            return_type = callee&.return_type
-            # @todo: Figure out why we get unresolved generics at
-            #   this point and need to assume method return types
-            #   based on the generic type
-            return_type ||= api_map.get_path_pins("#{context.subtypes.first}##{block.links.first.word}").first&.return_type
-            return_type || ComplexType::UNDEFINED
-          else
-            block.infer(api_map, Pin::ProxyType.anonymous(context), locals)
-          end
+          block_context_pin = name_pin
+          block_pin = find_block_pin(api_map)
+          block_context_pin = block_pin.closure if block_pin
+          block.infer(api_map, block_context_pin, locals)
         end
       end
     end
