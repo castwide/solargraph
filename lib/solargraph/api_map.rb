@@ -371,7 +371,7 @@ module Solargraph
           end
         end
         result.concat inner_get_methods('Kernel', :instance, [:public], deep, skip) if visibility.include?(:private)
-        result.concat inner_get_methods('Module', scope, visibility, deep, skip)
+        result.concat inner_get_methods('Module', scope, visibility, deep, skip) if scope == :module
       end
       resolved = resolve_method_aliases(result, visibility)
       cache.set_methods(rooted_tag, scope, visibility, deep, resolved)
