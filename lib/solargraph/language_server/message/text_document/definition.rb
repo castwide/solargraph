@@ -13,10 +13,10 @@ module Solargraph::LanguageServer::Message::TextDocument
     def code_location
       suggestions = host.definitions_at(params['textDocument']['uri'], @line, @column)
       return nil if suggestions.empty?
-      suggestions.reject { |pin| pin.location.nil? || pin.location.filename.nil? }.map do |pin|
+      suggestions.reject { |pin| pin.best_location.nil? || pin.best_location.filename.nil? }.map do |pin|
         {
-          uri: file_to_uri(pin.location.filename),
-          range: pin.location.range.to_hash
+          uri: file_to_uri(pin.best_location.filename),
+          range: pin.best_location.range.to_hash
         }
       end
     end

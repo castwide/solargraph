@@ -6,15 +6,15 @@ class Solargraph::LanguageServer::Message::TextDocument::DocumentSymbol < Solarg
   def process
     pins = host.document_symbols params['textDocument']['uri']
     info = pins.map do |pin|
-      next nil unless pin.location&.filename
+      next nil unless pin.best_location&.filename
 
       result = {
         name: pin.name,
         containerName: pin.namespace,
         kind: pin.symbol_kind,
         location: {
-          uri: file_to_uri(pin.location.filename),
-          range: pin.location.range.to_hash
+          uri: file_to_uri(pin.best_location.filename),
+          range: pin.best_location.range.to_hash
         },
         deprecated: pin.deprecated?
       }
