@@ -28,6 +28,10 @@ module Solargraph
       @workspace = workspace
       @name = name
       @threads = []
+      # @type [Integer, nil]
+      @total = nil
+      # @type [Source, nil]
+      @current = nil
     end
 
     def inspect

@@ -111,7 +111,7 @@ module Solargraph
           NodeMethods.infer_literal_node_type node
         end
 
-        # @return [void]
+        # @return [Integer]
         def version
           parser.version
         end
