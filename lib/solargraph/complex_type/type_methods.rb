@@ -12,12 +12,15 @@ module Solargraph
     #     @rooted: boolish
     #   methods:
     #     transform()
+    #     all_params()
     module TypeMethods
       # @!method transform(new_name = nil, &transform_type)
       #   @param new_name [String, nil]
       #   @yieldparam t [UniqueType]
       #   @yieldreturn [UniqueType]
       #   @return [UniqueType, nil]
+      # @!method all_params
+      #   @return [Array<ComplexType>]
 
       # @return [String]
       attr_reader :name
@@ -43,11 +46,6 @@ module Solargraph
       # @return [Boolean]
       def nil_type?
         @nil_type ||= (name.casecmp('nil') == 0)
-      end
-
-      # @return [Boolean]
-      def parameters?
-        !substring.empty?
       end
 
       def tuple?
@@ -178,7 +176,7 @@ module Solargraph
       end
 
       def rooted?
-        @rooted
+        @rooted && all_params.all?(&:rooted?)
       end
 
       # Generate a ComplexType that fully qualifies this type's namespaces.

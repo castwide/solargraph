@@ -92,7 +92,7 @@ module Solargraph
                 pins.push method_pin
                 method_pin.parameters.push Pin::Parameter.new(name: 'value', decl: :arg, closure: pins.last)
                 if method_pin.return_type.defined?
-                  pins.last.docstring.add_tag YARD::Tags::Tag.new(:param, '', pins.last.return_type.to_s.split(', '), 'value')
+                  pins.last.docstring.add_tag YARD::Tags::Tag.new(:param, '', pins.last.return_type.items.map(&:rooted_tags), 'value')
                 end
               end
             end
