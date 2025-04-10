@@ -9,9 +9,7 @@ module Solargraph
     class SyntaxError < StandardError
     end
 
-    def self.rubyvm?
-      false
-    end
+    ClassMethods = ParserGem::ClassMethods
 
     # @deprecated
     Legacy = ParserGem
