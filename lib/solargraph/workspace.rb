@@ -128,6 +128,11 @@ module Solargraph
       end
     end
 
+    # @return [String, nil]
+    def rbs_collection_path
+      @gem_rbs_collection ||= read_rbs_collection_path
+    end
+
     # Synchronize the workspace from the provided updater.
     #
     # @param updater [Source::Updater]
@@ -221,6 +226,14 @@ module Solargraph
           Solargraph.logger.warn "Failed to load plugin '#{plugin}'"
         end
       end
+    end
+
+    # @return [String, nil]
+    def read_rbs_collection_path
+      yaml_file = File.join(directory, 'rbs_collection.yaml')
+      return unless File.file?(yaml_file)
+
+      YAML.load_file(yaml_file)&.fetch('path')
     end
   end
 end

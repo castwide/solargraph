@@ -15,5 +15,6 @@ module Solargraph
     autoload :MessageTypes, 'solargraph/language_server/message_types'
     autoload :Request,      'solargraph/language_server/request'
     autoload :Transport,    'solargraph/language_server/transport'
+    autoload :Progress,     'solargraph/language_server/progress'
   end
 end

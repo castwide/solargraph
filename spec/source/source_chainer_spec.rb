@@ -190,7 +190,7 @@ describe Solargraph::Source::SourceChainer do
     source1 = Solargraph::Source.load_string(%(
       ''
     ))
-    source2 = source1.start_synchronize(Solargraph::Source::Updater.new(
+    source2 = source1.synchronize(Solargraph::Source::Updater.new(
       nil,
       2,
       [
@@ -223,7 +223,7 @@ describe Solargraph::Source::SourceChainer do
     updater = Solargraph::Source::Updater.new('test.rb', 1, [
       Solargraph::Source::Change.new(Solargraph::Range.from_to(2, 6, 2, 6), 'x.')
     ])
-    updated = source.start_synchronize(updater)
+    updated = source.synchronize(updater)
     cursor = updated.cursor_at(Solargraph::Position.new(2, 8))
     expect(cursor.chain.links.first.word).to eq('x')
   end
@@ -337,7 +337,7 @@ describe Solargraph::Source::SourceChainer do
     expect(chain.links.map(&:class)).to be
   end
 
-  xit 'infers specific array type from block sent to Array#map' do
+  it 'infers specific array type from block sent to Array#map' do
     source = Solargraph::Source.load_string(%(
       ['a', 'b'].map { 's' }
     ), 'test.rb')

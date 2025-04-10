@@ -80,7 +80,7 @@ module Solargraph
                 )
               end
               if node.children[1] == :attr_writer || node.children[1] == :attr_accessor
-                pins.push Solargraph::Pin::Method.new(
+                method_pin = Solargraph::Pin::Method.new(
                   location: loc,
                   closure: clos,
                   name: "#{a.children[0]}=",
@@ -89,8 +89,9 @@ module Solargraph
                   visibility: region.visibility,
                   attribute: true
                 )
-                pins.last.parameters.push Pin::Parameter.new(name: 'value', decl: :arg, closure: pins.last)
-                if pins.last.return_type.defined?
+                pins.push method_pin
+                method_pin.parameters.push Pin::Parameter.new(name: 'value', decl: :arg, closure: pins.last)
+                if method_pin.return_type.defined?
                   pins.last.docstring.add_tag YARD::Tags::Tag.new(:param, '', pins.last.return_type.to_s.split(', '), 'value')
                 end
               end
@@ -112,6 +113,7 @@ module Solargraph
             end
           end
 
+          # @return [void]
           def process_prepend
             if node.children[2].is_a?(AST::Node) && node.children[2].type == :const
               cp = region.closure

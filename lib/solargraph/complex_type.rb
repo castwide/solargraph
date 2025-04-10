@@ -11,7 +11,7 @@ module Solargraph
     autoload :TypeMethods, 'solargraph/complex_type/type_methods'
     autoload :UniqueType,  'solargraph/complex_type/unique_type'
 
-    # @param types [Array<[UniqueType, ComplexType]>]
+    # @param types [Array<UniqueType, ComplexType>]
     def initialize types = [UniqueType::UNDEFINED]
       # @todo @items here should not need an annotation
       # @type [Array<UniqueType>]
@@ -86,6 +86,10 @@ module Solargraph
       @items
     end
 
+    def tags
+      @items.map(&:tag).join(', ')
+    end
+
     # @param index [Integer]
     # @return [UniqueType]
     def [](index)
@@ -126,6 +130,10 @@ module Solargraph
       map(&:tag).join(', ')
     end
 
+    def rooted_tags
+      map(&:rooted_tag).join(', ')
+    end
+
     def all? &block
       @items.all? &block
     end
@@ -147,7 +155,15 @@ module Solargraph
     # @yieldreturn [UniqueType]
     # @return [ComplexType]
     def transform(new_name = nil, &transform_type)
+      raise "Please remove leading :: and set rooted with recreate() instead - #{new_name}" if new_name&.start_with?('::')
       ComplexType.new(map { |ut| ut.transform(new_name, &transform_type) })
+    end
+
+    # @return [self]
+    def force_rooted
+      transform do |t|
+        t.recreate(make_rooted: true)
+      end
     end
 
     # @param definitions [Pin::Namespace, Pin::Method]
@@ -155,7 +171,7 @@ module Solargraph
     # @return [ComplexType]
     def resolve_generics definitions, context_type
       result = @items.map { |i| i.resolve_generics(definitions, context_type) }
-      ComplexType.parse(*result.map(&:tag))
+      ComplexType.try_parse(*result.map(&:tag))
     end
 
     # @param dst [String]
@@ -164,7 +180,7 @@ module Solargraph
       return self unless selfy?
       red = reduce_class(dst)
       result = @items.map { |i| i.self_to red }
-      ComplexType.parse(*result.map(&:tag))
+      ComplexType.try_parse(*result.map(&:tag))
     end
 
     def nullable?
@@ -188,21 +204,6 @@ module Solargraph
 
     def bottom?
       @items.all?(&:bot?)
-    end
-
-    private
-
-    # @todo This is a quick and dirty hack that forces `self` keywords
-    #   to reference an instance of their class and never the class itself.
-    #   This behavior may change depending on which result is expected
-    #   from YARD conventions. See https://github.com/lsegal/yard/issues/1257
-    # @param dst [String]
-    # @return [String]
-    def reduce_class dst
-      while dst =~ /^(Class|Module)\<(.*?)\>$/
-        dst = dst.sub(/^(Class|Module)\</, '').sub(/\>$/, '')
-      end
-      dst
     end
 
     class << self
@@ -250,7 +251,7 @@ module Solargraph
               elsif base.end_with?('=')
                 raise ComplexTypeError, "Invalid hash thing" unless key_types.nil?
                 # types.push ComplexType.new([UniqueType.new(base[0..-2].strip)])
-                types.push UniqueType.new(base[0..-2].strip)
+                types.push UniqueType.parse(base[0..-2].strip, subtype_string)
                 # @todo this should either expand key_type's type
                 #   automatically or complain about not being
                 #   compatible with key_type's type in type checking
@@ -281,7 +282,7 @@ module Solargraph
               next
             elsif char == ',' && point_stack == 0 && curly_stack == 0 && paren_stack == 0
               # types.push ComplexType.new([UniqueType.new(base.strip, subtype_string.strip)])
-              types.push UniqueType.new(base.strip, subtype_string.strip)
+              types.push UniqueType.parse(base.strip, subtype_string.strip)
               base.clear
               subtype_string.clear
               next
@@ -294,7 +295,7 @@ module Solargraph
           end
           raise ComplexTypeError, "Unclosed subtype in #{type_string}" if point_stack != 0 || curly_stack != 0 || paren_stack != 0
           # types.push ComplexType.new([UniqueType.new(base, subtype_string)])
-          types.push UniqueType.new(base.strip, subtype_string.strip)
+          types.push UniqueType.parse(base.strip, subtype_string.strip)
         end
         unless key_types.nil?
           raise ComplexTypeError, "Invalid use of key/value parameters" unless partial
@@ -311,18 +312,33 @@ module Solargraph
       def try_parse *strings
         parse *strings
       rescue ComplexTypeError => e
-        Solargraph.logger.info "Error parsing complex type: #{e.message}"
+        Solargraph.logger.info "Error parsing complex type `#{strings.join(', ')}`: #{e.message}"
         ComplexType::UNDEFINED
       end
     end
 
     VOID = ComplexType.parse('void')
     UNDEFINED = ComplexType.parse('undefined')
-    SYMBOL = ComplexType.parse('Symbol')
-    ROOT = ComplexType.parse('Class<>')
+    SYMBOL = ComplexType.parse('::Symbol')
+    ROOT = ComplexType.parse('::Class<>')
     NIL = ComplexType.parse('nil')
     SELF = ComplexType.parse('self')
-    BOOLEAN = ComplexType.parse('Boolean')
+    BOOLEAN = ComplexType.parse('::Boolean')
     BOT = ComplexType.parse('bot')
+
+    private
+
+    # @todo This is a quick and dirty hack that forces `self` keywords
+    #   to reference an instance of their class and never the class itself.
+    #   This behavior may change depending on which result is expected
+    #   from YARD conventions. See https://github.com/lsegal/yard/issues/1257
+    # @param dst [String]
+    # @return [String]
+    def reduce_class dst
+      while dst =~ /^(Class|Module)\<(.*?)\>$/
+        dst = dst.sub(/^(Class|Module)\</, '').sub(/\>$/, '')
+      end
+      dst
+    end
   end
 end

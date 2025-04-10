@@ -48,12 +48,6 @@ module Solargraph
           NodeProcessor.process(source.node, Region.new(source: source))
         end
 
-        # @param node [Parser::AST::Node]
-        # @return [Array<Parser::AST::Node>]
-        def returns_from node
-          NodeMethods.returns_from(node)
-        end
-
         # @param source [Source]
         # @param name [String]
         # @return [Array<Location>]
@@ -62,10 +56,12 @@ module Solargraph
             reg = /#{Regexp.escape name[0..-2]}\s*=/
             # @param code [String]
             # @param offset [Integer]
+            # @return [Array(Integer, Integer), Array(nil, nil)]
             extract_offset = ->(code, offset) { reg.match(code, offset).offset(0) }
           else
             # @param code [String]
             # @param offset [Integer]
+            # @return [Array(Integer, Integer), Array(nil, nil)]
             extract_offset = ->(code, offset) { [soff = code.index(name, offset), soff + name.length] }
           end
           inner_node_references(name, source.node).map do |n|
@@ -115,7 +111,7 @@ module Solargraph
           NodeMethods.infer_literal_node_type node
         end
 
-        # @return [void]
+        # @return [Integer]
         def version
           parser.version
         end
