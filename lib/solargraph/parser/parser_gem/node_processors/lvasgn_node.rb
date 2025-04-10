@@ -8,8 +8,8 @@ module Solargraph
           include ParserGem::NodeMethods
 
           def process
-            here = get_node_start_position(node)
-            presence = Range.new(here, region.closure.location.range.ending)
+            # variable not visible until next statement
+            presence = Range.new(get_node_end_position(node), region.closure.location.range.ending)
             loc = get_node_location(node)
             locals.push Solargraph::Pin::LocalVariable.new(
               location: loc,

@@ -89,15 +89,21 @@ module Solargraph
           elsif n.type == :const
             const = unpack_name(n)
             result.push Chain::Constant.new(const)
-          elsif [:lvar, :lvasgn].include?(n.type)
+          elsif [:lvasgn, :ivasgn, :gvasgn, :cvasgn].include?(n.type)
+            result.concat generate_links(n.children[1])
+          elsif n.type == :lvar
             result.push Chain::Call.new(n.children[0].to_s)
-          elsif [:ivar, :ivasgn].include?(n.type)
-            result.push Chain::InstanceVariable.new(n.children[0].to_s)
-          elsif [:cvar, :cvasgn].include?(n.type)
-            result.push Chain::ClassVariable.new(n.children[0].to_s)
-          elsif [:gvar, :gvasgn].include?(n.type)
-            result.push Chain::GlobalVariable.new(n.children[0].to_s)
+          elsif n.type == :ivar
+             result.push Chain::InstanceVariable.new(n.children[0].to_s)
+          elsif n.type == :cvar
+             result.push Chain::ClassVariable.new(n.children[0].to_s)
+          elsif n.type == :gvar
+             result.push Chain::GlobalVariable.new(n.children[0].to_s)
           elsif n.type == :or_asgn
+            # @todo: Need a new Link class here that evaluates the
+            #   existing variable type with the RHS, and generates a
+            #   union type of the LHS alone if never nil, or minus nil +
+            #   RHS if it is nilable.
             result.concat generate_links n.children[1]
           elsif [:class, :module, :def, :defs].include?(n.type)
             # @todo Undefined or what?
