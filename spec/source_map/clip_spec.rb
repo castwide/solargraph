@@ -1946,7 +1946,7 @@ describe Solargraph::SourceMap::Clip do
   xit 'identifies tuple types' do
     source = Solargraph::Source.load_string(%(
       # @type [Array(String, Integer)]
-      a = 123
+      a = foo
       b = a[0]
       b
       c = a[1]
@@ -1983,7 +1983,7 @@ describe Solargraph::SourceMap::Clip do
     expect(type.to_s).to eq('Array<Integer>')
   end
 
-  xit 'infers tuple types from diverse literal arrays' do
+  it 'infers tuple types from diverse literal arrays' do
     source = Solargraph::Source.load_string(%(
       a = [123, 'foo']
       a
@@ -1992,6 +1992,39 @@ describe Solargraph::SourceMap::Clip do
     clip = api_map.clip_at('test.rb', [2, 6])
     type = clip.infer
     expect(type.to_s).to eq('Array(Integer, String)')
+  end
+
+  it 'infers shallow literal diverse arrays into tuples' do
+    source = Solargraph::Source.load_string(%(
+      h = ['foo', 1]
+      h
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new.map(source)
+    clip = api_map.clip_at('test.rb', [2, 6])
+    type = clip.infer
+    expect(type.to_s).to eq('Array(String, Integer)')
+  end
+
+  it 'infers array of identical diverse arrays into tuples' do
+    source = Solargraph::Source.load_string(%(
+      h = [['foo', 1], ['bar', 2]]
+      h
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new.map(source)
+    clip = api_map.clip_at('test.rb', [2, 6])
+    type = clip.infer
+    expect(type.to_s).to eq('Array<Array(String, Integer)>')
+  end
+
+  it 'infers literal diverse array of diverse arrays into tuple of tuples' do
+    source = Solargraph::Source.load_string(%(
+      h = [['foo', 1], ['bar', :baz]]
+      h
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new.map(source)
+    clip = api_map.clip_at('test.rb', [2, 6])
+    type = clip.infer
+    expect(type.to_s).to eq('Array(Array(String, Integer), Array(String, Symbol))')
   end
 
   it 'resolves block parameter types from Hash#each' do
@@ -2038,17 +2071,6 @@ describe Solargraph::SourceMap::Clip do
     clip = api_map.clip_at('test.rb', [6, 8])
     type = clip.infer
     expect(type.to_s).to eq('Integer')
-  end
-
-  xit 'infers literal heterogeneous arrays into tuples' do
-    source = Solargraph::Source.load_string(%(
-      h = [['foo', 1], ['bar', 2]]
-      h
-    ), 'test.rb')
-    api_map = Solargraph::ApiMap.new.map(source)
-    clip = api_map.clip_at('test.rb', [2, 6])
-    type = clip.infer
-    expect(type.to_s).to eq('Array<Array(String, Integer)>')
   end
 
   it 'excludes Kernel singleton methods from chained methods' do
@@ -2265,5 +2287,53 @@ describe Solargraph::SourceMap::Clip do
     api_map = Solargraph::ApiMap.new.map(source)
     clip = api_map.clip_at('test.rb', [10, 8])
     expect(clip.infer.to_s).to eq('nil')
+  end
+
+  it 'can infer assignments-in-return-position from complex expressions' do
+    source = Solargraph::Source.load_string(%(
+      class A
+        def foo
+          blah = ['foo'].map { 456 }
+        end
+
+        def bar
+          nah ||= ['foo'].map { 456 }
+        end
+
+        def foo1
+          @blah = ['foo'].map { 456 }
+        end
+
+        def bar1
+          @nah2 ||= ['foo'].map { 456 }
+        end
+
+        def baz
+          a = foo
+          a
+          b = bar
+          b
+          a1 = foo1
+          a1
+          b2 = bar1
+          b2
+        end
+      end
+  ), 'test.rb')
+
+    api_map = Solargraph::ApiMap.new.map(source)
+    clip = api_map.clip_at('test.rb', [20, 10])
+    expect(clip.infer.to_s).to eq('Array<Integer>')
+
+    # @todo support this on ||=
+    # clip = api_map.clip_at('test.rb', [22, 10])
+    # expect(clip.infer.to_s).to eq('Array<Integer>')
+
+    clip = api_map.clip_at('test.rb', [24, 10])
+    expect(clip.infer.to_s).to eq('Array<Integer>')
+
+    # @todo support this on ||=
+    # clip = api_map.clip_at('test.rb', [26, 10])
+    # expect(clip.infer.to_s).to eq('Array<Integer>')
   end
 end
