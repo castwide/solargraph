@@ -2512,17 +2512,18 @@ describe Solargraph::SourceMap::Clip do
   ), 'test.rb')
 
     api_map = Solargraph::ApiMap.new.map(source)
+
     clip = api_map.clip_at('test.rb', [20, 10])
     expect(clip.infer.to_s).to eq('Array<Integer>')
 
-    # @todo support this on ||=
+    # @todo pending https://github.com/castwide/solargraph/pull/888
     # clip = api_map.clip_at('test.rb', [22, 10])
     # expect(clip.infer.to_s).to eq('Array<Integer>')
 
     clip = api_map.clip_at('test.rb', [24, 10])
     expect(clip.infer.to_s).to eq('Array<Integer>')
 
-    # @todo support this on ||=
+    # @todo pending https://github.com/castwide/solargraph/pull/888
     # clip = api_map.clip_at('test.rb', [26, 10])
     # expect(clip.infer.to_s).to eq('Array<Integer>')
   end
