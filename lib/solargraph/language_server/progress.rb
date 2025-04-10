@@ -67,11 +67,8 @@ module Solargraph
 
         message = build
 
-        if created?
-          host.send_notification '$/progress', message
-        else
-          create(host) { host.send_notification '$/progress', message }
-        end
+        create(host) unless created?
+        host.send_notification '$/progress', message
         @status = FINISHED if kind == 'end'
       end
 
@@ -86,10 +83,11 @@ module Solargraph
       private
 
       # @param host [Solargraph::LanguageServer::Host]
-      def create host, &block
-        return false if created?
+      # @return [void]
+      def create host
+        return if created?
 
-        host.send_request 'window/workDoneProgress/create', { token: uuid }, &block
+        host.send_request 'window/workDoneProgress/create', { token: uuid }
         @status = CREATED
       end
 

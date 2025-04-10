@@ -29,6 +29,25 @@ module Solargraph
       index pins
     end
 
+    #
+    # This is a mutable object, which is cached in the Chain class -
+    # if you add any fields which change the results of calls (not
+    # just caches), please also change `equality_fields` below.
+    #
+
+    def eql?(other)
+      self.class == other.class &&
+        equality_fields == other.equality_fields
+    end
+
+    def ==(other)
+      self.eql?(other)
+    end
+
+    def hash
+      equality_fields.hash
+    end
+
     # @param pins [Array<Pin::Base>]
     # @return [self]
     def index pins
@@ -56,19 +75,29 @@ module Solargraph
     # @param bench [Bench]
     # @return [self]
     def catalog bench
-      implicit.clear
-      @cache.clear
+      old_api_hash = @source_map_hash&.values&.map(&:api_hash)
+      need_to_uncache = (old_api_hash != bench.source_maps.map(&:api_hash))
       @source_map_hash = bench.source_maps.map { |s| [s.filename, s] }.to_h
-      pins = bench.source_maps.map(&:pins).flatten
+      pins = bench.source_maps.flat_map(&:pins).flatten
+      implicit.clear
       source_map_hash.each_value do |map|
         implicit.merge map.environ
       end
-      unresolved_requires = (bench.external_requires + implicit.requires + bench.workspace.config.required).uniq
-      @doc_map = DocMap.new(unresolved_requires, []) # @todo Implement gem preferences
+      unresolved_requires = (bench.external_requires + implicit.requires + bench.workspace.config.required).to_a.compact.uniq
+      if @unresolved_requires != unresolved_requires || @doc_map&.uncached_gemspecs&.any?
+        @doc_map = DocMap.new(unresolved_requires, [], bench.workspace.rbs_collection_path) # @todo Implement gem preferences
+        @unresolved_requires = unresolved_requires
+        need_to_uncache = true
+      end
       @store = Store.new(@@core_map.pins + @doc_map.pins + implicit.pins + pins)
-      @unresolved_requires = @doc_map.unresolved_requires
+      @cache.clear if need_to_uncache
+
       @missing_docs = [] # @todo Implement missing docs
       self
+    end
+
+    protected def equality_fields
+      [self.class, @source_map_hash, implicit, @doc_map, @unresolved_requires, @missing_docs]
     end
 
     # @return [::Array<Gem::Specification>]
@@ -133,14 +162,19 @@ module Solargraph
     # Create an ApiMap with a workspace in the specified directory and cache
     # any missing gems.
     #
+    #
+    # @todo IO::NULL is incorrectly inferred to be a String.
+    # @sg-ignore
+    #
     # @param directory [String]
+    # @param out [IO] The output stream for messages
     # @return [ApiMap]
-    def self.load_with_cache directory
+    def self.load_with_cache directory, out = IO::NULL
       api_map = load(directory)
       return api_map if api_map.uncached_gemspecs.empty?
 
       api_map.uncached_gemspecs.each do |gemspec|
-        Solargraph.logger.info "Caching #{gemspec.name} #{gemspec.version}..."
+        out.puts "Caching gem #{gemspec.name} #{gemspec.version}"
         pins = GemPins.build(gemspec)
         Solargraph::Cache.save('gems', "#{gemspec.name}-#{gemspec.version}.ser", pins)
       end
@@ -221,10 +255,15 @@ module Solargraph
     # @return [String, nil] fully qualified tag
     def qualify tag, context_tag = ''
       return tag if ['self', nil].include?(tag)
-      context_type = ComplexType.parse(context_tag)
-      type = ComplexType.parse(tag)
+      context_type = ComplexType.try_parse(context_tag)
+      return unless context_type
+
+      type = ComplexType.try_parse(tag)
+      return unless type
+
       fqns = qualify_namespace(type.rooted_namespace, context_type.rooted_namespace)
-      return nil if fqns.nil?
+      return unless fqns
+
       fqns + type.substring
     end
 
@@ -332,7 +371,7 @@ module Solargraph
           end
         end
         result.concat inner_get_methods('Kernel', :instance, [:public], deep, skip) if visibility.include?(:private)
-        result.concat inner_get_methods('Module', scope, visibility, deep, skip)
+        result.concat inner_get_methods('Module', scope, visibility, deep, skip) if scope == :module
       end
       resolved = resolve_method_aliases(result, visibility)
       cache.set_methods(rooted_tag, scope, visibility, deep, resolved)
@@ -466,9 +505,6 @@ module Solargraph
     def clip cursor
       raise FileNotFoundError, "ApiMap did not catalog #{cursor.filename}" unless source_map_hash.key?(cursor.filename)
 
-      # @todo Clip caches are disabled pending resolution of a stale cache bug
-      # cache.get_clip(cursor) ||
-      #   SourceMap::Clip.new(self, cursor).tap { |clip| cache.set_clip(cursor, clip) }
       SourceMap::Clip.new(self, cursor)
     end
 
@@ -573,8 +609,8 @@ module Solargraph
       # namespaces; resolving the generics in the method pins is this
       # class' responsibility
       raw_methods = store.get_methods(fqns, scope: scope, visibility: visibility).sort{ |a, b| a.name <=> b.name }
-      namespace_pin = store.get_path_pins(fqns).select{|p| p.is_a?(Pin::Namespace)}.first
-      methods = if rooted_tag != fqns
+      namespace_pin = store.get_path_pins(fqns).select { |p| p.is_a?(Pin::Namespace) }.first
+      methods = if namespace_pin && rooted_tag != fqns
                   methods = raw_methods.map do |method_pin|
                     method_pin.resolve_generics(namespace_pin, rooted_type)
                   end

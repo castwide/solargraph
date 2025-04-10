@@ -150,7 +150,7 @@ module Solargraph
     # @return [void]
     def typecheck *files
       directory = File.realpath(options[:directory])
-      api_map = Solargraph::ApiMap.load_with_cache(directory)
+      api_map = Solargraph::ApiMap.load_with_cache(directory, $stdout)
       probcount = 0
       if files.empty?
         files = api_map.source_maps.map(&:filename)
@@ -173,6 +173,7 @@ module Solargraph
       }
       puts "Typecheck finished in #{time.real} seconds."
       puts "#{probcount} problem#{probcount != 1 ? 's' : ''} found#{files.length != 1 ? " in #{filecount} of #{files.length} files" : ''}."
+      # "
       exit 1 if probcount > 0
     end
 
@@ -190,7 +191,7 @@ module Solargraph
       directory = File.realpath(options[:directory])
       api_map = nil
       time = Benchmark.measure {
-        api_map = Solargraph::ApiMap.load_with_cache(directory)
+        api_map = Solargraph::ApiMap.load_with_cache(directory, $stdout)
         api_map.pins.each do |pin|
           begin
             puts pin_description(pin) if options[:verbose]

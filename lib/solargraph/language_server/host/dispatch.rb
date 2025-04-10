@@ -34,7 +34,7 @@ module Solargraph
         def update_libraries uri
           src = sources.find(uri)
           using = libraries.select { |lib| lib.contain?(src.filename) }
-          using.push generic_library_for(uri) if using.empty?
+          using.push library_for(uri) if using.empty?
           using.each { |lib| lib.merge src }
           diagnoser.schedule uri
         end
@@ -117,8 +117,10 @@ module Solargraph
                                                   .tap { |lib| lib.add_observer self }
         end
 
-        def update library
-          library.cache_progress&.send(self)
+        # @param library [Solargraph::Library]
+        # @return [void]
+        def update progress
+          progress&.send(self)
         end
       end
     end

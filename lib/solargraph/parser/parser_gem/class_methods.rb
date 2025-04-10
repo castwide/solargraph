@@ -48,12 +48,6 @@ module Solargraph
           NodeProcessor.process(source.node, Region.new(source: source))
         end
 
-        # @param node [Parser::AST::Node]
-        # @return [Array<Parser::AST::Node>]
-        def returns_from node
-          NodeMethods.returns_from(node)
-        end
-
         # @param source [Source]
         # @param name [String]
         # @return [Array<Location>]
@@ -117,7 +111,7 @@ module Solargraph
           NodeMethods.infer_literal_node_type node
         end
 
-        # @return [void]
+        # @return [Integer]
         def version
           parser.version
         end
