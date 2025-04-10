@@ -111,10 +111,9 @@ describe 'NodeChainer' do
       foo = [1, 2]
     ))
     chain = Solargraph::Parser.chain(source.node)
-    expect(chain.links.map(&:word)).to eq(['foo'])
+    expect(chain.links.map(&:word)).to eq(['<::Array>'])
     foo_link = chain.links.first
-    expect(foo_link.class).to eq(Solargraph::Source::Chain::Call)
-    expect(foo_link.arguments).to eq([])
+    expect(foo_link.class).to eq(Solargraph::Source::Chain::Array)
   end
 
   it 'tracks complex lhs' do
