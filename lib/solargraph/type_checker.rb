@@ -329,6 +329,11 @@ module Solargraph
           pin.signatures.sort { |sig| sig.parameters.length }.each do |sig|
             errors = []
             sig.parameters.each_with_index do |par, idx|
+              # @todo add logic mapping up restarg parameters with
+              #   arguments (including restarg arguments).  Use tuples
+              #   when possible, and when not, ensure provably
+              #   incorrect situations are detected.
+              break if par.decl == :restarg  # bail out pending better arg processing
               argchain = arguments[idx]
               if argchain.nil?
                 if par.decl == :arg

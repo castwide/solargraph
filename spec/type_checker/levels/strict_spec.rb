@@ -753,5 +753,17 @@ describe Solargraph::TypeChecker do
       ))
       expect(checker.problems.map(&:message)).to eq([])
     end
+
+    it "doesn't false alarm over splatted args which aren't the final argument" do
+      checker = type_checker(%(
+        # @param path [Array<String>]
+        # @param baz [Array<String>]
+        # @return [void]
+        def foo *path, baz; end
+
+        foo('a', 'b', 'c', ['d'])
+      ))
+      expect(checker.problems.map(&:message)).to eq([])
+    end
   end
 end
