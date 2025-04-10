@@ -5,10 +5,14 @@ require 'solargraph/source/chain/link'
 
 module Solargraph
   class Source
-    # A chain of constants, variables, and method calls for inferring types of
-    # values.
+    #
+    # Represents a single call chain at the parse tree level.  Chains are used to generate a set of pins, which can then
     #
     class Chain
+      #
+      # A chain of constants, variables, and method calls for inferring types of
+      # values.
+      #
       autoload :Link,             'solargraph/source/chain/link'
       autoload :Call,             'solargraph/source/chain/call'
       autoload :QCall,            'solargraph/source/chain/q_call'
