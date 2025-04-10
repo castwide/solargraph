@@ -2478,4 +2478,52 @@ describe Solargraph::SourceMap::Clip do
     clip = api_map.clip_at('test.rb', [10, 8])
     expect(clip.infer.to_s).to eq('nil')
   end
+
+  it 'can infer assignments-in-return-position from complex expressions' do
+    source = Solargraph::Source.load_string(%(
+      class A
+        def foo
+          blah = ['foo'].map { 456 }
+        end
+
+        def bar
+          nah ||= ['foo'].map { 456 }
+        end
+
+        def foo1
+          @blah = ['foo'].map { 456 }
+        end
+
+        def bar1
+          @nah2 ||= ['foo'].map { 456 }
+        end
+
+        def baz
+          a = foo
+          a
+          b = bar
+          b
+          a1 = foo1
+          a1
+          b2 = bar1
+          b2
+        end
+      end
+  ), 'test.rb')
+
+    api_map = Solargraph::ApiMap.new.map(source)
+    clip = api_map.clip_at('test.rb', [20, 10])
+    expect(clip.infer.to_s).to eq('Array<Integer>')
+
+    # @todo support this on ||=
+    # clip = api_map.clip_at('test.rb', [22, 10])
+    # expect(clip.infer.to_s).to eq('Array<Integer>')
+
+    clip = api_map.clip_at('test.rb', [24, 10])
+    expect(clip.infer.to_s).to eq('Array<Integer>')
+
+    # @todo support this on ||=
+    # clip = api_map.clip_at('test.rb', [26, 10])
+    # expect(clip.infer.to_s).to eq('Array<Integer>')
+  end
 end
