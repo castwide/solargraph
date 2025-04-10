@@ -207,7 +207,7 @@ module Solargraph
       def diagnose uri
         if sources.include?(uri)
           library = library_for(uri)
-          if library.mapped?
+          if library.mapped? && library.synchronized?
             logger.info "Diagnosing #{uri}"
             begin
               results = library.diagnose uri_to_file(uri)
