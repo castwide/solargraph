@@ -28,6 +28,10 @@ module Solargraph
       @workspace = workspace
       @name = name
       @threads = []
+      # @type [Integer, nil]
+      @total = nil
+      # @type [Source, nil]
+      @current = nil
     end
 
     def inspect
@@ -383,6 +387,7 @@ module Solargraph
       #   everything in the workspace should get diagnosed, or if there should
       #   be an option to do so.
       #
+      sync_catalog
       return [] unless open?(filename)
       result = []
       source = read(filename)
@@ -402,7 +407,7 @@ module Solargraph
         end
       end
       repargs.each_pair do |reporter, args|
-        result.concat reporter.new(*args.uniq).diagnose(source, mutex.synchronize { api_map })
+        result.concat reporter.new(*args.uniq).diagnose(source, api_map)
       end
       result
     end
