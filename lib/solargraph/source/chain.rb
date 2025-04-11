@@ -32,7 +32,7 @@ module Solargraph
       @@inference_invalidation_key = nil
       @@inference_cache = {}
 
-      UNDEFINED_CALL = Chain::Call.new('<undefined>')
+      UNDEFINED_CALL = Chain::Call.new('<undefined>', nil)
       UNDEFINED_CONSTANT = Chain::Constant.new('<undefined>')
 
       # @return [::Array<Source::Chain::Link>]
@@ -164,7 +164,6 @@ module Solargraph
               type = type.resolve_generics(pin.closure, context.return_type)
             end
             if type.defined?
-              possibles = [] if pin.declaration?
               possibles.push type
               break if pin.is_a?(Pin::Method)
             end
@@ -184,7 +183,6 @@ module Solargraph
             type = pin.probe(api_map)
             @@inference_stack.pop
             if type.defined?
-              possibles = [] if pin.declaration?
               possibles.push type
               break if pin.is_a?(Pin::Method)
             end

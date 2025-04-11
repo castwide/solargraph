@@ -25,6 +25,13 @@ module Solargraph
       }
     end
 
+    # @param node [Parser::AST::Node, nil]
+    def self.from_node(node)
+      return nil if node.nil? || node.loc.nil?
+      range = Range.from_node(node)
+      self.new(node.loc.expression.source_buffer.name, range)
+    end
+
     # @param other [BasicObject]
     def == other
       return false unless other.is_a?(Location)

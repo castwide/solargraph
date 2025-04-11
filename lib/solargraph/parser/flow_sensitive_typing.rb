@@ -23,6 +23,68 @@ module Solargraph
       end
 
       # @param if_node [Parser::AST::Node]
+      def process_if(if_node)
+        #
+        # See if we can refine a type based on the result of 'if foo.nil?'
+        #
+        # [3] pry(main)> require 'parser/current'; Parser::CurrentRuby.parse("if foo.is_a? Baz; then foo; else bar; end")
+        # => s(:if,
+        #   s(:send,
+        #     s(:send, nil, :foo), :is_a?,
+        #     s(:const, nil, :Baz)),
+        #   s(:send, nil, :foo),
+        #   s(:send, nil, :bar))
+        # [4] pry(main)>
+        conditional_node = if_node.children[0]
+        then_clause = if_node.children[1]
+        else_clause = if_node.children[2]
+
+        true_ranges = []
+        if always_breaks?(else_clause)
+          unless enclosing_breakable_pin.nil?
+            rest_of_breakable_body = Range.new(get_node_end_position(if_node),
+                                               get_node_end_position(enclosing_breakable_pin.node))
+            true_ranges << rest_of_breakable_body
+          end
+        end
+
+        unless then_clause.nil?
+          #
+          # Add specialized locals for the then clause range
+          #
+          before_then_clause_loc = then_clause.location.expression.adjust(begin_pos: -1)
+          before_then_clause_pos = Position.new(before_then_clause_loc.line, before_then_clause_loc.column)
+          true_ranges << Range.new(before_then_clause_pos,
+                                   get_node_end_position(then_clause))
+        end
+
+        process_conditional(conditional_node, true_ranges)
+      end
+
+      # Find a variable pin by name and where it is used.
+      #
+      # Resolves our most specific view of this variable's type by
+      # preferring pins created by flow-sensitive typing when we have
+      # them based on the Closure and Location.
+      #
+      # @param pins [Array<Pin::LocalVariable>]
+      # @param closure [Pin::Closure]
+      # @param location [Location]
+      def self.visible_pins(pins, name, closure, location)
+        pins_with_name = pins.select { |p| p.name == name }
+        return [] if pins_with_name.empty?
+        pins_with_specific_visibility = pins.select { |p| p.name == name && p.presence && p.visible_at?(closure, location) }
+        return pins_with_name if pins_with_specific_visibility.empty?
+        visible_pins_specific_to_this_closure = pins_with_specific_visibility.select { |p| p.closure == closure }
+        return pins_with_specific_visibility if visible_pins_specific_to_this_closure.empty?
+        flow_defined_pins = pins_with_specific_visibility.select { |p| p.declaration? }
+        return visible_pins_specific_to_this_closure if flow_defined_pins.empty?
+        flow_defined_pins
+      end
+
+      private
+
+      # @param if_node [Parser::AST::Node]
       def add_downcast_local(pin, downcast_type_name, presence)
         # @todo Create pin#update method
         new_pin = Solargraph::Pin::LocalVariable.new(
@@ -53,45 +115,6 @@ module Solargraph
         end
       end
 
-      # @param if_node [Parser::AST::Node]
-      def process_if(if_node)
-        #
-        # See if we can refine a type based on the result of 'if foo.nil?'
-        #
-        # [3] pry(main)> require 'parser/current'; Parser::CurrentRuby.parse("if foo.is_a? Baz; then foo; else bar; end")
-        # => s(:if,
-        #   s(:send,
-        #     s(:send, nil, :foo), :is_a?,
-        #     s(:const, nil, :Baz)),
-        #   s(:send, nil, :foo),
-        #   s(:send, nil, :bar))
-        # [4] pry(main)>
-        conditional_node = if_node.children[0]
-        then_clause = if_node.children[1]
-        else_clause = if_node.children[2]
-
-        true_ranges = []
-        if always_breaks?(else_clause)
-          unless enclosing_breakable_pin.nil?
-            rest_of_breakable_body = Range.new(get_node_end_position(if_node),
-                                                get_node_end_position(enclosing_breakable_pin.node))
-            true_ranges << rest_of_breakable_body
-          end
-        end
-
-        unless then_clause.nil?
-          #
-          # Add specialized locals for the then clause range
-          #
-          before_then_clause_loc = then_clause.location.expression.adjust(begin_pos: -1)
-          before_then_clause_pos = Position.new(before_then_clause_loc.line, before_then_clause_loc.column)
-          true_ranges << Range.new(before_then_clause_pos,
-                                   get_node_end_position(then_clause))
-        end
-
-        process_conditional(conditional_node, true_ranges)
-      end
-
       def process_conditional(conditional_node, true_ranges)
         if conditional_node.type == :send
           process_isa(conditional_node, true_ranges)
@@ -99,8 +122,6 @@ module Solargraph
           process_and(conditional_node, true_ranges)
         end
       end
-
-      private
 
       # @param isa_node [Parser::AST::Node]
       def parse_isa(isa_node)

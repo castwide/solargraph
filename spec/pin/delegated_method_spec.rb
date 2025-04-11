@@ -25,7 +25,7 @@ describe Solargraph::Pin::DelegatedMethod do
 
     class2 = api_map.get_path_pins('Class2').first
 
-    chain = Solargraph::Source::Chain.new([Solargraph::Source::Chain::Call.new('collaborator')])
+    chain = Solargraph::Source::Chain.new([Solargraph::Source::Chain::Call.new('collaborator', nil)])
     pin = Solargraph::Pin::DelegatedMethod.new(
       closure: class2,
       scope: :instance,

@@ -15,7 +15,7 @@ module Solargraph
         # @param with_block [Boolean] True if the chain is inside a block
         # @param head [Boolean] True if the call is the start of its chain
         def initialize word, with_block = false
-          super(word, [], with_block)
+          super(word, nil, [], with_block)
         end
 
         # @param api_map [ApiMap]

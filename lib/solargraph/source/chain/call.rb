@@ -3,9 +3,19 @@
 module Solargraph
   class Source
     class Chain
-      class Call < Link
+      #
+      # Handles both method calls and local variable references by
+      # first looking for a local with the name 'word', then
+      # proceeding to method signature resolution if not found.
+      #
+      class Call < Chain::Link
+        include Solargraph::Parser::NodeMethods
+
         # @return [String]
         attr_reader :word
+
+        # @return [Location]
+        attr_reader :location
 
         # @return [::Array<Chain>]
         attr_reader :arguments
@@ -14,10 +24,12 @@ module Solargraph
         attr_reader :block
 
         # @param word [String]
+        # @param location [Location, nil]
         # @param arguments [::Array<Chain>]
         # @param block [Chain, nil]
-        def initialize word, arguments = [], block = nil
+        def initialize word, location, arguments = [], block = nil
           @word = word
+          @location = location
           @arguments = arguments
           @block = block
           fix_block_pass
@@ -28,13 +40,13 @@ module Solargraph
         end
 
         # @param api_map [ApiMap]
-        # @param name_pin [Pin::Base]
+        # @param name_pin [Pin::Closure] @see Chain#define
         # @param locals [::Array<Pin::LocalVariable>]
         def resolve api_map, name_pin, locals
           return super_pins(api_map, name_pin) if word == 'super'
           return yield_pins(api_map, name_pin) if word == 'yield'
           found = if head?
-            locals.select { |p| p.name == word }
+            api_map.visible_pins(locals, word, name_pin, location)
           else
             []
           end
