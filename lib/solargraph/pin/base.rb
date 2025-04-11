@@ -24,7 +24,7 @@ module Solargraph
       # @return [::Symbol]
       attr_accessor :source
 
-      def declaration?
+      def presence_certain?
         true
       end
 

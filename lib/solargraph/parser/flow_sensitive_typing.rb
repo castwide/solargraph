@@ -77,7 +77,7 @@ module Solargraph
         return pins_with_name if pins_with_specific_visibility.empty?
         visible_pins_specific_to_this_closure = pins_with_specific_visibility.select { |p| p.closure == closure }
         return pins_with_specific_visibility if visible_pins_specific_to_this_closure.empty?
-        flow_defined_pins = pins_with_specific_visibility.select { |p| p.declaration? }
+        flow_defined_pins = pins_with_specific_visibility.select { |p| p.presence_certain? }
         return visible_pins_specific_to_this_closure if flow_defined_pins.empty?
         flow_defined_pins
       end
@@ -95,7 +95,7 @@ module Solargraph
           comments: pin.comments,
           presence: presence,
           return_type: ComplexType.try_parse(downcast_type_name),
-          declaration: true
+          presence_certain: true
         )
         locals.push(new_pin)
       end
