@@ -6,13 +6,19 @@ module Solargraph
       # @return [Range]
       attr_reader :presence
 
+      def presence_certain?
+        @presence_certain
+      end
+
       # @param assignment [AST::Node, nil]
       # @param presence [Range, nil]
+      # @param presence_certain [Boolean]
       # @param splat [Hash]
-      def initialize assignment: nil, presence: nil, **splat
+      def initialize assignment: nil, presence: nil, presence_certain: false, **splat
         super(**splat)
         @assignment = assignment
         @presence = presence
+        @presence_certain = presence_certain
       end
 
       # @param pin [self]
