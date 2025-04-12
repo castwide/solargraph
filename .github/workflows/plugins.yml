@@ -56,6 +56,7 @@ jobs:
     - name: Install gems
       run: |
        cd solargraph-rspec
+       ls ..
        echo "gem 'solargraph', path: '../solargraph'" >> Gemfile
        bundle install
     - name: Run specs
