@@ -61,6 +61,10 @@ module Solargraph
         m
       end
 
+      def block?
+        !block.nil?
+      end
+
       # @return [Pin::Signature, nil]
       def block
         return @block unless @block == :undefined
@@ -458,6 +462,7 @@ module Solargraph
       # @param name [String]
       # @return [::Array(String, ::Symbol)]
       def parse_overload_param(name)
+        # @todo this needs to handle mandatory vs not args, kwargs, blocks, etc
         if name.start_with?('**')
           [name[2..-1], :kwrestarg]
         elsif name.start_with?('*')
