@@ -205,11 +205,24 @@ module Solargraph
           true
         end
 
+        # @param name_pin [Pin::Base]
+        # @return [Pin::Method, nil]
+        def find_method_pin(name_pin)
+          method_pin = name_pin
+          until method_pin.is_a?(Pin::Method)
+            method_pin = method_pin.closure
+            return if method_pin.nil?
+          end
+          method_pin
+        end
+
         # @param api_map [ApiMap]
         # @param name_pin [Pin::Base]
         # @return [::Array<Pin::Base>]
         def super_pins api_map, name_pin
-          pins = api_map.get_method_stack(name_pin.namespace, name_pin.name, scope: name_pin.context.scope)
+          method_pin = find_method_pin(name_pin)
+          return [] if method_pin.nil?
+          pins = api_map.get_method_stack(method_pin.namespace, method_pin.name, scope: method_pin.context.scope)
           pins.reject{|p| p.path == name_pin.path}
         end
 
@@ -217,8 +230,8 @@ module Solargraph
         # @param name_pin [Pin::Base]
         # @return [::Array<Pin::Base>]
         def yield_pins api_map, name_pin
-          method_pin = api_map.get_method_stack(name_pin.namespace, name_pin.name, scope: name_pin.context.scope).first
-          return [] if method_pin.nil?
+          method_pin = find_method_pin(name_pin)
+          return [] unless method_pin
 
           method_pin.signatures.map(&:block).compact
         end
