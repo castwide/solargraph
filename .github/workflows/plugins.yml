@@ -61,6 +61,7 @@ jobs:
         bundle exec rake spec
 
   run_solargraph_rails_specs:
+    steps:
     - name: Run
       run: |
         false
