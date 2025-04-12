@@ -46,6 +46,7 @@ jobs:
     #
     - name: clone https://github.com/lekemula/solargraph-rspec/
       run: |
+       cd ..
        git clone https://github.com/lekemula/solargraph-rspec.git
        cd solargraph-rspec
     - name: Set up Ruby
@@ -55,13 +56,12 @@ jobs:
         bundler-cache: false
     - name: Install gems
       run: |
-       cd solargraph-rspec
-       ls ..
+       cd ../solargraph-rspec
        echo "gem 'solargraph', path: '../solargraph'" >> Gemfile
        bundle install
     - name: Run specs
       run: |
-        cd solargraph-rspec
+        cd ../solargraph-rspec
         bundle exec rake spec
 
   run_solargraph_rails_specs:
