@@ -61,6 +61,7 @@ jobs:
         bundle exec rake spec
 
   run_solargraph_rails_specs:
+    runs-on: ubuntu-latest
     steps:
     - name: Run
       run: |
