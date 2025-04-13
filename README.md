@@ -122,6 +122,10 @@ See [https://solargraph.org/guides](https://solargraph.org/guides) for more tips
 
 ### Development
 
+To see more logging when typechecking or running specs, set the
+`SOLARGRAPH_LOG` environment variable to `debug` or `info`.  `warn` is
+the default value.
+
 Code contributions are always appreciated. Feel free to fork the repo and submit pull requests. Check for open issues that could use help. Start new issues to discuss changes that have a major impact on the code or require large time commitments.
 
 ### Sponsorship and Donation

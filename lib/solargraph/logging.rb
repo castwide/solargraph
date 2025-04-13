@@ -11,8 +11,14 @@ module Solargraph
       'info' => Logger::INFO,
       'debug' => Logger::DEBUG
     }
-
-    @@logger = Logger.new(STDERR, level: DEFAULT_LOG_LEVEL)
+    configured_level = ENV['SOLARGRAPH_LOG']
+    level = if LOG_LEVELS.keys.include?(configured_level)
+              LOG_LEVELS.fetch(configured_level)
+            else
+              STDERR.puts("Invalid value for SOLARGRAPH_LOG: #{configured_level.inspect} - valid values are #{LOG_LEVELS.keys}") if configured_level
+              DEFAULT_LOG_LEVEL
+            end
+    @@logger = Logger.new(STDERR, level: level)
     @@logger.formatter = proc do |severity, datetime, progname, msg|
       "[#{severity}] #{msg}\n"
     end
