@@ -66,4 +66,16 @@ describe Solargraph::YardMap::Mapper::ToMethod do
     expect(param.name).to eq('bar')
     expect(param.full).to eq("&bar")
   end
+
+  xit 'parses undefined but typed blockargs' do
+    code_object.parameters = []
+    code_object.docstring = <<EOF
+@yieldparam foo [Integer]
+EOF
+    pin = Solargraph::YardMap::Mapper::ToMethod.make(code_object)
+    param = pin.parameters.first
+    expect(param.decl).to be(:blockarg)
+    expect(param.name).to eq('')
+    expect(param.full).to eq("&")
+  end
 end

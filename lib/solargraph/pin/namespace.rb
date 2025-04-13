@@ -40,6 +40,18 @@ module Solargraph
         end
       end
 
+      def to_rbs
+        "#{@type.to_s} #{generics_as_rbs}#{return_type.to_rbs}"
+      end
+
+      def desc
+        if name.nil?
+          '(top-level)'
+        else
+          to_rbs
+        end
+      end
+
       def namespace
         context.namespace
       end
@@ -74,6 +86,7 @@ module Solargraph
         @return_type ||= ComplexType.try_parse( (type == :class ? 'Class' : 'Module') + "<#{path}>" )
       end
 
+      # @return [Array<String>]
       def domains
         @domains ||= []
       end

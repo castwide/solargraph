@@ -2,7 +2,6 @@
 
 require 'yard'
 require 'solargraph/yard_tags'
-require 'set'
 
 module Solargraph
   # An index of Pins and other ApiMap-related data for a single Source
@@ -19,7 +18,7 @@ module Solargraph
     # @return [Array<Pin::Base>]
     attr_reader :pins
 
-    # @return [Array<Pin::Base>]
+    # @return [Array<Pin::LocalVariable>]
     attr_reader :locals
 
     # @param source [Source]
@@ -42,12 +41,14 @@ module Solargraph
       @pin_select_cache[klass] ||= @pin_class_hash.select { |key, _| key <= klass }.values.flatten
     end
 
-    # @return [Set<String>]
-    def rebindable_method_names
-      @rebindable_method_names ||= pins_by_class(Pin::Method)
-        .select { |pin| pin.comments && pin.comments.include?('@yieldreceiver') }
-        .map(&:name)
-        .to_set
+    # A hash representing the state of the source map's API.
+    #
+    # ApiMap#catalog uses this value to determine whether it needs to clear its
+    # cache.
+    #
+    # @return [Integer]
+    def api_hash
+      @api_hash ||= (pins_by_class(Pin::Constant) + pins_by_class(Pin::Namespace).select { |pin| pin.namespace.to_s > '' } + pins_by_class(Pin::Reference) + pins_by_class(Pin::Method).map(&:node)).hash
     end
 
     # @return [String]

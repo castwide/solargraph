@@ -8,7 +8,6 @@ module Solargraph
   class Source
     autoload :Updater,       'solargraph/source/updater'
     autoload :Change,        'solargraph/source/change'
-    autoload :Mapper,        'solargraph/source/mapper'
     autoload :EncodingFixes, 'solargraph/source/encoding_fixes'
     autoload :Cursor,        'solargraph/source/cursor'
     autoload :Chain,         'solargraph/source/chain'
@@ -91,50 +90,6 @@ module Solargraph
       stack = []
       inner_tree_at @node, position, stack
       stack
-    end
-
-    # Start synchronizing the source. This method updates the code without
-    # parsing a new AST. The resulting Source object will be marked not
-    # synchronized (#synchronized? == false).
-    #
-    # @param updater [Source::Updater]
-    # @return [Source]
-    def start_synchronize updater
-      raise 'Invalid synchronization' unless updater.filename == filename
-      real_code = updater.write(@code)
-      src = Source.allocate
-      src.filename = filename
-      src.code = real_code
-      src.version = updater.version
-      src.parsed = parsed?
-      src.repaired = updater.repair(@repaired)
-      src.synchronized = false
-      src.node = @node
-      src.comments = @comments
-      src.error_ranges = error_ranges
-      src.last_updater = updater
-      return src.finish_synchronize unless real_code.lines.length == @code.lines.length
-      src
-    end
-
-    # Finish synchronizing a source that was updated via #start_synchronize.
-    # This method returns self if the source is already synchronized. Otherwise
-    # it parses the AST and returns a new synchronized Source.
-    #
-    # @return [Source]
-    def finish_synchronize
-      return self if synchronized?
-      synced = Source.new(@code, filename)
-      if synced.parsed?
-        synced.version = version
-        return synced
-      end
-      synced = Source.new(@repaired, filename)
-      synced.error_ranges.concat (error_ranges + last_updater.changes.map(&:range))
-      synced.code = @code
-      synced.synchronized = true
-      synced.version = version
-      synced
     end
 
     # Synchronize the Source with an update. This method applies changes to the
@@ -435,21 +390,14 @@ module Solargraph
     def inner_tree_at node, position, stack
       return if node.nil?
       here = Range.from_node(node)
-      if here.contain?(position) || colonized(here, position, node)
+      if here.contain?(position)
         stack.unshift node
         node.children.each do |c|
           next unless Parser.is_ast_node?(c)
-          next if !Parser.rubyvm? && c.loc.expression.nil?
+          next if c.loc.expression.nil?
           inner_tree_at(c, position, stack)
         end
       end
-    end
-
-    def colonized range, position, node
-      node.type == :COLON2 &&
-        range.ending.line == position.line &&
-        range.ending.character == position.character - 2 &&
-        code[Position.to_offset(code, Position.new(position.line, position.character - 2)), 2] == '::'
     end
 
     protected
@@ -519,6 +467,10 @@ module Solargraph
         # HACK: Pass a dummy code object to the parser for plugins that
         # expect it not to be nil
         YARD::Docstring.parser.parse(comments, YARD::CodeObjects::Base.new(:root, 'stub'))
+      rescue StandardError => e
+        Solargraph.logger.info "YARD failed to parse docstring: [#{e.class}] #{e.message}"
+        Solargraph.logger.debug "Unparsed comment: #{comments}"
+        YARD::Docstring.parser
       end
     end
   end

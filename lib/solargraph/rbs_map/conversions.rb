@@ -39,24 +39,7 @@ module Solargraph
         cursor = pins.length
         environment.declarations.each { |decl| convert_decl_to_pin(decl, Solargraph::Pin::ROOT_PIN) }
         added_pins = pins[cursor..-1]
-        add_back_implicit_pins(added_pins)
-      end
-
-      # @param added_pins [::Enumerable<Pin>]
-      # @return [void]
-      def add_back_implicit_pins(added_pins)
-        added_pins.each do |pin|
-          pin.source = :rbs
-          next unless pin.is_a?(Pin::Namespace) && pin.type == :class
-          next if pins.any? { |p| p.path == "#{pin.path}.new"}
-          pins.push Solargraph::Pin::Method.new(
-                      location: nil,
-                      closure: pin,
-                      name: 'new',
-                      comments: pin.comments,
-                      scope: :class
-          )
-        end
+        added_pins.each { |pin| pin.source = :rbs }
       end
 
       # @param decl [RBS::AST::Declarations::Base]
@@ -173,6 +156,7 @@ module Solargraph
             name: decl.super_class.name.relative!.to_s
           )
         end
+        add_mixins decl, class_pin
         convert_members_to_pins decl, class_pin
       end
 
@@ -208,6 +192,8 @@ module Solargraph
         pins.push module_pin
         convert_self_types_to_pins decl, module_pin
         convert_members_to_pins decl, module_pin
+
+        add_mixins decl, module_pin.closure
       end
 
       # @param name [String]
@@ -294,30 +280,14 @@ module Solargraph
             scope: :instance,
             signatures: [],
             generics: generics,
+            # @todo RBS core has unreliable visibility definitions
+            visibility: closure.path == 'Kernel' && Kernel.private_instance_methods(false).include?(decl.name) ? :private : :public
           )
           pin.signatures.concat method_def_to_sigs(decl, pin)
           pins.push pin
           if pin.name == 'initialize'
-            pins.push Solargraph::Pin::Method.new(
-              location: pin.location,
-              closure: pin.closure,
-              name: 'new',
-              comments: pin.comments,
-              scope: :class,
-              signatures: pin.signatures
-            )
-            pins.last.signatures.replace(
-              pin.signatures.map do |p|
-                Pin::Signature.new(
-                  p.generics,
-                  p.parameters,
-                  ComplexType::SELF
-                )
-              end
-            )
-            # @todo Is this necessary?
-            # pin.instance_variable_set(:@visibility, :private)
-            # pin.instance_variable_set(:@return_type, ComplexType::VOID)
+            pin.instance_variable_set(:@visibility, :private)
+            pin.instance_variable_set(:@return_type, ComplexType::VOID)
           end
         end
         if decl.singleton?
@@ -327,7 +297,7 @@ module Solargraph
             comments: decl.comment&.string,
             scope: :class,
             signatures: [],
-            generics: generics,
+            generics: generics
           )
           pin.signatures.concat method_def_to_sigs(decl, pin)
           pins.push pin
@@ -546,21 +516,16 @@ module Solargraph
 
       # @param type_name [RBS::TypeName]
       # @param type_args [Enumerable<RBS::Types::Bases::Base>]
-      # @return [ComplexType]
+      # @return [ComplexType::UniqueType]
       def generic_type(type_name, type_args)
         base = RBS_TO_YARD_TYPE[type_name.relative!.to_s] || type_name.relative!.to_s
-        params = type_args.map { |a| other_type_to_tag(a) }.reject { |t| t == 'undefined' }
-        params_str = params.empty? ? '' : "<#{params.join(', ')}>"
-        type_string = "#{base}#{params_str}"
-        begin
-          ComplexType.parse(type_string)
-        rescue
-          # @todo Tuples of tuples aren't yet handled by the parser, and that appears in a few
-          #   minor cases in the core/stdlib rbs:
-          #   [WARN] Internal error parsing Array<Array(Integer, Symbol, String, Array(Integer, Integer, Integer, Integer))> from RBS
-          #   [WARN] Internal error parsing Array<Array(Array(Integer, Integer), Symbol, String, Ripper::Lexer::State)> from RBS
-          Solargraph.logger.info "Internal error parsing #{type_string} from RBS; treating as non-generic"
-          ComplexType.parse(base)
+        params = type_args.map { |a| other_type_to_tag(a) }.reject { |t| t == 'undefined' }.map do |t|
+          ComplexType.try_parse(t)
+        end
+        if base == 'Hash' && params.length == 2
+          ComplexType::UniqueType.new(base, [params.first], [params.last], rooted: true, parameters_type: :hash)
+        else
+          ComplexType::UniqueType.new(base, [], params, rooted: true, parameters_type: :list)
         end
       end
 
@@ -621,6 +586,20 @@ module Solargraph
         else
           Solargraph.logger.warn "Unrecognized RBS type: #{type.class} at #{type.location}"
           'undefined'
+        end
+      end
+
+      # @param decl [RBS::AST::Declarations::Class, RBS::AST::Declarations::Module]
+      # @param namespace [Pin::Namespace]
+      # @return [void]
+      def add_mixins decl, namespace
+        decl.each_mixin do |mixin|
+          klass = mixin.is_a?(RBS::AST::Members::Include) ? Pin::Reference::Include : Pin::Reference::Extend
+          pins.push klass.new(
+            name: mixin.name.relative!.to_s,
+            location: rbs_location_to_location(mixin.location),
+            closure: namespace
+          )
         end
       end
     end

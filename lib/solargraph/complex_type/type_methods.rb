@@ -13,17 +13,27 @@ module Solargraph
     #   methods:
     #     transform()
     module TypeMethods
+      # @!method transform(new_name = nil, &transform_type)
+      #   @param new_name [String, nil]
+      #   @yieldparam t [UniqueType]
+      #   @yieldreturn [UniqueType]
+      #   @return [UniqueType, nil]
+
       # @return [String]
       attr_reader :name
 
-      # @return [String]
-      attr_reader :substring
-
-      # @return [String]
-      attr_reader :tag
-
       # @return [Array<ComplexType>]
       attr_reader :subtypes
+
+      # @return [String]
+      def tag
+        @tag ||= "#{name}#{substring}"
+      end
+
+      # @return [String]
+      def rooted_tag
+        @rooted_tag ||= rooted_name + rooted_substring
+      end
 
       # @return [Boolean]
       def duck_type?
@@ -38,6 +48,10 @@ module Solargraph
       # @return [Boolean]
       def parameters?
         !substring.empty?
+      end
+
+      def tuple?
+        @tuple_type ||= (name == 'Tuple') || (name == 'Array' && subtypes.length >= 1 && fixed_parameters?)
       end
 
       def void?
@@ -68,19 +82,28 @@ module Solargraph
         end
       end
 
+      # @return [Symbol, nil]
+      attr_reader :parameters_type
+
+      PARAMETERS_TYPE_BY_STARTING_TAG = {
+        '{' => :hash,
+        '(' => :fixed,
+        '<' => :list
+      }.freeze
+
       # @return [Boolean]
       def list_parameters?
-        substring.start_with?('<')
+        parameters_type == :list
       end
 
       # @return [Boolean]
       def fixed_parameters?
-        substring.start_with?('(')
+        parameters_type == :fixed
       end
 
       # @return [Boolean]
       def hash_parameters?
-        substring.start_with?('{')
+        parameters_type == :hash
       end
 
       # @return [Array<ComplexType>]
@@ -109,6 +132,39 @@ module Solargraph
         "::#{namespace}"
       end
 
+      # @return [String]
+      def rooted_name
+        return name unless rooted?
+        "::#{name}"
+      end
+
+      # @return [String]
+      def substring
+        @substring ||= generate_substring_from(&:tags)
+      end
+
+      # @return [String]
+      def rooted_substring
+        @rooted_substring = generate_substring_from(&:rooted_tags)
+      end
+
+      # @return [String]
+      def generate_substring_from(&to_str)
+        key_types_str = key_types.map(&to_str).join(', ')
+        subtypes_str = subtypes.map(&to_str).join(', ')
+        if key_types.none?(&:defined?) && subtypes.none?(&:defined?)
+          ''
+        elsif key_types.empty? && subtypes.empty?
+          ''
+        elsif hash_parameters?
+          "{#{key_types_str} => #{subtypes_str}}"
+        elsif fixed_parameters?
+          "(#{subtypes_str})"
+        else
+          "<#{subtypes_str}>"
+        end
+      end
+
       # @return [::Symbol] :class or :instance
       def scope
         @scope ||= :instance if duck_type? || nil_type?
@@ -131,28 +187,16 @@ module Solargraph
       # @param context [String] The namespace from which to resolve names
       # @return [self, ComplexType, UniqueType] The generated ComplexType
       def qualify api_map, context = ''
-        return self if name == GENERIC_TAG_NAME
-        return ComplexType.new([self]) if duck_type? || void? || undefined?
-        recon = (rooted? ? '' : context)
-        fqns = api_map.qualify(name, recon)
-        if fqns.nil?
-          return UniqueType::BOOLEAN if tag == 'Boolean'
-          return UniqueType::UNDEFINED
-        end
-        fqns = "::#{fqns}" # Ensure the resulting complex type is rooted
-        all_ltypes = key_types.map { |t| t.qualify api_map, context }.uniq
-        all_rtypes = value_types.map { |t| t.qualify api_map, context }
-        if list_parameters?
-          rtypes = all_rtypes.uniq
-          Solargraph::ComplexType.parse("#{fqns}<#{rtypes.map(&:tag).join(', ')}>")
-        elsif fixed_parameters?
-          Solargraph::ComplexType.parse("#{fqns}(#{all_rtypes.map(&:tag).join(', ')})")
-        elsif hash_parameters?
-          ltypes = all_ltypes.uniq
-          rtypes = all_rtypes.uniq
-          Solargraph::ComplexType.parse("#{fqns}{#{ltypes.map(&:tag).join(', ')} => #{rtypes.map(&:tag).join(', ')}}")
-        else
-          Solargraph::ComplexType.parse(fqns)
+        transform do |t|
+          next t if t.name == GENERIC_TAG_NAME
+          next t if t.duck_type? || t.void? || t.undefined?
+          recon = (t.rooted? ? '' : context)
+          fqns = api_map.qualify(t.name, recon)
+          if fqns.nil?
+            next UniqueType::BOOLEAN if t.tag == 'Boolean'
+            next UniqueType::UNDEFINED
+          end
+          t.recreate(new_name: fqns, make_rooted: true)
         end
       end
 

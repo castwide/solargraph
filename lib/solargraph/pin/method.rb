@@ -135,7 +135,7 @@ module Solargraph
           result = []
           result.push generate_signature(parameters, top_type) if top_type.defined?
           result.concat(overloads.map { |meth| generate_signature(meth.parameters, meth.return_type) }) unless overloads.empty?
-          result.push generate_signature(parameters, top_type) if result.empty?
+          result.push generate_signature(parameters, @return_type || ComplexType::UNDEFINED) if result.empty?
           result
         end
       end
@@ -164,6 +164,27 @@ module Solargraph
             documentation: documentation
           }
         end
+      end
+
+      def desc
+        # ensure the signatures line up when logged
+        if signatures.length > 1
+          "\n#{to_rbs}\n"
+        else
+          to_rbs
+        end
+      end
+
+      def to_rbs
+        return nil if signatures.empty?
+
+        rbs = "def #{name}: #{signatures.first.to_rbs}"
+        signatures[1..].each do |sig|
+          rbs += "\n"
+          rbs += (' ' * (4 + name.length))
+          rbs += "| #{name}: #{sig.to_rbs}"
+        end
+        rbs
       end
 
       def path
@@ -267,7 +288,9 @@ module Solargraph
 
       # @return [::Array<Pin::Method>]
       def overloads
-        @overloads ||= docstring.tags(:overload).map do |tag|
+        # Ignore overload tags with nil parameters. If it's not an array, the
+        # tag's source is likely malformed.
+        @overloads ||= docstring.tags(:overload).select(&:parameters).map do |tag|
           Pin::Signature.new(
             generics,
             tag.parameters.map do |src|
@@ -346,7 +369,7 @@ module Solargraph
 
       # @return [ComplexType]
       def generate_complex_type
-        tags = docstring.tags(:return).map(&:types).flatten.reject(&:nil?)
+        tags = docstring.tags(:return).map(&:types).flatten.compact
         return ComplexType::UNDEFINED if tags.empty?
         ComplexType.try_parse *tags
       end

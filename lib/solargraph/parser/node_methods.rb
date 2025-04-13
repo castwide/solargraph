@@ -10,6 +10,14 @@ module Solargraph
         raise NotImplementedError
       end
 
+      # @abstract
+      # @todo Temporarily here for testing. Move to Solargraph::Parser.
+      # @param node [Parser::AST::Node]
+      # @return [Array<Parser::AST::Node>]
+      def call_nodes_from node
+        raise NotImplementedError
+      end
+
       # Find all the nodes within the provided node that potentially return a
       # value.
       #
@@ -24,6 +32,14 @@ module Solargraph
       # @param node [Parser::AST::Node]
       # @return [Array<Parser::AST::Node>]
       def returns_from_method_body node
+        raise NotImplementedError
+      end
+
+      # @abstract
+      # @param node [Parser::AST::Node]
+      #
+      # @return [Array<Parser::AST::Node>]
+      def const_nodes_from node
         raise NotImplementedError
       end
 
@@ -43,6 +59,11 @@ module Solargraph
         raise NotImplementedError
       end
 
+      # @abstract
+      # @param nodes [Enumerable<Parser::AST::Node>]
+      def any_splatted_call?(nodes)
+        raise NotImplementedError
+      end
 
       # @abstract
       # @param node [Parser::AST::Node]

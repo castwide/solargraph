@@ -1,11 +1,17 @@
 # frozen_string_literal: true
 
+require 'benchmark'
 require 'thor'
 require 'yard'
 
 module Solargraph
   class Shell < Thor
     include Solargraph::ServerMethods
+
+    # Tell Thor to ensure the process exits with status 1 if any error happens.
+    def self.exit_on_failure?
+      true
+    end
 
     map %w[--version -v] => :version
 
@@ -77,43 +83,6 @@ module Solargraph
       STDOUT.puts "Configuration file initialized."
     end
 
-    desc 'download-core [VERSION]', 'Download core documentation [deprecated]', hide: true
-    long_desc %(
-      The `download-core` command is deprecated. Current versions of Solargraph
-      use RBS for core and stdlib documentation.
-    )
-    # @param _version [String, nil]
-    # @return [void]
-    # @deprecated
-    def download_core _version = nil
-      puts 'The `download-core` command is deprecated.'
-      puts 'Current versions of Solargraph use RBS for core and stdlib documentation.'
-    end
-
-    desc 'list-cores', 'List the local documentation versions [deprecated]', hide: true
-    long_desc %(
-      The `list-cores` command is deprecated. Current versions of Solargraph use
-      RBS for core and stdlib documentation.
-    )
-    # @return [void]
-    # @deprecated
-    def list_cores
-      puts 'The `list-cores` command is deprecated.'
-      puts 'Current versions of Solargraph use RBS for core and stdlib documentation.'
-    end
-
-    desc 'available-cores', 'List available documentation versions [deprecated]', hide: true
-    long_desc %(
-      The `available-cores` command is deprecated. Current versions of Solargraph
-      use RBS for core and stdlib documentation.
-    )
-    # @return [void]
-    # @deprecated
-    def available_cores
-      puts 'The `available-cores` command is deprecated.'
-      puts 'Current versions of Solargraph use RBS for core and stdlib documentation.'
-    end
-
     desc 'clear', 'Delete all cached documentation'
     long_desc %(
       This command will delete all core and gem documentation from the cache.
@@ -126,14 +95,39 @@ module Solargraph
     map 'clear-cache' => :clear
     map 'clear-cores' => :clear
 
+    desc 'cache', 'Cache a gem', hide: true
+    # @return [void]
+    # @param gem [String]
+    # @param version [String, nil]
+    def cache gem, version = nil
+      spec = Gem::Specification.find_by_name(gem, version)
+      pins = GemPins.build(spec)
+      Cache.save('gems', "#{spec.name}-#{spec.version}.ser", pins)
+    end
+
     desc 'uncache GEM [...GEM]', "Delete cached gem documentation"
     # @return [void]
     def uncache *gems
       raise ArgumentError, 'No gems specified.' if gems.empty?
       gems.each do |gem|
-        Dir[File.join(Solargraph::YardMap::CoreDocs.cache_dir, 'gems', "#{gem}-*")].each do |dir|
-          puts "Deleting cache: #{dir}"
-          FileUtils.remove_entry_secure dir
+        spec = Gem::Specification.find_by_name(gem)
+        Cache.uncache('gems', "#{spec.name}-#{spec.version}.ser")
+        Cache.uncache('gems', "#{spec.name}-#{spec.version}.yardoc")
+      end
+    end
+
+    desc 'gems [GEM[=VERSION]]', 'Cache documentation for installed gems'
+    option :rebuild, type: :boolean, desc: 'Rebuild existing documentation', default: false
+    # @return [void]
+    def gems *names
+      if names.empty?
+        Gem::Specification.to_a.each { |spec| do_cache spec }
+      else
+        names.each do |name|
+          spec = Gem::Specification.find_by_name(*name.split('='))
+          do_cache spec
+        rescue Gem::MissingSpecError
+          warn "Gem '#{name}' not found"
         end
       end
     end
@@ -156,24 +150,30 @@ module Solargraph
     # @return [void]
     def typecheck *files
       directory = File.realpath(options[:directory])
-      api_map = Solargraph::ApiMap.load_with_cache(directory)
+      api_map = Solargraph::ApiMap.load_with_cache(directory, $stdout)
+      probcount = 0
       if files.empty?
         files = api_map.source_maps.map(&:filename)
       else
         files.map! { |file| File.realpath(file) }
       end
-      probcount = 0
       filecount = 0
-      files.each do |file|
-        checker = TypeChecker.new(file, api_map: api_map, level: options[:level].to_sym)
-        problems = checker.problems
-        next if problems.empty?
-        problems.sort! { |a, b| a.location.range.start.line <=> b.location.range.start.line }
-        puts problems.map { |prob| "#{prob.location.filename}:#{prob.location.range.start.line + 1} - #{prob.message}" }.join("\n")
-        filecount += 1
-        probcount += problems.length
-      end
+
+      time = Benchmark.measure {
+        files.each do |file|
+          checker = TypeChecker.new(file, api_map: api_map, level: options[:level].to_sym)
+          problems = checker.problems
+          next if problems.empty?
+          problems.sort! { |a, b| a.location.range.start.line <=> b.location.range.start.line }
+          puts problems.map { |prob| "#{prob.location.filename}:#{prob.location.range.start.line + 1} - #{prob.message}" }.join("\n")
+          filecount += 1
+          probcount += problems.length
+        end
+        # "
+      }
+      puts "Typecheck finished in #{time.real} seconds."
       puts "#{probcount} problem#{probcount != 1 ? 's' : ''} found#{files.length != 1 ? " in #{filecount} of #{files.length} files" : ''}."
+      # "
       exit 1 if probcount > 0
     end
 
@@ -188,11 +188,10 @@ module Solargraph
     option :verbose, type: :boolean, aliases: :v, desc: 'Verbose output', default: false
     # @return [void]
     def scan
-      require 'benchmark'
       directory = File.realpath(options[:directory])
       api_map = nil
       time = Benchmark.measure {
-        api_map = Solargraph::ApiMap.load_with_cache(directory)
+        api_map = Solargraph::ApiMap.load_with_cache(directory, $stdout)
         api_map.pins.each do |pin|
           begin
             puts pin_description(pin) if options[:verbose]
@@ -215,67 +214,8 @@ module Solargraph
     # @return [void]
     def list
       workspace = Solargraph::Workspace.new(options[:directory])
-      unless options[:count]
-        workspace.filenames.each { |f| puts f }
-      end
+      puts workspace.filenames unless options[:count]
       puts "#{workspace.filenames.length} files total."
-    end
-
-    desc 'bundle', 'Generate documentation for bundled gems [deprecated]', hide: true
-    long_desc %(
-      The `bundle` command is deprecated. Solargraph currently uses RBS instead.
-    )
-    option :directory, type: :string, aliases: :d, desc: 'The workspace directory', default: '.'
-    option :rebuild, type: :boolean, aliases: :r, desc: 'Rebuild existing documentation', default: false
-    # @return [void]
-    def bundle
-      puts 'The `bundle` command is deprecated. Solargraph currently uses RBS instead.'
-    end
-
-    desc 'cache', 'Cache a gem', hide: true
-    def cache gem, version = nil
-      spec = Gem::Specification.find_by_name(gem, version)
-      pins = GemPins.build(spec)
-      Cache.save('gems', "#{spec.name}-#{spec.version}.ser", pins)
-    end
-
-    desc 'gems', 'Cache documentation for installed gems'
-    option :rebuild, type: :boolean, desc: 'Rebuild existing documentation', default: false
-    def gems *names
-      if names.empty?
-        Gem::Specification.to_a.each do |spec|
-          next unless options.rebuild || !Yardoc.cached?(spec)
-
-          puts "Processing gem: #{spec.name} #{spec.version}"
-          pins = GemPins.build(spec)
-          Cache.save('gems', "#{spec.name}-#{spec.version}.ser", pins)
-        end
-      else
-        names.each do |name|
-          spec = Gem::Specification.find_by_name(name)
-          if spec
-            next unless options.rebuild || !Yardoc.cached?(spec)
-
-            puts "Processing gem: #{spec.name} #{spec.version}"
-            pins = GemPins.build(spec)
-            Cache.save('gems', "#{spec.name}-#{spec.version}.ser", pins)
-          else
-            warn "Gem '#{name}' not found"
-          end
-        end
-      end
-    end
-
-    desc 'rdoc GEM [VERSION]', 'Use RDoc to cache documentation [deprecated]', hide: true
-    long_desc %(
-      The `rdoc` command is deprecated. Solargraph currently uses RBS instead.
-    )
-    # @param _gem [String]
-    # @param _version  [String]
-    # @return [void]
-    # @deprecated
-    def rdoc _gem, _version = '>= 0'
-      puts 'The `rdoc` command is deprecated. Solargraph currently uses RBS instead.'
     end
 
     private
@@ -294,6 +234,19 @@ module Solargraph
       end
       desc += " (#{pin.location.filename} #{pin.location.range.start.line})" if pin.location
       desc
+    end
+
+    # @param gemspec [Gem::Specification]
+    # @return [void]
+    def do_cache gemspec
+      cached = Yardoc.cached?(gemspec)
+      if cached && !options.rebuild
+        puts "Cache already exists for #{gemspec.name} #{gemspec.version}"
+      else
+        puts "#{cached ? 'Rebuilding' : 'Caching'} gem documentation for #{gemspec.name} #{gemspec.version}"
+        pins = GemPins.build(gemspec)
+        Cache.save('gems', "#{gemspec.name}-#{gemspec.version}.ser", pins)
+      end
     end
   end
 end

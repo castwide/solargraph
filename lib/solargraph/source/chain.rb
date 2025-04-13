@@ -23,14 +23,18 @@ module Solargraph
       autoload :GlobalVariable,   'solargraph/source/chain/global_variable'
       autoload :Literal,          'solargraph/source/chain/literal'
       autoload :Head,             'solargraph/source/chain/head'
+      autoload :If,               'solargraph/source/chain/if'
       autoload :Or,               'solargraph/source/chain/or'
       autoload :BlockVariable,    'solargraph/source/chain/block_variable'
+      autoload :BlockSymbol,      'solargraph/source/chain/block_symbol'
       autoload :ZSuper,           'solargraph/source/chain/z_super'
       autoload :Hash,             'solargraph/source/chain/hash'
       autoload :Array,            'solargraph/source/chain/array'
 
       @@inference_stack = []
       @@inference_depth = 0
+      @@inference_invalidation_key = nil
+      @@inference_cache = {}
 
       UNDEFINED_CALL = Chain::Call.new('<undefined>')
       UNDEFINED_CONSTANT = Chain::Constant.new('<undefined>')
@@ -83,7 +87,25 @@ module Solargraph
       # @param name_pin [Pin::Base]
       # @param locals [::Enumerable<Pin::LocalVariable>]
       # @return [ComplexType]
+      # @sg-ignore
       def infer api_map, name_pin, locals
+        out = nil
+        cached = @@inference_cache[[node, node.location, links.map(&:word), name_pin&.return_type, locals]] unless node.nil?
+        return cached if cached && @@inference_invalidation_key == api_map.hash
+        out = infer_uncached api_map, name_pin, locals
+        if @@inference_invalidation_key != api_map.hash
+          @@inference_cache = {}
+          @@inference_invalidation_key = api_map.hash
+        end
+        @@inference_cache[[node, node.location, links.map(&:word), name_pin&.return_type, locals]] = out unless node.nil?
+        out
+      end
+
+      # @param api_map [ApiMap]
+      # @param name_pin [Pin::Base]
+      # @param locals [::Enumerable<Pin::LocalVariable>]
+      # @return [ComplexType]
+      def infer_uncached api_map, name_pin, locals
         from_here = base.infer(api_map, name_pin, locals) unless links.length == 1
         if from_here
           name_pin = name_pin.proxy(from_here)
@@ -172,6 +194,7 @@ module Solargraph
           @@inference_depth -= 1
         end
         return ComplexType::UNDEFINED if possibles.empty?
+
         type = if possibles.length > 1
           sorted = possibles.map { |t| t.rooted? ? "::#{t}" : t.to_s }.sort { |a, _| a == 'nil' ? 1 : 0 }
           ComplexType.parse(*sorted)
@@ -179,6 +202,7 @@ module Solargraph
           ComplexType.parse(possibles.map(&:to_s).join(', '))
         end
         return type if context.nil? || context.return_type.undefined?
+
         type.self_to(context.return_type.tag)
       end
 
