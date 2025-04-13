@@ -334,7 +334,7 @@ module Solargraph
         start_pos = Position.new(location.start_line - 1, location.start_column)
         end_pos = Position.new(location.end_line - 1, location.end_column)
         range = Range.new(start_pos, end_pos)
-        Location.new(location.name, range)
+        Location.new(location.name.to_s, range)
       end
 
       # @param type [RBS::MethodType,RBS::Types::Block]
