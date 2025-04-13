@@ -262,6 +262,7 @@ module Solargraph
       @associated_comments ||= begin
         result = {}
         buffer = String.new('')
+        # @type [Integer, nil]
         last = nil
         @comments.each_pair do |num, snip|
           if !last || num == last + 1
