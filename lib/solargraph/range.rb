@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 module Solargraph
-  # A pair of positions that compose a section of text.
+  # A pair of Positions that compose a section of text in code.
   #
   class Range
     # @return [Position]
