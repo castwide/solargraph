@@ -399,7 +399,7 @@ describe Solargraph::ApiMap do
       require 'invalid'
     ), 'app.rb')
     @api_map.catalog Solargraph::Bench.new(source_maps: [source1, source2], external_requires: ['invalid'])
-    expect(@api_map.unresolved_requires).to eq(['invalid'])
+    expect(@api_map.unresolved_requires).to eq(['invalid'] + @api_map.doc_map.environ.requires)
   end
 
   it 'gets instance variables from superclasses' do

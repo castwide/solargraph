@@ -29,12 +29,12 @@ module Solargraph
       result
     end
 
-    # @param yard_map [YardMap]
+    # @param yard_map [DocMap]
     # @return [Environ]
-    def self.for_global(yard_map)
+    def self.for_global(doc_map)
       result = Environ.new
       @@conventions.each do |conv|
-        result.merge conv.global(yard_map)
+        result.merge conv.global(doc_map)
       end
       result
     end
