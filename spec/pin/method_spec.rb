@@ -482,6 +482,29 @@ describe Solargraph::Pin::Method do
     expect(pin.docstring.tags(:param).map(&:type)).to eq(['String', 'Integer'])
   end
 
+  it 'resolves ref tags with namespaces' do
+    source = Solargraph::Source.load_string(%(
+      class Example1
+        # @param param1 [String]
+        # @param param2 [Integer]
+        def foo param1, param2
+        end
+      end
+
+      class Example2
+        # @param (see Example1#foo)
+        def bar param1, param2
+        end
+      end
+    ))
+    api_map = Solargraph::ApiMap.new
+    api_map.map source
+    pin = api_map.get_path_pins('Example2#bar').first
+    pin.resolve_ref_tag(api_map)
+    expect(pin.docstring.tags(:param).map(&:name)).to eq(['param1', 'param2'])
+    expect(pin.docstring.tags(:param).map(&:type)).to eq(['String', 'Integer'])
+  end
+
   context 'as attribute' do
     it "is a kind of attribute/property" do
       source = Solargraph::Source.load_string(%(
