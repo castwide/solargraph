@@ -20,7 +20,7 @@ module Solargraph
       # @param explicit [Boolean]
       # @param parameters [::Array<Pin::Parameter>]
       # @param block [Pin::Signature, nil, ::Symbol]
-      # @param node [Parser::AST::Node, RubyVM::AbstractSyntaxTree::Node, nil]
+      # @param node [Parser::AST::Node, nil]
       # @param attribute [Boolean]
       # @param signatures [::Array<Signature>, nil]
       # @param anon_splat [Boolean]

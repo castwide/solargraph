@@ -98,7 +98,7 @@ module Solargraph
         @pins.concat map.pins
       else
         # @todo Temporarily ignoring unresolved `require 'set'`
-        Solargraph.logger.warn "Require path #{path} could not be resolved" unless path == 'set'
+        Solargraph.logger.debug "Require path #{path} could not be resolved" unless path == 'set'
       end
     end
 
