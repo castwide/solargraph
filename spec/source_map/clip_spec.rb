@@ -2402,4 +2402,41 @@ describe Solargraph::SourceMap::Clip do
     # clip = api_map.clip_at('test.rb', [26, 10])
     # expect(clip.infer.to_s).to eq('Array<Integer>')
   end
+
+  xit 'resolves overloads based on kwarg existence' do
+    source = Solargraph::Source.load_string(%(
+      class Blah
+        # @param *strings [Array<String>] The type definitions to parse
+        # @return [Blah]
+        # @overload parse(*strings, partial:)
+        #   @param *strings [Array<String>] The type definitions to parse
+        #   @param partial [Boolean] True if the string is part of a another type
+        #   @return [Array<Blah>]
+        def self.parse *strings, partial: false; end
+
+        def foo
+          x = Blah.parse('blah')
+          x
+        end
+      end
+  ), 'test.rb')
+    api_map = Solargraph::ApiMap.new.map(source)
+    clip = api_map.clip_at('test.rb', [12, 10])
+    expect(clip.infer.to_s).to eq('Blah')
+  end
+
+  it 'handles resolving String#each_line overloads' do
+    source = Solargraph::Source.load_string(%(
+      def foo
+        'abc\ndef'.each_line do |line|
+          line
+        end
+      end
+    ), 'test.rb')
+
+    api_map = Solargraph::ApiMap.new.map(source)
+
+    clip = api_map.clip_at('test.rb', [3, 10])
+    expect(clip.infer.to_s).to eq('String')
+  end
 end

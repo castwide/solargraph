@@ -70,7 +70,7 @@ module Solargraph
             sorted_overloads = overloads.sort { |ol| ol.block? ? -1 : 1 }
             new_signature_pin = nil
             sorted_overloads.each do |ol|
-              next unless arity_matches?(arguments, ol)
+              next unless ol.arity_matches?(arguments, with_block?)
               match = true
 
               atypes = []
@@ -198,19 +198,6 @@ module Solargraph
             return context.value_types.first
           end
           nil
-        end
-
-        # @param arguments [::Array<Chain>]
-        # @param signature [Pin::Signature]
-        # @return [Boolean]
-        def arity_matches? arguments, signature
-          parameters = signature.parameters
-          argcount = arguments.length
-          parcount = parameters.length
-          parcount -= 1 if !parameters.empty? && parameters.last.block?
-          return false if signature.block? && !with_block?
-          return false if argcount < parcount && !(argcount == parcount - 1 && parameters.last.restarg?)
-          true
         end
 
         # @param api_map [ApiMap]
