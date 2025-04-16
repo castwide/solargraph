@@ -37,6 +37,7 @@ module Solargraph
     autoload :Breakable,        'solargraph/pin/breakable'
     autoload :Until,            'solargraph/pin/until'
     autoload :While,            'solargraph/pin/while'
+    autoload :Callable,         'solargraph/pin/callable'
 
     ROOT_PIN = Pin::Namespace.new(type: :class, name: '', closure: nil)
   end
