@@ -135,37 +135,26 @@ module Solargraph
     # @param position [Position]
     # @return [Boolean]
     def string_at? position
-      if Parser.rubyvm?
-        string_ranges.each do |range|
-          if synchronized?
-            return true if range.include?(position) || range.ending == position
-          else
-            return true if last_updater && last_updater.changes.one? && range.contain?(last_updater.changes.first.range.start)
-          end
+      return false if Position.to_offset(code, position) >= code.length
+      string_nodes.each do |node|
+        range = Range.from_node(node)
+        next if range.ending.line < position.line
+        break if range.ending.line > position.line
+        return true if node.type == :str && range.include?(position) && range.start != position
+        return true if [:STR, :str].include?(node.type) && range.include?(position) && range.start != position
+        if node.type == :dstr
+          inner = node_at(position.line, position.column)
+          next if inner.nil?
+          inner_range = Range.from_node(inner)
+          next unless range.include?(inner_range.ending)
+          return true if inner.type == :str
+          inner_code = at(Solargraph::Range.new(inner_range.start, position))
+          return true if (inner.type == :dstr && inner_range.ending.character <= position.character) && !inner_code.end_with?('}') ||
+                         (inner.type != :dstr && inner_range.ending.line == position.line && position.character <= inner_range.ending.character && inner_code.end_with?('}'))
         end
-        false
-      else
-        return false if Position.to_offset(code, position) >= code.length
-        string_nodes.each do |node|
-          range = Range.from_node(node)
-          next if range.ending.line < position.line
-          break if range.ending.line > position.line
-          return true if node.type == :str && range.include?(position) && range.start != position
-          return true if [:STR, :str].include?(node.type) && range.include?(position) && range.start != position
-          if node.type == :dstr
-            inner = node_at(position.line, position.column)
-            next if inner.nil?
-            inner_range = Range.from_node(inner)
-            next unless range.include?(inner_range.ending)
-            return true if inner.type == :str
-            inner_code = at(Solargraph::Range.new(inner_range.start, position))
-            return true if (inner.type == :dstr && inner_range.ending.character <= position.character) && !inner_code.end_with?('}') ||
-              (inner.type != :dstr && inner_range.ending.line == position.line && position.character <= inner_range.ending.character && inner_code.end_with?('}'))
-          end
-          break if range.ending.line > position.line
-        end
-        false
+        break if range.ending.line > position.line
       end
+      false
     end
 
     # @return [::Array<Range>]
@@ -225,15 +214,9 @@ module Solargraph
       Location.new(filename, range)
     end
 
-    FOLDING_NODE_TYPES = if Parser.rubyvm?
-      %i[
-        CLASS SCLASS MODULE DEFN DEFS IF WHILE UNLESS ITER STR HASH ARRAY LIST
-      ].freeze
-    else
-      %i[
+    FOLDING_NODE_TYPES = %i[
         class sclass module def defs if str dstr array while unless kwbegin hash block
       ].freeze
-    end
 
     # Get an array of ranges that can be folded, e.g., the range of a class
     # definition or an if condition.
@@ -296,12 +279,9 @@ module Solargraph
     def inner_folding_ranges top, result = [], parent = nil
       return unless Parser.is_ast_node?(top)
       if FOLDING_NODE_TYPES.include?(top.type)
-        # @todo Smelly exception for hash's first-level array in RubyVM
-        unless [:ARRAY, :LIST].include?(top.type) && parent == :HASH
-          range = Range.from_node(top)
-          if result.empty? || range.start.line > result.last.start.line
-            result.push range unless range.ending.line - range.start.line < 2
-          end
+        range = Range.from_node(top)
+        if result.empty? || range.start.line > result.last.start.line
+          result.push range unless range.ending.line - range.start.line < 2
         end
       end
       top.children.each do |child|
