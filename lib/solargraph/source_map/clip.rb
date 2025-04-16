@@ -2,8 +2,8 @@
 
 module Solargraph
   class SourceMap
-    # A static analysis tool for obtaining definitions, completions,
-    # signatures, and type inferences from a cursor.
+    # A static analysis tool for obtaining definitions, Completions,
+    # signatures, and type inferences from a Cursor.
     #
     class Clip
       # @param api_map [ApiMap]

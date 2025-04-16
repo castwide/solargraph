@@ -756,5 +756,15 @@ describe Solargraph::TypeChecker do
       ))
       expect(checker.problems.map(&:message)).to eq([])
     end
+
+    it "does not lose track of place and false alarm when using kwargs after a splat" do
+      checker = type_checker(%(
+        def foo(a, b, c); end
+        def bar(*args, **kwargs, &blk)
+          foo(*args, **kwargs, &blk)
+        end
+      ))
+      expect(checker.problems.map(&:message)).to eq([])
+    end
   end
 end
