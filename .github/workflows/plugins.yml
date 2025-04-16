@@ -10,7 +10,7 @@ permissions:
   contents: read
 
 jobs:
-  test:
+  typecheck_with_plugins:
     runs-on: ubuntu-latest
 
     steps:
@@ -38,3 +38,35 @@ jobs:
       run: bundle exec solargraph typecheck --level typed
     - name: Ensure specs still run
       run: bundle exec rake spec
+  run_solargraph_rspec_specs:
+    # check out solargraph-rspec as well as this project, and point the former to use the latter as a local gem
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    #
+    - name: clone https://github.com/lekemula/solargraph-rspec/
+      run: |
+       cd ..
+       git clone https://github.com/lekemula/solargraph-rspec.git
+       cd solargraph-rspec
+    - name: Set up Ruby
+      uses: ruby/setup-ruby@v1
+      with:
+        ruby-version: '3.0'
+        bundler-cache: false
+    - name: Install gems
+      run: |
+       cd ../solargraph-rspec
+       echo "gem 'solargraph', path: '../solargraph'" >> Gemfile
+       bundle install
+    - name: Run specs
+      run: |
+        cd ../solargraph-rspec
+        bundle exec rake spec
+
+  run_solargraph_rails_specs:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Run
+      run: |
+        false
