@@ -89,7 +89,7 @@ module Solargraph
     )
     # @return [void]
     def clear
-      puts "Deleting the cached documentation"
+      puts "Deleting all cached documentation (gems, core and stdlib)"
       Solargraph::Cache.clear
     end
     map 'clear-cache' => :clear
@@ -105,11 +105,26 @@ module Solargraph
       Cache.save('gems', "#{spec.name}-#{spec.version}.ser", pins)
     end
 
-    desc 'uncache GEM [...GEM]', "Delete cached gem documentation"
+    desc 'uncache GEM [...GEM]', "Delete specific cached gem documentation"
+    long_desc %(
+      Specify one or more gem names to clear. 'core' or 'stdlib' may
+      also be specified to clear cached system documentation.
+      Documentation will be regenerated as needed.
+    )
     # @return [void]
     def uncache *gems
       raise ArgumentError, 'No gems specified.' if gems.empty?
       gems.each do |gem|
+        if gem == 'core'
+          Cache.uncache("core.ser")
+          next
+        end
+
+        if gem == 'stdlib'
+          Cache.uncache("stdlib")
+          next
+        end
+
         spec = Gem::Specification.find_by_name(gem)
         Cache.uncache('gems', "#{spec.name}-#{spec.version}.ser")
         Cache.uncache('gems', "#{spec.name}-#{spec.version}.yardoc")
@@ -192,7 +207,7 @@ module Solargraph
       api_map = nil
       time = Benchmark.measure {
         api_map = Solargraph::ApiMap.load_with_cache(directory, $stdout)
-        api_map.pins.each do |pin|
+        api_mapp.pins.each do |pin|
           begin
             puts pin_description(pin) if options[:verbose]
             pin.typify api_map
