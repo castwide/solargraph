@@ -2291,12 +2291,12 @@ describe Solargraph::SourceMap::Clip do
     api_map = Solargraph::ApiMap.new.map(source)
 
     clip = api_map.clip_at('test.rb', [7, 12])
-    expect(clip.infer.rooted_tags).to eq('::Enumerable<::String>')
+    expect(clip.infer.tags).to eq('Enumerable<String>')
 
     clip = api_map.clip_at('test.rb', [11, 12])
-    expect(clip.infer.rooted_tags).to eq('::Array<::String>')
+    expect(clip.infer.tags).to eq('Array<String>')
 
     clip = api_map.clip_at('test.rb', [13, 14])
-    expect(clip.infer.rooted_tags).to eq('::String')
+    expect(clip.infer.tags).to eq('String')
   end
 end
