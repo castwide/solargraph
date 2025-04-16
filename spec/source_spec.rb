@@ -30,8 +30,6 @@ describe Solargraph::Source do
   end
 
   it "finds nodes" do
-    # @todo This test is specific to Parser and breaks with RubyVM.
-    next if Solargraph::Parser.rubyvm?
     code = 'class Foo;def bar;end;end'
     source = described_class.new(code)
     node = source.node_at(0, 0)
@@ -54,8 +52,6 @@ describe Solargraph::Source do
     )
     changed = source.synchronize(updater)
     expect(changed.code).to start_with('class Food;')
-    # @todo This test is specific to Parser and breaks with RubyVM.
-    next if Solargraph::Parser.rubyvm?
     expect(changed.node.children[0].children[1]).to eq(:Food)
   end
 
@@ -68,8 +64,6 @@ describe Solargraph::Source do
     ])
     changed = source.synchronize(updater)
     expect(changed.code).to eq(code2)
-    # @todo This test is specific to Parser and breaks with RubyVM.
-    next if Solargraph::Parser.rubyvm?
     expect(changed.node.children[0].children[1]).to eq(:Bar)
   end
 
