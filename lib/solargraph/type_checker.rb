@@ -337,17 +337,17 @@ module Solargraph
               argchain = arguments[idx]
               if argchain.nil?
                 if par.decl == :arg
-                  last = arguments.last
-                  if last && last.node.type == :splat
-                    argchain = last
+                  final_arg = arguments.last
+                  if final_arg && final_arg.node.type == :splat
+                    argchain = final_arg
                     next # don't try to apply the type of the splat - unlikely to be specific enough
                   else
                     errors.push Problem.new(location, "Not enough arguments to #{pin.path}")
                     next
                   end
                 else
-                  last = arguments.last
-                  argchain = last if last && [:kwsplat, :hash].include?(last.node.type)
+                  final_arg = arguments.last
+                  argchain = final_arg if final_arg && [:kwsplat, :hash].include?(final_arg.node.type)
                 end
               end
               if argchain
@@ -355,9 +355,26 @@ module Solargraph
                   errors.concat kwarg_problems_for sig, argchain, api_map, block_pin, locals, location, pin, params, idx
                   next
                 else
-                  last = arguments.last
-                  if last && last.node.type == :splat
-                    next # don't try to apply the type of the splat - unlikely to be specific enough
+                  if argchain.node.type == :splat && argchain == arguments.last
+                    final_arg = argchain
+                  end
+                  if (final_arg && final_arg.node.type == :splat)
+                    # The final argument given has been seen and was a
+                    # splat, which doesn't give us useful types or
+                    # arities against positional parameters, so let's
+                    # continue on in case there are any required
+                    # kwargs we should warn about
+                    next
+                  end
+
+                  if argchain.node.type == :splat && par != sig.parameters.last
+                    # we have been given a splat and there are more
+                    # arguments to come.
+
+                    # @todo Improve this so that we can skip past the
+                    #   rest of the positional parameters here but still
+                    #   process the kwargs
+                    break
                   end
                   ptype = params.key?(par.name) ? params[par.name][:qualified] : ComplexType::UNDEFINED
                   ptype = ptype.self_to_type(par.context)
