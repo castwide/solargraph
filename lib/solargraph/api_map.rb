@@ -5,7 +5,7 @@ require 'yard'
 require 'solargraph/yard_tags'
 
 module Solargraph
-  # An aggregate provider for information about workspaces, sources, gems, and
+  # An aggregate provider for information about Workspaces, Sources, gems, and
   # the Ruby core.
   #
   class ApiMap

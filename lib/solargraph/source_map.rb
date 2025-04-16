@@ -4,7 +4,8 @@ require 'yard'
 require 'solargraph/yard_tags'
 
 module Solargraph
-  # An index of pins and other ApiMap-related data for a Source.
+  # An index of Pins and other ApiMap-related data for a single Source
+  # that can be queried.
   #
   class SourceMap
     autoload :Mapper,        'solargraph/source_map/mapper'
