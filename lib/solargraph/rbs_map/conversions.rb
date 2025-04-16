@@ -319,12 +319,12 @@ module Solargraph
       def method_def_to_sigs decl, pin
         decl.overloads.map do |overload|
           generics = overload.method_type.type_params.map(&:to_s)
-          parameters, return_type = parts_of_function(overload.method_type, pin)
+          signature_parameters, signature_return_type = parts_of_function(overload.method_type, pin)
           block = if overload.method_type.block
-                    Pin::Signature.new(generics, *parts_of_function(overload.method_type.block, pin))
-          end
-          return_type = ComplexType.try_parse(method_type_to_tag(overload.method_type))
-          Pin::Signature.new(generics, parameters, return_type, block)
+                    block_parameters, block_return_type = parts_of_function(overload.method_type.block, pin)
+                    Pin::Signature.new(generics: generics, parameters: block_parameters, return_type: block_return_type)
+                  end
+          Pin::Signature.new(generics: generics, parameters: signature_parameters, return_type: signature_return_type, block: block)
         end
       end
 
@@ -341,7 +341,7 @@ module Solargraph
 
       # @param type [RBS::MethodType,RBS::Types::Block]
       # @param pin [Pin::Method]
-      # @return [Array<Array<Pin::Parameter>, ComplexType>]
+      # @return [Array(Array<Pin::Parameter>, ComplexType)]
       def parts_of_function type, pin
         return [[Solargraph::Pin::Parameter.new(decl: :restarg, name: 'arg', closure: pin)], ComplexType.try_parse(method_type_to_tag(type))] if defined?(RBS::Types::UntypedFunction) && type.type.is_a?(RBS::Types::UntypedFunction)
 
