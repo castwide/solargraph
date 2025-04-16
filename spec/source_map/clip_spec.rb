@@ -1605,13 +1605,13 @@ describe Solargraph::SourceMap::Clip do
         # @return [String, Array]
         def foo; end
       end
-      Thing.new.foo.an
+      Thing.new.foo.bytes
       Thing.new.foo.up
     ), 'test.rb')
     api_map = Solargraph::ApiMap.new.map(source)
 
     array_names = api_map.clip_at('test.rb', [5, 22]).complete.pins.map(&:name)
-    expect(array_names).to eq(['ancestors', 'any?'])
+    expect(array_names).to eq(["byteindex", "byterindex", "bytes", "bytesize", "byteslice", "bytesplice"])
 
     string_names = api_map.clip_at('test.rb', [6, 22]).complete.pins.map(&:name)
     expect(string_names).to eq(['upcase', 'upcase!', 'upto'])
@@ -2244,7 +2244,27 @@ describe Solargraph::SourceMap::Clip do
   ), 'test.rb')
     api_map = Solargraph::ApiMap.new.map(source)
     clip = api_map.clip_at('test.rb', [7, 6])
-    expect(clip.infer.to_s).to eq('String, Symbol, Integer')
+    # The order of the types can vary between platforms
+    expect(clip.infer.items.map(&:to_s).sort).to eq(%w[Integer String Symbol])
+  end
+
+  it 'does not map Module methods into an Object' do
+    source = Solargraph::Source.load_string(%(
+      class Nah
+        # name is also a method in Module class that returns String
+        def name
+        end
+      end
+
+      def blah
+        n = Nah.new
+        o = n.name
+        o
+     end
+  ), 'test.rb')
+    api_map = Solargraph::ApiMap.new.map(source)
+    clip = api_map.clip_at('test.rb', [10, 8])
+    expect(clip.infer.to_s).to eq('nil')
   end
 
   xit 'resolves overloads based on kwarg existence' do

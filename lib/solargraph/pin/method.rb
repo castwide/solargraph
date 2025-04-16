@@ -16,7 +16,7 @@ module Solargraph
       # @param visibility [::Symbol] :public, :protected, or :private
       # @param explicit [Boolean]
       # @param block [Pin::Signature, nil, ::Symbol]
-      # @param node [Parser::AST::Node, RubyVM::AbstractSyntaxTree::Node, nil]
+      # @param node [Parser::AST::Node, nil]
       # @param attribute [Boolean]
       # @param signatures [::Array<Signature>, nil]
       # @param anon_splat [Boolean]
