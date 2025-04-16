@@ -15,6 +15,9 @@ module Solargraph
       # @return [Solargraph::Location]
       attr_reader :location
 
+      # @return [Solargraph::Location]
+      attr_reader :type_location
+
       # @return [String]
       attr_reader :name
 
@@ -29,11 +32,13 @@ module Solargraph
       end
 
       # @param location [Solargraph::Location, nil]
+      # @param type_location [Solargraph::Location, nil]
       # @param closure [Solargraph::Pin::Closure, nil]
       # @param name [String]
       # @param comments [String]
-      def initialize location: nil, closure: nil, name: '', comments: ''
+      def initialize location: nil, type_location: nil, closure: nil, name: '', comments: ''
         @location = location
+        @type_location = type_location
         @closure = closure
         @name = name
         @comments = comments
@@ -104,6 +109,11 @@ module Solargraph
       # @return [Boolean]
       def variable?
         false
+      end
+
+      # @return [Location, nil]
+      def best_location
+        location || type_location
       end
 
       # Pin equality is determined using the #nearly? method and also
