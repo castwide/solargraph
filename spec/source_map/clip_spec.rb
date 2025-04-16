@@ -2289,8 +2289,14 @@ describe Solargraph::SourceMap::Clip do
     ), 'test.rb')
 
     api_map = Solargraph::ApiMap.new.map(source)
-    clip = api_map.clip_at('test.rb', [3, 10])
-    expect(clip.infer.to_s).to eq('String')
+    clip = api_map.clip_at('test.rb', [7, 12])
+    expect(clip.infer.tags).to eq('Enumerable<String>')
+
+    clip = api_map.clip_at('test.rb', [11, 12])
+    expect(clip.infer.tags).to eq('Array<String>')
+
+    clip = api_map.clip_at('test.rb', [13, 14])
+    expect(clip.infer.tags).to eq('String')
   end
 
   xit 'resolves overloads based on kwarg existence' do
@@ -2326,13 +2332,7 @@ describe Solargraph::SourceMap::Clip do
 
     api_map = Solargraph::ApiMap.new.map(source)
 
-    clip = api_map.clip_at('test.rb', [7, 12])
-    expect(clip.infer.tags).to eq('Enumerable<String>')
-
-    clip = api_map.clip_at('test.rb', [11, 12])
-    expect(clip.infer.tags).to eq('Array<String>')
-
-    clip = api_map.clip_at('test.rb', [13, 14])
-    expect(clip.infer.tags).to eq('String')
+    clip = api_map.clip_at('test.rb', [3, 10])
+    expect(clip.infer.to_s).to eq('String')
   end
 end
