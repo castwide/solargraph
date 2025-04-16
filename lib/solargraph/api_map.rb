@@ -804,7 +804,9 @@ module Solargraph
         scope: origin.scope,
         visibility: origin.visibility,
         signatures: origin.signatures,
-        attribute: origin.attribute?
+        attribute: origin.attribute?,
+        generics: origin.generics,
+        return_type: origin.return_type,
       }
       Pin::Method.new **args
     end
