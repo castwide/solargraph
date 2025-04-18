@@ -47,6 +47,8 @@ module Solargraph
 
         generics.join(', ') + ' '
       end
+
+      include Logging
     end
   end
 end
