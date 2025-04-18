@@ -16,12 +16,29 @@ module Solargraph
     @@logger.formatter = proc do |severity, datetime, progname, msg|
       "[#{severity}] #{msg}\n"
     end
+    @@dev_null_logger = Logger.new('/dev/null')
+
 
     module_function
 
+    # override this in your class to temporarily set a custom
+    # filtering log level for the class (e.g., suppress any debug
+    # message by setting it to :info even if it is set elsewhere, or
+    # show existing debug messages by setting to :debug).  @return
+    # [Symbol]
+    def log_level
+      @@logger.level
+    end
+
     # @return [Logger]
     def logger
-      @@logger
+      @logger ||= if log_level == @@logger.level
+                    @@logger
+                  else
+                    logger = Logger.new(STDERR, log_level)
+                    logger.formatter = @@logger.formatter
+                    logger
+                  end
     end
   end
 end
