@@ -57,7 +57,7 @@ module Solargraph
             # Use the return node for inference. The clip might infer from the
             # first node in a method call instead of the entire call.
             chain = Parser.chain(node, nil, nil)
-            result = chain.infer(api_map, closure, clip.locals).self_to(closure.context.tag)
+            result = chain.infer(api_map, closure, clip.locals).self_to_type(closure.context)
             types.push result unless result.undefined?
           end
         end

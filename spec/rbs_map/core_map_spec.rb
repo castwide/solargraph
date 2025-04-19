@@ -93,4 +93,14 @@ describe Solargraph::RbsMap::CoreMap do
     clip = api_map.clip_at('test.rb', [5, 6])
     expect(clip.infer.to_s).to eq('Foo')
   end
+
+  it "generates rooted pins from RBS for core" do
+    map = Solargraph::RbsMap::CoreMap.new
+    map.pins.each do |pin|
+      expect(pin).to be_all_rooted
+      unless pin.is_a?(Solargraph::Pin::Keyword)
+        expect(pin.closure).to_not be_nil, ->(){ "Pin #{pin.inspect} (#{pin.path}) has no closure" }
+      end
+    end
+  end
 end
