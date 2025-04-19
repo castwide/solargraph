@@ -175,10 +175,6 @@ module Solargraph
         tag == other.tag
       end
 
-      def rooted?
-        @rooted && all_params.all?(&:rooted?)
-      end
-
       # Generate a ComplexType that fully qualifies this type's namespaces.
       #
       # @param api_map [ApiMap] The ApiMap that performs qualification

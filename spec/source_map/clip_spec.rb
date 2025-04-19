@@ -1857,6 +1857,7 @@ describe Solargraph::SourceMap::Clip do
     type = clip.infer
     expect(type.tag).to eq('Array<String>')
     expect(type.rooted?).to be true
+    expect(type.all_rooted?).to be true
   end
 
   it 'infers block parameter type for Array#select' do
