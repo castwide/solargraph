@@ -273,6 +273,7 @@ module Solargraph
       def try_merge! pin
         return false unless super
         @node = pin.node
+        @resolved_ref_tag = false
         true
       end
 
@@ -303,6 +304,29 @@ module Solargraph
 
       def anon_splat?
         @anon_splat
+      end
+
+      # @param [ApiMap]
+      # @return [self]
+      def resolve_ref_tag api_map
+        return self if @resolved_ref_tag
+
+        @resolved_ref_tag = true
+        return self unless docstring.ref_tags.any?
+        docstring.ref_tags.each do |tag|
+          ref = if tag.owner.to_s.start_with?(/[#\.]/)
+            api_map.get_methods(namespace)
+                   .select { |pin| pin.path.end_with?(tag.owner.to_s) }
+                   .first
+          else
+            # @todo Resolve relative namespaces
+            api_map.get_path_pins(tag.owner.to_s).first
+          end
+          next unless ref
+
+          docstring.add_tag(*ref.docstring.tags(:param))
+        end
+        self
       end
 
       protected
