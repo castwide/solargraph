@@ -41,7 +41,7 @@ module Solargraph
       @@inference_invalidation_key = nil
       @@inference_cache = {}
 
-      UNDEFINED_CALL = Chain::Call.new('<undefined>')
+      UNDEFINED_CALL = Chain::Call.new('<undefined>', nil)
       UNDEFINED_CONSTANT = Chain::Constant.new('<undefined>')
 
       # @return [::Array<Source::Chain::Link>]
