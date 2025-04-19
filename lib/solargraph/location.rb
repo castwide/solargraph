@@ -18,12 +18,24 @@ module Solargraph
       @range = range
     end
 
+    # @param location [self]
+    def contain? location
+      range.contain?(location.range.start) && range.contain?(location.range.ending) && filename == location.filename
+    end
+
     # @return [Hash]
     def to_hash
       {
         filename: filename,
         range: range.to_hash
       }
+    end
+
+    # @param node [Parser::AST::Node, nil]
+    def self.from_node(node)
+      return nil if node.nil? || node.loc.nil?
+      range = Range.from_node(node)
+      self.new(node.loc.expression.source_buffer.name, range)
     end
 
     # @param other [BasicObject]
