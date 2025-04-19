@@ -3,8 +3,9 @@ module Solargraph
     class Chain
       class Array < Literal
         # @param children [::Array<Chain>]
-        def initialize children
-          super('::Array')
+        # @param node [Parser::AST::Node]
+        def initialize children, node
+          super('::Array', node)
           @children = children
         end
 
@@ -17,7 +18,7 @@ module Solargraph
         # @param locals [Enumerable<Pin::LocalVariable>]
         def resolve api_map, name_pin, locals
           child_types = @children.map do |child|
-            child.infer(api_map, name_pin, locals).tag
+            child.infer(api_map, name_pin, locals).simplify_literals.tags
           end
           type = if child_types.uniq.length == 1 && child_types.first != 'undefined'
                    "::Array<#{child_types.first}>"
