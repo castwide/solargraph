@@ -181,10 +181,19 @@ module Solargraph
       end
 
       def typify api_map
+        logger.debug { "Method#typify(self=#{self}, binder=#{binder}, closure=#{closure}, context=#{context}, return_type=#{return_type.rooted_tags}) - starting" }
         decl = super
-        return decl unless decl.undefined?
+        unless decl.undefined?
+          logger.debug { "Method#typify(self=#{self}, binder=#{binder}, closure=#{closure}, context=#{context}) => #{decl}" }
+          return decl
+        end
         type = see_reference(api_map) || typify_from_super(api_map)
-        return type.qualify(api_map, namespace) unless type.nil?
+        logger.debug { "Method#typify(self=#{self}) - type=#{type}" }
+        unless type.nil?
+          qualified = type.qualify(api_map, namespace)
+          logger.debug { "Method#typify(self=#{self}) => #{qualified}" }
+          return qualified
+        end
         name.end_with?('?') ? ComplexType::BOOLEAN : ComplexType::UNDEFINED
       end
 
