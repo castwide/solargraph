@@ -192,6 +192,18 @@ module Solargraph
       @items.first.all_params || []
     end
 
+    # every type and subtype in this union have been resolved to be
+    # fully qualified
+    def all_rooted?
+      all?(&:all_rooted?)
+    end
+
+    # every top-level type has resolved to be fully qualified; see
+    # #all_rooted? to check their subtypes as well
+    def rooted?
+      all?(&:rooted?)
+    end
+
     attr_reader :items
 
     protected

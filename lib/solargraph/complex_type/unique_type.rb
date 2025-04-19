@@ -296,6 +296,14 @@ module Solargraph
         @name == 'self' || @key_types.any?(&:selfy?) || @subtypes.any?(&:selfy?)
       end
 
+      def all_rooted?
+        @rooted && all_params.all?(&:rooted?)
+      end
+
+      def rooted?
+        @rooted
+      end
+
       UNDEFINED = UniqueType.new('undefined', rooted: false)
       BOOLEAN = UniqueType.new('Boolean', rooted: true)
     end
