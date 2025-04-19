@@ -259,9 +259,9 @@ module Solargraph
       end
 
       def nearly? other
-        return false unless super
-        parameters == other.parameters and
-          scope == other.scope and
+        super &&
+          parameters == other.parameters &&
+          scope == other.scope &&
           visibility == other.visibility
       end
 

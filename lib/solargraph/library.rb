@@ -174,9 +174,9 @@ module Solargraph
     # @return [Array<Solargraph::Pin::Base>, nil]
     # @todo Take filename/position instead of filename/line/column
     def definitions_at filename, line, column
+      sync_catalog
       position = Position.new(line, column)
       cursor = Source::Cursor.new(read(filename), position)
-      sync_catalog
       if cursor.comment?
         source = read(filename)
         offset = Solargraph::Position.to_offset(source.code, Solargraph::Position.new(line, column))
@@ -205,9 +205,9 @@ module Solargraph
     # @return [Array<Solargraph::Pin::Base>, nil]
     # @todo Take filename/position instead of filename/line/column
     def type_definitions_at filename, line, column
+      sync_catalog
       position = Position.new(line, column)
       cursor = Source::Cursor.new(read(filename), position)
-      sync_catalog
       mutex.synchronize { api_map.clip(cursor).types }
     rescue FileNotFoundError => e
       handle_file_not_found filename, e
@@ -222,9 +222,9 @@ module Solargraph
     # @return [Array<Solargraph::Pin::Base>]
     # @todo Take filename/position instead of filename/line/column
     def signatures_at filename, line, column
+      sync_catalog
       position = Position.new(line, column)
       cursor = Source::Cursor.new(read(filename), position)
-      sync_catalog
       mutex.synchronize { api_map.clip(cursor).signify }
     end
 
