@@ -79,9 +79,12 @@ module Solargraph
                   break
                 end
                 atype = atypes[idx] ||= arg.infer(api_map, Pin::ProxyType.anonymous(context), locals)
+                # make sure we get types from up the method
+                # inheritance chain if we don't have them on this pin
+                ptype = param.typify api_map
                 # @todo Weak type comparison
                 # unless atype.tag == param.return_type.tag || api_map.super_and_sub?(param.return_type.tag, atype.tag)
-                unless param.return_type.undefined? || atype.name == param.return_type.name || api_map.super_and_sub?(param.return_type.name, atype.name) || param.return_type.generic?
+                unless ptype.undefined? || atype.name == ptype.name || ptype.any? { |current_ptype| api_map.super_and_sub?(current_ptype.name, atype.name) } || ptype.generic? || param.restarg?
                   match = false
                   break
                 end
