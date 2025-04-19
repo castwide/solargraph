@@ -22,7 +22,7 @@ module Solargraph
     # @param context [String]
     # @return [ComplexType]
     def qualify api_map, context = ''
-      logger.debug { "ComplexType#qualify(self=#{self}, context=#{context.inspect}) - starting" }
+      logger.debug { "ComplexType#qualify(self=#{self.rooted_tags}, context=#{context.inspect}) - starting" }
       red = reduce_object
       types = red.items.map do |t|
         next t if ['Boolean', 'nil', 'void', 'undefined'].include?(t.name)
@@ -174,7 +174,9 @@ module Solargraph
     # @return [ComplexType]
     def resolve_generics definitions, context_type
       result = @items.map { |i| i.resolve_generics(definitions, context_type) }
-      ComplexType.try_parse(*result.map(&:tag))
+      out = ComplexType.try_parse(*result.map(&:tag))
+      logger.debug { "ComplexType#resolve_generics(self=#{rooted_tags}, definitions=#{definitions}, context_type=#{context_type.rooted_tags} => #{out.rooted_tags}" }
+      out
     end
 
     # @param dst [String]

@@ -49,11 +49,11 @@ module Solargraph
             api_map.get_method_stack(context.namespace == '' ? '' : context.tag, word, scope: context.scope)
           end
           if pins.empty?
-            logger.debug { "Call#resolve(word=#{word}, name_pin=#{name_pin}, name_pin.binder=#{name_pin.binder}) => [] - found no pins for #{word} in #{name_pin.binder}" }
+            logger.debug { "Call#resolve(name_pin.binder=#{name_pin.binder}, word=#{word}, name_pin=#{name_pin}, name_pin.binder=#{name_pin.binder}) => [] - found no pins for #{word} in #{name_pin.binder}" }
             return []
           end
           out = inferred_pins(pins, api_map, name_pin.context, locals)
-          logger.debug { "Call#resolve(word=#{word}, name_pin=#{name_pin}) - pins=#{pins} => #{out}" }
+          logger.debug { "Call#resolve(name_pin.binder=#{name_pin.binder}, word=#{word}, name_pin=#{name_pin}) - pins=#{pins.map(&:desc)} => #{out}" }
           out
         end
 
@@ -83,15 +83,23 @@ module Solargraph
 
             sorted_overloads = overloads.sort { |ol| ol.block? ? -1 : 1 }
             new_signature_pin = nil
+            atypes = []
             sorted_overloads.each do |ol|
-              next unless arity_matches?(arguments, ol)
+              unless arity_matches?(arguments, ol)
+                logger.debug { "Call#inferred_pins(word=#{word}, name_pin=#{name_pin}, name_pin.binder=#{name_pin.binder}) - rejecting #{ol} because arity did not match - arguments=#{arguments} vs parameters=#{ol.parameters}" }
+                next
+              end
               match = true
 
-              atypes = []
               arguments.each_with_index do |arg, idx|
                 param = ol.parameters[idx]
                 if param.nil?
                   match = ol.parameters.any?(&:restarg?)
+                  if match
+                    logger.debug { "Call#inferred_pins(word=#{word}, name_pin=#{name_pin}, name_pin.binder=#{name_pin.binder}) - accepting rest via restarg - #{ol}" }
+                  else
+                    logger.debug { "Call#inferred_pins(word=#{word}, name_pin=#{name_pin}, name_pin.binder=#{name_pin.binder}) - more args than parameters found - #{arg} not matched - #{ol} not matched" }
+                  end
                   break
                 end
 
@@ -100,6 +108,7 @@ module Solargraph
                 # @todo Weak type comparison
                 # unless atype.tag == param.return_type.tag || api_map.super_and_sub?(param.return_type.tag, atype.tag)
                 unless param.return_type.undefined? || atype.name == param.return_type.name || api_map.super_and_sub?(param.return_type.name, atype.name) || param.return_type.generic?
+                  logger.debug { "Call#inferred_pins(word=#{word}, name_pin=#{name_pin}, name_pin.binder=#{name_pin.binder}) - rejecting signature #{ol}" }
                   match = false
                   break
                 end
@@ -116,7 +125,12 @@ module Solargraph
               end
               break if type.defined?
             end
-            p = p.with_single_signature(new_signature_pin) unless new_signature_pin.nil?
+            if new_signature_pin.nil?
+              logger.debug { "Call#inferred_pins(word=#{word}, name_pin=#{name_pin}, name_pin.binder=#{name_pin.binder}) - found no matching signatures for #{p}" }
+            else
+              logger.debug { "Call#inferred_pins(word=#{word}, name_pin=#{name_pin}, name_pin.binder=#{name_pin.binder}) - accepting signature #{new_signature_pin}" }
+              p = p.with_single_signature(new_signature_pin)
+            end
             next p.proxy(type) if type.defined?
             if !p.macros.empty?
               result = process_macro(p, api_map, context, locals)
@@ -127,6 +141,7 @@ module Solargraph
             end
             p
           end
+          logger.debug { "Call#inferred_pins(pins=#{pins.map(&:desc)}, name_pin=#{name_pin}) - result=#{result}" }
           out = result.map do |pin|
             if pin.path == 'Class#new' && context.tag != 'Class'
               pin.proxy(ComplexType.try_parse(context.namespace))
@@ -136,7 +151,7 @@ module Solargraph
               selfy == pin.return_type ? pin : pin.proxy(selfy)
             end
           end
-          logger.debug { "Call#inferred_pins(pins=#{pins}, name_pin=#{name_pin}) => #{out}" }
+          logger.debug { "Call#inferred_pins(pins=#{pins.map(&:desc)}, name_pin=#{name_pin}) => #{out}" }
           out
         end
 
@@ -238,6 +253,7 @@ module Solargraph
         # @return [::Array<Pin::Base>]
         def yield_pins api_map, name_pin
           method_pin = api_map.get_method_stack(name_pin.namespace, name_pin.name, scope: name_pin.context.scope).first
+          logger.debug { "Call#yield_pins(name_pin=#{name_pin}) - method_pin=#{method_pin.inspect}" }
           return [] if method_pin.nil?
 
           method_pin.signatures.map(&:block).compact

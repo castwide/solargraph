@@ -22,8 +22,12 @@ module Solargraph
         # @param name_pin [Pin::Base]
         # @param locals [::Array<Pin::Base>]
         def resolve api_map, name_pin, locals
-          return super_pins(api_map, name_pin)
+          pins = super_pins(api_map, name_pin)
+          logger.debug { "ZSuper#resolve(#{word.inspect}, name_pin=#{name_pin.inspect}) => #{pins}" }
+          pins
         end
+
+        include Logging
       end
     end
   end
