@@ -208,7 +208,6 @@ module Solargraph
       #
       # @return [Solargraph::Pin::Constant]
       def create_constant(name, tag, comments, decl, base = nil)
-        comments = decl.comment&.string
         parts = name.split('::')
         if parts.length > 1
           name = parts.last
@@ -224,7 +223,8 @@ module Solargraph
           comments: comments
         )
         tag = "#{base}<#{tag}>" if base
-        constant_pin.docstring.add_tag(YARD::Tags::Tag.new(:return, '', tag))
+        rooted_tag = ComplexType.parse(tag).force_rooted.rooted_tags
+        constant_pin.docstring.add_tag(YARD::Tags::Tag.new(:return, '', rooted_tag))
         constant_pin
       end
 
@@ -260,13 +260,13 @@ module Solargraph
       def global_decl_to_pin decl
         closure = Solargraph::Pin::ROOT_PIN
         name = decl.name.to_s
-        tag = other_type_to_tag(decl.type)
         pin = Solargraph::Pin::GlobalVariable.new(
           name: name,
           closure: closure,
           comments: decl.comment&.string,
         )
-        pin.docstring.add_tag(YARD::Tags::Tag.new(:type, '', tag))
+        rooted_tag = ComplexType.parse(other_type_to_tag(decl.type)).force_rooted.rooted_tags
+        pin.docstring.add_tag(YARD::Tags::Tag.new(:type, '', rooted_tag))
         pins.push pin
       end
 
@@ -343,18 +343,18 @@ module Solargraph
       # @param pin [Pin::Method]
       # @return [Array(Array<Pin::Parameter>, ComplexType)]
       def parts_of_function type, pin
-        return [[Solargraph::Pin::Parameter.new(decl: :restarg, name: 'arg', closure: pin)], ComplexType.try_parse(method_type_to_tag(type))] if defined?(RBS::Types::UntypedFunction) && type.type.is_a?(RBS::Types::UntypedFunction)
+        return [[Solargraph::Pin::Parameter.new(decl: :restarg, name: 'arg', closure: pin)], ComplexType.try_parse(method_type_to_tag(type)).force_rooted] if defined?(RBS::Types::UntypedFunction) && type.type.is_a?(RBS::Types::UntypedFunction)
 
         parameters = []
         arg_num = -1
         type.type.required_positionals.each do |param|
           name = param.name ? param.name.to_s : "arg#{arg_num += 1}"
-          parameters.push Solargraph::Pin::Parameter.new(decl: :arg, name: name, closure: pin, return_type: ComplexType.try_parse(other_type_to_tag(param.type)))
+          parameters.push Solargraph::Pin::Parameter.new(decl: :arg, name: name, closure: pin, return_type: ComplexType.try_parse(other_type_to_tag(param.type)).force_rooted)
         end
         type.type.optional_positionals.each do |param|
           name = param.name ? param.name.to_s : "arg#{arg_num += 1}"
           parameters.push Solargraph::Pin::Parameter.new(decl: :optarg, name: name, closure: pin,
-                                                         return_type: ComplexType.try_parse(other_type_to_tag(param.type)))
+                                                         return_type: ComplexType.try_parse(other_type_to_tag(param.type)).force_rooted)
         end
         if type.type.rest_positionals
           name = type.type.rest_positionals.name ? type.type.rest_positionals.name.to_s : "arg#{arg_num += 1}"
@@ -367,12 +367,12 @@ module Solargraph
         type.type.required_keywords.each do |orig, param|
           name = orig ? orig.to_s : "arg#{arg_num += 1}"
           parameters.push Solargraph::Pin::Parameter.new(decl: :kwarg, name: name, closure: pin,
-                                                         return_type: ComplexType.try_parse(other_type_to_tag(param.type)))
+                                                         return_type: ComplexType.try_parse(other_type_to_tag(param.type)).force_rooted)
         end
         type.type.optional_keywords.each do |orig, param|
           name = orig ? orig.to_s : "arg#{arg_num += 1}"
           parameters.push Solargraph::Pin::Parameter.new(decl: :kwoptarg, name: name, closure: pin,
-                                                         return_type: ComplexType.try_parse(other_type_to_tag(param.type)))
+                                                         return_type: ComplexType.try_parse(other_type_to_tag(param.type)).force_rooted)
         end
         if type.type.rest_keywords
           name = type.type.rest_keywords.name ? type.type.rest_keywords.name.to_s : "arg#{arg_num += 1}"
@@ -380,7 +380,7 @@ module Solargraph
         end
 
         rooted_tag = method_type_to_tag(type)
-        return_type = ComplexType.try_parse(rooted_tag)
+        return_type = ComplexType.try_parse(rooted_tag).force_rooted
         [parameters, return_type]
       end
 
@@ -396,7 +396,8 @@ module Solargraph
           scope: :instance,
           attribute: true
         )
-        pin.docstring.add_tag(YARD::Tags::Tag.new(:return, '', other_type_to_tag(decl.type)))
+        rooted_tag = ComplexType.parse(other_type_to_tag(decl.type)).force_rooted.rooted_tags
+        pin.docstring.add_tag(YARD::Tags::Tag.new(:return, '', rooted_tag))
         pins.push pin
       end
 
@@ -412,7 +413,8 @@ module Solargraph
           scope: :instance,
           attribute: true
         )
-        pin.docstring.add_tag(YARD::Tags::Tag.new(:return, '', other_type_to_tag(decl.type)))
+        rooted_tag = ComplexType.parse(other_type_to_tag(decl.type)).force_rooted.rooted_tags
+        pin.docstring.add_tag(YARD::Tags::Tag.new(:return, '', rooted_tag))
         pins.push pin
       end
 
@@ -434,7 +436,8 @@ module Solargraph
           type_location: location_decl_to_pin_location(decl.location),
           comments: decl.comment&.string
         )
-        pin.docstring.add_tag(YARD::Tags::Tag.new(:type, '', other_type_to_tag(decl.type)))
+        rooted_tag = ComplexType.parse(other_type_to_tag(decl.type)).force_rooted.rooted_tags
+        pin.docstring.add_tag(YARD::Tags::Tag.new(:type, '', rooted_tag))
         pins.push pin
       end
 
@@ -448,7 +451,8 @@ module Solargraph
           closure: closure,
           comments: decl.comment&.string
         )
-        pin.docstring.add_tag(YARD::Tags::Tag.new(:type, '', other_type_to_tag(decl.type)))
+        rooted_tag = ComplexType.parse(other_type_to_tag(decl.type)).force_rooted.rooted_tags
+        pin.docstring.add_tag(YARD::Tags::Tag.new(:type, '', rooted_tag))
         pins.push pin
       end
 
@@ -462,7 +466,8 @@ module Solargraph
           closure: closure,
           comments: decl.comment&.string
         )
-        pin.docstring.add_tag(YARD::Tags::Tag.new(:type, '', other_type_to_tag(decl.type)))
+        rooted_tag = ComplexType.parse(other_type_to_tag(decl.type)).force_rooted.rooted_tags
+        pin.docstring.add_tag(YARD::Tags::Tag.new(:type, '', rooted_tag))
         pins.push pin
       end
 
@@ -470,7 +475,7 @@ module Solargraph
       # @param closure [Pin::Namespace]
       # @return [void]
       def include_to_pin decl, closure
-        type = generic_type(decl.name, decl.args)
+        type = build_type(decl.name, decl.args)
         generic_values = type.all_params.map(&:to_s)
         pins.push Solargraph::Pin::Reference::Include.new(
           name: decl.name.relative!.to_s,
@@ -515,9 +520,9 @@ module Solargraph
       end
 
       RBS_TO_YARD_TYPE = {
-        'bool' => '::Boolean',
-        'string' => '::String',
-        'int' => '::Integer',
+        'bool' => 'Boolean',
+        'string' => 'String',
+        'int' => 'Integer',
         'untyped' => '',
         'NilClass' => 'nil'
       }
@@ -535,10 +540,10 @@ module Solargraph
       # @param type_name [RBS::TypeName]
       # @param type_args [Enumerable<RBS::Types::Bases::Base>]
       # @return [ComplexType::UniqueType]
-      def generic_type(type_name, type_args)
+      def build_type(type_name, type_args = [])
         base = RBS_TO_YARD_TYPE[type_name.relative!.to_s] || type_name.relative!.to_s
         params = type_args.map { |a| other_type_to_tag(a) }.reject { |t| t == 'undefined' }.map do |t|
-          ComplexType.try_parse(t)
+          ComplexType.try_parse(t).force_rooted
         end
         if base == 'Hash' && params.length == 2
           ComplexType::UniqueType.new(base, [params.first], [params.last], rooted: true, parameters_type: :hash)
@@ -550,8 +555,8 @@ module Solargraph
       # @param type_name [RBS::TypeName]
       # @param type_args [Enumerable<RBS::Types::Bases::Base>]
       # @return [String]
-      def generic_type_tag(type_name, type_args)
-        generic_type(type_name, type_args).rooted_tags
+      def type_tag(type_name, type_args = [])
+        build_type(type_name, type_args).tags
       end
 
       # @param type [RBS::Types::Bases::Base]
@@ -561,18 +566,18 @@ module Solargraph
           "#{other_type_to_tag(type.type)}, nil"
         elsif type.is_a?(RBS::Types::Bases::Any)
           # @todo Not sure what to do with Any yet
-          '::BasicObject'
+          'BasicObject'
         elsif type.is_a?(RBS::Types::Bases::Bool)
-          '::Boolean'
+          'Boolean'
         elsif type.is_a?(RBS::Types::Tuple)
-          "::Array(#{type.types.map { |t| other_type_to_tag(t) }.join(', ')})"
+          "Array(#{type.types.map { |t| other_type_to_tag(t) }.join(', ')})"
         elsif type.is_a?(RBS::Types::Literal)
-          "#{type.literal}"
+          type.literal.to_s
         elsif type.is_a?(RBS::Types::Union)
           type.types.map { |t| other_type_to_tag(t) }.join(', ')
         elsif type.is_a?(RBS::Types::Record)
           # @todo Better record support
-          '::Hash'
+          'Hash'
         elsif type.is_a?(RBS::Types::Bases::Nil)
           'nil'
         elsif type.is_a?(RBS::Types::Bases::Self)
@@ -582,12 +587,12 @@ module Solargraph
         elsif type.is_a?(RBS::Types::Variable)
           "#{Solargraph::ComplexType::GENERIC_TAG_NAME}<#{type.name}>"
         elsif type.is_a?(RBS::Types::ClassInstance) #&& !type.args.empty?
-          generic_type_tag(type.name, type.args)
+          type_tag(type.name, type.args)
         elsif type.is_a?(RBS::Types::Bases::Instance)
           'self'
         elsif type.is_a?(RBS::Types::Bases::Top)
           # top is the most super superclass
-          '::BasicObject'
+          'BasicObject'
         elsif type.is_a?(RBS::Types::Bases::Bottom)
           # bottom is used in contexts where nothing will ever return
           # - e.g., it could be the return type of 'exit()' or 'raise'
@@ -598,9 +603,9 @@ module Solargraph
         elsif type.is_a?(RBS::Types::Intersection)
           type.types.map { |member| other_type_to_tag(member) }.join(', ')
         elsif type.is_a?(RBS::Types::Proc)
-          '::Proc'
+          'Proc'
         elsif type.respond_to?(:name) && type.name.respond_to?(:relative!)
-          RBS_TO_YARD_TYPE[type.name.relative!.to_s] || ('::' + type.name.relative!.to_s)
+          RBS_TO_YARD_TYPE[type.name.relative!.to_s] || type.name.relative!.to_s
         else
           Solargraph.logger.warn "Unrecognized RBS type: #{type.class} at #{type.location}"
           'undefined'

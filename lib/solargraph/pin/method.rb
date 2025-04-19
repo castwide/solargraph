@@ -43,6 +43,10 @@ module Solargraph
         m
       end
 
+      def all_rooted?
+        super && parameters.all?(&:all_rooted?) && (!block || block&.all_rooted?) && signatures.all?(&:all_rooted?)
+      end
+
       # @param signature [Pin::Signature]
       # @return [Pin::Method]
       def with_single_signature(signature)
@@ -68,7 +72,7 @@ module Solargraph
       # @return [Pin::Signature, nil]
       def block
         return @block unless @block == :undefined
-        @block = signatures.first.block
+        @block = signatures.first&.block
       end
 
       def completion_item_kind

@@ -26,6 +26,8 @@ module Solargraph
         if name.start_with?('::')
           name = name[2..-1]
           rooted = true
+        elsif !can_root_name?(name)
+          rooted = true
         else
           rooted = false
         end
@@ -63,7 +65,7 @@ module Solargraph
         if parameters_type.nil?
           raise "You must supply parameters_type if you provide parameters" unless key_types.empty? && subtypes.empty?
         end
-        raise "Please remove leading :: and set rooted instead - #{name}" if name.start_with?('::')
+        raise "Please remove leading :: and set rooted instead - #{name.inspect}" if name.start_with?('::')
         @name = name
         @key_types = key_types
         @subtypes = subtypes
@@ -301,7 +303,7 @@ module Solargraph
           new_key_types = @key_types.flat_map { |ct| ct.items.map { |ut| ut.transform(&transform_type) } }
           new_subtypes = @subtypes.flat_map { |ct| ct.items.map { |ut| ut.transform(&transform_type) } }
         end
-        new_type = recreate(new_name: new_name || name, new_key_types: new_key_types, new_subtypes: new_subtypes)
+        new_type = recreate(new_name: new_name || name, new_key_types: new_key_types, new_subtypes: new_subtypes, make_rooted: @rooted)
         yield new_type
       end
 
@@ -339,11 +341,22 @@ module Solargraph
       end
 
       def all_rooted?
-        @rooted && all_params.all?(&:rooted?)
+        return true if name == GENERIC_TAG_NAME
+        rooted? && all_params.all?(&:rooted?)
       end
 
       def rooted?
-        @rooted
+        !can_root_name? || @rooted
+      end
+
+      def can_root_name?(name_to_check = name)
+        self.class.can_root_name?(name_to_check)
+      end
+
+      # @param name [String]
+      def self.can_root_name?(name)
+        # name is not lowercase
+        !name.empty? && name != name.downcase
       end
 
       UNDEFINED = UniqueType.new('undefined', rooted: false)

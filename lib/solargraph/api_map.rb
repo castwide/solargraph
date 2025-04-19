@@ -593,7 +593,7 @@ module Solargraph
     # @param no_core [Boolean] Skip core classes if true
     # @return [Array<Pin::Base>]
     def inner_get_methods rooted_tag, scope, visibility, deep, skip, no_core = false
-      rooted_type = ComplexType.parse(rooted_tag)
+      rooted_type = ComplexType.parse(rooted_tag).force_rooted
       fqns = rooted_type.namespace
       fqns_generic_params = rooted_type.all_params
       return [] if no_core && fqns =~ /^(Object|BasicObject|Class|Module)$/
@@ -631,7 +631,7 @@ module Solargraph
             # @todo perform the same translation in the other areas
             #  here after adding a spec and handling things correctly
             #  in ApiMap::Store and RbsMap::Conversions
-            resolved_include_type = ComplexType.parse(rooted_include_tag).resolve_generics(namespace_pin, rooted_type)
+            resolved_include_type = ComplexType.parse(rooted_include_tag).force_rooted.resolve_generics(namespace_pin, rooted_type)
             methods = inner_get_methods(resolved_include_type.tag, scope, visibility, deep, skip, true)
             result.concat methods
           end

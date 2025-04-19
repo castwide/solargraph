@@ -13,6 +13,8 @@ module Solargraph
     #   methods:
     #     transform()
     #     all_params()
+    #     rooted?()
+    #     can_root_name?()
     module TypeMethods
       # @!method transform(new_name = nil, &transform_type)
       #   @param new_name [String, nil]
@@ -21,6 +23,9 @@ module Solargraph
       #   @return [UniqueType, nil]
       # @!method all_params
       #   @return [Array<ComplexType>]
+      # @!method rooted?
+      # @!method can_root_name?(name_to_check = nil)
+      #   @param name_to_check [String, nil]
 
       # @return [String]
       attr_reader :name
@@ -126,13 +131,13 @@ module Solargraph
 
       # @return [String]
       def rooted_namespace
-        return namespace unless rooted?
+        return namespace unless rooted? && can_root_name?(namespace)
         "::#{namespace}"
       end
 
       # @return [String]
       def rooted_name
-        return name unless rooted?
+        return name unless @rooted && can_root_name?
         "::#{name}"
       end
 
