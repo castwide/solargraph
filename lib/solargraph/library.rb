@@ -27,6 +27,7 @@ module Solargraph
     def initialize workspace = Solargraph::Workspace.new, name = nil
       @workspace = workspace
       @name = name
+      # @type [Array<Thread>]
       @threads = []
       # @type [Integer, nil]
       @total = nil
