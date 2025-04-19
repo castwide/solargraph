@@ -2,8 +2,8 @@
 
 module Solargraph
   class Source
-    # Information about a position in a source, including the word located
-    # there.
+    # Information about a single Position in a Source, including the
+    # word located there.
     #
     class Cursor
       # @return [Position]

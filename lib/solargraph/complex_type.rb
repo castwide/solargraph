@@ -226,10 +226,15 @@ module Solargraph
       #
       # @param *strings [Array<String>] The type definitions to parse
       # @return [ComplexType]
-      # @overload parse(*strings, partial: false)
-      #  @todo Need ability to use a literal true as a type below
-      #  @param partial [Boolean] True if the string is part of a another type
-      #  @return [Array<UniqueType>]
+      # # @overload parse(*strings, partial: false)
+      # #  @todo Need ability to use a literal true as a type below
+      # #  @param partial [Boolean] True if the string is part of a another type
+      # #  @return [Array<UniqueType>]
+      # @sg-ignore
+      # @todo To be able to select the right signature above,
+      #   Chain::Call needs to know the decl type (:arg, :optarg,
+      #   :kwarg, etc) of the arguments given, instead of just having
+      #   an array of Chains as the arguments.
       def parse *strings, partial: false
         # @type [Hash{Array<String> => ComplexType}]
         @cache ||= {}

@@ -85,7 +85,7 @@ module Solargraph
             new_signature_pin = nil
             atypes = []
             sorted_overloads.each do |ol|
-              unless arity_matches?(arguments, ol)
+              unless ol.arity_matches?(arguments, with_block?)
                 logger.debug { "Call#inferred_pins(word=#{word}, name_pin=#{name_pin}, name_pin.binder=#{name_pin.binder}) - rejecting #{ol} because arity did not match - arguments=#{arguments} vs parameters=#{ol.parameters}" }
                 next
               end
@@ -225,19 +225,6 @@ module Solargraph
             return context.value_types.first
           end
           nil
-        end
-
-        # @param arguments [::Array<Chain>]
-        # @param signature [Pin::Signature]
-        # @return [Boolean]
-        def arity_matches? arguments, signature
-          parameters = signature.parameters
-          argcount = arguments.length
-          parcount = parameters.length
-          parcount -= 1 if !parameters.empty? && parameters.last.block?
-          return false if signature.block? && !with_block?
-          return false if argcount < parcount && !(argcount == parcount - 1 && parameters.last.restarg?)
-          true
         end
 
         # @param api_map [ApiMap]
