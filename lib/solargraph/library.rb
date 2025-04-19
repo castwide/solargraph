@@ -441,17 +441,6 @@ module Solargraph
       )
     end
 
-    # Get an array of foldable ranges for the specified file.
-    #
-    # @deprecated The library should not need to handle folding ranges. The
-    #   source itself has all the information it needs.
-    #
-    # @param filename [String]
-    # @return [Array<Range>]
-    def folding_ranges filename
-      read(filename).folding_ranges
-    end
-
     # Create a library from a directory.
     #
     # @param directory [String] The path to be used for the workspace
