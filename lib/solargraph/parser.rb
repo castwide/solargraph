@@ -9,14 +9,11 @@ module Solargraph
     class SyntaxError < StandardError
     end
 
-    ClassMethods = ParserGem::ClassMethods
-
     # @deprecated
     Legacy = ParserGem
 
     ClassMethods = ParserGem::ClassMethods
-
-    extend ParserGem::ClassMethods
+    extend ClassMethods
 
     NodeMethods = ParserGem::NodeMethods
   end
