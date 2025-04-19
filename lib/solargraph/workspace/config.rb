@@ -15,7 +15,7 @@ module Solargraph
       attr_reader :directory
 
       # @todo To make this strongly typed we'll need a record syntax
-      # @return [Hash{String => undefined}]
+      # @return [Hash{String => Array, Hash, Integer, nil}]
       attr_reader :raw_data
 
       # @param directory [String]

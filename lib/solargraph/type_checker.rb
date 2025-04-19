@@ -413,7 +413,7 @@ module Solargraph
     # @param locals [Array<Pin::LocalVariable>]
     # @param location [Location]
     # @param pin [Pin::Method]
-    # @param params [Hash{String => [nil, Hash]}]
+    # @param params [Hash{String => Hash{Symbol => String, Solargraph::ComplexType}}]
     # @param idx [Integer]
     #
     # @return [Array<Problem>]
@@ -467,10 +467,11 @@ module Solargraph
     end
 
     # @param pin [Pin::Method]
-    # @return [Hash{String => Hash{Symbol => BaseObject}}]
+    # @return [Hash{String => Hash{Symbol => String, ComplexType}}]
     def param_hash(pin)
       tags = pin.docstring.tags(:param)
       return {} if tags.empty?
+      # @type [Hash{String => Hash{Symbol => String, ComplexType}}]
       result = {}
       tags.each do |tag|
         next if tag.types.nil? || tag.types.empty?
@@ -483,11 +484,9 @@ module Solargraph
     end
 
     # @param pins [Array<Pin::Method>]
-    # @return [Hash{String => Hash{Symbol => BasicObject}}]
+    # @return [Hash{String => Hash{Symbol => String, ComplexType}}]
     def first_param_hash(pins)
       pins.each do |pin|
-        # @todo this assignment from parametric use of Hash should not lose its generic
-        # @type [Hash{String => Hash{Symbol => BasicObject}}]
         result = param_hash(pin)
         return result unless result.empty?
       end

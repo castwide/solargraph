@@ -211,7 +211,17 @@ module Solargraph
           if t.name == GENERIC_TAG_NAME
             idx = definitions.generics.index(t.subtypes.first&.name)
             next t if idx.nil?
-            context_type.all_params[idx] || ComplexType::UNDEFINED
+            if context_type.parameters_type == :hash
+              if idx == 0
+                next ComplexType.new(context_type.key_types)
+              elsif idx == 1
+                next ComplexType.new(context_type.subtypes)
+              else
+                next ComplexType::UNDEFINED
+              end
+            else
+              context_type.all_params[idx] || ComplexType::UNDEFINED
+            end
           else
             t
           end

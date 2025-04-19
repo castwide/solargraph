@@ -2303,4 +2303,30 @@ describe Solargraph::SourceMap::Clip do
     clip = api_map.clip_at('test.rb', [3, 10])
     expect(clip.infer.to_s).to eq('String')
   end
+
+  it 'preserves hash value when it is a union without brackets' do
+    source = Solargraph::Source.load_string(%(
+      # @type [Hash{String => Array, Hash, Integer, nil}]
+      raw_data = {}
+      a = raw_data['domains']
+      a
+    ), 'test.rb')
+
+    api_map = Solargraph::ApiMap.new.map(source)
+    clip = api_map.clip_at('test.rb', [4, 6])
+    expect(clip.infer.to_s).to eq('Array, Hash, Integer, NilClass')
+  end
+
+  xit 'preserves hash value when it is a union with brackets' do
+    source = Solargraph::Source.load_string(%(
+      # @type [Hash{String => [Array, Hash, Integer, nil]}]
+      raw_data = {}
+      a = raw_data['domains']
+      a
+    ), 'test.rb')
+
+    api_map = Solargraph::ApiMap.new.map(source)
+    clip = api_map.clip_at('test.rb', [4, 6])
+    expect(clip.infer.to_s).to eq('Array, Hash, Integer, nil')
+  end
 end
