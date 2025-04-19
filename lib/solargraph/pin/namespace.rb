@@ -45,7 +45,7 @@ module Solargraph
       end
 
       def desc
-        if name.nil?
+        if name.nil? || name.empty?
           '(top-level)'
         else
           to_rbs
