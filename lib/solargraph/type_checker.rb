@@ -233,10 +233,11 @@ module Solargraph
       Solargraph::Parser::NodeMethods.const_nodes_from(source_map.source.node).each do |const|
         rng = Solargraph::Range.from_node(const)
         chain = Solargraph::Parser.chain(const, filename)
-        block_pin = source_map.locate_block_pin(rng.start.line, rng.start.column)
+        closure_pin = source_map.locate_closure_pin(rng.start.line, rng.start.column)
+        closure_pin.rebind(api_map)
         location = Location.new(filename, rng)
         locals = source_map.locals_at(location)
-        pins = chain.define(api_map, block_pin, locals)
+        pins = chain.define(api_map, closure_pin, locals)
         if pins.empty?
           result.push Problem.new(location, "Unresolved constant #{Solargraph::Parser::NodeMethods.unpack_name(const)}")
           @marked_ranges.push location.range
@@ -252,17 +253,25 @@ module Solargraph
         rng = Solargraph::Range.from_node(call)
         next if @marked_ranges.any? { |d| d.contain?(rng.start) }
         chain = Solargraph::Parser.chain(call, filename)
-        block_pin = source_map.locate_block_pin(rng.start.line, rng.start.column)
+        closure_pin = source_map.locate_closure_pin(rng.start.line, rng.start.column)
+        namespace_pin = closure_pin
+        if call.type == :block
+          # blocks in the AST include the method call as well, so the
+          # node returned by #call_nodes_from needs to be backed out
+          # one closure
+          closure_pin = closure_pin.closure
+        end
+        closure_pin.rebind(api_map)
         location = Location.new(filename, rng)
         locals = source_map.locals_at(location)
-        type = chain.infer(api_map, block_pin, locals)
+        type = chain.infer(api_map, closure_pin, locals)
         if type.undefined? && !rules.ignore_all_undefined?
           base = chain
           missing = chain
           found = nil
           closest = ComplexType::UNDEFINED
           until base.links.first.undefined?
-            found = base.define(api_map, block_pin, locals).first
+            found = base.define(api_map, closure_pin, locals).first
             break if found
             missing = base
             base = base.base
@@ -276,18 +285,18 @@ module Solargraph
             end
           end
         end
-        result.concat argument_problems_for(chain, api_map, block_pin, locals, location)
+        result.concat argument_problems_for(chain, api_map, closure_pin, locals, location)
       end
       result
     end
 
     # @param chain [Solargraph::Source::Chain]
     # @param api_map [Solargraph::ApiMap]
-    # @param block_pin [Solargraph::Pin::Base]
+    # @param closure_pin [Solargraph::Pin::Closure]
     # @param locals [Array<Solargraph::Pin::Base>]
     # @param location [Solargraph::Location]
     # @return [Array<Problem>]
-    def argument_problems_for chain, api_map, block_pin, locals, location
+    def argument_problems_for chain, api_map, closure_pin, locals, location
       result = []
       base = chain
       until base.links.length == 1 && base.undefined?
@@ -296,7 +305,7 @@ module Solargraph
 
         arguments = last_base_link.arguments
 
-        pins = base.define(api_map, block_pin, locals)
+        pins = base.define(api_map, closure_pin, locals)
 
         first_pin = pins.first
         if first_pin.is_a?(Pin::DelegatedMethod) && !first_pin.resolvable?(api_map)
@@ -305,12 +314,12 @@ module Solargraph
           # @type [Pin::Method]
           pin = first_pin
           ap = if base.links.last.is_a?(Solargraph::Source::Chain::ZSuper)
-            arity_problems_for(pin, fake_args_for(block_pin), location)
+            arity_problems_for(pin, fake_args_for(closure_pin), location)
           elsif pin.path == 'Class#new'
             fqns = if base.links.one?
-              block_pin.namespace
+              closure_pin.namespace
             else
-              base.base.infer(api_map, block_pin, locals).namespace
+              base.base.infer(api_map, closure_pin, locals).namespace
             end
             init = api_map.get_method_stack(fqns, 'initialize').first
             init ? arity_problems_for(init, arguments, location) : []
@@ -352,7 +361,7 @@ module Solargraph
               end
               if argchain
                 if par.decl != :arg
-                  errors.concat kwarg_problems_for sig, argchain, api_map, block_pin, locals, location, pin, params, idx
+                  errors.concat kwarg_problems_for sig, argchain, api_map, closure_pin, locals, location, pin, params, idx
                   next
                 else
                   if argchain.node.type == :splat && argchain == arguments.last
@@ -381,7 +390,7 @@ module Solargraph
                   if ptype.nil?
                     # @todo Some level (strong, I guess) should require the param here
                   else
-                    argtype = argchain.infer(api_map, block_pin, locals)
+                    argtype = argchain.infer(api_map, closure_pin, locals)
                     if argtype.defined? && ptype.defined? && !any_types_match?(api_map, ptype, argtype)
                       errors.push Problem.new(location, "Wrong argument type for #{pin.path}: #{par.name} expected #{ptype}, received #{argtype}")
                       next
@@ -409,7 +418,7 @@ module Solargraph
     # @param sig [Pin::Signature]
     # @param argchain [Source::Chain]
     # @param api_map [ApiMap]
-    # @param block_pin [Pin::Block]
+    # @param closure_pin [Pin::Closure]
     # @param locals [Array<Pin::LocalVariable>]
     # @param location [Location]
     # @param pin [Pin::Method]
@@ -417,13 +426,13 @@ module Solargraph
     # @param idx [Integer]
     #
     # @return [Array<Problem>]
-    def kwarg_problems_for sig, argchain, api_map, block_pin, locals, location, pin, params, idx
+    def kwarg_problems_for sig, argchain, api_map, closure_pin, locals, location, pin, params, idx
       result = []
       kwargs = convert_hash(argchain.node)
       par = sig.parameters[idx]
       argchain = kwargs[par.name.to_sym]
       if par.decl == :kwrestarg || (par.decl == :optarg && idx == pin.parameters.length - 1 && par.asgn_code == '{}')
-        result.concat kwrestarg_problems_for(api_map, block_pin, locals, location, pin, params, kwargs)
+        result.concat kwrestarg_problems_for(api_map, closure_pin, locals, location, pin, params, kwargs)
       else
         if argchain
           data = params[par.name]
@@ -432,7 +441,7 @@ module Solargraph
           else
             ptype = data[:qualified]
             unless ptype.undefined?
-              argtype = argchain.infer(api_map, block_pin, locals)
+              argtype = argchain.infer(api_map, closure_pin, locals)
               if argtype.defined? && ptype && !any_types_match?(api_map, ptype, argtype)
                 result.push Problem.new(location, "Wrong argument type for #{pin.path}: #{par.name} expected #{ptype}, received #{argtype}")
               end
@@ -446,19 +455,19 @@ module Solargraph
     end
 
     # @param api_map [ApiMap]
-    # @param block_pin [Pin::Block]
+    # @param closure_pin [Pin::Closure]
     # @param locals [Array<Pin::LocalVariable>]
     # @param location [Location]
     # @param pin [Pin::Method]
     # @param params [Hash{String => [nil, Hash]}]
     # @param kwargs [Hash{Symbol => Source::Chain}]
     # @return [Array<Problem>]
-    def kwrestarg_problems_for(api_map, block_pin, locals, location, pin, params, kwargs)
+    def kwrestarg_problems_for(api_map, closure_pin, locals, location, pin, params, kwargs)
       result = []
       kwargs.each_pair do |pname, argchain|
         next unless params.key?(pname.to_s)
         ptype = params[pname.to_s][:qualified]
-        argtype = argchain.infer(api_map, block_pin, locals)
+        argtype = argchain.infer(api_map, closure_pin, locals)
         if argtype.defined? && ptype && !any_types_match?(api_map, ptype, argtype)
           result.push Problem.new(location, "Wrong argument type for #{pin.path}: #{pname} expected #{ptype}, received #{argtype}")
         end
@@ -517,17 +526,17 @@ module Solargraph
       return true if pin.assignment.nil?
       chain = Solargraph::Parser.chain(pin.assignment, filename)
       rng = Solargraph::Range.from_node(pin.assignment)
-      block_pin = source_map.locate_block_pin(rng.start.line, rng.start.column)
+      closure_pin = source_map.locate_closure_pin(rng.start.line, rng.start.column)
       location = Location.new(filename, Range.from_node(pin.assignment))
       locals = source_map.locals_at(location)
-      type = chain.infer(api_map, block_pin, locals)
+      type = chain.infer(api_map, closure_pin, locals)
       if type.undefined? && !rules.ignore_all_undefined?
         base = chain
         missing = chain
         found = nil
         closest = ComplexType::UNDEFINED
         until base.links.first.undefined?
-          found = base.define(api_map, block_pin, locals).first
+          found = base.define(api_map, closure_pin, locals).first
           break if found
           missing = base
           base = base.base

@@ -114,8 +114,8 @@ module Solargraph
     # @param line [Integer]
     # @param character [Integer]
     # @return [Pin::Namespace,Pin::Method,Pin::Block]
-    def locate_block_pin line, character
-      _locate_pin line, character, Pin::Namespace, Pin::Method, Pin::Block
+    def locate_closure_pin line, character
+      _locate_pin line, character, Pin::Closure
     end
 
     # @param other_map [SourceMap]
