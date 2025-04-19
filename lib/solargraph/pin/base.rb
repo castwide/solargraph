@@ -72,6 +72,7 @@ module Solargraph
       # @return [self]
       def resolve_generics definitions, context_type
         transformed = transform_types { |t| t.resolve_generics(definitions, context_type) if t }
+        transformed.context = context_type
         transformed.erase_generics(definitions.generics)
       end
 
