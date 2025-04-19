@@ -604,8 +604,18 @@ module Solargraph
           type.types.map { |member| other_type_to_tag(member) }.join(', ')
         elsif type.is_a?(RBS::Types::Proc)
           'Proc'
-        elsif type.respond_to?(:name) && type.name.respond_to?(:relative!)
-          RBS_TO_YARD_TYPE[type.name.relative!.to_s] || type.name.relative!.to_s
+        elsif type.is_a?(RBS::Types::Alias)
+          # type-level alias use - e.g., 'bool' in "type bool = true | false"
+          # @todo ensure these get resolved after processing all aliases
+          # @todo handle recursive aliases
+          type_tag(type.name, type.args)
+        elsif type.is_a?(RBS::Types::Interface)
+          # represents a mix-in module which can be considered a
+          # subtype of a consumer of it
+          type_tag(type.name, type.args)
+        elsif type.is_a?(RBS::Types::ClassSingleton)
+          # e.g., singleton(String)
+          type_tag(type.name)
         else
           Solargraph.logger.warn "Unrecognized RBS type: #{type.class} at #{type.location}"
           'undefined'
