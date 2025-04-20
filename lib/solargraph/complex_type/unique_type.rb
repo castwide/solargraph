@@ -216,7 +216,7 @@ module Solargraph
             t
           end
         end
-        logger.debug { "UniqueType#resolve_generics(self=#{self.rooted_tag}, definitions=#{definitions}, context_type=#{context_type.rooted_tags}) => #{out}" }
+        # logger.debug { "UniqueType#resolve_generics(self=#{self.rooted_tag}, definitions=#{definitions}, context_type=#{context_type.rooted_tags}) => #{out}" }
         out
       end
 

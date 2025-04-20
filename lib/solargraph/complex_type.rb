@@ -175,7 +175,7 @@ module Solargraph
     def resolve_generics definitions, context_type
       result = @items.map { |i| i.resolve_generics(definitions, context_type) }
       out = ComplexType.try_parse(*result.map(&:tag))
-      logger.debug { "ComplexType#resolve_generics(self=#{rooted_tags}, definitions=#{definitions}, context_type=#{context_type.rooted_tags} => #{out.rooted_tags}" }
+      # logger.debug { "ComplexType#resolve_generics(self=#{rooted_tags}, definitions=#{definitions}, context_type=#{context_type.rooted_tags} => #{out.rooted_tags}" }
       out
     end
 
