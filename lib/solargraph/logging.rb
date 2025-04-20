@@ -27,15 +27,16 @@ module Solargraph
     # show existing debug messages by setting to :debug).  @return
     # [Symbol]
     def log_level
-      @@logger.level
+      :warn
     end
 
     # @return [Logger]
     def logger
-      @logger ||= if log_level == @@logger.level
+      @logger ||= if LOG_LEVELS[log_level.to_s] == @@logger.level
                     @@logger
                   else
-                    logger = Logger.new(STDERR, log_level)
+                    new_log_level = LOG_LEVELS[log_level.to_s]
+                    logger = Logger.new(STDERR, level: new_log_level)
                     logger.formatter = @@logger.formatter
                     logger
                   end
