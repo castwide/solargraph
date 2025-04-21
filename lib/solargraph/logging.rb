@@ -32,14 +32,14 @@ module Solargraph
 
     # @return [Logger]
     def logger
-      @logger ||= if LOG_LEVELS[log_level.to_s] == @@logger.level
-                    @@logger
-                  else
-                    new_log_level = LOG_LEVELS[log_level.to_s]
-                    logger = Logger.new(STDERR, level: new_log_level)
-                    logger.formatter = @@logger.formatter
-                    logger
-                  end
+      if LOG_LEVELS[log_level.to_s] == DEFAULT_LOG_LEVEL
+        @@logger
+      else
+        new_log_level = LOG_LEVELS[log_level.to_s]
+        logger = Logger.new(STDERR, level: new_log_level)
+        logger.formatter = @@logger.formatter
+        logger
+      end
     end
   end
 end
