@@ -418,7 +418,6 @@ module Solargraph
     def catalog
       @threads.delete_if(&:stop?)
       @threads.push(Thread.new do
-        sleep 0.05 if RUBY_PLATFORM =~ /mingw/
         next unless @threads.last == Thread.current
 
         mutex.synchronize do
@@ -429,7 +428,6 @@ module Solargraph
           cache_next_gemspec
         end
       end)
-      @threads.last.run if RUBY_PLATFORM =~ /mingw/
     end
 
     # @return [Bench]
@@ -467,7 +465,6 @@ module Solargraph
     # @param source [Source]
     # @return [Boolean] True if the source was merged into the workspace.
     def merge source
-      Logging.logger.debug "Merging source: #{source.filename}"
       result = workspace.merge(source)
       maybe_map source
       result
