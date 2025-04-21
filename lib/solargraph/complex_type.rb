@@ -183,7 +183,7 @@ module Solargraph
     # @return [ComplexType]
     def resolve_generics definitions, context_type
       result = @items.map { |i| i.resolve_generics(definitions, context_type) }
-      ComplexType.parse(*result.map(&:tag))
+      ComplexType.try_parse(*result.map(&:tag))
     end
 
     # @param dst [String]
@@ -192,7 +192,7 @@ module Solargraph
       return self unless selfy?
       red = reduce_class(dst)
       result = @items.map { |i| i.self_to red }
-      ComplexType.parse(*result.map(&:tag))
+      ComplexType.try_parse(*result.map(&:tag))
     end
 
     def nullable?
@@ -233,14 +233,15 @@ module Solargraph
       #
       # @param *strings [Array<String>] The type definitions to parse
       # @return [ComplexType]
-      # @overload parse(*strings, partial: false)
-      #  @param *strings [Array<String>] The type definitions to parse
-      #  @param partial [true] True if the string is part of a another type
-      #  @return [Array<UniqueType>]
-      # @overload parse(*strings, partial: false)
-      #  @param *strings [Array<String>] The type definitions to parse
-      #  @param partial [false] True if the string is part of a another type
-      #  @return [ComplexType]
+      # # @overload parse(*strings, partial: false)
+      # #  @todo Need ability to use a literal true as a type below
+      # #  @param partial [Boolean] True if the string is part of a another type
+      # #  @return [Array<UniqueType>]
+      # @sg-ignore
+      # @todo To be able to select the right signature above,
+      #   Chain::Call needs to know the decl type (:arg, :optarg,
+      #   :kwarg, etc) of the arguments given, instead of just having
+      #   an array of Chains as the arguments.
       def parse *strings, partial: false
         # @type [Hash{Array<String> => ComplexType}]
         @cache ||= {}
@@ -267,7 +268,7 @@ module Solargraph
               elsif base.end_with?('=')
                 raise ComplexTypeError, "Invalid hash thing" unless key_types.nil?
                 # types.push ComplexType.new([UniqueType.new(base[0..-2].strip)])
-                types.push UniqueType.parse(base[0..-2].strip)
+                types.push UniqueType.parse(base[0..-2].strip, subtype_string)
                 # @todo this should either expand key_type's type
                 #   automatically or complain about not being
                 #   compatible with key_type's type in type checking

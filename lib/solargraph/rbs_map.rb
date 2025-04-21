@@ -52,7 +52,9 @@ module Solargraph
 
     def repository
       @repository ||= RBS::Repository.new(no_stdlib: false).tap do |repo|
-        @directories.each { |dir| repo.add(Pathname.new(dir)) }
+        # @todo Temporarily ignoring external directories due to issues with
+        #   incomplete/broken gem_rbs_collection installations
+        # @directories.each { |dir| repo.add(Pathname.new(dir)) }
       end
     end
 

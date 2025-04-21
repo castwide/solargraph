@@ -35,11 +35,9 @@
     <li>
       Core Cache Directory: N/A <%# @todo Fix %>
     </li>
-    <% unless Solargraph::Parser.rubyvm? %>
-      <li>
-        Parser Target Version: <%= Solargraph::Parser.version %>
-      </li>
-    <% end %>
+    <li>
+      Parser Target Version: <%= Solargraph::Parser.version %>
+    </li>
     <li>
       Using Bundler: <%= ENV.key?('BUNDLE_BIN_PATH') %>
     </li>

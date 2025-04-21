@@ -27,6 +27,10 @@ module Solargraph
         decl == :kwrestarg || (assignment && [:HASH, :hash].include?(assignment.type))
       end
 
+      def arg?
+        decl == :arg
+      end
+
       def restarg?
         decl == :restarg
       end
@@ -126,17 +130,11 @@ module Solargraph
 
       # @return [YARD::Tags::Tag, nil]
       def param_tag
-        found = nil
         params = closure.docstring.tags(:param)
         params.each do |p|
-          next unless p.name == name
-          found = p
-          break
+          return p if p.name == name
         end
-        if found.nil? and !index.nil?
-          found = params[index] if params[index] && (params[index].name.nil? || params[index].name.empty?)
-        end
-        found
+        params[index] if index && params[index] && (params[index].name.nil? || params[index].name.empty?)
       end
 
       # @param api_map [ApiMap]

@@ -80,6 +80,8 @@ module Solargraph
 
       # @return [void]
       def clear
+        return if empty?
+
         all_caches.each(&:clear)
       end
 
