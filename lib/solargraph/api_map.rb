@@ -334,6 +334,8 @@ module Solargraph
     # @param deep [Boolean] True to include superclasses, mixins, etc.
     # @return [Array<Solargraph::Pin::Method>]
     def get_methods rooted_tag, scope: :instance, visibility: [:public], deep: true
+      rooted_type = ComplexType.parse(rooted_tag)
+      namespace_pin = store.get_path_pins(rooted_type.name).select { |p| p.is_a?(Pin::Namespace) }.first
       cached = cache.get_methods(rooted_tag, scope, visibility, deep)
       return cached.clone unless cached.nil?
       result = []
@@ -374,6 +376,7 @@ module Solargraph
         result.concat inner_get_methods('Module', scope, visibility, deep, skip) if scope == :module
       end
       resolved = resolve_method_aliases(result, visibility)
+      resolved = erase_generics(namespace_pin, rooted_type, resolved)
       cache.set_methods(rooted_tag, scope, visibility, deep, resolved)
       resolved
     end
@@ -807,6 +810,40 @@ module Solargraph
         attribute: origin.attribute?
       }
       Pin::Method.new **args
+    end
+
+    include Logging
+
+    private
+
+    # @param namespace_pin [Pin::Namespace]
+    # @param rooted_type [ComplexType]
+    # @param pins [Enumerable<Pin::Base>]
+    # @return [Enumerable<Pin::Base>]
+    def erase_generics(namespace_pin, rooted_type, pins)
+      return pins unless should_erase_generics_when_done?(namespace_pin, rooted_type)
+
+      logger.debug("Erasing generics on namespace_pin=#{namespace_pin} / rooted_type=#{rooted_type}")
+      pins.map do |method_pin|
+        method_pin.erase_generics(namespace_pin.generics)
+      end
+    end
+
+    # @param namespace_pin [Pin::Namespace]
+    # @param rooted_type [ComplexType]
+    def should_erase_generics_when_done?(namespace_pin, rooted_type)
+      has_generics?(namespace_pin) && !can_resolve_generics?(namespace_pin, rooted_type)
+    end
+
+    # @param namespace_pin [Pin::Namespace]
+    def has_generics?(namespace_pin)
+      namespace_pin && !namespace_pin.generics.empty?
+    end
+
+    # @param namespace_pin [Pin::Namespace]
+    # @param rooted_type [ComplexType]
+    def can_resolve_generics?(namespace_pin, rooted_type)
+      has_generics?(namespace_pin) && !rooted_type.all_params.empty?
     end
   end
 end
