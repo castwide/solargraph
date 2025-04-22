@@ -41,7 +41,9 @@ module Solargraph
           return inferred_pins(found, api_map, name_pin.context, locals) unless found.empty?
           # @param [ComplexType::UniqueType]
           pins = name_pin.binder.each_unique_type.flat_map do |context|
-            api_map.get_method_stack(context.namespace == '' ? '' : context.tag, word, scope: context.scope)
+            method_context = context.namespace == '' ? '' : context.tag
+            stack = api_map.get_method_stack(method_context, word, scope: context.scope)
+            [stack.first].compact
           end
           return [] if pins.empty?
           inferred_pins(pins, api_map, name_pin.context, locals)
