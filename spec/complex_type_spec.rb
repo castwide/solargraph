@@ -441,4 +441,9 @@ describe Solargraph::ComplexType do
     expect(type.to_s).to eq('Array(Symbol, String, Array(Integer, Integer))')
     expect(type.to_rbs).to eq('[::Symbol, ::String, [::Integer, ::Integer]]')
   end
+
+  it 'throws away other types when in union with an undefined' do
+    type = Solargraph::ComplexType.parse('Symbol, String, Array(Integer, Integer), undefined')
+    expect(type.to_s).to eq('undefined')
+  end
 end

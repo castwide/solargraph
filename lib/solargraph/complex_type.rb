@@ -15,7 +15,9 @@ module Solargraph
     def initialize types = [UniqueType::UNDEFINED]
       # @todo @items here should not need an annotation
       # @type [Array<UniqueType>]
-      @items = types.flat_map(&:items).uniq(&:to_s)
+      items = types.flat_map(&:items).uniq(&:to_s)
+      items = [UniqueType::UNDEFINED] if items.any?(&:undefined?)
+      @items = items
     end
 
     # @param api_map [ApiMap]
