@@ -748,5 +748,13 @@ describe Solargraph::TypeChecker do
       ))
       expect(checker.problems.map(&:message)).to eq([])
     end
+
+    it "understands Array#+ overloads" do
+      checker = type_checker(%(
+        c = ['a'] + ['a']
+        c
+      ))
+      expect(checker.problems.map(&:message)).to eq([])
+    end
   end
 end
