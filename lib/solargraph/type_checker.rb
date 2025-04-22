@@ -469,11 +469,22 @@ module Solargraph
     # @param pin [Pin::Method]
     # @return [Hash{String => Hash{Symbol => BaseObject}}]
     def param_hash(pin)
-      tags = pin.docstring.tags(:param)
-      return {} if tags.empty?
       result = {}
+      pin.parameters.each do |param|
+        type = param.typify(api_map)
+        next if type.nil? || type.undefined?
+        result[param.name.to_s] = {
+          tagged: type.tags,
+          qualified: type
+        }
+      end
+      # see if we have additional tags to pay attention to from YARD -
+      # e.g., kwargs in a **restkwargs splat
+      param_names = pin.parameter_names
+      tags = pin.docstring.tags(:param)
       tags.each do |tag|
-        next if tag.types.nil? || tag.types.empty?
+        next if result.key? tag.name.to_s
+        next if tag.types.nil?
         result[tag.name.to_s] = {
           tagged: tag.types.join(', '),
           qualified: Solargraph::ComplexType.try_parse(*tag.types).qualify(api_map, pin.full_context.namespace)
@@ -485,13 +496,26 @@ module Solargraph
     # @param pins [Array<Pin::Method>]
     # @return [Hash{String => Hash{Symbol => BasicObject}}]
     def first_param_hash(pins)
-      pins.each do |pin|
+      return {} if pins.empty?
+      first_pin_type = pins.first.typify(api_map)
+      first_pin = pins.first.proxy first_pin_type
+      results = param_hash(first_pin)
+      pins[1..].each do |pin|
         # @todo this assignment from parametric use of Hash should not lose its generic
         # @type [Hash{String => Hash{Symbol => BasicObject}}]
-        result = param_hash(pin)
-        return result unless result.empty?
+
+        # documentation of types in superclasses should fail back to
+        # subclasses if the subclass hasn't documented something
+        superclass_results = param_hash(pin)
+        superclass_results.each do |param_name, details|
+          results[param_name] ||= {}
+          if param_name in param_names
+            results[param_name][:tagged] ||= details[:tagged]
+            results[param_name][:qualified] ||= details[:qualified]
+          end
+        end
       end
-      {}
+      results
     end
 
     # @param pin [Pin::Base]

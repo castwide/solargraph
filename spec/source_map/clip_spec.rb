@@ -1899,11 +1899,15 @@ describe Solargraph::SourceMap::Clip do
     ), 'test.rb')
     api_map = Solargraph::ApiMap.new.map(source)
 
+    clip = api_map.clip_at('test.rb', [3, 8])
+    type = clip.infer
+    expect(type.tag).to eq('Array<Integer>')
+
     clip = api_map.clip_at('test.rb', [5, 10])
     type = clip.infer
     expect(type.tag).to eq('Integer')
 
-    clip = api_map.clip_at('test.rb', [7, 8])
+    clip = api_map.clip_at('test.rb', [8, 8])
     type = clip.infer
     expect(type.tag).to eq('Array<Float>')
 
