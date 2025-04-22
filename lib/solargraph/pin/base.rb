@@ -71,9 +71,7 @@ module Solargraph
       # @param context_type [ComplexType] The receiver type
       # @return [self]
       def resolve_generics definitions, context_type
-        transformed = transform_types { |t| t.resolve_generics(definitions, context_type) if t }
-        transformed.context = context_type
-        transformed.erase_generics(definitions.generics)
+        transform_types { |t| t.resolve_generics(definitions, context_type) if t }
       end
 
       # @param generics_to_erase [Enumerable<String>]
