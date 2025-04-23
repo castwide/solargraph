@@ -22,10 +22,16 @@ module Solargraph
     attr_reader :code
 
     # @return [Parser::AST::Node]
-    attr_reader :node
+    def node
+      finalize
+      @node
+    end
 
     # @return [Hash{Integer => Array<String>}]
-    attr_reader :comments
+    def comments
+      finalize
+      @comments
+    end
 
     # @todo Deprecate?
     # @return [Integer]
@@ -39,16 +45,6 @@ module Solargraph
       @repaired = code
       @filename = filename
       @version = version
-      begin
-        @node, @comments = Solargraph::Parser.parse_with_comments(@code, filename)
-        @parsed = true
-      rescue Parser::SyntaxError, EncodingError => e
-        @node = nil
-        @comments = {}
-        @parsed = false
-      ensure
-        @code.freeze
-      end
     end
 
     # @param range [Solargraph::Range]
@@ -87,7 +83,7 @@ module Solargraph
       # offset = Position.line_char_to_offset(@code, line, column)
       position = Position.new(line, column)
       stack = []
-      inner_tree_at @node, position, stack
+      inner_tree_at node, position, stack
       stack
     end
 
@@ -110,7 +106,8 @@ module Solargraph
       end
       incr_code = updater.repair(@repaired)
       synced = Source.new(incr_code, filename)
-      synced.error_ranges.concat (error_ranges + updater.changes.map(&:range))
+      synced.finalize
+      synced.error_ranges.concat(error_ranges + updater.changes.map(&:range))
       synced.code = real_code
       synced.version = updater.version
       synced
@@ -124,6 +121,7 @@ module Solargraph
 
     # @return [Boolean]
     def parsed?
+      finalize
       @parsed
     end
 
@@ -245,7 +243,7 @@ module Solargraph
         result = {}
         buffer = String.new('')
         last = nil
-        @comments.each_pair do |num, snip|
+        comments.each_pair do |num, snip|
           if !last || num == last + 1
             buffer.concat "#{snip.text}\n"
           else
@@ -320,12 +318,12 @@ module Solargraph
 
     # @return [Array<Parser::AST::Node>]
     def string_nodes
-      @string_nodes ||= string_nodes_in(@node)
+      @string_nodes ||= string_nodes_in(node)
     end
 
     # @return [Array<Range>]
     def comment_ranges
-      @comment_ranges ||= @comments.values.map(&:range)
+      @comment_ranges ||= comments.values.map(&:range)
     end
 
     # Get an array of foldable comment block ranges. Blocks are excluded if
@@ -386,6 +384,22 @@ module Solargraph
 
     # @return [Integer]
     attr_writer :version
+
+    def finalize
+      return if @finalized
+
+      @finalized = true
+      begin
+        @node, @comments = Solargraph::Parser.parse_with_comments(@code, filename)
+        @parsed = true
+      rescue Parser::SyntaxError, EncodingError => e
+        @node = nil
+        @comments = {}
+        @parsed = false
+      ensure
+        @code.freeze
+      end
+    end
 
     # @param val [String]
     # @return [String]
