@@ -27,11 +27,11 @@ module Solargraph
     def initialize workspace = Solargraph::Workspace.new, name = nil
       @workspace = workspace
       @name = name
-      @threads = []
       # @type [Integer, nil]
       @total = nil
       # @type [Source, nil]
       @current = nil
+      @sync_count = 0
     end
 
     def inspect
@@ -44,7 +44,7 @@ module Solargraph
     #
     # @return [Boolean]
     def synchronized?
-      !mutex.locked?
+      @sync_count < 2
     end
 
     # Attach a source to the library.
@@ -416,18 +416,7 @@ module Solargraph
     #
     # @return [void]
     def catalog
-      @threads.delete_if(&:stop?)
-      @threads.push(Thread.new do
-        next unless @threads.last == Thread.current
-
-        mutex.synchronize do
-          logger.info "Cataloging #{workspace.directory.empty? ? 'generic workspace' : workspace.directory}"
-          api_map.catalog bench
-          logger.info "Catalog complete (#{api_map.source_maps.length} files, #{api_map.pins.length} pins)"
-          logger.info "#{api_map.uncached_gemspecs.length} uncached gemspecs"
-          cache_next_gemspec
-        end
-      end)
+      @sync_count += 1
     end
 
     # @return [Bench]
@@ -663,8 +652,16 @@ module Solargraph
     end
 
     def sync_catalog
-      @threads.delete_if(&:stop?)
-              .last&.join
+      return if @sync_count == 0
+
+      mutex.synchronize do
+        logger.info "Cataloging #{workspace.directory.empty? ? 'generic workspace' : workspace.directory}"
+        api_map.catalog bench
+        logger.info "Catalog complete (#{api_map.source_maps.length} files, #{api_map.pins.length} pins)"
+        logger.info "#{api_map.uncached_gemspecs.length} uncached gemspecs"
+        cache_next_gemspec
+        @sync_count = 0
+      end
     end
   end
 end
