@@ -39,7 +39,6 @@ module Solargraph
       @repaired = code
       @filename = filename
       @version = version
-      @domains = []
       begin
         @node, @comments = Solargraph::Parser.parse_with_comments(@code, filename)
         @parsed = true
