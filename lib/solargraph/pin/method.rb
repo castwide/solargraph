@@ -184,7 +184,7 @@ module Solargraph
         logger.debug { "Method#typify(self=#{self}, binder=#{binder}, closure=#{closure}, context=#{context}, return_type=#{return_type.rooted_tags}) - starting" }
         decl = super
         unless decl.undefined?
-          logger.debug { "Method#typify(self=#{self}, binder=#{binder}, closure=#{closure}, context=#{context}) => #{decl}" }
+          logger.debug { "Method#typify(self=#{self}, binder=#{binder}, closure=#{closure}, context=#{context}) => #{decl} - no decl" }
           return decl
         end
         type = see_reference(api_map) || typify_from_super(api_map)
@@ -194,7 +194,13 @@ module Solargraph
           logger.debug { "Method#typify(self=#{self}) => #{qualified}" }
           return qualified
         end
-        name.end_with?('?') ? ComplexType::BOOLEAN : ComplexType::UNDEFINED
+        if name.end_with?('?')
+          logger.debug { "Method#typify(self=#{self}) => Boolean (? suffix)" }
+          ComplexType::BOOLEAN
+        else
+          logger.debug { "Method#typify(self=#{self}) => undefined" }
+          ComplexType::UNDEFINED
+        end
       end
 
       def documentation
