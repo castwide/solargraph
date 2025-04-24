@@ -20,13 +20,13 @@ module Solargraph
             child.infer(api_map, name_pin, locals)
           end
           type = if child_types.length == 0 || child_types.any?(&:undefined?)
-                   "::Array"
-                 elsif child_types.uniq.length == 1
-                   "::Array<#{child_types.first.to_s}>"
+                   ComplexType::UniqueType.new('Array', rooted: true)
+                 elsif child_types.uniq.length == 1 && child_types.first.defined?
+                   ComplexType::UniqueType.new('Array', [], child_types.uniq, rooted: true, parameters_type: :list)
                  else
-                   "::Array(#{child_types.map(&:to_s).join(', ')})"
+                   ComplexType::UniqueType.new('Array', [], child_types, rooted: true, parameters_type: :fixed)
                  end
-          [Pin::ProxyType.anonymous(ComplexType.try_parse(type))]
+          [Pin::ProxyType.anonymous(type)]
         end
       end
     end
