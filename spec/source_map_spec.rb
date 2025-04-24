@@ -74,12 +74,6 @@ describe Solargraph::SourceMap do
     expect(pin).to be_a(Solargraph::Pin::Block)
   end
 
-  it "does not merge require changes" do
-    map1 = Solargraph::SourceMap.load_string("require 'foo'")
-    map2 = Solargraph::SourceMap.load_string("require 'bar'")
-    expect(map1.try_merge!(map2)).to be(false)
-  end
-
   it 'scopes local variables correctly from root def blocks' do
     map = Solargraph::SourceMap.load_string(%(
       x = 'string'

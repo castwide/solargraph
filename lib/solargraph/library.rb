@@ -565,9 +565,7 @@ module Solargraph
       return unless @current == source || workspace.has_file?(source.filename)
       if source_map_hash.key?(source.filename)
         new_map = Solargraph::SourceMap.map(source)
-        unless source_map_hash[source.filename].try_merge!(new_map)
-          source_map_hash[source.filename] = new_map
-        end
+        source_map_hash[source.filename] = new_map
       else
         source_map_hash[source.filename] = Solargraph::SourceMap.map(source)
       end

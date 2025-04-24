@@ -452,9 +452,6 @@ module Solargraph
     # @return [Boolean]
     attr_writer :synchronized
 
-    # @return [Source::Updater]
-    attr_accessor :last_updater
-
     private
 
     # @return [Array<String>]
