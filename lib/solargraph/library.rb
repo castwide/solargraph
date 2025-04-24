@@ -475,7 +475,6 @@ module Solargraph
       if src
         Logging.logger.debug "Mapping #{src.filename}"
         source_map_hash[src.filename] = Solargraph::SourceMap.map(src)
-        find_external_requires(source_map_hash[src.filename])
         source_map_hash[src.filename]
       else
         false
@@ -486,7 +485,6 @@ module Solargraph
     def map!
       workspace.sources.each do |src|
         source_map_hash[src.filename] = Solargraph::SourceMap.map(src)
-        find_external_requires(source_map_hash[src.filename])
       end
       self
     end
@@ -569,11 +567,9 @@ module Solargraph
         new_map = Solargraph::SourceMap.map(source)
         unless source_map_hash[source.filename].try_merge!(new_map)
           source_map_hash[source.filename] = new_map
-          find_external_requires(source_map_hash[source.filename])
         end
       else
         source_map_hash[source.filename] = Solargraph::SourceMap.map(source)
-        find_external_requires(source_map_hash[source.filename])
       end
     end
 
@@ -649,6 +645,7 @@ module Solargraph
       mutex.synchronize do
         logger.info "Cataloging #{workspace.directory.empty? ? 'generic workspace' : workspace.directory}"
         api_map.catalog bench
+        source_map_hash.values.each { |map| find_external_requires(map) }
         logger.info "Catalog complete (#{api_map.source_maps.length} files, #{api_map.pins.length} pins)"
         logger.info "#{api_map.uncached_gemspecs.length} uncached gemspecs"
         cache_next_gemspec
