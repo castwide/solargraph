@@ -54,7 +54,7 @@ module Solargraph
         if result.tag == 'Class'
           # HACK: Exception to return BasicObject from Class#new
           dfn = cursor.chain.define(api_map, closure, locals).first
-          return ComplexType.try_parse('BasicObject') if dfn && dfn.path == 'Class#new'
+          return ComplexType.try_parse('::BasicObject') if dfn && dfn.path == 'Class#new'
         end
         return result unless result.tag == 'self'
         cursor.chain.base.infer(api_map, closure, locals)

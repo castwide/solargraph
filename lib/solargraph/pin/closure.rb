@@ -18,7 +18,7 @@ module Solargraph
         @context ||= begin
           result = super
           if scope == :instance
-            Solargraph::ComplexType.parse(result.namespace)
+            result.reduce_class_type
           else
             result
           end
@@ -46,10 +46,15 @@ module Solargraph
       end
 
       # @return [String]
-      def generics_as_rbs
+      def to_rbs
+        rbs_generics + return_type.to_rbs
+      end
+
+      # @return [String]
+      def rbs_generics
         return '' if generics.empty?
 
-        generics.join(', ') + ' '
+        '[' + generics.map { |gen| gen.to_s }.join(', ') + '] '
       end
     end
   end

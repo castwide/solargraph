@@ -41,7 +41,7 @@ module Solargraph
       end
 
       def to_rbs
-        "#{@type.to_s} #{generics_as_rbs}#{return_type.to_rbs}"
+        "#{@type.to_s} #{return_type.all_params.first.to_rbs}#{rbs_generics}".strip
       end
 
       def desc
@@ -57,7 +57,7 @@ module Solargraph
       end
 
       def full_context
-        @full_context ||= ComplexType.try_parse("#{type.to_s.capitalize}<#{path}>")
+        @full_context ||= ComplexType.try_parse("::#{type.to_s.capitalize}<#{path}>")
       end
 
       def binder
@@ -83,7 +83,7 @@ module Solargraph
       end
 
       def return_type
-        @return_type ||= ComplexType.try_parse( (type == :class ? 'Class' : 'Module') + "<#{path}>" )
+        @return_type ||= ComplexType.try_parse( (type == :class ? '::Class' : '::Module') + "<::#{path}>")
       end
 
       # @return [Array<String>]
