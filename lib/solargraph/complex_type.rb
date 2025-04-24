@@ -18,13 +18,27 @@ module Solargraph
       @items = types.flat_map(&:items).uniq(&:to_s)
     end
 
+    def eql?(other)
+      self.class == other.class &&
+        @items == other.items
+    end
+
+    def ==(other)
+      self.eql?(other)
+    end
+
+    def hash
+      [self.class, @items].hash
+    end
+
     # @param api_map [ApiMap]
     # @param context [String]
     # @return [ComplexType]
     def qualify api_map, context = ''
       red = reduce_object
       types = red.items.map do |t|
-        next t if ['Boolean', 'nil', 'void', 'undefined'].include?(t.name)
+        next t if ['nil', 'void', 'undefined'].include?(t.name)
+        next t if ['::Boolean'].include?(t.rooted_name)
         t.qualify api_map, context
       end
       ComplexType.new(types).reduce_object
@@ -50,6 +64,16 @@ module Solargraph
       ((@items.length > 1 ? '(' : '') +
        @items.map(&:to_rbs).join(' | ') +
        (@items.length > 1 ? ')' : ''))
+    end
+
+    # @param dst [ComplexType]
+    # @return [ComplexType]
+    def self_to_type dst
+      object_type_dst = dst.reduce_class_type
+      transform do |t|
+        next t if t.name != 'self'
+        object_type_dst
+      end
     end
 
     # @yieldparam [UniqueType]
@@ -171,16 +195,7 @@ module Solargraph
     # @return [ComplexType]
     def resolve_generics definitions, context_type
       result = @items.map { |i| i.resolve_generics(definitions, context_type) }
-      ComplexType.try_parse(*result.map(&:tag))
-    end
-
-    # @param dst [String]
-    # @return [ComplexType]
-    def self_to dst
-      return self unless selfy?
-      red = reduce_class(dst)
-      result = @items.map { |i| i.self_to red }
-      ComplexType.try_parse(*result.map(&:tag))
+      ComplexType.new(result)
     end
 
     def nullable?
@@ -192,14 +207,43 @@ module Solargraph
       @items.first.all_params || []
     end
 
+    # @return [ComplexType]
+    def reduce_class_type
+      new_items = items.flat_map do |type|
+        next type unless ['Module', 'Class'].include?(type.name)
+
+        type.all_params
+      end
+      ComplexType.new(new_items)
+    end
+
+    # every type and subtype in this union have been resolved to be
+    # fully qualified
+    def all_rooted?
+      all?(&:all_rooted?)
+    end
+
+    # every top-level type has resolved to be fully qualified; see
+    # #all_rooted? to check their subtypes as well
+    def rooted?
+      all?(&:rooted?)
+    end
+
     attr_reader :items
+
+    def rooted?
+      @items.all?(&:rooted?)
+    end
 
     protected
 
     # @return [ComplexType]
     def reduce_object
-      return self if name != 'Object' || subtypes.empty?
-      ComplexType.try_parse(reduce_class(subtypes.join(', ')))
+      new_items = items.flat_map do |ut|
+        next [ut] if ut.name != 'Object' || ut.subtypes.empty?
+        ut.subtypes
+      end
+      ComplexType.new(new_items)
     end
 
     def bottom?

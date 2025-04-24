@@ -1849,7 +1849,7 @@ describe Solargraph::SourceMap::Clip do
     expect(type.to_s).to eq('Array<String>')
   end
 
-  xit 'resolves literal arrays in the face of identical names' do
+  it 'resolves literal arrays in the face of identical names' do
     source = Solargraph::Source.load_string(%(
       module Foo; class Array; end; end
       foo = ['foo']
@@ -1860,6 +1860,7 @@ describe Solargraph::SourceMap::Clip do
     type = clip.infer
     expect(type.tag).to eq('Array<String>')
     expect(type.rooted?).to be true
+    expect(type.all_rooted?).to be true
   end
 
   it 'infers block parameter type for Array#select' do
@@ -1983,7 +1984,7 @@ describe Solargraph::SourceMap::Clip do
     api_map = Solargraph::ApiMap.new.map(source)
     clip = api_map.clip_at('test.rb', [2, 6])
     type = clip.infer
-    expect(type.to_s).to eq('Array<Integer>')
+    expect(type.rooted_tags).to eq('::Array<::Integer>')
   end
 
   xit 'infers tuple types from diverse literal arrays' do
@@ -2288,6 +2289,30 @@ describe Solargraph::SourceMap::Clip do
     expect(clip.infer.to_s).to eq('Integer')
   end
 
+  it 'handles a complex yieldreturn type resolution situation' do
+    source = Solargraph::Source.load_string(%(
+      module A
+        class B
+          class C
+            # @param x [Array<B>]
+            # @yieldreturn [Array<B>]
+            def d(x)
+              x
+              y = yield
+              y
+            end
+          end
+        end
+      end
+  ), 'test.rb')
+    api_map = Solargraph::ApiMap.new.map(source)
+    clip = api_map.clip_at('test.rb', [7, 14])
+    expect(clip.infer.to_s).to eq('Array<A::B>')
+
+    clip = api_map.clip_at('test.rb', [9, 14])
+    expect(clip.infer.to_s).to eq('Array<A::B>')
+  end
+
   it 'can infer assignments-in-return-position from complex expressions' do
     source = Solargraph::Source.load_string(%(
       class A
@@ -2321,20 +2346,17 @@ describe Solargraph::SourceMap::Clip do
   ), 'test.rb')
 
     api_map = Solargraph::ApiMap.new.map(source)
-
     clip = api_map.clip_at('test.rb', [20, 10])
     expect(clip.infer.to_s).to eq('Array<Integer>')
 
-    # @todo pending https://github.com/castwide/solargraph/pull/888
-    # clip = api_map.clip_at('test.rb', [22, 10])
-    # expect(clip.infer.to_s).to eq('Array<Integer>')
+    clip = api_map.clip_at('test.rb', [22, 10])
+    expect(clip.infer.to_s).to eq('Array<Integer>')
 
     clip = api_map.clip_at('test.rb', [24, 10])
     expect(clip.infer.to_s).to eq('Array<Integer>')
 
-    # @todo pending https://github.com/castwide/solargraph/pull/888
-    # clip = api_map.clip_at('test.rb', [26, 10])
-    # expect(clip.infer.to_s).to eq('Array<Integer>')
+    clip = api_map.clip_at('test.rb', [26, 10])
+    expect(clip.infer.to_s).to eq('Array<Integer>')
   end
 
   xit 'resolves overloads based on kwarg existence' do
