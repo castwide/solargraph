@@ -105,6 +105,8 @@ module Solargraph
         "#{to_rbs} = #{assignment&.type.inspect}"
       end
 
+      include Logging
+
       private
 
       # @return [ComplexType]
