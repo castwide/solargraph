@@ -53,10 +53,10 @@ module Solargraph
         if result.tag == 'Class'
           # HACK: Exception to return BasicObject from Class#new
           dfn = cursor.chain.define(api_map, block, locals).first
-          return ComplexType.try_parse('BasicObject') if dfn && dfn.path == 'Class#new'
+          return ComplexType.try_parse('::BasicObject') if dfn && dfn.path == 'Class#new'
         end
         return result unless result.tag == 'self'
-        ComplexType.try_parse(cursor.chain.base.infer(api_map, block, locals).tag)
+        cursor.chain.base.infer(api_map, block, locals)
       end
 
       # Get an array of all the locals that are visible from the cursors's
