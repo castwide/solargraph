@@ -13,7 +13,9 @@ module Solargraph
     Legacy = ParserGem
 
     ClassMethods = ParserGem::ClassMethods
-    extend ClassMethods
+    # @todo should be able to just 'extend ClassMethods' here and
+    #   typecheck things off it in strict mode
+    extend ParserGem::ClassMethods
 
     NodeMethods = ParserGem::NodeMethods
   end
