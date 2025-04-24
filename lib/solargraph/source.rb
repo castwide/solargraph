@@ -24,7 +24,7 @@ module Solargraph
       @code
     end
 
-    # @return [Parser::AST::Node]
+    # @return [Parser::AST::Node, nil]
     def node
       finalize
       @node

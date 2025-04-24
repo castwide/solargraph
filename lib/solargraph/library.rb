@@ -485,6 +485,7 @@ module Solargraph
     def map!
       workspace.sources.each do |src|
         source_map_hash[src.filename] = Solargraph::SourceMap.map(src)
+        find_external_requires source_map_hash[src.filename]
       end
       self
     end
