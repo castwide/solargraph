@@ -94,7 +94,7 @@ module Solargraph
                 end
                 new_signature_pin = ol.resolve_generics_from_context_until_complete(ol.generics, atypes, nil, nil, blocktype)
                 new_return_type = new_signature_pin.return_type
-                type = with_params(new_return_type.self_to(context.to_s), context).qualify(api_map, context.namespace) if new_return_type.defined?
+                type = with_params(new_return_type.self_to_type(context), context).qualify(api_map, context.namespace) if new_return_type.defined?
                 type ||= ComplexType::UNDEFINED
               end
               break if type.defined?
@@ -112,10 +112,11 @@ module Solargraph
           end
           result.map do |pin|
             if pin.path == 'Class#new' && context.tag != 'Class'
-              pin.proxy(ComplexType.try_parse(context.namespace))
+              reduced_context = context.reduce_class_type
+              pin.proxy(reduced_context)
             else
               next pin if pin.return_type.undefined?
-              selfy = pin.return_type.self_to(context.tag)
+              selfy = pin.return_type.self_to_type(context)
               selfy == pin.return_type ? pin : pin.proxy(selfy)
             end
           end
@@ -208,7 +209,10 @@ module Solargraph
           method_pin = api_map.get_method_stack(name_pin.namespace, name_pin.name, scope: name_pin.context.scope).first
           return [] if method_pin.nil?
 
-          method_pin.signatures.map(&:block).compact
+          method_pin.signatures.map(&:block).compact.map do |signature_pin|
+            return_type = signature_pin.return_type.qualify(api_map, name_pin.namespace)
+            signature_pin.proxy(return_type)
+          end
         end
 
         # @param type [ComplexType]
@@ -216,7 +220,7 @@ module Solargraph
         # @return [ComplexType]
         def with_params type, context
           return type unless type.to_s.include?('$')
-          ComplexType.try_parse(type.to_s.gsub('$', context.value_types.map(&:tag).join(', ')).gsub('<>', ''))
+          ComplexType.try_parse(type.to_s.gsub('$', context.value_types.map(&:rooted_tag).join(', ')).gsub('<>', ''))
         end
 
         # @return [void]

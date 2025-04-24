@@ -61,6 +61,15 @@ module Solargraph
           false
         end
 
+        # debugging description of contents; not for machine use
+        def desc
+          word
+        end
+
+        def inspect
+          "#<#{self.class} - `#{self.desc}`>"
+        end
+
         protected
 
         # Mark whether this link is the head of a chain
