@@ -118,11 +118,21 @@ module Solargraph
       _locate_pin line, character, Pin::Namespace, Pin::Method, Pin::Block
     end
 
-    # @deprecated
+    # @todo Candidate for deprecation
+    #
     # @param other_map [SourceMap]
     # @return [Boolean]
     def try_merge! other_map
-      false
+      return false if pins.length != other_map.pins.length || locals.length != other_map.locals.length || requires.map(&:name).uniq.sort != other_map.requires.map(&:name).uniq.sort
+
+      pins.each_index do |i|
+        return false unless pins[i].try_merge!(other_map.pins[i])
+      end
+      locals.each_index do |i|
+        return false unless locals[i].try_merge!(other_map.locals[i])
+      end
+      @source = other_map.source
+      true
     end
 
     # @param name [String]
