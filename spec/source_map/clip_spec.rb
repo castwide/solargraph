@@ -2549,7 +2549,7 @@ describe Solargraph::SourceMap::Clip do
     expect(clip.infer.to_s).to eq('Array<456>')
 
     clip = api_map.clip_at('test.rb', [26, 10])
-    expect(clip.infer.to_s).to eq('Array<Integer>')
+    expect(clip.infer.to_s).to eq('Array<456>')
   end
 
   xit 'resolves overloads based on kwarg existence' do
