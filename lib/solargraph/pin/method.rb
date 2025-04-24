@@ -43,6 +43,10 @@ module Solargraph
         m
       end
 
+      def all_rooted?
+        super && parameters.all?(&:all_rooted?) && (!block || block&.all_rooted?) && signatures.all?(&:all_rooted?)
+      end
+
       # @param signature [Pin::Signature]
       # @return [Pin::Method]
       def with_single_signature(signature)
@@ -68,7 +72,7 @@ module Solargraph
       # @return [Pin::Signature, nil]
       def block
         return @block unless @block == :undefined
-        @block = signatures.first.block
+        @block = signatures.first&.block
       end
 
       def completion_item_kind
@@ -464,7 +468,7 @@ module Solargraph
         end
         result.push ComplexType::NIL if has_nil
         return ComplexType::UNDEFINED if result.empty?
-        ComplexType.try_parse(*result.map(&:tag).uniq)
+        ComplexType.new(result.uniq)
       end
 
       # @param [ApiMap] api_map
@@ -479,7 +483,7 @@ module Solargraph
           types.push type if type.defined?
         end
         return ComplexType::UNDEFINED if types.empty?
-        ComplexType.try_parse(*types.map(&:tag).uniq)
+        ComplexType.new(types.uniq)
       end
 
       # When YARD parses an overload tag, it includes rest modifiers in the parameters names.
