@@ -2271,6 +2271,30 @@ describe Solargraph::SourceMap::Clip do
     expect(clip.infer.to_s).to eq('nil')
   end
 
+  it 'handles a complex yieldreturn type resolution situation' do
+    source = Solargraph::Source.load_string(%(
+      module A
+        class B
+          class C
+            # @param x [Array<B>]
+            # @yieldreturn [Array<B>]
+            def d(x)
+              x
+              y = yield
+              y
+            end
+          end
+        end
+      end
+  ), 'test.rb')
+    api_map = Solargraph::ApiMap.new.map(source)
+    clip = api_map.clip_at('test.rb', [7, 14])
+    expect(clip.infer.to_s).to eq('Array<A::B>')
+
+    clip = api_map.clip_at('test.rb', [9, 14])
+    expect(clip.infer.to_s).to eq('Array<A::B>')
+  end
+
   it 'can infer assignments-in-return-position from complex expressions' do
     source = Solargraph::Source.load_string(%(
       class A
