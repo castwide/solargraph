@@ -3,7 +3,7 @@ module Solargraph
     class FlowSensitiveTyping
       include Solargraph::Parser::NodeMethods
 
-      # @param locals [Array<Solargraph::Pin::BaseVariable>]
+      # @param locals [Array<Solargraph::Pin::LocalVariable, Solargraph::Pin::Parameter>]
       def initialize(locals, enclosing_breakable_pin = nil)
         @locals = locals
         @enclosing_breakable_pin = enclosing_breakable_pin
@@ -84,6 +84,7 @@ module Solargraph
 
       private
 
+      # @param pin [Pin::LocalVariable]
       # @param if_node [Parser::AST::Node]
       def add_downcast_local(pin, downcast_type_name, presence)
         # @todo Create pin#update method
@@ -100,6 +101,8 @@ module Solargraph
         locals.push(new_pin)
       end
 
+      # @param facts_by_pin [Hash<Pin::LocalVariable, Array<Hash>>]
+      # @param presences [Array<Range>]
       # @return [void]
       def process_facts(facts_by_pin, presences)
         #
@@ -115,6 +118,7 @@ module Solargraph
         end
       end
 
+      # @param conditional_node [Parser::AST::Node]
       def process_conditional(conditional_node, true_ranges)
         if conditional_node.type == :send
           process_isa(conditional_node, true_ranges)
@@ -124,6 +128,7 @@ module Solargraph
       end
 
       # @param isa_node [Parser::AST::Node]
+      # @return [Array(String, String)]
       def parse_isa(isa_node)
         return unless isa_node.type == :send && isa_node.children[1] == :is_a?
         # Check if conditional node follows this pattern:
