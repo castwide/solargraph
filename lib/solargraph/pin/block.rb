@@ -2,7 +2,7 @@
 
 module Solargraph
   module Pin
-    class Block < Closure
+    class Block < Callable
       # @return [Parser::AST::Node]
       attr_reader :receiver
 
@@ -14,10 +14,9 @@ module Solargraph
       # @param context [ComplexType, nil]
       # @param args [::Array<Parameter>]
       def initialize receiver: nil, args: [], context: nil, node: nil, **splat
-        super(**splat)
+        super(**splat, parameters: args)
         @receiver = receiver
         @context = context
-        @parameters = args
         @return_type = ComplexType.parse('::Proc')
         @node = node
       end
@@ -30,16 +29,6 @@ module Solargraph
 
       def binder
         @rebind&.defined? ? @rebind : closure.binder
-      end
-
-      # @return [::Array<Parameter>]
-      def parameters
-        @parameters ||= []
-      end
-
-      # @return [::Array<String>]
-      def parameter_names
-        @parameter_names ||= parameters.map(&:name)
       end
 
       # @param yield_types [::Array<ComplexType>]
@@ -56,13 +45,6 @@ module Solargraph
         end
         parameters.map { ComplexType::UNDEFINED }
       end
-
-      # @todo the next step with parameters, arguments, destructuring,
-      #   kwargs, etc logic is probably either creating a Parameters
-      #   or Callable pin that encapsulates and shares the logic
-      #   between methods, blocks and signatures.  It could live in
-      #   Signature if Method didn't also own potentially different
-      #   set of parameters, generics and return types.
 
       # @param api_map [ApiMap]
       # @return [::Array<ComplexType>]
@@ -87,7 +69,7 @@ module Solargraph
                 namespace_pin = api_map.get_namespace_pins(meth.namespace, closure.namespace).first
                 arg_type.resolve_generics(namespace_pin, param_type)
               else
-                arg_type.self_to(chain.base.infer(api_map, self, locals).namespace).qualify(api_map, meth.context.namespace)
+                arg_type.self_to_type(chain.base.infer(api_map, self, locals)).qualify(api_map, meth.context.namespace)
               end
             end
           end
@@ -114,7 +96,7 @@ module Solargraph
         target = chain.base.infer(api_map, receiver_pin, locals)
         target = full_context unless target.defined?
 
-        ComplexType.try_parse(*types).qualify(api_map, receiver_pin.context.namespace).self_to(target.to_s)
+        ComplexType.try_parse(*types).qualify(api_map, receiver_pin.context.namespace).self_to_type(target)
       end
     end
   end
