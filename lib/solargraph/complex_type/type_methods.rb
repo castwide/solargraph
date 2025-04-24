@@ -12,12 +12,20 @@ module Solargraph
     #     @rooted: boolish
     #   methods:
     #     transform()
+    #     all_params()
+    #     rooted?()
+    #     can_root_name?()
     module TypeMethods
       # @!method transform(new_name = nil, &transform_type)
       #   @param new_name [String, nil]
       #   @yieldparam t [UniqueType]
       #   @yieldreturn [UniqueType]
       #   @return [UniqueType, nil]
+      # @!method all_params
+      #   @return [Array<ComplexType>]
+      # @!method rooted?
+      # @!method can_root_name?(name_to_check = nil)
+      #   @param name_to_check [String, nil]
 
       # @return [String]
       attr_reader :name
@@ -43,11 +51,6 @@ module Solargraph
       # @return [Boolean]
       def nil_type?
         @nil_type ||= (name.casecmp('nil') == 0)
-      end
-
-      # @return [Boolean]
-      def parameters?
-        !substring.empty?
       end
 
       def tuple?
@@ -128,13 +131,13 @@ module Solargraph
 
       # @return [String]
       def rooted_namespace
-        return namespace unless rooted?
+        return namespace unless rooted? && can_root_name?(namespace)
         "::#{namespace}"
       end
 
       # @return [String]
       def rooted_name
-        return name unless rooted?
+        return name unless @rooted && can_root_name?
         "::#{name}"
       end
 
@@ -175,10 +178,6 @@ module Solargraph
       def == other
         return false unless self.class == other.class
         tag == other.tag
-      end
-
-      def rooted?
-        @rooted
       end
 
       # Generate a ComplexType that fully qualifies this type's namespaces.
