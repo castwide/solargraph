@@ -3,7 +3,7 @@
 module Solargraph
   module Pin
     class Parameter < LocalVariable
-      # @return [Symbol]
+      # @return [::Symbol]
       attr_reader :decl
 
       # @return [String]
@@ -121,6 +121,7 @@ module Solargraph
         tag.text
       end
 
+      # @param pin [Pin::Parameter]
       def try_merge! pin
         return false unless super && closure == pin.closure
         true

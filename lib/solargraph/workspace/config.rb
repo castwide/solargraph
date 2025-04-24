@@ -123,7 +123,7 @@ module Solargraph
         File.join(@directory, '.solargraph.yml')
       end
 
-      # @return [Hash{String => Array, Hash, Integer}]
+      # @return [Hash{String => Array<undefined>, Hash{String => undefined}, Integer}]
       def config_data
         workspace_config = read_config(workspace_config_path)
         global_config = read_config(global_config_path)

@@ -106,6 +106,7 @@ module Solargraph
     end
 
     desc 'uncache GEM [...GEM]', "Delete cached gem documentation"
+    # @param gems [Array<String>]
     # @return [void]
     def uncache *gems
       raise ArgumentError, 'No gems specified.' if gems.empty?
@@ -118,6 +119,7 @@ module Solargraph
 
     desc 'gems [GEM[=VERSION]]', 'Cache documentation for installed gems'
     option :rebuild, type: :boolean, desc: 'Rebuild existing documentation', default: false
+    # @param names [Array<String>]
     # @return [void]
     def gems *names
       if names.empty?

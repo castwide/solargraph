@@ -138,6 +138,9 @@ module Solargraph
       @items.all? &block
     end
 
+    # @yieldparam [UniqueType]
+    # @yieldreturn [Boolean]
+    # @return [Boolean]
     def any? &block
       @items.compact.any? &block
     end
@@ -219,7 +222,7 @@ module Solargraph
       #   Consumers should not need to use this parameter; it should only be
       #   used internally.
       #
-      # @param *strings [Array<String>] The type definitions to parse
+      # @param strings [Array<String>] The type definitions to parse
       # @return [ComplexType]
       # # @overload parse(*strings, partial: false)
       # #  @todo Need ability to use a literal true as a type below

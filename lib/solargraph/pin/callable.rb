@@ -3,7 +3,7 @@
 module Solargraph
   module Pin
     class Callable < Closure
-      # @return [self]
+      # @return [Signature]
       attr_reader :block
 
       attr_reader :parameters
@@ -57,7 +57,7 @@ module Solargraph
         callable
       end
 
-      # @param generics_to_resolve [Enumerable<String>]
+      # @param generics_to_resolve [::Array<String>]
       # @param arg_types [Array<ComplexType>, nil]
       # @param return_type_context [ComplexType, nil]
       # @param yield_arg_types [Array<ComplexType>, nil]
@@ -113,7 +113,7 @@ module Solargraph
       end
 
       # @param arguments [::Array<Chain>]
-      # @param signature [Pin::Signature]
+      # @param with_block [Boolean]
       # @return [Boolean]
       def arity_matches? arguments, with_block
         argcount = arguments.length

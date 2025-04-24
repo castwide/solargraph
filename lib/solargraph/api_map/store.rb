@@ -103,7 +103,7 @@ module Solargraph
         @namespaces ||= Set.new
       end
 
-      # @return [Array<Solargraph::Pin::Base>]
+      # @return [Enumerable<Solargraph::Pin::Namespace>]
       def namespace_pins
         pins_by_class(Solargraph::Pin::Namespace)
       end
@@ -148,8 +148,8 @@ module Solargraph
       end
 
       # @generic T
-      # @param klass [Class<T>]
-      # @return [Array<T>]
+      # @param klass [Class<generic<T>>]
+      # @return [Set<generic<T>>]
       def pins_by_class klass
         # @type [Set<Solargraph::Pin::Base>]
         s = Set.new
@@ -297,8 +297,8 @@ module Solargraph
         end
       end
 
-      # @param pin [Pin::Base]
-      # @param tag [String]
+      # @param pin [Pin::Method]
+      # @param tag [YARD::Tags::Tag]
       # @return [void]
       def redefine_return_type pin, tag
         return unless pin && tag.tag_name == 'return'

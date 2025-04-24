@@ -476,6 +476,7 @@ module Solargraph
       def locate_pins params
         return [] unless params['data'] && params['data']['uri']
         library = library_for(params['data']['uri'])
+        # @type [Array<Pin::Base>]
         result = []
         if params['data']['location']
           location = Location.new(
@@ -575,7 +576,7 @@ module Solargraph
       # @param column [Integer]
       # @param strip [Boolean] Strip special characters from variable names
       # @param only [Boolean] If true, search current file only
-      # @return [Array<Solargraph::Range>]
+      # @return [Array<Solargraph::Location>]
       def references_from uri, line, column, strip: true, only: false
         library = library_for(uri)
         library.references_from(uri_to_file(uri), line, column, strip: strip, only: only)

@@ -75,7 +75,7 @@ module Solargraph
         transformed.erase_generics(definitions.generics)
       end
 
-      # @param generics_to_erase [Enumerable<String>]
+      # @param generics_to_erase [::Array<String>]
       # @return [self]
       def erase_generics(generics_to_erase)
         return self if generics_to_erase.empty?

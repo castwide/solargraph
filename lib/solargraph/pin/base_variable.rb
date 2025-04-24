@@ -93,6 +93,7 @@ module Solargraph
         assignment == other.assignment
       end
 
+      # @param pin [self]
       def try_merge! pin
         return false unless super
         @assignment = pin.assignment

@@ -336,6 +336,7 @@ module Solargraph
     def get_methods rooted_tag, scope: :instance, visibility: [:public], deep: true
       cached = cache.get_methods(rooted_tag, scope, visibility, deep)
       return cached.clone unless cached.nil?
+      # @type [Array<Solargraph::Pin::Method>]
       result = []
       skip = Set.new
       if rooted_tag == ''
@@ -761,8 +762,8 @@ module Solargraph
 
     # Sort an array of pins to put nil or undefined variables last.
     #
-    # @param pins [Enumerable<Solargraph::Pin::Base>]
-    # @return [Enumerable<Solargraph::Pin::Base>]
+    # @param pins [Enumerable<Pin::BaseVariable>]
+    # @return [Enumerable<Pin::BaseVariable>]
     def prefer_non_nil_variables pins
       result = []
       nil_pins = []

@@ -233,7 +233,7 @@ module Solargraph
     # @param column [Integer]
     # @param strip [Boolean] Strip special characters from variable names
     # @param only [Boolean] Search for references in the current file only
-    # @return [Array<Solargraph::Range>]
+    # @return [Array<Solargraph::Location>]
     # @todo Take a Location instead of filename/line/column
     def references_from filename, line, column, strip: false, only: false
       sync_catalog
@@ -391,6 +391,8 @@ module Solargraph
       return [] unless open?(filename)
       result = []
       source = read(filename)
+
+      # @type [Hash{Class<Solargraph::Diagnostics::Base> => Array<String>}]
       repargs = {}
       workspace.config.reporters.each do |line|
         if line == 'all!'
