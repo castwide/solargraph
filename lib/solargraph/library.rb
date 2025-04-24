@@ -566,18 +566,10 @@ module Solargraph
       return unless source
       return unless @current == source || workspace.has_file?(source.filename)
       if source_map_hash.key?(source.filename)
-        return if source_map_hash[source.filename].code == source.code &&
-          source_map_hash[source.filename].source.synchronized? &&
-          source.synchronized?
-        if source.synchronized?
-          new_map = Solargraph::SourceMap.map(source)
-          unless source_map_hash[source.filename].try_merge!(new_map)
-            source_map_hash[source.filename] = new_map
-            find_external_requires(source_map_hash[source.filename])
-          end
-        else
-          # @todo Smelly instance variable access
-          source_map_hash[source.filename].instance_variable_set(:@source, source)
+        new_map = Solargraph::SourceMap.map(source)
+        unless source_map_hash[source.filename].try_merge!(new_map)
+          source_map_hash[source.filename] = new_map
+          find_external_requires(source_map_hash[source.filename])
         end
       else
         source_map_hash[source.filename] = Solargraph::SourceMap.map(source)

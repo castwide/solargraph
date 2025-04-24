@@ -101,7 +101,7 @@ module Solargraph
         @version = updater.version
         return self
       end
-      Source.new(code, filename, updater.version).tap do |src|
+      Source.new(@code, filename, updater.version).tap do |src|
         src.repaired = @repaired
         src.error_ranges.concat error_ranges
         src.changes.concat(changes + updater.changes)
@@ -227,7 +227,6 @@ module Solargraph
     end
 
     def synchronized?
-      finalize
       true
     end
 
