@@ -119,7 +119,7 @@ module Solargraph
           end
           result.map do |pin|
             if pin.path == 'Class#new' && name_pin.context.tag != 'Class'
-              reduced_context = context.reduce_class_type
+              reduced_context = name_pin.context.reduce_class_type
               pin.proxy(reduced_context)
             else
               next pin if pin.return_type.undefined?
