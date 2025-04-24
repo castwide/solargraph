@@ -210,7 +210,10 @@ module Solargraph
           method_pin = api_map.get_method_stack(name_pin.namespace, name_pin.name, scope: name_pin.context.scope).first
           return [] if method_pin.nil?
 
-          method_pin.signatures.map(&:block).compact
+          method_pin.signatures.map(&:block).compact.map do |signature_pin|
+            return_type = signature_pin.return_type.qualify(api_map, name_pin.namespace)
+            signature_pin.proxy(return_type)
+          end
         end
 
         # @param type [ComplexType]
