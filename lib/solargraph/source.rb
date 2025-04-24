@@ -436,7 +436,12 @@ module Solargraph
     attr_writer :error_ranges
 
     # @return [String]
-    attr_accessor :repaired
+    attr_writer :repaired
+
+    def repaired
+      finalize
+      @repaired
+    end
 
     # @return [Boolean]
     attr_writer :parsed
