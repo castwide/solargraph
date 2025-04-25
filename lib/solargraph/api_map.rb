@@ -332,6 +332,11 @@ module Solargraph
       store.pins_by_class(Pin::GlobalVariable)
     end
 
+    # @return [Enumerable<Solargraph::Pin::Block>]
+    def get_block_pins
+      store.pins_by_class(Pin::Block)
+    end
+
     # Get an array of methods available in a particular context.
     #
     # @param rooted_tag [String] The fully qualified namespace to search for methods
