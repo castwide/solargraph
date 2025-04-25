@@ -69,7 +69,7 @@ module Solargraph
                 namespace_pin = api_map.get_namespace_pins(meth.namespace, closure.namespace).first
                 arg_type.resolve_generics(namespace_pin, param_type)
               else
-                arg_type.self_to(chain.base.infer(api_map, self, locals).namespace).qualify(api_map, meth.context.namespace)
+                arg_type.self_to_type(chain.base.infer(api_map, self, locals)).qualify(api_map, meth.context.namespace)
               end
             end
           end
@@ -87,7 +87,7 @@ module Solargraph
 
         chain = Parser.chain(receiver, location.filename)
         locals = api_map.source_map(location.filename).locals_at(location)
-        receiver_pin = chain.define(api_map, self, locals).first
+        receiver_pin = chain.define(api_map, closure, locals).first
         return ComplexType::UNDEFINED unless receiver_pin
 
         types = receiver_pin.docstring.tag(:yieldreceiver)&.types
@@ -96,7 +96,7 @@ module Solargraph
         target = chain.base.infer(api_map, receiver_pin, locals)
         target = full_context unless target.defined?
 
-        ComplexType.try_parse(*types).qualify(api_map, receiver_pin.context.namespace).self_to(target.to_s)
+        ComplexType.try_parse(*types).qualify(api_map, receiver_pin.context.namespace).self_to_type(target)
       end
     end
   end
