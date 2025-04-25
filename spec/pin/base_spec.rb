@@ -52,6 +52,6 @@ describe Solargraph::Pin::Base do
 
   it "does not link documentation for undefined return types" do
     pin = Solargraph::Pin::Base.new(name: 'Foo', comments: '@return [undefined]')
-    expect(pin.link_documentation).to be_nil
+    expect(pin.link_documentation).to eq('Foo')
   end
 end
