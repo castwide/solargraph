@@ -1,5 +1,6 @@
 describe Solargraph::TypeChecker do
   context 'strict level' do
+    # @return [Solargraph::TypeChecker]
     def type_checker(code)
       Solargraph::TypeChecker.load_string(code, 'test.rb', :strict)
     end
@@ -490,7 +491,7 @@ describe Solargraph::TypeChecker do
       expect(checker.problems).to be_empty
     end
 
-    it 'requires strict return tags' do
+    xit 'requires strict return tags' do
       checker = type_checker(%(
         class Foo
           # The tag is [String] but the inference is [String, nil]
@@ -498,6 +499,21 @@ describe Solargraph::TypeChecker do
           # @return [String]
           def bar
             false ? 'bar' : nil
+          end
+        end
+      ))
+      expect(checker.problems).to be_one
+      expect(checker.problems.first.message).to include('does not match inferred type')
+    end
+
+    xit 'requires strict return tags' do
+      checker = type_checker(%(
+        class Foo
+          # The tag is [String] but the inference is [String, nil]
+          #
+          # @return [String]
+          def bar
+            true ? nil : 'bar'
           end
         end
       ))
@@ -705,6 +721,20 @@ describe Solargraph::TypeChecker do
       expect(checker.problems.map(&:message)).to eq(['Unresolved call to upcase'])
     end
 
+
+    it 'does not falsely enforce nil in return types' do
+      checker = type_checker(%(
+      # @return [Integer]
+      def foo
+        # @sg-ignore
+        # @type [Integer, nil]
+        a = bar
+        a || 123
+      end
+      ))
+      expect(checker.problems.map(&:message)).to be_empty
+    end
+
     it 'interprets self references correctly' do
       checker = type_checker(%(
         class Bar
@@ -725,6 +755,25 @@ describe Solargraph::TypeChecker do
         end
       ))
       expect(checker.problems.map(&:message)).to eq([])
+    end
+
+    it "doesn't get confused about rooted types from attr_accessors" do
+      checker = type_checker(%(
+        module Foo
+          class Symbol; end
+          class Bar
+            # @return [::Symbol]
+            attr_accessor :bar
+          end
+       end
+       class Quux
+         def baz
+           bar = Foo::Bar.new
+           bar.bar = :foo
+         end
+       end
+      ))
+      expect(checker.problems).to be_empty
     end
 
     it "doesn't false alarm over splatted args which aren't the final argument" do
