@@ -103,6 +103,10 @@ module Solargraph
         @string ||= source.string_at?(position)
       end
 
+      def assign?
+        [:lvasgn, :ivasgn, :gvasgn, :cvasgn].include? chain&.node&.type
+      end
+
       # Get a cursor pointing to the method that receives the current statement
       # as an argument.
       #
