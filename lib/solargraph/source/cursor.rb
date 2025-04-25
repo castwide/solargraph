@@ -104,6 +104,17 @@ module Solargraph
         @string ||= source.string_at?(position)
       end
 
+
+      # True if the cursor's chain is an assignment to a variable.
+      #
+      # When the chain is an assignment, `Cursor#word` will contain the
+      # variable name.
+      #
+      # @return [Boolean]
+      def assign?
+        [:lvasgn, :ivasgn, :gvasgn, :cvasgn].include? chain&.node&.type
+      end
+
       # Get a cursor pointing to the method that receives the current statement
       # as an argument.
       #
