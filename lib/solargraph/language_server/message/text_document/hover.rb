@@ -21,7 +21,7 @@ module Solargraph
               parts.push pin.documentation unless pin.documentation.nil? || pin.documentation.empty?
               unless parts.empty?
                 data = parts.join("\n\n")
-                next if contents.last && contents.last.end_with?(data)
+                next if contents.last&.end_with?(data)
                 contents.push data
               end
               last_link = this_link unless this_link.nil?
