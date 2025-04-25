@@ -1911,7 +1911,7 @@ describe Solargraph::SourceMap::Clip do
     # @todo more root-safety to be done - expect(type.rooted?).to be true
   end
 
-  it 'understands pass-through block-using wrapper methods from core RBS' do
+  it 'calculates visibility into variable in root closure from block' do
     source = Solargraph::Source.load_string(%(
       mutex = Thread::Mutex.new
       foo = 123
@@ -1925,6 +1925,94 @@ describe Solargraph::SourceMap::Clip do
     clip = api_map.clip_at('test.rb', [6, 6])
     type = clip.infer
     expect(type.tag).to eq('Integer')
+
+    # @todo more root-safety to be done - expect(type.rooted?).to be true
+  end
+
+  it 'calculates visibility into method in root-level closure from function all in root-level closure' do
+    source = Solargraph::Source.load_string(%(
+      # @return [Integer]
+      def foo
+        123
+      end
+      bar = Mutex.new.synchronize { foo.even? }
+      bar
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new.map(source)
+
+    clip = api_map.clip_at('test.rb', [6, 6])
+    type = clip.infer
+    expect(type.tags).to eq('Boolean')
+
+    # @todo more root-safety to be done - expect(type.rooted?).to be true
+  end
+
+  it 'calculates visibility into method in root closure from block in multi-line block' do
+    source = Solargraph::Source.load_string(%(
+      mutex = Mutex.new
+      # @return [Integer]
+      def foo
+        123
+      end
+      bar = mutex.synchronize do
+        foo
+      end
+      bar
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new.map(source)
+
+    clip = api_map.clip_at('test.rb', [8, 6])
+    type = clip.infer
+    expect(type.tags).to eq('Integer')
+
+    # @todo more root-safety to be done - expect(type.rooted?).to be true
+  end
+
+  it 'calculates visibility into method referencing root-level class from block in a sibling method in a class' do
+    source = Solargraph::Source.load_string(%(
+      class Baz
+      end
+      class Foo
+        # @return [Baz]
+        def baz
+          Baz.new
+        end
+        def test
+          x = Mutex.new.synchronize { baz }
+          x
+        end
+      end
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new.map(source)
+
+    clip = api_map.clip_at('test.rb', [10, 10])
+    type = clip.infer
+    expect(type.tags).to eq('Baz')
+    # @todo more root-safety to be done - expect(type.rooted?).to be true
+  end
+
+  it 'understands pass-through blocks through a single-line function call both in root and root-level function closures' do
+    source = Solargraph::Source.load_string(%(
+      # @return [Integer]
+      def foo
+        123
+      end
+      y = Mutex.new.synchronize { foo }
+      y
+      def signatures_at
+        x = Mutex.new.synchronize { foo }
+        x
+      end
+     ), 'test.rb')
+    api_map = Solargraph::ApiMap.new.map(source)
+
+    clip = api_map.clip_at('test.rb', [6, 6])
+    type = clip.infer
+    expect(type.tags).to eq('Integer')
+
+    clip = api_map.clip_at('test.rb', [9, 8])
+    type = clip.infer
+    expect(type.tags).to eq('Integer')
 
     # @todo more root-safety to be done - expect(type.rooted?).to be true
   end
