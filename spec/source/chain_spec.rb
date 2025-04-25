@@ -306,6 +306,36 @@ describe Solargraph::Source::Chain do
     expect(type.tag).to eq('String')
   end
 
+  it 'infers Symbol from symbols' do
+    source = Solargraph::Source.load_string(':foo', 'test.rb')
+    node = source.node
+    api_map = Solargraph::ApiMap.new
+    api_map.map source
+    chain = Solargraph::Parser.chain(node)
+    type = chain.infer(api_map, Solargraph::Pin::ROOT_PIN, [])
+    expect(type.tag).to eq('Symbol')
+  end
+
+  it 'infers Symbol from quoted symbols' do
+    source = Solargraph::Source.load_string(':"foo"', 'test.rb')
+    node = source.node
+    api_map = Solargraph::ApiMap.new
+    api_map.map source
+    chain = Solargraph::Parser.chain(node)
+    type = chain.infer(api_map, Solargraph::Pin::ROOT_PIN, [])
+    expect(type.tag).to eq('Symbol')
+  end
+
+  it 'infers Symbol from interpolated symbols' do
+    source = Solargraph::Source.load_string(':"#{Object}"', 'test.rb')
+    node = source.node
+    api_map = Solargraph::ApiMap.new
+    api_map.map source
+    chain = Solargraph::Parser.chain(node)
+    type = chain.infer(api_map, Solargraph::Pin::ROOT_PIN, [])
+    expect(type.tag).to eq('Symbol')
+  end
+
   it 'infers namespaces from constant aliases' do
     source = Solargraph::Source.load_string(%(
       class Foo

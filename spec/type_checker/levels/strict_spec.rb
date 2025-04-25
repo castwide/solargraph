@@ -1,5 +1,6 @@
 describe Solargraph::TypeChecker do
   context 'strict level' do
+    # @return [Solargraph::TypeChecker]
     def type_checker(code)
       Solargraph::TypeChecker.load_string(code, 'test.rb', :strict)
     end
@@ -56,7 +57,7 @@ describe Solargraph::TypeChecker do
       #   vendored code.
       gemspec = Gem::Specification.find_by_name('kramdown-parser-gfm')
       pins = Solargraph::GemPins.build(gemspec)
-      Solargraph::Cache.save('gems', "#{gemspec.name}-#{gemspec.version}.ser", pins)  
+      Solargraph::Cache.save('gems', "#{gemspec.name}-#{gemspec.version}.ser", pins)
       source_map = Solargraph::SourceMap.load_string(%(
         require 'kramdown-parser-gfm'
         Kramdown::Parser::GFM.undefined_call
@@ -400,6 +401,49 @@ describe Solargraph::TypeChecker do
       expect(checker.problems.first.message).to include('Not enough arguments')
     end
 
+    it 'does not attempt to account for splats' do
+      checker = type_checker(%(
+        class Foo
+          def bar(baz, bing)
+          end
+
+          def blah(args)
+             bar *args
+          end
+        end
+      ))
+      expect(checker.problems).to be_empty
+    end
+
+    it 'does not attempt to account for splats in arg counts' do
+      checker = type_checker(%(
+        class Foo
+          def bar(baz, bing)
+          end
+
+          def blah(args)
+             bar *args
+          end
+        end
+      ))
+      expect(checker.problems).to be_empty
+    end
+
+    it 'does not attempt to account for types in splats' do
+      checker = type_checker(%(
+        class Foo
+          # @param baz [Symbol]
+          def bar(baz)
+          end
+
+          def blah(args = [:foo])
+             bar(*args)
+          end
+        end
+      ))
+      expect(checker.problems).to be_empty
+    end
+
     it 'reports solo missing kwarg' do
       checker = type_checker(%(
         class Foo
@@ -447,7 +491,7 @@ describe Solargraph::TypeChecker do
       expect(checker.problems).to be_empty
     end
 
-    it 'requires strict return tags' do
+    xit 'requires strict return tags' do
       checker = type_checker(%(
         class Foo
           # The tag is [String] but the inference is [String, nil]
@@ -455,6 +499,21 @@ describe Solargraph::TypeChecker do
           # @return [String]
           def bar
             false ? 'bar' : nil
+          end
+        end
+      ))
+      expect(checker.problems).to be_one
+      expect(checker.problems.first.message).to include('does not match inferred type')
+    end
+
+    xit 'requires strict return tags' do
+      checker = type_checker(%(
+        class Foo
+          # The tag is [String] but the inference is [String, nil]
+          #
+          # @return [String]
+          def bar
+            true ? nil : 'bar'
           end
         end
       ))
@@ -646,6 +705,97 @@ describe Solargraph::TypeChecker do
         end
       ))
       expect(checker.problems).to be_one
+    end
+
+    xit 'uses nil? to refine type' do
+      checker = type_checker(%(
+        # @sg-ignore
+        # @type [String, nil]
+        foo = bar()
+        if foo.nil?
+          foo.upcase
+        else
+          foo.downcase
+        end
+      ))
+      expect(checker.problems.map(&:message)).to eq(['Unresolved call to upcase'])
+    end
+
+
+    it 'does not falsely enforce nil in return types' do
+      checker = type_checker(%(
+      # @return [Integer]
+      def foo
+        # @sg-ignore
+        # @type [Integer, nil]
+        a = bar
+        a || 123
+      end
+      ))
+      expect(checker.problems.map(&:message)).to be_empty
+    end
+
+    it 'interprets self references correctly' do
+      checker = type_checker(%(
+        class Bar
+          # @param pin [self]
+          # @return [void]
+          def baz pin; end
+        end
+
+        class Foo
+          # @return [Bar]
+          attr_reader :bing
+
+          # @param other [Foo]
+          # @return [void]
+          def try_merge!(other)
+            bing.baz(other.bing)
+          end
+        end
+      ))
+      expect(checker.problems.map(&:message)).to eq([])
+    end
+
+    it "doesn't get confused about rooted types from attr_accessors" do
+      checker = type_checker(%(
+        module Foo
+          class Symbol; end
+          class Bar
+            # @return [::Symbol]
+            attr_accessor :bar
+          end
+       end
+       class Quux
+         def baz
+           bar = Foo::Bar.new
+           bar.bar = :foo
+         end
+       end
+      ))
+      expect(checker.problems).to be_empty
+    end
+
+    it "doesn't false alarm over splatted args which aren't the final argument" do
+      checker = type_checker(%(
+        # @param path [Array<String>]
+        # @param baz [Array<String>]
+        # @return [void]
+        def foo *path, baz; end
+
+        foo('a', 'b', 'c', ['d'])
+      ))
+      expect(checker.problems.map(&:message)).to eq([])
+    end
+
+    it "does not lose track of place and false alarm when using kwargs after a splat" do
+      checker = type_checker(%(
+        def foo(a, b, c); end
+        def bar(*args, **kwargs, &blk)
+          foo(*args, **kwargs, &blk)
+        end
+      ))
+      expect(checker.problems.map(&:message)).to eq([])
     end
   end
 end

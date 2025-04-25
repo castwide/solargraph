@@ -30,8 +30,6 @@ describe Solargraph::Source do
   end
 
   it "finds nodes" do
-    # @todo This test is specific to Parser and breaks with RubyVM.
-    next if Solargraph::Parser.rubyvm?
     code = 'class Foo;def bar;end;end'
     source = described_class.new(code)
     node = source.node_at(0, 0)
@@ -54,8 +52,6 @@ describe Solargraph::Source do
     )
     changed = source.synchronize(updater)
     expect(changed.code).to start_with('class Food;')
-    # @todo This test is specific to Parser and breaks with RubyVM.
-    next if Solargraph::Parser.rubyvm?
     expect(changed.node.children[0].children[1]).to eq(:Food)
   end
 
@@ -68,8 +64,6 @@ describe Solargraph::Source do
     ])
     changed = source.synchronize(updater)
     expect(changed.code).to eq(code2)
-    # @todo This test is specific to Parser and breaks with RubyVM.
-    next if Solargraph::Parser.rubyvm?
     expect(changed.node.children[0].children[1]).to eq(:Bar)
   end
 
@@ -242,25 +236,9 @@ e = d # inline
     expect(source.folding_ranges.first.start.line).to eq(4)
   end
 
-  it "returns unsynchronized sources for started synchronizations" do
-    source1 = Solargraph::Source.load_string('x = 1', 'test.rb')
-    source2 = source1.start_synchronize Solargraph::Source::Updater.new(
-      'test.rb',
-      2,
-      [
-        Solargraph::Source::Change.new(
-          Solargraph::Range.from_to(0, 5, 0, 5),
-          '2'
-        )
-      ]
-    )
-    expect(source2.code).to eq('x = 12')
-    expect(source2).not_to be_synchronized
-  end
-
   it "finishes synchronizations for unbalanced lines" do
     source1 = Solargraph::Source.load_string('x = 1', 'test.rb')
-    source2 = source1.start_synchronize Solargraph::Source::Updater.new(
+    source2 = source1.synchronize Solargraph::Source::Updater.new(
       'test.rb',
       2,
       [
@@ -322,5 +300,11 @@ y = 1 #foo
       '%W[array of words #{\'with a substitution\'}]'
     )
     expect(source.string_ranges.length).to eq(4)
+  end
+
+  it 'handles errors in docstrings' do
+    # YARD has a known problem with empty @overload tags
+    comments = "@overload\n@return [String]"
+    expect { Solargraph::Source.parse_docstring(comments) }.not_to raise_error
   end
 end

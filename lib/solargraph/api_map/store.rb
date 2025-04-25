@@ -1,9 +1,11 @@
 # frozen_string_literal: true
 
-require 'set'
 
 module Solargraph
   class ApiMap
+    # Queryable collection of Pins representing a Workspace, gems and the Ruby
+    # core.
+    #
     class Store
       # @return [Array<Solargraph::Pin::Base>]
       attr_reader :pins
@@ -36,6 +38,7 @@ module Solargraph
       # @param fqns [String]
       # @return [String, nil]
       def get_superclass fqns
+        raise "Do not prefix fully qualified namespaces with '::' - #{fqns.inspect}" if fqns.start_with?('::')
         return superclass_references[fqns].first if superclass_references.key?(fqns)
         return 'Object' if fqns != 'BasicObject' && namespace_exists?(fqns)
         return 'Object' if fqns == 'Boolean'
@@ -64,6 +67,10 @@ module Solargraph
       # @return [Array<Solargraph::Pin::Base>]
       def get_path_pins path
         path_pin_hash[path] || []
+      end
+
+      def cacheable_pins
+        @cacheable_pins ||= pins_by_class(Pin::Namespace) + pins_by_class(Pin::Constant) + pins_by_class(Pin::Method) + pins_by_class(Pin::Reference)
       end
 
       # @param fqns [String]
@@ -141,10 +148,13 @@ module Solargraph
         to_s
       end
 
-      # @param klass [Class]
-      # @return [Enumerable<Solargraph::Pin::Base>]
+      # @generic T
+      # @param klass [Class<T>]
+      # @return [Set<T>]
       def pins_by_class klass
-        @pin_select_cache[klass] ||= @pin_class_hash.each_with_object(Set.new) { |(key, o), n| n.merge(o) if key <= klass }
+        # @type [Set<Solargraph::Pin::Base>]
+        s = Set.new
+        @pin_select_cache[klass] ||= @pin_class_hash.each_with_object(s) { |(key, o), n| n.merge(o) if key <= klass }
       end
 
       # @param fqns [String]
@@ -164,7 +174,7 @@ module Solargraph
 
       private
 
-      # @return [Hash{Array(String, String) => Array<Pin::Namespace>}]
+      # @return [Hash{::Array(String, String) => ::Array<Pin::Namespace>}]
       def fqns_pins_map
         @fqns_pins_map ||= Hash.new do |h, (base, name)|
           value = namespace_children(base).select { |pin| pin.name == name && pin.is_a?(Pin::Namespace) }
@@ -177,7 +187,7 @@ module Solargraph
         pins_by_class(Pin::Symbol)
       end
 
-      # @return [Hash{String => Enumerable<String>}]
+      # @return [Hash{String => Array<String>}]
       def superclass_references
         @superclass_references ||= {}
       end
@@ -242,7 +252,7 @@ module Solargraph
       def index
         set = pins.to_set
         @pin_class_hash = set.classify(&:class).transform_values(&:to_a)
-        # @type [Hash{Class => Enumerable<Solargraph::Pin::Base>}]
+        # @type [Hash{Class => ::Array<Solargraph::Pin::Base>}]
         @pin_select_cache = {}
         @namespace_map = set.classify(&:namespace)
         @path_pin_hash = set.classify(&:path)

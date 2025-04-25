@@ -15,6 +15,9 @@ module Solargraph
       # @return [Solargraph::Location]
       attr_reader :location
 
+      # @return [Solargraph::Location]
+      attr_reader :type_location
+
       # @return [String]
       attr_reader :name
 
@@ -25,11 +28,13 @@ module Solargraph
       attr_accessor :source
 
       # @param location [Solargraph::Location, nil]
+      # @param type_location [Solargraph::Location, nil]
       # @param closure [Solargraph::Pin::Closure, nil]
       # @param name [String]
       # @param comments [String]
-      def initialize location: nil, closure: nil, name: '', comments: ''
+      def initialize location: nil, type_location: nil, closure: nil, name: '', comments: ''
         @location = location
+        @type_location = type_location
         @closure = closure
         @name = name
         @comments = comments
@@ -70,6 +75,10 @@ module Solargraph
         transformed.erase_generics(definitions.generics)
       end
 
+      def all_rooted?
+        !return_type || return_type.all_rooted?
+      end
+
       # @param generics_to_erase [Enumerable<String>]
       # @return [self]
       def erase_generics(generics_to_erase)
@@ -94,12 +103,17 @@ module Solargraph
       end
 
       def to_s
-        name.to_s
+        to_rbs
       end
 
       # @return [Boolean]
       def variable?
         false
+      end
+
+      # @return [Location, nil]
+      def best_location
+        location || type_location
       end
 
       # Pin equality is determined using the #nearly? method and also
@@ -257,8 +271,26 @@ module Solargraph
         @identity ||= "#{closure.path}|#{name}"
       end
 
+      # @return [String, nil]
+      def to_rbs
+        return_type.to_rbs
+      end
+
+      # @return [String, nil]
+      def desc
+        if path
+          if to_rbs
+            path + ' ' + to_rbs
+          else
+            path
+          end
+        else
+          to_rbs
+        end
+      end
+
       def inspect
-        "#<#{self.class} `#{self.path}` at #{self.location.inspect}>"
+        "#<#{self.class} `#{self.desc}` at #{self.location.inspect}>"
       end
 
       protected

@@ -9,6 +9,9 @@ module Solargraph
       # @return [String]
       attr_reader :asgn_code
 
+      # @param decl [::Symbol] :arg, :optarg, :kwarg, :kwoptarg, :restarg, :kwrestarg, :block, :blockarg
+      # @param asgn_code [String, nil]
+      # @param return_type [ComplexType, nil]
       def initialize decl: :arg, asgn_code: nil, return_type: nil, **splat
         super(**splat)
         @asgn_code = asgn_code
@@ -22,6 +25,10 @@ module Solargraph
 
       def kwrestarg?
         decl == :kwrestarg || (assignment && [:HASH, :hash].include?(assignment.type))
+      end
+
+      def arg?
+        decl == :arg
       end
 
       def restarg?
@@ -44,6 +51,24 @@ module Solargraph
         [:block, :blockarg].include?(decl)
       end
 
+      def to_rbs
+        case decl
+        when :optarg
+          "?#{super}"
+        when :kwarg
+          "#{name}: #{return_type.to_rbs}"
+        when :kwoptarg
+          "?#{name}: #{return_type.to_rbs}"
+        when :restarg
+          "*#{super}"
+        when :kwrestarg
+          "**#{super}"
+        else
+          super
+        end
+      end
+
+      # @return [String]
       def full
         case decl
         when :optarg
@@ -63,6 +88,7 @@ module Solargraph
         end
       end
 
+      # @return [ComplexType]
       def return_type
         if @return_type.nil?
           @return_type = ComplexType::UNDEFINED
@@ -70,11 +96,11 @@ module Solargraph
           @return_type = ComplexType.try_parse(*found.types) unless found.nil? or found.types.nil?
           if @return_type.undefined?
             if decl == :restarg
-              @return_type = ComplexType.try_parse('Array')
+              @return_type = ComplexType.try_parse('::Array')
             elsif decl == :kwrestarg
-              @return_type = ComplexType.try_parse('Hash')
+              @return_type = ComplexType.try_parse('::Hash')
             elsif decl == :blockarg
-              @return_type = ComplexType.try_parse('Proc')
+              @return_type = ComplexType.try_parse('::Proc')
             end
           end
         end
@@ -86,7 +112,9 @@ module Solargraph
       #
       # @return [Integer]
       def index
-        closure.parameter_names.index(name)
+        # @type [Method, Block]
+        method_pin = closure
+        method_pin.parameter_names.index(name)
       end
 
       # @param api_map [ApiMap]
@@ -110,50 +138,18 @@ module Solargraph
 
       # @return [YARD::Tags::Tag, nil]
       def param_tag
-        found = nil
         params = closure.docstring.tags(:param)
         params.each do |p|
-          next unless p.name == name
-          found = p
-          break
+          return p if p.name == name
         end
-        if found.nil? and !index.nil?
-          found = params[index] if params[index] && (params[index].name.nil? || params[index].name.empty?)
-        end
-        found
+        params[index] if index && params[index] && (params[index].name.nil? || params[index].name.empty?)
       end
 
       # @param api_map [ApiMap]
       # @return [ComplexType]
       def typify_block_param api_map
         if closure.is_a?(Pin::Block) && closure.receiver
-          chain = Parser.chain(closure.receiver, filename)
-          clip = api_map.clip_at(location.filename, location.range.start)
-          locals = clip.locals - [self]
-          meths = chain.define(api_map, closure, locals)
-          receiver_type = chain.base.infer(api_map, closure, locals)
-          meths.each do |meth|
-            block_signature = meth.block
-            if block_signature
-              yield_type = block_signature.parameters[index]&.return_type
-            else
-              # @todo move the yieldparam tag parsing logic into the
-              #   creation of Method pins so we don't need this else
-              #   statement
-              yps = meth.docstring.tags(:yieldparam)
-              unless yps[index].nil? or yps[index].types.nil? or yps[index].types.empty?
-                yield_type = ComplexType.try_parse(yps[index].types.first)
-              end
-            end
-            unless yield_type.nil?
-              if yield_type.generic? && receiver_type.defined?
-                namespace_pin = api_map.get_namespace_pins(meth.namespace, closure.namespace).first
-                return yield_type.resolve_generics(namespace_pin, receiver_type)
-              else
-                return yield_type.self_to(chain.base.infer(api_map, closure, locals).namespace).qualify(api_map, meth.context.namespace)
-              end
-            end
-          end
+          return closure.typify_parameters(api_map)[index]
         end
         ComplexType::UNDEFINED
       end

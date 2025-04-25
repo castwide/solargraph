@@ -138,39 +138,6 @@ describe Solargraph::LanguageServer::Host do
     }.not_to raise_error
   end
 
-  it "is unsynchronized after library changes" do
-    host = Solargraph::LanguageServer::Host.new
-    dir = File.absolute_path('spec/fixtures/workspace')
-    file = File.join(dir, 'app.rb')
-    file_uri = Solargraph::LanguageServer::UriHelpers.uri_to_file(file)
-    host.prepare dir
-    host.open file_uri, File.read(file), 0
-    host.stop
-    params = {
-      'textDocument' => {
-        'uri' => file_uri,
-        'version' => 1
-      },
-      'contentChanges' => [
-        {
-          'range' => {
-            'start' => {
-              'line' => 2,
-              'character' => 0
-            },
-            'end' => {
-              'line' => 2,
-              'character' => 0
-            }
-          },
-          'text' => '; x = "x"'
-        }
-      ]
-    }
-    host.change params
-    expect(host.synchronizing?).to be(true)
-  end
-
   it "responds with empty diagnostics for unopened files" do
     host = Solargraph::LanguageServer::Host.new
     host.diagnose 'file:///file.rb'
@@ -204,34 +171,6 @@ describe Solargraph::LanguageServer::Host do
     }.not_to raise_error
   end
 
-  it 'unsynchronizes libraries after creating files' do
-    Dir.mktmpdir do |dir|
-      host = Solargraph::LanguageServer::Host.new
-      host.prepare dir
-      file = File.join(dir, 'foo.rb')
-      uri = Solargraph::LanguageServer::UriHelpers.file_to_uri(file)
-      File.write file, 'class Foo; end'
-      host.create uri
-      expect(host.libraries.first).not_to be_synchronized
-      # expect(host.libraries.first).to be_synchronized
-      # expect(host.libraries.first.contain?(file)).to be(true)
-    end
-  end
-
-  it 'unsynchronizes libraries after deleting files' do
-    Dir.mktmpdir do |dir|
-      file = File.join(dir, 'foo.rb')
-      uri = Solargraph::LanguageServer::UriHelpers.file_to_uri(file)
-      File.write file, 'class Foo; end'
-      host = Solargraph::LanguageServer::Host.new
-      host.prepare dir
-      host.delete uri
-      expect(host.libraries.first).not_to be_synchronized
-      # expect(host.libraries.first).to be_synchronized
-      # expect(host.libraries.first.contain?(file)).to be(false)
-    end
-  end
-
   it 'repairs simple breaking changes without incremental sync' do
     file = '/test.rb'
     uri = Solargraph::LanguageServer::UriHelpers.file_to_uri(file)
@@ -250,9 +189,47 @@ describe Solargraph::LanguageServer::Host do
         }
       ]
     })
-    source = host.sources.find(uri).finish_synchronize
-    # @todo Smelly private variable access
+    source = host.sources.find(uri)
+    # @todo Smelly private method access
     expect(source.send(:repaired)).to eq('Foo::Bar ')
+  end
+
+  describe '#locate_pins' do
+    it 'locates #initialize for Class#new calls' do
+      code = %(
+        class Example
+          # the initialize method
+          def initialize(foo); end
+        end
+        Foo.new
+      )
+
+      file = '/test.rb'
+      uri = Solargraph::LanguageServer::UriHelpers.file_to_uri(file)
+      host = Solargraph::LanguageServer::Host.new
+      host.prepare ''
+      host.open uri, code, 1
+      sleep 0.1 until host.libraries.all?(&:mapped?)
+      result = host.locate_pins({
+        "data" => {
+          "uri" => uri,
+          "location" => {
+            "range" => {
+              "start" => {
+                "line" => 5,
+                "character" => 12
+              },
+              "end" => {
+                "line" => 5,
+                "character" => 15
+              }
+            }
+          },
+          "path" => "Example.new"
+        }
+      })
+      expect(result.map(&:path)).to include('Example.new')
+    end
   end
 
   describe "Workspace variations" do

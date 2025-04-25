@@ -9,7 +9,8 @@ module Solargraph
         normal: 0,
         typed: 1,
         strict: 2,
-        strong: 3
+        strong: 3,
+        alpha: 4
       }.freeze
 
       # @return [Symbol]
@@ -55,6 +56,10 @@ module Solargraph
 
       def validate_tags?
         rank > LEVELS[:normal]
+      end
+
+      def require_all_return_types_match_inferred?
+        rank >= LEVELS[:alpha]
       end
     end
   end

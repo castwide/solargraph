@@ -3,7 +3,9 @@
 require 'yard'
 
 module Solargraph
-  # The namespace for pins used in maps.
+  # The namespace for Pins used in SourceMaps.
+  #
+  # Pins represent declarations, from gems, Sources, and the Ruby core.
   #
   module Pin
     autoload :Common,           'solargraph/pin/common'
@@ -27,12 +29,12 @@ module Solargraph
     autoload :Reference,        'solargraph/pin/reference'
     autoload :Documenting,      'solargraph/pin/documenting'
     autoload :Block,            'solargraph/pin/block'
-    autoload :Localized,        'solargraph/pin/localized'
     autoload :ProxyType,        'solargraph/pin/proxy_type'
     autoload :DuckMethod,       'solargraph/pin/duck_method'
     autoload :Singleton,        'solargraph/pin/singleton'
     autoload :KeywordParam,     'solargraph/pin/keyword_param'
     autoload :Search,           'solargraph/pin/search'
+    autoload :Callable,         'solargraph/pin/callable'
 
     ROOT_PIN = Pin::Namespace.new(type: :class, name: '', closure: nil)
   end

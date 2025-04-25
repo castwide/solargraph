@@ -31,6 +31,10 @@ module Solargraph
           []
         end
 
+        def inspect
+          "#{self.class} #{word}"
+        end
+
         def head?
           @head ||= false
         end
@@ -55,6 +59,15 @@ module Solargraph
 
         def nullable?
           false
+        end
+
+        # debugging description of contents; not for machine use
+        def desc
+          word
+        end
+
+        def inspect
+          "#<#{self.class} - `#{self.desc}`>"
         end
 
         protected

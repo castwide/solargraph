@@ -1,3 +1,78 @@
+## 0.54.0 - April 14, 2025
+- Add support for simple block argument destructuring (#821)
+- Benchmark the typecheck command (#852)
+- Send Gem Caching Progress Notifications to LSP Clients (#855)
+- [breaking] Fix more complex_type_spec.rb cases (#813)
+- Mass assignment support - e.g., a, b = ['1', '2'] (#843)
+- Memoize result of Chain#infer (#857)
+- Ignore malformed mixins and overloads (#862)
+- Drop Parser::ParserGem::ClassMethods#returns_from_node (#866)
+- Refactor TypeChecker#argument_problems_for for type safety (#867)
+- Specify more type behavior for variable reassignment (#863)
+- One-step source synchronization (#871)
+- Show cache progress in shell commands (#874)
+- Fix miscellaneous scan errors (#875)
+- Synchronous libraries (#876)
+- Fix parsing of Set#classify method signature from RBS (#878)
+- Sync Library#diagnose (#882)
+- Doesn't false-alarm over splatted non-final args in typechecking (#883)
+- Remove accidental inclusion of Module's methods in objects (#884)
+- Remove another splat-related false alarm in strict typechecking (#889)
+- Change require path `warn` to `debug` (#897)
+
+## 0.53.4 - March 30, 2025
+- [regression] Restore 'Unresolved call' typecheck for stdlib objects (#849)
+- Lazy dynamic rebinding (#851)
+- Restore fill for Class#allocate (#848)
+- [regression] Ensure YardMap gems have return type for Class<T>.new (#850)
+- Create implicit .new pins in namespace method queries (#853)
+
+## 0.53.3 - March 29, 2025
+- Remove redundant core fills (#824, #841)
+- Resolve self type in variable assignments (#839)
+- Eliminate splat-related false-alarms in strict typechecking (#840)
+- Dynamic block binding with yieldreceiver (#842)
+- Resolve generics by descending through context type (#847)
+
+## 0.53.2 - March 27, 2025
+- Fix a self-type-related false-positive in strict typechecking (#834)
+- DocMap fetches gem dependencies (#835)
+- Use configured command path to spawn solargraph processes (#837)
+
+## 0.53.1 - March 26, 2025
+- Reject nil requires in live code (#831)
+- RbsMap adds mixins to current namespace (#832)
+
+## 0.53.0 - March 25, 2025
+- Fix crash on generic methods (#762)
+- Add more type annotations to the codebase (#763 et al.)
+- Address remaining typecheck issues at 'typed' level and add CI task (#764)
+- Fix crash during strict typechecking (#766)
+- DeepInference: Fix some bugs, add docs, refactor (#767)
+- Include "self type" methods like Enumerable#each from RBS files (#769)
+- Handle RBS global, module alias, class variable and class instance variable declarations (#770)
+- Add support for generic includes via RBS (#773)
+- Handle parsing tuples of tuples in tags (#775)
+- Retire the RubyVM parser (#776)
+- Improve block handling in signature selection (#780)
+- Require Ruby >= 3 (#791)
+- Cache YARD and RBS (#781)
+  - Language server generates gem documentation in the background
+- Fix bug handling Array(A, B) syntax while resolving generics (#784)
+- Fix typeDefinitions for neovim (#792)
+- Infer block-pass symbols (#793)
+- Add #to_rbs methods to pins, use for better .inspect() output (#789)
+- Remove deprecated commands (#790)
+- Add :if support to NodeChainer for if statements as lvalues (#805)
+- Fix ApiMap::Cache (#806)
+- Map mixins from RBS (#808)
+- Fix issue with wrong signature selection by call with block node (#815)
+- Keep gem pins in memory (#811)
+- Refactor gems command (#816)
+- Use return type of literal blocks in inference (#818)
+- Insert Module methods (#820)
+- Revise documentation formatting (#823)
+
 ## 0.52.0 - February 28, 2025
 - Chains resolve identical names with different contexts (#679)
 - Handle symbol tags in method tag values (#744)

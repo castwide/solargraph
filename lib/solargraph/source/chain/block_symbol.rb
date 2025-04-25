@@ -3,7 +3,7 @@
 module Solargraph
   class Source
     class Chain
-      class BlockVariable < Link
+      class BlockSymbol < Link
         def resolve api_map, name_pin, locals
           [Pin::ProxyType.anonymous(ComplexType.try_parse('::Proc'))]
         end

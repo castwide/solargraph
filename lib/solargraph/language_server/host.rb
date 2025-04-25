@@ -3,7 +3,6 @@
 require 'diff/lcs'
 require 'observer'
 require 'securerandom'
-require 'set'
 
 module Solargraph
   module LanguageServer
@@ -13,7 +12,6 @@ module Solargraph
     #
     class Host
       autoload :Diagnoser,     'solargraph/language_server/host/diagnoser'
-      autoload :Cataloger,     'solargraph/language_server/host/cataloger'
       autoload :Sources,       'solargraph/language_server/host/sources'
       autoload :Dispatch,      'solargraph/language_server/host/dispatch'
       autoload :MessageWorker, 'solargraph/language_server/host/message_worker'
@@ -44,8 +42,6 @@ module Solargraph
         return unless stopped?
         @stopped = false
         diagnoser.start
-        cataloger.start
-        sources.start
         message_worker.start
       end
 
@@ -156,6 +152,7 @@ module Solargraph
       def delete *uris
         filenames = uris.map { |uri| uri_to_file(uri) }
         libraries.each do |lib|
+          lib.delete_observer self
           lib.delete(*filenames)
         end
         uris.each do |uri|
@@ -254,7 +251,7 @@ module Solargraph
       # @return [void]
       def change params
         updater = generate_updater(params)
-        sources.async_update params['textDocument']['uri'], updater
+        sources.update params['textDocument']['uri'], updater
         diagnoser.schedule params['textDocument']['uri']
       end
 
@@ -293,9 +290,11 @@ module Solargraph
         path = ''
         path = normalize_separators(directory) unless directory.nil?
         begin
-          lib = Solargraph::Library.load(path, name)
+          workspace = Solargraph::Workspace.new(path, nil, options)
+          lib = Solargraph::Library.new(workspace, name)
+          lib.add_observer self
           libraries.push lib
-          async_library_map lib
+          library_map lib
         rescue WorkspaceTooLargeError => e
           send_notification 'window/showMessage', {
             'type' => Solargraph::LanguageServer::MessageTypes::WARNING,
@@ -324,6 +323,7 @@ module Solargraph
         # @param lib [Library]
         libraries.delete_if do |lib|
           next false if lib.workspace.directory != directory
+          lib.delete_observer self
           true
         end
       end
@@ -458,9 +458,7 @@ module Solargraph
         return if @stopped
         @stopped = true
         message_worker.stop
-        cataloger.stop
         diagnoser.stop
-        sources.stop
         changed
         notify_observers
       end
@@ -493,6 +491,24 @@ module Solargraph
         end
         if params['data']['path']
           result.concat library.path_pins(params['data']['path'])
+          # @todo This exception is necessary because `Library#path_pins` does
+          #   not perform a namespace method query, so the implicit `.new` pin
+          #   might not exist.
+          if result.empty? && params['data']['path'] =~ /\.new$/
+            result.concat(library.path_pins(params['data']['path'].sub(/\.new$/, '#initialize')).map do |pin|
+              next pin unless pin.name == 'initialize'
+
+              Pin::Method.new(
+                name: 'new',
+                scope: :class,
+                location: pin.location,
+                parameters: pin.parameters,
+                return_type: ComplexType.try_parse(params['data']['path']),
+                comments: pin.comments,
+                closure: pin.closure
+              )
+            end)
+          end
         end
         # Selecting by both location and path can result in duplicate pins
         result.uniq { |p| [p.path, p.location] }
@@ -666,9 +682,13 @@ module Solargraph
         libraries.each(&:catalog)
       end
 
-      # @return [Hash{String => BasicObject}]
+      # @return [Hash{String => Hash{String => Boolean}}]
       def client_capabilities
         @client_capabilities ||= {}
+      end
+
+      def client_supports_progress?
+        client_capabilities['window'] && client_capabilities['window']['workDoneProgress']
       end
 
       private
@@ -681,11 +701,6 @@ module Solargraph
       # @return [Diagnoser]
       def diagnoser
         @diagnoser ||= Diagnoser.new(self)
-      end
-
-      # @return [Cataloger]
-      def cataloger
-        @cataloger ||= Cataloger.new(self)
       end
 
       # A hash of client requests by ID. The host uses this to keep track of
@@ -817,72 +832,28 @@ module Solargraph
         client_capabilities['rename'] && client_capabilities['rename']['prepareSupport']
       end
 
-      def client_supports_progress?
-        client_capabilities['window'] && client_capabilities['window']['workDoneProgress']
-      end
-
       # @param library [Library]
       # @return [void]
-      def async_library_map library
+      def library_map library
         return if library.mapped?
-        Thread.new do
-          if client_supports_progress?
-            uuid = SecureRandom.uuid
-            send_request 'window/workDoneProgress/create', {
-              token: uuid
-            } do |response|
-              do_async_library_map library, response.nil? ? uuid : nil
-            end
-          else
-            do_async_library_map library
-          end
-        end
+        Thread.new { sync_library_map library }
       end
 
       # @param library [Library]
       # @param uuid [String, nil]
       # @return [void]
-      def do_async_library_map library, uuid = nil
+      def sync_library_map library
         total = library.workspace.sources.length
-        if uuid
-          send_notification '$/progress', {
-            token: uuid,
-            value: {
-              kind: 'begin',
-              title: "Mapping workspace",
-              message: "0/#{total} files",
-              cancellable: false,
-              percentage: 0
-            }
-          }
-        end
-        pct = 0
-        mod = 10
+        progress = Progress.new('Mapping workspace')
+        progress.begin "0/#{total} files", 0
+        progress.send self
         while library.next_map
-          next unless uuid
-          cur = ((library.source_map_hash.keys.length.to_f / total.to_f) * 100).to_i
-          if cur > pct && cur % mod == 0
-            pct = cur
-            send_notification '$/progress', {
-              token: uuid,
-              value: {
-                kind: 'report',
-                cancellable: false,
-                message: "#{library.source_map_hash.keys.length}/#{total} files",
-                percentage: pct
-              }
-            }
-          end
+          pct = ((library.source_map_hash.keys.length.to_f / total) * 100).to_i
+          progress.report "#{library.source_map_hash.keys.length}/#{total} files", pct
+          progress.send self
         end
-        if uuid
-          send_notification '$/progress', {
-            token: uuid,
-            value: {
-              kind: 'end',
-              message: 'Mapping complete'
-            }
-          }
-        end
+        progress.finish 'done'
+        progress.send self
       end
     end
   end

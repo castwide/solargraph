@@ -181,10 +181,6 @@ module Solargraph
           elsif [:super, :zsuper].include?(node.type)
             result.push node
             node.children.each { |child| result.concat call_nodes_from(child) }
-          elsif node.type == :masgn
-            # @todo We're treating a mass assignment as a call node, but the
-            #   type checker still needs the logic to handle it.
-            result.push node
           else
             node.children.each { |child| result.concat call_nodes_from(child) }
           end
@@ -315,7 +311,7 @@ module Solargraph
         #    statements in value positions.
         module DeepInference
           class << self
-            CONDITIONAL_ALL_BUT_FIRST = [:if, :unless, :or_asgn]
+            CONDITIONAL_ALL_BUT_FIRST = [:if, :unless]
             CONDITIONAL_ALL = [:or]
             ONLY_ONE_CHILD = [:return]
             FIRST_TWO_CHILDREN = [:rescue]

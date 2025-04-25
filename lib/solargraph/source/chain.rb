@@ -5,10 +5,19 @@ require 'solargraph/source/chain/link'
 
 module Solargraph
   class Source
-    # A chain of constants, variables, and method calls for inferring types of
-    # values.
+    #
+    # Represents an expression as a single call chain at the parse
+    # tree level, made up of constants, variables, and method calls,
+    # each represented as a Link object.
+    #
+    # Computes Pins and/or ComplexTypes representing the interpreted
+    # expression.
     #
     class Chain
+      #
+      # A chain of constants, variables, and method calls for inferring types of
+      # values.
+      #
       autoload :Link,             'solargraph/source/chain/link'
       autoload :Call,             'solargraph/source/chain/call'
       autoload :QCall,            'solargraph/source/chain/q_call'
@@ -19,14 +28,18 @@ module Solargraph
       autoload :GlobalVariable,   'solargraph/source/chain/global_variable'
       autoload :Literal,          'solargraph/source/chain/literal'
       autoload :Head,             'solargraph/source/chain/head'
+      autoload :If,               'solargraph/source/chain/if'
       autoload :Or,               'solargraph/source/chain/or'
       autoload :BlockVariable,    'solargraph/source/chain/block_variable'
+      autoload :BlockSymbol,      'solargraph/source/chain/block_symbol'
       autoload :ZSuper,           'solargraph/source/chain/z_super'
       autoload :Hash,             'solargraph/source/chain/hash'
       autoload :Array,            'solargraph/source/chain/array'
 
       @@inference_stack = []
       @@inference_depth = 0
+      @@inference_invalidation_key = nil
+      @@inference_cache = {}
 
       UNDEFINED_CALL = Chain::Call.new('<undefined>')
       UNDEFINED_CONSTANT = Chain::Constant.new('<undefined>')
@@ -57,13 +70,31 @@ module Solargraph
         @base ||= Chain.new(links[0..-2])
       end
 
-      # @param api_map [ApiMap]
-      # @param name_pin [Pin::Base]
-      # @param locals [::Enumerable<Pin::LocalVariable>]
+      # Determine potential Pins returned by this chain of words
       #
-      # @return [::Array<Pin::Base>]
+      # @param api_map [ApiMap]
+      # @param name_pin [Pin::Closure] the surrounding closure pin for
+      #   the statement represented by this chain for type resolution
+      #   and method pin lookup.
+      #
+      #   For method calls (Chain::Call objects) as the first element
+      #   in the chain, 'name_pin.binder' should return the
+      #   ComplexType representing the LHS / "self type" of the call.
+      #
+      # @param locals [::Enumerable<Pin::LocalVariable>] Any local
+      #   variables / method parameters etc visible by the statement
+      #
+      # @return [::Array<Pin::Base>] Pins representing possible return
+      #   types of this method.
       def define api_map, name_pin, locals
         return [] if undefined?
+
+        # working_pin is the surrounding closure pin for the link
+        # being processed, whose #binder method will provide the LHS /
+        # 'self type' of the next link (same as the  #return_type method
+        # --the type of the result so far).
+        #
+        # @todo ProxyType uses 'type' for the binder, but '
         working_pin = name_pin
         links[0..-2].each do |link|
           pins = link.resolve(api_map, working_pin, locals)
@@ -71,19 +102,33 @@ module Solargraph
           return [] if type.undefined?
           working_pin = Pin::ProxyType.anonymous(type)
         end
-        links.last.last_context = name_pin
+        links.last.last_context = working_pin
         links.last.resolve(api_map, working_pin, locals)
+      end
+
+      # @param api_map [ApiMap]
+      # @param name_pin [Pin::Base] The pin for the closure in which this code runs
+      # @param locals [::Enumerable<Pin::LocalVariable>]
+      # @return [ComplexType]
+      # @sg-ignore
+      def infer api_map, name_pin, locals
+        out = nil
+        cached = @@inference_cache[[node, node.location, links.map(&:word), name_pin&.return_type, locals]] unless node.nil?
+        return cached if cached && @@inference_invalidation_key == api_map.hash
+        out = infer_uncached api_map, name_pin, locals
+        if @@inference_invalidation_key != api_map.hash
+          @@inference_cache = {}
+          @@inference_invalidation_key = api_map.hash
+        end
+        @@inference_cache[[node, node.location, links.map(&:word), name_pin&.return_type, locals]] = out unless node.nil?
+        out
       end
 
       # @param api_map [ApiMap]
       # @param name_pin [Pin::Base]
       # @param locals [::Enumerable<Pin::LocalVariable>]
       # @return [ComplexType]
-      def infer api_map, name_pin, locals
-        from_here = base.infer(api_map, name_pin, locals) unless links.length == 1
-        if from_here
-          name_pin = name_pin.proxy(from_here)
-        end
+      def infer_uncached api_map, name_pin, locals
         pins = define(api_map, name_pin, locals)
         type = infer_first_defined(pins, links.last.last_context, api_map, locals)
         maybe_nil(type)
@@ -139,7 +184,7 @@ module Solargraph
               # @todo even at strong, no typechecking complaint
               #   happens when a [Pin::Base,nil] is passed into a method
               #   that accepts only [Pin::Namespace] as an argument
-              type = type.resolve_generics(pin.closure, context.return_type)
+              type = type.resolve_generics(pin.closure, context.binder)
             end
             if type.defined?
               possibles.push type
@@ -168,14 +213,17 @@ module Solargraph
           @@inference_depth -= 1
         end
         return ComplexType::UNDEFINED if possibles.empty?
+
         type = if possibles.length > 1
-          sorted = possibles.map { |t| t.rooted? ? "::#{t}" : t.to_s }.sort { |a, _| a == 'nil' ? 1 : 0 }
-          ComplexType.parse(*sorted)
+          # Move nil to the end by convention
+          sorted = possibles.sort { |a, _| a.tag == 'nil' ? 1 : 0 }
+          ComplexType.new(sorted.uniq)
         else
-          ComplexType.parse(possibles.map(&:to_s).join(', '))
+          ComplexType.new(possibles)
         end
         return type if context.nil? || context.return_type.undefined?
-        type.self_to(context.return_type.tag)
+
+        type.self_to_type(context.return_type)
       end
 
       # @param type [ComplexType]
@@ -183,7 +231,7 @@ module Solargraph
       def maybe_nil type
         return type if type.undefined? || type.void? || type.nullable?
         return type unless nullable?
-        ComplexType.try_parse("#{type}, nil")
+        ComplexType.new(type.items + [ComplexType::NIL])
       end
     end
   end

@@ -16,13 +16,21 @@ module Solargraph
     def self.build(gemspec)
       yard_pins = build_yard_pins(gemspec)
       rbs_map = RbsMap.from_gemspec(gemspec)
+      combine yard_pins, rbs_map
+    end
+
+    # @param yard_pins [Array<Pin::Base>]
+    # @param rbs_map [RbsMap]
+    # @return [Array<Pin::Base>]
+    def self.combine(yard_pins, rbs_map)
       in_yard = Set.new
       combined = yard_pins.map do |yard|
         in_yard.add yard.path
         next yard unless yard.is_a?(Pin::Method)
-        rbs = rbs_map.path_pin(yard.path)
+
+        rbs = rbs_map.path_pin(yard.path, Pin::Method)
         next yard unless rbs
-        # @todo Could not include: attribute and anon_splat
+
         # @sg-ignore
         yard.class.new(
           location: yard.location,
@@ -49,7 +57,7 @@ module Solargraph
       def build_yard_pins(gemspec)
         Yardoc.cache(gemspec) unless Yardoc.cached?(gemspec)
         yardoc = Yardoc.load!(gemspec)
-        YardMap::Mapper.new(yardoc, gemspec).map  
+        YardMap::Mapper.new(yardoc, gemspec).map
       end
 
       # Select the first defined type.

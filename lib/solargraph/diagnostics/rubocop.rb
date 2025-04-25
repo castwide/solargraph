@@ -48,7 +48,7 @@ module Solargraph
         args.find { |a| a =~ /version=/ }.to_s.split('=').last
       end
 
-      # @param resp [Hash{String => Hash{String => Array<Hash{String => undefined}>}}]
+      # @param resp [Hash{String => Array<Hash{String => Array<Hash{String => undefined}>}>}]
       # @return [Array<Hash>]
       def make_array resp
         diagnostics = []

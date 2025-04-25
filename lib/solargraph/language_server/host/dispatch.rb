@@ -33,9 +33,9 @@ module Solargraph
         # @return [void]
         def update_libraries uri
           src = sources.find(uri)
-          libraries.each do |lib|
-            lib.merge src if lib.contain?(src.filename)
-          end
+          using = libraries.select { |lib| lib.contain?(src.filename) }
+          using.push library_for(uri) if using.empty?
+          using.each { |lib| lib.merge src }
           diagnoser.schedule uri
         end
 
@@ -95,6 +95,10 @@ module Solargraph
           nil
         end
 
+        def options
+          @options ||= {}.freeze
+        end
+
         # Get a generic library for the given URI and attach the corresponding
         # source.
         #
@@ -109,7 +113,14 @@ module Solargraph
 
         # @return [Library]
         def generic_library
-          @generic_library ||= Solargraph::Library.new
+          @generic_library ||= Solargraph::Library.new(Solargraph::Workspace.new('', nil, options), nil)
+                                                  .tap { |lib| lib.add_observer self }
+        end
+
+        # @param library [Solargraph::Library]
+        # @return [void]
+        def update progress
+          progress&.send(self)
         end
       end
     end

@@ -2,51 +2,53 @@
 
 require 'yard'
 require 'solargraph/yard_tags'
-require 'set'
 
 module Solargraph
-  # An index of pins and other ApiMap-related data for a Source.
+  # An index of Pins and other ApiMap-related data for a single Source
+  # that can be queried.
   #
   class SourceMap
     autoload :Mapper,        'solargraph/source_map/mapper'
     autoload :Clip,          'solargraph/source_map/clip'
     autoload :Completion,    'solargraph/source_map/completion'
+    autoload :Data,          'solargraph/source_map/data'
 
     # @return [Source]
     attr_reader :source
 
     # @return [Array<Pin::Base>]
-    attr_reader :pins
+    def pins
+      data.pins
+    end
 
-    # @return [Array<Pin::Base>]
-    attr_reader :locals
+    # @return [Array<Pin::LocalVariable>]
+    def locals
+      data.locals
+    end
 
     # @param source [Source]
-    # @param pins [Array<Pin::Base>]
-    # @param locals [Array<Pin::Base>]
-    def initialize source, pins, locals
-      # HACK: Keep the library from changing this
-      @source = source.dup
-      @pins = pins
-      @locals = locals
+    def initialize source
+      @source = source
+
       environ.merge Convention.for_local(self) unless filename.nil?
       self.convention_pins = environ.pins
-      @pin_class_hash = pins.to_set.classify(&:class).transform_values(&:to_a)
       @pin_select_cache = {}
     end
 
     # @param klass [Class]
     # @return [Array<Pin::Base>]
     def pins_by_class klass
-      @pin_select_cache[klass] ||= @pin_class_hash.select { |key, _| key <= klass }.values.flatten
+      @pin_select_cache[klass] ||= pin_class_hash.select { |key, _| key <= klass }.values.flatten
     end
 
-    # @return [Set<String>]
-    def rebindable_method_names
-      @rebindable_method_names ||= pins_by_class(Pin::Method)
-        .select { |pin| pin.comments && pin.comments.include?('@yieldreceiver') }
-        .map(&:name)
-        .to_set
+    # A hash representing the state of the source map's API.
+    #
+    # ApiMap#catalog uses this value to determine whether it needs to clear its
+    # cache.
+    #
+    # @return [Integer]
+    def api_hash
+      @api_hash ||= (pins_by_class(Pin::Constant) + pins_by_class(Pin::Namespace).select { |pin| pin.namespace.to_s > '' } + pins_by_class(Pin::Reference) + pins_by_class(Pin::Method).map(&:node) + locals).hash
     end
 
     # @return [String]
@@ -116,10 +118,13 @@ module Solargraph
       _locate_pin line, character, Pin::Namespace, Pin::Method, Pin::Block
     end
 
+    # @todo Candidate for deprecation
+    #
     # @param other_map [SourceMap]
     # @return [Boolean]
     def try_merge! other_map
       return false if pins.length != other_map.pins.length || locals.length != other_map.locals.length || requires.map(&:name).uniq.sort != other_map.requires.map(&:name).uniq.sort
+
       pins.each_index do |i|
         return false unless pins[i].try_merge!(other_map.pins[i])
       end
@@ -160,15 +165,23 @@ module Solargraph
         SourceMap.map(source)
       end
 
+      # @deprecated
       # @param source [Source]
       # @return [SourceMap]
       def map source
-        result = SourceMap::Mapper.map(source)
-        new(source, *result)
+        new(source)
       end
     end
 
     private
+
+    def pin_class_hash
+      @pin_class_hash ||= pins.to_set.classify(&:class).transform_values(&:to_a)
+    end
+
+    def data
+      @data ||= Data.new(source)
+    end
 
     # @return [Array<Pin::Base>]
     def convention_pins
@@ -178,7 +191,7 @@ module Solargraph
     # @param pins [Array<Pin::Base>]
     # @return [Array<Pin::Base>]
     def convention_pins=(pins)
-      # unmemoizing the document_symbols in case it was called from any of convnetions
+      # unmemoizing the document_symbols in case it was called from any of conventions
       @document_symbols = nil
       @convention_pins = pins
     end
