@@ -19,13 +19,22 @@ module Solargraph
     attr_reader :filename
 
     # @return [String]
-    attr_reader :code
+    def code
+      finalize
+      @code
+    end
 
-    # @return [Parser::AST::Node]
-    attr_reader :node
+    # @return [Parser::AST::Node, nil]
+    def node
+      finalize
+      @node
+    end
 
     # @return [Hash{Integer => Array<String>}]
-    attr_reader :comments
+    def comments
+      finalize
+      @comments
+    end
 
     # @todo Deprecate?
     # @return [Integer]
@@ -39,17 +48,6 @@ module Solargraph
       @repaired = code
       @filename = filename
       @version = version
-      @domains = []
-      begin
-        @node, @comments = Solargraph::Parser.parse_with_comments(@code, filename)
-        @parsed = true
-      rescue Parser::SyntaxError, EncodingError => e
-        @node = nil
-        @comments = {}
-        @parsed = false
-      ensure
-        @code.freeze
-      end
     end
 
     # @param range [Solargraph::Range]
@@ -64,9 +62,9 @@ module Solargraph
     # @param c2 [Integer]
     # @return [String]
     def from_to l1, c1, l2, c2
-      b = Solargraph::Position.line_char_to_offset(@code, l1, c1)
-      e = Solargraph::Position.line_char_to_offset(@code, l2, c2)
-      @code[b..e-1]
+      b = Solargraph::Position.line_char_to_offset(code, l1, c1)
+      e = Solargraph::Position.line_char_to_offset(code, l2, c2)
+      code[b..e-1]
     end
 
     # Get the nearest node that contains the specified index.
@@ -85,10 +83,9 @@ module Solargraph
     # @param column [Integer]
     # @return [Array<AST::Node>]
     def tree_at(line, column)
-      # offset = Position.line_char_to_offset(@code, line, column)
       position = Position.new(line, column)
       stack = []
-      inner_tree_at @node, position, stack
+      inner_tree_at node, position, stack
       stack
     end
 
@@ -104,32 +101,28 @@ module Solargraph
         @version = updater.version
         return self
       end
-      synced = Source.new(real_code, filename)
-      if synced.parsed?
-        synced.version = updater.version
-        return synced
+      Source.new(@code, filename, updater.version).tap do |src|
+        src.repaired = @repaired
+        src.error_ranges.concat error_ranges
+        src.changes.concat(changes + updater.changes)
       end
-      incr_code = updater.repair(@repaired)
-      synced = Source.new(incr_code, filename)
-      synced.error_ranges.concat (error_ranges + updater.changes.map(&:range))
-      synced.code = real_code
-      synced.version = updater.version
-      synced
     end
 
     # @param position [Position, Array(Integer, Integer)]
     # @return [Source::Cursor]
     def cursor_at position
+      finalize
       Cursor.new(self, position)
     end
 
     # @return [Boolean]
     def parsed?
+      finalize
       @parsed
     end
 
     def repaired?
-      @is_repaired ||= (@code != @repaired)
+      code != @repaired
     end
 
     # @param position [Position]
@@ -188,8 +181,8 @@ module Solargraph
     # @return [String]
     def code_for(node)
       rng = Range.from_node(node)
-      b = Position.line_char_to_offset(@code, rng.start.line, rng.start.column)
-      e = Position.line_char_to_offset(@code, rng.ending.line, rng.ending.column)
+      b = Position.line_char_to_offset(code, rng.start.line, rng.start.column)
+      e = Position.line_char_to_offset(code, rng.ending.line, rng.ending.column)
       frag = code[b..e-1].to_s
       frag.strip.gsub(/,$/, '')
     end
@@ -234,8 +227,7 @@ module Solargraph
     end
 
     def synchronized?
-      @synchronized = true if @synchronized.nil?
-      @synchronized
+      true
     end
 
     # Get a hash of comments grouped by the line numbers of the associated code.
@@ -245,8 +237,9 @@ module Solargraph
       @associated_comments ||= begin
         result = {}
         buffer = String.new('')
+        # @type [Integer, nil]
         last = nil
-        @comments.each_pair do |num, snip|
+        comments.each_pair do |num, snip|
           if !last || num == last + 1
             buffer.concat "#{snip.text}\n"
           else
@@ -321,12 +314,12 @@ module Solargraph
 
     # @return [Array<Parser::AST::Node>]
     def string_nodes
-      @string_nodes ||= string_nodes_in(@node)
+      @string_nodes ||= string_nodes_in(node)
     end
 
     # @return [Array<Range>]
     def comment_ranges
-      @comment_ranges ||= @comments.values.map(&:range)
+      @comment_ranges ||= comments.values.map(&:range)
     end
 
     # Get an array of foldable comment block ranges. Blocks are excluded if
@@ -382,16 +375,58 @@ module Solargraph
 
     protected
 
+    def changes
+      @changes ||= []
+    end
+
     # @return [String]
     attr_writer :filename
 
     # @return [Integer]
     attr_writer :version
 
+    def finalize
+      return if @finalized && changes.empty?
+
+      changes.each do |change|
+        @code = change.write(@code)
+      end
+      @finalized = true
+      begin
+        @node, @comments = Solargraph::Parser.parse_with_comments(@code, filename)
+        @parsed = true
+        @repaired = @code
+      rescue Parser::SyntaxError, EncodingError => e
+        @node = nil
+        @comments = {}
+        @parsed = false
+      ensure
+        @code.freeze
+      end
+      if !@parsed && !changes.empty?
+        changes.each do |change|
+          @repaired = change.repair(@repaired)
+        end
+        error_ranges.concat(changes.map(&:range))
+        begin
+          @node, @comments = Solargraph::Parser.parse_with_comments(@repaired, filename)
+          @parsed = true
+        rescue Parser::SyntaxError, EncodingError => e
+          @node = nil
+          @comments = {}
+          @parsed = false
+        end
+      elsif @parsed
+        error_ranges.clear
+      end
+      changes.clear
+    end
+
     # @param val [String]
     # @return [String]
     def code=(val)
-      @code_lines= nil
+      @code_lines = nil
+      @finalized = false
       @code = val
     end
 
@@ -402,7 +437,12 @@ module Solargraph
     attr_writer :error_ranges
 
     # @return [String]
-    attr_accessor :repaired
+    attr_writer :repaired
+
+    def repaired
+      finalize
+      @repaired
+    end
 
     # @return [Boolean]
     attr_writer :parsed
@@ -412,9 +452,6 @@ module Solargraph
 
     # @return [Boolean]
     attr_writer :synchronized
-
-    # @return [Source::Updater]
-    attr_accessor :last_updater
 
     private
 
