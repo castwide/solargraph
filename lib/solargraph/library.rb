@@ -598,6 +598,7 @@ module Solargraph
       ensure
         end_cache_progress
         catalog
+        sync_catalog
       end
     end
 
