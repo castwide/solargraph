@@ -190,7 +190,14 @@ module Solargraph
           []
         end
       else
-        mutex.synchronize { api_map.clip(cursor).define.map { |pin| pin.realize(api_map) } }
+        mutex.synchronize do
+          clip = api_map.clip(cursor)
+          if cursor.assign?
+            [Pin::ProxyType.new(name: cursor.word, return_type: clip.infer)]
+          else
+            clip.define.map { |pin| pin.realize(api_map) }
+          end
+        end
       end
     rescue FileNotFoundError => e
       handle_file_not_found(filename, e)
