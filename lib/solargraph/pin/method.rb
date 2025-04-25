@@ -43,6 +43,10 @@ module Solargraph
         m
       end
 
+      def all_rooted?
+        super && parameters.all?(&:all_rooted?) && (!block || block&.all_rooted?) && signatures.all?(&:all_rooted?)
+      end
+
       # @param signature [Pin::Signature]
       # @return [Pin::Method]
       def with_single_signature(signature)
@@ -68,7 +72,7 @@ module Solargraph
       # @return [Pin::Signature, nil]
       def block
         return @block unless @block == :undefined
-        @block = signatures.first.block
+        @block = signatures.first&.block
       end
 
       def completion_item_kind
@@ -274,9 +278,9 @@ module Solargraph
       end
 
       def nearly? other
-        return false unless super
-        parameters == other.parameters and
-          scope == other.scope and
+        super &&
+          parameters == other.parameters &&
+          scope == other.scope &&
           visibility == other.visibility
       end
 
@@ -287,6 +291,7 @@ module Solargraph
       def try_merge! pin
         return false unless super
         @node = pin.node
+        @resolved_ref_tag = false
         true
       end
 
@@ -317,6 +322,29 @@ module Solargraph
 
       def anon_splat?
         @anon_splat
+      end
+
+      # @param [ApiMap]
+      # @return [self]
+      def resolve_ref_tag api_map
+        return self if @resolved_ref_tag
+
+        @resolved_ref_tag = true
+        return self unless docstring.ref_tags.any?
+        docstring.ref_tags.each do |tag|
+          ref = if tag.owner.to_s.start_with?(/[#\.]/)
+            api_map.get_methods(namespace)
+                   .select { |pin| pin.path.end_with?(tag.owner.to_s) }
+                   .first
+          else
+            # @todo Resolve relative namespaces
+            api_map.get_path_pins(tag.owner.to_s).first
+          end
+          next unless ref
+
+          docstring.add_tag(*ref.docstring.tags(:param))
+        end
+        self
       end
 
       protected
@@ -454,7 +482,7 @@ module Solargraph
         end
         result.push ComplexType::NIL if has_nil
         return ComplexType::UNDEFINED if result.empty?
-        ComplexType.try_parse(*result.map(&:tag).uniq)
+        ComplexType.new(result.uniq)
       end
 
       # @param [ApiMap] api_map
@@ -469,7 +497,7 @@ module Solargraph
           types.push type if type.defined?
         end
         return ComplexType::UNDEFINED if types.empty?
-        ComplexType.try_parse(*types.map(&:tag).uniq)
+        ComplexType.new(types.uniq)
       end
 
       # When YARD parses an overload tag, it includes rest modifiers in the parameters names.
