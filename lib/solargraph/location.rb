@@ -18,6 +18,11 @@ module Solargraph
       @range = range
     end
 
+    # @param location [self]
+    def contain? location
+      range.contain?(location.range.start) && range.contain?(location.range.ending) && filename == location.filename
+    end
+
     # @return [Hash]
     def to_hash
       {

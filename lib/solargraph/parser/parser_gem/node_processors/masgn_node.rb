@@ -30,11 +30,17 @@ module Solargraph
 
             lhs_arr.each_with_index do |lhs, i|
               location = get_node_location(lhs)
+              pin = if lhs.type == :lvasgn
+                      # lvasgn is a local variable
+                      locals.find { |l| l.location == location }
+                    else
+                      # e.g., ivasgn is an instance variable, etc
+                      pins.find { |iv| iv.location == location && iv.is_a?(Pin::BaseVariable) }
+                    end
               # @todo in line below, nothing in typechecking alerts
               #   when a non-existant method is called on 'l'
-              pin = locals.find { |l| l.location == location }
               if pin.nil?
-                Solargraph.logger.debug "Could not find pin in location #{location}"
+                Solargraph.logger.debug { "Could not find local for masgn= value in location #{location.inspect} in #{lhs_arr} - masgn = #{masgn}, lhs.type = #{lhs.type}" }
                 next
               end
               pin.mass_assignment = [mass_rhs, i]
