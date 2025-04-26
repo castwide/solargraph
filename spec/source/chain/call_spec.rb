@@ -413,6 +413,27 @@ describe Solargraph::Source::Chain::Call do
     expect(type.tags).to eq('A::B')
   end
 
+  it 'qualifies types in an Array#+ scenario' do
+    source = Solargraph::Source.load_string(%(
+      module A
+        class B
+          def c
+            ([B.new] + [B.new]).each do |d|
+              d
+            end
+          end
+        end
+      end
+    ), 'test.rb')
+
+    api_map = Solargraph::ApiMap.new
+    api_map.map source
+
+    chain = Solargraph::Source::SourceChainer.chain(source, Solargraph::Position.new(5, 14))
+    type = chain.infer(api_map, Solargraph::Pin::ROOT_PIN, api_map.source_map('test.rb').locals)
+    expect(type.rooted_tags).to eq('::A::B')
+  end
+
   it 'handles subclass and superclass issues in Array#+' do
     source = Solargraph::Source.load_string(%(
       module A
@@ -441,7 +462,7 @@ describe Solargraph::Source::Chain::Call do
     chain = Solargraph::Source::SourceChainer.chain(source, Solargraph::Position.new(11, 14))
     type = chain.infer(api_map, Solargraph::Pin::ROOT_PIN, api_map.source_map('test.rb').locals)
     # valid options here:
-    #   * emit type checker warning when adding [B.new] and type whole thing as '::A::B'
+    #   * emit type checker warning when adding [B.new] and type whole thing as '::A::C'
     #   * type whole thing as '::A::B, A::C'
     #   * type as undefined
     expect(type.rooted_tags).to eq('::A::B, ::A::C').or be_undefined

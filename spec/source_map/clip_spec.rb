@@ -1022,7 +1022,7 @@ describe Solargraph::SourceMap::Clip do
     expect(clip.infer.to_s).to eq('String')
   end
 
-  xit 'infers complex variable type from ternary operator' do
+  it 'infers complex variable type from ternary operator' do
     source = Solargraph::Source.load_string(%(
       def foo a
         type = (a == 123 ? 'foo' : 456)
@@ -1287,6 +1287,7 @@ describe Solargraph::SourceMap::Clip do
     clip = api_map.clip_at('test.rb', [6, 6])
     expect(clip.infer.tag).to eq('Array<String>')
     expect(clip.infer.tags).to eq('Array<String>, nil')
+    expect(clip.infer.rooted_tags).to eq('::Array<::String>, nil')
   end
 
   it 'excludes local variables from chained call resolution' do
