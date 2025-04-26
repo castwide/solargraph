@@ -39,7 +39,7 @@ module Solargraph
       INCLUDES = [
         Solargraph::Pin::Reference::Include.new(name: '_ToAry',
                                                 closure: Solargraph::Pin::Namespace.new(name: 'Array'),
-                                                generic_values: ['Elem'])
+                                                generic_values: ['generic<Elem>'])
       ]
 
       # HACK: Add Errno exception classes
