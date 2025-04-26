@@ -101,7 +101,7 @@ module Solargraph
         locals.push(new_pin)
       end
 
-      # @param facts_by_pin [Hash<Pin::LocalVariable, Array<Hash>>]
+      # @param facts_by_pin [Hash{Pin::LocalVariable => Array<Hash{Symbol => String}>}]
       # @param presences [Array<Range>]
       # @return [void]
       def process_facts(facts_by_pin, presences)
@@ -191,6 +191,7 @@ module Solargraph
 
       # @todo "return type could not be inferred" should not trigger here
       # @sg-ignore
+      # @param clause_node [Parser::AST::Node]
       def always_breaks?(clause_node)
         clause_node&.type == :break
       end
