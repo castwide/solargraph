@@ -185,17 +185,17 @@ module Solargraph
       end
 
       def typify api_map
-        logger.debug { "Method#typify(self=#{self}, binder=#{binder}, closure=#{closure}, context=#{context}, return_type=#{return_type.rooted_tags}) - starting" }
+        logger.debug { "Method#typify(self=#{self}, binder=#{binder}, closure=#{closure}, context=#{context.rooted_tags}, return_type=#{return_type.rooted_tags}) - starting" }
         decl = super
         unless decl.undefined?
-          logger.debug { "Method#typify(self=#{self}, binder=#{binder}, closure=#{closure}, context=#{context}) => #{decl} - no decl" }
+          logger.debug { "Method#typify(self=#{self}, binder=#{binder}, closure=#{closure}, context=#{context}) => #{decl.rooted_tags} - decl found" }
           return decl
         end
         type = see_reference(api_map) || typify_from_super(api_map)
         logger.debug { "Method#typify(self=#{self}) - type=#{type}" }
         unless type.nil?
           qualified = type.qualify(api_map, namespace)
-          logger.debug { "Method#typify(self=#{self}) => #{qualified}" }
+          logger.debug { "Method#typify(self=#{self}) => #{qualified.rooted_tags}" }
           return qualified
         end
         if name.end_with?('?')

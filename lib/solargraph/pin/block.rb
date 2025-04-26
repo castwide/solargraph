@@ -98,9 +98,11 @@ module Solargraph
         return ComplexType::UNDEFINED unless receiver
 
         chain = Parser.chain(receiver, location.filename)
+        logger.debug { "Block#maybe_rebind(): chain: #{chain}" }
         locals = api_map.source_map(location.filename).locals_at(location)
         receiver_pin = chain.define(api_map, closure, locals).first
         return ComplexType::UNDEFINED unless receiver_pin
+        logger.debug { "Block#maybe_rebind(): receiver_pin: #{receiver_pin}" }
 
         types = receiver_pin.docstring.tag(:yieldreceiver)&.types
         return ComplexType::UNDEFINED unless types&.any?
