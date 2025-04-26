@@ -107,8 +107,8 @@ module Solargraph
                   break
                 end
                 logger.debug { "Call#inferred_pins(word=#{word}, name_pin=#{name_pin}, name_pin.binder=#{name_pin.binder}) - resolving arg #{arg.desc}" }
-                atype = atypes[idx] ||= arg.infer(api_map, Pin::ProxyType.anonymous(name_pin.context), locals)                
-                ptype = param.return_type                
+                atype = atypes[idx] ||= arg.infer(api_map, Pin::ProxyType.anonymous(name_pin.context), locals)
+                ptype = param.return_type
                 # @todo Weak type comparison
                 # unless atype.tag == param.return_type.tag || api_map.super_and_sub?(param.return_type.tag, atype.tag)
                 unless param.return_type.undefined? || atype.name == param.return_type.name || api_map.super_and_sub?(param.return_type.name, atype.name) || param.return_type.generic?
@@ -238,11 +238,24 @@ module Solargraph
           nil
         end
 
+        # @param name_pin [Pin::Base]
+        # @return [Pin::Method, nil]
+        def find_method_pin(name_pin)
+          method_pin = name_pin
+          until method_pin.is_a?(Pin::Method)
+            method_pin = method_pin.closure
+            return if method_pin.nil?
+          end
+          method_pin
+        end
+
         # @param api_map [ApiMap]
         # @param name_pin [Pin::Base]
         # @return [::Array<Pin::Base>]
         def super_pins api_map, name_pin
-          pins = api_map.get_method_stack(name_pin.namespace, name_pin.name, scope: name_pin.context.scope)
+          method_pin = find_method_pin(name_pin)
+          return [] if method_pin.nil?
+          pins = api_map.get_method_stack(method_pin.namespace, method_pin.name, scope: method_pin.context.scope)
           pins.reject{|p| p.path == name_pin.path}
         end
 
@@ -250,9 +263,9 @@ module Solargraph
         # @param name_pin [Pin::Base]
         # @return [::Array<Pin::Base>]
         def yield_pins api_map, name_pin
-          method_pin = api_map.get_method_stack(name_pin.namespace, name_pin.name, scope: name_pin.context.scope).first
+          method_pin = find_method_pin(name_pin)
           logger.debug { "Call#yield_pins(name_pin=#{name_pin}) - method_pin=#{method_pin.inspect}" }
-          return [] if method_pin.nil?
+          return [] unless method_pin
 
           method_pin.signatures.map(&:block).compact.map do |signature_pin|
             return_type = signature_pin.return_type.qualify(api_map, name_pin.namespace)
