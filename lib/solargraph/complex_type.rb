@@ -158,6 +158,7 @@ module Solargraph
       map(&:rooted_tag).join(', ')
     end
 
+    # @yieldparam [UniqueType]
     def all? &block
       @items.all? &block
     end

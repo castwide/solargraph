@@ -226,7 +226,9 @@ module Solargraph
 
       # @return [Array<String>]
       def excluded_directories
-        @raw_data['exclude']
+        # @type [Array<String>]
+        excluded = @raw_data['exclude']
+        excluded
           .select { |g| glob_is_directory?(g) }
           .map { |g| File.absolute_path(glob_to_directory(g), directory) }
       end
