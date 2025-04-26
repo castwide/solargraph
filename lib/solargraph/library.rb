@@ -647,9 +647,10 @@ module Solargraph
     end
 
     def sync_catalog
-      return if mutex.synchronize { @sync_count == 0 }
+      return if @sync_count == 0
 
       mutex.synchronize do
+        logger.warn "CATALOG"
         logger.info "Cataloging #{workspace.directory.empty? ? 'generic workspace' : workspace.directory}"
         api_map.catalog bench
         source_map_hash.values.each { |map| find_external_requires(map) }
