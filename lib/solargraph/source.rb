@@ -375,6 +375,7 @@ module Solargraph
 
     protected
 
+    # @return [Array<Change>]
     def changes
       @changes ||= []
     end
