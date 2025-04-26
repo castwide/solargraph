@@ -67,13 +67,25 @@ module Solargraph
         end
         raise "Please remove leading :: and set rooted instead - #{name.inspect}" if name.start_with?('::')
         @name = name
-        @key_types = key_types
-        @subtypes = subtypes
+        @parameters_type = parameters_type
+        if implicit_union?
+          @key_types = key_types.uniq
+          @subtypes = subtypes.uniq
+        else
+          @key_types = key_types
+          @subtypes = subtypes
+        end
         @rooted = rooted
         @all_params = []
-        @all_params.concat key_types
-        @all_params.concat subtypes
-        @parameters_type = parameters_type
+        @all_params.concat @key_types
+        @all_params.concat @subtypes
+      end
+
+      def implicit_union?
+        # @todo use api_map to establish number of generics in type;
+        #   if only one is allowed but multiple are passed in, treat
+        #   those as implicit unions
+        ['Hash', 'Array', 'Set', '_ToAry', 'Enumerable', '_Each'].include?(name) && parameters_type != :fixed
       end
 
       def to_s
