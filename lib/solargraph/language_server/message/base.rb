@@ -61,18 +61,11 @@ module Solargraph
         # @return [void]
         def send_response
           return if id.nil?
-          if host.cancel?(id)
-            # https://microsoft.github.io/language-server-protocol/specifications/specification-current/#cancelRequest
-            # cancel should send response RequestCancelled
-            Solargraph::Logging.logger.info "Cancelled response to #{method}"
-            set_result nil
-            set_error ErrorCodes::REQUEST_CANCELLED, "cancelled by client"
-          else
-            Solargraph::Logging.logger.info "Sending response to #{method}"
-          end
+
+          accept_or_cancel
           response = {
-            jsonrpc: "2.0",
-            id: id,
+            jsonrpc: '2.0',
+            id: id
           }
           response[:result] = result unless result.nil?
           response[:error] = error unless error.nil?
@@ -82,6 +75,20 @@ module Solargraph
           Solargraph.logger.debug envelope
           host.queue envelope
           host.clear id
+        end
+
+        private
+
+        def accept_or_cancel
+          if host.cancel?(id)
+            # https://microsoft.github.io/language-server-protocol/specifications/specification-current/#cancelRequest
+            # cancel should send response RequestCancelled
+            Solargraph::Logging.logger.info "Cancelled response to ##{id} #{method}"
+            set_result nil
+            set_error ErrorCodes::REQUEST_CANCELLED, 'Cancelled by client'
+          else
+            Solargraph::Logging.logger.info "Sending response to ##{id} #{method}"
+          end
         end
       end
     end
