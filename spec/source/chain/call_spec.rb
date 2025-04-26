@@ -471,6 +471,12 @@ describe Solargraph::Source::Chain::Call do
 
   it 'qualifies types in a second Array#+ ' do
     source = Solargraph::Source.load_string(%(
+      module A1
+        class B1
+          # @return [Array<A::D::E>]
+          def foo; end
+        end
+      end
       module A
         module D
           class E; end
@@ -504,26 +510,36 @@ describe Solargraph::Source::Chain::Call do
               d
             end
           end
+          def k
+            arr1 = A1::B1.new.foo + h
+            arr1
+            arr1.each do |d1|
+              d1
+            end
+          end
         end
       end
     ), 'test.rb')
     api_map = Solargraph::ApiMap.new
     api_map.map source
 
-    chain = Solargraph::Source::SourceChainer.chain(source, Solargraph::Position.new(9, 14))
-    type = chain.infer(api_map, Solargraph::Pin::ROOT_PIN, api_map.source_map('test.rb').locals)
-    expect(type.rooted_tags).to eq('::A::D::E')
+    clip = api_map.clip_at('test.rb', [15, 14])
+    expect(clip.infer.rooted_tags).to eq('::A::D::E')
 
-    chain = Solargraph::Source::SourceChainer.chain(source, Solargraph::Position.new(16, 14))
-    type = chain.infer(api_map, Solargraph::Pin::ROOT_PIN, api_map.source_map('test.rb').locals)
-    expect(type.rooted_tags).to eq('::A::D::E')
+    clip = api_map.clip_at('test.rb', [22, 14])
+    expect(clip.infer.rooted_tags).to eq('::A::D::E')
 
-    chain = Solargraph::Source::SourceChainer.chain(source, Solargraph::Position.new(26, 14))
-    type = chain.infer(api_map, Solargraph::Pin::ROOT_PIN, api_map.source_map('test.rb').locals)
-    expect(type.rooted_tags).to eq('::A::D::E')
+    clip = api_map.clip_at('test.rb', [32, 14])
+    expect(clip.infer.rooted_tags).to eq('::A::D::E')
 
-    chain = Solargraph::Source::SourceChainer.chain(source, Solargraph::Position.new(31, 14))
-    type = chain.infer(api_map, Solargraph::Pin::ROOT_PIN, api_map.source_map('test.rb').locals)
-    expect(type.rooted_tags).to eq('::A::D::E')
+    clip = api_map.clip_at('test.rb', [37, 14])
+    expect(clip.infer.rooted_tags).to eq('::A::D::E')
+
+    clip = api_map.clip_at('test.rb', [42, 12])
+
+    expect(clip.infer.rooted_name).to eq('::Array')
+    expect(clip.infer.all_params.map(&:rooted_tags)).to include('::A::D::E')
+    # @todo root out the undefined that pops up in the union right now
+    # expect(clip.infer.rooted_tags).to eq('::Array<::A::D::E>')
   end
 end
