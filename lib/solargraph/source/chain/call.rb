@@ -41,9 +41,18 @@ module Solargraph
             []
           end
           return inferred_pins(found, api_map, name_pin, locals) unless found.empty?
-          pins = name_pin.binder.each_unique_type.flat_map do |context|
-            method_context = context.namespace == '' ? '' : context.tag
-            api_map.get_method_stack(method_context, word, scope: context.scope)
+          if api_map.loose_unions
+            # fetch methods which ANY of the potential context types provide
+            pins = name_pin.binder.each_unique_type.flat_map do |context|
+              method_context = context.namespace == '' ? '' : context.tag
+              api_map.get_method_stack(method_context, word, scope: context.scope)
+            end
+          else
+            # grab pins which are provided by every potential context type
+            pins = name_pin.binder.each_unique_type.map do |context|
+              method_context = context.namespace == '' ? '' : context.tag
+              api_map.get_method_stack(method_context, word, scope: context.scope)
+            end.reduce(:&)
           end
           return [] if pins.empty?
           inferred_pins(pins, api_map, name_pin, locals)
