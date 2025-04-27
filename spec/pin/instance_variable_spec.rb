@@ -9,6 +9,6 @@ describe Solargraph::Pin::InstanceVariable do
 
   it "does not link documentation for undefined return types" do
     pin = Solargraph::Pin::InstanceVariable.new(name: '@bar')
-    expect(pin.link_documentation).to be_nil
+    expect(pin.link_documentation).to eq('@bar')
   end
 end

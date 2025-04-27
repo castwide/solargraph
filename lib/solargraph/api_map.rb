@@ -250,18 +250,20 @@ module Solargraph
     # @param tag [String, nil] The namespace to
     #   match, complete with generic parameters set to appropriate
     #   values if available
-    # @param context_tag [String] The context in which the tag was
-    #   referenced; start from here to resolve the name
+    # @param context_tag [String] The fully qualified context in which
+    #   the tag was referenced; start from here to resolve the name.
+    #   Should not be prefixed with '::'.
     # @return [String, nil] fully qualified tag
     def qualify tag, context_tag = ''
       return tag if ['self', nil].include?(tag)
-      context_type = ComplexType.try_parse(context_tag)
+
+      context_type = ComplexType.parse(context_tag).force_rooted
       return unless context_type
 
       type = ComplexType.try_parse(tag)
       return unless type
 
-      fqns = qualify_namespace(type.rooted_namespace, context_type.rooted_namespace)
+      fqns = qualify_namespace(type.rooted_namespace, context_type.namespace)
       return unless fqns
 
       fqns + type.substring
@@ -324,6 +326,11 @@ module Solargraph
     # @return [Enumerable<Solargraph::Pin::GlobalVariable>]
     def get_global_variable_pins
       store.pins_by_class(Pin::GlobalVariable)
+    end
+
+    # @return [Enumerable<Solargraph::Pin::Block>]
+    def get_block_pins
+      store.pins_by_class(Pin::Block)
     end
 
     # Get an array of methods available in a particular context.
@@ -591,7 +598,7 @@ module Solargraph
     # @param no_core [Boolean] Skip core classes if true
     # @return [Array<Pin::Base>]
     def inner_get_methods rooted_tag, scope, visibility, deep, skip, no_core = false
-      rooted_type = ComplexType.parse(rooted_tag)
+      rooted_type = ComplexType.parse(rooted_tag).force_rooted
       fqns = rooted_type.namespace
       fqns_generic_params = rooted_type.all_params
       return [] if no_core && fqns =~ /^(Object|BasicObject|Class|Module)$/
@@ -629,7 +636,7 @@ module Solargraph
             # @todo perform the same translation in the other areas
             #  here after adding a spec and handling things correctly
             #  in ApiMap::Store and RbsMap::Conversions
-            resolved_include_type = ComplexType.parse(rooted_include_tag).resolve_generics(namespace_pin, rooted_type)
+            resolved_include_type = ComplexType.parse(rooted_include_tag).force_rooted.resolve_generics(namespace_pin, rooted_type)
             methods = inner_get_methods(resolved_include_type.tag, scope, visibility, deep, skip, true)
             result.concat methods
           end
@@ -690,7 +697,7 @@ module Solargraph
 
     # @param namespace [String]
     # @param context [String]
-    # @return [String]
+    # @return [String, nil]
     def qualify_lower namespace, context
       qualify namespace, context.split('::')[0..-2].join('::')
     end
