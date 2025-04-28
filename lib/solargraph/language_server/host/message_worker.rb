@@ -3,12 +3,14 @@
 module Solargraph
   module LanguageServer
     class Host
-      # A serial worker Thread to handle message.
-      #
-      # this make check pending message possible, and maybe cancelled to speedup process
+      # A serial worker Thread to handle incoming messages.
       #
       class MessageWorker
-        UPDATE_METHODS = ['textDocument/didOpen', 'textDocument/didChange', 'workspace/didChangeWatchedFiles'].freeze
+        UPDATE_METHODS = [
+          'textDocument/didOpen',
+          'textDocument/didChange',
+          'workspace/didChangeWatchedFiles'
+        ].freeze
 
         # @param host [Host]
         def initialize(host)
@@ -64,12 +66,24 @@ module Solargraph
         private
 
         def next_message
+          cancel_message || next_priority
+        end
+
+        def cancel_message
+          # Handle cancellations first
+          idx = messages.find_index { |msg| msg['method'] == '$/cancelRequest' }
+          return unless idx
+
+          msg = messages[idx]
+          messages.delete_at idx
+          msg
+        end
+
+        def next_priority
           # Prioritize updates and version-dependent messages for performance
           idx = messages.find_index do |msg|
             UPDATE_METHODS.include?(msg['method']) || version_dependent?(msg)
           end
-          # @todo We might want to clear duplicate instances of this message
-          #   that occur before the next update
           return messages.shift unless idx
 
           msg = messages[idx]
