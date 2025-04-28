@@ -2359,6 +2359,38 @@ describe Solargraph::SourceMap::Clip do
     expect(clip.infer.to_s).to eq('nil')
   end
 
+  it 'resolves correctly with local Array type' do
+    source = Solargraph::Source.load_string(%(
+      module A
+        class Array
+        end
+        class Foo
+          # @param pins [::Enumerable<String>]
+          def inferred_pins pins
+            pins
+            result = pins.map do |p|
+              p
+            end
+            result
+            result.map do |i|
+              i
+            end
+          end
+        end
+      end
+    ), 'test.rb')
+
+    api_map = Solargraph::ApiMap.new.map(source)
+    clip = api_map.clip_at('test.rb', [7, 12])
+    expect(clip.infer.tags).to eq('Enumerable<String>')
+
+    clip = api_map.clip_at('test.rb', [11, 12])
+    expect(clip.infer.tags).to eq('Array<String>')
+
+    clip = api_map.clip_at('test.rb', [13, 14])
+    expect(clip.infer.tags).to eq('String')
+  end
+    
   it 'handles block method yield scenarios' do
     source = Solargraph::Source.load_string(%(
       # @yieldreturn [Integer]
