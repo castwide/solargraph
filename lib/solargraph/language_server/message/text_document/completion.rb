@@ -12,9 +12,6 @@ module Solargraph
             col = params['position']['character']
             begin
               completion = host.completions_at(params['textDocument']['uri'], line, col)
-              if host.cancel?(id)
-                return set_result(empty_result) if host.cancel?(id)
-              end
               items = []
               last_context = nil
               idx = -1
