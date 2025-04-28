@@ -72,16 +72,27 @@ module Solargraph
 
       # Determine potential Pins returned by this chain of words
       #
-      # @param api_map [ApiMap]
-      # @param name_pin [Pin::Closure] the surrounding closure pin for
-      #   the statement represented by this chain for type resolution
-      #   and method pin lookup.
+      # @param api_map [ApiMap] @param name_pin [Pin::Base] A pin
+      # representing the place in which expression is evaluated (e.g.,
+      # a Method pin, or a Module or Class pin if not run within a
+      # method - both in terms of the closure around the chain, as well
+      # as the self type used for any method calls in head position.
       #
-      #   For method calls (Chain::Call objects) as the first element
-      #   in the chain, 'name_pin.binder' should return the
-      #   ComplexType representing the LHS / "self type" of the call.
+      #   Requirements for name_pin:
       #
-      # @param locals [::Enumerable<Pin::LocalVariable>] Any local
+      #     * name_pin.context: This should be a type representing the
+      #       namespace where we can look up non-local variables and
+      #       method names.  If it is a Class<X>, we will look up
+      #       :class scoped methods/variables.
+      #
+      #     * name_pin.binder: Used for method call lookups only
+      #       (Chain::Call links).  For method calls as the first
+      #       element in the chain, 'name_pin.binder' should be the
+      #       same as name_pin.context above.  For method calls later
+      #       in the chain (e.g., 'b' in a.b.c), it should represent
+      #       'a'.
+      #
+      # @param locals [::Array<Pin::LocalVariable>] Any local
       #   variables / method parameters etc visible by the statement
       #
       # @return [::Array<Pin::Base>] Pins representing possible return
@@ -98,9 +109,18 @@ module Solargraph
         working_pin = name_pin
         links[0..-2].each do |link|
           pins = link.resolve(api_map, working_pin, locals)
-          type = infer_first_defined(pins, working_pin, api_map, locals)
-          return [] if type.undefined?
-          working_pin = Pin::ProxyType.anonymous(type)
+          type = infer_from_definitions(pins, working_pin, api_map, locals)
+          if type.undefined?
+            logger.debug { "Chain#define(links=#{links.map(&:desc)}, name_pin=#{name_pin.inspect}, locals=#{locals}) => [] - undefined type from #{link.desc}" }
+            return []
+          end
+          # We continue to use the context from the head pin, in case
+          # we need it to, for instance, provide context for a block
+          # evaluation.  However, we use the last link's return type
+          # for the binder, as this is chaining off of it, and the
+          # binder is now the lhs of the rhs we are evaluating.
+          working_pin = Pin::ProxyType.anonymous(name_pin.context, binder: type)
+          logger.debug { "Chain#define(links=#{links.map(&:desc)}, name_pin=#{name_pin.inspect}, locals=#{locals}) - after processing #{link.desc}, new working_pin=#{working_pin} with binder #{working_pin.binder}" }
         end
         links.last.last_context = working_pin
         links.last.resolve(api_map, working_pin, locals)
@@ -117,6 +137,7 @@ module Solargraph
         return cached if cached && @@inference_invalidation_key == api_map.hash
         out = infer_uncached api_map, name_pin, locals
         if @@inference_invalidation_key != api_map.hash
+#          STDERR.puts("Invalidating cache")
           @@inference_cache = {}
           @@inference_invalidation_key = api_map.hash
         end
@@ -130,8 +151,14 @@ module Solargraph
       # @return [ComplexType]
       def infer_uncached api_map, name_pin, locals
         pins = define(api_map, name_pin, locals)
-        type = infer_first_defined(pins, links.last.last_context, api_map, locals)
-        maybe_nil(type)
+        if pins.empty?
+          logger.debug { "Chain#infer_uncached(links=#{links.map(&:desc)}, locals=#{locals.map(&:desc)}) => undefined - no pins" }
+          return ComplexType::UNDEFINED
+        end
+        type = infer_from_definitions(pins, links.last.last_context, api_map, locals)
+        out = maybe_nil(type)
+        logger.debug { "Chain#infer_uncached(links=#{self.links.map(&:desc)}, locals=#{locals.map(&:desc)}, name_pin=#{name_pin}, name_pin.closure=#{name_pin.closure.inspect}, name_pin.binder=#{name_pin.binder}) => #{out.rooted_tags.inspect}" }
+        out
       end
 
       # @return [Boolean]
@@ -160,6 +187,8 @@ module Solargraph
         links.any?(&:nullable?)
       end
 
+      include Logging
+
       private
 
       # @param pins [::Array<Pin::Base>]
@@ -167,7 +196,7 @@ module Solargraph
       # @param api_map [ApiMap]
       # @param locals [::Enumerable<Pin::LocalVariable>]
       # @return [ComplexType]
-      def infer_first_defined pins, context, api_map, locals
+      def infer_from_definitions pins, context, api_map, locals
         possibles = []
         # @todo this param tag shouldn't be needed to probe the type
         # @todo ...but given it is needed, typecheck should complain that it is needed

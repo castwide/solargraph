@@ -392,6 +392,24 @@ describe Solargraph::Source::Chain::Call do
     expect(type.tag).to eq('String')
   end
 
+  it 'does not infer undefined types when declared ones exist' do
+    source = Solargraph::Source.load_string(%(
+      # @return [Array<String>]
+      def other; end
+      def foo
+        parts = [''] + other
+        parts
+      end
+    ), 'test.rb')
+
+    api_map = Solargraph::ApiMap.new
+    api_map.map source
+
+    chain = Solargraph::Source::SourceChainer.chain(source, Solargraph::Position.new(5, 8))
+    type = chain.infer(api_map, Solargraph::Pin::ROOT_PIN, api_map.source_map('test.rb').locals)
+    expect(type.rooted_tags).to eq('::Array<::String>')
+  end
+
   it 'understands types in an Array#+ scenario' do
     source = Solargraph::Source.load_string(%(
       module A
@@ -536,10 +554,6 @@ describe Solargraph::Source::Chain::Call do
     expect(clip.infer.rooted_tags).to eq('::A::D::E')
 
     clip = api_map.clip_at('test.rb', [42, 12])
-
-    expect(clip.infer.rooted_name).to eq('::Array')
-    expect(clip.infer.all_params.map(&:rooted_tags)).to include('::A::D::E')
-    # @todo root out the undefined that pops up in the union right now
-    # expect(clip.infer.rooted_tags).to eq('::Array<::A::D::E>')
+    expect(clip.infer.rooted_tags).to eq('::Array<::A::D::E>')
   end
 end
