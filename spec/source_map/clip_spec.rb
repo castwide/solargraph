@@ -2713,7 +2713,7 @@ describe Solargraph::SourceMap::Clip do
     clip = api_map.clip_at('test.rb', [13, 14])
     expect(clip.infer.tags).to eq('String')
   end
-    
+
   it 'handles block method yield scenarios' do
     source = Solargraph::Source.load_string(%(
       # @yieldreturn [Integer]
@@ -2821,7 +2821,7 @@ describe Solargraph::SourceMap::Clip do
     expect(clip.infer.to_s).to eq('Array<456>')
 
     clip = api_map.clip_at('test.rb', [22, 10])
-    expect(clip.infer.to_s).to eq('Array<Integer>')
+    expect(clip.infer.to_s).to eq('Array<456>')
 
     clip = api_map.clip_at('test.rb', [24, 10])
     expect(clip.infer.to_s).to eq('Array<456>')
@@ -2866,6 +2866,18 @@ describe Solargraph::SourceMap::Clip do
 
     clip = api_map.clip_at('test.rb', [3, 10])
     expect(clip.infer.to_s).to eq('String')
+  end
+
+  it 'resolves String#split overloads' do
+    source = Solargraph::Source.load_string(%(
+      a = 'abc\ndef'.split('\n')
+      a
+    ), 'test.rb')
+
+    api_map = Solargraph::ApiMap.new.map(source)
+
+    clip = api_map.clip_at('test.rb', [2, 6])
+    expect(clip.infer.to_s).to eq('Array<String>')
   end
 
   it 'handles block method super scenarios' do
