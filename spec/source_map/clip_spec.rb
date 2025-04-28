@@ -2545,6 +2545,18 @@ describe Solargraph::SourceMap::Clip do
     expect(clip.infer.to_s).to eq('String')
   end
 
+  it 'resolves String#split overloads' do
+    source = Solargraph::Source.load_string(%(
+      a = 'abc\ndef'.split('\n')
+      a
+    ), 'test.rb')
+
+    api_map = Solargraph::ApiMap.new.map(source)
+
+    clip = api_map.clip_at('test.rb', [2, 6])
+    expect(clip.infer.to_s).to eq('Array<String>')
+  end
+
   it 'handles block method super scenarios' do
     source = Solargraph::Source.load_string(%(
       class Foo
