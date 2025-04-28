@@ -52,6 +52,7 @@ module Solargraph
             method_context = context.namespace == '' ? '' : context.tag
             api_map.get_method_stack(method_context, word, scope: context.scope)
           end
+          logger.debug { "Call#resolve(name_pin.binder=#{name_pin.binder.rooted_tags}, word=#{word}, arguments=#{arguments.map(&:desc)}, name_pin=#{name_pin}) - pins=#{pins.map(&:desc)} - api_map gave pins=#{pins}" }
           if pins.empty?
             logger.debug { "Call#resolve(name_pin.binder=#{name_pin.binder.rooted_tags}, word=#{word}, arguments=#{arguments.map(&:desc)}, name_pin=#{name_pin}) => [] - found no pins for #{word} in #{name_pin.binder}" }
             return []
@@ -120,6 +121,7 @@ module Solargraph
               if match
                 if ol.block && with_block?
                   block_atypes = ol.block.parameters.map(&:return_type)
+                  logger.debug { "Call#inferred_pins(name_pin.binder=#{name_pin.binder}, word=#{word}, atypes=#{atypes.map(&:rooted_tags)}, name_pin=#{name_pin}) - ol.block.parameters=#{ol.block.parameters}, block_atypes=#{block_atypes.map(&:desc)}" }
                   if block.links.map(&:class) == [BlockSymbol]
                     # like the bar in foo(&:bar)
                     blocktype = block_symbol_call_type(api_map, name_pin.context, block_atypes, locals)
@@ -151,7 +153,7 @@ module Solargraph
             end
             p
           end
-          logger.debug { "Call#inferred_pins(pins=#{pins.map(&:desc)}, name_pin=#{name_pin}) - result=#{result}" }
+          logger.debug { "Call#inferred_pins(name_pin.binder=#{name_pin.binder}, word=#{word}, pins=#{pins.map(&:desc)}, name_pin=#{name_pin}) - result=#{result}" }
           out = result.map do |pin|
             if pin.path == 'Class#new' && name_pin.context.tag != 'Class'
               reduced_context = name_pin.context.reduce_class_type
@@ -162,7 +164,7 @@ module Solargraph
               selfy == pin.return_type ? pin : pin.proxy(selfy)
             end
           end
-          logger.debug { "Call#inferred_pins(pins=#{pins.map(&:desc)}, name_pin=#{name_pin}) => #{out}" }
+          logger.debug { "Call#inferred_pins(name_pin.binder=#{name_pin.binder}, word=#{word}, pins=#{pins.map(&:desc)}, name_pin=#{name_pin}) => #{out}" }
           out
         end
 

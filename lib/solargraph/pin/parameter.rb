@@ -111,19 +111,19 @@ module Solargraph
 
       # @param api_map [ApiMap]
       def typify api_map
-        logger.debug { "Parameter#typify(name=#{name}, return_type=#{return_type.rooted_tags}, closure.context.namespace=#{closure.context.namespace.inspect}, closure.context=#{closure.context}, closure=#{closure.inspect}) - starting" }
+        logger.debug { "Parameter#typify(self=#{self.desc} in #{closure.desc}) - starting" }
         unless return_type.undefined?
           out = return_type.qualify(api_map, closure.context.namespace)
-          logger.debug { "Parameter#typify(name=#{name}, return_type=#{return_type.rooted_tags}, closure.context.namespace=#{closure.context.namespace.inspect}, closure.context=#{closure.context}, closure=#{closure.inspect}) => #{out} from declaration" }
+          logger.debug { "Parameter#typify(self=#{self.desc}, return_type=#{return_type.rooted_tags}, ) => #{out} from declaration" }
           return out
         end
         if closure.is_a?(Pin::Block)
           out = typify_block_param(api_map)
-          logger.debug { "Parameter#typify(name=#{name}, return_type=#{return_type.rooted_tags}, closure.context.namespace=#{closure.context.namespace.inspect}, closure.context=#{closure.context}, closure=#{closure.inspect}) => #{out} from block parameter" }
+          logger.debug { "Parameter#typify(self=#{self.desc}) => #{out} from block parameter" }
           out
         else
           out = typify_method_param(api_map)
-          logger.debug { "Parameter#typify(name=#{name}, return_type=#{return_type.rooted_tags}, closure.context.namespace=#{closure.context.namespace.inspect}, closure.context=#{closure.context}, closure=#{closure.inspect}) => #{out} from method parameter" }
+          logger.debug { "Parameter#typify(self=#{self.desc}) => #{out} from method parameter" }
           out
         end
       end

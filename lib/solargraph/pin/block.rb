@@ -106,11 +106,16 @@ module Solargraph
 
         types = receiver_pin.docstring.tag(:yieldreceiver)&.types
         return ComplexType::UNDEFINED unless types&.any?
+        logger.debug { "Block#maybe_rebind(): yield receiver tag types: #{types}" }
 
         target = chain.base.infer(api_map, receiver_pin, locals)
         target = full_context unless target.defined?
 
-        ComplexType.try_parse(*types).qualify(api_map, receiver_pin.context.namespace).self_to_type(target)
+        logger.debug { "Block#maybe_rebind(): target=#{target}" }
+
+        out = ComplexType.try_parse(*types).qualify(api_map, receiver_pin.context.namespace).self_to_type(target)
+        logger.debug { "Block#maybe_rebind() => #{out}" }
+        out
       end
     end
   end

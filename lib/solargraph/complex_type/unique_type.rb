@@ -315,7 +315,7 @@ module Solargraph
       # @param context [String] The namespace from which to resolve names
       # @return [self, ComplexType, UniqueType] The generated ComplexType
       def qualify api_map, context = ''
-        transform do |t|
+        out = transform do |t|
           next t if t.name == GENERIC_TAG_NAME
           next t if t.duck_type? || t.void? || t.undefined?
           recon = (t.rooted? ? '' : context)
@@ -326,6 +326,8 @@ module Solargraph
           end
           t.recreate(new_name: fqns, make_rooted: true)
         end
+        logger.debug { "UniqueType#qualify(self=#{rooted_tags.inspect}) => #{out.rooted_tags.inspect}" }
+        out
       end
 
       def selfy?
