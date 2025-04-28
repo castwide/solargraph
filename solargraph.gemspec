@@ -24,7 +24,7 @@ Gem::Specification.new do |s|
   s.required_ruby_version = '>= 3.0'
 
   s.add_runtime_dependency 'backport', '~> 1.2'
-  s.add_runtime_dependency 'benchmark'
+  s.add_runtime_dependency 'benchmark', '~> 0.4'
   s.add_runtime_dependency 'bundler', '~> 2.0'
   s.add_runtime_dependency 'diff-lcs', '~> 1.4'
   s.add_runtime_dependency 'jaro_winkler', '~> 1.6'
@@ -35,19 +35,19 @@ Gem::Specification.new do |s|
   s.add_runtime_dependency 'ostruct', '~> 0.6'
   s.add_runtime_dependency 'parser', '~> 3.0'
   s.add_runtime_dependency 'rbs', '~> 3.3'
-  s.add_runtime_dependency 'reverse_markdown', '>= 2.0', '< 4'
+  s.add_runtime_dependency 'reverse_markdown', '~> 3.0'
   s.add_runtime_dependency 'rubocop', '~> 1.38'
   s.add_runtime_dependency 'thor', '~> 1.0'
   s.add_runtime_dependency 'tilt', '~> 2.0'
   s.add_runtime_dependency 'yard', '~> 0.9', '>= 0.9.24'
   s.add_runtime_dependency 'yard-solargraph', '~> 0.1'
 
-  s.add_development_dependency 'pry'
+  s.add_development_dependency 'pry', '~> 0.15'
   s.add_development_dependency 'public_suffix', '~> 3.1'
   s.add_development_dependency 'rake', '~> 13.2'
   s.add_development_dependency 'rspec', '~> 3.5'
   s.add_development_dependency 'simplecov', '~> 0.14'
   s.add_development_dependency 'webmock', '~> 3.6'
   # work around missing yard dependency needed as of Ruby 3.5
-  s.add_development_dependency 'irb'
+  s.add_development_dependency 'irb', '~> 1.15'
 end
