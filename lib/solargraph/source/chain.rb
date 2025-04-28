@@ -113,14 +113,14 @@ module Solargraph
       # @sg-ignore
       def infer api_map, name_pin, locals
         out = nil
-        cached = @@inference_cache[[node, node.location, links.map(&:word), name_pin&.return_type, locals]] unless node.nil?
+        cached = @@inference_cache[[node, node.location, links, name_pin&.return_type, locals]] unless node.nil?
         return cached if cached && @@inference_invalidation_key == api_map.hash
         out = infer_uncached api_map, name_pin, locals
         if @@inference_invalidation_key != api_map.hash
           @@inference_cache = {}
           @@inference_invalidation_key = api_map.hash
         end
-        @@inference_cache[[node, node.location, links.map(&:word), name_pin&.return_type, locals]] = out unless node.nil?
+        @@inference_cache[[node, node.location, links, name_pin&.return_type, locals]] = out unless node.nil?
         out
       end
 

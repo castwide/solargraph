@@ -15,6 +15,24 @@ module Solargraph
           @word = word
         end
 
+        # @sg-ignore Fix "Not enough arguments to Module#protected"
+        protected def equality_fields
+          [self.class, word, last_context]
+        end
+
+        def eql?(other)
+          self.class == other.class &&
+            equality_fields == other.equality_fields
+        end
+
+        def ==(other)
+          self.eql?(other)
+        end
+
+        def hash
+          equality_fields.hash
+        end
+
         def undefined?
           word == '<undefined>'
         end
@@ -37,10 +55,6 @@ module Solargraph
 
         def head?
           @head ||= false
-        end
-
-        def == other
-          self.class == other.class and word == other.word
         end
 
         # Make a copy of this link marked as the head of a chain
