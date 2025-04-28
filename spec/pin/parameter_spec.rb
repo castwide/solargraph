@@ -13,6 +13,21 @@ describe Solargraph::Pin::Parameter do
     expect(clip.infer.tag).to eq('Array')
   end
 
+  it 'infers @yieldparam tags with skipped arguments' do
+    api_map = Solargraph::ApiMap.new
+    source = Solargraph::Source.load_string(%(
+      # @yieldparam [String]
+      # @yieldparam [Integer]
+      def yielder; end
+      yielder do |things|
+        things
+      end
+    ), 'file.rb')
+    api_map.map source
+    clip = api_map.clip_at('file.rb', Solargraph::Position.new(5, 9))
+    expect(clip.infer.tag).to eq('String')
+  end
+
   it 'infers generic types' do
     source = Solargraph::Source.load_string(%(
       # @generic GenericTypeParam

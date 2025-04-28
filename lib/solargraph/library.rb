@@ -647,7 +647,7 @@ module Solargraph
     end
 
     def sync_catalog
-      return if mutex.synchronize { @sync_count == 0 }
+      return if @sync_count == 0
 
       mutex.synchronize do
         logger.info "Cataloging #{workspace.directory.empty? ? 'generic workspace' : workspace.directory}"

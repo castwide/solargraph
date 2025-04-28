@@ -42,8 +42,8 @@ module Solargraph
           end
           return inferred_pins(found, api_map, name_pin, locals) unless found.empty?
           pins = name_pin.binder.each_unique_type.flat_map do |context|
-            method_context = context.namespace == '' ? '' : context.tag
-            api_map.get_method_stack(method_context, word, scope: context.scope)
+            ns = context.namespace == '' ? '' : context.namespace_type.tag
+            api_map.get_method_stack(ns, word, scope: context.scope)
           end
           return [] if pins.empty?
           inferred_pins(pins, api_map, name_pin, locals)
@@ -81,10 +81,12 @@ module Solargraph
                   break
                 end
                 atype = atypes[idx] ||= arg.infer(api_map, Pin::ProxyType.anonymous(name_pin.context), locals)
-                ptype = param.return_type
+                # make sure we get types from up the method
+                # inheritance chain if we don't have them on this pin
+                ptype = param.typify api_map
                 # @todo Weak type comparison
                 # unless atype.tag == param.return_type.tag || api_map.super_and_sub?(param.return_type.tag, atype.tag)
-                unless param.return_type.undefined? || atype.name == param.return_type.name || api_map.super_and_sub?(param.return_type.name, atype.name) || param.return_type.generic?
+                unless ptype.undefined? || atype.name == ptype.name || ptype.any? { |current_ptype| api_map.super_and_sub?(current_ptype.name, atype.name) } || ptype.generic? || param.restarg?
                   match = false
                   break
                 end
