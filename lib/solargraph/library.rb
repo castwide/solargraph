@@ -190,7 +190,14 @@ module Solargraph
           []
         end
       else
-        mutex.synchronize { api_map.clip(cursor).define.map { |pin| pin.realize(api_map) } }
+        mutex.synchronize do
+          clip = api_map.clip(cursor)
+          if cursor.assign?
+            [Pin::ProxyType.new(name: cursor.word, return_type: clip.infer)]
+          else
+            clip.define.map { |pin| pin.realize(api_map) }
+          end
+        end
       end
     rescue FileNotFoundError => e
       handle_file_not_found(filename, e)
@@ -640,9 +647,10 @@ module Solargraph
     end
 
     def sync_catalog
-      return if mutex.synchronize { @sync_count == 0 }
+      return if @sync_count == 0
 
       mutex.synchronize do
+        logger.warn "CATALOG"
         logger.info "Cataloging #{workspace.directory.empty? ? 'generic workspace' : workspace.directory}"
         api_map.catalog bench
         source_map_hash.values.each { |map| find_external_requires(map) }

@@ -286,8 +286,8 @@ module Solargraph
             get_path_pins(pin.path.sub(/#initialize/, '.new')).first
           end
           (ovr.tags.map(&:tag_name) + ovr.delete).uniq.each do |tag|
-            pin.docstring.delete_tags tag.to_sym
-            new_pin.docstring.delete_tags tag.to_sym if new_pin
+            pin.docstring.delete_tags tag
+            new_pin.docstring.delete_tags tag if new_pin
           end
           ovr.tags.each do |tag|
             pin.docstring.add_tag(tag)
