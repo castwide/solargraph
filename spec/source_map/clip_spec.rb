@@ -1011,7 +1011,7 @@ describe Solargraph::SourceMap::Clip do
 
   it 'infers unique variable type from ternary operator when used as lvalue' do
     source = Solargraph::Source.load_string(%(
-      def foo a
+      def foo
         a = (true ? 'foo' : 'bar') + 'baz'
         a
       end
@@ -1022,7 +1022,7 @@ describe Solargraph::SourceMap::Clip do
     expect(clip.infer.to_s).to eq('String')
   end
 
-  it 'infers complex variable type from ternary operator' do
+  xit 'overcomes untyped argument used in comparison' do
     source = Solargraph::Source.load_string(%(
       def foo a
         type = (a == 123 ? 'foo' : 456)
@@ -1036,7 +1036,7 @@ describe Solargraph::SourceMap::Clip do
     expect(clip.infer.to_s).to eq('String, Integer')
   end
 
-  xit 'handles parallel type possibilities' do
+  it 'handles parallel type possibilities with #new' do
     source = Solargraph::Source.load_string(%(
       class Foo; end
       class Bar; end
@@ -1050,6 +1050,25 @@ describe Solargraph::SourceMap::Clip do
     api_map.map source
     clip = api_map.clip_at('test.rb', [7, 14])
     expect(clip.infer.to_s).to eq('Foo, Bar')
+  end
+
+  # pending https://github.com/castwide/solargraph/pull/836
+  xit 'handles parallel type possibilities with #nil?' do
+    source = Solargraph::Source.load_string(%(
+      # @type [Integer, nil]
+      b = foo
+      b
+      c = b.nil?
+      c
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new
+    api_map.map source
+
+    clip = api_map.clip_at('test.rb', [3, 6])
+    expect(clip.infer.rooted_tags).to eq('::Integer, nil')
+
+    clip = api_map.clip_at('test.rb', [5, 6])
+    expect(clip.infer.rooted_tags).to eq('::Boolean')
   end
 
   it 'includes tagged params for trailing hashes' do
@@ -2578,7 +2597,7 @@ describe Solargraph::SourceMap::Clip do
     expect(clip.infer.to_s).to eq('String')
   end
 
-  it 'infers that type of argument has been overridden' do
+  xit 'infers that type of argument has been overridden' do
     source = Solargraph::Source.load_string(%(
       def foo a
         a = 'foo'

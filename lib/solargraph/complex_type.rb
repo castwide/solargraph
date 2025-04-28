@@ -16,6 +16,10 @@ module Solargraph
       # @todo @items here should not need an annotation
       # @type [Array<UniqueType>]
       items = types.flat_map(&:items).uniq(&:to_s)
+      if items.any? { |i| i.name == 'false' } && items.any? { |i| i.name == 'true' }
+        items.delete_if { |i| i.name == 'false' || i.name == 'true' }
+        items.unshift(ComplexType::BOOLEAN)
+      end
       items = [UniqueType::UNDEFINED] if items.any?(&:undefined?)
       @items = items
     end

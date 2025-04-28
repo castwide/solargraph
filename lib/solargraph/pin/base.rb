@@ -267,7 +267,7 @@ module Solargraph
 
       # @return [String]
       def identity
-        @identity ||= "#{closure.path}|#{name}"
+        @identity ||= "#{closure.path}|#{name}|#{location}"
       end
 
       # @return [String, nil]

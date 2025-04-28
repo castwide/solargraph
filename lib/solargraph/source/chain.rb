@@ -197,7 +197,9 @@ module Solargraph
       # @param locals [::Enumerable<Pin::LocalVariable>]
       # @return [ComplexType]
       def infer_from_definitions pins, context, api_map, locals
-        possibles = []
+        # @type [::Array<ComplexType>]
+        types = []
+        unresolved_pins = []
         # @todo this param tag shouldn't be needed to probe the type
         # @todo ...but given it is needed, typecheck should complain that it is needed
         # @param pin [Pin::Base]
@@ -215,41 +217,41 @@ module Solargraph
               #   that accepts only [Pin::Namespace] as an argument
               type = type.resolve_generics(pin.closure, context.binder)
             end
-            if type.defined?
-              possibles.push type
-              break if pin.is_a?(Pin::Method)
-            end
+            types << type
+          else
+            unresolved_pins << pin
           end
         end
-        if possibles.empty?
-          # Limit method inference recursion
-          return ComplexType::UNDEFINED if @@inference_depth >= 10 && pins.first.is_a?(Pin::Method)
 
-          @@inference_depth += 1
-          # @param pin [Pin::Base]
-          pins.each do |pin|
-            # Avoid infinite recursion
-            next if @@inference_stack.include?(pin.identity)
+        # Limit method inference recursion
+        if @@inference_depth >= 10 && pins.first.is_a?(Pin::Method)
+          return ComplexType::UNDEFINED
+        end
 
-            @@inference_stack.push pin.identity
-            type = pin.probe(api_map)
-            @@inference_stack.pop
-            if type.defined?
-              possibles.push type
-              break if pin.is_a?(Pin::Method)
-            end
+        @@inference_depth += 1
+        # @param pin [Pin::Base]
+        unresolved_pins.each do |pin|
+          # Avoid infinite recursion
+          if @@inference_stack.include?(pin.identity)
+            next
           end
-          @@inference_depth -= 1
-        end
-        return ComplexType::UNDEFINED if possibles.empty?
 
-        type = if possibles.length > 1
-          # Move nil to the end by convention
-          sorted = possibles.sort { |a, _| a.tag == 'nil' ? 1 : 0 }
-          ComplexType.new(sorted.uniq)
-        else
-          ComplexType.new(possibles)
+          @@inference_stack.push(pin.identity)
+          type = pin.probe(api_map)
+          @@inference_stack.pop
+          types.push type if type
         end
+        @@inference_depth -= 1
+
+        type = if types.empty?
+                 ComplexType::UNDEFINED
+               elsif types.length > 1
+                 # Move nil to the end by convention
+                 sorted = types.flat_map(&:items).sort { |a, _| a.tag == 'nil' ? 1 : 0 }
+                 ComplexType.new(sorted.uniq)
+               else
+                 ComplexType.new(types)
+               end
         return type if context.nil? || context.return_type.undefined?
 
         type.self_to_type(context.return_type)
