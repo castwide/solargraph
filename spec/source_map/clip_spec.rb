@@ -1868,7 +1868,7 @@ describe Solargraph::SourceMap::Clip do
     expect(type.to_s).to eq('Array<String>')
   end
 
-  xit 'resolves literal arrays in the face of identical names' do
+  it 'resolves literal arrays in the face of identical names' do
     source = Solargraph::Source.load_string(%(
       module Foo; class Array; end; end
       foo = ['foo']
@@ -1879,6 +1879,7 @@ describe Solargraph::SourceMap::Clip do
     type = clip.infer
     expect(type.tag).to eq('Array<String>')
     expect(type.rooted?).to be true
+    expect(type.all_rooted?).to be true
   end
 
   it 'infers block parameter type for Array#select' do
@@ -2140,7 +2141,7 @@ describe Solargraph::SourceMap::Clip do
     api_map = Solargraph::ApiMap.new.map(source)
     clip = api_map.clip_at('test.rb', [2, 6])
     type = clip.infer
-    expect(type.to_s).to eq('Array<Integer>')
+    expect(type.rooted_tags).to eq('::Array<::Integer>')
   end
 
   xit 'infers tuple types from diverse literal arrays' do
