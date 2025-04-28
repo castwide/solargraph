@@ -1,3 +1,30 @@
+## 0.54.2 - April 28, 2025
+- Resolve generics correctly on mixin inclusion (#898)
+- Pick correct String#split overload (#905)
+- Fix type sent into YARD method (#912)
+- Early CancelRequest handling (#914)
+- Destructure partial yield types (#915)
+- Dependency versions (#916)
+
+## 0.54.1 - April 26, 2025
+- Retire more RubyVM-specific code (#797)
+- Add additional docs for key classes, modules and methods (#802)
+- Populate location information from RBS files (#768)
+- Consolidate parameter handling into Pin::Callable (#844)
+- Adjust local variable presence to start after assignment, not before (#864)
+- Resolve params from ref tags (#872)
+- Reduce use of ComplexType.parse() to preserve rooted? information (#870)
+- Ensure yield return types are qualified (#886)
+- Understand type of 'def foo; @foo ||= bar; end' reader methods (#888)
+- Improvements to #inspect output on pins and chains (#895)
+- Block method resolution improvements (#885)
+- Understand mass assignment into instance variables (#893)
+- Library sync and cache invalidation (#903)
+- Handle super and yield scenarios from blocks (#891)
+- Allow core and stdlib documentation to be uncached (#899)
+- Surface variable names in LSP, e.g., textDocument/hover (#910)
+- Keep idle progress notifications alive (#911)
+
 ## 0.54.0 - April 14, 2025
 - Add support for simple block argument destructuring (#821)
 - Benchmark the typecheck command (#852)

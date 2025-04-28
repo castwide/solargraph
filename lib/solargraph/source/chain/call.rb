@@ -49,8 +49,8 @@ module Solargraph
           end
           # @param [ComplexType::UniqueType]
           pins = name_pin.binder.each_unique_type.flat_map do |context|
-            method_context = context.namespace == '' ? '' : context.tag
-            api_map.get_method_stack(method_context, word, scope: context.scope)
+            ns = context.namespace == '' ? '' : context.namespace_type.tag
+            api_map.get_method_stack(ns, word, scope: context.scope)
           end
           logger.debug { "Call#resolve(name_pin.binder=#{name_pin.binder.rooted_tags}, word=#{word}, arguments=#{arguments.map(&:desc)}, name_pin=#{name_pin}) - pins=#{pins.map(&:desc)} - api_map gave pins=#{pins}" }
           if pins.empty?
@@ -109,7 +109,9 @@ module Solargraph
                 end
                 logger.debug { "Call#inferred_pins(word=#{word}, name_pin=#{name_pin}, name_pin.binder=#{name_pin.binder}) - resolving arg #{arg.desc}" }
                 atype = atypes[idx] ||= arg.infer(api_map, Pin::ProxyType.anonymous(name_pin.context), locals)
-                ptype = param.return_type
+                # make sure we get types from up the method
+                # inheritance chain if we don't have them on this pin
+                ptype = param.typify api_map
                 # @todo Weak type comparison
                 # unless atype.tag == param.return_type.tag || api_map.super_and_sub?(param.return_type.tag, atype.tag)
                 unless param.return_type.undefined? || atype.name == param.return_type.name || api_map.super_and_sub?(param.return_type.name, atype.name) || param.return_type.generic?
