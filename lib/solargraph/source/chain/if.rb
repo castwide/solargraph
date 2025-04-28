@@ -15,7 +15,7 @@ module Solargraph
 
         # @sg-ignore Fix "Not enough arguments to Module#protected"
         protected def equality_fields
-          super + [links]
+          super + [@links]
         end
 
         def resolve api_map, name_pin, locals
