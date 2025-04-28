@@ -1,3 +1,11 @@
+## 0.54.2 - April 28, 2025
+- Resolve generics correctly on mixin inclusion (#898)
+- Pick correct String#split overload (#905)
+- Fix type sent into YARD method (#912)
+- Early CancelRequest handling (#914)
+- Destructure partial yield types (#915)
+- Dependency versions (#916)
+
 ## 0.54.1 - April 26, 2025
 - Retire more RubyVM-specific code (#797)
 - Add additional docs for key classes, modules and methods (#802)
