@@ -192,7 +192,7 @@ module Solargraph
           return decl
         end
         type = see_reference(api_map) || typify_from_super(api_map)
-        logger.debug { "Method#typify(self=#{self}) - type=#{type.rooted_tags.inspect}" }
+        logger.debug { "Method#typify(self=#{self}) - type=#{type&.rooted_tags.inspect}" }
         unless type.nil?
           qualified = type.qualify(api_map, namespace)
           logger.debug { "Method#typify(self=#{self}) => #{qualified.rooted_tags.inspect}" }
