@@ -16,6 +16,14 @@ module Solargraph
         index
       end
 
+      def to_s
+        self.class.to_s
+      end
+
+      def inspect
+        to_s
+      end
+
       # @param fqns [String]
       # @param visibility [Array<Symbol>]
       # @return [Enumerable<Solargraph::Pin::Base>]
