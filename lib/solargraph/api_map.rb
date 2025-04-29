@@ -96,6 +96,9 @@ module Solargraph
       self
     end
 
+    # @todo need to model type def statement in chains as a symbol so
+    #   that this overload of 'protected' will typecheck @sg-ignore
+    # @sg-ignore
     protected def equality_fields
       [self.class, @source_map_hash, implicit, @doc_map, @unresolved_requires, @missing_docs]
     end
@@ -816,7 +819,9 @@ module Solargraph
 #        context: pin.context,
         visibility: origin.visibility,
         signatures: origin.signatures,
-        attribute: origin.attribute?
+        attribute: origin.attribute?,
+        generics: origin.generics,
+        return_type: origin.return_type,
       }
       Pin::Method.new **args
     end

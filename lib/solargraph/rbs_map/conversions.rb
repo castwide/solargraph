@@ -80,9 +80,12 @@ module Solargraph
       # @param closure [Pin::Namespace]
       # @return [void]
       def convert_self_type_to_pins decl, closure
+        type = build_type(decl.name, decl.args)
+        generic_values = type.all_params.map(&:to_s)
         include_pin = Solargraph::Pin::Reference::Include.new(
           name: decl.name.relative!.to_s,
           type_location: location_decl_to_pin_location(decl.location),
+          generic_values: generic_values,
           closure: closure
         )
         pins.push include_pin
@@ -628,9 +631,12 @@ module Solargraph
       def add_mixins decl, namespace
         decl.each_mixin do |mixin|
           klass = mixin.is_a?(RBS::AST::Members::Include) ? Pin::Reference::Include : Pin::Reference::Extend
+          type = build_type(mixin.name, mixin.args)
+          generic_values = type.all_params.map(&:to_s)
           pins.push klass.new(
             name: mixin.name.relative!.to_s,
-            location: location_decl_to_pin_location(mixin.location),
+            type_location: location_decl_to_pin_location(mixin.location),
+            generic_values: generic_values,
             closure: namespace
           )
         end
