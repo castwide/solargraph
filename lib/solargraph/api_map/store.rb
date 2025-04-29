@@ -38,6 +38,7 @@ module Solargraph
       # @param fqns [String]
       # @return [String, nil]
       def get_superclass fqns
+        raise "Do not prefix fully qualified namespaces with '::' - #{fqns.inspect}" if fqns.start_with?('::')
         return superclass_references[fqns].first if superclass_references.key?(fqns)
         return 'Object' if fqns != 'BasicObject' && namespace_exists?(fqns)
         return 'Object' if fqns == 'Boolean'
@@ -103,7 +104,7 @@ module Solargraph
         @namespaces ||= Set.new
       end
 
-      # @return [Array<Solargraph::Pin::Base>]
+      # @return [Enumerable<Solargraph::Pin::Base>]
       def namespace_pins
         pins_by_class(Solargraph::Pin::Namespace)
       end
@@ -149,7 +150,7 @@ module Solargraph
 
       # @generic T
       # @param klass [Class<T>]
-      # @return [Array<T>]
+      # @return [Set<T>]
       def pins_by_class klass
         # @type [Set<Solargraph::Pin::Base>]
         s = Set.new
@@ -283,8 +284,8 @@ module Solargraph
             get_path_pins(pin.path.sub(/#initialize/, '.new')).first
           end
           (ovr.tags.map(&:tag_name) + ovr.delete).uniq.each do |tag|
-            pin.docstring.delete_tags tag.to_sym
-            new_pin.docstring.delete_tags tag.to_sym if new_pin
+            pin.docstring.delete_tags tag
+            new_pin.docstring.delete_tags tag if new_pin
           end
           ovr.tags.each do |tag|
             pin.docstring.add_tag(tag)

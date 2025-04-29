@@ -13,6 +13,21 @@ describe Solargraph::Pin::Parameter do
     expect(clip.infer.tag).to eq('Array')
   end
 
+  it 'infers @yieldparam tags with skipped arguments' do
+    api_map = Solargraph::ApiMap.new
+    source = Solargraph::Source.load_string(%(
+      # @yieldparam [String]
+      # @yieldparam [Integer]
+      def yielder; end
+      yielder do |things|
+        things
+      end
+    ), 'file.rb')
+    api_map.map source
+    clip = api_map.clip_at('file.rb', Solargraph::Position.new(5, 9))
+    expect(clip.infer.tag).to eq('String')
+  end
+
   it 'infers generic types' do
     source = Solargraph::Source.load_string(%(
       # @generic GenericTypeParam
@@ -139,7 +154,7 @@ describe Solargraph::Pin::Parameter do
     expect(method.documentation).to eq("Block Params:\n*  [Array] \n\nBlock Returns:\n* [Integer] \n\nReturns:\n* [Integer] \n\nVisibility: public")
     expect(method.return_type.tag).to eq('Integer')
 
-    expect(map.locals.map(&:to_s)).to eq(['blk Proc', 'things Set'])
+    expect(map.locals.map(&:to_s)).to eq(['blk ::Proc', 'things Set'])
     expect(map.locals.map(&:return_type).map(&:to_s)).to eq(%w[Proc Set])
     expect(map.locals.map(&:decl)).to eq(%i[blockarg arg])
   end
