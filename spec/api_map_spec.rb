@@ -769,4 +769,27 @@ describe Solargraph::ApiMap do
     api_map = Solargraph::ApiMap.new(pins: [closure, mixin])
     expect(api_map.get_method_stack('Foo', 'foo')).to be_empty
   end
+
+  it 'understands aliases in local classes' do
+    source = Solargraph::Source.load_string(%(
+      class A
+        # @return [Symbol]
+        def foo; whatever; end
+
+        alias bar foo
+      end
+
+      class B
+        def baz
+          a = A.new.bar
+          a
+        end
+      end
+    ), 'test.rb')
+
+    api_map = Solargraph::ApiMap.new.map(source)
+
+    clip = api_map.clip_at('test.rb', [11, 10])
+    expect(clip.infer.to_s).to eq('Symbol')
+  end
 end

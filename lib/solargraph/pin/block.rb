@@ -36,14 +36,12 @@ module Solargraph
       #
       # @return [::Array<ComplexType>]
       def destructure_yield_types(yield_types, parameters)
-        return yield_types if yield_types.length == parameters.length
-
         # yielding a tuple into a block will destructure the tuple
         if yield_types.length == 1
           yield_type = yield_types.first
           return yield_type.all_params if yield_type.tuple? && yield_type.all_params.length == parameters.length
         end
-        parameters.map { ComplexType::UNDEFINED }
+        parameters.map.with_index { |_, idx| yield_types[idx] || ComplexType::UNDEFINED }
       end
 
       # @param api_map [ApiMap]
@@ -87,7 +85,7 @@ module Solargraph
 
         chain = Parser.chain(receiver, location.filename)
         locals = api_map.source_map(location.filename).locals_at(location)
-        receiver_pin = chain.define(api_map, self, locals).first
+        receiver_pin = chain.define(api_map, closure, locals).first
         return ComplexType::UNDEFINED unless receiver_pin
 
         types = receiver_pin.docstring.tag(:yieldreceiver)&.types
