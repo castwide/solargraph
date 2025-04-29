@@ -211,7 +211,6 @@ module Solargraph
       #
       # @return [Solargraph::Pin::Constant]
       def create_constant(name, tag, comments, decl, base = nil)
-        comments = decl.comment&.string
         parts = name.split('::')
         if parts.length > 1
           name = parts.last
