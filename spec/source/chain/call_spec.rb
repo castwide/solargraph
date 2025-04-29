@@ -392,6 +392,44 @@ describe Solargraph::Source::Chain::Call do
     expect(type.tag).to eq('String')
   end
 
+  it 'preserves unions in value position in Hash' do
+    source = Solargraph::Source.load_string(%(
+      # @param params [Hash{String => Array<undefined>, Hash{String => undefined}, String, Integer}]
+      def foo(params)
+        position = params['position']
+        position
+        col = position['character']
+        col
+      end
+    ), 'test.rb')
+
+    api_map = Solargraph::ApiMap.new
+    api_map.map source
+
+    chain = Solargraph::Source::SourceChainer.chain(source, Solargraph::Position.new(4, 8))
+    type = chain.infer(api_map, Solargraph::Pin::ROOT_PIN, api_map.source_map('test.rb').locals)
+    expect(type.rooted_tags).to eq('::Array, ::Hash{::String => undefined}, ::String, ::Integer')
+  end
+
+  it 'preserves undefined and underdefined tyypes in resolution' do
+    source = Solargraph::Source.load_string(%(
+      # @param params [Hash{String => Array<undefined>, Hash{String => undefined}, String, Integer}]
+      def foo(params)
+        position = params['position']
+        position
+        col = position['character']
+        col
+      end
+    ), 'test.rb')
+
+    api_map = Solargraph::ApiMap.new
+    api_map.map source
+
+    chain = Solargraph::Source::SourceChainer.chain(source, Solargraph::Position.new(6, 8))
+    type = chain.infer(api_map, Solargraph::Pin::ROOT_PIN, api_map.source_map('test.rb').locals)
+    expect(type.rooted_tags).to eq('undefined')
+  end
+
   it 'does not infer undefined types when declared ones exist' do
     source = Solargraph::Source.load_string(%(
       # @return [Array<String>]
