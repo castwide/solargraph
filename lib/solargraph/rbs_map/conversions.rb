@@ -142,6 +142,14 @@ module Solargraph
       # @param decl [RBS::AST::Declarations::Class]
       # @return [void]
       def class_decl_to_pin decl
+        generics = decl.type_params.map(&:name).map(&:to_s)
+        generic_defaults = {}
+        decl.type_params.each do |param|
+          if param.default_type
+            tag = other_type_to_tag param.default_type
+            generic_defaults[param.name.to_s] = ComplexType.parse(tag).force_rooted
+          end
+        end
         class_pin = Solargraph::Pin::Namespace.new(
           type: :class,
           name: decl.name.relative!.to_s,
@@ -151,13 +159,17 @@ module Solargraph
           # @todo some type parameters in core/stdlib have default
           #   values; Solargraph doesn't support that yet as so these
           #   get treated as undefined if not specified
-          generics: decl.type_params.map(&:name).map(&:to_s)
+          generics: generics,
+          generic_defaults: generic_defaults,
         )
         pins.push class_pin
         if decl.super_class
+          type = build_type(decl.super_class.name, decl.super_class.args)
+          generic_values = type.all_params.map(&:to_s)
           pins.push Solargraph::Pin::Reference::Superclass.new(
             type_location: location_decl_to_pin_location(decl.super_class.location),
             closure: class_pin,
+            generic_values: generic_values,
             name: decl.super_class.name.relative!.to_s
           )
         end

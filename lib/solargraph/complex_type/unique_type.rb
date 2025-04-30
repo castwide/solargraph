@@ -266,9 +266,10 @@ module Solargraph
 
         transform(name) do |t|
           if t.name == GENERIC_TAG_NAME
-            idx = definitions.generics.index(t.subtypes.first&.name)
+            generic_name = t.subtypes.first&.name
+            idx = definitions.generics.index(generic_name)
             next t if idx.nil?
-            context_type.all_params[idx] || ComplexType::UNDEFINED
+            context_type.all_params[idx] || definitions.generic_defaults[generic_name] || ComplexType::UNDEFINED
           else
             t
           end

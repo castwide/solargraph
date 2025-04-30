@@ -804,6 +804,15 @@ describe Solargraph::TypeChecker do
       expect(checker.problems.map(&:message)).to eq([])
     end
 
+    it 'understands tuple superclass' do
+      checker = type_checker(%(
+        b = ['a', 'b', 123]
+        c = b.include?('a')
+        c
+      ))
+      expect(checker.problems.map(&:message)).to be_empty
+    end
+
     it "does not lose track of place and false alarm when using kwargs after a splat" do
       checker = type_checker(%(
         def foo(a, b, c); end

@@ -37,13 +37,16 @@ module Solargraph
 
       # @param fqns [String]
       # @return [String, nil]
-      def get_superclass fqns
-        raise "Do not prefix fully qualified namespaces with '::' - #{fqns.inspect}" if fqns.start_with?('::')
+      def get_superclass fq_tag
+        raise "Do not prefix fully qualified tags with '::' - #{fq_tag.inspect}" if fq_tag.start_with?('::')
+        sub = ComplexType.parse(fq_tag)
+        fqns = sub.namespace
+        return superclass_references[fq_tag].first if superclass_references.key?(fq_tag)
         return superclass_references[fqns].first if superclass_references.key?(fqns)
         return 'Object' if fqns != 'BasicObject' && namespace_exists?(fqns)
         return 'Object' if fqns == 'Boolean'
-        simplified_literal_name = ComplexType.parse("#{fqns}").simplify_literals.name
-        return simplified_literal_name if simplified_literal_name != fqns
+        non_literal_sub = sub.simplify_literals
+        return non_literal_sub.tag if non_literal_sub.tag != fq_tag
         nil
       end
 
@@ -276,8 +279,7 @@ module Solargraph
           extend_references[pin.namespace].push pin.name
         end
         pins_by_class(Pin::Reference::Superclass).each do |pin|
-          superclass_references[pin.namespace] ||= []
-          superclass_references[pin.namespace].push pin.name
+          store_parametric_reference(superclass_references, pin)
         end
         pins_by_class(Pin::Reference::Override).each do |ovr|
           pin = get_path_pins(ovr.name).first

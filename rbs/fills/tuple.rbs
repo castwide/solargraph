@@ -6,15 +6,15 @@
 module Solargraph
   module Fills
     class Tuple[unchecked out A,
-                unchecked out B = void,
-                unchecked out C = void,
-                unchecked out D = void,
-                unchecked out E = void,
-                unchecked out F = void,
-                unchecked out G = void,
-                unchecked out H = void,
-                unchecked out I = void,
-                unchecked out J = void] < Array[A | B | C | D | E | F | G | H | I | J]
+                unchecked out B = A,
+                unchecked out C = A | B,
+                unchecked out D = A | B | C,
+                unchecked out E = A | B | C | D,
+                unchecked out F = A | B | C | D | E,
+                unchecked out G = A | B | C | D | E | F,
+                unchecked out H = A | B | C | D | E | F | G,
+                unchecked out I = A | B | C | D | E | F | G | H,
+                unchecked out J = A | B | C | D | E | F | G | H | I] < Array[A | B | C | D | E | F | G | H | I | J]
       # <!--
       #   rdoc-file=array.c
       #   - self[index] -> object or nil
@@ -123,28 +123,28 @@ module Solargraph
                | (8 index) -> I
                | (9 index) -> J
                | (int index) -> void
-               | [T] (0 index, T default) -> A
-               | [T] (1 index, T default) -> B
-               | [T] (2 index, T default) -> C
-               | [T] (3 index, T default) -> D
-               | [T] (4 index, T default) -> E
-               | [T] (5 index, T default) -> F
-               | [T] (6 index, T default) -> G
-               | [T] (7 index, T default) -> H
-               | [T] (8 index, T default) -> I
-               | [T] (9 index, T default) -> J
-               | [T] (int index, T default) -> T
-               | [T] (0 index) { (int index) -> T } -> A
-               | [T] (1 index) { (int index) -> T } -> B
-               | [T] (2 index) { (int index) -> T } -> C
-               | [T] (3 index) { (int index) -> T } -> D
-               | [T] (4 index) { (int index) -> T } -> E
-               | [T] (5 index) { (int index) -> T } -> F
-               | [T] (6 index) { (int index) -> T } -> G
-               | [T] (7 index) { (int index) -> T } -> H
-               | [T] (8 index) { (int index) -> T } -> I
-               | [T] (9 index) { (int index) -> T } -> J
-               | [T] (int index) { (int index) -> T } -> T
+               | [T] (0 index, T default) -> (A | T)
+               | [T] (1 index, T default) -> (B | T)
+               | [T] (2 index, T default) -> (C | T)
+               | [T] (3 index, T default) -> (D | T)
+               | [T] (4 index, T default) -> (E | T)
+               | [T] (5 index, T default) -> (F | T)
+               | [T] (6 index, T default) -> (G | T)
+               | [T] (7 index, T default) -> (H | T)
+               | [T] (8 index, T default) -> (I | T)
+               | [T] (9 index, T default) -> (J | T)
+               | [T] (int index, T default) -> (A | B | C | D | E | F |G | H | I | J | T)
+               | [T] (0 index) { (int index) -> T } -> (A | T)
+               | [T] (1 index) { (int index) -> T } -> (B | T)
+               | [T] (2 index) { (int index) -> T } -> (C | T)
+               | [T] (3 index) { (int index) -> T } -> (D | T)
+               | [T] (4 index) { (int index) -> T } -> (E | T)
+               | [T] (5 index) { (int index) -> T } -> (F | T)
+               | [T] (6 index) { (int index) -> T } -> (G | T)
+               | [T] (7 index) { (int index) -> T } -> (H | T)
+               | [T] (8 index) { (int index) -> T } -> (I | T)
+               | [T] (9 index) { (int index) -> T } -> (J | T)
+               | [T] (int index) { (int index) -> T } -> (A | B | C | D | E | F |G | H | I | J | T)
     end
   end
 end
