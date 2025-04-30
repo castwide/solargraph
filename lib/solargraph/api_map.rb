@@ -676,7 +676,7 @@ module Solargraph
     end
 
     # @param fq_reference_tag [String] A fully qualified whose method should be pulled in
-    # @param namespace_pin [String] Namespace pin for the rooted_type
+    # @param namespace_pin [Pin::Base] Namespace pin for the rooted_type
     #   parameter - used to pull generics information
     # @param type [ComplexType] The type which is having its
     #   methods supplemented from fq_reference_tag
@@ -745,15 +745,19 @@ module Solargraph
       qualify namespace, context.split('::')[0..-2].join('::')
     end
 
-    # @param fqsub [String]
+    # @param fq_tag [String]
     # @return [String, nil]
-    def qualify_superclass fqsub
-      sup = store.get_superclass(fqsub)
-      return nil if sup.nil?
-      parts = fqsub.split('::')
+    def qualify_superclass fq_sub_tag
+      fq_sub_type = ComplexType.try_parse(fq_sub_tag)
+      fq_sub_ns = fq_sub_type.name
+      sup_tag = store.get_superclass(fq_sub_tag)
+      sup_type = ComplexType.try_parse(sup_tag)
+      sup_ns = sup_type.name
+      return nil if sup_tag.nil?
+      parts = fq_sub_ns.split('::')
       last = parts.pop
-      parts.pop if last == sup
-      qualify(sup, parts.join('::'))
+      parts.pop if last == sup_ns
+      qualify(sup_tag, parts.join('::'))
     end
 
     # @param name [String] Namespace to fully qualify
