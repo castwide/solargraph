@@ -100,8 +100,8 @@ module Solargraph
         true
       end
 
-      def desc
-        "#{to_rbs} = #{assignment&.type.inspect}"
+      def type_desc
+        "#{super} = #{assignment&.type.inspect}"
       end
 
       private

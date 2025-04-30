@@ -16,6 +16,15 @@ module Solargraph
         @clips = {}
       end
 
+      def to_s
+        self.class.to_s
+      end
+
+      # avoid enormous dump
+      def inspect
+        to_s
+      end
+
       # @param fqns [String]
       # @param scope [Symbol]
       # @param visibility [Array<Symbol>]

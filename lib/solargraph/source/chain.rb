@@ -160,6 +160,14 @@ module Solargraph
         links.any?(&:nullable?)
       end
 
+      def desc
+        links.map(&:desc).to_s
+      end
+
+      def to_s
+        desc
+      end
+
       private
 
       # @param pins [::Array<Pin::Base>]

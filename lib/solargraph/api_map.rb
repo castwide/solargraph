@@ -48,6 +48,15 @@ module Solargraph
       equality_fields.hash
     end
 
+     def to_s
+       self.class.to_s
+     end
+
+     # avoid enormous dump
+     def inspect
+       to_s
+     end
+
     # @param pins [Array<Pin::Base>]
     # @return [self]
     def index pins
