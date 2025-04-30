@@ -4,6 +4,8 @@ module Solargraph
   class Source
     class Chain
       class Link
+        include Equality
+
         # @return [String]
         attr_reader :word
 
@@ -17,20 +19,7 @@ module Solargraph
 
         # @sg-ignore Fix "Not enough arguments to Module#protected"
         protected def equality_fields
-          [self.class, word, last_context]
-        end
-
-        def eql?(other)
-          self.class == other.class &&
-            equality_fields == other.equality_fields
-        end
-
-        def ==(other)
-          self.eql?(other)
-        end
-
-        def hash
-          equality_fields.hash
+          [self.class, word]
         end
 
         def undefined?

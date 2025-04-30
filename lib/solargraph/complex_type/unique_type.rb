@@ -7,8 +7,14 @@ module Solargraph
     #
     class UniqueType
       include TypeMethods
+      include Equality
 
       attr_reader :all_params, :subtypes, :key_types
+
+      # @sg-ignore Fix "Not enough arguments to Module#protected"
+      protected def equality_fields
+        [@name, @all_params, @subtypes, @key_types]
+      end
 
       # Create a UniqueType with the specified name and an optional substring.
       # The substring is the parameter section of a parametrized type, e.g.,
