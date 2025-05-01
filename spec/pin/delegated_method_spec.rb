@@ -2,10 +2,10 @@ require 'pry'
 
 describe Solargraph::Pin::DelegatedMethod do
   it 'can be constructed from a Method pin' do
-    method_pin = Solargraph::Pin::Method.new(comments: '@return [Hash<String, String>]')
+    method_pin = Solargraph::Pin::Method.new(comments: '@return [Hash{String => String}]')
 
     delegation_pin = Solargraph::Pin::DelegatedMethod.new(method: method_pin, scope: :instance)
-    expect(delegation_pin.return_type.to_s).to eq('Hash<String, String>')
+    expect(delegation_pin.return_type.to_s).to eq('Hash{String => String}')
   end
 
   it 'can be constructed from a receiver source and method name' do
