@@ -12,6 +12,7 @@ module Solargraph
       def initialize code_objects, spec = nil
         @code_objects = code_objects
         @spec = spec
+        # @type [Array<Solargraph::Pin::Base>]
         @pins = []
         @namespace_pins = {}
       end

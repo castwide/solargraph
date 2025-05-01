@@ -6,6 +6,7 @@ module Solargraph
       module ToNamespace
         extend YardMap::Helpers
 
+        # @param code_object [YARD::CodeObjects::NamespaceObject]
         def self.make code_object, spec, closure = nil
           closure ||= Solargraph::Pin::Namespace.new(
             name: code_object.namespace.to_s,

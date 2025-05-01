@@ -12,7 +12,7 @@ require 'ast'
 #     class Node
 #       # New children
 #
-#       # @return [Array<AST::Node>]
+#       # @return [Array<self>]
 #       attr_reader :children
 #     end
 #   end
@@ -462,7 +462,7 @@ module Solargraph
               result
             end
 
-            # @param nodes [Enumerable<Parser::AST::Node, BaseObject>]
+            # @param nodes [Enumerable<Parser::AST::Node, BasicObject>]
             # @return [Array<Parser::AST::Node, nil>]
             def reduce_to_value_nodes nodes
               result = []
