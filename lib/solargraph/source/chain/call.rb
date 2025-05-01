@@ -52,8 +52,8 @@ module Solargraph
           end
           return inferred_pins(found, api_map, name_pin, locals) unless found.empty?
           pins = name_pin.binder.each_unique_type.flat_map do |context|
-            method_context = context.namespace == '' ? '' : context.tag
-            api_map.get_method_stack(method_context, word, scope: context.scope)
+            ns = context.namespace == '' ? '' : context.namespace_type.tag
+            api_map.get_method_stack(ns, word, scope: context.scope)
           end
           return [] if pins.empty?
           inferred_pins(pins, api_map, name_pin, locals)
@@ -64,7 +64,7 @@ module Solargraph
         # @param pins [::Enumerable<Pin::Method>]
         # @param api_map [ApiMap]
         # @param name_pin [Pin::Base]
-        # @param locals [::Array<Pin::LocalVariable>]
+        # @param locals [::Array<Solargraph::Pin::LocalVariable, Solargraph::Pin::Parameter>]
         # @return [::Array<Pin::Base>]
         def inferred_pins pins, api_map, name_pin, locals
           result = pins.map do |p|
@@ -91,10 +91,12 @@ module Solargraph
                   break
                 end
                 atype = atypes[idx] ||= arg.infer(api_map, Pin::ProxyType.anonymous(name_pin.context), locals)
-                ptype = param.return_type
+                # make sure we get types from up the method
+                # inheritance chain if we don't have them on this pin
+                ptype = param.typify api_map
                 # @todo Weak type comparison
                 # unless atype.tag == param.return_type.tag || api_map.super_and_sub?(param.return_type.tag, atype.tag)
-                unless param.return_type.undefined? || atype.name == param.return_type.name || api_map.super_and_sub?(param.return_type.name, atype.name) || param.return_type.generic?
+                unless ptype.undefined? || atype.name == ptype.name || ptype.any? { |current_ptype| api_map.super_and_sub?(current_ptype.name, atype.name) } || ptype.generic? || param.restarg?
                   match = false
                   break
                 end
@@ -142,7 +144,7 @@ module Solargraph
         # @param pin [Pin::Base]
         # @param api_map [ApiMap]
         # @param context [ComplexType]
-        # @param locals [Enumerable<Pin::Base>]
+        # @param locals [::Array<Solargraph::Pin::LocalVariable, Solargraph::Pin::Parameter>]
         # @return [Pin::Base]
         def process_macro pin, api_map, context, locals
           pin.macros.each do |macro|
@@ -161,7 +163,7 @@ module Solargraph
         # @param pin [Pin::Method]
         # @param api_map [ApiMap]
         # @param context [ComplexType]
-        # @param locals [Enumerable<Pin::Base>]
+        # @param locals [::Array<Solargraph::Pin::LocalVariable, Solargraph::Pin::Parameter>]
         # @return [Pin::ProxyType]
         def process_directive pin, api_map, context, locals
           pin.directives.each do |dir|
@@ -177,7 +179,7 @@ module Solargraph
         # @param macro [YARD::Tags::MacroDirective]
         # @param api_map [ApiMap]
         # @param context [ComplexType]
-        # @param locals [Enumerable<Pin::Base>]
+        # @param locals [::Array<Pin::LocalVariable, Pin::Parameter>]
         # @return [Pin::ProxyType]
         def inner_process_macro pin, macro, api_map, context, locals
           vals = arguments.map{ |c| Pin::ProxyType.anonymous(c.infer(api_map, pin, locals)) }
@@ -211,11 +213,24 @@ module Solargraph
           nil
         end
 
+        # @param name_pin [Pin::Base]
+        # @return [Pin::Method, nil]
+        def find_method_pin(name_pin)
+          method_pin = name_pin
+          until method_pin.is_a?(Pin::Method)
+            method_pin = method_pin.closure
+            return if method_pin.nil?
+          end
+          method_pin
+        end
+
         # @param api_map [ApiMap]
         # @param name_pin [Pin::Base]
         # @return [::Array<Pin::Base>]
         def super_pins api_map, name_pin
-          pins = api_map.get_method_stack(name_pin.namespace, name_pin.name, scope: name_pin.context.scope)
+          method_pin = find_method_pin(name_pin)
+          return [] if method_pin.nil?
+          pins = api_map.get_method_stack(method_pin.namespace, method_pin.name, scope: method_pin.context.scope)
           pins.reject{|p| p.path == name_pin.path}
         end
 
@@ -223,8 +238,8 @@ module Solargraph
         # @param name_pin [Pin::Base]
         # @return [::Array<Pin::Base>]
         def yield_pins api_map, name_pin
-          method_pin = api_map.get_method_stack(name_pin.namespace, name_pin.name, scope: name_pin.context.scope).first
-          return [] if method_pin.nil?
+          method_pin = find_method_pin(name_pin)
+          return [] unless method_pin
 
           method_pin.signatures.map(&:block).compact.map do |signature_pin|
             return_type = signature_pin.return_type.qualify(api_map, name_pin.namespace)

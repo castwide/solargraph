@@ -75,15 +75,14 @@ module Solargraph
       # @param context_type [ComplexType] The receiver type
       # @return [self]
       def resolve_generics definitions, context_type
-        transformed = transform_types { |t| t.resolve_generics(definitions, context_type) if t }
-        transformed.erase_generics(definitions.generics)
+        transform_types { |t| t.resolve_generics(definitions, context_type) if t }
       end
 
       def all_rooted?
         !return_type || return_type.all_rooted?
       end
 
-      # @param generics_to_erase [Enumerable<String>]
+      # @param generics_to_erase [::Array<String>]
       # @return [self]
       def erase_generics(generics_to_erase)
         return self if generics_to_erase.empty?
@@ -107,7 +106,7 @@ module Solargraph
       end
 
       def to_s
-        to_rbs
+        desc
       end
 
       # @return [Boolean]
@@ -280,17 +279,27 @@ module Solargraph
         return_type.to_rbs
       end
 
-      # @return [String, nil]
-      def desc
+      # @return [String]
+      def type_desc
+        rbs = to_rbs
+        # RBS doesn't have a way to represent a Class<x> type
+        rbs = return_type.rooted_tags if return_type.name == 'Class'
         if path
-          if to_rbs
-            path + ' ' + to_rbs
+          if rbs
+            path + ' ' + rbs
           else
             path
           end
         else
-          to_rbs
+          rbs
         end
+      end
+
+      # @return [String]
+      def desc
+        closure_info = closure&.desc
+        binder_info = binder&.desc
+        "[#{type_desc}, closure=#{closure_info}, binder=#{binder}"
       end
 
       def inspect

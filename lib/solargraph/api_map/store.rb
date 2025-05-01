@@ -16,6 +16,14 @@ module Solargraph
         index
       end
 
+      def to_s
+        self.class.to_s
+      end
+
+      def inspect
+        to_s
+      end
+
       # @param fqns [String]
       # @param visibility [Array<Symbol>]
       # @return [Enumerable<Solargraph::Pin::Base>]
@@ -104,7 +112,7 @@ module Solargraph
         @namespaces ||= Set.new
       end
 
-      # @return [Enumerable<Solargraph::Pin::Base>]
+      # @return [Enumerable<Solargraph::Pin::Namespace>]
       def namespace_pins
         pins_by_class(Solargraph::Pin::Namespace)
       end
@@ -149,8 +157,8 @@ module Solargraph
       end
 
       # @generic T
-      # @param klass [Class<T>]
-      # @return [Set<T>]
+      # @param klass [Class<generic<T>>]
+      # @return [Set<generic<T>>]
       def pins_by_class klass
         # @type [Set<Solargraph::Pin::Base>]
         s = Set.new
@@ -284,8 +292,8 @@ module Solargraph
             get_path_pins(pin.path.sub(/#initialize/, '.new')).first
           end
           (ovr.tags.map(&:tag_name) + ovr.delete).uniq.each do |tag|
-            pin.docstring.delete_tags tag.to_sym
-            new_pin.docstring.delete_tags tag.to_sym if new_pin
+            pin.docstring.delete_tags tag
+            new_pin.docstring.delete_tags tag if new_pin
           end
           ovr.tags.each do |tag|
             pin.docstring.add_tag(tag)
@@ -298,8 +306,8 @@ module Solargraph
         end
       end
 
-      # @param pin [Pin::Base]
-      # @param tag [String]
+      # @param pin [Pin::Method]
+      # @param tag [YARD::Tags::Tag]
       # @return [void]
       def redefine_return_type pin, tag
         return unless pin && tag.tag_name == 'return'

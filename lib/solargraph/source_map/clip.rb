@@ -41,7 +41,7 @@ module Solargraph
         end
       end
 
-      # @return [Array<Pin::Base>]
+      # @return [Array<Pin::Method>]
       def signify
         return [] unless cursor.argument?
         chain = Parser.chain(cursor.recipient_node, cursor.filename)

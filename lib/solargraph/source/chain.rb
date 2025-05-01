@@ -107,8 +107,8 @@ module Solargraph
       end
 
       # @param api_map [ApiMap]
-      # @param name_pin [Pin::Base] The pin for the closure in which this code runs
-      # @param locals [::Enumerable<Pin::LocalVariable>]
+      # @param name_pin [Pin::Base]
+      # @param locals [::Array<Pin::LocalVariable>]
       # @return [ComplexType]
       # @sg-ignore
       def infer api_map, name_pin, locals
@@ -126,7 +126,7 @@ module Solargraph
 
       # @param api_map [ApiMap]
       # @param name_pin [Pin::Base]
-      # @param locals [::Enumerable<Pin::LocalVariable>]
+      # @param locals [::Array<Pin::LocalVariable>]
       # @return [ComplexType]
       def infer_uncached api_map, name_pin, locals
         pins = define(api_map, name_pin, locals)
@@ -158,6 +158,14 @@ module Solargraph
 
       def nullable?
         links.any?(&:nullable?)
+      end
+
+      def desc
+        links.map(&:desc).to_s
+      end
+
+      def to_s
+        desc
       end
 
       private
