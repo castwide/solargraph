@@ -8,7 +8,7 @@ module Solargraph
         @methods = {}
         # @type [Hash{(String, Array<String>) => Array<Pin::Base>}]
         @constants = {}
-        # @type [Hash{(String, String) => String}]
+        # @type [Hash{String => String}]
         @qualified_namespaces = {}
         # @type [Hash{String => Pin::Method}]
         @receiver_definitions = {}

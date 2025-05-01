@@ -78,7 +78,7 @@ module Solargraph
         !return_type || return_type.all_rooted?
       end
 
-      # @param generics_to_erase [Enumerable<String>]
+      # @param generics_to_erase [::Array<String>]
       # @return [self]
       def erase_generics(generics_to_erase)
         return self if generics_to_erase.empty?
