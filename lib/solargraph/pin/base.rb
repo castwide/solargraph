@@ -44,7 +44,7 @@ module Solargraph
       # @sg-ignore Fix "Not enough arguments to Module#protected"
       protected def equality_fields
         # 'source' not included so that top level namespaces are comparable, whether from RBS, code or a constant
-        [self.class, identity, code_object, location, type_location, name, path, comments, closure, presence_certain?, return_type]
+        [self.class, identity, code_object, location, type_location, name, path, comments, closure, return_type]
       end
 
       # specialize some things from Equality mix-in
