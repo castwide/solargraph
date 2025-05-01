@@ -261,11 +261,11 @@ module Solargraph
           referenced&.path == pin.path
         end
         if pin.path == 'Class#new'
-          caller = cursor.chain.base.infer(api_map, clip.send(:block), clip.locals).first
+          caller = cursor.chain.base.infer(api_map, clip.send(:closure), clip.locals).first
           if caller.defined?
             found.select! do |loc|
               clip = api_map.clip_at(loc.filename, loc.range.start)
-              other = clip.send(:cursor).chain.base.infer(api_map, clip.send(:block), clip.locals).first
+              other = clip.send(:cursor).chain.base.infer(api_map, clip.send(:closure), clip.locals).first
               caller == other
             end
           else

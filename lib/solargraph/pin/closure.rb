@@ -29,6 +29,10 @@ module Solargraph
         @binder || context
       end
 
+      # @param api_map [Solargraph::ApiMap]
+      # @return [void]
+      def rebind api_map; end
+
       # @return [::Array<String>]
       def gates
         # @todo This check might not be necessary. There should always be a
