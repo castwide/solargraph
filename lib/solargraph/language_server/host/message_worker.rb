@@ -94,6 +94,9 @@ module Solargraph
         # True if the message requires a previous update to have executed in
         # order to work correctly.
         #
+        # @param msg [Hash{String => Object}]
+        # @todo need boolish type from RBS
+        # @return [Object]
         def version_dependent? msg
           msg['textDocument'] && msg['position']
         end

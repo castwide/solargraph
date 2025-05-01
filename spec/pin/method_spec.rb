@@ -601,7 +601,7 @@ describe Solargraph::Pin::Method do
       api_map.map source
       pin = api_map.get_path_pins('Foo#bar').first
       expect(pin.typify(api_map)).to be_undefined
-      expect(pin.probe(api_map).simple_tags).to eq('String, Integer')
+      expect(pin.probe(api_map).items.map(&:simple_tag)).to eq(%w[String Integer])
     end
 
     it 'infers return types from compound statements in conditionals' do

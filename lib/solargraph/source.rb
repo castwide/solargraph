@@ -307,7 +307,7 @@ module Solargraph
 
     # A hash of line numbers and their associated comments.
     #
-    # @return [Hash{Integer => Array<String>}]
+    # @return [Hash{Integer => Array<String>, nil}]
     def stringified_comments
       @stringified_comments ||= {}
     end
@@ -375,6 +375,7 @@ module Solargraph
 
     protected
 
+    # @return [Array<Change>]
     def changes
       @changes ||= []
     end

@@ -11,6 +11,7 @@ module Solargraph
     autoload :Gemspec, 'solargraph/convention/gemspec'
     autoload :Rakefile, 'solargraph/convention/rakefile'
 
+    # @type [Set<Convention::Base>]
     @@conventions = Set.new
 
     # @param convention [Class<Convention::Base>]

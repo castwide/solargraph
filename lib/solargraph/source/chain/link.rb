@@ -31,8 +31,17 @@ module Solargraph
           []
         end
 
+        # debugging description of contents; not for machine use
+        def desc
+          word
+        end
+
+        def to_s
+          desc
+        end
+
         def inspect
-          "#{self.class} #{word}"
+          "#<#{self.class} - `#{self.desc}`>"
         end
 
         def head?

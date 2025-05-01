@@ -145,6 +145,10 @@ module Solargraph
         end
       end
 
+      def desc
+        rooted_tags
+      end
+
       # @return [String]
       def to_rbs
         if duck_type?
