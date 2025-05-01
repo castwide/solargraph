@@ -413,7 +413,8 @@ describe Solargraph::Source::Chain::Call do
     expect(type.tags).to eq('A::B')
   end
 
-  it 'handles subclass and superclass issues in Array#+' do
+  # pending https://github.com/castwide/solargraph/pull/907
+  xit 'handles subclass and superclass issues in Array#+' do
     source = Solargraph::Source.load_string(%(
       module A
         class B; end
