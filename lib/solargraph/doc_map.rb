@@ -112,6 +112,7 @@ module Solargraph
       true
     end
 
+    # @param gemspec [Gem::Specification]
     def update_from_collection gemspec, gempins
       return gempins unless @rbs_path && File.directory?(@rbs_path)
       return gempins if RbsMap.new(gemspec.name, gemspec.version).resolved?

@@ -125,7 +125,7 @@ module Solargraph
         File.join(@directory, '.solargraph.yml')
       end
 
-      # @return [Hash{String => Array, Hash, Integer}]
+      # @return [Hash{String => Array<undefined>, Hash{String => undefined}, Integer}]
       def config_data
         workspace_config = read_config(workspace_config_path)
         global_config = read_config(global_config_path)
@@ -228,7 +228,9 @@ module Solargraph
 
       # @return [Array<String>]
       def excluded_directories
-        @raw_data['exclude']
+        # @type [Array<String>]
+        excluded = @raw_data['exclude']
+        excluded
           .select { |g| glob_is_directory?(g) }
           .map { |g| File.absolute_path(glob_to_directory(g), directory) }
       end

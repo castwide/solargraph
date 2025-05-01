@@ -33,6 +33,7 @@ module Solargraph
 
           private
 
+          # @param corrections [String]
           def log_corrections(corrections)
             corrections = corrections&.strip
             return if corrections&.empty?
@@ -51,6 +52,7 @@ module Solargraph
             conf['rubocop'] || {}
           end
 
+          # @param config [Hash{String => String}]
           def cli_args file_uri, config
             file = UriHelpers.uri_to_file(file_uri)
             args = [
@@ -68,6 +70,7 @@ module Solargraph
             args + [file]
           end
 
+          # @param config [Hash{String => String}]
           def formatter_class(config)
             if self.class.const_defined?('BlankRubocopFormatter')
               # @sg-ignore
@@ -79,6 +82,7 @@ module Solargraph
             end
           end
 
+          # @param value [Array, String]
           def cop_list(value)
             value = value.join(',') if value.respond_to?(:join)
             return nil if value == '' || !value.is_a?(String)

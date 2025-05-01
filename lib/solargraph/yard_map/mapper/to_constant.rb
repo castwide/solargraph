@@ -6,6 +6,7 @@ module Solargraph
       module ToConstant
         extend YardMap::Helpers
 
+        # @param code_object [YARD::CodeObjects::Base]
         def self.make code_object, closure = nil, spec = nil
           closure ||= Solargraph::Pin::Namespace.new(
             name: code_object.namespace.to_s,

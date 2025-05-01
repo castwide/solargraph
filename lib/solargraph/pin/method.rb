@@ -262,6 +262,7 @@ module Solargraph
         @attribute
       end
 
+      # @parm other [Method]
       def nearly? other
         super &&
           parameters == other.parameters &&
@@ -273,6 +274,7 @@ module Solargraph
         attribute? ? infer_from_iv(api_map) : infer_from_return_nodes(api_map)
       end
 
+      # @param pin [Pin::Method]
       def try_merge! pin
         return false unless super
         @node = pin.node
