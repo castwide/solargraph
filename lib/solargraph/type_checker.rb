@@ -29,6 +29,7 @@ module Solargraph
       # @todo Smarter directory resolution
       @api_map = api_map || Solargraph::ApiMap.load(File.dirname(filename))
       @rules = Rules.new(level)
+      # @type [Array<Range>]
       @marked_ranges = []
     end
 
@@ -536,7 +537,7 @@ module Solargraph
       !internal? pin
     end
 
-    # @param pin [Pin::Base]
+    # @param pin [Pin::BaseVariable]
     def declared_externally? pin
       return true if pin.assignment.nil?
       chain = Solargraph::Parser.chain(pin.assignment, filename)
@@ -662,7 +663,7 @@ module Solargraph
         (pin.closure && pin.closure.docstring.has_tag?('abstract'))
     end
 
-    # @param pin [Pin::Base]
+    # @param pin [Pin::Method]
     # @return [Array<Source::Chain>]
     def fake_args_for(pin)
       args = []

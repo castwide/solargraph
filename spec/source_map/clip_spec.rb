@@ -684,8 +684,7 @@ describe Solargraph::SourceMap::Clip do
     ), 'test.rb')
     api_map = Solargraph::ApiMap.new
     api_map.map source
-    # [[4, 39], [7, 15], [11, 13], [12, 37], [15, 37]].each do |loc|
-    [[7, 15]].each do |loc|
+    [[4, 39], [7, 15], [11, 13], [12, 37], [15, 37]].each do |loc|
       clip = api_map.clip_at('test.rb', loc)
       paths = clip.complete.pins.map(&:path)
       expect(paths).to include('String#upcase'), -> { %(expected #{paths} at #{loc} to include "String#upcase") }

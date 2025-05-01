@@ -55,7 +55,7 @@ module Solargraph
         # @param pins [::Enumerable<Pin::Method>]
         # @param api_map [ApiMap]
         # @param name_pin [Pin::Base]
-        # @param locals [::Array<Pin::LocalVariable>]
+        # @param locals [::Array<Solargraph::Pin::LocalVariable, Solargraph::Pin::Parameter>]
         # @return [::Array<Pin::Base>]
         def inferred_pins pins, api_map, name_pin, locals
           result = pins.map do |p|
@@ -156,7 +156,7 @@ module Solargraph
         # @param pin [Pin::Base]
         # @param api_map [ApiMap]
         # @param context [ComplexType]
-        # @param locals [Enumerable<Pin::Base>]
+        # @param locals [::Array<Solargraph::Pin::LocalVariable, Solargraph::Pin::Parameter>]
         # @return [Pin::Base]
         def process_macro pin, api_map, context, locals
           pin.macros.each do |macro|
@@ -175,7 +175,7 @@ module Solargraph
         # @param pin [Pin::Method]
         # @param api_map [ApiMap]
         # @param context [ComplexType]
-        # @param locals [Enumerable<Pin::Base>]
+        # @param locals [::Array<Solargraph::Pin::LocalVariable, Solargraph::Pin::Parameter>]
         # @return [Pin::ProxyType]
         def process_directive pin, api_map, context, locals
           pin.directives.each do |dir|
@@ -191,7 +191,7 @@ module Solargraph
         # @param macro [YARD::Tags::MacroDirective]
         # @param api_map [ApiMap]
         # @param context [ComplexType]
-        # @param locals [Enumerable<Pin::Base>]
+        # @param locals [::Array<Pin::LocalVariable, Pin::Parameter>]
         # @return [Pin::ProxyType]
         def inner_process_macro pin, macro, api_map, context, locals
           vals = arguments.map{ |c| Pin::ProxyType.anonymous(c.infer(api_map, pin, locals)) }
