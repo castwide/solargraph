@@ -323,7 +323,9 @@ describe Solargraph::Pin::Method do
     api_map.map source
     pin = api_map.get_path_pins('Foo#bar').first
     type = pin.probe(api_map)
-    expect(type.simple_tags).to eq('Integer, nil')
+    expect(type.rooted_tags).to eq('1, nil')
+    expect(type.to_rbs).to eq('(1 | nil)')
+    expect(type.simple_tags).to eq('Integer, NilClass')
   end
 
   it 'infers from chains' do

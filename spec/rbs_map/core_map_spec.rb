@@ -103,4 +103,26 @@ describe Solargraph::RbsMap::CoreMap do
       end
     end
   end
+
+  it 'renders string literals from RBS in a useful way' do
+    source = Solargraph::Source.load_string(%(
+      foo = nil
+      bar = foo.to_s # => '""' in rbs
+      bar
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new.map(source)
+    clip = api_map.clip_at('test.rb', [3, 6])
+    expect(clip.infer.to_s).to eq('""')
+    expect(clip.infer.to_rbs).to eq('""')
+  end
+
+  it 'treats literal nil as NilClass for method resolution' do
+    source = Solargraph::Source.load_string(%(
+      foo = nil.to_s # => "''" in rbs
+      foo
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new.map(source)
+    clip = api_map.clip_at('test.rb', [2, 6])
+    expect(clip.infer.to_s).to eq('""')
+  end
 end

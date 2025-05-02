@@ -77,7 +77,7 @@ module Solargraph
     end
 
     # @yieldparam [UniqueType]
-    # @return [Array]
+    # @return [Array<UniqueType>]
     def map &block
       @items.map &block
     end
@@ -98,6 +98,12 @@ module Solargraph
       @items.each do |item|
         item.each_unique_type &block
       end
+    end
+
+    # @param atype [ComplexType] type which may be assigned to this type
+    # @param api_map [ApiMap] The ApiMap that performs qualification
+    def can_assign?(api_map, atype)
+      any? { |ut| ut.can_assign?(api_map, atype) }
     end
 
     # @return [Integer]
@@ -160,6 +166,11 @@ module Solargraph
 
     def literal?
       @items.any?(&:literal?)
+    end
+
+    # @return [ComplexType]
+    def downcast_to_literal_if_possible
+      ComplexType.new(items.map(&:downcast_to_literal_if_possible))
     end
 
     def desc

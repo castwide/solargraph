@@ -587,7 +587,7 @@ module Solargraph
         elsif type.is_a?(RBS::Types::Tuple)
           "Array(#{type.types.map { |t| other_type_to_tag(t) }.join(', ')})"
         elsif type.is_a?(RBS::Types::Literal)
-          type.literal.to_s
+          type.literal.inspect
         elsif type.is_a?(RBS::Types::Union)
           type.types.map { |t| other_type_to_tag(t) }.join(', ')
         elsif type.is_a?(RBS::Types::Record)
