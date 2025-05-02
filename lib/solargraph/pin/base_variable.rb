@@ -94,6 +94,7 @@ module Solargraph
         assignment == other.assignment
       end
 
+      # @param pin [self]
       def try_merge! pin
         return false unless super
         @assignment = pin.assignment
@@ -101,8 +102,8 @@ module Solargraph
         true
       end
 
-      def desc
-        "#{to_rbs} = #{assignment&.type.inspect}"
+      def type_desc
+        "#{super} = #{assignment&.type.inspect}"
       end
 
       include Logging

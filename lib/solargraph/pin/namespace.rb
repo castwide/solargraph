@@ -48,7 +48,7 @@ module Solargraph
         if name.nil? || name.empty?
           '(top-level)'
         else
-          to_rbs
+          return_type.rooted_tags
         end
       end
 
