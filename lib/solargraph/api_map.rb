@@ -269,7 +269,7 @@ module Solargraph
     def qualify tag, context_tag = ''
       return tag if ['Boolean', 'self', nil].include?(tag)
 
-      context_type = ComplexType.parse(context_tag).force_rooted
+      context_type = ComplexType.try_parse(context_tag).force_rooted
       return unless context_type
 
       type = ComplexType.try_parse(tag)

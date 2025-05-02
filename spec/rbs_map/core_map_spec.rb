@@ -116,4 +116,13 @@ describe Solargraph::RbsMap::CoreMap do
     expect(clip.infer.to_rbs).to eq('""')
   end
 
+  it 'treats literal nil as NilClass for method resolution' do
+    source = Solargraph::Source.load_string(%(
+      foo = nil.to_s # => "''" in rbs
+      foo
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new.map(source)
+    clip = api_map.clip_at('test.rb', [2, 6])
+    expect(clip.infer.to_s).to eq('""')
+  end
 end
