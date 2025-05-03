@@ -27,7 +27,7 @@ module Solargraph
 
         # @sg-ignore Fix "Not enough arguments to Module#protected"
         protected def equality_fields
-          super + [location, arguments, block]
+          super + [arguments, block]
         end
 
         def with_block?
