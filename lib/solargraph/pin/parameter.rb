@@ -114,16 +114,16 @@ module Solargraph
         logger.debug { "Parameter#typify(self=#{self.desc} in #{closure.desc}) - starting" }
         unless return_type.undefined?
           out = return_type.qualify(api_map, closure.context.namespace)
-          logger.debug { "Parameter#typify(self=#{self.desc}, return_type=#{return_type.rooted_tags}, ) => #{out} from declaration" }
+          logger.debug { "Parameter#typify(self=#{self.desc}, return_type=#{return_type.rooted_tags}, ) => #{out.rooted_tags} from declaration" }
           return out
         end
         if closure.is_a?(Pin::Block)
           out = typify_block_param(api_map)
-          logger.debug { "Parameter#typify(self=#{self.desc}) => #{out} from block parameter" }
+          logger.debug { "Parameter#typify(self=#{self.desc}) => #{out.rooted_tags} from block parameter" }
           out
         else
           out = typify_method_param(api_map)
-          logger.debug { "Parameter#typify(self=#{self.desc}) => #{out} from method parameter" }
+          logger.debug { "Parameter#typify(self=#{self.desc}) => #{out.rooted_tags} from method parameter" }
           out
         end
       end
