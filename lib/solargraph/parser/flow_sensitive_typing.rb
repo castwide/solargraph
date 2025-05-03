@@ -61,6 +61,10 @@ module Solargraph
         process_conditional(conditional_node, true_ranges)
       end
 
+      class << self
+        include Logging
+      end
+
       # Find a variable pin by name and where it is used.
       #
       # Resolves our most specific view of this variable's type by
@@ -71,16 +75,34 @@ module Solargraph
       # @param closure [Pin::Closure]
       # @param location [Location]
       def self.visible_pins(pins, name, closure, location)
+        logger.debug { "FlowSensitiveTyping#visible_pins(name=#{name}, closure=#{closure}, location=#{location})" }
         pins_with_name = pins.select { |p| p.name == name }
-        return [] if pins_with_name.empty?
+        if pins_with_name.empty?
+          logger.debug { "FlowSensitiveTyping#visible_pins(name=#{name}, closure=#{closure}, location=#{location}) => [] - no pins with name" }
+          return []
+        end
         pins_with_specific_visibility = pins.select { |p| p.name == name && p.presence && p.visible_at?(closure, location) }
-        return pins_with_name if pins_with_specific_visibility.empty?
+        if pins_with_specific_visibility.empty?
+          logger.debug { "FlowSensitiveTyping#visible_pins(name=#{name}, closure=#{closure}, location=#{location}) => #{pins_with_name} - no pins with specific visibility" }
+          return pins_with_name
+        end
         visible_pins_specific_to_this_closure = pins_with_specific_visibility.select { |p| p.closure == closure }
-        return pins_with_specific_visibility if visible_pins_specific_to_this_closure.empty?
+        if visible_pins_specific_to_this_closure.empty?
+          logger.debug { "FlowSensitiveTyping#visible_pins(name=#{name}, closure=#{closure}, location=#{location}) => #{pins_with_specific_visibility} - no visible pins specific to this closure (#{closure})}" }
+          return pins_with_specific_visibility
+        end
         flow_defined_pins = pins_with_specific_visibility.select { |p| p.presence_certain? }
-        return visible_pins_specific_to_this_closure if flow_defined_pins.empty?
+        if flow_defined_pins.empty?
+          logger.debug { "FlowSensitiveTyping#visible_pins(name=#{name}, closure=#{closure}, location=#{location}) => #{visible_pins_specific_to_this_closure} - no flow-defined pins" }
+          return visible_pins_specific_to_this_closure
+        end
+
+        logger.debug { "FlowSensitiveTyping#visible_pins(name=#{name}, closure=#{closure}, location=#{location}) => #{flow_defined_pins}" }
+
         flow_defined_pins
       end
+
+      include Logging
 
       private
 
