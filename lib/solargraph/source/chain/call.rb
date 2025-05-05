@@ -68,6 +68,7 @@ module Solargraph
             # reject it regardless
 
             sorted_overloads = overloads.sort { |ol| ol.block? ? -1 : 1 }
+            # @type [Pin::Signature, nil]
             new_signature_pin = nil
             sorted_overloads.each do |ol|
               next unless ol.arity_matches?(arguments, with_block?)
@@ -101,6 +102,7 @@ module Solargraph
                     blocktype = block_call_type(api_map, name_pin, locals)
                   end
                 end
+                # @type new_signature_pin [Pin::Signature]
                 new_signature_pin = ol.resolve_generics_from_context_until_complete(ol.generics, atypes, nil, nil, blocktype)
                 new_return_type = new_signature_pin.return_type
                 type = with_params(new_return_type.self_to_type(name_pin.context), name_pin.context).qualify(api_map, name_pin.context.namespace) if new_return_type.defined?
