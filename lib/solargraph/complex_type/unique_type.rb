@@ -419,6 +419,7 @@ module Solargraph
       TRUE = UniqueType.new('true', rooted: true)
       FALSE = UniqueType.new('false', rooted: true)
       NIL = UniqueType.new('nil', rooted: true)
+      # @type [Hash{String => UniqueType}]
       SINGLE_SUBTYPE = {
         '::TrueClass' => UniqueType::TRUE,
         '::FalseClass' => UniqueType::FALSE,
