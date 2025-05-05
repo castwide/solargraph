@@ -81,7 +81,8 @@ module Solargraph
                   match = ol.parameters.any?(&:restarg?)
                   break
                 end
-                atype = atypes[idx] ||= arg.infer(api_map, Pin::ProxyType.anonymous(name_pin.context), locals)
+                logger.debug { "Call#inferred_pins(word=#{word}, name_pin=#{name_pin}, name_pin.binder=#{name_pin.binder}) - resolving arg #{arg.desc}" }
+                atype = atypes[idx] ||= arg.infer(api_map, Pin::ProxyType.anonymous(name_pin.context, closure: name_pin.closure), locals)
                 # make sure we get types from up the method
                 # inheritance chain if we don't have them on this pin
                 ptype = param.typify api_map
