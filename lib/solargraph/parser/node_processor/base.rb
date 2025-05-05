@@ -35,6 +35,8 @@ module Solargraph
           process_children
         end
 
+        include Logging
+
         private
 
         # @param subregion [Region]

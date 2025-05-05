@@ -33,7 +33,7 @@ module Solargraph
         # @param name_pin [Pin::Closure] name_pin.binder should give us the object on which 'word' will be invoked
         # @param locals [::Array<Pin::LocalVariable>]
         def resolve api_map, name_pin, locals
-          logger.debug { "Call#resolve(name_pin.binder=#{name_pin.binder.rooted_tags}, word=#{word}, arguments=#{arguments.map(&:desc)}, name_pin=#{name_pin}) - starting" }
+          logger.debug { "Call#resolve(name_pin.binder=#{name_pin.binder.rooted_tags.inspect}, word=#{word}, arguments=#{arguments.map(&:desc)}, name_pin=#{name_pin}) - starting" }
           return super_pins(api_map, name_pin) if word == 'super'
           return yield_pins(api_map, name_pin) if word == 'yield'
           found = if head?
@@ -115,7 +115,7 @@ module Solargraph
                 # @todo Weak type comparison
                 # unless atype.tag == param.return_type.tag || api_map.super_and_sub?(param.return_type.tag, atype.tag)
                 unless ptype.undefined? || atype.name == ptype.name || ptype.any? { |current_ptype| api_map.super_and_sub?(current_ptype.name, atype.name) } || ptype.generic? || param.restarg?
-                  logger.debug { "Call#inferred_pins(name_pin.binder=#{name_pin.binder}, word=#{word}, atypes=#{atypes.map(&:rooted_tags)}, name_pin=#{name_pin}) - rejecting signature #{ol}" }
+                  logger.debug { "Call#inferred_pins(name_pin.binder=#{name_pin.binder}, name_pin.context=#{name_pin.context}, word=#{word}, atypes=#{atypes.map(&:rooted_tags)}, name_pin=#{name_pin}) - rejecting signature #{ol}" }
                   match = false
                   break
                 end
