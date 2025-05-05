@@ -146,7 +146,9 @@ module Solargraph
     def locals_at(location)
       return [] if location.filename != filename
       closure = locate_named_path_pin(location.range.start.line, location.range.start.character)
-      locals.select { |pin| pin.visible_at?(closure, location) }
+      out = locals.select { |pin| pin.visible_at?(closure, location) }
+      logger.debug { "SourceMap#locals_at(#{location.inspect}) => #{out.map(&:inspect)}" }
+      out
     end
 
     class << self
@@ -213,5 +215,7 @@ module Solargraph
       # Assuming the root pin is always valid
       found || pins.first
     end
+
+    include Logging
   end
 end

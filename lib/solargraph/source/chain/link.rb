@@ -79,6 +79,8 @@ module Solargraph
           "#<#{self.class} - `#{self.desc}`>"
         end
 
+        include Logging
+
         protected
 
         # Mark whether this link is the head of a chain

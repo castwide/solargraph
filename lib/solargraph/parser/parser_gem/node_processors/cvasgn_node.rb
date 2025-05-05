@@ -7,15 +7,19 @@ module Solargraph
         class CvasgnNode < Parser::NodeProcessor::Base
           def process
             loc = get_node_location(node)
-            pins.push Solargraph::Pin::ClassVariable.new(
+            pin = Solargraph::Pin::ClassVariable.new(
               location: loc,
               closure: region.closure,
               name: node.children[0].to_s,
               comments: comments_for(node),
               assignment: node.children[1]
             )
+            logger.debug { "CvasgnNode#process() - pin=#{pin}" }
+            pins.push pin
             process_children
           end
+
+          include Logging
         end
       end
     end
