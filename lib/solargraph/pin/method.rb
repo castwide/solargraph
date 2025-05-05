@@ -194,11 +194,11 @@ module Solargraph
 
       def documentation
         if @documentation.nil?
-          @documentation ||= super || ''
+          method_docs ||= super || ''
           param_tags = docstring.tags(:param)
           unless param_tags.nil? or param_tags.empty?
-            @documentation += "\n\n" unless @documentation.empty?
-            @documentation += "Params:\n"
+            method_docs += "\n\n" unless method_docs.empty?
+            method_docs += "Params:\n"
             lines = []
             param_tags.each do |p|
               l = "* #{p.name}"
@@ -206,12 +206,12 @@ module Solargraph
               l += " #{p.text}"
               lines.push l
             end
-            @documentation += lines.join("\n")
+            method_docs += lines.join("\n")
           end
           yieldparam_tags = docstring.tags(:yieldparam)
           unless yieldparam_tags.nil? or yieldparam_tags.empty?
-            @documentation += "\n\n" unless @documentation.empty?
-            @documentation += "Block Params:\n"
+            method_docs += "\n\n" unless method_docs.empty?
+            method_docs += "Block Params:\n"
             lines = []
             yieldparam_tags.each do |p|
               l = "* #{p.name}"
@@ -219,12 +219,12 @@ module Solargraph
               l += " #{p.text}"
               lines.push l
             end
-            @documentation += lines.join("\n")
+            method_docs += lines.join("\n")
           end
           yieldreturn_tags = docstring.tags(:yieldreturn)
           unless yieldreturn_tags.empty?
-            @documentation += "\n\n" unless @documentation.empty?
-            @documentation += "Block Returns:\n"
+            method_docs += "\n\n" unless method_docs.empty?
+            method_docs += "Block Returns:\n"
             lines = []
             yieldreturn_tags.each do |r|
               l = "*"
@@ -232,12 +232,12 @@ module Solargraph
               l += " #{r.text}"
               lines.push l
             end
-            @documentation += lines.join("\n")
+            method_docs += lines.join("\n")
           end
           return_tags = docstring.tags(:return)
           unless return_tags.empty?
-            @documentation += "\n\n" unless @documentation.empty?
-            @documentation += "Returns:\n"
+            method_docs += "\n\n" unless method_docs.empty?
+            method_docs += "Returns:\n"
             lines = []
             return_tags.each do |r|
               l = "*"
@@ -245,10 +245,11 @@ module Solargraph
               l += " #{r.text}"
               lines.push l
             end
-            @documentation += lines.join("\n")
+            method_docs += lines.join("\n")
           end
-          @documentation += "\n\n" unless @documentation.empty?
-          @documentation += "Visibility: #{visibility}"
+          method_docs += "\n\n" unless method_docs.empty?
+          method_docs += "Visibility: #{visibility}"
+          @documentation = method_docs
           concat_example_tags
         end
         @documentation.to_s
@@ -311,7 +312,7 @@ module Solargraph
         @anon_splat
       end
 
-      # @param [ApiMap]
+      # @param api_map [ApiMap]
       # @return [self]
       def resolve_ref_tag api_map
         return self if @resolved_ref_tag
