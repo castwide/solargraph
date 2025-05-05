@@ -12,7 +12,7 @@ require 'ast'
 #     class Node
 #       # New children
 #
-#       # @return [Array<self>]
+#       # @return [Array<self, Integer, String, Symbol, nil>]
 #       attr_reader :children
 #     end
 #   end
