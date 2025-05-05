@@ -88,6 +88,7 @@ module Solargraph
                 # @todo Weak type comparison
                 # unless atype.tag == param.return_type.tag || api_map.super_and_sub?(param.return_type.tag, atype.tag)
                 unless ptype.undefined? || atype.name == ptype.name || ptype.any? { |current_ptype| api_map.super_and_sub?(current_ptype.name, atype.name) } || ptype.generic? || param.restarg?
+                  logger.debug { "Call#inferred_pins(name_pin.binder=#{name_pin.binder}, name_pin.context=#{name_pin.context}, word=#{word}, atypes=#{atypes.map(&:rooted_tags)}, name_pin=#{name_pin}) - rejecting signature #{ol}" }
                   match = false
                   break
                 end

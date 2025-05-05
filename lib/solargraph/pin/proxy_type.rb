@@ -15,6 +15,7 @@ module Solargraph
       end
 
       # @param context [ComplexType, ComplexType::UniqueType] Used as context for this pin
+      # @param closure [Pin::Namespace, nil] Used as the closure for this pin
       # @param binder [ComplexType, ComplexType::UniqueType, nil]
       # @return [ProxyType]
       def self.anonymous context, closure: nil, binder: nil
