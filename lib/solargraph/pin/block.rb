@@ -21,6 +21,11 @@ module Solargraph
         @node = node
       end
 
+      # @sg-ignore Fix "Not enough arguments to Module#protected"
+      protected def equality_fields
+        super + [node, node&.location]
+      end
+
       # @param api_map [ApiMap]
       # @return [void]
       def rebind api_map

@@ -8,6 +8,7 @@ module Solargraph
       include Common
       include Conversions
       include Documenting
+      include Equality
 
       # @return [YARD::CodeObjects::Base]
       attr_reader :code_object
@@ -39,6 +40,22 @@ module Solargraph
         @name = name
         @comments = comments
       end
+
+      # @sg-ignore Fix "Not enough arguments to Module#protected"
+      protected def equality_fields
+        # 'source' not included so that top level namespaces are comparable, whether from RBS, code or a constant
+        [self.class, identity, code_object, location, type_location, name, path, comments, closure, return_type]
+      end
+
+      # specialize some things from Equality mix-in
+
+      def eql?(other)
+        self.class.eql?(other.class) &&
+          equality_fields.eql?(other.equality_fields) &&
+          nearly?(other)
+      end
+
+      alias == eql?
 
       # @return [String]
       def comments
@@ -78,7 +95,7 @@ module Solargraph
         !return_type || return_type.all_rooted?
       end
 
-      # @param generics_to_erase [Enumerable<String>]
+      # @param generics_to_erase [::Array<String>]
       # @return [self]
       def erase_generics(generics_to_erase)
         return self if generics_to_erase.empty?
@@ -102,7 +119,7 @@ module Solargraph
       end
 
       def to_s
-        to_rbs
+        desc
       end
 
       # @return [Boolean]
@@ -113,14 +130,6 @@ module Solargraph
       # @return [Location, nil]
       def best_location
         location || type_location
-      end
-
-      # Pin equality is determined using the #nearly? method and also
-      # requiring both pins to have the same location.
-      #
-      def == other
-        return false unless nearly? other
-        comments == other.comments and location == other.location
       end
 
       # True if the specified pin is a near match to this one. A near match
@@ -265,9 +274,10 @@ module Solargraph
         result
       end
 
+      # @deprecated
       # @return [String]
       def identity
-        @identity ||= "#{closure.path}|#{name}"
+        @identity ||= "#{closure&.path}|#{name}"
       end
 
       # @return [String, nil]
@@ -275,17 +285,27 @@ module Solargraph
         return_type.to_rbs
       end
 
-      # @return [String, nil]
-      def desc
+      # @return [String]
+      def type_desc
+        rbs = to_rbs
+        # RBS doesn't have a way to represent a Class<x> type
+        rbs = return_type.rooted_tags if return_type.name == 'Class'
         if path
-          if to_rbs
-            path + ' ' + to_rbs
+          if rbs
+            path + ' ' + rbs
           else
             path
           end
         else
-          to_rbs
+          rbs
         end
+      end
+
+      # @return [String]
+      def desc
+        closure_info = closure&.desc
+        binder_info = binder&.desc
+        "[#{type_desc}, closure=#{closure_info}, binder=#{binder}"
       end
 
       def inspect

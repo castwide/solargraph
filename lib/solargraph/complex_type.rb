@@ -7,6 +7,7 @@ module Solargraph
     GENERIC_TAG_NAME = 'generic'.freeze
     # @!parse
     #   include TypeMethods
+    include Equality
 
     autoload :TypeMethods, 'solargraph/complex_type/type_methods'
     autoload :UniqueType,  'solargraph/complex_type/unique_type'
@@ -18,17 +19,9 @@ module Solargraph
       @items = types.flat_map(&:items).uniq(&:to_s)
     end
 
-    def eql?(other)
-      self.class == other.class &&
-        @items == other.items
-    end
-
-    def ==(other)
-      self.eql?(other)
-    end
-
-    def hash
-      [self.class, @items].hash
+    # @sg-ignore Fix "Not enough arguments to Module#protected"
+    protected def equality_fields
+      [self.class, items]
     end
 
     # @param api_map [ApiMap]
@@ -154,14 +147,22 @@ module Solargraph
       map(&:tag).join(', ')
     end
 
+    def desc
+      rooted_tags
+    end
+
     def rooted_tags
       map(&:rooted_tag).join(', ')
     end
 
+    # @yieldparam [UniqueType]
     def all? &block
       @items.all? &block
     end
 
+    # @yieldparam [UniqueType]
+    # @yieldreturn [Boolean]
+    # @return [Boolean]
     def any? &block
       @items.compact.any? &block
     end
@@ -263,7 +264,7 @@ module Solargraph
       #   Consumers should not need to use this parameter; it should only be
       #   used internally.
       #
-      # @param *strings [Array<String>] The type definitions to parse
+      # @param strings [Array<String>] The type definitions to parse
       # @return [ComplexType]
       # # @overload parse(*strings, partial: false)
       # #  @todo Need ability to use a literal true as a type below

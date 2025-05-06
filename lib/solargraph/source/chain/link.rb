@@ -4,6 +4,8 @@ module Solargraph
   class Source
     class Chain
       class Link
+        include Equality
+
         # @return [String]
         attr_reader :word
 
@@ -13,6 +15,11 @@ module Solargraph
         # @param word [String]
         def initialize word = '<undefined>'
           @word = word
+        end
+
+        # @sg-ignore Fix "Not enough arguments to Module#protected"
+        protected def equality_fields
+          [self.class, word]
         end
 
         def undefined?
@@ -31,16 +38,21 @@ module Solargraph
           []
         end
 
+        # debugging description of contents; not for machine use
+        def desc
+          word
+        end
+
+        def to_s
+          desc
+        end
+
         def inspect
-          "#{self.class} #{word}"
+          "#<#{self.class} - `#{self.desc}`>"
         end
 
         def head?
           @head ||= false
-        end
-
-        def == other
-          self.class == other.class and word == other.word
         end
 
         # Make a copy of this link marked as the head of a chain

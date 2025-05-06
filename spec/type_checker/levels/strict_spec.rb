@@ -797,5 +797,38 @@ describe Solargraph::TypeChecker do
       ))
       expect(checker.problems.map(&:message)).to eq([])
     end
+
+    it "understands Array#+ overloads" do
+      checker = type_checker(%(
+        c = ['a'] + ['a']
+        c
+      ))
+      expect(checker.problems.map(&:message)).to eq([])
+    end
+
+    it "understands String#+ overloads" do
+      checker = type_checker(%(
+        detail = ''
+        detail += "foo"
+        detail.strip!
+      ))
+      expect(checker.problems.map(&:message)).to eq([])
+    end
+
+    it "understands Enumerable#each via _Each self type" do
+      checker = type_checker(%(
+        class Blah
+          # @param e [Enumerable<String>]
+          # @return [void]
+          def foo(e)
+            e
+            e.each do |x|
+              x
+            end
+          end
+        end
+      ))
+      expect(checker.problems.map(&:message)).to eq([])
+    end
   end
 end

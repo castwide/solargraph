@@ -8,12 +8,21 @@ module Solargraph
         @methods = {}
         # @type [Hash{(String, Array<String>) => Array<Pin::Base>}]
         @constants = {}
-        # @type [Hash{(String, String) => String}]
+        # @type [Hash{String => String}]
         @qualified_namespaces = {}
         # @type [Hash{String => Pin::Method}]
         @receiver_definitions = {}
         # @type [Hash{String => SourceMap::Clip}]
         @clips = {}
+      end
+
+      def to_s
+        self.class.to_s
+      end
+
+      # avoid enormous dump
+      def inspect
+        to_s
       end
 
       # @param fqns [String]

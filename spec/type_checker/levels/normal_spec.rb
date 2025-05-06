@@ -223,7 +223,7 @@ describe Solargraph::TypeChecker do
       #   vendored code.
       gemspec = Gem::Specification.find_by_name('kramdown-parser-gfm')
       pins = Solargraph::GemPins.build(gemspec)
-      Solargraph::Cache.save('gems', "#{gemspec.name}-#{gemspec.version}.ser", pins)  
+      Solargraph::Cache.save('gems', "#{gemspec.name}-#{gemspec.version}.ser", pins)
       checker = type_checker(%(
         require 'kramdown-parser-gfm'
         # @type [String]

@@ -29,6 +29,7 @@ module Solargraph
       # @todo Smarter directory resolution
       @api_map = api_map || Solargraph::ApiMap.load(File.dirname(filename))
       @rules = Rules.new(level)
+      # @type [Array<Range>]
       @marked_ranges = []
     end
 
@@ -413,7 +414,7 @@ module Solargraph
     # @param locals [Array<Pin::LocalVariable>]
     # @param location [Location]
     # @param pin [Pin::Method]
-    # @param params [Hash{String => [nil, Hash]}]
+    # @param params [Hash{String => Hash{Symbol => String, Solargraph::ComplexType}}]
     # @param idx [Integer]
     #
     # @return [Array<Problem>]
@@ -467,10 +468,11 @@ module Solargraph
     end
 
     # @param pin [Pin::Method]
-    # @return [Hash{String => Hash{Symbol => BaseObject}}]
+    # @return [Hash{String => Hash{Symbol => String, ComplexType}}]
     def param_hash(pin)
       tags = pin.docstring.tags(:param)
       return {} if tags.empty?
+      # @type [Hash{String => Hash{Symbol => String, ComplexType}}]
       result = {}
       tags.each do |tag|
         next if tag.types.nil? || tag.types.empty?
@@ -483,11 +485,9 @@ module Solargraph
     end
 
     # @param pins [Array<Pin::Method>]
-    # @return [Hash{String => Hash{Symbol => BasicObject}}]
+    # @return [Hash{String => Hash{Symbol => String, ComplexType}}]
     def first_param_hash(pins)
       pins.each do |pin|
-        # @todo this assignment from parametric use of Hash should not lose its generic
-        # @type [Hash{String => Hash{Symbol => BasicObject}}]
         result = param_hash(pin)
         return result unless result.empty?
       end
@@ -512,7 +512,7 @@ module Solargraph
       !internal? pin
     end
 
-    # @param pin [Pin::Base]
+    # @param pin [Pin::BaseVariable]
     def declared_externally? pin
       return true if pin.assignment.nil?
       chain = Solargraph::Parser.chain(pin.assignment, filename)
@@ -562,7 +562,7 @@ module Solargraph
       return [] unless pin.explicit?
       return [] if parameters.empty? && arguments.empty?
       return [] if pin.anon_splat?
-      unchecked = arguments.clone
+      unchecked = arguments.dup # creates copy of and unthaws array
       add_params = 0
       if unchecked.empty? && parameters.any? { |param| param.decl == :kwarg }
         return [Problem.new(location, "Missing keyword arguments to #{pin.path}")]
@@ -638,7 +638,7 @@ module Solargraph
         (pin.closure && pin.closure.docstring.has_tag?('abstract'))
     end
 
-    # @param pin [Pin::Base]
+    # @param pin [Pin::Method]
     # @return [Array<Source::Chain>]
     def fake_args_for(pin)
       args = []
