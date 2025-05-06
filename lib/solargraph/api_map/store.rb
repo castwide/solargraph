@@ -43,7 +43,7 @@ module Solargraph
         end
       end
 
-      # @param fqns [String]
+      # @param fq_tag [String]
       # @return [String, nil]
       def get_superclass fqns
         raise "Do not prefix fully qualified namespaces with '::' - #{fqns.inspect}" if fqns.start_with?('::')
@@ -77,6 +77,7 @@ module Solargraph
         path_pin_hash[path] || []
       end
 
+      # @return [Set<Pin::Base>]
       def cacheable_pins
         @cacheable_pins ||= pins_by_class(Pin::Namespace) + pins_by_class(Pin::Constant) + pins_by_class(Pin::Method) + pins_by_class(Pin::Reference)
       end
@@ -162,7 +163,7 @@ module Solargraph
       def pins_by_class klass
         # @type [Set<Solargraph::Pin::Base>]
         s = Set.new
-        @pin_select_cache[klass] ||= @pin_class_hash.each_with_object(s) { |(key, o), n| n.merge(o) if key <= klass }
+        @pin_select_cache[klass] ||= @pin_class_hash.each_with_object(s) { |x, n| key, o = x; n.merge(o) if key <= klass }
       end
 
       # @param fqns [String]
@@ -259,6 +260,7 @@ module Solargraph
       # @return [void]
       def index
         set = pins.to_set
+        # @type [Hash{Class => Array<Solargraph::Pin::Base>}]
         @pin_class_hash = set.classify(&:class).transform_values(&:to_a)
         # @type [Hash{Class => ::Array<Solargraph::Pin::Base>}]
         @pin_select_cache = {}

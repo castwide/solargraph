@@ -9,6 +9,22 @@ require 'solargraph/converters/dt'
 require 'solargraph/converters/dd'
 require 'solargraph/converters/misc'
 
+# @todo upstream this definition
+
+# @!parse
+#   module ::Kramdown
+#     class Document
+#       # @return [String]
+#       def to_html; end
+#     end
+#   end
+#   module ReverseMarkdown
+#     # @param input [String]
+#     # @param options [Hash]
+#     # @return [String]
+#     def self.convert(input, options = {}); end
+#   end
+
 module Solargraph
   module Pin
     # A module to add the Pin::Base#documentation method.

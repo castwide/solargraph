@@ -206,6 +206,7 @@ module Solargraph
     # @return [void]
     def scan
       directory = File.realpath(options[:directory])
+      # @type [Solargraph::ApiMap, nil]
       api_map = nil
       time = Benchmark.measure {
         api_map = Solargraph::ApiMap.load_with_cache(directory, $stdout)
