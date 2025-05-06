@@ -119,7 +119,7 @@ module Solargraph
         cache_key_hash = cache_key.hash
         cached = @@inference_cache[cache_key] unless node.nil?
         return cached if cached && @@inference_invalidation_key == api_map.hash
-        out = infer_uncached api_map, name_pin, locals
+        out = infer_uncached(api_map, name_pin, locals).downcast_to_literal_if_possible
         if @@inference_invalidation_key != api_map.hash
           logger.debug { "Invalidating cache due to api_map change: #{api_map.hash}" }
           @@inference_cache = {}
