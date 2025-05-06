@@ -174,7 +174,9 @@ module Solargraph
 
         # @param section [String]
         # @param capability [String]
-        # @return [Boolean]
+        # @todo Need support for RBS' boolish "type", which doesn't
+        #   enforce strict true/false-ness
+        # @sg-ignore
         def dynamic_registration_for? section, capability
           result = (params['capabilities'] &&
             params['capabilities'][section] &&
