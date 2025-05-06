@@ -96,6 +96,13 @@ module Solargraph
         raw_data['formatter']
       end
 
+      # @return [String]
+      def shim_dir
+        # @type [Hash{String => String}]
+        rbs_config = raw_data.fetch('rbs', {})
+        rbs_config.fetch('shims', 'sig/shims')
+      end
+
       # An array of plugins to require.
       #
       # @return [Array<String>]
@@ -163,6 +170,9 @@ module Solargraph
               'only' => [],
               'extra_args' =>[]
             }
+          },
+          'rbs' => {
+            'shims' => 'sig/shims'
           },
           'require_paths' => [],
           'plugins' => [],
