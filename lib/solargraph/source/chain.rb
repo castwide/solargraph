@@ -15,6 +15,7 @@ module Solargraph
     #
     class Chain
       include Equality
+      include Logging
 
       autoload :Link,             'solargraph/source/chain/link'
       autoload :Call,             'solargraph/source/chain/call'
@@ -139,7 +140,9 @@ module Solargraph
       def infer_uncached api_map, name_pin, locals
         pins = define(api_map, name_pin, locals)
         type = infer_first_defined(pins, links.last.last_context, api_map, locals)
-        maybe_nil(type)
+        out = maybe_nil(type)
+        logger.debug { "Chain#infer_uncached(links=#{self.links} => #{out}" }
+        out
       end
 
       # @return [Boolean]
