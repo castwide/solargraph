@@ -274,6 +274,7 @@ module Solargraph
         result
       end
 
+      # @deprecated
       # @return [String]
       def identity
         @identity ||= "#{closure&.path}|#{name}"

@@ -192,9 +192,9 @@ module Solargraph
         # @param pin [Pin::Base]
         pins.each do |pin|
           # Avoid infinite recursion
-          next if @@inference_stack.include?(pin.identity)
+          next if @@inference_stack.include?(pin)
 
-          @@inference_stack.push pin.identity
+          @@inference_stack.push pin
           type = pin.typify(api_map)
           @@inference_stack.pop
           if type.defined?
@@ -218,9 +218,9 @@ module Solargraph
           # @param pin [Pin::Base]
           pins.each do |pin|
             # Avoid infinite recursion
-            next if @@inference_stack.include?(pin.identity)
+            next if @@inference_stack.include?(pin)
 
-            @@inference_stack.push pin.identity
+            @@inference_stack.push pin
             type = pin.probe(api_map)
             @@inference_stack.pop
             if type.defined?
