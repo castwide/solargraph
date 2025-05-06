@@ -562,7 +562,7 @@ module Solargraph
       return [] unless pin.explicit?
       return [] if parameters.empty? && arguments.empty?
       return [] if pin.anon_splat?
-      unchecked = arguments.clone
+      unchecked = arguments.dup # creates copy of and unthaws array
       add_params = 0
       if unchecked.empty? && parameters.any? { |param| param.decl == :kwarg }
         return [Problem.new(location, "Missing keyword arguments to #{pin.path}")]
