@@ -8,7 +8,6 @@ module Solargraph
       include Common
       include Conversions
       include Documenting
-      include Equality
 
       # @return [YARD::CodeObjects::Base]
       attr_reader :code_object
@@ -40,22 +39,6 @@ module Solargraph
         @name = name
         @comments = comments
       end
-
-      # @sg-ignore Fix "Not enough arguments to Module#protected"
-      protected def equality_fields
-        # 'source' not included so that top level namespaces are comparable, whether from RBS, code or a constant
-        [self.class, identity, code_object, location, type_location, name, path, comments, closure, return_type]
-      end
-
-      # specialize some things from Equality mix-in
-
-      def eql?(other)
-        self.class.eql?(other.class) &&
-          equality_fields.eql?(other.equality_fields) &&
-          nearly?(other)
-      end
-
-      alias == eql?
 
       # @return [String]
       def comments
@@ -147,6 +130,15 @@ module Solargraph
             compare_docstring_tags(docstring, other.docstring))
           )
       end
+
+      # Pin equality is determined using the #nearly? method and also
+      # requiring both pins to have the same location.
+      #
+      def eql? other
+        return false unless nearly? other
+        comments == other.comments && location == other.location
+      end
+      alias == eql?
 
       # The pin's return type.
       #
