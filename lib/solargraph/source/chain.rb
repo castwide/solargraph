@@ -14,10 +14,8 @@ module Solargraph
     # expression.
     #
     class Chain
-      #
-      # A chain of constants, variables, and method calls for inferring types of
-      # values.
-      #
+      include Equality
+
       autoload :Link,             'solargraph/source/chain/link'
       autoload :Call,             'solargraph/source/chain/call'
       autoload :QCall,            'solargraph/source/chain/q_call'
@@ -48,6 +46,11 @@ module Solargraph
       attr_reader :links
 
       attr_reader :node
+
+      # @sg-ignore Fix "Not enough arguments to Module#protected"
+      protected def equality_fields
+        [links, node]
+      end
 
       # @param node [Parser::AST::Node, nil]
       # @param links [::Array<Chain::Link>]
@@ -132,16 +135,20 @@ module Solargraph
       # @return [ComplexType]
       # @sg-ignore
       def infer api_map, name_pin, locals
-        out = nil
-        cached = @@inference_cache[[node, node.location, links.map(&:word), name_pin&.return_type, locals]] unless node.nil?
+        cache_key = [node, node&.location, links, name_pin&.return_type, locals]
+        cache_key_hash = cache_key.hash
+        cached = @@inference_cache[cache_key] unless node.nil?
         return cached if cached && @@inference_invalidation_key == api_map.hash
         out = infer_uncached api_map, name_pin, locals
         if @@inference_invalidation_key != api_map.hash
-#          STDERR.puts("Invalidating cache")
+          logger.debug { "Invalidating cache due to api_map change: #{api_map.hash}" }
           @@inference_cache = {}
           @@inference_invalidation_key = api_map.hash
         end
-        @@inference_cache[[node, node.location, links.map(&:word), name_pin&.return_type, locals]] = out unless node.nil?
+        unless node.nil?
+          logger.debug { "Chain#infer() - caching result - cache_key_hash=#{cache_key_hash}, links.map(&:hash)=#{links.map(&:hash)}, links=#{links}, cache_key.map(&:hash) = #{cache_key.map(&:hash)}, cache_key=#{cache_key}" }
+          @@inference_cache[cache_key] = out
+        end
         out
       end
 
@@ -187,6 +194,8 @@ module Solargraph
         links.any?(&:nullable?)
       end
 
+      include Logging
+
       def desc
         links.map(&:desc).to_s
       end
@@ -213,9 +222,9 @@ module Solargraph
         # @param pin [Pin::Base]
         pins.each do |pin|
           # Avoid infinite recursion
-          next if @@inference_stack.include?(pin.identity)
+          next if @@inference_stack.include?(pin)
 
-          @@inference_stack.push pin.identity
+          @@inference_stack.push pin
           type = pin.typify(api_map)
           @@inference_stack.pop
           if type.defined?

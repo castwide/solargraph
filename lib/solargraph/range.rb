@@ -4,6 +4,8 @@ module Solargraph
   # A pair of Positions that compose a section of text in code.
   #
   class Range
+    include Equality
+
     # @return [Position]
     attr_reader :start
 
@@ -15,6 +17,11 @@ module Solargraph
     def initialize start, ending
       @start = start
       @ending = ending
+    end
+
+    # @sg-ignore Fix "Not enough arguments to Module#protected"
+    protected def equality_fields
+      [start, ending]
     end
 
     # Get a hash of the range. This representation is suitable for use in

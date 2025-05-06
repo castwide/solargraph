@@ -414,7 +414,7 @@ module Solargraph
     # @param locals [Array<Pin::LocalVariable>]
     # @param location [Location]
     # @param pin [Pin::Method]
-    # @param params [Hash{String => [nil, Hash]}]
+    # @param params [Hash{String => Hash{Symbol => String, Solargraph::ComplexType}}]
     # @param idx [Integer]
     #
     # @return [Array<Problem>]
@@ -468,8 +468,9 @@ module Solargraph
     end
 
     # @param pin [Pin::Method]
-    # @return [Hash{String => Hash{Symbol => BaseObject}}]
+    # @return [Hash{String => Hash{Symbol => String, ComplexType}}]
     def param_hash(pin)
+      # @type [Hash{String => Hash{Symbol => String, ComplexType}}]
       result = {}
       pin.parameters.each do |param|
         type = param.typify(api_map)
@@ -495,7 +496,7 @@ module Solargraph
     end
 
     # @param pins [Array<Pin::Method>]
-    # @return [Hash{String => Hash{Symbol => BasicObject}}]
+    # @return [Hash{String => Hash{Symbol => String, ComplexType}}]
     def first_param_hash(pins)
       return {} if pins.empty?
       first_pin_type = pins.first.typify(api_map)
@@ -587,7 +588,7 @@ module Solargraph
       return [] unless pin.explicit?
       return [] if parameters.empty? && arguments.empty?
       return [] if pin.anon_splat?
-      unchecked = arguments.clone
+      unchecked = arguments.dup # creates copy of and unthaws array
       add_params = 0
       if unchecked.empty? && parameters.any? { |param| param.decl == :kwarg }
         return [Problem.new(location, "Missing keyword arguments to #{pin.path}")]

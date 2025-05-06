@@ -7,6 +7,7 @@ module Solargraph
     GENERIC_TAG_NAME = 'generic'.freeze
     # @!parse
     #   include TypeMethods
+    include Equality
 
     autoload :TypeMethods, 'solargraph/complex_type/type_methods'
     autoload :UniqueType,  'solargraph/complex_type/unique_type'
@@ -24,17 +25,9 @@ module Solargraph
       @items = items
     end
 
-    def eql?(other)
-      self.class == other.class &&
-        @items == other.items
-    end
-
-    def ==(other)
-      self.eql?(other)
-    end
-
-    def hash
-      [self.class, @items].hash
+    # @sg-ignore Fix "Not enough arguments to Module#protected"
+    protected def equality_fields
+      [self.class, items]
     end
 
     # @param api_map [ApiMap]

@@ -5,6 +5,8 @@ module Solargraph
   # and Range.
   #
   class Location
+    include Equality
+
     # @return [String]
     attr_reader :filename
 
@@ -16,6 +18,11 @@ module Solargraph
     def initialize filename, range
       @filename = filename
       @range = range
+    end
+
+    # @sg-ignore Fix "Not enough arguments to Module#protected"
+    protected def equality_fields
+      [filename, range]
     end
 
     # @param location [self]
