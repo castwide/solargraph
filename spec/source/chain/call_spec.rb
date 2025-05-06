@@ -505,4 +505,18 @@ describe Solargraph::Source::Chain::Call do
     type = chain.infer(api_map, Solargraph::Pin::ROOT_PIN, api_map.source_map('test.rb').locals)
     expect(type.rooted_tags).to eq('::A::D::E')
   end
+
+  it 'does not mis-parse generic methods with type constraints' do
+    source = Solargraph::Source.load_string(%(
+      def bl
+        out = (Encoding.default_external = 'UTF-8')
+        out
+      end
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new
+    api_map.map source
+
+    clip = api_map.clip_at('test.rb', [3, 8])
+    expect(clip.infer.rooted_tags).to eq('::String')
+  end
 end
