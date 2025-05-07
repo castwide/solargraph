@@ -27,6 +27,7 @@ module Solargraph
 
     def freeze
       equality_fields.each(&:freeze)
+      super
     end
   end
 end
