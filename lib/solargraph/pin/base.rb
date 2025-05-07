@@ -134,11 +134,10 @@ module Solargraph
       # Pin equality is determined using the #nearly? method and also
       # requiring both pins to have the same location.
       #
-      def eql? other
+      def == other
         return false unless nearly? other
         comments == other.comments && location == other.location
       end
-      alias == eql?
 
       # The pin's return type.
       #
