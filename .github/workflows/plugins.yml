@@ -72,7 +72,7 @@ jobs:
       run: |
        cd ..
        # TODO: Replace with main branch of iftheshoefritz/solargraph-rails once fixes are merged
-       git -b 2025-05-07 clone https://github.com/apiology/solargraph-rails.git
+       git clone -b 2025-05-07 https://github.com/apiology/solargraph-rails.git
        cd solargraph-rails
     - name: Set up Ruby
       uses: ruby/setup-ruby@v1
