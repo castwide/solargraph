@@ -43,7 +43,6 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v3
-    #
     - name: clone https://github.com/lekemula/solargraph-rspec/
       run: |
        cd ..
@@ -65,8 +64,27 @@ jobs:
         bundle exec rake spec
 
   run_solargraph_rails_specs:
+    # check out solargraph-rails as well as this project, and point the former to use the latter as a local gem
     runs-on: ubuntu-latest
     steps:
-    - name: Run
+    - uses: actions/checkout@v3
+    - name: clone https://github.com/iftheshoefritz/solargraph-rails/
       run: |
-        false
+       cd ..
+       # TODO: Replace with main branch of iftheshoefritz/solargraph-rails once fixes are merged
+       git -b 2025-05-07 clone https://github.com/apiology/solargraph-rails.git
+       cd solargraph-rails
+    - name: Set up Ruby
+      uses: ruby/setup-ruby@v1
+      with:
+        ruby-version: '3.0'
+        bundler-cache: false
+    - name: Install gems
+      run: |
+       cd ../solargraph-rails
+       echo "gem 'solargraph', path: '../solargraph'" >> Gemfile
+       bundle install
+    - name: Run specs
+      run: |
+        cd ../solargraph-rails
+        bundle exec rake spec
