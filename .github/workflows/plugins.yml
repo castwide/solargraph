@@ -79,6 +79,8 @@ jobs:
       with:
         ruby-version: '3.0'
         bundler-cache: false
+        # specified in Gemfile
+        bundler: 2.3
     - name: Install gems
       run: |
        cd ../solargraph-rails
