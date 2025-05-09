@@ -3,7 +3,7 @@
 module Solargraph
   module Pin
     class Parameter < LocalVariable
-      # @return [Symbol]
+      # @return [::Symbol]
       attr_reader :decl
 
       # @return [String]
@@ -25,6 +25,10 @@ module Solargraph
 
       def kwrestarg?
         decl == :kwrestarg || (assignment && [:HASH, :hash].include?(assignment.type))
+      end
+
+      def arg?
+        decl == :arg
       end
 
       def restarg?
@@ -84,11 +88,11 @@ module Solargraph
           @return_type = ComplexType.try_parse(*found.types) unless found.nil? or found.types.nil?
           if @return_type.undefined?
             if decl == :restarg
-              @return_type = ComplexType.try_parse('Array')
+              @return_type = ComplexType.try_parse('::Array')
             elsif decl == :kwrestarg
-              @return_type = ComplexType.try_parse('Hash')
+              @return_type = ComplexType.try_parse('::Hash')
             elsif decl == :blockarg
-              @return_type = ComplexType.try_parse('Proc')
+              @return_type = ComplexType.try_parse('::Proc')
             end
           end
         end
@@ -117,6 +121,7 @@ module Solargraph
         tag.text
       end
 
+      # @param pin [Pin::Parameter]
       def try_merge! pin
         return false unless super && closure == pin.closure
         true
@@ -126,17 +131,11 @@ module Solargraph
 
       # @return [YARD::Tags::Tag, nil]
       def param_tag
-        found = nil
         params = closure.docstring.tags(:param)
         params.each do |p|
-          next unless p.name == name
-          found = p
-          break
+          return p if p.name == name
         end
-        if found.nil? and !index.nil?
-          found = params[index] if params[index] && (params[index].name.nil? || params[index].name.empty?)
-        end
-        found
+        params[index] if index && params[index] && (params[index].name.nil? || params[index].name.empty?)
       end
 
       # @param api_map [ApiMap]

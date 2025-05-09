@@ -12,7 +12,7 @@ require 'ast'
 #     class Node
 #       # New children
 #
-#       # @return [Array<AST::Node>]
+#       # @return [Array<self>]
 #       attr_reader :children
 #     end
 #   end
@@ -311,7 +311,7 @@ module Solargraph
         #    statements in value positions.
         module DeepInference
           class << self
-            CONDITIONAL_ALL_BUT_FIRST = [:if, :unless, :or_asgn]
+            CONDITIONAL_ALL_BUT_FIRST = [:if, :unless]
             CONDITIONAL_ALL = [:or]
             ONLY_ONE_CHILD = [:return]
             FIRST_TWO_CHILDREN = [:rescue]
@@ -462,7 +462,7 @@ module Solargraph
               result
             end
 
-            # @param nodes [Enumerable<Parser::AST::Node, BaseObject>]
+            # @param nodes [Enumerable<Parser::AST::Node, BasicObject>]
             # @return [Array<Parser::AST::Node, nil>]
             def reduce_to_value_nodes nodes
               result = []

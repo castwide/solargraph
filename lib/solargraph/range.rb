@@ -1,9 +1,11 @@
 # frozen_string_literal: true
 
 module Solargraph
-  # A pair of positions that compose a section of text.
+  # A pair of Positions that compose a section of text in code.
   #
   class Range
+    include Equality
+
     # @return [Position]
     attr_reader :start
 
@@ -15,6 +17,11 @@ module Solargraph
     def initialize start, ending
       @start = start
       @ending = ending
+    end
+
+    # @sg-ignore Fix "Not enough arguments to Module#protected"
+    protected def equality_fields
+      [start, ending]
     end
 
     # Get a hash of the range. This representation is suitable for use in
@@ -65,9 +72,7 @@ module Solargraph
     # @param node [Parser::AST::Node]
     # @return [Range, nil]
     def self.from_node node
-      if Parser.rubyvm? && node.is_a?(RubyVM::AbstractSyntaxTree::Node)
-        Solargraph::Range.from_to(node.first_lineno - 1, node.first_column, node.last_lineno - 1, node.last_column)
-      elsif node&.loc && node.loc.expression
+      if node&.loc && node.loc.expression
         from_expr(node.loc.expression)
       end
     end

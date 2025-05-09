@@ -57,7 +57,7 @@ module Solargraph
             # Use the return node for inference. The clip might infer from the
             # first node in a method call instead of the entire call.
             chain = Parser.chain(node, nil, nil)
-            result = chain.infer(api_map, closure, clip.locals).self_to(closure.context.tag)
+            result = chain.infer(api_map, closure, clip.locals).self_to_type(closure.context)
             types.push result unless result.undefined?
           end
         end
@@ -93,6 +93,7 @@ module Solargraph
         assignment == other.assignment
       end
 
+      # @param pin [self]
       def try_merge! pin
         return false unless super
         @assignment = pin.assignment
@@ -100,8 +101,8 @@ module Solargraph
         true
       end
 
-      def desc
-        "#{to_rbs} = #{assignment&.type.inspect}"
+      def type_desc
+        "#{super} = #{assignment&.type.inspect}"
       end
 
       private

@@ -27,11 +27,11 @@ module Solargraph
     def initialize workspace = Solargraph::Workspace.new, name = nil
       @workspace = workspace
       @name = name
-      @threads = []
       # @type [Integer, nil]
       @total = nil
       # @type [Source, nil]
       @current = nil
+      @sync_count = 0
     end
 
     def inspect
@@ -44,7 +44,7 @@ module Solargraph
     #
     # @return [Boolean]
     def synchronized?
-      !mutex.locked?
+      @sync_count < 2
     end
 
     # Attach a source to the library.
@@ -174,9 +174,9 @@ module Solargraph
     # @return [Array<Solargraph::Pin::Base>, nil]
     # @todo Take filename/position instead of filename/line/column
     def definitions_at filename, line, column
+      sync_catalog
       position = Position.new(line, column)
       cursor = Source::Cursor.new(read(filename), position)
-      sync_catalog
       if cursor.comment?
         source = read(filename)
         offset = Solargraph::Position.to_offset(source.code, Solargraph::Position.new(line, column))
@@ -190,7 +190,14 @@ module Solargraph
           []
         end
       else
-        mutex.synchronize { api_map.clip(cursor).define.map { |pin| pin.realize(api_map) } }
+        mutex.synchronize do
+          clip = api_map.clip(cursor)
+          if cursor.assign?
+            [Pin::ProxyType.new(name: cursor.word, return_type: clip.infer)]
+          else
+            clip.define.map { |pin| pin.realize(api_map) }
+          end
+        end
       end
     rescue FileNotFoundError => e
       handle_file_not_found(filename, e)
@@ -205,9 +212,9 @@ module Solargraph
     # @return [Array<Solargraph::Pin::Base>, nil]
     # @todo Take filename/position instead of filename/line/column
     def type_definitions_at filename, line, column
+      sync_catalog
       position = Position.new(line, column)
       cursor = Source::Cursor.new(read(filename), position)
-      sync_catalog
       mutex.synchronize { api_map.clip(cursor).types }
     rescue FileNotFoundError => e
       handle_file_not_found filename, e
@@ -222,9 +229,9 @@ module Solargraph
     # @return [Array<Solargraph::Pin::Base>]
     # @todo Take filename/position instead of filename/line/column
     def signatures_at filename, line, column
+      sync_catalog
       position = Position.new(line, column)
       cursor = Source::Cursor.new(read(filename), position)
-      sync_catalog
       mutex.synchronize { api_map.clip(cursor).signify }
     end
 
@@ -233,7 +240,7 @@ module Solargraph
     # @param column [Integer]
     # @param strip [Boolean] Strip special characters from variable names
     # @param only [Boolean] Search for references in the current file only
-    # @return [Array<Solargraph::Range>]
+    # @return [Array<Solargraph::Location>]
     # @todo Take a Location instead of filename/line/column
     def references_from filename, line, column, strip: false, only: false
       sync_catalog
@@ -391,6 +398,8 @@ module Solargraph
       return [] unless open?(filename)
       result = []
       source = read(filename)
+
+      # @type [Hash{Class<Solargraph::Diagnostics::Base> => Array<String>}]
       repargs = {}
       workspace.config.reporters.each do |line|
         if line == 'all!'
@@ -416,20 +425,7 @@ module Solargraph
     #
     # @return [void]
     def catalog
-      @threads.delete_if(&:stop?)
-      @threads.push(Thread.new do
-        sleep 0.05 if RUBY_PLATFORM =~ /mingw/
-        next unless @threads.last == Thread.current
-
-        mutex.synchronize do
-          logger.info "Cataloging #{workspace.directory.empty? ? 'generic workspace' : workspace.directory}"
-          api_map.catalog bench
-          logger.info "Catalog complete (#{api_map.source_maps.length} files, #{api_map.pins.length} pins)"
-          logger.info "#{api_map.uncached_gemspecs.length} uncached gemspecs"
-          cache_next_gemspec
-        end
-      end)
-      @threads.last.run if RUBY_PLATFORM =~ /mingw/
+      @sync_count += 1
     end
 
     # @return [Bench]
@@ -467,7 +463,6 @@ module Solargraph
     # @param source [Source]
     # @return [Boolean] True if the source was merged into the workspace.
     def merge source
-      Logging.logger.debug "Merging source: #{source.filename}"
       result = workspace.merge(source)
       maybe_map source
       result
@@ -489,7 +484,6 @@ module Solargraph
       if src
         Logging.logger.debug "Mapping #{src.filename}"
         source_map_hash[src.filename] = Solargraph::SourceMap.map(src)
-        find_external_requires(source_map_hash[src.filename])
         source_map_hash[src.filename]
       else
         false
@@ -500,7 +494,7 @@ module Solargraph
     def map!
       workspace.sources.each do |src|
         source_map_hash[src.filename] = Solargraph::SourceMap.map(src)
-        find_external_requires(source_map_hash[src.filename])
+        find_external_requires source_map_hash[src.filename]
       end
       self
     end
@@ -580,22 +574,10 @@ module Solargraph
       return unless source
       return unless @current == source || workspace.has_file?(source.filename)
       if source_map_hash.key?(source.filename)
-        return if source_map_hash[source.filename].code == source.code &&
-          source_map_hash[source.filename].source.synchronized? &&
-          source.synchronized?
-        if source.synchronized?
-          new_map = Solargraph::SourceMap.map(source)
-          unless source_map_hash[source.filename].try_merge!(new_map)
-            source_map_hash[source.filename] = new_map
-            find_external_requires(source_map_hash[source.filename])
-          end
-        else
-          # @todo Smelly instance variable access
-          source_map_hash[source.filename].instance_variable_set(:@source, source)
-        end
+        new_map = Solargraph::SourceMap.map(source)
+        source_map_hash[source.filename] = new_map
       else
         source_map_hash[source.filename] = Solargraph::SourceMap.map(source)
-        find_external_requires(source_map_hash[source.filename])
       end
     end
 
@@ -625,6 +607,7 @@ module Solargraph
       ensure
         end_cache_progress
         catalog
+        sync_catalog
       end
     end
 
@@ -666,8 +649,17 @@ module Solargraph
     end
 
     def sync_catalog
-      @threads.delete_if(&:stop?)
-              .last&.join
+      return if @sync_count == 0
+
+      mutex.synchronize do
+        logger.info "Cataloging #{workspace.directory.empty? ? 'generic workspace' : workspace.directory}"
+        api_map.catalog bench
+        source_map_hash.values.each { |map| find_external_requires(map) }
+        logger.info "Catalog complete (#{api_map.source_maps.length} files, #{api_map.pins.length} pins)"
+        logger.info "#{api_map.uncached_gemspecs.length} uncached gemspecs"
+        cache_next_gemspec
+        @sync_count = 0
+      end
     end
   end
 end
