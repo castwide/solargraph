@@ -87,7 +87,8 @@ module Solargraph
     def catalog bench
       old_api_hash = @source_map_hash&.values&.map(&:api_hash)
       need_to_uncache = (old_api_hash != bench.source_maps.map(&:api_hash))
-      @source_map_hash = bench.source_maps.to_h { |s| [s.filename, s] }
+      # @todo Work around #to_h problem in current Ruby head (3.5)
+      @source_map_hash = bench.source_maps.map { |s| [s.filename, s] }.to_h
       pins = bench.source_maps.flat_map(&:pins).flatten
       implicit.clear
       source_map_hash.each_value do |map|
