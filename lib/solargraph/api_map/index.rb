@@ -73,6 +73,7 @@ module Solargraph
         end
       end
 
+      # @param new_pins [Array<Pin::Base>]
       def catalog new_pins
         @pin_select_cache = {}
         pins.concat new_pins
@@ -84,23 +85,44 @@ module Solargraph
         set.classify(&:path)
            .map { |k, v| path_pin_hash[k].concat v.to_a }
         @namespaces = path_pin_hash.keys.compact.to_set
-        pins_by_class(Pin::Reference::Include).each do |pin|
-          store_parametric_reference(include_references, pin)
+        map_references Pin::Reference::Include, include_references
+        map_references Pin::Reference::Prepend, prepend_references
+        map_references Pin::Reference::Extend, extend_references
+        map_references Pin::Reference::Superclass, superclass_references
+        map_overrides
+        self
+      end
+
+      # @param klass [Class<Pin::Reference>]
+      # @param hash [Hash{String => Array<Pin::Reference>}]
+      # @return [void]
+      def map_references klass, hash
+        pins_by_class(klass).each do |pin|
+          store_parametric_reference(hash, pin)
         end
-        # @todo move the rest of these reference pins over to use
-        #   generic types, adding rbs_map/conversions.rb code to
-        #   populate type parameters and adding related specs ensuring
-        #   the generics get resolved, along with any api_map.rb
-        #   changes needed in
-        pins_by_class(Pin::Reference::Prepend).each do |pin|
-          prepend_references[pin.namespace].push pin.name
-        end
-        pins_by_class(Pin::Reference::Extend).each do |pin|
-          extend_references[pin.namespace].push pin.name
-        end
-        pins_by_class(Pin::Reference::Superclass).each do |pin|
-          superclass_references[pin.namespace].push pin.name
-        end
+      end
+
+      # Add references to a map
+      #
+      # @param hash [Hash{String => Array<Pin::Reference>}]
+      # @param reference_pin [Pin::Reference]
+      #
+      # @return [void]
+      def store_parametric_reference(hash, reference_pin)
+        referenced_ns = reference_pin.name
+        referenced_tag_params = reference_pin.generic_values
+        referenced_tag = referenced_ns +
+                         if referenced_tag_params && referenced_tag_params.length > 0
+                           "<" + referenced_tag_params.join(', ') + ">"
+                         else
+                           ''
+                         end
+        referencing_ns = reference_pin.namespace
+        hash[referencing_ns].push referenced_tag
+      end
+
+      # @return [void]
+      def map_overrides
         pins_by_class(Pin::Reference::Override).each do |ovr|
           pin = path_pin_hash[ovr.name].first
           next if pin.nil?
@@ -120,26 +142,6 @@ module Solargraph
             end
           end
         end
-        self
-      end
-
-      # Add references to a map
-      #
-      # @param h [Hash{String => Pin:Base}]
-      # @param reference_pin [Pin::Reference]
-      #
-      # @return [void]
-      def store_parametric_reference(h, reference_pin)
-        referenced_ns = reference_pin.name
-        referenced_tag_params = reference_pin.generic_values
-        referenced_tag = referenced_ns +
-                         if referenced_tag_params && referenced_tag_params.length > 0
-                           "<" + referenced_tag_params.join(', ') + ">"
-                         else
-                           ''
-                         end
-        referencing_ns = reference_pin.namespace
-        h[referencing_ns].push referenced_tag
       end
 
       # @param pin [Pin::Method]
