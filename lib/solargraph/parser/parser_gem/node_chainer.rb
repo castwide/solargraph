@@ -94,11 +94,11 @@ module Solargraph
           elsif n.type == :lvar
             result.push Chain::Call.new(n.children[0].to_s)
           elsif n.type == :ivar
-             result.push Chain::InstanceVariable.new(n.children[0].to_s)
+            result.push Chain::InstanceVariable.new(n.children[0].to_s)
           elsif n.type == :cvar
-             result.push Chain::ClassVariable.new(n.children[0].to_s)
+            result.push Chain::ClassVariable.new(n.children[0].to_s)
           elsif n.type == :gvar
-             result.push Chain::GlobalVariable.new(n.children[0].to_s)
+            result.push Chain::GlobalVariable.new(n.children[0].to_s)
           elsif n.type == :or_asgn
             # @todo: Need a new Link class here that evaluates the
             #   existing variable type with the RHS, and generates a

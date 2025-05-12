@@ -112,7 +112,7 @@ module Solargraph
       #
       # @return [Boolean]
       def assign?
-        [:lvasgn, :ivasgn, :gvasgn, :cvasgn].include? chain&.node&.type
+        %i[lvasgn ivasgn gvasgn cvasgn].include? chain&.node&.type
       end
 
       # Get a cursor pointing to the method that receives the current statement
