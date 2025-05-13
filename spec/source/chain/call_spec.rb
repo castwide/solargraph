@@ -436,7 +436,7 @@ describe Solargraph::Source::Chain::Call do
 
     chain = Solargraph::Source::SourceChainer.chain(source, Solargraph::Position.new(6, 14))
     type = chain.infer(api_map, Solargraph::Pin::ROOT_PIN, api_map.source_map('test.rb').locals)
-    expect(type.rooted_tags).to eq('::A::B').or eq('::A::B, ::A::C')
+    expect(type.rooted_tags).to eq('::A::B').or eq('::A::B, ::A::C').or eq('::A::C, ::A::B')
 
     chain = Solargraph::Source::SourceChainer.chain(source, Solargraph::Position.new(11, 14))
     type = chain.infer(api_map, Solargraph::Pin::ROOT_PIN, api_map.source_map('test.rb').locals)
@@ -444,7 +444,7 @@ describe Solargraph::Source::Chain::Call do
     #   * emit type checker warning when adding [B.new] and type whole thing as '::A::B'
     #   * type whole thing as '::A::B, A::C'
     #   * type as undefined
-    expect(type.rooted_tags).to eq('::A::B, ::A::C').or be_undefined
+    expect(type.rooted_tags).to eq('::A::B, ::A::C').or eq('::A::C, ::A::B').or be_undefined
     expect(type.rooted_tags).not_to eq('::A::C')
   end
 
@@ -504,5 +504,19 @@ describe Solargraph::Source::Chain::Call do
     chain = Solargraph::Source::SourceChainer.chain(source, Solargraph::Position.new(31, 14))
     type = chain.infer(api_map, Solargraph::Pin::ROOT_PIN, api_map.source_map('test.rb').locals)
     expect(type.rooted_tags).to eq('::A::D::E')
+  end
+
+  it 'does not mis-parse generic methods with type constraints' do
+    source = Solargraph::Source.load_string(%(
+      def bl
+        out = (Encoding.default_external = 'UTF-8')
+        out
+      end
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new
+    api_map.map source
+
+    clip = api_map.clip_at('test.rb', [3, 8])
+    expect(clip.infer.rooted_tags).to eq('::String')
   end
 end

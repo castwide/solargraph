@@ -7,13 +7,32 @@ module Solargraph
     # core.
     #
     class Store
-      # @return [Array<Solargraph::Pin::Base>]
-      attr_reader :pins
+      # @param static [Enumerable<Pin::Base>]
+      # @param dynamic [Enumerable<Pin::Base>]
+      def initialize static = [], dynamic = []
+        @static_index = Index.new(static)
+        @dynamic = dynamic
+        @index = @static_index.merge(dynamic)
+      end
 
-      # @param pins [Enumerable<Solargraph::Pin::Base>]
-      def initialize pins = []
-        @pins = pins
-        index
+      # @return [Array<Solargraph::Pin::Base>]
+      def pins
+        index.pins
+      end
+
+      # @param static [Enumerable<Pin::Base>]
+      # @param dynamic [Enumerable<Pin::Base>]
+      def update! static = [], dynamic = []
+        # @todo Fix this map
+        @fqns_pins_map = nil
+        if @static_index.pins == static
+          return self if @dynamic == dynamic
+        else
+          @static_index = Index.new(static)
+        end
+        @dynamic = dynamic
+        @index = @static_index.merge(dynamic)
+        self
       end
 
       def to_s
@@ -74,12 +93,7 @@ module Solargraph
       # @param path [String]
       # @return [Array<Solargraph::Pin::Base>]
       def get_path_pins path
-        path_pin_hash[path] || []
-      end
-
-      # @return [Set<Pin::Base>]
-      def cacheable_pins
-        @cacheable_pins ||= pins_by_class(Pin::Namespace) + pins_by_class(Pin::Constant) + pins_by_class(Pin::Method) + pins_by_class(Pin::Reference)
+        index.path_pin_hash[path]
       end
 
       # @param fqns [String]
@@ -110,7 +124,7 @@ module Solargraph
 
       # @return [Set<String>]
       def namespaces
-        @namespaces ||= Set.new
+        index.namespaces
       end
 
       # @return [Enumerable<Solargraph::Pin::Namespace>]
@@ -152,18 +166,11 @@ module Solargraph
         pins_by_class(Pin::Block)
       end
 
-      def inspect
-        # Avoid insane dumps in specs
-        to_s
-      end
-
       # @generic T
       # @param klass [Class<generic<T>>]
       # @return [Set<generic<T>>]
       def pins_by_class klass
-        # @type [Set<Solargraph::Pin::Base>]
-        s = Set.new
-        @pin_select_cache[klass] ||= @pin_class_hash.each_with_object(s) { |x, n| key, o = x; n.merge(o) if key <= klass }
+        index.pins_by_class klass
       end
 
       # @param fqns [String]
@@ -183,6 +190,8 @@ module Solargraph
 
       private
 
+      attr_reader :index
+
       # @return [Hash{::Array(String, String) => ::Array<Pin::Namespace>}]
       def fqns_pins_map
         @fqns_pins_map ||= Hash.new do |h, (base, name)|
@@ -193,38 +202,34 @@ module Solargraph
 
       # @return [Enumerable<Solargraph::Pin::Symbol>]
       def symbols
-        pins_by_class(Pin::Symbol)
+        index.pins_by_class(Pin::Symbol)
       end
 
       # @return [Hash{String => Array<String>}]
       def superclass_references
-        @superclass_references ||= {}
+        index.superclass_references
       end
 
       # @return [Hash{String => Array<String>}]
       def include_references
-        @include_references ||= {}
+        index.include_references
       end
 
       # @return [Hash{String => Array<String>}]
       def prepend_references
-        @prepend_references ||= {}
+        index.prepend_references
       end
 
       # @return [Hash{String => Array<String>}]
       def extend_references
-        @extend_references ||= {}
+        index.extend_references
       end
 
       # @param name [String]
       # @return [Enumerable<Solargraph::Pin::Base>]
       def namespace_children name
-        namespace_map[name] || []
-      end
-
-      # @return [Hash{String => Enumerable<Pin::Base>}
-      def namespace_map
-        @namespace_map ||= {}
+        return [] unless index.namespace_hash.key?(name)
+        index.namespace_hash[name]
       end
 
       # @return [Enumerable<Pin::InstanceVariable>]
@@ -317,6 +322,7 @@ module Solargraph
         pin.signatures.each do |sig|
           sig.instance_variable_set(:@return_type, ComplexType.try_parse(tag.type))
         end
+        index.pins_by_class(Pin::InstanceVariable)
       end
     end
   end
