@@ -132,6 +132,7 @@ module Solargraph
       result = false
       filenames.each do |filename|
         detach filename
+        source_map_hash.delete(filename)
         result ||= workspace.remove(filename)
       end
       result
