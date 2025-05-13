@@ -115,14 +115,6 @@ module Solargraph
         location || type_location
       end
 
-      # Pin equality is determined using the #nearly? method and also
-      # requiring both pins to have the same location.
-      #
-      def == other
-        return false unless nearly? other
-        comments == other.comments and location == other.location
-      end
-
       # True if the specified pin is a near match to this one. A near match
       # indicates that the pins contain mostly the same data. Any differences
       # between them should not have an impact on the API surface.
@@ -137,6 +129,14 @@ module Solargraph
             (((maybe_directives? == false && other.maybe_directives? == false) || compare_directives(directives, other.directives)) &&
             compare_docstring_tags(docstring, other.docstring))
           )
+      end
+
+      # Pin equality is determined using the #nearly? method and also
+      # requiring both pins to have the same location.
+      #
+      def == other
+        return false unless nearly? other
+        comments == other.comments && location == other.location
       end
 
       # The pin's return type.
@@ -265,9 +265,10 @@ module Solargraph
         result
       end
 
+      # @deprecated
       # @return [String]
       def identity
-        @identity ||= "#{closure.path}|#{name}"
+        @identity ||= "#{closure&.path}|#{name}"
       end
 
       # @return [String, nil]
