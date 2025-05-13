@@ -12,6 +12,7 @@ module Solargraph
     autoload :Cache,          'solargraph/api_map/cache'
     autoload :SourceToYard,   'solargraph/api_map/source_to_yard'
     autoload :Store,          'solargraph/api_map/store'
+    autoload :Index,          'solargraph/api_map/index'
 
     # @return [Array<String>]
     attr_reader :unresolved_requires
@@ -49,14 +50,14 @@ module Solargraph
       equality_fields.hash
     end
 
-     def to_s
-       self.class.to_s
-     end
+    def to_s
+      self.class.to_s
+    end
 
-     # avoid enormous dump
-     def inspect
-       to_s
-     end
+    # avoid enormous dump
+    def inspect
+      to_s
+    end
 
     # @param pins [Array<Pin::Base>]
     # @return [self]
@@ -66,7 +67,7 @@ module Solargraph
       @source_map_hash = {}
       implicit.clear
       cache.clear
-      @store = Store.new(@@core_map.pins + pins)
+      store.update! @@core_map.pins, pins
       self
     end
 
@@ -87,6 +88,7 @@ module Solargraph
     def catalog bench
       old_api_hash = @source_map_hash&.values&.map(&:api_hash)
       need_to_uncache = (old_api_hash != bench.source_maps.map(&:api_hash))
+      # @todo Work around #to_h problem in current Ruby head (3.5)
       @source_map_hash = bench.source_maps.map { |s| [s.filename, s] }.to_h
       pins = bench.source_maps.flat_map(&:pins).flatten
       implicit.clear
@@ -99,7 +101,7 @@ module Solargraph
         @unresolved_requires = unresolved_requires
         need_to_uncache = true
       end
-      @store = Store.new(@@core_map.pins + shim_pins(bench.workspace) + @doc_map.pins + implicit.pins + pins)
+      store.update! @@core_map.pins + shim_pins(bench.workspace) + @doc_map.pins, implicit.pins + pins
       @cache.clear if need_to_uncache
 
       @missing_docs = [] # @todo Implement missing docs
@@ -202,7 +204,7 @@ module Solargraph
 
     # @return [Array<Solargraph::Pin::Base>]
     def pins
-      store.pins
+      store.pins.clone.freeze
     end
 
     # An array of pins based on Ruby keywords (`if`, `end`, etc.).
