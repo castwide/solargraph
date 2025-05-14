@@ -1,3 +1,7 @@
+## 0.54.4 - May 14, 2025
+- Delete files from Library hash (#932)
+- Clip#define returns variable pins (#934, #933)
+
 ## 0.54.3 - May 13, 2025
 - Improve inspect()/desc()/to_s() methods for better debugging output (#913)
 - Fix generic resolution in Hash types (#906)
