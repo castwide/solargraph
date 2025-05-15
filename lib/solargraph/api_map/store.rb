@@ -9,10 +9,13 @@ module Solargraph
     class Store
       # @param static [Enumerable<Pin::Base>]
       # @param dynamic [Enumerable<Pin::Base>]
-      def initialize static = [], dynamic = []
+      # @param live [Enumerable<Pin::Base>]
+      def initialize static = [], dynamic = [], live = []
         @static_index = Index.new(static)
         @dynamic = dynamic
-        @index = @static_index.merge(dynamic)
+        @dynamic_index = @static_index.merge(dynamic)
+        @live = live
+        @index = @dynamic_index.merge(live)
       end
 
       # @return [Array<Solargraph::Pin::Base>]
@@ -22,17 +25,24 @@ module Solargraph
 
       # @param static [Enumerable<Pin::Base>]
       # @param dynamic [Enumerable<Pin::Base>]
-      def update! static = [], dynamic = []
+      # @return [Boolean] True if the index was updated
+      def update static = [], dynamic = [], live = []
         # @todo Fix this map
         @fqns_pins_map = nil
         if @static_index.pins == static
-          return self if @dynamic == dynamic
+          if @dynamic == dynamic
+            return false if @live == live
+          else
+            @dynamic_index = @static_index.merge(dynamic)
+          end
         else
           @static_index = Index.new(static)
+          @dynamic_index = @static_index.merge(dynamic)
         end
         @dynamic = dynamic
-        @index = @static_index.merge(dynamic)
-        self
+        @live = live
+        @index = @dynamic_index.merge(live)
+        true
       end
 
       def to_s
