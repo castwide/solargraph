@@ -7,15 +7,9 @@ module Solargraph
     # core.
     #
     class Store
-      # @param static [Enumerable<Pin::Base>]
-      # @param dynamic [Enumerable<Pin::Base>]
-      # @param live [Enumerable<Pin::Base>]
-      def initialize static = [], dynamic = [], live = []
-        @static_index = Index.new(static)
-        @dynamic = dynamic
-        @dynamic_index = @static_index.merge(dynamic)
-        @live = live
-        @index = @dynamic_index.merge(live)
+      # @param pinsets [Array<Enumerable<Pin::Base>>]
+      def initialize *pinsets
+        catalog pinsets
       end
 
       # @return [Array<Solargraph::Pin::Base>]
@@ -23,25 +17,22 @@ module Solargraph
         index.pins
       end
 
-      # @param static [Enumerable<Pin::Base>]
-      # @param dynamic [Enumerable<Pin::Base>]
+      # @param pinsets [Array<Enumerable<Pin::Base>>]
       # @return [Boolean] True if the index was updated
-      def update static = [], dynamic = [], live = []
+      def update *pinsets
+        return catalog(pinsets) if pinsets.length != @pinsets.length
+
+        changed = pinsets.find_index.with_index { |pinset, idx| @pinsets[idx] != pinset }
+        return false unless changed
+
         # @todo Fix this map
         @fqns_pins_map = nil
-        if @static_index.pins == static
-          if @dynamic == dynamic
-            return false if @live == live
-          else
-            @dynamic_index = @static_index.merge(dynamic)
-          end
-        else
-          @static_index = Index.new(static)
-          @dynamic_index = @static_index.merge(dynamic)
+        return catalog(pinsets) if changed == 0
+
+        pinsets[changed..].each_with_index do |pins, idx|
+          @pinsets[changed + idx] = pins
+          @indexes[changed + idx] = @indexes[changed + idx - 1].merge(pins)
         end
-        @dynamic = dynamic
-        @live = live
-        @index = @dynamic_index.merge(live)
         true
       end
 
@@ -200,7 +191,18 @@ module Solargraph
 
       private
 
-      attr_reader :index
+      def index
+        @indexes.last
+      end
+
+      def catalog pinsets
+        @pinsets = pinsets
+        @indexes = []
+        pinsets.each do |pins|
+          @indexes.push(@indexes.last&.merge(pins) || Solargraph::ApiMap::Index.new(pins))
+        end
+        true
+      end
 
       # @return [Hash{::Array(String, String) => ::Array<Pin::Namespace>}]
       def fqns_pins_map

@@ -97,7 +97,7 @@ module Solargraph
         @doc_map = DocMap.new(unresolved_requires, [], bench.workspace.rbs_collection_path) # @todo Implement gem preferences
         @unresolved_requires = unresolved_requires
       end
-      @cache.clear if store.update(@@core_map.pins + @doc_map.pins, implicit.pins + iced_pins, live_pins)
+      @cache.clear if store.update(@@core_map.pins, @doc_map.pins, implicit.pins, iced_pins, live_pins)
       @missing_docs = [] # @todo Implement missing docs
       self
     end
