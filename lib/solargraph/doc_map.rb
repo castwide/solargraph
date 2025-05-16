@@ -6,6 +6,7 @@ module Solargraph
   class DocMap
     # @return [Array<String>]
     attr_reader :requires
+    alias required requires
 
     # @return [Array<Gem::Specification>]
     attr_reader :preferences
@@ -16,6 +17,9 @@ module Solargraph
     # @return [Array<Gem::Specification>]
     attr_reader :uncached_gemspecs
 
+    # @return [Environ]
+    attr_reader :environ
+
     # @param requires [Array<String>]
     # @param preferences [Array<Gem::Specification>]
     # @param rbs_path [String, Pathname, nil]
@@ -23,7 +27,9 @@ module Solargraph
       @requires = requires.compact
       @preferences = preferences.compact
       @rbs_path = rbs_path
-      generate
+      @environ = Convention.for_global(self)
+      generate_gem_pins
+      pins.concat @environ.pins
     end
 
     # @return [Array<Gem::Specification>]
@@ -49,7 +55,7 @@ module Solargraph
     private
 
     # @return [void]
-    def generate
+    def generate_gem_pins
       @pins = []
       @uncached_gemspecs = []
       required_gem_map.each do |path, gemspec|
@@ -65,7 +71,7 @@ module Solargraph
 
     # @return [Hash{String => Gem::Specification, nil}]
     def required_gem_map
-      @required_gem_map ||= requires.to_h { |path| [path, resolve_path_to_gemspec(path)] }
+      @required_gem_map ||= (requires + environ.requires).uniq.to_h { |path| [path, resolve_path_to_gemspec(path)] }
     end
 
     # @return [Hash{String => Gem::Specification}]
