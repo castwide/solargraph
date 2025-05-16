@@ -1,6 +1,5 @@
 # frozen_string_literal: true
 
-
 module Solargraph
   class ApiMap
     # Queryable collection of Pins representing a Workspace, gems and the Ruby
