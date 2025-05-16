@@ -70,7 +70,7 @@ describe Solargraph::SourceMap do
         end
       end
     ))
-    pin = map.locate_block_pin(3, 0)
+    pin = map.locate_closure_pin(3, 0)
     expect(pin).to be_a(Solargraph::Pin::Block)
   end
 
