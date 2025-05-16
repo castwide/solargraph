@@ -351,11 +351,11 @@ module Solargraph
         parameters = []
         arg_num = -1
         type.type.required_positionals.each do |param|
-          name = param.name ? param.name.to_s : "arg#{arg_num += 1}"
+          name = param.name ? param.name.to_s : "arg_#{arg_num += 1}"
           parameters.push Solargraph::Pin::Parameter.new(decl: :arg, name: name, closure: pin, return_type: ComplexType.try_parse(other_type_to_tag(param.type)).force_rooted)
         end
         type.type.optional_positionals.each do |param|
-          name = param.name ? param.name.to_s : "arg#{arg_num += 1}"
+          name = param.name ? param.name.to_s : "arg_#{arg_num += 1}"
           parameters.push Solargraph::Pin::Parameter.new(decl: :optarg, name: name, closure: pin,
                                                          return_type: ComplexType.try_parse(other_type_to_tag(param.type)).force_rooted)
         end
@@ -364,16 +364,16 @@ module Solargraph
           parameters.push Solargraph::Pin::Parameter.new(decl: :restarg, name: name, closure: pin)
         end
         type.type.trailing_positionals.each do |param|
-          name = param.name ? param.name.to_s : "arg#{arg_num += 1}"
+          name = param.name ? param.name.to_s : "arg_#{arg_num += 1}"
           parameters.push Solargraph::Pin::Parameter.new(decl: :arg, name: name, closure: pin)
         end
         type.type.required_keywords.each do |orig, param|
-          name = orig ? orig.to_s : "arg#{arg_num += 1}"
+          name = orig ? orig.to_s : "arg_#{arg_num += 1}"
           parameters.push Solargraph::Pin::Parameter.new(decl: :kwarg, name: name, closure: pin,
                                                          return_type: ComplexType.try_parse(other_type_to_tag(param.type)).force_rooted)
         end
         type.type.optional_keywords.each do |orig, param|
-          name = orig ? orig.to_s : "arg#{arg_num += 1}"
+          name = orig ? orig.to_s : "arg_#{arg_num += 1}"
           parameters.push Solargraph::Pin::Parameter.new(decl: :kwoptarg, name: name, closure: pin,
                                                          return_type: ComplexType.try_parse(other_type_to_tag(param.type)).force_rooted)
         end

@@ -449,6 +449,21 @@ describe Solargraph::ComplexType do
     expect(type.to_rbs).to eq('[::Symbol, ::String, [::Integer, ::Integer]]')
   end
 
+  it 'throws away other types when in union with an undefined' do
+    type = Solargraph::ComplexType.parse('Symbol, String, Array(Integer, Integer), undefined')
+    expect(type.to_s).to eq('undefined')
+  end
+
+  it 'deduplicates types that are implicit unions' do
+    type = Solargraph::ComplexType.parse('Array<Symbol, String, Symbol>')
+    expect(type.to_s).to eq('Array<Symbol, String>')
+  end
+
+  it "does not deduplicate types that aren't implicit unions" do
+    type = Solargraph::ComplexType.parse('Foo<Symbol, String, Symbol>')
+    expect(type.to_s).to eq('Foo<Symbol, String, Symbol>')
+  end
+
   ['generic<T>', "nil", "true", "false", ":123", "123"].each do |tag|
     it "treats #{tag} as rooted" do
       types = Solargraph::ComplexType.parse(tag)

@@ -22,6 +22,7 @@ module Solargraph
         autoload :ArgsNode,      'solargraph/parser/parser_gem/node_processors/args_node'
         autoload :BlockNode,     'solargraph/parser/parser_gem/node_processors/block_node'
         autoload :OrasgnNode,    'solargraph/parser/parser_gem/node_processors/orasgn_node'
+        autoload :OpasgnNode,    'solargraph/parser/parser_gem/node_processors/opasgn_node'
         autoload :SymNode,       'solargraph/parser/parser_gem/node_processors/sym_node'
         autoload :ResbodyNode,   'solargraph/parser/parser_gem/node_processors/resbody_node'
       end
@@ -50,6 +51,7 @@ module Solargraph
       register :forward_args, ParserGem::NodeProcessors::ArgsNode
       register :block,        ParserGem::NodeProcessors::BlockNode
       register :or_asgn,      ParserGem::NodeProcessors::OrasgnNode
+      register :op_asgn,      ParserGem::NodeProcessors::OpasgnNode
       register :sym,          ParserGem::NodeProcessors::SymNode
     end
   end
