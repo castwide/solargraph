@@ -15,7 +15,7 @@ end
 
 desc "Run the type checker"
 task :typecheck do
-  sh "bundle exec solargraph typecheck --level typed"
+  sh "bundle exec solargraph typecheck --level strict"
 end
 
 desc "Run all tests"
