@@ -73,6 +73,10 @@ If your project automatically requires bundled gems (e.g., `require 'bundler/req
 
 As of version 0.33.0, Solargraph includes a [type checker](https://github.com/castwide/solargraph/issues/192) that uses a combination of YARD tags and code analysis to report missing type definitions. In strict mode, it performs type inference to determine whether the tags match the types it detects from code.
 
+Solargraph processes type definitions from the gems in your bundle using their RBS signatures and YARD tags.
+
+If you'd like to specify your own shims to improve the type definitions in the gems your project uses, you can add them to the `sigs/shims` directory in your workspace.
+
 ### The Documentation Cache
 
 Solargraph uses a cache directory to store documentation for the Ruby core and gems. The default location is `~/.cache/solargraph`, e.g., `/home/<username>/.cache/solargraph` on Linux or `C:\Users\<username>\.cache\solargraph` on Windows.

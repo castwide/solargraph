@@ -18,6 +18,7 @@ module Solargraph
     attr_reader :unresolved_requires
 
     @@core_map = RbsMap::CoreMap.new
+    @@shim_pins = {}
 
     # @return [Array<String>]
     attr_reader :missing_docs
@@ -100,7 +101,7 @@ module Solargraph
         @unresolved_requires = unresolved_requires
         need_to_uncache = true
       end
-      store.update! @@core_map.pins + @doc_map.pins, implicit.pins + pins
+      store.update! @@core_map.pins + shim_pins(bench.workspace) + @doc_map.pins, implicit.pins + pins
       @cache.clear if need_to_uncache
 
       @missing_docs = [] # @todo Implement missing docs
@@ -117,6 +118,12 @@ module Solargraph
     # @return [::Array<Gem::Specification>]
     def uncached_gemspecs
       @doc_map&.uncached_gemspecs || []
+    end
+
+    # @return [Array<Pin::Base>]
+    def shim_pins(workspace)
+      shim_dir = workspace.config.shim_dir
+      @@shim_pins[shim_dir] ||= RbsMap::ShimMap.new(shim_dir).pins
     end
 
     # @return [Array<Pin::Base>]
