@@ -1,12 +1,12 @@
 <h2>
     Overview:
 </h2>
-<%= htmlify object.docstring %>
+<%= htmlify pin.docstring %>
 <h2>
     Class Methods
 </h2>
 <ul class="doc-list">
-    <% object.meths(scope: :class).sort{|a, b| a.name <=> b.name}.each do |meth| %>
+    <% api_map.get_methods(pin.path, scope: :class, deep: false).sort{|a, b| a.name <=> b.name}.each do |meth| %>
         <li>
             <a href="solargraph:/document?query=<%= CGI.escape(meth.path) %>"><%= meth.name %></a>
         </li>
@@ -16,7 +16,7 @@
     Instance Methods
 </h2>
 <ul class="doc-list">
-    <% object.meths(scope: :instance).sort{|a, b| a.name <=> b.name}.each do |meth| %>
+    <% api_map.get_methods(pin.path, scope: :instance, deep: false).sort{|a, b| a.name <=> b.name}.each do |meth| %>
         <li>
             <a href="solargraph:/document?query=<%= CGI.escape(meth.path) %>"><%= meth.name %></a>
         </li>
