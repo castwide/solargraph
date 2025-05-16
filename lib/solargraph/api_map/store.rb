@@ -203,7 +203,11 @@ module Solargraph
         @pinsets = pinsets
         @indexes = []
         pinsets.each do |pins|
-          @indexes.push(@indexes.last&.merge(pins) || Solargraph::ApiMap::Index.new(pins))
+          if @indexes.last && pins.empty?
+            @indexes.push @indexes.last
+          else
+            @indexes.push(@indexes.last&.merge(pins) || Solargraph::ApiMap::Index.new(pins))
+          end
         end
         true
       end
