@@ -9,9 +9,10 @@ module Solargraph
 
           def process
             sc = nil
-            if node.type == :class and !node.children[1].nil?
+            if node.type == :class and node.children[1]&.type == :const
               sc = unpack_name(node.children[1])
             end
+            return if Convention::StructDefinition::StructDefintionNode.valid?(node.children[1])
             loc = get_node_location(node)
             nspin = Solargraph::Pin::Namespace.new(
               type: node.type,
