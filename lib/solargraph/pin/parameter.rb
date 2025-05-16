@@ -111,8 +111,21 @@ module Solargraph
 
       # @param api_map [ApiMap]
       def typify api_map
-        return return_type.qualify(api_map, closure.context.namespace) unless return_type.undefined?
-        closure.is_a?(Pin::Block) ? typify_block_param(api_map) : typify_method_param(api_map)
+        logger.debug { "Parameter#typify(self=#{self.desc} in #{closure.desc}) - starting" }
+        unless return_type.undefined?
+          out = return_type.qualify(api_map, closure.context.namespace)
+          logger.debug { "Parameter#typify(self=#{self.desc}, return_type=#{return_type.rooted_tags}, ) => #{out.rooted_tags} from declaration" }
+          return out
+        end
+        if closure.is_a?(Pin::Block)
+          out = typify_block_param(api_map)
+          logger.debug { "Parameter#typify(self=#{self.desc}) => #{out.rooted_tags} from block parameter" }
+          out
+        else
+          out = typify_method_param(api_map)
+          logger.debug { "Parameter#typify(self=#{self.desc}) => #{out.rooted_tags} from method parameter" }
+          out
+        end
       end
 
       def documentation
@@ -126,6 +139,8 @@ module Solargraph
         return false unless super && closure == pin.closure
         true
       end
+
+      include Logging
 
       private
 
@@ -141,6 +156,7 @@ module Solargraph
       # @param api_map [ApiMap]
       # @return [ComplexType]
       def typify_block_param api_map
+        logger.debug { "Parameter#typify_block_param(closure=#{closure.inspect}) - starting" }
         if closure.is_a?(Pin::Block) && closure.receiver
           return closure.typify_parameters(api_map)[index]
         end

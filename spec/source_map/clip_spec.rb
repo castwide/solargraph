@@ -2395,7 +2395,7 @@ describe Solargraph::SourceMap::Clip do
     clip = api_map.clip_at('test.rb', [13, 14])
     expect(clip.infer.tags).to eq('String')
   end
-    
+
   it 'handles block method yield scenarios' do
     source = Solargraph::Source.load_string(%(
       # @yieldreturn [Integer]

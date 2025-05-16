@@ -47,10 +47,13 @@ module Solargraph
       # @param api_map [ApiMap]
       # @return [::Array<ComplexType>]
       def typify_parameters(api_map)
+        logger.debug("Block#typify_parameters() - start")
         chain = Parser.chain(receiver, filename, node)
+        logger.debug { "Block#typify_parameters() - chain=#{chain.desc}" }
         clip = api_map.clip_at(location.filename, location.range.start)
         locals = clip.locals - [self]
         meths = chain.define(api_map, closure, locals)
+        logger.debug { "Block#typify_parameters() - meths=#{meths}" }
         # @todo Convert logic to use signatures
         meths.each do |meth|
           next if meth.block.nil?
@@ -65,15 +68,24 @@ module Solargraph
             unless arg_type.nil?
               if arg_type.generic? && param_type.defined?
                 namespace_pin = api_map.get_namespace_pins(meth.namespace, closure.namespace).first
-                arg_type.resolve_generics(namespace_pin, param_type)
+                after_generics = arg_type.resolve_generics(namespace_pin, param_type)
+                logger.debug { "Block#typify_parameters() - arg_type=#{arg_type}, namespace_pin=#{namespace_pin}, param_type=#{param_type}, after_generics=#{after_generics}" }
+                after_generics
               else
                 arg_type.self_to_type(chain.base.infer(api_map, self, locals)).qualify(api_map, meth.context.namespace)
               end
             end
           end
-          return param_types if param_types.all?(&:defined?)
+          if param_types.all?(&:defined?)
+            logger.debug { "Block#typify_parameters() => #{param_types.map(&:rooted_tags)}" }
+            return param_types
+          else
+            logger.debug { "Block#typify_parameters() - param_types=#{param_types.map(&:rooted_tags)}" }
+          end
         end
-        parameters.map { ComplexType::UNDEFINED }
+        out = parameters.map { ComplexType::UNDEFINED }
+        logger.debug { "Block#typify_parameters() => #{out.map(&:rooted_tags)}" }
+        out
       end
 
       private
@@ -84,17 +96,24 @@ module Solargraph
         return ComplexType::UNDEFINED unless receiver
 
         chain = Parser.chain(receiver, location.filename)
+        logger.debug { "Block#maybe_rebind(): chain: #{chain}" }
         locals = api_map.source_map(location.filename).locals_at(location)
         receiver_pin = chain.define(api_map, closure, locals).first
         return ComplexType::UNDEFINED unless receiver_pin
+        logger.debug { "Block#maybe_rebind(): receiver_pin: #{receiver_pin}" }
 
         types = receiver_pin.docstring.tag(:yieldreceiver)&.types
         return ComplexType::UNDEFINED unless types&.any?
+        logger.debug { "Block#maybe_rebind(): yield receiver tag types: #{types}" }
 
         target = chain.base.infer(api_map, receiver_pin, locals)
         target = full_context unless target.defined?
 
-        ComplexType.try_parse(*types).qualify(api_map, receiver_pin.context.namespace).self_to_type(target)
+        logger.debug { "Block#maybe_rebind(): target=#{target}" }
+
+        out = ComplexType.try_parse(*types).qualify(api_map, receiver_pin.context.namespace).self_to_type(target)
+        logger.debug { "Block#maybe_rebind() => #{out}" }
+        out
       end
     end
   end
