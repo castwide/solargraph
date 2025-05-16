@@ -365,7 +365,7 @@ describe Solargraph::SourceMap::Clip do
     ), 'test.rb')
     map = Solargraph::ApiMap.new
     map.map source
-    clip = map.clip_at('test.rb', Solargraph::Position.new(4, 6))
+    clip = map.clip_at('test.rb', Solargraph::Position.new(3, 7))
     type = clip.infer
     expect(type.to_s).to eq('String, Array')
   end
@@ -735,7 +735,7 @@ describe Solargraph::SourceMap::Clip do
     ), 'test.rb')
     api_map = Solargraph::ApiMap.new
     api_map.map source
-    clip = api_map.clip_at('test.rb', [7, 11])
+    clip = api_map.clip_at('test.rb', [6, 11])
     expect(clip.infer.tag).to eq('Class')
   end
 
@@ -1254,7 +1254,6 @@ describe Solargraph::SourceMap::Clip do
       class Mod
         def meth
           arr = []
-          arr
           1.times do
             arr
           end
@@ -1264,11 +1263,11 @@ describe Solargraph::SourceMap::Clip do
     ), 'test.rb')
     api_map = Solargraph::ApiMap.new
     api_map.map source
-    clip = api_map.clip_at('test.rb', [4, 11])
+    clip = api_map.clip_at('test.rb', [3, 11])
     expect(clip.infer.tag).to eq('Array')
-    clip = api_map.clip_at('test.rb', [6, 12])
+    clip = api_map.clip_at('test.rb', [5, 12])
     expect(clip.infer.tag).to eq('Array')
-    clip = api_map.clip_at('test.rb', [8, 10])
+    clip = api_map.clip_at('test.rb', [7, 10])
     expect(clip.infer.tag).to eq('Array')
   end
 
@@ -2760,6 +2759,20 @@ describe Solargraph::SourceMap::Clip do
     expect(clip.infer.to_s).to eq('String')
   end
 
+  it 'preserves hash value when it is a union without brackets' do
+    source = Solargraph::Source.load_string(%(
+      # @type [Hash{String => Array, Hash, Integer, nil}]
+      raw_data = {}
+      a = raw_data['domains']
+      a
+    ), 'test.rb')
+
+    api_map = Solargraph::ApiMap.new.map(source)
+
+    clip = api_map.clip_at('test.rb', [4, 6])
+    expect(clip.infer.to_s).to eq('Array, Hash, Integer, NilClass')
+  end
+    
   xit 'infers that type of argument has been overridden' do
     source = Solargraph::Source.load_string(%(
       def foo a
@@ -2783,6 +2796,19 @@ describe Solargraph::SourceMap::Clip do
 
     clip = api_map.clip_at('test.rb', [2, 6])
     expect(clip.infer.to_s).to eq('Array<String>')
+  end
+
+  xit 'preserves hash value when it is a union with brackets' do
+    source = Solargraph::Source.load_string(%(
+      # @type [Hash{String => [Array, Hash, Integer, nil]}]
+      raw_data = {}
+      a = raw_data['domains']
+      a
+    ), 'test.rb')
+
+    api_map = Solargraph::ApiMap.new.map(source)
+    clip = api_map.clip_at('test.rb', [4, 6])
+    expect(clip.infer.to_s).to eq('Array, Hash, Integer, nil')
   end
 
   it 'handles block method super scenarios' do

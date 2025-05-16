@@ -411,4 +411,25 @@ describe Solargraph::Source::Chain do
     # type = chain.infer(api_map, Solargraph::Pin::ROOT_PIN, [])
     # expect(type.to_s).to eq('String')
   end
+
+  it 'resolves variable and method name collisions' do
+    source = Solargraph::Source.load_string(%(
+      class Example
+        # @return [String]
+        def stringify; end
+
+        class << self
+          # @return [Example]
+          def obj(foo); end
+        end
+      end
+
+      obj = Example.obj
+      str = obj.stringify
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new.map(source)
+    chain = Solargraph::Source::SourceChainer.chain(source, Solargraph::Position.new(12, 6))
+    type = chain.infer(api_map, Solargraph::Pin::ROOT_PIN, api_map.source_map('test.rb').locals)
+    expect(type.to_s).to eq('String')
+  end
 end

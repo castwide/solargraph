@@ -132,6 +132,7 @@ module Solargraph
       result = false
       filenames.each do |filename|
         detach filename
+        source_map_hash.delete(filename)
         result ||= workspace.remove(filename)
       end
       result
@@ -192,11 +193,7 @@ module Solargraph
       else
         mutex.synchronize do
           clip = api_map.clip(cursor)
-          if cursor.assign?
-            [Pin::ProxyType.new(name: cursor.word, return_type: clip.infer)]
-          else
-            clip.define.map { |pin| pin.realize(api_map) }
-          end
+          clip.define.map { |pin| pin.realize(api_map) }
         end
       end
     rescue FileNotFoundError => e
