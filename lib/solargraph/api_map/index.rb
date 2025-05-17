@@ -4,7 +4,7 @@ module Solargraph
   class ApiMap
     class Index
       # @param pins [Array<Pin::Base>]
-      def initialize pins
+      def initialize pins = []
         catalog pins
       end
 

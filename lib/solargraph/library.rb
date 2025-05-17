@@ -430,7 +430,8 @@ module Solargraph
       Bench.new(
         source_maps: source_map_hash.values,
         workspace: workspace,
-        external_requires: external_requires
+        external_requires: external_requires,
+        live_map: @current ? source_map_hash[@current.filename] : nil
       )
     end
 
