@@ -13,6 +13,10 @@ module Solargraph
         #       s(:const, nil, :Struct), :new,
         #       s(:sym, :bar),
         #       s(:sym, :baz)),
+        #       s(:hash,
+        #         s(:pair,
+        #           s(:sym, :keyword_init),
+        #           s(:true)))),
         #     s(:def, :foo,
         #       s(:args),
         #       s(:send, nil, :bar)))
@@ -39,9 +43,21 @@ module Solargraph
 
         # @return [Array<Array(Parser::AST::Node, String)>]
         def attributes
-          struct_node.children[2..-1].map do |child|
-            [child, child.children[0].to_s]
+          struct_attribute_nodes.map do |struct_def_param|
+            next unless struct_def_param.type == :sym
+            [struct_def_param, struct_def_param.children[0].to_s]
+          end.compact
+        end
+
+        def keyword_init?
+          keyword_init_param = struct_attribute_nodes.find do |struct_def_param|
+            struct_def_param.type == :hash && struct_def_param.children[0].type == :pair &&
+              struct_def_param.children[0].children[0].children[0] == :keyword_init
           end
+
+          return false if keyword_init_param.nil?
+
+          keyword_init_param.children[0].children[1].type == :true
         end
 
         # @return [Parser::AST::Node]
@@ -57,6 +73,11 @@ module Solargraph
         # @return [Parser::AST::Node]
         def struct_node
           node.children[1]
+        end
+
+        # @return [Array<Parser::AST::Node>]
+        def struct_attribute_nodes
+          struct_node.children[2..-1]
         end
       end
 
@@ -105,6 +126,7 @@ module Solargraph
               initialize_method_pin.parameters.push(
                 Pin::Parameter.new(
                   name: attribute_name,
+                  decl: struct_def_node.keyword_init? ? :kwarg : :arg,
                   location: get_node_location(attribute_node),
                   closure: initialize_method_pin
                 )

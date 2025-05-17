@@ -2661,4 +2661,23 @@ describe Solargraph::SourceMap::Clip do
     names = clip.complete.pins.map(&:name)
     expect(names).to include('bar', 'bar=', 'baz', 'baz=')
   end
+
+  it 'completes Struct initialize keyword args' do
+    source = Solargraph::Source.load_string(%(
+      # @param bar [String]
+      # @param baz [Integer]
+      class Foo < Struct.new(:bar, :baz, keyword_init: true)
+        def foo
+          bar
+        end
+      end
+
+      Foo.new(bar: 'foo', baz: 123)
+    ), 'test.rb')
+
+    api_map = Solargraph::ApiMap.new.map(source)
+    clip = api_map.clip_at('test.rb', [9, 15])
+    names = clip.complete.pins.map(&:name)
+    expect(names).to include('bar:', 'baz:')
+  end
 end
