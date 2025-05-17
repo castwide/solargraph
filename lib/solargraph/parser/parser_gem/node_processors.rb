@@ -37,7 +37,6 @@ module Solargraph
       register :defs,         ParserGem::NodeProcessors::DefsNode
       register :send,         ParserGem::NodeProcessors::SendNode
       register :class,        ParserGem::NodeProcessors::NamespaceNode
-      register :class,        Convention::StructDefinition::NodeProcessors::StructNode
       register :module,       ParserGem::NodeProcessors::NamespaceNode
       register :sclass,       ParserGem::NodeProcessors::SclassNode
       register :ivasgn,       ParserGem::NodeProcessors::IvasgnNode

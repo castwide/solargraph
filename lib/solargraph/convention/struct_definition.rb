@@ -72,8 +72,8 @@ module Solargraph
           #     s(:args),
           #     s(:send, nil, :bar)))
           def process
-            binding.pry
             return unless StructDefintionNode.valid?(node.children[1])
+
             struct_def_node = StructDefintionNode.new(node)
             loc = get_node_location(node)
             nspin = Solargraph::Pin::Namespace.new(
