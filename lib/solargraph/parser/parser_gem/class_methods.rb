@@ -3,6 +3,15 @@
 require 'parser/current'
 require 'parser/source/buffer'
 
+# Awaiting ability to use a version containing https://github.com/whitequark/parser/pull/1076
+#
+# @!parse
+#   class ::Parser::Base < ::Parser::Builder
+#     # @return [Integer]
+#     def version; end
+#   end
+#   class ::Parser::CurrentRuby < ::Parser::Base; end
+
 module Solargraph
   module Parser
     module ParserGem
