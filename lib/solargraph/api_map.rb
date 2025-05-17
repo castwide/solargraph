@@ -527,13 +527,8 @@ module Solargraph
           .select { |path| path.downcase.include?(query.downcase) }
     end
 
-    # Get YARD documentation for the specified path.
-    #
-    # @example
-    #   api_map.document('String#split')
-    #
-    # @todo This method is likely superfluous. Calling get_path_pins directly
-    #   should be sufficient.
+    # @deprecated This method is likely superfluous. Calling #get_path_pins
+    #   directly should be sufficient.
     #
     # @param path [String] The path to find
     # @return [Enumerable<Pin::Base>]
