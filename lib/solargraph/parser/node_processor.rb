@@ -9,7 +9,6 @@ module Solargraph
       autoload :Base, 'solargraph/parser/node_processor/base'
 
       class << self
-        # @type [Hash<Symbol, Array<Class<NodeProcessor::Base>>>]
         @@processors ||= {}
 
         # Register a processor for a node type.
@@ -18,12 +17,7 @@ module Solargraph
         # @param cls [Class<NodeProcessor::Base>]
         # @return [Class<NodeProcessor::Base>]
         def register type, cls
-          @@processors[type] ||= []
-          @@processors[type] << cls
-        end
-
-        def deregister type, cls
-          @@processors[type].delete(cls)
+          @@processors[type] = cls
         end
       end
 
@@ -33,7 +27,6 @@ module Solargraph
       # @param locals [Array<Pin::BaseVariable>]
       # @return [Array(Array<Pin::Base>, Array<Pin::Base>)]
       def self.process node, region = Region.new, pins = [], locals = []
-        result = [[], []]
         if pins.empty?
           pins.push Pin::Namespace.new(
             location: region.source.location,
@@ -41,16 +34,10 @@ module Solargraph
           )
         end
         return [pins, locals] unless Parser.is_ast_node?(node)
-        node_processor_classes = @@processors[node.type] || [NodeProcessor::Base]
-        node_processor_classes.each do |klass|
-          processor = klass.new(node, region, pins, locals)
-          processor.process
-
-          result[0] += processor.pins
-          result[1] += processor.locals
-        end
-
-        result
+        klass = @@processors[node.type] || NodeProcessor::Base
+        processor = klass.new(node, region, pins, locals)
+        processor.process
+        [processor.pins, processor.locals]
       end
     end
   end
