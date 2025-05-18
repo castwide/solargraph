@@ -2080,7 +2080,7 @@ describe Solargraph::SourceMap::Clip do
       a
     ), 'test.rb')
     api_map = Solargraph::ApiMap.new.map(source)
-    clip = api_map.clip_at('test.rb', [15, 6])
+    clip = api_map.clip_at('test.rb', [16, 6])
     type = clip.infer
     expect(type.to_s).to eq('String')
   end
@@ -2817,7 +2817,7 @@ describe Solargraph::SourceMap::Clip do
     clip = api_map.clip_at('test.rb', [4, 6])
     expect(clip.infer.to_s).to eq('Array, Hash, Integer, NilClass')
   end
-    
+
   xit 'infers that type of argument has been overridden' do
     source = Solargraph::Source.load_string(%(
       def foo a
