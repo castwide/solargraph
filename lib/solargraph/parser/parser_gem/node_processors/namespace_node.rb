@@ -13,7 +13,7 @@ module Solargraph
               superclass_name = unpack_name(node.children[1])
             end
 
-            if Convention::StructDefinition::StructDefintionNode.valid?(node.children[1])
+            if Convention::StructDefinition::StructDefintionNode.valid?(node)
               process_struct_definition
             else
               process_namespace(superclass_name)
