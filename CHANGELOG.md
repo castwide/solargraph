@@ -1,3 +1,12 @@
+## 0.54.5 - May 17, 2025
+- Repair unknown encoding errors (#936, #935)
+- Index arbitrary pinsets (#937)
+- Separate YARD cache from doc map cache (#938)
+
+## 0.54.4 - May 14, 2025
+- Delete files from Library hash (#932)
+- Clip#define returns variable pins (#934, #933)
+
 ## 0.54.3 - May 13, 2025
 - Improve inspect()/desc()/to_s() methods for better debugging output (#913)
 - Fix generic resolution in Hash types (#906)
