@@ -2680,6 +2680,40 @@ describe Solargraph::SourceMap::Clip do
     names = clip.complete.pins.map(&:name)
     expect(names).to include('bar:', 'baz:')
   end
+  
+  it 'completes Struct methods inside class' do
+    source = Solargraph::Source.load_string(%(
+      # @param bar [String]
+      # @param baz [Integer]
+      class Foo < Struct.new(:bar, :baz, keyword_init: true)
+        def foo
+          ba
+        end
+      end
+    ), 'test.rb')
+
+    api_map = Solargraph::ApiMap.new.map(source)
+    clip = api_map.clip_at('test.rb', [5, 11])
+    names = clip.complete.pins.map(&:name)
+    expect(names).to include('bar', 'bar=', 'baz', 'baz=')
+  end
+
+  it 'completes Struct ivars inside class' do
+    source = Solargraph::Source.load_string(%(
+      # @param bar [String]
+      # @param baz [Integer]
+      class Foo < Struct.new(:bar, :baz, keyword_init: true)
+        def foo
+          @ba
+        end
+      end
+    ), 'test.rb')
+
+    api_map = Solargraph::ApiMap.new.map(source)
+    clip = api_map.clip_at('test.rb', [5, 11])
+    names = clip.complete.pins.map(&:name)
+    expect(names).to include('@bar', '@baz')
+  end
 
   it 'completes Struct methods via const assignment' do
     source = Solargraph::Source.load_string(%(

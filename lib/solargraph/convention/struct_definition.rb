@@ -179,21 +179,29 @@ module Solargraph
               )
             end
 
-            # define attribute accessors
+            # define attribute accessors and instance variables
             struct_def_node.attributes.each do |attribute_node, attribute_name|
               [attribute_name, "#{attribute_name}="].each do |name|
-                pins.push Pin::Method.new(
+                method_pin = Pin::Method.new(
                   name: name,
                   parameters: [],
                   scope: :instance,
                   location: get_node_location(attribute_node),
                   closure: nspin,
-                  comments: comments_for(node).split("\n").find do |row|
-                    row.include?(attribute_name)
-                  end&.gsub('@param', '@return')&.gsub(attribute_name, ''),
+                  comments: attribute_comments(attribute_node, attribute_name),
                   visibility: :public
                 )
+
+                pins.push method_pin
+
+                if name.include?('=') # setter
+                  pins.push Pin::InstanceVariable.new(name: "@#{attribute_name}",
+                                                      closure: method_pin,
+                                                      location: get_node_location(attribute_node),
+                                                      comments: attribute_comments(attribute_node, attribute_name))
+                end
               end
+
             end
 
             process_children region.update(closure: nspin, visibility: :public)
@@ -208,6 +216,14 @@ module Solargraph
                                  elsif StructAssignmentNode.valid?(node)
                                    StructAssignmentNode.new(node)
                                  end
+          end
+
+          # @param attribute_node [Parser::AST::Node]
+          # @return [String, nil]
+          def attribute_comments(attribute_node, attribute_name)
+            comments_for(attribute_node).split("\n").find do |row|
+              row.include?(attribute_name)
+            end&.gsub('@param', '@return')&.gsub(attribute_name, '')
           end
         end
       end
