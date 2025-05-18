@@ -39,7 +39,7 @@ module Solargraph
       @@inference_invalidation_key = nil
       @@inference_cache = {}
 
-      UNDEFINED_CALL = Chain::Call.new('<undefined>')
+      UNDEFINED_CALL = Chain::Call.new('<undefined>', nil)
       UNDEFINED_CONSTANT = Chain::Constant.new('<undefined>')
 
       # @return [::Array<Source::Chain::Link>]
@@ -136,20 +136,16 @@ module Solargraph
       # @sg-ignore
       def infer api_map, name_pin, locals
         cache_key = [node, node&.location, links, name_pin&.return_type, locals]
-        cache_key_hash = cache_key.hash
-        cached = @@inference_cache[cache_key] unless node.nil?
-        return cached if cached && @@inference_invalidation_key == api_map.hash
-        out = infer_uncached api_map, name_pin, locals
-        if @@inference_invalidation_key != api_map.hash
-          logger.debug { "Invalidating cache due to api_map change: #{api_map.hash}" }
-          @@inference_cache = {}
+        if @@inference_invalidation_key == api_map.hash
+          cached = @@inference_cache[cache_key]
+          return cached if cached
+        else
           @@inference_invalidation_key = api_map.hash
+          @@inference_cache = {}
         end
-        unless node.nil?
-          logger.debug { "Chain#infer() - caching result - cache_key_hash=#{cache_key_hash}, links.map(&:hash)=#{links.map(&:hash)}, links=#{links}, cache_key.map(&:hash) = #{cache_key.map(&:hash)}, cache_key=#{cache_key}" }
-          @@inference_cache[cache_key] = out
-        end
-        out
+        out = infer_uncached api_map, name_pin, locals
+        logger.debug { "Chain#infer() - caching result - cache_key_hash=#{cache_key.hash}, links.map(&:hash)=#{links.map(&:hash)}, links=#{links}, cache_key.map(&:hash) = #{cache_key.map(&:hash)}, cache_key=#{cache_key}" }
+        @@inference_cache[cache_key] = out
       end
 
       # @param api_map [ApiMap]

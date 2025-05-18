@@ -37,7 +37,7 @@ describe Solargraph::Source::Chain do
 
   it "infers types from core methods" do
     api_map = Solargraph::ApiMap.new
-    chain = described_class.new([Solargraph::Source::Chain::Constant.new('String'), Solargraph::Source::Chain::Call.new('new')])
+    chain = described_class.new([Solargraph::Source::Chain::Constant.new('String'), Solargraph::Source::Chain::Call.new('new', nil)])
     type = chain.infer(api_map, Solargraph::Pin::ROOT_PIN, [])
     expect(type.namespace).to eq('String')
     expect(type.scope).to eq(:instance)
