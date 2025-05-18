@@ -9,9 +9,7 @@ module Solargraph
 
           def process
             superclass_name = nil
-            if node.type == :class && node.children[1]&.type == :const
-              superclass_name = unpack_name(node.children[1])
-            end
+            superclass_name = unpack_name(node.children[1]) if node.type == :class && node.children[1]&.type == :const
 
             if Convention::StructDefinition::StructDefintionNode.valid?(node)
               process_struct_definition
@@ -45,6 +43,8 @@ module Solargraph
             process_children region.update(closure: nspin, visibility: :public)
           end
 
+          # TODO: Move this out of [NamespaceNode] once [Solargraph::Parser::NodeProcessor] supports
+          # multiple processors.
           def process_struct_definition
             processor_klass = Convention::StructDefinition::NodeProcessors::StructNode
             processor = processor_klass.new(node, region, pins, locals)

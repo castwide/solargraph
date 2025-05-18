@@ -2700,8 +2700,6 @@ describe Solargraph::SourceMap::Clip do
 
   it 'completes Struct ivars inside class' do
     source = Solargraph::Source.load_string(%(
-      # @param bar [String]
-      # @param baz [Integer]
       class Foo < Struct.new(:bar, :baz, keyword_init: true)
         def foo
           @ba
@@ -2710,7 +2708,7 @@ describe Solargraph::SourceMap::Clip do
     ), 'test.rb')
 
     api_map = Solargraph::ApiMap.new.map(source)
-    clip = api_map.clip_at('test.rb', [5, 11])
+    clip = api_map.clip_at('test.rb', [3, 11])
     names = clip.complete.pins.map(&:name)
     expect(names).to include('@bar', '@baz')
   end
