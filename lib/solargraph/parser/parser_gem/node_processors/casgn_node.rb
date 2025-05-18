@@ -8,6 +8,17 @@ module Solargraph
           include ParserGem::NodeMethods
 
           def process
+            if Convention::StructDefinition::StructAssignmentNode.valid?(node)
+              process_struct_assignment
+            else
+              process_constant_assignment
+            end
+          end
+
+          private
+
+          # @return [void]
+          def process_constant_assignment
             pins.push Solargraph::Pin::Constant.new(
               location: get_node_location(node),
               closure: region.closure,
@@ -18,7 +29,16 @@ module Solargraph
             process_children
           end
 
-          private
+          # TODO: Move this out of [CasgnNode] once [Solargraph::Parser::NodeProcessor] supports
+          # multiple processors.
+          def process_struct_assignment
+            processor_klass = Convention::StructDefinition::NodeProcessors::StructNode
+            processor = processor_klass.new(node, region, pins, locals)
+            processor.process
+
+            @pins = processor.pins
+            @locals = processor.locals
+          end
 
           # @return [String]
           def const_name
