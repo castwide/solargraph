@@ -2607,7 +2607,7 @@ describe Solargraph::SourceMap::Clip do
     clip = api_map.clip_at('test.rb', [13, 14])
     expect(clip.infer.tags).to eq('String')
   end
-    
+
   it 'handles block method yield scenarios' do
     source = Solargraph::Source.load_string(%(
       # @yieldreturn [Integer]
@@ -2773,9 +2773,9 @@ describe Solargraph::SourceMap::Clip do
     api_map = Solargraph::ApiMap.new.map(source)
 
     clip = api_map.clip_at('test.rb', [4, 6])
-    expect(clip.infer.to_s).to eq('Array, Hash, Integer, NilClass')
+    expect(clip.infer.to_s).to eq('Array, Hash, Integer, nil')
   end
-    
+
   xit 'infers that type of argument has been overridden' do
     source = Solargraph::Source.load_string(%(
       def foo a
