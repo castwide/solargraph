@@ -63,6 +63,7 @@ module Solargraph
             types.push result unless result.undefined?
           end
         end
+        logger.debug { "BaseVariable#return_types_from_node(#{parent_node}) => #{types.map(&:rooted_tags)}" }
         types
       end
 
@@ -106,6 +107,8 @@ module Solargraph
       def type_desc
         "#{super} = #{assignment&.type.inspect}"
       end
+
+      include Logging
 
       private
 

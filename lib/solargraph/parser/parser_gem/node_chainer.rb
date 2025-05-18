@@ -21,7 +21,10 @@ module Solargraph
         # @return [Source::Chain]
         def chain
           links = generate_links(@node)
-          Chain.new(links, @node, (Parser.is_ast_node?(@node) && @node.type == :splat))
+          logger.debug { "NodeChainer#chain(@node=#{@node}, @filename=#{@filename}, @parent=#{@parent}) - links=#{links}" }
+          out = Chain.new(links, @node, (Parser.is_ast_node?(@node) && @node.type == :splat))
+          logger.debug { "NodeChainer#chain(@node=#{@node}, @filename=#{@filename}, @parent=#{@parent}) => #{out}" }
+          out
         end
 
         class << self
@@ -42,6 +45,8 @@ module Solargraph
             chain
           end
         end
+
+        include Logging
 
         private
 
