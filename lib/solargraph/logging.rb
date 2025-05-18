@@ -13,6 +13,7 @@ module Solargraph
     }
 
     @@logger = Logger.new(STDERR, level: DEFAULT_LOG_LEVEL)
+    # @sg-ignore Fix cvar issue
     @@logger.formatter = proc do |severity, datetime, progname, msg|
       "[#{severity}] #{msg}\n"
     end
