@@ -124,13 +124,13 @@ module Solargraph
               end
             end
           elsif n.type == :hash
-            result.push Chain::Hash.new('::Hash', hash_is_splatted?(n))
+            result.push Chain::Hash.new('::Hash', n, hash_is_splatted?(n))
           elsif n.type == :array
             chained_children = n.children.map { |c| NodeChainer.chain(c) }
-            result.push Source::Chain::Array.new(chained_children)
+            result.push Source::Chain::Array.new(chained_children, n)
           else
             lit = infer_literal_node_type(n)
-            result.push (lit ? Chain::Literal.new(lit) : Chain::Link.new)
+            result.push (lit ? Chain::Literal.new(lit, n) : Chain::Link.new)
           end
           result
         end

@@ -872,5 +872,51 @@ describe Solargraph::TypeChecker do
       ))
       expect(checker.problems.map(&:message)).to eq([])
     end
+
+    it 'does not complain when passing nil to a NilClass parameter' do
+      checker = type_checker(%(
+        # @param a [NilClass]
+        def foo(a); end
+
+        foo(nil)
+      ))
+      expect(checker.problems.map(&:message)).to eq([])
+    end
+
+    it 'does not complain when passing NilClass to nil parameter' do
+      checker = type_checker(%(
+        # @param a [nil]
+        def foo(a); end
+
+        # @param a [NilClass]
+        def bar(a)
+          foo(a)
+        end
+      ))
+      expect(checker.problems.map(&:message)).to eq([])
+    end
+
+    it 'does not complain when passing true to TrueClass parameter' do
+      checker = type_checker(%(
+        # @param a [TrueClass]
+        def foo(a); end
+
+        foo(true)
+      ))
+      expect(checker.problems.map(&:message)).to eq([])
+    end
+
+    it 'does not complain when passing TrueClass to true parameter' do
+      checker = type_checker(%(
+        # @param a [true]
+        def foo(a); end
+
+        # @param a [TrueClass]
+        def bar(a)
+          foo(a)
+        end
+      ))
+      expect(checker.problems.map(&:message)).to eq([])
+    end
   end
 end

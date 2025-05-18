@@ -113,6 +113,15 @@ module Solargraph
         closure.is_a?(Pin::Block) ? typify_block_param(api_map) : typify_method_param(api_map)
       end
 
+      # @param atype [ComplexType]
+      # @param api_map [ApiMap]
+      def compatible_arg?(atype, api_map)
+        # make sure we get types from up the method
+        # inheritance chain if we don't have them on this pin
+        ptype = typify api_map
+        ptype.undefined? || ptype.can_assign?(api_map, atype) || ptype.generic?
+      end
+
       def documentation
         tag = param_tag
         return '' if tag.nil? || tag.text.nil?
