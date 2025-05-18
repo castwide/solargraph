@@ -319,6 +319,11 @@ module Solargraph
       result
     end
 
+    # @see Solargraph::Parser::FlowSensitiveTyping#visible_pins
+    def visible_pins(*args, **kwargs, &blk)
+      Solargraph::Parser::FlowSensitiveTyping.visible_pins(*args, **kwargs, &blk)
+    end
+
     # Get an array of class variable pins for a namespace.
     #
     # @param namespace [String] A fully qualified namespace

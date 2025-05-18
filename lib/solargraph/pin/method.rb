@@ -196,6 +196,7 @@ module Solargraph
         name.end_with?('?') ? ComplexType::BOOLEAN : ComplexType::UNDEFINED
       end
 
+      # @sg-ignore
       def documentation
         if @documentation.nil?
           @documentation ||= super || ''
