@@ -4,6 +4,8 @@ module Solargraph
   # The zero-based line and column numbers of a position in a string.
   #
   class Position
+    include Equality
+
     # @return [Integer]
     attr_reader :line
 
@@ -17,6 +19,11 @@ module Solargraph
     def initialize line, character
       @line = line
       @character = character
+    end
+
+    # @sg-ignore Fix "Not enough arguments to Module#protected"
+    protected def equality_fields
+      [line, character]
     end
 
     # Get a hash of the position. This representation is suitable for use in

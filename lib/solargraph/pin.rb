@@ -34,6 +34,9 @@ module Solargraph
     autoload :Singleton,        'solargraph/pin/singleton'
     autoload :KeywordParam,     'solargraph/pin/keyword_param'
     autoload :Search,           'solargraph/pin/search'
+    autoload :Breakable,        'solargraph/pin/breakable'
+    autoload :Until,            'solargraph/pin/until'
+    autoload :While,            'solargraph/pin/while'
     autoload :Callable,         'solargraph/pin/callable'
 
     ROOT_PIN = Pin::Namespace.new(type: :class, name: '', closure: nil)

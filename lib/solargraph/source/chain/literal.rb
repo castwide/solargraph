@@ -14,6 +14,11 @@ module Solargraph
           @complex_type = ComplexType.try_parse(type)
         end
 
+        # @sg-ignore Fix "Not enough arguments to Module#protected"
+        protected def equality_fields
+          super + [@value, @type, @literal_type, @complex_type]
+        end
+
         def resolve api_map, name_pin, locals
           [Pin::ProxyType.anonymous(@complex_type)]
         end
