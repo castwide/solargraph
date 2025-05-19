@@ -132,7 +132,17 @@ module Solargraph
       return nil if path.empty?
 
       if path == 'bundler/require'
-        return Gem.loaded_specs.values.flatten
+        # find only the gems bundler is now using
+        gemspecs = Bundler.definition.locked_gems.specs.flat_map do |lazy_spec|
+          [Gem::Specification.find_by_name(lazy_spec.name, lazy_spec.version)]
+        rescue Gem::MissingSpecError => e
+          # can happen in local filesystem references
+          specs = resolve_path_to_gemspecs lazy_spec.name
+          logger.info "Gem #{lazy_spec.name} #{lazy_spec.version} from bundle not found: #{e}" if specs.nil?
+          specs
+        end.compact
+
+        return gemspecs
       end
 
       gemspec = Gem::Specification.find_by_path(path)
