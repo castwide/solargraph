@@ -482,7 +482,6 @@ module Solargraph
       end
       # see if we have additional tags to pay attention to from YARD -
       # e.g., kwargs in a **restkwargs splat
-      param_names = pin.parameter_names
       tags = pin.docstring.tags(:param)
       tags.each do |tag|
         next if result.key? tag.name.to_s
@@ -501,6 +500,7 @@ module Solargraph
       return {} if pins.empty?
       first_pin_type = pins.first.typify(api_map)
       first_pin = pins.first.proxy first_pin_type
+      param_names = first_pin.parameter_names
       results = param_hash(first_pin)
       pins[1..].each do |pin|
         # @todo this assignment from parametric use of Hash should not lose its generic
@@ -510,11 +510,11 @@ module Solargraph
         # subclasses if the subclass hasn't documented something
         superclass_results = param_hash(pin)
         superclass_results.each do |param_name, details|
+          next unless param_names.include?(param_name)
+
           results[param_name] ||= {}
-          if param_names.include?(param_name)
-            results[param_name][:tagged] ||= details[:tagged]
-            results[param_name][:qualified] ||= details[:qualified]
-          end
+          results[param_name][:tagged] ||= details[:tagged]
+          results[param_name][:qualified] ||= details[:qualified]
         end
       end
       results
