@@ -511,7 +511,7 @@ module Solargraph
         superclass_results = param_hash(pin)
         superclass_results.each do |param_name, details|
           results[param_name] ||= {}
-          if param_name in param_names
+          if param_names.include?(param_name)
             results[param_name][:tagged] ||= details[:tagged]
             results[param_name][:qualified] ||= details[:qualified]
           end
