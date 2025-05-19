@@ -28,12 +28,12 @@ module Solargraph
 
     # @return [Array<Gem::Specification>]
     def gemspecs
-      @gemspecs ||= required_gem_map.values.compact
+      @gemspecs ||= required_gems_map.values.compact.flatten
     end
 
     # @return [Array<String>]
     def unresolved_requires
-      @unresolved_requires ||= required_gem_map.select { |_, gemspec| gemspec.nil? }.keys
+      @unresolved_requires ||= required_gems_map.select { |_, gemspecs| gemspecs.nil? }.keys
     end
 
     # @return [Hash{Gem::Specification => Array[Pin::Base]}]
@@ -52,20 +52,22 @@ module Solargraph
     def generate
       @pins = []
       @uncached_gemspecs = []
-      required_gem_map.each do |path, gemspec|
-        if gemspec
-          try_cache gemspec
-        else
+      required_gems_map.each do |path, gemspecs|
+        if gemspecs.nil?
           try_stdlib_map path
+        else
+          gemspecs.each do |gemspec|
+            try_cache gemspec
+          end
         end
       end
       dependencies.each { |dep| try_cache dep }
       @uncached_gemspecs.uniq!
     end
 
-    # @return [Hash{String => Gem::Specification, nil}]
-    def required_gem_map
-      @required_gem_map ||= requires.to_h { |path| [path, resolve_path_to_gemspec(path)] }
+    # @return [Hash{String => Array<Gem::Specification>}]
+    def required_gems_map
+      @required_gems_map ||= requires.to_h { |path| [path, resolve_path_to_gemspecs(path)] }
     end
 
     # @return [Hash{String => Gem::Specification}]
@@ -125,9 +127,13 @@ module Solargraph
     end
 
     # @param path [String]
-    # @return [Gem::Specification, nil]
-    def resolve_path_to_gemspec path
+    # @return [::Array<Gem::Specification>, nil]
+    def resolve_path_to_gemspecs path
       return nil if path.empty?
+
+      if path == 'bundler/require'
+        return Gem.loaded_specs.values.flatten
+      end
 
       gemspec = Gem::Specification.find_by_path(path)
       if gemspec.nil?
@@ -142,16 +148,17 @@ module Solargraph
           gemspec = potential_gemspec if potential_gemspec.files.any? { |gemspec_file| file == gemspec_file }
         rescue Gem::MissingSpecError
           Solargraph.logger.debug "Require path #{path} could not be resolved to a gem via find_by_path or guess of #{gem_name_guess}"
-          nil
+          []
         end
       end
-      gemspec_or_preference gemspec
+      return nil if gemspec.nil?
+      [gemspec_or_preference(gemspec)]
     end
 
-    # @param gemspec [Gem::Specification, nil]
-    # @return [Gem::Specification, nil]
+    # @param gemspec [Gem::Specification]
+    # @return [Gem::Specification]
     def gemspec_or_preference gemspec
-      return gemspec unless gemspec && preference_map.key?(gemspec.name)
+      return gemspec unless preference_map.key?(gemspec.name)
       return gemspec if gemspec.version == preference_map[gemspec.name].version
 
       change_gemspec_version gemspec, preference_map[by_path.name].version
