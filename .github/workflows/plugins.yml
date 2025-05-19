@@ -87,11 +87,11 @@ jobs:
       run: |
        cd ../solargraph-rails
        cd spec/rails7
-       echo "gem 'solargraph', path: '../../../solargraph'" >> Gemfile
+       echo "gem 'solargraph', path: '/home/runner/work/solargraph/solargraph'" >> Gemfile
        bundle install
        bundle exec rbs collection install
        cd ../../
-       echo "gem 'solargraph', path: '../solargraph'" >> Gemfile
+       echo "gem 'solargraph', path: '/home/runner/work/solargraph/solargraph'" >> Gemfile
        bundle install
        bundle exec rbs collection init
        bundle exec rbs collection install
