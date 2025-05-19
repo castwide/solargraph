@@ -1195,7 +1195,7 @@ describe Solargraph::SourceMap::Mapper do
           # @!method bar
           # @!method baz
         end
-      end  
+      end
     ), 'test.rb')
     api_map = Solargraph::ApiMap.new
     api_map.map source
@@ -1212,7 +1212,7 @@ describe Solargraph::SourceMap::Mapper do
         class << self
           # @!method baz
         end
-      end  
+      end
     ), 'test.rb')
     api_map = Solargraph::ApiMap.new
     api_map.map source
@@ -1391,6 +1391,15 @@ describe Solargraph::SourceMap::Mapper do
       Bundler.require
     ))
     pin = map.pins.select { |pin| pin.is_a?(Solargraph::Pin::Reference::Require) }.first
+    expect(pin.name).to eq('bundler/require')
+  end
+
+  it 'maps Bundler.require in Rails context to require "bundler/require"' do
+    map = Solargraph::SourceMap.load_string(%(
+      Bundler.require(*Rails.groups)
+    ))
+    pin = map.pins.select { |pin| pin.is_a?(Solargraph::Pin::Reference::Require) }.first
+    # not perfect - would be best if we did something with the argument to limit pins gathered
     expect(pin.name).to eq('bundler/require')
   end
 

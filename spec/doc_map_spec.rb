@@ -29,6 +29,21 @@ describe Solargraph::DocMap do
     expect(doc_map.uncached_gemspecs).to eq([gemspec])
   end
 
+  it 'imports all gems when bundler/require used' do
+    gemspec_a = Gem::Specification.new do |spec|
+      spec.name = 'not_a_gem'
+      spec.version = '1.0.0'
+    end
+    gemspec_b = Gem::Specification.new do |spec|
+      spec.name = 'also_not_a_gem'
+      spec.version = '1.0.0'
+    end
+    allow(Gem).to receive(:loaded_specs).with(no_args).and_return({ 'a' => gemspec_a, 'b' => gemspec_b })
+
+    doc_map = Solargraph::DocMap.new(['bundler/require'], [])
+    expect(doc_map.uncached_gemspecs).to eq([gemspec_a, gemspec_b])
+  end
+
   it 'does not warn for redundant requires' do
     # Requiring 'set' is unnecessary because it's already included in core. It
     # might make sense to log redundant requires, but a warning is overkill.
