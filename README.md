@@ -63,9 +63,17 @@ The RSpec framework is supported via [solargraph-rspec](https://github.com/lekem
 
 **Note: Before version 0.53.0, it was recommended to run `yard gems` periodically or automate it with `yard config` to ensure that Solargraph had access to gem documentation. These steps are no longer necessary. Solargraph maintains its own gem documentation cache independent of the yardocs in your gem installations.**
 
-Solargraph automatically generates code maps from installed gems. You can also manage your cached gem documentation with the `solargraph gems` command.
-
 When editing code, a `require` call that references a gem will pull the documentation into the code maps and include the gem's API in code completion and intellisense.
+
+Solargraph automatically generates code maps from installed gems.  You can also manage your cached gem documentation with the `solargraph gems` command.
+
+To combine this YARD and Rdoc information with RBS, use [gem\_rbs\_collection](https://github.com/ruby/gem_rbs_collection)
+to install RBS types for Rails:
+
+```sh
+bundle exec rbs collection init
+bundle exec rbs collection install
+```
 
 If your project automatically requires bundled gems (e.g., `require 'bundler/require'`), Solargraph will add all of the Gemfile's default dependencies to the map.
 

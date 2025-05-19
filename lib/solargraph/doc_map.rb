@@ -4,6 +4,8 @@ module Solargraph
   # A collection of pins generated from required gems.
   #
   class DocMap
+    include Logging
+
     # @return [Array<String>]
     attr_reader :requires
 
@@ -84,7 +86,7 @@ module Solargraph
         self.class.gems_in_memory[gemspec] = gempins
         @pins.concat gempins
       else
-        Solargraph.logger.debug "No pin cache for #{gemspec.name} #{gemspec.version}"
+        logger.debug "No pin cache for #{gemspec.name} #{gemspec.version}"
         @uncached_gemspecs.push gemspec
       end
     end
@@ -94,11 +96,11 @@ module Solargraph
     def try_stdlib_map path
       map = RbsMap::StdlibMap.load(path)
       if map.resolved?
-        Solargraph.logger.debug "Loading stdlib pins for #{path}"
+        logger.debug { "Loading stdlib pins for #{path}" }
         @pins.concat map.pins
       else
         # @todo Temporarily ignoring unresolved `require 'set'`
-        Solargraph.logger.debug "Require path #{path} could not be resolved" unless path == 'set'
+        logger.debug { "Require path #{path} could not be resolved" } unless path == 'set'
       end
     end
 
@@ -107,21 +109,37 @@ module Solargraph
     def try_gem_in_memory gemspec
       gempins = DocMap.gems_in_memory[gemspec]
       return false unless gempins
-      Solargraph.logger.debug "Found #{gemspec.name} #{gemspec.version} in memory"
+      logger.debug { "Found #{gemspec.name} #{gemspec.version} in memory" }
       @pins.concat gempins
       true
     end
 
     # @param gemspec [Gem::Specification]
     def update_from_collection gemspec, gempins
-      return gempins unless @rbs_path && File.directory?(@rbs_path)
-      return gempins if RbsMap.new(gemspec.name, gemspec.version).resolved?
+      unless @rbs_path && File.directory?(@rbs_path)
+        logger.debug { "DocMap#update_from_collection: No collection" }
+        return gempins
+      end
+      rbs_map = RbsMap.new(gemspec.name, gemspec.version)
+      if rbs_map.resolved?
+        logger.info { "DocMap#update_from_collection: Resolved #{gemspec.name} to RBS exported by gem" }
+        return GemPins.combine(gempins, rbs_map)
+      end
 
       rbs_map = RbsMap.new(gemspec.name, gemspec.version, directories: [@rbs_path])
-      return gempins unless rbs_map.resolved?
+      if rbs_map.resolved?
+        logger.info "Updating #{gemspec.name} #{gemspec.version} from collection"
+        return GemPins.combine(gempins, rbs_map)
+      end
 
-      Solargraph.logger.info "Updating #{gemspec.name} #{gemspec.version} from collection"
-      GemPins.combine(gempins, rbs_map)
+      rbs_map = RbsMap.new(gemspec.name, nil, directories: [@rbs_path])
+      if rbs_map.resolved?
+        logger.info "Updating #{gemspec.name} #{gemspec.version} from collection"
+        return GemPins.combine(gempins, rbs_map)
+      end
+
+      logger.debug { "DocMap#update_from_collection: No collection found for #{gemspec.name}" }
+      gempins
     end
 
     # @param path [String]
@@ -141,8 +159,8 @@ module Solargraph
           file = "lib/#{path}.rb"
           gemspec = potential_gemspec if potential_gemspec.files.any? { |gemspec_file| file == gemspec_file }
         rescue Gem::MissingSpecError
-          Solargraph.logger.debug "Require path #{path} could not be resolved to a gem via find_by_path or guess of #{gem_name_guess}"
-          nil
+          logger.debug { "Require path #{path} could not be resolved to a gem via find_by_path or guess of #{gem_name_guess}" }
+          []
         end
       end
       gemspec_or_preference gemspec

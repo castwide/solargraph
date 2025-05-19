@@ -233,7 +233,9 @@ module Solargraph
       yaml_file = File.join(directory, 'rbs_collection.yaml')
       return unless File.file?(yaml_file)
 
-      YAML.load_file(yaml_file)&.fetch('path')
+      path = YAML.load_file(yaml_file)&.fetch('path')
+      # make fully qualified
+      File.expand_path(path, directory)
     end
   end
 end
