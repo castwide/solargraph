@@ -180,7 +180,9 @@ module Solargraph
       # @param spec [Gem::Dependency]
       only_runtime_dependencies(gemspec).each_with_object(Set.new) do |spec, deps|
         Solargraph.logger.info "Adding #{spec.name} dependency for #{gemspec.name}"
-        dep = Gem::Specification.find_by_name(spec.name, spec.requirement)
+        dep = Gem.loaded_specs[gemspec.name]
+        # @todo is next line necessary?
+        dep ||= Gem::Specification.find_by_name(spec.name, spec.requirement)
         deps.merge fetch_dependencies(dep) if deps.add?(dep)
       rescue Gem::MissingSpecError
         Solargraph.logger.warn "Gem dependency #{spec.name} #{spec.requirement} for #{gemspec.name} not found."
