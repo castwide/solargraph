@@ -568,8 +568,7 @@ module Solargraph
         if type.is_a?(RBS::Types::Optional)
           "#{other_type_to_tag(type.type)}, nil"
         elsif type.is_a?(RBS::Types::Bases::Any)
-          # @todo Not sure what to do with Any yet
-          'BasicObject'
+          'undefined'
         elsif type.is_a?(RBS::Types::Bases::Bool)
           'Boolean'
         elsif type.is_a?(RBS::Types::Tuple)
