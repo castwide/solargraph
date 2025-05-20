@@ -360,7 +360,7 @@ module Solargraph
                                                          return_type: ComplexType.try_parse(other_type_to_tag(param.type)).force_rooted)
         end
         if type.type.rest_positionals
-          name = type.type.rest_positionals.name ? type.type.rest_positionals.name.to_s : "arg#{arg_num += 1}"
+          name = type.type.rest_positionals.name ? type.type.rest_positionals.name.to_s : "arg_#{arg_num += 1}"
           parameters.push Solargraph::Pin::Parameter.new(decl: :restarg, name: name, closure: pin)
         end
         type.type.trailing_positionals.each do |param|
@@ -378,7 +378,7 @@ module Solargraph
                                                          return_type: ComplexType.try_parse(other_type_to_tag(param.type)).force_rooted)
         end
         if type.type.rest_keywords
-          name = type.type.rest_keywords.name ? type.type.rest_keywords.name.to_s : "arg#{arg_num += 1}"
+          name = type.type.rest_keywords.name ? type.type.rest_keywords.name.to_s : "arg_#{arg_num += 1}"
           parameters.push Solargraph::Pin::Parameter.new(decl: :kwrestarg, name: type.type.rest_keywords.name.to_s, closure: pin)
         end
 
