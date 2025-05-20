@@ -21,7 +21,7 @@ module Solargraph
         # name = parts.last.to_s
         # ProxyType.new(nil, namespace, name, return_type)
         ProxyType.new(
-          closure: Solargraph::Pin::Namespace.new(name: namespace, source: :proxy_type), return_type: return_type, source: :source
+          closure: Solargraph::Pin::Namespace.new(name: namespace, source: :proxy_type), return_type: return_type, source: source
         )
       end
     end
