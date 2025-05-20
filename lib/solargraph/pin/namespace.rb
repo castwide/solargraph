@@ -44,7 +44,7 @@ module Solargraph
         "#{@type.to_s} #{return_type.all_params.first.to_rbs}#{rbs_generics}".strip
       end
 
-      def desc
+      def inner_desc
         if name.nil? || name.empty?
           '(top-level)'
         else

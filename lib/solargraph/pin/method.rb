@@ -164,9 +164,9 @@ module Solargraph
         end
       end
 
-      def desc
+      def inner_desc
         # ensure the signatures line up when logged
-        if signatures.length > 1
+        super + ", rbs=" + if signatures.length > 1
           "\n#{to_rbs}\n"
         else
           to_rbs
