@@ -103,7 +103,7 @@ module Solargraph
           pins = link.resolve(api_map, working_pin, locals)
           type = infer_first_defined(pins, working_pin, api_map, locals)
           return [] if type.undefined?
-          working_pin = Pin::ProxyType.anonymous(type)
+          working_pin = Pin::ProxyType.anonymous(type, source: :chain)
         end
         links.last.last_context = working_pin
         links.last.resolve(api_map, working_pin, locals)
