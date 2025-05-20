@@ -32,7 +32,8 @@ module Solargraph
         Override.from_comment('Module#module_exec', '@yieldreceiver [::Module<self>]'),
         # RBS does not define Class with a generic, so all calls to
         # generic() return an 'untyped'.  We can do better:
-        Override.method_return('Class#allocate', 'self')
+        Override.method_return('Class#allocate', 'self'),
+        Override.method_return('Class#new', 'self')
       ]
 
       # HACK: Add Errno exception classes
