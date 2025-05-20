@@ -31,7 +31,8 @@ module Solargraph
         if pins.empty?
           pins.push Pin::Namespace.new(
             location: region.source.location,
-            name: ''
+            name: '',
+            source: :parser,
           )
         end
         return [pins, locals] unless Parser.is_ast_node?(node)

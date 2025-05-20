@@ -21,7 +21,8 @@ module Solargraph
                                 assignment: u.children[1],
                                 asgn_code: u.children[1] ? region.code_for(u.children[1]) : nil,
                                 presence: callable.location.range,
-                                decl: get_decl(u)
+                                decl: get_decl(u),
+                                source: :parser
                               )
                   callable.parameters.push locals.last
                 end
@@ -40,7 +41,8 @@ module Solargraph
               location: loc,
               closure: callable,
               presence: region.closure.location.range,
-              decl: get_decl(node)
+              decl: get_decl(node),
+              source: :parser
             )
             callable.parameters.push locals.last
           end

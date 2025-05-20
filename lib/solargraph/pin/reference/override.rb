@@ -10,18 +10,18 @@ module Solargraph
         # @return [::Array<Symbol>]
         attr_reader :delete
 
-        def initialize location, name, tags, delete = []
-          super(location: location, name: name)
+        def initialize location, name, tags, delete = [], **splat
+          super(location: location, name: name, **splat)
           @tags = tags
           @delete = delete
         end
 
-        def self.method_return name, *tags, delete: []
-          new(nil, name, [YARD::Tags::Tag.new('return', nil, tags)], delete)
+        def self.method_return name, *tags, delete: [], **splat
+          new(nil, name, [YARD::Tags::Tag.new('return', nil, tags)], delete, **splat)
         end
 
-        def self.from_comment name, comment
-          new(nil, name, Solargraph::Source.parse_docstring(comment).to_docstring.tags)
+        def self.from_comment name, comment, **splat
+          new(nil, name, Solargraph::Source.parse_docstring(comment).to_docstring.tags, **splat)
         end
       end
     end

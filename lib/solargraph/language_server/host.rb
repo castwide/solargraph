@@ -501,7 +501,8 @@ module Solargraph
                 parameters: pin.parameters,
                 return_type: ComplexType.try_parse(params['data']['path']),
                 comments: pin.comments,
-                closure: pin.closure
+                closure: pin.closure,
+                source: :solargraph
               )
             end)
           end

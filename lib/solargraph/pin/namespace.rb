@@ -35,7 +35,7 @@ module Solargraph
             closure.full_context.namespace + '::'
           end
           closure_name += parts.join('::')
-          @closure = Pin::Namespace.new(name: closure_name, gates: [parts.join('::')])
+          @closure = Pin::Namespace.new(name: closure_name, gates: [parts.join('::')], source: :namespace)
           @context = nil
         end
       end
@@ -44,7 +44,7 @@ module Solargraph
         "#{@type.to_s} #{return_type.all_params.first.to_rbs}#{rbs_generics}".strip
       end
 
-      def desc
+      def inner_desc
         if name.nil? || name.empty?
           '(top-level)'
         else

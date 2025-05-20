@@ -17,7 +17,8 @@ module Solargraph
               name: node.children[0].to_s,
               assignment: node.children[1],
               comments: comments_for(node),
-              presence: presence
+              presence: presence,
+              source: :parser
             )
             process_children
           end

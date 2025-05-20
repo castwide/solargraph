@@ -18,6 +18,7 @@ module Solargraph
               closure: region.closure,
               node: node,
               comments: comments_for(node),
+              source: :parser,
             )
             process_children region
           end
