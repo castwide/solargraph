@@ -25,7 +25,7 @@ module Solargraph
                  else
                    ComplexType::UniqueType.new('Array', rooted: true)
                  end
-          [Pin::ProxyType.anonymous(type)]
+          [Pin::ProxyType.anonymous(type, source: :chain)]
         end
       end
     end

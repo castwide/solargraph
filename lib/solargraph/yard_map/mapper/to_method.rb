@@ -16,7 +16,8 @@ module Solargraph
         def self.make code_object, name = nil, scope = nil, visibility = nil, closure = nil, spec = nil
           closure ||= Solargraph::Pin::Namespace.new(
             name: code_object.namespace.to_s,
-            gates: [code_object.namespace.to_s]
+            gates: [code_object.namespace.to_s],
+            source: :yardoc,
           )
           location = object_location(code_object, spec)
           name ||= code_object.name.to_s
@@ -32,7 +33,8 @@ module Solargraph
             # @todo Might need to convert overloads to signatures
             parameters: [],
             explicit: code_object.is_explicit?,
-            return_type: return_type
+            return_type: return_type,
+            source: :yardoc,
           )
           pin.parameters.concat get_parameters(code_object, location, comments, pin)
           pin
@@ -59,7 +61,8 @@ module Solargraph
                 name: arg_name(a),
                 presence: nil,
                 decl: arg_type(a),
-                asgn_code: a[1]
+                asgn_code: a[1],
+                source: :yardoc,
               )
             end
           end

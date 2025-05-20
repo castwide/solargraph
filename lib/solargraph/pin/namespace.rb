@@ -35,7 +35,7 @@ module Solargraph
             closure.full_context.namespace + '::'
           end
           closure_name += parts.join('::')
-          @closure = Pin::Namespace.new(name: closure_name, gates: [parts.join('::')])
+          @closure = Pin::Namespace.new(name: closure_name, type: nil, gates: [parts.join('::')], source: :namespace)
           @context = nil
         end
       end

@@ -15,13 +15,13 @@ module Solargraph
 
       # @param return_type [ComplexType]
       # @return [ProxyType]
-      def self.anonymous return_type
+      def self.anonymous return_type, source: nil
         parts = return_type.namespace.split('::')
         namespace = parts[0..-2].join('::').to_s
         # name = parts.last.to_s
         # ProxyType.new(nil, namespace, name, return_type)
         ProxyType.new(
-          closure: Solargraph::Pin::Namespace.new(name: namespace), return_type: return_type
+          closure: Solargraph::Pin::Namespace.new(name: namespace, source: :proxy_type), return_type: return_type, source: :source
         )
       end
     end
