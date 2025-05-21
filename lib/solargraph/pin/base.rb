@@ -200,7 +200,6 @@ module Solargraph
         if val1&.name != val2&.name
           Solargraph.assert_or_log(:combine_with,
                                    "Inconsistent #{attr.inspect} name values between \nself =#{inspect} and \nother=#{other.inspect}:\n\n self.#{attr} = #{val1.inspect}\nother.#{attr} = #{val2.inspect}")
-          return nil
         end
         [val1, val2].min
       end
