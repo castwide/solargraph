@@ -31,6 +31,129 @@ module Solargraph
         @anon_splat = anon_splat
       end
 
+      def combine_all_signature_pins(*signature_pins)
+        by_arity = {}
+        signature_pins.each do |signature_pin|
+          by_arity[signature_pin.arity] ||= []
+          by_arity[signature_pin.arity] << signature_pin
+        end
+        by_arity.transform_values! do |same_arity_pins|
+          same_arity_pins.reduce(nil) do |memo, signature|
+            next signature if memo.nil?
+            memo.combine_with(signature)
+          end
+        end
+        by_arity.values.flatten
+      end
+
+      def combine_visibility(other)
+        if dodgy_visibility_source? && !other.dodgy_visibility_source?
+          other.visibility
+        elsif other.dodgy_visibility_source? && !dodgy_visibility_source?
+          visibility
+        else
+          assert_same(other, :visibility)
+        end
+      end
+
+      def combine_with(other, attrs = {})
+        sigs = combine_all_signature_pins(*(self.signatures + other.signatures))
+        new_attrs = {
+          visibility: combine_visibility(other),
+          explicit: explicit? || other.explicit?,
+          block: combine_blocks(other),
+          node: choose_node(other, :node),
+          attribute: prefer_rbs_location(other, :attribute?),
+          parameters: choose(other, :parameters),
+          signatures: sigs,
+          anon_splat: assert_same(other, :anon_splat?),
+          return_type: nil # pulled from signatures on first call
+        }.merge(attrs)
+        super(other, new_attrs)
+      end
+
+      def combine_all_signature_pins(*signature_pins)
+        by_arity = {}
+        signature_pins.each do |signature_pin|
+          by_arity[signature_pin.arity] ||= []
+          by_arity[signature_pin.arity] << signature_pin
+        end
+        by_arity.transform_values! do |same_arity_pins|
+          same_arity_pins.reduce(nil) do |memo, signature|
+            next signature if memo.nil?
+            memo.combine_with(signature)
+          end
+        end
+        by_arity.values.flatten
+      end
+
+      def combine_visibility(other)
+        if dodgy_visibility_source? && !other.dodgy_visibility_source?
+          other.visibility
+        elsif other.dodgy_visibility_source? && !dodgy_visibility_source?
+          visibility
+        else
+          assert_same(other, :visibility)
+        end
+      end
+
+      def combine_with(other, attrs = {})
+        sigs = combine_all_signature_pins(*(self.signatures + other.signatures))
+        new_attrs = {
+          visibility: combine_visibility(other),
+          explicit: explicit? || other.explicit?,
+          block: combine_blocks(other),
+          node: choose_node(other, :node),
+          attribute: prefer_rbs_location(other, :attribute?),
+          parameters: choose(other, :parameters),
+          signatures: sigs,
+          anon_splat: assert_same(other, :anon_splat?),
+          return_type: nil # pulled from signatures on first call
+        }.merge(attrs)
+        super(other, new_attrs)
+      end
+
+      def combine_all_signature_pins(*signature_pins)
+        by_arity = {}
+        signature_pins.each do |signature_pin|
+          by_arity[signature_pin.arity] ||= []
+          by_arity[signature_pin.arity] << signature_pin
+        end
+        by_arity.transform_values! do |same_arity_pins|
+          same_arity_pins.reduce(nil) do |memo, signature|
+            next signature if memo.nil?
+            memo.combine_with(signature)
+          end
+        end
+        by_arity.values.flatten
+      end
+
+      def combine_visibility(other)
+        if dodgy_visibility_source? && !other.dodgy_visibility_source?
+          other.visibility
+        elsif other.dodgy_visibility_source? && !dodgy_visibility_source?
+          visibility
+        else
+          assert_same(other, :visibility)
+        end
+      end
+
+      def combine_with(other, attrs = {})
+        sigs = combine_all_signature_pins(*(self.signatures + other.signatures))
+        new_attrs = {
+          visibility: combine_visibility(other),
+          explicit: explicit? || other.explicit?,
+          block: combine_blocks(other),
+          node: choose_node(other, :node),
+          attribute: prefer_rbs_location(other, :attribute?),
+          parameters: choose(other, :parameters),
+          signatures: sigs,
+          anon_splat: assert_same(other, :anon_splat?),
+          return_type: nil # pulled from signatures on first call
+        }.merge(attrs)
+        super(other, new_attrs)
+      end
+
       def == other
         super && other.node == node
       end
@@ -42,9 +165,15 @@ module Solargraph
           sig.transform_types(&transform)
         end
         m.block = block&.transform_types(&transform)
-        m.signature_help = nil
-        m.documentation = nil
+        m.reset_generated!
         m
+      end
+
+      def reset_generated!
+        super
+        return_type = nil unless signatures.empty?
+        signature_help = nil
+        documentation = nil
       end
 
       def all_rooted?
@@ -55,8 +184,7 @@ module Solargraph
       # @return [Pin::Method]
       def with_single_signature(signature)
         m = proxy signature.return_type
-        m.signature_help = nil
-        m.documentation = nil
+        m.reset_generated!
         # @todo populating the single parameters/return_type/block
         #   arguments here seems to be needed for some specs to pass,
         #   even though we have a signature with the same information.
@@ -120,9 +248,9 @@ module Solargraph
             )
           end
           yield_return_type = ComplexType.try_parse(*yieldreturn_tags.flat_map(&:types))
-          block = Signature.new(generics: generics, parameters: yield_parameters, return_type: yield_return_type)
+          block = Signature.new(generics: generics, parameters: yield_parameters, return_type: yield_return_type, source: source, closure: self)
         end
-        Signature.new(generics: generics, parameters: parameters, return_type: return_type, block: block)
+        Signature.new(generics: generics, parameters: parameters, return_type: return_type, block: block, source: source, closure: self)
       end
 
       # @return [::Array<Signature>]
@@ -135,6 +263,12 @@ module Solargraph
           result.push generate_signature(parameters, @return_type || ComplexType::UNDEFINED) if result.empty?
           result
         end
+      end
+
+      def proxy_with_signatures return_type
+        out = proxy return_type
+        out.signatures = out.signatures.map { |sig| sig.proxy return_type }
+        out
       end
 
       # @return [String, nil]
@@ -188,12 +322,25 @@ module Solargraph
         @path ||= "#{namespace}#{(scope == :instance ? '#' : '.')}#{name}"
       end
 
+      def method_name
+        name
+      end
+
       def typify api_map
+        logger.debug { "Method#typify(self=#{self}, binder=#{binder}, closure=#{closure}, context=#{context.rooted_tags}, return_type=#{return_type.rooted_tags}) - starting" }
         decl = super
-        return decl unless decl.undefined?
+        unless decl.undefined?
+          logger.debug { "Method#typify(self=#{self}, binder=#{binder}, closure=#{closure}, context=#{context}) => #{decl.rooted_tags.inspect} - decl found" }
+          return decl
+        end
         type = see_reference(api_map) || typify_from_super(api_map)
-        return type.qualify(api_map, namespace) unless type.nil?
-        name.end_with?('?') ? ComplexType::BOOLEAN : ComplexType::UNDEFINED
+        logger.debug { "Method#typify(self=#{self}) - type=#{type&.rooted_tags.inspect}" }
+        unless type.nil?
+          qualified = type.qualify(api_map, namespace)
+          logger.debug { "Method#typify(self=#{self}) => #{qualified.rooted_tags.inspect}" }
+          return qualified
+        end
+        super
       end
 
       # @sg-ignore
@@ -279,14 +426,6 @@ module Solargraph
         attribute? ? infer_from_iv(api_map) : infer_from_return_nodes(api_map)
       end
 
-      # @param pin [Pin::Method]
-      def try_merge! pin
-        return false unless super
-        @node = pin.node
-        @resolved_ref_tag = false
-        true
-      end
-
       # @return [::Array<Pin::Method>]
       def overloads
         # Ignore overload tags with nil parameters. If it's not an array, the
@@ -306,7 +445,9 @@ module Solargraph
                 return_type: param_type_from_name(tag, src.first)
               )
             end,
-            return_type: ComplexType.try_parse(*tag.docstring.tags(:return).flat_map(&:types))
+            closure: self,
+            return_type: ComplexType.try_parse(*tag.docstring.tags(:return).flat_map(&:types)),
+            source: :overloads,
           )
         end
         @overloads
@@ -339,6 +480,11 @@ module Solargraph
         self
       end
 
+      # @param api_map [ApiMap]
+      def rest_of_stack api_map
+        api_map.get_method_stack(method_namespace, method_name, scope: scope).reject { |pin| pin.path == path }
+      end
+
       protected
 
       attr_writer :block
@@ -348,6 +494,13 @@ module Solargraph
       attr_writer :signature_help
 
       attr_writer :documentation
+
+      def dodgy_visibility_source?
+        # as of 2025-03-12, the RBS generator used for
+        # e.g. activesupport did not understand 'private' markings
+        # inside 'class << self' blocks, but YARD did OK at it
+        source == :rbs && scope == :class && type_location&.filename&.include?('generated')
+      end
 
       private
 
@@ -409,10 +562,14 @@ module Solargraph
         resolve_reference match[1], api_map
       end
 
+      def method_namespace
+        namespace
+      end
+
       # @param api_map [ApiMap]
       # @return [ComplexType, nil]
       def typify_from_super api_map
-        stack = api_map.get_method_stack(namespace, name, scope: scope).reject { |pin| pin.path == path }
+        stack = rest_of_stack api_map
         return nil if stack.empty?
         stack.each do |pin|
           return pin.return_type unless pin.return_type.undefined?
@@ -523,6 +680,8 @@ module Solargraph
       protected
 
       attr_writer :signatures
+
+      attr_writer :return_type
     end
   end
 end

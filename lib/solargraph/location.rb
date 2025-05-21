@@ -25,6 +25,10 @@ module Solargraph
       [filename, range]
     end
 
+    def rbs?
+      filename.end_with?('.rbs')
+    end
+
     # @param location [self]
     def contain? location
       range.contain?(location.range.start) && range.contain?(location.range.ending) && filename == location.filename
