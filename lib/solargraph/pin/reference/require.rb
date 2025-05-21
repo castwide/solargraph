@@ -6,7 +6,7 @@ module Solargraph
       class Require < Reference
         def initialize location, name
           # super(location, '', name)
-          super(location: location, name: name)
+          super(location: location, name: name, closure: Pin::ROOT_PIN)
         end
       end
     end
