@@ -328,12 +328,10 @@ module Solargraph
           block = if overload.method_type.block
                     block_parameters, block_return_type = parts_of_function(overload.method_type.block, pin)
                     Pin::Signature.new(generics: generics, parameters: block_parameters, return_type: block_return_type,
-                                       #closure: pin
-                                      )
+                                       closure: pin)
                   end
-          Pin::Signature.new(generics: generics, parameters: signature_parameters, return_type: signature_return_type, block: block,
-                             #closure: pin
-                            )
+        Pin::Signature.new(generics: generics, parameters: signature_parameters, return_type: signature_return_type, block: block,
+                           closure: pin)
         end
       end
 
