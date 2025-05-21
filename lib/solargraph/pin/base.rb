@@ -64,15 +64,24 @@ module Solargraph
           type_location: type_location,
           name: combined_name,
           closure: choose_pin_attr_with_same_name(other, :closure),
-          comments: choose(other, :comments),
+          comments: choose_longer(other, :comments),
           source: :combined,
           docstring: choose(other, :docstring),
           directives: combine_directives(other),
         }.merge(attrs)
+        assert_same(other, :macros)
         logger.debug { "Base#combine_with(path=#{path}) - other.comments=#{other.comments.inspect}, self.comments = #{self.comments}" }
         out = self.class.new(**new_attrs)
         out.reset_generated!
         out
+      end
+
+      def choose_longer(other, attr)
+        val1 = send(attr)
+        val2 = other.send(attr)
+        return val1 if val1 == val2
+        return val2 if val1.nil?
+        val1.length > val2.length ? val1 : val2
       end
 
       def combine_directives(other)
