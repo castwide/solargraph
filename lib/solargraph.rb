@@ -56,14 +56,14 @@ module Solargraph
   #   used in the future to allow configurable asserts mixes for
   #   different situations.
   def self.asserts_on?(type)
-    @asserts_on ||= if ENV['SOLARGRAPH_ASSERTS'].nil? || ENV['SOLARGRAPH_ASSERTS'].empty?
-                      false
-                    elsif ENV['SOLARGRAPH_ASSERTS'] == 'on'
-                      true
-                    else
-                      logger.warn "Unrecognized SOLARGRAPH_ASSERTS value: #{ENV['SOLARGRAPH_ASSERTS']}"
-                      false
-                    end
+    if ENV['SOLARGRAPH_ASSERTS'].nil? || ENV['SOLARGRAPH_ASSERTS'].empty?
+      false
+    elsif ENV['SOLARGRAPH_ASSERTS'] == 'on'
+      true
+    else
+      logger.warn "Unrecognized SOLARGRAPH_ASSERTS value: #{ENV['SOLARGRAPH_ASSERTS']}"
+      false
+    end
   end
 
   def self.assert_or_log(type, msg)
