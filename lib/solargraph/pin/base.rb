@@ -58,11 +58,12 @@ module Solargraph
         raise "tried to combine #{other.class} with #{self.class}" unless other.class == self.class
         type_location = choose(other, :type_location)
         location = choose(other, :location) || type_location
+        combined_name = combine_name(other)
         new_attrs = {
           location: location,
           type_location: type_location,
-          closure: choose(other, :closure),
-          name: choose(other, :name),
+          name: combined_name,
+          closure: choose_pin_attr_with_same_name(other, :closure),
           comments: choose(other, :comments),
           source: :combined,
           docstring: choose(other, :docstring),
@@ -80,6 +81,14 @@ module Solargraph
         [directives + other.directives].uniq
       end
 
+      def combine_name(other)
+        if needs_consistent_name? || other.needs_consistent_name?
+          assert_same(other, :name)
+        else
+          choose(other, :name)
+        end
+      end
+
       def reset_generated!
         # @return_type doesn't go here as subclasses tend to assign it
         # themselves in constructors, and they will deal with setting
@@ -93,6 +102,10 @@ module Solargraph
         # regenerate docstring
         @deprecated = nil
         reset_conversions
+      end
+
+      def needs_consistent_name?
+        true
       end
 
       # @sg-ignore def should infer as symbol - "Not enough arguments to Module#protected"
@@ -167,12 +180,44 @@ module Solargraph
         val1 = send(attr)
         val2 = other.send(attr)
         return val1 if val1 == val2
-        msg = "Inconsistent #{attr.inspect} values from \nself =#{inspect} and \nother=#{other.inspect}:\n\n self.#{attr} = #{val1.inspect}\nother.#{attr} = #{val2.inspect}"
-        if ENV['DEBUG_PINS']
-          raise msg
-        end
-        logger.info msg
+        Solargraph.assert_or_log(:combine_with,
+                                 "Inconsistent #{attr.inspect} values between \nself =#{inspect} and \nother=#{other.inspect}:\n\n self.#{attr} = #{val1.inspect}\nother.#{attr} = #{val2.inspect}")
         val1
+      end
+
+      def choose_pin_attr_with_same_name(other, attr)
+        val1 = send(attr)
+        val2 = other.send(attr)
+        if val1&.name != val2&.name
+          Solargraph.assert_or_log(:combine_with,
+                                   "Inconsistent #{attr.inspect} name values between \nself =#{inspect} and \nother=#{other.inspect}:\n\n self.#{attr} = #{val1.inspect}\nother.#{attr} = #{val2.inspect}")
+          return nil
+        end
+        [val1, val2].min
+      end
+
+      # @param other [self]
+      # @param attr [::Symbol]
+      #
+      # @return [Pin::Base, nil]
+      def assert_combined_pin(other, attr)
+        val1 = send(attr)
+        val2 = other.send(attr)
+        if val1.nil? && val2.nil?
+          return nil
+        end
+        unless val1 && val2
+          Solargraph.assert_or_log(:combine_with,
+                                   "Inconsistent #{attr.inspect} values from \nself =#{inspect} and \nother=#{other.inspect}:\n\n self.#{attr} = #{val1.inspect}\nother.#{attr} = #{val2.inspect}")
+          return val1 || val2
+        end
+        if val1.object_id == self.object_id || val2.object_id == self.object_id
+          Solargraph.assert_or_log(:combine_with,
+                                   "Loop found: #{val1.inspect} or #{val2.inspect} may be same as self - #{inspect}")
+          return nil
+        end
+
+        val1.combine_with(val2)
       end
 
       # @return [String]

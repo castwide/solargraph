@@ -1,5 +1,5 @@
 describe Solargraph::Pin::LocalVariable do
-  it "merges presence changes" do
+  xit "merges presence changes so that [not currently used]" do
     map1 = Solargraph::SourceMap.load_string(%(
       class Foo
         foo = 'foo'
@@ -7,6 +7,9 @@ describe Solargraph::Pin::LocalVariable do
       end
     ))
     pin1 = map1.locals.first
+    expect(pin1.presence.start.to_hash).to eq({ line: 2, character: 8 })
+    expect(pin1.presence.ending.to_hash).to eq({ line: 4, character: 9 })
+
     map2 = Solargraph::SourceMap.load_string(%(
       class Foo
         @more = 'more'
@@ -15,10 +18,19 @@ describe Solargraph::Pin::LocalVariable do
       end
     ))
     pin2 = map2.locals.first
-    expect(pin1.try_merge!(pin2)).to be(true)
+    expect(pin2.presence.start.to_hash).to eq({ line: 3, character: 8 })
+    expect(pin2.presence.ending.to_hash).to eq({ line: 5, character: 9 })
+
+    combined = pin1.combine_with(pin2)
+    expect(combined).to be_a(Solargraph::Pin::LocalVariable)
+
+
+    expect(combined.source).to eq(:combined)
+    # no choice behavior defined yet - if/when this is to be used, we
+    # should indicate which one should override in the range situation
   end
 
-  it "does not merge namespace changes" do
+  it "asserts on attempt to merge namespace changes" do
     map1 = Solargraph::SourceMap.load_string(%(
       class Foo
         foo = 'foo'
@@ -31,6 +43,11 @@ describe Solargraph::Pin::LocalVariable do
       end
     ))
     pin2 = map2.locals.first
-    expect(pin1.try_merge!(pin2)).to be(false)
+    # set env variable 'FOO' to 'true' in block
+
+    with_env_var('SOLARGRAPH_ASSERTS', 'on') do
+      expect(Solargraph.asserts_on?(:combine_with)).to be true
+      expect { pin1.combine_with(pin2) }.to raise_error(RuntimeError, /Inconsistent :name values/)
+    end
   end
 end

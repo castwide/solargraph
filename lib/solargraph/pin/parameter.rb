@@ -34,6 +34,11 @@ module Solargraph
         decl == :kwrestarg || (assignment && [:HASH, :hash].include?(assignment.type))
       end
 
+      def needs_consistent_name?
+        keyword?
+      end
+
+
       def arity_decl
         name = (name || '(anon)')
         type = (return_type&.to_rbs || 'untyped')
