@@ -391,7 +391,8 @@ module Solargraph
               return_type: type,
               comments: init_pin.comments,
               closure: init_pin.closure,
-              source: :api_map
+              source: init_pin.source,
+              type_location: init_pin.type_location,
             )
           end
         end
