@@ -20,7 +20,7 @@ module Solargraph
           )
           location = object_location(code_object, spec)
           name ||= code_object.name.to_s
-          return_type = ComplexType::SELF if name == 'new' || name == 'initialize'
+          return_type = ComplexType::SELF if name == 'new'
           comments = code_object.docstring ? code_object.docstring.all.to_s : ''
           pin = Pin::Method.new(
             location: location,
