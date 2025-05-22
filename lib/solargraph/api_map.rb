@@ -382,17 +382,33 @@ module Solargraph
             next pin unless init_pin
 
             type = ComplexType.try_parse(ComplexType.try_parse(rooted_tag).namespace)
-            Pin::Method.new(
+            new_pin = Pin::Method.new(
               name: 'new',
               scope: :class,
               location: init_pin.location,
-              parameters: init_pin.parameters,
-              signatures: init_pin.signatures.map { |sig| sig.proxy(type) },
               return_type: type,
               comments: init_pin.comments,
-              closure: init_pin.closure
-            # @todo Hack to force TypeChecker#internal_or_core?
-            ).tap { |pin| pin.source = :rbs }
+              closure: init_pin.closure,
+              # @todo Hack to force TypeChecker#internal_or_core?
+              source: :rbs
+            )
+            new_pin.parameters = init_pin.parameters.map do |init_param|
+              param = init_param.clone
+              param.closure = new_pin
+              param.reset_generated!
+              param
+            end.freeze
+            new_pin.signatures = init_pin.signatures.map do |init_sig|
+              sig = init_sig.proxy(type)
+              sig.parameters = init_sig.parameters.map do |param|
+                param = param.clone
+                param.closure = new_pin
+                param.reset_generated!
+                param
+              end.freeze
+              sig
+            end.freeze
+            new_pin
           end
         end
         result.concat inner_get_methods('Kernel', :instance, [:public], deep, skip) if visibility.include?(:private)
@@ -830,12 +846,25 @@ module Solargraph
         scope: origin.scope,
 #        context: pin.context,
         visibility: origin.visibility,
-        signatures: origin.signatures,
+        signatures: origin.signatures.map(&:clone).freeze,
         attribute: origin.attribute?,
-        generics: origin.generics,
+        generics: origin.generics.clone,
         return_type: origin.return_type,
       }
-      Pin::Method.new **args
+      out = Pin::Method.new **args
+      out.signatures.each do |sig|
+        sig.parameters = sig.parameters.map(&:clone).freeze
+        sig.source = :resolve_method_alias
+        sig.parameters.each do |param|
+          param.closure = out
+          param.source = :resolve_method_alias
+          param.reset_generated!
+        end
+        sig.closure = out
+        sig.reset_generated!
+      end
+      logger.debug { "ApiMap#resolve_method_alias(pin=#{pin}) - returning #{out} from #{origin}" }
+      out
     end
 
     include Logging

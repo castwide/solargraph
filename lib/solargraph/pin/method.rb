@@ -10,6 +10,8 @@ module Solargraph
       # @return [::Symbol] :public, :private, or :protected
       attr_reader :visibility
 
+      attr_writer :signatures
+
       # @return [Parser::AST::Node]
       attr_reader :node
 
@@ -345,8 +347,6 @@ module Solargraph
 
       attr_writer :block
 
-      attr_writer :signatures
-
       attr_writer :signature_help
 
       attr_writer :documentation
@@ -524,7 +524,7 @@ module Solargraph
 
       protected
 
-      attr_writer :signatures
+      attr_writer :return_type
     end
   end
 end
