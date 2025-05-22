@@ -643,6 +643,8 @@ module Solargraph
       # namespaces; resolving the generics in the method pins is this
       # class' responsibility
       methods = store.get_methods(fqns, scope: scope, visibility: visibility).sort{ |a, b| a.name <=> b.name }
+      methods = methods.map(&:as_virtual_class_method) if store.get_includes(fqns).include?('ActiveSupport::Concern') && scope == :class
+      logger.info { "ApiMap#inner_get_methods(rooted_tag=#{rooted_tag.inspect}, scope=#{scope.inspect}, visibility=#{visibility.inspect}, deep=#{deep.inspect}, skip=#{skip.inspect}, fqns=#{fqns}) - added from store: #{methods}" }
       result.concat methods
       if deep
         if scope == :instance
@@ -664,6 +666,24 @@ module Solargraph
             result.concat inner_get_methods(fqsc, scope, visibility, true, skip, no_core) unless fqsc.nil?
           end
         else
+          store.get_includes(fqns).reverse.each do |include_tag|
+            logger.info { "ApiMap#inner_get_methods(#{fqns}, #{scope}, #{visibility}, #{deep}) - Handling class include include_tag=#{include_tag}" }
+            rooted_include_tag = qualify(include_tag, rooted_tag)
+
+            # ActiveSupport::Concern is syntactic sugar for a common
+            # pattern to provide virtual class method - i.e., if Foo
+            # includes Bar and Bar is a module using this
+            # pattern, Bar can supply class methods which will also
+            # appear under Foo.
+
+            # See https://api.rubyonrails.org/classes/ActiveSupport/Concern.html
+            included_class_pins = inner_get_methods_from_reference(rooted_include_tag, namespace_pin, rooted_type, scope, visibility, deep, skip, true)
+            # activesupport_concern_pins = included_class_pins.select { |p| p.virtual_class_method? }
+            # result.concat activesupport_concern_pins
+            result.concat included_class_pins # TODO remove this line once we have activesupport::concern support
+          end
+
+          logger.info { "ApiMap#inner_get_methods(#{fqns}, #{scope}, #{visibility}, #{deep}, #{skip}) - looking for get_extends() from #{fqns}" }
           store.get_extends(fqns).reverse.each do |em|
             fqem = qualify(em, fqns)
             result.concat inner_get_methods(fqem, :instance, visibility, deep, skip, true) unless fqem.nil?
