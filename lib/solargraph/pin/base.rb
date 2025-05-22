@@ -201,7 +201,7 @@ module Solargraph
           Solargraph.assert_or_log(:combine_with,
                                    "Inconsistent #{attr.inspect} name values between \nself =#{inspect} and \nother=#{other.inspect}:\n\n self.#{attr} = #{val1.inspect}\nother.#{attr} = #{val2.inspect}")
         end
-        [val1, val2].min
+        [val1, val2].compact.min
       end
 
       # @param other [self]
