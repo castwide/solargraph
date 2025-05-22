@@ -156,11 +156,14 @@ module Solargraph
       # @param tag [YARD::Tags::Tag]
       # @return [void]
       def redefine_return_type pin, tag
+        # @todo can this be made to not mutate existing pins and use
+        #   proxy() / proxy_with_signatures() instead?
         return unless pin && tag.tag_name == 'return'
         pin.instance_variable_set(:@return_type, ComplexType.try_parse(tag.type))
         pin.signatures.each do |sig|
           sig.instance_variable_set(:@return_type, ComplexType.try_parse(tag.type))
         end
+        pin.reset_generated!
       end
     end
   end
