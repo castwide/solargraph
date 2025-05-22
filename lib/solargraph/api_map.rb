@@ -406,6 +406,8 @@ module Solargraph
                 param.reset_generated!
                 param
               end.freeze
+              sig.closure = new_pin
+              sig.reset_generated!
               sig
             end.freeze
             new_pin
