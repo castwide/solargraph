@@ -106,13 +106,13 @@ module Solargraph
       def convert_member_to_pin member, closure, context
         case member
         when RBS::AST::Members::MethodDefinition
-          method_def_to_pin(member, closure)
+          method_def_to_pin(member, closure, context)
         when RBS::AST::Members::AttrReader
-          attr_reader_to_pin(member, closure)
+          attr_reader_to_pin(member, closure, context)
         when RBS::AST::Members::AttrWriter
-          attr_writer_to_pin(member, closure)
+          attr_writer_to_pin(member, closure, context)
         when RBS::AST::Members::AttrAccessor
-          attr_accessor_to_pin(member, closure)
+          attr_accessor_to_pin(member, closure, context)
         when RBS::AST::Members::Include
           include_to_pin(member, closure)
         when RBS::AST::Members::Prepend
@@ -128,9 +128,9 @@ module Solargraph
         when RBS::AST::Members::InstanceVariable
           ivar_to_pin(member, closure)
         when RBS::AST::Members::Public
-          return Context.new(visibility: :public)
+          return Context.new(:public)
         when RBS::AST::Members::Private
-          return Context.new(visibility: :private)
+          return Context.new(:private)
         when RBS::AST::Declarations::Base
           convert_decl_to_pin(member, closure)
         else
@@ -273,26 +273,64 @@ module Solargraph
         pins.push pin
       end
 
+      VISIBILITY_OVERRIDE = {
+        ["Rails::Engine", :instance, "run_tasks_blocks"] => :protected,
+        # Should have been marked as both instance and class method in module -e.g., 'module_function'
+        ["Kernel", :instance, "pretty_inspect"] => :private,
+        # marked incorrectly in RBS
+        ["WEBrick::HTTPUtils::FormData", :instance, "next_data"] => :protected,
+        # marked incorrectly in RBS
+        ["Rails::Command", :class, "command_type"] => :private,
+        ["Rails::Command", :class, "lookup_paths"] => :private,
+        ["Rails::Command", :class, "file_lookup_paths"] => :private,
+        # marked incorrectly in RBS
+        # ["Rails::Railtie", :class, "generate_railtie_name"] => :private,
+        # ["Rails::Railtie", :class, "respond_to_missing?"] => :private,
+        # ["Rails::Railtie", :class, "method_missing"] => :private,
+        # ["Rails::Railtie", :class, "register_block_for"] => :private,
+        ["Rails::Railtie", :instance, "run_console_blocks"] => :protected,
+        ["Rails::Railtie", :instance, "run_generators_blocks"] => :protected,
+        ["Rails::Railtie", :instance, "run_runner_blocks"] => :protected,
+        ["Rails::Railtie", :instance, "run_tasks_blocks"] => :protected,
+        # marked incorrectly in RBS
+        ["ActionController::Base", :instance, "_protected_ivars"] => :private,
+        ["ActionView::Template", :instance, "method_name"] => :public,
+        ["Module", :instance, "ruby2_keywords"] => :private,
+      }
+
       # @param decl [RBS::AST::Members::MethodDefinition]
       # @param closure [Pin::Closure]
+      # @param context [Context]
       # @return [void]
-      def method_def_to_pin decl, closure
+      def method_def_to_pin decl, closure, context
         # there may be edge cases here around different signatures
         # having different type params / orders - we may need to match
         # this data model and have generics live in signatures to
         # handle those correctly
         generics = decl.overloads.map(&:method_type).flat_map(&:type_params).map(&:name).map(&:to_s).uniq
+
         if decl.instance?
+          name = decl.name.to_s
+          final_scope = :instance
+          override_key = [closure.path, final_scope, name]
+          visibility = VISIBILITY_OVERRIDE[override_key]
+          simple_override_key = [closure.path, final_scope]
+          visibility ||= VISIBILITY_OVERRIDE[simple_override_key]
+          visibility ||= :private if closure.path == 'Kernel' && Kernel.private_instance_methods(false).include?(decl.name)
+          if decl.kind == :singleton_instance
+            # this is a 'module function'
+            visibility ||= :private
+          end
+          visibility ||= (decl.visibility || context.visibility)
           pin = Solargraph::Pin::Method.new(
-            name: decl.name.to_s,
+            name: name,
             closure: closure,
             type_location: location_decl_to_pin_location(decl.location),
             comments: decl.comment&.string,
-            scope: :instance,
+            scope: final_scope,
             signatures: [],
             generics: generics,
-            # @todo RBS core has unreliable visibility definitions
-            visibility: closure.path == 'Kernel' && Kernel.private_instance_methods(false).include?(decl.name) ? :private : :public
+            visibility: visibility
           )
           pin.signatures.concat method_def_to_sigs(decl, pin)
           pins.push pin
@@ -302,12 +340,19 @@ module Solargraph
           end
         end
         if decl.singleton?
+          final_scope = :class
+          name = decl.name.to_s
+          override_key = [closure.path, final_scope, name]
+          visibility = VISIBILITY_OVERRIDE[override_key]
+          visibility ||= decl.visibility
+          visibility ||= :public
           pin = Solargraph::Pin::Method.new(
-            name: decl.name.to_s,
+            name: name,
             closure: closure,
             comments: decl.comment&.string,
             type_location: location_decl_to_pin_location(decl.location),
-            scope: :class,
+            visibility: visibility,
+            scope: final_scope,
             signatures: [],
             generics: generics
           )
@@ -390,31 +435,47 @@ module Solargraph
       # @param decl [RBS::AST::Members::AttrReader,RBS::AST::Members::AttrAccessor]
       # @param closure [Pin::Namespace]
       # @return [void]
-      def attr_reader_to_pin(decl, closure)
+      def attr_reader_to_pin(decl, closure, context)
+        name = decl.name.to_s
+        final_scope = decl.kind == :instance ? :instance : :class
+        override_key = [closure.path, final_scope, name]
+        visibility = VISIBILITY_OVERRIDE[override_key]
+        visibility ||= :private if closure.path == 'Kernel' && Kernel.private_instance_methods(false).include?(decl.name)
+        if decl.kind == :singleton_instance
+          # this is a 'module function'
+          visibility ||= :private
+        end
+        visibility ||= (decl.visibility || context.visibility)
         pin = Solargraph::Pin::Method.new(
-          name: decl.name.to_s,
+          name: name,
           type_location: location_decl_to_pin_location(decl.location),
           closure: closure,
           comments: decl.comment&.string,
           scope: :instance,
           attribute: true
+          visibility: visibility,
         )
         rooted_tag = ComplexType.parse(other_type_to_tag(decl.type)).force_rooted.rooted_tags
         pin.docstring.add_tag(YARD::Tags::Tag.new(:return, '', rooted_tag))
+        logger.debug { "Conversions#attr_reader_to_pin(name=#{name.inspect}, visibility=#{visibility.inspect}) => #{pin.inspect}" }
         pins.push pin
       end
 
       # @param decl [RBS::AST::Members::AttrWriter, RBS::AST::Members::AttrAccessor]
       # @param closure [Pin::Namespace]
       # @return [void]
-      def attr_writer_to_pin(decl, closure)
+      def attr_writer_to_pin(decl, closure, context)
+        final_scope = decl.kind == :instance ? :instance : :class
+        name = "#{decl.name.to_s}="
+        visibility = decl.visibility || context.visibility
         pin = Solargraph::Pin::Method.new(
-          name: "#{decl.name.to_s}=",
+          name: name,
           type_location: location_decl_to_pin_location(decl.location),
           closure: closure,
           comments: decl.comment&.string,
           scope: :instance,
           attribute: true
+          visibility: visibility,
         )
         rooted_tag = ComplexType.parse(other_type_to_tag(decl.type)).force_rooted.rooted_tags
         pin.docstring.add_tag(YARD::Tags::Tag.new(:return, '', rooted_tag))
@@ -424,9 +485,9 @@ module Solargraph
       # @param decl [RBS::AST::Members::AttrAccessor]
       # @param closure [Pin::Namespace]
       # @return [void]
-      def attr_accessor_to_pin(decl, closure)
-        attr_reader_to_pin(decl, closure)
-        attr_writer_to_pin(decl, closure)
+      def attr_accessor_to_pin(decl, closure, context)
+        attr_reader_to_pin(decl, closure, context)
+        attr_writer_to_pin(decl, closure, context)
       end
 
       # @param decl [RBS::AST::Members::InstanceVariable]
