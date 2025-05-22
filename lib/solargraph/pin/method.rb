@@ -10,6 +10,8 @@ module Solargraph
       # @return [::Symbol] :public, :private, or :protected
       attr_reader :visibility
 
+      attr_writer :signatures
+
       # @return [Parser::AST::Node]
       attr_reader :node
 
@@ -122,7 +124,9 @@ module Solargraph
           yield_return_type = ComplexType.try_parse(*yieldreturn_tags.flat_map(&:types))
           block = Signature.new(generics: generics, parameters: yield_parameters, return_type: yield_return_type)
         end
-        Signature.new(generics: generics, parameters: parameters, return_type: return_type, block: block)
+        signature = Signature.new(generics: generics, parameters: parameters, return_type: return_type, block: block, closure: self)
+        block.closure = signature if block
+        signature
       end
 
       # @return [::Array<Signature>]
@@ -343,8 +347,6 @@ module Solargraph
 
       attr_writer :block
 
-      attr_writer :signatures
-
       attr_writer :signature_help
 
       attr_writer :documentation
@@ -522,7 +524,7 @@ module Solargraph
 
       protected
 
-      attr_writer :signatures
+      attr_writer :return_type
     end
   end
 end

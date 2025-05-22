@@ -35,6 +35,7 @@ module Solargraph
             return_type: return_type
           )
           pin.parameters.concat get_parameters(code_object, location, comments, pin)
+          pin.parameters.freeze
           pin
         end
 
