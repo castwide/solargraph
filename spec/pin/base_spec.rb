@@ -10,7 +10,7 @@ describe Solargraph::Pin::Base do
     expect(pin1.nearly?(pin2)).to be(false)
     # enable asserts
     with_env_var('SOLARGRAPH_ASSERTS', 'on') do
-      expect { pin1.combine_with(pin2) }.to raise_error(RuntimeError, /Inconsistent :macros values/)
+      expect { pin1.combine_with(pin2) }.to raise_error(RuntimeError, /Inconsistent :macros count/)
     end
   end
 

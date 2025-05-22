@@ -38,6 +38,7 @@ module Solargraph
       # @param closure [Solargraph::Pin::Closure, nil]
       # @param name [String]
       # @param comments [String]
+      # @param source [Symbol, nil]
       def initialize location: nil, type_location: nil, closure: nil, name: '', comments: '', docstring: nil, source: nil, directives: nil
         @location = location
         @type_location = type_location
@@ -69,7 +70,7 @@ module Solargraph
           docstring: choose(other, :docstring),
           directives: combine_directives(other),
         }.merge(attrs)
-        assert_same(other, :macros)
+        assert_same_macros(other)
         logger.debug { "Base#combine_with(path=#{path}) - other.comments=#{other.comments.inspect}, self.comments = #{self.comments}" }
         out = self.class.new(**new_attrs)
         out.reset_generated!
@@ -181,6 +182,35 @@ module Solargraph
         type_location&.rbs?
       end
 
+      def assert_same_macros(other)
+        assert_same_count(other, :macros)
+        assert_same_array_content(other, :macros) { |macro| macro.tag.name }
+      end
+
+      def assert_same_array_content(other, attr, &block)
+        arr1 = send(attr)
+        arr2 = other.send(attr)
+        values1 = arr1.map(&block)
+        values2 = arr2.map(&block)
+        return arr1 if values1 == values2
+        Solargraph.assert_or_log("combine_with_#{attr}".to_sym,
+                                 "Inconsistent #{attr.inspect} values between \nself =#{inspect} and \nother=#{other.inspect}:\n\n self values = #{values1}\nother values =#{attr} = #{values2}")
+        arr1
+      end
+
+      # @param other [self]
+      # @param attr [::Symbol]
+      #
+      # @return [Object, nil]
+      def assert_same_count(other, attr)
+        val1 = send(attr)
+        val2 = other.send(attr)
+        return val1 if val1.count == val2.count
+        Solargraph.assert_or_log("combine_with_#{attr}".to_sym,
+                                 "Inconsistent #{attr.inspect} count value between \nself =#{inspect} and \nother=#{other.inspect}:\n\n self.#{attr} = #{val1.inspect}\nother.#{attr} = #{val2.inspect}")
+        val1
+      end
+
       # @param other [self]
       # @param attr [::Symbol]
       #
@@ -189,7 +219,7 @@ module Solargraph
         val1 = send(attr)
         val2 = other.send(attr)
         return val1 if val1 == val2
-        Solargraph.assert_or_log(:combine_with,
+        Solargraph.assert_or_log("combine_with_#{attr}".to_sym,
                                  "Inconsistent #{attr.inspect} values between \nself =#{inspect} and \nother=#{other.inspect}:\n\n self.#{attr} = #{val1.inspect}\nother.#{attr} = #{val2.inspect}")
         val1
       end
