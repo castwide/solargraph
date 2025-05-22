@@ -44,7 +44,7 @@ module Solargraph
           block: combine_blocks(other),
           return_type: combine_return_type(other),
         }.merge(attrs)
-        new_attrs[:parameters] = choose_parameters(other) unless new_attrs.key?(:parameters)
+        new_attrs[:parameters] = choose_parameters(other).clone.freeze unless new_attrs.key?(:parameters)
         super(other, new_attrs)
       end
 

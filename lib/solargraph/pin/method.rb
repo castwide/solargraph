@@ -57,14 +57,19 @@ module Solargraph
       end
 
       def combine_with(other, attrs = {})
-        sigs = combine_all_signature_pins(*(self.signatures + other.signatures))
+        sigs = combine_all_signature_pins(*(self.signatures + other.signatures)).clone.freeze
+        parameters = if sigs.length > 0
+          [].freeze
+        else
+          choose(other, :parameters).clone.freeze
+        end
         new_attrs = {
           visibility: combine_visibility(other),
           explicit: explicit? || other.explicit?,
           block: combine_blocks(other),
           node: choose_node(other, :node),
           attribute: prefer_rbs_location(other, :attribute?),
-          parameters: choose(other, :parameters),
+          parameters: parameters,
           signatures: sigs,
           anon_splat: assert_same(other, :anon_splat?),
           return_type: nil # pulled from signatures on first call
