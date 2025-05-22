@@ -390,7 +390,6 @@ module Solargraph
               signatures: init_pin.signatures.map { |sig| sig.proxy(type) },
               return_type: type,
               comments: init_pin.comments,
-              closure: init_pin.closure
               closure: init_pin.closure,
               source: :api_map
             )
