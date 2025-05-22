@@ -7,6 +7,8 @@ module Solargraph
     # Functions for converting RBS declarations to Solargraph pins
     #
     module Conversions
+      include Logging
+
       # A container for tracking the current context of the RBS conversion
       # process, e.g., what visibility is declared for methods in the current
       # scope
@@ -452,7 +454,7 @@ module Solargraph
           closure: closure,
           comments: decl.comment&.string,
           scope: :instance,
-          attribute: true
+          attribute: true,
           visibility: visibility,
         )
         rooted_tag = ComplexType.parse(other_type_to_tag(decl.type)).force_rooted.rooted_tags
@@ -474,7 +476,7 @@ module Solargraph
           closure: closure,
           comments: decl.comment&.string,
           scope: :instance,
-          attribute: true
+          attribute: true,
           visibility: visibility,
         )
         rooted_tag = ComplexType.parse(other_type_to_tag(decl.type)).force_rooted.rooted_tags

@@ -27,6 +27,8 @@ module Solargraph
           name ||= code_object.name.to_s
           return_type = ComplexType::SELF if name == 'new'
           comments = code_object.docstring ? code_object.docstring.all.to_s : ''
+          final_scope = scope || code_object.scope
+          override_key = [closure.path, final_scope, name]
           final_visibility = VISIBILITY_OVERRIDE[override_key]
           final_visibility ||= VISIBILITY_OVERRIDE[override_key[0..-2]]
           final_visibility ||= :private if closure.path == 'Kernel' && Kernel.private_instance_methods(false).include?(name)
@@ -39,7 +41,7 @@ module Solargraph
             closure: closure,
             name: name,
             comments: comments,
-            scope: scope || code_object.scope,
+            scope: final_scope,
             visibility: final_visibility,
             # @todo Might need to convert overloads to signatures
             parameters: [],
