@@ -7,8 +7,14 @@ module Solargraph
     #
     class UniqueType
       include TypeMethods
+      include Equality
 
       attr_reader :all_params, :subtypes, :key_types
+
+      # @sg-ignore Fix "Not enough arguments to Module#protected"
+      protected def equality_fields
+        [@name, @all_params, @subtypes, @key_types]
+      end
 
       # Create a UniqueType with the specified name and an optional substring.
       # The substring is the parameter section of a parametrized type, e.g.,
@@ -291,7 +297,17 @@ module Solargraph
             generic_name = t.subtypes.first&.name
             idx = definitions.generics.index(generic_name)
             next t if idx.nil?
-            context_type.all_params[idx] || definitions.generic_defaults[generic_name] || ComplexType::UNDEFINED
+            if context_type.parameters_type == :hash
+              if idx == 0
+                next ComplexType.new(context_type.key_types)
+              elsif idx == 1
+                next ComplexType.new(context_type.subtypes)
+              else
+                next ComplexType::UNDEFINED
+              end
+            else
+              context_type.all_params[idx] || definitions.generic_defaults[generic_name] || ComplexType::UNDEFINED
+            end
           else
             t
           end
@@ -420,6 +436,7 @@ module Solargraph
       TRUE = UniqueType.new('true', rooted: true)
       FALSE = UniqueType.new('false', rooted: true)
       NIL = UniqueType.new('nil', rooted: true)
+      # @type [Hash{String => UniqueType}]
       SINGLE_SUBTYPE = {
         '::TrueClass' => UniqueType::TRUE,
         '::FalseClass' => UniqueType::FALSE,

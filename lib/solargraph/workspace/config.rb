@@ -15,7 +15,7 @@ module Solargraph
       attr_reader :directory
 
       # @todo To make this strongly typed we'll need a record syntax
-      # @return [Hash{String => undefined}]
+      # @return [Hash{String => Array, Hash, Integer, nil}]
       attr_reader :raw_data
 
       # @param directory [String]
@@ -90,6 +90,7 @@ module Solargraph
 
       # A hash of options supported by the formatter
       #
+      # @sg-ignore pending https://github.com/castwide/solargraph/pull/905
       # @return [Hash]
       def formatter
         raw_data['formatter']
@@ -104,6 +105,7 @@ module Solargraph
 
       # The maximum number of files to parse from the workspace.
       #
+      # @sg-ignore pending https://github.com/castwide/solargraph/pull/905
       # @return [Integer]
       def max_files
         raw_data['max_files']

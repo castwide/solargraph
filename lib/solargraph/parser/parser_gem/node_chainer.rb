@@ -57,22 +57,22 @@ module Solargraph
           elsif n.type == :send
             if n.children[0].is_a?(::Parser::AST::Node)
               result.concat generate_links(n.children[0])
-              result.push Chain::Call.new(n.children[1].to_s, node_args(n), passed_block(n))
+              result.push Chain::Call.new(n.children[1].to_s, Location.from_node(n), node_args(n), passed_block(n))
             elsif n.children[0].nil?
               args = []
               n.children[2..-1].each do |c|
                 args.push NodeChainer.chain(c, @filename, n)
               end
-              result.push Chain::Call.new(n.children[1].to_s, node_args(n), passed_block(n))
+              result.push Chain::Call.new(n.children[1].to_s, Location.from_node(n), node_args(n), passed_block(n))
             else
               raise "No idea what to do with #{n}"
             end
           elsif n.type == :csend
             if n.children[0].is_a?(::Parser::AST::Node)
               result.concat generate_links(n.children[0])
-              result.push Chain::QCall.new(n.children[1].to_s, node_args(n))
+              result.push Chain::QCall.new(n.children[1].to_s, Location.from_node(n), node_args(n))
             elsif n.children[0].nil?
-              result.push Chain::QCall.new(n.children[1].to_s, node_args(n))
+              result.push Chain::QCall.new(n.children[1].to_s, Location.from_node(n), node_args(n))
             else
               raise "No idea what to do with #{n}"
             end
@@ -82,28 +82,22 @@ module Solargraph
             result.push Chain::ZSuper.new('super')
           elsif n.type == :super
             args = n.children.map { |c| NodeChainer.chain(c, @filename, n) }
-            result.push Chain::Call.new('super', args)
+            result.push Chain::Call.new('super', Location.from_node(n), args)
           elsif n.type == :yield
             args = n.children.map { |c| NodeChainer.chain(c, @filename, n) }
-            result.push Chain::Call.new('yield', args)
+            result.push Chain::Call.new('yield', Location.from_node(n), args)
           elsif n.type == :const
             const = unpack_name(n)
             result.push Chain::Constant.new(const)
-          elsif [:lvasgn, :ivasgn, :gvasgn, :cvasgn].include?(n.type)
-            result.concat generate_links(n.children[1])
-          elsif n.type == :lvar
-            result.push Chain::Call.new(n.children[0].to_s)
-          elsif n.type == :ivar
-             result.push Chain::InstanceVariable.new(n.children[0].to_s)
-          elsif n.type == :cvar
-             result.push Chain::ClassVariable.new(n.children[0].to_s)
-          elsif n.type == :gvar
-             result.push Chain::GlobalVariable.new(n.children[0].to_s)
+          elsif [:lvar, :lvasgn].include?(n.type)
+            result.push Chain::Call.new(n.children[0].to_s, Location.from_node(n))
+          elsif [:ivar, :ivasgn].include?(n.type)
+            result.push Chain::InstanceVariable.new(n.children[0].to_s)
+          elsif [:cvar, :cvasgn].include?(n.type)
+            result.push Chain::ClassVariable.new(n.children[0].to_s)
+          elsif [:gvar, :gvasgn].include?(n.type)
+            result.push Chain::GlobalVariable.new(n.children[0].to_s)
           elsif n.type == :or_asgn
-            # @todo: Need a new Link class here that evaluates the
-            #   existing variable type with the RHS, and generates a
-            #   union type of the LHS alone if never nil, or minus nil +
-            #   RHS if it is nilable.
             result.concat generate_links n.children[1]
           elsif [:class, :module, :def, :defs].include?(n.type)
             # @todo Undefined or what?

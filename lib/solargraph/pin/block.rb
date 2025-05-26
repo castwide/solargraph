@@ -3,6 +3,8 @@
 module Solargraph
   module Pin
     class Block < Callable
+      include Breakable
+
       # @return [Parser::AST::Node]
       attr_reader :receiver
 

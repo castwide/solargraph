@@ -11,12 +11,10 @@ module Solargraph
 
       # @param decl [::Symbol] :arg, :optarg, :kwarg, :kwoptarg, :restarg, :kwrestarg, :block, :blockarg
       # @param asgn_code [String, nil]
-      # @param return_type [ComplexType, nil]
-      def initialize decl: :arg, asgn_code: nil, return_type: nil, **splat
+      def initialize decl: :arg, asgn_code: nil, **splat
         super(**splat)
         @asgn_code = asgn_code
         @decl = decl
-        @return_type = return_type
       end
 
       def keyword?
@@ -150,8 +148,9 @@ module Solargraph
       # @param api_map [ApiMap]
       # @return [ComplexType]
       def typify_block_param api_map
-        if closure.is_a?(Pin::Block) && closure.receiver
-          return closure.typify_parameters(api_map)[index]
+        block_pin = closure
+        if block_pin.is_a?(Pin::Block) && block_pin.receiver
+          return block_pin.typify_parameters(api_map)[index]
         end
         ComplexType::UNDEFINED
       end

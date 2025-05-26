@@ -12,6 +12,11 @@ module Solargraph
           @splatted = splatted
         end
 
+        # @sg-ignore Fix "Not enough arguments to Module#protected"
+        protected def equality_fields
+          super + [@splatted]
+        end
+
         def word
           @word ||= "<#{@type}>"
         end

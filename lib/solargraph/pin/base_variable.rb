@@ -11,12 +11,14 @@ module Solargraph
 
       attr_accessor :mass_assignment
 
+      # @param return_type [ComplexType, nil]
       # @param assignment [Parser::AST::Node, nil]
-      def initialize assignment: nil, **splat
+      def initialize assignment: nil, return_type: nil, **splat
         super(**splat)
         @assignment = assignment
         # @type [nil, ::Array(Parser::AST::Node, Integer)]
         @mass_assignment = nil
+        @return_type = return_type
       end
 
       def completion_item_kind

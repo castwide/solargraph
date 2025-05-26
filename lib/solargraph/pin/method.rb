@@ -31,6 +31,10 @@ module Solargraph
         @anon_splat = anon_splat
       end
 
+      def == other
+        super && other.node == node
+      end
+
       def transform_types(&transform)
         # @todo 'super' alone should work here I think, but doesn't typecheck at level typed
         m = super(&transform)
@@ -192,6 +196,7 @@ module Solargraph
         name.end_with?('?') ? ComplexType::BOOLEAN : ComplexType::UNDEFINED
       end
 
+      # @sg-ignore
       def documentation
         if @documentation.nil?
           @documentation ||= super || ''

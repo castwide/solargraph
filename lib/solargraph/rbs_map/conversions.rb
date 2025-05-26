@@ -333,7 +333,7 @@ module Solargraph
       # @return [void]
       def method_def_to_sigs decl, pin
         decl.overloads.map do |overload|
-          generics = overload.method_type.type_params.map(&:to_s)
+          generics = overload.method_type.type_params.map(&:name).map(&:to_s)
           signature_parameters, signature_return_type = parts_of_function(overload.method_type, pin)
           block = if overload.method_type.block
                     block_parameters, block_return_type = parts_of_function(overload.method_type.block, pin)

@@ -737,7 +737,6 @@ describe Solargraph::TypeChecker do
       expect(checker.problems.map(&:message)).to eq(['Unresolved call to upcase'])
     end
 
-
     it 'does not falsely enforce nil in return types' do
       checker = type_checker(%(
       # @return [Integer]
@@ -749,6 +748,20 @@ describe Solargraph::TypeChecker do
       end
       ))
       expect(checker.problems.map(&:message)).to be_empty
+    end
+
+    it 'refines types on is_a? and && to downcast and avoid false positives' do
+      checker = type_checker(%(
+        def foo
+          # @sg-ignore
+          # @type [Object]
+          a = bar
+          if a.is_a?(String) && a.length > 0
+            a.upcase
+          end
+        end
+      ))
+      expect(checker.problems.map(&:message)).to eq([])
     end
 
     it 'interprets self references correctly' do
@@ -804,6 +817,7 @@ describe Solargraph::TypeChecker do
       expect(checker.problems.map(&:message)).to eq([])
     end
 
+
     it 'understands tuple superclass' do
       checker = type_checker(%(
         b = ['a', 'b', 123]
@@ -811,6 +825,35 @@ describe Solargraph::TypeChecker do
         c
       ))
       expect(checker.problems.map(&:message)).to be_empty
+    end
+
+    xit "Uses flow scope to specialize understanding of cvar types" do
+      checker = type_checker(%(
+        class Bar
+          # @return [String]
+          def foo
+            'feh'
+          end
+
+          # @return [void]
+          def reset_blah
+            @blah = nil
+          end
+        end
+
+        class Foo < Bar
+          # @return [String]
+          def foo
+            @blah.upcase!
+            if @blah.nil?
+              @blah = super
+              @blah.empty?
+            end
+            @blah
+          end
+        end
+      ))
+      expect(checker.problems.map(&:message)).to eq(["Unresolved call to upcase!"])
     end
 
     it "does not lose track of place and false alarm when using kwargs after a splat" do
