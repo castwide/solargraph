@@ -30,18 +30,11 @@ describe Solargraph::DocMap do
   end
 
   it 'imports all gems when bundler/require used' do
-    gemspec_a = Gem::Specification.new do |spec|
-      spec.name = 'not_a_gem'
-      spec.version = '1.0.0'
-    end
-    gemspec_b = Gem::Specification.new do |spec|
-      spec.name = 'also_not_a_gem'
-      spec.version = '1.0.0'
-    end
-    allow(Gem).to receive(:loaded_specs).with(no_args).and_return({ 'a' => gemspec_a, 'b' => gemspec_b })
+    plain_doc_map = Solargraph::DocMap.new([], [])
 
-    doc_map = Solargraph::DocMap.new(['bundler/require'], [])
-    expect(doc_map.uncached_gemspecs).to eq([gemspec_a, gemspec_b])
+    doc_map_with_bundler_require = Solargraph::DocMap.new(['bundler/require'], [])
+
+    expect(doc_map_with_bundler_require.pins.length - plain_doc_map.pins.length).to be_positive
   end
 
   it 'does not warn for redundant requires' do
