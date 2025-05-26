@@ -109,6 +109,10 @@ module Solargraph
       [self.class, @source_map_hash, implicit, @doc_map, @unresolved_requires]
     end
 
+    def doc_map
+      @doc_map ||= DocMap.new([], [])
+    end
+
     # @return [::Array<Gem::Specification>]
     def uncached_gemspecs
       @doc_map&.uncached_gemspecs || []
