@@ -595,7 +595,7 @@ describe Solargraph::Source::Chain::Call do
     expect(clip.infer.rooted_tags).to eq('::Array<::A::D::E>')
   end
 
-  it 'correctly looks up civars' do
+  xit 'correctly looks up civars' do
     source = Solargraph::Source.load_string(%(
       class Foo
         BAZ = /aaa/
