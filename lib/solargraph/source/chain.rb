@@ -39,7 +39,7 @@ module Solargraph
       @@inference_invalidation_key = nil
       @@inference_cache = {}
 
-      UNDEFINED_CALL = Chain::Call.new('<undefined>')
+      UNDEFINED_CALL = Chain::Call.new('<undefined>', nil)
       UNDEFINED_CONSTANT = Chain::Constant.new('<undefined>')
 
       # @return [::Array<Source::Chain::Link>]
@@ -123,7 +123,7 @@ module Solargraph
           @@inference_invalidation_key = api_map.hash
           @@inference_cache = {}
         end
-        out = infer_uncached api_map, name_pin, locals
+        out = infer_uncached(api_map, name_pin, locals).downcast_to_literal_if_possible
         logger.debug { "Chain#infer() - caching result - cache_key_hash=#{cache_key.hash}, links.map(&:hash)=#{links.map(&:hash)}, links=#{links}, cache_key.map(&:hash) = #{cache_key.map(&:hash)}, cache_key=#{cache_key}" }
         @@inference_cache[cache_key] = out
       end

@@ -27,6 +27,10 @@ module Solargraph
       # @return [::Symbol]
       attr_accessor :source
 
+      def presence_certain?
+        true
+      end
+
       # @param location [Solargraph::Location, nil]
       # @param type_location [Solargraph::Location, nil]
       # @param closure [Solargraph::Pin::Closure, nil]

@@ -264,15 +264,19 @@ module Solargraph
     #   Should not be prefixed with '::'.
     # @return [String, nil] fully qualified tag
     def qualify tag, context_tag = ''
-      return tag if ['self', nil].include?(tag)
+      return tag if ['Boolean', 'self', nil].include?(tag)
 
-      context_type = ComplexType.parse(context_tag).force_rooted
+      context_type = ComplexType.try_parse(context_tag).force_rooted
       return unless context_type
 
       type = ComplexType.try_parse(tag)
       return unless type
+      return tag if type.literal?
 
-      fqns = qualify_namespace(type.rooted_namespace, context_type.namespace)
+      context_type = ComplexType.try_parse(context_tag)
+      return unless context_type
+
+      fqns = qualify_namespace(type.rooted_namespace, context_type.rooted_namespace)
       return unless fqns
 
       fqns + type.substring
@@ -317,6 +321,11 @@ module Solargraph
         sc = qualify_lower(store.get_superclass(sc), sc)
       end
       result
+    end
+
+    # @see Solargraph::Parser::FlowSensitiveTyping#visible_pins
+    def visible_pins(*args, **kwargs, &blk)
+      Solargraph::Parser::FlowSensitiveTyping.visible_pins(*args, **kwargs, &blk)
     end
 
     # Get an array of class variable pins for a namespace.

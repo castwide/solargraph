@@ -59,6 +59,8 @@ module Solargraph
             return '::String'
           elsif node.type == :array
             return '::Array'
+          elsif node.type == :nil
+            return '::NilClass'
           elsif node.type == :hash
             return '::Hash'
           elsif node.type == :int
