@@ -3,7 +3,7 @@
 module Solargraph
   module Pin
     class Parameter < LocalVariable
-      # @return [Symbol]
+      # @return [::Symbol]
       attr_reader :decl
 
       # @return [String]
@@ -11,12 +11,10 @@ module Solargraph
 
       # @param decl [::Symbol] :arg, :optarg, :kwarg, :kwoptarg, :restarg, :kwrestarg, :block, :blockarg
       # @param asgn_code [String, nil]
-      # @param return_type [ComplexType, nil]
-      def initialize decl: :arg, asgn_code: nil, return_type: nil, **splat
+      def initialize decl: :arg, asgn_code: nil, **splat
         super(**splat)
         @asgn_code = asgn_code
         @decl = decl
-        @return_type = return_type
       end
 
       def keyword?
@@ -115,12 +113,22 @@ module Solargraph
         closure.is_a?(Pin::Block) ? typify_block_param(api_map) : typify_method_param(api_map)
       end
 
+      # @param atype [ComplexType]
+      # @param api_map [ApiMap]
+      def compatible_arg?(atype, api_map)
+        # make sure we get types from up the method
+        # inheritance chain if we don't have them on this pin
+        ptype = typify api_map
+        ptype.undefined? || ptype.can_assign?(api_map, atype) || ptype.generic?
+      end
+
       def documentation
         tag = param_tag
         return '' if tag.nil? || tag.text.nil?
         tag.text
       end
 
+      # @param pin [Pin::Parameter]
       def try_merge! pin
         return false unless super && closure == pin.closure
         true
@@ -140,8 +148,9 @@ module Solargraph
       # @param api_map [ApiMap]
       # @return [ComplexType]
       def typify_block_param api_map
-        if closure.is_a?(Pin::Block) && closure.receiver
-          return closure.typify_parameters(api_map)[index]
+        block_pin = closure
+        if block_pin.is_a?(Pin::Block) && block_pin.receiver
+          return block_pin.typify_parameters(api_map)[index]
         end
         ComplexType::UNDEFINED
       end

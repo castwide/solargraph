@@ -15,7 +15,7 @@ module Solargraph
       attr_reader :directory
 
       # @todo To make this strongly typed we'll need a record syntax
-      # @return [Hash{String => undefined}]
+      # @return [Hash{String => Array, Hash, Integer, nil}]
       attr_reader :raw_data
 
       # @param directory [String]
@@ -90,6 +90,7 @@ module Solargraph
 
       # A hash of options supported by the formatter
       #
+      # @sg-ignore pending https://github.com/castwide/solargraph/pull/905
       # @return [Hash]
       def formatter
         raw_data['formatter']
@@ -104,6 +105,7 @@ module Solargraph
 
       # The maximum number of files to parse from the workspace.
       #
+      # @sg-ignore pending https://github.com/castwide/solargraph/pull/905
       # @return [Integer]
       def max_files
         raw_data['max_files']
@@ -123,7 +125,7 @@ module Solargraph
         File.join(@directory, '.solargraph.yml')
       end
 
-      # @return [Hash{String => Array, Hash, Integer}]
+      # @return [Hash{String => Array<undefined>, Hash{String => undefined}, Integer}]
       def config_data
         workspace_config = read_config(workspace_config_path)
         global_config = read_config(global_config_path)
@@ -226,7 +228,9 @@ module Solargraph
 
       # @return [Array<String>]
       def excluded_directories
-        @raw_data['exclude']
+        # @type [Array<String>]
+        excluded = @raw_data['exclude']
+        excluded
           .select { |g| glob_is_directory?(g) }
           .map { |g| File.absolute_path(glob_to_directory(g), directory) }
       end

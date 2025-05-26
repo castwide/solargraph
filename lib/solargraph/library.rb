@@ -132,6 +132,7 @@ module Solargraph
       result = false
       filenames.each do |filename|
         detach filename
+        source_map_hash.delete(filename)
         result ||= workspace.remove(filename)
       end
       result
@@ -192,11 +193,7 @@ module Solargraph
       else
         mutex.synchronize do
           clip = api_map.clip(cursor)
-          if cursor.assign?
-            [Pin::ProxyType.new(name: cursor.word, return_type: clip.infer)]
-          else
-            clip.define.map { |pin| pin.realize(api_map) }
-          end
+          clip.define.map { |pin| pin.realize(api_map) }
         end
       end
     rescue FileNotFoundError => e
@@ -240,7 +237,7 @@ module Solargraph
     # @param column [Integer]
     # @param strip [Boolean] Strip special characters from variable names
     # @param only [Boolean] Search for references in the current file only
-    # @return [Array<Solargraph::Range>]
+    # @return [Array<Solargraph::Location>]
     # @todo Take a Location instead of filename/line/column
     def references_from filename, line, column, strip: false, only: false
       sync_catalog
@@ -398,6 +395,8 @@ module Solargraph
       return [] unless open?(filename)
       result = []
       source = read(filename)
+
+      # @type [Hash{Class<Solargraph::Diagnostics::Base> => Array<String>}]
       repargs = {}
       workspace.config.reporters.each do |line|
         if line == 'all!'
@@ -431,7 +430,8 @@ module Solargraph
       Bench.new(
         source_maps: source_map_hash.values,
         workspace: workspace,
-        external_requires: external_requires
+        external_requires: external_requires,
+        live_map: @current ? source_map_hash[@current.filename] : nil
       )
     end
 

@@ -721,7 +721,6 @@ describe Solargraph::TypeChecker do
       expect(checker.problems.map(&:message)).to eq(['Unresolved call to upcase'])
     end
 
-
     it 'does not falsely enforce nil in return types' do
       checker = type_checker(%(
       # @return [Integer]
@@ -733,6 +732,20 @@ describe Solargraph::TypeChecker do
       end
       ))
       expect(checker.problems.map(&:message)).to be_empty
+    end
+
+    it 'refines types on is_a? and && to downcast and avoid false positives' do
+      checker = type_checker(%(
+        def foo
+          # @sg-ignore
+          # @type [Object]
+          a = bar
+          if a.is_a?(String) && a.length > 0
+            a.upcase
+          end
+        end
+      ))
+      expect(checker.problems.map(&:message)).to eq([])
     end
 
     it 'interprets self references correctly' do
@@ -788,6 +801,7 @@ describe Solargraph::TypeChecker do
       expect(checker.problems.map(&:message)).to eq([])
     end
 
+
     it "understands enough of define_method not to think the block is in class scope" do
       checker = type_checker(%(
         class Foo
@@ -806,11 +820,119 @@ describe Solargraph::TypeChecker do
       expect(checker.problems.map(&:message)).to eq([])
     end
 
+    xit "Uses flow scope to specialize understanding of cvar types" do
+      checker = type_checker(%(
+        class Bar
+          # @return [String]
+          def foo
+            'feh'
+          end
+
+          # @return [void]
+          def reset_blah
+            @blah = nil
+          end
+        end
+
+        class Foo < Bar
+          # @return [String]
+          def foo
+            @blah.upcase!
+            if @blah.nil?
+              @blah = super
+              @blah.empty?
+            end
+            @blah
+          end
+        end
+      ))
+      expect(checker.problems.map(&:message)).to eq(["Unresolved call to upcase!"])
+    end
+
     it "does not lose track of place and false alarm when using kwargs after a splat" do
       checker = type_checker(%(
         def foo(a, b, c); end
         def bar(*args, **kwargs, &blk)
           foo(*args, **kwargs, &blk)
+        end
+      ))
+      expect(checker.problems.map(&:message)).to eq([])
+    end
+
+    it "understands Array#+ overloads" do
+      checker = type_checker(%(
+        c = ['a'] + ['a']
+        c
+      ))
+      expect(checker.problems.map(&:message)).to eq([])
+    end
+
+    it "understands String#+ overloads" do
+      checker = type_checker(%(
+        detail = ''
+        detail += "foo"
+        detail.strip!
+      ))
+      expect(checker.problems.map(&:message)).to eq([])
+    end
+
+    it "understands Enumerable#each via _Each self type" do
+      checker = type_checker(%(
+        class Blah
+          # @param e [Enumerable<String>]
+          # @return [void]
+          def foo(e)
+            e
+            e.each do |x|
+              x
+            end
+          end
+        end
+      ))
+      expect(checker.problems.map(&:message)).to eq([])
+    end
+
+    it 'does not complain when passing nil to a NilClass parameter' do
+      checker = type_checker(%(
+        # @param a [NilClass]
+        def foo(a); end
+
+        foo(nil)
+      ))
+      expect(checker.problems.map(&:message)).to eq([])
+    end
+
+    it 'does not complain when passing NilClass to nil parameter' do
+      checker = type_checker(%(
+        # @param a [nil]
+        def foo(a); end
+
+        # @param a [NilClass]
+        def bar(a)
+          foo(a)
+        end
+      ))
+      expect(checker.problems.map(&:message)).to eq([])
+    end
+
+    it 'does not complain when passing true to TrueClass parameter' do
+      checker = type_checker(%(
+        # @param a [TrueClass]
+        def foo(a); end
+
+        foo(true)
+      ))
+      expect(checker.problems.map(&:message)).to eq([])
+    end
+
+    it 'does not complain when passing TrueClass to true parameter' do
+      checker = type_checker(%(
+        # @param a [true]
+        def foo(a); end
+
+        # @param a [TrueClass]
+        def bar(a)
+          foo(a)
         end
       ))
       expect(checker.problems.map(&:message)).to eq([])

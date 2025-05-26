@@ -64,6 +64,7 @@ module Solargraph
       @@rbs_maps_hash[library] ||= RbsMap.new(library)
     end
 
+    # @param gemspec [Gem::Specification]
     def self.from_gemspec(gemspec)
       RbsMap.new(gemspec.name, gemspec.version)
     end

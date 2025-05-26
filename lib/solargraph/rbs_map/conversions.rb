@@ -321,7 +321,7 @@ module Solargraph
       # @return [void]
       def method_def_to_sigs decl, pin
         decl.overloads.map do |overload|
-          generics = overload.method_type.type_params.map(&:to_s)
+          generics = overload.method_type.type_params.map(&:name).map(&:to_s)
           signature_parameters, signature_return_type = parts_of_function(overload.method_type, pin)
           block = if overload.method_type.block
                     block_parameters, block_return_type = parts_of_function(overload.method_type.block, pin)
@@ -575,7 +575,7 @@ module Solargraph
         elsif type.is_a?(RBS::Types::Tuple)
           "Array(#{type.types.map { |t| other_type_to_tag(t) }.join(', ')})"
         elsif type.is_a?(RBS::Types::Literal)
-          type.literal.to_s
+          type.literal.inspect
         elsif type.is_a?(RBS::Types::Union)
           type.types.map { |t| other_type_to_tag(t) }.join(', ')
         elsif type.is_a?(RBS::Types::Record)

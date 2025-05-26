@@ -3,11 +3,19 @@
 module Solargraph
   class Source
     class Chain
+      #
+      # Handles both method calls and local variable references by
+      # first looking for a variable with the name 'word', then
+      # proceeding to method signature resolution if not found.
+      #
       class Call < Chain::Link
         include Solargraph::Parser::NodeMethods
 
         # @return [String]
         attr_reader :word
+
+        # @return [Location]
+        attr_reader :location
 
         # @return [::Array<Chain>]
         attr_reader :arguments
@@ -16,13 +24,20 @@ module Solargraph
         attr_reader :block
 
         # @param word [String]
+        # @param location [Location, nil]
         # @param arguments [::Array<Chain>]
         # @param block [Chain, nil]
-        def initialize word, arguments = [], block = nil
+        def initialize word, location, arguments = [], block = nil
           @word = word
+          @location = location
           @arguments = arguments
           @block = block
           fix_block_pass
+        end
+
+        # @sg-ignore Fix "Not enough arguments to Module#protected"
+        protected def equality_fields
+          super + [arguments, block]
         end
 
         def with_block?
@@ -36,7 +51,7 @@ module Solargraph
           return super_pins(api_map, name_pin) if word == 'super'
           return yield_pins(api_map, name_pin) if word == 'yield'
           found = if head?
-            locals.select { |p| p.name == word }
+            api_map.visible_pins(locals, word, name_pin, location)
           else
             []
           end
@@ -54,7 +69,7 @@ module Solargraph
         # @param pins [::Enumerable<Pin::Method>]
         # @param api_map [ApiMap]
         # @param name_pin [Pin::Base]
-        # @param locals [::Array<Pin::LocalVariable>]
+        # @param locals [::Array<Solargraph::Pin::LocalVariable, Solargraph::Pin::Parameter>]
         # @return [::Array<Pin::Base>]
         def inferred_pins pins, api_map, name_pin, locals
           result = pins.map do |p|
@@ -67,7 +82,8 @@ module Solargraph
             # use it.  If we didn't pass a block, the logic below will
             # reject it regardless
 
-            sorted_overloads = overloads.sort { |ol| ol.block? ? -1 : 1 }
+            with_block, without_block = overloads.partition(&:block?)
+            sorted_overloads = with_block + without_block
             new_signature_pin = nil
             sorted_overloads.each do |ol|
               next unless ol.arity_matches?(arguments, with_block?)
@@ -81,12 +97,7 @@ module Solargraph
                   break
                 end
                 atype = atypes[idx] ||= arg.infer(api_map, Pin::ProxyType.anonymous(name_pin.context), locals)
-                # make sure we get types from up the method
-                # inheritance chain if we don't have them on this pin
-                ptype = param.typify api_map
-                # @todo Weak type comparison
-                # unless atype.tag == param.return_type.tag || api_map.super_and_sub?(param.return_type.tag, atype.tag)
-                unless ptype.undefined? || atype.name == ptype.name || ptype.any? { |current_ptype| api_map.super_and_sub?(current_ptype.name, atype.name) } || ptype.generic? || param.restarg?
+                unless param.compatible_arg?(atype, api_map) || param.restarg?
                   match = false
                   break
                 end
@@ -134,7 +145,7 @@ module Solargraph
         # @param pin [Pin::Base]
         # @param api_map [ApiMap]
         # @param context [ComplexType]
-        # @param locals [Enumerable<Pin::Base>]
+        # @param locals [::Array<Solargraph::Pin::LocalVariable, Solargraph::Pin::Parameter>]
         # @return [Pin::Base]
         def process_macro pin, api_map, context, locals
           pin.macros.each do |macro|
@@ -153,7 +164,7 @@ module Solargraph
         # @param pin [Pin::Method]
         # @param api_map [ApiMap]
         # @param context [ComplexType]
-        # @param locals [Enumerable<Pin::Base>]
+        # @param locals [::Array<Solargraph::Pin::LocalVariable, Solargraph::Pin::Parameter>]
         # @return [Pin::ProxyType]
         def process_directive pin, api_map, context, locals
           pin.directives.each do |dir|
@@ -169,7 +180,7 @@ module Solargraph
         # @param macro [YARD::Tags::MacroDirective]
         # @param api_map [ApiMap]
         # @param context [ComplexType]
-        # @param locals [Enumerable<Pin::Base>]
+        # @param locals [::Array<Pin::LocalVariable, Pin::Parameter>]
         # @return [Pin::ProxyType]
         def inner_process_macro pin, macro, api_map, context, locals
           vals = arguments.map{ |c| Pin::ProxyType.anonymous(c.infer(api_map, pin, locals)) }

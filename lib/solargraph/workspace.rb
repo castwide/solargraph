@@ -45,7 +45,7 @@ module Solargraph
     # or add it to the sources if the workspace is configured to include it.
     # The source is ignored if the configuration excludes it.
     #
-    # @param source [Solargraph::Source]
+    # @param sources [Array<Solargraph::Source>]
     # @return [Boolean] True if the source was added to the workspace
     def merge *sources
       unless directory == '*' || sources.all? { |source| source_hash.key?(source.filename) }

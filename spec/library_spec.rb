@@ -479,6 +479,26 @@ describe Solargraph::Library do
     end
   end
 
+  describe '#delete' do
+    it 'removes files from Library#source_map_hash' do
+      workspace = File.absolute_path(File.join('spec', 'fixtures', 'workspace'))
+      library = Solargraph::Library.load(workspace)
+      library.map!
+      library.catalog
+      other_file = File.absolute_path(File.join('spec', 'fixtures', 'workspace', 'lib', 'other.rb'))
+
+      expect(library.source_map_hash.key?(other_file)).to be(true)
+      pins = library.get_path_pins('Other')
+      expect(pins).to be_one
+
+      library.delete other_file
+      library.catalog
+      expect(library.source_map_hash.key?(other_file)).to be(false)
+      pins = library.get_path_pins('Other')
+      expect(pins).to be_empty
+    end
+  end
+
   context 'unsynchronized' do
     let(:library) { Solargraph::Library.load File.absolute_path(File.join('spec', 'fixtures', 'workspace')) }
     let(:good_file) { File.join(library.workspace.directory, 'lib', 'thing.rb') }
