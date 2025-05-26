@@ -228,7 +228,7 @@ module Solargraph
         val1 = send(attr)
         val2 = other.send(attr)
         if val1&.name != val2&.name
-          Solargraph.assert_or_log(:combine_with,
+          Solargraph.assert_or_log("combine_with_#{attr}_name".to_sym,
                                    "Inconsistent #{attr.inspect} name values between \nself =#{inspect} and \nother=#{other.inspect}:\n\n self.#{attr} = #{val1.inspect}\nother.#{attr} = #{val2.inspect}")
         end
         [val1, val2].compact.min

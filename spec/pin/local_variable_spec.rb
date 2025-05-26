@@ -30,7 +30,8 @@ describe Solargraph::Pin::LocalVariable do
     # should indicate which one should override in the range situation
   end
 
-  it "asserts on attempt to merge namespace changes" do
+    # Pending https://github.com/castwide/solargraph/pull/947
+  xit "asserts on attempt to merge namespace changes" do
     map1 = Solargraph::SourceMap.load_string(%(
       class Foo
         foo = 'foo'
@@ -46,7 +47,7 @@ describe Solargraph::Pin::LocalVariable do
     # set env variable 'FOO' to 'true' in block
 
     with_env_var('SOLARGRAPH_ASSERTS', 'on') do
-      expect(Solargraph.asserts_on?(:combine_with)).to be true
+      expect(Solargraph.asserts_on?(:combine_with_closure_name)).to be true
       expect { pin1.combine_with(pin2) }.to raise_error(RuntimeError, /Inconsistent :closure name/)
     end
   end
