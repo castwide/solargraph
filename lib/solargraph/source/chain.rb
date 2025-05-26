@@ -130,7 +130,7 @@ module Solargraph
           @@inference_invalidation_key = api_map.hash
           @@inference_cache = {}
         end
-        out = infer_uncached api_map, name_pin, locals
+        out = infer_uncached(api_map, name_pin, locals).downcast_to_literal_if_possible
         logger.debug { "Chain#infer() - caching result - cache_key_hash=#{cache_key.hash}, links.map(&:hash)=#{links.map(&:hash)}, links=#{links}, cache_key.map(&:hash) = #{cache_key.map(&:hash)}, cache_key=#{cache_key}" }
         @@inference_cache[cache_key] = out
       end

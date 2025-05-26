@@ -389,7 +389,7 @@ describe Solargraph::Pin::Parameter do
       api_map.map(source)
       pin = api_map.source_map('test.rb').locals.first
       type = pin.probe(api_map)
-      expect(type.name).to eq('String')
+      expect(type.simple_tags).to eq('String')
     end
 
     it 'infers types from kwoptarg values' do
@@ -403,7 +403,7 @@ describe Solargraph::Pin::Parameter do
       api_map.map(source)
       pin = api_map.source_map('test.rb').locals.first
       type = pin.probe(api_map)
-      expect(type.name).to eq('String')
+      expect(type.simple_tags).to eq('String')
     end
   end
 
@@ -419,7 +419,7 @@ describe Solargraph::Pin::Parameter do
       api_map.map(source)
       pin = api_map.source_map('test.rb').locals.first
       type = pin.probe(api_map)
-      expect(type.name).to eq('String')
+      expect(type.simple_tags).to eq('String')
     end
 
     it 'infers types from kwoptarg values' do
@@ -433,7 +433,7 @@ describe Solargraph::Pin::Parameter do
       api_map.map(source)
       pin = api_map.source_map('test.rb').locals.first
       type = pin.probe(api_map)
-      expect(type.name).to eq('String')
+      expect(type.simple_tags).to eq('String')
     end
 
     it 'infers types from kwoptarg code' do
@@ -465,7 +465,7 @@ describe Solargraph::Pin::Parameter do
       api_map.map(source)
       pin = api_map.source_map('test.rb').locals.first
       type = pin.probe(api_map)
-      expect(type.name).to eq('String')
+      expect(type.simple_tags).to eq('String')
     end
 
     it 'infers types from kwoptarg values' do
@@ -481,7 +481,7 @@ describe Solargraph::Pin::Parameter do
       api_map.map(source)
       pin = api_map.source_map('test.rb').locals.first
       type = pin.probe(api_map)
-      expect(type.name).to eq('String')
+      expect(type.simple_tags).to eq('String')
     end
   end
 end

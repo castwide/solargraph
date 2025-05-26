@@ -34,7 +34,10 @@ module Solargraph
         @return_type ||= generate_complex_type
       end
 
+      # @sg-ignore
       def nil_assignment?
+        # this will always be false - should it be return_type ==
+        #   ComplexType::NIL or somesuch?
         return_type.nil?
       end
 
@@ -91,6 +94,7 @@ module Solargraph
         ComplexType::UNDEFINED
       end
 
+      # @param other [Object]
       def == other
         return false unless super
         assignment == other.assignment
