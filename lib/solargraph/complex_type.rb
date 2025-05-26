@@ -70,7 +70,7 @@ module Solargraph
     end
 
     # @yieldparam [UniqueType]
-    # @return [Array]
+    # @return [Array<UniqueType>]
     def map &block
       @items.map &block
     end
@@ -93,6 +93,12 @@ module Solargraph
       end
     end
 
+    # @param atype [ComplexType] type which may be assigned to this type
+    # @param api_map [ApiMap] The ApiMap that performs qualification
+    def can_assign?(api_map, atype)
+      any? { |ut| ut.can_assign?(api_map, atype) }
+    end
+
     # @return [Integer]
     def length
       @items.length
@@ -101,10 +107,6 @@ module Solargraph
     # @return [Array<UniqueType>]
     def to_a
       @items
-    end
-
-    def tags
-      @items.map(&:tag).join(', ')
     end
 
     # @param index [Integer]
@@ -147,6 +149,23 @@ module Solargraph
       map(&:tag).join(', ')
     end
 
+    def tags
+      map(&:tag).join(', ')
+    end
+
+    def simple_tags
+      simplify_literals.tags
+    end
+
+    def literal?
+      @items.any?(&:literal?)
+    end
+
+    # @return [ComplexType]
+    def downcast_to_literal_if_possible
+      ComplexType.new(items.map(&:downcast_to_literal_if_possible))
+    end
+
     def desc
       rooted_tags
     end
@@ -173,6 +192,10 @@ module Solargraph
 
     def generic?
       any?(&:generic?)
+    end
+
+    def simplify_literals
+      ComplexType.new(map(&:simplify_literals))
     end
 
     # @param new_name [String, nil]
