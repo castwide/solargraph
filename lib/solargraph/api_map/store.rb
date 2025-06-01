@@ -117,7 +117,7 @@ module Solargraph
       # @param fqns [String]
       # @return [Enumerable<Solargraph::Pin::Base>]
       def get_class_variables(fqns)
-        namespace_children(fqns).select{|pin| pin.is_a?(Pin::ClassVariable)}
+        namespace_children(fqns).select { |pin| pin.is_a?(Pin::ClassVariable)}
       end
 
       # @return [Enumerable<Solargraph::Pin::Base>]
