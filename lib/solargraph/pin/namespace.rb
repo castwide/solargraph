@@ -14,21 +14,23 @@ module Solargraph
       # @param type [::Symbol] :class or :module
       # @param visibility [::Symbol] :public or :private
       # @param gates [::Array<String>]
-      def initialize type: :class, visibility: :public, gates: [''], **splat
+      # @param name [String]
+      def initialize type: :class, visibility: :public, gates: [''], name: '', **splat
         # super(location, namespace, name, comments)
-        super(**splat)
+        super(**splat, name: name)
         @type = type
         @visibility = visibility
         if name.start_with?('::')
-          @name = name[2..-1]
+          # @type [String]
+          name = name[2..-1] || ''
           @closure = Solargraph::Pin::ROOT_PIN
         end
         @open_gates = gates
-        if @name.include?('::')
+        if name.include?('::')
           # In this case, a chained namespace was opened (e.g., Foo::Bar)
           # but Foo does not exist.
-          parts = @name.split('::')
-          @name = parts.pop
+          parts = name.split('::')
+          name = parts.pop
           closure_name = if [Solargraph::Pin::ROOT_PIN, nil].include?(closure)
             ''
           else
@@ -38,6 +40,7 @@ module Solargraph
           @closure = Pin::Namespace.new(name: closure_name, gates: [parts.join('::')])
           @context = nil
         end
+        @name = name
       end
 
       def to_rbs
