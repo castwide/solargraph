@@ -17,6 +17,14 @@ module Solargraph
         @decl = decl
       end
 
+      def type_location
+        super || closure&.type_location
+      end
+
+      def location
+        super || closure&.type_location
+      end
+
       def combine_with(other, attrs={})
         new_attrs = {
           decl: assert_same(other, :decl),

@@ -15,6 +15,18 @@ module Solargraph
 
       attr_writer :closure
 
+      def dodgy_return_type_source?
+        super || closure&.dodgy_return_type_source?
+      end
+
+      def type_location
+        super || closure&.type_location
+      end
+
+      def location
+        super || closure&.location
+      end
+
       def typify api_map
         if return_type.defined?
           qualified = return_type.qualify(api_map, closure.namespace)

@@ -10,7 +10,6 @@ module Solargraph
       include Documenting
       include Logging
 
-
       # @return [YARD::CodeObjects::Base]
       attr_reader :code_object
 
@@ -128,6 +127,10 @@ module Solargraph
           other.return_type
         elsif other.return_type.undefined?
           return_type
+        elsif dodgy_return_type_source? && !other.dodgy_return_type_source?
+          other.return_type
+        elsif other.dodgy_return_type_source? && !dodgy_return_type_source?
+          return_type
         else
           all_items = return_type.items + other.return_type.items
           if all_items.any? { |item| item.selfy? } && all_items.any? { |item| item.rooted_tag == context.rooted_tag }
@@ -136,6 +139,11 @@ module Solargraph
           end
           ComplexType.new(all_items)
         end
+      end
+
+      def dodgy_return_type_source?
+        # uses a lot of 'Object' instead of 'self'
+        location&.filename&.include?('core_ext/object/')
       end
 
       def <=>(p1)
