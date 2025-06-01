@@ -40,7 +40,7 @@ module Solargraph
               if n.is_a?(AST::Node)
                 if n.type == :cbase
                   parts = [''] + pack_name(n)
-                else
+                elsif n.type == :const
                   parts += pack_name(n)
                 end
               else
