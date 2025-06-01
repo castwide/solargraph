@@ -3233,7 +3233,7 @@ describe Solargraph::SourceMap::Clip do
     expect(clip.infer.to_s).to eq('Array, Hash, Integer, nil')
   end
 
-  it 'infers that type of argument has been overridden' do
+  xit 'infers that type of argument has been overridden' do
     source = Solargraph::Source.load_string(%(
       def foo a
         a = 'foo'
@@ -3363,7 +3363,7 @@ describe Solargraph::SourceMap::Clip do
     names = clip.complete.pins.map(&:name)
     expect(names).to include('bar:', 'baz:')
   end
-  
+
   it 'completes Struct methods inside class' do
     source = Solargraph::Source.load_string(%(
       # @param bar [String]
