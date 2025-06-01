@@ -657,6 +657,5 @@ describe Solargraph::Source::Chain::Call do
 
     clip = api_map.clip_at('test.rb', [3, 8])
     expect(clip.infer.rooted_tags).to eq('::String')
->>>>>>> origin/master
   end
 end
