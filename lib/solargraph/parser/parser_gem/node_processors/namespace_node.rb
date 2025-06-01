@@ -38,7 +38,7 @@ module Solargraph
               pins.push Pin::Reference::Superclass.new(
                 location: loc,
                 closure: pins.last,
-                name: superclass_name
+                name: superclass_name,
                 source: :parser
               )
             end

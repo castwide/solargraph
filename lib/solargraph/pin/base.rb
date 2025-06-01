@@ -302,7 +302,11 @@ module Solargraph
       def inner_desc
         closure_info = closure&.desc
         binder_info = binder&.desc
-        "[name=#{name.inspect} return_type=#{type_desc}, context=#{context.rooted_tags}, closure=#{closure_info}, binder=#{binder_info}]"
+        "name=#{name.inspect} return_type=#{type_desc}, context=#{context.rooted_tags}, closure=#{closure_info}, binder=#{binder_info}"
+      end
+
+      def desc
+        "[#{inner_desc}]"
       end
 
       def inspect
