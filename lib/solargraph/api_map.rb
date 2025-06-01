@@ -12,6 +12,7 @@ module Solargraph
     autoload :Cache,          'solargraph/api_map/cache'
     autoload :SourceToYard,   'solargraph/api_map/source_to_yard'
     autoload :Store,          'solargraph/api_map/store'
+    autoload :Index,          'solargraph/api_map/index'
 
     # @return [Array<String>]
     attr_reader :unresolved_requires
@@ -48,14 +49,14 @@ module Solargraph
       equality_fields.hash
     end
 
-     def to_s
-       self.class.to_s
-     end
+    def to_s
+      self.class.to_s
+    end
 
-     # avoid enormous dump
-     def inspect
-       to_s
-     end
+    # avoid enormous dump
+    def inspect
+      to_s
+    end
 
     # @param pins [Array<Pin::Base>]
     # @return [self]
@@ -65,7 +66,7 @@ module Solargraph
       @source_map_hash = {}
       implicit.clear
       cache.clear
-      @store = Store.new(@@core_map.pins + pins)
+      store.update @@core_map.pins, pins
       self
     end
 
@@ -84,10 +85,9 @@ module Solargraph
     # @param bench [Bench]
     # @return [self]
     def catalog bench
-      old_api_hash = @source_map_hash&.values&.map(&:api_hash)
-      need_to_uncache = (old_api_hash != bench.source_maps.map(&:api_hash))
-      @source_map_hash = bench.source_maps.map { |s| [s.filename, s] }.to_h
-      pins = bench.source_maps.flat_map(&:pins).flatten
+      @source_map_hash = bench.source_map_hash
+      iced_pins = bench.icebox.flat_map(&:pins)
+      live_pins = bench.live_map&.pins || []
       implicit.clear
       source_map_hash.each_value do |map|
         implicit.merge map.environ
@@ -96,11 +96,8 @@ module Solargraph
       if @unresolved_requires != unresolved_requires || @doc_map&.uncached_gemspecs&.any?
         @doc_map = DocMap.new(unresolved_requires, [], bench.workspace.rbs_collection_path) # @todo Implement gem preferences
         @unresolved_requires = unresolved_requires
-        need_to_uncache = true
       end
-      @store = Store.new(@@core_map.pins + @doc_map.pins + implicit.pins + pins)
-      @cache.clear if need_to_uncache
-
+      @cache.clear if store.update(@@core_map.pins, @doc_map.pins, implicit.pins, iced_pins, live_pins)
       @missing_docs = [] # @todo Implement missing docs
       self
     end
@@ -109,7 +106,7 @@ module Solargraph
     #   that this overload of 'protected' will typecheck @sg-ignore
     # @sg-ignore
     protected def equality_fields
-      [self.class, @source_map_hash, implicit, @doc_map, @unresolved_requires, @missing_docs]
+      [self.class, @source_map_hash, implicit, @doc_map, @unresolved_requires]
     end
 
     # @return [::Array<Gem::Specification>]
@@ -195,7 +192,7 @@ module Solargraph
 
     # @return [Array<Solargraph::Pin::Base>]
     def pins
-      store.pins
+      store.pins.clone.freeze
     end
 
     # An array of pins based on Ruby keywords (`if`, `end`, etc.).
@@ -267,15 +264,19 @@ module Solargraph
     #   Should not be prefixed with '::'.
     # @return [String, nil] fully qualified tag
     def qualify tag, context_tag = ''
-      return tag if ['self', nil].include?(tag)
+      return tag if ['Boolean', 'self', nil].include?(tag)
 
-      context_type = ComplexType.parse(context_tag).force_rooted
+      context_type = ComplexType.try_parse(context_tag).force_rooted
       return unless context_type
 
       type = ComplexType.try_parse(tag)
       return unless type
+      return tag if type.literal?
 
-      fqns = qualify_namespace(type.rooted_namespace, context_type.namespace)
+      context_type = ComplexType.try_parse(context_tag)
+      return unless context_type
+
+      fqns = qualify_namespace(type.rooted_namespace, context_type.rooted_namespace)
       return unless fqns
 
       fqns + type.substring
@@ -320,6 +321,11 @@ module Solargraph
         sc = qualify_lower(store.get_superclass(sc), sc)
       end
       result
+    end
+
+    # @see Solargraph::Parser::FlowSensitiveTyping#visible_pins
+    def visible_pins(*args, **kwargs, &blk)
+      Solargraph::Parser::FlowSensitiveTyping.visible_pins(*args, **kwargs, &blk)
     end
 
     # Get an array of class variable pins for a namespace.
@@ -817,7 +823,7 @@ module Solargraph
       return pin unless pin.is_a?(Pin::MethodAlias)
       return nil if @method_alias_stack.include?(pin.path)
       @method_alias_stack.push pin.path
-      origin = get_method_stack(pin.full_context.tag, pin.original, scope: pin.scope).first
+      origin = get_method_stack(pin.full_context.tag, pin.original, scope: pin.scope, preserve_generics: true).first
       @method_alias_stack.pop
       return nil if origin.nil?
       args = {

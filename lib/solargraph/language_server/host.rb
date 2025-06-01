@@ -749,6 +749,7 @@ module Solargraph
         return change if source.code.length + 1 != change['text'].length
         diffs = Diff::LCS.diff(source.code, change['text'])
         return change if diffs.length.zero? || diffs.length > 1 || diffs.first.length > 1
+        # @sg-ignore push this upstream
         # @type [Diff::LCS::Change]
         diff = diffs.first.first
         return change unless diff.adding? && ['.', ':', '(', ',', ' '].include?(diff.element)

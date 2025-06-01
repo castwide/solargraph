@@ -35,7 +35,7 @@ module Solargraph
     # @param gemspec [Gem::Specification]
     # @return [String]
     def path_for(gemspec)
-      File.join(Solargraph::Cache.work_dir, 'gems', "#{gemspec.name}-#{gemspec.version}.yardoc")
+      File.join(Solargraph::Cache.base_dir, "yard-#{YARD::VERSION}", "#{gemspec.name}-#{gemspec.version}.yardoc")
     end
 
     # Load a gem's yardoc and return its code objects.

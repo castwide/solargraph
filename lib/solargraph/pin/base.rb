@@ -8,7 +8,6 @@ module Solargraph
       include Common
       include Conversions
       include Documenting
-      include Equality
 
       # @return [YARD::CodeObjects::Base]
       attr_reader :code_object
@@ -28,34 +27,23 @@ module Solargraph
       # @return [::Symbol]
       attr_accessor :source
 
+      def presence_certain?
+        true
+      end
+
       # @param location [Solargraph::Location, nil]
       # @param type_location [Solargraph::Location, nil]
       # @param closure [Solargraph::Pin::Closure, nil]
       # @param name [String]
       # @param comments [String]
-      def initialize location: nil, type_location: nil, closure: nil, name: '', comments: ''
+      def initialize location: nil, type_location: nil, closure: nil, source: nil, name: '', comments: ''
         @location = location
         @type_location = type_location
         @closure = closure
         @name = name
+        @source = source
         @comments = comments
       end
-
-      # @sg-ignore Fix "Not enough arguments to Module#protected"
-      protected def equality_fields
-        # 'source' not included so that top level namespaces are comparable, whether from RBS, code or a constant
-        [self.class, identity, code_object, location, type_location, name, path, comments, closure, return_type]
-      end
-
-      # specialize some things from Equality mix-in
-
-      def eql?(other)
-        self.class.eql?(other.class) &&
-          equality_fields.eql?(other.equality_fields) &&
-          nearly?(other)
-      end
-
-      alias == eql?
 
       # @return [String]
       def comments
@@ -146,6 +134,14 @@ module Solargraph
             (((maybe_directives? == false && other.maybe_directives? == false) || compare_directives(directives, other.directives)) &&
             compare_docstring_tags(docstring, other.docstring))
           )
+      end
+
+      # Pin equality is determined using the #nearly? method and also
+      # requiring both pins to have the same location.
+      #
+      def == other
+        return false unless nearly? other
+        comments == other.comments && location == other.location
       end
 
       # The pin's return type.
@@ -277,7 +273,7 @@ module Solargraph
       # @deprecated
       # @return [String]
       def identity
-        @identity ||= "#{closure&.path}|#{name}"
+        @identity ||= "#{closure&.path}|#{name}|#{location}"
       end
 
       # @return [String, nil]
@@ -305,7 +301,7 @@ module Solargraph
       def desc
         closure_info = closure&.desc
         binder_info = binder&.desc
-        "[#{type_desc}, closure=#{closure_info}, binder=#{binder}"
+        "[name=#{name.inspect} return_type=#{type_desc}, context=#{context.rooted_tags}, closure=#{closure_info}, binder=#{binder_info}]"
       end
 
       def inspect

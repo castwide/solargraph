@@ -351,34 +351,34 @@ module Solargraph
         parameters = []
         arg_num = -1
         type.type.required_positionals.each do |param|
-          name = param.name ? param.name.to_s : "arg#{arg_num += 1}"
+          name = param.name ? param.name.to_s : "arg_#{arg_num += 1}"
           parameters.push Solargraph::Pin::Parameter.new(decl: :arg, name: name, closure: pin, return_type: ComplexType.try_parse(other_type_to_tag(param.type)).force_rooted)
         end
         type.type.optional_positionals.each do |param|
-          name = param.name ? param.name.to_s : "arg#{arg_num += 1}"
+          name = param.name ? param.name.to_s : "arg_#{arg_num += 1}"
           parameters.push Solargraph::Pin::Parameter.new(decl: :optarg, name: name, closure: pin,
                                                          return_type: ComplexType.try_parse(other_type_to_tag(param.type)).force_rooted)
         end
         if type.type.rest_positionals
-          name = type.type.rest_positionals.name ? type.type.rest_positionals.name.to_s : "arg#{arg_num += 1}"
+          name = type.type.rest_positionals.name ? type.type.rest_positionals.name.to_s : "arg_#{arg_num += 1}"
           parameters.push Solargraph::Pin::Parameter.new(decl: :restarg, name: name, closure: pin)
         end
         type.type.trailing_positionals.each do |param|
-          name = param.name ? param.name.to_s : "arg#{arg_num += 1}"
+          name = param.name ? param.name.to_s : "arg_#{arg_num += 1}"
           parameters.push Solargraph::Pin::Parameter.new(decl: :arg, name: name, closure: pin)
         end
         type.type.required_keywords.each do |orig, param|
-          name = orig ? orig.to_s : "arg#{arg_num += 1}"
+          name = orig ? orig.to_s : "arg_#{arg_num += 1}"
           parameters.push Solargraph::Pin::Parameter.new(decl: :kwarg, name: name, closure: pin,
                                                          return_type: ComplexType.try_parse(other_type_to_tag(param.type)).force_rooted)
         end
         type.type.optional_keywords.each do |orig, param|
-          name = orig ? orig.to_s : "arg#{arg_num += 1}"
+          name = orig ? orig.to_s : "arg_#{arg_num += 1}"
           parameters.push Solargraph::Pin::Parameter.new(decl: :kwoptarg, name: name, closure: pin,
                                                          return_type: ComplexType.try_parse(other_type_to_tag(param.type)).force_rooted)
         end
         if type.type.rest_keywords
-          name = type.type.rest_keywords.name ? type.type.rest_keywords.name.to_s : "arg#{arg_num += 1}"
+          name = type.type.rest_keywords.name ? type.type.rest_keywords.name.to_s : "arg_#{arg_num += 1}"
           parameters.push Solargraph::Pin::Parameter.new(decl: :kwrestarg, name: type.type.rest_keywords.name.to_s, closure: pin)
         end
 
@@ -575,7 +575,7 @@ module Solargraph
         elsif type.is_a?(RBS::Types::Tuple)
           "Array(#{type.types.map { |t| other_type_to_tag(t) }.join(', ')})"
         elsif type.is_a?(RBS::Types::Literal)
-          type.literal.to_s
+          type.literal.inspect
         elsif type.is_a?(RBS::Types::Union)
           type.types.map { |t| other_type_to_tag(t) }.join(', ')
         elsif type.is_a?(RBS::Types::Record)

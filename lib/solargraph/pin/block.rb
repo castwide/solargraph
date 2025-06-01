@@ -3,6 +3,8 @@
 module Solargraph
   module Pin
     class Block < Callable
+      include Breakable
+
       # @return [Parser::AST::Node]
       attr_reader :receiver
 
@@ -19,11 +21,6 @@ module Solargraph
         @context = context
         @return_type = ComplexType.parse('::Proc')
         @node = node
-      end
-
-      # @sg-ignore Fix "Not enough arguments to Module#protected"
-      protected def equality_fields
-        super + [node, node&.location]
       end
 
       # @param api_map [ApiMap]
