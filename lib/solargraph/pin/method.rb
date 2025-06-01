@@ -56,8 +56,20 @@ module Solargraph
         end
       end
 
+      def combine_signatures(other)
+        all_undefined = signatures.all? { |sig| sig.return_type.undefined? }
+        other_all_undefined = other.signatures.all? { |sig| sig.return_type.undefined? }
+        if all_undefined && !other_all_undefined
+          other.signatures
+        elsif other_all_undefined && !all_undefined
+          signatures
+        else
+          combine_all_signature_pins(*signatures, *other.signatures)
+        end
+      end
+
       def combine_with(other, attrs = {})
-        sigs = combine_all_signature_pins(*(self.signatures + other.signatures)).clone.freeze
+        sigs = combine_signatures(other)
         parameters = if sigs.length > 0
           [].freeze
         else
