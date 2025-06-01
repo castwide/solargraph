@@ -50,6 +50,8 @@ module Solargraph
       # @param inferred [ComplexType]
       # @return [Boolean]
       def any_types_match? api_map, expected, inferred
+        expected = expected.downcast_to_literal_if_possible
+        inferred = inferred.downcast_to_literal_if_possible
         return duck_types_match?(api_map, expected, inferred) if expected.duck_type?
         # walk through the union expected type and see if any members
         # of the union match the inferred type
@@ -71,6 +73,8 @@ module Solargraph
       # @param expected [ComplexType]
       # @return [Boolean]
       def all_types_match? api_map, inferred, expected
+        expected = expected.downcast_to_literal_if_possible
+        inferred = inferred.downcast_to_literal_if_possible
         return duck_types_match?(api_map, expected, inferred) if expected.duck_type?
         inferred.each do |inf|
           next if inf.duck_type?
