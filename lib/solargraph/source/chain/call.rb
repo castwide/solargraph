@@ -27,7 +27,7 @@ module Solargraph
         # @param location [Location, nil]
         # @param arguments [::Array<Chain>]
         # @param block [Chain, nil]
-        def initialize word, location, arguments = [], block = nil
+        def initialize word, location = nil, arguments = [], block = nil
           @word = word
           @location = location
           @arguments = arguments
