@@ -16,8 +16,6 @@ module Solargraph
       ].map { |k| Pin::Keyword.new(k) }
 
       MISSING = [
-        Solargraph::Pin::Method.new(name: 'tap', scope: :instance,
-                                    closure: Solargraph::Pin::Namespace.new(name: 'Object')),
         Solargraph::Pin::Method.new(name: 'class', scope: :instance,
                                     closure: Solargraph::Pin::Namespace.new(name: 'Object'), comments: '@return [::Class<self>]')
       ]
@@ -35,6 +33,15 @@ module Solargraph
         Override.method_return('Class#allocate', 'self')
       ]
 
+      # @todo I don't see any direct link in RBS to build this from -
+      #   presumably RBS is using duck typing to match interfaces
+      #   against concrete classes
+      INCLUDES = [
+        Solargraph::Pin::Reference::Include.new(name: '_ToAry',
+                                                closure: Solargraph::Pin::Namespace.new(name: 'Array'),
+                                                generic_values: ['generic<Elem>'])
+      ]
+
       # HACK: Add Errno exception classes
       errno = Solargraph::Pin::Namespace.new(name: 'Errno')
       errnos = []
@@ -44,7 +51,7 @@ module Solargraph
       end
       ERRNOS = errnos
 
-      ALL = KEYWORDS + MISSING + OVERRIDES + ERRNOS
+      ALL = KEYWORDS + MISSING + OVERRIDES + ERRNOS + INCLUDES
     end
   end
 end

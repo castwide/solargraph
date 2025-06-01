@@ -264,15 +264,19 @@ module Solargraph
     #   Should not be prefixed with '::'.
     # @return [String, nil] fully qualified tag
     def qualify tag, context_tag = ''
-      return tag if ['self', nil].include?(tag)
+      return tag if ['Boolean', 'self', nil].include?(tag)
 
-      context_type = ComplexType.parse(context_tag).force_rooted
+      context_type = ComplexType.try_parse(context_tag).force_rooted
       return unless context_type
 
       type = ComplexType.try_parse(tag)
       return unless type
+      return tag if type.literal?
 
-      fqns = qualify_namespace(type.rooted_namespace, context_type.namespace)
+      context_type = ComplexType.try_parse(context_tag)
+      return unless context_type
+
+      fqns = qualify_namespace(type.rooted_namespace, context_type.rooted_namespace)
       return unless fqns
 
       fqns + type.substring
@@ -821,7 +825,7 @@ module Solargraph
       return pin unless pin.is_a?(Pin::MethodAlias)
       return nil if @method_alias_stack.include?(pin.path)
       @method_alias_stack.push pin.path
-      origin = get_method_stack(pin.full_context.tag, pin.original, scope: pin.scope).first
+      origin = get_method_stack(pin.full_context.tag, pin.original, scope: pin.scope, preserve_generics: true).first
       @method_alias_stack.pop
       return nil if origin.nil?
       args = {
