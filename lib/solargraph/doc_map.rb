@@ -4,6 +4,8 @@ module Solargraph
   # A collection of pins generated from required gems.
   #
   class DocMap
+    include Logging
+
     # @return [Array<String>]
     attr_reader :requires
 
@@ -28,12 +30,12 @@ module Solargraph
 
     # @return [Array<Gem::Specification>]
     def gemspecs
-      @gemspecs ||= required_gem_map.values.compact
+      @gemspecs ||= required_gems_map.values.compact.flatten
     end
 
     # @return [Array<String>]
     def unresolved_requires
-      @unresolved_requires ||= required_gem_map.select { |_, gemspec| gemspec.nil? }.keys
+      @unresolved_requires ||= required_gems_map.select { |_, gemspecs| gemspecs.nil? }.keys
     end
 
     # @return [Hash{Gem::Specification => Array[Pin::Base]}]
@@ -52,20 +54,22 @@ module Solargraph
     def generate
       @pins = []
       @uncached_gemspecs = []
-      required_gem_map.each do |path, gemspec|
-        if gemspec
-          try_cache gemspec
-        else
+      required_gems_map.each do |path, gemspecs|
+        if gemspecs.nil?
           try_stdlib_map path
+        else
+          gemspecs.each do |gemspec|
+            try_cache gemspec
+          end
         end
       end
       dependencies.each { |dep| try_cache dep }
       @uncached_gemspecs.uniq!
     end
 
-    # @return [Hash{String => Gem::Specification, nil}]
-    def required_gem_map
-      @required_gem_map ||= requires.to_h { |path| [path, resolve_path_to_gemspec(path)] }
+    # @return [Hash{String => Array<Gem::Specification>}]
+    def required_gems_map
+      @required_gems_map ||= requires.to_h { |path| [path, resolve_path_to_gemspecs(path)] }
     end
 
     # @return [Hash{String => Gem::Specification}]
@@ -112,6 +116,7 @@ module Solargraph
       true
     end
 
+    # @param gemspec [Gem::Specification]
     def update_from_collection gemspec, gempins
       return gempins unless @rbs_path && File.directory?(@rbs_path)
       return gempins if RbsMap.new(gemspec.name, gemspec.version).resolved?
@@ -124,9 +129,25 @@ module Solargraph
     end
 
     # @param path [String]
-    # @return [Gem::Specification, nil]
-    def resolve_path_to_gemspec path
+    # @return [::Array<Gem::Specification>, nil]
+    def resolve_path_to_gemspecs path
       return nil if path.empty?
+
+      if path == 'bundler/require'
+        # find only the gems bundler is now using
+        gemspecs = Bundler.definition.locked_gems.specs.flat_map do |lazy_spec|
+          logger.info "Handling #{lazy_spec.name}:#{lazy_spec.version} from #{path}"
+          [Gem::Specification.find_by_name(lazy_spec.name, lazy_spec.version)]
+        rescue Gem::MissingSpecError => e
+          logger.info("Could not find #{lazy_spec.name}:#{lazy_spec.version} with find_by_name, falling back to guess")
+          # can happen in local filesystem references
+          specs = resolve_path_to_gemspecs lazy_spec.name
+          logger.info "Gem #{lazy_spec.name} #{lazy_spec.version} from bundle not found: #{e}" if specs.nil?
+          next specs
+        end.compact
+
+        return gemspecs
+      end
 
       gemspec = Gem::Specification.find_by_path(path)
       if gemspec.nil?
@@ -141,16 +162,17 @@ module Solargraph
           gemspec = potential_gemspec if potential_gemspec.files.any? { |gemspec_file| file == gemspec_file }
         rescue Gem::MissingSpecError
           Solargraph.logger.debug "Require path #{path} could not be resolved to a gem via find_by_path or guess of #{gem_name_guess}"
-          nil
+          []
         end
       end
-      gemspec_or_preference gemspec
+      return nil if gemspec.nil?
+      [gemspec_or_preference(gemspec)]
     end
 
-    # @param gemspec [Gem::Specification, nil]
-    # @return [Gem::Specification, nil]
+    # @param gemspec [Gem::Specification]
+    # @return [Gem::Specification]
     def gemspec_or_preference gemspec
-      return gemspec unless gemspec && preference_map.key?(gemspec.name)
+      return gemspec unless preference_map.key?(gemspec.name)
       return gemspec if gemspec.version == preference_map[gemspec.name].version
 
       change_gemspec_version gemspec, preference_map[by_path.name].version
@@ -169,12 +191,15 @@ module Solargraph
     # @param gemspec [Gem::Specification]
     # @return [Array<Gem::Specification>]
     def fetch_dependencies gemspec
+      # @param spec [Gem::Dependency]
       only_runtime_dependencies(gemspec).each_with_object(Set.new) do |spec, deps|
         Solargraph.logger.info "Adding #{spec.name} dependency for #{gemspec.name}"
-        dep = Gem::Specification.find_by_name(spec.name, spec.requirement)
+        dep = Gem.loaded_specs[spec.name]
+        # @todo is next line necessary?
+        dep ||= Gem::Specification.find_by_name(spec.name, spec.requirement)
         deps.merge fetch_dependencies(dep) if deps.add?(dep)
       rescue Gem::MissingSpecError
-        Solargraph.logger.warn "Gem dependency #{spec.name} #{spec.requirements} for #{gemspec.name} not found."
+        Solargraph.logger.warn "Gem dependency #{spec.name} #{spec.requirement} for #{gemspec.name} not found."
       end.to_a
     end
 

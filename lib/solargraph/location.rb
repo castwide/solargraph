@@ -5,6 +5,8 @@ module Solargraph
   # and Range.
   #
   class Location
+    include Equality
+
     # @return [String]
     attr_reader :filename
 
@@ -18,9 +20,22 @@ module Solargraph
       @range = range
     end
 
+    # @sg-ignore Fix "Not enough arguments to Module#protected"
+    protected def equality_fields
+      [filename, range]
+    end
+
     # @param location [self]
     def contain? location
       range.contain?(location.range.start) && range.contain?(location.range.ending) && filename == location.filename
+    end
+
+    def inspect
+      "<#{self.class.name}: filename=#{filename}, range=#{range.inspect}>"
+    end
+
+    def to_s
+      inspect
     end
 
     # @return [Hash]

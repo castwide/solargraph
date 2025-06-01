@@ -27,16 +27,21 @@ module Solargraph
       # @return [::Symbol]
       attr_accessor :source
 
+      def presence_certain?
+        true
+      end
+
       # @param location [Solargraph::Location, nil]
       # @param type_location [Solargraph::Location, nil]
       # @param closure [Solargraph::Pin::Closure, nil]
       # @param name [String]
       # @param comments [String]
-      def initialize location: nil, type_location: nil, closure: nil, name: '', comments: ''
+      def initialize location: nil, type_location: nil, closure: nil, source: nil, name: '', comments: ''
         @location = location
         @type_location = type_location
         @closure = closure
         @name = name
+        @source = source
         @comments = comments
       end
 
@@ -71,15 +76,14 @@ module Solargraph
       # @param context_type [ComplexType] The receiver type
       # @return [self]
       def resolve_generics definitions, context_type
-        transformed = transform_types { |t| t.resolve_generics(definitions, context_type) if t }
-        transformed.erase_generics(definitions.generics)
+        transform_types { |t| t.resolve_generics(definitions, context_type) if t }
       end
 
       def all_rooted?
         !return_type || return_type.all_rooted?
       end
 
-      # @param generics_to_erase [Enumerable<String>]
+      # @param generics_to_erase [::Array<String>]
       # @return [self]
       def erase_generics(generics_to_erase)
         return self if generics_to_erase.empty?
@@ -103,7 +107,7 @@ module Solargraph
       end
 
       def to_s
-        to_rbs
+        desc
       end
 
       # @return [Boolean]
@@ -114,14 +118,6 @@ module Solargraph
       # @return [Location, nil]
       def best_location
         location || type_location
-      end
-
-      # Pin equality is determined using the #nearly? method and also
-      # requiring both pins to have the same location.
-      #
-      def == other
-        return false unless nearly? other
-        comments == other.comments and location == other.location
       end
 
       # True if the specified pin is a near match to this one. A near match
@@ -138,6 +134,14 @@ module Solargraph
             (((maybe_directives? == false && other.maybe_directives? == false) || compare_directives(directives, other.directives)) &&
             compare_docstring_tags(docstring, other.docstring))
           )
+      end
+
+      # Pin equality is determined using the #nearly? method and also
+      # requiring both pins to have the same location.
+      #
+      def == other
+        return false unless nearly? other
+        comments == other.comments && location == other.location
       end
 
       # The pin's return type.
@@ -266,9 +270,10 @@ module Solargraph
         result
       end
 
+      # @deprecated
       # @return [String]
       def identity
-        @identity ||= "#{closure.path}|#{name}"
+        @identity ||= "#{closure&.path}|#{name}|#{location}"
       end
 
       # @return [String, nil]
@@ -276,17 +281,27 @@ module Solargraph
         return_type.to_rbs
       end
 
-      # @return [String, nil]
-      def desc
+      # @return [String]
+      def type_desc
+        rbs = to_rbs
+        # RBS doesn't have a way to represent a Class<x> type
+        rbs = return_type.rooted_tags if return_type.name == 'Class'
         if path
-          if to_rbs
-            path + ' ' + to_rbs
+          if rbs
+            path + ' ' + rbs
           else
             path
           end
         else
-          to_rbs
+          rbs
         end
+      end
+
+      # @return [String]
+      def desc
+        closure_info = closure&.desc
+        binder_info = binder&.desc
+        "[name=#{name.inspect} return_type=#{type_desc}, context=#{context.rooted_tags}, closure=#{closure_info}, binder=#{binder_info}]"
       end
 
       def inspect

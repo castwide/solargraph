@@ -80,9 +80,12 @@ module Solargraph
       # @param closure [Pin::Namespace]
       # @return [void]
       def convert_self_type_to_pins decl, closure
+        type = build_type(decl.name, decl.args)
+        generic_values = type.all_params.map(&:to_s)
         include_pin = Solargraph::Pin::Reference::Include.new(
           name: decl.name.relative!.to_s,
           type_location: location_decl_to_pin_location(decl.location),
+          generic_values: generic_values,
           closure: closure
         )
         pins.push include_pin
@@ -318,7 +321,7 @@ module Solargraph
       # @return [void]
       def method_def_to_sigs decl, pin
         decl.overloads.map do |overload|
-          generics = overload.method_type.type_params.map(&:to_s)
+          generics = overload.method_type.type_params.map(&:name).map(&:to_s)
           signature_parameters, signature_return_type = parts_of_function(overload.method_type, pin)
           block = if overload.method_type.block
                     block_parameters, block_return_type = parts_of_function(overload.method_type.block, pin)
@@ -348,34 +351,34 @@ module Solargraph
         parameters = []
         arg_num = -1
         type.type.required_positionals.each do |param|
-          name = param.name ? param.name.to_s : "arg#{arg_num += 1}"
+          name = param.name ? param.name.to_s : "arg_#{arg_num += 1}"
           parameters.push Solargraph::Pin::Parameter.new(decl: :arg, name: name, closure: pin, return_type: ComplexType.try_parse(other_type_to_tag(param.type)).force_rooted)
         end
         type.type.optional_positionals.each do |param|
-          name = param.name ? param.name.to_s : "arg#{arg_num += 1}"
+          name = param.name ? param.name.to_s : "arg_#{arg_num += 1}"
           parameters.push Solargraph::Pin::Parameter.new(decl: :optarg, name: name, closure: pin,
                                                          return_type: ComplexType.try_parse(other_type_to_tag(param.type)).force_rooted)
         end
         if type.type.rest_positionals
-          name = type.type.rest_positionals.name ? type.type.rest_positionals.name.to_s : "arg#{arg_num += 1}"
+          name = type.type.rest_positionals.name ? type.type.rest_positionals.name.to_s : "arg_#{arg_num += 1}"
           parameters.push Solargraph::Pin::Parameter.new(decl: :restarg, name: name, closure: pin)
         end
         type.type.trailing_positionals.each do |param|
-          name = param.name ? param.name.to_s : "arg#{arg_num += 1}"
+          name = param.name ? param.name.to_s : "arg_#{arg_num += 1}"
           parameters.push Solargraph::Pin::Parameter.new(decl: :arg, name: name, closure: pin)
         end
         type.type.required_keywords.each do |orig, param|
-          name = orig ? orig.to_s : "arg#{arg_num += 1}"
+          name = orig ? orig.to_s : "arg_#{arg_num += 1}"
           parameters.push Solargraph::Pin::Parameter.new(decl: :kwarg, name: name, closure: pin,
                                                          return_type: ComplexType.try_parse(other_type_to_tag(param.type)).force_rooted)
         end
         type.type.optional_keywords.each do |orig, param|
-          name = orig ? orig.to_s : "arg#{arg_num += 1}"
+          name = orig ? orig.to_s : "arg_#{arg_num += 1}"
           parameters.push Solargraph::Pin::Parameter.new(decl: :kwoptarg, name: name, closure: pin,
                                                          return_type: ComplexType.try_parse(other_type_to_tag(param.type)).force_rooted)
         end
         if type.type.rest_keywords
-          name = type.type.rest_keywords.name ? type.type.rest_keywords.name.to_s : "arg#{arg_num += 1}"
+          name = type.type.rest_keywords.name ? type.type.rest_keywords.name.to_s : "arg_#{arg_num += 1}"
           parameters.push Solargraph::Pin::Parameter.new(decl: :kwrestarg, name: type.type.rest_keywords.name.to_s, closure: pin)
         end
 
@@ -572,7 +575,7 @@ module Solargraph
         elsif type.is_a?(RBS::Types::Tuple)
           "Array(#{type.types.map { |t| other_type_to_tag(t) }.join(', ')})"
         elsif type.is_a?(RBS::Types::Literal)
-          type.literal.to_s
+          type.literal.inspect
         elsif type.is_a?(RBS::Types::Union)
           type.types.map { |t| other_type_to_tag(t) }.join(', ')
         elsif type.is_a?(RBS::Types::Record)
@@ -628,9 +631,12 @@ module Solargraph
       def add_mixins decl, namespace
         decl.each_mixin do |mixin|
           klass = mixin.is_a?(RBS::AST::Members::Include) ? Pin::Reference::Include : Pin::Reference::Extend
+          type = build_type(mixin.name, mixin.args)
+          generic_values = type.all_params.map(&:to_s)
           pins.push klass.new(
             name: mixin.name.relative!.to_s,
-            location: location_decl_to_pin_location(mixin.location),
+            type_location: location_decl_to_pin_location(mixin.location),
+            generic_values: generic_values,
             closure: namespace
           )
         end

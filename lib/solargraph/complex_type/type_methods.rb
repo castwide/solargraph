@@ -129,6 +129,13 @@ module Solargraph
         end.call
       end
 
+      def namespace_type
+        return ComplexType.parse('::Object') if duck_type?
+        return ComplexType.parse('::NilClass') if nil_type?
+        return subtypes.first if (name == 'Class' || name == 'Module') && !subtypes.empty?
+        self
+      end
+
       # @return [String]
       def rooted_namespace
         return namespace unless rooted? && can_root_name?(namespace)

@@ -1,3 +1,48 @@
+## 0.54.5 - May 17, 2025
+- Repair unknown encoding errors (#936, #935)
+- Index arbitrary pinsets (#937)
+- Separate YARD cache from doc map cache (#938)
+
+## 0.54.4 - May 14, 2025
+- Delete files from Library hash (#932)
+- Clip#define returns variable pins (#934, #933)
+
+## 0.54.3 - May 13, 2025
+- Improve inspect()/desc()/to_s() methods for better debugging output (#913)
+- Fix generic resolution in Hash types (#906)
+- Stop parsing RBS type parameter constraints as the type name (#918)
+- Fix pin inference stack (#922)
+- Refactor pin equality for performance (#925)
+- Improve ApiMap catalog speed by preserving static pin indexes (#930)
+- Update jaro_winkler dependency (#931)
+
+## 0.54.2 - April 28, 2025
+- Resolve generics correctly on mixin inclusion (#898)
+- Pick correct String#split overload (#905)
+- Fix type sent into YARD method (#912)
+- Early CancelRequest handling (#914)
+- Destructure partial yield types (#915)
+- Dependency versions (#916)
+
+## 0.54.1 - April 26, 2025
+- Retire more RubyVM-specific code (#797)
+- Add additional docs for key classes, modules and methods (#802)
+- Populate location information from RBS files (#768)
+- Consolidate parameter handling into Pin::Callable (#844)
+- Adjust local variable presence to start after assignment, not before (#864)
+- Resolve params from ref tags (#872)
+- Reduce use of ComplexType.parse() to preserve rooted? information (#870)
+- Ensure yield return types are qualified (#886)
+- Understand type of 'def foo; @foo ||= bar; end' reader methods (#888)
+- Improvements to #inspect output on pins and chains (#895)
+- Block method resolution improvements (#885)
+- Understand mass assignment into instance variables (#893)
+- Library sync and cache invalidation (#903)
+- Handle super and yield scenarios from blocks (#891)
+- Allow core and stdlib documentation to be uncached (#899)
+- Surface variable names in LSP, e.g., textDocument/hover (#910)
+- Keep idle progress notifications alive (#911)
+
 ## 0.54.0 - April 14, 2025
 - Add support for simple block argument destructuring (#821)
 - Benchmark the typecheck command (#852)
