@@ -17,30 +17,54 @@ module Solargraph
           closure ||= Solargraph::Pin::Namespace.new(
             name: code_object.namespace.to_s,
             gates: [code_object.namespace.to_s],
+            type: code_object.namespace.is_a?(YARD::CodeObjects::ClassObject) ? :class : :module,
             source: :yardoc,
           )
           location = object_location(code_object, spec)
           name ||= code_object.name.to_s
           return_type = ComplexType::SELF if name == 'new'
           comments = code_object.docstring ? code_object.docstring.all.to_s : ''
-          pin = Pin::Method.new(
-            location: location,
-            closure: closure,
-            name: name,
-            comments: comments,
-            scope: scope || code_object.scope,
-            visibility: visibility || code_object.visibility,
-            # @todo Might need to convert overloads to signatures
-            parameters: [],
-            explicit: code_object.is_explicit?,
-            return_type: return_type,
-            source: :yardoc,
-          )
-          pin.parameters.concat get_parameters(code_object, location, comments, pin)
+          final_scope = scope || code_object.scope
+          final_visibility = visibility || code_object.visibility
+          if code_object.is_alias?
+            origin_code_object = code_object.namespace.aliases[code_object]
+            pin = Pin::MethodAlias.new(
+              name: name,
+              location: location,
+              original: origin_code_object.name.to_s,
+              closure: closure,
+              comments: comments,
+              scope: final_scope,
+              visibility: final_visibility,
+              explicit: code_object.is_explicit?,
+              return_type: return_type,
+              parameters: [],
+              source: :yardoc,
+            )
+          else
+            pin = Pin::Method.new(
+              location: location,
+              closure: closure,
+              name: name,
+              comments: comments,
+              scope: final_scope,
+              visibility: final_visibility,
+              # @todo Might need to convert overloads to signatures
+              explicit: code_object.is_explicit?,
+              return_type: return_type,
+              attribute: code_object.is_attribute?,
+              parameters: [],
+              source: :yardoc,
+            )
+            pin.parameters.concat get_parameters(code_object, location, comments, pin)
+          end
+          logger.debug { "ToMethod.make: Just created method pin: #{pin.inspect}" }
           pin
         end
 
         class << self
+          include Logging
+
           private
 
           # @param code_object [YARD::CodeObjects::Base]

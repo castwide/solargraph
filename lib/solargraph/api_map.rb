@@ -824,7 +824,7 @@ module Solargraph
       return pin unless pin.is_a?(Pin::MethodAlias)
       return nil if @method_alias_stack.include?(pin.path)
       @method_alias_stack.push pin.path
-      origin = get_method_stack(pin.full_context.tag, pin.original, scope: pin.scope).first
+      origin = get_method_stack(pin.full_context.tag, pin.original, scope: pin.scope, preserve_generics: true).first
       @method_alias_stack.pop
       return nil if origin.nil?
       args = {
