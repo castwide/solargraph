@@ -11,14 +11,14 @@ module Solargraph
       def initialize api_map, cursor
         @api_map = api_map
         @cursor = cursor
-        block_pin = block
-        block_pin.rebind(api_map) if block_pin.is_a?(Pin::Block)
+        closure_pin = closure
+        closure_pin.rebind(api_map)
      end
 
       # @return [Array<Pin::Base>] Relevant pins for infering the type of the Cursor's position
       def define
         return [] if cursor.comment? || cursor.chain.literal?
-        result = cursor.chain.define(api_map, block, locals)
+        result = cursor.chain.define(api_map, closure, locals)
         result.concat file_global_methods
         result.concat((source_map.pins + source_map.locals).select{ |p| p.name == cursor.word && p.location.range.contain?(cursor.position) }) if result.empty?
         result
@@ -50,14 +50,14 @@ module Solargraph
 
       # @return [ComplexType]
       def infer
-        result = cursor.chain.infer(api_map, block, locals)
+        result = cursor.chain.infer(api_map, closure, locals)
         if result.tag == 'Class'
           # HACK: Exception to return BasicObject from Class#new
-          dfn = cursor.chain.define(api_map, block, locals).first
+          dfn = cursor.chain.define(api_map, closure, locals).first
           return ComplexType.try_parse('::BasicObject') if dfn && dfn.path == 'Class#new'
         end
         return result unless result.tag == 'self'
-        cursor.chain.base.infer(api_map, block, locals)
+        cursor.chain.base.infer(api_map, closure, locals)
       end
 
       # Get an array of all the locals that are visible from the cursors's
@@ -71,22 +71,14 @@ module Solargraph
 
       # @return [::Array<String>]
       def gates
-        block.gates
-      end
-
-      def in_block?
-        return @in_block unless @in_block.nil?
-        @in_block = begin
-          tree = cursor.source.tree_at(cursor.position.line, cursor.position.column)
-          Parser.is_ast_node?(tree[1]) && [:block, :ITER].include?(tree[1].type)
-        end
+        closure.gates
       end
 
       # @param phrase [String]
       # @return [Array<Solargraph::Pin::Base>]
       def translate phrase
         chain = Parser.chain(Parser.parse(phrase))
-        chain.define(api_map, block, locals)
+        chain.define(api_map, closure, locals)
       end
 
       private
@@ -108,8 +100,8 @@ module Solargraph
       end
 
       # @return [Solargraph::Pin::Closure]
-      def block
-        @block ||= source_map.locate_block_pin(cursor.node_position.line, cursor.node_position.character)
+      def closure
+        @block ||= source_map.locate_closure_pin(cursor.node_position.line, cursor.node_position.character)
       end
 
       # The context at the current position.
@@ -200,20 +192,20 @@ module Solargraph
             result.concat api_map.get_constants(type.namespace, cursor.start_of_constant? ? '' : context_pin.full_context.namespace, *gates)
           end
         else
-          type = cursor.chain.base.infer(api_map, block, locals)
-          result.concat api_map.get_complex_type_methods(type, block.binder.namespace, cursor.chain.links.length == 1)
+          type = cursor.chain.base.infer(api_map, closure, locals)
+          result.concat api_map.get_complex_type_methods(type, closure.binder.namespace, cursor.chain.links.length == 1)
           if cursor.chain.links.length == 1
             if cursor.word.start_with?('@@')
               return package_completions(api_map.get_class_variable_pins(context_pin.full_context.namespace))
             elsif cursor.word.start_with?('@')
-              return package_completions(api_map.get_instance_variable_pins(block.binder.namespace, block.binder.scope))
+              return package_completions(api_map.get_instance_variable_pins(closure.binder.namespace, closure.binder.scope))
             elsif cursor.word.start_with?('$')
               return package_completions(api_map.get_global_variable_pins)
             end
             result.concat locals
-            result.concat file_global_methods unless block.binder.namespace.empty?
+            result.concat file_global_methods unless closure.binder.namespace.empty?
             result.concat api_map.get_constants(context_pin.context.namespace, *gates)
-            result.concat api_map.get_methods(block.binder.namespace, scope: block.binder.scope, visibility: [:public, :private, :protected])
+            result.concat api_map.get_methods(closure.binder.namespace, scope: closure.binder.scope, visibility: [:public, :private, :protected])
             result.concat api_map.get_methods('Kernel')
             result.concat api_map.keyword_pins.to_a
           end
