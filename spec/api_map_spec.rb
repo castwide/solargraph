@@ -744,6 +744,21 @@ describe Solargraph::ApiMap do
     expect(pins.map(&:name).sort).to eq(%w[bar foo])
   end
 
+  it 'can qualify "Boolean"' do
+    api_map = Solargraph::ApiMap.new
+    expect(api_map.qualify('Boolean')).to eq('Boolean')
+  end
+
+  it 'knows that true is a "subtype" of Boolean' do
+    api_map = Solargraph::ApiMap.new
+    expect(api_map.super_and_sub?('Boolean', 'true')).to be(true)
+  end
+
+  it 'knows that false is a "subtype" of Boolean' do
+    api_map = Solargraph::ApiMap.new
+    expect(api_map.super_and_sub?('Boolean', 'true')).to be(true)
+  end
+
   it 'resolves aliases for YARD methods' do
     dir = File.absolute_path(File.join('spec', 'fixtures', 'yard_map'))
     yard_pins = Dir.chdir dir do

@@ -27,7 +27,7 @@ module Solargraph
       # @return [UniqueType]
       def self.parse name, substring = '', make_rooted: nil
         if name.start_with?(':::')
-          raise "Illegal prefix: #{name}"
+          raise ComplexTypeError, "Illegal prefix: #{name}"
         end
         if name.start_with?('::')
           name = name[2..-1]
@@ -48,7 +48,7 @@ module Solargraph
           subs = ComplexType.parse(substring[1..-2], partial: true)
           parameters_type = PARAMETERS_TYPE_BY_STARTING_TAG.fetch(substring[0])
           if parameters_type == :hash
-            raise ComplexTypeError, "Bad hash type" unless !subs.is_a?(ComplexType) and subs.length == 2 and !subs[0].is_a?(UniqueType) and !subs[1].is_a?(UniqueType)
+            raise ComplexTypeError, "Bad hash type: name=#{name}, substring=#{substring}" unless !subs.is_a?(ComplexType) and subs.length == 2 and !subs[0].is_a?(UniqueType) and !subs[1].is_a?(UniqueType)
             # @todo should be able to resolve map; both types have it
             #   with same return type
             # @sg-ignore
@@ -73,17 +73,61 @@ module Solargraph
         end
         raise "Please remove leading :: and set rooted instead - #{name.inspect}" if name.start_with?('::')
         @name = name
-        @key_types = key_types
-        @subtypes = subtypes
+        @parameters_type = parameters_type
+        if implicit_union?
+          @key_types = key_types.uniq
+          @subtypes = subtypes.uniq
+        else
+          @key_types = key_types
+          @subtypes = subtypes
+        end
         @rooted = rooted
         @all_params = []
-        @all_params.concat key_types
-        @all_params.concat subtypes
-        @parameters_type = parameters_type
+        @all_params.concat @key_types
+        @all_params.concat @subtypes
+      end
+
+      def implicit_union?
+        # @todo use api_map to establish number of generics in type;
+        #   if only one is allowed but multiple are passed in, treat
+        #   those as implicit unions
+        ['Hash', 'Array', 'Set', '_ToAry', 'Enumerable', '_Each'].include?(name) && parameters_type != :fixed
       end
 
       def to_s
         tag
+      end
+
+      def simplify_literals
+        transform do |t|
+          next t unless t.literal?
+          t.recreate(new_name: t.non_literal_name)
+        end
+      end
+
+      def literal?
+        non_literal_name != name
+      end
+
+      def non_literal_name
+        @non_literal_name ||= determine_non_literal_name
+      end
+
+      def determine_non_literal_name
+        # https://github.com/ruby/rbs/blob/master/docs/syntax.md
+        #
+        # _literal_ ::= _string-literal_
+        #    | _symbol-literal_
+        #    | _integer-literal_
+        #    | `true`
+        #    | `false`
+        return name if name.empty?
+        return 'NilClass' if name == 'nil'
+        return 'Boolean' if ['true', 'false'].include?(name)
+        return 'Symbol' if name[0] == ':'
+        return 'String' if ['"', "'"].include?(name[0])
+        return 'Integer' if name.match?(/^-?\d+$/)
+        name
       end
 
       def eql?(other)
@@ -113,6 +157,8 @@ module Solargraph
       def rbs_name
         if name == 'undefined'
           'untyped'
+        elsif literal?
+          name
         else
           rooted_name
         end
@@ -181,6 +227,23 @@ module Solargraph
 
       def generic?
         name == GENERIC_TAG_NAME || all_params.any?(&:generic?)
+      end
+
+      # @param api_map [ApiMap] The ApiMap that performs qualification
+      # @param atype [ComplexType] type which may be assigned to this type
+      def can_assign?(api_map, atype)
+        logger.debug { "UniqueType#can_assign?(self=#{rooted_tags.inspect}, atype=#{atype.rooted_tags.inspect})" }
+        downcasted_atype = atype.downcast_to_literal_if_possible
+        out = downcasted_atype.all? do |autype|
+          autype.name == name || api_map.super_and_sub?(name, autype.name)
+        end
+        logger.debug { "UniqueType#can_assign?(self=#{rooted_tags.inspect}, atype=#{atype.rooted_tags.inspect}) => #{out}" }
+        out
+      end
+
+      # @return [UniqueType]
+      def downcast_to_literal_if_possible
+        SINGLE_SUBTYPE.fetch(rooted_tag, self)
       end
 
       # @param generics_to_resolve [Enumerable<String>]
@@ -252,6 +315,12 @@ module Solargraph
                 next ComplexType.new(context_type.subtypes)
               else
                 next ComplexType::UNDEFINED
+              end
+            elsif context_type.all?(&:implicit_union?)
+              if idx == 0 && !context_type.all_params.empty?
+                ComplexType.new(context_type.all_params)
+              else
+                ComplexType::UNDEFINED
               end
             else
               context_type.all_params[idx] || ComplexType::UNDEFINED
@@ -381,6 +450,18 @@ module Solargraph
 
       UNDEFINED = UniqueType.new('undefined', rooted: false)
       BOOLEAN = UniqueType.new('Boolean', rooted: true)
+      TRUE = UniqueType.new('true', rooted: true)
+      FALSE = UniqueType.new('false', rooted: true)
+      NIL = UniqueType.new('nil', rooted: true)
+      # @type [Hash{String => UniqueType}]
+      SINGLE_SUBTYPE = {
+        '::TrueClass' => UniqueType::TRUE,
+        '::FalseClass' => UniqueType::FALSE,
+        '::NilClass' => UniqueType::NIL
+      }.freeze
+
+
+      include Logging
     end
   end
 end
