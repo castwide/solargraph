@@ -7,9 +7,16 @@ module Solargraph
       #
       class MessageWorker
         UPDATE_METHODS = [
-          'textDocument/didOpen',
           'textDocument/didChange',
-          'workspace/didChangeWatchedFiles'
+          'textDocument/didClose',
+          'textDocument/didOpen',
+          'textDocument/didSave',
+          'workspace/didChangeConfiguration',
+          'workspace/didChangeWatchedFiles',
+          'workspace/didCreateFiles',
+          'workspace/didChangeWorkspaceFolders',
+          'workspace/didDeleteFiles',
+          'workspace/didRenameFiles'
         ].freeze
 
         # @param host [Host]
@@ -84,11 +91,7 @@ module Solargraph
           idx = messages.find_index do |msg|
             UPDATE_METHODS.include?(msg['method']) || version_dependent?(msg)
           end
-          return messages.shift unless idx
-
-          msg = messages[idx]
-          messages.delete_at idx
-          msg
+          idx ? messages.delete_at(idx) : messages.shift
         end
 
         # True if the message requires a previous update to have executed in
