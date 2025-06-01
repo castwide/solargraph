@@ -9,7 +9,6 @@ module Solargraph
       autoload :Base, 'solargraph/parser/node_processor/base'
 
       class << self
-        # @type [Hash<Symbol, Class<NodeProcessor::Base>>]
         @@processors ||= {}
 
         # Register a processor for a node type.

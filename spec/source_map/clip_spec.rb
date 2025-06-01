@@ -3109,4 +3109,117 @@ describe Solargraph::SourceMap::Clip do
     clip = api_map.clip_at('test.rb', [13, 12])
     expect(clip.infer.to_s).to eq('Integer')
   end
+
+  it 'completes Struct methods' do
+    source = Solargraph::Source.load_string(%(
+      # @param bar [String]
+      # @param baz [Integer]
+      class Foo < Struct.new(:bar, :baz)
+        def foo
+          bar
+        end
+      end
+
+      Foo.new.ba
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new.map(source)
+    pin = api_map.get_path_pins('Foo#baz').first
+    expect(pin).not_to be_nil
+    expect(pin.return_type.to_s).to eq('Integer')
+    pin = api_map.get_path_pins('Foo#baz=').first
+    expect(pin).not_to be_nil
+    expect(pin.return_type.to_s).to eq('Integer')
+    pin = api_map.get_path_pins('Foo#bar').first
+    expect(pin).not_to be_nil
+    expect(pin.return_type.to_s).to eq('String')
+    pin = api_map.get_path_pins('Foo#bar=').first
+    expect(pin).not_to be_nil
+    expect(pin.return_type.to_s).to eq('String')
+
+    clip = api_map.clip_at('test.rb', [9, 15])
+    names = clip.complete.pins.map(&:name)
+    expect(names).to include('bar', 'bar=', 'baz', 'baz=')
+  end
+
+  it 'completes Struct initialize keyword args' do
+    source = Solargraph::Source.load_string(%(
+      # @param bar [String]
+      # @param baz [Integer]
+      class Foo < Struct.new(:bar, :baz, keyword_init: true)
+        def foo
+          ba
+        end
+      end
+
+      Foo.new(bar: 'foo', baz: 123)
+    ), 'test.rb')
+
+    api_map = Solargraph::ApiMap.new.map(source)
+    clip = api_map.clip_at('test.rb', [9, 15])
+    names = clip.complete.pins.map(&:name)
+    expect(names).to include('bar:', 'baz:')
+  end
+  
+  it 'completes Struct methods inside class' do
+    source = Solargraph::Source.load_string(%(
+      # @param bar [String]
+      # @param baz [Integer]
+      class Foo < Struct.new(:bar, :baz, keyword_init: true)
+        def foo
+          ba
+        end
+      end
+    ), 'test.rb')
+
+    api_map = Solargraph::ApiMap.new.map(source)
+    clip = api_map.clip_at('test.rb', [5, 11])
+    names = clip.complete.pins.map(&:name)
+    expect(names).to include('bar', 'bar=', 'baz', 'baz=')
+  end
+
+  it 'completes Struct ivars inside class' do
+    source = Solargraph::Source.load_string(%(
+      class Foo < Struct.new(:bar, :baz, keyword_init: true)
+        def foo
+          @ba
+        end
+      end
+    ), 'test.rb')
+
+    api_map = Solargraph::ApiMap.new.map(source)
+    clip = api_map.clip_at('test.rb', [3, 11])
+    names = clip.complete.pins.map(&:name)
+    expect(names).to include('@bar', '@baz')
+  end
+
+  it 'completes Struct methods via const assignment' do
+    source = Solargraph::Source.load_string(%(
+      # @param bar [String]
+      # @param baz [Integer]
+      Foo = Struct.new(:bar, :baz) do
+        def foo
+          bar
+        end
+      end
+
+      Foo.new.ba
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new.map(source)
+    pin = api_map.get_path_pins('Foo#baz').first
+    expect(pin).not_to be_nil
+    expect(pin.return_type.to_s).to eq('Integer')
+    pin = api_map.get_path_pins('Foo#baz=').first
+    expect(pin).not_to be_nil
+    expect(pin.return_type.to_s).to eq('Integer')
+    pin = api_map.get_path_pins('Foo#bar').first
+    expect(pin).not_to be_nil
+    expect(pin.return_type.to_s).to eq('String')
+    pin = api_map.get_path_pins('Foo#bar=').first
+    expect(pin).not_to be_nil
+    expect(pin.return_type.to_s).to eq('String')
+
+    clip = api_map.clip_at('test.rb', [9, 15])
+    names = clip.complete.pins.map(&:name)
+    expect(names).to include('bar', 'bar=', 'baz', 'baz=')
+  end
 end
