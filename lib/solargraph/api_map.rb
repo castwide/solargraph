@@ -667,20 +667,26 @@ module Solargraph
           end
         else
           store.get_includes(fqns).reverse.each do |include_tag|
-            logger.info { "ApiMap#inner_get_methods(#{fqns}, #{scope}, #{visibility}, #{deep}) - Handling class include include_tag=#{include_tag}" }
-            rooted_include_tag = qualify(include_tag, rooted_tag)
-
+            logger.debug { "ApiMap#inner_get_methods(#{fqns}, #{scope}, #{visibility}, #{deep}) - Handling class include include_tag=#{include_tag}" }
+            module_extends = store.get_extends(include_tag)
             # ActiveSupport::Concern is syntactic sugar for a common
-            # pattern to provide virtual class method - i.e., if Foo
-            # includes Bar and Bar is a module using this
-            # pattern, Bar can supply class methods which will also
-            # appear under Foo.
+            # pattern to include class methods while mixing-in a Module
 
             # See https://api.rubyonrails.org/classes/ActiveSupport/Concern.html
-            included_class_pins = inner_get_methods_from_reference(rooted_include_tag, namespace_pin, rooted_type, scope, visibility, deep, skip, true)
-            # activesupport_concern_pins = included_class_pins.select { |p| p.virtual_class_method? }
-            # result.concat activesupport_concern_pins
-            result.concat included_class_pins # TODO remove this line once we have activesupport::concern support
+            logger.debug { "ApiMap#inner_get_methods(#{fqns}, #{scope}, #{visibility}, #{deep}) - Handling class include include_tag=#{include_tag}" }
+            if module_extends.include? 'ActiveSupport::Concern'
+              rooted_include_tag = qualify(include_tag, rooted_tag)
+              unless rooted_include_tag.nil?
+                # yard-activesupport-concern pulls methods inside
+                # 'class_methods' blocks into main class visible from YARD
+                included_class_pins = inner_get_methods_from_reference(rooted_include_tag, namespace_pin, rooted_type, :class, visibility, deep, skip, true)
+                result.concat included_class_pins
+
+                # another pattern is to put class methods inside a submodule
+                included_classmethods_pins = inner_get_methods_from_reference(rooted_include_tag + "::ClassMethods", namespace_pin, rooted_type, :instance, visibility, deep, skip, true)
+                result.concat included_classmethods_pins
+              end
+            end
           end
 
           logger.info { "ApiMap#inner_get_methods(#{fqns}, #{scope}, #{visibility}, #{deep}, #{skip}) - looking for get_extends() from #{fqns}" }
