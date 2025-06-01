@@ -1394,6 +1394,15 @@ describe Solargraph::SourceMap::Mapper do
     expect(pin.name).to eq('bundler/require')
   end
 
+  it 'maps Bundler.require in Rails context to require "bundler/require"' do
+    map = Solargraph::SourceMap.load_string(%(
+      Bundler.require(*Rails.groups)
+    ))
+    pin = map.pins.select { |pin| pin.is_a?(Solargraph::Pin::Reference::Require) }.first
+    # not perfect - would be best if we did something with the argument to limit pins gathered
+    expect(pin.name).to eq('bundler/require')
+  end
+
   it 'correctly orders optargs and blockargs' do
     map = Solargraph::SourceMap.load_string(%(
       def foo bar = nil, &block
