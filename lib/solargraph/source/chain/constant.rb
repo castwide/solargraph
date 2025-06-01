@@ -43,7 +43,7 @@ module Solargraph
 
         private
 
-        # @param pin [Pin::Base]
+        # @param pin [Pin::Closure]
         # @return [::Array<String>]
         def crawl_gates pin
           clos = pin

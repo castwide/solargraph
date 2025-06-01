@@ -27,7 +27,7 @@ module Solargraph
         # @param location [Location, nil]
         # @param arguments [::Array<Chain>]
         # @param block [Chain, nil]
-        def initialize word, location, arguments = [], block = nil
+        def initialize word, location = nil, arguments = [], block = nil
           @word = word
           @location = location
           @arguments = arguments
@@ -45,7 +45,7 @@ module Solargraph
         end
 
         # @param api_map [ApiMap]
-        # @param name_pin [Pin::Closure] name_pin.binder should give us the object on which 'word' will be invoked
+        # @param name_pin [Pin::Closure] name_pin.binder should give us the type of the object on which 'word' will be invoked
         # @param locals [::Array<Pin::LocalVariable>]
         def resolve api_map, name_pin, locals
           logger.debug { "Call#resolve(name_pin.binder=#{name_pin.binder.rooted_tags.inspect}, word=#{word}, arguments=#{arguments.map(&:desc)}, name_pin=#{name_pin}) - starting" }
@@ -64,8 +64,9 @@ module Solargraph
           end
           # @param [ComplexType::UniqueType]
           pins = name_pin.binder.each_unique_type.flat_map do |context|
-            ns = context.namespace == '' ? '' : context.namespace_type.tag
-            api_map.get_method_stack(ns, word, scope: context.scope)
+            ns_tag = context.namespace == '' ? '' : context.namespace_type.tag
+            stack = api_map.get_method_stack(ns_tag, word, scope: context.scope)
+            [stack.first].compact
           end
           logger.debug { "Call#resolve(name_pin.binder=#{name_pin.binder.rooted_tags}, word=#{word}, arguments=#{arguments.map(&:desc)}, name_pin=#{name_pin}) - pins=#{pins.map(&:desc)} - api_map gave pins=#{pins}" }
           if pins.empty?
@@ -144,7 +145,27 @@ module Solargraph
                 new_signature_pin = ol.resolve_generics_from_context_until_complete(ol.generics, atypes, nil, nil, blocktype)
                 logger.debug { "Call#inferred_pins(name_pin.binder=#{name_pin.binder}, word=#{word}, atypes=#{atypes.map(&:rooted_tags)}, name_pin=#{name_pin}) - resolved generics in #{ol} (#{ol.generics}) to #{new_signature_pin}" }
                 new_return_type = new_signature_pin.return_type
-                type = with_params(new_return_type.self_to_type(name_pin.context), name_pin.context).qualify(api_map, name_pin.context.namespace) if new_return_type.defined?
+                if head?
+                  # If we're at the head of the chain, we called a
+                  # method somewhere that marked itself as returning
+                  # self.  Given we didn't invoke this on an object,
+                  # this must be a method in this same class - so we
+                  # use our own self type
+                  self_type = name_pin.context
+                else
+                  # if we're past the head in the chain, whatever the
+                  # type of the lhs side is what 'self' will be in its
+                  # declaration - we can't just use the type of the
+                  # method pin, as this might be a subclass of the
+                  # place where the method is defined
+                  self_type = name_pin.binder
+                end
+                # This same logic applies to the YARD work done by
+                # 'with_params()'.
+                #
+                # qualify(), however, happens in the namespace where
+                # the docs were written - from the method pin.
+                type = with_params(new_return_type.self_to_type(self_type), self_type).qualify(api_map, p.namespace) if new_return_type.defined?
                 type ||= ComplexType::UNDEFINED
               end
               break if type.defined?
@@ -167,12 +188,12 @@ module Solargraph
           end
           logger.debug { "Call#inferred_pins(name_pin.binder=#{name_pin.binder}, word=#{word}, pins=#{pins.map(&:desc)}, name_pin=#{name_pin}) - result=#{result}" }
           out = result.map do |pin|
-            if pin.path == 'Class#new' && name_pin.context.tag != 'Class'
-              reduced_context = name_pin.context.reduce_class_type
+            if pin.path == 'Class#new' && name_pin.binder.tag != 'Class'
+              reduced_context = name_pin.binder.reduce_class_type
               pin.proxy(reduced_context)
             else
               next pin if pin.return_type.undefined?
-              selfy = pin.return_type.self_to_type(name_pin.context)
+              selfy = pin.return_type.self_to_type(name_pin.binder)
               selfy == pin.return_type ? pin : pin.proxy(selfy)
             end
           end

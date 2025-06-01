@@ -36,11 +36,12 @@ module Solargraph
       # @param closure [Solargraph::Pin::Closure, nil]
       # @param name [String]
       # @param comments [String]
-      def initialize location: nil, type_location: nil, closure: nil, name: '', comments: ''
+      def initialize location: nil, type_location: nil, closure: nil, source: nil, name: '', comments: ''
         @location = location
         @type_location = type_location
         @closure = closure
         @name = name
+        @source = source
         @comments = comments
       end
 
@@ -272,7 +273,7 @@ module Solargraph
       # @deprecated
       # @return [String]
       def identity
-        @identity ||= "#{closure&.path}|#{name}"
+        @identity ||= "#{closure&.path}|#{name}|#{location}"
       end
 
       # @return [String, nil]
@@ -300,7 +301,7 @@ module Solargraph
       def desc
         closure_info = closure&.desc
         binder_info = binder&.desc
-        "[#{type_desc}, closure=#{closure_info}, binder=#{binder}"
+        "[name=#{name.inspect} return_type=#{type_desc}, context=#{context.rooted_tags}, closure=#{closure_info}, binder=#{binder_info}]"
       end
 
       def inspect
