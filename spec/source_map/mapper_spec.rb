@@ -1195,7 +1195,7 @@ describe Solargraph::SourceMap::Mapper do
           # @!method bar
           # @!method baz
         end
-      end  
+      end
     ), 'test.rb')
     api_map = Solargraph::ApiMap.new
     api_map.map source
@@ -1212,7 +1212,7 @@ describe Solargraph::SourceMap::Mapper do
         class << self
           # @!method baz
         end
-      end  
+      end
     ), 'test.rb')
     api_map = Solargraph::ApiMap.new
     api_map.map source
