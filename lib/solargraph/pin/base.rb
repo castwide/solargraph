@@ -36,11 +36,12 @@ module Solargraph
       # @param closure [Solargraph::Pin::Closure, nil]
       # @param name [String]
       # @param comments [String]
-      def initialize location: nil, type_location: nil, closure: nil, name: '', comments: ''
+      def initialize location: nil, type_location: nil, closure: nil, source: nil, name: '', comments: ''
         @location = location
         @type_location = type_location
         @closure = closure
         @name = name
+        @source = source
         @comments = comments
       end
 
