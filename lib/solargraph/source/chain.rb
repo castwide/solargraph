@@ -128,7 +128,7 @@ module Solargraph
         end
         links.last.last_context = working_pin
         out = links.last.resolve(api_map, working_pin, locals)
-        logger.debug { "Chain#define(name_pin=#{name_pin.desc}, links=#{links.map(&:desc)}, locals=#{locals}) => #{out}" }
+        logger.debug { "Chain#define(links=#{links.map(&:desc)}, name_pin=#{name_pin.desc}, locals=#{locals}) => #{out}" }
         out
       end
 
