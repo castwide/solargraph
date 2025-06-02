@@ -385,7 +385,7 @@ module Solargraph
             init_pin = get_method_stack(rooted_tag, 'initialize').first
             next pin unless init_pin
 
-            type = ComplexType.try_parse(ComplexType.try_parse(rooted_tag).namespace)
+            type = ComplexType::SELF
             Pin::Method.new(
               name: 'new',
               scope: :class,
@@ -394,9 +394,10 @@ module Solargraph
               signatures: init_pin.signatures.map { |sig| sig.proxy(type) },
               return_type: type,
               comments: init_pin.comments,
-              closure: init_pin.closure
-            # @todo Hack to force TypeChecker#internal_or_core?
-            ).tap { |pin| pin.source = :rbs }
+              closure: init_pin.closure,
+              source: init_pin.source,
+              type_location: init_pin.type_location,
+            )
           end
         end
         result.concat inner_get_methods('Kernel', :instance, [:public], deep, skip) if visibility.include?(:private)

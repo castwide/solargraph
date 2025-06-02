@@ -43,6 +43,7 @@ module Solargraph
         @name = name
         @source = source
         @comments = comments
+        @source = source
       end
 
       # @return [String]
