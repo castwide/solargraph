@@ -106,7 +106,13 @@ module Solargraph
 
       def reset_generated!
         super
-        return_type = nil unless signatures.empty?
+        unless signatures.empty?
+          return_type = nil
+          @block = :undefined
+          parameters = []
+        end
+        block&.reset_generated!
+        @signatures&.each(&:reset_generated!)
         signature_help = nil
         documentation = nil
       end
