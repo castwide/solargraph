@@ -23,8 +23,10 @@ module Solargraph
 
           type = if child_types.uniq.length == 1 && child_types.first.defined?
                    ComplexType::UniqueType.new('Array', [], child_types.uniq, rooted: true, parameters_type: :list)
+                 elsif child_types.length == 0
+                   ComplexType::UniqueType.new('Array', rooted: true, parameters_type: :list)
                  else
-                   ComplexType::UniqueType.new('Array', rooted: true)
+                   ComplexType::UniqueType.new('Array', [], child_types, rooted: true, parameters_type: :fixed)
                  end
           [Pin::ProxyType.anonymous(type)]
         end
