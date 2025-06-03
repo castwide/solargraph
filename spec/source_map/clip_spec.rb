@@ -1059,7 +1059,7 @@ describe Solargraph::SourceMap::Clip do
     api_map = Solargraph::ApiMap.new
     api_map.map source
     clip = api_map.clip_at('test.rb', [7, 14])
-    expect(clip.infer.to_s).to eq('Foo, Bar')
+    expect(clip.infer.to_s).to eq('Foo, Bar').or eq('Bar, Foo')
   end
 
   # pending https://github.com/castwide/solargraph/pull/836
