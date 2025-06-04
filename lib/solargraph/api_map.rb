@@ -23,10 +23,22 @@ module Solargraph
     attr_reader :missing_docs
 
     # @param pins [Array<Solargraph::Pin::Base>]
-    def initialize pins: []
+    # @param loose_unions [Boolean] if true, a potential type can be
+    #   inferred if ANY of the UniqueTypes in the base chain's
+    #   ComplexType match it. If false, every single UniqueTypes in
+    #   the base must be ALL able to independently provide this
+    #   type.  The former is useful during completion, but the
+    #   latter is best for typechecking at higher levels.
+    #
+    #   Currently applies only to selecting potential methods to
+    #   select in a Call link, but is likely to expand in the
+    #   future to similar situations.
+    #
+    def initialize pins: [], loose_unions: true
       @source_map_hash = {}
       @cache = Cache.new
       @method_alias_stack = []
+      @loose_unions = loose_unions
       index pins
     end
 
@@ -48,6 +60,9 @@ module Solargraph
     def hash
       equality_fields.hash
     end
+
+
+    attr_reader :loose_unions
 
     def to_s
       self.class.to_s
@@ -106,7 +121,7 @@ module Solargraph
     #   that this overload of 'protected' will typecheck @sg-ignore
     # @sg-ignore
     protected def equality_fields
-      [self.class, @source_map_hash, implicit, @doc_map, @unresolved_requires]
+      [self.class, @source_map_hash, implicit, @doc_map, @unresolved_requires, @missing_docs, @loose_unions]
     end
 
     # @return [::Array<Gem::Specification>]
@@ -158,8 +173,8 @@ module Solargraph
     #
     # @param directory [String]
     # @return [ApiMap]
-    def self.load directory
-      api_map = new
+    def self.load directory, loose_unions: true
+      api_map = new(loose_unions: loose_unions)
       workspace = Solargraph::Workspace.new(directory)
       # api_map.catalog Bench.new(workspace: workspace)
       library = Library.new(workspace)
@@ -178,8 +193,8 @@ module Solargraph
     # @param directory [String]
     # @param out [IO] The output stream for messages
     # @return [ApiMap]
-    def self.load_with_cache directory, out = IO::NULL
-      api_map = load(directory)
+    def self.load_with_cache directory, out = IO::NULL, loose_unions: true
+      api_map = load(directory, loose_unions: loose_unions)
       return api_map if api_map.uncached_gemspecs.empty?
 
       api_map.uncached_gemspecs.each do |gemspec|
