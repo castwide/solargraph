@@ -8,6 +8,7 @@ module Solargraph
       include Common
       include Conversions
       include Documenting
+      include Logging
 
       # @return [YARD::CodeObjects::Base]
       attr_reader :code_object
@@ -36,7 +37,8 @@ module Solargraph
       # @param closure [Solargraph::Pin::Closure, nil]
       # @param name [String]
       # @param comments [String]
-      def initialize location: nil, type_location: nil, closure: nil, source: nil, name: '', comments: ''
+      # @param source [Symbol, nil]
+      def initialize location: nil, type_location: nil, closure: nil, source: nil, name: '', comments: '', docstring: nil, directives: nil
         @location = location
         @type_location = type_location
         @closure = closure
@@ -44,6 +46,225 @@ module Solargraph
         @source = source
         @comments = comments
         @source = source
+        @identity = nil
+        @docstring = docstring
+        @directives = directives
+      end
+
+      # @param other [self]
+      # @param attrs [Hash{Symbol => Object}]
+      #
+      # @return [self]
+      def combine_with(other, attrs={})
+        raise "tried to combine #{other.class} with #{self.class}" unless other.class == self.class
+        type_location = choose(other, :type_location)
+        location = choose(other, :location) || type_location
+        combined_name = combine_name(other)
+        new_attrs = {
+          location: location,
+          type_location: type_location,
+          name: combined_name,
+          closure: choose_pin_attr_with_same_name(other, :closure),
+          comments: choose_longer(other, :comments),
+          source: :combined,
+          docstring: choose(other, :docstring),
+          directives: combine_directives(other),
+        }.merge(attrs)
+        assert_same_macros(other)
+        logger.debug { "Base#combine_with(path=#{path}) - other.comments=#{other.comments.inspect}, self.comments = #{self.comments}" }
+        out = self.class.new(**new_attrs)
+        out.reset_generated!
+        out
+      end
+
+      def choose_longer(other, attr)
+        val1 = send(attr)
+        val2 = other.send(attr)
+        return val1 if val1 == val2
+        return val2 if val1.nil?
+        val1.length > val2.length ? val1 : val2
+      end
+
+      def combine_directives(other)
+        return self.directives if other.directives.empty?
+        return other.directives if directives.empty?
+        [directives + other.directives].uniq
+      end
+
+      def combine_name(other)
+        if needs_consistent_name? || other.needs_consistent_name?
+          assert_same(other, :name)
+        else
+          choose(other, :name)
+        end
+      end
+
+      def reset_generated!
+        # @return_type doesn't go here as subclasses tend to assign it
+        # themselves in constructors, and they will deal with setting
+        # it in any methods that call this
+        #
+        # @docstring also doesn't go here, as there is code which
+        # directly manipulates docstring without editing comments
+        # (e.g., Api::Map::Store#index processes overrides that way
+        #
+        # Same with @directives, @macros, @maybe_directives, which
+        # regenerate docstring
+        @deprecated = nil
+        reset_conversions
+      end
+
+      def needs_consistent_name?
+        true
+      end
+
+      # @sg-ignore def should infer as symbol - "Not enough arguments to Module#protected"
+      protected def equality_fields
+        [name, location, type_location, closure, source]
+      end
+
+      def combine_return_type(other)
+        if return_type.undefined?
+          other.return_type
+        elsif other.return_type.undefined?
+          return_type
+        elsif dodgy_return_type_source? && !other.dodgy_return_type_source?
+          other.return_type
+        elsif other.dodgy_return_type_source? && !dodgy_return_type_source?
+          return_type
+        else
+          all_items = return_type.items + other.return_type.items
+          if all_items.any? { |item| item.selfy? } && all_items.any? { |item| item.rooted_tag == context.rooted_tag }
+            # assume this was a declaration that should have said 'self'
+            all_items.delete_if { |item| item.rooted_tag == context.rooted_tag }
+          end
+          ComplexType.new(all_items)
+        end
+      end
+
+      def dodgy_return_type_source?
+        # uses a lot of 'Object' instead of 'self'
+        location&.filename&.include?('core_ext/object/')
+      end
+
+      def <=>(p1)
+        return nil unless p1.is_a?(self.class)
+        return 0 if self == p1
+        equality_fields <=> equality_fields
+      end
+
+      # when choices are arbitrary, make sure the choice is consistent
+      #
+      # @param other [Pin::Base]
+      # @param attr [::Symbol]
+      #
+      # @return [Object, nil]
+      def choose(other, attr)
+        results = [self, other].map(&attr).compact
+        # true and false are different classes and can't be sorted
+        return true if results.any? { |r| r == true || r == false }
+        results.min
+      rescue
+        STDERR.puts("Problem handling #{attr} for \n#{self.inspect}\n and \n#{other.inspect}\n\n#{self.send(attr).inspect} vs #{other.send(attr).inspect}")
+        raise
+      end
+
+      def choose_node(other, attr)
+        if other.object_id < attr.object_id
+          other.send(attr)
+        else
+          send(attr)
+        end
+      end
+
+      def prefer_rbs_location(other, attr)
+        if rbs_location? && !other.rbs_location?
+          self.send(attr)
+        elsif !rbs_location? && other.rbs_location?
+          other.send(attr)
+        else
+          choose(other, attr)
+        end
+      end
+
+      def rbs_location?
+        type_location&.rbs?
+      end
+
+      def assert_same_macros(other)
+        assert_same_count(other, :macros)
+        assert_same_array_content(other, :macros) { |macro| macro.tag.name }
+      end
+
+      def assert_same_array_content(other, attr, &block)
+        arr1 = send(attr)
+        arr2 = other.send(attr)
+        values1 = arr1.map(&block)
+        values2 = arr2.map(&block)
+        return arr1 if values1 == values2
+        Solargraph.assert_or_log("combine_with_#{attr}".to_sym,
+                                 "Inconsistent #{attr.inspect} values between \nself =#{inspect} and \nother=#{other.inspect}:\n\n self values = #{values1}\nother values =#{attr} = #{values2}")
+        arr1
+      end
+
+      # @param other [self]
+      # @param attr [::Symbol]
+      #
+      # @return [Object, nil]
+      def assert_same_count(other, attr)
+        val1 = send(attr)
+        val2 = other.send(attr)
+        return val1 if val1.count == val2.count
+        Solargraph.assert_or_log("combine_with_#{attr}".to_sym,
+                                 "Inconsistent #{attr.inspect} count value between \nself =#{inspect} and \nother=#{other.inspect}:\n\n self.#{attr} = #{val1.inspect}\nother.#{attr} = #{val2.inspect}")
+        val1
+      end
+
+      # @param other [self]
+      # @param attr [::Symbol]
+      #
+      # @return [Object, nil]
+      def assert_same(other, attr)
+        val1 = send(attr)
+        val2 = other.send(attr)
+        return val1 if val1 == val2
+        Solargraph.assert_or_log("combine_with_#{attr}".to_sym,
+                                 "Inconsistent #{attr.inspect} values between \nself =#{inspect} and \nother=#{other.inspect}:\n\n self.#{attr} = #{val1.inspect}\nother.#{attr} = #{val2.inspect}")
+        val1
+      end
+
+      def choose_pin_attr_with_same_name(other, attr)
+        val1 = send(attr)
+        val2 = other.send(attr)
+        if val1&.name != val2&.name
+          Solargraph.assert_or_log("combine_with_#{attr}_name".to_sym,
+                                   "Inconsistent #{attr.inspect} name values between \nself =#{inspect} and \nother=#{other.inspect}:\n\n self.#{attr} = #{val1.inspect}\nother.#{attr} = #{val2.inspect}")
+        end
+        [val1, val2].compact.min
+      end
+
+      # @param other [self]
+      # @param attr [::Symbol]
+      #
+      # @return [Pin::Base, nil]
+      def assert_combined_pin(other, attr)
+        val1 = send(attr)
+        val2 = other.send(attr)
+        if val1.nil? && val2.nil?
+          return nil
+        end
+        unless val1 && val2
+          Solargraph.assert_or_log(:combine_with,
+                                   "Inconsistent #{attr.inspect} values from \nself =#{inspect} and \nother=#{other.inspect}:\n\n self.#{attr} = #{val1.inspect}\nother.#{attr} = #{val2.inspect}")
+          return val1 || val2
+        end
+        if val1.object_id == self.object_id || val2.object_id == self.object_id
+          Solargraph.assert_or_log(:combine_with,
+                                   "Loop found: #{val1.inspect} or #{val2.inspect} may be same as self - #{inspect}")
+          return nil
+        end
+
+        val1.combine_with(val2)
       end
 
       # @return [String]
@@ -154,13 +375,13 @@ module Solargraph
 
       # @return [YARD::Docstring]
       def docstring
-        parse_comments unless defined?(@docstring)
+        parse_comments unless @docstring
         @docstring ||= Solargraph::Source.parse_docstring('').to_docstring
       end
 
       # @return [::Array<YARD::Tags::Directive>]
       def directives
-        parse_comments unless defined?(@directives)
+        parse_comments unless @directives
         @directives
       end
 
@@ -178,7 +399,7 @@ module Solargraph
       #
       # @return [Boolean]
       def maybe_directives?
-        return !@directives.empty? if defined?(@directives)
+        return !@directives.empty? if defined?(@directives) && @directives
         @maybe_directives ||= comments.include?('@!')
       end
 
@@ -215,26 +436,6 @@ module Solargraph
         type = typify(api_map)
         return type unless type.undefined?
         probe api_map
-      end
-
-      # Try to merge data from another pin. Merges are only possible if the
-      # pins are near matches (see the #nearly? method). The changes should
-      # not have any side effects on the API surface.
-      #
-      # @param pin [Pin::Base] The pin to merge into this one
-      # @return [Boolean] True if the pins were merged
-      def try_merge! pin
-        return false unless nearly?(pin)
-        @location = pin.location
-        @closure = pin.closure
-        return true if comments == pin.comments
-        @comments = pin.comments
-        @docstring = pin.docstring
-        @return_type = pin.return_type
-        @documentation = nil
-        @deprecated = nil
-        reset_conversions
-        true
       end
 
       def proxied?
@@ -319,6 +520,10 @@ module Solargraph
 
       # @return [ComplexType]
       attr_writer :return_type
+
+      attr_writer :docstring
+
+      attr_writer :directives
 
       private
 

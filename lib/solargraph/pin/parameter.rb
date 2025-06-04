@@ -17,12 +17,54 @@ module Solargraph
         @decl = decl
       end
 
+      def type_location
+        super || closure&.type_location
+      end
+
+      def location
+        super || closure&.type_location
+      end
+
+      def combine_with(other, attrs={})
+        new_attrs = {
+          decl: assert_same(other, :decl),
+          presence: choose(other, :presence),
+          asgn_code: choose(other, :asgn_code),
+        }.merge(attrs)
+        super(other, new_attrs)
+      end
+
       def keyword?
         [:kwarg, :kwoptarg].include?(decl)
       end
 
       def kwrestarg?
         decl == :kwrestarg || (assignment && [:HASH, :hash].include?(assignment.type))
+      end
+
+      def needs_consistent_name?
+        keyword?
+      end
+
+      def arity_decl
+        name = (self.name || '(anon)')
+        type = (return_type&.to_rbs || 'untyped')
+        case decl
+        when :arg
+          ""
+        when :optarg
+          "?"
+        when :kwarg
+          "#{name}:"
+        when :kwoptarg
+          "?#{name}:"
+        when :restarg
+          "*"
+        when :kwrestarg
+          "**"
+        else
+          "(unknown decl: #{decl})"
+        end
       end
 
       def arg?
@@ -126,12 +168,6 @@ module Solargraph
         tag = param_tag
         return '' if tag.nil? || tag.text.nil?
         tag.text
-      end
-
-      # @param pin [Pin::Parameter]
-      def try_merge! pin
-        return false unless super && closure == pin.closure
-        true
       end
 
       private
