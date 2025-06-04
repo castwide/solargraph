@@ -15,6 +15,7 @@ module Solargraph
     #
     class Chain
       include Equality
+      include Logging
 
       autoload :Link,             'solargraph/source/chain/link'
       autoload :Call,             'solargraph/source/chain/call'
