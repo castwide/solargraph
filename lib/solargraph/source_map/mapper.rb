@@ -55,6 +55,7 @@ module Solargraph
 
       # @return [Array<Solargraph::Pin::Base>]
       def pins
+        # @type [Array<Solargraph::Pin::Base>]
         @pins ||= []
       end
 
