@@ -52,6 +52,8 @@ module Solargraph
 
         '[' + generics.map { |gen| gen.to_s }.join(', ') + '] '
       end
+
+      include Logging
     end
   end
 end

@@ -267,6 +267,7 @@ module Solargraph
             break if found
             missing = base
             base = base.base
+            logger.debug {  "TypeChecker#call_problems: found=#{found}, base=#{base}, missing=#{missing}" }
           end
           closest = found.typify(api_map) if found
           # @todo remove the internal_or_core? check at a higher-than-strict level
@@ -695,5 +696,7 @@ module Solargraph
         node && source_map.source.comments_for(node)&.include?('@sg-ignore')
       end
     end
+
+    include Logging
   end
 end
