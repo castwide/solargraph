@@ -385,7 +385,7 @@ module Solargraph
             init_pin = get_method_stack(rooted_tag, 'initialize').first
             next pin unless init_pin
 
-            type = ComplexType.try_parse(ComplexType.try_parse(rooted_tag).namespace)
+            type = ComplexType::SELF
             Pin::Method.new(
               name: 'new',
               scope: :class,
@@ -395,8 +395,8 @@ module Solargraph
               return_type: type,
               comments: init_pin.comments,
               closure: init_pin.closure,
-              # @todo Hack to force TypeChecker#internal_or_coref?
-              source: :rbs
+              source: init_pin.source,
+              type_location: init_pin.type_location,
             )
           end
         end

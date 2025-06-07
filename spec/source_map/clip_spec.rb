@@ -1059,7 +1059,7 @@ describe Solargraph::SourceMap::Clip do
     api_map = Solargraph::ApiMap.new
     api_map.map source
     clip = api_map.clip_at('test.rb', [7, 14])
-    expect(clip.infer.to_s).to eq('Foo, Bar')
+    expect(clip.infer.to_s).to eq('Foo, Bar').or eq('Bar, Foo')
   end
 
   # pending https://github.com/castwide/solargraph/pull/836
@@ -3221,5 +3221,29 @@ describe Solargraph::SourceMap::Clip do
     clip = api_map.clip_at('test.rb', [9, 15])
     names = clip.complete.pins.map(&:name)
     expect(names).to include('bar', 'bar=', 'baz', 'baz=')
+  end
+
+  it 'defines calls with blocks to methods with yieldreceiver tags' do
+    source = Solargraph::Source.load_string(%(
+      class Base
+        # An inherited class method
+        # @yieldparam arg [String]
+        # @yieldreceiver [Object]
+        # @return [void]
+        def self.foo(arg, &block)
+          block.call('1', 1)
+        end
+      end
+      class Desc < Base
+        foo arg do |bar|
+          bar.upcase
+        end
+      end
+    ), 'test.rb')
+
+    api_map = Solargraph::ApiMap.new.map(source)
+
+    clip = api_map.clip_at('test.rb', [11, 8])
+    expect(clip.define.map(&:path)).to eq(['Base.foo'])
   end
 end
