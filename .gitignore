@@ -1,3 +1,5 @@
+/.gem_rbs_collection
+/rbs_collection.lock.yaml
 /Gemfile.lock
 .Gemfile
 .idea
