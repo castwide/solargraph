@@ -264,15 +264,19 @@ module Solargraph
     #   Should not be prefixed with '::'.
     # @return [String, nil] fully qualified tag
     def qualify tag, context_tag = ''
-      return tag if ['self', nil].include?(tag)
+      return tag if ['Boolean', 'self', nil].include?(tag)
 
-      context_type = ComplexType.parse(context_tag).force_rooted
+      context_type = ComplexType.try_parse(context_tag).force_rooted
       return unless context_type
 
       type = ComplexType.try_parse(tag)
       return unless type
+      return tag if type.literal?
 
-      fqns = qualify_namespace(type.rooted_namespace, context_type.namespace)
+      context_type = ComplexType.try_parse(context_tag)
+      return unless context_type
+
+      fqns = qualify_namespace(type.rooted_namespace, context_type.rooted_namespace)
       return unless fqns
 
       fqns + type.substring
@@ -381,7 +385,7 @@ module Solargraph
             init_pin = get_method_stack(rooted_tag, 'initialize').first
             next pin unless init_pin
 
-            type = ComplexType.try_parse(ComplexType.try_parse(rooted_tag).namespace)
+            type = ComplexType::SELF
             Pin::Method.new(
               name: 'new',
               scope: :class,
@@ -390,9 +394,10 @@ module Solargraph
               signatures: init_pin.signatures.map { |sig| sig.proxy(type) },
               return_type: type,
               comments: init_pin.comments,
-              closure: init_pin.closure
-            # @todo Hack to force TypeChecker#internal_or_core?
-            ).tap { |pin| pin.source = :rbs }
+              closure: init_pin.closure,
+              source: init_pin.source,
+              type_location: init_pin.type_location,
+            )
           end
         end
         result.concat inner_get_methods('Kernel', :instance, [:public], deep, skip) if visibility.include?(:private)
@@ -819,7 +824,7 @@ module Solargraph
       return pin unless pin.is_a?(Pin::MethodAlias)
       return nil if @method_alias_stack.include?(pin.path)
       @method_alias_stack.push pin.path
-      origin = get_method_stack(pin.full_context.tag, pin.original, scope: pin.scope).first
+      origin = get_method_stack(pin.full_context.tag, pin.original, scope: pin.scope, preserve_generics: true).first
       @method_alias_stack.pop
       return nil if origin.nil?
       args = {

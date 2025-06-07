@@ -1,3 +1,16 @@
+## 0.55.0 - June 3, 2025
+- Flow-sensitive typing - automatically downcast from is_a? calls (#856)
+- Tuple enabler: infer literal types and use them for signature selection (#836)
+- Signature selection improvements (#907)
+- Add support for Ruby Structs (#939)
+- [regression] Fix interface change breaking solargraph-rails (#940)
+- [regression] Add back bundler/require support for solargraph-rails (#941)
+- Add specs for initialize capabilities (#955)
+- Create MethodAlias pins from YARD (#945)
+- MessageWorker prioritizes synchronization (#956)
+- initialize/new method pin cleanups (#949)
+- Clip rebinds blocks when cursor is not part of receiver (#958)
+
 ## 0.54.5 - May 17, 2025
 - Repair unknown encoding errors (#936, #935)
 - Index arbitrary pinsets (#937)
