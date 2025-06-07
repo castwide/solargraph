@@ -9,6 +9,10 @@ module Solargraph
       # @return [String]
       attr_reader :asgn_code
 
+      # allow this to be set to the method after the method itself has
+      # been created
+      attr_writer :closure
+
       # @param decl [::Symbol] :arg, :optarg, :kwarg, :kwoptarg, :restarg, :kwrestarg, :block, :blockarg
       # @param asgn_code [String, nil]
       def initialize decl: :arg, asgn_code: nil, **splat

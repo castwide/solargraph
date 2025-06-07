@@ -1,6 +1,10 @@
 module Solargraph
   module Pin
     class Signature < Callable
+      # allow signature to be created before method pin, then set this
+      # to the method pin
+      attr_writer :closure
+
       def initialize **splat
         super(**splat)
       end

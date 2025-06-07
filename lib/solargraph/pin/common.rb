@@ -9,6 +9,11 @@ module Solargraph
       # @return [Pin::Closure, nil]
       attr_reader :closure
 
+      def closure
+        Solargraph.assert_or_log(:closure, "Closure not set on #{self.class} #{name.inspect} from #{source.inspect}") unless @closure
+        @closure
+      end
+
       # @return [String]
       def name
         @name ||= ''
