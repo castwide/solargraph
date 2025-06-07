@@ -95,7 +95,7 @@ module Solargraph
       unresolved_requires = (bench.external_requires + implicit.requires + bench.workspace.config.required).to_a.compact.uniq
       recreate_docmap = @unresolved_requires != unresolved_requires ||
                      @doc_map&.uncached_gemspecs&.any? ||
-                     docmap.rbs_collection_path != bench.workspace.rbs_collection_path
+                     @doc_map&.rbs_collection_path != bench.workspace.rbs_collection_path
       if recreate_docmap
         @doc_map = DocMap.new(unresolved_requires, [], bench.workspace.rbs_collection_path) # @todo Implement gem preferences
         @unresolved_requires = unresolved_requires
