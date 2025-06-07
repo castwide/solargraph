@@ -134,6 +134,13 @@ module Solargraph
       return nil if path.empty?
 
       if path == 'bundler/require'
+        # @todo Quick fix for cases when Solargraph is running without Bundler.
+        #   The next goal is to enable loading of external bundles, i.e.,
+        #   finding gems that are defined in the workspace's bundle when
+        #   Solargraph is running in a different environment.
+        #   See https://github.com/castwide/vscode-solargraph/issues/279
+        require 'bundler'
+
         # find only the gems bundler is now using
         gemspecs = Bundler.definition.locked_gems.specs.flat_map do |lazy_spec|
           logger.info "Handling #{lazy_spec.name}:#{lazy_spec.version} from #{path}"
