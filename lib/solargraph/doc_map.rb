@@ -20,11 +20,11 @@ module Solargraph
 
     # @param requires [Array<String>]
     # @param preferences [Array<Gem::Specification>]
-    # @param rbs_path [String, Pathname, nil]
-    def initialize(requires, preferences, rbs_path = nil)
+    # @param rbs_collection_path [String, Pathname, nil]
+    def initialize(requires, preferences, rbs_collection_path = nil)
       @requires = requires.compact
       @preferences = preferences.compact
-      @rbs_path = rbs_path
+      @rbs_collection_path = rbs_collection_path
       generate
     end
 
@@ -118,7 +118,7 @@ module Solargraph
 
     # @param gemspec [Gem::Specification]
     def update_from_collection gemspec, gempins
-      unless @rbs_path && File.directory?(@rbs_path)
+      unless @rbs_collection_path && File.directory?(@rbs_collection_path)
         logger.debug { "DocMap#update_from_collection: No collection" }
         return gempins
       end
@@ -128,13 +128,13 @@ module Solargraph
         return GemPins.combine(gempins, rbs_map)
       end
 
-      rbs_map = RbsMap.new(gemspec.name, gemspec.version, directories: [@rbs_path])
+      rbs_map = RbsMap.new(gemspec.name, gemspec.version, directories: [@rbs_collection_path])
       if rbs_map.resolved?
         logger.info "Updating #{gemspec.name} #{gemspec.version} from collection"
         return GemPins.combine(gempins, rbs_map)
       end
 
-      rbs_map = RbsMap.new(gemspec.name, nil, directories: [@rbs_path])
+      rbs_map = RbsMap.new(gemspec.name, nil, directories: [@rbs_collection_path])
       if rbs_map.resolved?
         logger.info "Updating #{gemspec.name} #{gemspec.version} from collection"
         return GemPins.combine(gempins, rbs_map)
