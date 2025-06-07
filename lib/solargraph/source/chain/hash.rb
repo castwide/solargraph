@@ -22,7 +22,7 @@ module Solargraph
         end
 
         def resolve api_map, name_pin, locals
-          [Pin::ProxyType.anonymous(@complex_type)]
+          [Pin::ProxyType.anonymous(@complex_type, source: :chain)]
         end
 
         def splatted?

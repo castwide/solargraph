@@ -23,7 +23,8 @@ module Solargraph
               name: arg_name(a),
               presence: nil,
               decl: arg_type(a),
-              asgn_code: a[1]
+              asgn_code: a[1],
+              source: :yard_map
             )
           end
         end
@@ -78,7 +79,8 @@ module Solargraph
           scope: scope || code_object.scope,
           visibility: visibility || code_object.visibility,
           parameters: InnerMethods.get_parameters(code_object, location, comments),
-          explicit: code_object.is_explicit?
+          explicit: code_object.is_explicit?,
+          source: :yard_map
         )
       end
     end

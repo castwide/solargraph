@@ -25,7 +25,8 @@ module Solargraph
               comments: comments_for(node),
               scope: :class,
               visibility: s_visi,
-              node: node
+              node: node,
+              source: :parser,
             )
             process_children region.update(closure: pins.last, scope: :class)
           end

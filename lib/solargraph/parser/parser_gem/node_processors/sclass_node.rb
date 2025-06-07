@@ -17,7 +17,7 @@ module Solargraph
                 names.concat [NodeMethods.unpack_name(sclass.children[0]), sclass.children[1].to_s]
               end
               name = names.reject(&:empty?).join('::')
-              closure = Solargraph::Pin::Namespace.new(name: name, location: region.closure.location)
+              closure = Solargraph::Pin::Namespace.new(name: name, location: region.closure.location, source: :parser)
             elsif sclass.is_a?(AST::Node) && sclass.type == :const
               names = [region.closure.namespace, region.closure.name]
               also = NodeMethods.unpack_name(sclass)
@@ -25,13 +25,14 @@ module Solargraph
                 names << also
               end
               name = names.reject(&:empty?).join('::')
-              closure = Solargraph::Pin::Namespace.new(name: name, location: region.closure.location)
+              closure = Solargraph::Pin::Namespace.new(name: name, location: region.closure.location, source: :parser)
             else
               return
             end
             pins.push Solargraph::Pin::Singleton.new(
               location: get_node_location(node),
-              closure: closure
+              closure: closure,
+              source: :parser,
             )
             process_children region.update(visibility: :public, scope: :class, closure: pins.last)
           end

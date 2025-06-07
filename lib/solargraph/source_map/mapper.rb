@@ -41,7 +41,7 @@ module Solargraph
         s = Position.new(0, 0)
         e = Position.from_offset(code, code.length)
         location = Location.new(filename, Range.new(s, e))
-        [[Pin::Namespace.new(location: location, name: '')], []]
+        [[Pin::Namespace.new(location: location, name: '', source: :source_map)], []]
       end
 
       class << self
@@ -140,7 +140,8 @@ module Solargraph
               scope: namespace.is_a?(Pin::Singleton) ? :class : :instance,
               visibility: :public,
               explicit: false,
-              attribute: true
+              attribute: true,
+              source: :source_map
             )
           end
           if t.nil? || t.include?('w')
@@ -151,10 +152,11 @@ module Solargraph
               comments: docstring.all.to_s,
               scope: namespace.is_a?(Pin::Singleton) ? :class : :instance,
               visibility: :public,
-              attribute: true
+              attribute: true,
+              source: :source_map
             )
             pins.push method_pin
-            method_pin.parameters.push Pin::Parameter.new(name: 'value', decl: :arg, closure: pins.last)
+            method_pin.parameters.push Pin::Parameter.new(name: 'value', decl: :arg, closure: pins.last, source: :source_map)
             if pins.last.return_type.defined?
               pins.last.docstring.add_tag YARD::Tags::Tag.new(:param, '', pins.last.return_type.to_s.split(', '), 'value')
             end
@@ -205,7 +207,8 @@ module Solargraph
           namespace = closure_at(source_position) || Pin::ROOT_PIN
           namespace.domains.concat directive.tag.types unless directive.tag.types.nil?
         when 'override'
-          pins.push Pin::Reference::Override.new(location, directive.tag.name, docstring.tags)
+          pins.push Pin::Reference::Override.new(location, directive.tag.name, docstring.tags,
+                                                 source: :source_map)
         when 'macro'
           # @todo Handle macros
         end
