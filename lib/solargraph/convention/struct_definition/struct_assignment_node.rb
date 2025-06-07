@@ -25,7 +25,12 @@ module Solargraph
           def valid?(node)
             return false unless node&.type == :casgn
             return false if node.children[2].nil?
-            struct_node = node.children[2].children[0]
+
+            struct_node = if node.children[2].type == :block
+                            node.children[2].children[0]
+                          else
+                            node.children[2]
+                          end
 
             struct_definition_node?(struct_node)
           end
@@ -43,7 +48,11 @@ module Solargraph
 
         # @return [Parser::AST::Node]
         def struct_node
-          node.children[2].children[0]
+          if node.children[2].type == :block
+            node.children[2].children[0]
+          else
+            node.children[2]
+          end
         end
       end
     end
