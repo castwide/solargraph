@@ -18,6 +18,8 @@ module Solargraph
     # @return [Array<Gem::Specification>]
     attr_reader :uncached_gemspecs
 
+    attr_reader :rbs_collection_path
+
     # @param requires [Array<String>]
     # @param preferences [Array<Gem::Specification>]
     # @param rbs_collection_path [String, Pathname, nil]
@@ -38,9 +40,12 @@ module Solargraph
       @unresolved_requires ||= required_gems_map.select { |_, gemspecs| gemspecs.nil? }.keys
     end
 
-    # @return [Hash{Gem::Specification => Array[Pin::Base]}]
-    def self.gems_in_memory
+    def self.all_gems_in_memory
       @gems_in_memory ||= {}
+    end
+
+    def gems_in_memory
+      self.class.all_gems_in_memory[rbs_collection_path] ||= {}
     end
 
     # @return [Set<Gem::Specification>]
@@ -85,7 +90,7 @@ module Solargraph
       if Cache.exist?(cache_file)
         cached = Cache.load(cache_file)
         gempins = update_from_collection(gemspec, cached)
-        self.class.gems_in_memory[gemspec] = gempins
+        gems_in_memory[gemspec] = gempins
         @pins.concat gempins
       else
         logger.debug "No pin cache for #{gemspec.name} #{gemspec.version}"
@@ -109,7 +114,7 @@ module Solargraph
     # @param gemspec [Gem::Specification]
     # @return [Boolean]
     def try_gem_in_memory gemspec
-      gempins = DocMap.gems_in_memory[gemspec]
+      gempins = gems_in_memory[gemspec]
       return false unless gempins
       logger.debug { "Found #{gemspec.name} #{gemspec.version} in memory" }
       @pins.concat gempins
