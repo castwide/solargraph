@@ -8,10 +8,15 @@ module Solargraph
 
       # @param scope [::Symbol] :class or :instance
       # @param generics [::Array<Pin::Parameter>, nil]
-      def initialize scope: :class, generics: nil, **splat
+      def initialize scope: :class, generics: nil, generic_defaults: {},  **splat
         super(**splat)
         @scope = scope
         @generics = generics
+        @generic_defaults = generic_defaults
+      end
+
+      def generic_defaults
+        @generic_defaults ||= {}
       end
 
       def context
