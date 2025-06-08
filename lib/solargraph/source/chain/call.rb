@@ -154,9 +154,8 @@ module Solargraph
           end
           logger.debug { "Call#inferred_pins(name_pin.binder=#{name_pin.binder}, word=#{word}, pins=#{pins.map(&:desc)}, name_pin=#{name_pin}) - result=#{result}" }
           out = result.map do |pin|
-            if pin.path == 'Class#new' && name_pin.binder.tag != 'Class'
-              reduced_context = name_pin.binder.reduce_class_type
-              pin.proxy(reduced_context)
+            if pin.path == 'Class#new' && name_pin.binder.tag == 'Class'
+              pin.proxy(ComplexType::BASIC_OBJECT)
             else
               next pin if pin.return_type.undefined?
               selfy = pin.return_type.self_to_type(name_pin.binder)
