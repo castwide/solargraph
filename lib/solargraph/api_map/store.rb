@@ -204,6 +204,7 @@ module Solargraph
         @pinsets = pinsets
         @indexes = []
         pinsets.each do |pins|
+          raise ArgumentError, "Pinset must be an Enumerable - was #{pins.class} (#{pins})}" unless pins.is_a?(Enumerable)
           if @indexes.last && pins.empty?
             @indexes.push @indexes.last
           else
