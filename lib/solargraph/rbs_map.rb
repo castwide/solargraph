@@ -58,7 +58,7 @@ module Solargraph
             'unresolved'
           end
         else
-          Digest::SHA1.hexdigest(data_arr.join)
+          Digest::SHA1.hexdigest(data)
         end
       end
     end
