@@ -94,11 +94,14 @@ module Solargraph
       end
       unresolved_requires = (bench.external_requires + implicit.requires + bench.workspace.config.required).to_a.compact.uniq
       recreate_docmap = @unresolved_requires != unresolved_requires ||
-                     @doc_map&.uncached_gemspecs&.any? ||
+                     @doc_map&.uncached_yard_gemspecs&.any? ||
+                     @doc_map&.uncached_rbs_collection_gemspecs&.any? ||
                      @doc_map&.rbs_collection_path != bench.workspace.rbs_collection_path
       if recreate_docmap
-        @doc_map = DocMap.new(unresolved_requires, [], bench.workspace.rbs_collection_path) # @todo Implement gem preferences
-        @unresolved_requires = unresolved_requires
+        @doc_map = DocMap.new(unresolved_requires, [],
+                              bench.workspace.rbs_collection_path,
+                              bench.workspace.rbs_collection_config_path) # @todo Implement gem preferences
+        @unresolved_requires = @doc_map.unresolved_requires
       end
       @cache.clear if store.update(@@core_map.pins, @doc_map.pins, implicit.pins, iced_pins, live_pins)
       @missing_docs = [] # @todo Implement missing docs
@@ -115,6 +118,16 @@ module Solargraph
     # @return [::Array<Gem::Specification>]
     def uncached_gemspecs
       @doc_map&.uncached_gemspecs || []
+    end
+
+    # @return [::Array<Gem::Specification>]
+    def uncached_rbs_collection_gemspecs
+      @doc_map.uncached_rbs_collection_gemspecs
+    end
+
+    # @return [::Array<Gem::Specification>]
+    def uncached_yard_gemspecs
+      @doc_map.uncached_yard_gemspecs
     end
 
     # @return [Array<Pin::Base>]
@@ -171,6 +184,18 @@ module Solargraph
       api_map
     end
 
+    def cache_all!(out)
+      @doc_map.cache_all!(out)
+    end
+
+    def cache_gem(gemspec, rebuild: false, out: nil)
+      @doc_map.cache(gemspec, rebuild: rebuild, out: out)
+    end
+
+    class << self
+      include Logging
+    end
+
     # Create an ApiMap with a workspace in the specified directory and cache
     # any missing gems.
     #
@@ -183,13 +208,12 @@ module Solargraph
     # @return [ApiMap]
     def self.load_with_cache directory, out = IO::NULL
       api_map = load(directory)
-      return api_map if api_map.uncached_gemspecs.empty?
-
-      api_map.uncached_gemspecs.each do |gemspec|
-        out.puts "Caching gem #{gemspec.name} #{gemspec.version}"
-        pins = GemPins.build(gemspec)
-        Solargraph::Cache.save('gems', "#{gemspec.name}-#{gemspec.version}.ser", pins)
+      if api_map.uncached_gemspecs.empty?
+        logger.info { "All gems cached for #{directory}" }
+        return api_map
       end
+
+      api_map.cache_all!(out)
       load(directory)
     end
 

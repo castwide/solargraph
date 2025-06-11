@@ -1,5 +1,8 @@
 # frozen_string_literal: true
 
+require 'pathname'
+require 'benchmark'
+
 module Solargraph
   # A collection of pins generated from required gems.
   #
@@ -16,18 +19,67 @@ module Solargraph
     attr_reader :pins
 
     # @return [Array<Gem::Specification>]
-    attr_reader :uncached_gemspecs
+    def uncached_gemspecs
+      (uncached_yard_gemspecs + uncached_rbs_collection_gemspecs).sort.
+        uniq { |gemspec| "#{gemspec.name}:#{gemspec.version}" }
+    end
+
+    # @return [Array<Gem::Specification>]
+    attr_reader :uncached_yard_gemspecs
+
+    # @return [Array<Gem::Specification>]
+    attr_reader :uncached_rbs_collection_gemspecs
 
     attr_reader :rbs_collection_path
 
+    attr_reader :rbs_collection_config_path
     # @param requires [Array<String>]
     # @param preferences [Array<Gem::Specification>]
     # @param rbs_collection_path [String, Pathname, nil]
-    def initialize(requires, preferences, rbs_collection_path = nil)
+    def initialize(requires, preferences, rbs_collection_path = nil, rbs_collection_config_path = nil)
+      raise "Please provide rbs_collection_config_path if you provide rbs_collection_path" if rbs_collection_path && rbs_collection_config_path.nil?
       @requires = requires.compact
       @preferences = preferences.compact
       @rbs_collection_path = rbs_collection_path
-      generate
+      @rbs_collection_config_path = rbs_collection_config_path
+      load_serialized_gem_pins
+    end
+
+    def cache_all!(out)
+      gem_desc = uncached_gemspecs.map { |gemspec| "#{gemspec.name}:#{gemspec.version}" }.join(', ')
+      out.puts "Caching pins for gems: #{gem_desc.inspect}" unless uncached_gemspecs.empty?
+      logger.warn { "Caching for YARD: #{uncached_yard_gemspecs.map(&:name)}" }
+      logger.warn { "Caching for RBS collection: #{uncached_rbs_collection_gemspecs.map(&:name)}" }
+      load_serialized_gem_pins
+      uncached_gemspecs.each do |gemspec|
+        out.puts "Caching pins for gem #{gemspec.name}:#{gemspec.version}"
+        cache(gemspec, out: out)
+      end
+      load_serialized_gem_pins
+      @uncached_rbs_collection_gemspecs = []
+      @uncached_yard_gemspecs = []
+    end
+
+    def cache_yard_pins(gemspec, out)
+      pins = GemPins.build_yard_pins(gemspec)
+      PinCache.serialize_yard_gem(gemspec, pins)
+      out.puts "Cached #{pins.length} YARD pins for gem #{gemspec.name}:#{gemspec.version}" unless pins.empty?
+    end
+
+    def cache_rbs_collection_pins(gemspec, out)
+      rbs_map = RbsMap.from_gemspec(gemspec, rbs_collection_path, rbs_collection_config_path)
+      pins = rbs_map.pins
+      rbs_version_cache_key = rbs_map.cache_key
+      # cache pins even if result is zero, so we don't retry building pins
+      pins ||= []
+      PinCache.serialize_rbs_collection_gem(gemspec, rbs_version_cache_key, pins)
+      out.puts "Cached #{pins.length} RBS collection pins for gem #{gemspec.name} #{gemspec.version} with cache_key #{rbs_version_cache_key.inspect}" unless pins.empty?
+    end
+
+    # @param gemspec [Gem::Specification]
+    def cache(gemspec, rebuild: false, out: nil)
+      cache_yard_pins(gemspec, out) if uncached_yard_gemspecs.include?(gemspec) || rebuild
+      cache_rbs_collection_pins(gemspec, out) if uncached_rbs_collection_gemspecs.include?(gemspec) || rebuild
     end
 
     # @return [Array<Gem::Specification>]
@@ -40,12 +92,24 @@ module Solargraph
       @unresolved_requires ||= required_gems_map.select { |_, gemspecs| gemspecs.nil? }.keys
     end
 
-    def self.all_gems_in_memory
-      @gems_in_memory ||= {}
+    def self.all_yard_gems_in_memory
+      @yard_gems_in_memory ||= {}
     end
 
-    def gems_in_memory
-      self.class.all_gems_in_memory[rbs_collection_path] ||= {}
+    def self.all_rbs_collection_gems_in_memory
+      @rbs_collection_gems_in_memory ||= {}
+    end
+
+    def yard_pins_in_memory
+      self.class.all_yard_gems_in_memory
+    end
+
+    def rbs_collection_pins_in_memory
+      self.class.all_rbs_collection_gems_in_memory[rbs_collection_path] ||= {}
+    end
+
+    def combined_pins_in_memory
+      @combined_pins_in_memory ||= {}
     end
 
     # @return [Set<Gem::Specification>]
@@ -55,21 +119,29 @@ module Solargraph
 
     private
 
-    # @return [void]
-    def generate
+    def load_serialized_gem_pins
       @pins = []
-      @uncached_gemspecs = []
-      required_gems_map.each do |path, gemspecs|
-        if gemspecs.nil?
-          try_stdlib_map path
-        else
-          gemspecs.each do |gemspec|
-            try_cache gemspec
-          end
+      @uncached_yard_gemspecs = []
+      @uncached_rbs_collection_gemspecs = []
+      with_gemspecs, without_gemspecs = required_gems_map.partition { |_, v| v }
+      paths = Hash[without_gemspecs].keys
+      gemspecs = Hash[with_gemspecs].values.flatten.compact + dependencies.to_a
+
+      paths.each do |path|
+        rbs_pins = deserialize_stdlib_rbs_map path
+      end
+
+      logger.debug { "DocMap#load_serialized_gem_pins: Combining pins..." }
+      time = Benchmark.measure do
+        gemspecs.each do |gemspec|
+          pins = deserialize_combined_pin_cache gemspec
+          @pins.concat pins if pins
         end
       end
-      dependencies.each { |dep| try_cache dep }
-      @uncached_gemspecs.uniq!
+      logger.info { "DocMap#load_serialized_gem_pins: Loaded and processed serialized pins together in #{time.real} seconds" }
+      @uncached_yard_gemspecs.uniq!
+      @uncached_rbs_collection_gemspecs.uniq!
+      nil
     end
 
     # @return [Hash{String => Array<Gem::Specification>}]
@@ -83,72 +155,100 @@ module Solargraph
     end
 
     # @param gemspec [Gem::Specification]
-    # @return [void]
-    def try_cache gemspec
-      return if try_gem_in_memory(gemspec)
-      cache_file = File.join('gems', "#{gemspec.name}-#{gemspec.version}.ser")
-      if Cache.exist?(cache_file)
-        cached = Cache.load(cache_file)
-        gempins = update_from_collection(gemspec, cached)
-        gems_in_memory[gemspec] = gempins
-        @pins.concat gempins
+    # @return [Array<Pin::Base>]
+    def deserialize_yard_pin_cache gemspec
+      if yard_pins_in_memory.key?([gemspec.name, gemspec.version])
+        return yard_pins_in_memory[[gemspec.name, gemspec.version]]
+      end
+
+      cached = PinCache.deserialize_yard_gem(gemspec)
+      if cached
+        logger.info { "Loaded #{cached.length} cached YARD pins from #{gemspec.name}:#{gemspec.version}" }
+        yard_pins_in_memory[[gemspec.name, gemspec.version]] = cached
+        cached
       else
-        logger.debug "No pin cache for #{gemspec.name} #{gemspec.version}"
-        @uncached_gemspecs.push gemspec
+        logger.debug "No YARD pin cache for #{gemspec.name}:#{gemspec.version}"
+        @uncached_yard_gemspecs.push gemspec
+        nil
+      end
+    end
+
+    # @param gemspec [Gem::Specification]
+    # @return [void]
+    def deserialize_combined_pin_cache(gemspec)
+      unless combined_pins_in_memory[[gemspec.name, gemspec.version]].nil?
+        return combined_pins_in_memory[[gemspec.name, gemspec.version]]
+      end
+
+      rbs_map = RbsMap.from_gemspec(gemspec, rbs_collection_path, rbs_collection_config_path)
+      rbs_version_cache_key = rbs_map.cache_key
+
+      cached = PinCache.deserialize_combined_gem(gemspec, rbs_version_cache_key)
+      if cached
+        logger.info { "Loaded #{cached.length} cached YARD pins from #{gemspec.name}:#{gemspec.version}" }
+        combined_pins_in_memory[[gemspec.name, gemspec.version]] = cached
+        return combined_pins_in_memory[[gemspec.name, gemspec.version]]
+      end
+
+      rbs_collection_pins = deserialize_rbs_collection_cache gemspec, rbs_version_cache_key
+
+      yard_pins = deserialize_yard_pin_cache gemspec
+
+      if !rbs_collection_pins.nil? && !yard_pins.nil?
+        logger.debug { "Combining pins for #{gemspec.name}:#{gemspec.version}" }
+        combined_pins = GemPins.combine(yard_pins, rbs_collection_pins)
+        PinCache.serialize_combined_gem(gemspec, rbs_version_cache_key, combined_pins)
+        combined_pins_in_memory[[gemspec.name, gemspec.version]] = combined_pins
+        logger.info { "Generated #{combined_pins_in_memory[[gemspec.name, gemspec.version]].length} combined pins for #{gemspec.name} #{gemspec.version}" }
+        return combined_pins
+      end
+
+      if !yard_pins.nil?
+        logger.debug { "Using only YARD pins for #{gemspec.name}:#{gemspec.version}" }
+        combined_pins_in_memory[[gemspec.name, gemspec.version]] = yard_pins
+        return combined_pins_in_memory[[gemspec.name, gemspec.version]]
+      elsif !rbs_collection_pins.nil?
+        logger.debug { "Using only RBS collection pins for #{gemspec.name}:#{gemspec.version}" }
+        combined_pins_in_memory[[gemspec.name, gemspec.version]] = rbs_collection_pins
+        return combined_pins_in_memory[[gemspec.name, gemspec.version]]
+      else
+        logger.warn { "No pins found for gem #{gemspec.name}:#{gemspec.version}" }
+        return nil
       end
     end
 
     # @param path [String] require path that might be in the RBS stdlib collection
     # @return [void]
-    def try_stdlib_map path
+    def deserialize_stdlib_rbs_map path
       map = RbsMap::StdlibMap.load(path)
       if map.resolved?
         logger.debug { "Loading stdlib pins for #{path}" }
         @pins.concat map.pins
+        logger.info { "Loaded #{map.pins.length} stdlib pins for #{path}" }
+        map.pins
       else
         # @todo Temporarily ignoring unresolved `require 'set'`
-        logger.debug { "Require path #{path} could not be resolved" } unless path == 'set'
+        logger.debug { "Require path #{path} could not be resolved in RBS" } unless path == 'set'
+        nil
+      end
+    end
+
+    # @return [Array<Pin::Base>, nil]
+    def deserialize_rbs_collection_cache gemspec, rbs_version_cache_key
+      return if rbs_collection_pins_in_memory.key?([gemspec, rbs_version_cache_key])
+      cached = PinCache.deserialize_rbs_collection_gem(gemspec, rbs_version_cache_key)
+      if cached
+        logger.info { "Loaded #{cached.length} pins from RBS collection cache for #{gemspec.name}:#{gemspec.version}" } unless cached.empty?
+        rbs_collection_pins_in_memory[[gemspec, rbs_version_cache_key]] = cached
+        cached
+      else
+        logger.debug "No RBS collection pin cache for #{gemspec.name} #{gemspec.version}"
+        @uncached_rbs_collection_gemspecs.push gemspec
+        nil
       end
     end
 
     # @param gemspec [Gem::Specification]
-    # @return [Boolean]
-    def try_gem_in_memory gemspec
-      gempins = gems_in_memory[gemspec]
-      return false unless gempins
-      logger.debug { "Found #{gemspec.name} #{gemspec.version} in memory" }
-      @pins.concat gempins
-      true
-    end
-
-    # @param gemspec [Gem::Specification]
-    def update_from_collection gemspec, gempins
-      unless @rbs_collection_path && File.directory?(@rbs_collection_path)
-        logger.debug { "DocMap#update_from_collection: No collection" }
-        return gempins
-      end
-      rbs_map = RbsMap.new(gemspec.name, gemspec.version)
-      if rbs_map.resolved?
-        logger.info { "DocMap#update_from_collection: Resolved #{gemspec.name} to RBS exported by gem" }
-        return GemPins.combine(gempins, rbs_map)
-      end
-
-      rbs_map = RbsMap.new(gemspec.name, gemspec.version, directories: [@rbs_collection_path])
-      if rbs_map.resolved?
-        logger.info "Updating #{gemspec.name} #{gemspec.version} from collection"
-        return GemPins.combine(gempins, rbs_map)
-      end
-
-      rbs_map = RbsMap.new(gemspec.name, nil, directories: [@rbs_collection_path])
-      if rbs_map.resolved?
-        logger.info "Updating #{gemspec.name} #{gemspec.version} from collection"
-        return GemPins.combine(gempins, rbs_map)
-      end
-
-      logger.debug { "DocMap#update_from_collection: No collection found for #{gemspec.name}" }
-      gempins
-    end
-
     # @param path [String]
     # @return [::Array<Gem::Specification>, nil]
     def resolve_path_to_gemspecs path
@@ -220,7 +320,7 @@ module Solargraph
         dep ||= Gem::Specification.find_by_name(spec.name, spec.requirement)
         deps.merge fetch_dependencies(dep) if deps.add?(dep)
       rescue Gem::MissingSpecError
-        Solargraph.logger.warn "Gem dependency #{spec.name} #{spec.requirement} for #{gemspec.name} not found."
+        Solargraph.logger.warn "Gem dependency #{spec.name} #{spec.requirement} for #{gemspec.name} not found in RubyGems."
       end.to_a
     end
 
@@ -228,6 +328,10 @@ module Solargraph
     # @return [Array<Gem::Dependency>]
     def only_runtime_dependencies gemspec
       gemspec.dependencies - gemspec.development_dependencies
+    end
+
+    def inspect
+      self.class.inspect
     end
   end
 end

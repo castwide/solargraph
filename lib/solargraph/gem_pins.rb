@@ -7,29 +7,37 @@ module Solargraph
   # documentation.
   #
   module GemPins
-    # Build an array of pins from a gem specification. The process starts with
-    # YARD, enhances the resulting pins with RBS definitions, and appends RBS
-    # pins that don't exist in the YARD mapping.
-    #
-    # @param gemspec [Gem::Specification]
-    # @return [Array<Pin::Base>]
-    def self.build(gemspec)
-      yard_pins = build_yard_pins(gemspec)
-      rbs_map = RbsMap.from_gemspec(gemspec)
-      combine yard_pins, rbs_map
+    class << self
+      include Logging
     end
 
+    def log_level
+      :debug
+    end
+
+    # @param gemspec [Gem::Specification]
+    # @return [Array<Pin::Base>]
+    def self.build_yard_pins(gemspec)
+      Yardoc.cache(gemspec) unless Yardoc.cached?(gemspec)
+      yardoc = Yardoc.load!(gemspec)
+      YardMap::Mapper.new(yardoc, gemspec).map
+    end
+
+    # Build an array of pins by combining YARD and RBS
+    # information.
+    #
     # @param yard_pins [Array<Pin::Base>]
     # @param rbs_map [RbsMap]
     # @return [Array<Pin::Base>]
-    def self.combine(yard_pins, rbs_map)
+    def self.combine(yard_pins, rbs_pins)
       in_yard = Set.new
+      rbs_api_map = Solargraph::ApiMap.new(pins: rbs_pins)
       combined = yard_pins.map do |yard|
         in_yard.add yard.path
         next yard unless yard.is_a?(Pin::Method)
 
-        rbs = rbs_map.path_pin(yard.path, Pin::Method)
-        next yard unless rbs
+        rbs = rbs_api_map.get_path_pins(yard.path).first
+        next yard unless rbs && yard.is_a?(Pin::Method)
 
         # @sg-ignore
         yard.class.new(
@@ -45,20 +53,14 @@ module Solargraph
           return_type: best_return_type(rbs.return_type, yard.return_type)
         )
       end
-      in_rbs = rbs_map.pins.reject { |pin| in_yard.include?(pin.path) }
-      combined + in_rbs
+      in_rbs = rbs_pins.reject { |pin| in_yard.include?(pin.path) }
+      out = combined + in_rbs
+      logger.debug { "GemPins#combine: Returning #{out.length} combined pins" }
+      out
     end
 
     class << self
       private
-
-      # @param gemspec [Gem::Specification]
-      # @return [Array<Pin::Base>]
-      def build_yard_pins(gemspec)
-        Yardoc.cache(gemspec) unless Yardoc.cached?(gemspec)
-        yardoc = Yardoc.load!(gemspec)
-        YardMap::Mapper.new(yardoc, gemspec).map
-      end
 
       # Select the first defined type.
       #
