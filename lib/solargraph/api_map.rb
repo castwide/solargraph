@@ -209,7 +209,7 @@ module Solargraph
     # @param directory [String]
     # @param out [IO] The output stream for messages
     # @return [ApiMap]
-    def self.load_with_cache directory, out = IO::NULL
+    def self.load_with_cache directory, out
       api_map = load(directory)
       if api_map.uncached_gemspecs.empty?
         logger.info { "All gems cached for #{directory}" }
