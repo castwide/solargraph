@@ -68,6 +68,7 @@ module Solargraph
       @source_map_hash = {}
       implicit.clear
       cache.clear
+      raise ArgumentError, "@@core_map.pins must be an Enumerable - was #{@@core_map.pins.class} (#{@@core_map.pins})}" unless @@core_map.pins.is_a?(Enumerable)
       store.update @@core_map.pins, pins
       self
     end

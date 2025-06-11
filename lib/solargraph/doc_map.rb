@@ -46,8 +46,11 @@ module Solargraph
     end
 
     def cache_all!(out)
-      gem_desc = uncached_gemspecs.map { |gemspec| "#{gemspec.name}:#{gemspec.version}" }.join(', ')
-      out.puts "Caching pins for gems: #{gem_desc.inspect}" unless uncached_gemspecs.empty?
+      # if we log at debug level:
+      if logger.info?
+        gem_desc = uncached_gemspecs.map { |gemspec| "#{gemspec.name}:#{gemspec.version}" }.join(', ')
+        logger.info "Caching pins for gems: #{gem_desc}" unless uncached_gemspecs.empty?
+      end
       logger.warn { "Caching for YARD: #{uncached_yard_gemspecs.map(&:name)}" }
       logger.warn { "Caching for RBS collection: #{uncached_rbs_collection_gemspecs.map(&:name)}" }
       load_serialized_gem_pins
@@ -63,7 +66,7 @@ module Solargraph
     def cache_yard_pins(gemspec, out)
       pins = GemPins.build_yard_pins(gemspec)
       PinCache.serialize_yard_gem(gemspec, pins)
-      out.puts "Cached #{pins.length} YARD pins for gem #{gemspec.name}:#{gemspec.version}" unless pins.empty?
+      logger.info { "Cached #{pins.length} YARD pins for gem #{gemspec.name}:#{gemspec.version}" } unless pins.empty?
     end
 
     def cache_rbs_collection_pins(gemspec, out)
@@ -73,7 +76,7 @@ module Solargraph
       # cache pins even if result is zero, so we don't retry building pins
       pins ||= []
       PinCache.serialize_rbs_collection_gem(gemspec, rbs_version_cache_key, pins)
-      out.puts "Cached #{pins.length} RBS collection pins for gem #{gemspec.name} #{gemspec.version} with cache_key #{rbs_version_cache_key.inspect}" unless pins.empty?
+      logger.info { "Cached #{pins.length} RBS collection pins for gem #{gemspec.name} #{gemspec.version} with cache_key #{rbs_version_cache_key.inspect}" unless pins.empty? }
     end
 
     # @param gemspec [Gem::Specification]
@@ -212,7 +215,7 @@ module Solargraph
         combined_pins_in_memory[[gemspec.name, gemspec.version]] = rbs_collection_pins
         return combined_pins_in_memory[[gemspec.name, gemspec.version]]
       else
-        logger.warn { "No pins found for gem #{gemspec.name}:#{gemspec.version}" }
+        logger.debug { "Pins not yet cached for #{gemspec.name}:#{gemspec.version}" }
         return nil
       end
     end
