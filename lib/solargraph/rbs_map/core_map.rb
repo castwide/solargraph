@@ -31,6 +31,7 @@ module Solargraph
 
           PinCache.serialize_core @pins
         end
+        @pins
       end
 
       def loader
