@@ -46,9 +46,12 @@ module Solargraph
     #   if the config for where information comes form changes.
     def cache_key
       @hextdigest ||= begin
-        collection_config = RBS::Collection::Config.from_path RBS::Collection::Config.to_lockfile_path(Pathname.new(rbs_collection_config_path))
-        gem_config = collection_config.gem(library)
-        data = gem_config&.to_s
+        data = nil
+        if rbs_collection_config_path
+          collection_config = RBS::Collection::Config.from_path RBS::Collection::Config.to_lockfile_path(Pathname.new(rbs_collection_config_path))
+          gem_config = collection_config.gem(library)
+          data = gem_config&.to_s
+        end
         if data.nil? || data.empty?
           if resolved?
             # definitely came from the gem itself and not elsewhere -
