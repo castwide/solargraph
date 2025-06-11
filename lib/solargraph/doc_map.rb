@@ -51,8 +51,8 @@ module Solargraph
         gem_desc = uncached_gemspecs.map { |gemspec| "#{gemspec.name}:#{gemspec.version}" }.join(', ')
         logger.info "Caching pins for gems: #{gem_desc}" unless uncached_gemspecs.empty?
       end
-      logger.warn { "Caching for YARD: #{uncached_yard_gemspecs.map(&:name)}" }
-      logger.warn { "Caching for RBS collection: #{uncached_rbs_collection_gemspecs.map(&:name)}" }
+      logger.debug { "Caching for YARD: #{uncached_yard_gemspecs.map(&:name)}" }
+      logger.debug { "Caching for RBS collection: #{uncached_rbs_collection_gemspecs.map(&:name)}" }
       load_serialized_gem_pins
       uncached_gemspecs.each do |gemspec|
         out.puts "Caching pins for gem #{gemspec.name}:#{gemspec.version}"
