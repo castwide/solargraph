@@ -27,6 +27,7 @@ module Solargraph
       @source_map_hash = {}
       @cache = Cache.new
       @method_alias_stack = []
+      raise ArgumentError, "pins must be an Enumerable - was #{pins.class} (#{pins})}" unless pins.is_a?(Enumerable)
       index pins
     end
 
@@ -61,6 +62,7 @@ module Solargraph
     # @param pins [Array<Pin::Base>]
     # @return [self]
     def index pins
+      raise ArgumentError, "pins must be an Enumerable - was #{pins.class} (#{pins})}" unless pins.is_a?(Enumerable)
       # @todo This implementation is incomplete. It should probably create a
       #   Bench.
       @source_map_hash = {}
