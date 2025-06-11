@@ -46,15 +46,10 @@ module Solargraph
     #   if the config for where information comes form changes.
     def cache_key
       @hextdigest ||= begin
-        data_arr = rbs_collection_paths.map do |dir|
-          # TODO can I get this more directly upstream?
-          # rbs_collection_config_path = Pathname.new(dir).join("..", "rbs_collection.yaml")
-          collection_config = RBS::Collection::Config.from_path RBS::Collection::Config.to_lockfile_path(Pathname.new(rbs_collection_config_path))
-          gem_config = collection_config.gem(library)
-          next unless gem_config
-          gem_config.to_s
-        end.sort.compact
-        if data_arr.empty?
+        collection_config = RBS::Collection::Config.from_path RBS::Collection::Config.to_lockfile_path(Pathname.new(rbs_collection_config_path))
+        gem_config = collection_config.gem(library)
+        data = gem_config&.to_s
+        if data.nil? || data.empty?
           if resolved?
             # definitely came from the gem itself and not elsewhere -
             # only one version per gem
@@ -77,7 +72,7 @@ module Solargraph
       # try any version of the gem in the collection
       RbsMap.new(gemspec.name, nil,
                  rbs_collection_paths: [rbs_collection_path].compact,
-                rbs_collection_config_path: rbs_collection_config_path)
+                 rbs_collection_config_path: rbs_collection_config_path)
     end
 
     # @generic T
@@ -101,7 +96,10 @@ module Solargraph
 
     def repository
       @repository ||= RBS::Repository.new(no_stdlib: false).tap do |repo|
-        @rbs_collection_paths.each { |dir| repo.add(Pathname.new(dir)) }
+        @rbs_collection_paths.each do |dir|
+          dir_path = Pathname.new(dir)
+          repo.add(dir_path) if dir_path.exist? && dir_path.directory?
+        end
       end
     end
 
