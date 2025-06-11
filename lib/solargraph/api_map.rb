@@ -68,7 +68,7 @@ module Solargraph
       @source_map_hash = {}
       implicit.clear
       cache.clear
-      raise ArgumentError, "@@core_map.pins must be an Array - was #{@@core_map.pins.class} (#{@@core_map.pins})}" unless @@core_map.pins.is_a?(Array)
+      raise ArgumentError, "@@core_map.pins must be an Array - was #{@@core_map.pins.class} (#{@@core_map.pins})}" unless @@core_map.pins.class == Array
       store.update @@core_map.pins, pins
       self
     end
