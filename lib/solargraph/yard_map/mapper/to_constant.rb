@@ -19,7 +19,7 @@ module Solargraph
             name: code_object.name.to_s,
             comments: code_object.docstring ? code_object.docstring.all.to_s : '',
             visibility: code_object.visibility,
-            source: :yardoc,
+            source: :yardoc
           )
         end
       end
