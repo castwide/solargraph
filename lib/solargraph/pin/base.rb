@@ -58,7 +58,7 @@ module Solargraph
       def combine_with(other, attrs={})
         raise "tried to combine #{other.class} with #{self.class}" unless other.class == self.class
         type_location = choose(other, :type_location)
-        location = choose(other, :location) || type_location
+        location = choose(other, :location)
         combined_name = combine_name(other)
         new_attrs = {
           location: location,
