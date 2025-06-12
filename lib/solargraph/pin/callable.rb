@@ -6,7 +6,7 @@ module Solargraph
       # @return [Signature]
       attr_reader :block
 
-      attr_reader :parameters
+      attr_accessor :parameters
 
       # @return [ComplexType, nil]
       attr_reader :return_type
@@ -19,6 +19,10 @@ module Solargraph
         @block = block
         @return_type = return_type
         @parameters = parameters
+      end
+
+      def method_namespace
+        closure.namespace
       end
 
       # @return [::Array<String>]
@@ -140,8 +144,6 @@ module Solargraph
       protected
 
       attr_writer :block
-
-      attr_writer :parameters
     end
   end
 end

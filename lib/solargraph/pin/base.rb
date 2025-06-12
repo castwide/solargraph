@@ -309,6 +309,9 @@ module Solargraph
         "#<#{self.class} `#{self.desc}` at #{self.location.inspect}>"
       end
 
+      def reset_generated!
+      end
+
       protected
 
       # @return [Boolean]
