@@ -74,6 +74,10 @@ module Solargraph
         File.join(work_dir, 'rbs', "#{gemspec.name}-#{gemspec.version}-#{hash || 0}.ser")
       end
 
+      def rbs_collection_path_prefix(gemspec)
+        File.join(work_dir, 'rbs', "#{gemspec.name}-#{gemspec.version}-")
+      end
+
       def deserialize_rbs_collection_gem(gemspec, hash)
         load(rbs_collection_path(gemspec, hash))
       end
@@ -106,9 +110,9 @@ module Solargraph
         uncache("stdlib")
       end
 
-      def uncache_gem(gemspec, hash, out: nil)
+      def uncache_gem(gemspec, out: nil)
         uncache(yardoc_path(gemspec), out: out)
-        uncache(rbs_collection_path(gemspec, hash), out: out)
+        uncache_by_prefix(rbs_collection_path_prefix(gemspec), out: out)
         uncache(yard_gem_path(gemspec), out: out)
       end
 
@@ -146,12 +150,25 @@ module Solargraph
       end
 
       # @return [void]
-      # @param path [Array<String>]
-      def uncache *path, out: nil
-        path = File.join(work_dir, *path)
+      # @param path_segments [Array<String>]
+      def uncache *path_segments, out: nil
+        path = File.join(*path_segments)
         if File.exist?(path)
           FileUtils.rm_rf path, secure: true
           out.puts "Clearing pin cache in #{path}" unless out.nil?
+        end
+      end
+
+      # @return [void]
+      # @param path_segments [Array<String>]
+      def uncache_by_prefix *path_segments, out: nil
+        path = File.join(*path_segments)
+        glob = "#{path}*"
+        out.puts "Clearing pin cache in #{glob}" unless out.nil?
+        Dir.glob(glob).each do |file|
+          next unless File.file?(file)
+          FileUtils.rm_rf file, secure: true
+          out.puts "Clearing pin cache in #{file}" unless out.nil?
         end
       end
     end

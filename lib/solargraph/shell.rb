@@ -103,7 +103,7 @@ module Solargraph
     def cache gem, version = nil
       api_map = Solargraph::ApiMap.load(Dir.pwd)
       spec = Gem::Specification.find_by_name(gem, version)
-      api_map.do_cache(spec, version, out: $stdout)
+      api_map.cache_gem(spec, rebuild: options[:rebuild], out: $stdout)
     end
 
     desc 'uncache GEM [...GEM]', "Delete specific cached gem documentation"
