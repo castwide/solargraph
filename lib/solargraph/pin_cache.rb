@@ -43,7 +43,7 @@ module Solargraph
       end
 
       def core_path
-        'core.ser'
+        File.join(work_dir, 'core.ser')
       end
 
       def deserialize_core
@@ -108,7 +108,7 @@ module Solargraph
 
       def uncache_gem(gemspec, hash, out: nil)
         uncache(yardoc_path(gemspec), out: out)
-        uncache(rbs_collection(gemspec, hash), out: out)
+        uncache(rbs_collection_path(gemspec, hash), out: out)
         uncache(yard_gem_path(gemspec), out: out)
       end
 
