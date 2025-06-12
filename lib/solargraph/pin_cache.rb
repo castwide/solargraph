@@ -90,6 +90,10 @@ module Solargraph
         File.join(work_dir, 'combined', "#{gemspec.name}-#{gemspec.version}-#{hash || 0}.ser")
       end
 
+      def combined_path_prefix(gemspec)
+        File.join(work_dir, 'combined', "#{gemspec.name}-#{gemspec.version}-")
+      end
+
       def serialize_combined_gem(gemspec, hash, pins)
         save(combined_path(gemspec, hash), pins)
       end
@@ -114,6 +118,7 @@ module Solargraph
         uncache(yardoc_path(gemspec), out: out)
         uncache_by_prefix(rbs_collection_path_prefix(gemspec), out: out)
         uncache(yard_gem_path(gemspec), out: out)
+        uncache_by_prefix(combined_path_prefix(gemspec), out: out)
       end
 
       # @return [void]
