@@ -416,19 +416,18 @@ module Solargraph
           name: "#{decl.name.to_s}=",
           type_location: location_decl_to_pin_location(decl.location),
           closure: closure,
-          parameters: [
-            Solargraph::Pin::Parameter.new(
-              name: 'value',
-              return_type: ComplexType.try_parse(other_type_to_tag(decl.type)).force_rooted
-            )
-          ],
+          parameters: [],
           comments: decl.comment&.string,
           scope: :instance,
           attribute: true
         )
-        pin.parameters.each do |param|
-          param.closure = pin
-        end
+        pin.parameters <<
+          Solargraph::Pin::Parameter.new(
+            name: 'value',
+            return_type: ComplexType.try_parse(other_type_to_tag(decl.type)).force_rooted,
+            source: :rbs,
+            closure: pin
+          )
         rooted_tag = ComplexType.parse(other_type_to_tag(decl.type)).force_rooted.rooted_tags
         pin.docstring.add_tag(YARD::Tags::Tag.new(:return, '', rooted_tag))
         pins.push pin
