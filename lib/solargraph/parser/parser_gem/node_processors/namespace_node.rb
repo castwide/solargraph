@@ -30,14 +30,16 @@ module Solargraph
               name: unpack_name(node.children[0]),
               comments: comments_for(node),
               visibility: :public,
-              gates: region.closure.gates.freeze
+              gates: region.closure.gates.freeze,
+              source: :parser
             )
             pins.push nspin
             unless superclass_name.nil?
               pins.push Pin::Reference::Superclass.new(
                 location: loc,
                 closure: pins.last,
-                name: superclass_name
+                name: superclass_name,
+                source: :parser
               )
             end
             process_children region.update(closure: nspin, visibility: :public)

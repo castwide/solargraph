@@ -34,7 +34,7 @@ module Solargraph
                 return if process_private_class_method
               end
             elsif node.children[1] == :require && node.children[0].to_s == '(const nil :Bundler)'
-              pins.push Pin::Reference::Require.new(Solargraph::Location.new(region.filename, Solargraph::Range.from_to(0, 0, 0, 0)), 'bundler/require')
+              pins.push Pin::Reference::Require.new(Solargraph::Location.new(region.filename, Solargraph::Range.from_to(0, 0, 0, 0)), 'bundler/require', source: :parser)
             end
             process_children
           end
@@ -76,7 +76,8 @@ module Solargraph
                   comments: cmnt,
                   scope: region.scope || :instance,
                   visibility: region.visibility,
-                  attribute: true
+                  attribute: true,
+                  source: :parser
                 )
               end
               if node.children[1] == :attr_writer || node.children[1] == :attr_accessor
@@ -87,10 +88,11 @@ module Solargraph
                   comments: cmnt,
                   scope: region.scope || :instance,
                   visibility: region.visibility,
-                  attribute: true
+                  attribute: true,
+                  source: :parser
                 )
                 pins.push method_pin
-                method_pin.parameters.push Pin::Parameter.new(name: 'value', decl: :arg, closure: pins.last)
+                method_pin.parameters.push Pin::Parameter.new(name: 'value', decl: :arg, closure: pins.last, source: :parser)
                 if method_pin.return_type.defined?
                   pins.last.docstring.add_tag YARD::Tags::Tag.new(:param, '', pins.last.return_type.items.map(&:rooted_tags), 'value')
                 end
@@ -107,7 +109,8 @@ module Solargraph
                 pins.push type.new(
                   location: get_node_location(i),
                   closure: cp,
-                  name: unpack_name(i)
+                  name: unpack_name(i),
+                  source: :parser
                 )
               end
             end
@@ -121,7 +124,8 @@ module Solargraph
                 pins.push Pin::Reference::Prepend.new(
                   location: get_node_location(i),
                   closure: cp,
-                  name: unpack_name(i)
+                  name: unpack_name(i),
+                  source: :parser
                 )
               end
             end
@@ -135,13 +139,15 @@ module Solargraph
                 pins.push Pin::Reference::Extend.new(
                   location: loc,
                   closure: region.closure,
-                  name: region.closure.full_context.namespace
+                  name: region.closure.full_context.namespace,
+                  source: :parser
                 )
               else
                 pins.push Pin::Reference::Extend.new(
                   location: loc,
                   closure: region.closure,
-                  name: unpack_name(i)
+                  name: unpack_name(i),
+                  source: :parser
                 )
               end
             end
@@ -151,7 +157,7 @@ module Solargraph
           def process_require
             if node.children[2].is_a?(AST::Node) && node.children[2].type == :str
               path = node.children[2].children[0].to_s
-              pins.push Pin::Reference::Require.new(get_node_location(node), path)
+              pins.push Pin::Reference::Require.new(get_node_location(node), path, source: :parser)
             end
           end
 
@@ -159,7 +165,7 @@ module Solargraph
           def process_autoload
             if node.children[3].is_a?(AST::Node) && node.children[3].type == :str
               path = node.children[3].children[0].to_s
-              pins.push Pin::Reference::Require.new(get_node_location(node), path)
+              pins.push Pin::Reference::Require.new(get_node_location(node), path, source: :parser)
             end
           end
 
@@ -182,7 +188,8 @@ module Solargraph
                     comments: ref.comments,
                     scope: :class,
                     visibility: :public,
-                    node: ref.node
+                    node: ref.node,
+                    source: :parser
                   )
                   cm = Solargraph::Pin::Method.new(
                     location: ref.location,
@@ -192,7 +199,8 @@ module Solargraph
                     comments: ref.comments,
                     scope: :instance,
                     visibility: :private,
-                    node: ref.node)
+                    node: ref.node,
+                    source: :parser)
                   pins.push mm, cm
                   pins.select{|pin| pin.is_a?(Pin::InstanceVariable) && pin.closure.path == ref.path}.each do |ivar|
                     pins.delete ivar
@@ -201,14 +209,16 @@ module Solargraph
                       closure: cm,
                       name: ivar.name,
                       comments: ivar.comments,
-                      assignment: ivar.assignment
+                      assignment: ivar.assignment,
+                      source: :parser
                     )
                     pins.push Solargraph::Pin::InstanceVariable.new(
                       location: ivar.location,
                       closure: mm,
                       name: ivar.name,
                       comments: ivar.comments,
-                      assignment: ivar.assignment
+                      assignment: ivar.assignment,
+                      source: :parser
                     )
                   end
                 end
@@ -236,7 +246,8 @@ module Solargraph
               closure: region.closure,
               name: node.children[2].children[0].to_s,
               original: node.children[3].children[0].to_s,
-              scope: region.scope || :instance
+              scope: region.scope || :instance,
+              source: :parser
             )
           end
 
