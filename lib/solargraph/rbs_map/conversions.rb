@@ -298,6 +298,12 @@ module Solargraph
         ["ActionController::Base", :instance, "_protected_ivars"] => :private,
         ["ActionView::Template", :instance, "method_name"] => :public,
         ["Module", :instance, "ruby2_keywords"] => :private,
+        ["Nokogiri::XML::Node", :instance, "coerce"] => :protected,
+        ["Nokogiri::XML::Document", :class, "empty_doc?"] => :private,
+        ["Nokogiri::Decorators::Slop", :instance, "respond_to_missing?"] => :public,
+        ["RuboCop::Cop::RangeHelp", :instance, "source_range"] => :private,
+        ["AST::Node", :instance, "original_dup"] => :private,
+        ["Rainbow::Presenter", :instance, "wrap_with_sgr"] => :private,
       }
 
       # @param decl [RBS::AST::Members::MethodDefinition]
