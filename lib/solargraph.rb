@@ -66,6 +66,11 @@ module Solargraph
                     end
   end
 
+  def self.assert_or_log(type, msg = nil, &block)
+    raise (msg || block.call) if asserts_on?(type) && ![:combine_with_visibility].include?(type)
+    logger.info msg, &block
+  end
+
   # A convenience method for Solargraph::Logging.logger.
   #
   # @return [Logger]
