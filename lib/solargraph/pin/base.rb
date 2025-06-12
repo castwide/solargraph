@@ -43,7 +43,11 @@ module Solargraph
         @name = name
         @comments = comments
         @source = source
-        raise "Please provide a source" if Solargraph.asserts_on?(:source) && source.nil?
+        assert_source_provided
+      end
+
+      def assert_source_provided
+        Solargraph.assert_or_log(:source, "source not provided - #{@path} #{@source} #{self.class}") if source.nil?
       end
 
       # @return [String]
