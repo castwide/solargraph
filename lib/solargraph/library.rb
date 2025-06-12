@@ -586,8 +586,9 @@ module Solargraph
 
     # @return [void]
     def cache_next_gemspec
-      return if @cache_progress
-      spec = api_map.uncached_gemspecs.find { |spec| !cache_errors.include?(spec) }
+      return if @cache_progres
+      spec = (api_map.uncached_yard_gemspecs + api_map.uncached_rbs_collection_gemspecs).
+               find { |spec| !cache_errors.include?(spec) }
       return end_cache_progress unless spec
 
       pending = api_map.uncached_gemspecs.length - cache_errors.length - 1
@@ -654,7 +655,8 @@ module Solargraph
         api_map.catalog bench
         source_map_hash.values.each { |map| find_external_requires(map) }
         logger.info "Catalog complete (#{api_map.source_maps.length} files, #{api_map.pins.length} pins)"
-        logger.info "#{api_map.uncached_gemspecs.length} uncached gemspecs"
+        logger.info "#{api_map.uncached_yard_gemspecs.length} uncached YARD gemspecs"
+        logger.info "#{api_map.uncached_rbs_collection_gemspecs.length} uncached RBS collection gemspecs"
         cache_next_gemspec
         @sync_count = 0
       end
