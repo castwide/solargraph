@@ -267,6 +267,7 @@ module Solargraph
           name: name,
           closure: closure,
           comments: decl.comment&.string,
+          type_location: location_decl_to_pin_location(decl.location)
         )
         rooted_tag = ComplexType.parse(other_type_to_tag(decl.type)).force_rooted.rooted_tags
         pin.docstring.add_tag(YARD::Tags::Tag.new(:type, '', rooted_tag))
@@ -452,7 +453,8 @@ module Solargraph
         pin = Solargraph::Pin::ClassVariable.new(
           name: name,
           closure: closure,
-          comments: decl.comment&.string
+          comments: decl.comment&.string,
+          type_location: location_decl_to_pin_location(decl.location)
         )
         rooted_tag = ComplexType.parse(other_type_to_tag(decl.type)).force_rooted.rooted_tags
         pin.docstring.add_tag(YARD::Tags::Tag.new(:type, '', rooted_tag))
@@ -467,7 +469,8 @@ module Solargraph
         pin = Solargraph::Pin::InstanceVariable.new(
           name: name,
           closure: closure,
-          comments: decl.comment&.string
+          comments: decl.comment&.string,
+          type_location: location_decl_to_pin_location(decl.location)
         )
         rooted_tag = ComplexType.parse(other_type_to_tag(decl.type)).force_rooted.rooted_tags
         pin.docstring.add_tag(YARD::Tags::Tag.new(:type, '', rooted_tag))
