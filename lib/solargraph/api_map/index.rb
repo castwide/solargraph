@@ -3,6 +3,8 @@
 module Solargraph
   class ApiMap
     class Index
+      include Logging
+
       # @param pins [Array<Pin::Base>]
       def initialize pins = []
         catalog pins
@@ -132,21 +134,24 @@ module Solargraph
       # @return [void]
       def map_overrides
         pins_by_class(Pin::Reference::Override).each do |ovr|
-          pin = path_pin_hash[ovr.name].first
-          next if pin.nil?
-          new_pin = if pin.path.end_with?('#initialize')
-            path_pin_hash[pin.path.sub(/#initialize/, '.new')].first
-          end
-          (ovr.tags.map(&:tag_name) + ovr.delete).uniq.each do |tag|
-            pin.docstring.delete_tags tag
-            new_pin.docstring.delete_tags tag if new_pin
-          end
-          ovr.tags.each do |tag|
-            pin.docstring.add_tag(tag)
-            redefine_return_type pin, tag
-            if new_pin
-              new_pin.docstring.add_tag(tag)
-              redefine_return_type new_pin, tag
+          logger.debug { "ApiMap::Index#map_overrides: Looking at override #{ovr} for #{ovr.name}" }
+          pins = path_pin_hash[ovr.name]
+          logger.debug { "ApiMap::Index#map_overrides: pins for path=#{ovr.name}: #{pins}" }
+          pins.each do |pin|
+            new_pin = if pin.path.end_with?('#initialize')
+                        path_pin_hash[pin.path.sub(/#initialize/, '.new')].first
+                      end
+            (ovr.tags.map(&:tag_name) + ovr.delete).uniq.each do |tag|
+              pin.docstring.delete_tags tag
+              new_pin.docstring.delete_tags tag if new_pin
+            end
+            ovr.tags.each do |tag|
+              pin.docstring.add_tag(tag)
+              redefine_return_type pin, tag
+              if new_pin
+                new_pin.docstring.add_tag(tag)
+                redefine_return_type new_pin, tag
+              end
             end
           end
         end
@@ -156,11 +161,14 @@ module Solargraph
       # @param tag [YARD::Tags::Tag]
       # @return [void]
       def redefine_return_type pin, tag
+        # @todo can this be made to not mutate existing pins and use
+        #   proxy() / proxy_with_signatures() instead?
         return unless pin && tag.tag_name == 'return'
         pin.instance_variable_set(:@return_type, ComplexType.try_parse(tag.type))
         pin.signatures.each do |sig|
           sig.instance_variable_set(:@return_type, ComplexType.try_parse(tag.type))
         end
+        pin.reset_generated!
       end
     end
   end

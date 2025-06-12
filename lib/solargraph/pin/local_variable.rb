@@ -21,11 +21,14 @@ module Solargraph
         @presence_certain = presence_certain
       end
 
-      # @param pin [self]
-      def try_merge! pin
-        return false unless super
-        @presence = pin.presence
-        true
+      def combine_with(other, attrs={})
+        new_attrs = {
+          assignment: assert_same(other, :assignment),
+          presence_certain: assert_same(other, :presence_certain?),
+        }.merge(attrs)
+        new_attrs[:presence] =  assert_same(other, :presence) unless attrs.key?(:presence)
+
+        super(other, new_attrs)
       end
 
       # @param other_closure [Pin::Closure]

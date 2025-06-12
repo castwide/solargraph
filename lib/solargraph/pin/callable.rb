@@ -21,9 +21,59 @@ module Solargraph
         @parameters = parameters
       end
 
+      def method_namespace
+        closure.namespace
+      end
+
+      def combine_blocks(other)
+        if block.nil?
+          other.block
+        elsif other.block.nil?
+          block
+        else
+          choose(other, :block)
+        end
+      end
+
+      # @param other [self]
+      # @param attrs [Hash{Symbol => Object}]
+      #
+      # @return [self]
+      def combine_with(other, attrs={})
+        new_attrs = {
+          block: combine_blocks(other),
+          return_type: combine_return_type(other),
+        }.merge(attrs)
+        new_attrs[:parameters] = choose_parameters(other).clone.freeze unless new_attrs.key?(:parameters)
+        super(other, new_attrs)
+      end
+
       # @return [::Array<String>]
       def parameter_names
         @parameter_names ||= parameters.map(&:name)
+      end
+
+      def generics
+        []
+      end
+
+      def choose_parameters(other)
+        raise "Trying to combine two pins with different arities - \nself =#{inspect}, \nother=#{other.inspect}, \n\n self.arity=#{self.arity}, \nother.arity=#{other.arity}" if other.arity != arity
+        parameters.each_with_index.map do |param, i|
+          param.combine_with(other.parameters[i])
+        end
+      end
+
+      def blockless_parameters
+        if parameters.last&.block?
+          parameters[0..-2]
+        else
+          parameters
+        end
+      end
+
+      def arity
+        [generics, blockless_parameters.map(&:arity_decl), block&.arity]
       end
 
       # @param generics_to_resolve [Enumerable<String>]
@@ -55,6 +105,23 @@ module Solargraph
                                                               yield_return_type_context,
                                                               resolved_generic_values: resolved_generic_values) if callable.block?
         callable
+      end
+
+      def typify api_map
+        type = super
+        return type if type.defined?
+        if method_name.end_with?('?')
+          logger.debug { "Callable#typify(self=#{self}) => Boolean (? suffix)" }
+          ComplexType::BOOLEAN
+        else
+          logger.debug { "Callable#typify(self=#{self}) => undefined" }
+          ComplexType::UNDEFINED
+        end
+      end
+
+      def method_name
+        raise "closure was nil in #{self.inspect}" if closure.nil?
+        @method_name ||= closure.name
       end
 
       # @param generics_to_resolve [::Array<String>]
