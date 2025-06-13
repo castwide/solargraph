@@ -39,6 +39,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v3
+      with:
+        # fetch all history for all branches and tags so we can
+        # compare against origin/master
+        fetch-depth: 0
     - name: Set up Ruby
       uses: ruby/setup-ruby@v1
       with:
