@@ -14,12 +14,6 @@ inherit_from: .rubocop_todo.yml
 AllCops:
   NewCops: enable
   Exclude:
-    - "spec/fixtures/rubocop-validation-error/.*"
-    - "spec/fixtures/rubocop-validation-error/*"
-    - "spec/fixtures/rubocop-unused-variable-error/.*"
-    - "spec/fixtures/rubocop-unused-variable-error/*"
-    - "spec/fixtures/rubocop-subfolder-configuration/.*"
-    - "spec/fixtures/rubocop-subfolder-configuration/*"
     - "spec/fixtures/invalid_byte.rb"
     - "spec/fixtures/invalid_node_comment.rb"
     - "spec/fixtures/invalid_utf8.rb"
