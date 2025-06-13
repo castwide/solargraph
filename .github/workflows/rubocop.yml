@@ -17,8 +17,7 @@ permissions:
   contents: read
 
 jobs:
-  test:
-
+  rubocop:
     runs-on: ubuntu-latest
 
     steps:
