@@ -275,26 +275,33 @@ module Solargraph
         pins.push pin
       end
 
+
+      # Visibility overrides that will allow the Solargraph project
+      # and plugins to pass typechecking using SOLARGRAPH_ASSERTS=on,
+      # so that we can detect any regressions/issues elsewhere in the
+      # visibility logic.
+      #
+      # These should either reflect a bug upstream in the RBS
+      # definitions, or include a @todo indicating what needs to be
+      # fixed in Solargraph to properly understand it.
+      #
+      # @todo PR these fixes upstream and list open PRs here above
+      #   related overrides
+      # @todo externalize remaining overrides into yaml file, then
+      #   allow that to be extended via .solargraph.yml
       VISIBILITY_OVERRIDE = {
         ["Rails::Engine", :instance, "run_tasks_blocks"] => :protected,
         # Should have been marked as both instance and class method in module -e.g., 'module_function'
         ["Kernel", :instance, "pretty_inspect"] => :private,
         # marked incorrectly in RBS
         ["WEBrick::HTTPUtils::FormData", :instance, "next_data"] => :protected,
-        # marked incorrectly in RBS
         ["Rails::Command", :class, "command_type"] => :private,
         ["Rails::Command", :class, "lookup_paths"] => :private,
         ["Rails::Command", :class, "file_lookup_paths"] => :private,
-        # marked incorrectly in RBS
-        # ["Rails::Railtie", :class, "generate_railtie_name"] => :private,
-        # ["Rails::Railtie", :class, "respond_to_missing?"] => :private,
-        # ["Rails::Railtie", :class, "method_missing"] => :private,
-        # ["Rails::Railtie", :class, "register_block_for"] => :private,
         ["Rails::Railtie", :instance, "run_console_blocks"] => :protected,
         ["Rails::Railtie", :instance, "run_generators_blocks"] => :protected,
         ["Rails::Railtie", :instance, "run_runner_blocks"] => :protected,
         ["Rails::Railtie", :instance, "run_tasks_blocks"] => :protected,
-        # marked incorrectly in RBS
         ["ActionController::Base", :instance, "_protected_ivars"] => :private,
         ["ActionView::Template", :instance, "method_name"] => :public,
         ["Module", :instance, "ruby2_keywords"] => :private,
@@ -305,6 +312,22 @@ module Solargraph
         ["AST::Node", :instance, "original_dup"] => :private,
         ["Rainbow::Presenter", :instance, "wrap_with_sgr"] => :private,
       }
+
+      def calculate_method_visibility(decl, context, closure, scope, name)
+        override_key = [closure.path, scope, name]
+        visibility = VISIBILITY_OVERRIDE[override_key]
+        simple_override_key = [closure.path, scope]
+        visibility ||= VISIBILITY_OVERRIDE[simple_override_key]
+        visibility ||= :private if closure.path == 'Kernel' && Kernel.private_instance_methods(false).include?(decl.name)
+        if decl.kind == :singleton_instance
+          # this is a 'module function'
+          visibility ||= :private
+        end
+        visibility ||= decl.visibility
+        visibility ||= context.visibility
+        visibility ||= :public
+        visibility
+      end
 
       # @param decl [RBS::AST::Members::MethodDefinition]
       # @param closure [Pin::Closure]
@@ -320,16 +343,7 @@ module Solargraph
         if decl.instance?
           name = decl.name.to_s
           final_scope = :instance
-          override_key = [closure.path, final_scope, name]
-          visibility = VISIBILITY_OVERRIDE[override_key]
-          simple_override_key = [closure.path, final_scope]
-          visibility ||= VISIBILITY_OVERRIDE[simple_override_key]
-          visibility ||= :private if closure.path == 'Kernel' && Kernel.private_instance_methods(false).include?(decl.name)
-          if decl.kind == :singleton_instance
-            # this is a 'module function'
-            visibility ||= :private
-          end
-          visibility ||= (decl.visibility || context.visibility)
+          visibility = calculate_method_visibility(decl, context, closure, final_scope, name)
           pin = Solargraph::Pin::Method.new(
             name: name,
             closure: closure,
@@ -350,10 +364,7 @@ module Solargraph
         if decl.singleton?
           final_scope = :class
           name = decl.name.to_s
-          override_key = [closure.path, final_scope, name]
-          visibility = VISIBILITY_OVERRIDE[override_key]
-          visibility ||= decl.visibility
-          visibility ||= :public
+          visibility = calculate_method_visibility(decl, context, closure, final_scope, name)
           pin = Solargraph::Pin::Method.new(
             name: name,
             closure: closure,
@@ -446,14 +457,7 @@ module Solargraph
       def attr_reader_to_pin(decl, closure, context)
         name = decl.name.to_s
         final_scope = decl.kind == :instance ? :instance : :class
-        override_key = [closure.path, final_scope, name]
-        visibility = VISIBILITY_OVERRIDE[override_key]
-        visibility ||= :private if closure.path == 'Kernel' && Kernel.private_instance_methods(false).include?(decl.name)
-        if decl.kind == :singleton_instance
-          # this is a 'module function'
-          visibility ||= :private
-        end
-        visibility ||= (decl.visibility || context.visibility)
+        visibility = calculate_method_visibility(decl, context, closure, final_scope, name)
         pin = Solargraph::Pin::Method.new(
           name: name,
           type_location: location_decl_to_pin_location(decl.location),
@@ -475,7 +479,7 @@ module Solargraph
       def attr_writer_to_pin(decl, closure, context)
         final_scope = decl.kind == :instance ? :instance : :class
         name = "#{decl.name.to_s}="
-        visibility = decl.visibility || context.visibility
+        visibility = calculate_method_visibility(decl, context, closure, final_scope, name)
         pin = Solargraph::Pin::Method.new(
           name: name,
           type_location: location_decl_to_pin_location(decl.location),
