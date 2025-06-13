@@ -36,4 +36,5 @@ jobs:
       run: bundle install
 
     - name: Run RuboCop
-      run: bundle exec rubocop
+      # Use -c flag so we ignore config files used within rubocop-related fixtures
+      run: bundle exec rubocop -c .rubocop.yml
