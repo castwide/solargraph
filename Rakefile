@@ -20,7 +20,7 @@ end
 
 desc "Check PR coverage"
 task :undercover do
-  sh 'bundle exec undercover --exclude-files "Rakefile,spec/**/*" --compare origin/master'
+  sh 'bundle exec undercover --exclude-files "Rakefile,spec/*,spec/**/*" --compare origin/master'
 end
 
 desc "Run all tests"
