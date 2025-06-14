@@ -35,14 +35,14 @@ describe Solargraph::ComplexType do
   end
 
   it "parses multiple subtypes" do
-    types = Solargraph::ComplexType.parse 'Hash<Symbol, String>'
+    types = Solargraph::ComplexType.parse 'Array<Symbol, String>'
     expect(types.length).to eq(1)
-    expect(types.first.tag).to eq('Hash<Symbol, String>')
-    expect(types.first.name).to eq('Hash')
+    expect(types.first.tag).to eq('Array<Symbol, String>')
+    expect(types.first.name).to eq('Array')
     expect(types.first.subtypes.length).to eq(2)
     expect(types.first.subtypes[0].name).to eq('Symbol')
     expect(types.first.subtypes[1].name).to eq('String')
-    expect(types.to_rbs).to eq('Hash[Symbol, String]')
+    expect(types.to_rbs).to eq('Array[Symbol, String]')
   end
 
   it "detects namespace and scope for simple types" do
@@ -104,6 +104,18 @@ describe Solargraph::ComplexType do
       expect(types.first.nil_type?).to be(true)
       expect(types.to_rbs).to eq('nil')
     end
+  end
+
+  it "parses Hash using <> notation" do
+    types = Solargraph::ComplexType.parse 'Hash<Symbol, String>'
+    expect(types.length).to eq(1)
+    expect(types.first.tag).to eq('Hash<Symbol, String>')
+    expect(types.first.name).to eq('Hash')
+    expect(types.first.key_types.length).to eq(1)
+    expect(types.first.key_types[0].name).to eq('Symbol')
+    expect(types.first.subtypes.length).to eq(1)
+    expect(types.first.subtypes[0].name).to eq('String')
+    expect(types.to_rbs).to eq('Hash[Symbol, String]')
   end
 
   it "identifies parametrized types" do
