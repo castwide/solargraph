@@ -7,6 +7,7 @@ module Solargraph
         class MasgnNode < Parser::NodeProcessor::Base
           include ParserGem::NodeMethods
 
+          # @return [void]
           def process
             # Example:
             #
@@ -40,7 +41,9 @@ module Solargraph
               # @todo in line below, nothing in typechecking alerts
               #   when a non-existant method is called on 'l'
               if pin.nil?
-                Solargraph.logger.debug { "Could not find local for masgn= value in location #{location.inspect} in #{lhs_arr} - masgn = #{masgn}, lhs.type = #{lhs.type}" }
+                Solargraph.logger.debug do
+                  "Could not find local for masgn= value in location #{location.inspect} in #{lhs_arr} - masgn = #{masgn}, lhs.type = #{lhs.type}"
+                end
                 next
               end
               pin.mass_assignment = [mass_rhs, i]

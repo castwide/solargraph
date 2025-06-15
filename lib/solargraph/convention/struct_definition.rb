@@ -8,8 +8,9 @@ module Solargraph
 
       module NodeProcessors
         class StructNode < Parser::NodeProcessor::Base
+          # @return [Boolean] continue processing the next processor of the same node.
           def process
-            return if struct_definition_node.nil?
+            return true if struct_definition_node.nil?
 
             loc = get_node_location(node)
             nspin = Solargraph::Pin::Namespace.new(
@@ -71,15 +72,16 @@ module Solargraph
             end
 
             process_children region.update(closure: nspin, visibility: :public)
+            false
           end
 
           private
 
           # @return [StructDefintionNode, nil]
           def struct_definition_node
-            @struct_definition_node ||= if StructDefintionNode.valid?(node)
+            @struct_definition_node ||= if StructDefintionNode.match?(node)
                                           StructDefintionNode.new(node)
-                                        elsif StructAssignmentNode.valid?(node)
+                                        elsif StructAssignmentNode.match?(node)
                                           StructAssignmentNode.new(node)
                                         end
           end

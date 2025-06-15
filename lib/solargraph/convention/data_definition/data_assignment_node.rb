@@ -2,20 +2,20 @@
 
 module Solargraph
   module Convention
-    module StructDefinition
-      # A node wrapper for a Struct definition via const assignment.
+    module DataDefinition
+      # A node wrapper for a Data definition via const assignment.
       # @example
-      #   MyStruct = Struct.new(:bar, :baz) do
+      #   MyData = Data.new(:bar, :baz) do
       #     def foo
       #     end
       #   end
-      class StructAssignmentNode < StructDefintionNode
+      class DataAssignmentNode < DataDefintionNode
         class << self
           # @example
           # s(:casgn, nil, :Foo,
           #   s(:block,
           #     s(:send,
-          #       s(:const, nil, :Struct), :new,
+          #       s(:const, nil, :Data), :define,
           #       s(:sym, :bar),
           #       s(:sym, :baz)),
           #     s(:args),
@@ -26,13 +26,13 @@ module Solargraph
             return false unless node&.type == :casgn
             return false if node.children[2].nil?
 
-            struct_node = if node.children[2].type == :block
-                            node.children[2].children[0]
-                          else
-                            node.children[2]
-                          end
+            data_node = if node.children[2].type == :block
+                          node.children[2].children[0]
+                        else
+                          node.children[2]
+                        end
 
-            struct_definition_node?(struct_node)
+            data_definition_node?(data_node)
           end
         end
 
@@ -47,7 +47,7 @@ module Solargraph
         private
 
         # @return [Parser::AST::Node]
-        def struct_node
+        def data_node
           if node.children[2].type == :block
             node.children[2].children[0]
           else
