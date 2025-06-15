@@ -43,6 +43,8 @@ module Solargraph
       register :if,           ParserGem::NodeProcessors::IfNode
       register :send,         ParserGem::NodeProcessors::SendNode
       register :class,        ParserGem::NodeProcessors::NamespaceNode
+      register :class,        Convention::StructDefinition::NodeProcessors::StructNode
+      register :class,        Convention::DataDefinition::NodeProcessors::DataNode
       register :module,       ParserGem::NodeProcessors::NamespaceNode
       register :sclass,       ParserGem::NodeProcessors::SclassNode
       register :ivasgn,       ParserGem::NodeProcessors::IvasgnNode
@@ -50,6 +52,8 @@ module Solargraph
       register :lvasgn,       ParserGem::NodeProcessors::LvasgnNode
       register :gvasgn,       ParserGem::NodeProcessors::GvasgnNode
       register :casgn,        ParserGem::NodeProcessors::CasgnNode
+      register :casgn,        Convention::StructDefinition::NodeProcessors::StructNode
+      register :casgn,        Convention::DataDefinition::NodeProcessors::DataNode
       register :masgn,        ParserGem::NodeProcessors::MasgnNode
       register :alias,        ParserGem::NodeProcessors::AliasNode
       register :args,         ParserGem::NodeProcessors::ArgsNode
