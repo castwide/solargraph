@@ -12,7 +12,8 @@ module Solargraph
         # @type [Hash<Symbol, Array<Class<NodeProcessor::Base>>>]
         @@processors ||= {}
 
-        # Register a processor for a node type.
+        # Register a processor for a node type. You can register multiple processors for the same type.
+        # If a node processor returns true, it will skip the next processor of the same node type.
         #
         # @param type [Symbol]
         # @param cls [Class<NodeProcessor::Base>]
@@ -45,7 +46,9 @@ module Solargraph
 
         node_processor_classes.each do |klass|
           processor = klass.new(node, region, pins, locals)
-          processor.process
+          process_next = processor.process
+
+          break unless process_next
         end
 
         [pins, locals]
