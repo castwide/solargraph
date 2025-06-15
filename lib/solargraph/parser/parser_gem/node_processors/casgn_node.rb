@@ -8,9 +8,6 @@ module Solargraph
           include ParserGem::NodeMethods
 
           def process
-            return if Convention::StructDefinition::StructAssignmentNode.match?(node) ||
-                      Convention::DataDefinition::DataAssignmentNode.match?(node)
-
             pins.push Solargraph::Pin::Constant.new(
               location: get_node_location(node),
               closure: region.closure,

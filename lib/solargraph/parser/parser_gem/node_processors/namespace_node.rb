@@ -8,9 +8,6 @@ module Solargraph
           include ParserGem::NodeMethods
 
           def process
-            return if Convention::StructDefinition::StructDefintionNode.match?(node) ||
-                      Convention::DataDefinition::DataDefintionNode.match?(node)
-
             superclass_name = nil
             superclass_name = unpack_name(node.children[1]) if node.type == :class && node.children[1]&.type == :const
 
