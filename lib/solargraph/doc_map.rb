@@ -55,7 +55,6 @@ module Solargraph
       logger.debug { "Caching for RBS collection: #{uncached_rbs_collection_gemspecs.map(&:name)}" }
       load_serialized_gem_pins
       uncached_gemspecs.each do |gemspec|
-        out.puts "Caching pins for gem #{gemspec.name}:#{gemspec.version}"
         cache(gemspec, out: out)
       end
       load_serialized_gem_pins
@@ -81,6 +80,7 @@ module Solargraph
 
     # @param gemspec [Gem::Specification]
     def cache(gemspec, rebuild: false, out: nil)
+      out.puts("Caching pins for gem #{gemspec.name}:#{gemspec.version}") if out
       cache_yard_pins(gemspec, out) if uncached_yard_gemspecs.include?(gemspec) || rebuild
       cache_rbs_collection_pins(gemspec, out) if uncached_rbs_collection_gemspecs.include?(gemspec) || rebuild
     end
