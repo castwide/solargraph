@@ -22,7 +22,13 @@ module Solargraph
 
       # @return [Array<Pin::Base>]
       def pins
+        @loaded ||= false
         @pins ||= []
+        if resolved? && !@loaded
+          @loaded = true
+          load_environment_to_pins(loader)
+        end
+        @pins
       end
 
       private
@@ -37,6 +43,10 @@ module Solargraph
       def load_environment_to_pins(loader)
         environment = RBS::Environment.from_loader(loader).resolve_type_names
         cursor = pins.length
+        if environment.declarations.empty?
+          Solargraph.logger.warn "No RBS declarations found in environment for #{loader.core_root}."
+          return
+        end
         environment.declarations.each { |decl| convert_decl_to_pin(decl, Solargraph::Pin::ROOT_PIN) }
         added_pins = pins[cursor..-1]
         added_pins.each { |pin| pin.source = :rbs }
