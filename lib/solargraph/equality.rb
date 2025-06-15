@@ -29,5 +29,10 @@ module Solargraph
       equality_fields.each(&:freeze)
       super
     end
+
+    def <=>(other)
+      return nil unless other.is_a?(self.class)
+      equality_fields <=> other.equality_fields
+    end
   end
 end
