@@ -13,6 +13,8 @@ module Solargraph
 
             if Convention::StructDefinition::StructDefintionNode.valid?(node)
               process_struct_definition
+            elsif Convention::DataDefinition::DataDefintionNode.valid?(node)
+              process_data_definition
             else
               process_namespace(superclass_name)
             end
@@ -49,6 +51,17 @@ module Solargraph
           #   multiple processors.
           def process_struct_definition
             processor_klass = Convention::StructDefinition::NodeProcessors::StructNode
+            processor = processor_klass.new(node, region, pins, locals)
+            processor.process
+
+            @pins = processor.pins
+            @locals = processor.locals
+          end
+
+          # TODO: Move this out of [NamespaceNode] once [Solargraph::Parser::NodeProcessor] supports
+          # multiple processors.
+          def process_data_definition
+            processor_klass = Convention::DataDefinition::NodeProcessors::DataNode
             processor = processor_klass.new(node, region, pins, locals)
             processor.process
 

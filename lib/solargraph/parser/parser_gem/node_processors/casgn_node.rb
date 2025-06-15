@@ -10,6 +10,8 @@ module Solargraph
           def process
             if Convention::StructDefinition::StructAssignmentNode.valid?(node)
               process_struct_assignment
+            elsif Convention::DataDefinition::DataAssignmentNode.valid?(node)
+              process_data_assignment
             else
               process_constant_assignment
             end
@@ -34,6 +36,18 @@ module Solargraph
           #   multiple processors.
           def process_struct_assignment
             processor_klass = Convention::StructDefinition::NodeProcessors::StructNode
+            processor = processor_klass.new(node, region, pins, locals)
+            processor.process
+
+            @pins = processor.pins
+            @locals = processor.locals
+          end
+
+          # TODO: Move this out of [CasgnNode] once [Solargraph::Parser::NodeProcessor] supports
+          # multiple processors.
+          # @return [void]
+          def process_data_assignment
+            processor_klass = Convention::DataDefinition::NodeProcessors::DataNode
             processor = processor_klass.new(node, region, pins, locals)
             processor.process
 
