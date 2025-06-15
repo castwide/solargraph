@@ -57,7 +57,8 @@ describe Solargraph::Parser::NodeProcessor do
       def some_method; end
     ))
     pins, = Solargraph::Parser::NodeProcessor.process(node)
-    expect(pins.map(&:name)).to include('foo', 'bar')
+    # empty namespace pin is root namespace
+    expect(pins.map(&:name)).to contain_exactly('', 'foo', 'bar', 'some_method')
 
     # Clean up the registered processors
     Solargraph::Parser::NodeProcessor.deregister(:def, dummy_processor1)
