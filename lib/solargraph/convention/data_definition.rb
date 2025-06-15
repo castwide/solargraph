@@ -77,9 +77,9 @@ module Solargraph
 
           # @return [DataDefintionNode, nil]
           def data_definition_node
-            @data_definition_node ||= if DataDefintionNode.valid?(node)
+            @data_definition_node ||= if DataDefintionNode.match?(node)
                                         DataDefintionNode.new(node)
-                                      elsif DataAssignmentNode.valid?(node)
+                                      elsif DataAssignmentNode.match?(node)
                                         DataAssignmentNode.new(node)
                                       end
           end

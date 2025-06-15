@@ -8,9 +8,9 @@ module Solargraph
           include ParserGem::NodeMethods
 
           def process
-            if Convention::StructDefinition::StructAssignmentNode.valid?(node)
+            if Convention::StructDefinition::StructAssignmentNode.match?(node)
               process_struct_assignment
-            elsif Convention::DataDefinition::DataAssignmentNode.valid?(node)
+            elsif Convention::DataDefinition::DataAssignmentNode.match?(node)
               process_data_assignment
             else
               process_constant_assignment

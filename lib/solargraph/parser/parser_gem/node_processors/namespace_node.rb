@@ -11,9 +11,9 @@ module Solargraph
             superclass_name = nil
             superclass_name = unpack_name(node.children[1]) if node.type == :class && node.children[1]&.type == :const
 
-            if Convention::StructDefinition::StructDefintionNode.valid?(node)
+            if Convention::StructDefinition::StructDefintionNode.match?(node)
               process_struct_definition
-            elsif Convention::DataDefinition::DataDefintionNode.valid?(node)
+            elsif Convention::DataDefinition::DataDefintionNode.match?(node)
               process_data_definition
             else
               process_namespace(superclass_name)

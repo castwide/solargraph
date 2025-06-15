@@ -77,9 +77,9 @@ module Solargraph
 
           # @return [StructDefintionNode, nil]
           def struct_definition_node
-            @struct_definition_node ||= if StructDefintionNode.valid?(node)
+            @struct_definition_node ||= if StructDefintionNode.match?(node)
                                           StructDefintionNode.new(node)
-                                        elsif StructAssignmentNode.valid?(node)
+                                        elsif StructAssignmentNode.match?(node)
                                           StructAssignmentNode.new(node)
                                         end
           end
