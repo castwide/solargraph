@@ -25,7 +25,7 @@ module Solargraph
           #     s(:def, :foo,
           #       s(:args),
           #       s(:send, nil, :bar)))
-          def valid?(node)
+          def match?(node)
             return false unless node&.type == :class
 
             data_definition_node?(node.children[1])

@@ -22,7 +22,7 @@ module Solargraph
           #     s(:def, :foo,
           #       s(:args),
           #       s(:send, nil, :bar))))
-          def valid?(node)
+          def match?(node)
             return false unless node&.type == :casgn
             return false if node.children[2].nil?
 
