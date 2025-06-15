@@ -171,7 +171,8 @@ module Solargraph
             elsif node.children[2].type == :sym || node.children[2].type == :str
               node.children[2..-1].each do |x|
                 cn = x.children[0].to_s
-                ref = pins.select{ |p| p.is_a?(Pin::Method) && p.namespace == region.closure.full_context.namespace && p.name == cn }.first
+                # @type [Pin::Method]
+                ref = pins.find { |p| p.is_a?(Pin::Method) && p.namespace == region.closure.full_context.namespace && p.name == cn }
                 unless ref.nil?
                   pins.delete ref
                   mm = Solargraph::Pin::Method.new(
