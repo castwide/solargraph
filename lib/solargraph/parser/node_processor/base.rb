@@ -30,8 +30,8 @@ module Solargraph
 
         # Subclasses should override this method to generate new pins.
         #
-        # @return [Boolean, nil] continue processing the next processor of the same node type.
-        #   In case there is only one processor registered for the node type, it can return nil.
+        # @return [Boolean] continue processing the next processor of the same node type.
+        # @return [void] In case there is only one processor registered for the node type, it can be void.
         def process
           process_children
 
