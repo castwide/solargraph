@@ -452,7 +452,7 @@ module Solargraph
         # as of 2025-03-12, the RBS generator used for
         # e.g. activesupport did not understand 'private' markings
         # inside 'class << self' blocks, but YARD did OK at it
-        source == :rbs && scope == :class && type_location&.filename&.include?('generated') && return_value.undefined? ||
+        source == :rbs && scope == :class && type_location&.filename&.include?('generated') && return_type.undefined? ||
           # YARD's RBS generator seems to miss a lot of should-be protected instance methods
           source == :rbs && scope == :instance && namespace.start_with?('YARD::') ||
           # private on attr_readers seems to be broken in Prism's auto-generator script
