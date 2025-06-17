@@ -225,6 +225,7 @@ module Solargraph
       #
       # @return [Object, nil]
       def assert_same(other, attr)
+        return false if other.nil?
         val1 = send(attr)
         val2 = other.send(attr)
         return val1 if val1 == val2
