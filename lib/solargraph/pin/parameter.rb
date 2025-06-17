@@ -46,6 +46,7 @@ module Solargraph
         keyword?
       end
 
+      # @return [String]
       def arity_decl
         name = (self.name || '(anon)')
         type = (return_type&.to_rbs || 'untyped')

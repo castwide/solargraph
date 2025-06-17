@@ -59,8 +59,14 @@ module Solargraph
 
       def choose_parameters(other)
         raise "Trying to combine two pins with different arities - \nself =#{inspect}, \nother=#{other.inspect}, \n\n self.arity=#{self.arity}, \nother.arity=#{other.arity}" if other.arity != arity
-        parameters.each_with_index.map do |param, i|
-          param.combine_with(other.parameters[i])
+        parameters.zip(other.parameters).map do |param, other_param|
+          if param.nil? && other_param.block?
+            other_param
+          elsif other_param.nil? && param.block?
+            param
+          else
+            param.combine_with(other_param)
+          end
         end
       end
 
