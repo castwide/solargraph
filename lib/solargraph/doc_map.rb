@@ -198,35 +198,36 @@ module Solargraph
     end
 
     def gemspecs_required_from_bundler
-      logger.info "Fetching gemspecs required from Bundler (bundler/require)"
-      return gemspecs_required_from_external_bundle if !defined?(Bundler) && workspace&.directory && !workspace.directory.empty? && Bundler.definition&.lockfile&.start_with?(workspace.directory)
-
-      # Find only the gems bundler is now using
-      gemspecs = Bundler.definition.locked_gems.specs.flat_map do |lazy_spec|
-        logger.info "Handling #{lazy_spec.name}:#{lazy_spec.version}"
-        [Gem::Specification.find_by_name(lazy_spec.name, lazy_spec.version)]
-      rescue Gem::MissingSpecError => e
-        logger.info("Could not find #{lazy_spec.name}:#{lazy_spec.version} with find_by_name, falling back to guess")
-        # can happen in local filesystem references
-        specs = resolve_path_to_gemspecs lazy_spec.name
-        logger.info "Gem #{lazy_spec.name} #{lazy_spec.version} from bundle not found: #{e}" if specs.nil?
-        next specs
-      end.compact
-
-      gemspecs
+      if workspace&.directory && Bundler.definition&.lockfile&.to_s&.start_with?(workspace.directory)
+        # Find only the gems bundler is now using
+        Bundler.definition.locked_gems.specs.flat_map do |lazy_spec|
+          logger.info "Handling #{lazy_spec.name}:#{lazy_spec.version}"
+          [Gem::Specification.find_by_name(lazy_spec.name, lazy_spec.version)]
+        rescue Gem::MissingSpecError => e
+          logger.info("Could not find #{lazy_spec.name}:#{lazy_spec.version} with find_by_name, falling back to guess")
+          # can happen in local filesystem references
+          specs = resolve_path_to_gemspecs lazy_spec.name
+          logger.info "Gem #{lazy_spec.name} #{lazy_spec.version} from bundle not found: #{e}" if specs.nil?
+          next specs
+        end.compact
+      else
+        logger.info 'Fetching gemspecs required from Bundler (bundler/require)'
+        gemspecs_required_from_external_bundle
+      end
     end
 
     def gemspecs_required_from_external_bundle
-      logger.info "Fetching gemspecs required from external bundle"
+      logger.info 'Fetching gemspecs required from external bundle'
       return [] unless workspace&.directory
 
       Solargraph.with_clean_env do
         cmd = [
           'ruby', '-e',
-          "require 'bundler/require'; require 'json'; Dir.chdir('#{workspace&.directory}') { puts Bundler.definition.locked_gems.specs.map { |spec| [spec.name, spec.version] }.to_h.to_json }"
+          "require 'bundler'; require 'json'; Dir.chdir('#{workspace&.directory}') { puts Bundler.definition.locked_gems.specs.map { |spec| [spec.name, spec.version] }.to_h.to_json }"
         ]
         o, e, s = Open3.capture3(*cmd)
         if s.success?
+          Solargraph.logger.debug "External bundle: #{o}"
           hash = o && !o.empty? ? JSON.parse(o.split("\n").last) : {}
           hash.map do |name, version|
             Gem::Specification.find_by_name(name, version)
@@ -239,7 +240,7 @@ module Solargraph
           end.compact
         else
           Solargraph.logger.warn e
-          raise BundleNotFoundError, "Failed to load gems from bundle at #{directory}"
+          raise BundleNotFoundError, "Failed to load gems from bundle at #{workspace&.directory}"
         end
       end
     end
