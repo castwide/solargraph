@@ -158,6 +158,11 @@ module Solargraph
       end
     end
 
+    # @return [Array<Pin::Base>]
+    def convention_pins
+      @convention_pins || []
+    end
+
     private
 
     # @return [Hash{Class => Array<Pin::Base>}]
@@ -168,11 +173,6 @@ module Solargraph
     # @return [Data]
     def data
       @data ||= Data.new(source)
-    end
-
-    # @return [Array<Pin::Base>]
-    def convention_pins
-      @convention_pins || []
     end
 
     # @param pins [Array<Pin::Base>]

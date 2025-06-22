@@ -236,6 +236,14 @@ module Solargraph
       store.pins_by_class(Pin::Keyword)
     end
 
+    # An array of pins based on factory parameters.
+    #
+    # @return [Enumerable<Solargraph::Pin::FactoryParameter>]
+    def factory_parameter_pins
+      # TODO: Index these pins
+      store.pins_by_class(Pin::FactoryParameter)
+    end
+
     # An array of namespace names defined in the ApiMap.
     #
     # @return [Set<String>]
@@ -566,6 +574,9 @@ module Solargraph
     end
 
     # Get an array of pins that match the specified path.
+    #
+    # @example
+    #   api_map.get_pins_by_path('String#split')
     #
     # @param path [String]
     # @return [Enumerable<Pin::Base>]

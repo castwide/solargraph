@@ -80,6 +80,46 @@ describe Solargraph::Source::Chain do
     expect(type.name).to eq('Sub')
   end
 
+  it 'infers types from factory methods' do
+    dummy_convention = Class.new(Solargraph::Convention::Base) do
+      def local(_source_map)
+        Solargraph::Environ.new(
+          pins: [
+            Solargraph::Pin::FactoryParameter.new(
+              method_name: 'create',
+              method_namespace: 'FactoryBot',
+              method_scope: :class,
+              param_name: 'klass',
+              value: :my_model,
+              return_type: Solargraph::ComplexType.parse('MyModel')
+            )
+          ]
+        )
+      end
+    end
+
+    Solargraph::Convention.register dummy_convention
+
+    source = Solargraph::Source.new(%(
+      class MyModel
+      end
+      module FactoryBot
+        def self.create(klass, **args)
+        end
+      end
+
+      FactoryBot.create(:my_model, name: 'test')
+    ), 'test.rb')
+    source_map = Solargraph::SourceMap.map(source)
+
+    api_map = Solargraph::ApiMap.new
+    api_map.index source_map.pins + source_map.convention_pins
+    chain = Solargraph::Source::SourceChainer.chain(source_map.source, Solargraph::Position.new(8, 20))
+    type = chain.infer(api_map, Solargraph::Pin::ROOT_PIN, [])
+    expect(type.name).to eq('MyModel')
+    Solargraph::Convention.register dummy_convention
+  end
+
   it "follows constant chains" do
     source = Solargraph::Source.load_string(%(
       module Mixin; end

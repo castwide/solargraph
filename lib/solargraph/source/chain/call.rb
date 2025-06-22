@@ -137,7 +137,16 @@ module Solargraph
                 #
                 # qualify(), however, happens in the namespace where
                 # the docs were written - from the method pin.
-                type = with_params(new_return_type.self_to_type(self_type), self_type).qualify(api_map, p.namespace) if new_return_type.defined?
+                if new_return_type.defined?
+                  type = with_params(new_return_type.self_to_type(self_type), self_type).qualify(api_map, p.namespace)
+                else
+                  factory_parameter = api_map.factory_parameter_pins.find do |fp|
+                    fp.method_namespace == p.namespace &&
+                      fp.method_name == p.name &&
+                      fp.method_scope == p.scope
+                  end
+                  type = factory_parameter.return_type.qualify(api_map, p.namespace) if factory_parameter
+                end
                 type ||= ComplexType::UNDEFINED
               end
               break if type.defined?
