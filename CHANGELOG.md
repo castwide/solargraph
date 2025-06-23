@@ -1,3 +1,6 @@
+## 0.55.2 - June 21, 2025
+- Require external bundle (#972)
+
 ## 0.55.1 - June 8, 2025
 - Fix inline Struct definition (#962)
 - Ensure DocMap requires bundler when loading gemspecs (#963)

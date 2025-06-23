@@ -2,6 +2,7 @@
 
 Encoding.default_external = 'UTF-8'
 
+require 'bundler'
 require 'set'
 require 'yard-solargraph'
 require 'solargraph/yard_tags'
@@ -56,14 +57,14 @@ module Solargraph
   #   used in the future to allow configurable asserts mixes for
   #   different situations.
   def self.asserts_on?(type)
-    if ENV['SOLARGRAPH_ASSERTS'].nil? || ENV['SOLARGRAPH_ASSERTS'].empty?
-      false
-    elsif ENV['SOLARGRAPH_ASSERTS'] == 'on'
-      true
-    else
-      logger.warn "Unrecognized SOLARGRAPH_ASSERTS value: #{ENV['SOLARGRAPH_ASSERTS']}"
-      false
-    end
+    @asserts_on ||= if ENV['SOLARGRAPH_ASSERTS'].nil? || ENV['SOLARGRAPH_ASSERTS'].empty?
+                      false
+                    elsif ENV['SOLARGRAPH_ASSERTS'] == 'on'
+                      true
+                    else
+                      logger.warn "Unrecognized SOLARGRAPH_ASSERTS value: #{ENV['SOLARGRAPH_ASSERTS']}"
+                      false
+                    end
   end
 
   def self.assert_or_log(type, msg = nil, &block)
