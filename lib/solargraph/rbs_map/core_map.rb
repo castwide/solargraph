@@ -19,7 +19,6 @@ module Solargraph
           load_environment_to_pins(loader)
           pins.concat RbsMap::CoreFills::ALL
           processed = ApiMap::Store.new(pins).pins.reject { |p| p.is_a?(Solargraph::Pin::Reference::Override) }
-          processed.each { |pin| pin.source = :rbs }
           pins.replace processed
 
           Cache.save('core.ser', pins)
