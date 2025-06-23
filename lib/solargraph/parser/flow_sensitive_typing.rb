@@ -118,7 +118,8 @@ module Solargraph
           comments: pin.comments,
           presence: presence,
           return_type: ComplexType.try_parse(downcast_type_name),
-          presence_certain: true
+          presence_certain: true,
+          source: :flow_sensitive_typing
         )
         locals.push(new_pin)
       end
@@ -152,7 +153,9 @@ module Solargraph
       # @param isa_node [Parser::AST::Node]
       # @return [Array(String, String)]
       def parse_isa(isa_node)
-        return unless isa_node.type == :send && isa_node.children[1] == :is_a?
+        # @todo A nil guard might be good enough here, but we might want to
+        #   see if the callers are checking for nils instead.
+        return unless isa_node&.type == :send && isa_node.children[1] == :is_a?
         # Check if conditional node follows this pattern:
         #   s(:send,
         #     s(:send, nil, :foo), :is_a?,

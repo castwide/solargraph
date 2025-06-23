@@ -118,13 +118,14 @@ module Solargraph
               name: name,
               decl: decl,
               presence: location ? location.range : nil,
-              return_type: ComplexType.try_parse(*p.types)
+              return_type: ComplexType.try_parse(*p.types),
+              source: source
             )
           end
           yield_return_type = ComplexType.try_parse(*yieldreturn_tags.flat_map(&:types))
-          block = Signature.new(generics: generics, parameters: yield_parameters, return_type: yield_return_type)
+          block = Signature.new(generics: generics, parameters: yield_parameters, return_type: yield_return_type, source: source)
         end
-        signature = Signature.new(generics: generics, parameters: parameters, return_type: return_type, block: block, closure: self)
+        signature = Signature.new(generics: generics, parameters: parameters, return_type: return_type, block: block, closure: self, source: source)
         block.closure = signature if block
         signature
       end
@@ -167,7 +168,7 @@ module Solargraph
         end
       end
 
-      def desc
+      def inner_desc
         # ensure the signatures line up when logged
         if signatures.length > 1
           path + " \n#{to_rbs}\n"
@@ -308,10 +309,12 @@ module Solargraph
                 name: name,
                 decl: decl,
                 presence: location ? location.range : nil,
-                return_type: param_type_from_name(tag, src.first)
+                return_type: param_type_from_name(tag, src.first),
+                source: :overloads
               )
             end,
-            return_type: ComplexType.try_parse(*tag.docstring.tags(:return).flat_map(&:types))
+            return_type: ComplexType.try_parse(*tag.docstring.tags(:return).flat_map(&:types)),
+            source: :overloads,
           )
         end
         @overloads

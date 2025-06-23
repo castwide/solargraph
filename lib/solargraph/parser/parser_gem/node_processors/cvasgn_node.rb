@@ -12,7 +12,8 @@ module Solargraph
               closure: region.closure,
               name: node.children[0].to_s,
               comments: comments_for(node),
-              assignment: node.children[1]
+              assignment: node.children[1],
+              source: :parser
             )
             process_children
           end

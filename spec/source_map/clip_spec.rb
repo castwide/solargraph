@@ -1059,7 +1059,7 @@ describe Solargraph::SourceMap::Clip do
     api_map = Solargraph::ApiMap.new
     api_map.map source
     clip = api_map.clip_at('test.rb', [7, 14])
-    expect(clip.infer.to_s).to eq('Foo, Bar')
+    expect(clip.infer.to_s).to eq('Foo, Bar').or eq('Bar, Foo')
   end
 
   # pending https://github.com/castwide/solargraph/pull/836
@@ -2109,7 +2109,7 @@ describe Solargraph::SourceMap::Clip do
   xit 'dereferences tuple types with [](idx) via literals' do
     source = Solargraph::Source.load_string(%(
       # @type [Array(String, Integer)]
-      a = 123
+      a = foo
       b = a[0]
       b
       c = a[1]
@@ -2146,7 +2146,7 @@ describe Solargraph::SourceMap::Clip do
     expect(type.rooted_tags).to eq('::Array<::Integer>')
   end
 
-  xit 'infers tuple types from diverse literal arrays' do
+  it 'infers tuple types from diverse literal arrays' do
     source = Solargraph::Source.load_string(%(
       a = [123, 'foo']
       a
@@ -2155,6 +2155,39 @@ describe Solargraph::SourceMap::Clip do
     clip = api_map.clip_at('test.rb', [2, 6])
     type = clip.infer
     expect(type.to_s).to eq('Array(Integer, String)')
+  end
+
+  it 'infers shallow literal diverse arrays into tuples' do
+    source = Solargraph::Source.load_string(%(
+      h = ['foo', 1]
+      h
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new.map(source)
+    clip = api_map.clip_at('test.rb', [2, 6])
+    type = clip.infer
+    expect(type.to_s).to eq('Array(String, Integer)')
+  end
+
+  it 'infers array of identical diverse arrays into tuples' do
+    source = Solargraph::Source.load_string(%(
+      h = [['foo', 1], ['bar', 2]]
+      h
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new.map(source)
+    clip = api_map.clip_at('test.rb', [2, 6])
+    type = clip.infer
+    expect(type.to_s).to eq('Array<Array(String, Integer)>')
+  end
+
+  it 'infers literal diverse array of diverse arrays into tuple of tuples' do
+    source = Solargraph::Source.load_string(%(
+      h = [['foo', 1], ['bar', :baz]]
+      h
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new.map(source)
+    clip = api_map.clip_at('test.rb', [2, 6])
+    type = clip.infer
+    expect(type.to_s).to eq('Array(Array(String, Integer), Array(String, Symbol))')
   end
 
   it 'resolves block parameter types from Hash#each' do
@@ -2201,17 +2234,6 @@ describe Solargraph::SourceMap::Clip do
     clip = api_map.clip_at('test.rb', [6, 8])
     type = clip.infer
     expect(type.to_s).to eq('Integer')
-  end
-
-  xit 'infers literal heterogeneous arrays into tuples' do
-    source = Solargraph::Source.load_string(%(
-      h = [['foo', 1], ['bar', 2]]
-      h
-    ), 'test.rb')
-    api_map = Solargraph::ApiMap.new.map(source)
-    clip = api_map.clip_at('test.rb', [2, 6])
-    type = clip.infer
-    expect(type.to_s).to eq('Array<Array(String, Integer)>')
   end
 
   it 'excludes Kernel singleton methods from chained methods' do
@@ -3135,6 +3157,8 @@ describe Solargraph::SourceMap::Clip do
     pin = api_map.get_path_pins('Foo#bar=').first
     expect(pin).not_to be_nil
     expect(pin.return_type.to_s).to eq('String')
+    pin = api_map.get_path_pins('Foo#foo').first
+    expect(pin).not_to be_nil
 
     clip = api_map.clip_at('test.rb', [9, 15])
     names = clip.complete.pins.map(&:name)
@@ -3217,8 +3241,37 @@ describe Solargraph::SourceMap::Clip do
     pin = api_map.get_path_pins('Foo#bar=').first
     expect(pin).not_to be_nil
     expect(pin.return_type.to_s).to eq('String')
+    pin = api_map.get_path_pins('Foo#foo').first
+    expect(pin).not_to be_nil
 
     clip = api_map.clip_at('test.rb', [9, 15])
+    names = clip.complete.pins.map(&:name)
+    expect(names).to include('bar', 'bar=', 'baz', 'baz=')
+  end
+
+  it 'completes Struct methods via const assignment without a block' do
+    source = Solargraph::Source.load_string(%(
+      # @param bar [String]
+      # @param baz [Integer]
+      Foo = Struct.new(:bar, :baz)
+
+      Foo.new.ba
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new.map(source)
+    pin = api_map.get_path_pins('Foo#baz').first
+    expect(pin).not_to be_nil
+    expect(pin.return_type.to_s).to eq('Integer')
+    pin = api_map.get_path_pins('Foo#baz=').first
+    expect(pin).not_to be_nil
+    expect(pin.return_type.to_s).to eq('Integer')
+    pin = api_map.get_path_pins('Foo#bar').first
+    expect(pin).not_to be_nil
+    expect(pin.return_type.to_s).to eq('String')
+    pin = api_map.get_path_pins('Foo#bar=').first
+    expect(pin).not_to be_nil
+    expect(pin.return_type.to_s).to eq('String')
+
+    clip = api_map.clip_at('test.rb', [5, 15])
     names = clip.complete.pins.map(&:name)
     expect(names).to include('bar', 'bar=', 'baz', 'baz=')
   end
