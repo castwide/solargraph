@@ -7,6 +7,7 @@ module Solargraph
     module ParserGem
       module NodeProcessors
         class OpasgnNode < Parser::NodeProcessor::Base
+          # @return [void]
           def process
             # Parser::CurrentRuby.parse("a += 2")
             # => s(:op_asgn,
