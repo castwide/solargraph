@@ -12,7 +12,8 @@ module Solargraph
               closure: region.closure,
               name: node.children[0].children[0].to_s,
               original: node.children[1].children[0].to_s,
-              scope: region.scope || :instance
+              scope: region.scope || :instance,
+              source: :parser
             )
             process_children
           end

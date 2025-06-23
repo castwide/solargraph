@@ -1,3 +1,11 @@
+## 0.55.2 - June 21, 2025
+- Require external bundle (#972)
+
+## 0.55.1 - June 8, 2025
+- Fix inline Struct definition (#962)
+- Ensure DocMap requires bundler when loading gemspecs (#963)
+- DelegatedMethod improvements (#953)
+
 ## 0.55.0 - June 3, 2025
 - Flow-sensitive typing - automatically downcast from is_a? calls (#856)
 - Tuple enabler: infer literal types and use them for signature selection (#836)
