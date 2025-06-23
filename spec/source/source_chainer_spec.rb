@@ -283,7 +283,7 @@ describe Solargraph::Source::SourceChainer do
     expect(type.tag).to eq('Array<String>')
   end
 
-  it 'infers general array type when types in literal differ' do
+  it 'infers tuple type when types in literal differ' do
     source = Solargraph::Source.load_string(%(
       ['a', 123]
     ), 'test.rb')
@@ -292,7 +292,7 @@ describe Solargraph::Source::SourceChainer do
 
     chain = Solargraph::Source::SourceChainer.chain(source, Solargraph::Position.new(1, 16))
     type = chain.infer(api_map, Solargraph::Pin::ROOT_PIN, api_map.source_map('test.rb').locals)
-    expect(type.tag).to eq('Array')
+    expect(type.tag).to eq('Array(String, Integer)')
   end
 
   it 'infers specific array type when types in literal identical' do

@@ -24,7 +24,8 @@ module Solargraph
                 closure: region.closure,
                 name: node.children[1].children[0].to_s,
                 comments: "@type [#{types.join(',')}]",
-                presence: presence
+                presence: presence,
+                source: :parser
               )
             end
             NodeProcessor.process(node.children[2], region, pins, locals)

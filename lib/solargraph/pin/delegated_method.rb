@@ -24,7 +24,24 @@ module Solargraph
         @receiver_method_name = receiver_method_name
       end
 
-      %i[comments parameters return_type location].each do |method|
+      def inner_desc
+        "#{name} => #{@receiver_chain}##{@receiver_method_name}"
+      end
+
+      def location
+        return super if super
+
+        @resolved_method&.send(:location)
+      end
+
+
+      def type_location
+        return super if super
+
+        @resolved_method&.send(:type_location)
+      end
+
+      %i[comments parameters return_type signatures].each do |method|
         define_method(method) do
           @resolved_method ? @resolved_method.send(method) : super()
         end
