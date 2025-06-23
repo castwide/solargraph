@@ -5,9 +5,10 @@ module Solargraph
     class Chain
       class Hash < Literal
         # @param type [String]
+        # @param node [Parser::AST::Node]
         # @param splatted [Boolean]
-        def initialize type, splatted = false
-          super(type)
+        def initialize type, node, splatted = false
+          super(type, node)
           @splatted = splatted
         end
 
@@ -21,7 +22,7 @@ module Solargraph
         end
 
         def resolve api_map, name_pin, locals
-          [Pin::ProxyType.anonymous(@complex_type)]
+          [Pin::ProxyType.anonymous(@complex_type, source: :chain)]
         end
 
         def splatted?

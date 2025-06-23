@@ -73,6 +73,8 @@ module Solargraph
         return superclass_references[fqns].first if superclass_references.key?(fqns)
         return 'Object' if fqns != 'BasicObject' && namespace_exists?(fqns)
         return 'Object' if fqns == 'Boolean'
+        simplified_literal_name = ComplexType.parse("#{fqns}").simplify_literals.name
+        return simplified_literal_name if simplified_literal_name != fqns
         nil
       end
 
@@ -112,7 +114,7 @@ module Solargraph
       # @param fqns [String]
       # @return [Enumerable<Solargraph::Pin::Base>]
       def get_class_variables(fqns)
-        namespace_children(fqns).select{|pin| pin.is_a?(Pin::ClassVariable)}
+        namespace_children(fqns).select { |pin| pin.is_a?(Pin::ClassVariable)}
       end
 
       # @return [Enumerable<Solargraph::Pin::Base>]

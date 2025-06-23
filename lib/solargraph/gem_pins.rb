@@ -42,7 +42,8 @@ module Solargraph
           generics: rbs.generics,
           node: yard.node,
           signatures: yard.signatures,
-          return_type: best_return_type(rbs.return_type, yard.return_type)
+          return_type: best_return_type(rbs.return_type, yard.return_type),
+          source: :gem_pins
         )
       end
       in_rbs = rbs_map.pins.reject { |pin| in_yard.include?(pin.path) }
