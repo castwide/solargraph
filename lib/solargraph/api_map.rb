@@ -94,7 +94,7 @@ module Solargraph
       end
       unresolved_requires = (bench.external_requires + implicit.requires + bench.workspace.config.required).to_a.compact.uniq
       if @unresolved_requires != unresolved_requires || @doc_map&.uncached_gemspecs&.any?
-        @doc_map = DocMap.new(unresolved_requires, [], bench.workspace.rbs_collection_path) # @todo Implement gem preferences
+        @doc_map = DocMap.new(unresolved_requires, [], bench.workspace) # @todo Implement gem preferences
         @unresolved_requires = unresolved_requires
       end
       @cache.clear if store.update(@@core_map.pins, @doc_map.pins, implicit.pins, iced_pins, live_pins)
@@ -436,7 +436,7 @@ module Solargraph
       result = Set.new
       complex_type.each do |type|
         if type.duck_type?
-          result.add Pin::DuckMethod.new(name: type.to_s[1..-1])
+          result.add Pin::DuckMethod.new(name: type.to_s[1..-1], source: :api_map)
           result.merge get_methods('Object')
         else
           unless type.nil? || type.name == 'void'
@@ -831,6 +831,7 @@ module Solargraph
       return nil if origin.nil?
       args = {
         location: pin.location,
+        type_location: origin.type_location,
         closure: pin.closure,
         name: pin.name,
         comments: origin.comments,
@@ -841,6 +842,7 @@ module Solargraph
         attribute: origin.attribute?,
         generics: origin.generics,
         return_type: origin.return_type,
+        source: :resolve_method_alias
       }
       out = Pin::Method.new **args
       logger.debug { "ApiMap#resolve_method_alias(pin=#{pin}) - returning #{out} from #{origin}" }
