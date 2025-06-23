@@ -2,6 +2,7 @@
 
 require 'parser/current'
 require 'parser/source/buffer'
+require 'prism'
 
 # Awaiting ability to use a version containing https://github.com/whitequark/parser/pull/1076
 #
@@ -30,11 +31,12 @@ module Solargraph
         # @param line [Integer]
         # @return [Parser::AST::Node]
         def parse code, filename = nil, line = 0
-          buffer = ::Parser::Source::Buffer.new(filename, line)
-          buffer.source = code
-          parser.parse(buffer)
-        rescue ::Parser::SyntaxError, ::Parser::UnknownEncodingInMagicComment => e
-          raise Parser::SyntaxError, e.message
+        #   buffer = ::Parser::Source::Buffer.new(filename, line)
+        #   buffer.source = code
+        #   parser.parse(buffer)
+        # rescue ::Parser::SyntaxError, ::Parser::UnknownEncodingInMagicComment => e
+        #   raise Parser::SyntaxError, e.message
+          Prism::Translation::Parser.parse(code, filename, line)
         end
 
         # @return [::Parser::Base]
