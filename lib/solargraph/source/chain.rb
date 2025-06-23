@@ -122,7 +122,7 @@ module Solargraph
           # evaluation.  However, we use the last link's return type
           # for the binder, as this is chaining off of it, and the
           # binder is now the lhs of the rhs we are evaluating.
-          working_pin = Pin::ProxyType.anonymous(name_pin.context, binder: type, closure: name_pin)
+          working_pin = Pin::ProxyType.anonymous(name_pin.context, binder: type, closure: name_pin, source: :chain)
           logger.debug { "Chain#define(links=#{links.map(&:desc)}, name_pin=#{name_pin.inspect}, locals=#{locals}) - after processing #{link.desc}, new working_pin=#{working_pin} with binder #{working_pin.binder}" }
         end
         links.last.last_context = working_pin
