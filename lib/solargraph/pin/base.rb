@@ -41,8 +41,13 @@ module Solargraph
         @type_location = type_location
         @closure = closure
         @name = name
-        @source = source
         @comments = comments
+        @source = source
+        assert_source_provided
+      end
+
+      def assert_source_provided
+        Solargraph.assert_or_log(:source, "source not provided - #{@path} #{@source} #{self.class}") if source.nil?
       end
 
       # @return [String]
@@ -298,14 +303,33 @@ module Solargraph
       end
 
       # @return [String]
-      def desc
+      def inner_desc
         closure_info = closure&.desc
         binder_info = binder&.desc
-        "[name=#{name.inspect} return_type=#{type_desc}, context=#{context.rooted_tags}, closure=#{closure_info}, binder=#{binder_info}]"
+        "name=#{name.inspect} return_type=#{type_desc}, context=#{context.rooted_tags}, closure=#{closure_info}, binder=#{binder_info}"
+      end
+
+      def desc
+        "[#{inner_desc}]"
       end
 
       def inspect
-        "#<#{self.class} `#{self.desc}` at #{self.location.inspect}>"
+        "#<#{self.class} `#{self.inner_desc}`#{all_location_text} via #{source.inspect}>"
+      end
+
+      def all_location_text
+        if location.nil? && type_location.nil?
+          ''
+        elsif !location.nil? && type_location.nil?
+          " at #{location.inspect})"
+        elsif !type_location.nil? && location.nil?
+          " at #{type_location.inspect})"
+        else
+          " at (#{location.inspect} and #{type_location.inspect})"
+        end
+      end
+
+      def reset_generated!
       end
 
       protected

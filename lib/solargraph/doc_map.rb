@@ -18,13 +18,16 @@ module Solargraph
     # @return [Array<Gem::Specification>]
     attr_reader :uncached_gemspecs
 
+    # @return [Workspace, nil]
+    attr_reader :workspace
+
     # @param requires [Array<String>]
     # @param preferences [Array<Gem::Specification>]
-    # @param rbs_path [String, Pathname, nil]
-    def initialize(requires, preferences, rbs_path = nil)
+    # @param workspace [Workspace, nil]
+    def initialize(requires, preferences, workspace = nil)
       @requires = requires.compact
       @preferences = preferences.compact
-      @rbs_path = rbs_path
+      @workspace = workspace
       generate
     end
 
@@ -118,10 +121,10 @@ module Solargraph
 
     # @param gemspec [Gem::Specification]
     def update_from_collection gemspec, gempins
-      return gempins unless @rbs_path && File.directory?(@rbs_path)
+      return gempins unless workspace&.rbs_collection_path && File.directory?(workspace&.rbs_collection_path)
       return gempins if RbsMap.new(gemspec.name, gemspec.version).resolved?
 
-      rbs_map = RbsMap.new(gemspec.name, gemspec.version, directories: [@rbs_path])
+      rbs_map = RbsMap.new(gemspec.name, gemspec.version, directories: [workspace&.rbs_collection_path])
       return gempins unless rbs_map.resolved?
 
       Solargraph.logger.info "Updating #{gemspec.name} #{gemspec.version} from collection"
@@ -132,22 +135,7 @@ module Solargraph
     # @return [::Array<Gem::Specification>, nil]
     def resolve_path_to_gemspecs path
       return nil if path.empty?
-
-      if path == 'bundler/require'
-        # find only the gems bundler is now using
-        gemspecs = Bundler.definition.locked_gems.specs.flat_map do |lazy_spec|
-          logger.info "Handling #{lazy_spec.name}:#{lazy_spec.version} from #{path}"
-          [Gem::Specification.find_by_name(lazy_spec.name, lazy_spec.version)]
-        rescue Gem::MissingSpecError => e
-          logger.info("Could not find #{lazy_spec.name}:#{lazy_spec.version} with find_by_name, falling back to guess")
-          # can happen in local filesystem references
-          specs = resolve_path_to_gemspecs lazy_spec.name
-          logger.info "Gem #{lazy_spec.name} #{lazy_spec.version} from bundle not found: #{e}" if specs.nil?
-          next specs
-        end.compact
-
-        return gemspecs
-      end
+      return gemspecs_required_from_bundler if path == 'bundler/require'
 
       gemspec = Gem::Specification.find_by_path(path)
       if gemspec.nil?
@@ -207,6 +195,54 @@ module Solargraph
     # @return [Array<Gem::Dependency>]
     def only_runtime_dependencies gemspec
       gemspec.dependencies - gemspec.development_dependencies
+    end
+
+    def gemspecs_required_from_bundler
+      if workspace&.directory && Bundler.definition&.lockfile&.to_s&.start_with?(workspace.directory)
+        # Find only the gems bundler is now using
+        Bundler.definition.locked_gems.specs.flat_map do |lazy_spec|
+          logger.info "Handling #{lazy_spec.name}:#{lazy_spec.version}"
+          [Gem::Specification.find_by_name(lazy_spec.name, lazy_spec.version)]
+        rescue Gem::MissingSpecError => e
+          logger.info("Could not find #{lazy_spec.name}:#{lazy_spec.version} with find_by_name, falling back to guess")
+          # can happen in local filesystem references
+          specs = resolve_path_to_gemspecs lazy_spec.name
+          logger.info "Gem #{lazy_spec.name} #{lazy_spec.version} from bundle not found: #{e}" if specs.nil?
+          next specs
+        end.compact
+      else
+        logger.info 'Fetching gemspecs required from Bundler (bundler/require)'
+        gemspecs_required_from_external_bundle
+      end
+    end
+
+    def gemspecs_required_from_external_bundle
+      logger.info 'Fetching gemspecs required from external bundle'
+      return [] unless workspace&.directory
+
+      Solargraph.with_clean_env do
+        cmd = [
+          'ruby', '-e',
+          "require 'bundler'; require 'json'; Dir.chdir('#{workspace&.directory}') { puts Bundler.definition.locked_gems.specs.map { |spec| [spec.name, spec.version] }.to_h.to_json }"
+        ]
+        o, e, s = Open3.capture3(*cmd)
+        if s.success?
+          Solargraph.logger.debug "External bundle: #{o}"
+          hash = o && !o.empty? ? JSON.parse(o.split("\n").last) : {}
+          hash.map do |name, version|
+            Gem::Specification.find_by_name(name, version)
+          rescue Gem::MissingSpecError => e
+            logger.info("Could not find #{name}:#{version} with find_by_name, falling back to guess")
+            # can happen in local filesystem references
+            specs = resolve_path_to_gemspecs name
+            logger.info "Gem #{name} #{version} from bundle not found: #{e}" if specs.nil?
+            next specs
+          end.compact
+        else
+          Solargraph.logger.warn e
+          raise BundleNotFoundError, "Failed to load gems from bundle at #{workspace&.directory}"
+        end
+      end
     end
   end
 end

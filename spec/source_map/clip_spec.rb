@@ -1032,7 +1032,7 @@ describe Solargraph::SourceMap::Clip do
     expect(clip.infer.to_s).to eq('String')
   end
 
-  xit 'overcomes untyped argument used in comparison' do
+  it 'infers complex variable type from ternary operator' do
     source = Solargraph::Source.load_string(%(
       def foo a
         type = (a == 123 ? 'foo' : 456)
@@ -1043,7 +1043,7 @@ describe Solargraph::SourceMap::Clip do
     api_map = Solargraph::ApiMap.new
     api_map.map source
     clip = api_map.clip_at('test.rb', [5, 14])
-    expect(clip.infer.to_s).to eq('String, Integer')
+    expect(clip.infer.to_s).to eq('String, 456')
   end
 
   it 'handles parallel type possibilities with #new' do
@@ -1059,7 +1059,7 @@ describe Solargraph::SourceMap::Clip do
     api_map = Solargraph::ApiMap.new
     api_map.map source
     clip = api_map.clip_at('test.rb', [7, 14])
-    expect(clip.infer.to_s).to eq('Foo, Bar')
+    expect(clip.infer.to_s).to eq('Foo, Bar').or eq('Bar, Foo')
   end
 
   # pending https://github.com/castwide/solargraph/pull/836
@@ -2063,22 +2063,138 @@ describe Solargraph::SourceMap::Clip do
     # @todo more root-safety to be done - expect(type.rooted?).to be true
   end
 
-  xit 'resolves declared tuple types correctly' do
+  it 'resolves declared tuple types correctly' do
     source = Solargraph::Source.load_string(%(
-      # @type [Tuple(String, Integer)]
+      # @type [::Solargraph::Fills::Tuple(String, Integer)]
       a = nil
       b = a[0]
       b
       c = a[1]
       c
+      d = a[2]
+      d
     ), 'test.rb')
     api_map = Solargraph::ApiMap.new.map(source)
     clip = api_map.clip_at('test.rb', [4, 6])
     type = clip.infer
     expect(type.to_s).to eq('String')
+
     clip = api_map.clip_at('test.rb', [6, 6])
     type = clip.infer
     expect(type.to_s).to eq('Integer')
+
+    clip = api_map.clip_at('test.rb', [8, 6])
+    type = clip.infer
+    # @todo Ideally this would be 'nil' - RBS isn't sophisticated enough to express this
+    expect(type.to_s).to eq('String, Integer')
+  end
+
+  xit 'does not pay attention to method signatures which have been redefind by subclass'
+
+  it 'understands #at for tuples' do
+    source = Solargraph::Source.load_string(%(
+      # @type [::Solargraph::Fills::Tuple(String, Integer)]
+      a = nil
+      b = a.at(0)
+      b
+      c = a.at(1)
+      c
+      d = a.at(2)
+      d
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new.map(source)
+    clip = api_map.clip_at('test.rb', [4, 6])
+    type = clip.infer
+    expect(type.to_s).to eq('String')
+
+    clip = api_map.clip_at('test.rb', [6, 6])
+    type = clip.infer
+    expect(type.to_s).to eq('Integer')
+
+    clip = api_map.clip_at('test.rb', [8, 6])
+    type = clip.infer
+    # @todo Ideally this would be 'nil' - RBS isn't sophisticated enough to express this
+    expect(type.to_s).to eq('String, Integer')
+  end
+
+  it 'understands #fetch for tuples with no default' do
+    source = Solargraph::Source.load_string(%(
+      # @type [::Solargraph::Fills::Tuple(String, Integer)]
+      a = nil
+      b = a.fetch(0)
+      b
+      c = a.fetch(1)
+      c
+      d = a.fetch(2)
+      d
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new.map(source)
+    clip = api_map.clip_at('test.rb', [4, 6])
+    type = clip.infer
+    expect(type.to_s).to eq('String')
+
+    clip = api_map.clip_at('test.rb', [6, 6])
+    type = clip.infer
+    expect(type.to_s).to eq('Integer')
+
+    clip = api_map.clip_at('test.rb', [8, 6])
+    type = clip.infer
+    # @todo Ideally this would be 'bot' - RBS isn't sophisticated enough to express this
+    expect(type.to_s).to eq('String, Integer')
+  end
+
+  it 'understands #fetch for tuples with a default' do
+    source = Solargraph::Source.load_string(%(
+      # @type [::Solargraph::Fills::Tuple(String, Integer)]
+      a = nil
+      b = a.fetch(0, :foo)
+      b
+      c = a.fetch(1, :foo)
+      c
+      d = a.fetch(2, :foo)
+      d
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new.map(source)
+    clip = api_map.clip_at('test.rb', [4, 6])
+    type = clip.infer
+    expect(type.to_s).to eq('String, :foo')
+
+    clip = api_map.clip_at('test.rb', [6, 6])
+    type = clip.infer
+    expect(type.to_s).to eq('Integer, :foo')
+
+    clip = api_map.clip_at('test.rb', [8, 6])
+    type = clip.infer
+    # @todo Ideally this would be just ':foo' - RBS isn't sophisticated enough to express this
+    expect(type.to_s).to eq('String, Integer, :foo')
+  end
+
+  it 'understands #fetch for tuples with a block' do
+    source = Solargraph::Source.load_string(%(
+      # @type [::Solargraph::Fills::Tuple(String, Integer)]
+      a = nil
+      b = a.fetch(0) {:foo }
+      b
+      c = a.fetch(1) { :foo }
+      c
+      d = a.fetch(2) { :foo }
+      d
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new.map(source)
+    clip = api_map.clip_at('test.rb', [4, 6])
+    type = clip.infer
+    # @todo Ideally this would be just 'String' - RBS isn't sophisticated enough to express this
+    expect(type.to_s).to eq('String, :foo')
+
+    clip = api_map.clip_at('test.rb', [6, 6])
+    type = clip.infer
+    # @todo Ideally this would be just 'Integer' - RBS isn't sophisticated enough to express this
+    expect(type.to_s).to eq('Integer, :foo')
+
+    clip = api_map.clip_at('test.rb', [8, 6])
+    type = clip.infer
+    # @todo Ideally this would be just ':foo' - RBS isn't sophisticated enough to express this
+    expect(type.to_s).to eq('String, Integer, :foo')
   end
 
   it 'does not pay attention to method signatures which have been redefind by subclass' do
@@ -2106,10 +2222,10 @@ describe Solargraph::SourceMap::Clip do
     expect(type.to_s).to eq('String')
   end
 
-  xit 'dereferences tuple types with [](idx) via literals' do
+  it 'dereferences tuple types with [](idx) via literals' do
     source = Solargraph::Source.load_string(%(
       # @type [Array(String, Integer)]
-      a = 123
+      a = foo
       b = a[0]
       b
       c = a[1]
@@ -2146,7 +2262,7 @@ describe Solargraph::SourceMap::Clip do
     expect(type.rooted_tags).to eq('::Array<::Integer>')
   end
 
-  xit 'infers tuple types from diverse literal arrays' do
+  it 'infers tuple types from diverse literal arrays' do
     source = Solargraph::Source.load_string(%(
       a = [123, 'foo']
       a
@@ -2155,6 +2271,39 @@ describe Solargraph::SourceMap::Clip do
     clip = api_map.clip_at('test.rb', [2, 6])
     type = clip.infer
     expect(type.to_s).to eq('Array(Integer, String)')
+  end
+
+  it 'infers shallow literal diverse arrays into tuples' do
+    source = Solargraph::Source.load_string(%(
+      h = ['foo', 1]
+      h
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new.map(source)
+    clip = api_map.clip_at('test.rb', [2, 6])
+    type = clip.infer
+    expect(type.to_s).to eq('Array(String, Integer)')
+  end
+
+  it 'infers array of identical diverse arrays into tuples' do
+    source = Solargraph::Source.load_string(%(
+      h = [['foo', 1], ['bar', 2]]
+      h
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new.map(source)
+    clip = api_map.clip_at('test.rb', [2, 6])
+    type = clip.infer
+    expect(type.to_s).to eq('Array<Array(String, Integer)>')
+  end
+
+  it 'infers literal diverse array of diverse arrays into tuple of tuples' do
+    source = Solargraph::Source.load_string(%(
+      h = [['foo', 1], ['bar', :baz]]
+      h
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new.map(source)
+    clip = api_map.clip_at('test.rb', [2, 6])
+    type = clip.infer
+    expect(type.to_s).to eq('Array(Array(String, Integer), Array(String, Symbol))')
   end
 
   it 'resolves block parameter types from Hash#each' do
@@ -2203,7 +2352,7 @@ describe Solargraph::SourceMap::Clip do
     expect(type.to_s).to eq('Integer')
   end
 
-  xit 'infers literal heterogeneous arrays into tuples' do
+  it 'infers literal heterogeneous arrays into tuples' do
     source = Solargraph::Source.load_string(%(
       h = [['foo', 1], ['bar', 2]]
       h
@@ -2977,7 +3126,7 @@ describe Solargraph::SourceMap::Clip do
     expect(clip.infer.to_s).to eq('Array<456>')
   end
 
-  xit 'resolves overloads based on kwarg existence' do
+  it 'resolves overloads based on kwarg existence' do
     source = Solargraph::Source.load_string(%(
       class Blah
         # @param *strings [Array<String>] The type definitions to parse
@@ -3135,6 +3284,8 @@ describe Solargraph::SourceMap::Clip do
     pin = api_map.get_path_pins('Foo#bar=').first
     expect(pin).not_to be_nil
     expect(pin.return_type.to_s).to eq('String')
+    pin = api_map.get_path_pins('Foo#foo').first
+    expect(pin).not_to be_nil
 
     clip = api_map.clip_at('test.rb', [9, 15])
     names = clip.complete.pins.map(&:name)
@@ -3159,7 +3310,7 @@ describe Solargraph::SourceMap::Clip do
     names = clip.complete.pins.map(&:name)
     expect(names).to include('bar:', 'baz:')
   end
-  
+
   it 'completes Struct methods inside class' do
     source = Solargraph::Source.load_string(%(
       # @param bar [String]
@@ -3217,9 +3368,62 @@ describe Solargraph::SourceMap::Clip do
     pin = api_map.get_path_pins('Foo#bar=').first
     expect(pin).not_to be_nil
     expect(pin.return_type.to_s).to eq('String')
+    pin = api_map.get_path_pins('Foo#foo').first
+    expect(pin).not_to be_nil
 
     clip = api_map.clip_at('test.rb', [9, 15])
     names = clip.complete.pins.map(&:name)
     expect(names).to include('bar', 'bar=', 'baz', 'baz=')
+  end
+
+  it 'completes Struct methods via const assignment without a block' do
+    source = Solargraph::Source.load_string(%(
+      # @param bar [String]
+      # @param baz [Integer]
+      Foo = Struct.new(:bar, :baz)
+
+      Foo.new.ba
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new.map(source)
+    pin = api_map.get_path_pins('Foo#baz').first
+    expect(pin).not_to be_nil
+    expect(pin.return_type.to_s).to eq('Integer')
+    pin = api_map.get_path_pins('Foo#baz=').first
+    expect(pin).not_to be_nil
+    expect(pin.return_type.to_s).to eq('Integer')
+    pin = api_map.get_path_pins('Foo#bar').first
+    expect(pin).not_to be_nil
+    expect(pin.return_type.to_s).to eq('String')
+    pin = api_map.get_path_pins('Foo#bar=').first
+    expect(pin).not_to be_nil
+    expect(pin.return_type.to_s).to eq('String')
+
+    clip = api_map.clip_at('test.rb', [5, 15])
+    names = clip.complete.pins.map(&:name)
+    expect(names).to include('bar', 'bar=', 'baz', 'baz=')
+  end
+
+  it 'defines calls with blocks to methods with yieldreceiver tags' do
+    source = Solargraph::Source.load_string(%(
+      class Base
+        # An inherited class method
+        # @yieldparam arg [String]
+        # @yieldreceiver [Object]
+        # @return [void]
+        def self.foo(arg, &block)
+          block.call('1', 1)
+        end
+      end
+      class Desc < Base
+        foo arg do |bar|
+          bar.upcase
+        end
+      end
+    ), 'test.rb')
+
+    api_map = Solargraph::ApiMap.new.map(source)
+
+    clip = api_map.clip_at('test.rb', [11, 8])
+    expect(clip.define.map(&:path)).to eq(['Base.foo'])
   end
 end
