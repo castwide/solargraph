@@ -11,7 +11,8 @@ module Solargraph
           closure ||= Solargraph::Pin::Namespace.new(
             name: code_object.namespace.to_s,
             closure: Pin::ROOT_PIN,
-            gates: [code_object.namespace.to_s]
+            gates: [code_object.namespace.to_s],
+            source: :yardoc,
           )
           Pin::Namespace.new(
             location: object_location(code_object, spec),
@@ -19,7 +20,8 @@ module Solargraph
             comments: code_object.docstring ? code_object.docstring.all.to_s : '',
             type: code_object.is_a?(YARD::CodeObjects::ClassObject) ? :class : :module,
             visibility: code_object.visibility,
-            closure: closure
+            closure: closure,
+            source: :yardoc,
           )
         end
       end

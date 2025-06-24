@@ -14,7 +14,8 @@ module Solargraph
               closure: region.closure,
               name: node.children[0].to_s,
               comments: comments_for(node),
-              assignment: node.children[1]
+              assignment: node.children[1],
+              source: :parser
             )
             if region.visibility == :module_function
               here = get_node_start_position(node)
@@ -25,7 +26,8 @@ module Solargraph
                   closure: Pin::Namespace.new(type: :module, closure: region.closure.closure, name: region.closure.name),
                   name: node.children[0].to_s,
                   comments: comments_for(node),
-                  assignment: node.children[1]
+                  assignment: node.children[1],
+                  source: :parser
                 )
               end
             end

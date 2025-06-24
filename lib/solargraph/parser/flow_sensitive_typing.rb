@@ -118,7 +118,8 @@ module Solargraph
           comments: pin.comments,
           presence: presence,
           return_type: ComplexType.try_parse(downcast_type_name),
-          presence_certain: true
+          presence_certain: true,
+          source: :flow_sensitive_typing
         )
         locals.push(new_pin)
       end

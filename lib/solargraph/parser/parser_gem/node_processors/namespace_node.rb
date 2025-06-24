@@ -31,7 +31,8 @@ module Solargraph
               name: name,
               comments: comments_for(node),
               visibility: :public,
-              gates: region.closure.gates.freeze
+              gates: region.closure.gates.freeze,
+              source: :parser
             )
             logger.debug { "NamespaceNode#process: Created namespace pin: #{nspin} in closure #{region.closure} and namespace=#{nspin.namespace} and name=#{name}" }
             pins.push nspin
@@ -39,7 +40,8 @@ module Solargraph
               pins.push Pin::Reference::Superclass.new(
                 location: loc,
                 closure: pins.last,
-                name: superclass_name
+                name: superclass_name,
+                source: :parser
               )
             end
             process_children region.update(closure: nspin, visibility: :public)

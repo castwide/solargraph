@@ -47,15 +47,16 @@ module Solargraph
             else
               code_object.superclass.to_s
             end
-            result.push Solargraph::Pin::Reference::Superclass.new(name: superclass, closure: nspin)
+            result.push Solargraph::Pin::Reference::Superclass.new(name: superclass, closure: nspin, source: :yard_map)
           end
           code_object.class_mixins.each do |m|
-            result.push Solargraph::Pin::Reference::Extend.new(closure: nspin, name: m.path)
+            result.push Solargraph::Pin::Reference::Extend.new(closure: nspin, name: m.path, source: :yard_map)
           end
           code_object.instance_mixins.each do |m|
             result.push Solargraph::Pin::Reference::Include.new(
               closure: nspin, # @todo Fix this
-              name: m.path
+              name: m.path,
+              source: :yard_map
             )
           end
         elsif code_object.is_a?(YARD::CodeObjects::MethodObject)

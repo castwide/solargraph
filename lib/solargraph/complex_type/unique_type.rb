@@ -306,7 +306,8 @@ module Solargraph
 
         out = transform(name) do |t|
           if t.name == GENERIC_TAG_NAME
-            idx = definitions.generics.index(t.subtypes.first&.name)
+            generic_name = t.subtypes.first&.name
+            idx = definitions.generics.index(generic_name)
             next t if idx.nil?
             if context_type.parameters_type == :hash
               if idx == 0
@@ -323,7 +324,7 @@ module Solargraph
                 ComplexType::UNDEFINED
               end
             else
-              context_type.all_params[idx] || ComplexType::UNDEFINED
+              context_type.all_params[idx] || definitions.generic_defaults[generic_name] || ComplexType::UNDEFINED
             end
           else
             t
