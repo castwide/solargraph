@@ -219,6 +219,7 @@ module Solargraph
       # @param other [self]
       # @return [void]
       def assert_same_macros(other)
+        return unless self.source == :yardoc && other.source == :yardoc
         assert_same_count(other, :macros)
         assert_same_array_content(other, :macros) { |macro| macro.tag.name }
       end
@@ -292,6 +293,11 @@ module Solargraph
         if val1&.name != val2&.name
           Solargraph.assert_or_log("combine_with_#{attr}_name".to_sym,
                                    "Inconsistent #{attr.inspect} name values between \nself =#{inspect} and \nother=#{other.inspect}:\n\n self.#{attr} = #{val1.inspect}\nother.#{attr} = #{val2.inspect}")
+        end
+        if val1.class != val2.class
+          Solargraph.assert_or_log("combine_with_#{attr}_class".to_sym,
+                                   "Inconsistent #{attr.inspect} class values between \nself =#{inspect} and \nother=#{other.inspect}:\n\n self.#{attr} = #{val1.inspect}\nother.#{attr} = #{val2.inspect}")
+          return val1
         end
         [val1, val2].compact.min
       end
