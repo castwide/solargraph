@@ -645,8 +645,6 @@ module Solargraph
 
       protected
 
-      attr_writer :signatures
-
       attr_writer :return_type
     end
   end
