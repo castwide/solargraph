@@ -107,13 +107,13 @@ module Solargraph
       def convert_member_to_pin member, closure, context
         case member
         when RBS::AST::Members::MethodDefinition
-          method_def_to_pin(member, closure)
+          method_def_to_pin(member, closure, context)
         when RBS::AST::Members::AttrReader
-          attr_reader_to_pin(member, closure)
+          attr_reader_to_pin(member, closure, context)
         when RBS::AST::Members::AttrWriter
-          attr_writer_to_pin(member, closure)
+          attr_writer_to_pin(member, closure, context)
         when RBS::AST::Members::AttrAccessor
-          attr_accessor_to_pin(member, closure)
+          attr_accessor_to_pin(member, closure, context)
         when RBS::AST::Members::Include
           include_to_pin(member, closure)
         when RBS::AST::Members::Prepend
@@ -129,9 +129,9 @@ module Solargraph
         when RBS::AST::Members::InstanceVariable
           ivar_to_pin(member, closure)
         when RBS::AST::Members::Public
-          return Context.new(visibility: :public)
+          return Context.new(:public)
         when RBS::AST::Members::Private
-          return Context.new(visibility: :private)
+          return Context.new(:private)
         when RBS::AST::Declarations::Base
           convert_decl_to_pin(member, closure)
         else
@@ -280,26 +280,84 @@ module Solargraph
         pins.push pin
       end
 
+
+      # Visibility overrides that will allow the Solargraph project
+      # and plugins to pass typechecking using SOLARGRAPH_ASSERTS=on,
+      # so that we can detect any regressions/issues elsewhere in the
+      # visibility logic.
+      #
+      # These should either reflect a bug upstream in the RBS
+      # definitions, or include a @todo indicating what needs to be
+      # fixed in Solargraph to properly understand it.
+      #
+      # @todo PR these fixes upstream and list open PRs here above
+      #   related overrides
+      # @todo externalize remaining overrides into yaml file, then
+      #   allow that to be extended via .solargraph.yml
+      VISIBILITY_OVERRIDE = {
+        ["Rails::Engine", :instance, "run_tasks_blocks"] => :protected,
+        # Should have been marked as both instance and class method in module -e.g., 'module_function'
+        ["Kernel", :instance, "pretty_inspect"] => :private,
+        # marked incorrectly in RBS
+        ["WEBrick::HTTPUtils::FormData", :instance, "next_data"] => :protected,
+        ["Rails::Command", :class, "command_type"] => :private,
+        ["Rails::Command", :class, "lookup_paths"] => :private,
+        ["Rails::Command", :class, "file_lookup_paths"] => :private,
+        ["Rails::Railtie", :instance, "run_console_blocks"] => :protected,
+        ["Rails::Railtie", :instance, "run_generators_blocks"] => :protected,
+        ["Rails::Railtie", :instance, "run_runner_blocks"] => :protected,
+        ["Rails::Railtie", :instance, "run_tasks_blocks"] => :protected,
+        ["ActionController::Base", :instance, "_protected_ivars"] => :private,
+        ["ActionView::Template", :instance, "method_name"] => :public,
+        ["Module", :instance, "ruby2_keywords"] => :private,
+        ["Nokogiri::XML::Node", :instance, "coerce"] => :protected,
+        ["Nokogiri::XML::Document", :class, "empty_doc?"] => :private,
+        ["Nokogiri::Decorators::Slop", :instance, "respond_to_missing?"] => :public,
+        ["RuboCop::Cop::RangeHelp", :instance, "source_range"] => :private,
+        ["AST::Node", :instance, "original_dup"] => :private,
+        ["Rainbow::Presenter", :instance, "wrap_with_sgr"] => :private,
+      }
+
+      def calculate_method_visibility(decl, context, closure, scope, name)
+        override_key = [closure.path, scope, name]
+        visibility = VISIBILITY_OVERRIDE[override_key]
+        simple_override_key = [closure.path, scope]
+        visibility ||= VISIBILITY_OVERRIDE[simple_override_key]
+        visibility ||= :private if closure.path == 'Kernel' && Kernel.private_instance_methods(false).include?(decl.name)
+        if decl.kind == :singleton_instance
+          # this is a 'module function'
+          visibility ||= :private
+        end
+        visibility ||= decl.visibility
+        visibility ||= context.visibility
+        visibility ||= :public
+        visibility
+      end
+
       # @param decl [RBS::AST::Members::MethodDefinition]
       # @param closure [Pin::Closure]
+      # @param context [Context]
       # @return [void]
-      def method_def_to_pin decl, closure
+      def method_def_to_pin decl, closure, context
         # there may be edge cases here around different signatures
         # having different type params / orders - we may need to match
         # this data model and have generics live in signatures to
         # handle those correctly
         generics = decl.overloads.map(&:method_type).flat_map(&:type_params).map(&:name).map(&:to_s).uniq
+
         if decl.instance?
+          name = decl.name.to_s
+          final_scope = :instance
+          visibility = calculate_method_visibility(decl, context, closure, final_scope, name)
           pin = Solargraph::Pin::Method.new(
-            name: decl.name.to_s,
+            name: name,
             closure: closure,
             type_location: location_decl_to_pin_location(decl.location),
             comments: decl.comment&.string,
-            scope: :instance,
+            scope: final_scope,
             signatures: [],
             generics: generics,
-            # @todo RBS core has unreliable visibility definitions
-            visibility: closure.path == 'Kernel' && Kernel.private_instance_methods(false).include?(decl.name) ? :private : :public,
+            visibility: visibility,
             source: :rbs
           )
           pin.signatures.concat method_def_to_sigs(decl, pin)
@@ -310,12 +368,16 @@ module Solargraph
           end
         end
         if decl.singleton?
+          final_scope = :class
+          name = decl.name.to_s
+          visibility = calculate_method_visibility(decl, context, closure, final_scope, name)
           pin = Solargraph::Pin::Method.new(
-            name: decl.name.to_s,
+            name: name,
             closure: closure,
             comments: decl.comment&.string,
             type_location: location_decl_to_pin_location(decl.location),
-            scope: :class,
+            visibility: visibility,
+            scope: final_scope,
             signatures: [],
             generics: generics,
             source: :rbs
@@ -405,33 +467,42 @@ module Solargraph
       # @param decl [RBS::AST::Members::AttrReader,RBS::AST::Members::AttrAccessor]
       # @param closure [Pin::Namespace]
       # @return [void]
-      def attr_reader_to_pin(decl, closure)
+      def attr_reader_to_pin(decl, closure, context)
+        name = decl.name.to_s
+        final_scope = decl.kind == :instance ? :instance : :class
+        visibility = calculate_method_visibility(decl, context, closure, final_scope, name)
         pin = Solargraph::Pin::Method.new(
-          name: decl.name.to_s,
+          name: name,
           type_location: location_decl_to_pin_location(decl.location),
           closure: closure,
           comments: decl.comment&.string,
           scope: :instance,
           attribute: true,
+          visibility: visibility,
           source: :rbs
         )
         rooted_tag = ComplexType.parse(other_type_to_tag(decl.type)).force_rooted.rooted_tags
         pin.docstring.add_tag(YARD::Tags::Tag.new(:return, '', rooted_tag))
+        logger.debug { "Conversions#attr_reader_to_pin(name=#{name.inspect}, visibility=#{visibility.inspect}) => #{pin.inspect}" }
         pins.push pin
       end
 
       # @param decl [RBS::AST::Members::AttrWriter, RBS::AST::Members::AttrAccessor]
       # @param closure [Pin::Namespace]
       # @return [void]
-      def attr_writer_to_pin(decl, closure)
+      def attr_writer_to_pin(decl, closure, context)
+        final_scope = decl.kind == :instance ? :instance : :class
+        name = "#{decl.name.to_s}="
+        visibility = calculate_method_visibility(decl, context, closure, final_scope, name)
         pin = Solargraph::Pin::Method.new(
-          name: "#{decl.name.to_s}=",
+          name: name,
           type_location: location_decl_to_pin_location(decl.location),
           closure: closure,
           parameters: [],
           comments: decl.comment&.string,
           scope: :instance,
           attribute: true,
+          visibility: visibility,
           source: :rbs
         )
         pin.parameters <<
@@ -449,9 +520,9 @@ module Solargraph
       # @param decl [RBS::AST::Members::AttrAccessor]
       # @param closure [Pin::Namespace]
       # @return [void]
-      def attr_accessor_to_pin(decl, closure)
-        attr_reader_to_pin(decl, closure)
-        attr_writer_to_pin(decl, closure)
+      def attr_accessor_to_pin(decl, closure, context)
+        attr_reader_to_pin(decl, closure, context)
+        attr_writer_to_pin(decl, closure, context)
       end
 
       # @param decl [RBS::AST::Members::InstanceVariable]
