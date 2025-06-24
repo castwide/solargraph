@@ -55,10 +55,6 @@ module Solargraph
 
   # @param type [Symbol] Type of assert.
   def self.asserts_on?(type)
-    # Pending https://github.com/castwide/solargraph/pull/950
-    return false if type == :combine_with_visibility
-    # Pending https://github.com/castwide/solargraph/pull/947
-    return false if type == :combine_with_closure_name
     if ENV['SOLARGRAPH_ASSERTS'].nil? || ENV['SOLARGRAPH_ASSERTS'].empty?
       false
     elsif ENV['SOLARGRAPH_ASSERTS'] == 'on'
