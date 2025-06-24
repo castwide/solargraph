@@ -68,8 +68,11 @@ module Solargraph
 
       # @param fq_tag [String]
       # @return [String, nil]
-      def get_superclass fqns
-        raise "Do not prefix fully qualified namespaces with '::' - #{fqns.inspect}" if fqns.start_with?('::')
+      def get_superclass fq_tag
+        raise "Do not prefix fully qualified tags with '::' - #{fq_tag.inspect}" if fq_tag.start_with?('::')
+        sub = ComplexType.parse(fq_tag)
+        fqns = sub.namespace
+        return superclass_references[fq_tag].first if superclass_references.key?(fq_tag)
         return superclass_references[fqns].first if superclass_references.key?(fqns)
         return 'Object' if fqns != 'BasicObject' && namespace_exists?(fqns)
         return 'Object' if fqns == 'Boolean'
