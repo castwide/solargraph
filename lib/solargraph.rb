@@ -59,14 +59,14 @@ module Solargraph
     return false if type == :combine_with_visibility
     # Pending https://github.com/castwide/solargraph/pull/947
     return false if type == :combine_with_closure_name
-    @asserts_on ||= if ENV['SOLARGRAPH_ASSERTS'].nil? || ENV['SOLARGRAPH_ASSERTS'].empty?
-                      false
-                    elsif ENV['SOLARGRAPH_ASSERTS'] == 'on'
-                      true
-                    else
-                      logger.warn "Unrecognized SOLARGRAPH_ASSERTS value: #{ENV['SOLARGRAPH_ASSERTS']}"
-                      false
-                    end
+    if ENV['SOLARGRAPH_ASSERTS'].nil? || ENV['SOLARGRAPH_ASSERTS'].empty?
+      false
+    elsif ENV['SOLARGRAPH_ASSERTS'] == 'on'
+      true
+    else
+      logger.warn "Unrecognized SOLARGRAPH_ASSERTS value: #{ENV['SOLARGRAPH_ASSERTS']}"
+      false
+    end
   end
 
   def self.assert_or_log(type, msg = nil, &block)

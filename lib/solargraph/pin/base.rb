@@ -50,6 +50,7 @@ module Solargraph
         @identity = nil
         @docstring = docstring
         @directives = directives
+        assert_source_provided
       end
 
       # @param other [self]
@@ -293,7 +294,6 @@ module Solargraph
                                    "Inconsistent #{attr.inspect} name values between \nself =#{inspect} and \nother=#{other.inspect}:\n\n self.#{attr} = #{val1.inspect}\nother.#{attr} = #{val2.inspect}")
         end
         [val1, val2].compact.min
-        assert_source_provided
       end
 
       def assert_source_provided
