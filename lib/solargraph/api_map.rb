@@ -461,7 +461,7 @@ module Solargraph
       result = Set.new
       complex_type.each do |type|
         if type.duck_type?
-          result.add Pin::DuckMethod.new(name: type.to_s[1..-1])
+          result.add Pin::DuckMethod.new(name: type.to_s[1..-1], source: :api_map)
           result.merge get_methods('Object')
         else
           unless type.nil? || type.name == 'void'
@@ -854,6 +854,7 @@ module Solargraph
       return nil if origin.nil?
       args = {
         location: pin.location,
+        type_location: origin.type_location,
         closure: pin.closure,
         name: pin.name,
         comments: origin.comments,
@@ -864,6 +865,7 @@ module Solargraph
         attribute: origin.attribute?,
         generics: origin.generics,
         return_type: origin.return_type,
+        source: :resolve_method_alias
       }
       Pin::Method.new **args
     end
