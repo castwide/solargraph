@@ -31,6 +31,7 @@ module Solargraph
     def initialize(requires, preferences, workspace = nil)
       @requires = requires.compact
       @preferences = preferences.compact
+      @workspace = workspace
       @rbs_path = workspace&.rbs_collection_path
       @environ = Convention.for_global(self)
       generate_gem_pins
@@ -224,6 +225,7 @@ module Solargraph
 
     def gemspecs_required_from_external_bundle
       logger.info 'Fetching gemspecs required from external bundle'
+      puts workspace.inspect
       return [] unless workspace&.directory
 
       Solargraph.with_clean_env do
