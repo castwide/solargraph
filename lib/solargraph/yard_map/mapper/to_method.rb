@@ -57,6 +57,7 @@ module Solargraph
               source: :yardoc,
             )
             pin.parameters.concat get_parameters(code_object, location, comments, pin)
+            pin.parameters.freeze
           end
           logger.debug { "ToMethod.make: Just created method pin: #{pin.inspect}" }
           pin

@@ -7,6 +7,8 @@ module Solargraph
     # Functions for converting RBS declarations to Solargraph pins
     #
     module Conversions
+      include Logging
+
       # A container for tracking the current context of the RBS conversion
       # process, e.g., what visibility is declared for methods in the current
       # scope
@@ -332,9 +334,11 @@ module Solargraph
           signature_parameters, signature_return_type = parts_of_function(overload.method_type, pin)
           block = if overload.method_type.block
                     block_parameters, block_return_type = parts_of_function(overload.method_type.block, pin)
-                    Pin::Signature.new(generics: generics, parameters: block_parameters, return_type: block_return_type, source: :rbs)
+                    Pin::Signature.new(generics: generics, parameters: block_parameters, return_type: block_return_type,
+                                       closure: pin, source: :rbs)
                   end
-          Pin::Signature.new(generics: generics, parameters: signature_parameters, return_type: signature_return_type, block: block, source: :rbs)
+          Pin::Signature.new(generics: generics, parameters: signature_parameters, return_type: signature_return_type, block: block,
+                             closure: pin, source: :rbs)
         end
       end
 
@@ -424,11 +428,19 @@ module Solargraph
           name: "#{decl.name.to_s}=",
           type_location: location_decl_to_pin_location(decl.location),
           closure: closure,
+          parameters: [],
           comments: decl.comment&.string,
           scope: :instance,
           attribute: true,
           source: :rbs
         )
+        pin.parameters <<
+          Solargraph::Pin::Parameter.new(
+            name: 'value',
+            return_type: ComplexType.try_parse(other_type_to_tag(decl.type)).force_rooted,
+            source: :rbs,
+            closure: pin
+          )
         rooted_tag = ComplexType.parse(other_type_to_tag(decl.type)).force_rooted.rooted_tags
         pin.docstring.add_tag(YARD::Tags::Tag.new(:return, '', rooted_tag))
         pins.push pin
