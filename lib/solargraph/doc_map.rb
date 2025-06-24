@@ -44,8 +44,8 @@ module Solargraph
       @requires = requires.compact
       @preferences = preferences.compact
       @workspace = workspace
-      @rbs_collection_path = workspace.rbs_collection_path
-      @rbs_collection_config_path = workspace.rbs_collection_config_path
+      @rbs_collection_path = workspace&.rbs_collection_path
+      @rbs_collection_config_path = workspace&.rbs_collection_config_path
       load_serialized_gem_pins
     end
 
