@@ -10,6 +10,10 @@ module Solargraph
         # @return [::Array<Symbol>]
         attr_reader :delete
 
+        def closure
+          nil
+        end
+
         def initialize location, name, tags, delete = [], **splat
           super(location: location, name: name, **splat)
           @tags = tags
