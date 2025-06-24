@@ -329,6 +329,9 @@ module Solargraph
         end
       end
 
+      def reset_generated!
+      end
+
       protected
 
       # @return [Boolean]

@@ -130,7 +130,7 @@ module Solargraph
       end
 
       # @param api_map [ApiMap]
-      # @param name_pin [Pin::Base]
+      # @param name_pin [Pin::Base] The pin for the closure in which this code runs
       # @param locals [::Array<Pin::LocalVariable>]
       # @return [ComplexType]
       # @sg-ignore
