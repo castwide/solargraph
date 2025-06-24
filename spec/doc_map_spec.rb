@@ -16,7 +16,7 @@ describe Solargraph::DocMap do
 
   it 'tracks unresolved requires' do
     doc_map = Solargraph::DocMap.new(['not_a_gem'], [])
-    expect(doc_map.unresolved_requires).to eq(['not_a_gem'] + doc_map.environ.requires)
+    expect(doc_map.unresolved_requires).to eq(['not_a_gem'])
   end
 
   it 'tracks uncached_gemspecs' do
