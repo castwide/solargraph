@@ -32,9 +32,9 @@ describe Solargraph::DocMap do
   end
 
   it 'imports all gems when bundler/require used' do
-    plain_doc_map = Solargraph::DocMap.new([], [])
-
-    doc_map_with_bundler_require = Solargraph::DocMap.new(['bundler/require'], [])
+    workspace = Solargraph::Workspace.new(Dir.pwd)
+    plain_doc_map = Solargraph::DocMap.new([], [], workspace)
+    doc_map_with_bundler_require = Solargraph::DocMap.new(['bundler/require'], [], workspace)
 
     expect(doc_map_with_bundler_require.pins.length - plain_doc_map.pins.length).to be_positive
   end
