@@ -30,8 +30,7 @@ describe Solargraph::Pin::LocalVariable do
     # should indicate which one should override in the range situation
   end
 
-    # Pending https://github.com/castwide/solargraph/pull/947
-  xit "asserts on attempt to merge namespace changes" do
+  it "asserts on attempt to merge namespace changes" do
     map1 = Solargraph::SourceMap.load_string(%(
       class Foo
         foo = 'foo'
