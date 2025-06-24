@@ -9,6 +9,10 @@ module Solargraph
       # @return [String]
       attr_reader :asgn_code
 
+      # allow this to be set to the method after the method itself has
+      # been created
+      attr_writer :closure
+
       # @param decl [::Symbol] :arg, :optarg, :kwarg, :kwoptarg, :restarg, :kwrestarg, :block, :blockarg
       # @param asgn_code [String, nil]
       def initialize decl: :arg, asgn_code: nil, **splat
@@ -111,6 +115,15 @@ module Solargraph
       def typify api_map
         return return_type.qualify(api_map, closure.context.namespace) unless return_type.undefined?
         closure.is_a?(Pin::Block) ? typify_block_param(api_map) : typify_method_param(api_map)
+      end
+
+      # @param atype [ComplexType]
+      # @param api_map [ApiMap]
+      def compatible_arg?(atype, api_map)
+        # make sure we get types from up the method
+        # inheritance chain if we don't have them on this pin
+        ptype = typify api_map
+        ptype.undefined? || ptype.can_assign?(api_map, atype) || ptype.generic?
       end
 
       def documentation

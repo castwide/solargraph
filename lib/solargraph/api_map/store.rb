@@ -66,13 +66,18 @@ module Solargraph
         end
       end
 
-      # @param fqns [String]
+      # @param fq_tag [String]
       # @return [String, nil]
-      def get_superclass fqns
-        raise "Do not prefix fully qualified namespaces with '::' - #{fqns.inspect}" if fqns.start_with?('::')
+      def get_superclass fq_tag
+        raise "Do not prefix fully qualified tags with '::' - #{fq_tag.inspect}" if fq_tag.start_with?('::')
+        sub = ComplexType.parse(fq_tag)
+        fqns = sub.namespace
+        return superclass_references[fq_tag].first if superclass_references.key?(fq_tag)
         return superclass_references[fqns].first if superclass_references.key?(fqns)
         return 'Object' if fqns != 'BasicObject' && namespace_exists?(fqns)
         return 'Object' if fqns == 'Boolean'
+        simplified_literal_name = ComplexType.parse("#{fqns}").simplify_literals.name
+        return simplified_literal_name if simplified_literal_name != fqns
         nil
       end
 
@@ -112,7 +117,7 @@ module Solargraph
       # @param fqns [String]
       # @return [Enumerable<Solargraph::Pin::Base>]
       def get_class_variables(fqns)
-        namespace_children(fqns).select{|pin| pin.is_a?(Pin::ClassVariable)}
+        namespace_children(fqns).select { |pin| pin.is_a?(Pin::ClassVariable)}
       end
 
       # @return [Enumerable<Solargraph::Pin::Base>]

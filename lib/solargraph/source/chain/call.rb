@@ -27,7 +27,7 @@ module Solargraph
         # @param location [Location, nil]
         # @param arguments [::Array<Chain>]
         # @param block [Chain, nil]
-        def initialize word, location, arguments = [], block = nil
+        def initialize word, location = nil, arguments = [], block = nil
           @word = word
           @location = location
           @arguments = arguments
@@ -45,7 +45,7 @@ module Solargraph
         end
 
         # @param api_map [ApiMap]
-        # @param name_pin [Pin::Closure] name_pin.binder should give us the object on which 'word' will be invoked
+        # @param name_pin [Pin::Closure] name_pin.binder should give us the type of the object on which 'word' will be invoked
         # @param locals [::Array<Pin::LocalVariable>]
         def resolve api_map, name_pin, locals
           return super_pins(api_map, name_pin) if word == 'super'
@@ -57,8 +57,9 @@ module Solargraph
           end
           return inferred_pins(found, api_map, name_pin, locals) unless found.empty?
           pins = name_pin.binder.each_unique_type.flat_map do |context|
-            ns = context.namespace == '' ? '' : context.namespace_type.tag
-            api_map.get_method_stack(ns, word, scope: context.scope)
+            ns_tag = context.namespace == '' ? '' : context.namespace_type.tag
+            stack = api_map.get_method_stack(ns_tag, word, scope: context.scope)
+            [stack.first].compact
           end
           return [] if pins.empty?
           inferred_pins(pins, api_map, name_pin, locals)
@@ -82,7 +83,9 @@ module Solargraph
             # use it.  If we didn't pass a block, the logic below will
             # reject it regardless
 
-            sorted_overloads = overloads.sort { |ol| ol.block? ? -1 : 1 }
+            with_block, without_block = overloads.partition(&:block?)
+            sorted_overloads = with_block + without_block
+            # @type [Pin::Signature, nil]
             new_signature_pin = nil
             sorted_overloads.each do |ol|
               next unless ol.arity_matches?(arguments, with_block?)
@@ -95,13 +98,8 @@ module Solargraph
                   match = ol.parameters.any?(&:restarg?)
                   break
                 end
-                atype = atypes[idx] ||= arg.infer(api_map, Pin::ProxyType.anonymous(name_pin.context), locals)
-                # make sure we get types from up the method
-                # inheritance chain if we don't have them on this pin
-                ptype = param.typify api_map
-                # @todo Weak type comparison
-                # unless atype.tag == param.return_type.tag || api_map.super_and_sub?(param.return_type.tag, atype.tag)
-                unless ptype.undefined? || atype.name == ptype.name || ptype.any? { |current_ptype| api_map.super_and_sub?(current_ptype.name, atype.name) } || ptype.generic? || param.restarg?
+                atype = atypes[idx] ||= arg.infer(api_map, Pin::ProxyType.anonymous(name_pin.context, source: :chain), locals)
+                unless param.compatible_arg?(atype, api_map) || param.restarg?
                   match = false
                   break
                 end
@@ -116,9 +114,30 @@ module Solargraph
                     blocktype = block_call_type(api_map, name_pin, locals)
                   end
                 end
+                # @type new_signature_pin [Pin::Signature]
                 new_signature_pin = ol.resolve_generics_from_context_until_complete(ol.generics, atypes, nil, nil, blocktype)
                 new_return_type = new_signature_pin.return_type
-                type = with_params(new_return_type.self_to_type(name_pin.context), name_pin.context).qualify(api_map, name_pin.context.namespace) if new_return_type.defined?
+                if head?
+                  # If we're at the head of the chain, we called a
+                  # method somewhere that marked itself as returning
+                  # self.  Given we didn't invoke this on an object,
+                  # this must be a method in this same class - so we
+                  # use our own self type
+                  self_type = name_pin.context
+                else
+                  # if we're past the head in the chain, whatever the
+                  # type of the lhs side is what 'self' will be in its
+                  # declaration - we can't just use the type of the
+                  # method pin, as this might be a subclass of the
+                  # place where the method is defined
+                  self_type = name_pin.binder
+                end
+                # This same logic applies to the YARD work done by
+                # 'with_params()'.
+                #
+                # qualify(), however, happens in the namespace where
+                # the docs were written - from the method pin.
+                type = with_params(new_return_type.self_to_type(self_type), self_type).qualify(api_map, p.namespace) if new_return_type.defined?
                 type ||= ComplexType::UNDEFINED
               end
               break if type.defined?
@@ -134,13 +153,14 @@ module Solargraph
             end
             p
           end
-          result.map do |pin|
-            if pin.path == 'Class#new' && name_pin.context.tag != 'Class'
-              reduced_context = name_pin.context.reduce_class_type
+          logger.debug { "Call#inferred_pins(name_pin.binder=#{name_pin.binder}, word=#{word}, pins=#{pins.map(&:desc)}, name_pin=#{name_pin}) - result=#{result}" }
+          out = result.map do |pin|
+            if pin.path == 'Class#new' && name_pin.binder.tag != 'Class'
+              reduced_context = name_pin.binder.reduce_class_type
               pin.proxy(reduced_context)
             else
               next pin if pin.return_type.undefined?
-              selfy = pin.return_type.self_to_type(name_pin.context)
+              selfy = pin.return_type.self_to_type(name_pin.binder)
               selfy == pin.return_type ? pin : pin.proxy(selfy)
             end
           end
@@ -162,7 +182,7 @@ module Solargraph
             result = inner_process_macro(pin, macro, api_map, context, locals)
             return result unless result.return_type.undefined?
           end
-          Pin::ProxyType.anonymous(ComplexType::UNDEFINED)
+          Pin::ProxyType.anonymous(ComplexType::UNDEFINED, source: :chain)
         end
 
         # @param pin [Pin::Method]
@@ -177,7 +197,7 @@ module Solargraph
             result = inner_process_macro(pin, macro, api_map, context, locals)
             return result unless result.return_type.undefined?
           end
-          Pin::ProxyType.anonymous ComplexType::UNDEFINED
+          Pin::ProxyType.anonymous ComplexType::UNDEFINED, source: :chain
         end
 
         # @param pin [Pin::Base]
@@ -187,7 +207,7 @@ module Solargraph
         # @param locals [::Array<Pin::LocalVariable, Pin::Parameter>]
         # @return [Pin::ProxyType]
         def inner_process_macro pin, macro, api_map, context, locals
-          vals = arguments.map{ |c| Pin::ProxyType.anonymous(c.infer(api_map, pin, locals)) }
+          vals = arguments.map{ |c| Pin::ProxyType.anonymous(c.infer(api_map, pin, locals), source: :chain) }
           txt = macro.tag.text.clone
           if txt.empty? && macro.tag.name
             named = api_map.named_macro(macro.tag.name)
@@ -201,9 +221,9 @@ module Solargraph
           docstring = Solargraph::Source.parse_docstring(txt).to_docstring
           tag = docstring.tag(:return)
           unless tag.nil? || tag.types.nil?
-            return Pin::ProxyType.anonymous(ComplexType.try_parse(*tag.types))
+            return Pin::ProxyType.anonymous(ComplexType.try_parse(*tag.types), source: :chain)
           end
-          Pin::ProxyType.anonymous(ComplexType::UNDEFINED)
+          Pin::ProxyType.anonymous(ComplexType::UNDEFINED, source: :chain)
         end
 
         # @param docstring [YARD::Docstring]

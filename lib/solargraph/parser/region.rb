@@ -29,7 +29,7 @@ module Solargraph
                      scope: nil, visibility: :public, lvars: []
         @source = source
         # @closure = closure
-        @closure = closure || Pin::Namespace.new(name: '', location: source.location)
+        @closure = closure || Pin::Namespace.new(name: '', location: source.location, source: :parser)
         @scope = scope
         @visibility = visibility
         @lvars = lvars

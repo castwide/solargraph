@@ -13,7 +13,8 @@ module Solargraph
               Solargraph::Pin::Namespace.new(
                 location: location,
                 type: :class,
-                name: unpack_name(node.children[0].children[0])
+                name: unpack_name(node.children[0].children[0]),
+                source: :parser,
               )
             else
               region.closure
@@ -24,7 +25,8 @@ module Solargraph
               node: node,
               receiver: node.children[0],
               comments: comments_for(node),
-              scope: region.scope || region.closure.context.scope
+              scope: region.scope || region.closure.context.scope,
+              source: :parser
             )
             process_children region.update(closure: pins.last)
           end

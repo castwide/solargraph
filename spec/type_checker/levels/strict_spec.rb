@@ -118,6 +118,22 @@ describe Solargraph::TypeChecker do
       expect(checker.problems.first.message).to include('Wrong argument type')
     end
 
+    xit 'complains about calling a private method from an illegal place'
+
+    xit 'complains about calling a non-existent method'
+
+    xit 'complains about inserting the wrong type into a tuple slot' do
+      checker = type_checker(%(
+        # @param a [::Solargraph::Fills::Tuple(String, Integer)]
+        def foo(a)
+          a[0] = :something
+        end
+      ))
+      expect(checker.problems.map(&:problems)).to eq(['Wrong argument type'])
+    end
+
+    xit 'complains about dereferencing a non-existent tuple slot'
+
     it 'reports mismatched keyword arguments' do
       checker = type_checker(%(
         class Foo
@@ -801,6 +817,16 @@ describe Solargraph::TypeChecker do
       expect(checker.problems.map(&:message)).to eq([])
     end
 
+
+    it 'understands tuple superclass' do
+      checker = type_checker(%(
+        b = ['a', 'b', 123]
+        c = b.include?('a')
+        c
+      ))
+      expect(checker.problems.map(&:message)).to be_empty
+    end
+
     xit "Uses flow scope to specialize understanding of cvar types" do
       checker = type_checker(%(
         class Bar
@@ -868,6 +894,52 @@ describe Solargraph::TypeChecker do
               x
             end
           end
+        end
+      ))
+      expect(checker.problems.map(&:message)).to eq([])
+    end
+
+    it 'does not complain when passing nil to a NilClass parameter' do
+      checker = type_checker(%(
+        # @param a [NilClass]
+        def foo(a); end
+
+        foo(nil)
+      ))
+      expect(checker.problems.map(&:message)).to eq([])
+    end
+
+    it 'does not complain when passing NilClass to nil parameter' do
+      checker = type_checker(%(
+        # @param a [nil]
+        def foo(a); end
+
+        # @param a [NilClass]
+        def bar(a)
+          foo(a)
+        end
+      ))
+      expect(checker.problems.map(&:message)).to eq([])
+    end
+
+    it 'does not complain when passing true to TrueClass parameter' do
+      checker = type_checker(%(
+        # @param a [TrueClass]
+        def foo(a); end
+
+        foo(true)
+      ))
+      expect(checker.problems.map(&:message)).to eq([])
+    end
+
+    it 'does not complain when passing TrueClass to true parameter' do
+      checker = type_checker(%(
+        # @param a [true]
+        def foo(a); end
+
+        # @param a [TrueClass]
+        def bar(a)
+          foo(a)
         end
       ))
       expect(checker.problems.map(&:message)).to eq([])
