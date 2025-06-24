@@ -31,7 +31,7 @@ module Solargraph
         elsif other.block.nil?
           block
         else
-          choose(other, :block)
+          choose_pin_attr(other, :block)
         end
       end
 

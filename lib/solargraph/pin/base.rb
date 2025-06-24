@@ -163,13 +163,6 @@ module Solargraph
         location&.filename&.include?('core_ext/object/')
       end
 
-      # @param p1 [self]
-      def <=>(p1)
-        return nil unless p1.is_a?(self.class)
-        return 0 if self == p1
-        equality_fields <=> equality_fields
-      end
-
       # when choices are arbitrary, make sure the choice is consistent
       #
       # @param other [Pin::Base]
@@ -294,12 +287,21 @@ module Solargraph
           Solargraph.assert_or_log("combine_with_#{attr}_name".to_sym,
                                    "Inconsistent #{attr.inspect} name values between \nself =#{inspect} and \nother=#{other.inspect}:\n\n self.#{attr} = #{val1.inspect}\nother.#{attr} = #{val2.inspect}")
         end
+        choose_pin_attr(other, attr)
+      end
+
+      def choose_pin_attr(other, attr)
+        # @type [Pin::Base, nil]
+        val1 = send(attr)
+        # @type [Pin::Base, nil]
+        val2 = other.send(attr)
         if val1.class != val2.class
           Solargraph.assert_or_log("combine_with_#{attr}_class".to_sym,
                                    "Inconsistent #{attr.inspect} class values between \nself =#{inspect} and \nother=#{other.inspect}:\n\n self.#{attr} = #{val1.inspect}\nother.#{attr} = #{val2.inspect}")
           return val1
         end
-        [val1, val2].compact.min
+        # arbitrary way of choosing a pin
+        [val1, val2].compact.min_by { _1.best_location.to_s }
       end
 
       def assert_source_provided
