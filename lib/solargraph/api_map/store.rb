@@ -66,7 +66,7 @@ module Solargraph
         end
       end
 
-      # @param fqns [String]
+      # @param fq_tag [String]
       # @return [String, nil]
       def get_superclass fqns
         raise "Do not prefix fully qualified namespaces with '::' - #{fqns.inspect}" if fqns.start_with?('::')
