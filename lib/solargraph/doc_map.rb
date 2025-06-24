@@ -225,7 +225,6 @@ module Solargraph
 
     def gemspecs_required_from_external_bundle
       logger.info 'Fetching gemspecs required from external bundle'
-      puts workspace.inspect
       return [] unless workspace&.directory
 
       Solargraph.with_clean_env do
